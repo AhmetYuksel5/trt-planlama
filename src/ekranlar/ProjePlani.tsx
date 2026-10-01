@@ -89,8 +89,8 @@ export default function ProjePlani() {
         </span>
         <span className="bosluk" />
         <DilSecici />
-        <a className="dugme" href="#/">
-          <LogIn size={16} className="yon" /> {t(ben ? "prototipeDon" : "prototipeGir")}
+        <a className="dugme" href="#/" aria-label={t(ben ? "prototipeDon" : "prototipeGir")}>
+          <LogIn size={16} className="yon" /> <span className="mobilde-gizli">{t(ben ? "prototipeDon" : "prototipeGir")}</span>
         </a>
       </header>
 
@@ -176,7 +176,7 @@ export default function ProjePlani() {
           <p>{t("ppBirimlerA")}</p>
           <div className="kart">
             <div className="tablo-sar">
-              <table className="tablo">
+              <table className="tablo kartli">
                 <thead>
                   <tr>
                     <th>{t("birim")}</th>
@@ -187,9 +187,11 @@ export default function ProjePlani() {
                 <tbody>
                   {BIRIM_PENCERESI.map(([b, g, e]) => (
                     <tr key={b}>
-                      <td className="kalin">{t(BIRIM_ADI[b])}</td>
-                      <td>{t(g)}</td>
-                      <td className="sonuk">{t(e)}</td>
+                      <td className="kalin birincil">{t(BIRIM_ADI[b])}</td>
+                      <td data-etiket={t("ppGorevi")}>{t(g)}</td>
+                      <td className="sonuk" data-etiket={t("ppAnaSayfasinda")}>
+                        {t(e)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -222,6 +224,7 @@ export default function ProjePlani() {
           <p>{t("ppYetkiA")}</p>
           <div className="kart">
             <div className="tablo-sar">
+              {/* Yetki matrisi bir ızgara; telefonda karta dönmüyor, yatay kayıyor. */}
               <table className="tablo matris">
                 <thead>
                   <tr>

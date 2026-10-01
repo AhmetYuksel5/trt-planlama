@@ -7,15 +7,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   çıktıyı `docs/` içine üretiyor. **Derlemeden gönderme:** `docs/` elle
   düzenlenmez, kaynak değişince yeniden derlenir.
 - GitHub Pages `main` dalındaki `docs/` klasöründen yayınlıyor. `base`
-  göreli (`./`), depo adı değişse de (trt-planlama → arabiflow)
+  göreli (`./`); depo adı değişse de (trt-planlama → arabiflow)
   yapılandırma değişmiyor.
 - Dayanağı dört belge:
   - notlardaki beş aşama ve birimler
   - "Görselli Kapsamlı Rapor": Next Day'in on kutusu, haftalık akış ve üç
     kol, birim pencereleri, ortak kayıt, yetki, mimari
   - "İlk Taslak Promptu": ilk teslimatın kapsamı, Next Day ekranı, menü
-  - kurumun Next Day çıktısı (الأجندة الإخبارية): çıktı ekranı onun
-    bölüm sırasını ve biçimini izliyor
+  - kurumun Next Day çıktısı (الأجندة الإخبارية): çıktı ekranı onun bölüm
+    sırasını ve biçimini izliyor
 
   Eşlemeler `src/akis.ts` ve `src/veri.ts` başındaki yorumlarda.
 - Katmanlar:
@@ -26,7 +26,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `oturum.ts`: demo giriş
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
-  `src/dil.ts` içinde tek tabloda ve üç dil zorunlu: eksik çeviri derlemeyi
+  `src/dil.ts` içinde tek tabloda ve üç dil zorunlu; eksik çeviri derlemeyi
   kırar. Ekranlara çıplak metin yazılmaz. Kayıt içeriği `Yazi` tipinde:
   örnek veri üç dilli, kullanıcının yazdığı metin yazıldığı dilde kalır.
 - Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v2`)
@@ -38,6 +38,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
   Arapçada sağdan sola kendiliğinden.
+- Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
+  bir düzen:
+  - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor
+  - "Menü" (`MobilMenu`) plan kısayollarını, bütün sayfaları, dili ve
+    oturumu bir panelde topluyor
+  - yeni bir sayfa eklenince `SolMenu`'deki `MENU` listesine girmesi ikisine
+    birden yetiyor
+- Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
+  `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
+  Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.
+- Dokunma hedefi en az 44 piksel. Telefonda yazı alanları 16 piksel; daha
+  küçüğünde iPhone sayfayı yakınlaştırıyor.
+- Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
+  yatay taşmanın sıfır olduğuna bakılır, Arapçada da.
 - Örnek veri kurgusal; kurumun belgelerindeki adlar dahil gerçek personel
   adı yazılmaz.
 - Yorumlar Türkçe ve "neden" anlatır, "ne" değil.

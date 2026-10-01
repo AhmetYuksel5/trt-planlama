@@ -76,6 +76,10 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
       <button className="ikon-dugme menu-dugme" onClick={onMenu} aria-label={t("menuAc")}>
         <Menu size={18} />
       </button>
+      <a className="marka marka-mobil" href="#/" aria-label={t("uygulama")}>
+        <b>TRT</b>
+        <span>{t("markaArapca")}</span>
+      </a>
       <div className={`arama ${acik === "arama" ? "acik" : ""}`}>
         <Search size={16} />
         <input

@@ -46,7 +46,7 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
           <Bos metin={t("planYok")} />
         ) : (
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("tarih")}</th>
@@ -63,7 +63,7 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
                   const kaynak = v.planlar.find((x) => x.id === p.kopyaKaynagi);
                   return (
                     <tr key={p.id} className="tiklanir" onClick={() => git(`nextday/${p.id}`)}>
-                      <td>
+                      <td className="birincil">
                         <a className="kalin" href={`#/nextday/${p.id}`} onClick={(e) => e.stopPropagation()}>
                           {tarihYaz(p.tarih, dil, "tam")}
                         </a>
@@ -80,14 +80,16 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
                           </>
                         )}
                       </td>
-                      <td>
+                      <td data-etiket={t("durum")}>
                         <Rozet ton={PLAN_DURUM_TONU[p.durum]}>{t(PLAN_DURUM_ADI[p.durum])}</Rozet>
                       </td>
-                      <td>{p.basliklar.length}</td>
-                      <td>{v.paketler.filter((x) => x.planId === p.id && x.durum !== "iptal").length}</td>
-                      <td>{p.ekip.length}</td>
-                      <td className="sonuk">{kaynak ? tarihYaz(kaynak.tarih, dil, "kisa") : "—"}</td>
-                      <td className="dar">
+                      <td data-etiket={t("basliklar")}>{p.basliklar.length}</td>
+                      <td data-etiket={t("paketOnerileri")}>{v.paketler.filter((x) => x.planId === p.id && x.durum !== "iptal").length}</td>
+                      <td data-etiket={t("ekip")}>{p.ekip.length}</td>
+                      <td className="sonuk" data-etiket={t("kopyaKaynagi")}>
+                        {kaynak ? tarihYaz(kaynak.tarih, dil, "kisa") : "—"}
+                      </td>
+                      <td className="dar eylem">
                         <a className="dugme dugme-sade dugme-kucuk" href={`#/nextday/${p.id}/cikti`} onClick={(e) => e.stopPropagation()} title={t("ciktiOnizleme")}>
                           <Printer size={15} /> {t("cikti")}
                         </a>

@@ -140,7 +140,7 @@ export function HazirPaketler() {
       <SayfaBasi ikon={<Layers size={26} />} baslik={t("mHazirPaketler")} alt={t("hazirAlt")} />
       <Kart>
         <div className="tablo-sar">
-          <table className="tablo">
+          <table className="tablo kartli">
             <thead>
               <tr>
                 <th>{t("sehirUlke")}</th>
@@ -155,21 +155,25 @@ export function HazirPaketler() {
             <tbody>
               {v.hazirPaketler.map((h) => (
                 <tr key={h.id}>
-                  <td className="kalin">{t(sehirAdi(h.sehir))}</td>
-                  <td>
+                  <td className="kalin" data-etiket={t("sehirUlke")}>
+                    {t(sehirAdi(h.sehir))}
+                  </td>
+                  <td className="birincil">
                     <b>{y(h.baslik)}</b>
                     <br />
                     <small className="sonuk">{y(h.aciklama)}</small>
                   </td>
-                  <td>{y(kisiBul(v, h.muhabirId)?.ad ?? "")}</td>
-                  <td>
+                  <td data-etiket={t("muhabir")}>{y(kisiBul(v, h.muhabirId)?.ad ?? "")}</td>
+                  <td data-etiket={t("tur")}>
                     <TurRozeti tur={h.tur} />
                   </td>
-                  <td>{h.sure}</td>
-                  <td className="sonuk" dir="ltr">
-                    {h.slug}
+                  <td data-etiket={t("sure")}>{h.sure}</td>
+                  <td className="sonuk" data-etiket={t("slug")}>
+                    <bdi>{h.slug}</bdi>
                   </td>
-                  <td className="sonuk">{tarihYaz(h.hazirlanma, dil, "kisa")}</td>
+                  <td className="sonuk" data-etiket={t("hazirlanma")}>
+                    {tarihYaz(h.hazirlanma, dil, "kisa")}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -210,7 +214,7 @@ export function Ucretler({ ben }: { ben: Kisi }) {
           <Bos metin={t("kayitYok")} />
         ) : (
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("muhabir")}</th>
@@ -222,20 +226,20 @@ export function Ucretler({ ben }: { ben: Kisi }) {
               <tbody>
                 {ucretli.map((p: Paket) => (
                   <tr key={p.id}>
-                    <td>
+                    <td data-etiket={t("muhabir")}>
                       <span className="kisi-hucre">
                         <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" /> {y(kisiBul(v, p.muhabirId)?.ad ?? "")}
                       </span>
                     </td>
-                    <td>
+                    <td className="birincil">
                       <a className="kalin" href={`#/paketler/${p.id}`}>
                         {y(p.baslik)}
                       </a>
                     </td>
-                    <td>
+                    <td data-etiket={t("durum")}>
                       <Rozet>{t(PAKET_DURUM_ADI[p.durum])}</Rozet>
                     </td>
-                    <td>
+                    <td data-etiket={t("ucret")}>
                       {ucretGorebilir(ben, p) ? (
                         <b>
                           {p.ucret!.tutar} {p.ucret!.para} · {t(`uc_${p.ucret!.durum}`)}

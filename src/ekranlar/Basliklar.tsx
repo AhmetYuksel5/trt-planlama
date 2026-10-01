@@ -67,7 +67,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
           <Bos metin={t("kayitYok")} />
         ) : (
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("baslikAdi")}</th>
@@ -84,10 +84,10 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                   const duzenleniyor = duzen?.id === b.id;
                   return (
                     <tr key={b.id}>
-                      <td className="kalin">
+                      <td className="kalin birincil">
                         {duzenleniyor ? <input className="girdi" value={duzen.ad} onChange={(e) => setDuzen({ ...duzen, ad: e.target.value })} autoFocus /> : y(b.ad)}
                       </td>
-                      <td>
+                      <td data-etiket={t("ulke")}>
                         {duzenleniyor ? (
                           <select className="girdi" value={duzen.ulke} onChange={(e) => setDuzen({ ...duzen, ulke: e.target.value as Ulke | "" })}>
                             <option value="">—</option>
@@ -103,9 +103,9 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                           "—"
                         )}
                       </td>
-                      <td>{t("planSayisi", { n: planlar.length })}</td>
-                      <td className="sonuk">{planlar[0] ? <a href={`#/nextday/${planlar[0].id}`}>{tarihYaz(planlar[0].tarih, dil, "kisa")}</a> : "—"}</td>
-                      <td>
+                      <td data-etiket={t("kullanim")}>{t("planSayisi", { n: planlar.length })}</td>
+                      <td className="sonuk" data-etiket={t("sonKullanim")}>{planlar[0] ? <a href={`#/nextday/${planlar[0].id}`}>{tarihYaz(planlar[0].tarih, dil, "kisa")}</a> : "—"}</td>
+                      <td data-etiket={t("durum")}>
                         {yonetir ? (
                           <label className="secim">
                             <input type="checkbox" checked={b.aktif} onChange={(e) => baslikDuzenle(ben, b.id, { aktif: e.target.checked })} />
@@ -116,7 +116,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                         )}
                       </td>
                       {yonetir && (
-                        <td className="dar">
+                        <td className="dar eylem">
                           {duzenleniyor ? (
                             <span className="dugmeler">
                               <button

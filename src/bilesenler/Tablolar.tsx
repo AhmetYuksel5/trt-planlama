@@ -25,7 +25,7 @@ export function PaketTablosu({
   const var_ = (s: (typeof sutunlar)[number]) => sutunlar.includes(s);
   return (
     <div className="tablo-sar">
-      <table className="tablo">
+      <table className="tablo kartli">
         <thead>
           <tr>
             {var_("kod") && <th>{t("kod")}</th>}
@@ -46,9 +46,13 @@ export function PaketTablosu({
             const plan = d.planlar.find((x) => x.id === p.planId);
             return (
               <tr key={p.id} className="tiklanir" onClick={() => git(`paketler/${p.id}`)}>
-                {var_("kod") && <td className="sonuk dar">{p.kod}</td>}
+                {var_("kod") && (
+                  <td className="sonuk dar" data-etiket={t("kod")}>
+                    {p.kod}
+                  </td>
+                )}
                 {var_("baslik") && (
-                  <td>
+                  <td className="birincil">
                     <a className="kalin" href={`#/paketler/${p.id}`} onClick={(e) => e.stopPropagation()}>
                       {y(p.baslik)}
                     </a>
@@ -57,27 +61,27 @@ export function PaketTablosu({
                   </td>
                 )}
                 {var_("muhabir") && (
-                  <td>
+                  <td data-etiket={t("muhabir")}>
                     <KisiHucre kisi={muhabir} />
                   </td>
                 )}
                 {var_("tur") && (
-                  <td>
+                  <td data-etiket={t("tur")}>
                     <TurRozeti tur={p.tur} />
                   </td>
                 )}
-                {var_("plan") && <td className="sonuk">{plan ? tarihYaz(plan.tarih, dil, "kisa") : t("haftalikKaynak")}</td>}
+                {var_("plan") && <td className="sonuk" data-etiket={t("plan")}>{plan ? tarihYaz(plan.tarih, dil, "kisa") : t("haftalikKaynak")}</td>}
                 {var_("asama") && (
-                  <td>
+                  <td data-etiket={t("asama")}>
                     <AsamaCubugu paket={p} />
                     <div className="ara-ust">
                       <PaketDurumRozeti paket={p} />
                     </div>
                   </td>
                 )}
-                {var_("kimde") && <td>{sahip ? t(BIRIM_ADI[sahip]) : "—"}</td>}
+                {var_("kimde") && <td data-etiket={t("simdiKimde")}>{sahip ? t(BIRIM_ADI[sahip]) : "—"}</td>}
                 {var_("teslim") && (
-                  <td className="dar">
+                  <td className="dar" data-etiket={t("teslim")}>
                     {p.teslim ? (
                       <Rozet ton={geciktiMi(p) ? "kotu" : ""}>
                         {tarihYaz(yerelGun(p.teslim), dil, "kisa")} {saatYaz(p.teslim, dil)}
@@ -87,7 +91,7 @@ export function PaketTablosu({
                     )}
                   </td>
                 )}
-                <td className="dar sonuk">
+                <td className="dar sonuk ok-hucre">
                   <ChevronRight size={16} className="yon" />
                 </td>
               </tr>
@@ -109,7 +113,7 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
   if (!oneriler.length) return <Bos metin={t("oneriYok")} />;
   return (
     <div className="tablo-sar">
-      <table className="tablo">
+      <table className="tablo kartli">
         <thead>
           <tr>
             <th>{t("zaman")}</th>
@@ -125,14 +129,14 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
         <tbody>
           {oneriler.map((o) => (
             <tr key={o.id} className="tiklanir" onClick={() => git(`oneriler/${o.id}`)}>
-              <td className="sonuk dar">
+              <td className="sonuk dar" data-etiket={t("zaman")}>
                 {kisa && yerelGun(o.zaman) === bugun() ? "" : `${tarihYaz(yerelGun(o.zaman), dil, "kisa")} `}
                 {saatYaz(o.zaman, dil)}
               </td>
-              <td>
+              <td data-etiket={t("muhabir")}>
                 <KisiHucre kisi={kisiBul(d, o.muhabirId)} />
               </td>
-              <td>
+              <td className="birincil">
                 <a className="kalin" href={`#/oneriler/${o.id}`} onClick={(e) => e.stopPropagation()}>
                   {y(o.haberBasligi)}
                 </a>
@@ -144,16 +148,20 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
                 )}
               </td>
               {!kisa && (
-                <td>
+                <td data-etiket={t("tur")}>
                   <TurRozeti tur={o.tur} />
                 </td>
               )}
-              <td>{t(ulkeAdi(o.ulke))}</td>
-              {!kisa && <td className="sonuk">{t(KANAL_ADI[o.kanal])}</td>}
-              <td>
+              <td data-etiket={t("ulke")}>{t(ulkeAdi(o.ulke))}</td>
+              {!kisa && (
+                <td className="sonuk" data-etiket={t("kanal")}>
+                  {t(KANAL_ADI[o.kanal])}
+                </td>
+              )}
+              <td data-etiket={t("durum")}>
                 <OneriDurumRozeti oneri={o} />
               </td>
-              <td className="dar sonuk">
+              <td className="dar sonuk ok-hucre">
                 <ChevronRight size={16} className="yon" />
               </td>
             </tr>

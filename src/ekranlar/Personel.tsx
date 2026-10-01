@@ -55,7 +55,7 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
           <span className="bos-kucuk">{t("kisiSayisi", { n: liste.length })}</span>
         </div>
         <div className="tablo-sar">
-          <table className="tablo">
+          <table className="tablo kartli">
             <thead>
               <tr>
                 <th>{t("ad")}</th>
@@ -70,13 +70,13 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
             <tbody>
               {liste.map((k) => (
                 <tr key={k.id}>
-                  <td>
+                  <td className="birincil">
                     <a className="kisi-hucre kalin" href={`#/muhabirler/${k.id}`}>
                       <Avatar kisi={k} boy="kucuk" durum /> {y(k.ad)}
                     </a>
                   </td>
-                  <td>{t(BIRIM_ADI[k.birim])}</td>
-                  <td className="sonuk">
+                  <td data-etiket={t("birim")}>{t(BIRIM_ADI[k.birim])}</td>
+                  <td className="sonuk" data-etiket={t("gorev")}>
                     {t(GOREV_ADI[k.gorev])}
                     {k.serbest && (
                       <>
@@ -85,14 +85,14 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
                       </>
                     )}
                   </td>
-                  <td>{t(sehirAdi(k.sehir))}</td>
-                  <td>
+                  <td data-etiket={t("konum")}>{t(sehirAdi(k.sehir))}</td>
+                  <td data-etiket={t("durum")}>
                     <Rozet ton={k.durum === "sahada" ? "vurgu" : k.durum === "izinli" ? "" : k.durum === "yolda" ? "uyari" : "iyi"}>{t(KISI_DURUM_ADI[k.durum])}</Rozet>
                   </td>
-                  <td className="sonuk" dir="ltr">
-                    {k.diller.join(" · ").toUpperCase()}
+                  <td className="sonuk" data-etiket={t("diller")}>
+                    <bdi>{k.diller.join(" · ").toUpperCase()}</bdi>
                   </td>
-                  {sayfa === "muhabirler" && <td>{aktifIs(k) || "—"}</td>}
+                  {sayfa === "muhabirler" && <td data-etiket={t("devamEdenIs")}>{aktifIs(k) || "—"}</td>}
                 </tr>
               ))}
             </tbody>

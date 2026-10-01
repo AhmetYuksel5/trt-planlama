@@ -42,7 +42,7 @@ export function Haftalik() {
       {plan && (
         <Kart baslik={t("haftalikKalemler")} ek={`${tarihYaz(plan.baslangic, dil, "kisa")} – ${tarihYaz(gunEkle(plan.baslangic, 6), dil, "kisa")}`}>
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("gun")}</th>
@@ -55,13 +55,15 @@ export function Haftalik() {
               <tbody>
                 {plan.kalemler.map((k) => (
                   <tr key={k.id}>
-                    <td className="sonuk">{k.tarih && `${gunAdi(k.tarih, dil)} ${tarihYaz(k.tarih, dil, "kisa")}`}</td>
-                    <td className="kalin">{y(k.baslik)}</td>
-                    <td>
+                    <td className="sonuk" data-etiket={t("gun")}>
+                      {k.tarih && `${gunAdi(k.tarih, dil)} ${tarihYaz(k.tarih, dil, "kisa")}`}
+                    </td>
+                    <td className="kalin birincil">{y(k.baslik)}</td>
+                    <td data-etiket={t("tur")}>
                       <TurRozeti tur={k.tur} />
                     </td>
-                    <td>{k.ulke ? t(ulkeAdi(k.ulke)) : "—"}</td>
-                    <td>
+                    <td data-etiket={t("ulke")}>{k.ulke ? t(ulkeAdi(k.ulke)) : "—"}</td>
+                    <td data-etiket={t("toplantiKarari")}>
                       <Rozet ton={k.onayli ? "iyi" : ""}>{t(k.onayli ? "onaylandi" : "beklemede")}</Rozet>
                     </td>
                   </tr>
