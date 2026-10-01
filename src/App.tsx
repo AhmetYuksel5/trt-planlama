@@ -1,112 +1,127 @@
-import { useCallback, useEffect, useState } from "react";
-import AltCubuk from "./bilesenler/AltCubuk";
-import AnaBasliklar from "./bilesenler/AnaBasliklar";
-import MobilMenu from "./bilesenler/MobilMenu";
-import SolMenu from "./bilesenler/SolMenu";
-import UstCubuk from "./bilesenler/UstCubuk";
-import { useDil, type Anahtar } from "./dil";
+import type { ReactNode } from "react";
+import Kabuk from "./bilesenler/Kabuk";
 import AnaSayfa from "./ekranlar/AnaSayfa";
-import Muhabirler, { MuhabirDetay } from "./ekranlar/Muhabirler";
-import NextDay, { NextDayDetay } from "./ekranlar/NextDay";
-import Oneriler from "./ekranlar/Oneriler";
-import Paketler, { PaketDetay } from "./ekranlar/Paketler";
-import SagSutun from "./ekranlar/SagSutun";
-import Yakinda from "./ekranlar/Yakinda";
-import { ROLLER, useVeri, type Rol } from "./veri";
+import { Ayarlar, Raporlar, Yetkisiz } from "./ekranlar/Ayarlar";
+import Basliklar from "./ekranlar/Basliklar";
+import Giris from "./ekranlar/Giris";
+import { HazirPaketler, IsAkisi, Paketler, Ucretler } from "./ekranlar/Listeler";
+import Cikti from "./ekranlar/nextday/Cikti";
+import NextDayListe from "./ekranlar/nextday/Liste";
+import PlanEkrani from "./ekranlar/nextday/Plan";
+import { Cagri, OneriDetay, OnerilerListe, YeniOneri } from "./ekranlar/oneri/Oneriler";
+import PaketDetay from "./ekranlar/PaketDetay";
+import { Gorevlendirmeler, KisiDetay, PersonelListe } from "./ekranlar/Personel";
+import { Aylik, Haftalik, Ozel } from "./ekranlar/Planlar";
+import ProjePlani from "./ekranlar/ProjePlani";
+import { useBen } from "./oturum";
+import { kisiBul, oneriBul, paketBul, planBul, useVeri } from "./veri";
+import { oneriGorebilir, paketGorebilir, sayfaGorebilir } from "./yetki";
 import { useYol } from "./yol";
 
 /**
- * İskelet: üst çubuk, beş ana başlık, sol menü, orta ve sağ sütun.
+ * Uygulamanın girişi: oturum yoksa demo giriş, varsa kabuk ve sayfa.
  *
- * Sağ sütun yalnız ana sayfada; iç sayfalar genişliği tabloya bırakıyor.
- * Rol üst çubuktan seçiliyor ve ana sayfadaki "senin sıran" kutusunu
- * belirliyor; giriş sistemi gelene kadar bu yeterli.
+ * Proje planı girişsiz açılıyor; yöneticilere bağlantıyla gösterilecek.
+ * Her sayfa önce birim iznine (yetki.ts → SAYFA_IZNI), kayıt sayfaları
+ * ayrıca kaydın görünürlüğüne bakıyor: muhabir başka muhabirin paketinin
+ * adresini elle yazsa da "yetkisiz" görüyor.
  */
-const ROL_SAKLA = "trt-planlama-rol";
-
-const YAKINDA: Record<string, Anahtar> = {
-  haftalik: "haftalik",
-  aylik: "aylik",
-  ozel: "ozel",
-  yurtdisi: "yurtdisi",
-  toplantilar: "toplantilar",
-  ekipler: "ekipler",
-  program: "programBirimi",
-  feature: "feature",
-  arsiv: "arsiv",
-  raporlar: "raporlar",
-  ayarlar: "ayarlar",
-};
-
 export default function App() {
   const yol = useYol();
-  const [, t] = useDil();
+  const ben = useBen();
   const v = useVeri();
-  const [rol, setRol] = useState<Rol>(() => {
-    try {
-      const k = localStorage.getItem(ROL_SAKLA) as Rol | null;
-      return k && ROLLER.includes(k) ? k : "planlama";
-    } catch {
-      return "planlama";
+
+  if (yol.sayfa === "plan") return <ProjePlani />;
+  if (!ben) return <Giris />;
+
+  const sayfa = yol.sayfa;
+  let icerik: ReactNode;
+  if (!sayfaGorebilir(ben, sayfa)) {
+    icerik = <Yetkisiz />;
+  } else {
+    switch (sayfa) {
+      case "ana":
+        icerik = <AnaSayfa ben={ben} />;
+        break;
+      case "nextday": {
+        const plan = planBul(v, yol.id);
+        if (yol.id && yol.id !== "yeni" && !plan) icerik = <Yetkisiz />;
+        else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
+        else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
+        else icerik = <NextDayListe ben={ben} yeni={yol.id === "yeni"} />;
+        break;
+      }
+      case "haftalik":
+        icerik = <Haftalik />;
+        break;
+      case "aylik":
+        icerik = <Aylik />;
+        break;
+      case "ozel":
+        icerik = <Ozel />;
+        break;
+      case "oneriler": {
+        if (yol.id === "yeni") icerik = <YeniOneri ben={ben} />;
+        else if (yol.id === "cagri") icerik = sayfaGorebilir(ben, "nextday") ? <Cagri ben={ben} tarih={yol.alt} /> : <Yetkisiz />;
+        else if (yol.id) {
+          const o = oneriBul(v, yol.id);
+          icerik = o && oneriGorebilir(ben, o) ? <OneriDetay ben={ben} oneri={o} /> : <Yetkisiz />;
+        } else icerik = <OnerilerListe ben={ben} />;
+        break;
+      }
+      case "basliklar":
+        icerik = <Basliklar ben={ben} />;
+        break;
+      case "paketler":
+        if (yol.id) {
+          const p = paketBul(v, yol.id);
+          icerik = p && paketGorebilir(ben, p, v) ? <PaketDetay ben={ben} paket={p} /> : <Yetkisiz />;
+        } else icerik = <Paketler ben={ben} sayfa="paketler" />;
+        break;
+      case "feature":
+      case "programlar":
+        icerik = <Paketler ben={ben} sayfa={sayfa} />;
+        break;
+      case "hazirpaketler":
+        icerik = <HazirPaketler />;
+        break;
+      case "muhabirler":
+      case "editorler":
+      case "personel":
+        if (yol.id) {
+          const k = kisiBul(v, yol.id);
+          icerik = k ? <KisiDetay kisi={k} /> : <Yetkisiz />;
+        } else icerik = <PersonelListe sayfa={sayfa} />;
+        break;
+      case "izinler":
+      case "yurtdisi":
+      case "yurtici":
+      case "seyahat":
+      case "talepler":
+        icerik = <Gorevlendirmeler ben={ben} sayfa={sayfa} />;
+        break;
+      case "uretim":
+      case "metinkontrol":
+      case "video":
+        icerik = <IsAkisi sayfa={sayfa} />;
+        break;
+      case "ucretler":
+        icerik = <Ucretler ben={ben} />;
+        break;
+      case "raporlar":
+        icerik = <Raporlar />;
+        break;
+      case "ayarlar":
+        icerik = <Ayarlar ben={ben} />;
+        break;
+      default:
+        icerik = <Yetkisiz />;
     }
-  });
-  const rolDegistir = (r: Rol) => {
-    setRol(r);
-    try {
-      localStorage.setItem(ROL_SAKLA, r);
-    } catch {
-      /* saklanamazsa oturumluk kalır */
-    }
-  };
-
-  // Telefondaki menü paneli. Bir bağlantıya basılınca adres değişiyor;
-  // o an paneli kapatmak, her bağlantıya ayrı ayrı "kapat" yazmaktan sağlam.
-  const [menuAcik, setMenuAcik] = useState(false);
-  const menuKapat = useCallback(() => setMenuAcik(false), []);
-  useEffect(() => {
-    setMenuAcik(false);
-    window.scrollTo(0, 0);
-  }, [yol.sayfa, yol.id]);
-
-  const bekleyen = v.oneriler.filter((o) => o.durum === "bekliyor").length;
-  const anaSayfa = yol.sayfa === "ana";
-
-  let icerik;
-  switch (yol.sayfa) {
-    case "ana":
-      icerik = <AnaSayfa rol={rol} />;
-      break;
-    case "nextday":
-      icerik = yol.id && yol.id !== "yeni" ? <NextDayDetay tarih={yol.id} /> : <NextDay yeni={yol.id === "yeni"} />;
-      break;
-    case "muhabirler":
-      icerik = yol.id ? <MuhabirDetay id={yol.id} /> : <Muhabirler />;
-      break;
-    case "paketler":
-      icerik = yol.id ? <PaketDetay id={yol.id} /> : <Paketler />;
-      break;
-    case "oneriler":
-      icerik = <Oneriler yeni={yol.id === "yeni"} />;
-      break;
-    default:
-      icerik = <Yakinda baslik={t(YAKINDA[yol.sayfa] ?? "yakinda")} />;
   }
 
   return (
-    <div className={`uygulama sayfa-${yol.sayfa}`}>
-      <UstCubuk rol={rol} onRol={rolDegistir} bildirim={bekleyen} />
-      <AnaBasliklar acik={yol.sayfa} />
-      <div className={`govde ${anaSayfa ? "" : "dar"}`}>
-        <SolMenu acik={yol.sayfa} />
-        <main className="orta">{icerik}</main>
-        {anaSayfa && (
-          <aside className="sag">
-            <SagSutun />
-          </aside>
-        )}
-      </div>
-      <AltCubuk acik={yol.sayfa} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />
-      {menuAcik && <MobilMenu acik={yol.sayfa} onKapat={menuKapat} rol={rol} onRol={rolDegistir} />}
-    </div>
+    <Kabuk ben={ben} sayfa={sayfa}>
+      {icerik}
+    </Kabuk>
   );
 }
