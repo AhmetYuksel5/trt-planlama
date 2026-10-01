@@ -6,12 +6,14 @@ import react from "@vitejs/plugin-react";
  *
  * GitHub Pages bu depodaki `docs/` klasörünü olduğu gibi sunuyor, derleme
  * yapmıyor; çıktıyı depoya koyunca yayınlamak "gönder ve bitti" kalıyor.
- * Site kurum içi bir sunucuya taşındığında aynı çıktı kök klasöre konur
- * ve yalnız `base` değişir.
+ * `base` göreli: sayfalar adres çubuğundaki `#` ile açıldığı için tek bir
+ * index.html var ve varlıklar ona göre bulunuyor. Böylece depo adı
+ * değişse de (trt-planlama → arabiflow) ya da site kurum içi bir sunucuya
+ * taşınsa da yapılandırmaya dokunmak gerekmiyor.
  */
 export default defineConfig({
   plugins: [react()],
-  base: "/trt-planlama/",
+  base: "./",
   build: {
     outDir: "docs",
     emptyOutDir: true,

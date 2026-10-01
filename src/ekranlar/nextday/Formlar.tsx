@@ -1,0 +1,337 @@
+import { useState } from "react";
+import { bildir } from "../../bilesenler/Parcalar";
+import { useDil } from "../../dil";
+import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, paketKaydet } from "../../eylemler";
+import { HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
+import { useBen } from "../../oturum";
+import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
+import {
+  HAREKET_TURLERI,
+  ICERIK_TURLERI,
+  KAYNAK_TURLERI,
+  SEHIRLER,
+  muhabirler,
+  useVeri,
+  type CanliYayin,
+  type Gelisme,
+  type HareketTuru,
+  type IcerikTuru,
+  type KaynakTuru,
+  type NextDayPlan,
+  type Paket,
+  type Sehir,
+} from "../../veri";
+
+/*
+ * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
+ * belgedeki alanlar var, kaydet ve iptal hep aynı yerde. Düzenlenen kayıt
+ * örnek veriden geliyorsa (üç dilli) metin seçili dilde açılıyor ve
+ * kaydedildiğinde yazıldığı dilde kalıyor.
+ */
+
+function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: () => void; devre?: boolean }) {
+  const { t } = useDil();
+  return (
+    <div className="form-alt">
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+        {t("iptal")}
+      </button>
+      <button type="button" className="dugme dugme-kucuk" onClick={kaydet} disabled={devre}>
+        {t("kaydet")}
+      </button>
+    </div>
+  );
+}
+
+/** Muhabir seçici: ad ve şehir, alfabetik. */
+export function MuhabirSecici({ deger, degistir, bosEtiket }: { deger: string; degistir: (id: string) => void; bosEtiket?: string }) {
+  const { t, y } = useDil();
+  const v = useVeri();
+  const liste = [...muhabirler(v)].sort((a, b) => y(a.ad).localeCompare(y(b.ad)));
+  return (
+    <select value={deger} onChange={(e) => degistir(e.target.value)}>
+      <option value="">{bosEtiket ?? t("seciniz")}</option>
+      {liste.map((k) => (
+        <option key={k.id} value={k.id}>
+          {y(k.ad)} · {t(sehirAdi(k.sehir))}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; kapat: () => void }) {
+  const { t, y } = useDil();
+  const ben = useBen();
+  const [f, setF] = useState({
+    yer: mevcut?.yer ? y(mevcut.yer) : "",
+    metin: mevcut ? y(mevcut.metin) : "",
+    kaynakTuru: (mevcut?.kaynakTuru ?? "ajans") as KaynakTuru,
+    kaynakAdi: mevcut?.kaynakAdi ?? "",
+    onerenId: mevcut?.onerenId ?? "",
+    tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
+  });
+  const kaydet = () => {
+    if (!ben || !f.metin.trim()) return;
+    gelismeKaydet(ben, {
+      id: mevcut?.id,
+      planId: plan.id,
+      planBaslikId,
+      yer: f.yer.trim() || undefined,
+      metin: f.metin.trim(),
+      kaynakTuru: f.kaynakTuru,
+      kaynakAdi: f.kaynakAdi.trim(),
+      tarih: girdidenIso(f.tarih) ?? simdi(),
+      onerenId: f.onerenId || undefined,
+      oneriId: mevcut?.oneriId,
+    });
+    kapat();
+  };
+  return (
+    <div className="form form-kutu">
+      <div className="satir">
+        <label>
+          {t("yer")}
+          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={t("yerIpucu")} />
+        </label>
+        <label>
+          {t("kaynakTuru")}
+          <select value={f.kaynakTuru} onChange={(e) => setF({ ...f, kaynakTuru: e.target.value as KaynakTuru })}>
+            {KAYNAK_TURLERI.map((k) => (
+              <option key={k} value={k}>
+                {t(KAYNAK_ADI[k])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("kaynakAdi")}
+          <input value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
+        </label>
+      </div>
+      <label>
+        {t("gelismeMetni")}
+        <textarea value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
+      </label>
+      <div className="satir">
+        <label>
+          {t("tarih")}
+          <input type="datetime-local" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+        </label>
+        <label>
+          {t("onerenMuhabir")}
+          <MuhabirSecici deger={f.onerenId} degistir={(id) => setF({ ...f, onerenId: id })} bosEtiket={t("yok")} />
+        </label>
+      </div>
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
+    </div>
+  );
+}
+
+export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: CanliYayin; kapat: () => void }) {
+  const { t, y } = useDil();
+  const ben = useBen();
+  const [f, setF] = useState({
+    konu: mevcut ? y(mevcut.konu) : "",
+    aciklama: mevcut ? y(mevcut.aciklama) : "",
+    yer: mevcut ? y(mevcut.yer) : "",
+    tarih: mevcut?.tarih ?? plan.tarih,
+    saatGmt: mevcut?.saatGmt ?? "",
+    muhabirId: mevcut?.muhabirId ?? "",
+    notlar: mevcut ? y(mevcut.notlar) : "",
+  });
+  const kaydet = () => {
+    if (!ben || !f.konu.trim()) return;
+    canliKaydet(ben, { id: mevcut?.id, planId: plan.id, planBaslikId, ...f, muhabirId: f.muhabirId || undefined });
+    kapat();
+  };
+  return (
+    <div className="form form-kutu">
+      <div className="satir">
+        <label>
+          {t("etkinlikAdi")}
+          <input value={f.konu} onChange={(e) => setF({ ...f, konu: e.target.value })} />
+        </label>
+        <label>
+          {t("yer")}
+          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} />
+        </label>
+      </div>
+      <div className="satir">
+        <label>
+          {t("tarih")}
+          <input type="date" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+        </label>
+        <label>
+          {t("saatGmt")} <span className="ipucu">{t("saatBosTbc")}</span>
+          <input type="time" value={f.saatGmt} onChange={(e) => setF({ ...f, saatGmt: e.target.value })} />
+        </label>
+        <label>
+          {t("muhabir")}
+          <MuhabirSecici deger={f.muhabirId} degistir={(id) => setF({ ...f, muhabirId: id })} bosEtiket={t("yok")} />
+        </label>
+      </div>
+      <label>
+        {t("aciklama")}
+        <input value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+      </label>
+      <label>
+        {t("yayinNotlari")}
+        <input value={f.notlar} onChange={(e) => setF({ ...f, notlar: e.target.value })} />
+      </label>
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.konu.trim()} />
+    </div>
+  );
+}
+
+export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; kapat: () => void }) {
+  const { t, y } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const [f, setF] = useState({
+    baslik: mevcut ? y(mevcut.baslik) : "",
+    sehir: (mevcut?.sehir ?? "istanbul") as Sehir,
+    muhabirId: mevcut?.muhabirId ?? "",
+    aciklama: mevcut ? y(mevcut.aciklama) : "",
+    tur: (mevcut?.tur ?? "haber") as IcerikTuru,
+    teslim: yerelGirdi(mevcut?.teslim),
+    yayin: mevcut?.yayin ? yerelGirdi(mevcut.yayin).slice(11) : "",
+    sahaGerekli: mevcut?.sahaGerekli ?? false,
+    slug: mevcut?.slug ?? "",
+  });
+  /* Muhabir seçilince şehir onun şehrine geliyor; çıktıdaki "ŞEHİR /" çoğu zaman muhabirin yeri. */
+  const muhabirSec = (id: string) => {
+    const k = v.kisiler.find((x) => x.id === id);
+    setF({ ...f, muhabirId: id, sehir: k?.sehir ?? f.sehir });
+  };
+  const kaydet = () => {
+    if (!ben || !f.baslik.trim()) return;
+    const id = paketKaydet(ben, {
+      id: mevcut?.id,
+      planId: plan.id,
+      planBaslikId,
+      baslik: f.baslik.trim(),
+      sehir: f.sehir,
+      muhabirId: f.muhabirId || undefined,
+      aciklama: f.aciklama.trim(),
+      tur: f.tur,
+      teslim: girdidenIso(f.teslim),
+      yayin: f.yayin ? zaman(plan.tarih, f.yayin) : undefined,
+      sahaGerekli: f.sahaGerekli,
+      slug: f.slug.trim() || undefined,
+    });
+    if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
+    kapat();
+  };
+  return (
+    <div className="form form-kutu">
+      <label>
+        {t("paketBasligi")}
+        <input value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} />
+      </label>
+      <div className="satir">
+        <label>
+          {t("muhabir")}
+          <MuhabirSecici deger={f.muhabirId} degistir={muhabirSec} bosEtiket={t("atanmadi")} />
+        </label>
+        <label>
+          {t("sehirUlke")}
+          <select value={f.sehir} onChange={(e) => setF({ ...f, sehir: e.target.value as Sehir })}>
+            {(Object.keys(SEHIRLER) as Sehir[]).map((s) => (
+              <option key={s} value={s}>
+                {t(sehirAdi(s))}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("tur")}
+          <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
+            {ICERIK_TURLERI.map((x) => (
+              <option key={x} value={x}>
+                {t(TUR_ADI[x])}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label>
+        {t("kisaAciklama")}
+        <textarea value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+      </label>
+      <div className="satir">
+        <label>
+          {t("teslim")}
+          <input type="datetime-local" value={f.teslim} onChange={(e) => setF({ ...f, teslim: e.target.value })} />
+        </label>
+        <label>
+          {t("yayinSaati")}
+          <input type="time" value={f.yayin} onChange={(e) => setF({ ...f, yayin: e.target.value })} />
+        </label>
+        <label>
+          {t("slug")}
+          <input value={f.slug} onChange={(e) => setF({ ...f, slug: e.target.value.toUpperCase() })} placeholder="GAZA-HEALTH-PKG-OH" dir="ltr" />
+        </label>
+      </div>
+      <label className="secim">
+        <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
+        {t("sahaGerekli")}
+      </label>
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.baslik.trim()} />
+    </div>
+  );
+}
+
+export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: () => void }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const [f, setF] = useState({ kisiId: "", tur: "gorevlendirme" as HareketTuru, yer: "", baslangic: plan.tarih, bitis: plan.tarih, aciklama: "", yurtdisi: false });
+  const kaydet = () => {
+    if (!ben || !f.kisiId || !f.yer.trim()) return;
+    gorevlendirmeOlustur(ben, plan.id, { ...f, yer: f.yer.trim(), aciklama: f.aciklama.trim(), bitis: f.bitis < f.baslangic ? f.baslangic : f.bitis });
+    kapat();
+  };
+  return (
+    <div className="form form-kutu">
+      <div className="satir">
+        <label>
+          {t("muhabir")}
+          <MuhabirSecici deger={f.kisiId} degistir={(id) => setF({ ...f, kisiId: id })} />
+        </label>
+        <label>
+          {t("hareketTuru")}
+          <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as HareketTuru })}>
+            {HAREKET_TURLERI.map((x) => (
+              <option key={x} value={x}>
+                {t(HAREKET_TURU_ADI[x])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("yer")}
+          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} />
+        </label>
+      </div>
+      <div className="satir">
+        <label>
+          {t("baslangic")}
+          <input type="date" value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
+        </label>
+        <label>
+          {t("bitis")}
+          <input type="date" value={f.bitis} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
+        </label>
+      </div>
+      <label>
+        {t("aciklama")}
+        <input value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+      </label>
+      <label className="secim">
+        <input type="checkbox" checked={f.yurtdisi} onChange={(e) => setF({ ...f, yurtdisi: e.target.checked })} />
+        {t("yurtdisiGorev")}
+      </label>
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.kisiId || !f.yer.trim()} />
+    </div>
+  );
+}

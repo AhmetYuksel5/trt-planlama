@@ -1,12 +1,68 @@
-# TRT Arabi · Planlama
+# TRT Arapça · Planlama ve Koordinasyon Platformu
 
-TRT Arabi haber merkezi için planlama merkezli iş akışı sitesi. Planlama
-birimi merkezde; bir haber öneriden iNews'e yüklenene kadar on adımda
-izleniyor, bütün birimler aynı kaydı güncelliyor.
+TRT Arapça haber merkezi için tıklanabilir ilk prototip. Haber önerisinden
+yayına kadar bütün süreç tek kayıt üzerinde yürüyor. Planlar tek yerde
+hazırlanıyor, her birim kendi işini kendi ekranından yürütüyor.
 
-- Kaynak: React + TypeScript + Vite. `npm install` bir kez, `npm run dev`
-  geliştirme, `npm run build` çıktıyı `docs/` içine üretiyor.
-- Yayın: GitHub Pages, `main` dalındaki `docs/` klasöründen.
-- Dil: Türkçe, Arapça, İngilizce için tek tablo (`src/dil.ts`); şimdilik
-  Türkçe dolu.
-- Veri: ilk sürümde tarayıcıda, örnek kayıtlarla. Sunucu katmanı sonra.
+**Adres:** https://ahmetyuksel5.github.io/arabiflow/ (depo adı `arabiflow`
+olduktan sonra; öncesinde `…/trt-planlama/`). Girişsiz açılan proje planı
+sayfası: adresin sonuna `#/plan`.
+
+## Çalıştırma
+
+```sh
+npm install      # bir kez
+npm run dev      # geliştirme sunucusu
+npm run build    # docs/ içine derler; GitHub Pages buradan yayınlar
+npm run preview  # derlenmiş hali yerelde
+```
+
+## Bu prototipte çalışanlar
+
+- **Demo giriş:** kişi seçiliyor. Ana sayfa ve menü birime göre şekilleniyor
+  (Planlama, Newsdesk, News Gathering, Programlar, Output/dil, Media Manager,
+  Muhabir, Yönetim).
+- **Next Day planı:**
+  - liste ve yeni plan; tarih varsayılan olarak yarın
+  - önceki planı bölüm seçerek kopyalama
+  - altı bölümlük düzenleme: ekip ve vardiya, muhabir hareketleri, canlı
+    yayınlar, hazır paketler, başlık başlık haber gündemi, takipler
+  - durum çizgisi: taslak → haber toplantısında → onaylı → Newsdesk devraldı
+- **Çıktı önizleme:** kurumun "الأجندة الإخبارية" belgesinin düzeninde.
+  Arapça ve sağdan sola, boş bölümler gizli, yazdırılabilir.
+- **Öneriler:**
+  - öneri çağrısı e-posta metni (demo, gönderim yok)
+  - gelen öneriler ve değerlendirme
+  - mevcut ya da yeni başlığa bağlayıp plana ekleme
+  - muhabirlere geri dönüş
+- **Merkezi haber başlıkları havuzu.**
+- **Paket önerisi ve üretim adımları:** saha, Newsdesk, metin, kontrol, dil,
+  video, Media Manager, iNews. Ayrıca geri gönderme, koordinasyon notları
+  ve tam hareket geçmişi.
+- **Yetki:**
+  - birim, rol ve alan bazlı (muhabir ücreti yalnız yetkiliye)
+  - muhabir yalnız kendi işini görüyor
+- **Üç dil:** Türkçe, Arapça (sağdan sola), İngilizce.
+
+## Henüz uygulanmayanlar
+
+- Gerçek e-posta gönderimi. Çağrı ve geri dönüş metni şimdilik kopyalanıyor.
+- Kurum içi giriş, ortak veri tabanı, çok kullanıcılı eşzamanlı çalışma.
+  Veri yalnız bu tarayıcıda (`localStorage`) duruyor.
+- Word/PDF dışa aktarma. Şimdilik yazdır → PDF olarak kaydet.
+- Dosya yükleme ve dosya deposu.
+- iNews ve medya sistemi entegrasyonu. Klip kodu elle giriliyor.
+- Haftalık planı düzenleme, Next Day'e aktarma ve feature/program kollarına
+  devir. Haftalık, aylık ve özel yayın şimdilik temel liste.
+- News Gathering talep, onay ve seyahat lojistiği; Program Birimi'nin kendi
+  akışı.
+- Ücret girişi, onayı ve ödeme takibi; raporlar.
+- Arapça ve İngilizce metinlerin anadil kontrolü.
+
+## Varsayımlar (geri alınabilir)
+
+- Feature/ekonomi kolunda yükleme Media Manager'da, takip Planlama'da.
+- Muhabir kendi ücretini görüyor.
+- Vardiya kodu GMT başlangıç saati: `04G` = 04:00 GMT.
+- Plan onayı Planlama yöneticisinde ya da Yönetim'de.
+- Örnek kişi ve kayıtlar kurgusal.

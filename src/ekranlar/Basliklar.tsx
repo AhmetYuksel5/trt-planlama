@@ -1,0 +1,153 @@
+import { Check, Newspaper, Pencil, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { Bos, Kart, Rozet } from "../bilesenler/Parcalar";
+import { tarihYaz, useDil } from "../dil";
+import { baslikDuzenle, baslikEkle } from "../eylemler";
+import { ulkeAdi } from "../etiketler";
+import { ULKELER, useVeri, type Kisi, type Ulke } from "../veri";
+import { yapabilir } from "../yetki";
+import { SayfaBasi } from "./ana/Planlama";
+
+/**
+ * Merkezi haber başlıkları havuzu (promptun 4.4 maddesi).
+ *
+ * Başlık bir kez açılıyor, her gün yeniden kullanılıyor; günlük plan yalnız
+ * seçtiği başlıkları gösteriyor. Pasif başlık havuzdan silinmiyor (eski
+ * planlar ona bağlı), yalnız seçim listesinden çıkıyor.
+ */
+export default function Basliklar({ ben }: { ben: Kisi }) {
+  const { t, y, dil } = useDil();
+  const v = useVeri();
+  const yonetir = yapabilir(ben, "baslikYonet");
+  const [yeni, setYeni] = useState({ ad: "", ulke: "" as Ulke | "" });
+  const [duzen, setDuzen] = useState<{ id: string; ad: string; ulke: Ulke | "" } | null>(null);
+  const kullanim = (id: string) => v.planlar.filter((p) => p.basliklar.some((b) => b.baslikId === id));
+  const sirali = [...v.basliklar].sort((a, b) => Number(b.aktif) - Number(a.aktif) || kullanim(b.id).length - kullanim(a.id).length);
+
+  return (
+    <>
+      <SayfaBasi ikon={<Newspaper size={26} />} baslik={t("mBasliklar")} alt={t("basliklarAlt")} />
+      {yonetir && (
+        <Kart baslik={t("yeniBaslik")}>
+          <div className="form">
+            <div className="satir">
+              <label>
+                {t("baslikAdi")}
+                <input value={yeni.ad} onChange={(e) => setYeni({ ...yeni, ad: e.target.value })} placeholder={t("yeniBaslikIpucu")} />
+              </label>
+              <label>
+                {t("ulke")} <span className="ipucu">{t("varsa")}</span>
+                <select value={yeni.ulke} onChange={(e) => setYeni({ ...yeni, ulke: e.target.value as Ulke | "" })}>
+                  <option value="">—</option>
+                  {ULKELER.map((u) => (
+                    <option key={u} value={u}>
+                      {t(ulkeAdi(u))}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="form-alt">
+              <button
+                className="dugme"
+                disabled={!yeni.ad.trim()}
+                onClick={() => {
+                  baslikEkle(ben, yeni.ad, yeni.ulke || undefined);
+                  setYeni({ ad: "", ulke: "" });
+                }}
+              >
+                <Plus size={16} /> {t("havuzaEkle")}
+              </button>
+            </div>
+          </div>
+        </Kart>
+      )}
+      <Kart baslik={t("baslikHavuzu")} ek={String(v.basliklar.length)}>
+        {sirali.length === 0 ? (
+          <Bos metin={t("kayitYok")} />
+        ) : (
+          <div className="tablo-sar">
+            <table className="tablo">
+              <thead>
+                <tr>
+                  <th>{t("baslikAdi")}</th>
+                  <th>{t("ulke")}</th>
+                  <th>{t("kullanim")}</th>
+                  <th>{t("sonKullanim")}</th>
+                  <th>{t("durum")}</th>
+                  {yonetir && <th className="dar" />}
+                </tr>
+              </thead>
+              <tbody>
+                {sirali.map((b) => {
+                  const planlar = kullanim(b.id).sort((a, c) => c.tarih.localeCompare(a.tarih));
+                  const duzenleniyor = duzen?.id === b.id;
+                  return (
+                    <tr key={b.id}>
+                      <td className="kalin">
+                        {duzenleniyor ? <input className="girdi" value={duzen.ad} onChange={(e) => setDuzen({ ...duzen, ad: e.target.value })} autoFocus /> : y(b.ad)}
+                      </td>
+                      <td>
+                        {duzenleniyor ? (
+                          <select className="girdi" value={duzen.ulke} onChange={(e) => setDuzen({ ...duzen, ulke: e.target.value as Ulke | "" })}>
+                            <option value="">—</option>
+                            {ULKELER.map((u) => (
+                              <option key={u} value={u}>
+                                {t(ulkeAdi(u))}
+                              </option>
+                            ))}
+                          </select>
+                        ) : b.ulke ? (
+                          t(ulkeAdi(b.ulke))
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>{t("planSayisi", { n: planlar.length })}</td>
+                      <td className="sonuk">{planlar[0] ? <a href={`#/nextday/${planlar[0].id}`}>{tarihYaz(planlar[0].tarih, dil, "kisa")}</a> : "—"}</td>
+                      <td>
+                        {yonetir ? (
+                          <label className="secim">
+                            <input type="checkbox" checked={b.aktif} onChange={(e) => baslikDuzenle(ben, b.id, { aktif: e.target.checked })} />
+                            <Rozet ton={b.aktif ? "iyi" : ""}>{t(b.aktif ? "aktif" : "pasif")}</Rozet>
+                          </label>
+                        ) : (
+                          <Rozet ton={b.aktif ? "iyi" : ""}>{t(b.aktif ? "aktif" : "pasif")}</Rozet>
+                        )}
+                      </td>
+                      {yonetir && (
+                        <td className="dar">
+                          {duzenleniyor ? (
+                            <span className="dugmeler">
+                              <button
+                                className="dugme dugme-sade dugme-ikon"
+                                aria-label={t("kaydet")}
+                                onClick={() => {
+                                  baslikDuzenle(ben, b.id, { ad: duzen.ad, ulke: duzen.ulke || undefined });
+                                  setDuzen(null);
+                                }}
+                              >
+                                <Check size={15} />
+                              </button>
+                              <button className="dugme dugme-sade dugme-ikon" aria-label={t("iptal")} onClick={() => setDuzen(null)}>
+                                <X size={15} />
+                              </button>
+                            </span>
+                          ) : (
+                            <button className="dugme dugme-sade dugme-ikon" aria-label={t("duzenle")} onClick={() => setDuzen({ id: b.id, ad: y(b.ad), ulke: b.ulke ?? "" })}>
+                              <Pencil size={15} />
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Kart>
+    </>
+  );
+}
