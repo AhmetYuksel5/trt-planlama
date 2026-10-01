@@ -24,6 +24,13 @@ const M = {
   bildirimler: { tr: "Bildirimler" },
   rol: { tr: "Rol" },
   dil: { tr: "Dil" },
+  menu: { tr: "Menü" },
+  kapat: { tr: "Kapat" },
+  kayitlar: { tr: "Kayıtlar" },
+  tercihler: { tr: "Tercihler" },
+  nextdayKisa: { tr: "Next Day" },
+  paketlerKisa: { tr: "Paketler" },
+  bugunEvre: { tr: "Bugün" },
 
   // Roller
   rolPlanlama: { tr: "Planlama" },

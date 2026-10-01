@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import AltCubuk from "./bilesenler/AltCubuk";
 import AnaBasliklar from "./bilesenler/AnaBasliklar";
+import MobilMenu from "./bilesenler/MobilMenu";
 import SolMenu from "./bilesenler/SolMenu";
 import UstCubuk from "./bilesenler/UstCubuk";
 import { useDil, type Anahtar } from "./dil";
@@ -57,6 +59,15 @@ export default function App() {
     }
   };
 
+  // Telefondaki menü paneli. Bir bağlantıya basılınca adres değişiyor;
+  // o an paneli kapatmak, her bağlantıya ayrı ayrı "kapat" yazmaktan sağlam.
+  const [menuAcik, setMenuAcik] = useState(false);
+  const menuKapat = useCallback(() => setMenuAcik(false), []);
+  useEffect(() => {
+    setMenuAcik(false);
+    window.scrollTo(0, 0);
+  }, [yol.sayfa, yol.id]);
+
   const bekleyen = v.oneriler.filter((o) => o.durum === "bekliyor").length;
   const anaSayfa = yol.sayfa === "ana";
 
@@ -82,7 +93,7 @@ export default function App() {
   }
 
   return (
-    <div className="uygulama">
+    <div className={`uygulama sayfa-${yol.sayfa}`}>
       <UstCubuk rol={rol} onRol={rolDegistir} bildirim={bekleyen} />
       <AnaBasliklar acik={yol.sayfa} />
       <div className={`govde ${anaSayfa ? "" : "dar"}`}>
@@ -94,6 +105,8 @@ export default function App() {
           </aside>
         )}
       </div>
+      <AltCubuk acik={yol.sayfa} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />
+      {menuAcik && <MobilMenu acik={yol.sayfa} onKapat={menuKapat} rol={rol} onRol={rolDegistir} />}
     </div>
   );
 }

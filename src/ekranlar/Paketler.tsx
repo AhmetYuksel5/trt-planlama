@@ -27,7 +27,7 @@ export default function Paketler() {
           <Bos metin={t("bos")} />
         ) : (
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("tarih")}</th>
@@ -41,15 +41,15 @@ export default function Paketler() {
               <tbody>
                 {paketler.map((p) => (
                   <tr key={p.id}>
-                    <td className="sonuk">{tarihYaz(p.planTarihi, dil)}</td>
-                    <td>
+                    <td className="sonuk" data-etiket={t("tarih")}>{tarihYaz(p.planTarihi, dil)}</td>
+                    <td className="birincil">
                       <a href={`#/paketler/${p.id}`}>{p.baslik}</a>
                       {p.gecikti && <> <Rozet ton="kotu">{t("gecikti")}</Rozet></>}
                     </td>
-                    <td><a href={`#/muhabirler/${p.muhabirId}`}>{muhabirAdi(v, p.muhabirId)}</a></td>
-                    <td><TurRozeti tur={p.tur} /></td>
-                    <td><AdimSeridi paket={p} /> <span className="sonuk">{t(ADIM_ADI[p.adim])}</span></td>
-                    <td className="sonuk">{p.klipKodu ?? "—"}</td>
+                    <td data-etiket={t("muhabir")}><a href={`#/muhabirler/${p.muhabirId}`}>{muhabirAdi(v, p.muhabirId)}</a></td>
+                    <td data-etiket={t("tur")}><TurRozeti tur={p.tur} /></td>
+                    <td data-etiket={t("adim")}><AdimSeridi paket={p} /> <span className="sonuk">{t(ADIM_ADI[p.adim])}</span></td>
+                    <td className="sonuk" data-etiket={t("klipKodu")}>{p.klipKodu ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

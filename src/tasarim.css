@@ -65,6 +65,11 @@
 
   --sol-genislik: 220px;
   --sag-genislik: 288px;
+
+  /* Telefon ölçüleri. 44 piksel, parmağın rahat bastığı en küçük hedef
+     (Apple'ın da önerdiği değer); alt çubuk ona göre. */
+  --dokunma: 44px;
+  --alt-cubuk: 64px;
 }
 
 * { box-sizing: border-box; }
@@ -153,11 +158,11 @@ ul { margin: 0; padding: 0; list-style: none; }
 /* --- Gövde: sol menü, orta, sağ --- */
 
 .govde {
-  display: grid; grid-template-columns: var(--sol-genislik) 1fr var(--sag-genislik);
+  display: grid; grid-template-columns: var(--sol-genislik) minmax(0, 1fr) var(--sag-genislik);
   gap: var(--ara-4); padding: var(--ara-4) var(--ara-6) var(--ara-8);
   align-items: start;
 }
-.govde.dar { grid-template-columns: var(--sol-genislik) 1fr; }
+.govde.dar { grid-template-columns: var(--sol-genislik) minmax(0, 1fr); }
 
 .sol { position: sticky; top: 76px; }
 .sol a {
@@ -331,31 +336,186 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .not-kutu { background: var(--yuzey-2); border-radius: var(--yaricap-rozet); padding: var(--ara-3) var(--ara-4); color: var(--sonuk); font-size: var(--punto-kucuk); }
 
-/* --- Dar ekranlar --- */
+/* --- Yalnız telefonda görünenler; masaüstünde yer kaplamasınlar --- */
+
+.alt-cubuk, .mobil-menu, .yalniz-mobil { display: none; }
+
+.ikon-dugme {
+  width: var(--dokunma); height: var(--dokunma); border: 0; border-radius: var(--yaricap-hap);
+  background: var(--yuzey-2); color: var(--murekkep); display: grid; place-items: center;
+}
+
+/* --- Orta genişlik: sağ sütun ortanın altına iner --- */
 
 @media (max-width: 1100px) {
-  .govde { grid-template-columns: var(--sol-genislik) 1fr; }
+  .govde { grid-template-columns: var(--sol-genislik) minmax(0, 1fr); }
   .sag { grid-column: 2; }
-}
-@media (max-width: 760px) {
-  .ust { padding: var(--ara-3) var(--ara-4); flex-wrap: wrap; }
-  .ust .ara { order: 9; max-width: none; flex-basis: 100%; }
+  /* Tablette üst çubuğa tarih sığmıyor; ad ise kısaltılmayacak kadar önemli. */
   .ust .tarih { display: none; }
-  .basliklar { grid-template-columns: repeat(5, minmax(150px, 1fr)); overflow-x: auto; padding: var(--ara-3) var(--ara-4) 0; }
-  .govde { grid-template-columns: 1fr; padding: var(--ara-3) var(--ara-4) var(--ara-8); }
-  .sol { position: static; display: flex; overflow-x: auto; gap: var(--ara-1); }
-  .sol a { white-space: nowrap; }
-  .sol .ayrac { display: none; }
-  .sag { grid-column: 1; }
-  .form .satir { grid-template-columns: 1fr; }
+  .ust .ara { min-width: 0; }
+  .liste .ad { flex: 1 0 140px; }
+  .liste .not { white-space: normal; min-width: 0; }
 }
 
-/* Telefonda liste satırı tek satıra sığmıyor: başlık kendi satırına, ayrıntı altına. */
+/*
+ * --- Telefon ---
+ *
+ * Masaüstü düzeni burada küçültülmüyor, yerine başka bir düzen geçiyor:
+ * sol menü ve üst şerit kalkıyor, alta sekme çubuğu geliyor, tablolar
+ * karta dönüyor. Küçültmeye çalışınca içerik ekranın üçte birine
+ * sıkışıyordu.
+ */
 @media (max-width: 760px) {
-  .liste > li { flex-wrap: wrap; row-gap: var(--ara-1); }
+  body { font-size: var(--punto-orta); }
+
+  .uygulama { padding-bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom)); }
+
+  /* Üst çubuk: yalnız marka ve bildirim. */
+  .ust {
+    padding: var(--ara-2) var(--ara-4);
+    padding-top: calc(var(--ara-2) + env(safe-area-inset-top));
+    gap: var(--ara-2);
+  }
+  .ust .masaustu, .ust .tarih { display: none; }
+  .ust .zil { width: var(--dokunma); height: var(--dokunma); }
+
+  /* Sol menü yok; yerini alt çubuk ve menü paneli alıyor. */
+  .sol { display: none; }
+
+  /* Beş plan başlığı yalnız ana sayfada, ikişerli ızgara. İç sayfalarda
+     menü panelinden açılıyor; her sayfada ekranın yarısını yemesin. */
+  .basliklar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ara-2); padding: var(--ara-3) var(--ara-4) 0;
+  }
+  .basliklar .baslik:first-child { grid-column: 1 / -1; }
+  .uygulama:not(.sayfa-ana) .basliklar { display: none; }
+  .baslik { padding: var(--ara-2) var(--ara-3); border-top-width: 3px; }
+  .baslik strong { font-size: var(--punto); }
+  .baslik a.olustur { min-height: 32px; display: inline-flex; align-items: center; }
+
+  .govde, .govde.dar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ara-3); padding: var(--ara-3) var(--ara-4) var(--ara-6);
+  }
+  .sag { grid-column: 1; }
+
+  .kart { padding: var(--ara-4); border-radius: var(--yaricap-kart); }
+
+  .sayfa-basi { gap: var(--ara-2); }
+  .sayfa-basi h1 { font-size: var(--punto-buyuk); flex-basis: 100%; order: 1; }
+  .sayfa-basi .geri { order: 0; min-height: 32px; display: inline-flex; align-items: center; }
+  .sayfa-basi .rozet { order: 2; }
+  .sayfa-basi .sag-uc { order: 3; margin-inline-start: 0; flex-basis: 100%; }
+  .sayfa-basi .sag-uc .dugme, .sayfa-basi > .dugme { width: 100%; justify-content: center; }
+
+  /* Dokunma hedefleri. */
+  .dugme { min-height: var(--dokunma); justify-content: center; }
+  .dugme-kucuk { min-height: 40px; font-size: var(--punto); }
+
+  /* iPhone, 16 pikselden küçük yazılı alana dokununca sayfayı
+     yakınlaştırıyor; alanları 16 piksele çekmek bunu durduruyor. */
+  input, select, textarea, .form input, .form select, .form textarea { font-size: var(--punto-orta); min-height: var(--dokunma); }
+  .form .satir { grid-template-columns: 1fr; }
+  .form .dugmeler .dugme { flex: 1; }
+
+  .sayilar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+  .sayilar .sayi:first-child { grid-column: 1 / -1; }
+  .sayi { padding: var(--ara-3); }
+  .sayi b { font-size: var(--punto-buyuk); }
+
+  /* Liste satırı: başlık kendi satırında, ayrıntı ve düğmeler altında. */
+  .liste > li { flex-wrap: wrap; row-gap: var(--ara-2); padding: var(--ara-3) 0; }
   .liste .ad { flex-basis: 100%; white-space: normal; }
-  .liste .not { white-space: normal; flex: 1; }
-  .hafta > div { font-size: 10px; padding: var(--ara-1) 0; overflow-wrap: anywhere; }
-  .hafta > div strong { font-size: var(--punto-kucuk); }
-  .sayfa-basi .sag-uc { margin-inline-start: 0; }
+  .liste .not { white-space: normal; flex: 1; min-width: 0; }
+  .liste > li > .dugme { flex: 1; }
+
+  /* Hafta şeridi: hücrede yalnız gün; bugünün evresi altta yazılı. */
+  .hafta { gap: 3px; }
+  .hafta > div { padding: var(--ara-2) 0; }
+  .hafta > div span { display: none; }
+  .hafta-bugun { margin-top: var(--ara-3); }
+  .hafta-bugun b { color: var(--haftalik); }
+  .hafta-evre { font-size: var(--punto-kucuk); }
+
+  .adim-liste { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .alanlar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .alan { overflow-wrap: anywhere; }
+
+  .sekmeler { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--ara-4)); padding-inline: var(--ara-4); scrollbar-width: none; }
+  .sekmeler button { min-height: 36px; white-space: nowrap; }
+
+  .yalniz-mobil { display: inline; }
+  p.yalniz-mobil { display: block; }
+
+  /* Tablo → kart. Her satır bir kart; başlık üstte, diğer hücreler
+     etiketiyle birlikte alt alta. Etiket hücrenin kendi `data-etiket`
+     özniteliğinden geliyor, böylece dil değişince o da değişiyor. */
+  .tablo-sar { overflow: visible; }
+  .tablo.kartli, .tablo.kartli tbody, .tablo.kartli tr { display: block; width: 100%; }
+  .tablo.kartli thead { display: none; }
+  .tablo.kartli tr {
+    display: flex; flex-direction: column; gap: var(--ara-2);
+    padding: var(--ara-3) 0; border-bottom: 1px solid var(--cizgi);
+  }
+  .tablo.kartli tr:last-child { border-bottom: 0; }
+  .tablo.kartli td {
+    display: flex; align-items: center; flex-wrap: wrap; gap: var(--ara-2);
+    padding: 0; border: 0; font-size: var(--punto);
+  }
+  .tablo.kartli td[data-etiket]::before {
+    content: attr(data-etiket); flex: 0 0 104px;
+    color: var(--sonuk); font-size: var(--punto-kucuk); font-weight: 600;
+  }
+  .tablo.kartli td.birincil { order: -1; font-size: var(--punto-orta); line-height: 1.35; }
+  .tablo.kartli td.eylem:empty, .tablo.kartli td.bos-hucre { display: none; }
+  .tablo.kartli td.eylem .dugme { width: 100%; }
+
+  /* --- Alt sekme çubuğu --- */
+  .alt-cubuk {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 20;
+    height: calc(var(--alt-cubuk) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--yuzey); border-top: 1px solid var(--cizgi);
+  }
+  .alt-cubuk a, .alt-cubuk button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: none; border: 0; padding: 0; color: var(--sonuk);
+    font-size: 11px; font-weight: 600; min-width: 0;
+  }
+  .alt-cubuk .hap {
+    display: grid; place-items: center; width: 52px; height: 30px; border-radius: var(--yaricap-hap);
+  }
+  .alt-cubuk .acik { color: var(--vurgu); }
+  .alt-cubuk .acik .hap { background: var(--vurgu-sis); }
+
+  /* --- Menü paneli: alt çubuğun üstünde, tam ekran --- */
+  .mobil-menu {
+    display: block; position: fixed; z-index: 15; inset: 0;
+    bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom));
+    background: var(--zemin); overflow-y: auto; overscroll-behavior: contain;
+    padding: var(--ara-3) var(--ara-4) var(--ara-6);
+    padding-top: calc(var(--ara-3) + env(safe-area-inset-top));
+  }
+  .mobil-menu-ust { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--ara-3); }
+  .mobil-menu-ust strong { font-size: var(--punto-buyuk); }
+  .mobil-menu .ara {
+    width: 100%; padding: var(--ara-2) var(--ara-4);
+    border: 1px solid var(--cizgi); border-radius: var(--yaricap-hap);
+    background: var(--yuzey); color: var(--murekkep);
+  }
+  .mobil-menu h3 {
+    font-size: var(--punto-kucuk); text-transform: uppercase; letter-spacing: .06em;
+    color: var(--sonuk); margin: var(--ara-5) 0 var(--ara-2);
+  }
+  .mobil-planlar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+  .mobil-planlar .baslik:first-child { grid-column: 1 / -1; }
+  .mobil-kayitlar { background: var(--yuzey); border-radius: var(--yaricap-kart); box-shadow: var(--golge-kart); overflow: hidden; }
+  .mobil-kayitlar a {
+    display: flex; align-items: center; min-height: var(--dokunma);
+    padding: 0 var(--ara-4); border-top: 1px solid var(--cizgi); font-weight: 600;
+  }
+  .mobil-kayitlar a:first-child { border-top: 0; }
+  .mobil-kayitlar a.acik { color: var(--vurgu); background: var(--vurgu-sis); }
 }

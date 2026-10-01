@@ -138,7 +138,7 @@ export function NextDayDetay({ tarih }: { tarih: string }) {
           <Bos metin={t("bos")} />
         ) : (
           <div className="tablo-sar">
-            <table className="tablo">
+            <table className="tablo kartli">
               <thead>
                 <tr>
                   <th>{t("yayinSaati")}</th>
@@ -153,20 +153,22 @@ export function NextDayDetay({ tarih }: { tarih: string }) {
               <tbody>
                 {paketler.map((p) => (
                   <tr key={p.id}>
-                    <td className="sonuk">{p.yayinSaati ?? "—"}</td>
-                    <td>
+                    <td className="sonuk" data-etiket={t("yayinSaati")}>{p.yayinSaati ?? "—"}</td>
+                    <td className="birincil">
                       <a href={`#/paketler/${p.id}`}>{p.baslik}</a>
                       {p.gecikti && <> <Rozet ton="kotu">{t("gecikti")}</Rozet></>}
                     </td>
-                    <td><a href={`#/muhabirler/${p.muhabirId}`}>{muhabirAdi(v, p.muhabirId)}</a></td>
-                    <td><TurRozeti tur={p.tur} /></td>
-                    <td className="sonuk">{t(FORMAT_ADI[p.format])}</td>
-                    <td>
+                    <td data-etiket={t("muhabir")}><a href={`#/muhabirler/${p.muhabirId}`}>{muhabirAdi(v, p.muhabirId)}</a></td>
+                    <td data-etiket={t("tur")}><TurRozeti tur={p.tur} /></td>
+                    <td className="sonuk" data-etiket={t("format")}>{t(FORMAT_ADI[p.format])}</td>
+                    <td data-etiket={t("adim")}>
                       <AdimSeridi paket={p} /> <span className="sonuk">{t(ADIM_ADI[p.adim])}</span>
                     </td>
-                    <td>
+                    <td className="eylem">
                       {p.adim !== "yayin" && (
-                        <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => paketIlerle(p.id)}>→</button>
+                        <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => paketIlerle(p.id)} aria-label={t("ileriTasi")}>
+                          <span className="yalniz-mobil">{t("ileriTasi")}</span> →
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -113,10 +113,13 @@ function HaftaSeridi() {
         {sira.map((g) => (
           <div key={g} className={g === simdi ? "bugun" : ""}>
             <strong>{gunler[g]}</strong>
-            {t(EVRE[g])}
+            <span>{t(EVRE[g])}</span>
           </div>
         ))}
       </div>
+      <p className="hafta-bugun yalniz-mobil">
+        {t("bugunEvre")}: <b>{t(EVRE[simdi])}</b>
+      </p>
       <p className="hafta-evre">
         {t("hOneri")} → {t("hPlan")} → <b>{t("hToplanti")}</b> → {t("hGeri")}
       </p>

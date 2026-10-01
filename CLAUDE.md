@@ -21,6 +21,17 @@ kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Rol üst çubuktan seçiliyor; giriş sistemi yerine geçici çözüm.
 - Tasarım dili `src/tasarim.css`: beş ana başlığın her birinin kendi
   rengi var, kalan her şey tek vurgu rengi. Ekranlarda çıplak değer yok.
+- Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil,
+  ayrı bir düzen: sol menü ve üst şerit kalkıyor, alta sekme çubuğu
+  (`AltCubuk`) geliyor, "Menü" bütün sayfaları, plan başlıklarını, dil ve
+  rolü bir panelde (`MobilMenu`) topluyor. Yeni bir sayfa eklenince
+  `SolMenu`'deki listeye girmesi ikisine birden yetiyor.
+- Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı ve her hücrede
+  `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
+- Dokunma hedefi en az 44 piksel; telefonda yazı alanları 16 piksel
+  (daha küçüğünde iPhone sayfayı yakınlaştırıyor).
+- Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her
+  sayfada yatay taşmanın sıfır olduğuna bakılır.
 - Yorumlar Türkçe ve "neden" anlatır, "ne" değil.
 - Commit iletisi maddeli: kısa başlık, sonra her madde ne değişti ve neden.
 - Bir şey yapmadan önce ne yapacağını söyle.

@@ -1,7 +1,7 @@
 import { useDil, type Anahtar } from "../dil";
 
 /** Sol sütun: kayıt defterleri. Üstteki başlıklar "plan", buradakiler "kaynak". */
-const MADDELER: { yol: string; ad: Anahtar; ayrac?: boolean }[] = [
+export const MADDELER: { yol: string; ad: Anahtar; ayrac?: boolean }[] = [
   { yol: "ana", ad: "anasayfa" },
   { yol: "muhabirler", ad: "muhabirler", ayrac: true },
   { yol: "paketler", ad: "paketler" },

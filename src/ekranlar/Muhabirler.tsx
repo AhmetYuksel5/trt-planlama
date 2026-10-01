@@ -14,7 +14,7 @@ export default function Muhabirler() {
       </div>
       <Kart>
         <div className="tablo-sar">
-          <table className="tablo">
+          <table className="tablo kartli">
             <thead>
               <tr>
                 <th>{t("muhabir")}</th>
@@ -29,11 +29,11 @@ export default function Muhabirler() {
                 const is = v.paketler.find((p) => p.muhabirId === m.id && p.planTarihi === yarin);
                 return (
                   <tr key={m.id}>
-                    <td><a href={`#/muhabirler/${m.id}`}>{m.ad}</a></td>
-                    <td className="sonuk">{m.konum}</td>
-                    <td className="sonuk">{m.uzmanlik.join(", ")}</td>
-                    <td>{is ? <a href={`#/paketler/${is.id}`}>{is.baslik}</a> : <span className="sonuk">{t("gorevYok")}</span>}</td>
-                    <td>{is && <AdimSeridi paket={is} />}</td>
+                    <td className="birincil"><a href={`#/muhabirler/${m.id}`}>{m.ad}</a></td>
+                    <td className="sonuk" data-etiket={t("konum")}>{m.konum}</td>
+                    <td className="sonuk" data-etiket={t("uzmanlik")}>{m.uzmanlik.join(", ")}</td>
+                    <td data-etiket={t("bugunkuGorev")}>{is ? <a href={`#/paketler/${is.id}`}>{is.baslik}</a> : <span className="sonuk">{t("gorevYok")}</span>}</td>
+                    <td data-etiket={t("adim")} className={is ? "" : "bos-hucre"}>{is && <AdimSeridi paket={is} />}</td>
                   </tr>
                 );
               })}
