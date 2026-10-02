@@ -1,12 +1,12 @@
 import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Pencil, Scissors, Smartphone, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { cagriKaydet, epostaYanitiIsle, oneriDuzenle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
-import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, emlUret, etiketUret, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
+import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { ICERIK_TURLERI, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type Yanit } from "../../veri";
+import { ICERIK_TURLERI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
@@ -23,9 +23,9 @@ import { indir } from "../../bilesenler/indir";
  */
 
 /* Giden e-posta her zaman Arapça; arayüz dili ne olursa olsun. */
-const metinAr = (k: Anahtar, p?: Record<string, string>) => metin(k, "ar", p);
+export const metinAr = (k: Anahtar, p?: Record<string, string>) => metin(k, "ar", p);
 
-const panoya = async (metin: string, t: (k: Anahtar) => string) => {
+export const panoya = async (metin: string, t: (k: Anahtar) => string) => {
   try {
     await navigator.clipboard.writeText(metin);
     bildir(t("bKopyalandi"));
@@ -35,11 +35,11 @@ const panoya = async (metin: string, t: (k: Anahtar) => string) => {
 };
 
 /** Outlook'a ";" ile, telefona "," ile; ikisi de çoğu istemcide geçiyor, Outlook'un alışkanlığı ";". */
-const adresler = (v: ReturnType<typeof useVeri>, kimlikler: string[]) =>
+export const adresler = (v: ReturnType<typeof useVeri>, kimlikler: string[]) =>
   kimlikler.map((id) => kisiBul(v, id)?.eposta).filter((a): a is string => !!a);
 
 /** Giden e-postayı açan düğmeler; açmak çağrıyı da kaydediyor ki yanıtlar eşleşsin. */
-function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEposta; dosyaAdi: string; once?: () => void }) {
+export function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEposta; dosyaAdi: string; once?: () => void }) {
   const { t } = useDil();
   return (
     <div className="form-alt">
@@ -63,22 +63,121 @@ function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEposta; dosy
   );
 }
 
+/** İzinde olmayan bütün muhabirler: çağrının varsayılan BCC listesi. */
+export const izinliHaric = (v: ReturnType<typeof useVeri>) => muhabirler(v).filter((k) => k.durum !== "izinli").map((k) => k.id);
+
+/** Son kullanılan Kime adresi; ilk çağrıda kurgusal örnek adres (gerçeği planlamacı yazıyor). */
+export const sonKime = (v: ReturnType<typeof useVeri>) => [...v.cagrilar].sort((a, b) => b.zaman.localeCompare(a.zaman))[0]?.kime ?? ORNEK_PLANLAMA_ADRESI;
+
+/** Kime ve BCC: BCC'deki muhabirler düzenlenebilir, izinliler varsayılan olarak dışarıda. */
+export function AliciAlanlari({ kime, setKime, bcc, setBcc }: { kime: string; setKime: (k: string) => void; bcc: string[]; setBcc: (b: string[]) => void }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const [aliciAcik, setAliciAcik] = useState(false);
+  const liste = [...muhabirler(v)].sort((a, b) => ad(a).localeCompare(ad(b)));
+  return (
+    <>
+      <label>
+        {t("kime")} <span className="ipucu">{t("kimeIpucu")}</span>
+        <input type="email" dir="ltr" value={kime} onChange={(e) => setKime(e.target.value)} />
+      </label>
+      <div>
+        <div className="alan-etiket">
+          {t("bccAlicilar")} · {t("aliciSayisi", { n: bcc.length })}
+        </div>
+        <p className="bos-kucuk">{t("bccNotu")}</p>
+        <div className="dugmeler ara-ust">
+          <button className="dugme dugme-sade dugme-kucuk" onClick={() => setAliciAcik(!aliciAcik)}>
+            {t("alicilariDuzenle")}
+          </button>
+          {aliciAcik && (
+            <>
+              <button className="dugme dugme-sade dugme-kucuk" onClick={() => setBcc(liste.map((k) => k.id))}>
+                {t("tumunuSec")}
+              </button>
+              <button className="dugme dugme-sade dugme-kucuk" onClick={() => setBcc(izinliHaric(v))}>
+                {t("izinliHaric")}
+              </button>
+            </>
+          )}
+        </div>
+        {aliciAcik && (
+          <fieldset className="secim-grubu ara-ust-2">
+            {liste.map((k) => (
+              <label key={k.id} className="secim-cip">
+                <input type="checkbox" checked={bcc.includes(k.id)} onChange={() => setBcc(bcc.includes(k.id) ? bcc.filter((x) => x !== k.id) : [...bcc, k.id])} />
+                {ad(k)}
+                {k.durum === "izinli" && <Rozet>{t("kdIzinli")}</Rozet>}
+              </label>
+            ))}
+          </fieldset>
+        )}
+      </div>
+    </>
+  );
+}
+
+/** Gönderilecek e-postanın önizlemesi; gövde düzenlenebilir, giden metin her zaman Arapça. */
+export function EpostaOnizleme({ eposta, govde, setGovde }: { eposta: GidenEposta; govde: string; setGovde: (g: string) => void }) {
+  const { t } = useDil();
+  return (
+    <div className="eposta-kutu">
+      <header>
+        <span>
+          {t("kime")}: <bdi>{eposta.kime}</bdi>
+        </span>
+        <span>· BCC: {t("aliciSayisi", { n: eposta.bcc.length })}</span>
+        <span>
+          · {t("konu")}: <Icerik>{eposta.konu}</Icerik>
+        </span>
+      </header>
+      <textarea className="girdi" {...icerikAlani} value={govde} onChange={(e) => setGovde(e.target.value)} />
+      {eposta.tablo && (
+        <div className="tablo-sar eposta-tablosu" dir="rtl" lang="ar">
+          <table>
+            <thead>
+              <tr>
+                {eposta.tablo.map((b) => (
+                  <th key={b}>{b}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[0, 1].map((i) => (
+                <tr key={i}>
+                  {eposta.tablo!.map((b) => (
+                    <td key={b} />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Çağrı listesinde ve seçicide çağrının adı: Next Day'de günü, haftalıkta hafta aralığı. */
+export const useCagriAdi = () => {
+  const { t, dil } = useDil();
+  return (c: CagriKaydi) =>
+    cagriTuru(c) === "haftalik" ? `${t("haftalik")} · ${aralikYaz(c.tarih, gunEkle(c.tarih, 6), dil)}` : tarihYaz(c.tarih, dil, "tam");
+};
+
 export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
-  const { t, ad, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const B = bugun();
-  const son = [...v.cagrilar].sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
-  const liste = [...muhabirler(v)].sort((a, b) => ad(a).localeCompare(ad(b)));
-  const izinliHaric = () => liste.filter((k) => k.durum !== "izinli").map((k) => k.id);
+  const son = [...v.cagrilar].filter((c) => cagriTuru(c) === "nextday").sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
   const [hedef, setHedef] = useState(tarih ?? gunEkle(B, 1));
   const [sonSaat, setSonSaat] = useState(son?.sonSaat ?? "15:00");
-  const [kime, setKime] = useState(son?.kime ?? ORNEK_PLANLAMA_ADRESI);
-  const [bcc, setBcc] = useState<string[]>(izinliHaric);
-  const [aliciAcik, setAliciAcik] = useState(false);
+  const [kime, setKime] = useState(sonKime(v));
+  const [bcc, setBcc] = useState<string[]>(() => izinliHaric(v));
   const [govde, setGovde] = useState(cagriGovdesi(hedef, sonSaat));
   const konu = cagriKonusu(hedef);
   const eposta: GidenEposta = { kime, bcc: adresler(v, bcc), konu, govde };
-  const kaydet = () => cagriKaydet(ben, { tarih: hedef, metin: govde, sonSaat, kime, bcc, etiket: etiketUret(hedef) });
+  const kaydet = () => cagriKaydet(ben, { tur: "nextday", tarih: hedef, metin: govde, sonSaat, kime, bcc, etiket: etiketUret(hedef) });
 
   return (
     <>
@@ -126,83 +225,46 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
                 />
               </label>
             </div>
-            <label>
-              {t("kime")} <span className="ipucu">{t("kimeIpucu")}</span>
-              <input type="email" dir="ltr" value={kime} onChange={(e) => setKime(e.target.value)} />
-            </label>
-            <div>
-              <div className="alan-etiket">
-                {t("bccAlicilar")} · {t("aliciSayisi", { n: bcc.length })}
-              </div>
-              <p className="bos-kucuk">{t("bccNotu")}</p>
-              <div className="dugmeler ara-ust">
-                <button className="dugme dugme-sade dugme-kucuk" onClick={() => setAliciAcik(!aliciAcik)}>
-                  {t("alicilariDuzenle")}
-                </button>
-                {aliciAcik && (
-                  <>
-                    <button className="dugme dugme-sade dugme-kucuk" onClick={() => setBcc(liste.map((k) => k.id))}>
-                      {t("tumunuSec")}
-                    </button>
-                    <button className="dugme dugme-sade dugme-kucuk" onClick={() => setBcc(izinliHaric())}>
-                      {t("izinliHaric")}
-                    </button>
-                  </>
-                )}
-              </div>
-              {aliciAcik && (
-                <fieldset className="secim-grubu ara-ust-2">
-                  {liste.map((k) => (
-                    <label key={k.id} className="secim-cip">
-                      <input type="checkbox" checked={bcc.includes(k.id)} onChange={() => setBcc(bcc.includes(k.id) ? bcc.filter((x) => x !== k.id) : [...bcc, k.id])} />
-                      {ad(k)}
-                      {k.durum === "izinli" && <Rozet>{t("kdIzinli")}</Rozet>}
-                    </label>
-                  ))}
-                </fieldset>
-              )}
-            </div>
-            <div className="eposta-kutu">
-              <header>
-                <span>
-                  {t("kime")}: <bdi>{kime}</bdi>
-                </span>
-                <span>· BCC: {t("aliciSayisi", { n: eposta.bcc.length })}</span>
-                <span>
-                  · {t("konu")}: <Icerik>{konu}</Icerik>
-                </span>
-              </header>
-              <textarea className="girdi" {...icerikAlani} value={govde} onChange={(e) => setGovde(e.target.value)} />
-            </div>
+            <AliciAlanlari kime={kime} setKime={setKime} bcc={bcc} setBcc={setBcc} />
+            <EpostaOnizleme eposta={eposta} govde={govde} setGovde={setGovde} />
             <GonderDugmeleri eposta={eposta} dosyaAdi={`cagri-${hedef}.eml`} once={kaydet} />
             <p className="bos-kucuk">{t("outlookIpucu")}</p>
           </div>
         </Kart>
-        <Kart baslik={t("oncekiCagrilar")}>
-          {v.cagrilar.length === 0 ? (
-            <Bos kucuk metin={t("kayitYok")} />
-          ) : (
-            <ul className="liste">
-              {[...v.cagrilar]
-                .sort((a, b) => b.zaman.localeCompare(a.zaman))
-                .map((c) => (
-                  <li key={c.id}>
-                    <div className="ad">
-                      <a href={`#/oneriler/yanitlar/${c.id}`}>{tarihYaz(c.tarih, dil, "tam")}</a>
-                      <small>
-                        {ad(kisiBul(v, c.olusturan))} · {tarihYaz(yerelGun(c.zaman), dil, "kisa")} {saatYaz(c.zaman, dil)} · {t("sonSaat")} {c.sonSaat}
-                      </small>
-                    </div>
-                    <Rozet ton="vurgu">
-                      {yanitVerenler(v, c).length} / {c.bcc.length}
-                    </Rozet>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </Kart>
+        <OncekiCagrilar />
       </div>
     </>
+  );
+}
+
+export function OncekiCagrilar({ tur }: { tur?: "nextday" | "haftalik" }) {
+  const { t, ad, dil } = useDil();
+  const v = useVeri();
+  const cagriAdi = useCagriAdi();
+  const liste = v.cagrilar.filter((c) => !tur || cagriTuru(c) === tur).sort((a, b) => b.zaman.localeCompare(a.zaman));
+  return (
+    <Kart baslik={t("oncekiCagrilar")}>
+      {liste.length === 0 ? (
+        <Bos kucuk metin={t("kayitYok")} />
+      ) : (
+        <ul className="liste">
+          {liste.map((c) => (
+            <li key={c.id}>
+              <div className="ad">
+                <a href={`#/oneriler/yanitlar/${c.id}`}>{cagriAdi(c)}</a>
+                <small>
+                  {ad(kisiBul(v, c.olusturan))} · {tarihYaz(yerelGun(c.zaman), dil, "kisa")} {saatYaz(c.zaman, dil)}
+                  {c.sonSaat && ` · ${t("sonSaat")} ${c.sonSaat}`}
+                </small>
+              </div>
+              <Rozet ton="vurgu">
+                {yanitVerenler(v, c).length} / {c.bcc.length}
+              </Rozet>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Kart>
   );
 }
 
@@ -321,7 +383,7 @@ function IceAktar({ ben, cagri }: { ben: Kisi; cagri?: CagriKaydi }) {
             disabled={!kisi || !yapistir.metin.trim()}
             onClick={() => {
               if (!kisi) return;
-              const konu = cagri ? `RE: ${cagriKonusu(cagri.tarih)}` : "";
+              const konu = cagri ? `RE: ${cagriKonusu(cagri.tarih, cagriTuru(cagri))}` : "";
               sonuc(epostaYanitiIsle(ben, { kimden: kisi.eposta, kimdenAd: ad(kisi), konu, metin: yapistir.metin }, "iceAktarma"));
               setYapistir({ kisiId: "", metin: "" });
             }}
@@ -401,11 +463,15 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
         .sort((a, b) => Number(a.durum === "yanitYok") - Number(b.durum === "yanitYok") || ad(a.kisi).localeCompare(ad(b.kisi)))
     : [];
   const vermeyen = satirlar.filter((s) => s.durum === "yanitYok");
+  const cagriAdi = useCagriAdi();
+  const haftalik = !!cagri && cagriTuru(cagri) === "haftalik";
   const hatirlatma: GidenEposta | undefined = cagri && {
     kime: cagri.kime,
     bcc: vermeyen.map((s) => s.kisi.eposta),
-    konu: `${metinAr("hatirlatmaOnEki")}: ${cagriKonusu(cagri.tarih)}`,
-    govde: metinAr("hatirlatmaGovdesi", { saat: cagri.sonSaat }),
+    konu: `${metinAr("hatirlatmaOnEki")}: ${cagriKonusu(cagri.tarih, cagriTuru(cagri))}`,
+    govde: haftalik
+      ? metinAr("hatirlatmaHaftalik", { aralik: haftaAraligiAr(cagri.tarih), adres: cagri.kime })
+      : metinAr("hatirlatmaGovdesi", { saat: cagri.sonSaat }),
   };
   return (
     <>
@@ -422,14 +488,16 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
               <select className="girdi girdi-kisa" value={cagri?.id} onChange={(e) => (location.hash = `#/oneriler/yanitlar/${e.target.value}`)} aria-label={t("oneriCagrisi")}>
                 {cagrilar.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {tarihYaz(c.tarih, dil, "tam")}
+                    {cagriAdi(c)}
                   </option>
                 ))}
               </select>
             )}
-            <a className="dugme dugme-ikincil" href="#/oneriler/cagri">
-              <Megaphone size={16} /> {t("oneriCagrisi")}
-            </a>
+            {!haftalik && (
+              <a className="dugme dugme-ikincil" href="#/oneriler/cagri">
+                <Megaphone size={16} /> {t("oneriCagrisi")}
+              </a>
+            )}
           </>
         }
       />
@@ -438,13 +506,13 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
       ) : (
         <>
           <div className="sayaclar">
-            <Sayac ikon={<Mail size={22} />} etiket={t("alicilar")} deger={satirlar.length} alt={`${t("sonSaat")} ${cagri.sonSaat} GMT`} />
+            <Sayac ikon={<Mail size={22} />} etiket={t("alicilar")} deger={satirlar.length} alt={cagri.sonSaat ? `${t("sonSaat")} ${cagri.sonSaat} GMT` : undefined} />
             <Sayac ikon={<MailCheck size={22} />} etiket={t("yanitVerenler")} deger={satirlar.length - vermeyen.length} ton="iyi" />
             <Sayac ikon={<MailMinus size={22} />} etiket={t("yd_oneriYok")} deger={satirlar.filter((s) => s.durum === "oneriYok").length} />
             <Sayac ikon={<MailX size={22} />} etiket={t("yanitVermeyenler")} deger={vermeyen.length} ton={vermeyen.length ? "uyari" : ""} />
           </div>
           <div className="iz iz-ana-yan">
-            <Kart baslik={tarihYaz(cagri.tarih, dil, "tam")} sagUc={<Rozet>{cagri.etiket}</Rozet>}>
+            <Kart baslik={cagriAdi(cagri)} sagUc={<Rozet>{cagri.etiket}</Rozet>}>
               <div className="tablo-sar">
                 <table className="tablo kartli">
                   <thead>

@@ -25,7 +25,12 @@ import { ORNEK } from "./ornek";
 
 /* --- Birimler ve kişiler --- */
 
-export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "output", "media", "muhabir", "yonetim"] as const;
+/*
+ * Ekonomi ayrı birim: haftalık planda ekonomi kolunun stok önerilerine
+ * toplantıdan önce bakıyor (ön inceleme). Üretim akışında masası yok;
+ * ekonomi paketini Planlama'nın feature/stok ekibi yürütüyor (akis.ts).
+ */
+export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "muhabir", "yonetim"] as const;
 export type Birim = (typeof BIRIMLER)[number];
 
 export type Rol = "yonetici" | "personel";
@@ -212,6 +217,8 @@ export interface Gelisme {
   tarih: string;
   onerenId?: string;
   oneriId?: string;
+  /** Haftalık plandan aktarıldıysa kaynağı olan kalem. */
+  haftalikKalemId?: string;
 }
 
 export interface CanliYayin {
@@ -289,7 +296,10 @@ export interface Oneri {
   sahaGerekli: boolean;
   zaman: string;
   kanal: Kanal;
-  hedefTarih: string;
+  /** Next Day önerisinde planın günü; haftalık öneride boş. */
+  hedefTarih?: string;
+  /** Haftalık öneride haftanın Cumartesi'si; Next Day planlarına karışmıyor. */
+  hafta?: string;
   durum: OneriDurum;
   cagriId?: string;
   baslikId?: string;
@@ -306,8 +316,13 @@ export interface Oneri {
  * planlama yazışmayı görsün), muhabirler BCC'de (her muhabirin yazışması
  * müstakil kalsın). Konudaki etiket yanıtları doğru çağrıya bağlıyor.
  */
+export type CagriTuru = "nextday" | "haftalik";
+
 export interface Cagri {
   id: string;
+  /** Eski kayıtta yok: Next Day. */
+  tur?: CagriTuru;
+  /** Next Day'de planın günü, haftalıkta haftanın Cumartesi'si. */
   tarih: string;
   metin: string;
   sonSaat: string;
@@ -316,7 +331,7 @@ export interface Cagri {
   kime: string;
   /** BCC'deki muhabirler (kişi kimliği). */
   bcc: string[];
-  /** Konudaki eşleştirme etiketi: ND-20260930. */
+  /** Konudaki eşleştirme etiketi: ND-20260930, haftalıkta HP-20261003. */
   etiket: string;
 }
 
@@ -405,12 +420,91 @@ export interface Paket {
   duzeltmeSayisi?: number;
   /** Yöneticinin müdahalesi: her listede rozetli ve başta. */
   oncelikli?: boolean;
+  /** Haftalık toplantıda kabul edilen kalemden doğduysa: "Haftalık plandan" rozeti. */
+  haftalikKalemId?: string;
   notlar: Not[];
   olusturma: string;
   guncelleme: string;
 }
 
-/* --- Haftalık, aylık ve özel planlar: Next Day'e karışmayan ayrı kayıtlar. --- */
+/* --- Haftalık plan: Perşembe toplantısında kesinleşen Cumartesi–Cuma gündemi --- */
+
+/*
+ * Kurumun haftalık çıktısındaki (الأجندة الأسبوعية) düzen: haftanın ana
+ * dosyaları, sonra gün gün gündem. Gündemde her kalem bir dosyanın
+ * (merkezi başlık havuzundaki başlık) altında; Next Day'e aktarılınca aynı
+ * başlığa düşüyor, havuz ikiye bölünmüyor. Günü olmayan kalem zamana bağlı
+ * olmayan (stok) dosyada: feature, ekonomi, program önerileri.
+ */
+export const HAFTA_DURUMLARI = ["hazirlik", "toplantida", "kesinlesti"] as const;
+export type HaftaDurum = (typeof HAFTA_DURUMLARI)[number];
+
+/** Toplantı kararı. "bilgi": çıktıda yer alır ama takip edilmez (لا نتابع). */
+export const KARARLAR = ["bekliyor", "kabul", "bilgi", "ret"] as const;
+export type Karar = (typeof KARARLAR)[number];
+
+/** Haftanın ana dosyası (أهم ملفات الأسبوع): başlık ve bir paragraf durum özeti. */
+export interface AnaKonu {
+  id: string;
+  baslik: string;
+  metin: string;
+}
+
+export interface Gorus {
+  kisiId: string;
+  zaman: string;
+  metin: string;
+}
+
+/*
+ * Ön inceleme: stok öneri toplantıdan önce o kolun yöneticisine gidiyor.
+ * Yönetici görüş yazıyor ya da gerekçeyle reddediyor; reddedilen
+ * gündemden düşüyor, kabul kararı yine toplantıda.
+ */
+export interface OnInceleme {
+  durum: "gonderildi" | "reddedildi";
+  gonderen: string;
+  zaman: string;
+  gorusler: Gorus[];
+  reddeden?: string;
+  gerekce?: string;
+}
+
+export interface HaftalikKalem {
+  id: string;
+  /** Boşsa zamana bağlı olmayan (stok) dosyada. */
+  tarih?: string;
+  /** Dosya: merkezi başlık havuzundaki başlık. */
+  baslikId?: string;
+  /** Olayın kısa adı; çıktıda "ad - yer / metin". */
+  baslik?: string;
+  yer?: string;
+  metin: string;
+  tur: IcerikTuru;
+  /** Çıktıdaki biçim satırı: PKG + LIVE. */
+  bicimler: Bicim[];
+  muhabirler: string[];
+  /** Çıktıda sarı vurgulu not. */
+  not?: string;
+  oneriId?: string;
+  karar: Karar;
+  onInceleme?: OnInceleme;
+  /** Kabul edilip aktarılınca: Next Day planı ve doğan paket. */
+  aktarim?: { planId?: string; paketId?: string };
+}
+
+export interface HaftalikPlan {
+  id: string;
+  /** Haftanın Cumartesi'si. */
+  baslangic: string;
+  durum: HaftaDurum;
+  anaKonular: AnaKonu[];
+  kalemler: HaftalikKalem[];
+  olusturan: string;
+  olusturma: string;
+}
+
+/* --- Aylık ve özel planlar: Next Day'e karışmayan ayrı kayıtlar. --- */
 
 export interface PlanKalemi {
   id: string;
@@ -419,13 +513,6 @@ export interface PlanKalemi {
   tur: IcerikTuru;
   ulke?: Ulke;
   onayli: boolean;
-}
-
-export interface HaftalikPlan {
-  id: string;
-  baslangic: string;
-  durum: "hazirlik" | "toplantida" | "onayli";
-  kalemler: PlanKalemi[];
 }
 
 export interface AylikPlan {
@@ -497,6 +584,14 @@ export const HAREKET_TIPLERI = [
   "paketOncelikli",
   "paketOncelikKalkti",
   "yoneticiNotu",
+  "haftalikOlusturuldu",
+  "haftalikToplantida",
+  "haftalikHazirliga",
+  "haftalikKesinlesti",
+  "onIncelemeyeGonderildi",
+  "onIncelemeGorusu",
+  "onIncelemedeReddedildi",
+  "haftaliktanAktarildi",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 
@@ -508,11 +603,12 @@ export interface Hareket {
   paketId?: string;
   oneriId?: string;
   planId?: string;
+  haftaId?: string;
   veri?: Record<string, string>;
 }
 
 export interface Durum {
-  surum: 6;
+  surum: 7;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -541,16 +637,17 @@ export interface Durum {
  * Şema değişince anahtar da değişiyor: eski kayıt yeni ekranı bozmasın,
  * örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları, v5:
  * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi,
- * v6: yönetici talimatı, öncelik ve yönetici notu).
+ * v6: yönetici talimatı, öncelik ve yönetici notu, v7: haftalık plan akışı,
+ * ön inceleme, Ekonomi birimi).
  */
-const SAKLA = "trt-planlama-v6";
+const SAKLA = "trt-planlama-v7";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 6) return d;
+      if (d.surum === 7) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -594,4 +691,12 @@ export const baslikBul = (d: Durum, id?: string) => d.basliklar.find((b) => b.id
 export const planBul = (d: Durum, id?: string) => d.planlar.find((p) => p.id === id);
 export const paketBul = (d: Durum, id?: string) => d.paketler.find((p) => p.id === id);
 export const oneriBul = (d: Durum, id?: string) => d.oneriler.find((o) => o.id === id);
+export const haftaBul = (d: Durum, id?: string) => d.haftalik.find((h) => h.id === id);
 export const muhabirler = (d: Durum) => d.kisiler.filter((k) => k.birim === "muhabir");
+
+/** Çağrının türü; alanı olmayan kayıt Next Day. */
+export const cagriTuru = (c: { tur?: CagriTuru }): CagriTuru => c.tur ?? "nextday";
+
+/** Açık çağrı: günü (haftalıkta haftası) henüz gelmemiş, en son hazırlanan. */
+export const acikCagri = (d: Durum, tur: CagriTuru, bugun: string) =>
+  d.cagrilar.filter((c) => cagriTuru(c) === tur && c.tarih > bugun).sort((a, b) => b.zaman.localeCompare(a.zaman))[0];

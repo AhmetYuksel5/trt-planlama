@@ -9,6 +9,8 @@ import {
   type Durum,
   type Gorev,
   type Gorevlendirme,
+  type HaftalikKalem,
+  type HaftalikPlan,
   type Hareket,
   type IcerikTuru,
   type Kisi,
@@ -59,9 +61,14 @@ export const IZINLER = {
   talimatVer: { ad: "yTalimatVer", birimler: ["yonetim"] },
   mudahale: {
     ad: "yMudahale",
-    birimler: ["planlama", "newsdesk", "newsgathering", "program", "output", "media", "yonetim"],
-    yalnizYonetici: ["planlama", "newsdesk", "newsgathering", "program", "output", "media"],
+    birimler: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "yonetim"],
+    yalnizYonetici: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media"],
   },
+  /* Haftalık planı Planlama hazırlıyor; Perşembe toplantısının kararını Planlama yöneticisi ya da yönetim kesinleştiriyor. */
+  haftalikDuzenle: { ad: "yHaftalikDuzenle", birimler: ["planlama"] },
+  haftalikKesinlestir: { ad: "yHaftalikKesinlestir", birimler: ["planlama", "yonetim"], yalnizYonetici: ["planlama"] },
+  /* Ayrıca kol soruluyor (onIncelemeci): müdür kendi kolunun, Ekonomi ekonomi kolunun önerisine bakıyor. */
+  onInceleme: { ad: "yOnInceleme", birimler: ["yonetim", "ekonomi"] },
 } satisfies Record<string, Izin>;
 export type Eylem = keyof typeof IZINLER;
 
@@ -86,10 +93,20 @@ export const yapabilir = (k: Kisi | undefined, e: Eylem): boolean => {
 export interface Kapsam {
   birimler: Birim[];
   kollar: IcerikTuru[];
+  /** Birden fazla birimden sorumlu; birimlerin ekranına inebiliyor. */
   mudur: boolean;
+  /** Paketlerde sorumluluk kola göre mi (müdür, Ekonomi), şu an kimin masasında olduğuna göre mi. */
+  kolaGore: boolean;
 }
 
-export const MUDURLUKLER: Partial<Record<Gorev, Omit<Kapsam, "mudur">>> = {
+/*
+ * Üretimde masası olmayan, bir kolun içeriğinden sorumlu birim. Ekonomi
+ * paketini Planlama'nın feature/stok ekibi yürütüyor; Ekonomi yöneticisi
+ * masaya değil kola bakıyor.
+ */
+const KOL_BIRIMLERI: Partial<Record<Birim, IcerikTuru[]>> = { ekonomi: ["ekonomi"] };
+
+export const MUDURLUKLER: Partial<Record<Gorev, Pick<Kapsam, "birimler" | "kollar">>> = {
   inputMuduru: { birimler: ["planlama", "newsdesk", "newsgathering", "muhabir"], kollar: ["haber", "feature", "ekonomi"] },
   programMuduru: { birimler: ["program"], kollar: ["program"] },
 };
@@ -97,15 +114,18 @@ export const MUDURLUKLER: Partial<Record<Gorev, Omit<Kapsam, "mudur">>> = {
 export const kapsam = (k: Kisi | undefined): Kapsam | null => {
   if (!k) return null;
   if (k.birim === "yonetim")
-    return { ...(MUDURLUKLER[k.gorev] ?? { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] }), mudur: true };
-  if (k.rol === "yonetici" && k.birim !== "muhabir") return { birimler: [k.birim], kollar: [...ICERIK_TURLERI], mudur: false };
+    return { ...(MUDURLUKLER[k.gorev] ?? { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] }), mudur: true, kolaGore: true };
+  if (k.rol === "yonetici" && k.birim !== "muhabir") {
+    const kol = KOL_BIRIMLERI[k.birim];
+    return { birimler: [k.birim], kollar: kol ?? [...ICERIK_TURLERI], mudur: false, kolaGore: !!kol };
+  }
   return null;
 };
 
 export const paketKapsamda = (k: Kisi | undefined, p: Paket): boolean => {
   const ks = kapsam(k);
   if (!k || !ks) return false;
-  return ks.mudur ? ks.kollar.includes(p.tur) : paketSahibi(p) === k.birim;
+  return ks.kolaGore ? ks.kollar.includes(p.tur) : paketSahibi(p) === k.birim;
 };
 
 export const talimatVerebilir = (k: Kisi | undefined): boolean => yapabilir(k, "talimatVer") && !!kapsam(k)?.birimler.includes("planlama");
@@ -127,6 +147,23 @@ export const planIcerikDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
 
 export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
   planIcerikDuzenler(k, p) || (yapabilir(k, "operasyon") && p.durum === "devralindi");
+
+/* --- Haftalık plan --- */
+
+/** Kesinleşen plan kilitli; o haftanın kararı artık Next Day'lere ve kollara dağıldı. */
+export const haftalikDuzenler = (k: Kisi | undefined, h: HaftalikPlan) => yapabilir(k, "haftalikDuzenle") && h.durum !== "kesinlesti";
+
+/** Toplantının kararı: planlamacı kaydediyor, toplantıyı yöneten yönetici de verebiliyor. */
+export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) =>
+  h.durum === "toplantida" && (yapabilir(k, "haftalikDuzenle") || yapabilir(k, "haftalikKesinlestir"));
+
+/** Ön incelemeyi kim yapar: kolu kapsamında olan müdür; ekonomi kaleminde Ekonomi birimi de. */
+export const onIncelemeci = (k: Kisi | undefined, kalem: Pick<HaftalikKalem, "tur">): boolean => {
+  if (!k || !yapabilir(k, "onInceleme")) return false;
+  if (KOL_BIRIMLERI[k.birim]) return KOL_BIRIMLERI[k.birim]!.includes(kalem.tur);
+  const ks = kapsam(k);
+  return !!ks?.mudur && ks.kollar.includes(kalem.tur);
+};
 
 /* --- Üretim adımları: sahibi akıştan --- */
 
@@ -173,12 +210,15 @@ export const hareketGorebilir = (k: Kisi | undefined, h: Hareket, d: Durum): boo
 /**
  * Bildirim ayrıca saklanmıyor: hareket kaydı kimin önüne iş düşürdüyse
  * (veri.sahip) o birime, muhabirse kendi işindeki her harekete bildirim.
- * Bir kişiye özel olan (veri.kime: talimatı veren yönetici) yalnız ona.
+ * Kişilere özel olan (veri.kime, virgülle ayrılmış: talimatı veren
+ * yönetici, ön incelemedeki müdürler) yalnız onlara; yanında birim de
+ * yazılıysa (ön incelemede Ekonomi) o birime de.
  */
 export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   if (h.kisiId === k.id) return false;
-  if (h.veri?.kime) return h.veri.kime === k.id;
-  if (k.birim === "muhabir") return hareketGorebilir(k, h, d);
+  const kime = h.veri?.kime ? h.veri.kime.split(",") : [];
+  if (kime.includes(k.id)) return true;
+  if (k.birim === "muhabir") return !kime.length && hareketGorebilir(k, h, d);
   return h.veri?.sahip === k.birim;
 };
 
@@ -200,7 +240,7 @@ const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
 export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   ana: BIRIMLER,
   nextday: MASA,
-  haftalik: ["planlama", "newsdesk", "program", "yonetim"],
+  haftalik: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
   aylik: ["planlama", "program", "yonetim"],
   ozel: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
   muhabirler: MASA,
@@ -220,7 +260,7 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   metinkontrol: ["output", "newsdesk", "planlama", "yonetim"],
   video: ["newsdesk", "media", "planlama", "yonetim"],
   ucretler: ["newsdesk", "yonetim"],
-  raporlar: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
+  raporlar: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "yonetim"],
   ayarlar: BIRIMLER,
   profil: BIRIMLER,
   plan: BIRIMLER,

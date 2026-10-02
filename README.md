@@ -20,8 +20,8 @@ npm run preview  # derlenmiş hali yerelde
 ## Bu prototipte çalışanlar
 
 - **Demo giriş:** kişi seçiliyor. Ana sayfa ve menü birime göre şekilleniyor
-  (Planlama, Newsdesk, News Gathering, Programlar, Output/dil, Media Manager,
-  Muhabir, Yönetim).
+  (Planlama, Newsdesk, News Gathering, Programlar, Ekonomi, Output/dil,
+  Media Manager, Muhabir, Yönetim).
 - **Next Day planı:**
   - liste ve yeni plan; tarih varsayılan olarak yarın
   - önceki planı bölüm seçerek kopyalama
@@ -43,6 +43,33 @@ npm run preview  # derlenmiş hali yerelde
   - gelen öneriler ve değerlendirme
   - mevcut ya da yeni başlığa bağlayıp plana ekleme
   - muhabirlere geri dönüş
+- **Haftalık plan** (Cumartesi–Cuma, Perşembe toplantısı):
+  - haftalık öneri çağrısı, kurumun e-postası gibi: dönem kırmızı, yanıt
+    adresi Kime'deki planlama adresi, altında muhabirin dolduracağı tablo
+    (الدولة | المدينة, اليوم, التاريخ, الحدث و أهميته, مقترح التعامل مع
+    الحدث). Konudaki `HP-` etiketi yanıtı o haftanın önerisi yapıyor;
+    Next Day planlarına karışmıyor. Muhabir uygulamadan da haftalık öneri
+    gönderebiliyor
+  - plan ekranı: gelen öneriler (gündeme alma ya da ret), muhabir
+    hareketleri, haftanın ana dosyaları, gün gün gündem (dosyalara göre
+    gruplu; ad, yer, metin, biçim, muhabirler, not) ve zamana bağlı
+    olmayan dosya
+  - ön inceleme: stok öneriler toplantıdan önce kolun yöneticisine gidiyor
+    (feature: Input müdürü, ekonomi: Ekonomi birimi ve Input müdürü,
+    program: Program müdürü). Yönetici görüş yazıyor ya da gerekçeyle
+    reddediyor; reddedilen gündemden düşüyor
+  - toplantı: her kalem kabul, bilgi (لا نتابع) ya da ret; plan
+    kesinleşince kilitleniyor
+  - kabul edilen haber gününün Next Day planına kendiliğinden, onaylı paket
+    olarak giriyor ("Haftalık plandan" rozeti); plan o gün henüz yoksa
+    açıldığında geliyor. Feature, ekonomi ve program kolunun sahibine
+    plansız onaylı paket olarak düşüyor
+  - muhabirlere kabul/ret geri dönüşü
+  - çıktı: kurumun "الأجندة الأسبوعية" belgesinin düzeninde; yazdır/PDF,
+    metni kopyala, Word (.doc). E-postayı planlamacı kendisi gönderiyor
+- **Ekonomi birimi:** ön inceleme bekleyen ekonomi önerileri, haftalık
+  planın ekonomi kalemleri, ekonomi paketleri. Üretimde masası yok; ekonomi
+  paketini Planlama'nın feature/stok ekibi yürütüyor.
 - **Merkezi haber başlıkları havuzu.**
 - **Muhabir profili ve listesi:**
   - fotoğraf (yüklenebiliyor, tarayıcıda küçültülüp saklanıyor), ad,
@@ -63,7 +90,12 @@ npm run preview  # derlenmiş hali yerelde
   - günün sayıları, birim kartları ve gerekçesi yazılı durum ışığı
     (geciken iş, bekleyen karar ya da "yolunda")
   - dikkat gerektirenler: geciken ve öncelikli işler, onay ya da devir
-    bekleyen plan, saha talepleri, bekleyen talimatlar
+    bekleyen plan, kesinleşme bekleyen haftalık plan, saha talepleri,
+    bekleyen talimatlar
+  - planların durumu sekmelerde: günlük (Next Day), haftalık, özel yayın,
+    saha görevlendirmeleri. Satırda yalnız ad, durum ve ilerleme; basınca
+    aşamaları ve birkaç sayıyı gösteren pencere açılıyor
+  - ön inceleme bekleyen öneriler (kolu kapsamındaysa)
   - ayrıntı için birimin kendi çalışma ekranına inme
   - müdahale: işi öncelikli yapma ve yönetici notu; ikisi de işi o an
     yürüten birime bildirim
@@ -89,11 +121,15 @@ npm run preview  # derlenmiş hali yerelde
   e-postasından (Outlook taslağı ya da telefon).
 - Kurum içi giriş, ortak veri tabanı, çok kullanıcılı eşzamanlı çalışma.
   Veri yalnız bu tarayıcıda (`localStorage`) duruyor.
-- Word/PDF dışa aktarma. Şimdilik yazdır → PDF olarak kaydet.
+- Next Day çıktısında Word dışa aktarma (haftalık çıktıda var). Şimdilik
+  yazdır → PDF olarak kaydet.
 - Dosya yükleme ve dosya deposu.
 - iNews ve medya sistemi entegrasyonu. Klip kodu elle giriliyor.
-- Haftalık planı düzenleme, Next Day'e aktarma ve feature/program kollarına
-  devir. Haftalık, aylık ve özel yayın şimdilik temel liste.
+- Feature/stok üretimi (feature takip ekibi, montaj kontrolü ve yükleme),
+  "Stok haberler" sekmesi ve yayınlanan arşivi: sonraki adım. Aylık ve
+  özel yayın şimdilik temel liste.
+- Haftalık plan e-postasının uygulamadan gönderilmesi; şimdilik planlamacı
+  çıktıyı alıp kendisi gönderiyor.
 - News Gathering talep, onay ve seyahat lojistiği; Program Birimi'nin kendi
   akışı.
 - Ücret girişi, onayı ve ödeme takibi.
@@ -106,7 +142,12 @@ npm run preview  # derlenmiş hali yerelde
 - Feature/ekonomi kolunda yükleme Media Manager'da, takip Planlama'da.
 - Muhabir kendi ücretini görüyor.
 - Vardiya kodu GMT başlangıç saati: `04G` = 04:00 GMT.
-- Plan onayı Planlama yöneticisinde ya da Yönetim'de.
+- Plan onayı Planlama yöneticisinde ya da Yönetim'de; haftalık planı da
+  onlar kesinleştiriyor.
+- Haftalık toplantıda kabul edilen haber Next Day'e onaylı paket olarak,
+  planlamacının ayrıca onayı olmadan geçiyor. Yalnız canlı bağlantı olan
+  kalemde paket yok, muhabir başlığın altında. Gündeme hiç alınmamış
+  haftalık öneri plan kesinleşince reddedilmiş sayılıyor.
 - Yönetici paketlerde kola göre sorumlu: haber kolu hangi birimin
   masasında olursa olsun Input müdürünün. Birim yöneticisi yalnız o an
   kendi masasındaki işe müdahale eder.

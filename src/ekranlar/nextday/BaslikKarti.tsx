@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, CircleCheck, Hourglass, Lightbulb, Pencil, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, useDil } from "../../dil";
 import { paketDurum, paketSil, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { kisiAr, satir, sehirAr } from "../../etiketler";
@@ -165,6 +165,7 @@ export default function BaslikKarti({
                     </a>
                     <small>
                       {p.oncelikli && <OncelikRozeti />}
+                      {p.haftalikKalemId && <HaftalikRozeti />}
                       <PaketDurumRozeti paket={p} />
                       <span>{p.kod}</span>
                       {p.yayin && <span>· {t("yayin")} {saatYaz(p.yayin, dil)}</span>}

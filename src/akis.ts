@@ -141,9 +141,15 @@ export const asamaBul = (p: Paket): number | null => {
   return 0;
 };
 
-/** Şu an işi elinde tutan birim; bitmiş ya da iptal edilmiş pakette kimse. */
+/**
+ * Şu an işi elinde tutan birim; bitmiş ya da iptal edilmiş pakette kimse.
+ * Haftalık toplantıda kabul edilen, bir Next Day planına bağlı olmayan
+ * paket kolun sahibinde bekliyor: feature/ekonomi Planlama'nın stok
+ * ekibinde, program Program biriminde.
+ */
 export const paketSahibi = (p: Paket): Birim | null => {
   if (p.durum === "uretimde" && p.adim) return adimSahibi(p.adim as UretimAdimi, p.tur);
+  if (p.durum === "onaylandi" && !p.planId) return KOL_SAHIBI[p.tur];
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
   return null;
 };

@@ -1,5 +1,6 @@
-import { gunAdi, metin } from "./dil";
-import { SEHIRLER, type Cagri, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
+import { aralikYaz, gunAdi, metin } from "./dil";
+import { gunEkle } from "./tarih";
+import { SEHIRLER, type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
 
 /**
  * Öneri çağrısının e-posta tarafı.
@@ -20,28 +21,63 @@ import { SEHIRLER, type Cagri, type Durum, type Kisi, type Oneri, type Yanit } f
 /** Planlama grubu adresi örnekte kurgusal; gerçeği çağrı ekranında giriliyor, bu herkese açık sitede yazmıyor. */
 export const ORNEK_PLANLAMA_ADRESI = "planning@ornek.local";
 
-/** Konudaki eşleştirme etiketi. "RE:", "FW:", "رد:" eklense de etiket kalıyor. */
-export const etiketUret = (tarih: string) => `ND-${tarih.replace(/-/g, "")}`;
-export const etiketBul = (konu: string) => konu.match(/ND-\d{8}/)?.[0];
+/*
+ * Konudaki eşleştirme etiketi: Next Day'de planın günü (ND-20260930),
+ * haftalıkta haftanın Cumartesi'si (HP-20261003). "RE:", "FW:", "رد:"
+ * eklense de etiket kalıyor.
+ */
+const ON_EK: Record<CagriTuru, string> = { nextday: "ND", haftalik: "HP" };
+export const etiketUret = (tarih: string, tur: CagriTuru = "nextday") => `${ON_EK[tur]}-${tarih.replace(/-/g, "")}`;
+export const etiketBul = (konu: string) => konu.match(/(ND|HP)-\d{8}/)?.[0];
 
 /** Kurumun e-postasındaki tarih biçimi: 30.09.2026. */
 const noktali = (tarih: string) => tarih.split("-").reverse().join(".");
 
-export const cagriKonusu = (tarih: string) =>
-  `${metin("cagriKonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih) })} [${etiketUret(tarih)}]`;
+/** Haftalık e-postadaki dönem: "10 - 16 أكتوبر"; kurumun e-postasında kırmızı. */
+export const haftaAraligiAr = (bas: string) => aralikYaz(bas, gunEkle(bas, 6), "ar");
+
+export const cagriKonusu = (tarih: string, tur: CagriTuru = "nextday") =>
+  tur === "haftalik"
+    ? `${metin("haftalikCagriKonu", "ar", { aralik: haftaAraligiAr(tarih) })} [${etiketUret(tarih, tur)}]`
+    : `${metin("cagriKonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih) })} [${etiketUret(tarih)}]`;
 
 export const cagriGovdesi = (tarih: string, sonSaat: string) =>
   metin("cagriSablonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih), saat: sonSaat });
 
+/** Haftalık çağrı: kurumun e-postası; yanıt adresi Kime'deki planlama adresi. */
+export const haftalikGovde = (bas: string, adres: string) => metin("haftalikCagriSablonu", "ar", { aralik: haftaAraligiAr(bas), adres });
+
+/** Haftalık e-postanın ekindeki tablo: muhabir her olayı bir satıra yazıyor. */
+export const HAFTALIK_TABLO = ["الدولة | المدينة", "اليوم", "التاريخ", "الحدث و أهميته", "مقترح التعامل مع الحدث"];
+
 const kac = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** Outlook'ta sağdan sola açılan gövde; "ملاحظة هامة" kurumun e-postasındaki gibi kırmızı. */
-export const govdeHtml = (govde: string) =>
+const KIRMIZI = "#c00000";
+
+/* Kurumun e-postasındaki tablo: kırmızı başlıklar, muhabirin dolduracağı üç boş satır. */
+const tabloHtml = (basliklar: string[]) => {
+  const hucre = "border:1px solid #808080;padding:6px 10px;vertical-align:top";
+  const bas = basliklar.map((b) => `<th style="${hucre};background:#efe7e1;color:${KIRMIZI};text-align:right">${kac(b)}</th>`).join("");
+  const bos = `<tr>${basliklar.map(() => `<td style="${hucre};height:28px">&nbsp;</td>`).join("")}</tr>`;
+  return `<table dir="rtl" style="border-collapse:collapse;margin-top:12px;font-size:12pt"><tr>${bas}</tr>${bos.repeat(3)}</table>`;
+};
+
+/**
+ * Outlook'ta sağdan sola açılan gövde. "ملاحظة هامة" ve haftalık dönem
+ * kurumun e-postasındaki gibi kırmızı; haftalıkta altında tablo.
+ */
+export const govdeHtml = (govde: string, ek: { vurgu?: string; tablo?: string[] } = {}) =>
   `<div dir="rtl" lang="ar" style="font-family:Calibri,Arial,sans-serif;font-size:14pt;text-align:right">` +
   govde
     .split("\n")
-    .map((s) => (s.trim() ? `<p style="margin:0 0 8px">${kac(s).replace(/^(ملاحظة هامة\s*:?)/, '<b style="color:#c00000">$1</b>')}</p>` : "<p>&nbsp;</p>"))
+    .map((s) => {
+      if (!s.trim()) return "<p>&nbsp;</p>";
+      let h = kac(s).replace(/^(ملاحظة هامة\s*:?)/, `<b style="color:${KIRMIZI}">$1</b>`);
+      if (ek.vurgu) h = h.replace(kac(ek.vurgu), `<b style="color:${KIRMIZI}">${kac(ek.vurgu)}</b>`);
+      return `<p style="margin:0 0 8px">${h}</p>`;
+    })
     .join("") +
+  (ek.tablo ? tabloHtml(ek.tablo) : "") +
   `</div>`;
 
 const utf8Base64 = (s: string) => {
@@ -55,6 +91,10 @@ export interface GidenEposta {
   bcc: string[];
   konu: string;
   govde: string;
+  /** Gövdede kırmızı yazılacak parça (haftalık dönem). */
+  vurgu?: string;
+  /** Gövdenin altındaki tablonun başlıkları (haftalık çağrı). */
+  tablo?: string[];
 }
 
 /*
@@ -70,7 +110,7 @@ export const emlUret = (e: GidenEposta) => {
     else satirlar.push(adres);
     return satirlar;
   }, []);
-  const govde = utf8Base64(`<html><body>${govdeHtml(e.govde)}</body></html>`).replace(/.{76}/g, "$&\r\n");
+  const govde = utf8Base64(`<html><body>${govdeHtml(e.govde, e)}</body></html>`).replace(/.{76}/g, "$&\r\n");
   return [
     `To: ${e.kime}`,
     `Bcc: ${bcc.join(",\r\n ")}`,
@@ -84,9 +124,15 @@ export const emlUret = (e: GidenEposta) => {
   ].join("\r\n");
 };
 
+/*
+ * Düz metinde tablo yok: başlıklar muhabirin doldurup yanıtlayacağı bir
+ * form bloğu olarak gövdenin altına ekleniyor.
+ */
+export const duzMetin = (e: Pick<GidenEposta, "govde" | "tablo">) => (e.tablo ? `${e.govde}\n\n${e.tablo.map((b) => `${b}:`).join("\n")}` : e.govde);
+
 /** Telefondaki e-posta uygulaması (Gmail, Outlook, Mail) için; gövde düz metin. */
 export const mailtoUret = (e: GidenEposta) =>
-  `mailto:${encodeURIComponent(e.kime)}?bcc=${e.bcc.map(encodeURIComponent).join(",")}&subject=${encodeURIComponent(e.konu)}&body=${encodeURIComponent(e.govde)}`;
+  `mailto:${encodeURIComponent(e.kime)}?bcc=${e.bcc.map(encodeURIComponent).join(",")}&subject=${encodeURIComponent(e.konu)}&body=${encodeURIComponent(duzMetin(e))}`;
 
 /* --- Gelen yanıt --- */
 
@@ -160,7 +206,8 @@ export const yanittanOneriTaslagi = (y: Yanit, kisi: Kisi, cagri: Cagri, id: str
     sahaGerekli: false,
     zaman: y.zaman,
     kanal: "eposta",
-    hedefTarih: cagri.tarih,
+    // Haftalık çağrının yanıtı o haftanın önerisi; Next Day planlarına karışmıyor.
+    ...(cagri.tur === "haftalik" ? { hafta: cagri.tarih } : { hedefTarih: cagri.tarih }),
     durum: "yeni",
     cagriId: cagri.id,
     yanitId: y.id,

@@ -2,7 +2,7 @@ import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Wor
 import { useState } from "react";
 import { ADIM_ADI, ADIM_KUTUSU, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
-import { AsamaBuyuk, Avatar, BicimRozeti, Bos, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum } from "../eylemler";
@@ -46,7 +46,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           </h1>
           <p>
             {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} />{" "}
-            {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />}
+            {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />} {paket.haftalikKalemId && <HaftalikRozeti />}
           </p>
         </div>
       </header>

@@ -1,9 +1,12 @@
-import { ilkAdim, paketSahibi, sonrakiAdim, type UretimAdimi } from "./akis";
+import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { simdi } from "./tarih";
+import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { haftaBasi, simdi } from "./tarih";
 import {
   SEHIRLER,
+  cagriTuru,
   getir,
+  haftaBul,
   kaydet,
   kimlik,
   kisiBul,
@@ -19,7 +22,11 @@ import {
   type Hareket,
   type IcerikTuru,
   type Bicim,
+  type CagriTuru,
+  type HaftalikKalem,
+  type HaftalikPlan,
   type Kanal,
+  type Karar,
   type Kisi,
   type NextDayPlan,
   type Oneri,
@@ -33,7 +40,10 @@ import {
 } from "./veri";
 import {
   adimYapabilir,
+  haftalikDuzenler,
+  kararVerebilir,
   mudahaleEdebilir,
+  onIncelemeci,
   paketGorebilir,
   planIcerikDuzenler,
   planOperasyonDuzenler,
@@ -81,7 +91,10 @@ const yeniKod = (d: Durum): [string, Durum] => {
  * ya da telefon), uygulama göndermiyor. Kayıt muhabir ekranına açık çağrı
  * düşürüyor ve gelen yanıtların eşleşeceği etiketi ve BCC listesini tutuyor.
  */
-export const cagriKaydet = (ben: Kisi, g: { tarih: string; metin: string; sonSaat: string; kime: string; bcc: string[]; etiket: string }) => {
+export const cagriKaydet = (
+  ben: Kisi,
+  g: { tur: CagriTuru; tarih: string; metin: string; sonSaat: string; kime: string; bcc: string[]; etiket: string },
+) => {
   if (!yapabilir(ben, "cagriHazirla") || !g.kime.trim()) return false;
   let d = getir();
   /* Aynı plan için ikinci kez açılırsa yeni çağrı değil güncelleme: yanıtlar tek etikete bağlanıyor. */
@@ -92,9 +105,18 @@ export const cagriKaydet = (ben: Kisi, g: { tarih: string; metin: string; sonSaa
   }
   const id = kimlik("c");
   d = { ...d, cagrilar: [{ id, olusturan: ben.id, zaman: simdi(), ...g }, ...d.cagrilar] };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "cagriHazirlandi", veri: { tarih: g.tarih, sahip: "muhabir" } }));
+  const haftaId = g.tur === "haftalik" ? d.haftalik.find((h) => h.baslangic === g.tarih)?.id : undefined;
+  kaydet(
+    hareketYaz(d, {
+      kisiId: ben.id,
+      tip: "cagriHazirlandi",
+      haftaId,
+      veri: { tarih: g.tarih, sahip: "muhabir", ...(g.tur === "haftalik" ? { hafta: "1" } : {}) },
+    }),
+  );
   return true;
 };
+
 
 export interface OneriGirdisi {
   muhabirId: string;
@@ -106,16 +128,20 @@ export interface OneriGirdisi {
   bicim?: Bicim;
   sahaGerekli: boolean;
   kanal: Kanal;
-  hedefTarih: string;
+  /** Biri dolu: Next Day önerisinde planın günü, haftalık öneride haftanın Cumartesi'si. */
+  hedefTarih?: string;
+  hafta?: string;
 }
 
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
-  if (!yapabilir(ben, "oneriGonder")) return null;
+  if (!yapabilir(ben, "oneriGonder") || (!g.hafta && !g.hedefTarih)) return null;
   // Muhabir yalnız kendi adına gönderir; Planlama e-postayla ya da telefonla gelen öneriyi muhabir adına girer.
   const muhabirId = ben.birim === "muhabir" ? ben.id : g.muhabirId;
   const kanal: Kanal = ben.birim === "muhabir" ? "sistem" : g.kanal;
   let d = getir();
-  const cagri = d.cagrilar.find((c) => c.tarih === g.hedefTarih);
+  const cagri = g.hafta
+    ? d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih === g.hafta)
+    : d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih === g.hedefTarih);
   const id = kimlik("o");
   d = {
     ...d,
@@ -132,7 +158,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
         sahaGerekli: g.sahaGerekli,
         zaman: simdi(),
         kanal,
-        hedefTarih: g.hedefTarih,
+        hedefTarih: g.hafta ? undefined : g.hedefTarih,
+        hafta: g.hafta,
         durum: "yeni",
         cagriId: cagri?.id,
       },
@@ -294,22 +321,410 @@ export const oneriPlanaEkle = (
   return true;
 };
 
-/** Toplantıdan sonra muhabirlere kabul/ret bilgisi. E-posta yerine bildirim; gönderim entegrasyonu sonra. */
-export const geriDonusGonder = (ben: Kisi, planId: string): number => {
+/** Kararı verilmiş, muhabire henüz bildirilmemiş öneri. */
+export const geriDonusBekliyor = (o: Oneri) => !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum);
+
+const geriDonusYaz = (ben: Kisi, kapsamda: (o: Oneri) => boolean, bag: { planId?: string; haftaId?: string }): number => {
   let d = getir();
-  const plan = planBul(d, planId);
-  if (!plan || !yapabilir(ben, "geriDonus")) return 0;
-  const hedef = d.oneriler.filter(
-    (o) => o.hedefTarih === plan.tarih && !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum),
-  );
+  const hedef = d.oneriler.filter((o) => kapsamda(o) && geriDonusBekliyor(o));
   if (!hedef.length) return 0;
   const ids = new Set(hedef.map((o) => o.id));
   d = { ...d, oneriler: d.oneriler.map((o) => (ids.has(o.id) ? { ...o, geriDonus: true } : o)) };
   for (const o of hedef) {
-    d = hareketYaz(d, { kisiId: ben.id, tip: "geriDonus", oneriId: o.id, planId, veri: { sonuc: o.durum } });
+    d = hareketYaz(d, { kisiId: ben.id, tip: "geriDonus", oneriId: o.id, ...bag, veri: { sonuc: o.durum } });
   }
   kaydet(d);
   return hedef.length;
+};
+
+/** Toplantıdan sonra muhabirlere kabul/ret bilgisi. E-posta yerine bildirim; gönderim entegrasyonu sonra. */
+export const geriDonusGonder = (ben: Kisi, planId: string): number => {
+  const plan = planBul(getir(), planId);
+  if (!plan || !yapabilir(ben, "geriDonus")) return 0;
+  return geriDonusYaz(ben, (o) => o.hedefTarih === plan.tarih, { planId });
+};
+
+/** Haftalık toplantının kararı muhabire: plan kesinleştikten sonra. */
+export const haftalikGeriDonus = (ben: Kisi, haftaId: string): number => {
+  const h = haftaBul(getir(), haftaId);
+  if (!h || h.durum !== "kesinlesti" || !yapabilir(ben, "geriDonus")) return 0;
+  return geriDonusYaz(ben, (o) => o.hafta === h.baslangic, { haftaId });
+};
+
+/* --- Haftalık plan --- */
+
+const haftaGuncelle = (d: Durum, id: string, f: (h: HaftalikPlan) => HaftalikPlan): Durum => ({
+  ...d,
+  haftalik: d.haftalik.map((h) => (h.id === id ? f(h) : h)),
+});
+
+const kalemGuncelle = (d: Durum, haftaId: string, kalemId: string, f: (k: HaftalikKalem) => HaftalikKalem): Durum =>
+  haftaGuncelle(d, haftaId, (h) => ({ ...h, kalemler: h.kalemler.map((k) => (k.id === kalemId ? f(k) : k)) }));
+
+/** Verilen günü içeren haftanın planı; aynı hafta için ikinci plan açılmıyor. */
+export const haftalikOlustur = (ben: Kisi, gun: string): { id: string; vardi: boolean } | null => {
+  if (!yapabilir(ben, "haftalikDuzenle")) return null;
+  const baslangic = haftaBasi(gun);
+  let d = getir();
+  const var_ = d.haftalik.find((h) => h.baslangic === baslangic);
+  if (var_) return { id: var_.id, vardi: true };
+  const id = kimlik("hf");
+  const plan: HaftalikPlan = { id, baslangic, durum: "hazirlik", anaKonular: [], kalemler: [], olusturan: ben.id, olusturma: simdi() };
+  d = { ...d, haftalik: [plan, ...d.haftalik] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikOlusturuldu", haftaId: id, veri: { tarih: baslangic } }));
+  return { id, vardi: false };
+};
+
+/** Hazırlık ile toplantı arasında gidip gelebiliyor; kesinleştirme ayrı eylem. */
+export const haftalikDurum = (ben: Kisi, id: string, yeni: "hazirlik" | "toplantida") => {
+  let d = getir();
+  const h = haftaBul(d, id);
+  if (!h || !haftalikDuzenler(ben, h) || h.durum === yeni) return false;
+  d = haftaGuncelle(d, id, (x) => ({ ...x, durum: yeni }));
+  const tip = yeni === "toplantida" ? "haftalikToplantida" : "haftalikHazirliga";
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip, haftaId: id, veri: { tarih: h.baslangic, sahip: yeni === "toplantida" ? "yonetim" : "" } }));
+  return true;
+};
+
+/* İçerik düzenlemeleri aynı kalıpta: yetki ve kilit tek yerde. */
+const haftaIcerik = (ben: Kisi, id: string, f: (h: HaftalikPlan) => HaftalikPlan | null) => {
+  const d = getir();
+  const h = haftaBul(d, id);
+  if (!h || !haftalikDuzenler(ben, h)) return false;
+  const yeni = f(h);
+  if (!yeni) return false;
+  kaydet(haftaGuncelle(d, id, () => yeni));
+  return true;
+};
+
+export const anaKonuKaydet = (ben: Kisi, haftaId: string, g: { id?: string; baslik: string; metin: string }) =>
+  haftaIcerik(ben, haftaId, (h) => {
+    const temiz = { baslik: g.baslik.trim(), metin: g.metin.trim() };
+    if (!temiz.baslik) return null;
+    return g.id
+      ? { ...h, anaKonular: h.anaKonular.map((a) => (a.id === g.id ? { ...a, ...temiz } : a)) }
+      : { ...h, anaKonular: [...h.anaKonular, { id: kimlik("ak"), ...temiz }] };
+  });
+
+export const anaKonuSil = (ben: Kisi, haftaId: string, id: string) =>
+  haftaIcerik(ben, haftaId, (h) => ({ ...h, anaKonular: h.anaKonular.filter((a) => a.id !== id) }));
+
+export const anaKonuTasi = (ben: Kisi, haftaId: string, id: string, yon: -1 | 1) =>
+  haftaIcerik(ben, haftaId, (h) => {
+    const i = h.anaKonular.findIndex((a) => a.id === id);
+    const j = i + yon;
+    if (i < 0 || j < 0 || j >= h.anaKonular.length) return null;
+    const yeni = [...h.anaKonular];
+    [yeni[i], yeni[j]] = [yeni[j], yeni[i]];
+    return { ...h, anaKonular: yeni };
+  });
+
+export interface KalemGirdisi {
+  id?: string;
+  tarih?: string;
+  baslikId?: string;
+  /** Dosya havuzda yoksa açılıyor. */
+  yeniBaslik?: string;
+  baslik?: string;
+  yer?: string;
+  metin: string;
+  tur: IcerikTuru;
+  bicimler: Bicim[];
+  muhabirler: string[];
+  not?: string;
+}
+
+/* Yeni dosya havuza giriyor: Next Day'de de aynı başlık kullanılacak. */
+const dosyaAc = (d: Durum, ad?: string): [string | undefined, Durum] => {
+  if (!ad?.trim()) return [undefined, d];
+  const id = kimlik("b");
+  return [id, { ...d, basliklar: [...d.basliklar, { id, ad: ad.trim(), aktif: true }] }];
+};
+
+/** Kalemi ekler ya da düzeltir; karar, ön inceleme ve öneri bağı düzeltmede korunuyor. */
+export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi): string | null => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !haftalikDuzenler(ben, h) || !g.metin.trim()) return null;
+  if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
+  let baslikId = g.baslikId || undefined;
+  if (!baslikId && g.yeniBaslik?.trim()) {
+    if (!yapabilir(ben, "baslikYonet")) return null;
+    [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+  }
+  const alanlar = {
+    tarih: g.tarih || undefined,
+    baslikId,
+    baslik: g.baslik?.trim() || undefined,
+    yer: g.yer?.trim() || undefined,
+    metin: g.metin.trim(),
+    tur: g.tur,
+    bicimler: g.bicimler,
+    muhabirler: g.muhabirler,
+    not: g.not?.trim() || undefined,
+  };
+  if (g.id) {
+    const id = g.id;
+    if (!h.kalemler.some((k) => k.id === id)) return null;
+    kaydet(kalemGuncelle(d, haftaId, id, (k) => ({ ...k, ...alanlar })));
+    return id;
+  }
+  const id = kimlik("hk");
+  kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: [...x.kalemler, { id, ...alanlar, karar: "bekliyor" }] })));
+  return id;
+};
+
+/** Kalem silinince öneri yeniden değerlendirmeye dönüyor; önerinin kendisi kalıyor. */
+export const kalemSil = (ben: Kisi, haftaId: string, kalemId: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || !haftalikDuzenler(ben, h)) return false;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.filter((y) => y.id !== kalemId) }));
+  if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "degerlendiriliyor" } : o)) };
+  kaydet(d);
+  return true;
+};
+
+/** Haftalık öneriyi gündeme alır: bir güne ya da zamana bağlı olmayan dosyaya, bir dosyanın altına. */
+export const oneriGundemeEkle = (
+  ben: Kisi,
+  haftaId: string,
+  oneriId: string,
+  g: { tarih?: string; baslikId?: string; yeniBaslik?: string },
+): string | null => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const o = oneriBul(d, oneriId);
+  if (!h || !o || o.hafta !== h.baslangic || !haftalikDuzenler(ben, h) || !yapabilir(ben, "oneriDegerlendir")) return null;
+  if (h.kalemler.some((k) => k.oneriId === o.id) || o.durum === "reddedildi") return null;
+  if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
+  let baslikId = g.baslikId || undefined;
+  if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+  const id = kimlik("hk");
+  const kalem: HaftalikKalem = {
+    id,
+    tarih: g.tarih || undefined,
+    baslikId,
+    baslik: o.haberBasligi,
+    metin: o.gelisme,
+    tur: o.tur,
+    bicimler: o.bicim ? [o.bicim] : [],
+    muhabirler: o.muhabirId ? [o.muhabirId] : [],
+    oneriId: o.id,
+    karar: "bekliyor",
+  };
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: [...x.kalemler, kalem] }));
+  d = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "degerlendiriliyor", baslikId: baslikId ?? x.baslikId } : x)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDegerlendirmede", oneriId: o.id, haftaId }));
+  return id;
+};
+
+/* --- Ön inceleme --- */
+
+/** Stok önerileri toplantıdan önce kolun yöneticisine: müdürlere kişi olarak, Ekonomi'ye birim olarak bildirim. */
+export const onIncelemeyeGonder = (ben: Kisi, haftaId: string, kalemIdleri: string[]): number => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !haftalikDuzenler(ben, h)) return 0;
+  const secilen = h.kalemler.filter((k) => kalemIdleri.includes(k.id) && onIncelemeyeGidebilir(k));
+  if (!secilen.length) return 0;
+  const zaman = simdi();
+  const ids = new Set(secilen.map((k) => k.id));
+  d = haftaGuncelle(d, haftaId, (x) => ({
+    ...x,
+    kalemler: x.kalemler.map((k) => (ids.has(k.id) ? { ...k, onInceleme: { durum: "gonderildi", gonderen: ben.id, zaman, gorusler: [] } } : k)),
+  }));
+  for (const k of secilen) {
+    const kime = d.kisiler.filter((x) => x.birim === "yonetim" && onIncelemeci(x, k)).map((x) => x.id);
+    const birim = d.kisiler.find((x) => x.birim !== "yonetim" && onIncelemeci(x, k))?.birim;
+    d = hareketYaz(d, { kisiId: ben.id, tip: "onIncelemeyeGonderildi", haftaId, veri: { kalem: k.id, kime: kime.join(","), sahip: birim ?? "" } });
+  }
+  kaydet(d);
+  return secilen.length;
+};
+
+const incelenen = (ben: Kisi, haftaId: string, kalemId: string) => {
+  const d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || h.durum === "kesinlesti" || k.onInceleme?.durum !== "gonderildi" || !onIncelemeci(ben, k)) return null;
+  return { d, h, k };
+};
+
+export const onIncelemeGorusu = (ben: Kisi, haftaId: string, kalemId: string, metin: string) => {
+  const x = incelenen(ben, haftaId, kalemId);
+  if (!x || !metin.trim()) return false;
+  let d = kalemGuncelle(x.d, haftaId, kalemId, (k) => ({
+    ...k,
+    onInceleme: k.onInceleme && { ...k.onInceleme, gorusler: [...k.onInceleme.gorusler, { kisiId: ben.id, zaman: simdi(), metin: metin.trim() }] },
+  }));
+  d = hareketYaz(d, { kisiId: ben.id, tip: "onIncelemeGorusu", haftaId, veri: { kalem: kalemId, sahip: "planlama" } });
+  kaydet(d);
+  return true;
+};
+
+/** Toplantı olmadan ret: gerekçe zorunlu; kalem gündemden düşüyor, öneri kesinleşince reddedilmiş sayılıyor. */
+export const onIncelemeReddet = (ben: Kisi, haftaId: string, kalemId: string, gerekce: string) => {
+  const x = incelenen(ben, haftaId, kalemId);
+  if (!x || !gerekce.trim()) return false;
+  let d = kalemGuncelle(x.d, haftaId, kalemId, (k) => ({
+    ...k,
+    karar: "ret",
+    onInceleme: k.onInceleme && { ...k.onInceleme, durum: "reddedildi", reddeden: ben.id, gerekce: gerekce.trim() },
+  }));
+  d = hareketYaz(d, { kisiId: ben.id, tip: "onIncelemedeReddedildi", haftaId, veri: { kalem: kalemId, gerekce: gerekce.trim(), sahip: "planlama" } });
+  kaydet(d);
+  return true;
+};
+
+/* --- Toplantı kararı ve kesinleştirme --- */
+
+export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: Karar) => {
+  const d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || !gundemde(k) || !kararVerebilir(ben, h)) return false;
+  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar })));
+  return true;
+};
+
+/** Toplantının sonunda kalan kalemlerin hepsine kabul. */
+export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
+  const d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !kararVerebilir(ben, h)) return 0;
+  const kalan = new Set(kararBekleyenler(h).map((k) => k.id));
+  if (!kalan.size) return 0;
+  kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.map((k) => (kalan.has(k.id) ? { ...k, karar: "kabul" } : k)) })));
+  return kalan.size;
+};
+
+/*
+ * Haftalıktan Next Day'e aktarım tek yerde: hem kesinleştirmede (o günün
+ * planı açıksa) hem plan sonradan açılınca. Dosya o planın başlığı oluyor,
+ * muhabirleri başlığın altına, metni gelişme olarak düşüyor; muhabiri ve
+ * paket biçimi olan kalemde onaylı paket doğuyor. Yalnız canlı bağlantıysa
+ * paket yok, muhabir başlığın altında. Dosyası olmayan kalem takiplere.
+ */
+const haftaliktanAktar = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
+  let pbId: string | undefined;
+  if (k.baslikId) {
+    const var_ = plan.basliklar.find((b) => b.baslikId === k.baslikId);
+    const pb = var_ ?? { id: kimlik("pb"), baslikId: k.baslikId, muhabirler: [] };
+    pbId = pb.id;
+    const yeniPb = { ...pb, muhabirler: [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))] };
+    d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: var_ ? p.basliklar.map((b) => (b.id === pb.id ? yeniPb : b)) : [...p.basliklar, yeniPb] }));
+  }
+  const muhabirId = k.muhabirler[0];
+  const gelisme: Gelisme = {
+    id: kimlik("g"),
+    planId: plan.id,
+    planBaslikId: pbId,
+    yer: k.yer,
+    metin: k.baslik ? `${k.baslik} / ${k.metin}` : k.metin,
+    kaynakTuru: k.oneriId ? "muhabir" : "diger",
+    kaynakAdi: "",
+    tarih: simdi(),
+    onerenId: k.oneriId ? muhabirId : undefined,
+    oneriId: k.oneriId,
+    haftalikKalemId: k.id,
+  };
+  d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
+
+  let paketId: string | undefined;
+  const bicim = k.bicimler.length ? k.bicimler.find((b) => b !== "canli") : "pkg";
+  if (muhabirId && bicim) {
+    let kod: string;
+    [kod, d] = yeniKod(d);
+    paketId = kimlik("p");
+    const paket: Paket = {
+      id: paketId,
+      kod,
+      planId: plan.id,
+      planBaslikId: pbId,
+      baslik: k.baslik || k.metin,
+      sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+      muhabirId,
+      aciklama: k.metin,
+      tur: k.tur,
+      bicim,
+      durum: "onaylandi",
+      sahaGerekli: false,
+      oneriId: k.oneriId,
+      haftalikKalemId: k.id,
+      notlar: [],
+      olusturma: simdi(),
+      guncelleme: simdi(),
+    };
+    d = { ...d, paketler: [paket, ...d.paketler] };
+  }
+  d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
+  if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, paketId: paketId ?? o.paketId } : o)) };
+  return hareketYaz(d, { kisiId: ben.id, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } });
+};
+
+/* Next Day'e gitmeyen kabul: plansız, onaylı paket; kolun sahibi (stok ekibi, Program) üretime alıyor. */
+const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem): Durum => {
+  const muhabirId = k.muhabirler[0];
+  let kod: string;
+  [kod, d] = yeniKod(d);
+  const paketId = kimlik("p");
+  const paket: Paket = {
+    id: paketId,
+    kod,
+    baslik: k.baslik || k.metin,
+    sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+    muhabirId,
+    aciklama: k.metin,
+    tur: k.tur,
+    bicim: k.bicimler[0],
+    durum: "onaylandi",
+    sahaGerekli: false,
+    oneriId: k.oneriId,
+    haftalikKalemId: k.id,
+    notlar: [],
+    olusturma: simdi(),
+    guncelleme: simdi(),
+  };
+  d = { ...d, paketler: [paket, ...d.paketler] };
+  d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
+  if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
+  return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: KOL_SAHIBI[k.tur] } });
+};
+
+/**
+ * Perşembe toplantısının sonu: plan kilitleniyor ve kabul edilenler
+ * kollara dağılıyor. Karar bekleyen kalem varken kesinleşmiyor.
+ * Haftaya gelen öneriler kalemin kararını alıyor; gündeme hiç alınmamış
+ * öneri reddedilmiş sayılıyor. Muhabire bildirim ayrı düğmeyle (geri dönüş).
+ */
+export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || h.durum !== "toplantida" || !yapabilir(ben, "haftalikKesinlestir") || kararBekleyenler(h).length) return false;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti" }));
+  for (const k of h.kalemler.filter((x) => gundemde(x) && x.karar === "kabul")) {
+    if (k.tur === "haber" && k.tarih) {
+      const plan = d.planlar.find((p) => p.tarih === k.tarih);
+      // Plan henüz yoksa açıldığında çekiyor (planOlustur); onaylanmış ya da devredilmişse elle eklenir.
+      if (plan && (plan.durum === "taslak" || plan.durum === "toplantida")) d = haftaliktanAktar(d, ben, haftaId, k, plan);
+    } else {
+      d = haftaliktanPaket(d, ben, haftaId, k);
+    }
+  }
+  const kalemi = new Map(h.kalemler.filter((k) => k.oneriId).map((k) => [k.oneriId!, k]));
+  d = {
+    ...d,
+    oneriler: d.oneriler.map((o) => {
+      if (o.hafta !== h.baslangic) return o;
+      const k = kalemi.get(o.id);
+      if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.onInceleme?.gerekce ?? o.gerekce } : { ...o, durum: "planaEklendi" };
+      return o.durum === "yeni" || o.durum === "degerlendiriliyor" ? { ...o, durum: "reddedildi" } : o;
+    }),
+  };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic } }));
+  return true;
 };
 
 /* --- Merkezi başlık havuzu --- */
@@ -389,14 +804,19 @@ export const planOlustur = (ben: Kisi, tarih: string, kopya?: KopyaSecimi): { id
           .map((c) => ({ ...c, id: kimlik("cy"), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined }))
       : [];
   d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar] };
-  kaydet(
-    hareketYaz(d, {
-      kisiId: ben.id,
-      tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
-      planId: id,
-      veri: { tarih, ...(kaynak ? { kaynak: kaynak.tarih } : {}) },
-    }),
-  );
+  d = hareketYaz(d, {
+    kisiId: ben.id,
+    tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
+    planId: id,
+    veri: { tarih, ...(kaynak ? { kaynak: kaynak.tarih } : {}) },
+  });
+  // Haftalık toplantıda bu güne kabul edilmiş, henüz aktarılmamış haberler kendiliğinden geliyor.
+  for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
+    for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
+      d = haftaliktanAktar(d, ben, h.id, k, planBul(d, id)!);
+    }
+  }
+  kaydet(d);
   return { id, vardi: false };
 };
 

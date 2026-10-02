@@ -31,6 +31,7 @@ import {
 import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
+import { gorusBekleyenler } from "../haftalik";
 import { paketGorebilir, sayfaGorebilir, siramMi } from "../yetki";
 import Logo from "./Logo";
 
@@ -79,7 +80,8 @@ export const MENU: Grup[] = [
     ad: "mgPlanlama",
     maddeler: [
       { sayfa: "nextday", ad: "mNextday", ikon: CalendarDays },
-      { sayfa: "haftalik", ad: "mHaftalik", ikon: CalendarRange, taslak: true },
+      // Sayı: kişinin önündeki ön inceleme (müdür, Ekonomi).
+      { sayfa: "haftalik", ad: "mHaftalik", ikon: CalendarRange, say: (d, ben) => gorusBekleyenler(d, ben).length },
       { sayfa: "aylik", ad: "mAylik", ikon: Calendar, taslak: true },
       { sayfa: "ozel", ad: "mOzel", ikon: Tv, taslak: true },
     ],

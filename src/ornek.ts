@@ -1,10 +1,11 @@
-import { adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
+import { KOL_SAHIBI, adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
 import { metin } from "./dil";
-import { cagriGovdesi, cagriKonusu, etiketUret, ORNEK_PLANLAMA_ADRESI } from "./eposta";
+import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_ADRESI } from "./eposta";
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
   Baslik,
+  Cagri,
   CanliYayin,
   Durum,
   EkipUyesi,
@@ -12,6 +13,8 @@ import type {
   Gorevlendirme,
   HareketTipi,
   Hareket,
+  HaftalikKalem,
+  HaftalikPlan,
   HazirPaket,
   Bicim,
   IcerikTuru,
@@ -19,7 +22,6 @@ import type {
   NextDayPlan,
   Oneri,
   Paket,
-  PlanKalemi,
   Sehir,
   Toplanti,
   Ucret,
@@ -78,6 +80,9 @@ const KISILER: KisiSatiri[] = [
   ["pr5", "Hiba Mourad", "هبة مراد", "program", "personel", "sunucu", "istanbul"],
   ["pr6", "Yousef Khatib", "يوسف الخطيب", "program", "personel", "sunucu", "istanbul"],
   ["pr7", "Nour Abbas", "نور عباس", "program", "personel", "sunucu", "istanbul"],
+  ["ek1", "Selim Aktaş", "سليم أقطاش", "ekonomi", "yonetici", "yonetici", "istanbul"],
+  ["ek2", "Dalia Fikri", "داليا فكري", "ekonomi", "personel", "editor", "istanbul"],
+  ["ek3", "Kaan Özer", "قاان أوزر", "ekonomi", "personel", "editor", "istanbul"],
   ["ou1", "Hassan Jaber", "حسن جابر", "output", "yonetici", "yonetici", "istanbul"],
   ["ou2", "Samira Taha", "سميرة طه", "output", "personel", "dilDenetmeni", "istanbul"],
   ["ou3", "Adel Mahmoud", "عادل محمود", "output", "personel", "dilDenetmeni", "istanbul"],
@@ -262,6 +267,7 @@ const BASLIKLAR: Baslik[] = [
   { id: "b-ihlaller", ad: "الانتهاكات الإسرائيلية في فلسطين", ulke: "filistin", aktif: true },
   { id: "b-rusya-ukrayna", ad: "الحرب الروسية الأوكرانية", ulke: "ukrayna", aktif: true },
   { id: "b-turk-gundem", ad: "الأجندة التركية", ulke: "turkiye", aktif: true },
+  { id: "b-bosna", ad: "الانتخابات العامة في البوسنة والهرسك", aktif: true },
   { id: "b-yemen", ad: "الصراع في اليمن", ulke: "yemen", aktif: false },
 ];
 
@@ -1166,38 +1172,56 @@ const CANLILAR = (planId: (k: "dun" | "bugun" | "yarin") => string, gun: (n: num
 
 /* --- Haftalık, aylık, özel --- */
 
-type KalemSatiri = [number, string, IcerikTuru, PlanKalemi["ulke"]?, boolean?];
+/*
+ * Haftalık plan kalemi: [gün (Cumartesi=0, null: zamana bağlı olmayan),
+ * dosya, olayın adı, yer, metin, kol, biçimler, muhabirler, not]. Düzen
+ * kurumun haftalık çıktısından; içerik kurgusal.
+ */
+type KalemSatiri = [number | null, string | undefined, string | undefined, string | undefined, string, IcerikTuru, Bicim[], string[], string?];
 
-const HAFTA_KALEMLERI: KalemSatiri[] = [
-  [0, "مفاوضات وقف إطلاق النار في غزة", "haber", "filistin", true],
-  [0, "التحضيرات الانتخابية في سوريا", "haber", "suriye", true],
-  [0, "الحكومة الجديدة في لبنان", "haber", "lubnan"],
-  [0, "OPEC+ وأسعار النفط", "ekonomi", undefined, true],
-  [0, "حوار نهاية الأسبوع", "program"],
-  [1, "الاتصالات الأمريكية الإيرانية", "haber", "iran", true],
-  [1, "الاستعداد للشتاء في أوكرانيا", "haber", "ukrayna"],
-  [1, "بورصات الخليج الأسبوعية", "ekonomi", "katar"],
-  [1, "وثائقي: أبواب القدس", "program", "filistin"],
-  [2, "التعليم في غزة", "haber", "filistin", true],
-  [2, "المعابر الحدودية السورية التركية", "haber", "turkiye"],
-  [2, "بيانات التضخم في تركيا", "ekonomi", "turkiye", true],
-  [2, "أسواق حلب التاريخية", "feature", "suriye"],
-  [3, "التحضير لبث 7 أكتوبر الخاص", "haber", "filistin", true],
-  [3, "الهجرة في لبنان", "haber", "lubnan"],
-  [3, "الذهب والبنوك المركزية", "ekonomi"],
-  [3, "طاولة الاقتصاد", "program"],
-  [4, "البث الخاص في 7 أكتوبر", "haber", "filistin", true],
-  [4, "جلسة فلسطين في الأمم المتحدة", "haber", "abd", true],
-  [4, "فنانون من غزة", "feature", "filistin"],
-  [5, "الحملة الانتخابية الأمريكية", "haber", "abd"],
-  [5, "الاقتصاد السوري", "haber", "suriye"],
-  [5, "الاستثمارات الخليجية", "ekonomi", "katar"],
-  [5, "التقييم الأسبوعي", "program"],
-  [6, "غزة: أجندة الجمعة", "haber", "filistin"],
-  [6, "الحدود اللبنانية", "haber", "lubnan"],
-  [6, "السياسة الخارجية التركية", "haber", "turkiye"],
-  [6, "الطلاب العرب في إسطنبول", "feature", "turkiye"],
+/* Bu hafta: geçen Perşembe kesinleşti. Bugünün haberleri bugünün planına aktarıldı. */
+const BU_HAFTA_DOSYALARI: [string, string][] = [
+  ["الانتهاكات الإسرائيلية في فلسطين", "تتواصل الاعتداءات في الضفة الغربية والقدس، مع تصاعد عمليات الهدم والاعتقالات وتشديد القيود على الحركة، فيما تتفاقم الأزمة الإنسانية في قطاع غزة."],
+  ["الحرب الروسية الأوكرانية", "تتبادل موسكو وكييف الضربات على منشآت الطاقة مع اقتراب الشتاء، وسط تحركات دبلوماسية لعقد جولة مفاوضات جديدة."],
+  ["الوضع في السودان", "يستمر القتال في كردفان ودارفور، وتحذر المنظمات الإنسانية من موجة نزوح جديدة ونقص حاد في الغذاء والدواء."],
 ];
+
+const GELECEK_HAFTA_DOSYALARI: [string, string][] = [
+  ["الانتهاكات الإسرائيلية في فلسطين", "تحل الذكرى السنوية للحرب على غزة هذا الأسبوع، مع فعاليات في الداخل الفلسطيني وعواصم عدة، واستمرار المفاوضات حول وقف إطلاق النار وإدخال المساعدات."],
+  ["المفاوضات الأمريكية الإيرانية", "جولة جديدة من المحادثات غير المباشرة بوساطة عمانية، وسط تصريحات متباينة حول الملف النووي ورفع العقوبات."],
+  ["العراق بعد انسحاب التحالف الدولي", "متابعة المشهد الأمني والسياسي بعد انتهاء مهمة التحالف الدولي، وموقف القوى السياسية من الوجود العسكري الأجنبي."],
+];
+
+const GELECEK_HAFTA: KalemSatiri[] = [
+  [0, "b-ihlaller", "إحياء ذكرى هبة القدس والأقصى", "القدس", "برنامج زيارات لأضرحة الشهداء وفعاليات في البلدات العربية بدعوة من لجنة المتابعة العليا.", "haber", ["pkg", "canli"], ["mu2"]],
+  [0, "b-ihlaller", undefined, "مدريد", "تجمعات تضامنية مع أطفال غزة في الساحات العامة تحت شعار الطائرات الورقية.", "haber", [], []],
+  [0, "b-turk-gundem", "مهرجان تكنوفيست", "شانلي أورفا", "انطلاق مهرجان تكنولوجيا الطيران والفضاء بمشاركة شركات الصناعات الدفاعية والجامعات.", "haber", ["canli", "pkg"], ["mu7"]],
+  [1, "b-bosna", "الانتخابات العامة", "سراييفو", "يتوجه الناخبون لاختيار أعضاء مجلس الرئاسة والبرلمان على مستوى الدولة والكيانين.", "haber", ["pkg", "canli", "walktalk"], ["mu11", "mu30"], "فريق البلقان في مهمة طوال الأسبوع"],
+  [1, "b-turk-gundem", "ندوة التراث الفكري", "إسطنبول", "ندوة دولية حول التراث الفكري العثماني بمشاركة أكاديميين من العالم العربي.", "haber", ["pkg"], []],
+  [2, "b-iran", "المحادثات الأمريكية الإيرانية", "مسقط", "جولة جديدة من المحادثات غير المباشرة بوساطة عمانية.", "haber", ["pkg"], ["mu25"]],
+  [3, "b-sudan", undefined, "الخرطوم", "مؤتمر صحفي لوزارة الصحة حول إعادة تشغيل المستشفيات المتضررة.", "haber", ["pkg"], ["mu21"]],
+  [3, "b-ekonomi", "اجتماع OPEC+ الشهري", "فيينا", "قرار سقف الإنتاج للشهر المقبل وأثره على أسعار النفط وموازنات دول الخليج.", "ekonomi", ["pkg"], ["mu19"]],
+  [4, "b-ihlaller", "الذكرى السنوية للحرب على غزة", "غزة", "تغطية خاصة: بث مباشر من غزة ورام الله والقدس، وتقارير عن العائلات النازحة.", "haber", ["canli", "pkg"], ["mu1", "mu31", "mu2"], "تُنسَّق مع خطة البث الخاص"],
+  [4, "b-bm", "جلسة مجلس الأمن حول الشرق الأوسط", "نيويورك", "جلسة شهرية حول الوضع في الشرق الأوسط بما فيه القضية الفلسطينية.", "haber", ["pkg"], ["mu27"]],
+  [5, "b-abd", undefined, "واشنطن", "مناظرة انتخابية في ولاية متأرجحة قبل الانتخابات النصفية.", "haber", ["pkg"], ["mu5"]],
+  [5, "b-irak", "ما بعد انسحاب التحالف الدولي", "بغداد", "قراءة في المشهد الأمني بعد انتهاء مهمة التحالف، مع مقابلات مع مسؤولين وخبراء.", "haber", ["pkg"], ["mu15"]],
+  [6, "b-lubnan", undefined, "بيروت", "جلسة نيابية لمناقشة مشروع قانون الموازنة.", "haber", [], []],
+  [null, "b-korfez", "مقاهي القاهرة القديمة", "القاهرة", "قصص أصحاب المقاهي التاريخية وروادها في وسط البلد.", "feature", ["feature"], ["mu4"]],
+  [null, undefined, "برنامج: أصوات من المخيمات", "عمّان", "حلقة عن شباب المخيمات ومشاريعهم الصغيرة لصالح البرنامج الأسبوعي.", "program", ["derinlemesine"], ["mu17"]],
+];
+
+/*
+ * Bu haftanın kesinleşmiş gündeminden bilgi (takip yok) ve ret kalemleri;
+ * kabul edilenler ORNEK içinde, aktarıldıkları paketlerle birlikte.
+ */
+const BU_HAFTA: KalemSatiri[] = [
+  [0, "b-rusya-ukrayna", undefined, "كييف", "تحضيرات الشتاء وحماية منشآت الطاقة من الضربات.", "haber", [], []],
+  [1, "b-ihlaller", "يوم التضامن مع الأسرى", "رام الله", "وقفات أمام مقرات الصليب الأحمر في مدن الضفة الغربية.", "haber", [], []],
+  [2, "b-turk-gundem", "معرض الكتاب العربي", "إسطنبول", "دورة جديدة لمعرض الكتاب العربي بمشاركة دور نشر من عشرين دولة.", "haber", [], []],
+  [3, "b-sudan", undefined, "بورتسودان", "اجتماع للمانحين حول الاستجابة الإنسانية.", "haber", [], []],
+  [5, "b-abd", undefined, "نيويورك", "فعالية لجمعيات عربية أمريكية حول الانتخابات النصفية.", "haber", ["pkg"], ["mu27"]],
+];
+const BU_HAFTA_KARAR: HaftalikKalem["karar"][] = ["bilgi", "bilgi", "bilgi", "bilgi", "ret"];
 
 const AY_KALEMLERI: [string, IcerikTuru, boolean][] = [
   ["ملف فلسطين: بعد عام", "haber", true],
@@ -1510,7 +1534,8 @@ export const ORNEK = (): Durum => {
         else h("pl1", "paketOnaylandi", zaman(once, "17:45"), { paketId: p.id, planId: plan.id, veri: { toplanti: "1" } });
       }
     } else {
-      h("pl4", "paketOnaylandi", zaman(gun(-3), "11:00"), { paketId: p.id, veri: { toplanti: "1" } });
+      // Plansız paket geçen Perşembe haftalık toplantıda kabul edildi; kolun sahibinde bekliyor.
+      h("pl1", "paketOnaylandi", zaman(gunEkle(haftaBasi(B), -2), "12:30"), { paketId: p.id, haftaId: "hf-bu", veri: { hafta: "1", sahip: KOL_SAHIBI[tur] } });
     }
 
     /* Üretim adımları. */
@@ -1730,6 +1755,209 @@ export const ORNEK = (): Durum => {
   }
 
   const haftaBas = planlananHafta(B);
+  const buBas = haftaBasi(B);
+  /* Geçen Perşembe: bu haftanın planının kesinleştiği toplantı. */
+  const buToplanti = zaman(gunEkle(buBas, -2), "12:30");
+  const satirdan = ([g, baslikId, baslik, yer, metin, tur, bicimler, muhabirler, not]: KalemSatiri, bas: string, id: string): HaftalikKalem => ({
+    id,
+    tarih: g === null ? undefined : gunEkle(bas, g),
+    baslikId,
+    baslik,
+    yer,
+    metin,
+    tur,
+    bicimler,
+    muhabirler,
+    not,
+    karar: "bekliyor",
+  });
+
+  /*
+   * Bu hafta, kesinleşmiş: bugüne düşen iki etkinlik haberi bugünün
+   * planına aktarılmış (paketleri "Haftalık plandan" rozetli), geçen
+   * toplantıda kabul edilen feature, ekonomi ve program işleri kendi
+   * kollarında üretimde.
+   */
+  const buHaftaKalemleri: HaftalikKalem[] = [
+    ...BU_HAFTA.map((r, i) => ({ ...satirdan(r, buBas, `hb${i}`), karar: BU_HAFTA_KARAR[i] })),
+    { id: "hb-forum", tarih: B, baslikId: "b-turkiye", baslik: "منتدى الأعمال التركي الخليجي", yer: "إسطنبول", metin: "منتدى بمشاركة وزراء ورجال أعمال من تركيا ودول الخليج؛ توقيع اتفاقيات.", tur: "haber", bicimler: ["pkg"], muhabirler: ["mu6"], karar: "kabul", aktarim: { planId: planId("bugun"), paketId: "p-forum" } },
+    { id: "hb-bm", tarih: B, baslikId: "b-bm", baslik: "جلسة الجمعية العامة بشأن فلسطين", yer: "نيويورك", metin: "تصويت على مشروع قرار حول الوضع في الأراضي الفلسطينية.", tur: "haber", bicimler: ["pkg"], muhabirler: ["mu27"], karar: "kabul", aktarim: { planId: planId("bugun"), paketId: "p-bm" } },
+    { id: "hb-elyazma", baslikId: "b-misir", baslik: "مكتبة المخطوطات في القاهرة", yer: "القاهرة", metin: "فريق يعمل على رقمنة مخطوطات عمرها قرون.", tur: "feature", bicimler: ["feature"], muhabirler: ["mu8"], karar: "kabul", aktarim: { paketId: "p-elyazma" } },
+    { id: "hb-hidrojen", baslikId: "b-korfez", baslik: "استثمارات الهيدروجين الأخضر في الخليج", yer: "الدوحة", metin: "مشاريع جديدة وتحوّل الطاقة.", tur: "ekonomi", bicimler: ["pkg"], muhabirler: ["mu18"], karar: "kabul", aktarim: { paketId: "p-hidrojen" } },
+    { id: "hb-girisim", baslik: "برنامج: رواد الأعمال الشباب في العالم العربي", yer: "عمّان", metin: "ثلاثة بورتريهات لرواد أعمال لصالح البرنامج الأسبوعي.", tur: "program", bicimler: ["derinlemesine"], muhabirler: ["mu17"], karar: "kabul", aktarim: { paketId: "p-girisim" } },
+  ];
+  for (const p of paketler) {
+    const k = buHaftaKalemleri.find((x) => x.aktarim?.paketId === p.id);
+    if (k) p.haftalikKalemId = k.id;
+  }
+  h("pl2", "haftalikOlusturuldu", zaman(gunEkle(buBas, -6), "10:00"), { haftaId: "hf-bu", veri: { tarih: buBas } });
+  h("pl2", "haftalikToplantida", zaman(gunEkle(buBas, -2), "10:30"), { haftaId: "hf-bu", veri: { tarih: buBas, sahip: "yonetim" } });
+  h("pl1", "haftalikKesinlesti", buToplanti, { haftaId: "hf-bu", veri: { tarih: buBas } });
+  for (const k of buHaftaKalemleri.filter((x) => x.aktarim?.planId)) {
+    h("pl2", "haftaliktanAktarildi", zaman(gun(-1), "08:51"), { haftaId: "hf-bu", planId: k.aktarim!.planId, paketId: k.aktarim!.paketId, veri: { tarih: B, kalem: k.id } });
+  }
+
+  /*
+   * Gelecek hafta, hazırlıkta: haftalık çağrı bu Cumartesi gitti, yanıtlar
+   * geliyor. Yanıtlardan üçü zamana bağlı olmayan stok öneri: biri Input
+   * müdürünün görüşüyle, biri Ekonomi'nin ön incelemede reddiyle, biri
+   * ekonomi ön incelemesi bekliyor. Kalanlar gündeme alınmayı bekliyor.
+   */
+  const SAAT_ = 60 * DAKIKA;
+  const cagriZamani = new Date(Math.min(new Date(zaman(buBas, "09:30")).getTime(), an - 6 * SAAT_)).toISOString();
+  const arada = (oran: number) => new Date(new Date(cagriZamani).getTime() + (an - 30 * DAKIKA - new Date(cagriZamani).getTime()) * oran).toISOString();
+  type HaftalikOneri = [string, string, string, string, IcerikTuru, Bicim, Oneri["kanal"], number];
+  const HAFTALIK_ONERILER: HaftalikOneri[] = [
+    ["ow-kudus", "mu2", "إحياء ذكرى هبة القدس والأقصى", "فعاليات وزيارات لأضرحة الشهداء في الداخل الفلسطيني؛ يمكن ربطها بمباشر من القدس.", "haber", "pkg", "eposta", 0.1],
+    ["ow-ankara", "mu7", "زيارة وزير الخارجية التركي إلى الخليج", "جولة تشمل الدوحة والرياض؛ ملفات التجارة والطاقة والوضع في غزة.", "haber", "pkg", "sistem", 0.15],
+    ["ow-zanaat", "mu11", "الحرفيون السوريون في إسطنبول", "ورش النحاس والصدف في الفاتح: حرفة تنتقل بين جيلين.", "feature", "feature", "eposta", 0.2],
+    ["ow-fon", "mu18", "صناديق الثروة الخليجية والاستثمار في التكنولوجيا", "اتجاه الصناديق السيادية نحو الذكاء الاصطناعي وأشباه الموصلات.", "ekonomi", "pkg", "eposta", 0.25],
+    ["ow-ekmek", "mu8", "أسعار الخبز في مصر بعد تعديل الدعم", "جولة في المخابز والأسواق ومقابلات مع أسر وخبير اقتصادي.", "ekonomi", "pkg", "eposta", 0.3],
+    ["ow-amman", "mu17", "مؤتمر المانحين لإعادة إعمار غزة في عمّان", "وفود عربية ودولية؛ التعهدات المتوقعة وآلية التنفيذ.", "haber", "pkg", "eposta", 0.5],
+    ["ow-bruksel", "mu28", "اجتماع وزراء خارجية الاتحاد الأوروبي حول الشرق الأوسط", "نقاش حول اتفاقية الشراكة مع إسرائيل ودعم الأونروا.", "haber", "pkg", "eposta", 0.65],
+    ["ow-rabat", "mu24", "موسم الزيتون في المغرب", "قطاف الزيتون في منطقة الأطلس وتأثير الجفاف على المحصول.", "feature", "feature", "sistem", 0.8],
+  ];
+  const gundemdeki: Record<string, [number | null, string | undefined]> = {
+    "ow-kudus": [0, "b-ihlaller"],
+    "ow-ankara": [2, "b-turkiye"],
+    "ow-zanaat": [null, "b-turk-gundem"],
+    "ow-fon": [null, "b-korfez"],
+    "ow-ekmek": [null, "b-misir"],
+  };
+  const haftalikOneriler: (Oneri & { muhabirId: string })[] = HAFTALIK_ONERILER.map(([id, muhabirId, haber, gelisme, tur, bicim, kanal, oran]) => {
+    const sehir = (KISILER.find((k) => k[0] === muhabirId)?.[6] ?? "istanbul") as Sehir;
+    return {
+      id,
+      muhabirId,
+      ulke: SEHIR_ULKESI[sehir],
+      haberBasligi: haber,
+      gelisme,
+      tur,
+      bicim,
+      sahaGerekli: false,
+      zaman: arada(oran),
+      kanal,
+      hafta: haftaBas,
+      durum: gundemdeki[id] ? "degerlendiriliyor" : "yeni",
+      cagriId: kanal === "eposta" ? "c-hafta" : undefined,
+      baslikId: gundemdeki[id]?.[1],
+    };
+  });
+  const gelecekKalemleri: HaftalikKalem[] = GELECEK_HAFTA.map((r, i) => satirdan(r, haftaBas, `hg${i}`));
+  /* Gündeme alınmış öneriler: gündeki kalem öneriye bağlanıyor, stoktakiler yeni kalem. */
+  for (const o of haftalikOneriler.filter((x) => gundemdeki[x.id])) {
+    const [g, baslikId] = gundemdeki[o.id];
+    const var_ = gelecekKalemleri.find((k) => g !== null && k.tarih === gunEkle(haftaBas, g) && k.muhabirler.includes(o.muhabirId));
+    if (var_) var_.oneriId = o.id;
+    else
+      gelecekKalemleri.push({
+        id: `hg-${o.id}`,
+        tarih: g === null ? undefined : gunEkle(haftaBas, g),
+        baslikId,
+        baslik: o.haberBasligi,
+        metin: o.gelisme,
+        tur: o.tur,
+        bicimler: o.bicim ? [o.bicim] : [],
+        muhabirler: [o.muhabirId],
+        oneriId: o.id,
+        karar: "bekliyor",
+      });
+  }
+  const incelemeZamani = arada(0.6);
+  const kalemi = (oneriId: string) => gelecekKalemleri.find((k) => k.oneriId === oneriId)!;
+  kalemi("ow-zanaat").onInceleme = {
+    durum: "gonderildi",
+    gonderen: "pl4",
+    zaman: incelemeZamani,
+    gorusler: [{ kisiId: "yo1", zaman: arada(0.75), metin: "Konu iyi; Suriyeli ustaların yanında Türk ustalarla ortak atölyeleri de görelim." }],
+  };
+  kalemi("ow-fon").onInceleme = {
+    durum: "reddedildi",
+    gonderen: "pl4",
+    zaman: incelemeZamani,
+    gorusler: [],
+    reddeden: "ek1",
+    gerekce: "Benzer bir dosyayı geçen ay yayımladık; şimdilik tekrar etmeyelim.",
+  };
+  kalemi("ow-fon").karar = "ret";
+  kalemi("ow-ekmek").onInceleme = { durum: "gonderildi", gonderen: "pl4", zaman: incelemeZamani, gorusler: [] };
+
+  h("pl2", "haftalikOlusturuldu", new Date(new Date(cagriZamani).getTime() - 10 * DAKIKA).toISOString(), { haftaId: "hf-gelecek", veri: { tarih: haftaBas } });
+  h("pl2", "cagriHazirlandi", cagriZamani, { haftaId: "hf-gelecek", veri: { tarih: haftaBas, sahip: "muhabir", hafta: "1" } });
+  for (const o of haftalikOneriler) {
+    h(o.muhabirId, "oneriGeldi", o.zaman, { oneriId: o.id, veri: { sahip: "planlama", ...(o.kanal === "eposta" ? { kanal: "eposta" } : {}) } });
+    if (o.durum === "degerlendiriliyor") h("pl4", "oneriDegerlendirmede", new Date(new Date(o.zaman).getTime() + 20 * DAKIKA).toISOString(), { oneriId: o.id, haftaId: "hf-gelecek" });
+  }
+  for (const id of ["ow-zanaat", "ow-fon", "ow-ekmek"]) {
+    const k = kalemi(id);
+    h("pl4", "onIncelemeyeGonderildi", incelemeZamani, { haftaId: "hf-gelecek", veri: { kalem: k.id, kime: "yo1", sahip: k.tur === "ekonomi" ? "ekonomi" : "" } });
+  }
+  h("yo1", "onIncelemeGorusu", arada(0.75), { haftaId: "hf-gelecek", veri: { kalem: kalemi("ow-zanaat").id, sahip: "planlama" } });
+  h("ek1", "onIncelemedeReddedildi", arada(0.7), { haftaId: "hf-gelecek", veri: { kalem: kalemi("ow-fon").id, gerekce: kalemi("ow-fon").onInceleme!.gerekce!, sahip: "planlama" } });
+
+  /* Haftalık çağrının e-posta yanıtları: öneri yanıtları ve bir "önerim yok". */
+  for (const o of haftalikOneriler.filter((x) => x.kanal === "eposta")) {
+    const ad = muhabirSatiri(o.muhabirId)[1];
+    const metin = [o.haberBasligi, o.gelisme].join("\n");
+    o.yanitId = `y-${o.id}`;
+    yanitlar.push({
+      id: o.yanitId,
+      cagriId: "c-hafta",
+      kisiId: o.muhabirId,
+      kimden: eposta(ad),
+      kimdenAd: ad,
+      konu: `RE: ${cagriKonusu(haftaBas, "haftalik")}`,
+      metin,
+      tamMetin: `${metin}\n\n-----Original Message-----\nFrom: Planning\n${haftalikGovde(haftaBas, ORNEK_PLANLAMA_ADRESI)}`,
+      zaman: o.zaman,
+      mesajKimligi: `<${o.id}@ornek.local>`,
+      ekler: [],
+      durum: "oneri",
+      kaynak: "posta",
+    });
+  }
+  {
+    const ad = muhabirSatiri("mu22")[1];
+    const z = arada(0.4);
+    yanitlar.push({
+      id: "y-hafta-bos-mu22",
+      cagriId: "c-hafta",
+      kisiId: "mu22",
+      kimden: eposta(ad),
+      kimdenAd: ad,
+      konu: `RE: ${cagriKonusu(haftaBas, "haftalik")}`,
+      metin: "لا يوجد لدي جديد للأسبوع القادم.",
+      tamMetin: "لا يوجد لدي جديد للأسبوع القادم.",
+      zaman: z,
+      mesajKimligi: "<hafta-bos-mu22@ornek.local>",
+      ekler: [],
+      durum: "oneriYok",
+      kaynak: "posta",
+    });
+    h("mu22", "yanitOneriYok", z, { veri: { tarih: haftaBas } });
+  }
+
+  const haftalik: HaftalikPlan[] = [
+    {
+      id: "hf-gelecek",
+      baslangic: haftaBas,
+      durum: "hazirlik",
+      anaKonular: GELECEK_HAFTA_DOSYALARI.map(([baslik, metin], i) => ({ id: `akg${i}`, baslik, metin })),
+      kalemler: gelecekKalemleri,
+      olusturan: "pl2",
+      olusturma: new Date(new Date(cagriZamani).getTime() - 10 * DAKIKA).toISOString(),
+    },
+    {
+      id: "hf-bu",
+      baslangic: buBas,
+      durum: "kesinlesti",
+      anaKonular: BU_HAFTA_DOSYALARI.map(([baslik, metin], i) => ({ id: `akb${i}`, baslik, metin })),
+      kalemler: buHaftaKalemleri,
+      olusturan: "pl2",
+      olusturma: zaman(gunEkle(buBas, -6), "10:00"),
+    },
+  ];
+
   /*
    * Yalnız akışta tanımlı toplantılar: akşam haber toplantısı (Next Day
    * kutusu 3), Newsdesk'in sabah toplantısı (kutu 4) ve Perşembe haftalık
@@ -1745,41 +1973,63 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 6,
+    surum: 7,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
     gelismeler,
     canliYayinlar: CANLILAR(planId, gun),
     hazirPaketler: HAZIR(gun),
-    gorevlendirmeler: GOREVLENDIRMELER(gun),
-    oneriler: [...talimatlar, ...oneriler],
+    gorevlendirmeler: [
+      ...GOREVLENDIRMELER(gun),
+      // Gelecek haftanın seçimleri için ekip: haftalık çıktıda tek satır ("YER / ad - ad …").
+      ...(["mu11", "mu30"] as const).map(
+        (kisiId): Gorevlendirme => ({
+          id: `gr-balkan-${kisiId}`,
+          kisiId,
+          tur: "gorevlendirme",
+          yer: "البوسنة والهرسك",
+          baslangic: haftaBas,
+          bitis: gunEkle(haftaBas, 16),
+          aciklama: "تغطية الانتخابات العامة.",
+          durum: "onayli",
+        }),
+      ),
+    ],
+    oneriler: [...talimatlar, ...haftalikOneriler, ...oneriler],
     cagrilar: (
       [
         ["c-dun", gun(0), zaman(gun(-1), "09:10")],
         ["c-bugun", gun(1), bugunSaat("09:15", 60)],
       ] as const
-    ).map(([id, tarih, z]) => ({
-      id,
-      tarih,
-      metin: cagriGovdesi(tarih, "15:00"),
+    )
+      .map(([id, tarih, z]): Cagri => ({
+        id,
+        tur: "nextday",
+        tarih,
+        metin: cagriGovdesi(tarih, "15:00"),
       sonSaat: "15:00",
       olusturan: "pl2",
       zaman: z,
       kime: ORNEK_PLANLAMA_ADRESI,
-      bcc: kisiListesi.filter((k) => k.birim === "muhabir" && k.durum !== "izinli").map((k) => k.id),
-      etiket: etiketUret(tarih),
-    })),
+        bcc: kisiListesi.filter((k) => k.birim === "muhabir" && k.durum !== "izinli").map((k) => k.id),
+        etiket: etiketUret(tarih),
+      }))
+      .concat({
+        id: "c-hafta",
+        tur: "haftalik",
+        tarih: haftaBas,
+        metin: haftalikGovde(haftaBas, ORNEK_PLANLAMA_ADRESI),
+        sonSaat: "",
+        olusturan: "pl2",
+        zaman: cagriZamani,
+        kime: ORNEK_PLANLAMA_ADRESI,
+        bcc: kisiListesi.filter((k) => k.birim === "muhabir" && k.durum !== "izinli").map((k) => k.id),
+        etiket: etiketUret(haftaBas, "haftalik"),
+      }),
     yanitlar,
     paketler: [...paketler, ...arsiv],
-    haftalik: [
-      {
-        id: "hf-gelecek",
-        baslangic: haftaBas,
-        durum: "toplantida",
-        kalemler: HAFTA_KALEMLERI.map(([g, baslik, tur, ulke, onayli], i) => ({ id: `hk${i}`, tarih: gunEkle(haftaBas, g), baslik, tur, ulke, onayli: !!onayli })),
-      },
-    ],
+    haftalik,
     aylik: [
       {
         id: "ay-bu",

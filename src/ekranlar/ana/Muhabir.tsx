@@ -3,10 +3,10 @@ import { ADIM_ADI, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from 
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
-import { saatYaz, tarihYaz, useDil } from "../../dil";
+import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
-import { bugun, yerelGun } from "../../tarih";
-import { useVeri, type Kisi } from "../../veri";
+import { bugun, gunEkle, yerelGun } from "../../tarih";
+import { acikCagri, useVeri, type Kisi } from "../../veri";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
 import { SayfaBasi } from "./Planlama";
 
@@ -26,7 +26,8 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
   const oneriler = v.oneriler.filter((o) => oneriGorebilir(ben, o)).sort((a, b) => b.zaman.localeCompare(a.zaman));
   const siram = paketler.filter((p) => adimYapabilir(ben, p));
   const gorevler = v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B);
-  const cagri = v.cagrilar.filter((c) => c.tarih > B).sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
+  const cagri = acikCagri(v, "nextday", B);
+  const haftalikCagri = acikCagri(v, "haftalik", B);
   const bildirimler = v.hareketler.filter((h) => bildirimMi(ben, h, v)).slice(0, 6);
   const aktif = paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
 
@@ -49,6 +50,16 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
           <br />
           {t("acikCagriAciklama", { saat: cagri.sonSaat })}{" "}
           <a href="#/oneriler/yeni">
+            <b>{t("oneriGonder")} →</b>
+          </a>
+        </NotKutu>
+      )}
+      {haftalikCagri && (
+        <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
+          <b>{t("acikHaftalikCagri", { aralik: aralikYaz(haftalikCagri.tarih, gunEkle(haftalikCagri.tarih, 6), dil) })}</b>
+          <br />
+          {t("acikHaftalikCagriAciklama")}{" "}
+          <a href="#/oneriler/yeni/haftalik">
             <b>{t("oneriGonder")} →</b>
           </a>
         </NotKutu>

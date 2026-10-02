@@ -3,7 +3,8 @@ import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
-import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
+import { aralikYaz, metin, saatYaz, tarihYaz, useDil } from "../../dil";
+import { haftaSonu } from "../../haftalik";
 import { oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
@@ -12,6 +13,7 @@ import {
   KANALLAR,
   ONERI_DURUMLARI,
   ULKELER,
+  acikCagri,
   baslikBul,
   kisiBul,
   paketBul,
@@ -138,6 +140,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const plan = planBul(v, oneri.planId);
   const paket = paketBul(v, oneri.paketId);
   const baslik = baslikBul(v, oneri.baslikId);
+  const haftaPlani = oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined;
   const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi";
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
@@ -178,7 +181,11 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
               <div className="alan">
                 <small>{t("hedefPlan")}</small>
-                <b>{tarihYaz(oneri.hedefTarih, dil, "tam")}</b>
+                <b>
+                  {oneri.hafta
+                    ? `${t("haftalik")} · ${aralikYaz(oneri.hafta, haftaSonu(oneri.hafta), dil)}`
+                    : oneri.hedefTarih && tarihYaz(oneri.hedefTarih, dil, "tam")}
+                </b>
               </div>
               <div className="alan">
                 <small>{t("tur")}</small>
@@ -228,7 +235,13 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
               <div className="alan">
                 <small>{t("plan")}</small>
-                {plan ? <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a> : <b>—</b>}
+                {plan ? (
+                  <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a>
+                ) : haftaPlani ? (
+                  <a href={`#/haftalik/${haftaPlani.id}`}>{t("haftalik")}</a>
+                ) : (
+                  <b>—</b>
+                )}
               </div>
               <div className="alan">
                 <small>{t("paketOnerisi")}</small>
@@ -274,7 +287,13 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                   </div>
                 ) : (
                   <div className="dugmeler">
-                    {oneri.durum !== "reddedildi" && (
+                    {/* Haftalık öneri Next Day'e değil haftalık planın gündemine alınıyor. */}
+                    {oneri.durum !== "reddedildi" && haftaPlani && (
+                      <a className="dugme dugme-iyi" href={`#/haftalik/${haftaPlani.id}`}>
+                        {t("haftalikPlandaDegerlendir")}
+                      </a>
+                    )}
+                    {oneri.durum !== "reddedildi" && !oneri.hafta && (
                       <button className="dugme dugme-iyi" onClick={() => setEkle(true)}>
                         {t("planaEkle")}
                       </button>
@@ -321,12 +340,23 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   );
 }
 
-export function YeniOneri({ ben }: { ben: Kisi }) {
+export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boolean }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const muhabir = ben.birim === "muhabir";
   const B = bugun();
-  const cagri = v.cagrilar.filter((c) => c.tarih > B).sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
+  const cagri = acikCagri(v, "nextday", B);
+  /*
+   * Haftalık hedef: muhabire açık haftalık çağrının haftası; Planlama
+   * telefonla gelen öneriyi kesinleşmemiş her gelecek haftaya girebiliyor.
+   */
+  const haftalikCagri = acikCagri(v, "haftalik", B);
+  const haftalar = muhabir
+    ? haftalikCagri
+      ? [haftalikCagri.tarih]
+      : []
+    : v.haftalik.filter((h) => h.durum !== "kesinlesti" && h.baslangic > B).map((h) => h.baslangic).sort();
+  const [hafta, setHafta] = useState(haftalik ? (haftalikCagri?.tarih ?? haftalar[0] ?? "") : "");
   const [f, setF] = useState({
     muhabirId: muhabir ? ben.id : "",
     ulke: (muhabir ? ulkesi(ben.sehir) : "turkiye") as Ulke,
@@ -342,7 +372,14 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
   const gecerli = !!f.muhabirId && !!f.haberBasligi.trim() && !!f.gelisme.trim();
   const gonder = () => {
     if (!gecerli) return;
-    const id = oneriGonder(ben, { ...f, haberBasligi: f.haberBasligi.trim(), gelisme: f.gelisme.trim(), paketBasligi: f.paketBasligi.trim() || undefined });
+    const id = oneriGonder(ben, {
+      ...f,
+      hedefTarih: hafta ? undefined : f.hedefTarih,
+      hafta: hafta || undefined,
+      haberBasligi: f.haberBasligi.trim(),
+      gelisme: f.gelisme.trim(),
+      paketBasligi: f.paketBasligi.trim() || undefined,
+    });
     if (id) {
       bildir(t("bOneriGonderildi"));
       git(`oneriler/${id}`);
@@ -385,11 +422,34 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
               </label>
             </div>
           )}
+          {haftalar.length > 0 && (
+            <div className="sekmeler" role="tablist" aria-label={t("hedefPlan")}>
+              <button type="button" role="tab" aria-selected={!hafta} className={!hafta ? "acik" : ""} onClick={() => setHafta("")}>
+                {t("nextday")}
+              </button>
+              <button type="button" role="tab" aria-selected={!!hafta} className={hafta ? "acik" : ""} onClick={() => setHafta(hafta || haftalar[0])}>
+                {t("haftalik")}
+              </button>
+            </div>
+          )}
           <div className="satir">
-            <label>
-              {t("hedefPlan")}
-              <input type="date" value={f.hedefTarih} min={B} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} />
-            </label>
+            {hafta ? (
+              <label>
+                {t("hedefPlan")}
+                <select value={hafta} onChange={(e) => setHafta(e.target.value)}>
+                  {haftalar.map((h) => (
+                    <option key={h} value={h}>
+                      {aralikYaz(h, haftaSonu(h), dil)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label>
+                {t("hedefPlan")}
+                <input type="date" value={f.hedefTarih} min={B} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} />
+              </label>
+            )}
             <label>
               {t("ulke")}
               <select value={f.ulke} onChange={(e) => setF({ ...f, ulke: e.target.value as Ulke })}>

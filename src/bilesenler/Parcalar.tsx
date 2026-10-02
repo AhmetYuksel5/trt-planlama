@@ -1,5 +1,5 @@
-import { ArrowRight, Construction, Flag, Inbox, Info, Lock, PenLine } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { ArrowRight, CalendarRange, Check, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
@@ -105,6 +105,16 @@ export function OncelikRozeti() {
   );
 }
 
+/** Haftalık toplantıda kabul edilen kalemden doğan iş: Next Day'e ya da kolun sahibine kendiliğinden geldi. */
+export function HaftalikRozeti() {
+  const { t } = useDil();
+  return (
+    <span className="rozet rozet-haftalik">
+      <CalendarRange size={12} /> {t("haftalikPlandan")}
+    </span>
+  );
+}
+
 /** Önerinin yerinde talimatı veren yönetici; Planlama'nın talimatı muhabir önerisinden ayırması için. */
 export function TalimatRozeti({ veren }: { veren?: Kisi }) {
   const { t, ad } = useDil();
@@ -180,7 +190,8 @@ export function Sayac({
 }: {
   ikon: ReactNode;
   etiket: string;
-  deger: number | string;
+  /** Sayı ya da (planın durumu gibi) küçük bir rozet. */
+  deger: ReactNode;
   alt?: string;
   ton?: "" | "iyi" | "kotu" | "uyari";
   renk?: string;
@@ -203,6 +214,55 @@ export function Sayac({
     </a>
   ) : (
     <div className={sinif}>{icerik}</div>
+  );
+}
+
+/**
+ * Ayrıntı penceresi: tarayıcının kendi modal diyaloğu. Odak içeride
+ * kalıyor, Esc ve arka plana basmak kapatıyor; panel gibi özet ekranlar
+ * ayrıntıyı sayfayı uzatmadan burada gösteriyor.
+ */
+export function Pencere({ baslik, alt, kapat, children, altBilgi }: { baslik: ReactNode; alt?: ReactNode; kapat: () => void; children: ReactNode; altBilgi?: ReactNode }) {
+  const { t } = useDil();
+  const ref = useRef<HTMLDialogElement>(null);
+  const id = useId();
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+    return () => d?.close();
+  }, []);
+  return (
+    <dialog ref={ref} className="pencere" aria-labelledby={id} onClose={kapat} onClick={(e) => e.target === ref.current && kapat()}>
+      <header>
+        <div>
+          <h2 id={id}>{baslik}</h2>
+          {alt && <small>{alt}</small>}
+        </div>
+        <button type="button" className="dugme dugme-sade dugme-ikon" onClick={kapat} aria-label={t("kapat")} title={t("kapat")}>
+          <X size={18} />
+        </button>
+      </header>
+      <div className="pencere-govde">{children}</div>
+      {altBilgi && <footer>{altBilgi}</footer>}
+    </dialog>
+  );
+}
+
+/** Aşama çizgisi: geçilenler işaretli, şimdiki vurgulu; bitince hepsi geçilmiş. */
+export function DurumCizgisi({ asamalar, simdi, bitti = false, etiket }: { asamalar: string[]; simdi: number; bitti?: boolean; etiket: string }) {
+  return (
+    <div className="durum-cizgisi" aria-label={etiket}>
+      {asamalar.map((a, i) => {
+        const gecti = i < simdi || (bitti && i === simdi);
+        return (
+          <span key={a} className={gecti ? "gecti" : i === simdi ? "simdi" : ""} aria-current={i === simdi ? "step" : undefined}>
+            {i > 0 && <span className="ayrac" aria-hidden="true" />}
+            <i>{gecti ? <Check size={11} /> : i + 1}</i>
+            {a}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
