@@ -670,6 +670,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .eposta-kutu { border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); }
 .eposta-kutu header { display: flex; gap: var(--ara-2); align-items: center; padding: var(--ara-2) var(--ara-3); border-bottom: 1px solid var(--cizgi); background: var(--zemin); border-start-start-radius: var(--yaricap); border-start-end-radius: var(--yaricap); font-size: var(--punto-kucuk); color: var(--sonuk); }
 .eposta-kutu textarea { border: 0 !important; border-radius: 0 0 var(--yaricap) var(--yaricap) !important; min-height: 190px !important; line-height: 1.8 !important; }
+.eposta-kutu header { flex-wrap: wrap; }
+/* Outlook'tan sürüklenen e-postanın bırakılacağı alan. */
+.birakma-alani { display: flex; flex-direction: column; align-items: center; gap: var(--ara-2); padding: var(--ara-5) var(--ara-3); border: 2px dashed var(--cizgi); border-radius: var(--yaricap-kart); color: var(--sonuk); text-align: center; cursor: pointer; }
+.birakma-alani.ustunde { border-color: var(--vurgu); background: var(--vurgu-sis); color: var(--vurgu); }
+.tam-metin { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: var(--punto-kucuk); color: var(--sonuk); background: var(--zemin); padding: var(--ara-3); border-radius: var(--yaricap); margin-top: var(--ara-2); max-block-size: 320px; overflow: auto; }
+.sol-hiza { overflow-wrap: anywhere; }
+.girdi.girdi-kisa { inline-size: auto; max-inline-size: 100%; }
 
 /* --- Giriş --- */
 

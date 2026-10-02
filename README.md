@@ -31,7 +31,15 @@ npm run preview  # derlenmiş hali yerelde
 - **Çıktı önizleme:** kurumun "الأجندة الإخبارية" belgesinin düzeninde.
   Arapça ve sağdan sola, boş bölümler gizli, yazdırılabilir.
 - **Öneriler:**
-  - öneri çağrısı e-posta metni (demo, gönderim yok)
+  - öneri çağrısı, kurumun bugünkü e-postası gibi: Kime planlama grubu,
+    muhabirler BCC'de, etiketli konu. "Outlook'ta aç" (taslak dosyası),
+    "Telefonda aç" (e-posta uygulaması), BCC adreslerini kopyala
+  - gelen yanıtlar: kim yanıt verdi, kim "önerim yok" dedi, kim vermedi;
+    hatırlatma; eşleşmeyen e-postayı muhabire bağlama
+  - her e-posta yanıtı olduğu gibi tek öneri olarak düşüyor; plancı
+    düzenliyor ve aynı yanıttan yeni öneriler ayırıyor, orijinal değişmiyor
+  - sunucu gelene kadar köprü: Outlook'tan sürükle-bırak (.msg), .eml ya da
+    yapıştırılan metin; sunucunun kullanacağı işlemeden geçiyor
   - gelen öneriler ve değerlendirme
   - mevcut ya da yeni başlığa bağlayıp plana ekleme
   - muhabirlere geri dönüş
@@ -59,7 +67,11 @@ npm run preview  # derlenmiş hali yerelde
 
 ## Henüz uygulanmayanlar
 
-- Gerçek e-posta gönderimi. Çağrı ve geri dönüş metni şimdilik kopyalanıyor.
+- Yanıtların posta kutusundan kendiliğinden düşmesi: Microsoft Graph ile
+  planlama kutusunu izleyen sunucu hizmeti. Kurulum ve BT'ye sorular
+  `belgeler/eposta-entegrasyonu.md` içinde. Şimdilik içe aktarma köprüsü.
+- Uygulamanın e-postayı kendisinin göndermesi; şimdilik planlamacının kendi
+  e-postasından (Outlook taslağı ya da telefon).
 - Kurum içi giriş, ortak veri tabanı, çok kullanıcılı eşzamanlı çalışma.
   Veri yalnız bu tarayıcıda (`localStorage`) duruyor.
 - Word/PDF dışa aktarma. Şimdilik yazdır → PDF olarak kaydet.

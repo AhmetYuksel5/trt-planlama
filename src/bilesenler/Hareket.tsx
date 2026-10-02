@@ -44,6 +44,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   tamamlandi: "hrTamamlandi",
   notEklendi: "hrNotEklendi",
   nitelikPuanlandi: "hrNitelik",
+  yanitOneriYok: "hrYanitOneriYok",
+  oneriDuzenlendi: "hrOneriDuzenlendi",
   profilGuncellendi: "hrProfil",
 };
 

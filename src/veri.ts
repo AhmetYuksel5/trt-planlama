@@ -285,8 +285,15 @@ export interface Oneri {
   paketId?: string;
   gerekce?: string;
   geriDonus?: boolean;
+  /** E-postayla geldiyse kaynağı olan yanıt; orijinal metin orada değişmeden duruyor. */
+  yanitId?: string;
 }
 
+/*
+ * Öneri çağrısı kurumun bugünkü e-postası gibi: Kime planlama grubu (bütün
+ * planlama yazışmayı görsün), muhabirler BCC'de (her muhabirin yazışması
+ * müstakil kalsın). Konudaki etiket yanıtları doğru çağrıya bağlıyor.
+ */
 export interface Cagri {
   id: string;
   tarih: string;
@@ -294,6 +301,39 @@ export interface Cagri {
   sonSaat: string;
   olusturan: string;
   zaman: string;
+  kime: string;
+  /** BCC'deki muhabirler (kişi kimliği). */
+  bcc: string[];
+  /** Konudaki eşleştirme etiketi: ND-20260930. */
+  etiket: string;
+}
+
+/*
+ * Çağrıya gelen e-posta yanıtı: olduğu gibi saklanıyor (alıntısız yeni
+ * metin ve tam metin). Öneri buradan türüyor; yanıt hiç değişmiyor.
+ * Sunucu fazında posta kutusunu izleyen hizmet de aynı kaydı yazacak.
+ */
+export const YANIT_DURUMLARI = ["oneri", "oneriYok", "eslesmedi"] as const;
+export type YanitDurum = (typeof YANIT_DURUMLARI)[number];
+
+export interface Yanit {
+  id: string;
+  cagriId?: string;
+  kisiId?: string;
+  kimden: string;
+  kimdenAd?: string;
+  konu: string;
+  /** Alıntı ve imza ayıklanmış yeni metin. */
+  metin: string;
+  /** E-postanın tam metni; ayıklama yanlış kesse de hiçbir şey kaybolmasın. */
+  tamMetin: string;
+  zaman: string;
+  /** Message-ID: aynı e-posta iki kez gelirse ikinci kez işlenmesin. */
+  mesajKimligi?: string;
+  ekler: string[];
+  durum: YanitDurum;
+  /** Nereden geldi: posta kutusu (sunucu) ya da elle içe aktarma. */
+  kaynak: "posta" | "iceAktarma";
 }
 
 /* --- Paket önerisi: birimler arası ortak kayıt (rapor bölüm 7). --- */
@@ -435,6 +475,8 @@ export const HAREKET_TIPLERI = [
   "notEklendi",
   "nitelikPuanlandi",
   "profilGuncellendi",
+  "yanitOneriYok",
+  "oneriDuzenlendi",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 
@@ -450,7 +492,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 3;
+  surum: 4;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -460,6 +502,7 @@ export interface Durum {
   gorevlendirmeler: Gorevlendirme[];
   oneriler: Oneri[];
   cagrilar: Cagri[];
+  yanitlar: Yanit[];
   paketler: Paket[];
   haftalik: HaftalikPlan[];
   aylik: AylikPlan[];
@@ -474,15 +517,15 @@ export interface Durum {
 
 /* --- Saklama ve abonelik --- */
 
-/* v2'de içerik üç dilli nesneydi; o kayıt v3 ekranında okunamaz, örnekten başlanıyor. */
-const SAKLA = "trt-planlama-v3";
+/* Şema değişince anahtar da değişiyor: eski kayıt yeni ekranı bozmasın, örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları). */
+const SAKLA = "trt-planlama-v4";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 3) return d;
+      if (d.surum === 4) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

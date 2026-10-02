@@ -1,10 +1,10 @@
-import { ArrowLeft, Ban, ClipboardCopy, Clock, FlaskConical, Lightbulb, Megaphone, Search, Send } from "lucide-react";
+import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { cagriKaydet, oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
+import { oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import {
@@ -14,7 +14,6 @@ import {
   ULKELER,
   baslikBul,
   kisiBul,
-  muhabirler,
   paketBul,
   planBul,
   useVeri,
@@ -30,10 +29,11 @@ import { oneriGorebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
+import { EpostaKaynagi } from "./Eposta";
 import PlanaEkle from "./PlanaEkle";
 
 /**
- * Öneriler: havuz, ayrıntı, yeni öneri ve öneri çağrısı.
+ * Öneriler: havuz, ayrıntı ve yeni öneri. Çağrı ve gelen e-posta yanıtları Eposta.tsx'te.
  *
  * Promptun 4.2 maddesindeki alanlar ve durumlar. Önerinin muhabirin
  * yazdığı hali hiç değişmiyor; değerlendirme (durum, bağlandığı başlık,
@@ -70,9 +70,14 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
         sagUc={
           <>
             {yapabilir(ben, "cagriHazirla") && (
-              <a className="dugme dugme-ikincil" href="#/oneriler/cagri">
-                <Megaphone size={16} /> {t("oneriCagrisi")}
-              </a>
+              <>
+                <a className="dugme dugme-ikincil" href="#/oneriler/yanitlar">
+                  <Inbox size={16} /> {t("gelenYanitlar")}
+                </a>
+                <a className="dugme dugme-ikincil" href="#/oneriler/cagri">
+                  <Megaphone size={16} /> {t("oneriCagrisi")}
+                </a>
+              </>
             )}
             {yapabilir(ben, "oneriGonder") && (
               <a className="dugme" href="#/oneriler/yeni">
@@ -132,6 +137,8 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const baslik = baslikBul(v, oneri.baslikId);
   const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi";
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
+  /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
+  const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
 
   return (
     <>
@@ -151,7 +158,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
       </header>
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <Kart baslik={t("oneriOrijinal")} ek={t("oneriOrijinalNot")}>
+          <Kart baslik={t(yanit ? "oneri" : "oneriOrijinal")} ek={t(yanit ? "oneriEpostadanNot" : "oneriOrijinalNot")}>
             <div className="alanlar">
               <div className="alan">
                 <small>{t("muhabir")}</small>
@@ -199,6 +206,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
             )}
           </Kart>
+          {yanit && <EpostaKaynagi ben={ben} oneri={oneri} yanit={yanit} />}
           <Kart baslik={t("hareketGecmisi")}>
             {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}
           </Kart>
@@ -426,107 +434,6 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
           </div>
         </div>
       </Kart>
-    </>
-  );
-}
-
-/**
- * Öneri çağrısı: sabah saha muhabirlerine giden e-postanın metni.
- * Prompt e-posta entegrasyonu yoksa bunun demo olduğunun açıkça
- * yazılmasını istiyor; metin hazırlanıp kopyalanıyor, "kaydet" ise
- * çağrıyı muhabirlerin ekranına düşürüyor. E-posta her zaman Arapça:
- * çağrı da planın içeriği.
- */
-export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
-  const { t, ad, dil } = useDil();
-  const v = useVeri();
-  const B = bugun();
-  const [hedef, setHedef] = useState(tarih ?? gunEkle(B, 1));
-  const [sonSaat, setSonSaat] = useState("15:00");
-  const sablon = (gun: string) => metin("cagriSablonu", "ar", { tarih: tarihYaz(gun, "ar", "tam") });
-  const [govde, setGovde] = useState(sablon(hedef));
-  const alicilar = muhabirler(v);
-
-  const kopyala = async () => {
-    try {
-      await navigator.clipboard.writeText(govde);
-      bildir(t("bKopyalandi"));
-    } catch {
-      bildir(t("kopyalanamadi"));
-    }
-  };
-  const kaydet = () => {
-    if (cagriKaydet(ben, { tarih: hedef, metin: govde, sonSaat })) bildir(t("bCagriKaydedildi"));
-  };
-
-  return (
-    <>
-      <a className="geri-bag" href="#/oneriler">
-        <ArrowLeft size={14} className="yon" /> {t("mOneriler")}
-      </a>
-      <SayfaBasi ikon={<Megaphone size={26} />} baslik={t("oneriCagrisi")} alt={t("cagriAlt")} />
-      <NotKutu ton="uyari" ikon={<FlaskConical size={16} />}>
-        <b>{t("demo")}:</b> {t("cagriDemoNotu")}
-      </NotKutu>
-      <div className="iz iz-ana-yan">
-        <Kart>
-          <div className="form">
-            <div className="satir">
-              <label>
-                {t("hedefPlan")}
-                <input
-                  type="date"
-                  value={hedef}
-                  min={B}
-                  onChange={(e) => {
-                    setHedef(e.target.value);
-                    setGovde(sablon(e.target.value));
-                  }}
-                />
-              </label>
-              <label>
-                {t("sonSaatGmt")}
-                <input type="time" value={sonSaat} onChange={(e) => setSonSaat(e.target.value)} />
-              </label>
-            </div>
-            <div className="eposta-kutu">
-              <header>
-                {t("alicilar")}: {t("muhabirSayisi", { n: alicilar.length })} · {t("konu")}: <Icerik>{metin("cagriKonu", "ar", { tarih: tarihYaz(hedef, "ar", "kisa") })}</Icerik>
-              </header>
-              <textarea className="girdi" {...icerikAlani} value={govde} onChange={(e) => setGovde(e.target.value)} />
-            </div>
-            <div className="form-alt">
-              <button className="dugme dugme-ikincil" onClick={kopyala}>
-                <ClipboardCopy size={16} /> {t("metniKopyala")}
-              </button>
-              <button className="dugme" onClick={kaydet}>
-                <Megaphone size={16} /> {t("cagriyiKaydet")}
-              </button>
-            </div>
-          </div>
-        </Kart>
-        <Kart baslik={t("oncekiCagrilar")}>
-          {v.cagrilar.length === 0 ? (
-            <Bos kucuk metin={t("kayitYok")} />
-          ) : (
-            <ul className="liste">
-              {[...v.cagrilar]
-                .sort((a, b) => b.zaman.localeCompare(a.zaman))
-                .map((c) => (
-                  <li key={c.id}>
-                    <div className="ad">
-                      <b>{tarihYaz(c.tarih, dil, "tam")}</b>
-                      <small>
-                        {ad(kisiBul(v, c.olusturan))} · {tarihYaz(yerelGun(c.zaman), dil, "kisa")} {saatYaz(c.zaman, dil)} · {t("sonSaat")} {c.sonSaat}
-                      </small>
-                    </div>
-                    <Rozet>{v.oneriler.filter((o) => o.cagriId === c.id).length}</Rozet>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </Kart>
-      </div>
     </>
   );
 }
