@@ -1,15 +1,15 @@
-import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
+import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { ADIM_ADI, ADIM_KUTUSU, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../akis";
+import { ADIM_KUTUSU, adimAdi, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum } from "../eylemler";
-import { BIRIM_ADI, sehirAdi } from "../etiketler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, uretimeAl } from "../eylemler";
+import { BIRIM_ADI, STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, ucretGorebilir, yapabilir } from "../yetki";
+import { adimYapabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { MuhabirSecici } from "./nextday/Formlar";
 
 /**
@@ -26,6 +26,8 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
   const muhabir = kisiBul(v, paket.muhabirId);
   const plan = planBul(v, paket.planId);
   const pb = plan?.basliklar.find((b) => b.id === paket.planBaslikId);
+  const stok = stokDurumu(paket);
+  const yayinPlani = planBul(v, paket.yayinlandi?.planId);
   const oneri = oneriBul(v, paket.oneriId);
   const sahip = paketSahibi(paket);
   const sonraki = paket.durum === "uretimde" ? sonrakiAdim(paket) : null;
@@ -57,7 +59,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <div>
             <small>{t("simdiKimde")}</small>
             <b>
-              {sahip ? t(BIRIM_ADI[sahip]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
+              {sahip ? t(BIRIM_ADI[sahip]) : stok ? t(STOK_DURUM_ADI[stok]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
               {sahip === "muhabir" && muhabir && ` · ${ad(muhabir)}`}
             </b>
           </div>
@@ -65,14 +67,14 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             <div>
               <small>{t("buAdim")}</small>
               <b>
-                {t(ADIM_ADI[paket.adim as UretimAdimi])} · {t("raporKutusu", { n: ADIM_KUTUSU[paket.adim as UretimAdimi] })}
+                {t(adimAdi(paket.adim as UretimAdimi, paket))} · {t("raporKutusu", { n: ADIM_KUTUSU[paket.adim as UretimAdimi] })}
               </b>
             </div>
           )}
           {sonraki && (
             <div>
               <small>{t("sirada")}</small>
-              <b>{sonraki === "tamam" ? t("pdTamamlandi") : `${t(ADIM_ADI[sonraki])} · ${t(BIRIM_ADI[adimSahibi(sonraki, paket.tur)])}`}</b>
+              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${t(adimAdi(sonraki, paket))} · ${t(BIRIM_ADI[adimSahibi(sonraki, paket.tur)])}`}</b>
             </div>
           )}
           {paket.teslim && (
@@ -123,6 +125,12 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 <small>{t("plan")}</small>
                 {plan ? (
                   <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a>
+                ) : yayinPlani ? (
+                  <a href={`#/nextday/${yayinPlani.id}`}>
+                    {t("sdYayinlandi")} · {tarihYaz(yayinPlani.tarih, dil, "kisa")}
+                  </a>
+                ) : stok ? (
+                  <b>{t(STOK_DURUM_ADI[stok])}</b>
                 ) : (
                   <b>{paket.durum === "tamamlandi" && paket.yayin ? tarihYaz(yerelGun(paket.yayin), dil, "kisa") : t("haftalikKaynak")}</b>
                 )}
@@ -216,6 +224,19 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     if (adimIlerle(ben, paket.id, g)) bildir(t("bAdimTamam"));
   };
 
+  if (paket.durum === "onaylandi" && uretimeAlabilir(ben, paket)) {
+    return (
+      <Kart baslik={t("seninIslemin")}>
+        <p className="aciklama">{t(paket.stok ? "uretimeAlStokAciklama" : "uretimeAlAciklama")}</p>
+        <div className="dugmeler">
+          <button className="dugme" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
+            <CirclePlay size={15} /> {t("uretimeAl")}
+          </button>
+        </div>
+      </Kart>
+    );
+  }
+
   if (paket.durum !== "uretimde") {
     if (!yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal", "onaylandi"].includes(paket.durum)) return null;
     return (
@@ -242,7 +263,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     const sahip = paketSahibi(paket);
     return (
       <NotKutu>
-        {t("baskaBirimde", { birim: sahip ? t(BIRIM_ADI[sahip]) : "", adim: t(ADIM_ADI[paket.adim as UretimAdimi]) })}
+        {t("baskaBirimde", { birim: sahip ? t(BIRIM_ADI[sahip]) : "", adim: t(adimAdi(paket.adim as UretimAdimi, paket)) })}
       </NotKutu>
     );
   }
@@ -250,7 +271,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const adim = paket.adim as UretimAdimi;
   const geriGonderebilir = adim === "kontrol" || adim === "dil";
   return (
-    <Kart baslik={`${t("seninSiran")}: ${t(ADIM_ADI[adim])}`}>
+    <Kart baslik={`${t("seninSiran")}: ${t(adimAdi(adim, paket))}`}>
       <div className="form">
         {adim === "gorevlendirme" && (
           <>
@@ -357,10 +378,10 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "inews" && (
           <>
-            <p className="aciklama">{t("eInews")}</p>
+            <p className="aciklama">{t(paket.stok ? "eStokYukleme" : "eInews")}</p>
             <div className="form-alt">
               <button className="dugme dugme-iyi" onClick={() => ilerle({})}>
-                <CircleCheck size={15} /> {t("inewsTamam")}
+                <CircleCheck size={15} /> {t(paket.stok ? "stogaAl" : "inewsTamam")}
               </button>
             </div>
           </>

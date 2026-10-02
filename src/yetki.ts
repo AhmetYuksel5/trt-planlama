@@ -167,12 +167,24 @@ export const onIncelemeci = (k: Kisi | undefined, kalem: Pick<HaftalikKalem, "tu
 
 /* --- Üretim adımları: sahibi akıştan --- */
 
+/*
+ * Planlama'ya düşen üretim adımı (feature ve ekonomi kolunda görev verme,
+ * Media Manager'a iletme, montaj kontrolü ve yükleme) feature/stok
+ * ekibinin işi; Planlama'nın kalanı izliyor, yönetici her zaman yapabiliyor.
+ */
+const ekipte = (k: Kisi) => k.birim !== "planlama" || k.gorev === "stokTakip" || k.rol === "yonetici";
+
 export const adimYapabilir = (k: Kisi | undefined, p: Paket): boolean => {
   if (!k || p.durum !== "uretimde" || !p.adim) return false;
   const adim = p.adim as UretimAdimi;
   if (k.birim === "muhabir") return adimSahibi(adim, p.tur) === "muhabir" && p.muhabirId === k.id;
-  return adimSahibi(adim, p.tur) === k.birim || !!YARDIMCI_SAHIP[adim]?.includes(k.birim);
+  if (adimSahibi(adim, p.tur) === k.birim) return ekipte(k);
+  return !!YARDIMCI_SAHIP[adim]?.includes(k.birim);
 };
+
+/** Plansız onaylı paketi (haftalık toplantının kabulü) kolun sahibi üretime alıyor; Planlama'da stok ekibi. */
+export const uretimeAlabilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && p.durum === "onaylandi" && !p.planId && paketSahibi(p) === k.birim && ekipte(k);
 
 /* --- Görünürlük --- */
 
@@ -252,7 +264,7 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   paketler: BIRIMLER,
   feature: MASA,
   programlar: ["planlama", "program", "yonetim"],
-  hazirpaketler: ["planlama", "newsdesk", "program", "yonetim"],
+  stok: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
   saha: ["newsgathering", "planlama", "yonetim", "muhabir"],
   seyahat: ["newsgathering", "planlama", "yonetim"],
   talepler: ["newsgathering", "planlama", "yonetim"],
@@ -287,6 +299,10 @@ export const yetkiMatrisi = (): MatrisSatiri[] => [
   })),
 ];
 
-/** Paketin şimdiki sahibi kişiye düşüyor mu ("Senin sıran" kutusu). */
+/** Paketin şimdiki sahibi kişiye düşüyor mu ("Senin sıran" kutusu); plansız onaylı pakette üretime alacak olana. */
 export const siramMi = (k: Kisi, p: Paket) =>
-  p.durum === "uretimde" ? adimYapabilir(k, p) : paketSahibi(p) === k.birim && k.birim === "planlama";
+  p.durum === "uretimde"
+    ? adimYapabilir(k, p)
+    : p.durum === "onaylandi" && !p.planId
+      ? uretimeAlabilir(k, p)
+      : paketSahibi(p) === k.birim && k.birim === "planlama";

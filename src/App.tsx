@@ -6,7 +6,7 @@ import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
 import Raporlar from "./ekranlar/Raporlar";
 import Basliklar from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
-import { HazirPaketler, IsAkisi, Paketler, Ucretler } from "./ekranlar/Listeler";
+import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
 import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
@@ -99,8 +99,8 @@ export default function App() {
       case "programlar":
         icerik = <Paketler ben={ben} sayfa={sayfa} />;
         break;
-      case "hazirpaketler":
-        icerik = <HazirPaketler />;
+      case "stok":
+        icerik = <StokHaberler ben={ben} />;
         break;
       case "profil":
         icerik = <KisiDetay ben={ben} kisi={ben} />;

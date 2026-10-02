@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { ADIM_ADI, ASAMALAR, ASAMA_ADI, type UretimAdimi } from "../akis";
+import { ADIM_ADI, ASAMALAR, ASAMA_ADI, adimAdi, type UretimAdimi } from "../akis";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
@@ -60,6 +60,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   onIncelemeGorusu: "hrOnIncelemeGorusu",
   onIncelemedeReddedildi: "hrOnIncelemedeReddedildi",
   haftaliktanAktarildi: "hrHaftaliktanAktarildi",
+  uretimeAlindi: "hrUretimeAlindi",
+  stokYayinlandi: "hrStokYayinlandi",
 };
 
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
@@ -68,6 +70,7 @@ const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "paketOnaylandi" && h.veri?.toplanti) return "hrPaketToplantidaOnay";
   if (h.tip === "paketOnaylandi" && h.veri?.hafta) return "hrPaketHaftalikOnay";
   if (h.tip === "cagriHazirlandi" && h.veri?.hafta) return "hrHaftalikCagri";
+  if (h.tip === "tamamlandi" && h.veri?.stok) return "hrStoga";
   return SABLON[h.tip];
 };
 
@@ -174,6 +177,7 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
         const m = metni(h, d);
         const sahip = h.veri?.sahip as Birim | undefined;
         const adim = h.veri?.adim as UretimAdimi | "tamam" | "metin" | undefined;
+        const paket = paketBul(d, h.paketId);
         const nokta = h.tip === "geriGonderildi" || h.tip === "oneriReddedildi" || h.tip === "paketIptal" ? "geri" : h.tip === "tamamlandi" ? "tamam" : "";
         return (
           <li key={h.id}>
@@ -198,8 +202,10 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
                     <span>{t(BIRIM_ADI[sahip])}</span>
                   </>
                 )}
-                {adim && adim !== "tamam" && adim in ADIM_ADI && <Rozet ton="vurgu">{t(ADIM_ADI[adim as UretimAdimi])}</Rozet>}
-                {adim === "tamam" && <Rozet ton="iyi">{t(ASAMA_ADI[ASAMALAR[4]])}</Rozet>}
+                {adim && adim !== "tamam" && adim in ADIM_ADI && (
+                  <Rozet ton="vurgu">{t(paket ? adimAdi(adim as UretimAdimi, paket) : ADIM_ADI[adim as UretimAdimi])}</Rozet>
+                )}
+                {adim === "tamam" && <Rozet ton="iyi">{t(h.veri?.stok ? "sdStokta" : ASAMA_ADI[ASAMALAR[4]])}</Rozet>}
               </small>
               {h.veri?.gerekce && <blockquote dir="auto">{h.veri.gerekce}</blockquote>}
             </div>

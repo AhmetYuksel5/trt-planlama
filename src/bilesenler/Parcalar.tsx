@@ -1,8 +1,8 @@
 import { ArrowRight, CalendarRange, Check, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ADIM_ADI, ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, uretimYolu, type UretimAdimi } from "../akis";
+import { ASAMALAR, ASAMA_ADI, adimAdi, asamaBul, geciktiMi, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
-import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
+import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TUR_ADI } from "../etiketler";
 import type { Bicim, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
@@ -326,12 +326,14 @@ const PAKET_DURUM_TONU: Record<Paket["durum"], string> = {
   iptal: "kotu",
 };
 
-/** Paketin durum etiketi; üretimdeyse hangi adımda olduğunu da söylüyor. */
+/** Paketin durum etiketi; üretimdeyse hangi adımda, stok paketiyse stokta mı yayınlandı mı olduğunu da söylüyor. */
 export function PaketDurumRozeti({ paket }: { paket: Paket }) {
   const { t } = useDil();
   if (paket.durum === "uretimde" && paket.adim) {
-    return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{t(ADIM_ADI[paket.adim as UretimAdimi])}</Rozet>;
+    return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{t(adimAdi(paket.adim as UretimAdimi, paket))}</Rozet>;
   }
+  const stok = stokDurumu(paket);
+  if (stok === "stokta" || stok === "yayinlandi" || stok === "bekliyor") return <Rozet ton={STOK_DURUM_TONU[stok]}>{t(STOK_DURUM_ADI[stok])}</Rozet>;
   return <Rozet ton={PAKET_DURUM_TONU[paket.durum]}>{t(PAKET_DURUM_ADI[paket.durum])}</Rozet>;
 }
 
@@ -393,7 +395,7 @@ export function AsamaBuyuk({ paket }: { paket: Paket }) {
         <div className="adim-seridi">
           {yol.map((a, i) => (
             <span key={a} className={i < adimSirasi ? "gecti" : i === adimSirasi ? (gecikti ? "gecikti" : "simdi") : ""}>
-              {t(ADIM_ADI[a])}
+              {t(adimAdi(a, paket))}
             </span>
           ))}
         </div>

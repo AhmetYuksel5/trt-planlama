@@ -1,3 +1,4 @@
+import type { StokDurumu } from "./akis";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
   Bicim,
@@ -52,6 +53,7 @@ export const GOREV_ADI: Record<Gorev, Anahtar> = {
   yonetici: "goYonetici",
   inputMuduru: "goInputMuduru",
   programMuduru: "goProgramMuduru",
+  stokTakip: "goStokTakip",
 };
 
 export const EKIP_GOREV_ADI: Record<EkipGorevi, Anahtar> = {
@@ -172,6 +174,20 @@ export const BICIM_KODU: Record<Bicim, string> = {
   derinlemesine: "In-depth",
   ozelRoportaj: "Interview",
   hikayem: "My Story",
+};
+
+export const STOK_DURUM_ADI: Record<StokDurumu, Anahtar> = {
+  bekliyor: "sdBekliyor",
+  uretimde: "sdUretimde",
+  stokta: "sdStokta",
+  yayinlandi: "sdYayinlandi",
+};
+
+export const STOK_DURUM_TONU: Record<StokDurumu, string> = {
+  bekliyor: "uyari",
+  uretimde: "vurgu",
+  stokta: "iyi",
+  yayinlandi: "",
 };
 
 export const KANAL_ADI: Record<Kanal, Anahtar> = {

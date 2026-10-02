@@ -1,12 +1,13 @@
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Avatar, Bos, Icerik, Rozet } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Rozet, TurRozeti } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, planGorevlendirmeCikar, planGorevlendirmeEkle } from "../../eylemler";
 import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
+import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { EKIP_GOREVLERI, kisiBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type NextDayPlan } from "../../veri";
+import { EKIP_GOREVLERI, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type NextDayPlan, type Paket } from "../../veri";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
 
 /**
@@ -308,40 +309,49 @@ export function CanliBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
   );
 }
 
-/* --- 4. Hazır paketler: arşivden seçiliyor; ŞEHİR / BAŞLIK / MUHABİR --- */
+/* --- 4. Hazır paketler: stoktan seçiliyor; ŞEHİR / BAŞLIK / MUHABİR --- */
 
+/*
+ * Stoktaki paket (bitmiş feature, ekonomi ya da günü olmayan haber) plana
+ * seçiliyor; plan Newsdesk'e devredilince yayınlanmış sayılıp stoktan
+ * düşüyor. Çıktıdaki "التقارير الجاهزة" bölümü bunlar.
+ */
 export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler: boolean; d: Durum }) {
   const { t } = useDil();
   const ben = useBen();
   const [sec, setSec] = useState(false);
-  const secili = plan.hazirPaketler.map((id) => d.hazirPaketler.find((h) => h.id === id)).filter((h) => h !== undefined);
-  const arsiv = d.hazirPaketler.filter((h) => !plan.hazirPaketler.includes(h.id));
-  const hazirSatiri = (h: (typeof secili)[number]) => (
+  const secili = plan.hazirPaketler.map((id) => paketBul(d, id)).filter((p): p is Paket => !!p);
+  const stokta = d.paketler.filter((p) => stokDurumu(p) === "stokta" && !plan.hazirPaketler.includes(p.id));
+  const hazirSatiri = (p: Paket) => (
     <>
-      <b>
-        <Icerik blok>{satir(sehirAr(h.sehir), h.baslik, kisiAr(kisiBul(d, h.muhabirId)))}</Icerik>
-      </b>
+      <a href={`#/paketler/${p.id}`} className="kalin-bag">
+        <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}</Icerik>
+      </a>
       <Icerik blok className="kayit-metin">
-        {h.aciklama}
+        {p.aciklama}
       </Icerik>
       <small>
-        <span dir="ltr" className="slug">
-          {h.slug}
-        </span>
-        <span>· {h.sure}</span>
+        <TurRozeti tur={p.tur} />
+        {p.slug && (
+          <span dir="ltr" className="slug">
+            {p.slug}
+          </span>
+        )}
+        {p.sure && <span>· {p.sure}</span>}
+        {stokDurumu(p) === "yayinlandi" && <Rozet ton="iyi">{t("sdYayinlandi")}</Rozet>}
       </small>
     </>
   );
   return (
     <Bolum no={4} baslik={t("hazirPaketler")} ek={String(secili.length)}>
       {secili.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
-      {secili.map((h) => (
-        <div key={h.id} className="kayit">
+      {secili.map((p) => (
+        <div key={p.id} className="kayit">
           <div className="kayit-bas">
-            <div>{hazirSatiri(h)}</div>
+            <div>{hazirSatiri(p)}</div>
             {duzenler && (
               <div className="islemler">
-                <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, h.id)} />
+                <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, p.id)} />
               </div>
             )}
           </div>
@@ -350,12 +360,13 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
       {duzenler &&
         (sec ? (
           <div className="form form-kutu ara-ust-2">
-            <div className="alan-etiket">{t("paketArsivi")}</div>
-            {arsiv.map((h) => (
-              <div key={h.id} className="kayit">
+            <div className="alan-etiket">{t("stoktakiPaketler")}</div>
+            {stokta.length === 0 && <Bos kucuk metin={t("stokBos")} />}
+            {stokta.map((p) => (
+              <div key={p.id} className="kayit">
                 <div className="kayit-bas">
-                  <div>{hazirSatiri(h)}</div>
-                  <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, h.id)}>
+                  <div>{hazirSatiri(p)}</div>
+                  <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, p.id)}>
                     <Plus size={14} /> {t("sec")}
                   </button>
                 </div>
@@ -369,7 +380,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
           </div>
         ) : (
           <div className="ara-ust-2">
-            <EkleDugmesi metin={t("arsivdenSec")} onClick={() => setSec(true)} />
+            <EkleDugmesi metin={t("stoktanSec")} onClick={() => setSec(true)} />
           </div>
         ))}
     </Bolum>

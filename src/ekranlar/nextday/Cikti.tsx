@@ -4,7 +4,7 @@ import { NotKutu, bildir } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
 import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
 import { vardiyaYaz } from "../../tarih";
-import { EKIP_GOREVLERI, baslikBul, kisiBul, useVeri, type NextDayPlan } from "../../veri";
+import { EKIP_GOREVLERI, baslikBul, kisiBul, paketBul, useVeri, type NextDayPlan } from "../../veri";
 
 /**
  * Planın temiz çıktısı: akşam haber toplantısına götürülen belge.
@@ -28,7 +28,7 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
 
   const gorevlendirmeler = plan.gorevlendirmeler.map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g) => g !== undefined);
   const canlilar = v.canliYayinlar.filter((x) => x.planId === plan.id).sort((a, b) => (a.tarih + a.saatGmt).localeCompare(b.tarih + b.saatGmt));
-  const hazirlar = plan.hazirPaketler.map((id) => v.hazirPaketler.find((h) => h.id === id)).filter((h) => h !== undefined);
+  const hazirlar = plan.hazirPaketler.map((id) => paketBul(v, id)).filter((h) => h !== undefined);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const takipler = v.gelismeler.filter((g) => g.planId === plan.id && !g.planBaslikId);
 
@@ -123,9 +123,11 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
                     {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
                   </Satir>
                   <p className="cikti-aciklama">{h.aciklama}</p>
-                  <p className="cikti-slug">
-                    <bdi>{h.slug}</bdi>
-                  </p>
+                  {h.slug && (
+                    <p className="cikti-slug">
+                      <bdi>{h.slug}</bdi>
+                    </p>
+                  )}
                 </div>
               ))}
             </section>
