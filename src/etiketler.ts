@@ -47,6 +47,8 @@ export const GOREV_ADI: Record<Gorev, Anahtar> = {
   mediaManager: "goMediaManager",
   koordinator: "goKoordinator",
   yonetici: "goYonetici",
+  inputMuduru: "goInputMuduru",
+  programMuduru: "goProgramMuduru",
 };
 
 export const EKIP_GOREV_ADI: Record<EkipGorevi, Anahtar> = {

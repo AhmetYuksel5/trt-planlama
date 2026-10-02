@@ -1,6 +1,6 @@
 import { ArrowLeft, Ban, CalendarDays, Check, Clock, Lightbulb, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, NotKutu, Rozet, TalimatRozeti, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { baslikEkle, geriDonusGonder, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
@@ -214,7 +214,8 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
   const oneriler = v.oneriler
     .filter((o) => o.hedefTarih === plan.tarih && o.durum !== "planaEklendi")
-    .sort((a, b) => (a.durum === b.durum ? b.zaman.localeCompare(a.zaman) : sira(a) - sira(b)));
+    .sort((a, b) => (a.durum === b.durum ? b.zaman.localeCompare(a.zaman) : sira(a) - sira(b)))
+    .sort(talimatOnce);
   const bekleyen = oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length;
 
   return (
@@ -224,10 +225,11 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
       ) : (
         oneriler.map((o) => {
           const k = kisiBul(v, o.muhabirId);
+          const talimat = !!o.talimatVeren;
           return (
-            <div key={o.id} className="kayit">
+            <div key={o.id} className={`kayit ${talimat ? "kayit-talimat" : ""}`}>
               <div className="kayit-bas">
-                <Avatar kisi={k} boy="kucuk" />
+                <Avatar kisi={k ?? kisiBul(v, o.talimatVeren)} boy="kucuk" />
                 <div>
                   <b>
                     <Icerik blok>{satir(sehirAr(k?.sehir), o.haberBasligi)}</Icerik>
@@ -242,7 +244,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
                   )}
                   <small>
                     <OneriDurumRozeti oneri={o} />
-                    <span>{ad(k)}</span>
+                    {talimat ? <TalimatRozeti veren={kisiBul(v, o.talimatVeren)} /> : <span>{ad(k)}</span>}
                     <span>
                       · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
                     </span>
@@ -260,12 +262,13 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
                       <Clock size={14} />
                     </button>
                   )}
-                  {o.durum !== "sonra" && o.durum !== "reddedildi" && (
+                  {/* Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor. */}
+                  {!talimat && o.durum !== "sonra" && o.durum !== "reddedildi" && (
                     <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "sonra")} title={t("odSonra")}>
                       <Lightbulb size={14} />
                     </button>
                   )}
-                  {o.durum !== "reddedildi" && (
+                  {!talimat && o.durum !== "reddedildi" && (
                     <button className="dugme dugme-kotu dugme-kucuk" onClick={() => setRet({ id: o.id, gerekce: "" })} title={t("reddet")}>
                       <Ban size={14} />
                     </button>

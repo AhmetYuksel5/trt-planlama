@@ -21,11 +21,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Katmanlar:
   - `veri.ts`: tipler, depo, yükle/kaydet
   - `akis.ts`: adımlar, aşamalar, adım sahipleri
-  - `yetki.ts`: birim/rol/alan yetkisi, görünürlük, sayfa izinleri
+  - `yetki.ts`: birim/rol/alan yetkisi, görünürlük, sayfa izinleri;
+    yönetici kapsamı (`MUDURLUKLER`, `kapsam`): Input müdürü Planlama,
+    Newsdesk, News Gathering ve muhabirlerden, Program müdürü Program'dan,
+    birim yöneticisi kendi biriminden sorumlu
   - `eylemler.ts`: kaydı değiştiren her şey; önce yetki, sonra hareket kaydı
   - `performans.ts`: muhabir göstergeleri; saklanmaz, paket kaydındaki
     ölçüm noktalarından (gorevZamani, muhabirTeslimi, duzeltmeSayisi,
     nitelik) hesaplanır, sınırlı hareket kaydından değil
+  - `rapor.ts`: raporlar; performans gibi saklanmaz, aynı ölçümle
+    (`olcumler`) kayıtlardan hesaplanır
   - `eposta.ts`: çağrı e-postası (Outlook taslağı, mailto) ve gelen yanıtı
     eşleştirme kuralları; saf, sunucu fazında posta kutusunu izleyen hizmet
     de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`)
@@ -52,12 +57,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v5`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v6`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
   Yetki hem düğmede hem eylemde soruluyor.
+- Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
+  göstermez: sayılar, birim ışıkları (gerekçesi yazılı), dikkat
+  gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
+  Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
+  akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
+- Takvime yalnız akışta tanımlı toplantı girer (akşam haber toplantısı,
+  Newsdesk sabah toplantısı, Perşembe haftalık toplantısı).
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

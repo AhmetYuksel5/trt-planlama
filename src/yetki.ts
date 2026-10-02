@@ -2,12 +2,15 @@ import { ADIM_ADI, URETIM_ADIMLARI, YARDIMCI_SAHIP, adimSahibi, paketSahibi, typ
 import type { Anahtar } from "./dil";
 import {
   BIRIMLER,
+  ICERIK_TURLERI,
   oneriBul,
   paketBul,
   type Birim,
   type Durum,
+  type Gorev,
   type Gorevlendirme,
   type Hareket,
+  type IcerikTuru,
   type Kisi,
   type NextDayPlan,
   type Oneri,
@@ -52,6 +55,13 @@ export const IZINLER = {
   ucretGor: { ad: "yUcretGor", birimler: ["newsdesk", "yonetim"] },
   nitelikPuanla: { ad: "yNitelikPuanla", birimler: ["newsdesk", "yonetim"] },
   profilDuzenle: { ad: "yProfilDuzenle", birimler: ["planlama", "newsgathering", "yonetim"] },
+  /* Ayrıca kapsam soruluyor: talimatı yalnız Planlama'dan sorumlu müdür verir, müdahale yalnız kapsamdaki pakete. */
+  talimatVer: { ad: "yTalimatVer", birimler: ["yonetim"] },
+  mudahale: {
+    ad: "yMudahale",
+    birimler: ["planlama", "newsdesk", "newsgathering", "program", "output", "media", "yonetim"],
+    yalnizYonetici: ["planlama", "newsdesk", "newsgathering", "program", "output", "media"],
+  },
 } satisfies Record<string, Izin>;
 export type Eylem = keyof typeof IZINLER;
 
@@ -62,6 +72,47 @@ export const yapabilir = (k: Kisi | undefined, e: Eylem): boolean => {
   if (iz.yalnizYonetici?.includes(k.birim) && k.rol !== "yonetici") return false;
   return true;
 };
+
+/* --- Yöneticiler: kim hangi birimin işinden sorumlu --- */
+
+/*
+ * Müdürler yönetim biriminde ve birden fazla birimden sorumlu: Input
+ * müdürü Planlama, Newsdesk, News Gathering ve muhabirlerden, Program
+ * müdürü Program'dan. Paketlerde sorumluluk kola göre: haber kolu hangi
+ * birimin masasında olursa olsun baştan sona Input'un. Birim yöneticisi
+ * yalnız kendi biriminden, paketlerde yalnız şu an kendi masasında
+ * olandan sorumlu. Unvanı tabloda olmayan yönetim üyesi her şeyi görür.
+ */
+export interface Kapsam {
+  birimler: Birim[];
+  kollar: IcerikTuru[];
+  mudur: boolean;
+}
+
+export const MUDURLUKLER: Partial<Record<Gorev, Omit<Kapsam, "mudur">>> = {
+  inputMuduru: { birimler: ["planlama", "newsdesk", "newsgathering", "muhabir"], kollar: ["haber", "feature", "ekonomi"] },
+  programMuduru: { birimler: ["program"], kollar: ["program"] },
+};
+
+export const kapsam = (k: Kisi | undefined): Kapsam | null => {
+  if (!k) return null;
+  if (k.birim === "yonetim")
+    return { ...(MUDURLUKLER[k.gorev] ?? { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] }), mudur: true };
+  if (k.rol === "yonetici" && k.birim !== "muhabir") return { birimler: [k.birim], kollar: [...ICERIK_TURLERI], mudur: false };
+  return null;
+};
+
+export const paketKapsamda = (k: Kisi | undefined, p: Paket): boolean => {
+  const ks = kapsam(k);
+  if (!k || !ks) return false;
+  return ks.mudur ? ks.kollar.includes(p.tur) : paketSahibi(p) === k.birim;
+};
+
+export const talimatVerebilir = (k: Kisi | undefined): boolean => yapabilir(k, "talimatVer") && !!kapsam(k)?.birimler.includes("planlama");
+
+/** Öncelik ve yönetici notu: kapsamdaki, henüz bitmemiş paket. */
+export const mudahaleEdebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  yapabilir(k, "mudahale") && paketKapsamda(k, p) && p.durum !== "tamamlandi" && p.durum !== "iptal";
 
 /* --- Plan düzenleme: içerik Planlama'nın, devirden sonra operasyon Newsdesk'in --- */
 
@@ -122,9 +173,11 @@ export const hareketGorebilir = (k: Kisi | undefined, h: Hareket, d: Durum): boo
 /**
  * Bildirim ayrıca saklanmıyor: hareket kaydı kimin önüne iş düşürdüyse
  * (veri.sahip) o birime, muhabirse kendi işindeki her harekete bildirim.
+ * Bir kişiye özel olan (veri.kime: talimatı veren yönetici) yalnız ona.
  */
 export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   if (h.kisiId === k.id) return false;
+  if (h.veri?.kime) return h.veri.kime === k.id;
   if (k.birim === "muhabir") return hareketGorebilir(k, h, d);
   return h.veri?.sahip === k.birim;
 };
@@ -173,8 +226,9 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   plan: BIRIMLER,
 };
 
+/* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */
 export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
-  !!k && !!SAYFA_IZNI[sayfa]?.includes(k.birim);
+  !!k && (sayfa === "panel" ? !!kapsam(k) : !!SAYFA_IZNI[sayfa]?.includes(k.birim));
 
 /* --- Proje planı için matris: tablolardan üretiliyor, elle yazılmıyor --- */
 

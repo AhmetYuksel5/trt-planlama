@@ -4,6 +4,7 @@ import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
 import { useVeri, type Kisi, type Oneri } from "../../veri";
 import { planIcerikDuzenler } from "../../yetki";
+import { MuhabirSecici } from "../nextday/Formlar";
 
 /**
  * Öneriyi plana ekleme formu.
@@ -13,6 +14,9 @@ import { planIcerikDuzenler } from "../../yetki";
  * olduğu başlık, sonra aynı ülkenin plandaki başlığı; hiçbiri yoksa
  * önerinin kendi başlığıyla yeni başlık. Paket başlığı önerilmişse paket
  * önerisi de doğuyor; onu kapatmak yalnız gelişmeyi ekliyor.
+ *
+ * Yönetici talimatında muhabir yok: Planlama burada atıyor. Talimat bir
+ * haber siparişi olduğu için paket her zaman doğuyor ve öncelikli.
  */
 export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; kapat: () => void }) {
   const { t, dil } = useDil();
@@ -30,7 +34,9 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
     "yeni";
   const [baslikId, setBaslikId] = useState(varsayilan);
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
+  const talimat = !!oneri.talimatVeren;
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
+  const [muhabirId, setMuhabirId] = useState("");
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
 
@@ -39,7 +45,8 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
       planId: plan.id,
       baslikId: baslikId === "yeni" ? undefined : baslikId,
       yeniBaslik: baslikId === "yeni" ? yeniBaslik : undefined,
-      paketOlustur: paket,
+      paketOlustur: talimat || paket,
+      muhabirId: oneri.muhabirId ? undefined : muhabirId,
     });
     if (tamam) {
       bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
@@ -89,7 +96,13 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
           <input {...icerikAlani} value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} />
         </label>
       )}
-      {oneri.paketBasligi && (
+      {!oneri.muhabirId && (
+        <label>
+          {t("muhabirAta")}
+          <MuhabirSecici deger={muhabirId} degistir={setMuhabirId} bosEtiket={t("atanmadi")} />
+        </label>
+      )}
+      {oneri.paketBasligi && !talimat && (
         <label className="secim">
           <input type="checkbox" checked={paket} onChange={(e) => setPaket(e.target.checked)} />
           {t("paketOnerisiOlustur")}: <b>

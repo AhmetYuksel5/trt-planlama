@@ -2,7 +2,8 @@ import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Wor
 import { useState } from "react";
 import { ADIM_ADI, ADIM_KUTUSU, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
-import { AsamaBuyuk, Avatar, BicimRozeti, Bos, Icerik, Kart, Kilitli, NotKutu, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { AsamaBuyuk, Avatar, BicimRozeti, Bos, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum } from "../eylemler";
 import { BIRIM_ADI, sehirAdi } from "../etiketler";
@@ -44,7 +45,8 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             <Icerik>{paket.baslik}</Icerik>
           </h1>
           <p>
-            {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} /> {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+            {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} />{" "}
+            {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />}
           </p>
         </div>
       </header>
@@ -87,6 +89,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
       <div className="iz iz-ana-yan">
         <div className="iz">
           <EylemKarti ben={ben} paket={paket} />
+          <YoneticiKarti ben={ben} paket={paket} />
           {paket.metin && (
             <Kart baslik={t("metin")}>
               <div className="metin-kutu">
@@ -409,10 +412,11 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
         {paket.notlar.map((n) => {
           const k = kisiBul(v, n.kisiId);
           return (
-            <li key={n.id}>
+            <li key={n.id} className={n.yonetici ? "yonetici-notu" : ""}>
               <Avatar kisi={k} boy="kucuk" />
               <div className="metin">
                 <b>{k ? ad(k) : "?"}</b> <span className="sonuk-yazi">· {k ? t(BIRIM_ADI[k.birim]) : ""}</span>
+                {n.yonetici && <span className="rozet rozet-talimat">{t("yoneticiNotu")}</span>}
                 <p dir="auto">{n.metin}</p>
               </div>
               <time dateTime={n.zaman}>{gecenSure(n.zaman, dil)}</time>

@@ -815,9 +815,71 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .mobil-kisi-bag { display: flex; gap: var(--ara-3); align-items: center; flex: 1; min-width: 0; min-height: var(--dokunma); }
 .mobil-kisi-bag > div { min-width: 0; }
 
+/* --- Yönetici: öncelik, talimat, panel, raporlar --- */
+
+/*
+ * Öncelik markanın kırmızısıyla dolu rozet: "geciken"in açık kırmızı
+ * rozetinden ayrılsın. Yönetici talimatı ve notu lacivert: kimden geldiği
+ * bir bakışta belli olsun.
+ */
+.rozet-oncelik { background: var(--marka); color: #fff; display: inline-flex; align-items: center; gap: 3px; }
+.rozet-talimat { background: var(--lacivert); color: #fff; display: inline-flex; align-items: center; gap: 3px; }
+.dugme-oncelik { background: var(--marka); border-color: var(--marka); color: #fff; }
+.dugme-oncelik:hover { background: var(--marka); border-color: var(--marka); filter: brightness(.92); }
+.kayit-talimat { border-inline-start: 3px solid var(--lacivert); }
+.akis li.yonetici-notu { background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-2); border-top: 0; margin-top: var(--ara-1); }
+.akis li.yonetici-notu .rozet { margin-inline-start: var(--ara-1); }
+
+.birim-kartlari { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--ara-3); }
+.birim-karti { display: flex; flex-direction: column; gap: var(--ara-3); }
+.birim-karti header { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); flex-wrap: wrap; }
+.birim-karti h3 { font-size: var(--punto-orta); font-weight: 700; }
+.birim-karti dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: var(--ara-2); }
+.birim-karti dt, .ozet-sayilar dt { color: var(--sonuk); font-size: var(--punto-mini); font-weight: 500; }
+.birim-karti dd { font-size: var(--punto-buyuk); font-weight: 800; font-variant-numeric: tabular-nums; }
+.birim-karti .tumu { align-self: flex-start; margin-top: auto; }
+.isik { display: inline-flex; align-items: center; gap: var(--ara-1); font-size: var(--punto-kucuk); font-weight: 600; }
+.isik i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.isik-kotu { color: var(--kotu); } .isik-kotu i { background: var(--kotu); }
+.isik-uyari { color: var(--uyari); } .isik-uyari i { background: var(--uyari); }
+.isik-iyi { color: var(--iyi); } .isik-iyi i { background: var(--iyi); }
+
+.liste.dikkat > li { align-items: stretch; }
+.dikkat-isaret { width: 4px; border-radius: var(--yaricap-hap); flex: none; background: var(--cizgi); }
+.ton-kotu .dikkat-isaret { background: var(--kotu); }
+.ton-uyari .dikkat-isaret { background: var(--uyari); }
+.ton-vurgu .dikkat-isaret { background: var(--marka); }
+.liste.dikkat .dugme { align-self: center; }
+/* Dikkat satırında başlık kırpılmasın: yönetici neyin geciktiğini okuyabilsin. */
+.liste.dikkat .ad > a { white-space: normal; }
+@media (max-width: 760px) {
+  /* Telefonda düğme başlığın altına iniyor; başlık satırın tamamını alıyor. */
+  .liste.dikkat > li { flex-wrap: wrap; }
+  .liste.dikkat .ad { flex-basis: calc(100% - var(--ara-4)); }
+  .liste.dikkat .dugme { margin-inline-start: var(--ara-4); }
+}
+
+.talimat-zinciri { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-top: var(--ara-1); }
+.talimat-zinciri li { font-size: var(--punto-mini); font-weight: 600; color: var(--silik); background: var(--yuzey-2); border-radius: var(--yaricap-hap); padding: 2px var(--ara-2); }
+.talimat-zinciri li.gecti { color: var(--iyi); background: var(--iyi-sis); }
+.talimat-zinciri li.simdi { color: #fff; background: var(--vurgu); }
+.talimat-zinciri.iptal li.simdi { background: var(--kotu); }
+.liste.talimatlar .ad small, .liste.talimatlar .ad > a { white-space: normal; }
+
+.ozet-sayilar { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--ara-3); }
+.ozet-sayilar dd { font-size: var(--punto-buyuk); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.gozlem-bandi { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; background: var(--vurgu-sis); color: var(--vurgu-koyu); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); font-weight: 600; font-size: var(--punto-kucuk); }
+.gozlem-bandi .dugme { margin-inline-start: auto; }
+
+.rapor-ust { display: flex; align-items: center; gap: var(--ara-3); flex-wrap: wrap; }
+.yalniz-yazdir { display: none; }
+
 @media print {
   body { background: #fff; }
   .menu, .ust, .demo-serit, .yazdirma-gizle, .sayfa-basi, .perde, .bildiri { display: none !important; }
+  .yalniz-yazdir { display: block; margin-bottom: var(--ara-3); }
+  .kart, .sayac { box-shadow: none; break-inside: avoid; }
   .uygulama { display: block; }
   .sayfa { padding: 0; }
   .cikti-sarici { background: none; padding: 0; }

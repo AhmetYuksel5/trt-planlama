@@ -31,7 +31,16 @@ import {
   type Yanit,
   type YanitDurum,
 } from "./veri";
-import { adimYapabilir, paketGorebilir, planIcerikDuzenler, planOperasyonDuzenler, profilDuzenler, yapabilir } from "./yetki";
+import {
+  adimYapabilir,
+  mudahaleEdebilir,
+  paketGorebilir,
+  planIcerikDuzenler,
+  planOperasyonDuzenler,
+  profilDuzenler,
+  talimatVerebilir,
+  yapabilir,
+} from "./yetki";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -134,11 +143,54 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   return id;
 };
 
+/*
+ * Yöneticinin haber talimatı: "şunun haberini yapalım". Ayrı bir akış
+ * kurulmuyor; Planlama'nın önüne öneri gibi düşüyor ama reddedilemiyor,
+ * plana eklenince doğan paket öncelikli. Muhabiri Planlama atıyor.
+ */
+export interface TalimatGirdisi {
+  haberBasligi: string;
+  aciklama: string;
+  ulke: Ulke;
+  hedefTarih: string;
+}
+
+export const talimatVer = (ben: Kisi, g: TalimatGirdisi): string | null => {
+  if (!talimatVerebilir(ben) || !g.haberBasligi.trim()) return null;
+  let d = getir();
+  const id = kimlik("o");
+  const baslik = g.haberBasligi.trim();
+  d = {
+    ...d,
+    oneriler: [
+      {
+        id,
+        talimatVeren: ben.id,
+        ulke: g.ulke,
+        haberBasligi: baslik,
+        gelisme: g.aciklama.trim() || baslik,
+        paketBasligi: baslik,
+        tur: "haber",
+        sahaGerekli: false,
+        zaman: simdi(),
+        kanal: "sistem",
+        hedefTarih: g.hedefTarih,
+        durum: "yeni",
+      },
+      ...d.oneriler,
+    ],
+  };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "talimatVerildi", oneriId: id, veri: { sahip: "planlama" } }));
+  return id;
+};
+
 export const oneriDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "sonra" | "reddedildi", gerekce = "") => {
   if (!yapabilir(ben, "oneriDegerlendir")) return false;
   let d = getir();
   const o = oneriBul(d, id);
   if (!o || o.durum === "planaEklendi") return false;
+  // Talimat reddedilmez ve ertelenmez; yalnız değerlendirmeye alınıp plana eklenir.
+  if (o.talimatVeren && yeni !== "degerlendiriliyor") return false;
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: yeni, gerekce: gerekce || x.gerekce } : x)) };
   const tip = yeni === "degerlendiriliyor" ? "oneriDegerlendirmede" : yeni === "sonra" ? "oneriSonra" : "oneriReddedildi";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, oneriId: id, veri: gerekce ? { gerekce } : undefined }));
@@ -155,12 +207,14 @@ export const oneriDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "s
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
-  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean },
+  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string },
 ): boolean => {
   let d = getir();
   const o = oneriBul(d, oneriId);
   const plan = planBul(d, g.planId);
   if (!o || !plan || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
+  // Talimatın muhabiri yok; Planlama burada atıyor. Önerinin kendisi değişmiyor.
+  const muhabirId = o.muhabirId ?? (g.muhabirId || undefined);
 
   let baslikId = g.baslikId;
   if (!baslikId && g.yeniBaslik?.trim()) {
@@ -174,7 +228,7 @@ export const oneriPlanaEkle = (
   const pbId = pb.id;
   const yeniPb = {
     ...pb,
-    muhabirler: pb.muhabirler.some((m) => m.kisiId === o.muhabirId) ? pb.muhabirler : [...pb.muhabirler, { kisiId: o.muhabirId }],
+    muhabirler: !muhabirId || pb.muhabirler.some((m) => m.kisiId === muhabirId) ? pb.muhabirler : [...pb.muhabirler, { kisiId: muhabirId }],
   };
   d = planGuncelle(d, plan.id, (p) => ({
     ...p,
@@ -186,17 +240,17 @@ export const oneriPlanaEkle = (
     planId: plan.id,
     planBaslikId: pbId,
     metin: o.gelisme,
-    kaynakTuru: "muhabir",
+    kaynakTuru: o.talimatVeren ? "diger" : "muhabir",
     kaynakAdi: "",
     tarih: o.zaman,
-    onerenId: o.muhabirId,
+    onerenId: muhabirId,
     oneriId: o.id,
   };
   d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
 
   let paketId: string | undefined;
   if (g.paketOlustur && o.paketBasligi) {
-    const muhabir = kisiBul(d, o.muhabirId);
+    const muhabir = kisiBul(d, muhabirId);
     let kod: string;
     [kod, d] = yeniKod(d);
     paketId = kimlik("p");
@@ -207,13 +261,14 @@ export const oneriPlanaEkle = (
       planBaslikId: pbId,
       baslik: o.paketBasligi,
       sehir: muhabir?.sehir ?? "istanbul",
-      muhabirId: o.muhabirId,
+      muhabirId,
       aciklama: o.gelisme,
       tur: o.tur,
       bicim: o.bicim,
       durum: "degerlendiriliyor",
       sahaGerekli: o.sahaGerekli,
       oneriId: o.id,
+      oncelikli: o.talimatVeren ? true : undefined,
       notlar: [],
       olusturma: simdi(),
       guncelleme: simdi(),
@@ -232,7 +287,8 @@ export const oneriPlanaEkle = (
       oneriId: o.id,
       paketId,
       planId: plan.id,
-      veri: { tarih: plan.tarih },
+      // Talimat plana girince talimatı veren yönetici haberdar oluyor.
+      veri: o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih },
     }),
   );
   return true;
@@ -654,6 +710,30 @@ export const notEkle = (ben: Kisi, paketId: string, metin: string) => {
   d = paketGuncelle(d, paketId, (x) => ({ ...x, notlar: [...x.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: metin.trim() }] }));
   const sahip = paketSahibi(p);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "notEklendi", paketId, planId: p.planId, veri: { sahip: sahip ?? "" } }));
+  return true;
+};
+
+/* --- Yöneticinin müdahalesi: öncelik ve not; işi o an yürüten birime bildirim düşer --- */
+
+export const oncelikDegistir = (ben: Kisi, paketId: string, oncelikli: boolean) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !mudahaleEdebilir(ben, p) || !!p.oncelikli === oncelikli) return false;
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, oncelikli: oncelikli || undefined }));
+  const tip = oncelikli ? "paketOncelikli" : "paketOncelikKalkti";
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip, paketId, planId: p.planId, veri: { sahip: paketSahibi(p) ?? "" } }));
+  return true;
+};
+
+export const yoneticiNotu = (ben: Kisi, paketId: string, metin: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !metin.trim() || !mudahaleEdebilir(ben, p)) return false;
+  d = paketGuncelle(d, paketId, (x) => ({
+    ...x,
+    notlar: [...x.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: metin.trim(), yonetici: true }],
+  }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "yoneticiNotu", paketId, planId: p.planId, veri: { sahip: paketSahibi(p) ?? "" } }));
   return true;
 };
 

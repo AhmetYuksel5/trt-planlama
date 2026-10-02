@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, CircleCheck, Hourglass, Lightbulb, Pencil, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Icerik, PaketDurumRozeti, Rozet, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, useDil } from "../../dil";
 import { paketDurum, paketSil, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { kisiAr, satir, sehirAr } from "../../etiketler";
@@ -153,7 +153,7 @@ export default function BaslikKarti({
             <Package size={14} /> {t("paketOnerileri")} (PKG)
           </h4>
           {paketler.length === 0 && paketForm !== "yeni" && <p className="bos-kucuk">{t("paketOnerisiYok")}</p>}
-          {paketler.map((p) =>
+          {[...paketler].sort(oncelikliOnce).map((p) =>
             paketForm === p.id ? (
               <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
             ) : (
@@ -164,6 +164,7 @@ export default function BaslikKarti({
                       <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : metin("atanmadi", "ar"))}</Icerik>
                     </a>
                     <small>
+                      {p.oncelikli && <OncelikRozeti />}
                       <PaketDurumRozeti paket={p} />
                       <span>{p.kod}</span>
                       {p.yayin && <span>· {t("yayin")} {saatYaz(p.yayin, dil)}</span>}
@@ -211,10 +212,10 @@ export default function BaslikKarti({
             <h4>
               <Lightbulb size={14} /> {t("buBasligaGelenOneriler")}
             </h4>
-            {oneriler.map((o) => (
-              <div key={o.id} className="kayit">
+            {[...oneriler].sort(talimatOnce).map((o) => (
+              <div key={o.id} className={`kayit ${o.talimatVeren ? "kayit-talimat" : ""}`}>
                 <div className="kayit-bas">
-                  <Avatar kisi={kisiBul(v, o.muhabirId)} boy="kucuk" />
+                  <Avatar kisi={kisiBul(v, o.muhabirId ?? o.talimatVeren)} boy="kucuk" />
                   <div>
                     <b>
                       <Icerik blok>{o.haberBasligi}</Icerik>
@@ -222,7 +223,7 @@ export default function BaslikKarti({
                     <Icerik blok className="kayit-metin">
                       {o.gelisme}
                     </Icerik>
-                    <small>{ad(kisiBul(v, o.muhabirId))}</small>
+                    <small>{o.talimatVeren ? <TalimatRozeti veren={kisiBul(v, o.talimatVeren)} /> : ad(kisiBul(v, o.muhabirId))}</small>
                   </div>
                   {oneriAcik !== o.id && (
                     <button className="dugme dugme-iyi dugme-kucuk" onClick={() => setOneriAcik(o.id)}>

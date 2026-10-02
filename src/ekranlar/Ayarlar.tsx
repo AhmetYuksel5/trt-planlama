@@ -1,6 +1,6 @@
-import { ChartColumn, Database, Lock, RotateCcw, Settings } from "lucide-react";
+import { Database, Lock, RotateCcw, Settings } from "lucide-react";
 import DilSecici from "../bilesenler/DilSecici";
-import { Kart, NotKutu, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
+import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { sifirla, type Kisi } from "../veri";
@@ -38,16 +38,6 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
           </button>
         </Kart>
       </div>
-    </>
-  );
-}
-
-export function Raporlar() {
-  const { t } = useDil();
-  return (
-    <>
-      <SayfaBasi ikon={<ChartColumn size={26} />} baslik={t("mRaporlar")} alt={t("raporlarAlt")} sagUc={<TaslakEtiketi />} />
-      <NotKutu>{t("raporlarTaslak")}</NotKutu>
     </>
   );
 }
