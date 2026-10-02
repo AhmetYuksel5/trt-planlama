@@ -13,11 +13,15 @@ import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
  * Next Day planının bölümleri, promptun 4.3 maddesindeki ve kurumun
  * bugünkü çıktısındaki sırayla. Her bölüm açılıp kapanan bir kart; plan
  * kilitliyse (onaylandı ya da devralındı) düzenleme düğmeleri görünmüyor.
+ *
+ * Bölümler kapalı açılıyor: plan uzun, planlamacı o an hangi bölümde
+ * çalışıyorsa onu açıyor. Başlıktaki sayı kapalıyken de neyin olduğunu
+ * söylüyor.
  */
 
-export function Bolum({ no, baslik, ek, children, acik = true }: { no: number | string; baslik: string; ek?: ReactNode; children: ReactNode; acik?: boolean }) {
+export function Bolum({ no, baslik, ek, children }: { no: number | string; baslik: string; ek?: ReactNode; children: ReactNode }) {
   return (
-    <details className="bolum" open={acik}>
+    <details className="bolum">
       <summary>
         <span className="no">{no}</span>
         {baslik}

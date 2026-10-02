@@ -218,7 +218,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const bekleyen = oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length;
 
   return (
-    <Bolum no="★" baslik={t("buPlanaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })} acik={bekleyen > 0}>
+    <Bolum no="★" baslik={t("buPlanaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
       {oneriler.length === 0 ? (
         <Bos kucuk metin={t("oneriYok")} />
       ) : (
