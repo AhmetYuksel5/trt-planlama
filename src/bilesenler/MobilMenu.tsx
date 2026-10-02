@@ -8,7 +8,7 @@ import type { Kisi } from "../veri";
 import { sayfaGorebilir } from "../yetki";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
-import { MENU } from "./SolMenu";
+import { MENU, maddeGorunur } from "./SolMenu";
 
 /**
  * Telefonda "Menü"nün açtığı panel: plan kısayolları, bütün sayfalar,
@@ -73,7 +73,7 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
       )}
 
       {MENU.map((g, i) => {
-        const maddeler = g.maddeler.filter((m) => sayfaGorebilir(ben, m.sayfa) && !(muhabir && m.muhabirGizle));
+        const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         return (
           <section key={i}>

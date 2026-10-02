@@ -31,7 +31,7 @@ import {
  * denetlenmiyor, Latin harfli özel isim serbest.
  */
 
-function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: () => void; devre?: boolean }) {
+export function FormAlt({ kapat, kaydet, devre = false, kaydetMetni }: { kapat: () => void; kaydet: () => void; devre?: boolean; kaydetMetni?: string }) {
   const { t } = useDil();
   return (
     <div className="form-alt">
@@ -39,7 +39,7 @@ function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: 
         {t("iptal")}
       </button>
       <button type="button" className="dugme dugme-kucuk" onClick={kaydet} disabled={devre}>
-        {t("kaydet")}
+        {kaydetMetni ?? t("kaydet")}
       </button>
     </div>
   );

@@ -1,7 +1,7 @@
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { ADIM_ADI, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, PaketDurumRozeti, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
+import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
@@ -68,7 +68,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
               <Bos kucuk metin={t("siraBos")} />
             ) : (
               <ul className="liste">
-                {siram.map((p) => (
+                {[...siram].sort(oncelikliOnce).map((p) => (
                   <li key={p.id}>
                     <div className="ad">
                       <a href={`#/paketler/${p.id}`}>
@@ -79,6 +79,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
                       </small>
                     </div>
+                    {p.oncelikli && <OncelikRozeti />}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
                     <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
                       {t(p.adim === "metin" ? "metniGonder" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
@@ -108,6 +109,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                           {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: t(ADIM_ADI[sonraki]) })}`}
                         </small>
                       </div>
+                      {p.oncelikli && <OncelikRozeti />}
                       <AsamaCubugu paket={p} />
                       <PaketDurumRozeti paket={p} />
                     </li>

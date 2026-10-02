@@ -57,6 +57,21 @@ npm run preview  # derlenmiş hali yerelde
   - herkes kendi profilini "Profilim"den görüyor; düzenleme kişinin kendisi
     ile Planlama, News Gathering ve Yönetim'de; göstergeleri Output ve
     Media görmüyor
+- **Yönetici paneli:** Input müdürü (Planlama, Newsdesk, News Gathering,
+  muhabirler), Program müdürü (Program) ve her birim yöneticisi (kendi
+  birimi) için.
+  - günün sayıları, birim kartları ve gerekçesi yazılı durum ışığı
+    (geciken iş, bekleyen karar ya da "yolunda")
+  - dikkat gerektirenler: geciken ve öncelikli işler, onay ya da devir
+    bekleyen plan, saha talepleri, bekleyen talimatlar
+  - ayrıntı için birimin kendi çalışma ekranına inme
+  - müdahale: işi öncelikli yapma ve yönetici notu; ikisi de işi o an
+    yürüten birime bildirim
+  - haber talimatı: "şunun haberini yapalım". Planlama'ya reddedilemeyen,
+    en üstte duran öneri olarak düşer; Planlama plana ekler ve muhabiri
+    atar, paket öncelikli doğar. Yönetici durumunu panelden izler.
+- **Raporlar:** bugün / 7 gün / 30 gün; üretim, öneriler, birimlerin iş
+  yükü, haber türleri, muhabirler. Yazdır/PDF ve Excel (CSV).
 - **Paket önerisi ve üretim adımları:** saha, Newsdesk, metin, kontrol, dil,
   video, Media Manager, iNews. Ayrıca geri gönderme, koordinasyon notları
   ve tam hareket geçmişi.
@@ -81,7 +96,9 @@ npm run preview  # derlenmiş hali yerelde
   devir. Haftalık, aylık ve özel yayın şimdilik temel liste.
 - News Gathering talep, onay ve seyahat lojistiği; Program Birimi'nin kendi
   akışı.
-- Ücret girişi, onayı ve ödeme takibi; raporlar.
+- Ücret girişi, onayı ve ödeme takibi.
+- Program müdürünün paneli şimdilik genel durum; program akışı birimle
+  netleşecek.
 - Arapça ve İngilizce metinlerin anadil kontrolü.
 
 ## Varsayımlar (geri alınabilir)
@@ -90,6 +107,11 @@ npm run preview  # derlenmiş hali yerelde
 - Muhabir kendi ücretini görüyor.
 - Vardiya kodu GMT başlangıç saati: `04G` = 04:00 GMT.
 - Plan onayı Planlama yöneticisinde ya da Yönetim'de.
+- Yönetici paketlerde kola göre sorumlu: haber kolu hangi birimin
+  masasında olursa olsun Input müdürünün. Birim yöneticisi yalnız o an
+  kendi masasındaki işe müdahale eder.
+- Birim ışığındaki "karar bekliyor": onay ya da devir bekleyen plan,
+  bekleyen talimat, yanıt bekleyen saha talebi.
 - Örnek kişi ve kayıtlar kurgusal.
 - İçerik (başlık, gelişme, paket, script, çıktı, öneri çağrısı) her zaman
   Arapça ve her arayüz dilinde sağdan sola. Arayüz TR/AR/EN seçilebiliyor.

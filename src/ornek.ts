@@ -89,8 +89,8 @@ const KISILER: KisiSatiri[] = [
   ["me2", "Onur Aydemir", "أونور آيدمير", "media", "personel", "mediaManager", "istanbul"],
   ["me3", "Mona Saad", "منى سعد", "media", "personel", "mediaManager", "istanbul"],
   ["me4", "Tamer Hilal", "تامر هلال", "media", "personel", "mediaManager", "istanbul"],
-  ["yo1", "Kemal Erdem", "كمال أردم", "yonetim", "yonetici", "yonetici", "istanbul"],
-  ["yo2", "Fatima Zahra Idrissi", "فاطمة الزهراء الإدريسي", "yonetim", "yonetici", "yonetici", "istanbul"],
+  ["yo1", "Kemal Erdem", "كمال أردم", "yonetim", "yonetici", "inputMuduru", "istanbul"],
+  ["yo2", "Fatima Zahra Idrissi", "فاطمة الزهراء الإدريسي", "yonetim", "yonetici", "programMuduru", "istanbul"],
   ["mu1", "Omar Haddad", "عمر حداد", "muhabir", "personel", "muhabir", "gazze", { durum: "sahada" }],
   ["mu2", "Selin Ercan", "سلين أرجان", "muhabir", "personel", "muhabir", "kudus"],
   ["mu3", "Mustafa Nasr", "مصطفى نصر", "muhabir", "personel", "muhabir", "beyrut", { durum: "sahada" }],
@@ -381,6 +381,8 @@ interface PaketTanimi {
   metin?: string;
   geriGonder?: string;
   bicim?: Bicim;
+  /** Yöneticinin öncelikli işaretlediği iş. */
+  oncelikli?: boolean;
 }
 
 /* Kolun varsayılan biçimi: feature kolu insan hikâyesi, program derinlemesine, gerisi PKG. */
@@ -436,6 +438,23 @@ const PAKETLER: PaketTanimi[] = [
     oneriId: "o-beyrut",
     saat: "19:00",
     teslimDk: -40,
+    oncelikli: true,
+  },
+  // Input müdürünün dünkü talimatı: plana alındı, öncelikli olarak üretimde.
+  {
+    id: "p-talimat",
+    plan: "bugun",
+    pb: "pb-b-turkiye",
+    baslik: "إسطنبول تستعد لموسم الأمطار: خطة الطوارئ وجاهزية فرق الإنقاذ",
+    sehir: "istanbul",
+    muhabirId: "mu30",
+    aciklama: "خطة البلدية لمواجهة السيول، وجولة مع فرق الإنقاذ في الأحياء المعرضة للخطر.",
+    durum: "uretimde",
+    adim: "metin",
+    oneriId: "o-talimat-2",
+    saat: "20:00",
+    teslimDk: 150,
+    oncelikli: true,
   },
   {
     id: "p-sam",
@@ -1310,7 +1329,7 @@ export const ORNEK = (): Durum => {
   }));
 
   /* Önerinin gönderildiği gün, karar verdiği planın bir gün öncesi. */
-  const oneriler: Oneri[] = ONERILER.map((o, i) => {
+  const oneriler: (Oneri & { muhabirId: string })[] = ONERILER.map((o, i) => {
     const muhabir = KISILER.find((k) => k[0] === o.muhabirId);
     const sehir = (muhabir?.[6] ?? "istanbul") as Sehir;
     const hedef = o.gun === "dun" ? "bugun" : "yarin";
@@ -1474,6 +1493,7 @@ export const ORNEK = (): Durum => {
       video: geçilen.includes("video") ? `https://video.ornek.local/${kod}` : undefined,
       klipKodu: geçilen.includes("media") ? klip(tarih, 40 + i) : undefined,
       ucret: t.ucret,
+      oncelikli: t.oncelikli,
       notlar: [],
       olusturma: zaman(gunEkle(tarih, -1), "12:00"),
       guncelleme: zaman(gunEkle(tarih, -1), "12:00"),
@@ -1603,6 +1623,61 @@ export const ORNEK = (): Durum => {
     return p;
   });
 
+  /*
+   * Input müdürünün iki talimatı: biri yarın için Planlama'da bekliyor,
+   * öteki dün verildi, bugünün planına alındı ve öncelikli olarak üretimde.
+   * Müdür ayrıca gecikmiş Beyrut paketini öncelikli yaptı.
+   */
+  const talimatlar: Oneri[] = [
+    {
+      id: "o-talimat-1",
+      talimatVeren: "yo1",
+      ulke: "irak",
+      haberBasligi: "أزمة المياه في العراق: تراجع منسوب دجلة والفرات",
+      gelisme: "نريد تقريرا ميدانيا من البصرة مع مزارعين وخبراء، وأرقام وزارة الموارد المائية.",
+      paketBasligi: "أزمة المياه في العراق: تراجع منسوب دجلة والفرات",
+      tur: "haber",
+      sahaGerekli: false,
+      zaman: bugunSaat("11:20", 45),
+      kanal: "sistem",
+      hedefTarih: planTarihi.yarin,
+      durum: "yeni",
+    },
+    {
+      id: "o-talimat-2",
+      talimatVeren: "yo1",
+      ulke: "turkiye",
+      haberBasligi: "إسطنبول تستعد لموسم الأمطار: خطة الطوارئ وجاهزية فرق الإنقاذ",
+      gelisme: "خطة البلدية لمواجهة السيول، وجولة مع فرق الإنقاذ في الأحياء المعرضة للخطر.",
+      paketBasligi: "إسطنبول تستعد لموسم الأمطار: خطة الطوارئ وجاهزية فرق الإنقاذ",
+      tur: "haber",
+      sahaGerekli: false,
+      zaman: zaman(gun(-1), "11:40"),
+      kanal: "sistem",
+      hedefTarih: planTarihi.bugun,
+      durum: "planaEklendi",
+      baslikId: "b-turkiye",
+      planId: planId("bugun"),
+      paketId: "p-talimat",
+    },
+  ];
+  for (const o of talimatlar) h("yo1", "talimatVerildi", o.zaman, { oneriId: o.id, veri: { sahip: "planlama" } });
+  h("pl2", "oneriPlanaEklendi", zaman(gun(-1), "12:30"), {
+    oneriId: "o-talimat-2",
+    paketId: "p-talimat",
+    planId: planId("bugun"),
+    veri: { tarih: planTarihi.bugun, kime: "yo1" },
+  });
+  h("yo1", "paketOncelikli", new Date(an - 35 * DAKIKA).toISOString(), { paketId: "p-beyrut", planId: planId("bugun"), veri: { sahip: "muhabir" } });
+  const talimatPaketi = paketler.find((p) => p.id === "p-talimat");
+  if (talimatPaketi) {
+    const z = bugunSaat("13:00", 90);
+    talimatPaketi.notlar = [
+      { id: "n3", kisiId: "yo1", zaman: z, metin: "Akşam bülteninin açılış haberi olacak; teslim saatini kaçırmayalım.", yonetici: true },
+    ];
+    h("yo1", "yoneticiNotu", z, { paketId: "p-talimat", planId: planId("bugun"), veri: { sahip: "muhabir" } });
+  }
+
   /* Gazze paketine iki koordinasyon notu: kayıt üzerinden yazışmanın örneği. */
   const gazze = paketler.find((p) => p.id === "p-gazze");
   if (gazze) {
@@ -1625,6 +1700,16 @@ export const ORNEK = (): Durum => {
       onerenId,
     })),
   );
+  gelismeler.push({
+    id: "g-o-talimat-2",
+    planId: planId("bugun"),
+    planBaslikId: "pb-b-turkiye",
+    metin: talimatlar[1].gelisme,
+    kaynakTuru: "diger",
+    kaynakAdi: "",
+    tarih: talimatlar[1].zaman,
+    oneriId: "o-talimat-2",
+  });
   /* Plana eklenen önerilerin gelişmeleri de o planın başlığı altında. */
   for (const o of oneriler.filter((x) => x.durum === "planaEklendi")) {
     const k = o.planId === planId("bugun") ? "bugun" : "yarin";
@@ -1645,23 +1730,22 @@ export const ORNEK = (): Durum => {
   }
 
   const haftaBas = planlananHafta(B);
+  /*
+   * Yalnız akışta tanımlı toplantılar: akşam haber toplantısı (Next Day
+   * kutusu 3), Newsdesk'in sabah toplantısı (kutu 4) ve Perşembe haftalık
+   * toplantısı. Akışı tanımlanmamış toplantı takvime konmuyor.
+   */
   const toplantilar: Toplanti[] = [
-    { id: "t1", ad: "تقييم مقترحات المراسلين", aciklama: "فريق التخطيط", zaman: zaman(B, "10:00"), birim: "planlama" },
-    { id: "t2", ad: "تحليل أجندة الوكالات", aciklama: "فريق التخطيط", zaman: zaman(B, "13:00"), birim: "planlama" },
-    { id: "t3", ad: "اجتماع التحضير لخطة الغد", aciklama: "التخطيط وغرفة الأخبار", zaman: zaman(B, "15:30"), birim: "planlama" },
     { id: "t4", ad: "اجتماع الأخبار", aciklama: "عرض خطة الغد", zaman: zaman(B, "17:00"), birim: "planlama", onemli: true },
-    { id: "t5", ad: "الرد على المراسلين", aciklama: "إشعارات القبول والرفض", zaman: zaman(B, "19:00"), birim: "planlama" },
     { id: "t6", ad: "اجتماع الأخبار الصباحي", aciklama: "غرفة الأخبار تحدّث الخطة وتوزع المهام", zaman: zaman(gun(1), "09:30"), birim: "newsdesk" },
-    { id: "t7", ad: "اجتماع تخطيط البث الخاص", aciklama: "بث 7 أكتوبر الخاص", zaman: zaman(gun(1), "11:00"), birim: "planlama" },
     { id: "t8", ad: "الاجتماع الأسبوعي للأخبار", aciklama: "عرض الخطة الأسبوعية والقرارات", zaman: zaman(gunEkle(haftaBasi(B), new Date(B + "T12:00:00").getDay() > 4 ? 12 : 5), "11:00"), birim: "planlama", onemli: true },
-    { id: "t9", ad: "تقييم الخطة الشهرية", aciklama: "حتى 25 من الشهر", zaman: zaman(gun(2), "14:00"), birim: "planlama" },
   ];
 
   const yil = B.slice(0, 4);
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 5,
+    surum: 6,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -1669,7 +1753,7 @@ export const ORNEK = (): Durum => {
     canliYayinlar: CANLILAR(planId, gun),
     hazirPaketler: HAZIR(gun),
     gorevlendirmeler: GOREVLENDIRMELER(gun),
-    oneriler,
+    oneriler: [...talimatlar, ...oneriler],
     cagrilar: (
       [
         ["c-dun", gun(0), zaman(gun(-1), "09:10")],

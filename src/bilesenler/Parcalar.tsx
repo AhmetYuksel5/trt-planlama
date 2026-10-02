@@ -1,9 +1,9 @@
-import { ArrowRight, Construction, Inbox, Info, Lock } from "lucide-react";
+import { ArrowRight, Construction, Flag, Inbox, Info, Lock, PenLine } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
-import type { Bicim, IcerikTuru, Kisi, Paket } from "../veri";
+import type { Bicim, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
 
@@ -93,6 +93,32 @@ export function BicimRozeti({ bicim }: { bicim: Bicim }) {
     </span>
   );
 }
+
+/* --- Yöneticinin izi: öncelik ve talimat her listede görünüyor ve başa geçiyor --- */
+
+export function OncelikRozeti() {
+  const { t } = useDil();
+  return (
+    <span className="rozet rozet-oncelik">
+      <Flag size={12} /> {t("oncelikli")}
+    </span>
+  );
+}
+
+/** Önerinin yerinde talimatı veren yönetici; Planlama'nın talimatı muhabir önerisinden ayırması için. */
+export function TalimatRozeti({ veren }: { veren?: Kisi }) {
+  const { t, ad } = useDil();
+  return (
+    <span className="rozet rozet-talimat">
+      <PenLine size={12} /> {t("yoneticiTalimati")}
+      {veren && ` · ${ad(veren)}`}
+    </span>
+  );
+}
+
+/* Sıralama yardımcıları: sıralamanın kalanını bozmadan (Array.sort kararlı) öne alıyor. */
+export const oncelikliOnce = (a: Paket, b: Paket) => Number(!!b.oncelikli) - Number(!!a.oncelikli);
+export const talimatOnce = (a: Oneri, b: Oneri) => Number(!!b.talimatVeren) - Number(!!a.talimatVeren);
 
 /*
  * Renk kişiye sabit: aynı kişi her ekranda aynı tonda görünsün. Kimlikler

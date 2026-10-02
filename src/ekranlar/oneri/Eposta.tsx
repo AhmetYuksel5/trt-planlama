@@ -10,6 +10,7 @@ import { ICERIK_TURLERI, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as
 import { yapabilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
+import { indir } from "../../bilesenler/indir";
 
 /**
  * Öneri çağrısı ve gelen yanıtlar.
@@ -23,14 +24,6 @@ import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 
 /* Giden e-posta her zaman Arapça; arayüz dili ne olursa olsun. */
 const metinAr = (k: Anahtar, p?: Record<string, string>) => metin(k, "ar", p);
-
-const indir = (ad: string, icerik: string, tur: string) => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([icerik], { type: tur }));
-  a.download = ad;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-};
 
 const panoya = async (metin: string, t: (k: Anahtar) => string) => {
   try {

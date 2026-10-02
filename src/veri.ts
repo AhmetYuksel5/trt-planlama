@@ -43,6 +43,9 @@ export const GOREVLER = [
   "mediaManager",
   "koordinator",
   "yonetici",
+  /* Yönetim birimindeki müdürler; sorumlu oldukları birimler yetki.ts → MUDURLUKLER. */
+  "inputMuduru",
+  "programMuduru",
 ] as const;
 export type Gorev = (typeof GOREVLER)[number];
 
@@ -273,7 +276,10 @@ export type Kanal = (typeof KANALLAR)[number];
 
 export interface Oneri {
   id: string;
-  muhabirId: string;
+  /** Yöneticinin haber talimatında boş: muhabiri Planlama plana eklerken atıyor. */
+  muhabirId?: string;
+  /** Haber talimatıysa talimatı veren yönetici; Planlama reddedemiyor, öncelikli. */
+  talimatVeren?: string;
   ulke: Ulke;
   haberBasligi: string;
   gelisme: string;
@@ -352,6 +358,8 @@ export interface Not {
   kisiId: string;
   zaman: string;
   metin: string;
+  /** Yöneticinin müdahale notu; listede vurgulu. */
+  yonetici?: boolean;
 }
 
 export interface Ucret {
@@ -395,6 +403,8 @@ export interface Paket {
   muhabirTeslimi?: string;
   /** Metnin kontrolden düzeltmeye kaç kez döndüğü. */
   duzeltmeSayisi?: number;
+  /** Yöneticinin müdahalesi: her listede rozetli ve başta. */
+  oncelikli?: boolean;
   notlar: Not[];
   olusturma: string;
   guncelleme: string;
@@ -483,6 +493,10 @@ export const HAREKET_TIPLERI = [
   "profilGuncellendi",
   "yanitOneriYok",
   "oneriDuzenlendi",
+  "talimatVerildi",
+  "paketOncelikli",
+  "paketOncelikKalkti",
+  "yoneticiNotu",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 
@@ -498,7 +512,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 5;
+  surum: 6;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -526,16 +540,17 @@ export interface Durum {
 /*
  * Şema değişince anahtar da değişiyor: eski kayıt yeni ekranı bozmasın,
  * örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları, v5:
- * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi).
+ * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi,
+ * v6: yönetici talimatı, öncelik ve yönetici notu).
  */
-const SAKLA = "trt-planlama-v5";
+const SAKLA = "trt-planlama-v6";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 5) return d;
+      if (d.surum === 6) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

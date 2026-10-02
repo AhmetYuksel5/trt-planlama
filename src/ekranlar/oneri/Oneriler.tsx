@@ -1,7 +1,7 @@
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
@@ -57,9 +57,11 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
         (durum === "hepsi" || o.durum === durum) &&
         (!tur || o.tur === tur) &&
         (!ulke || o.ulke === ulke) &&
-        (!q || `${o.haberBasligi} ${o.gelisme} ${ad(kisiBul(v, o.muhabirId))}`.toLocaleLowerCase().includes(q)),
+        (!q || `${o.haberBasligi} ${o.gelisme} ${ad(kisiBul(v, o.muhabirId ?? o.talimatVeren))}`.toLocaleLowerCase().includes(q)),
     )
-    .sort((a, b) => b.zaman.localeCompare(a.zaman));
+    .sort((a, b) => b.zaman.localeCompare(a.zaman))
+    // Bekleyen yönetici talimatı Planlama'nın önünde en üstte.
+    .sort((a, b) => Number(!!b.talimatVeren && b.durum !== "planaEklendi") - Number(!!a.talimatVeren && a.durum !== "planaEklendi"));
 
   return (
     <>
@@ -132,6 +134,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const [ekle, setEkle] = useState(false);
   const [ret, setRet] = useState<string | null>(null);
   const muhabir = kisiBul(v, oneri.muhabirId);
+  const veren = kisiBul(v, oneri.talimatVeren);
   const plan = planBul(v, oneri.planId);
   const paket = paketBul(v, oneri.paketId);
   const baslik = baslikBul(v, oneri.baslikId);
@@ -146,13 +149,14 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
         <ArrowLeft size={14} className="yon" /> {t(ben.birim === "muhabir" ? "mOnerilerim" : "mOneriler")}
       </a>
       <header className="sayfa-basi">
-        <Avatar kisi={muhabir} boy="buyuk" />
+        <Avatar kisi={muhabir ?? veren} boy="buyuk" />
         <div>
           <h1>
             <Icerik>{oneri.haberBasligi}</Icerik>
           </h1>
           <p>
-            <OneriDurumRozeti oneri={oneri} /> {ad(muhabir)} · {t(ulkeAdi(oneri.ulke))} · {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
+            <OneriDurumRozeti oneri={oneri} /> {veren ? <TalimatRozeti veren={veren} /> : ad(muhabir)} · {t(ulkeAdi(oneri.ulke))} ·{" "}
+            {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
           </p>
         </div>
       </header>
@@ -161,8 +165,8 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
           <Kart baslik={t(yanit ? "oneri" : "oneriOrijinal")} ek={t(yanit ? "oneriEpostadanNot" : "oneriOrijinalNot")}>
             <div className="alanlar">
               <div className="alan">
-                <small>{t("muhabir")}</small>
-                <b>{muhabir ? ad(muhabir) : "?"}</b>
+                <small>{t(veren ? "yoneticiTalimati" : "muhabir")}</small>
+                <b>{veren ? ad(veren) : muhabir ? ad(muhabir) : "?"}</b>
               </div>
               <div className="alan">
                 <small>{t("ulke")}</small>
@@ -280,17 +284,20 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                         <Clock size={15} /> {t("degerlendirmeyeAl")}
                       </button>
                     )}
-                    {oneri.durum !== "sonra" && oneri.durum !== "reddedildi" && (
+                    {!veren && oneri.durum !== "sonra" && oneri.durum !== "reddedildi" && (
                       <button className="dugme dugme-ikincil" onClick={() => oneriDurum(ben, oneri.id, "sonra")}>
                         {t("odSonra")}
                       </button>
                     )}
-                    {oneri.durum !== "reddedildi" && (
+                    {!veren && oneri.durum !== "reddedildi" && (
                       <button className="dugme dugme-kotu" onClick={() => setRet("")}>
                         <Ban size={15} /> {t("reddet")}
                       </button>
                     )}
                   </div>
+                )}
+                {veren && !ekle && (
+                  <p className="bos-kucuk ara-ust">{t("talimatReddedilmez")}</p>
                 )}
               </div>
             )}

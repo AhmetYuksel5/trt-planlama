@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import Kabuk from "./bilesenler/Kabuk";
 import AnaSayfa from "./ekranlar/AnaSayfa";
-import { Ayarlar, Raporlar, Yetkisiz } from "./ekranlar/Ayarlar";
+import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
+import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
+import Raporlar from "./ekranlar/Raporlar";
 import Basliklar from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import { HazirPaketler, IsAkisi, Paketler, Ucretler } from "./ekranlar/Listeler";
@@ -43,6 +45,9 @@ export default function App() {
     switch (sayfa) {
       case "ana":
         icerik = <AnaSayfa ben={ben} />;
+        break;
+      case "panel":
+        icerik = <YoneticiPaneli ben={ben} birim={yol.id} />;
         break;
       case "nextday": {
         const plan = planBul(v, yol.id);
@@ -113,7 +118,7 @@ export default function App() {
         icerik = <Ucretler ben={ben} />;
         break;
       case "raporlar":
-        icerik = <Raporlar />;
+        icerik = <Raporlar ben={ben} />;
         break;
       case "ayarlar":
         icerik = <Ayarlar ben={ben} />;

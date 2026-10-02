@@ -1,4 +1,4 @@
-import type { Bicim, Durum } from "./veri";
+import type { Bicim, Durum, Oneri, Paket } from "./veri";
 
 /**
  * Muhabir performans göstergeleri.
@@ -30,8 +30,13 @@ export interface Performans {
 const oran = (pay: number, payda: number) => (payda ? pay / payda : null);
 const ms = (iso: string) => new Date(iso).getTime();
 
-export const performans = (d: Durum, kisiId: string): Performans => {
-  const isler = d.paketler.filter((p) => p.muhabirId === kisiId && ["onaylandi", "uretimde", "tamamlandi"].includes(p.durum));
+/*
+ * Ölçüm, verilen paket ve öneri kümesi üzerinden: muhabir göstergesi
+ * kendi kümesini, raporlar dönemin ve kapsamın kümesini veriyor; tanımlar
+ * tek yerde kalsın, rapor ile profil ayrışmasın.
+ */
+export const olcumler = (paketler: Paket[], tumOneriler: Oneri[]): Performans => {
+  const isler = paketler.filter((p) => ["onaylandi", "uretimde", "tamamlandi"].includes(p.durum));
   const biten = isler.filter((p) => p.durum === "tamamlandi");
 
   const teslimli = isler.filter((p) => p.muhabirTeslimi && p.teslim);
@@ -40,7 +45,7 @@ export const performans = (d: Durum, kisiId: string): Performans => {
   const kontrollu = isler.filter((p) => p.muhabirTeslimi || p.durum === "tamamlandi");
   const puanli = biten.filter((p) => p.nitelik);
 
-  const oneriler = d.oneriler.filter((o) => o.muhabirId === kisiId && (o.durum === "planaEklendi" || o.durum === "reddedildi"));
+  const oneriler = tumOneriler.filter((o) => o.durum === "planaEklendi" || o.durum === "reddedildi");
 
   const bicimler: Partial<Record<Bicim, number>> = {};
   for (const p of biten) if (p.bicim) bicimler[p.bicim] = (bicimler[p.bicim] ?? 0) + 1;
@@ -58,3 +63,9 @@ export const performans = (d: Durum, kisiId: string): Performans => {
     bicimler,
   };
 };
+
+export const performans = (d: Durum, kisiId: string): Performans =>
+  olcumler(
+    d.paketler.filter((p) => p.muhabirId === kisiId),
+    d.oneriler.filter((o) => o.muhabirId === kisiId),
+  );

@@ -5,9 +5,12 @@ import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, seh
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
-import { AsamaCubugu, Bos, Icerik, KisiHucre, PaketDurumRozeti, Rozet, TurRozeti } from "./Parcalar";
+import { AsamaCubugu, Bos, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
 
-/* Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek yerde dursun. */
+/*
+ * Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek
+ * yerde dursun. Yöneticinin öncelikli işaretlediği paket her tabloda başta.
+ */
 
 export function PaketTablosu({
   paketler,
@@ -40,7 +43,7 @@ export function PaketTablosu({
           </tr>
         </thead>
         <tbody>
-          {paketler.map((p) => {
+          {[...paketler].sort(oncelikliOnce).map((p) => {
             const sahip = paketSahibi(p);
             const muhabir = kisiBul(d, p.muhabirId);
             const plan = d.planlar.find((x) => x.id === p.planId);
@@ -57,7 +60,7 @@ export function PaketTablosu({
                       <Icerik blok>{p.baslik}</Icerik>
                     </a>
                     <small className="sonuk">
-                      {t(sehirAdi(p.sehir))}
+                      {p.oncelikli && <OncelikRozeti />} {t(sehirAdi(p.sehir))}
                       {p.bicim && ` · ${t(BICIM_ADI(p.bicim))}`}
                     </small>
                   </td>
@@ -141,7 +144,7 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
                 {saatYaz(o.zaman, dil)}
               </td>
               <td data-etiket={t("muhabir")}>
-                <KisiHucre kisi={kisiBul(d, o.muhabirId)} />
+                {o.talimatVeren ? <TalimatRozeti veren={kisiBul(d, o.talimatVeren)} /> : <KisiHucre kisi={kisiBul(d, o.muhabirId)} />}
               </td>
               <td className="birincil icerik-sutun">
                 <a className="kalin" href={`#/oneriler/${o.id}`} onClick={(e) => e.stopPropagation()}>

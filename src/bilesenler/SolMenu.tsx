@@ -8,6 +8,7 @@ import {
   ChartColumn,
   Clapperboard,
   Contact,
+  Gauge,
   House,
   Inbox,
   Layers,
@@ -47,7 +48,8 @@ interface Madde {
   adMuhabir?: Anahtar;
   ikon: LucideIcon;
   taslak?: boolean;
-  muhabirGizle?: boolean;
+  /** Sayfa izninin üstüne kişiye göre ek koşul. */
+  goster?: (ben: Kisi) => boolean;
   say?: (d: Durum, ben: Kisi) => number;
 }
 
@@ -55,6 +57,9 @@ interface Grup {
   ad?: Anahtar;
   maddeler: Madde[];
 }
+
+/** Masaüstü menüsü ve telefondaki Menü paneli aynı kuralla süzüyor. */
+export const maddeGorunur = (ben: Kisi, m: Madde) => sayfaGorebilir(ben, m.sayfa) && (m.goster?.(ben) ?? true);
 
 export const MENU: Grup[] = [
   {
@@ -66,6 +71,8 @@ export const MENU: Grup[] = [
         ikon: House,
         say: (d, ben) => d.paketler.filter((p) => p.durum === "uretimde" && siramMi(ben, p) && paketGorebilir(ben, p, d)).length,
       },
+      // Yönetim biriminde panel zaten ana sayfa; birim yöneticisi ona buradan ulaşıyor.
+      { sayfa: "panel", ad: "mPanel", ikon: Gauge, goster: (ben) => ben.birim !== "yonetim" },
     ],
   },
   {
@@ -123,7 +130,7 @@ export const MENU: Grup[] = [
     ad: "mgDiger",
     maddeler: [
       { sayfa: "ucretler", ad: "mUcretler", ikon: Wallet },
-      { sayfa: "raporlar", ad: "mRaporlar", ikon: ChartColumn, taslak: true },
+      { sayfa: "raporlar", ad: "mRaporlar", ikon: ChartColumn },
       { sayfa: "plan", ad: "mProjePlani", ikon: BookOpen },
       { sayfa: "ayarlar", ad: "mAyarlar", ikon: Settings },
     ],
@@ -148,7 +155,7 @@ export default function SolMenu({ ben, acik }: { ben: Kisi; acik: string }) {
         </div>
       </div>
       {MENU.map((g, i) => {
-        const maddeler = g.maddeler.filter((m) => sayfaGorebilir(ben, m.sayfa) && !(muhabir && m.muhabirGizle));
+        const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         return (
           <div className="menu-grup" key={i}>

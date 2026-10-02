@@ -7,7 +7,6 @@ import {
   CirclePlay,
   Clapperboard,
   Clock,
-  Gauge,
   History,
   Inbox,
   Lightbulb,
@@ -21,17 +20,17 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, paketSahibi } from "../../akis";
+import { geciktiMi } from "../../akis";
 import { planDurum } from "../../eylemler";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Ilerleme, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
-import { tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
+import { tarihYaz, useDil } from "../../dil";
+import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, planlananHafta } from "../../tarih";
-import { BIRIMLER, kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
+import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, yapabilir } from "../../yetki";
-import { BugununTakvimi, HaftaKarti, SayfaBasi, YaklasanToplantilar } from "./Planlama";
+import { SayfaBasi } from "./Planlama";
 
 /**
  * Diğer birimlerin ana sayfaları: promptun 3. maddesindeki ilk taslak.
@@ -304,92 +303,3 @@ export function MediaAna() {
     </>
   );
 }
-
-/* --- Yönetim: ortak pano (rapor Şekil 1) --- */
-
-const PLANLAMA_TAKVIMI: [Anahtar, Anahtar][] = [
-  ["nextday", "ptNextday"],
-  ["haftalik", "ptHaftalik"],
-  ["aylik", "ptAylik"],
-  ["ozel", "ptOzel"],
-];
-
-export function YonetimAna() {
-  const { t } = useDil();
-  const v = useVeri();
-  const aktif = v.paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
-  const asamaSayisi = ASAMALAR.map((_, i) => aktif.filter((p) => asamaBul(p) === i).length);
-  const enCok = Math.max(1, ...asamaSayisi);
-  const yuk = BIRIMLER.map((b) => ({ b, n: aktif.filter((p) => paketSahibi(p) === b).length })).filter((x) => x.n > 0);
-  const onayBekleyen = v.planlar.filter((p) => p.durum === "toplantida");
-  return (
-    <>
-      <SayfaBasi ikon={<Gauge size={26} />} baslik={t("ortakPano")} alt={t("yonetimAlt")} />
-      <div className="sayaclar">
-        <Sayac href="#/paketler" ikon={<ListChecks size={22} />} renk="renk-nextday" etiket={t("sAktifPaket")} deger={aktif.length} />
-        <Sayac href="#/paketler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sTamamlanan")} deger={v.paketler.filter((p) => p.durum === "tamamlandi").length} />
-        <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={uretimdeki(v).length} />
-        <Sayac href="#/nextday" ikon={<Clock size={22} />} ton="uyari" etiket={t("sOnayBekleyen")} deger={onayBekleyen.length + v.paketler.filter((p) => p.durum === "degerlendiriliyor").length} />
-        <Sayac href="#/saha" ikon={<MapPinned size={22} />} renk="renk-saha" etiket={t("sSahaGorev")} deger={v.gorevlendirmeler.filter((g) => sahaGorevi(g) && g.bitis >= bugun()).length} />
-        <Sayac href="#/uretim" ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={v.paketler.filter((p) => geciktiMi(p)).length} />
-      </div>
-      <div className="iz iz-pano">
-        <HaftaKarti d={v} />
-        <BugununTakvimi d={v} />
-        <YaklasanToplantilar d={v} />
-      </div>
-      <div className="iz iz-3">
-        <Kart baslik={t("asamalaraGore")} ikon={<ListChecks size={18} />}>
-          <ul className="liste">
-            {ASAMALAR.map((a, i) => (
-              <li key={a}>
-                <div className="ad">
-                  <b>
-                    {i + 1}. {t(ASAMA_ADI[a])}
-                  </b>
-                </div>
-                <div className="ilerleme-kutu">
-                  <Ilerleme oran={asamaSayisi[i] / enCok} />
-                </div>
-                <b>{asamaSayisi[i]}</b>
-              </li>
-            ))}
-          </ul>
-        </Kart>
-        <Kart baslik={t("birimIsYuku")} ikon={<Users size={18} />}>
-          <ul className="liste">
-            {yuk.map(({ b, n }) => (
-              <li key={b}>
-                <div className="ad">
-                  <b>{t(BIRIM_ADI[b])}</b>
-                </div>
-                <Rozet>{n}</Rozet>
-              </li>
-            ))}
-          </ul>
-        </Kart>
-        <Kart baslik={t("planlamaTakvimi")} ikon={<CalendarDays size={18} />}>
-          <ul className="liste">
-            {PLANLAMA_TAKVIMI.map(([a, b]) => (
-              <li key={a}>
-                <div className="ad">
-                  <b>{t(a)}</b>
-                </div>
-                <span className="not">{t(b)}</span>
-              </li>
-            ))}
-          </ul>
-        </Kart>
-      </div>
-      <div className="iz iz-2">
-        <Kart baslik={t("gecikenOncelikli")} ikon={<AlertTriangle size={18} />}>
-          <PaketTablosu paketler={v.paketler.filter((p) => geciktiMi(p))} d={v} sutunlar={["baslik", "muhabir", "kimde", "teslim"]} bosMetin={t("gecikenYok")} />
-        </Kart>
-        <Kart baslik={t("sonHareketler")} ikon={<History size={18} />}>
-          <HareketAkisi hareketler={v.hareketler.slice(0, 8)} d={v} />
-        </Kart>
-      </div>
-    </>
-  );
-}
-

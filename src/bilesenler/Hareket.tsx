@@ -47,6 +47,10 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   yanitOneriYok: "hrYanitOneriYok",
   oneriDuzenlendi: "hrOneriDuzenlendi",
   profilGuncellendi: "hrProfil",
+  talimatVerildi: "hrTalimat",
+  paketOncelikli: "hrOncelikli",
+  paketOncelikKalkti: "hrOncelikKalkti",
+  yoneticiNotu: "hrYoneticiNotu",
 };
 
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
