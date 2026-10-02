@@ -60,7 +60,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v7`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v8`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
@@ -87,6 +87,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `planOlustur`'da çağrılır.
   - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
     (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
+- Stok haberi ayrı kayıt değil, `Paket` (`stok: true`): haftalıkta kabul
+  edilen plansız feature, ekonomi ya da günü olmayan haber. Durumu
+  saklanmaz, kayıttan çıkar (`akis.ts → stokDurumu`): üretime alınacak →
+  üretimde → stokta → yayınlandı.
+  - Kolun Planlama'ya düşen adımlarını (görev verme, Media'ya iletme,
+    montaj kontrolü ve yükleme) yalnız feature/stok ekibi (`stokTakip`)
+    ve Planlama yöneticisi yapar (`yetki.ts → adimYapabilir`).
+  - Adımın ekrandaki adı koldan: `akis.ts → adimAdi(adim, paket)`;
+    `ADIM_ADI`'yı doğrudan pakete yazma.
+  - Next Day'in "Hazır paketler" bölümü (`hazirPaketler`) stoktan seçer;
+    plan devredilince seçili paket `yayinlandi` alır.
 - Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
   feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
   (`yetki.ts → KOL_BIRIMLERI`).

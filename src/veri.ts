@@ -7,7 +7,7 @@ import { ORNEK } from "./ornek";
  *
  * Kayıtlar "İlk taslak promptu"nun 7. maddesindeki gibi mantıksal olarak
  * ayrı: başlık havuzu, günlük plan, gelişme, öneri, personel,
- * görevlendirme, hazır paket, paket önerisi, canlı yayın. Aynı merkezi
+ * görevlendirme, paket önerisi (stok haberi dahil), canlı yayın. Aynı merkezi
  * başlık farklı günlerin planlarında kullanılır; o günün gelişmeleri ve
  * atamaları o planın kendi kayıtlarıdır, başlık havuzu kirlenmez.
  *
@@ -51,13 +51,15 @@ export const GOREVLER = [
   /* Yönetim birimindeki müdürler; sorumlu oldukları birimler yetki.ts → MUDURLUKLER. */
   "inputMuduru",
   "programMuduru",
+  /* Planlama'nın feature/stok ekibi: zamana bağlı olmayan paketin üretimini yürütüyor. */
+  "stokTakip",
 ] as const;
 export type Gorev = (typeof GOREVLER)[number];
 
 export type KisiDurum = "gorevde" | "sahada" | "yolda" | "izinli";
 
 /*
- * Şehir → ülke. Öneri formundaki "ülke" ile hazır paketin "ŞEHİR" alanı
+ * Şehir → ülke. Öneri formundaki "ülke" ile paketin "ŞEHİR" alanı
  * aynı tablodan beslensin diye tek yerde.
  */
 export const SEHIRLER = {
@@ -191,6 +193,7 @@ export interface NextDayPlan {
   durum: PlanDurum;
   ekip: EkipUyesi[];
   gorevlendirmeler: string[];
+  /** Stoktan seçilen paketler (Paket kimliği); plan Newsdesk'e devredilince yayınlanmış sayılıyor. */
   hazirPaketler: string[];
   basliklar: PlanBasligi[];
   kopyaKaynagi?: string;
@@ -233,21 +236,6 @@ export interface CanliYayin {
   yer: string;
   muhabirId?: string;
   notlar: string;
-}
-
-/* --- Hazır paket arşivi: üretimi bitmiş, plana yalnız seçilerek girer. --- */
-
-export interface HazirPaket {
-  id: string;
-  sehir: Sehir;
-  baslik: string;
-  muhabirId: string;
-  aciklama: string;
-  /** Arşivdeki dosya adı, çıktıda başlığın altında: GAZA-PRESERVESEEDS-PKG-MAH. */
-  slug: string;
-  tur: IcerikTuru;
-  sure: string;
-  hazirlanma: string;
 }
 
 /* --- Muhabir hareketleri: görevlendirme, seyahat, izin. Planlar bunlara bağlantı tutar. --- */
@@ -422,6 +410,15 @@ export interface Paket {
   oncelikli?: boolean;
   /** Haftalık toplantıda kabul edilen kalemden doğduysa: "Haftalık plandan" rozeti. */
   haftalikKalemId?: string;
+  /*
+   * Stok haberi: bir Next Day planına bağlı olmadan üretiliyor (feature,
+   * ekonomi, günü olmayan haber). Bitince stokta bekliyor; bir plana
+   * seçilip plan Newsdesk'e devredilince yayınlanmış sayılıyor.
+   */
+  stok?: boolean;
+  /** Paketin süresi: 3:20. */
+  sure?: string;
+  yayinlandi?: { planId: string; tarih: string };
   notlar: Not[];
   olusturma: string;
   guncelleme: string;
@@ -592,6 +589,8 @@ export const HAREKET_TIPLERI = [
   "onIncelemeGorusu",
   "onIncelemedeReddedildi",
   "haftaliktanAktarildi",
+  "uretimeAlindi",
+  "stokYayinlandi",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 
@@ -608,13 +607,12 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 7;
+  surum: 8;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
   gelismeler: Gelisme[];
   canliYayinlar: CanliYayin[];
-  hazirPaketler: HazirPaket[];
   gorevlendirmeler: Gorevlendirme[];
   oneriler: Oneri[];
   cagrilar: Cagri[];
@@ -638,16 +636,17 @@ export interface Durum {
  * örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları, v5:
  * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi,
  * v6: yönetici talimatı, öncelik ve yönetici notu, v7: haftalık plan akışı,
- * ön inceleme, Ekonomi birimi).
+ * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
+ * paketi).
  */
-const SAKLA = "trt-planlama-v7";
+const SAKLA = "trt-planlama-v8";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 7) return d;
+      if (d.surum === 8) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

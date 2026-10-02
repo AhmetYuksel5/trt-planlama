@@ -15,7 +15,6 @@ import type {
   Hareket,
   HaftalikKalem,
   HaftalikPlan,
-  HazirPaket,
   Bicim,
   IcerikTuru,
   Kisi,
@@ -55,8 +54,8 @@ const KISILER: KisiSatiri[] = [
   ["pl3", "Hamza Saleh", "حمزة صالح", "planlama", "personel", "planlamaci", "istanbul"],
   ["pl4", "Rana Khalil", "رنا خليل", "planlama", "personel", "planlamaci", "istanbul"],
   ["pl5", "Burak Demir", "بوراك دمير", "planlama", "personel", "planlamaci", "istanbul"],
-  ["pl6", "Mariam Fawzi", "مريم فوزي", "planlama", "personel", "editor", "istanbul"],
-  ["pl7", "Kerem Aksoy", "كرم أقصوي", "planlama", "personel", "editor", "istanbul"],
+  ["pl6", "Mariam Fawzi", "مريم فوزي", "planlama", "personel", "stokTakip", "istanbul"],
+  ["pl7", "Kerem Aksoy", "كرم أقصوي", "planlama", "personel", "stokTakip", "istanbul"],
   ["pl8", "Huda Nasser", "هدى ناصر", "planlama", "personel", "planlamaci", "istanbul"],
   ["nd1", "Mustafa Karam", "مصطفى كرم", "newsdesk", "yonetici", "yonetici", "istanbul"],
   ["nd2", "Omar Fares", "عمر فارس", "newsdesk", "personel", "newsdesk", "istanbul", { ucretYetkisi: true }],
@@ -271,9 +270,21 @@ const BASLIKLAR: Baslik[] = [
   { id: "b-yemen", ad: "الصراع في اليمن", ulke: "yemen", aktif: false },
 ];
 
-/* --- Hazır paket arşivi --- */
+/* --- Stoktaki paketler: üretimi bitmiş, bir plana seçilmeyi bekliyor --- */
 
-const HAZIR = (gun: (n: number) => string): HazirPaket[] => [
+interface StokTanimi {
+  id: string;
+  slug: string;
+  sehir: Sehir;
+  baslik: string;
+  muhabirId: string;
+  aciklama: string;
+  tur: IcerikTuru;
+  sure: string;
+  hazirlanma: string;
+}
+
+const STOK = (gun: (n: number) => string): StokTanimi[] => [
   {
     id: "hp1",
     slug: "CAIRO-NILEBOATS-PKG-RM",
@@ -389,6 +400,8 @@ interface PaketTanimi {
   bicim?: Bicim;
   /** Yöneticinin öncelikli işaretlediği iş. */
   oncelikli?: boolean;
+  /** Stok paketi: feature/stok ekibi üretiyor, bitince stokta bekliyor. */
+  stok?: boolean;
 }
 
 /* Kolun varsayılan biçimi: feature kolu insan hikâyesi, program derinlemesine, gerisi PKG. */
@@ -667,6 +680,7 @@ const PAKETLER: PaketTanimi[] = [
     tur: "feature",
     durum: "uretimde",
     adim: "video",
+    stok: true,
   },
   {
     id: "p-hidrojen",
@@ -677,6 +691,17 @@ const PAKETLER: PaketTanimi[] = [
     tur: "ekonomi",
     durum: "uretimde",
     adim: "kontrol",
+    stok: true,
+  },
+  {
+    id: "p-sahaf",
+    baslik: "سوق الكتب المستعملة في شارع المتنبي",
+    sehir: "bagdat",
+    muhabirId: "mu15",
+    aciklama: "باعة الكتب في شارع المتنبي ببغداد وجمهور الجمعة؛ قصة مكان يعود إلى الحياة.",
+    tur: "feature",
+    durum: "onaylandi",
+    stok: true,
   },
   {
     id: "p-girisim",
@@ -1264,7 +1289,7 @@ const ADIM_KISISI: Record<string, string> = {
   newsdesk: "nd3",
   output: "ou5",
   media: "me2",
-  planlama: "pl4",
+  planlama: "pl6",
   program: "pr2",
 };
 
@@ -1518,6 +1543,7 @@ export const ORNEK = (): Durum => {
       klipKodu: geçilen.includes("media") ? klip(tarih, 40 + i) : undefined,
       ucret: t.ucret,
       oncelikli: t.oncelikli,
+      stok: t.stok,
       notlar: [],
       olusturma: zaman(gunEkle(tarih, -1), "12:00"),
       guncelleme: zaman(gunEkle(tarih, -1), "12:00"),
@@ -1542,7 +1568,8 @@ export const ORNEK = (): Durum => {
     if (t.durum === "uretimde" || bitti) {
       const devir = plan?.id === planId("dun") ? devirDun : plan ? devirBugun : zaman(gun(-2), "10:00");
       const ilk = yol[0];
-      h(plan ? "nd1" : ADIM_KISISI[adimSahibi("newsdesk", tur)], "planDevralindi", devir, {
+      // Next Day paketini planın devri, plansız paketi kolun sahibi üretime alıyor.
+      h(plan ? "nd1" : ADIM_KISISI[adimSahibi("newsdesk", tur)], plan ? "planDevralindi" : "uretimeAlindi", devir, {
         paketId: p.id,
         planId: plan?.id,
         veri: { adim: ilk, sahip: adimSahibi(ilk, tur) },
@@ -1579,6 +1606,42 @@ export const ORNEK = (): Durum => {
     }
     return p;
   });
+
+  /*
+   * Stoktaki paketler: feature/stok ekibi montajı kontrol edip yükledi.
+   * Devredilmiş bir plana (dün, bugün) seçilenler o planla yayınlandı;
+   * yarının planına seçilenler ve hiçbir plana girmeyenler stokta.
+   */
+  for (const s of STOK(gun)) {
+    const kod = `TRT-AR-${B.slice(0, 4)}-${String(++sayac).padStart(4, "0")}`;
+    const bitis = zaman(s.hazirlanma, "16:00");
+    const yayinPlani = planlar.find((p) => p.durum === "devralindi" && p.hazirPaketler.includes(s.id));
+    paketler.push({
+      id: s.id,
+      kod,
+      baslik: s.baslik,
+      sehir: s.sehir,
+      muhabirId: s.muhabirId,
+      aciklama: s.aciklama,
+      tur: s.tur,
+      bicim: varsayilanBicim(s.tur),
+      durum: "tamamlandi",
+      slug: s.slug,
+      sure: s.sure,
+      stok: true,
+      sahaGerekli: false,
+      klipKodu: klip(s.hazirlanma, 90 + paketler.length % 10),
+      gorevZamani: zaman(gunEkle(s.hazirlanma, -4), "10:00"),
+      muhabirTeslimi: zaman(gunEkle(s.hazirlanma, -1), "15:00"),
+      nitelik: 4,
+      yayinlandi: yayinPlani ? { planId: yayinPlani.id, tarih: yayinPlani.tarih } : undefined,
+      notlar: [],
+      olusturma: zaman(gunEkle(s.hazirlanma, -5), "11:00"),
+      guncelleme: bitis,
+    });
+    h("pl6", "tamamlandi", bitis, { paketId: s.id, veri: { adim: "tamam", sahip: "", stok: "1" } });
+    if (yayinPlani) h("nd1", "stokYayinlandi", yayinPlani.id === planId("dun") ? devirDun : devirBugun, { paketId: s.id, planId: yayinPlani.id, veri: { tarih: yayinPlani.tarih } });
+  }
 
   /* Arşiv: plan kaydı yok, kodu bugünkü paketlerden küçük. */
   const kisiListesi = kisiler();
@@ -1784,6 +1847,7 @@ export const ORNEK = (): Durum => {
     { id: "hb-bm", tarih: B, baslikId: "b-bm", baslik: "جلسة الجمعية العامة بشأن فلسطين", yer: "نيويورك", metin: "تصويت على مشروع قرار حول الوضع في الأراضي الفلسطينية.", tur: "haber", bicimler: ["pkg"], muhabirler: ["mu27"], karar: "kabul", aktarim: { planId: planId("bugun"), paketId: "p-bm" } },
     { id: "hb-elyazma", baslikId: "b-misir", baslik: "مكتبة المخطوطات في القاهرة", yer: "القاهرة", metin: "فريق يعمل على رقمنة مخطوطات عمرها قرون.", tur: "feature", bicimler: ["feature"], muhabirler: ["mu8"], karar: "kabul", aktarim: { paketId: "p-elyazma" } },
     { id: "hb-hidrojen", baslikId: "b-korfez", baslik: "استثمارات الهيدروجين الأخضر في الخليج", yer: "الدوحة", metin: "مشاريع جديدة وتحوّل الطاقة.", tur: "ekonomi", bicimler: ["pkg"], muhabirler: ["mu18"], karar: "kabul", aktarim: { paketId: "p-hidrojen" } },
+    { id: "hb-sahaf", baslikId: "b-irak", baslik: "سوق الكتب المستعملة في شارع المتنبي", yer: "بغداد", metin: "باعة الكتب في شارع المتنبي وجمهور الجمعة.", tur: "feature", bicimler: ["feature"], muhabirler: ["mu15"], karar: "kabul", aktarim: { paketId: "p-sahaf" } },
     { id: "hb-girisim", baslik: "برنامج: رواد الأعمال الشباب في العالم العربي", yer: "عمّان", metin: "ثلاثة بورتريهات لرواد أعمال لصالح البرنامج الأسبوعي.", tur: "program", bicimler: ["derinlemesine"], muhabirler: ["mu17"], karar: "kabul", aktarim: { paketId: "p-girisim" } },
   ];
   for (const p of paketler) {
@@ -1973,13 +2037,12 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 7,
+    surum: 8,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
     gelismeler,
     canliYayinlar: CANLILAR(planId, gun),
-    hazirPaketler: HAZIR(gun),
     gorevlendirmeler: [
       ...GOREVLENDIRMELER(gun),
       // Gelecek haftanın seçimleri için ekip: haftalık çıktıda tek satır ("YER / ad - ad …").

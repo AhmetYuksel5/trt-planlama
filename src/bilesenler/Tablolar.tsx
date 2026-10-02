@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
-import { geciktiMi, paketSahibi } from "../akis";
+import { geciktiMi, paketSahibi, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
-import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
@@ -21,7 +21,7 @@ export function PaketTablosu({
   paketler: Paket[];
   d: Durum;
   bosMetin?: string;
-  sutunlar?: ("kod" | "baslik" | "muhabir" | "tur" | "asama" | "kimde" | "teslim" | "plan")[];
+  sutunlar?: ("kod" | "baslik" | "muhabir" | "tur" | "asama" | "kimde" | "teslim" | "plan" | "sure" | "stok")[];
 }) {
   const { t, dil } = useDil();
   if (!paketler.length) return <Bos metin={bosMetin ?? t("kayitYok")} />;
@@ -39,6 +39,8 @@ export function PaketTablosu({
             {var_("asama") && <th>{t("asama")}</th>}
             {var_("kimde") && <th>{t("simdiKimde")}</th>}
             {var_("teslim") && <th>{t("teslim")}</th>}
+            {var_("sure") && <th>{t("sure")}</th>}
+            {var_("stok") && <th>{t("planYayin")}</th>}
             <th className="dar" aria-hidden="true" />
           </tr>
         </thead>
@@ -77,8 +79,14 @@ export function PaketTablosu({
                 )}
                 {var_("plan") && (
                   <td className="sonuk" data-etiket={t("plan")}>
-                    {/* Plan kaydı olmayan tamamlanmış iş (arşiv) yayın tarihiyle; olmayan açık iş haftalık plandan. */}
-                    {plan ? tarihYaz(plan.tarih, dil, "kisa") : p.durum === "tamamlandi" && p.yayin ? tarihYaz(yerelGun(p.yayin), dil, "kisa") : t("haftalikKaynak")}
+                    {/* Planı olmayan: stok paketi durumuyla, tamamlanmış iş (arşiv) yayın tarihiyle, açık iş haftalık plandan. */}
+                    {plan
+                      ? tarihYaz(plan.tarih, dil, "kisa")
+                      : stokDurumu(p)
+                        ? t(STOK_DURUM_ADI[stokDurumu(p)!])
+                        : p.durum === "tamamlandi" && p.yayin
+                          ? tarihYaz(yerelGun(p.yayin), dil, "kisa")
+                          : t("haftalikKaynak")}
                   </td>
                 )}
                 {var_("asama") && (
@@ -101,6 +109,16 @@ export function PaketTablosu({
                     )}
                   </td>
                 )}
+                {var_("sure") && (
+                  <td className="sonuk dar" data-etiket={t("sure")}>
+                    {p.sure ?? "—"}
+                  </td>
+                )}
+                {var_("stok") && (
+                  <td data-etiket={t("planYayin")}>
+                    <StokYeri p={p} d={d} />
+                  </td>
+                )}
                 <td className="dar sonuk ok-hucre">
                   <ChevronRight size={16} className="yon" />
                 </td>
@@ -111,6 +129,21 @@ export function PaketTablosu({
       </table>
     </div>
   );
+}
+
+/** Stok paketinin plandaki yeri: yayınlandığı plan ya da seçildiği, henüz devredilmemiş planlar. */
+function StokYeri({ p, d }: { p: Paket; d: Durum }) {
+  const { t, dil } = useDil();
+  const yayin = d.planlar.find((x) => x.id === p.yayinlandi?.planId);
+  if (yayin)
+    return (
+      <a href={`#/nextday/${yayin.id}`} onClick={(e) => e.stopPropagation()}>
+        {t("nextday")} · {tarihYaz(yayin.tarih, dil, "kisa")}
+      </a>
+    );
+  const secildi = d.planlar.filter((x) => x.durum !== "devralindi" && x.hazirPaketler.includes(p.id));
+  if (!secildi.length) return <span className="sonuk">—</span>;
+  return <Rozet ton="vurgu">{t("planaSecildi", { tarih: secildi.map((x) => tarihYaz(x.tarih, dil, "kisa")).join(", ") })}</Rozet>;
 }
 
 export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {

@@ -1,5 +1,5 @@
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
-import { ADIM_ADI, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
+import { adimAdi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
@@ -86,7 +86,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                         <Icerik blok>{p.baslik}</Icerik>
                       </a>
                       <small>
-                        {t(ADIM_ADI[p.adim as UretimAdimi])}
+                        {t(adimAdi(p.adim as UretimAdimi, p))}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
                       </small>
                     </div>
@@ -117,7 +117,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                         </a>
                         <small>
                           {sahip ? t("simdiKimdeKisa", { birim: t(BIRIM_ADI[sahip]) }) : t("pdTamamlandi")}
-                          {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: t(ADIM_ADI[sonraki]) })}`}
+                          {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: t(adimAdi(sonraki, p)) })}`}
                         </small>
                       </div>
                       {p.oncelikli && <OncelikRozeti />}

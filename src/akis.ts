@@ -82,6 +82,20 @@ export const ADIM_ADI: Record<UretimAdimi, Anahtar> = {
   inews: "adInews",
 };
 
+/*
+ * Stok paketinde kolun adımları Planlama'nın feature/stok ekibinde ve
+ * adları da onların işi: görev vermek, montajı kontrol edip sisteme
+ * yüklemek. Ortak adımlar (metin, kontrol, dil, video, Media) aynı.
+ */
+const STOK_ADIM_ADI: Partial<Record<UretimAdimi, Anahtar>> = {
+  newsdesk: "adStokGorev",
+  inews: "adStokYukleme",
+};
+
+/** Adımın paketin koluna göre adı. */
+export const adimAdi = (adim: UretimAdimi, p: Pick<Paket, "tur">): Anahtar =>
+  (KOL_SAHIBI[p.tur] === "planlama" && STOK_ADIM_ADI[adim]) || ADIM_ADI[adim];
+
 /** Raporun Next Day şemasındaki kutu numarası; detay ekranında "rapor adımı" diye görünüyor. */
 export const ADIM_KUTUSU: Record<UretimAdimi, number> = {
   gorevlendirme: 4,
@@ -152,6 +166,23 @@ export const paketSahibi = (p: Paket): Birim | null => {
   if (p.durum === "onaylandi" && !p.planId) return KOL_SAHIBI[p.tur];
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
   return null;
+};
+
+/* --- Stok haberleri --- */
+
+/*
+ * Stok paketinin yolu ayrıca saklanmıyor, kayıttan çıkıyor: onaylandı ama
+ * üretime alınmadı (bekliyor), üretimde, bitti ve stokta, bir plana
+ * seçilip plan devredilince yayınlandı.
+ */
+export const STOK_DURUMLARI = ["bekliyor", "uretimde", "stokta", "yayinlandi"] as const;
+export type StokDurumu = (typeof STOK_DURUMLARI)[number];
+
+export const stokDurumu = (p: Paket): StokDurumu | null => {
+  if (!p.stok || p.durum === "iptal" || p.durum === "taslak" || p.durum === "degerlendiriliyor") return null;
+  if (p.yayinlandi) return "yayinlandi";
+  if (p.durum === "tamamlandi") return "stokta";
+  return p.durum === "uretimde" ? "uretimde" : "bekliyor";
 };
 
 /** Teslim zamanı geçmiş ve henüz bitmemiş iş. */

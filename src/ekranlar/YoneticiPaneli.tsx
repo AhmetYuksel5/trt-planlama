@@ -1,6 +1,6 @@
 import { AlertTriangle, ArrowLeft, CheckCircle, CirclePlay, ClipboardCheck, ClipboardList, Eye, Flag, Gauge, PenLine } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { ADIM_ADI, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
+import { ADIM_ADI, adimAdi, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
 import { Bos, Icerik, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OnIncelemeKarti } from "../bilesenler/Haftalik";
 import { OncelikDugmesi } from "../bilesenler/Yonetici";
@@ -190,7 +190,7 @@ function DikkatListesi({ ben, d, paketler, ks }: { ben: Kisi; d: Durum; paketler
     satirlar.push({ anahtar: `g-${p.id}`, ton: "kotu", baslik: p.baslik, icerik: true, alt: t("dkGecikti", { sure: sureYaz(dk, t), birim: kimde(p) }), href: `#/paketler/${p.id}`, paket: p });
   }
   for (const p of paketler.filter((x) => x.oncelikli && aktifMi(x) && !geciktiMi(x))) {
-    const asama = p.durum === "uretimde" && p.adim ? t(ADIM_ADI[p.adim as UretimAdimi]) : kimde(p);
+    const asama = p.durum === "uretimde" && p.adim ? t(adimAdi(p.adim as UretimAdimi, p)) : kimde(p);
     const teslim = p.teslim ? ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}` : "";
     satirlar.push({ anahtar: `o-${p.id}`, ton: "vurgu", baslik: p.baslik, icerik: true, alt: `${t("oncelikli")} · ${asama}${teslim}`, href: `#/paketler/${p.id}`, paket: p });
   }

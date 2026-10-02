@@ -67,6 +67,17 @@ npm run preview  # derlenmiş hali yerelde
   - muhabirlere kabul/ret geri dönüşü
   - çıktı: kurumun "الأجندة الأسبوعية" belgesinin düzeninde; yazdır/PDF,
     metni kopyala, Word (.doc). E-postayı planlamacı kendisi gönderiyor
+- **Stok haberler** (feature, ekonomi ve günü olmayan haber):
+  - haftalık toplantıda kabul edilen plansız paketi Planlama'nın
+    feature/stok ekibi "Üretime al"ıyor
+  - akış: stok ekibi görev verir → metin → kontrol (Output) → dil denetimi
+    → video → Media Manager'a ilet (stok ekibi) → klip kodu (Media) →
+    montaj kontrolü ve sisteme yükleme (stok ekibi) → paket stokta
+  - "Stok haberler" sayfası: üretime alınacaklar, Üretimde / Stokta /
+    Yayınlanan sekmeleri, paketin seçildiği plan
+  - Next Day'in "Hazır paketler" bölümü stoktan seçiyor; plan Newsdesk'e
+    devredilince seçili paketler yayınlanmış sayılıyor ve arşive geçiyor
+  - iş panolarında stok paketinin adımı başka birimdeyse kartta yazıyor
 - **Ekonomi birimi:** ön inceleme bekleyen ekonomi önerileri, haftalık
   planın ekonomi kalemleri, ekonomi paketleri. Üretimde masası yok; ekonomi
   paketini Planlama'nın feature/stok ekibi yürütüyor.
@@ -125,9 +136,8 @@ npm run preview  # derlenmiş hali yerelde
   yazdır → PDF olarak kaydet.
 - Dosya yükleme ve dosya deposu.
 - iNews ve medya sistemi entegrasyonu. Klip kodu elle giriliyor.
-- Feature/stok üretimi (feature takip ekibi, montaj kontrolü ve yükleme),
-  "Stok haberler" sekmesi ve yayınlanan arşivi: sonraki adım. Aylık ve
-  özel yayın şimdilik temel liste.
+- Aylık ve özel yayın şimdilik temel liste.
+- Stoktaki paketin geçerlilik süresi; eskiyen stoğun ayıklanması.
 - Haftalık plan e-postasının uygulamadan gönderilmesi; şimdilik planlamacı
   çıktıyı alıp kendisi gönderiyor.
 - News Gathering talep, onay ve seyahat lojistiği; Program Birimi'nin kendi
@@ -139,7 +149,12 @@ npm run preview  # derlenmiş hali yerelde
 
 ## Varsayımlar (geri alınabilir)
 
-- Feature/ekonomi kolunda yükleme Media Manager'da, takip Planlama'da.
+- Feature/ekonomi kolunda görev verme, Media Manager'a iletme, montaj
+  kontrolü ve sisteme yükleme Planlama'nın feature/stok ekibinde
+  ("Feature / stok takibi" unvanı; Planlama yöneticisi de yapabiliyor).
+  Metin kontrolü ve dil Output'ta, klip kodu Media'da.
+- Stok paketi plana seçildiği an değil, plan Newsdesk'e devredildiğinde
+  yayınlanmış sayılıyor.
 - Muhabir kendi ücretini görüyor.
 - Vardiya kodu GMT başlangıç saati: `04G` = 04:00 GMT.
 - Plan onayı Planlama yöneticisinde ya da Yönetim'de; haftalık planı da

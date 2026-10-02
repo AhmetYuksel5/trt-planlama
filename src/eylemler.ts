@@ -1,4 +1,4 @@
-import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, type UretimAdimi } from "./akis";
+import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { haftaBasi, simdi } from "./tarih";
@@ -49,6 +49,7 @@ import {
   planOperasyonDuzenler,
   profilDuzenler,
   talimatVerebilir,
+  uretimeAlabilir,
   yapabilir,
 } from "./yetki";
 
@@ -681,6 +682,8 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     bicim: k.bicimler[0],
     durum: "onaylandi",
     sahaGerekli: false,
+    // Program kendi birimine gidiyor; gerisi bitince stokta bekleyen paket.
+    stok: k.tur !== "program" || undefined,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
     notlar: [],
@@ -853,6 +856,13 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
       const sahip = paketSahibi({ ...p, durum: "uretimde", adim });
       d = hareketYaz(d, { kisiId: ben.id, tip: "planDevralindi", paketId: p.id, planId, veri: { adim, sahip: sahip ?? "" } });
     }
+    // Plana stoktan seçilen paketler bu planla yayına çıkıyor; stoktan düşüp arşive geçiyor.
+    for (const id of plan.hazirPaketler) {
+      const p = paketBul(d, id);
+      if (!p || stokDurumu(p) !== "stokta") continue;
+      d = paketGuncelle(d, id, (x) => ({ ...x, yayinlandi: { planId, tarih: plan.tarih } }));
+      d = hareketYaz(d, { kisiId: ben.id, tip: "stokYayinlandi", paketId: id, planId, veri: { tarih: plan.tarih } });
+    }
   }
   const tip = yeni === "toplantida" ? "planToplantida" : yeni === "onayli" ? "planOnaylandi" : yeni === "devralindi" ? "planDevralindi" : "planTaslaga";
   const sahip: Birim | "" = yeni === "toplantida" ? "yonetim" : yeni === "onayli" ? "newsdesk" : "";
@@ -895,8 +905,12 @@ export const gorevlendirmeOlustur = (ben: Kisi, planId: string, g: Omit<Gorevlen
   return true;
 };
 
-export const hazirPaketEkle = (ben: Kisi, planId: string, id: string) =>
-  planIcerik(ben, planId, (p) => ({ ...p, hazirPaketler: ekle(p.hazirPaketler, id) }));
+/** Plana yalnız stoktaki (bitmiş, henüz yayınlanmamış) paket seçiliyor. */
+export const hazirPaketEkle = (ben: Kisi, planId: string, id: string) => {
+  const p = paketBul(getir(), id);
+  if (!p || stokDurumu(p) !== "stokta") return false;
+  return planIcerik(ben, planId, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, id) }));
+};
 export const hazirPaketCikar = (ben: Kisi, planId: string, id: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, hazirPaketler: cikar(p.hazirPaketler, id) }));
 
@@ -1052,6 +1066,22 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
   return true;
 };
 
+/**
+ * Plansız onaylı paketi üretime alır: haftalık toplantıda kabul edilen
+ * feature, ekonomi, günü olmayan haber ya da program. Next Day paketinde
+ * bunu planın devri yapıyor; plansız paketin devri kolun sahibinde.
+ */
+export const uretimeAl = (ben: Kisi, paketId: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !uretimeAlabilir(ben, p)) return false;
+  const adim = ilkAdim(p);
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, durum: "uretimde", adim }));
+  const sahip = paketSahibi({ ...p, durum: "uretimde", adim });
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimeAlindi", paketId, veri: { adim, sahip: sahip ?? "" } }));
+  return true;
+};
+
 /* --- Üretim adımları (rapor 4-10. kutular) --- */
 
 export interface AdimGirdisi {
@@ -1099,6 +1129,8 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   };
   d = paketGuncelle(d, paketId, () => yeni);
   const veri: Record<string, string> = { adim: sonraki, sahip: paketSahibi(yeni) ?? "" };
+  // Stok paketi son adımda yayına değil stoğa giriyor; hareket cümlesi ona göre.
+  if (sonraki === "tamam" && p.stok) veri.stok = "1";
   if (g.klipKodu) veri.kod = g.klipKodu;
   if (g.muhabirId) veri.muhabir = g.muhabirId;
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));

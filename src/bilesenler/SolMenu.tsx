@@ -32,7 +32,7 @@ import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
-import { paketGorebilir, sayfaGorebilir, siramMi } from "../yetki";
+import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir } from "../yetki";
 import Logo from "./Logo";
 
 /**
@@ -109,7 +109,8 @@ export const MENU: Grup[] = [
       { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", ikon: Package },
       { sayfa: "feature", ad: "mFeature", ikon: TrendingUp },
       { sayfa: "programlar", ad: "mProgramlar", ikon: Clapperboard },
-      { sayfa: "hazirpaketler", ad: "mHazirPaketler", ikon: Layers },
+      // Sayı: kişinin üretime alabileceği paketler (Planlama'da feature/stok ekibi).
+      { sayfa: "stok", ad: "mStok", ikon: Layers, say: (d, ben) => d.paketler.filter((p) => uretimeAlabilir(ben, p)).length },
     ],
   },
   {
