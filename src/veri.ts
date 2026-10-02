@@ -79,9 +79,28 @@ export const SEHIRLER = {
   bruksel: "belcika",
   londra: "ingiltere",
 } as const;
+/*
+ * Muhabirin şehri olmayan ama çalışabildiği ülkeler ("çalışabildiği diğer
+ * ülkeler"): kurumun muhabir listesinde Paris, São Paulo gibi üsler de var.
+ */
+const EK_ULKELER = ["kuveyt", "bae", "bahreyn", "umman", "cezayir", "fransa", "almanya", "rusya", "brezilya", "azerbaycan"] as const;
+
 export type Sehir = keyof typeof SEHIRLER;
-export type Ulke = (typeof SEHIRLER)[Sehir];
-export const ULKELER = [...new Set(Object.values(SEHIRLER))] as Ulke[];
+export type Ulke = (typeof SEHIRLER)[Sehir] | (typeof EK_ULKELER)[number];
+export const ULKELER = [...new Set([...Object.values(SEHIRLER), ...EK_ULKELER])] as Ulke[];
+
+/*
+ * Muhabirin üretebildiği haber türleri (biçim). Rapordaki üç kol
+ * (haber, feature/ekonomi, program) işin hangi akıştan geçtiğini söylüyor;
+ * biçim ise ekrana nasıl çıktığını: aynı kolda PKG de canlı bağlantı da
+ * olabilir. Bu yüzden ayrı alan.
+ */
+export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem"] as const;
+export type Bicim = (typeof BICIMLER)[number];
+
+/* Kurumun muhabir listesindeki ayrım: kadrolu, retainer (aylık sabit), serbest (paket başına). */
+export const CALISMA_BICIMLERI = ["kadrolu", "retainer", "serbest"] as const;
+export type CalismaBicimi = (typeof CALISMA_BICIMLERI)[number];
 
 export interface Kisi {
   id: string;
@@ -89,13 +108,23 @@ export interface Kisi {
   birim: Birim;
   rol: Rol;
   gorev: Gorev;
+  /** Ana görev yeri; ülkesi `SEHIRLER`'den. */
   sehir: Sehir;
   diller: string[];
   telefon: string;
+  /** Kurumsal e-posta. */
   eposta: string;
+  kisiselEposta?: string;
+  /** Uydu ya da yapım şirketi irtibatı: canlı bağlantıda aranacak masa. */
+  irtibat?: string;
+  /** Üç harfli kısaltma; slug'ın sonunda (GAZA-HEALTH-PKG-OHA). */
+  kisaltma: string;
+  calisma: CalismaBicimi;
+  /** Küçültülmüş fotoğraf (data URL); sunucu fazında dosya deposuna taşınır. */
+  foto?: string;
+  digerUlkeler: Ulke[];
+  bicimler: Bicim[];
   durum: KisiDurum;
-  /** Kadrolu değil; ücreti paket başına ödeniyor. */
-  serbest?: boolean;
   /** Newsdesk içinde ücret alanlarını görebilen kişi (rapor bölüm 9). */
   ucretYetkisi?: boolean;
 }
@@ -244,6 +273,7 @@ export interface Oneri {
   gelisme: string;
   paketBasligi?: string;
   tur: IcerikTuru;
+  bicim?: Bicim;
   sahaGerekli: boolean;
   zaman: string;
   kanal: Kanal;
@@ -294,6 +324,7 @@ export interface Paket {
   muhabirId?: string;
   aciklama: string;
   tur: IcerikTuru;
+  bicim?: Bicim;
   teslim?: string;
   yayin?: string;
   durum: PaketDurum;
@@ -306,6 +337,18 @@ export interface Paket {
   video?: string;
   klipKodu?: string;
   ucret?: Ucret;
+  /** Tamamlanan pakete Newsdesk'in verdiği nitelik puanı (1–5); ölçütü birimle netleşecek. */
+  nitelik?: number;
+  /*
+   * Performans ölçüm noktaları kaydın kendisinde: hareket kaydı sınırlı
+   * tutuluyor, eski işin göstergesi onunla birlikte silinmesin.
+   */
+  /** Muhabire görevin verildiği an ("görev verildi" adımı). */
+  gorevZamani?: string;
+  /** Muhabirin kendi payını bitirdiği an (video bağlantısı geldi). */
+  muhabirTeslimi?: string;
+  /** Metnin kontrolden düzeltmeye kaç kez döndüğü. */
+  duzeltmeSayisi?: number;
   notlar: Not[];
   olusturma: string;
   guncelleme: string;
@@ -390,6 +433,8 @@ export const HAREKET_TIPLERI = [
   "klipKodu",
   "tamamlandi",
   "notEklendi",
+  "nitelikPuanlandi",
+  "profilGuncellendi",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 

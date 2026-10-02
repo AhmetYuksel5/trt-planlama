@@ -85,13 +85,16 @@ export default function App() {
       case "hazirpaketler":
         icerik = <HazirPaketler />;
         break;
+      case "profil":
+        icerik = <KisiDetay ben={ben} kisi={ben} />;
+        break;
       case "muhabirler":
       case "editorler":
       case "personel":
         if (yol.id) {
           const k = kisiBul(v, yol.id);
-          icerik = k ? <KisiDetay kisi={k} /> : <Yetkisiz />;
-        } else icerik = <PersonelListe sayfa={sayfa} />;
+          icerik = k ? <KisiDetay ben={ben} kisi={k} /> : <Yetkisiz />;
+        } else icerik = <PersonelListe ben={ben} sayfa={sayfa} />;
         break;
       case "izinler":
       case "yurtdisi":

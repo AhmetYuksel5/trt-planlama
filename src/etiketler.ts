@@ -1,6 +1,8 @@
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
+  Bicim,
   Birim,
+  CalismaBicimi,
   EkipGorevi,
   Gorev,
   GorevlendirmeDurum,
@@ -75,6 +77,15 @@ export const TUR_ADI: Record<IcerikTuru, Anahtar> = {
   feature: "turFeature",
   ekonomi: "turEkonomi",
   program: "turProgram",
+};
+
+export const BICIM_ADI = (b: Bicim): Anahtar => `bc_${b}`;
+export const BICIM_ACIKLAMA = (b: Bicim): Anahtar => `bcA_${b}`;
+
+export const CALISMA_ADI: Record<CalismaBicimi, Anahtar> = {
+  kadrolu: "kadrolu",
+  retainer: "retainer",
+  serbest: "serbest",
 };
 
 export const PAKET_DURUM_ADI: Record<PaketDurum, Anahtar> = {

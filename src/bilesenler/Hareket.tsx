@@ -43,6 +43,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   klipKodu: "hrKlipKodu",
   tamamlandi: "hrTamamlandi",
   notEklendi: "hrNotEklendi",
+  nitelikPuanlandi: "hrNitelik",
+  profilGuncellendi: "hrProfil",
 };
 
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
@@ -64,6 +66,7 @@ export function useHareketMetni() {
       kod: h.veri?.kod ?? "",
       muhabir: ad(muhabir),
       sonuc: h.veri?.sonuc ? t(ONERI_DURUM_ADI[h.veri.sonuc as OneriDurum]) : "",
+      puan: h.veri?.puan ?? "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");
     return { kisi, once, sonra };

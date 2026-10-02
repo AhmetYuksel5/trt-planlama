@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { geciktiMi, paketSahibi } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
-import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
@@ -56,7 +56,10 @@ export function PaketTablosu({
                     <a className="kalin" href={`#/paketler/${p.id}`} onClick={(e) => e.stopPropagation()}>
                       <Icerik blok>{p.baslik}</Icerik>
                     </a>
-                    <small className="sonuk">{t(sehirAdi(p.sehir))}</small>
+                    <small className="sonuk">
+                      {t(sehirAdi(p.sehir))}
+                      {p.bicim && ` · ${t(BICIM_ADI(p.bicim))}`}
+                    </small>
                   </td>
                 )}
                 {var_("muhabir") && (
@@ -69,7 +72,12 @@ export function PaketTablosu({
                     <TurRozeti tur={p.tur} />
                   </td>
                 )}
-                {var_("plan") && <td className="sonuk" data-etiket={t("plan")}>{plan ? tarihYaz(plan.tarih, dil, "kisa") : t("haftalikKaynak")}</td>}
+                {var_("plan") && (
+                  <td className="sonuk" data-etiket={t("plan")}>
+                    {/* Plan kaydı olmayan tamamlanmış iş (arşiv) yayın tarihiyle; olmayan açık iş haftalık plandan. */}
+                    {plan ? tarihYaz(plan.tarih, dil, "kisa") : p.durum === "tamamlandi" && p.yayin ? tarihYaz(yerelGun(p.yayin), dil, "kisa") : t("haftalikKaynak")}
+                  </td>
+                )}
                 {var_("asama") && (
                   <td data-etiket={t("asama")}>
                     <AsamaCubugu paket={p} />

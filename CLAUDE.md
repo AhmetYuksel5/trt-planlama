@@ -23,6 +23,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `akis.ts`: adımlar, aşamalar, adım sahipleri
   - `yetki.ts`: birim/rol/alan yetkisi, görünürlük, sayfa izinleri
   - `eylemler.ts`: kaydı değiştiren her şey; önce yetki, sonra hareket kaydı
+  - `performans.ts`: muhabir göstergeleri; saklanmaz, paket kaydındaki
+    ölçüm noktalarından (gorevZamani, muhabirTeslimi, duzeltmeSayisi,
+    nitelik) hesaplanır, sınırlı hareket kaydından değil
   - `oturum.ts`: demo giriş
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
@@ -39,6 +42,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
   - Kişi adı içerik değil: arayüz dilinin yazımıyla (`useDil().ad`).
     Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
+- Logo (`bilesenler/Logo.tsx`) her dilde "TRT عربي"; dile göre değişmez.
+- Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
+  program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
 - Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v3`)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.

@@ -32,6 +32,7 @@ import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { paketGorebilir, sayfaGorebilir, siramMi } from "../yetki";
+import Logo from "./Logo";
 
 /**
  * Sol menü. Gruplar ilk taslak promptunun 2. maddesindeki ana başlıklar:
@@ -138,8 +139,7 @@ export default function SolMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   return (
     <nav className="menu" aria-label={t("anaMenu")}>
       <a className="marka" href="#/" aria-label={t("uygulama")}>
-        <b>TRT</b>
-        <span>{t("markaArapca")}</span>
+        <Logo />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
       <div className="birim-kutusu">

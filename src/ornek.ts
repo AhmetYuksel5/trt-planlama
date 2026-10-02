@@ -1,4 +1,6 @@
 import { adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
+import { metin } from "./dil";
+import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
   Baslik,
@@ -10,6 +12,7 @@ import type {
   HareketTipi,
   Hareket,
   HazirPaket,
+  Bicim,
   IcerikTuru,
   Kisi,
   NextDayPlan,
@@ -19,6 +22,7 @@ import type {
   Sehir,
   Toplanti,
   Ucret,
+  Ulke,
 } from "./veri";
 
 /**
@@ -93,26 +97,26 @@ const KISILER: KisiSatiri[] = [
   ["mu6", "Muhannad Saleh", "مهند صالح", "muhabir", "personel", "muhabir", "istanbul"],
   ["mu7", "Ahmet Güneş", "أحمد غونش", "muhabir", "personel", "muhabir", "ankara"],
   ["mu8", "Rania Mansour", "رانيا منصور", "muhabir", "personel", "muhabir", "kahire"],
-  ["mu9", "Nour Al-Ali", "نور العلي", "muhabir", "personel", "muhabir", "beyrut", { serbest: true, durum: "izinli" }],
+  ["mu9", "Nour Al-Ali", "نور العلي", "muhabir", "personel", "muhabir", "beyrut", { calisma: "serbest", durum: "izinli" }],
   ["mu10", "Yusuf Demir", "يوسف دمير", "muhabir", "personel", "muhabir", "istanbul", { durum: "izinli" }],
   ["mu11", "Leyla Sayed", "ليلى السيد", "muhabir", "personel", "muhabir", "istanbul"],
-  ["mu12", "Hasan Abu Zaid", "حسن أبو زيد", "muhabir", "personel", "muhabir", "gazze", { serbest: true, durum: "sahada" }],
+  ["mu12", "Hasan Abu Zaid", "حسن أبو زيد", "muhabir", "personel", "muhabir", "gazze", { calisma: "serbest", durum: "sahada" }],
   ["mu13", "Walid Kassem", "وليد قاسم", "muhabir", "personel", "muhabir", "sam", { durum: "sahada" }],
-  ["mu14", "Abdullah Hamwi", "عبد الله الحموي", "muhabir", "personel", "muhabir", "halep", { serbest: true }],
+  ["mu14", "Abdullah Hamwi", "عبد الله الحموي", "muhabir", "personel", "muhabir", "halep", { calisma: "serbest" }],
   ["mu15", "Mohammed Rubaie", "محمد الربيعي", "muhabir", "personel", "muhabir", "bagdat"],
-  ["mu16", "Shirin Kareem", "شيرين كريم", "muhabir", "personel", "muhabir", "erbil", { serbest: true }],
+  ["mu16", "Shirin Kareem", "شيرين كريم", "muhabir", "personel", "muhabir", "erbil", { calisma: "serbest" }],
   ["mu17", "Ibrahim Odeh", "إبراهيم عودة", "muhabir", "personel", "muhabir", "amman"],
   ["mu18", "Tariq Al-Kuwari", "طارق الكواري", "muhabir", "personel", "muhabir", "doha"],
-  ["mu19", "Fahad Al-Otaibi", "فهد العتيبي", "muhabir", "personel", "muhabir", "riyad", { serbest: true }],
-  ["mu20", "Saeed Al-Hadi", "سعيد الهادي", "muhabir", "personel", "muhabir", "sana", { serbest: true }],
-  ["mu21", "Amira Osman", "أميرة عثمان", "muhabir", "personel", "muhabir", "hartum", { serbest: true }],
-  ["mu22", "Mahmoud Sweilem", "محمود سويلم", "muhabir", "personel", "muhabir", "trablus", { serbest: true }],
+  ["mu19", "Fahad Al-Otaibi", "فهد العتيبي", "muhabir", "personel", "muhabir", "riyad", { calisma: "serbest" }],
+  ["mu20", "Saeed Al-Hadi", "سعيد الهادي", "muhabir", "personel", "muhabir", "sana", { calisma: "serbest" }],
+  ["mu21", "Amira Osman", "أميرة عثمان", "muhabir", "personel", "muhabir", "hartum", { calisma: "serbest" }],
+  ["mu22", "Mahmoud Sweilem", "محمود سويلم", "muhabir", "personel", "muhabir", "trablus", { calisma: "serbest" }],
   ["mu23", "Anis Ben Salem", "أنيس بن سالم", "muhabir", "personel", "muhabir", "tunus"],
-  ["mu24", "Youssef El Alaoui", "يوسف العلوي", "muhabir", "personel", "muhabir", "rabat", { serbest: true }],
-  ["mu25", "Reza Ahmadi", "رضا أحمدي", "muhabir", "personel", "muhabir", "tahran", { serbest: true }],
-  ["mu26", "Olena Kovalenko", "أولينا كوفالينكو", "muhabir", "personel", "muhabir", "kiev", { serbest: true, durum: "yolda" }],
+  ["mu24", "Youssef El Alaoui", "يوسف العلوي", "muhabir", "personel", "muhabir", "rabat", { calisma: "serbest" }],
+  ["mu25", "Reza Ahmadi", "رضا أحمدي", "muhabir", "personel", "muhabir", "tahran", { calisma: "serbest" }],
+  ["mu26", "Olena Kovalenko", "أولينا كوفالينكو", "muhabir", "personel", "muhabir", "kiev", { calisma: "serbest", durum: "yolda" }],
   ["mu27", "Jamal Haddad", "جمال حداد", "muhabir", "personel", "muhabir", "newyork"],
-  ["mu28", "Sophie Laurent", "صوفي لوران", "muhabir", "personel", "muhabir", "bruksel", { serbest: true }],
+  ["mu28", "Sophie Laurent", "صوفي لوران", "muhabir", "personel", "muhabir", "bruksel", { calisma: "serbest" }],
   ["mu29", "Kareem Fadel", "كريم فاضل", "muhabir", "personel", "muhabir", "londra"],
   ["mu30", "Hatice Arslan", "هاتيجة أرسلان", "muhabir", "personel", "muhabir", "ankara"],
   ["mu31", "Nabil Awad", "نبيل عوض", "muhabir", "personel", "muhabir", "ramallah"],
@@ -145,30 +149,95 @@ const ALAN_KODU: Partial<Record<Sehir, string>> = {
   londra: "+44",
 };
 
-const eposta = (ad: string) =>
+const latin = (ad: string) =>
   ad
     .toLocaleLowerCase("tr")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/ı/g, "i")
     .replace(/[^a-z ]/g, "")
-    .trim()
-    .replace(/ +/g, ".") + "@ornek.local";
+    .trim();
 
-const kisiler = (): Kisi[] =>
-  KISILER.map(([id, tr, ar, birim, rol, gorev, sehir, ek], i) => ({
-    id,
-    ad: { tr, ar, en: tr },
-    birim,
-    rol,
-    gorev,
-    sehir,
-    diller: birim === "muhabir" ? (i % 3 === 0 ? ["ar", "en"] : i % 3 === 1 ? ["ar", "tr"] : ["ar", "fr"]) : ["ar", "tr", "en"],
-    telefon: `${ALAN_KODU[sehir] ?? "+90"} 000 000 ${String(i + 1).padStart(2, "0")}`,
-    eposta: eposta(tr),
-    durum: "gorevde",
-    ...ek,
-  }));
+const eposta = (ad: string, alan = "ornek.local") => latin(ad).replace(/ +/g, ".") + "@" + alan;
+
+/* Kurumun muhabir listesindeki kısaltma kalıbı: adın ilk harfi ve soyadın ilk iki harfi (ASH, IKH). */
+const kisaltmalar = new Set<string>();
+const kisaltmaUret = (ad: string) => {
+  const p = latin(ad).split(/ +/);
+  const son = p[p.length - 1];
+  for (const k of [p[0][0] + son.slice(0, 2), p[0][0] + son[0] + son[son.length - 1], p[0].slice(0, 2) + son[0]]) {
+    const b = k.toUpperCase();
+    if (!kisaltmalar.has(b)) {
+      kisaltmalar.add(b);
+      return b;
+    }
+  }
+  return (p[0][0] + son).slice(0, 3).toUpperCase();
+};
+
+/* Çalışabildiği diğer ülkeler: ana görev yerinin çevresi; listedeki ilk bir-üç tanesi. */
+const KOMSU: Partial<Record<Ulke, Ulke[]>> = {
+  filistin: ["urdun", "misir", "lubnan"],
+  lubnan: ["suriye", "urdun", "filistin"],
+  suriye: ["lubnan", "turkiye", "irak"],
+  misir: ["sudan", "libya", "filistin"],
+  irak: ["suriye", "iran", "kuveyt"],
+  urdun: ["filistin", "suriye", "irak"],
+  katar: ["bae", "bahreyn", "kuveyt"],
+  suudi: ["bae", "bahreyn", "yemen"],
+  yemen: ["suudi", "umman"],
+  sudan: ["misir", "libya"],
+  libya: ["tunus", "cezayir", "misir"],
+  tunus: ["cezayir", "libya"],
+  fas: ["cezayir", "fransa"],
+  turkiye: ["suriye", "azerbaycan", "irak"],
+  iran: ["irak", "azerbaycan"],
+  ukrayna: ["rusya"],
+  abd: ["brezilya"],
+  belcika: ["fransa", "almanya"],
+  ingiltere: ["fransa", "belcika"],
+};
+
+/* Her muhabir PKG ve canlı yapıyor; diğer türler kişiden kişiye. */
+const BICIM_EKI: Bicim[][] = [
+  ["voxpop", "feature"],
+  ["walktalk", "derinlemesine"],
+  ["ozelRoportaj"],
+  ["hikayem", "feature"],
+  ["voxpop", "walktalk", "ozelRoportaj"],
+  ["derinlemesine", "ozelRoportaj"],
+  ["feature"],
+];
+
+const RETAINER = new Set(["mu3", "mu5", "mu13", "mu18", "mu29"]);
+const IRTIBATLI = new Set<Sehir>(["gazze", "beyrut", "kudus", "sam", "bagdat", "kahire"]);
+
+const kisiler = (): Kisi[] => {
+  kisaltmalar.clear();
+  return KISILER.map(([id, tr, ar, birim, rol, gorev, sehir, ek], i) => {
+    const muhabir = birim === "muhabir";
+    const ulke = SEHIR_ULKESI[sehir];
+    return {
+      id,
+      ad: { tr, ar, en: tr },
+      birim,
+      rol,
+      gorev,
+      sehir,
+      diller: muhabir ? (i % 3 === 0 ? ["ar", "en"] : i % 3 === 1 ? ["ar", "tr"] : ["ar", "fr"]) : ["ar", "tr", "en"],
+      telefon: `${ALAN_KODU[sehir] ?? "+90"} 000 000 ${String(i + 1).padStart(2, "0")}`,
+      eposta: eposta(tr),
+      kisiselEposta: muhabir ? eposta(tr, "kisisel.ornek.local") : undefined,
+      irtibat: muhabir && IRTIBATLI.has(sehir) ? `satdesk@${sehir}.ornek.local` : undefined,
+      kisaltma: kisaltmaUret(tr),
+      calisma: RETAINER.has(id) ? "retainer" : "kadrolu",
+      digerUlkeler: muhabir ? (KOMSU[ulke] ?? []).slice(0, 1 + (i % 3)) : [],
+      bicimler: muhabir ? ["pkg", "canli", ...BICIM_EKI[i % BICIM_EKI.length]] : [],
+      durum: "gorevde",
+      ...ek,
+    };
+  });
+};
 
 /* --- Merkezi başlık havuzu (promptun 4.4 maddesindeki örnekler önce) --- */
 
@@ -309,7 +378,11 @@ interface PaketTanimi {
   ucret?: Ucret;
   metin?: string;
   geriGonder?: string;
+  bicim?: Bicim;
 }
+
+/* Kolun varsayılan biçimi: feature kolu insan hikâyesi, program derinlemesine, gerisi PKG. */
+const varsayilanBicim = (tur: IcerikTuru): Bicim => (tur === "feature" ? "feature" : tur === "program" ? "derinlemesine" : "pkg");
 
 const GAZZE_METNI =
   "تعاني المستشفيات في قطاع غزة من نقص حاد في الأدوية والوقود، فيما تعمل أقسام الطوارئ بأكثر من طاقتها الاستيعابية. ويقول الأطباء إن المولدات الاحتياطية لا تكفي إلا لساعات محدودة يوميا، وإن آلاف المرضى ينتظرون عمليات مؤجلة. وتؤكد منظمة الصحة العالمية أن أقل من نصف مستشفيات القطاع ما زالت تعمل بشكل جزئي.";
@@ -1157,6 +1230,56 @@ const ADIM_KISISI: Record<string, string> = {
   program: "pr2",
 };
 
+/*
+ * Son iki ayın tamamlanmış işleri: muhabir profilindeki göstergeler boş
+ * kalmasın diye. Kurgusal ama her açılışta aynı (tohumlu üretim); teslim
+ * hızı, düzeltme ve puan eğilimi kişiden kişiye değişiyor ki göstergeler
+ * birbirinden ayrışsın.
+ */
+const ARSIV_BASLIKLARI = [
+  "أسعار الخبز ترتفع في {س}",
+  "{س}: أزمة السكن تضغط على العائلات الشابة",
+  "مستشفيات {س} بين نقص الأدوية وضغط المرضى",
+  "حرفيون في {س} يحافظون على مهن الأجداد",
+  "الكهرباء في {س}: ساعات انقطاع أطول",
+  "{س}: مبادرة شبابية لتنظيف الأحياء",
+  "مهرجان ثقافي يجمع الفنانين في {س}",
+  "{س}: تراجع السياحة وأثره على التجار",
+  "المياه في {س}: آبار تجف ومزارعون يبحثون عن حلول",
+  "الشباب في {س} بين الهجرة والبقاء",
+  "حركة النقل في {س} بعد رفع أسعار الوقود",
+  "{س}: مكتبة عامة تعود إلى الحياة",
+  "ملاعب الأحياء في {س} تصنع أبطالا",
+  "{س}: الاستثمار في الطاقة الشمسية",
+  "صيادو {س} يواجهون موسما صعبا",
+  "{س}: مطاعم شعبية تقاوم الغلاء",
+  "الجامعات في {س} وتكلفة الدراسة",
+  "{س}: انتخابات محلية وأولويات السكان",
+  "تراث {س} المعماري في خطر",
+  "{س}: متطوعون يساعدون كبار السن",
+  "المزارعون في {س} وأسعار الأسمدة",
+  "أسواق {س} قبل العطلة",
+];
+
+const BICIM_SLUG: Record<Bicim, string> = {
+  pkg: "PKG",
+  canli: "LIVE",
+  voxpop: "VOX",
+  walktalk: "WT",
+  feature: "FEAT",
+  derinlemesine: "DEEP",
+  ozelRoportaj: "INT",
+  hikayem: "STORY",
+};
+
+/* mulberry32: ardışık tohumlar da birbirinden bağımsız dizi versin (basit doğrusal üreteçte ilk değerler neredeyse aynıydı). */
+const tohumlu = (t: number) => () => {
+  t = (t + 0x6d2b79f5) | 0;
+  let x = Math.imul(t ^ (t >>> 15), 1 | t);
+  x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+  return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+};
+
 export const ORNEK = (): Durum => {
   const B = bugun();
   const gun = (n: number) => gunEkle(B, n);
@@ -1204,6 +1327,7 @@ export const ORNEK = (): Durum => {
       gelisme: o.gelisme,
       paketBasligi: o.paket,
       tur: o.tur ?? "haber",
+      bicim: varsayilanBicim(o.tur ?? "haber"),
       sahaGerekli: !!o.saha,
       zaman: o.gun === "dun" ? zaman(gun(-1), o.saat) : bugunSaat(o.saat, 30),
       kanal: o.kanal ?? "sistem",
@@ -1273,6 +1397,7 @@ export const ORNEK = (): Durum => {
       muhabirId: t.muhabirId,
       aciklama: t.aciklama,
       tur,
+      bicim: t.bicim ?? varsayilanBicim(tur),
       teslim: t.teslimDk !== undefined ? new Date(an + t.teslimDk * DAKIKA).toISOString() : undefined,
       yayin: t.saat ? zaman(tarih, t.saat) : undefined,
       durum: t.durum,
@@ -1333,11 +1458,83 @@ export const ORNEK = (): Durum => {
         const veri: Record<string, string> = { adim: sonraki, sahip: sonraki === "tamam" ? "" : adimSahibi(sonraki, tur) };
         if (a === "media" && p.klipKodu) veri.kod = p.klipKodu;
         if (a === "gorevlendirme") veri.muhabir = t.muhabirId;
+        if (a === "newsdesk") p.gorevZamani = zamanlar[j];
+        if (a === "video") p.muhabirTeslimi = zamanlar[j];
         h(kisi, ADIM_HAREKETI[a], zamanlar[j], { paketId: p.id, planId: plan?.id, veri });
       });
+      if (t.geriGonder && sira.includes("geri")) p.duzeltmeSayisi = 1;
+      if (bitti) p.nitelik = 4;
       const sonZaman = zamanlar[zamanlar.length - 1];
       if (sonZaman) p.guncelleme = sonZaman;
     }
+    return p;
+  });
+
+  /* Arşiv: plan kaydı yok, kodu bugünkü paketlerden küçük. */
+  const kisiListesi = kisiler();
+  const SAAT = 60 * DAKIKA;
+  const arsivTaslak = kisiListesi
+    .filter((k) => k.birim === "muhabir")
+    .flatMap((m, i) => {
+      const r = tohumlu(i + 11);
+      const n = 4 + Math.floor(r() * 7);
+      const hiz = 2.5 + r() * 4;
+      const titiz = r();
+      const sehirAr = metin(sehirAdi(m.sehir), "ar");
+      return Array.from({ length: n }, (_, j) => {
+        const tarih = gun(-(3 + Math.floor(((j + r()) * 56) / n)));
+        const gorev = new Date(zaman(tarih, `${String(8 + Math.floor(r() * 3)).padStart(2, "0")}:${r() < 0.5 ? "00" : "30"}`)).getTime();
+        const teslimEden = gorev + hiz * (0.6 + r() * 0.9) * SAAT;
+        const bicim = m.bicimler[Math.floor(r() * m.bicimler.length)];
+        const puan = Math.min(5, Math.max(1, Math.round(2.6 + titiz * 2 + (r() - 0.5) * 1.2)));
+        return {
+          m,
+          j,
+          tarih,
+          gorev,
+          teslimEden,
+          bicim,
+          puan,
+          duzeltme: r() < 0.35 - titiz * 0.25 ? 1 : 0,
+          baslik: ARSIV_BASLIKLARI[(i * 5 + j * 3) % ARSIV_BASLIKLARI.length].replace("{س}", sehirAr),
+          sehirAr,
+        };
+      });
+    })
+    .sort((a, b) => a.gorev - b.gorev);
+  const arsiv: Paket[] = arsivTaslak.map((a, n) => {
+    const kod = `TRT-AR-${B.slice(0, 4)}-${String(410 - arsivTaslak.length + n).padStart(4, "0")}`;
+    const tur: IcerikTuru = a.bicim === "feature" ? "feature" : "haber";
+    const bitis = new Date(a.teslimEden + 3 * SAAT).toISOString();
+    const p: Paket = {
+      id: `pa-${a.m.id}-${a.j}`,
+      kod,
+      baslik: a.baslik,
+      sehir: a.m.sehir,
+      muhabirId: a.m.id,
+      aciklama: `قصة من ${a.sehirAr} مع شهادات السكان وآراء المختصين.`,
+      tur,
+      bicim: a.bicim,
+      teslim: new Date(a.gorev + 7 * SAAT).toISOString(),
+      yayin: new Date(a.teslimEden + 2 * SAAT).toISOString(),
+      durum: "tamamlandi",
+      slug: `${a.m.sehir.toUpperCase()}-${kod.slice(-4)}-${BICIM_SLUG[a.bicim]}-${a.m.kisaltma}`,
+      sahaGerekli: false,
+      metin: `${a.baslik}.`,
+      video: `https://video.ornek.local/${kod}`,
+      klipKodu: klip(a.tarih, 100 + (n % 900)),
+      notlar: [],
+      nitelik: a.puan,
+      gorevZamani: new Date(a.gorev).toISOString(),
+      muhabirTeslimi: new Date(a.teslimEden).toISOString(),
+      duzeltmeSayisi: a.duzeltme || undefined,
+      olusturma: zaman(gunEkle(a.tarih, -1), "12:00"),
+      guncelleme: bitis,
+    };
+    h("nd3", "gorevVerildi", p.gorevZamani!, { paketId: p.id, veri: { adim: "metin", sahip: "muhabir" } });
+    h(a.m.id, "videoGeldi", p.muhabirTeslimi!, { paketId: p.id, veri: { adim: "iletim", sahip: adimSahibi("iletim", tur) } });
+    h("nd3", "tamamlandi", bitis, { paketId: p.id, veri: { adim: "tamam", sahip: "" } });
+    h("nd1", "nitelikPuanlandi", new Date(a.teslimEden + 4 * SAAT).toISOString(), { paketId: p.id, veri: { puan: String(a.puan) } });
     return p;
   });
 
@@ -1400,7 +1597,7 @@ export const ORNEK = (): Durum => {
 
   return {
     surum: 3,
-    kisiler: kisiler(),
+    kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
     gelismeler,
@@ -1412,7 +1609,7 @@ export const ORNEK = (): Durum => {
       { id: "c-dun", tarih: gun(0), metin: "", sonSaat: "15:00", olusturan: "pl2", zaman: zaman(gun(-1), "09:10") },
       { id: "c-bugun", tarih: gun(1), metin: "", sonSaat: "15:00", olusturan: "pl2", zaman: bugunSaat("09:15", 60) },
     ],
-    paketler,
+    paketler: [...paketler, ...arsiv],
     haftalik: [
       {
         id: "hf-gelecek",
