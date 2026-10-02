@@ -31,7 +31,7 @@ const m = (tr: string, ar: string, en: string): Metin => ({ tr, ar, en });
 
 const M = {
   uygulama: m("TRT Arapça · Planlama ve Koordinasyon", "تي آر تي عربي · التخطيط والتنسيق", "TRT Arabi · Planning and Coordination"),
-  /* Logo: kanalın adı her dilde aynı (bkz. Logo.tsx). */
+  /* Logonun alt metni: kanalın adı her dilde aynı (bkz. Logo.tsx). */
   markaArapca: m("عربي", "عربي", "عربي"),
   markaAlt: m("Planlama ve Koordinasyon", "التخطيط والتنسيق", "Planning & Coordination"),
   dilAdi: m("Türkçe", "العربية", "English"),

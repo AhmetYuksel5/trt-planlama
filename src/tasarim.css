@@ -37,6 +37,15 @@
   --lacivert-yazi: #c3cee2;
   --lacivert-silik: #7f8fab;
   --marka: #e1251b;
+  /*
+   * Logonun boyu bulunduğu yere göre; genişliği dosyanın oranından geliyor.
+   * Koyu zeminde logo beyaz levhanın üstünde duruyor, çünkü "عربي" kısmı
+   * koyu lacivert ve levhasız kaybolur.
+   */
+  --logo-menu: 28px;
+  --logo-ust: 22px;
+  --logo-giris: 36px;
+  --logo-belge: 26px;
 
   /* Ana başlıklar: koyu + sis. */
   --nextday: #1d5bd8;
@@ -160,11 +169,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   padding: var(--ara-4) var(--ara-3) var(--ara-6);
   scrollbar-width: thin; scrollbar-color: var(--lacivert-3) transparent;
 }
-.marka { display: flex; align-items: baseline; gap: var(--ara-2); padding: var(--ara-1) var(--ara-2) var(--ara-4); color: #fff; }
-.marka b { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
-.marka span { font-size: 20px; font-weight: 700; color: var(--marka); }
-.marka span[lang="ar"] { font-family: var(--yazi-arapca); }
-.marka-alt { display: block; font-size: var(--punto-mini); color: var(--lacivert-silik); font-weight: 500; letter-spacing: .02em; margin-top: -10px; padding: 0 var(--ara-2) var(--ara-3); }
+.marka { display: flex; align-items: center; padding: var(--ara-1) 0 var(--ara-2); }
+.logo { display: block; height: var(--logo-menu); width: auto; }
+.logo-levha { display: inline-flex; background: var(--yuzey); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); }
+.marka-alt { display: block; font-size: var(--punto-mini); color: var(--lacivert-silik); font-weight: 500; letter-spacing: .02em; padding: 0 var(--ara-1) var(--ara-3); }
 
 .birim-kutusu {
   display: flex; align-items: center; gap: var(--ara-3);
@@ -682,6 +690,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 .giris { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); }
 .giris-sol { background: var(--lacivert); color: var(--lacivert-yazi); padding: var(--ara-8); display: flex; flex-direction: column; gap: var(--ara-5); }
+.giris-sol .marka { padding: 0; }
+.giris-sol .logo { height: var(--logo-giris); }
 .giris-sol h1 { color: #fff; font-size: 28px; line-height: 1.25; }
 .giris-sol p { line-height: 1.6; }
 .giris-sol .ozellikler { display: grid; gap: var(--ara-3); }
@@ -710,6 +720,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .belge { max-width: 1080px; margin: 0 auto; padding: var(--ara-6) var(--ara-6) 80px; display: flex; flex-direction: column; gap: var(--ara-6); }
 .belge-ust { position: sticky; top: 0; z-index: 10; background: var(--lacivert); color: #fff; display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-3) var(--ara-6); }
 .belge-ust .marka { padding: 0; }
+.belge-ust .logo { height: var(--logo-belge); }
 .belge-ust .bosluk { flex: 1; }
 .belge-ust .dil-secici { border-color: var(--lacivert-3); }
 .belge-ust .dil-secici button { background: var(--lacivert-2); color: var(--lacivert-yazi); }
@@ -887,9 +898,8 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .menu, .menu-acik .perde { display: none; }
   .ust { padding-top: env(safe-area-inset-top); gap: var(--ara-2); }
   .ust .menu-dugme, .ust .dil-secici { display: none; }
-  .ust .marka-mobil { display: flex; padding: 0; color: var(--lacivert); margin-inline-end: auto; }
-  .ust .marka-mobil b { font-size: 19px; }
-  .ust .marka-mobil span { font-size: 17px; }
+  .ust .marka-mobil { display: flex; padding: 0; min-height: var(--dokunma); margin-inline-end: auto; }
+  .ust .marka-mobil .logo { height: var(--logo-ust); }
   .ust .bosluk { display: none; }
   .ikon-dugme { width: var(--dokunma); height: var(--dokunma); }
   .demo-serit { padding: 6px var(--ara-4); }

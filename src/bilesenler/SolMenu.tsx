@@ -139,7 +139,7 @@ export default function SolMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   return (
     <nav className="menu" aria-label={t("anaMenu")}>
       <a className="marka" href="#/" aria-label={t("uygulama")}>
-        <Logo />
+        <Logo levha />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
       <div className="birim-kutusu">
