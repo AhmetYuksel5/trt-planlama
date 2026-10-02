@@ -17,6 +17,7 @@ import {
   type Gorevlendirme,
   type Hareket,
   type IcerikTuru,
+  type Bicim,
   type Kanal,
   type Kisi,
   type NextDayPlan,
@@ -26,7 +27,7 @@ import {
   type Sehir,
   type Ulke,
 } from "./veri";
-import { adimYapabilir, paketGorebilir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "./yetki";
+import { adimYapabilir, paketGorebilir, planIcerikDuzenler, planOperasyonDuzenler, profilDuzenler, yapabilir } from "./yetki";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -79,6 +80,7 @@ export interface OneriGirdisi {
   gelisme: string;
   paketBasligi?: string;
   tur: IcerikTuru;
+  bicim?: Bicim;
   sahaGerekli: boolean;
   kanal: Kanal;
   hedefTarih: string;
@@ -103,6 +105,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
         gelisme: g.gelisme,
         paketBasligi: g.paketBasligi || undefined,
         tur: g.tur,
+        bicim: g.bicim,
         sahaGerekli: g.sahaGerekli,
         zaman: simdi(),
         kanal,
@@ -193,6 +196,7 @@ export const oneriPlanaEkle = (
       muhabirId: o.muhabirId,
       aciklama: o.gelisme,
       tur: o.tur,
+      bicim: o.bicim,
       durum: "degerlendiriliyor",
       sahaGerekli: o.sahaGerekli,
       oneriId: o.id,
@@ -508,6 +512,7 @@ export interface PaketGirdisi {
   muhabirId?: string;
   aciklama: string;
   tur: IcerikTuru;
+  bicim?: Bicim;
   teslim?: string;
   yayin?: string;
   sahaGerekli: boolean;
@@ -598,6 +603,8 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
     ...(g.metin ? { metin: g.metin } : {}),
     ...(g.video ? { video: g.video } : {}),
     ...(g.klipKodu ? { klipKodu: g.klipKodu } : {}),
+    ...(adim === "newsdesk" ? { gorevZamani: simdi() } : {}),
+    ...(adim === "video" ? { muhabirTeslimi: simdi() } : {}),
     ...(sonraki === "tamam" ? { durum: "tamamlandi", adim: undefined } : { adim: sonraki }),
   };
   d = paketGuncelle(d, paketId, () => yeni);
@@ -613,7 +620,7 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
   let d = getir();
   const p = paketBul(d, paketId);
   if (!p || !adimYapabilir(ben, p) || !["kontrol", "dil"].includes(p.adim ?? "") || !gerekce.trim()) return false;
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: "metin" }));
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: "metin", duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 }));
   kaydet(
     hareketYaz(d, {
       kisiId: ben.id,
@@ -633,6 +640,33 @@ export const notEkle = (ben: Kisi, paketId: string, metin: string) => {
   d = paketGuncelle(d, paketId, (x) => ({ ...x, notlar: [...x.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: metin.trim() }] }));
   const sahip = paketSahibi(p);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "notEklendi", paketId, planId: p.planId, veri: { sahip: sahip ?? "" } }));
+  return true;
+};
+
+/** Tamamlanan pakete nitelik puanı: göstergeye girer, ölçütü birimle netleşecek. */
+export const nitelikPuanla = (ben: Kisi, paketId: string, puan: number) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || p.durum !== "tamamlandi" || !yapabilir(ben, "nitelikPuanla") || !Number.isInteger(puan) || puan < 1 || puan > 5) return false;
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, nitelik: puan }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "nitelikPuanlandi", paketId, planId: p.planId, veri: { puan: String(puan) } }));
+  return true;
+};
+
+export type ProfilGirdisi = Partial<
+  Pick<Kisi, "telefon" | "eposta" | "kisiselEposta" | "irtibat" | "kisaltma" | "sehir" | "digerUlkeler" | "bicimler" | "calisma" | "foto">
+>;
+
+export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi) => {
+  let d = getir();
+  const kisi = kisiBul(d, kisiId);
+  if (!kisi || !profilDuzenler(ben, kisi)) return false;
+  /* Kişi kendi çalışma biçimini değiştiremez: sözleşme Planlama ve Yönetim'in kaydı. */
+  const izinli = ben.id === kisiId && !yapabilir(ben, "profilDuzenle") ? { ...g, calisma: undefined } : g;
+  const temiz = Object.fromEntries(Object.entries(izinli).filter(([, x]) => x !== undefined)) as ProfilGirdisi;
+  if ("foto" in g && g.foto === undefined) temiz.foto = undefined;
+  d = { ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, ...temiz } : k)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "profilGuncellendi", veri: { muhabir: kisiId } }));
   return true;
 };
 

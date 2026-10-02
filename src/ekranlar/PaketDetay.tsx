@@ -1,10 +1,10 @@
-import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Undo2, Workflow } from "lucide-react";
+import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { ADIM_ADI, ADIM_KUTUSU, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
-import { AsamaBuyuk, Avatar, Bos, Icerik, Kart, Kilitli, NotKutu, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { AsamaBuyuk, Avatar, BicimRozeti, Bos, Icerik, Kart, Kilitli, NotKutu, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, notEkle, paketDurum } from "../eylemler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum } from "../eylemler";
 import { BIRIM_ADI, sehirAdi } from "../etiketler";
 import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
@@ -44,7 +44,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             <Icerik>{paket.baslik}</Icerik>
           </h1>
           <p>
-            {paket.kod} · <TurRozeti tur={paket.tur} /> <PaketDurumRozeti paket={paket} /> {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+            {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} /> {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
           </p>
         </div>
       </header>
@@ -118,7 +118,11 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
               </div>
               <div className="alan">
                 <small>{t("plan")}</small>
-                {plan ? <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a> : <b>{t("haftalikKaynak")}</b>}
+                {plan ? (
+                  <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a>
+                ) : (
+                  <b>{paket.durum === "tamamlandi" && paket.yayin ? tarihYaz(yerelGun(paket.yayin), dil, "kisa") : t("haftalikKaynak")}</b>
+                )}
               </div>
               <div className="alan">
                 <small>{t("haberBasligi")}</small>
@@ -132,6 +136,12 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 <small>{t("saha")}</small>
                 <b>{t(paket.sahaGerekli ? "evet" : "hayir")}</b>
               </div>
+              {paket.durum === "tamamlandi" && (paket.nitelik || yapabilir(ben, "nitelikPuanla")) && (
+                <div className="alan alan-genis">
+                  <small>{t("nitelikPuani")}</small>
+                  <NitelikPuani ben={ben} paket={paket} />
+                </div>
+              )}
               <div className="alan">
                 <small>{t("slug")}</small>
                 <b dir="ltr">{paket.slug ?? "—"}</b>
@@ -419,5 +429,30 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
         </div>
       </div>
     </Kart>
+  );
+}
+
+/** Tamamlanan pakete Newsdesk'in nitelik puanı: yıldızlar, yetkisi olana düğme. */
+function NitelikPuani({ ben, paket }: { ben: Kisi; paket: Paket }) {
+  const { t } = useDil();
+  const verir = yapabilir(ben, "nitelikPuanla");
+  return (
+    <span className="yildizlar" role={verir ? "group" : undefined} aria-label={t("nitelikPuani")}>
+      {[1, 2, 3, 4, 5].map((n) =>
+        verir ? (
+          <button
+            key={n}
+            className={`dugme dugme-sade dugme-ikon ${n <= (paket.nitelik ?? 0) ? "dolu" : ""}`}
+            aria-label={t("puanVer", { n })}
+            aria-pressed={n === paket.nitelik}
+            onClick={() => nitelikPuanla(ben, paket.id, n) && bildir(t("bPuanKaydedildi"))}
+          >
+            <Star size={16} />
+          </button>
+        ) : (
+          <Star key={n} size={16} className={n <= (paket.nitelik ?? 0) ? "dolu" : ""} />
+        ),
+      )}
+    </span>
   );
 }

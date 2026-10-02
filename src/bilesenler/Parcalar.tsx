@@ -2,8 +2,8 @@ import { ArrowRight, Construction, Inbox, Info, Lock } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
-import { PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
-import type { IcerikTuru, Kisi, Paket } from "../veri";
+import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
+import type { Bicim, IcerikTuru, Kisi, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
 
@@ -84,6 +84,16 @@ export function TurRozeti({ tur }: { tur: IcerikTuru }) {
   return <Rozet ton={`tur-${tur}`}>{t(TUR_ADI[tur])}</Rozet>;
 }
 
+/** Haber türü (biçim): adı terim, üzerine gelince tanımı. */
+export function BicimRozeti({ bicim }: { bicim: Bicim }) {
+  const { t } = useDil();
+  return (
+    <span className="rozet rozet-bicim" title={t(BICIM_ACIKLAMA(bicim))}>
+      {t(BICIM_ADI(bicim))}
+    </span>
+  );
+}
+
 /*
  * Renk kişiye sabit: aynı kişi her ekranda aynı tonda görünsün. Kimlikler
  * birbirine çok benzediği için (pl1, pl2) karma altın açıyla dağıtılıyor;
@@ -91,7 +101,7 @@ export function TurRozeti({ tur }: { tur: IcerikTuru }) {
  */
 const ton = (id: string) => Math.round(([...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7) * 137.508) % 360);
 
-export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "" | "kucuk" | "buyuk"; durum?: boolean }) {
+export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "" | "kucuk" | "buyuk" | "dev"; durum?: boolean }) {
   const { ad: adi } = useDil();
   if (!kisi) return <span className={`avatar ${boy} avatar-fazla`}>?</span>;
   const ad = typeof kisi.ad === "string" ? kisi.ad : kisi.ad.tr;
@@ -104,12 +114,12 @@ export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "
     .toLocaleUpperCase("tr");
   return (
     <span
-      className={`avatar ${boy} ${durum ? `durum-${kisi.durum}` : ""}`}
+      className={`avatar ${boy} ${durum ? `durum-${kisi.durum}` : ""} ${kisi.foto ? "fotolu" : ""}`}
       style={{ ["--ton" as string]: ton(kisi.id) }}
       title={adi(kisi)}
       aria-hidden="true"
     >
-      {harf}
+      {kisi.foto ? <img src={kisi.foto} alt="" /> : harf}
       {durum && <i className="durum-nokta" />}
     </span>
   );

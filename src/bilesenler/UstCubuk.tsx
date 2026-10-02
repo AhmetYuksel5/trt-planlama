@@ -1,4 +1,4 @@
-import { Bell, BookOpen, LogOut, Menu, Search, Settings, X } from "lucide-react";
+import { Bell, BookOpen, CircleUser, LogOut, Menu, Search, Settings, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
@@ -9,6 +9,7 @@ import { bildirimMi, oneriGorebilir, paketGorebilir } from "../yetki";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { Avatar, Bos, Icerik } from "./Parcalar";
+import Logo from "./Logo";
 
 /**
  * Üst çubuk: arama, dil, bildirimler ve kullanıcı menüsü.
@@ -77,8 +78,7 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
         <Menu size={18} />
       </button>
       <a className="marka marka-mobil" href="#/" aria-label={t("uygulama")}>
-        <b>TRT</b>
-        <span>{t("markaArapca")}</span>
+        <Logo />
       </a>
       <div className={`arama ${acik === "arama" ? "acik" : ""}`}>
         <Search size={16} />
@@ -175,6 +175,9 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
         </button>
         {acik === "kullanici" && (
           <div className="acilir">
+            <a className="acilir-satir" href="#/profil" onClick={() => setAcik("")}>
+              <CircleUser size={16} /> {t("profilim")}
+            </a>
             <a className="acilir-satir" href="#/ayarlar" onClick={() => setAcik("")}>
               <Settings size={16} /> {t("mAyarlar")}
             </a>

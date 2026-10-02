@@ -2,16 +2,18 @@ import { useState } from "react";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, paketKaydet } from "../../eylemler";
-import { HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
+import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
 import {
+  BICIMLER,
   HAREKET_TURLERI,
   ICERIK_TURLERI,
   KAYNAK_TURLERI,
   SEHIRLER,
   muhabirler,
   useVeri,
+  type Bicim,
   type CanliYayin,
   type Gelisme,
   type HareketTuru,
@@ -40,6 +42,20 @@ function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: 
         {t("kaydet")}
       </button>
     </div>
+  );
+}
+
+/** Haber türü seçici: adı terim, tanımı seçenek metninde. */
+export function BicimSecici({ deger, degistir }: { deger: Bicim; degistir: (b: Bicim) => void }) {
+  const { t } = useDil();
+  return (
+    <select value={deger} onChange={(e) => degistir(e.target.value as Bicim)}>
+      {BICIMLER.map((b) => (
+        <option key={b} value={b}>
+          {t(BICIM_ADI(b))}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -194,6 +210,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
     muhabirId: mevcut?.muhabirId ?? "",
     aciklama: mevcut?.aciklama ?? "",
     tur: (mevcut?.tur ?? "haber") as IcerikTuru,
+    bicim: (mevcut?.bicim ?? "pkg") as Bicim,
     teslim: yerelGirdi(mevcut?.teslim),
     yayin: mevcut?.yayin ? yerelGirdi(mevcut.yayin).slice(11) : "",
     sahaGerekli: mevcut?.sahaGerekli ?? false,
@@ -215,6 +232,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       muhabirId: f.muhabirId || undefined,
       aciklama: f.aciklama.trim(),
       tur: f.tur,
+      bicim: f.bicim,
       teslim: girdidenIso(f.teslim),
       yayin: f.yayin ? zaman(plan.tarih, f.yayin) : undefined,
       sahaGerekli: f.sahaGerekli,
@@ -253,6 +271,10 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          {t("haberTuru")}
+          <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
         </label>
       </div>
       <label>

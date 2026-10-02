@@ -6,6 +6,7 @@ import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
 import { BIRIMLER, useVeri, type Birim, type Kisi } from "../veri";
+import Logo from "../bilesenler/Logo";
 
 /**
  * Demo giriş.
@@ -51,8 +52,7 @@ export default function Giris() {
     <div className="giris">
       <aside className="giris-sol">
         <span className="marka">
-          <b>TRT</b>
-          <span>{t("markaArapca")}</span>
+          <Logo />
         </span>
         <h1>{t("girisBaslik")}</h1>
         <p>{t("girisAciklama")}</p>

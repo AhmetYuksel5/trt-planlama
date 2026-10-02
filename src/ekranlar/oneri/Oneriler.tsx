@@ -1,7 +1,7 @@
 import { ArrowLeft, Ban, ClipboardCopy, Clock, FlaskConical, Lightbulb, Megaphone, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { cagriKaydet, oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
@@ -18,6 +18,7 @@ import {
   paketBul,
   planBul,
   useVeri,
+  type Bicim,
   type IcerikTuru,
   type Kanal,
   type Kisi,
@@ -28,7 +29,7 @@ import {
 import { oneriGorebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
-import { MuhabirSecici } from "../nextday/Formlar";
+import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 import PlanaEkle from "./PlanaEkle";
 
 /**
@@ -172,6 +173,12 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                 <small>{t("tur")}</small>
                 <TurRozeti tur={oneri.tur} />
               </div>
+              {oneri.bicim && (
+                <div className="alan">
+                  <small>{t("haberTuru")}</small>
+                  <BicimRozeti bicim={oneri.bicim} />
+                </div>
+              )}
               <div className="alan">
                 <small>{t("saha")}</small>
                 <b>{t(oneri.sahaGerekli ? "evet" : "hayir")}</b>
@@ -312,6 +319,7 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
     gelisme: "",
     paketBasligi: "",
     tur: "haber" as IcerikTuru,
+    bicim: "pkg" as Bicim,
     sahaGerekli: false,
     kanal: (muhabir ? "sistem" : "eposta") as Kanal,
     hedefTarih: cagri?.tarih ?? gunEkle(B, 1),
@@ -386,6 +394,10 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
                   </option>
                 ))}
               </select>
+            </label>
+            <label>
+              {t("haberTuru")}
+              <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
             </label>
           </div>
           <label>

@@ -7,6 +7,7 @@ import { BIRIM_ADI } from "../etiketler";
 import { girisYap, useBen } from "../oturum";
 import { BIRIMLER, kisiBul, useVeri, type Birim } from "../veri";
 import { yetkiMatrisi } from "../yetki";
+import Logo from "../bilesenler/Logo";
 
 /**
  * Proje planı sayfası: girişsiz açılıyor, yöneticilere bağlantıyla
@@ -84,8 +85,7 @@ export default function ProjePlani() {
     <div className="belge-sayfa">
       <header className="belge-ust">
         <span className="marka">
-          <b>TRT</b>
-          <span>{t("markaArapca")}</span>
+          <Logo />
         </span>
         <span className="bosluk" />
         <DilSecici />

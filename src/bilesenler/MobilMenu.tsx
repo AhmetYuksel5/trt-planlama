@@ -43,13 +43,15 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
       </div>
 
       <div className="mobil-kisi">
-        <Avatar kisi={ben} durum />
-        <div>
-          <b>{ad(ben)}</b>
-          <small>
-            {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
-          </small>
-        </div>
+        <a className="mobil-kisi-bag" href="#/profil" onClick={onKapat} aria-label={t("profilim")}>
+          <Avatar kisi={ben} durum />
+          <div>
+            <b>{ad(ben)}</b>
+            <small>
+              {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
+            </small>
+          </div>
+        </a>
         <button
           type="button"
           className="dugme dugme-ikincil dugme-kucuk"

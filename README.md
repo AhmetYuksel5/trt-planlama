@@ -36,6 +36,19 @@ npm run preview  # derlenmiş hali yerelde
   - mevcut ya da yeni başlığa bağlayıp plana ekleme
   - muhabirlere geri dönüş
 - **Merkezi haber başlıkları havuzu.**
+- **Muhabir profili ve listesi:**
+  - fotoğraf (yüklenebiliyor, tarayıcıda küçültülüp saklanıyor), ad,
+    iletişim (telefon, kurumsal ve kişisel e-posta, yayın irtibatı),
+    kısaltma, çalışma biçimi (kadrolu, retainer, serbest)
+  - ana görev bölgesi ve çalışabildiği diğer ülkeler
+  - üretebildiği haber türleri: PKG, Live / Is-Live, Vox Pop, Walk & Talk,
+    Feature, In-depth, Exclusive Interview, My Story
+  - performans: verilen ve tamamlanan haber, zamanında teslim, ortalama
+    teslim süresi, ilk seferde kabul, nitelik puanı, öneri kabulü
+  - listede ülkeye ve haber türüne göre süzme ("Lübnan'da Live yapabilen")
+  - herkes kendi profilini "Profilim"den görüyor; düzenleme kişinin kendisi
+    ile Planlama, News Gathering ve Yönetim'de; göstergeleri Output ve
+    Media görmüyor
 - **Paket önerisi ve üretim adımları:** saha, Newsdesk, metin, kontrol, dil,
   video, Media Manager, iNews. Ayrıca geri gönderme, koordinasyon notları
   ve tam hareket geçmişi.
@@ -71,3 +84,12 @@ npm run preview  # derlenmiş hali yerelde
   Latin harfli özel isim serbest; dil denetimi yok.
 - Kişi adı rehberde arayüz dilinin yazımıyla, planın içerik satırlarında ve
   çıktıda Arapça.
+- Performans göstergelerinin tanımları taslak (ekranda da öyle işaretli):
+  zamanında teslim muhabirin videosunun teslim saatinden önce gelmesi,
+  ilk seferde kabul metnin düzeltmeye hiç dönmemesi, nitelik puanı
+  Newsdesk'in tamamlanan pakete verdiği 1–5. Ölçüt ve hedefler birimle
+  netleşecek.
+- Örnek veride son iki ayın tamamlanmış işlerinden kurgusal bir arşiv var;
+  göstergeler boş görünmesin diye.
+- Logo şimdilik yazıyla "TRT عربي"; resmî logo dosyası gelince
+  `src/bilesenler/Logo.tsx` değişecek.

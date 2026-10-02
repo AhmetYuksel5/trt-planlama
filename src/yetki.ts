@@ -50,6 +50,8 @@ export const IZINLER = {
   operasyon: { ad: "yOperasyon", birimler: ["newsdesk"] },
   paketDegerlendir: { ad: "yPaketDegerlendir", birimler: ["planlama"] },
   ucretGor: { ad: "yUcretGor", birimler: ["newsdesk", "yonetim"] },
+  nitelikPuanla: { ad: "yNitelikPuanla", birimler: ["newsdesk", "yonetim"] },
+  profilDuzenle: { ad: "yProfilDuzenle", birimler: ["planlama", "newsgathering", "yonetim"] },
 } satisfies Record<string, Izin>;
 export type Eylem = keyof typeof IZINLER;
 
@@ -127,6 +129,17 @@ export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   return h.veri?.sahip === k.birim;
 };
 
+/** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
+export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean => !!k && (k.id === kisi.id || yapabilir(k, "profilDuzenle"));
+
+/*
+ * Performans göstergeleri alan bazlı: muhabir yalnız kendisininkini, işi
+ * planlayan ve dağıtan birimler herkesinkini görür; Output ve Media
+ * kayıtları işler ama kişi değerlendirmesi onların masası değil.
+ */
+export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
+  !!k && (k.id === kisi.id || ["planlama", "newsdesk", "newsgathering", "yonetim"].includes(k.birim));
+
 /* --- Sayfalar --- */
 
 const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
@@ -157,6 +170,7 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   ucretler: ["newsdesk", "yonetim"],
   raporlar: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
   ayarlar: BIRIMLER,
+  profil: BIRIMLER,
   plan: BIRIMLER,
 };
 
