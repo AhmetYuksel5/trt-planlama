@@ -26,6 +26,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `performans.ts`: muhabir göstergeleri; saklanmaz, paket kaydındaki
     ölçüm noktalarından (gorevZamani, muhabirTeslimi, duzeltmeSayisi,
     nitelik) hesaplanır, sınırlı hareket kaydından değil
+  - `eposta.ts`: çağrı e-postası (Outlook taslağı, mailto) ve gelen yanıtı
+    eşleştirme kuralları; saf, sunucu fazında posta kutusunu izleyen hizmet
+    de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`)
   - `oturum.ts`: demo giriş
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
@@ -45,7 +48,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Logo (`bilesenler/Logo.tsx`) her dilde "TRT عربي"; dile göre değişmez.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v3`)
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v4`;
+  şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.

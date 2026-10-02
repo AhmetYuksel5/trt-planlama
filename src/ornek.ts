@@ -1,5 +1,6 @@
 import { adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
 import { metin } from "./dil";
+import { cagriGovdesi, cagriKonusu, etiketUret, ORNEK_PLANLAMA_ADRESI } from "./eposta";
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
@@ -23,6 +24,7 @@ import type {
   Toplanti,
   Ucret,
   Ulke,
+  Yanit,
 } from "./veri";
 
 /**
@@ -1315,7 +1317,7 @@ export const ORNEK = (): Durum => {
   }));
 
   /* Önerinin gönderildiği gün, karar verdiği planın bir gün öncesi. */
-  const oneriler: Oneri[] = ONERILER.map((o) => {
+  const oneriler: Oneri[] = ONERILER.map((o, i) => {
     const muhabir = KISILER.find((k) => k[0] === o.muhabirId);
     const sehir = (muhabir?.[6] ?? "istanbul") as Sehir;
     const hedef = o.gun === "dun" ? "bugun" : "yarin";
@@ -1330,7 +1332,8 @@ export const ORNEK = (): Durum => {
       bicim: varsayilanBicim(o.tur ?? "haber"),
       sahaGerekli: !!o.saha,
       zaman: o.gun === "dun" ? zaman(gun(-1), o.saat) : bugunSaat(o.saat, 30),
-      kanal: o.kanal ?? "sistem",
+      /* Bugün önerilerin çoğu çağrı e-postasına yanıtla geliyor; beşte biri uygulamadan. */
+      kanal: o.kanal ?? (i % 5 === 0 ? "sistem" : "eposta"),
       hedefTarih: planTarihi[hedef],
       durum: o.durum,
       cagriId: o.gun === "dun" ? "c-dun" : "c-bugun",
@@ -1375,6 +1378,75 @@ export const ORNEK = (): Durum => {
     }
     if (o.geriDonus) h("pl2", "geriDonus", zaman(gun(-1), "19:05"), { oneriId: o.id, planId: o.planId, veri: { sonuc: o.durum } });
   }
+
+  /*
+   * E-postayla gelen önerinin kaynağı: çağrıya verilen yanıt. Sunucu
+   * fazında posta kutusundan gelecek; burada örnek. Ayrıca "önerim yok"
+   * yanıtları ve rehberde olmayan bir adresten gelen e-posta.
+   */
+  const cagriTarihi: Record<string, string> = { "c-dun": gun(0), "c-bugun": gun(1) };
+  const muhabirSatiri = (id: string) => KISILER.find((r) => r[0] === id)!;
+  const yanitlar: Yanit[] = [];
+  for (const o of oneriler.filter((x) => x.kanal === "eposta" && x.cagriId)) {
+    const tarih = cagriTarihi[o.cagriId!];
+    const ad = muhabirSatiri(o.muhabirId)[1];
+    const metin = [o.haberBasligi, o.gelisme, o.paketBasligi ? `PKG: ${o.paketBasligi}` : ""].filter(Boolean).join("\n");
+    o.yanitId = `y-${o.id}`;
+    yanitlar.push({
+      id: o.yanitId,
+      cagriId: o.cagriId,
+      kisiId: o.muhabirId,
+      kimden: eposta(ad),
+      kimdenAd: ad,
+      konu: `RE: ${cagriKonusu(tarih)}`,
+      metin,
+      tamMetin: `${metin}\n\n-----Original Message-----\nFrom: Planning\n${cagriGovdesi(tarih, "15:00")}`,
+      zaman: o.zaman,
+      mesajKimligi: `<${o.id}@ornek.local>`,
+      ekler: [],
+      durum: "oneri",
+      kaynak: "posta",
+    });
+  }
+  const BOS_YANITLAR: [string, string, string][] = [
+    ["mu6", "لا يوجد لدي جديد لخطة الغد، شكرا.", "10:05"],
+    ["mu16", "لا يوجد", "10:40"],
+    ["mu7", "لا شيء لدي غدا، شكرا.", "11:20"],
+    ["mu22", "لا جديد من ليبيا غدا.", "12:05"],
+  ];
+  for (const [id, metin, saat] of BOS_YANITLAR) {
+    const ad = muhabirSatiri(id)[1];
+    const z = bugunSaat(saat, 45);
+    yanitlar.push({
+      id: `y-bos-${id}`,
+      cagriId: "c-bugun",
+      kisiId: id,
+      kimden: eposta(ad),
+      kimdenAd: ad,
+      konu: `RE: ${cagriKonusu(gun(1))}`,
+      metin,
+      tamMetin: metin,
+      zaman: z,
+      mesajKimligi: `<bos-${id}@ornek.local>`,
+      ekler: [],
+      durum: "oneriYok",
+      kaynak: "posta",
+    });
+    h(id, "yanitOneriYok", z, { veri: { tarih: gun(1) } });
+  }
+  yanitlar.push({
+    id: "y-eslesmeyen",
+    kimden: "stringer.aden@ornek-disi.local",
+    kimdenAd: "Stringer Aden",
+    konu: "مقترح من عدن",
+    metin: "مرحبا، لدي تقرير عن أزمة الوقود في عدن ويمكنني إرساله غدا صباحا مع مقابلات من محطات الوقود.",
+    tamMetin: "مرحبا، لدي تقرير عن أزمة الوقود في عدن ويمكنني إرساله غدا صباحا مع مقابلات من محطات الوقود.",
+    zaman: bugunSaat("11:45", 35),
+    mesajKimligi: "<eslesmeyen-1@ornek.local>",
+    ekler: ["aden-yakit.jpg"],
+    durum: "eslesmedi",
+    kaynak: "posta",
+  });
 
   /* Paketler ve geçmişleri. */
   let sayac = 410;
@@ -1596,7 +1668,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 3,
+    surum: 4,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -1605,10 +1677,23 @@ export const ORNEK = (): Durum => {
     hazirPaketler: HAZIR(gun),
     gorevlendirmeler: GOREVLENDIRMELER(gun),
     oneriler,
-    cagrilar: [
-      { id: "c-dun", tarih: gun(0), metin: "", sonSaat: "15:00", olusturan: "pl2", zaman: zaman(gun(-1), "09:10") },
-      { id: "c-bugun", tarih: gun(1), metin: "", sonSaat: "15:00", olusturan: "pl2", zaman: bugunSaat("09:15", 60) },
-    ],
+    cagrilar: (
+      [
+        ["c-dun", gun(0), zaman(gun(-1), "09:10")],
+        ["c-bugun", gun(1), bugunSaat("09:15", 60)],
+      ] as const
+    ).map(([id, tarih, z]) => ({
+      id,
+      tarih,
+      metin: cagriGovdesi(tarih, "15:00"),
+      sonSaat: "15:00",
+      olusturan: "pl2",
+      zaman: z,
+      kime: ORNEK_PLANLAMA_ADRESI,
+      bcc: kisiListesi.filter((k) => k.birim === "muhabir" && k.durum !== "izinli").map((k) => k.id),
+      etiket: etiketUret(tarih),
+    })),
+    yanitlar,
     paketler: [...paketler, ...arsiv],
     haftalik: [
       {

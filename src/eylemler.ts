@@ -1,4 +1,5 @@
 import { ilkAdim, paketSahibi, sonrakiAdim, type UretimAdimi } from "./akis";
+import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { simdi } from "./tarih";
 import {
   SEHIRLER,
@@ -21,11 +22,14 @@ import {
   type Kanal,
   type Kisi,
   type NextDayPlan,
+  type Oneri,
   type Paket,
   type PlanDurum,
   type PlanMuhabiri,
   type Sehir,
   type Ulke,
+  type Yanit,
+  type YanitDurum,
 } from "./veri";
 import { adimYapabilir, paketGorebilir, planIcerikDuzenler, planOperasyonDuzenler, profilDuzenler, yapabilir } from "./yetki";
 
@@ -63,10 +67,20 @@ const yeniKod = (d: Durum): [string, Durum] => {
 
 /* --- Öneri çağrısı ve öneriler --- */
 
-/** Çağrı metni kaydediliyor ama gönderilmiyor: e-posta entegrasyonu yok, ekranda bu açıkça yazıyor. */
-export const cagriKaydet = (ben: Kisi, g: { tarih: string; metin: string; sonSaat: string }) => {
-  if (!yapabilir(ben, "cagriHazirla")) return false;
+/*
+ * Çağrı kaydı: gönderim planlamacının kendi e-postasından (Outlook taslağı
+ * ya da telefon), uygulama göndermiyor. Kayıt muhabir ekranına açık çağrı
+ * düşürüyor ve gelen yanıtların eşleşeceği etiketi ve BCC listesini tutuyor.
+ */
+export const cagriKaydet = (ben: Kisi, g: { tarih: string; metin: string; sonSaat: string; kime: string; bcc: string[]; etiket: string }) => {
+  if (!yapabilir(ben, "cagriHazirla") || !g.kime.trim()) return false;
   let d = getir();
+  /* Aynı plan için ikinci kez açılırsa yeni çağrı değil güncelleme: yanıtlar tek etikete bağlanıyor. */
+  const var_ = d.cagrilar.find((c) => c.etiket === g.etiket);
+  if (var_) {
+    kaydet({ ...d, cagrilar: d.cagrilar.map((c) => (c.id === var_.id ? { ...c, ...g } : c)) });
+    return true;
+  }
   const id = kimlik("c");
   d = { ...d, cagrilar: [{ id, olusturan: ben.id, zaman: simdi(), ...g }, ...d.cagrilar] };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "cagriHazirlandi", veri: { tarih: g.tarih, sahip: "muhabir" } }));
@@ -667,6 +681,134 @@ export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi) => {
   if ("foto" in g && g.foto === undefined) temiz.foto = undefined;
   d = { ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, ...temiz } : k)) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "profilGuncellendi", veri: { muhabir: kisiId } }));
+  return true;
+};
+
+/* --- E-postayla gelen yanıtlar --- */
+
+export interface YanitSonucu {
+  durum: YanitDurum | "tekrar";
+  yanitId?: string;
+  oneriId?: string;
+}
+
+/*
+ * Gelen e-postayı işler: gönderen muhabire, konudaki etiket çağrıya
+ * bağlanıyor; alıntı ayıklanıyor; kısa "önerim yok" yanıtı öneri listesini
+ * doldurmuyor; gerisi olduğu gibi tek öneri olarak düşüyor (bölmeyi plancı
+ * yapıyor). Eşleşmeyen e-posta kaybolmuyor, ayrı listede bekliyor. Aynı
+ * Message-ID ikinci kez işlenmiyor. Sunucu fazında posta kutusunu izleyen
+ * hizmet de bunu çağıracak; tarayıcıda yalnız Planlama içe aktarabiliyor.
+ */
+export const epostaYanitiIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Yanit["kaynak"]): YanitSonucu | null => {
+  if (kaynak === "iceAktarma" && !yapabilir(ben, "cagriHazirla")) return null;
+  let d = getir();
+  if (gelen.mesajKimligi && d.yanitlar.some((y) => y.mesajKimligi === gelen.mesajKimligi)) return { durum: "tekrar" };
+  const zaman = gelen.zaman ?? simdi();
+  const kisi = gondereniBul(d, gelen.kimden);
+  const cagri = cagriyiBul(d, gelen.konu, zaman, kisi);
+  const metin = yeniMetin(gelen.metin) || gelen.metin.trim();
+  const durum: YanitDurum = !kisi || !cagri ? "eslesmedi" : bosYanitMi(metin) ? "oneriYok" : "oneri";
+  const yanit: Yanit = {
+    id: kimlik("y"),
+    cagriId: cagri?.id,
+    kisiId: kisi?.id,
+    kimden: gelen.kimden.trim(),
+    kimdenAd: gelen.kimdenAd,
+    konu: gelen.konu,
+    metin,
+    tamMetin: gelen.metin,
+    zaman,
+    mesajKimligi: gelen.mesajKimligi,
+    ekler: gelen.ekler ?? [],
+    durum,
+    kaynak,
+  };
+  d = { ...d, yanitlar: [yanit, ...d.yanitlar] };
+  return { durum, yanitId: yanit.id, oneriId: yanitiYerlestir(d, yanit) };
+};
+
+/* Eşleşmiş yanıt: öneri ya da "önerisi yok" hareketi; eşleşmemiş yalnız saklanıyor. */
+const yanitiYerlestir = (d: Durum, y: Yanit): string | undefined => {
+  const kisi = kisiBul(d, y.kisiId);
+  const cagri = d.cagrilar.find((c) => c.id === y.cagriId);
+  if (!kisi || !cagri || y.durum === "eslesmedi") {
+    kaydet(d);
+    return undefined;
+  }
+  if (y.durum === "oneriYok") {
+    kaydet(hareketYaz(d, { kisiId: kisi.id, tip: "yanitOneriYok", veri: { tarih: cagri.tarih } }));
+    return undefined;
+  }
+  const oneri = yanittanOneriTaslagi(y, kisi, cagri, kimlik("o"));
+  d = { ...d, oneriler: [oneri, ...d.oneriler] };
+  kaydet(hareketYaz(d, { kisiId: kisi.id, tip: "oneriGeldi", oneriId: oneri.id, veri: { sahip: "planlama", kanal: "eposta" } }));
+  return oneri.id;
+};
+
+/** Eşleşmeyen yanıtı muhabire (ve gerekirse çağrıya) bağlar; sonra eşleşmiş gibi yerleşir. */
+export const yanitBagla = (ben: Kisi, yanitId: string, kisiId: string, cagriId: string): YanitSonucu | null => {
+  if (!yapabilir(ben, "oneriDegerlendir")) return null;
+  let d = getir();
+  const y = d.yanitlar.find((x) => x.id === yanitId);
+  if (!y || y.durum !== "eslesmedi" || !kisiBul(d, kisiId) || !d.cagrilar.some((c) => c.id === cagriId)) return null;
+  const durum: YanitDurum = bosYanitMi(y.metin) ? "oneriYok" : "oneri";
+  const yeni = { ...y, kisiId, cagriId, durum };
+  d = { ...d, yanitlar: d.yanitlar.map((x) => (x.id === yanitId ? yeni : x)) };
+  return { durum, yanitId, oneriId: yanitiYerlestir(d, yeni) };
+};
+
+export interface YanitOneriGirdisi {
+  haberBasligi: string;
+  gelisme: string;
+  paketBasligi?: string;
+  tur: IcerikTuru;
+  bicim?: Bicim;
+  sahaGerekli: boolean;
+}
+
+/** Bir yanıtta birden çok öneri varsa plancı her birini ayrı öneri olarak açıyor; yanıt değişmiyor. */
+export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi): string | null => {
+  if (!yapabilir(ben, "oneriDegerlendir") || !g.haberBasligi.trim()) return null;
+  let d = getir();
+  const y = d.yanitlar.find((x) => x.id === yanitId);
+  const kisi = kisiBul(d, y?.kisiId);
+  const cagri = d.cagrilar.find((c) => c.id === y?.cagriId);
+  if (!y || !kisi || !cagri) return null;
+  const oneri: Oneri = {
+    ...yanittanOneriTaslagi(y, kisi, cagri, kimlik("o")),
+    haberBasligi: g.haberBasligi.trim(),
+    gelisme: g.gelisme.trim(),
+    paketBasligi: g.paketBasligi?.trim() || undefined,
+    tur: g.tur,
+    bicim: g.bicim,
+    sahaGerekli: g.sahaGerekli,
+  };
+  d = { ...d, oneriler: [oneri, ...d.oneriler] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDuzenlendi", oneriId: oneri.id, veri: { sahip: "planlama" } }));
+  return oneri.id;
+};
+
+/*
+ * E-postadan otomatik düşen önerinin başlığı yalnız ilk satır; plancı
+ * değerlendirmeden önce düzeltiyor. Muhabirin uygulamadan gönderdiği öneri
+ * düzenlenmiyor (orijinal haliyle korunur); burada orijinal, yanıtın kendisi.
+ */
+export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) => {
+  if (!yapabilir(ben, "oneriDegerlendir") || !g.haberBasligi.trim()) return false;
+  const d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !o.yanitId || !["yeni", "degerlendiriliyor", "sonra"].includes(o.durum)) return false;
+  const yeni: Oneri = {
+    ...o,
+    haberBasligi: g.haberBasligi.trim(),
+    gelisme: g.gelisme.trim(),
+    paketBasligi: g.paketBasligi?.trim() || undefined,
+    tur: g.tur,
+    bicim: g.bicim,
+    sahaGerekli: g.sahaGerekli,
+  };
+  kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "oneriDuzenlendi", oneriId }));
   return true;
 };
 

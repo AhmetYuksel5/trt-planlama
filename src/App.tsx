@@ -8,14 +8,15 @@ import { HazirPaketler, IsAkisi, Paketler, Ucretler } from "./ekranlar/Listeler"
 import Cikti from "./ekranlar/nextday/Cikti";
 import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
-import { Cagri, OneriDetay, OnerilerListe, YeniOneri } from "./ekranlar/oneri/Oneriler";
+import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
+import { OneriDetay, OnerilerListe, YeniOneri } from "./ekranlar/oneri/Oneriler";
 import PaketDetay from "./ekranlar/PaketDetay";
 import { Gorevlendirmeler, KisiDetay, PersonelListe } from "./ekranlar/Personel";
 import { Aylik, Haftalik, Ozel } from "./ekranlar/Planlar";
 import ProjePlani from "./ekranlar/ProjePlani";
 import { useBen } from "./oturum";
 import { kisiBul, oneriBul, paketBul, planBul, useVeri } from "./veri";
-import { oneriGorebilir, paketGorebilir, sayfaGorebilir } from "./yetki";
+import { oneriGorebilir, paketGorebilir, sayfaGorebilir, yapabilir } from "./yetki";
 import { useYol } from "./yol";
 
 /**
@@ -62,7 +63,8 @@ export default function App() {
         break;
       case "oneriler": {
         if (yol.id === "yeni") icerik = <YeniOneri ben={ben} />;
-        else if (yol.id === "cagri") icerik = sayfaGorebilir(ben, "nextday") ? <Cagri ben={ben} tarih={yol.alt} /> : <Yetkisiz />;
+        else if (yol.id === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <Cagri ben={ben} tarih={yol.alt} /> : <Yetkisiz />;
+        else if (yol.id === "yanitlar") icerik = yapabilir(ben, "cagriHazirla") ? <Yanitlar ben={ben} cagriId={yol.alt} /> : <Yetkisiz />;
         else if (yol.id) {
           const o = oneriBul(v, yol.id);
           icerik = o && oneriGorebilir(ben, o) ? <OneriDetay ben={ben} oneri={o} /> : <Yetkisiz />;
