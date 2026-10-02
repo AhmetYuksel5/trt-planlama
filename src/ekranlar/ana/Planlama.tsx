@@ -25,7 +25,8 @@ import { HareketAkisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Ilerleme, Kart, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
 import { OneriTablosu } from "../../bilesenler/Tablolar";
 import { gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi, ulkeAdi } from "../../etiketler";
+import { BIRIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
+import { gundemde, kalemAdi } from "../../haftalik";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
 import { muhabirler, useVeri, type Durum, type Kisi, type NextDayPlan } from "../../veri";
 
@@ -178,11 +179,11 @@ export function HaftaKarti({ d }: { d: Durum }) {
       baslik={t("buHaftaninPlani")}
       ikon={<CalendarRange size={18} />}
       ek={`(${tarihYaz(gunler[0], dil, "kisa")} – ${tarihYaz(gunler[6], dil, "kisa")})`}
-      sagUc={<Tumu href="#/haftalik" metin={t("planiGor")} />}
+      sagUc={<Tumu href={plan ? `#/haftalik/${plan.id}` : "#/haftalik"} metin={t("planiGor")} />}
     >
       <div className="hafta">
         {gunler.map((g) => {
-          const kalemler = plan?.kalemler.filter((k) => k.tarih === g) ?? [];
+          const kalemler = plan?.kalemler.filter((k) => k.tarih === g && gundemde(k)) ?? [];
           return (
             <div key={g} className={`gun ${ozelGunler.has(g) ? "ozel-gun" : ""}`}>
               <div className="gun-bas">
@@ -192,9 +193,11 @@ export function HaftaKarti({ d }: { d: Durum }) {
               <div className="gun-say">{kalemler.length}</div>
               <ul>
                 {kalemler.map((k) => (
-                  <li key={k.id} className={`tur-${k.tur}`} title={k.baslik}>
+                  <li key={k.id} className={`tur-${k.tur}`} title={kalemAdi(k)}>
                     <i className="nokta" />
-                    <span>{k.ulke ? t(ulkeAdi(k.ulke)) : <Icerik>{k.baslik}</Icerik>}</span>
+                    <span>
+                      <Icerik>{k.yer || kalemAdi(k)}</Icerik>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -315,9 +318,10 @@ function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: N
     satirlar.push({
       ad: t("haftalik"),
       alt: `${tarihYaz(hafta.baslangic, dil, "kisa")} – ${tarihYaz(gunEkle(hafta.baslangic, 6), dil, "kisa")}`,
-      oran: oran(hafta.kalemler.filter((k) => k.onayli).length, hafta.kalemler.length),
+      oran: oran(hafta.kalemler.filter((k) => k.karar !== "bekliyor").length, hafta.kalemler.length),
       renk: "renk-haftalik",
-      href: "#/haftalik",
+      href: `#/haftalik/${hafta.id}`,
+      rozet: { ad: HAFTA_DURUM_ADI[hafta.durum], ton: HAFTA_DURUM_TONU[hafta.durum] },
     });
   if (ay)
     satirlar.push({

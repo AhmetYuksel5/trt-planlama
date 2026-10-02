@@ -5,7 +5,7 @@ import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, seh
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
-import { AsamaCubugu, Bos, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
+import { AsamaCubugu, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
 
 /*
  * Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek
@@ -60,7 +60,7 @@ export function PaketTablosu({
                       <Icerik blok>{p.baslik}</Icerik>
                     </a>
                     <small className="sonuk">
-                      {p.oncelikli && <OncelikRozeti />} {t(sehirAdi(p.sehir))}
+                      {p.oncelikli && <OncelikRozeti />} {p.haftalikKalemId && <HaftalikRozeti />} {t(sehirAdi(p.sehir))}
                       {p.bicim && ` · ${t(BICIM_ADI(p.bicim))}`}
                     </small>
                   </td>

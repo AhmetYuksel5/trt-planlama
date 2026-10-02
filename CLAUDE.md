@@ -33,7 +33,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`olcumler`) kayıtlardan hesaplanır
   - `eposta.ts`: çağrı e-postası (Outlook taslağı, mailto) ve gelen yanıtı
     eşleştirme kuralları; saf, sunucu fazında posta kutusunu izleyen hizmet
-    de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`)
+    de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`). Next Day
+    etiketi `ND-`, haftalık `HP-` (haftanın Cumartesi'si)
+  - `haftalik.ts`: haftalık planın okuma kuralları (gündemde mi, karar
+    bekleyen, Next Day'e gider mi, ön inceleme bekleyenler)
   - `oturum.ts`: demo giriş
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
@@ -57,7 +60,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v6`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v7`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
@@ -68,6 +71,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
   Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
   akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
+- Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
+  toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
+  - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
+    başlıkla geçer, havuz ikiye bölünmez.
+  - Haftalık öneri `Oneri.hafta` taşır, `hedefTarih` taşımaz; Next Day
+    ekranlarına karışmaz.
+  - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
+    `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
+    birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
+  - Kesinleşince kabul edilen haber Next Day'e onaylı paket olarak geçer
+    (`haftalikKalemId`, "Haftalık plandan" rozeti); feature, ekonomi ve
+    program plansız onaylı paket olur. Aktarım tek yerde
+    (`eylemler.ts → haftaliktanAktar`); hem kesinleştirmede hem
+    `planOlustur`'da çağrılır.
+  - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
+    (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
+- Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
+  feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
+  (`yetki.ts → KOL_BIRIMLERI`).
+- Yönetici panelindeki "Planların durumu" kartı sekmeli (günlük, haftalık,
+  özel yayın, saha); satırda yalnız ad, durum, ilerleme, ayrıntı
+  `Pencere`de (yerleşik `<dialog>`). Panele yeni bilgi eklenecekse de bu
+  kalıp: önce kısa satır, ayrıntı pencerede.
 - Takvime yalnız akışta tanımlı toplantı girer (akşam haber toplantısı,
   Newsdesk sabah toplantısı, Perşembe haftalık toplantısı).
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana

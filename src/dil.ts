@@ -695,11 +695,6 @@ const M = {
   aylik: m("Aylık plan", "الخطة الشهرية", "Monthly plan"),
   ozel: m("Özel yayın planı", "خطة البث الخاص", "Special broadcast plan"),
   haftalikAlt: m("Cumartesi'den sonraki Cuma'ya kadar haberler ve içerikler", "الأخبار والمحتوى من السبت حتى الجمعة التالية", "News and content from Saturday to the following Friday"),
-  haftalikTaslakNotu: m(
-    "İlk prototipte haftalık plan temel liste düzeyinde. Onaylanan haber/güncel işin Next Day'e aktarımı (kayıt yeniden açılmadan) ve feature/program kollarına devir sonraki adımda.",
-    "الخطة الأسبوعية في هذا النموذج على مستوى القائمة الأساسية. نقل الأخبار المعتمدة إلى خطة الغد (دون فتح سجل جديد) وإحالة المنوعات والبرامج في الخطوة التالية.",
-    "In this first prototype the weekly plan is a basic list. Moving approved news into Next Day (without a new record) and handing feature/programme items to their branches comes next.",
-  ),
   haftalikAkis: m("Haftalık akış", "المسار الأسبوعي", "Weekly flow"),
   hevOneri: m("Öneri toplama", "جمع المقترحات", "Collecting proposals"),
   hevOneriGun: m("Cumartesi – Pazar", "السبت – الأحد", "Saturday – Sunday"),
@@ -709,15 +704,19 @@ const M = {
   hevToplantiGun: m("Perşembe", "الخميس", "Thursday"),
   hevGeriDonus: m("Geri dönüş", "الرد على المراسلين", "Feedback"),
   hevGeriDonusGun: m("Perşembe – Cuma", "الخميس – الجمعة", "Thursday – Friday"),
-  haftalikKalemler: m("Haftanın kalemleri", "بنود الأسبوع", "This week's items"),
-  toplantiKarari: m("Toplantı kararı", "قرار الاجتماع", "Meeting decision"),
-  onaylandi: m("Onaylandı", "معتمد", "Approved"),
-  beklemede: m("Beklemede", "قيد الانتظار", "Pending"),
   kollar: m("Onaylanan işler içerik türüne göre ayrılır", "تُقسَّم الأعمال المعتمدة حسب نوع المحتوى", "Approved items split by content type"),
   kolHaber: m("A · Haber / güncel paket akışı", "أ · مسار الأخبار والأحداث", "A · News / current affairs"),
-  kolHaberA: m("Next Day planlamacısı haftalık planda onaylanan haberleri günlük plana dahil eder; üretim Next Day akışıyla sürer.", "يُدرج مخطط الغد الأخبار المعتمدة أسبوعيا في الخطة اليومية، ويستمر الإنتاج وفق مسار الغد.", "The Next Day planner brings approved items into the daily plan; production follows the Next Day flow."),
+  kolHaberA: m(
+    "Haftalık toplantıda kabul edilen haber, gününün Next Day planına kendiliğinden onaylı paket olarak girer; üretim Next Day akışıyla sürer.",
+    "يدخل الخبر المقبول في الاجتماع الأسبوعي تلقائيا إلى خطة الغد في يومه تقريرا معتمدا، ويستمر إنتاجه وفق مسار الغد.",
+    "News accepted at the weekly meeting enters its day's Next Day plan automatically as an approved package; production follows the Next Day flow.",
+  ),
   kolFeature: m("B · Feature / ekonomi paket akışı", "ب · مسار التقارير المنوعة والاقتصادية", "B · Feature / economy"),
-  kolFeatureA: m("Planlama'nın Feature/Stok takip birimi izler; üretim ortak adımlardan geçer, takip ve teknik devir Planlama'dadır.", "تتابعها وحدة متابعة المنوعات في التخطيط؛ يمر الإنتاج بالخطوات المشتركة والمتابعة والإحالة الفنية لدى التخطيط.", "Tracked by Planning's feature/stock desk; production uses the shared steps with follow-up and handover in Planning."),
+  kolFeatureA: m(
+    "Kabul edilen feature ve ekonomi önerisi plansız, onaylı paket olarak Planlama'nın feature/stok ekibine düşer; ekip üretimi izler, bitince stokta bekler.",
+    "يصل مقترح المنوعات والاقتصاد المقبول إلى فريق المنوعات والمخزون في التخطيط تقريرا معتمدا غير مرتبط بخطة يومية؛ يتابع الفريق إنتاجه ثم يبقى في المخزون.",
+    "Accepted feature and economy proposals reach Planning's feature/stock team as approved packages with no daily plan; the team follows production and the finished piece waits in stock.",
+  ),
   kolProgram: m("C · Program paket akışı", "ج · مسار البرامج", "C · Programmes"),
   kolProgramA: m("Program Birimi devralır ve kendi akışına göre işler; ayrıntılı program akışı ayrıca tanımlanacak.", "تتسلمها وحدة البرامج وتعالجها وفق مسارها؛ وسيُحدَّد مسار البرامج التفصيلي لاحقا.", "The Programmes unit takes over and works to its own flow, to be defined separately."),
   aylikAlt: m("Uzun vadeli haber, yayın ve içerik çalışmaları", "أعمال الأخبار والبث والمحتوى طويلة المدى", "Longer-term news, broadcast and content work"),
@@ -930,14 +929,19 @@ const M = {
   ppY5: m("Öneri çağrısı metni, gelen öneriler, plana ekleme, geri dönüş", "نص طلب المقترحات والمقترحات الواردة وإدراجها والرد", "Call text, incoming proposals, adding to plan, feedback"),
   ppY6: m("Paket önerisinden iNews'e üretim adımları ve hareket geçmişi", "خطوات الإنتاج من مقترح التقرير حتى iNews وسجل الحركات", "Production steps from proposal to iNews, with activity history"),
   ppY7: m("Birim, rol ve alan bazlı yetki; muhabir yalnız kendi işini görür", "صلاحيات حسب الوحدة والدور والحقل؛ يرى المراسل أعماله فقط", "Unit, role and field permissions; reporters see only their own work"),
+  ppY9: m(
+    "Haftalık plan: çağrı, ön inceleme, toplantı kararı, Next Day'e kendiliğinden aktarım, çıktı (PDF/Word)",
+    "الخطة الأسبوعية: طلب المقترحات والمراجعة المسبقة وقرار الاجتماع والنقل التلقائي إلى الغد والنسخة المطبوعة (PDF/Word)",
+    "Weekly plan: call, pre-review, meeting decisions, automatic move into Next Day, output (PDF/Word)",
+  ),
   ppY8: m("Üç dil; Arapçada sağdan sola arayüz", "ثلاث لغات وواجهة من اليمين إلى اليسار بالعربية", "Three languages; right-to-left interface in Arabic"),
   ppN1: m("Gerçek e-posta gönderimi (metin şimdilik kopyalanıyor)", "إرسال البريد فعليا (يُنسخ النص حاليا)", "Real email sending (text is copied for now)"),
   ppN2: m("Kurum içi giriş ve kimlik doğrulama", "تسجيل الدخول والمصادقة المؤسسية", "Corporate sign-in and authentication"),
   ppN3: m("Ortak veri tabanı ve çok kullanıcılı eşzamanlı çalışma", "قاعدة بيانات مشتركة وعمل متزامن لعدة مستخدمين", "Shared database and simultaneous multi-user work"),
-  ppN4: m("Word/PDF dışa aktarma (şimdilik yazdır → PDF)", "التصدير إلى Word/PDF (حاليا طباعة ← PDF)", "Word/PDF export (print → PDF for now)"),
+  ppN4: m("Next Day çıktısında Word dışa aktarma (haftalık çıktıda var; şimdilik yazdır → PDF)", "تصدير نسخة خطة الغد إلى Word (متاح في النسخة الأسبوعية؛ حاليا طباعة ← PDF)", "Word export for the Next Day output (available for the weekly one; print → PDF for now)"),
   ppN5: m("Dosya yükleme ve dosya deposu", "رفع الملفات ومستودعها", "File upload and storage"),
   ppN6: m("iNews ve medya sistemi entegrasyonu (klip kodu elle)", "التكامل مع iNews ونظام الوسائط (رمز المقطع يدويا)", "iNews and media system integration (clip code by hand)"),
-  ppN7: m("Haftalık planı düzenleme, Next Day'e aktarma ve kollara devir", "تعديل الخطة الأسبوعية ونقلها إلى الغد والإحالة إلى المسارات", "Editing the weekly plan, moving to Next Day, branch handover"),
+  ppN7: m("Feature/stok üretimi, stok haberler ve yayınlanan arşivi", "إنتاج المنوعات والمخزون، وتبويب التقارير المخزنة وأرشيف المنشور", "Feature/stock production, the stock tab and the aired archive"),
   ppN8: m("Aylık ve özel yayın planı oluşturma", "إنشاء الخطة الشهرية وخطة البث الخاص", "Creating monthly and special plans"),
   ppN9: m("News Gathering talep, onay ve seyahat lojistiği", "طلبات جمع الأخبار وموافقاتها ولوجستيات السفر", "News Gathering requests, approval and travel logistics"),
   ppN10: m("Program Birimi'nin kendi üretim akışı", "مسار الإنتاج الخاص بوحدة البرامج", "The Programmes unit's own production flow"),
@@ -965,7 +969,11 @@ const M = {
   ppS2: m("Muhabir kendi ücretini görecek mi? (Varsayım: evet.)", "هل يرى المراسل أجره؟ (افتراض: نعم.)", "Will reporters see their own fees? (Assumed: yes.)"),
   ppS3: m("Program Birimi'nin üretim adımları neler?", "ما خطوات الإنتاج لدى وحدة البرامج؟", "What are the Programmes unit's production steps?"),
   ppS4: m("Ekip vardiya kodu her zaman GMT başlangıç saati mi? (Varsayım: \"04G\" = 04:00 GMT.)", "هل رمز المناوبة دائما ساعة البدء بتوقيت غرينتش؟ (افتراض: \"04G\" = 04:00 غرينتش.)", "Is the shift code always the GMT start time? (Assumed: \"04G\" = 04:00 GMT.)"),
-  ppS5: m("Haftalık plandan Next Day'e aktarım planlamacının onayıyla mı, otomatik mi?", "هل يتم النقل من الخطة الأسبوعية إلى الغد بموافقة المخطط أم تلقائيا؟", "Does moving from weekly to Next Day need the planner's approval or is it automatic?"),
+  ppS5: m(
+    "Haftalık plan çıktısı hangi birimlere ve listelere gidecek, gönderim uygulamadan mı olsun? (Şimdilik planlamacı çıktıyı alıp kendisi gönderiyor.)",
+    "إلى أي وحدات وقوائم تُرسل الخطة الأسبوعية، وهل يتم الإرسال من التطبيق؟ (حاليا يأخذ المخطط النسخة ويرسلها بنفسه.)",
+    "Which units and lists receive the weekly plan, and should the app send it? (For now the planner takes the output and sends it themselves.)",
+  ),
   ppS6: m("Plan onayı kimde: Planlama yöneticisi mi, haber toplantısını yöneten mi?", "لدى من اعتماد الخطة: مدير التخطيط أم رئيس اجتماع الأخبار؟", "Who approves the plan: the Planning manager or whoever chairs the news meeting?"),
   ppS7: m("Platform kurum içi sunucuda mı, çevrim içi mi çalışacak?", "هل تعمل المنصة على خادم داخلي أم عبر الإنترنت؟", "Will the platform run on an internal server or online?"),
   ppYolHaritasi: m("Yol haritası", "خارطة الطريق", "Roadmap"),
@@ -1271,6 +1279,231 @@ const M = {
     "لا يُرفض توجيه المدير ولا يؤجَّل؛ يُضاف إلى الخطة ويكون التقرير ذا أولوية.",
     "A manager's instruction cannot be rejected or postponed; it is added to the plan and the package becomes a priority.",
   ),
+  /* Haftalık plan akışı */
+  biEkonomi: m("Ekonomi", "الاقتصاد", "Economy"),
+  hdHazirlik: m("Hazırlık", "قيد الإعداد", "In preparation"),
+  hdToplantida: m("Haftalık toplantıda", "في الاجتماع الأسبوعي", "At the weekly meeting"),
+  hdKesinlesti: m("Kesinleşti", "معتمدة", "Finalised"),
+  krBekliyor: m("Karar bekliyor", "بانتظار القرار", "Awaiting decision"),
+  krKabul: m("Kabul", "مقبول", "Accepted"),
+  krBilgi: m("Bilgi (takip yok)", "للعلم (لا نتابع)", "For information (not followed)"),
+  krRet: m("Ret", "مرفوض", "Rejected"),
+  haftalikPlanlar: m("Haftalık planlar", "الخطط الأسبوعية", "Weekly plans"),
+  yeniHaftalik: m("Yeni haftalık plan", "خطة أسبوعية جديدة", "New weekly plan"),
+  haftaninBirGunu: m("Haftanın herhangi bir günü", "أي يوم من الأسبوع", "Any day of the week"),
+  haftaAraligi: m("Hafta: {aralik}", "الأسبوع: {aralik}", "Week: {aralik}"),
+  hafta: m("Hafta", "الأسبوع", "Week"),
+  buHafta: m("Bu hafta", "هذا الأسبوع", "This week"),
+  gelecekHafta: m("Gelecek hafta", "الأسبوع القادم", "Next week"),
+  gundemKalemi: m("Gündem kalemi", "بنود جدول الأعمال", "Agenda items"),
+  kararBekleyen: m("Karar bekleyen", "بانتظار القرار", "Awaiting decision"),
+  haftaOzetSatiri: m(
+    "{kalem} kalem · {bekleyen} karar bekliyor · {dosya} ana dosya",
+    "{kalem} بندا · {bekleyen} بانتظار القرار · {dosya} ملفات رئيسية",
+    "{kalem} items · {bekleyen} awaiting decision · {dosya} main files",
+  ),
+  haftalikPlanaDon: m("Haftalık plana dön", "العودة إلى الخطة الأسبوعية", "Back to the weekly plan"),
+  haftalikPlandaDegerlendir: m("Haftalık planda değerlendir", "التقييم في الخطة الأسبوعية", "Review in the weekly plan"),
+  haftalikToplantiyaGotur: m("Haftalık toplantıya götür", "عرض في الاجتماع الأسبوعي", "Take to the weekly meeting"),
+  hazirligaGeriAl: m("Hazırlığa geri al", "إعادة إلى الإعداد", "Back to preparation"),
+  kalanlariKabulEt: m("Kalanları kabul et ({n})", "قبول البنود المتبقية ({n})", "Accept the rest ({n})"),
+  kesinlestir: m("Planı kesinleştir", "اعتماد الخطة", "Finalise the plan"),
+  kesinlestirmeIcinKarar: m(
+    "Kesinleştirmek için {n} kaleme daha karar verilmeli.",
+    "يجب البت في {n} بنود أخرى قبل الاعتماد.",
+    "{n} more items need a decision before finalising.",
+  ),
+  kesinlestirmeYoneticide: m(
+    "Planı Planlama yöneticisi ya da yönetim kesinleştirir.",
+    "يعتمد الخطةَ مديرُ التخطيط أو الإدارة.",
+    "The Planning manager or management finalises the plan.",
+  ),
+  haftalikKilit: m(
+    "Plan kesinleşti ve kilitlendi. Kabul edilen haberler günlerinin Next Day planına, feature, ekonomi ve program işleri kollarına onaylı paket olarak geçti.",
+    "اعتُمدت الخطة وأُقفلت. انتقلت الأخبار المقبولة إلى خطة الغد في أيامها، وأُحيلت أعمال المنوعات والاقتصاد والبرامج إلى مساراتها تقاريرَ معتمدة.",
+    "The plan is final and locked. Accepted news went into the Next Day plan of its day; feature, economy and programme items went to their strands as approved packages.",
+  ),
+  aktarimBekliyor: m(
+    "{n} haber, gününün Next Day planı açılınca oraya kendiliğinden geçecek.",
+    "ستنتقل {n} أخبار تلقائيا إلى خطة الغد عند فتح خطة يومها.",
+    "{n} news items will move automatically once their day's Next Day plan is opened.",
+  ),
+  aktarildi: m("Next Day {tarih} planına aktarıldı", "نُقل إلى خطة الغد ليوم {tarih}", "Moved to the {tarih} Next Day plan"),
+  hevOnInceleme: m("Ön inceleme", "المراجعة المسبقة", "Pre-review"),
+  hevOnIncelemeGun: m("Toplantıdan önce", "قبل الاجتماع", "Before the meeting"),
+  buHaftayaGelenOneriler: m("Bu haftaya gelen öneriler", "المقترحات الواردة لهذا الأسبوع", "Proposals for this week"),
+  buHaftayaGelenOnerilerAciklama: m(
+    "Haftalık çağrıya gelen yanıtlar ve uygulamadan gönderilen öneriler. Gündeme alınan öneri bir güne ya da zamana bağlı olmayan dosyaya yerleşir; kararı toplantıda verilir.",
+    "الردود على طلب المقترحات الأسبوعي والمقترحات المرسلة من التطبيق. يوضع المقترح المضاف إلى جدول الأعمال في يوم محدد أو في الملفات غير المرتبطة بموعد، ويُبتّ فيه في الاجتماع.",
+    "Replies to the weekly call and proposals sent from the app. An item added to the agenda goes on a day or into the not-tied-to-a-date file; the meeting decides on it.",
+  ),
+  gundemeEkle: m("Gündeme ekle", "إضافة إلى جدول الأعمال", "Add to agenda"),
+  bGundemeEklendi: m("Öneri gündeme eklendi.", "أُضيف المقترح إلى جدول الأعمال.", "Proposal added to the agenda."),
+  muhabirHareketleriHafta: m("Muhabir hareketleri", "تحركات المراسلين", "Reporter movements"),
+  muhabirHareketleriHaftaAciklama: m(
+    "Haftaya düşen saha görevlendirmeleri; kayıtları saha görevlendirmeleri sayfasında.",
+    "التكليفات الميدانية خلال الأسبوع؛ سجلاتها في صفحة التكليفات الميدانية.",
+    "Field assignments falling in this week; their records are on the field assignments page.",
+  ),
+  haftaninAnaDosyalari: m("Haftanın ana dosyaları", "أهم ملفات الأسبوع", "Main files of the week"),
+  haftaninAnaDosyalariAciklama: m(
+    "Çıktının başındaki durum özetleri: her dosyada başlık ve bir paragraf.",
+    "ملخصات الوضع في مطلع النسخة المطبوعة: عنوان وفقرة لكل ملف.",
+    "The summaries at the top of the output: a title and a paragraph for each file.",
+  ),
+  anaDosyaEkle: m("Ana dosya ekle", "إضافة ملف رئيسي", "Add main file"),
+  anaDosyaIpucu: m("Örn. İsrail'in Filistin'deki ihlalleri", "مثال: الانتهاكات الإسرائيلية في فلسطين", "e.g. Israeli violations in Palestine"),
+  dosyaBasligi: m("Dosya başlığı", "عنوان الملف", "File title"),
+  durumOzeti: m("Durum özeti", "ملخص الوضع", "Summary"),
+  yukari: m("Yukarı taşı", "نقل للأعلى", "Move up"),
+  asagi: m("Aşağı taşı", "نقل للأسفل", "Move down"),
+  gunlukGundem: m("Gün gün gündem", "الأجندة اليومية", "Daily agenda"),
+  gunlukGundemAciklama: m(
+    "Cumartesi'den Cuma'ya her gün; kalemler dosyalarına göre gruplu. Toplantıda her kalem kabul, bilgi (takip yok) ya da ret alır; kabul edilen haber o günün Next Day planına onaylı paket olarak geçer.",
+    "كل يوم من السبت إلى الجمعة، والبنود مجمعة حسب ملفاتها. في الاجتماع يُقبل كل بند أو يُدرج للعلم (لا نتابع) أو يُرفض؛ وينتقل الخبر المقبول إلى خطة الغد في يومه تقريرا معتمدا.",
+    "Saturday to Friday, items grouped by file. At the meeting each item is accepted, kept for information (not followed) or rejected; accepted news goes into that day's Next Day plan as an approved package.",
+  ),
+  buGunKalemYok: m("Bu gün için kalem yok.", "لا بنود لهذا اليوم.", "No items for this day."),
+  kalemEkle: m("Kalem ekle", "إضافة بند", "Add item"),
+  kalemSayisi: m("{n} kalem", "{n} بندا", "{n} items"),
+  zamanaBagliOlmayan: m("Zamana bağlı olmayan dosya", "ملفات غير مرتبطة بموعد", "Not tied to a date"),
+  stokDosyasiAciklama: m(
+    "Günü olmayan feature, ekonomi ve program önerileri. Toplantıdan önce kolun yöneticisine gönderilebilir (feature: Input müdürü, ekonomi: Ekonomi birimi ve Input müdürü, program: Program müdürü); görüş yazar ya da gerekçeyle reddeder. Kabul edilen plansız, onaylı paket olur.",
+    "مقترحات المنوعات والاقتصاد والبرامج غير المرتبطة بيوم. يمكن إرسالها قبل الاجتماع إلى مسؤول المسار (المنوعات: مدير الإدخال، الاقتصاد: وحدة الاقتصاد ومدير الإدخال، البرامج: مدير البرامج) فيكتب رأيه أو يرفضها مع ذكر السبب. ويصبح المقبول تقريرا معتمدا غير مرتبط بخطة يومية.",
+    "Feature, economy and programme proposals with no date. They can go to the strand's manager before the meeting (feature: Input manager; economy: the Economy unit and the Input manager; programme: Programme manager), who comments or rejects with a reason. Accepted items become approved packages with no daily plan.",
+  ),
+  dosya: m("Dosya", "الملف", "File"),
+  dosyasiz: m("Dosyasız", "بدون ملف", "No file"),
+  yeniDosya: m("Yeni dosya", "ملف جديد", "New file"),
+  dosyaIpucu: m("Örn. Türkiye gündemi", "مثال: الأجندة التركية", "e.g. Turkish agenda"),
+  olayAdi: m("Olayın adı", "اسم الحدث", "Event name"),
+  olayAdiIpucu: m("Örn. Bosna-Hersek genel seçimleri", "مثال: الانتخابات العامة في البوسنة والهرسك", "e.g. Bosnia and Herzegovina general election"),
+  kalemMetniIpucu: m("Olay ve önemi…", "الحدث وأهميته…", "The event and why it matters…"),
+  bicimSatiri: m("Biçim (çıktıdaki satır)", "الشكل (سطر النسخة المطبوعة)", "Format (output line)"),
+  muhabirEkle: m("+ Muhabir ekle", "+ إضافة مراسل", "+ Add reporter"),
+  kalemNotu: m("Not", "ملاحظة", "Note"),
+  kalemNotuIpucu: m("çıktıda sarı vurgulu", "تظهر مظللة بالأصفر في النسخة المطبوعة", "highlighted in yellow in the output"),
+  bHaftalikOlusturuldu: m("Haftalık plan açıldı.", "أُنشئت الخطة الأسبوعية.", "Weekly plan created."),
+  bHaftalikToplantida: m("Plan haftalık toplantıya götürüldü.", "عُرضت الخطة في الاجتماع الأسبوعي.", "Plan taken to the weekly meeting."),
+  bHazirligaAlindi: m("Plan hazırlığa geri alındı.", "أُعيدت الخطة إلى الإعداد.", "Plan returned to preparation."),
+  bKalanlarKabul: m("Kalan kalemler kabul edildi.", "قُبلت البنود المتبقية.", "Remaining items accepted."),
+  bHaftalikKesinlesti: m(
+    "Haftalık plan kesinleşti; kabul edilenler kollarına aktarıldı.",
+    "اعتُمدت الخطة الأسبوعية وأُحيلت البنود المقبولة إلى مساراتها.",
+    "Weekly plan finalised; accepted items handed to their strands.",
+  ),
+
+  /* Haftalık öneri çağrısı */
+  haftalikCagri: m("Haftalık öneri çağrısı", "طلب مقترحات الخطة الأسبوعية", "Weekly call for proposals"),
+  haftalikCagriyiAc: m("Haftalık çağrıyı aç", "فتح طلب المقترحات الأسبوعي", "Open the weekly call"),
+  haftalikCagriAlt: m("Muhabirlere haftanın beklenen olaylarını soran e-posta", "بريد يطلب من المراسلين أحداث الأسبوع المتوقعة", "Email asking reporters for the week's expected events"),
+  haftalikCagriNotu: m(
+    "Gönderim senin e-postandan. Konudaki HP- etiketi yanıtları bu haftanın önerisi yapar; Next Day planlarına karışmaz. Tablo Outlook taslağında gövdenin altında, telefonda doldurulacak satırlar olarak gider.",
+    "يتم الإرسال من بريدك. الوسم HP- في الموضوع يجعل الردود مقترحات لهذا الأسبوع ولا يخلطها بخطط الغد. يظهر الجدول أسفل نص الرسالة في مسودة Outlook، وفي الهاتف أسطرا للتعبئة.",
+    "Sending is from your own mailbox. The HP- tag in the subject makes replies this week's proposals, kept apart from Next Day plans. The table goes under the body in the Outlook draft and as lines to fill in on a phone.",
+  ),
+  haftalikCagriKonu: m("Haftalık plan önerileri – {aralik}", "مقترحات الخطة الأسبوعية – {aralik}", "Weekly plan proposals – {aralik}"),
+  /* Kurumun haftalık çağrı e-postası; giden metin her zaman Arapça, diğer iki dil ekranda anlam için. */
+  haftalikCagriSablonu: m(
+    "Değerli muhabir arkadaşlar,\nİyi çalışmalar.\n\n{aralik} dönemi için haftalık planı ve bölgelerinizdeki gelişmelerle ilgili beklenen olayları birlikte hazırlıyoruz.\n\nBütün arkadaşlardan, gelecek haftanın gündemi için bu bölgelerde beklenen haber ve olayları ya da çevrenizdeki başka bölge ve ülkelerde bunlarla bağlantılı gelişmeleri bize iletmelerini rica ediyoruz.\nGündeminizi ekteki tabloya göre yalnızca planlama biriminin e-posta adresine ({adres}) gönderiniz.\n\nÇok teşekkürler",
+    "الزملاء المراسلين الكرام\nتحية طيبة و بعد\n\nنعمل معاً على إعداد الخطة الأسبوعية للفترة من {aralik} وما يتوقع من أحداث تتعلق بالتطورات في بلدانكم و مناطقكم.\n\nيرجى من جميع الزملاء موافاتنا بكل ما يتوقع من أخبار وأحداث لأجندة الأسبوع القادم في هذه المناطق أو ما يرتبط بها من تطورات في مناطق و دول أخرى في محيطكم\nبرجاء موافاتنا بما لديكم من أجندة بإرسالها على إيميل قسم التخطيط حصراً {adres} وفقاً للجدول المرفق.\n\nمع جزيل الشكر",
+    "Dear reporter colleagues,\nGreetings.\n\nWe are preparing together the weekly plan for {aralik} and the events expected around developments in your countries and regions.\n\nWe ask all colleagues to send us every news item and event expected for next week's agenda in these regions, or related developments in other regions and countries around you.\nPlease send your agenda only to the planning department's email address {adres}, following the attached table.\n\nMany thanks",
+  ),
+  hatirlatmaHaftalik: m(
+    "Değerli meslektaşlar,\n\n{aralik} haftalık planı için gündeminizi ekteki tabloya göre planlama biriminin e-posta adresine ({adres}) göndermenizi hatırlatırız; plana girecek bir şeyiniz olmasa bile lütfen yanıtlayın.\n\nTeşekkürler",
+    "الزملاء الكرام،\n\nنذكّركم بإرسال ما لديكم من أجندة للخطة الأسبوعية للفترة من {aralik} على إيميل قسم التخطيط {adres} وفقاً للجدول المرفق، والرد حتى ولو لم يكن لديكم ما يمكن تضمينه.\n\nمع الشكر",
+    "Dear colleagues,\n\nA reminder to send your agenda for the {aralik} weekly plan to the planning department's address {adres}, following the attached table; please reply even if you have nothing to add.\n\nThank you",
+  ),
+  acikHaftalikCagri: m("Haftalık plan önerileri açık: {aralik}", "طلب مقترحات الخطة الأسبوعية مفتوح: {aralik}", "Weekly plan proposals are open: {aralik}"),
+  acikHaftalikCagriAciklama: m(
+    "Gelecek haftanın beklenen olaylarını ve gündemini gönder; e-postayı yanıtlayarak da gönderebilirsin.",
+    "أرسل الأحداث المتوقعة وأجندة الأسبوع القادم؛ ويمكنك أيضا الرد على البريد.",
+    "Send next week's expected events and agenda; you can also reply to the email.",
+  ),
+
+  /* Ön inceleme */
+  onIncelemede: m("Ön incelemede", "قيد المراجعة المسبقة", "In pre-review"),
+  onIncelemedeReddedildi: m("Ön incelemede reddedildi", "رُفض في المراجعة المسبقة", "Rejected in pre-review"),
+  onIncelemedeReddetti: m("ön incelemede reddetti", "رفضه في المراجعة المسبقة", "rejected it in pre-review"),
+  onIncelemedeReddedilenler: m("Ön incelemede reddedilenler ({n})", "المرفوضة في المراجعة المسبقة ({n})", "Rejected in pre-review ({n})"),
+  onIncelemeBekleyen: m("Ön inceleme bekleyen öneriler", "مقترحات بانتظار المراجعة المسبقة", "Proposals awaiting pre-review"),
+  onIncelemeAciklama: m(
+    "Planlama, zamana bağlı olmayan önerileri haftalık toplantıdan önce gönderdi. Görüş yaz ya da gerekçeyle reddet; reddedilen gündemden düşer. Kabul kararı toplantıda.",
+    "أرسل التخطيط المقترحات غير المرتبطة بموعد قبل الاجتماع الأسبوعي. اكتب رأيك أو ارفضها مع ذكر السبب؛ يسقط المرفوض من جدول الأعمال، ويُتخذ قرار القبول في الاجتماع.",
+    "Planning sent the proposals not tied to a date ahead of the weekly meeting. Comment, or reject with a reason; a rejected item drops from the agenda. Acceptance is decided at the meeting.",
+  ),
+  onIncelemeYok: m("Ön inceleme bekleyen öneri yok.", "لا توجد مقترحات بانتظار المراجعة المسبقة.", "Nothing awaiting pre-review."),
+  onIncelemeyeGonder: m("Ön incelemeye gönder", "إرسال للمراجعة المسبقة", "Send for pre-review"),
+  hepsiniOnIncelemeyeGonder: m("Hepsini ön incelemeye gönder ({n})", "إرسال الكل للمراجعة المسبقة ({n})", "Send all for pre-review ({n})"),
+  bOnIncelemeyeGitti: m("{n} öneri ön incelemeye gönderildi.", "أُرسل {n} مقترح للمراجعة المسبقة.", "{n} proposals sent for pre-review."),
+  gorusYaz: m("Görüş yaz", "اكتب رأيك", "Comment"),
+  gorusun: m("Görüşün", "رأيك", "Your comment"),
+  gorusGonder: m("Görüşü gönder", "إرسال الرأي", "Send comment"),
+  gorusYazildi: m("Görüşün yazıldı", "أبديت رأيك", "You commented"),
+  bGorusYazildi: m("Görüş iletildi.", "أُرسل الرأي.", "Comment sent."),
+  bOnIncelemeRet: m("Öneri ön incelemede reddedildi.", "رُفض المقترح في المراجعة المسبقة.", "Proposal rejected in pre-review."),
+  yHaftalikDuzenle: m("Haftalık planı hazırlama", "إعداد الخطة الأسبوعية", "Prepare the weekly plan"),
+  yHaftalikKesinlestir: m("Haftalık planı kesinleştirme", "اعتماد الخطة الأسبوعية", "Finalise the weekly plan"),
+  yOnInceleme: m("Stok önerilere ön inceleme", "المراجعة المسبقة للمقترحات غير المرتبطة بموعد", "Pre-review of stock proposals"),
+
+  /* Haftalık çıktı: kurumun belgesindeki Arapça başlıklar */
+  haftalikCiktiBaslik: m("Haftalık gündem", "الأجندة الأسبوعية", "Weekly agenda"),
+  ciktiHareketler: m("Muhabirlerin hareketleri", "تحركات المراسلين", "Reporter movements"),
+  ciktiKadar: m("({tarih} tarihine kadar)", "حتى {tarih}", "until {tarih}"),
+  laNutabi: m("(takip etmiyoruz)", "(لا نتابع)", "(not followed)"),
+  wordIndir: m("Word indir", "تنزيل Word", "Download Word"),
+  haftalikCiktiNotu: m(
+    "Planlamacı çıktıyı alıp ilgili birimlere e-postayla kendisi gönderir. Yalnız kabul edilen ve bilgi olarak giren kalemler basılır.",
+    "يأخذ المخطط النسخة ويرسلها بنفسه بالبريد إلى الوحدات المعنية. تُطبع البنود المقبولة والمدرجة للعلم فقط.",
+    "The planner takes the output and emails it to the units themselves. Only accepted items and items kept for information are printed.",
+  ),
+  haftalikCiktiTaslakNotu: m(
+    "Plan henüz kesinleşmedi; çıktı taslaktır. Karar verilmemiş kalemler basılmaz.",
+    "لم تُعتمد الخطة بعد؛ هذه النسخة مسودة. لا تُطبع البنود التي لم يُبتّ فيها.",
+    "The plan is not final yet; this output is a draft. Items without a decision are not printed.",
+  ),
+
+  /* Haftalık hareket kayıtları */
+  hrHaftalikCagri: m("{kisi}, {tarih} haftası için öneri çağrısı hazırladı", "أعدّ {kisi} طلب مقترحات الخطة الأسبوعية لأسبوع {tarih}", "{kisi} prepared the weekly call for the week of {tarih}"),
+  hrHaftalikOlusturuldu: m("{kisi}, {tarih} haftasının planını açtı", "أنشأ {kisi} خطة أسبوع {tarih}", "{kisi} opened the plan for the week of {tarih}"),
+  hrHaftalikToplantida: m("{kisi}, {tarih} haftasının planını haftalık toplantıya götürdü", "عرض {kisi} خطة أسبوع {tarih} في الاجتماع الأسبوعي", "{kisi} took the week of {tarih} plan to the weekly meeting"),
+  hrHaftalikHazirliga: m("{kisi}, {tarih} haftasının planını hazırlığa geri aldı", "أعاد {kisi} خطة أسبوع {tarih} إلى الإعداد", "{kisi} returned the week of {tarih} plan to preparation"),
+  hrHaftalikKesinlesti: m("{kisi}, {tarih} haftasının planını kesinleştirdi", "اعتمد {kisi} خطة أسبوع {tarih}", "{kisi} finalised the plan for the week of {tarih}"),
+  hrOnIncelemeyeGonderildi: m("{kisi} öneriyi ön incelemeye gönderdi", "أرسل {kisi} المقترح للمراجعة المسبقة", "{kisi} sent the proposal for pre-review"),
+  hrOnIncelemeGorusu: m("{kisi} ön incelemede görüş yazdı", "أبدى {kisi} رأيه في المراجعة المسبقة", "{kisi} commented in pre-review"),
+  hrOnIncelemedeReddedildi: m("{kisi} öneriyi ön incelemede reddetti", "رفض {kisi} المقترح في المراجعة المسبقة", "{kisi} rejected the proposal in pre-review"),
+  hrHaftaliktanAktarildi: m(
+    "{kisi} haftalık plandaki haberi {tarih} Next Day planına aktardı",
+    "نقل {kisi} الخبر من الخطة الأسبوعية إلى خطة الغد ليوم {tarih}",
+    "{kisi} moved the weekly item into the {tarih} Next Day plan",
+  ),
+  hrPaketHaftalikOnay: m("{kisi} paketi haftalık toplantıda onayladı", "اعتمد {kisi} التقرير في الاجتماع الأسبوعي", "{kisi} approved the package at the weekly meeting"),
+  /* Ekonomi birimi */
+  ekonomiAlt: m(
+    "Ekonomi kolunun içeriği: haftalık önerilerin ön incelemesi ve ekonomi paketleri",
+    "محتوى المسار الاقتصادي: المراجعة المسبقة للمقترحات الأسبوعية والتقارير الاقتصادية",
+    "The economy strand's content: pre-review of weekly proposals and economy packages",
+  ),
+  ekonomiPaketleri: m("Ekonomi paketleri", "التقارير الاقتصادية", "Economy packages"),
+  haftalikEkonomiKalemleri: m("Haftalık planda ekonomi", "الاقتصاد في الخطة الأسبوعية", "Economy in the weekly plan"),
+  ekonomiNotu: m(
+    "Ekonomi paketinin üretimini Planlama'nın feature/stok ekibi yürütüyor; birim içeriği ön incelemede ve paket kayıtlarında izliyor. Ayrıntılı birim akışı birimle netleşecek.",
+    "يتولى فريق المنوعات والمخزون في التخطيط إنتاج التقرير الاقتصادي، وتتابع الوحدة المحتوى في المراجعة المسبقة وسجلات التقارير. يُحدَّد مسار الوحدة التفصيلي مع الوحدة.",
+    "Planning's feature/stock team produces economy packages; the unit follows the content through pre-review and the package records. The unit's detailed flow is to be agreed with it.",
+  ),
+  dkHaftalikKesinlesme: m("{aralik} haftalık planı kesinleşme bekliyor", "الخطة الأسبوعية {aralik} بانتظار الاعتماد", "The {aralik} weekly plan awaits finalisation"),
+  haftalikPlandan: m("Haftalık plandan", "من الخطة الأسبوعية", "From the weekly plan"),
+  /* Yönetici panelinde planların durumu */
+  ypPlanlar: m("Planların durumu", "حالة الخطط", "Plans at a glance"),
+  ypSekmeGunluk: m("Günlük", "اليومية", "Daily"),
+  ypSekmeHaftalik: m("Haftalık", "الأسبوعية", "Weekly"),
+  ypSekmeOzel: m("Özel yayın", "البث الخاص", "Special broadcasts"),
+  ypSekmeSaha: m("Saha", "الميدان", "Field"),
+  dun: m("Dün", "أمس", "Yesterday"),
+  hazirlikAsamalari: m("Hazırlık aşamaları", "مراحل التحضير", "Preparation steps"),
+  hazirlikOrani: m("{tamam}/{toplam} hazır", "{tamam}/{toplam} جاهز", "{tamam}/{toplam} ready"),
+  kalanGun: m("{n} gün kaldı", "بقي {n} يوما", "{n} days left"),
+  yayinlandi: m("Yayınlandı", "بُث", "Aired"),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;
@@ -1362,6 +1595,23 @@ export const ciktiTarihi = (iso: string, d: Dil = dil) => {
   const t = gunTarihi(iso);
   const ay = new Intl.DateTimeFormat(YEREL[d], { month: "long" }).format(t);
   return `${gunAdi(iso, d)} ${String(t.getDate()).padStart(2, "0")} ${ay}`;
+};
+
+/** Haftalık çıktıdaki gün satırı: "03 أكتوبر السبت" (gün, ay, gün adı). */
+export const ciktiGunu = (iso: string, d: Dil = dil) => {
+  const t = gunTarihi(iso);
+  const ay = new Intl.DateTimeFormat(YEREL[d], { month: "long" }).format(t);
+  return `${String(t.getDate()).padStart(2, "0")} ${ay} ${gunAdi(iso, d)}`;
+};
+
+/**
+ * Hafta aralığı kurumun yazımıyla: aynı ayda "03 - 09 أكتوبر", ay
+ * değişiyorsa "31 أكتوبر - 06 نوفمبر".
+ */
+export const aralikYaz = (bas: string, bit: string, d: Dil = dil) => {
+  const ay = (iso: string) => new Intl.DateTimeFormat(YEREL[d], { month: "long" }).format(gunTarihi(iso));
+  const g = (iso: string) => String(gunTarihi(iso).getDate()).padStart(2, "0");
+  return ay(bas) === ay(bit) ? `${g(bas)} - ${g(bit)} ${ay(bit)}` : `${g(bas)} ${ay(bas)} - ${g(bit)} ${ay(bit)}`;
 };
 
 /** "12 dk önce" gibi göreli zaman. */

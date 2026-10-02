@@ -1,9 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, type UretimAdimi } from "../akis";
-import { gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
+import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
+import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
 import { BIRIM_ADI, ONERI_DURUM_ADI } from "../etiketler";
-import { kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
+import { haftaBul, kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
@@ -51,12 +52,22 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   paketOncelikli: "hrOncelikli",
   paketOncelikKalkti: "hrOncelikKalkti",
   yoneticiNotu: "hrYoneticiNotu",
+  haftalikOlusturuldu: "hrHaftalikOlusturuldu",
+  haftalikToplantida: "hrHaftalikToplantida",
+  haftalikHazirliga: "hrHaftalikHazirliga",
+  haftalikKesinlesti: "hrHaftalikKesinlesti",
+  onIncelemeyeGonderildi: "hrOnIncelemeyeGonderildi",
+  onIncelemeGorusu: "hrOnIncelemeGorusu",
+  onIncelemedeReddedildi: "hrOnIncelemedeReddedildi",
+  haftaliktanAktarildi: "hrHaftaliktanAktarildi",
 };
 
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
 const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "planDevralindi" && h.paketId) return "hrPaketDevralindi";
   if (h.tip === "paketOnaylandi" && h.veri?.toplanti) return "hrPaketToplantidaOnay";
+  if (h.tip === "paketOnaylandi" && h.veri?.hafta) return "hrPaketHaftalikOnay";
+  if (h.tip === "cagriHazirlandi" && h.veri?.hafta) return "hrHaftalikCagri";
   return SABLON[h.tip];
 };
 
@@ -98,8 +109,12 @@ export function useHareketKonusu() {
     if (p) return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}` };
     const o = oneriBul(d, h.oneriId);
     if (o) return { baslik: o.haberBasligi, href: `#/oneriler/${o.id}` };
+    const hafta = haftaBul(d, h.haftaId);
+    const kalem = hafta?.kalemler.find((k) => k.id === h.veri?.kalem);
+    if (hafta && kalem) return { baslik: kalemAdi(kalem), href: `#/haftalik/${hafta.id}` };
     const plan = planBul(d, h.planId);
     if (plan) return { metin: `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")}`, href: `#/nextday/${plan.id}` };
+    if (hafta) return { metin: `${t("haftalik")} · ${aralikYaz(hafta.baslangic, haftaSonu(hafta.baslangic), dil)}`, href: `#/haftalik/${hafta.id}` };
     return null;
   };
 }

@@ -5,6 +5,7 @@ import {
   CalendarRange,
   CheckCircle,
   CirclePlay,
+  ClipboardCheck,
   Clapperboard,
   Clock,
   History,
@@ -16,18 +17,21 @@ import {
   MonitorPlay,
   Route,
   SpellCheck,
+  TrendingUp,
   Upload,
   Users,
   Wallet,
 } from "lucide-react";
 import { geciktiMi } from "../../akis";
 import { planDurum } from "../../eylemler";
+import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
-import { bugun, gunEkle, planlananHafta } from "../../tarih";
+import { gorusBekleyenler, gundemde } from "../../haftalik";
+import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, yapabilir } from "../../yetki";
 import { SayfaBasi } from "./Planlama";
@@ -198,37 +202,71 @@ export function NewsGatheringAna() {
   );
 }
 
+/* --- Ekonomi --- */
+
+/**
+ * Ekonomi birimi: üretimde masası yok (ekonomi paketini Planlama'nın
+ * feature/stok ekibi yürütüyor), içerikten sorumlu. Haftalık planda
+ * ekonomi kolunun stok önerilerine toplantıdan önce bakıyor; ana sayfası
+ * bu ön inceleme, haftanın ekonomi kalemleri ve ekonomi paketleri.
+ */
+export function EkonomiAna({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const B = bugun();
+  const gelecek = v.haftalik.find((h) => h.baslangic === planlananHafta(B));
+  const buHafta = v.haftalik.find((h) => h.baslangic === haftaBasi(B));
+  const ekonomi = (h?: (typeof v.haftalik)[number]) => h?.kalemler.filter((k) => k.tur === "ekonomi") ?? [];
+  const paketler = v.paketler.filter((p) => p.tur === "ekonomi" && p.durum !== "iptal");
+  const aktif = paketler.filter((p) => p.durum !== "tamamlandi");
+  const bekleyen = gorusBekleyenler(v, ben).length;
+  return (
+    <>
+      <SayfaBasi ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} alt={t("ekonomiAlt")} />
+      <div className="sayaclar">
+        <Sayac ikon={<ClipboardCheck size={22} />} ton={bekleyen ? "uyari" : ""} etiket={t("onIncelemeBekleyen")} deger={bekleyen} />
+        <Sayac href="#/feature" ikon={<CirclePlay size={22} />} renk="renk-haftalik" etiket={t("ekonomiPaketleri")} deger={aktif.length} alt={t("sDevamEden")} />
+        <Sayac
+          href={gelecek ? `#/haftalik/${gelecek.id}` : "#/haftalik"}
+          ikon={<CalendarRange size={22} />}
+          renk="renk-haftalik"
+          etiket={t("haftalikEkonomiKalemleri")}
+          deger={ekonomi(gelecek).filter(gundemde).length}
+          alt={t("gelecekHafta")}
+        />
+      </div>
+      <OnIncelemeKarti ben={ben} />
+      <div className="iz iz-2">
+        <Kart baslik={t("haftalikEkonomiKalemleri")} ek={t("gelecekHafta")} ikon={<CalendarRange size={18} />} sagUc={<Tumu href={gelecek ? `#/haftalik/${gelecek.id}` : "#/haftalik"} />}>
+          <KalemListesi kalemler={ekonomi(gelecek)} />
+        </Kart>
+        <Kart baslik={t("haftalikEkonomiKalemleri")} ek={t("buHafta")} ikon={<CalendarRange size={18} />} sagUc={<Tumu href={buHafta ? `#/haftalik/${buHafta.id}` : "#/haftalik"} />}>
+          <KalemListesi kalemler={ekonomi(buHafta).filter(gundemde)} />
+        </Kart>
+      </div>
+      <Kart baslik={t("ekonomiPaketleri")} ikon={<CirclePlay size={18} />} sagUc={<Tumu href="#/feature" />}>
+        <PaketTablosu paketler={paketler} d={v} sutunlar={["baslik", "muhabir", "plan", "asama", "kimde"]} bosMetin={t("kayitYok")} />
+      </Kart>
+      <NotKutu>{t("ekonomiNotu")}</NotKutu>
+    </>
+  );
+}
+
 /* --- Programlar --- */
 
 export function ProgramAna() {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const hafta = v.haftalik.find((h) => h.baslangic === planlananHafta(bugun()));
-  const programKalemleri = hafta?.kalemler.filter((k) => k.tur === "program") ?? [];
+  const programKalemleri = hafta?.kalemler.filter((k) => k.tur === "program" && gundemde(k)) ?? [];
   const programOnerileri = v.oneriler.filter((o) => o.tur === "program");
   const programPaketleri = v.paketler.filter((p) => p.tur === "program");
   return (
     <>
       <SayfaBasi ikon={<Clapperboard size={26} />} baslik={t("biProgram")} alt={t("programAlt")} sagUc={<TaslakEtiketi />} />
       <div className="iz iz-2">
-        <Kart baslik={t("haftalikProgramPlani")} ikon={<CalendarRange size={18} />} sagUc={<Tumu href="#/haftalik" />}>
-          {programKalemleri.length === 0 ? (
-            <Bos kucuk metin={t("kayitYok")} />
-          ) : (
-            <ul className="liste">
-              {programKalemleri.map((k) => (
-                <li key={k.id}>
-                  <div className="ad">
-                    <b>
-                      <Icerik blok>{k.baslik}</Icerik>
-                    </b>
-                    <small>{k.tarih && tarihYaz(k.tarih, dil, "uzun")}</small>
-                  </div>
-                  <Rozet ton={k.onayli ? "iyi" : ""}>{t(k.onayli ? "onaylandi" : "beklemede")}</Rozet>
-                </li>
-              ))}
-            </ul>
-          )}
+        <Kart baslik={t("haftalikProgramPlani")} ikon={<CalendarRange size={18} />} sagUc={<Tumu href={hafta ? `#/haftalik/${hafta.id}` : "#/haftalik"} />}>
+          <KalemListesi kalemler={programKalemleri} />
         </Kart>
         <Kart baslik={t("programUretimDurumu")} ikon={<CirclePlay size={18} />} sagUc={<Tumu href="#/programlar" />}>
           <PaketTablosu paketler={programPaketleri} d={v} sutunlar={["baslik", "muhabir", "asama", "kimde"]} bosMetin={t("kayitYok")} />

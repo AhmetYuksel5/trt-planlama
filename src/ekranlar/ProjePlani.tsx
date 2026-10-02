@@ -41,7 +41,7 @@ const BIRIM_PENCERESI: [Birim, Anahtar, Anahtar][] = [
 
 const ZINCIR: Anahtar[] = ["zc1", "zc2", "zc3", "zc4", "zc5", "zc6", "zc7", "zc8", "zc9", "zc10", "zc11", "zc12", "zc13"];
 
-const YAPILDI: Anahtar[] = ["ppY1", "ppY2", "ppY3", "ppY4", "ppY5", "ppY6", "ppY7", "ppY8"];
+const YAPILDI: Anahtar[] = ["ppY1", "ppY2", "ppY3", "ppY4", "ppY5", "ppY6", "ppY7", "ppY8", "ppY9"];
 const YOK: Anahtar[] = ["ppN1", "ppN2", "ppN3", "ppN4", "ppN5", "ppN6", "ppN7", "ppN8", "ppN9", "ppN10", "ppN11", "ppN12"];
 const SORULAR: Anahtar[] = ["ppS1", "ppS2", "ppS3", "ppS4", "ppS5", "ppS6", "ppS7"];
 const YOL: [Anahtar, Anahtar][] = [

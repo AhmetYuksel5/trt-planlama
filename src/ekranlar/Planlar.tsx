@@ -1,99 +1,14 @@
-import { Calendar, CalendarRange, CheckCircle, Circle, Tv } from "lucide-react";
+import { Calendar, CheckCircle, Circle, Tv } from "lucide-react";
 import { Bos, Icerik, Ilerleme, Kart, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
-import { gunAdi, tarihYaz, useDil } from "../dil";
-import { ulkeAdi } from "../etiketler";
-import { gunEkle } from "../tarih";
+import { tarihYaz, useDil } from "../dil";
 import { useVeri } from "../veri";
-import { HaftaKarti, SayfaBasi } from "./ana/Planlama";
+import { SayfaBasi } from "./ana/Planlama";
 
 /*
- * Haftalık, aylık ve özel yayın planları: promptun 5. maddesindeki gibi
- * ilk prototipte temel liste düzeyinde. Kayıtları Next Day'den ayrı
- * tutuluyor; haftalıkta onaylanan haber/güncel işin Next Day'e aktarımı
- * (rapor bölüm 5) ve kollara ayrılması sonraki adımda.
+ * Aylık ve özel yayın planları: promptun 5. maddesindeki gibi ilk
+ * prototipte temel liste düzeyinde; kayıtları Next Day'den ayrı.
+ * Haftalık plan kendi klasöründe (ekranlar/haftalik).
  */
-
-const EVRELER = [
-  ["hevOneri", "hevOneriGun"],
-  ["hevPlan", "hevPlanGun"],
-  ["hevToplanti", "hevToplantiGun"],
-  ["hevGeriDonus", "hevGeriDonusGun"],
-] as const;
-
-export function Haftalik() {
-  const { t, dil } = useDil();
-  const v = useVeri();
-  const plan = v.haftalik[0];
-  return (
-    <>
-      <SayfaBasi ikon={<CalendarRange size={26} />} baslik={t("haftalik")} alt={t("haftalikAlt")} sagUc={<TaslakEtiketi />} />
-      <NotKutu>{t("haftalikTaslakNotu")}</NotKutu>
-      <Kart baslik={t("haftalikAkis")}>
-        <div className="kollar">
-          {EVRELER.map(([a, g]) => (
-            <div key={a} className="kol renk-haftalik">
-              <b>{t(a)}</b>
-              <p>{t(g)}</p>
-            </div>
-          ))}
-        </div>
-      </Kart>
-      <HaftaKarti d={v} />
-      {plan && (
-        <Kart baslik={t("haftalikKalemler")} ek={`${tarihYaz(plan.baslangic, dil, "kisa")} – ${tarihYaz(gunEkle(plan.baslangic, 6), dil, "kisa")}`}>
-          <div className="tablo-sar">
-            <table className="tablo kartli">
-              <thead>
-                <tr>
-                  <th>{t("gun")}</th>
-                  <th className="icerik-sutun">{t("baslik")}</th>
-                  <th>{t("tur")}</th>
-                  <th>{t("ulke")}</th>
-                  <th>{t("toplantiKarari")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.kalemler.map((k) => (
-                  <tr key={k.id}>
-                    <td className="sonuk" data-etiket={t("gun")}>
-                      {k.tarih && `${gunAdi(k.tarih, dil)} ${tarihYaz(k.tarih, dil, "kisa")}`}
-                    </td>
-                    <td className="kalin birincil icerik-sutun">
-                      <Icerik blok>{k.baslik}</Icerik>
-                    </td>
-                    <td data-etiket={t("tur")}>
-                      <TurRozeti tur={k.tur} />
-                    </td>
-                    <td data-etiket={t("ulke")}>{k.ulke ? t(ulkeAdi(k.ulke)) : "—"}</td>
-                    <td data-etiket={t("toplantiKarari")}>
-                      <Rozet ton={k.onayli ? "iyi" : ""}>{t(k.onayli ? "onaylandi" : "beklemede")}</Rozet>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Kart>
-      )}
-      <Kart baslik={t("kollar")}>
-        <div className="kollar">
-          <div className="kol renk-nextday">
-            <b>{t("kolHaber")}</b>
-            <p>{t("kolHaberA")}</p>
-          </div>
-          <div className="kol renk-haftalik">
-            <b>{t("kolFeature")}</b>
-            <p>{t("kolFeatureA")}</p>
-          </div>
-          <div className="kol renk-saha">
-            <b>{t("kolProgram")}</b>
-            <p>{t("kolProgramA")}</p>
-          </div>
-        </div>
-      </Kart>
-    </>
-  );
-}
 
 export function Aylik() {
   const { t, dil } = useDil();

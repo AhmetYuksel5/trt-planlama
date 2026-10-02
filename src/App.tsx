@@ -14,10 +14,14 @@ import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
 import { OneriDetay, OnerilerListe, YeniOneri } from "./ekranlar/oneri/Oneriler";
 import PaketDetay from "./ekranlar/PaketDetay";
 import { Gorevlendirmeler, KisiDetay, PersonelListe } from "./ekranlar/Personel";
-import { Aylik, Haftalik, Ozel } from "./ekranlar/Planlar";
+import { Aylik, Ozel } from "./ekranlar/Planlar";
+import HaftalikCagri from "./ekranlar/haftalik/Cagri";
+import HaftalikCikti from "./ekranlar/haftalik/Cikti";
+import HaftalikListe from "./ekranlar/haftalik/Liste";
+import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
 import { useBen } from "./oturum";
-import { kisiBul, oneriBul, paketBul, planBul, useVeri } from "./veri";
+import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri } from "./veri";
 import { oneriGorebilir, paketGorebilir, sayfaGorebilir, yapabilir } from "./yetki";
 import { useYol } from "./yol";
 
@@ -57,9 +61,15 @@ export default function App() {
         else icerik = <NextDayListe ben={ben} yeni={yol.id === "yeni"} />;
         break;
       }
-      case "haftalik":
-        icerik = <Haftalik />;
+      case "haftalik": {
+        const hafta = haftaBul(v, yol.id);
+        if (yol.id && !hafta) icerik = <Yetkisiz />;
+        else if (hafta && yol.alt === "cikti") icerik = <HaftalikCikti hafta={hafta} />;
+        else if (hafta && yol.alt === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <HaftalikCagri ben={ben} hafta={hafta} /> : <Yetkisiz />;
+        else if (hafta) icerik = <HaftalikPlanEkrani ben={ben} hafta={hafta} />;
+        else icerik = <HaftalikListe ben={ben} />;
         break;
+      }
       case "aylik":
         icerik = <Aylik />;
         break;
@@ -67,7 +77,7 @@ export default function App() {
         icerik = <Ozel />;
         break;
       case "oneriler": {
-        if (yol.id === "yeni") icerik = <YeniOneri ben={ben} />;
+        if (yol.id === "yeni") icerik = <YeniOneri ben={ben} haftalik={yol.alt === "haftalik"} />;
         else if (yol.id === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <Cagri ben={ben} tarih={yol.alt} /> : <Yetkisiz />;
         else if (yol.id === "yanitlar") icerik = yapabilir(ben, "cagriHazirla") ? <Yanitlar ben={ben} cagriId={yol.alt} /> : <Yetkisiz />;
         else if (yol.id) {

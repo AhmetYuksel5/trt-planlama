@@ -6,9 +6,11 @@ import type {
   EkipGorevi,
   Gorev,
   GorevlendirmeDurum,
+  HaftaDurum,
   HareketTuru,
   IcerikTuru,
   Kanal,
+  Karar,
   KaynakTuru,
   KisiDurum,
   OneriDurum,
@@ -29,6 +31,7 @@ export const BIRIM_ADI: Record<Birim, Anahtar> = {
   newsdesk: "biNewsdesk",
   newsgathering: "biNewsgathering",
   program: "biProgram",
+  ekonomi: "biEkonomi",
   output: "biOutput",
   media: "biMedia",
   muhabir: "biMuhabir",
@@ -127,6 +130,48 @@ export const PLAN_DURUM_TONU: Record<PlanDurum, string> = {
   toplantida: "uyari",
   onayli: "vurgu",
   devralindi: "iyi",
+};
+
+export const HAFTA_DURUM_ADI: Record<HaftaDurum, Anahtar> = {
+  hazirlik: "hdHazirlik",
+  toplantida: "hdToplantida",
+  kesinlesti: "hdKesinlesti",
+};
+
+export const HAFTA_DURUM_TONU: Record<HaftaDurum, string> = {
+  hazirlik: "",
+  toplantida: "uyari",
+  kesinlesti: "iyi",
+};
+
+export const KARAR_ADI: Record<Karar, Anahtar> = {
+  bekliyor: "krBekliyor",
+  kabul: "krKabul",
+  bilgi: "krBilgi",
+  ret: "krRet",
+};
+
+export const KARAR_TONU: Record<Karar, string> = {
+  bekliyor: "",
+  kabul: "iyi",
+  bilgi: "vurgu",
+  ret: "kotu",
+};
+
+/*
+ * Haftalık çıktının biçim satırındaki kısaltmalar (PKG + LIVE, W&T):
+ * kurumun belgesindeki gibi Latin ve her dilde aynı; ekrandaki uzun ad
+ * BICIM_ADI'nda.
+ */
+export const BICIM_KODU: Record<Bicim, string> = {
+  pkg: "PKG",
+  canli: "LIVE",
+  voxpop: "Vox Pop",
+  walktalk: "W&T",
+  feature: "Feature",
+  derinlemesine: "In-depth",
+  ozelRoportaj: "Interview",
+  hikayem: "My Story",
 };
 
 export const KANAL_ADI: Record<Kanal, Anahtar> = {
