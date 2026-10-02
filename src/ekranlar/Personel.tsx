@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, Pencil, Phone, Plane, Radio, Route, Search, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
+import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -7,7 +7,7 @@ import { profilGuncelle, type ProfilGirdisi } from "../eylemler";
 import { BICIM_ACIKLAMA, BICIM_ADI, BIRIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, GOREV_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
-import { BICIMLER, BIRIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, useVeri, type Bicim, type Birim, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
+import { BICIMLER, BIRIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type Birim, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
 import { gorevlendirmeGorebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -660,7 +660,6 @@ function GorevListesi({ gorevler }: { gorevler: Gorevlendirme[] }) {
                 <Icerik blok>{g.aciklama}</Icerik>
               </small>
             </div>
-            {g.yurtdisi && <Rozet ton="tur-program">{t("yurtdisiKisa")}</Rozet>}
             <Rozet ton={g.durum === "talep" ? "uyari" : g.durum === "bitti" ? "" : "vurgu"}>{t(GOREVLENDIRME_DURUM_ADI[g.durum])}</Rozet>
           </li>
         );
@@ -672,8 +671,7 @@ function GorevListesi({ gorevler }: { gorevler: Gorevlendirme[] }) {
 /* --- Görevlendirmeler: News Gathering'in alanı; akışı henüz tanımlanmadı --- */
 
 const GOREV_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: ReactNode; suz: (g: Gorevlendirme, B: string) => boolean }> = {
-  yurtdisi: { baslik: "mYurtdisi", alt: "yurtdisiAlt", ikon: <Plane size={26} />, suz: (g) => g.yurtdisi },
-  yurtici: { baslik: "mYurtici", alt: "yurticiAlt", ikon: <MapPin size={26} />, suz: (g) => !g.yurtdisi && g.tur !== "izin" },
+  saha: { baslik: "mSaha", alt: "sahaAlt", ikon: <MapPinned size={26} />, suz: sahaGorevi },
   seyahat: { baslik: "mSeyahat", alt: "seyahatAlt", ikon: <Route size={26} />, suz: (g, B) => g.bitis >= B },
   talepler: { baslik: "mTalepler", alt: "taleplerAlt", ikon: <Inbox size={26} />, suz: (g) => g.durum === "talep" },
   izinler: { baslik: "mIzinler", alt: "izinlerAlt", ikon: <CalendarClock size={26} />, suz: (g, B) => g.bitis >= B },
@@ -684,7 +682,7 @@ export function Gorevlendirmeler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const v = useVeri();
   const B = bugun();
   const muhabir = ben.birim === "muhabir";
-  const ayar = GOREV_SAYFASI[sayfa] ?? GOREV_SAYFASI.yurtdisi;
+  const ayar = GOREV_SAYFASI[sayfa] ?? GOREV_SAYFASI.saha;
   const liste = v.gorevlendirmeler
     .filter((g) => gorevlendirmeGorebilir(ben, g) && (muhabir || ayar.suz(g, B)))
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));

@@ -85,7 +85,7 @@ export function Haftalik() {
             <b>{t("kolFeature")}</b>
             <p>{t("kolFeatureA")}</p>
           </div>
-          <div className="kol renk-yurtdisi">
+          <div className="kol renk-saha">
             <b>{t("kolProgram")}</b>
             <p>{t("kolProgramA")}</p>
           </div>

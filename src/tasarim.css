@@ -7,7 +7,7 @@
  * İlk taslak promptu sade ve kurumsal bir dil istiyor: koyu lacivert,
  * beyaz, açık gri, ölçülü mavi/yeşil vurgu; dekoratif grafik yok. Renk
  * süs değil adres: beş ana başlığın (Next Day, Haftalık, Aylık, Özel
- * yayın, Yurt dışı) her birinin kendi rengi var ve içerik türleri de bu
+ * yayın, Saha görevlendirmesi) her birinin kendi rengi var ve içerik türleri de bu
  * renkleri ödünç alıyor; kalan her şey tek vurgu rengiyle sakin kalıyor.
  *
  * Bütün yerleşim mantıksal özelliklerle (inline-start/end) yazılı;
@@ -56,8 +56,8 @@
   --aylik-sis: #fcefdc;
   --ozel: #c0283a;
   --ozel-sis: #fce5e8;
-  --yurtdisi: #6a42c9;
-  --yurtdisi-sis: #eee8fb;
+  --saha: #6a42c9;
+  --saha-sis: #eee8fb;
 
   /* Durumlar: renk tek başına anlam taşımıyor, yanında hep yazı var. */
   --iyi: #12825a;
@@ -317,7 +317,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .renk-haftalik { --renk: var(--haftalik); --sis: var(--haftalik-sis); }
 .renk-aylik { --renk: var(--aylik); --sis: var(--aylik-sis); }
 .renk-ozel { --renk: var(--ozel); --sis: var(--ozel-sis); }
-.renk-yurtdisi { --renk: var(--yurtdisi); --sis: var(--yurtdisi-sis); }
+.renk-saha { --renk: var(--saha); --sis: var(--saha-sis); }
 
 /* --- Sayaçlar --- */
 
@@ -359,7 +359,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .tur-haber { --renk: var(--nextday); --sis: var(--nextday-sis); }
 .tur-feature { --renk: var(--haftalik); --sis: var(--haftalik-sis); }
 .tur-ekonomi { --renk: var(--aylik); --sis: var(--aylik-sis); }
-.tur-program { --renk: var(--yurtdisi); --sis: var(--yurtdisi-sis); }
+.tur-program { --renk: var(--saha); --sis: var(--saha-sis); }
 
 /* --- Zaman çizelgesi (bugünün takvimi) --- */
 

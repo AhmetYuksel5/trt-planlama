@@ -1008,7 +1008,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(-10),
     bitis: gun(35),
     aciklama: "مهمة في واشنطن قبل الانتخابات النصفية الأمريكية.",
-    yurtdisi: true,
     durum: "suruyor",
   },
   {
@@ -1019,7 +1018,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(-1),
     bitis: gun(1),
     aciklama: "إجازة سنوية.",
-    yurtdisi: false,
     durum: "suruyor",
   },
   {
@@ -1030,7 +1028,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(0),
     bitis: gun(2),
     aciklama: "برنامج تدريبي في المقر.",
-    yurtdisi: true,
     durum: "suruyor",
   },
   {
@@ -1041,7 +1038,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(1),
     bitis: gun(3),
     aciklama: "تصوير شحنات الحبوب في الميناء.",
-    yurtdisi: false,
     durum: "onayli",
   },
   {
@@ -1052,7 +1048,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(0),
     bitis: gun(2),
     aciklama: "إجازة مرضية.",
-    yurtdisi: false,
     durum: "suruyor",
   },
   {
@@ -1063,7 +1058,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(1),
     bitis: gun(1),
     aciklama: "بث مباشر صباحي وتصوير ميداني.",
-    yurtdisi: false,
     durum: "onayli",
   },
   {
@@ -1074,7 +1068,6 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
     baslangic: gun(4),
     bitis: gun(7),
     aciklama: "قمة مجلس التعاون الخليجي.",
-    yurtdisi: true,
     durum: "talep",
   },
 ];
@@ -1668,7 +1661,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 4,
+    surum: 5,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,

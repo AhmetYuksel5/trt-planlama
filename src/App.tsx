@@ -99,8 +99,7 @@ export default function App() {
         } else icerik = <PersonelListe ben={ben} sayfa={sayfa} />;
         break;
       case "izinler":
-      case "yurtdisi":
-      case "yurtici":
+      case "saha":
       case "seyahat":
       case "talepler":
         icerik = <Gorevlendirmeler ben={ben} sayfa={sayfa} />;

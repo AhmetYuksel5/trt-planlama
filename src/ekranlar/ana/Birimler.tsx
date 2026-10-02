@@ -13,8 +13,8 @@ import {
   Lightbulb,
   ListChecks,
   MapPin,
+  MapPinned,
   MonitorPlay,
-  Plane,
   Route,
   SpellCheck,
   Upload,
@@ -29,7 +29,7 @@ import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, planlananHafta } from "../../tarih";
-import { BIRIMLER, kisiBul, muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
+import { BIRIMLER, kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, yapabilir } from "../../yetki";
 import { BugununTakvimi, HaftaKarti, SayfaBasi, YaklasanToplantilar } from "./Planlama";
 
@@ -131,7 +131,7 @@ export function NewsGatheringAna() {
       <div className="sayaclar">
         <Sayac href="#/talepler" ikon={<Inbox size={22} />} ton="uyari" etiket={t("sYeniTalep")} deger={talepler.length + sahaAdimi.length} />
         <Sayac ikon={<MapPin size={22} />} renk="renk-nextday" etiket={t("sSahada")} deger={sahada.length} />
-        <Sayac href="#/yurtdisi" ikon={<Plane size={22} />} renk="renk-yurtdisi" etiket={t("sYurtdisiGorev")} deger={v.gorevlendirmeler.filter((g) => g.yurtdisi && g.bitis >= B).length} />
+        <Sayac href="#/saha" ikon={<MapPinned size={22} />} renk="renk-saha" etiket={t("sSahaGorev")} deger={v.gorevlendirmeler.filter((g) => sahaGorevi(g) && g.bitis >= B).length} />
         <Sayac ikon={<Route size={22} />} renk="renk-haftalik" etiket={t("sSeyahat")} deger={v.gorevlendirmeler.filter((g) => g.tur === "seyahat" && g.bitis >= B).length} />
       </div>
       <div className="iz iz-2">
@@ -189,7 +189,6 @@ export function NewsGatheringAna() {
                     {t(HAREKET_TURU_ADI[g.tur])} · {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
                   </small>
                 </div>
-                {g.yurtdisi && <Rozet ton="tur-program">{t("yurtdisiKisa")}</Rozet>}
               </li>
             ))}
           </ul>
@@ -331,7 +330,7 @@ export function YonetimAna() {
         <Sayac href="#/paketler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sTamamlanan")} deger={v.paketler.filter((p) => p.durum === "tamamlandi").length} />
         <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={uretimdeki(v).length} />
         <Sayac href="#/nextday" ikon={<Clock size={22} />} ton="uyari" etiket={t("sOnayBekleyen")} deger={onayBekleyen.length + v.paketler.filter((p) => p.durum === "degerlendiriliyor").length} />
-        <Sayac href="#/yurtdisi" ikon={<Plane size={22} />} renk="renk-yurtdisi" etiket={t("sYurtdisiGorev")} deger={v.gorevlendirmeler.filter((g) => g.yurtdisi && g.bitis >= bugun()).length} />
+        <Sayac href="#/saha" ikon={<MapPinned size={22} />} renk="renk-saha" etiket={t("sSahaGorev")} deger={v.gorevlendirmeler.filter((g) => sahaGorevi(g) && g.bitis >= bugun()).length} />
         <Sayac href="#/uretim" ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={v.paketler.filter((p) => geciktiMi(p)).length} />
       </div>
       <div className="iz iz-pano">

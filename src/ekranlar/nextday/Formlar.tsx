@@ -307,7 +307,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
 export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
-  const [f, setF] = useState({ kisiId: "", tur: "gorevlendirme" as HareketTuru, yer: "", baslangic: plan.tarih, bitis: plan.tarih, aciklama: "", yurtdisi: false });
+  const [f, setF] = useState({ kisiId: "", tur: "gorevlendirme" as HareketTuru, yer: "", baslangic: plan.tarih, bitis: plan.tarih, aciklama: "" });
   const kaydet = () => {
     if (!ben || !f.kisiId || !f.yer.trim()) return;
     gorevlendirmeOlustur(ben, plan.id, { ...f, yer: f.yer.trim(), aciklama: f.aciklama.trim(), bitis: f.bitis < f.baslangic ? f.baslangic : f.bitis });
@@ -348,10 +348,6 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
       <label>
         {t("aciklama")}
         <input {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
-      </label>
-      <label className="secim">
-        <input type="checkbox" checked={f.yurtdisi} onChange={(e) => setF({ ...f, yurtdisi: e.target.checked })} />
-        {t("yurtdisiGorev")}
       </label>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.kisiId || !f.yer.trim()} />
     </div>
