@@ -103,5 +103,8 @@ npm run preview  # derlenmiş hali yerelde
   netleşecek.
 - Örnek veride son iki ayın tamamlanmış işlerinden kurgusal bir arşiv var;
   göstergeler boş görünmesin diye.
-- Logo şimdilik yazıyla "TRT عربي"; resmî logo dosyası gelince
-  `src/bilesenler/Logo.tsx` değişecek.
+- Logo kanalın resmî dosyası (`src/varliklar/logo-trt-arabi.png`), her
+  dilde aynı. Koyu lacivert zeminlerde (sol menü, giriş, proje planı)
+  köşeleri yuvarlatılmış beyaz bir levhanın üstünde duruyor; logonun
+  "عربي" kısmı lacivert olduğu için levhasız okunmuyor. Dosyanın kendisi
+  değiştirilmedi.

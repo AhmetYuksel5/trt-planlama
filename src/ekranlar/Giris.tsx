@@ -52,7 +52,7 @@ export default function Giris() {
     <div className="giris">
       <aside className="giris-sol">
         <span className="marka">
-          <Logo />
+          <Logo levha />
         </span>
         <h1>{t("girisBaslik")}</h1>
         <p>{t("girisAciklama")}</p>

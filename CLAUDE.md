@@ -45,7 +45,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
   - Kişi adı içerik değil: arayüz dilinin yazımıyla (`useDil().ad`).
     Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
-- Logo (`bilesenler/Logo.tsx`) her dilde "TRT عربي"; dile göre değişmez.
+- Logo resmî dosya (`src/varliklar/logo-trt-arabi.png`, `bilesenler/Logo.tsx`);
+  her dilde aynı, dosyaya dokunulmaz. Koyu zeminde `<Logo levha />` beyaz
+  levhada durur ("عربي" lacivert, levhasız kaybolur); boyu yerine göre
+  `--logo-*` token'larından. Favicon logonun "TRT" kısmından
+  (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
 - Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v4`;
