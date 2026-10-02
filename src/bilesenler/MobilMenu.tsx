@@ -18,7 +18,7 @@ import { MENU } from "./SolMenu";
  * da çıkıyor.
  */
 export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: string; onKapat: () => void }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const muhabir = ben.birim === "muhabir";
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
@@ -45,7 +45,7 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
       <div className="mobil-kisi">
         <Avatar kisi={ben} durum />
         <div>
-          <b>{y(ben.ad)}</b>
+          <b>{ad(ben)}</b>
           <small>
             {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
           </small>

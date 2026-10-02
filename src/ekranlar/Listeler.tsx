@@ -1,7 +1,7 @@
 import { Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, URETIM_ADIMLARI, adimSahibi, geciktiMi } from "../akis";
-import { AsamaCubugu, Avatar, Bos, Kart, Kilitli, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
+import { AsamaCubugu, Avatar, Bos, Icerik, Kart, Kilitli, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, PAKET_DURUM_ADI, TUR_ADI, sehirAdi } from "../etiketler";
@@ -23,7 +23,7 @@ const ICERIK_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: Reac
 };
 
 export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ayar = ICERIK_SAYFASI[sayfa] ?? ICERIK_SAYFASI.paketler;
   const [durum, setDurum] = useState<PaketDurum | "hepsi" | "aktif">("aktif");
@@ -37,7 +37,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
       (p) =>
         (durum === "hepsi" || (durum === "aktif" ? p.durum !== "tamamlandi" && p.durum !== "iptal" : p.durum === durum)) &&
         (!tur || p.tur === tur) &&
-        (!q || `${p.kod} ${y(p.baslik)} ${y(kisiBul(v, p.muhabirId)?.ad ?? "")}`.toLocaleLowerCase().includes(q)),
+        (!q || `${p.kod} ${p.baslik} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q)),
     )
     .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   return (
@@ -89,7 +89,7 @@ const PANO: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: ReactNode; adi
 };
 
 export function IsAkisi({ sayfa }: { sayfa: string }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ayar = PANO[sayfa] ?? PANO.uretim;
   const uretimde = v.paketler.filter((p) => p.durum === "uretimde");
@@ -110,10 +110,12 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
               {paketler.length === 0 && <p className="bos-kucuk">{t("bos")}</p>}
               {paketler.map((p) => (
                 <a key={p.id} className={`pano-kart ${geciktiMi(p) ? "gecikmis" : ""}`} href={`#/paketler/${p.id}`}>
-                  <b>{y(p.baslik)}</b>
+                  <b>
+                    <Icerik blok>{p.baslik}</Icerik>
+                  </b>
                   <span className="kisi-hucre">
                     <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" />
-                    <small>{y(kisiBul(v, p.muhabirId)?.ad ?? t("atanmadi"))}</small>
+                    <small>{p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}</small>
                   </span>
                   <span className="pano-alt">
                     <TurRozeti tur={p.tur} />
@@ -133,7 +135,7 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
 /* --- Hazır paket arşivi --- */
 
 export function HazirPaketler() {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   return (
     <>
@@ -144,7 +146,7 @@ export function HazirPaketler() {
             <thead>
               <tr>
                 <th>{t("sehirUlke")}</th>
-                <th>{t("paketBasligi")}</th>
+                <th className="icerik-sutun">{t("paketBasligi")}</th>
                 <th>{t("muhabir")}</th>
                 <th>{t("tur")}</th>
                 <th>{t("sure")}</th>
@@ -158,12 +160,15 @@ export function HazirPaketler() {
                   <td className="kalin" data-etiket={t("sehirUlke")}>
                     {t(sehirAdi(h.sehir))}
                   </td>
-                  <td className="birincil">
-                    <b>{y(h.baslik)}</b>
-                    <br />
-                    <small className="sonuk">{y(h.aciklama)}</small>
+                  <td className="birincil icerik-sutun">
+                    <b>
+                      <Icerik blok>{h.baslik}</Icerik>
+                    </b>
+                    <small className="sonuk">
+                      <Icerik blok>{h.aciklama}</Icerik>
+                    </small>
                   </td>
-                  <td data-etiket={t("muhabir")}>{y(kisiBul(v, h.muhabirId)?.ad ?? "")}</td>
+                  <td data-etiket={t("muhabir")}>{ad(kisiBul(v, h.muhabirId))}</td>
                   <td data-etiket={t("tur")}>
                     <TurRozeti tur={h.tur} />
                   </td>
@@ -187,7 +192,7 @@ export function HazirPaketler() {
 /* --- Ücretler: Newsdesk'in örnek ekranı; alan bazlı yetkinin gösterimi --- */
 
 export function Ucretler({ ben }: { ben: Kisi }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ucretli = v.paketler.filter((p) => p.ucret);
   const gorebilir = ucretli.some((p) => ucretGorebilir(ben, p));
@@ -218,7 +223,7 @@ export function Ucretler({ ben }: { ben: Kisi }) {
               <thead>
                 <tr>
                   <th>{t("muhabir")}</th>
-                  <th>{t("paketBasligi")}</th>
+                  <th className="icerik-sutun">{t("paketBasligi")}</th>
                   <th>{t("durum")}</th>
                   <th>{t("ucret")}</th>
                 </tr>
@@ -228,12 +233,12 @@ export function Ucretler({ ben }: { ben: Kisi }) {
                   <tr key={p.id}>
                     <td data-etiket={t("muhabir")}>
                       <span className="kisi-hucre">
-                        <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" /> {y(kisiBul(v, p.muhabirId)?.ad ?? "")}
+                        <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" /> {ad(kisiBul(v, p.muhabirId))}
                       </span>
                     </td>
-                    <td className="birincil">
+                    <td className="birincil icerik-sutun">
                       <a className="kalin" href={`#/paketler/${p.id}`}>
-                        {y(p.baslik)}
+                        <Icerik blok>{p.baslik}</Icerik>
                       </a>
                     </td>
                     <td data-etiket={t("durum")}>

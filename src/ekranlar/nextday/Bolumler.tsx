@@ -1,9 +1,9 @@
 import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Avatar, Bos, Rozet } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Rozet } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, planGorevlendirmeCikar, planGorevlendirmeEkle } from "../../eylemler";
-import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, sehirAdi, varsayilanEkipGorevi } from "../../etiketler";
+import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { EKIP_GOREVLERI, kisiBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type NextDayPlan } from "../../veri";
@@ -48,7 +48,7 @@ export function EkleDugmesi({ metin, onClick }: { metin: string; onClick: () => 
 /* --- 1. Çalışma ekibi --- */
 
 export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [ekle, setEkle] = useState(false);
@@ -57,7 +57,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
   const [vardiya, setVardiya] = useState("08:00");
   const adaylar = v.kisiler
     .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id))
-    .sort((a, b) => y(a.ad).localeCompare(y(b.ad)));
+    .sort((a, b) => ad(a).localeCompare(ad(b)));
 
   const kaydet = () => {
     if (!ben || !kisiId) return;
@@ -81,7 +81,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                 return (
                   <span key={e.kisiId} className="cip">
                     <Avatar kisi={k} boy="kucuk" />
-                    {k ? y(k.ad) : "?"}
+                    {k ? ad(k) : "?"}
                     {duzenler ? (
                       <>
                         <input
@@ -129,7 +129,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                   <option value="">{t("seciniz")}</option>
                   {adaylar.map((k) => (
                     <option key={k.id} value={k.id}>
-                      {y(k.ad)} · {t(GOREV_ADI[k.gorev])}
+                      {ad(k)} · {t(GOREV_ADI[k.gorev])}
                     </option>
                   ))}
                 </select>
@@ -170,7 +170,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
 /* --- 2. Muhabir hareketleri ve izinleri --- */
 
 export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState<"" | "yeni" | "mevcut">("");
@@ -189,12 +189,14 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
                 <Avatar kisi={k} boy="kucuk" />
                 <div>
                   <b>
-                    {y(g.yer)} / {k ? y(k.ad) : ""}
+                    <Icerik blok>{satir(g.yer, kisiAr(k))}</Icerik>
                   </b>
+                  <Icerik blok className="kayit-metin">
+                    {g.aciklama}
+                  </Icerik>
                   <small>
                     <Rozet>{t(HAREKET_TURU_ADI[g.tur])}</Rozet>
                     {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
-                    {y(g.aciklama) && <span>· {y(g.aciklama)}</span>}
                   </small>
                 </div>
                 {duzenler && (
@@ -220,7 +222,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
                   <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && planGorevlendirmeEkle(ben, plan.id, g.id)}>
                     <Plus size={14} />
                   </button>
-                  {y(g.yer)} / {k ? y(k.ad) : ""} · {t(HAREKET_TURU_ADI[g.tur])}
+                  <Icerik>{satir(g.yer, kisiAr(k))}</Icerik> · {t(HAREKET_TURU_ADI[g.tur])}
                 </div>
               );
             })
@@ -245,7 +247,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
 /* --- 3. Canlı yayınlar ve etkinlikler (başlığa bağlı olmayanlar) --- */
 
 export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan: NextDayPlan; canlilar: CanliYayin[]; duzenler: boolean; planBaslikId?: string }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState<string>("");
@@ -262,13 +264,14 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
               <div className="kayit-bas">
                 <div>
                   <b>
-                    {y(c.yer)} / {y(c.konu)} / {c.saatGmt ? `${c.saatGmt} GMT` : "TBC"}
+                    <Icerik blok>{satir(c.yer, c.konu, c.saatGmt ? `${c.saatGmt} GMT` : "TBC")}</Icerik>
                   </b>
+                  <Icerik blok className="kayit-metin">
+                    {[c.aciklama, c.notlar].filter(Boolean).join(" · ")}
+                  </Icerik>
                   <small>
                     {c.tarih !== plan.tarih && <Rozet ton="uyari">{tarihYaz(c.tarih, dil, "kisa")}</Rozet>}
-                    {c.muhabirId && <span>{y(kisiBul(v, c.muhabirId)?.ad ?? "")}</span>}
-                    {y(c.aciklama) && <span>· {y(c.aciklama)}</span>}
-                    {y(c.notlar) && <span>· {y(c.notlar)}</span>}
+                    {c.muhabirId && <span>{ad(kisiBul(v, c.muhabirId))}</span>}
                   </small>
                 </div>
                 {duzenler && (
@@ -304,21 +307,24 @@ export function CanliBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
 /* --- 4. Hazır paketler: arşivden seçiliyor; ŞEHİR / BAŞLIK / MUHABİR --- */
 
 export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler: boolean; d: Durum }) {
-  const { t, y } = useDil();
+  const { t } = useDil();
   const ben = useBen();
   const [sec, setSec] = useState(false);
   const secili = plan.hazirPaketler.map((id) => d.hazirPaketler.find((h) => h.id === id)).filter((h) => h !== undefined);
   const arsiv = d.hazirPaketler.filter((h) => !plan.hazirPaketler.includes(h.id));
-  const satir = (h: (typeof secili)[number]) => (
+  const hazirSatiri = (h: (typeof secili)[number]) => (
     <>
       <b>
-        {t(sehirAdi(h.sehir))} / {y(h.baslik)} / {y(kisiBul(d, h.muhabirId)?.ad ?? "")}
+        <Icerik blok>{satir(sehirAr(h.sehir), h.baslik, kisiAr(kisiBul(d, h.muhabirId)))}</Icerik>
       </b>
+      <Icerik blok className="kayit-metin">
+        {h.aciklama}
+      </Icerik>
       <small>
-        {y(h.aciklama)} · {h.sure}
-      </small>
-      <small dir="ltr" className="slug">
-        {h.slug}
+        <span dir="ltr" className="slug">
+          {h.slug}
+        </span>
+        <span>· {h.sure}</span>
       </small>
     </>
   );
@@ -328,7 +334,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
       {secili.map((h) => (
         <div key={h.id} className="kayit">
           <div className="kayit-bas">
-            <div>{satir(h)}</div>
+            <div>{hazirSatiri(h)}</div>
             {duzenler && (
               <div className="islemler">
                 <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, h.id)} />
@@ -344,7 +350,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
             {arsiv.map((h) => (
               <div key={h.id} className="kayit">
                 <div className="kayit-bas">
-                  <div>{satir(h)}</div>
+                  <div>{hazirSatiri(h)}</div>
                   <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, h.id)}>
                     <Plus size={14} /> {t("sec")}
                   </button>
@@ -369,7 +375,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
 /* --- Gelişme satırı: başlık altında da takiplerde de aynı --- */
 
 export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { plan: NextDayPlan; gelismeler: Gelisme[]; duzenler: boolean; planBaslikId?: string }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState("");
@@ -383,14 +389,14 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
           <div key={g.id} className="kayit">
             <div className="kayit-bas">
               <div>
-                <p>
-                  {(g.yer || g.onerenId) && <b className="satir-ici">{g.yer ? y(g.yer) : t(sehirAdi(kisiBul(v, g.onerenId)?.sehir ?? "istanbul"))} / </b>}
-                  {y(g.metin)}
-                </p>
+                <Icerik blok className="kayit-metin">
+                  {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
+                  {g.metin}
+                </Icerik>
                 <small>
                   <Rozet>{t(KAYNAK_ADI[g.kaynakTuru])}</Rozet>
-                  {g.kaynakAdi && <span>{g.kaynakAdi}</span>}
-                  {g.onerenId && <span>· {y(kisiBul(v, g.onerenId)?.ad ?? "")}</span>}
+                  {g.kaynakAdi && <Icerik>{g.kaynakAdi}</Icerik>}
+                  {g.onerenId && <span>· {ad(kisiBul(v, g.onerenId))}</span>}
                   <span>
                     · {tarihYaz(yerelGun(g.tarih), dil, "kisa")} {saatYaz(g.tarih, dil)}
                   </span>

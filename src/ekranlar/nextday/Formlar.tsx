@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { bildir } from "../../bilesenler/Parcalar";
-import { useDil } from "../../dil";
+import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { metin, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, paketKaydet } from "../../eylemler";
 import { HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
 import { useBen } from "../../oturum";
@@ -24,9 +24,9 @@ import {
 
 /*
  * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
- * belgedeki alanlar var, kaydet ve iptal hep aynı yerde. Düzenlenen kayıt
- * örnek veriden geliyorsa (üç dilli) metin seçili dilde açılıyor ve
- * kaydedildiğinde yazıldığı dilde kalıyor.
+ * belgedeki alanlar var, kaydet ve iptal hep aynı yerde. İçerik alanları
+ * her arayüz dilinde sağdan sola ve örnekleri Arapça; yazılan metin
+ * denetlenmiyor, Latin harfli özel isim serbest.
  */
 
 function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: () => void; devre?: boolean }) {
@@ -45,15 +45,15 @@ function FormAlt({ kapat, kaydet, devre = false }: { kapat: () => void; kaydet: 
 
 /** Muhabir seçici: ad ve şehir, alfabetik. */
 export function MuhabirSecici({ deger, degistir, bosEtiket }: { deger: string; degistir: (id: string) => void; bosEtiket?: string }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
-  const liste = [...muhabirler(v)].sort((a, b) => y(a.ad).localeCompare(y(b.ad)));
+  const liste = [...muhabirler(v)].sort((a, b) => ad(a).localeCompare(ad(b)));
   return (
     <select value={deger} onChange={(e) => degistir(e.target.value)}>
       <option value="">{bosEtiket ?? t("seciniz")}</option>
       {liste.map((k) => (
         <option key={k.id} value={k.id}>
-          {y(k.ad)} · {t(sehirAdi(k.sehir))}
+          {ad(k)} · {t(sehirAdi(k.sehir))}
         </option>
       ))}
     </select>
@@ -61,11 +61,11 @@ export function MuhabirSecici({ deger, degistir, bosEtiket }: { deger: string; d
 }
 
 export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; kapat: () => void }) {
-  const { t, y } = useDil();
+  const { t } = useDil();
   const ben = useBen();
   const [f, setF] = useState({
-    yer: mevcut?.yer ? y(mevcut.yer) : "",
-    metin: mevcut ? y(mevcut.metin) : "",
+    yer: mevcut?.yer ?? "",
+    metin: mevcut?.metin ?? "",
     kaynakTuru: (mevcut?.kaynakTuru ?? "ajans") as KaynakTuru,
     kaynakAdi: mevcut?.kaynakAdi ?? "",
     onerenId: mevcut?.onerenId ?? "",
@@ -92,7 +92,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: Next
       <div className="satir">
         <label>
           {t("yer")}
-          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={t("yerIpucu")} />
+          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
         </label>
         <label>
           {t("kaynakTuru")}
@@ -106,12 +106,12 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: Next
         </label>
         <label>
           {t("kaynakAdi")}
-          <input value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
+          <input {...icerikAlani} value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
         </label>
       </div>
       <label>
         {t("gelismeMetni")}
-        <textarea value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
+        <textarea {...icerikAlani} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
       </label>
       <div className="satir">
         <label>
@@ -129,16 +129,16 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: Next
 }
 
 export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: CanliYayin; kapat: () => void }) {
-  const { t, y } = useDil();
+  const { t } = useDil();
   const ben = useBen();
   const [f, setF] = useState({
-    konu: mevcut ? y(mevcut.konu) : "",
-    aciklama: mevcut ? y(mevcut.aciklama) : "",
-    yer: mevcut ? y(mevcut.yer) : "",
+    konu: mevcut?.konu ?? "",
+    aciklama: mevcut?.aciklama ?? "",
+    yer: mevcut?.yer ?? "",
     tarih: mevcut?.tarih ?? plan.tarih,
     saatGmt: mevcut?.saatGmt ?? "",
     muhabirId: mevcut?.muhabirId ?? "",
-    notlar: mevcut ? y(mevcut.notlar) : "",
+    notlar: mevcut?.notlar ?? "",
   });
   const kaydet = () => {
     if (!ben || !f.konu.trim()) return;
@@ -150,11 +150,11 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       <div className="satir">
         <label>
           {t("etkinlikAdi")}
-          <input value={f.konu} onChange={(e) => setF({ ...f, konu: e.target.value })} />
+          <input {...icerikAlani} value={f.konu} onChange={(e) => setF({ ...f, konu: e.target.value })} />
         </label>
         <label>
           {t("yer")}
-          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} />
+          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
         </label>
       </div>
       <div className="satir">
@@ -173,11 +173,11 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       </div>
       <label>
         {t("aciklama")}
-        <input value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+        <input {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
       </label>
       <label>
         {t("yayinNotlari")}
-        <input value={f.notlar} onChange={(e) => setF({ ...f, notlar: e.target.value })} />
+        <input {...icerikAlani} value={f.notlar} onChange={(e) => setF({ ...f, notlar: e.target.value })} />
       </label>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.konu.trim()} />
     </div>
@@ -185,14 +185,14 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
 }
 
 export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; kapat: () => void }) {
-  const { t, y } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [f, setF] = useState({
-    baslik: mevcut ? y(mevcut.baslik) : "",
+    baslik: mevcut?.baslik ?? "",
     sehir: (mevcut?.sehir ?? "istanbul") as Sehir,
     muhabirId: mevcut?.muhabirId ?? "",
-    aciklama: mevcut ? y(mevcut.aciklama) : "",
+    aciklama: mevcut?.aciklama ?? "",
     tur: (mevcut?.tur ?? "haber") as IcerikTuru,
     teslim: yerelGirdi(mevcut?.teslim),
     yayin: mevcut?.yayin ? yerelGirdi(mevcut.yayin).slice(11) : "",
@@ -227,7 +227,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
     <div className="form form-kutu">
       <label>
         {t("paketBasligi")}
-        <input value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} />
+        <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} />
       </label>
       <div className="satir">
         <label>
@@ -257,7 +257,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       </div>
       <label>
         {t("kisaAciklama")}
-        <textarea value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+        <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
       </label>
       <div className="satir">
         <label>
@@ -310,7 +310,7 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
         </label>
         <label>
           {t("yer")}
-          <input value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} />
+          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
         </label>
       </div>
       <div className="satir">
@@ -325,7 +325,7 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
       </div>
       <label>
         {t("aciklama")}
-        <input value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+        <input {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
       </label>
       <label className="secim">
         <input type="checkbox" checked={f.yurtdisi} onChange={(e) => setF({ ...f, yurtdisi: e.target.checked })} />

@@ -1,5 +1,5 @@
 import { Calendar, CalendarRange, CheckCircle, Circle, Tv } from "lucide-react";
-import { Bos, Ilerleme, Kart, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
+import { Bos, Icerik, Ilerleme, Kart, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
 import { gunAdi, tarihYaz, useDil } from "../dil";
 import { ulkeAdi } from "../etiketler";
 import { gunEkle } from "../tarih";
@@ -21,7 +21,7 @@ const EVRELER = [
 ] as const;
 
 export function Haftalik() {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const plan = v.haftalik[0];
   return (
@@ -46,7 +46,7 @@ export function Haftalik() {
               <thead>
                 <tr>
                   <th>{t("gun")}</th>
-                  <th>{t("baslik")}</th>
+                  <th className="icerik-sutun">{t("baslik")}</th>
                   <th>{t("tur")}</th>
                   <th>{t("ulke")}</th>
                   <th>{t("toplantiKarari")}</th>
@@ -58,7 +58,9 @@ export function Haftalik() {
                     <td className="sonuk" data-etiket={t("gun")}>
                       {k.tarih && `${gunAdi(k.tarih, dil)} ${tarihYaz(k.tarih, dil, "kisa")}`}
                     </td>
-                    <td className="kalin birincil">{y(k.baslik)}</td>
+                    <td className="kalin birincil icerik-sutun">
+                      <Icerik blok>{k.baslik}</Icerik>
+                    </td>
                     <td data-etiket={t("tur")}>
                       <TurRozeti tur={k.tur} />
                     </td>
@@ -94,7 +96,7 @@ export function Haftalik() {
 }
 
 export function Aylik() {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const plan = v.aylik[0];
   return (
@@ -109,7 +111,9 @@ export function Aylik() {
               <li key={k.id}>
                 {k.onayli ? <CheckCircle size={16} className="iyi-yazi" /> : <Circle size={16} className="sonuk-yazi" />}
                 <div className="ad">
-                  <b>{y(k.baslik)}</b>
+                  <b>
+                    <Icerik blok>{k.baslik}</Icerik>
+                  </b>
                 </div>
                 <TurRozeti tur={k.tur} />
               </li>
@@ -124,7 +128,7 @@ export function Aylik() {
 }
 
 export function Ozel() {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   return (
     <>
@@ -132,14 +136,16 @@ export function Ozel() {
       <NotKutu>{t("ozelTaslakNotu")}</NotKutu>
       <div className="iz iz-2">
         {v.ozel.map((o) => (
-          <Kart key={o.id} baslik={y(o.ad)} ek={tarihYaz(o.tarih, dil, "uzun")}>
+          <Kart key={o.id} baslik={<Icerik>{o.ad}</Icerik>} ek={tarihYaz(o.tarih, dil, "uzun")}>
             <Ilerleme oran={o.hazirlik.filter((h) => h.tamam).length / Math.max(1, o.hazirlik.length)} />
             <ul className="liste ara-ust-2">
               {o.hazirlik.map((h) => (
                 <li key={h.id}>
                   {h.tamam ? <CheckCircle size={16} className="iyi-yazi" /> : <Circle size={16} className="sonuk-yazi" />}
                   <div className="ad">
-                    <b>{y(h.metin)}</b>
+                    <b>
+                      <Icerik blok>{h.metin}</Icerik>
+                    </b>
                   </div>
                 </li>
               ))}

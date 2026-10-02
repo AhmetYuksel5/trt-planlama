@@ -21,7 +21,7 @@ export const DEMO_KISILERI = ["pl1", "pl2", "mu1", "nd1", "nd2", "ng1", "pr1", "
 const OZELLIKLER: Anahtar[] = ["girisOz1", "girisOz2", "girisOz3", "girisOz4"];
 
 export default function Giris() {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const [birim, setBirim] = useState<Birim | "hepsi">("hepsi");
   const [aranan, setAranan] = useState("");
@@ -38,7 +38,7 @@ export default function Giris() {
     <button key={k.id} className={`kisi-kart ${onerilenMi ? "onerilen" : ""}`} onClick={() => girisYap(k.id)}>
       <Avatar kisi={k} durum />
       <div>
-        <b>{y(k.ad)}</b>
+        <b>{ad(k)}</b>
         <small>
           {t(GOREV_ADI[k.gorev])} · {t(sehirAdi(k.sehir))}
         </small>

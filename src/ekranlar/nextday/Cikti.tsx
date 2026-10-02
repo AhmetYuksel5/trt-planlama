@@ -1,8 +1,8 @@
 import { ArrowLeft, ClipboardCopy, Printer } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { NotKutu, bildir } from "../../bilesenler/Parcalar";
-import { DILLER, ciktiTarihi, metin, useDil, yaz, type Anahtar, type Dil } from "../../dil";
-import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
+import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
+import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
 import { vardiyaYaz } from "../../tarih";
 import { EKIP_GOREVLERI, baslikBul, kisiBul, useVeri, type NextDayPlan } from "../../veri";
 
@@ -13,22 +13,18 @@ import { EKIP_GOREVLERI, baslikBul, kisiBul, useVeri, type NextDayPlan } from ".
  * tarihle; فريق العمل, تحركات وإجازات المراسلين, مباشر, التقارير الجاهزة,
  * التقارير المتوقعة, الأحداث الإخبارية (başlık başlık: gelişmeler,
  * المراسلون, PKG), متابعات. Satırlar "YER / metin / kişi" kalıbında. Boş
- * bölüm çıktıda görünmüyor. Varsayılan dil Arapça ve sağdan sola; ekranın
- * dilinden bağımsız seçiliyor. Word/PDF dışa aktarma sonraki adım; şimdilik
+ * bölüm çıktıda görünmüyor. Belge her zaman Arapça ve sağdan sola: içerik
+ * Arapça yazılıyor, toplantıya giden belge de o; ekranın dili yalnız
+ * düğmeleri değiştiriyor. Word/PDF dışa aktarma sonraki adım; şimdilik
  * tarayıcının yazdırma penceresi (PDF olarak kaydet dahil) kullanılıyor.
  */
 export default function Cikti({ plan }: { plan: NextDayPlan }) {
   const { t } = useDil();
   const v = useVeri();
-  const [cdil, setCdil] = useState<Dil>("ar");
   const belge = useRef<HTMLElement>(null);
-  const c = (k: Anahtar, p?: Record<string, string | number>) => metin(k, cdil, p);
-  const yz = (x: Parameters<typeof yaz>[0]) => yaz(x, cdil);
-  const kisiAdi = (id?: string) => yz(kisiBul(v, id)?.ad ?? "");
-  const sehir = (id?: string) => {
-    const k = kisiBul(v, id);
-    return k ? c(sehirAdi(k.sehir)) : "";
-  };
+  const c = (k: Anahtar, p?: Record<string, string | number>) => metin(k, "ar", p);
+  const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
+  const sehir = (id?: string) => sehirAr(kisiBul(v, id)?.sehir);
 
   const gorevlendirmeler = plan.gorevlendirmeler.map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g) => g !== undefined);
   const canlilar = v.canliYayinlar.filter((x) => x.planId === plan.id).sort((a, b) => (a.tarih + a.saatGmt).localeCompare(b.tarih + b.saatGmt));
@@ -60,16 +56,6 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
           <ArrowLeft size={14} className="yon" /> {t("planaDon")}
         </a>
         <span className="bosluk-esnek" />
-        <label className="alan-etiket satir-ici-etiket">
-          {t("ciktiDili")}
-          <select className="girdi" value={cdil} onChange={(e) => setCdil(e.target.value as Dil)}>
-            {DILLER.map((d) => (
-              <option key={d} value={d}>
-                {metin("dilAdi", d)}
-              </option>
-            ))}
-          </select>
-        </label>
         <button className="dugme dugme-ikincil" onClick={kopyala}>
           <ClipboardCopy size={16} /> {t("metniKopyala")}
         </button>
@@ -82,9 +68,9 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
       </div>
 
       <div className="cikti-sarici">
-        <article className="cikti" ref={belge} dir={cdil === "ar" ? "rtl" : "ltr"} lang={cdil}>
+        <article className="cikti" ref={belge} dir="rtl" lang="ar">
           <h1>
-            {c("ciktiBaslik")} {ciktiTarihi(plan.tarih, cdil)}
+            {c("ciktiBaslik")} {ciktiTarihi(plan.tarih, "ar")}
           </h1>
 
           {plan.ekip.length > 0 && (
@@ -107,9 +93,9 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
             <section>
               <h2 className="yesil">{c("muhabirHareketleri")}</h2>
               {gorevlendirmeler.map((g) => (
-                <Satir key={g.id} yer={yz(g.yer)}>
+                <Satir key={g.id} yer={g.yer}>
                   {kisiAdi(g.kisiId)} · {c(HAREKET_TURU_ADI[g.tur])}
-                  {yz(g.aciklama) ? ` · ${yz(g.aciklama)}` : ""}
+                  {g.aciklama ? ` · ${g.aciklama}` : ""}
                 </Satir>
               ))}
             </section>
@@ -119,9 +105,9 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
             <section>
               <h2 className="kirmizi">{c("ciktiCanli")}</h2>
               {canlilar.map((x) => (
-                <Satir key={x.id} yer={yz(x.yer)}>
-                  {yz(x.konu)}
-                  {yz(x.aciklama) ? ` · ${yz(x.aciklama)}` : ""} / <b>{x.saatGmt ? `${vardiyaYaz(x.saatGmt)}` : "TBC"}</b>
+                <Satir key={x.id} yer={x.yer}>
+                  {x.konu}
+                  {x.aciklama ? ` · ${x.aciklama}` : ""} / <b>{x.saatGmt ? `${vardiyaYaz(x.saatGmt)}` : "TBC"}</b>
                   {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
                 </Satir>
               ))}
@@ -133,10 +119,10 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
               <h2 className="yesil">{c("ciktiHazir")}</h2>
               {hazirlar.map((h) => (
                 <div key={h.id} className="cikti-paket">
-                  <Satir yer={c(sehirAdi(h.sehir))}>
-                    {yz(h.baslik)} / <b>{kisiAdi(h.muhabirId)}</b>
+                  <Satir yer={sehirAr(h.sehir)}>
+                    {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
                   </Satir>
-                  <p className="cikti-aciklama">{yz(h.aciklama)}</p>
+                  <p className="cikti-aciklama">{h.aciklama}</p>
                   <p className="cikti-slug">
                     <bdi>{h.slug}</bdi>
                   </p>
@@ -149,8 +135,8 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
             <section>
               <h2 className="yesil">{c("ciktiBeklenen")}</h2>
               {paketler.map((p) => (
-                <Satir key={p.id} yer={c(sehirAdi(p.sehir))}>
-                  {yz(p.baslik)} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+                <Satir key={p.id} yer={sehirAr(p.sehir)}>
+                  {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
                 </Satir>
               ))}
             </section>
@@ -165,10 +151,10 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
                 if (!gelismeler.length && !pb.muhabirler.length && !pkg.length) return null;
                 return (
                   <div key={pb.id} className="cikti-baslik">
-                    <h3>{yz(baslikBul(v, pb.baslikId)?.ad ?? "")}</h3>
+                    <h3>{baslikBul(v, pb.baslikId)?.ad}</h3>
                     {gelismeler.map((g) => (
-                      <Satir key={g.id} yer={g.yer ? yz(g.yer) : g.onerenId ? sehir(g.onerenId) : undefined}>
-                        {yz(g.metin)}
+                      <Satir key={g.id} yer={g.yer || (g.onerenId ? sehir(g.onerenId) : undefined)}>
+                        {g.metin}
                       </Satir>
                     ))}
                     {pb.muhabirler.length > 0 && (
@@ -187,8 +173,8 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
                           <bdi>PKG</bdi>
                         </p>
                         {pkg.map((p) => (
-                          <Satir key={p.id} yer={c(sehirAdi(p.sehir))}>
-                            {yz(p.baslik)} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+                          <Satir key={p.id} yer={sehirAr(p.sehir)}>
+                            {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
                           </Satir>
                         ))}
                       </>
@@ -203,8 +189,8 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
             <section>
               <h2 className="yesil">{c("takipler")}</h2>
               {takipler.map((g) => (
-                <Satir key={g.id} yer={g.yer ? yz(g.yer) : undefined}>
-                  {yz(g.metin)}
+                <Satir key={g.id} yer={g.yer || undefined}>
+                  {g.metin}
                 </Satir>
               ))}
             </section>

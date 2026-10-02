@@ -66,3 +66,8 @@ npm run preview  # derlenmiş hali yerelde
 - Vardiya kodu GMT başlangıç saati: `04G` = 04:00 GMT.
 - Plan onayı Planlama yöneticisinde ya da Yönetim'de.
 - Örnek kişi ve kayıtlar kurgusal.
+- İçerik (başlık, gelişme, paket, script, çıktı, öneri çağrısı) her zaman
+  Arapça ve her arayüz dilinde sağdan sola. Arayüz TR/AR/EN seçilebiliyor.
+  Latin harfli özel isim serbest; dil denetimi yok.
+- Kişi adı rehberde arayüz dilinin yazımıyla, planın içerik satırlarında ve
+  çıktıda Arapça.

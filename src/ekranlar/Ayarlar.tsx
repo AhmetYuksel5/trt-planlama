@@ -8,7 +8,7 @@ import { SayfaBasi } from "./ana/Planlama";
 
 /* Ayarlar: dil, oturum ve örnek veri. Kalıcılığın sınırı burada açıkça yazıyor. */
 export function Ayarlar({ ben }: { ben: Kisi }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   return (
     <>
       <SayfaBasi ikon={<Settings size={26} />} baslik={t("mAyarlar")} alt={t("ayarlarAlt")} />
@@ -19,7 +19,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         </Kart>
         <Kart baslik={t("oturum")}>
           <p>
-            <b>{y(ben.ad)}</b> · {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
+            <b>{ad(ben)}</b> · {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
           </p>
           <p className="aciklama ara-ust">{t("oturumAciklama")}</p>
         </Kart>

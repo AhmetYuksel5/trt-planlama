@@ -1,9 +1,9 @@
 import { ArrowLeft, CalendarClock, Contact, Inbox, Mail, MapPin, Phone, Plane, Route, Search, UserRound, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Avatar, Bos, Kart, NotKutu, PaketDurumRozeti, Rozet, TaslakEtiketi } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, NotKutu, PaketDurumRozeti, Rozet, TaslakEtiketi } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
-import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, GOREV_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, sehirAdi } from "../etiketler";
+import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, GOREV_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi } from "../etiketler";
 import { bugun } from "../tarih";
 import { BIRIMLER, kisiBul, useVeri, type Birim, type Gorevlendirme, type Kisi } from "../veri";
 import { gorevlendirmeGorebilir } from "../yetki";
@@ -22,7 +22,7 @@ const PERSONEL_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: Re
 };
 
 export function PersonelListe({ sayfa }: { sayfa: string }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ayar = PERSONEL_SAYFASI[sayfa] ?? PERSONEL_SAYFASI.personel;
   const [aranan, setAranan] = useState("");
@@ -30,8 +30,8 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
   const q = aranan.trim().toLocaleLowerCase();
   const tum = v.kisiler.filter(ayar.suz);
   const liste = tum
-    .filter((k) => (!birim || k.birim === birim) && (!q || `${y(k.ad)} ${t(sehirAdi(k.sehir))}`.toLocaleLowerCase().includes(q)))
-    .sort((a, b) => y(a.ad).localeCompare(y(b.ad)));
+    .filter((k) => (!birim || k.birim === birim) && (!q || `${ad(k)} ${t(sehirAdi(k.sehir))}`.toLocaleLowerCase().includes(q)))
+    .sort((a, b) => ad(a).localeCompare(ad(b)));
   const aktifIs = (k: Kisi) => v.paketler.filter((p) => p.muhabirId === k.id && p.durum === "uretimde").length;
   return (
     <>
@@ -72,7 +72,7 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
                 <tr key={k.id}>
                   <td className="birincil">
                     <a className="kisi-hucre kalin" href={`#/muhabirler/${k.id}`}>
-                      <Avatar kisi={k} boy="kucuk" durum /> {y(k.ad)}
+                      <Avatar kisi={k} boy="kucuk" durum /> {ad(k)}
                     </a>
                   </td>
                   <td data-etiket={t("birim")}>{t(BIRIM_ADI[k.birim])}</td>
@@ -104,7 +104,7 @@ export function PersonelListe({ sayfa }: { sayfa: string }) {
 }
 
 export function KisiDetay({ kisi }: { kisi: Kisi }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const paketler = v.paketler.filter((p) => p.muhabirId === kisi.id).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   const devam = paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
@@ -121,7 +121,7 @@ export function KisiDetay({ kisi }: { kisi: Kisi }) {
       <header className="sayfa-basi">
         <Avatar kisi={kisi} boy="buyuk" durum />
         <div>
-          <h1>{y(kisi.ad)}</h1>
+          <h1>{ad(kisi)}</h1>
           <p>
             {t(BIRIM_ADI[kisi.birim])} · {t(GOREV_ADI[kisi.gorev])} · {t(sehirAdi(kisi.sehir))} <Rozet>{t(KISI_DURUM_ADI[kisi.durum])}</Rozet>
           </p>
@@ -142,7 +142,9 @@ export function KisiDetay({ kisi }: { kisi: Kisi }) {
                     {gecmis.slice(0, 10).map((p) => (
                       <li key={p.id}>
                         <div className="ad">
-                          <a href={`#/paketler/${p.id}`}>{y(p.baslik)}</a>
+                          <a href={`#/paketler/${p.id}`}>
+                            <Icerik blok>{p.baslik}</Icerik>
+                          </a>
                           <small>
                             {p.kod} {p.klipKodu && `· ${p.klipKodu}`}
                           </small>
@@ -219,7 +221,7 @@ export function KisiDetay({ kisi }: { kisi: Kisi }) {
 }
 
 function GorevListesi({ gorevler }: { gorevler: Gorevlendirme[] }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   return (
     <ul className="liste">
@@ -230,11 +232,13 @@ function GorevListesi({ gorevler }: { gorevler: Gorevlendirme[] }) {
             <Avatar kisi={k} boy="kucuk" />
             <div className="ad">
               <b>
-                {y(g.yer)} / {k ? y(k.ad) : ""}
+                <Icerik blok>{satir(g.yer, kisiAr(k))}</Icerik>
               </b>
               <small>
                 {t(HAREKET_TURU_ADI[g.tur])} · {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
-                {y(g.aciklama) && ` · ${y(g.aciklama)}`}
+              </small>
+              <small>
+                <Icerik blok>{g.aciklama}</Icerik>
               </small>
             </div>
             {g.yurtdisi && <Rozet ton="tur-program">{t("yurtdisiKisa")}</Rozet>}

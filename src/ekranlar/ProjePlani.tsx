@@ -71,7 +71,7 @@ const DENE: [string, Anahtar, string][] = [
 ];
 
 export default function ProjePlani() {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ben = useBen();
   const matris = yetkiMatrisi();
@@ -333,7 +333,7 @@ export default function ProjePlani() {
                   <p>
                     {t(adim)}
                     <small>
-                      {k ? y(k.ad) : ""} · {k ? t(BIRIM_ADI[k.birim]) : ""}
+                      {ad(k)} · {k ? t(BIRIM_ADI[k.birim]) : ""}
                     </small>
                   </p>
                   <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => dene(id, hedef)}>

@@ -1,4 +1,4 @@
-import type { Anahtar } from "./dil";
+import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
   Birim,
   EkipGorevi,
@@ -154,3 +154,13 @@ export const KISI_DURUM_ADI: Record<KisiDurum, Anahtar> = {
 
 export const sehirAdi = (s: Sehir): Anahtar => `s_${s}`;
 export const ulkeAdi = (u: Ulke): Anahtar => `u_${u}`;
+
+/*
+ * Planın içerik satırı ("ŞEHİR / BAŞLIK / MUHABİR") kurumun çıktısındaki
+ * gibi baştan sona Arapça; şehir ve kişi adı da. Satır sağdan sola tek
+ * parça akıyor; araya arayüz dilinde bir ad girse sıra okuyana ters
+ * görünürdü. Çıktı ve düzenleme ekranı satırı buradan kuruyor.
+ */
+export const sehirAr = (s?: Sehir) => (s ? metin(sehirAdi(s), "ar") : "");
+export const kisiAr = (k?: { ad: Yazi }) => (k ? yaz(k.ad, "ar") : "");
+export const satir = (...parcalar: (string | undefined)[]) => parcalar.filter(Boolean).join(" / ");

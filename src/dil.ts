@@ -8,8 +8,10 @@ import { useSyncExternalStore } from "react";
  * kırıyor, ekrana yarım dil sızmıyor. Çeviriler ilk taslak; anadil
  * kontrolü yol haritasında.
  *
- * Kayıtlardaki içerik (başlık, gelişme) ayrı: örnek veri üç dilli
- * (`Yazi` nesnesi), kullanıcının yazdığı metin yazıldığı dilde kalıyor.
+ * Kayıtlardaki içerik (başlık, gelişme) bu tablonun dışında ve her
+ * arayüz dilinde Arapça, sağdan sola (bkz. `veri.ts`, `Icerik`). Bu
+ * tablodaki tek içerik yakını kişi adı: `Yazi` olarak arayüz dilinin
+ * yazımıyla okunuyor.
  * Tarih ve saat `Intl` ile seçili dilde; Arapçada rakamlar Latin, çünkü
  * saat, vardiya (04G) ve klip kodlarıyla yan yana duruyor.
  */
@@ -22,7 +24,7 @@ interface Metin {
   en: string;
 }
 
-/** Kayıt içeriği: düz metin (kullanıcının yazdığı) ya da üç dilli örnek. */
+/** Kişi adı: rehberde arayüz dilinin yazımıyla (Latin ya da Arapça). */
 export type Yazi = string | Metin;
 
 const m = (tr: string, ar: string, en: string): Metin => ({ tr, ar, en });
@@ -528,7 +530,6 @@ const M = {
   ciktiOlaylar: m("Haber gelişmeleri", "الأحداث الإخبارية", "News events"),
   ciktiMuhabirler: m("Muhabirler", "المراسلون", "Reporters"),
   ciktiMuhabir: m("Muhabir", "المراسل", "Reporter"),
-  ciktiDili: m("Çıktı dili", "لغة النسخة", "Output language"),
   metniKopyala: m("Metni kopyala", "نسخ النص", "Copy text"),
   yazdir: m("Yazdır / PDF", "طباعة / PDF", "Print / PDF"),
   planaDon: m("Plana dön", "العودة إلى الخطة", "Back to plan"),
@@ -574,7 +575,6 @@ const M = {
     "لا يوجد إرسال بريد في هذا النموذج. يمكنك نسخ النص وإرساله من بريدك؛ و\"حفظ الطلب\" يُظهره طلبا مفتوحا على شاشات المراسلين.",
     "This prototype does not send email. Copy the text and send it from your own mailbox; \"save call\" shows it as an open call on reporters' screens.",
   ),
-  epostaDili: m("E-posta dili", "لغة الرسالة", "Email language"),
   sonSaatGmt: m("Son saat (GMT)", "آخر موعد (غرينتش)", "Deadline (GMT)"),
   sonSaat: m("son saat", "آخر موعد", "deadline"),
   alicilar: m("Alıcılar", "المرسل إليهم", "Recipients"),
@@ -920,7 +920,7 @@ const M = {
   ppKatmanAkis: m("İş akışı katmanı", "طبقة سير العمل", "Workflow layer"),
   ppKatmanAkisA: m("Plan onayı, Newsdesk'e devir, görevlendirme, metin ve dil kontrolü, video ve teknik devirler.", "اعتماد الخطة والتسليم لغرفة الأخبار والتكليف وتدقيق النص واللغة والفيديو والإحالات الفنية.", "Plan approval, Newsdesk handover, assignment, script and language checks, video and technical handovers."),
   ppKatmanArayuz: m("Arayüz katmanı", "طبقة الواجهة", "Interface layer"),
-  ppKatmanArayuzA: m("Kullanıcının birimine, rolüne ve sorumluluğuna göre ana sayfa ve modüller; üç dil.", "صفحة رئيسية ووحدات حسب وحدة المستخدم ودوره ومسؤولياته؛ بثلاث لغات.", "Home page and modules by unit, role and responsibility; three languages."),
+  ppKatmanArayuzA: m("Kullanıcının birimine, rolüne ve sorumluluğuna göre ana sayfa ve modüller; arayüz üç dilde, içerik Arapça ve sağdan sola.", "صفحة رئيسية ووحدات حسب وحدة المستخدم ودوره ومسؤولياته؛ الواجهة بثلاث لغات والمحتوى بالعربية من اليمين إلى اليسار.", "Home page and modules by unit, role and responsibility; interface in three languages, content in Arabic, right to left."),
   ppMimariA: m("Tek web uygulaması ve ortak veri tabanı; her birim için ayrı site ya da ayrı veri tabanı gerekmez. Birimlerin özel akışları ortak kayıt yapısını bozmadan modül olarak eklenir. Kurum içi mi çevrim içi mi çalışacağı sonra kararlaştırılır.", "تطبيق ويب واحد وقاعدة بيانات مشتركة؛ لا حاجة لموقع أو قاعدة بيانات منفصلة لكل وحدة. تُضاف مسارات الوحدات الخاصة كوحدات دون الإخلال بالسجل المشترك. ويُحسم لاحقا التشغيل داخل المؤسسة أو عبر الإنترنت.", "One web app and a shared database; no separate site or database per unit. Unit-specific flows are added as modules without breaking the shared record. Hosting (internal or online) is decided later."),
   ppPrototip: m("Bu prototipte ne var, ne yok", "ما يتضمنه النموذج الأول وما لا يتضمنه", "What this prototype has and lacks"),
   ppYapildi: m("Çalışıyor", "يعمل", "Working"),
@@ -1080,7 +1080,7 @@ export const metin = (k: Anahtar, d: Dil = dil, p?: Degisken): string => {
   return p ? ham.replace(/\{(\w+)\}/g, (_, x: string) => (x in p ? String(p[x]) : `{${x}}`)) : ham;
 };
 
-/** Kayıt içeriği: düz metinse olduğu gibi, üç dilliyse seçili dil. */
+/** Düz metinse olduğu gibi, üç dilliyse seçili dil. */
 export const yaz = (x: Yazi | undefined, d: Dil = dil): string => (x === undefined ? "" : typeof x === "string" ? x : x[d] || x.tr);
 
 export function useDil() {
@@ -1094,7 +1094,7 @@ export function useDil() {
   return {
     dil: simdiki,
     t: (k: Anahtar, p?: Degisken) => metin(k, simdiki, p),
-    y: (x: Yazi | undefined) => yaz(x, simdiki),
+    ad: (k: { ad: Yazi } | undefined) => (k ? yaz(k.ad, simdiki) : ""),
   };
 }
 
