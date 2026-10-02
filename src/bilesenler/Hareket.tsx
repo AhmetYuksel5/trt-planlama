@@ -4,7 +4,7 @@ import { gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { yerelGun } from "../tarih";
 import { BIRIM_ADI, ONERI_DURUM_ADI } from "../etiketler";
 import { kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
-import { Avatar, Rozet } from "./Parcalar";
+import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
  * Hareket kaydının ekrandaki hali.
@@ -53,7 +53,7 @@ const sablonSec = (h: Hareket): Anahtar => {
 };
 
 export function useHareketMetni() {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   return (h: Hareket, d: Durum) => {
     const kisi = kisiBul(d, h.kisiId);
     const muhabir = kisiBul(d, h.veri?.muhabir);
@@ -62,7 +62,7 @@ export function useHareketMetni() {
       tarih: h.veri?.tarih ? tarihYaz(h.veri.tarih, dil, "kisa") : "",
       kaynak: h.veri?.kaynak ? tarihYaz(h.veri.kaynak, dil, "kisa") : "",
       kod: h.veri?.kod ?? "",
-      muhabir: muhabir ? y(muhabir.ad) : "",
+      muhabir: ad(muhabir),
       sonuc: h.veri?.sonuc ? t(ONERI_DURUM_ADI[h.veri.sonuc as OneriDurum]) : "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");
@@ -70,23 +70,43 @@ export function useHareketMetni() {
   };
 }
 
-/** Hareketin hangi kayda ait olduğu: başlık ve bağlantı. */
+/*
+ * Hareketin hangi kayda ait olduğu. Kod ve plan adı arayüzün, başlık
+ * içeriğin parçası: ayrı tutuluyor ki başlık arayüz cümlesinin içinde de
+ * kendi yönünde (sağdan sola) aksın.
+ */
+export interface Konu {
+  href: string;
+  kod?: string;
+  baslik?: string;
+  metin?: string;
+}
+
 export function useHareketKonusu() {
-  const { y, t, dil } = useDil();
-  return (h: Hareket, d: Durum): { metin: string; href: string } | null => {
+  const { t, dil } = useDil();
+  return (h: Hareket, d: Durum): Konu | null => {
     const p = paketBul(d, h.paketId);
-    if (p) return { metin: `${p.kod} · ${y(p.baslik)}`, href: `#/paketler/${p.id}` };
+    if (p) return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}` };
     const o = oneriBul(d, h.oneriId);
-    if (o) return { metin: y(o.haberBasligi), href: `#/oneriler/${o.id}` };
+    if (o) return { baslik: o.haberBasligi, href: `#/oneriler/${o.id}` };
     const plan = planBul(d, h.planId);
     if (plan) return { metin: `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")}`, href: `#/nextday/${plan.id}` };
     return null;
   };
 }
 
+export function KonuMetni({ k }: { k: Konu }) {
+  return (
+    <>
+      {k.kod && `${k.kod} · `}
+      {k.baslik !== undefined ? <Icerik>{k.baslik}</Icerik> : k.metin}
+    </>
+  );
+}
+
 /** Panolardaki kısa akış: kim, ne yaptı, hangi kayıtta, ne zaman. */
 export function HareketAkisi({ hareketler, d, konu = true }: { hareketler: Hareket[]; d: Durum; konu?: boolean }) {
-  const { dil, y } = useDil();
+  const { dil, ad } = useDil();
   const metni = useHareketMetni();
   const konusu = useHareketKonusu();
   return (
@@ -99,9 +119,13 @@ export function HareketAkisi({ hareketler, d, konu = true }: { hareketler: Harek
             <Avatar kisi={m.kisi} boy="kucuk" />
             <div className="metin">
               {m.once}
-              <b>{m.kisi ? y(m.kisi.ad) : "?"}</b>
+              <b>{m.kisi ? ad(m.kisi) : "?"}</b>
               {m.sonra}
-              {k && <a href={k.href}>{k.metin}</a>}
+              {k && (
+                <a href={k.href}>
+                  <KonuMetni k={k} />
+                </a>
+              )}
             </div>
             <time dateTime={h.zaman}>{gecenSure(h.zaman, dil)}</time>
           </li>
@@ -117,7 +141,7 @@ export function HareketAkisi({ hareketler, d, konu = true }: { hareketler: Harek
  * en son kim işlem yaptı, hangi birimden hangisine devredildi" soruları.
  */
 export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Durum }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const metni = useHareketMetni();
   const sirali = [...hareketler].sort((a, b) => a.zaman.localeCompare(b.zaman));
   return (
@@ -139,7 +163,7 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
             <div className="olay">
               <p>
                 {m.once}
-                <b>{m.kisi ? y(m.kisi.ad) : "?"}</b>
+                <b>{m.kisi ? ad(m.kisi) : "?"}</b>
                 {m.sonra}
               </p>
               <small>
@@ -153,7 +177,7 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
                 {adim && adim !== "tamam" && adim in ADIM_ADI && <Rozet ton="vurgu">{t(ADIM_ADI[adim as UretimAdimi])}</Rozet>}
                 {adim === "tamam" && <Rozet ton="iyi">{t(ASAMA_ADI[ASAMALAR[4]])}</Rozet>}
               </small>
-              {h.veri?.gerekce && <blockquote>{h.veri.gerekce}</blockquote>}
+              {h.veri?.gerekce && <blockquote dir="auto">{h.veri.gerekce}</blockquote>}
             </div>
           </li>
         );

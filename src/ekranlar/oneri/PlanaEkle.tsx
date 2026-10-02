@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { bildir } from "../../bilesenler/Parcalar";
+import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
 import { useVeri, type Kisi, type Oneri } from "../../veri";
@@ -15,7 +15,7 @@ import { planIcerikDuzenler } from "../../yetki";
  * önerisi de doğuyor; onu kapatmak yalnız gelişmeyi ekliyor.
  */
 export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; kapat: () => void }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const planlar = v.planlar.filter((p) => planIcerikDuzenler(ben, p)).sort((a, b) => a.tarih.localeCompare(b.tarih));
   const ilkPlan = planlar.find((p) => p.id === planId) ?? planlar.find((p) => p.tarih === oneri.hedefTarih) ?? planlar[0];
@@ -29,7 +29,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
     v.basliklar.find((b) => b.aktif && b.ulke === oneri.ulke)?.id ??
     "yeni";
   const [baslikId, setBaslikId] = useState(varsayilan);
-  const [yeniBaslik, setYeniBaslik] = useState(y(oneri.haberBasligi));
+  const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
@@ -66,7 +66,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
             <optgroup label={t("plandakiBasliklar")}>
               {plan.basliklar.map((b) => (
                 <option key={b.baslikId} value={b.baslikId}>
-                  {y(v.basliklar.find((x) => x.id === b.baslikId)?.ad ?? "")}
+                  {v.basliklar.find((x) => x.id === b.baslikId)?.ad}
                 </option>
               ))}
             </optgroup>
@@ -75,7 +75,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
                 .filter((b) => b.aktif && !plandakiler.includes(b.id))
                 .map((b) => (
                   <option key={b.id} value={b.id}>
-                    {y(b.ad)}
+                    {b.ad}
                   </option>
                 ))}
             </optgroup>
@@ -86,13 +86,15 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
       {baslikId === "yeni" && (
         <label>
           {t("yeniBaslikAdi")}
-          <input value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} />
+          <input {...icerikAlani} value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} />
         </label>
       )}
       {oneri.paketBasligi && (
         <label className="secim">
           <input type="checkbox" checked={paket} onChange={(e) => setPaket(e.target.checked)} />
-          {t("paketOnerisiOlustur")}: <b>{y(oneri.paketBasligi)}</b>
+          {t("paketOnerisiOlustur")}: <b>
+            <Icerik>{oneri.paketBasligi}</Icerik>
+          </b>
         </label>
       )}
       <div className="form-alt">

@@ -27,9 +27,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
   `src/dil.ts` içinde tek tabloda ve üç dil zorunlu; eksik çeviri derlemeyi
-  kırar. Ekranlara çıplak metin yazılmaz. Kayıt içeriği `Yazi` tipinde:
-  örnek veri üç dilli, kullanıcının yazdığı metin yazıldığı dilde kalır.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v2`)
+  kırar. Ekranlara çıplak metin yazılmaz.
+- İçerik her zaman Arapça ve her arayüz dilinde sağdan sola. İçerik: başlık,
+  gelişme, paket, canlı yayın, plan kalemi, script; düz `string`.
+  - Ekranda `<Icerik>` (satır içi, `bdi`) ya da `<Icerik blok>` (kendi
+    satırı, hücresi, paragrafı; sağa yaslı) ile gösterilir. Tablo sütunu
+    `icerik-sutun`. Ekranlar `dir`/`lang` elle yazmaz.
+  - Form alanı `{...icerikAlani}` alır, yer tutucu örneği Arapça.
+  - Dil denetimi yok: Latin harfli özel isim (NATO, OPEC+) serbest.
+  - Planın "ŞEHİR / BAŞLIK / MUHABİR" satırı çıktıdaki gibi baştan sona
+    Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
+  - Kişi adı içerik değil: arayüz dilinin yazımıyla (`useDil().ad`).
+    Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v3`)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
@@ -37,7 +47,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
-  Arapçada sağdan sola kendiliğinden.
+  Arapçada sağdan sola kendiliğinden. Tek bilinçli istisna içerik
+  hizası: içerik her dilde sağa yaslı.
 - Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
   bir düzen:
   - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor

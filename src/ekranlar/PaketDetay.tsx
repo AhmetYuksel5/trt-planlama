@@ -2,8 +2,8 @@ import { ArrowLeft, Ban, CircleCheck, Hourglass, MessageSquare, Undo2, Workflow 
 import { useState } from "react";
 import { ADIM_ADI, ADIM_KUTUSU, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
-import { AsamaBuyuk, Avatar, Bos, Kart, Kilitli, NotKutu, PaketDurumRozeti, Rozet, TurRozeti, bildir } from "../bilesenler/Parcalar";
-import { gecenSure, saatYaz, tarihYaz, useDil } from "../dil";
+import { AsamaBuyuk, Avatar, Bos, Icerik, Kart, Kilitli, NotKutu, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, notEkle, paketDurum } from "../eylemler";
 import { BIRIM_ADI, sehirAdi } from "../etiketler";
 import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
@@ -20,7 +20,7 @@ import { MuhabirSecici } from "./nextday/Formlar";
  * bazlı yetkiyle: kaydı görmek ücreti görmek demek değil.
  */
 export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const muhabir = kisiBul(v, paket.muhabirId);
   const plan = planBul(v, paket.planId);
@@ -40,7 +40,9 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <Workflow size={26} />
         </span>
         <div>
-          <h1>{y(paket.baslik)}</h1>
+          <h1>
+            <Icerik>{paket.baslik}</Icerik>
+          </h1>
           <p>
             {paket.kod} · <TurRozeti tur={paket.tur} /> <PaketDurumRozeti paket={paket} /> {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
           </p>
@@ -54,7 +56,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             <small>{t("simdiKimde")}</small>
             <b>
               {sahip ? t(BIRIM_ADI[sahip]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
-              {sahip === "muhabir" && muhabir && ` · ${y(muhabir.ad)}`}
+              {sahip === "muhabir" && muhabir && ` · ${ad(muhabir)}`}
             </b>
           </div>
           {paket.adim && (
@@ -87,8 +89,8 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <EylemKarti ben={ben} paket={paket} />
           {paket.metin && (
             <Kart baslik={t("metin")}>
-              <div className="metin-kutu" dir="auto">
-                {paket.metin}
+              <div className="metin-kutu">
+                <Icerik blok>{paket.metin}</Icerik>
               </div>
             </Kart>
           )}
@@ -104,7 +106,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 <small>{t("muhabir")}</small>
                 {muhabir ? (
                   <span className="kisi-hucre">
-                    <Avatar kisi={muhabir} boy="kucuk" /> {y(muhabir.ad)}
+                    <Avatar kisi={muhabir} boy="kucuk" /> {ad(muhabir)}
                   </span>
                 ) : (
                   <b>{t("atanmadi")}</b>
@@ -120,7 +122,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
               </div>
               <div className="alan">
                 <small>{t("haberBasligi")}</small>
-                <b>{pb ? y(baslikBul(v, pb.baslikId)?.ad ?? "") : "—"}</b>
+                <b>{pb ? <Icerik>{baslikBul(v, pb.baslikId)?.ad}</Icerik> : "—"}</b>
               </div>
               <div className="alan">
                 <small>{t("yayinSaati")}</small>
@@ -150,7 +152,13 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
               </div>
               <div className="alan">
                 <small>{t("oneri")}</small>
-                {oneri ? <a href={`#/oneriler/${oneri.id}`}>{y(oneri.haberBasligi)}</a> : <b>—</b>}
+                {oneri ? (
+                  <a href={`#/oneriler/${oneri.id}`}>
+                    <Icerik>{oneri.haberBasligi}</Icerik>
+                  </a>
+                ) : (
+                  <b>—</b>
+                )}
               </div>
               <div className="alan">
                 <small>{t("ucret")}</small>
@@ -168,7 +176,9 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             {paket.aciklama && (
               <div className="ara-ust-2">
                 <div className="alan-etiket">{t("kisaAciklama")}</div>
-                <p className="sonuk-yazi">{y(paket.aciklama)}</p>
+                <p className="sonuk-yazi">
+                  <Icerik blok>{paket.aciklama}</Icerik>
+                </p>
               </div>
             )}
           </Kart>
@@ -180,7 +190,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
 
 /** Adımın sahibine görünen eylem; her adım yalnız kendi bilgisini istiyor. */
 function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const [muhabirId, setMuhabirId] = useState(paket.muhabirId ?? "");
   const [teslim, setTeslim] = useState(yerelGirdi(paket.teslim));
@@ -266,7 +276,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         {adim === "metin" && (
           <>
             <p className="aciklama">{t("eMetin")}</p>
-            <textarea value={metin} onChange={(e) => setMetin(e.target.value)} dir="auto" rows={8} placeholder={t("metinIpucu")} />
+            <textarea {...icerikAlani} value={metin} onChange={(e) => setMetin(e.target.value)} rows={8} placeholder={dilMetni("metinIpucu", "ar")} />
             <div className="form-alt">
               <button className="dugme" disabled={!metin.trim()} onClick={() => ilerle({ metin })}>
                 {t("metniGonder")}
@@ -278,8 +288,8 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
           <>
             <p className="aciklama">{t(adim === "kontrol" ? "eKontrol" : "eDil")}</p>
             {paket.metin && (
-              <div className="metin-kutu" dir="auto">
-                {paket.metin}
+              <div className="metin-kutu">
+                <Icerik blok>{paket.metin}</Icerik>
               </div>
             )}
             <div className="form-alt">
@@ -346,7 +356,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
           <div className="form-kutu form">
             <label>
               {t("geriGondermeGerekcesi")}
-              <textarea value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus />
+              <textarea dir="auto" value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus />
             </label>
             <div className="form-alt">
               <button className="dugme dugme-ikincil" onClick={() => setGerekce(null)}>
@@ -365,7 +375,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
             </div>
           </div>
         )}
-        {paket.muhabirId && adim !== "metin" && adim !== "video" && <small className="sonuk-yazi">{t("muhabirBilgi", { ad: y(kisiBul(v, paket.muhabirId)?.ad ?? "") })}</small>}
+        {paket.muhabirId && adim !== "metin" && adim !== "video" && <small className="sonuk-yazi">{t("muhabirBilgi", { ad: ad(kisiBul(v, paket.muhabirId)) })}</small>}
       </div>
     </Kart>
   );
@@ -376,7 +386,7 @@ const plan = (v: ReturnType<typeof useVeri>, p: Paket) => planBul(v, p.planId)?.
 
 /** Koordinasyon notları: e-posta yerine kayıt üzerinde yazışma. */
 function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const [yeni, setYeni] = useState("");
   const gonder = () => {
@@ -392,8 +402,8 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
             <li key={n.id}>
               <Avatar kisi={k} boy="kucuk" />
               <div className="metin">
-                <b>{k ? y(k.ad) : "?"}</b> <span className="sonuk-yazi">· {k ? t(BIRIM_ADI[k.birim]) : ""}</span>
-                <p>{n.metin}</p>
+                <b>{k ? ad(k) : "?"}</b> <span className="sonuk-yazi">· {k ? t(BIRIM_ADI[k.birim]) : ""}</span>
+                <p dir="auto">{n.metin}</p>
               </div>
               <time dateTime={n.zaman}>{gecenSure(n.zaman, dil)}</time>
             </li>
@@ -401,7 +411,7 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
         })}
       </ul>
       <div className="form ara-ust-2">
-        <textarea value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={t("notIpucu")} rows={2} />
+        <textarea dir="auto" value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={t("notIpucu")} rows={2} />
         <div className="form-alt">
           <button className="dugme dugme-kucuk" onClick={gonder} disabled={!yeni.trim()}>
             {t("notEkle")}

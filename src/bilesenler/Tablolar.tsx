@@ -5,7 +5,7 @@ import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, sehirAdi, ulke
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
-import { AsamaCubugu, Bos, KisiHucre, PaketDurumRozeti, Rozet, TurRozeti } from "./Parcalar";
+import { AsamaCubugu, Bos, Icerik, KisiHucre, PaketDurumRozeti, Rozet, TurRozeti } from "./Parcalar";
 
 /* Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek yerde dursun. */
 
@@ -20,7 +20,7 @@ export function PaketTablosu({
   bosMetin?: string;
   sutunlar?: ("kod" | "baslik" | "muhabir" | "tur" | "asama" | "kimde" | "teslim" | "plan")[];
 }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   if (!paketler.length) return <Bos metin={bosMetin ?? t("kayitYok")} />;
   const var_ = (s: (typeof sutunlar)[number]) => sutunlar.includes(s);
   return (
@@ -29,7 +29,7 @@ export function PaketTablosu({
         <thead>
           <tr>
             {var_("kod") && <th>{t("kod")}</th>}
-            {var_("baslik") && <th>{t("paketBasligi")}</th>}
+            {var_("baslik") && <th className="icerik-sutun">{t("paketBasligi")}</th>}
             {var_("muhabir") && <th>{t("muhabir")}</th>}
             {var_("tur") && <th>{t("tur")}</th>}
             {var_("plan") && <th>{t("plan")}</th>}
@@ -52,11 +52,10 @@ export function PaketTablosu({
                   </td>
                 )}
                 {var_("baslik") && (
-                  <td className="birincil">
+                  <td className="birincil icerik-sutun">
                     <a className="kalin" href={`#/paketler/${p.id}`} onClick={(e) => e.stopPropagation()}>
-                      {y(p.baslik)}
+                      <Icerik blok>{p.baslik}</Icerik>
                     </a>
-                    <br />
                     <small className="sonuk">{t(sehirAdi(p.sehir))}</small>
                   </td>
                 )}
@@ -109,7 +108,7 @@ export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
 }
 
 export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[]; d: Durum; kisa?: boolean }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   if (!oneriler.length) return <Bos metin={t("oneriYok")} />;
   return (
     <div className="tablo-sar">
@@ -118,7 +117,7 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
           <tr>
             <th>{t("zaman")}</th>
             <th>{t("muhabir")}</th>
-            <th>{t("haberBasligi")}</th>
+            <th className="icerik-sutun">{t("haberBasligi")}</th>
             {!kisa && <th>{t("tur")}</th>}
             <th>{t("ulke")}</th>
             {!kisa && <th>{t("kanal")}</th>}
@@ -136,15 +135,14 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
               <td data-etiket={t("muhabir")}>
                 <KisiHucre kisi={kisiBul(d, o.muhabirId)} />
               </td>
-              <td className="birincil">
+              <td className="birincil icerik-sutun">
                 <a className="kalin" href={`#/oneriler/${o.id}`} onClick={(e) => e.stopPropagation()}>
-                  {y(o.haberBasligi)}
+                  <Icerik blok>{o.haberBasligi}</Icerik>
                 </a>
                 {o.paketBasligi && !kisa && (
-                  <>
-                    <br />
-                    <small className="sonuk">PKG · {y(o.paketBasligi)}</small>
-                  </>
+                  <small className="sonuk">
+                    PKG · <Icerik>{o.paketBasligi}</Icerik>
+                  </small>
                 )}
               </td>
               {!kisa && (

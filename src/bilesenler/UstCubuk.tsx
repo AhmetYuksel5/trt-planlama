@@ -7,8 +7,8 @@ import { cikisYap } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { bildirimMi, oneriGorebilir, paketGorebilir } from "../yetki";
 import DilSecici from "./DilSecici";
-import { useHareketKonusu, useHareketMetni } from "./Hareket";
-import { Avatar, Bos } from "./Parcalar";
+import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
+import { Avatar, Bos, Icerik } from "./Parcalar";
 
 /**
  * Üst çubuk: arama, dil, bildirimler ve kullanıcı menüsü.
@@ -19,7 +19,7 @@ import { Avatar, Bos } from "./Parcalar";
  * sayılıyor.
  */
 export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => void }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "arama">("");
   const [aranan, setAranan] = useState("");
@@ -53,17 +53,17 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
         ...v.paketler
           .filter((p) => paketGorebilir(ben, p, v) && (icinde(p.baslik) || p.kod.toLowerCase().includes(q) || icinde(v.kisiler.find((k) => k.id === p.muhabirId)?.ad)))
           .slice(0, 6)
-          .map((p) => ({ id: p.id, ust: p.kod, metin: y(p.baslik), href: `#/paketler/${p.id}` })),
+          .map((p) => ({ id: p.id, ust: p.kod, metin: p.baslik, icerik: true, href: `#/paketler/${p.id}` })),
         ...v.oneriler
           .filter((o) => oneriGorebilir(ben, o) && (icinde(o.haberBasligi) || icinde(o.gelisme)))
           .slice(0, 4)
-          .map((o) => ({ id: o.id, ust: t("oneri"), metin: y(o.haberBasligi), href: `#/oneriler/${o.id}` })),
+          .map((o) => ({ id: o.id, ust: t("oneri"), metin: o.haberBasligi, icerik: true, href: `#/oneriler/${o.id}` })),
         ...(ben.birim === "muhabir"
           ? []
           : v.kisiler
               .filter((k) => icinde(k.ad))
               .slice(0, 4)
-              .map((k) => ({ id: k.id, ust: t(BIRIM_ADI[k.birim]), metin: y(k.ad), href: `#/muhabirler/${k.id}` }))),
+              .map((k) => ({ id: k.id, ust: t(BIRIM_ADI[k.birim]), metin: ad(k), icerik: false, href: `#/muhabirler/${k.id}` }))),
       ];
 
   const ac = (n: typeof acik) => {
@@ -84,6 +84,7 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
         <Search size={16} />
         <input
           type="search"
+          dir="auto"
           value={aranan}
           placeholder={t("araIpucu")}
           aria-label={t("ara")}
@@ -110,7 +111,7 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
                 >
                   <div>
                     <small>{s.ust}</small>
-                    {s.metin}
+                    {s.icerik ? <Icerik>{s.metin}</Icerik> : s.metin}
                   </div>
                 </a>
               ))
@@ -147,9 +148,13 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
                     <Avatar kisi={m.kisi} boy="kucuk" />
                     <div>
                       {m.once}
-                      <b>{m.kisi ? y(m.kisi.ad) : "?"}</b>
+                      <b>{m.kisi ? ad(m.kisi) : "?"}</b>
                       {m.sonra}
-                      {k && <small>{k.metin}</small>}
+                      {k && (
+                        <small>
+                          <KonuMetni k={k} />
+                        </small>
+                      )}
                     </div>
                   </a>
                 );
@@ -162,7 +167,7 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
         <button className="kullanici" onClick={() => ac("kullanici")} aria-expanded={acik === "kullanici"} aria-label={t("kullaniciMenusu")}>
           <Avatar kisi={ben} durum />
           <span className="kullanici-ad">
-            <b>{y(ben.ad)}</b>
+            <b>{ad(ben)}</b>
             <small>
               {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
             </small>

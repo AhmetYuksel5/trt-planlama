@@ -1,9 +1,9 @@
 import { ArrowLeft, Ban, ClipboardCopy, Clock, FlaskConical, Lightbulb, Megaphone, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Kart, NotKutu, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
-import { DILLER, metin, saatYaz, tarihYaz, useDil, type Dil } from "../../dil";
+import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { cagriKaydet, oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
@@ -41,7 +41,7 @@ import PlanaEkle from "./PlanaEkle";
  */
 
 export function OnerilerListe({ ben }: { ben: Kisi }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const [durum, setDurum] = useState<OneriDurum | "hepsi">("hepsi");
   const [tur, setTur] = useState<IcerikTuru | "">("");
@@ -56,7 +56,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
         (durum === "hepsi" || o.durum === durum) &&
         (!tur || o.tur === tur) &&
         (!ulke || o.ulke === ulke) &&
-        (!q || `${y(o.haberBasligi)} ${y(o.gelisme)} ${y(kisiBul(v, o.muhabirId)?.ad ?? "")}`.toLocaleLowerCase().includes(q)),
+        (!q || `${o.haberBasligi} ${o.gelisme} ${ad(kisiBul(v, o.muhabirId))}`.toLocaleLowerCase().includes(q)),
     )
     .sort((a, b) => b.zaman.localeCompare(a.zaman));
 
@@ -85,7 +85,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
         <div className="suzgec">
           <label className="arama arama-kutu">
             <Search size={16} />
-            <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("oneriAra")} aria-label={t("oneriAra")} />
+            <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("oneriAra")} aria-label={t("oneriAra")} />
           </label>
           <select className="girdi" value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru | "")} aria-label={t("tur")}>
             <option value="">{t("tumTurler")}</option>
@@ -121,7 +121,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
 }
 
 export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const [ekle, setEkle] = useState(false);
   const [ret, setRet] = useState<string | null>(null);
@@ -140,9 +140,11 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
       <header className="sayfa-basi">
         <Avatar kisi={muhabir} boy="buyuk" />
         <div>
-          <h1>{y(oneri.haberBasligi)}</h1>
+          <h1>
+            <Icerik>{oneri.haberBasligi}</Icerik>
+          </h1>
           <p>
-            <OneriDurumRozeti oneri={oneri} /> {muhabir && y(muhabir.ad)} · {t(ulkeAdi(oneri.ulke))} · {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
+            <OneriDurumRozeti oneri={oneri} /> {ad(muhabir)} · {t(ulkeAdi(oneri.ulke))} · {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
           </p>
         </div>
       </header>
@@ -152,7 +154,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
             <div className="alanlar">
               <div className="alan">
                 <small>{t("muhabir")}</small>
-                <b>{muhabir ? y(muhabir.ad) : "?"}</b>
+                <b>{muhabir ? ad(muhabir) : "?"}</b>
               </div>
               <div className="alan">
                 <small>{t("ulke")}</small>
@@ -177,12 +179,16 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
             </div>
             <div className="ara-ust-2">
               <div className="alan-etiket">{t("gelismeAciklama")}</div>
-              <div className="metin-kutu">{y(oneri.gelisme)}</div>
+              <div className="metin-kutu">
+                <Icerik blok>{oneri.gelisme}</Icerik>
+              </div>
             </div>
             {oneri.paketBasligi && (
               <div className="ara-ust-2">
                 <div className="alan-etiket">{t("onerilenPaketBasligi")}</div>
-                <div className="metin-kutu">{y(oneri.paketBasligi)}</div>
+                <div className="metin-kutu">
+                  <Icerik blok>{oneri.paketBasligi}</Icerik>
+                </div>
               </div>
             )}
           </Kart>
@@ -199,7 +205,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
               <div className="alan">
                 <small>{t("haberBasligi")}</small>
-                <b>{baslik ? y(baslik.ad) : "—"}</b>
+                <b>{baslik ? <Icerik>{baslik.ad}</Icerik> : "—"}</b>
               </div>
               <div className="alan">
                 <small>{t("plan")}</small>
@@ -212,7 +218,9 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
             </div>
             {oneri.gerekce && (
               <div className="ara-ust-2">
-                <NotKutu ton="uyari">{oneri.gerekce}</NotKutu>
+                <NotKutu ton="uyari">
+                  <span dir="auto">{oneri.gerekce}</span>
+                </NotKutu>
               </div>
             )}
             {oneri.geriDonus && (
@@ -228,7 +236,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                   <div className="form form-kutu">
                     <label>
                       {t("retGerekcesi")}
-                      <input value={ret} onChange={(e) => setRet(e.target.value)} autoFocus />
+                      <input dir="auto" value={ret} onChange={(e) => setRet(e.target.value)} autoFocus />
                     </label>
                     <div className="form-alt">
                       <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setRet(null)}>
@@ -277,7 +285,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               <div className="kayit-bas">
                 <Avatar kisi={muhabir} durum />
                 <div>
-                  <b>{y(muhabir.ad)}</b>
+                  <b>{ad(muhabir)}</b>
                   <small>
                     {t(BIRIM_ADI[muhabir.birim])} · {t(sehirAdi(muhabir.sehir))}
                   </small>
@@ -382,15 +390,15 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
           </div>
           <label>
             {t("haberBasligi")}
-            <input value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={t("haberBasligiIpucu")} />
+            <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} />
           </label>
           <label>
             {t("gelismeAciklama")}
-            <textarea value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={t("gelismeIpucu")} />
+            <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} />
           </label>
           <label>
             {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
-            <input value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
+            <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
           </label>
           <label className="secim">
             <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
@@ -414,18 +422,17 @@ export function YeniOneri({ ben }: { ben: Kisi }) {
  * Öneri çağrısı: sabah saha muhabirlerine giden e-postanın metni.
  * Prompt e-posta entegrasyonu yoksa bunun demo olduğunun açıkça
  * yazılmasını istiyor; metin hazırlanıp kopyalanıyor, "kaydet" ise
- * çağrıyı muhabirlerin ekranına düşürüyor.
+ * çağrıyı muhabirlerin ekranına düşürüyor. E-posta her zaman Arapça:
+ * çağrı da planın içeriği.
  */
 export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const B = bugun();
   const [hedef, setHedef] = useState(tarih ?? gunEkle(B, 1));
-  const [edil, setEdil] = useState<Dil>("ar");
   const [sonSaat, setSonSaat] = useState("15:00");
-  const sablon = (d: Dil, gun: string) => metin("cagriSablonu", d, { tarih: tarihYaz(gun, d, "tam") });
-  const [govde, setGovde] = useState(sablon("ar", hedef));
-  const yenile = (d: Dil, gun: string) => setGovde(sablon(d, gun));
+  const sablon = (gun: string) => metin("cagriSablonu", "ar", { tarih: tarihYaz(gun, "ar", "tam") });
+  const [govde, setGovde] = useState(sablon(hedef));
   const alicilar = muhabirler(v);
 
   const kopyala = async () => {
@@ -437,7 +444,7 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
     }
   };
   const kaydet = () => {
-    if (cagriKaydet(ben, { tarih: hedef, dil: edil, metin: govde, sonSaat })) bildir(t("bCagriKaydedildi"));
+    if (cagriKaydet(ben, { tarih: hedef, metin: govde, sonSaat })) bildir(t("bCagriKaydedildi"));
   };
 
   return (
@@ -461,25 +468,9 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
                   min={B}
                   onChange={(e) => {
                     setHedef(e.target.value);
-                    yenile(edil, e.target.value);
+                    setGovde(sablon(e.target.value));
                   }}
                 />
-              </label>
-              <label>
-                {t("epostaDili")}
-                <select
-                  value={edil}
-                  onChange={(e) => {
-                    setEdil(e.target.value as Dil);
-                    yenile(e.target.value as Dil, hedef);
-                  }}
-                >
-                  {DILLER.map((d) => (
-                    <option key={d} value={d}>
-                      {metin("dilAdi", d)}
-                    </option>
-                  ))}
-                </select>
               </label>
               <label>
                 {t("sonSaatGmt")}
@@ -488,9 +479,9 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
             </div>
             <div className="eposta-kutu">
               <header>
-                {t("alicilar")}: {t("muhabirSayisi", { n: alicilar.length })} · {t("konu")}: {metin("cagriKonu", edil, { tarih: tarihYaz(hedef, edil, "kisa") })}
+                {t("alicilar")}: {t("muhabirSayisi", { n: alicilar.length })} · {t("konu")}: <Icerik>{metin("cagriKonu", "ar", { tarih: tarihYaz(hedef, "ar", "kisa") })}</Icerik>
               </header>
-              <textarea className="girdi" dir={edil === "ar" ? "rtl" : "ltr"} lang={edil} value={govde} onChange={(e) => setGovde(e.target.value)} />
+              <textarea className="girdi" {...icerikAlani} value={govde} onChange={(e) => setGovde(e.target.value)} />
             </div>
             <div className="form-alt">
               <button className="dugme dugme-ikincil" onClick={kopyala}>
@@ -514,7 +505,7 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
                     <div className="ad">
                       <b>{tarihYaz(c.tarih, dil, "tam")}</b>
                       <small>
-                        {y(kisiBul(v, c.olusturan)?.ad ?? "")} · {tarihYaz(yerelGun(c.zaman), dil, "kisa")} {saatYaz(c.zaman, dil)} · {t("sonSaat")} {c.sonSaat}
+                        {ad(kisiBul(v, c.olusturan))} · {tarihYaz(yerelGun(c.zaman), dil, "kisa")} {saatYaz(c.zaman, dil)} · {t("sonSaat")} {c.sonSaat}
                       </small>
                     </div>
                     <Rozet>{v.oneriler.filter((o) => o.cagriId === c.id).length}</Rozet>

@@ -22,10 +22,10 @@ import {
 import type { ReactNode } from "react";
 import { geciktiMi, paketSahibi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Ilerleme, Kart, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
 import { OneriTablosu } from "../../bilesenler/Tablolar";
 import { gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, sehirAdi, ulkeAdi } from "../../etiketler";
+import { BIRIM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
 import { muhabirler, useVeri, type Durum, type Kisi, type NextDayPlan } from "../../veri";
 
@@ -168,7 +168,7 @@ export default function PlanlamaAna({ ben }: { ben: Kisi }) {
 
 /** Perşembe toplantısında hazırlanan haftanın şeridi (Cumartesi–Cuma). */
 export function HaftaKarti({ d }: { d: Durum }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const bas = planlananHafta(bugun());
   const gunler = Array.from({ length: 7 }, (_, i) => gunEkle(bas, i));
   const plan = d.haftalik.find((h) => h.baslangic === bas);
@@ -192,9 +192,9 @@ export function HaftaKarti({ d }: { d: Durum }) {
               <div className="gun-say">{kalemler.length}</div>
               <ul>
                 {kalemler.map((k) => (
-                  <li key={k.id} className={`tur-${k.tur}`} title={y(k.baslik)}>
+                  <li key={k.id} className={`tur-${k.tur}`} title={k.baslik}>
                     <i className="nokta" />
-                    <span>{k.ulke ? t(ulkeAdi(k.ulke)) : y(k.baslik)}</span>
+                    <span>{k.ulke ? t(ulkeAdi(k.ulke)) : <Icerik>{k.baslik}</Icerik>}</span>
                   </li>
                 ))}
               </ul>
@@ -214,7 +214,7 @@ export function HaftaKarti({ d }: { d: Durum }) {
 }
 
 export function BugununTakvimi({ d }: { d: Durum }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const B = bugun();
   const bugunku = d.toplantilar
     .filter((x) => yerelGun(x.zaman) === B)
@@ -233,8 +233,12 @@ export function BugununTakvimi({ d }: { d: Durum }) {
                 <i className={x.zaman < an ? "gecti" : ""} />
               </span>
               <div className={`olay ${x.onemli ? "onemli" : ""}`}>
-                <b>{y(x.ad)}</b>
-                <small>{y(x.aciklama)}</small>
+                <b>
+                  <Icerik blok>{x.ad}</Icerik>
+                </b>
+                <small>
+                  <Icerik blok>{x.aciklama}</Icerik>
+                </small>
               </div>
             </li>
           ))}
@@ -245,7 +249,7 @@ export function BugununTakvimi({ d }: { d: Durum }) {
 }
 
 export function YaklasanToplantilar({ d }: { d: Durum }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const an = new Date().toISOString();
   const B = bugun();
   const yaklasan = d.toplantilar.filter((x) => x.zaman > an).sort((a, b) => a.zaman.localeCompare(b.zaman)).slice(0, 4);
@@ -270,7 +274,9 @@ export function YaklasanToplantilar({ d }: { d: Durum }) {
                 <small>
                   {gunEtiketi(x.zaman)} {saatYaz(x.zaman, dil)}
                 </small>
-                <b>{y(x.ad)}</b>
+                <b>
+                  <Icerik blok>{x.ad}</Icerik>
+                </b>
               </div>
             </li>
           ))}
@@ -281,13 +287,13 @@ export function YaklasanToplantilar({ d }: { d: Durum }) {
 }
 
 function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: NextDayPlan; yarinPlan?: NextDayPlan }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const bas = planlananHafta(bugun());
   const hafta = d.haftalik.find((h) => h.baslangic === bas);
   const ay = d.aylik[0];
   const bugunPaketleri = d.paketler.filter((p) => p.planId === bugunPlan?.id && p.durum !== "iptal");
   const oran = (a: number, b: number) => (b ? a / b : 0);
-  const satirlar: { ad: string; alt: string; oran: number; renk: string; href: string; rozet?: { ad: Anahtar; ton: string } }[] = [];
+  const satirlar: { ad: string; icerik?: boolean; alt: string; oran: number; renk: string; href: string; rozet?: { ad: Anahtar; ton: string } }[] = [];
   if (yarinPlan)
     satirlar.push({
       ad: t("nextday"),
@@ -323,7 +329,8 @@ function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: N
     });
   for (const o of d.ozel)
     satirlar.push({
-      ad: y(o.ad),
+      ad: o.ad,
+      icerik: true,
       alt: tarihYaz(o.tarih, dil, "kisa"),
       oran: oran(o.hazirlik.filter((h) => h.tamam).length, o.hazirlik.length),
       renk: "renk-ozel",
@@ -335,7 +342,7 @@ function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: N
         {satirlar.map((s) => (
           <li key={s.ad + s.alt}>
             <div className="ad">
-              <a href={s.href}>{s.ad}</a>
+              <a href={s.href}>{s.icerik ? <Icerik blok>{s.ad}</Icerik> : s.ad}</a>
               <small>
                 {s.alt} {s.rozet && <Rozet ton={s.rozet.ton}>{t(s.rozet.ad)}</Rozet>}
               </small>
@@ -351,7 +358,7 @@ function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: N
 }
 
 function MuhabirDurumu({ d }: { d: Durum }) {
-  const { t, y } = useDil();
+  const { t, ad } = useDil();
   const sira = { sahada: 0, yolda: 1, gorevde: 2, izinli: 3 } as const;
   const liste = [...muhabirler(d)].sort((a, b) => sira[a.durum] - sira[b.durum]);
   const gosterilen = liste.slice(0, 8);
@@ -359,9 +366,9 @@ function MuhabirDurumu({ d }: { d: Durum }) {
     <Kart baslik={t("muhabirlerinDurumu")} ikon={<Users size={18} />} sagUc={<Tumu href="#/muhabirler" />}>
       <div className="avatarlar">
         {gosterilen.map((k) => (
-          <a key={k.id} href={`#/muhabirler/${k.id}`} title={y(k.ad)}>
+          <a key={k.id} href={`#/muhabirler/${k.id}`} title={ad(k)}>
             <Avatar kisi={k} boy="buyuk" durum />
-            <b>{y(k.ad).split(" ")[0]}</b>
+            <b>{ad(k).split(" ")[0]}</b>
             <small>{t(sehirAdi(k.sehir))}</small>
           </a>
         ))}
@@ -381,18 +388,19 @@ function MuhabirDurumu({ d }: { d: Durum }) {
  * bekleyen kayıtlar. Liste kendiliğinden çıkıyor, ayrıca tutulmuyor.
  */
 function Koordinasyon({ d }: { d: Durum; ben: Kisi }) {
-  const { t, y } = useDil();
-  const satirlar: { id: string; metin: string; birim: string; href: string; ton: string }[] = [];
+  const { t } = useDil();
+  /* Etiket arayüzün, konu içeriğin: konu arayüz cümlesinde de sağdan sola aksın diye ayrı. */
+  const satirlar: { id: string; metin: string; konu?: string; birim: string; href: string; ton: string }[] = [];
   for (const p of d.paketler.filter((x) => geciktiMi(x))) {
     const s = paketSahibi(p);
-    satirlar.push({ id: p.id, metin: `${t("kGeciken")}: ${y(p.baslik)}`, birim: s ? t(BIRIM_ADI[s]) : "", href: `#/paketler/${p.id}`, ton: "kotu" });
+    satirlar.push({ id: p.id, metin: t("kGeciken"), konu: p.baslik, birim: s ? t(BIRIM_ADI[s]) : "", href: `#/paketler/${p.id}`, ton: "kotu" });
   }
   for (const p of d.paketler.filter((x) => (x.durum === "degerlendiriliyor" || x.durum === "taslak") && x.sahaGerekli)) {
-    satirlar.push({ id: p.id + "s", metin: `${t("kSaha")}: ${y(p.baslik)}`, birim: t("biNewsgathering"), href: `#/paketler/${p.id}`, ton: "uyari" });
+    satirlar.push({ id: p.id + "s", metin: t("kSaha"), konu: p.baslik, birim: t("biNewsgathering"), href: `#/paketler/${p.id}`, ton: "uyari" });
   }
   for (const g of d.gorevlendirmeler.filter((x) => x.durum === "talep")) {
     const k = d.kisiler.find((x) => x.id === g.kisiId);
-    satirlar.push({ id: g.id, metin: `${t("kTalep")}: ${k ? y(k.ad) : ""} · ${y(g.yer)}`, birim: t("biNewsgathering"), href: "#/talepler", ton: "uyari" });
+    satirlar.push({ id: g.id, metin: t("kTalep"), konu: satir(g.yer, kisiAr(k)), birim: t("biNewsgathering"), href: "#/talepler", ton: "uyari" });
   }
   for (const p of d.planlar.filter((x) => x.durum === "onayli")) {
     satirlar.push({ id: p.id, metin: t("kDevirBekliyor"), birim: t("biNewsdesk"), href: `#/nextday/${p.id}`, ton: "vurgu" });
@@ -406,7 +414,14 @@ function Koordinasyon({ d }: { d: Durum; ben: Kisi }) {
           {satirlar.slice(0, 7).map((s) => (
             <li key={s.id}>
               <div className="ad">
-                <a href={s.href}>{s.metin}</a>
+                <a href={s.href}>
+                  {s.metin}
+                  {s.konu && (
+                    <>
+                      : <Icerik>{s.konu}</Icerik>
+                    </>
+                  )}
+                </a>
               </div>
               <Rozet ton={s.ton}>{s.birim}</Rozet>
             </li>
@@ -418,7 +433,7 @@ function Koordinasyon({ d }: { d: Durum; ben: Kisi }) {
 }
 
 function OnemliDosyalar({ d }: { d: Durum }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   return (
     <Kart baslik={t("onemliDosyalar")} ikon={<FolderOpen size={18} />}>
       <ul className="liste">
@@ -426,7 +441,9 @@ function OnemliDosyalar({ d }: { d: Durum }) {
           <li key={f.id}>
             {f.tur === "xlsx" ? <FileSpreadsheet size={18} className="sonuk-yazi" /> : <FileText size={18} className="sonuk-yazi" />}
             <div className="ad">
-              <b>{y(f.ad)}</b>
+              <b>
+                <Icerik blok>{f.ad}</Icerik>
+              </b>
               <small>
                 {f.tur.toUpperCase()} · {t("guncellendi")} {tarihYaz(f.guncelleme, dil, "kisa")}
               </small>

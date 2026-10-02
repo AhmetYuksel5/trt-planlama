@@ -1,10 +1,10 @@
 import { ArrowLeft, Ban, CalendarDays, Check, Clock, Lightbulb, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Bos, NotKutu, Rozet, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
-import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { baslikEkle, geriDonusGonder, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
-import { KANAL_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, sehirAdi } from "../../etiketler";
+import { KANAL_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { yerelGun } from "../../tarih";
 import { PLAN_DURUMLARI, kisiBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
@@ -139,7 +139,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
 /* --- 5. Haber gündemi: merkezi başlıklardan seçilen ve sıralanan başlıklar --- */
 
 function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: boolean; operasyon: boolean }) {
-  const { t, y } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [ekle, setEkle] = useState(false);
@@ -175,14 +175,14 @@ function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: 
                     if (ben) planBaslikEkle(ben, plan.id, b.id);
                   }}
                 >
-                  <Plus size={13} /> {y(b.ad)}
+                  <Plus size={13} /> <Icerik>{b.ad}</Icerik>
                 </button>
               ))}
             </div>
             <div className="satir">
               <label>
                 {t("havuzaYeniBaslik")}
-                <input value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={t("yeniBaslikIpucu")} onKeyDown={(e) => e.key === "Enter" && yeniEkle()} />
+                <input {...icerikAlani} value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={metin("yeniBaslikIpucu", "ar")} onKeyDown={(e) => e.key === "Enter" && yeniEkle()} />
               </label>
             </div>
             <div className="form-alt">
@@ -208,7 +208,7 @@ function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: 
 /* --- Bu tarihe gelen öneriler: plan hazırlanırken karar burada veriliyor --- */
 
 function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState("");
   const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
@@ -230,17 +230,23 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
                 <Avatar kisi={k} boy="kucuk" />
                 <div>
                   <b>
-                    {k ? t(sehirAdi(k.sehir)) : ""} / {y(o.haberBasligi)}
+                    <Icerik blok>{satir(sehirAr(k?.sehir), o.haberBasligi)}</Icerik>
                   </b>
-                  <p>{y(o.gelisme)}</p>
+                  <Icerik blok className="kayit-metin">
+                    {o.gelisme}
+                  </Icerik>
+                  {o.paketBasligi && (
+                    <Icerik blok className="kayit-metin">
+                      {`PKG: ${o.paketBasligi}`}
+                    </Icerik>
+                  )}
                   <small>
                     <OneriDurumRozeti oneri={o} />
-                    <span>{k ? y(k.ad) : ""}</span>
-                    {o.paketBasligi && <span>· PKG: {y(o.paketBasligi)}</span>}
+                    <span>{ad(k)}</span>
                     <span>
                       · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
                     </span>
-                    {o.gerekce && <span>· {o.gerekce}</span>}
+                    {o.gerekce && <span dir="auto">· {o.gerekce}</span>}
                   </small>
                 </div>
                 <div className="islemler">

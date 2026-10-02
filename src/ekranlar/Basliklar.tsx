@@ -1,7 +1,7 @@
 import { Check, Newspaper, Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
-import { Bos, Kart, Rozet } from "../bilesenler/Parcalar";
-import { tarihYaz, useDil } from "../dil";
+import { Bos, Icerik, Kart, Rozet, icerikAlani } from "../bilesenler/Parcalar";
+import { metin, tarihYaz, useDil } from "../dil";
 import { baslikDuzenle, baslikEkle } from "../eylemler";
 import { ulkeAdi } from "../etiketler";
 import { ULKELER, useVeri, type Kisi, type Ulke } from "../veri";
@@ -16,7 +16,7 @@ import { SayfaBasi } from "./ana/Planlama";
  * planlar ona bağlı), yalnız seçim listesinden çıkıyor.
  */
 export default function Basliklar({ ben }: { ben: Kisi }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const yonetir = yapabilir(ben, "baslikYonet");
   const [yeni, setYeni] = useState({ ad: "", ulke: "" as Ulke | "" });
@@ -33,7 +33,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
             <div className="satir">
               <label>
                 {t("baslikAdi")}
-                <input value={yeni.ad} onChange={(e) => setYeni({ ...yeni, ad: e.target.value })} placeholder={t("yeniBaslikIpucu")} />
+                <input {...icerikAlani} value={yeni.ad} onChange={(e) => setYeni({ ...yeni, ad: e.target.value })} placeholder={metin("yeniBaslikIpucu", "ar")} />
               </label>
               <label>
                 {t("ulke")} <span className="ipucu">{t("varsa")}</span>
@@ -70,7 +70,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
             <table className="tablo kartli">
               <thead>
                 <tr>
-                  <th>{t("baslikAdi")}</th>
+                  <th className="icerik-sutun">{t("baslikAdi")}</th>
                   <th>{t("ulke")}</th>
                   <th>{t("kullanim")}</th>
                   <th>{t("sonKullanim")}</th>
@@ -84,8 +84,12 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                   const duzenleniyor = duzen?.id === b.id;
                   return (
                     <tr key={b.id}>
-                      <td className="kalin birincil">
-                        {duzenleniyor ? <input className="girdi" value={duzen.ad} onChange={(e) => setDuzen({ ...duzen, ad: e.target.value })} autoFocus /> : y(b.ad)}
+                      <td className="kalin birincil icerik-sutun">
+                        {duzenleniyor ? (
+                          <input className="girdi" {...icerikAlani} value={duzen.ad} onChange={(e) => setDuzen({ ...duzen, ad: e.target.value })} autoFocus />
+                        ) : (
+                          <Icerik blok>{b.ad}</Icerik>
+                        )}
                       </td>
                       <td data-etiket={t("ulke")}>
                         {duzenleniyor ? (
@@ -134,7 +138,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                               </button>
                             </span>
                           ) : (
-                            <button className="dugme dugme-sade dugme-ikon" aria-label={t("duzenle")} onClick={() => setDuzen({ id: b.id, ad: y(b.ad), ulke: b.ulke ?? "" })}>
+                            <button className="dugme dugme-sade dugme-ikon" aria-label={t("duzenle")} onClick={() => setDuzen({ id: b.id, ad: b.ad, ulke: b.ulke ?? "" })}>
                               <Pencil size={15} />
                             </button>
                           )}

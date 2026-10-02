@@ -1,7 +1,7 @@
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { ADIM_ADI, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { AsamaCubugu, Bos, Kart, NotKutu, PaketDurumRozeti, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
+import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, PaketDurumRozeti, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
@@ -19,7 +19,7 @@ import { SayfaBasi } from "./Planlama";
  * görevlendirmeleri. Başka muhabirin kaydı burada da aramada da yok.
  */
 export default function MuhabirAna({ ben }: { ben: Kisi }) {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const B = bugun();
   const paketler = v.paketler.filter((p) => paketGorebilir(ben, p, v)).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
@@ -34,7 +34,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
     <>
       <SayfaBasi
         ikon={<Newspaper size={26} />}
-        baslik={t("merhaba", { ad: y(ben.ad).split(" ")[0] })}
+        baslik={t("merhaba", { ad: ad(ben).split(" ")[0] })}
         alt={`${t("biMuhabir")} · ${t(sehirAdi(ben.sehir))}`}
         sagUc={
           <a className="dugme" href="#/oneriler/yeni">
@@ -71,7 +71,9 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                 {siram.map((p) => (
                   <li key={p.id}>
                     <div className="ad">
-                      <a href={`#/paketler/${p.id}`}>{y(p.baslik)}</a>
+                      <a href={`#/paketler/${p.id}`}>
+                        <Icerik blok>{p.baslik}</Icerik>
+                      </a>
                       <small>
                         {t(ADIM_ADI[p.adim as UretimAdimi])}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
@@ -98,7 +100,9 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                   return (
                     <li key={p.id}>
                       <div className="ad">
-                        <a href={`#/paketler/${p.id}`}>{y(p.baslik)}</a>
+                        <a href={`#/paketler/${p.id}`}>
+                          <Icerik blok>{p.baslik}</Icerik>
+                        </a>
                         <small>
                           {sahip ? t("simdiKimdeKisa", { birim: t(BIRIM_ADI[sahip]) }) : t("pdTamamlandi")}
                           {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: t(ADIM_ADI[sonraki]) })}`}
@@ -121,7 +125,9 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                 {oneriler.slice(0, 6).map((o) => (
                   <li key={o.id}>
                     <div className="ad">
-                      <a href={`#/oneriler/${o.id}`}>{y(o.haberBasligi)}</a>
+                      <a href={`#/oneriler/${o.id}`}>
+                        <Icerik blok>{o.haberBasligi}</Icerik>
+                      </a>
                       <small>
                         {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
                         {o.gerekce && ` · ${o.gerekce}`}
@@ -144,7 +150,9 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
                 {gorevler.map((g) => (
                   <li key={g.id}>
                     <div className="ad">
-                      <b>{y(g.yer)}</b>
+                      <b>
+                        <Icerik blok>{g.yer}</Icerik>
+                      </b>
                       <small>
                         {t(HAREKET_TURU_ADI[g.tur])} · {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
                       </small>

@@ -1,9 +1,9 @@
 import { CalendarDays, Copy, FilePlus2, Printer, X } from "lucide-react";
 import { useState } from "react";
-import { Bos, Kart, NotKutu, Rozet, bildir } from "../../bilesenler/Parcalar";
+import { Bos, Icerik, Kart, NotKutu, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { planOlustur } from "../../eylemler";
-import { HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
+import { HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
 import { baslikBul, kisiBul, useVeri, type Gorevlendirme, type Kisi, type NextDayPlan } from "../../veri";
 import { yapabilir } from "../../yetki";
@@ -107,7 +107,7 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
 }
 
 function YeniPlan({ ben, planlar, kapat }: { ben: Kisi; planlar: NextDayPlan[]; kapat: () => void }) {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const [tarih, setTarih] = useState(gunEkle(bugun(), 1));
   const oncekiler = planlar.filter((p) => p.tarih < tarih);
@@ -224,7 +224,7 @@ function YeniPlan({ ben, planlar, kapat }: { ben: Kisi; planlar: NextDayPlan[]; 
               return (
                 <label key={g.id} className="secim">
                   <input type="checkbox" disabled={bitti} checked={!bitti && secim.gorev.has(g.id)} onChange={() => degistir("gorev", g.id)} />
-                  {y(g.yer)} / {k ? y(k.ad) : ""} · {t(HAREKET_TURU_ADI[g.tur])} ({tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")})
+                  <Icerik>{satir(g.yer, kisiAr(k))}</Icerik> · {t(HAREKET_TURU_ADI[g.tur])} ({tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")})
                   {bitti && <Rozet>{t("suresiDoldu")}</Rozet>}
                 </label>
               );
@@ -234,7 +234,7 @@ function YeniPlan({ ben, planlar, kapat }: { ben: Kisi; planlar: NextDayPlan[]; 
             {kaynak.basliklar.map((b) => (
               <label key={b.id} className="secim">
                 <input type="checkbox" checked={secim.baslik.has(b.id)} onChange={() => degistir("baslik", b.id)} />
-                {y(baslikBul(v, b.baslikId)?.ad ?? "")}
+                <Icerik>{baslikBul(v, b.baslikId)?.ad}</Icerik>
               </label>
             ))}
             <label className="secim">
@@ -249,7 +249,7 @@ function YeniPlan({ ben, planlar, kapat }: { ben: Kisi; planlar: NextDayPlan[]; 
               return (
                 <label key={c.id} className="secim">
                   <input type="checkbox" disabled={gecti} checked={!gecti && secim.canli.has(c.id)} onChange={() => degistir("canli", c.id)} />
-                  {y(c.yer)} / {y(c.konu)} · {tarihYaz(c.tarih, dil, "kisa")} {c.saatGmt ? `${c.saatGmt} GMT` : "TBC"}
+                  <Icerik>{satir(c.yer, c.konu)}</Icerik> · {tarihYaz(c.tarih, dil, "kisa")} {c.saatGmt ? `${c.saatGmt} GMT` : "TBC"}
                   {gecti && <Rozet>{t("suresiDoldu")}</Rozet>}
                 </label>
               );

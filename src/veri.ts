@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Dil, Yazi } from "./dil";
+import type { Yazi } from "./dil";
 import { ORNEK } from "./ornek";
 
 /**
@@ -10,6 +10,12 @@ import { ORNEK } from "./ornek";
  * görevlendirme, hazır paket, paket önerisi, canlı yayın. Aynı merkezi
  * başlık farklı günlerin planlarında kullanılır; o günün gelişmeleri ve
  * atamaları o planın kendi kayıtlarıdır, başlık havuzu kirlenmez.
+ *
+ * Kayıt içeriği (başlık, gelişme, açıklama, script) düz metin ve Arapça:
+ * kanal Arapça yayın yapıyor, planlama hep Arapça yazılıyor. Arayüz dili
+ * yalnız menüyü ve etiketleri değiştiriyor, içeriği değil. Latin harfli
+ * özel isim içerikte serbest; dil denetimi yok. Tek istisna kişi adı:
+ * rehberdeki kimlik, arayüz dilinin yazımıyla (Latin ya da Arapça) okunuyor.
  *
  * Bu sürümde her şey tarayıcıda (localStorage) duruyor ve örnek veriyle
  * açılıyor. Çok kullanıcılı sunucu katmanı geldiğinde yalnız bu dosyanın
@@ -103,7 +109,7 @@ export type IcerikTuru = (typeof ICERIK_TURLERI)[number];
 
 export interface Baslik {
   id: string;
-  ad: Yazi;
+  ad: string;
   ulke?: Ulke;
   aktif: boolean;
 }
@@ -167,8 +173,8 @@ export interface Gelisme {
   id: string;
   planId: string;
   planBaslikId?: string;
-  yer?: Yazi;
-  metin: Yazi;
+  yer?: string;
+  metin: string;
   kaynakTuru: KaynakTuru;
   kaynakAdi: string;
   tarih: string;
@@ -181,13 +187,13 @@ export interface CanliYayin {
   planId: string;
   /** Boşsa planın genel "canlı yayınlar ve etkinlikler" bölümünde durur. */
   planBaslikId?: string;
-  konu: Yazi;
-  aciklama: Yazi;
+  konu: string;
+  aciklama: string;
   tarih: string;
   saatGmt: string;
-  yer: Yazi;
+  yer: string;
   muhabirId?: string;
-  notlar: Yazi;
+  notlar: string;
 }
 
 /* --- Hazır paket arşivi: üretimi bitmiş, plana yalnız seçilerek girer. --- */
@@ -195,9 +201,9 @@ export interface CanliYayin {
 export interface HazirPaket {
   id: string;
   sehir: Sehir;
-  baslik: Yazi;
+  baslik: string;
   muhabirId: string;
-  aciklama: Yazi;
+  aciklama: string;
   /** Arşivdeki dosya adı, çıktıda başlığın altında: GAZA-PRESERVESEEDS-PKG-MAH. */
   slug: string;
   tur: IcerikTuru;
@@ -215,10 +221,10 @@ export interface Gorevlendirme {
   id: string;
   kisiId: string;
   tur: HareketTuru;
-  yer: Yazi;
+  yer: string;
   baslangic: string;
   bitis: string;
-  aciklama: Yazi;
+  aciklama: string;
   yurtdisi: boolean;
   durum: GorevlendirmeDurum;
 }
@@ -234,9 +240,9 @@ export interface Oneri {
   id: string;
   muhabirId: string;
   ulke: Ulke;
-  haberBasligi: Yazi;
-  gelisme: Yazi;
-  paketBasligi?: Yazi;
+  haberBasligi: string;
+  gelisme: string;
+  paketBasligi?: string;
   tur: IcerikTuru;
   sahaGerekli: boolean;
   zaman: string;
@@ -254,7 +260,6 @@ export interface Oneri {
 export interface Cagri {
   id: string;
   tarih: string;
-  dil: Dil;
   metin: string;
   sonSaat: string;
   olusturan: string;
@@ -284,10 +289,10 @@ export interface Paket {
   kod: string;
   planId?: string;
   planBaslikId?: string;
-  baslik: Yazi;
+  baslik: string;
   sehir: Sehir;
   muhabirId?: string;
-  aciklama: Yazi;
+  aciklama: string;
   tur: IcerikTuru;
   teslim?: string;
   yayin?: string;
@@ -311,7 +316,7 @@ export interface Paket {
 export interface PlanKalemi {
   id: string;
   tarih?: string;
-  baslik: Yazi;
+  baslik: string;
   tur: IcerikTuru;
   ulke?: Ulke;
   onayli: boolean;
@@ -333,15 +338,15 @@ export interface AylikPlan {
 
 export interface OzelYayin {
   id: string;
-  ad: Yazi;
+  ad: string;
   tarih: string;
-  hazirlik: { id: string; metin: Yazi; tamam: boolean }[];
+  hazirlik: { id: string; metin: string; tamam: boolean }[];
 }
 
 export interface Toplanti {
   id: string;
-  ad: Yazi;
-  aciklama: Yazi;
+  ad: string;
+  aciklama: string;
   zaman: string;
   birim: Birim;
   onemli?: boolean;
@@ -349,7 +354,7 @@ export interface Toplanti {
 
 export interface Dosya {
   id: string;
-  ad: Yazi;
+  ad: string;
   tur: "docx" | "xlsx" | "pdf";
   guncelleme: string;
 }
@@ -400,7 +405,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 2;
+  surum: 3;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -424,14 +429,15 @@ export interface Durum {
 
 /* --- Saklama ve abonelik --- */
 
-const SAKLA = "trt-planlama-v2";
+/* v2'de içerik üç dilli nesneydi; o kayıt v3 ekranında okunamaz, örnekten başlanıyor. */
+const SAKLA = "trt-planlama-v3";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 2) return d;
+      if (d.surum === 3) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

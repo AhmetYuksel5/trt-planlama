@@ -1,5 +1,4 @@
 import { ilkAdim, paketSahibi, sonrakiAdim, type UretimAdimi } from "./akis";
-import type { Dil, Yazi } from "./dil";
 import { simdi } from "./tarih";
 import {
   SEHIRLER,
@@ -64,7 +63,7 @@ const yeniKod = (d: Durum): [string, Durum] => {
 /* --- Öneri çağrısı ve öneriler --- */
 
 /** Çağrı metni kaydediliyor ama gönderilmiyor: e-posta entegrasyonu yok, ekranda bu açıkça yazıyor. */
-export const cagriKaydet = (ben: Kisi, g: { tarih: string; dil: Dil; metin: string; sonSaat: string }) => {
+export const cagriKaydet = (ben: Kisi, g: { tarih: string; metin: string; sonSaat: string }) => {
   if (!yapabilir(ben, "cagriHazirla")) return false;
   let d = getir();
   const id = kimlik("c");
@@ -504,10 +503,10 @@ export interface PaketGirdisi {
   id?: string;
   planId: string;
   planBaslikId: string;
-  baslik: Yazi;
+  baslik: string;
   sehir: Sehir;
   muhabirId?: string;
-  aciklama: Yazi;
+  aciklama: string;
   tur: IcerikTuru;
   teslim?: string;
   yayin?: string;

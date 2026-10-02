@@ -24,10 +24,10 @@ import {
 import { ASAMALAR, ASAMA_ADI, asamaBul, geciktiMi, paketSahibi } from "../../akis";
 import { planDurum } from "../../eylemler";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Ilerleme, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, sehirAdi } from "../../etiketler";
+import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, planlananHafta } from "../../tarih";
 import { BIRIMLER, kisiBul, muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, yapabilir } from "../../yetki";
@@ -117,7 +117,7 @@ export function NewsdeskAna({ ben }: { ben: Kisi }) {
 /* --- News Gathering --- */
 
 export function NewsGatheringAna() {
-  const { t, y, dil } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const B = bugun();
   const sahaAdimi = uretimdeki(v).filter((p) => p.adim === "gorevlendirme");
@@ -144,10 +144,13 @@ export function NewsGatheringAna() {
                   <Avatar kisi={kisiBul(v, g.kisiId)} boy="kucuk" />
                   <div className="ad">
                     <b>
-                      {y(kisiBul(v, g.kisiId)?.ad ?? "")} · {y(g.yer)}
+                      <Icerik blok>{satir(g.yer, kisiAr(kisiBul(v, g.kisiId)))}</Icerik>
                     </b>
                     <small>
-                      {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")} · {y(g.aciklama)}
+                      {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
+                    </small>
+                    <small>
+                      <Icerik blok>{g.aciklama}</Icerik>
                     </small>
                   </div>
                   <Rozet ton="uyari">{t(GOREVLENDIRME_DURUM_ADI[g.durum])}</Rozet>
@@ -167,7 +170,7 @@ export function NewsGatheringAna() {
               <li key={k.id}>
                 <Avatar kisi={k} durum />
                 <div className="ad">
-                  <a href={`#/muhabirler/${k.id}`}>{y(k.ad)}</a>
+                  <a href={`#/muhabirler/${k.id}`}>{ad(k)}</a>
                   <small>{t(sehirAdi(k.sehir))}</small>
                 </div>
               </li>
@@ -180,7 +183,7 @@ export function NewsGatheringAna() {
               <li key={g.id}>
                 <div className="ad">
                   <b>
-                    {y(kisiBul(v, g.kisiId)?.ad ?? "")} · {y(g.yer)}
+                    <Icerik blok>{satir(g.yer, kisiAr(kisiBul(v, g.kisiId)))}</Icerik>
                   </b>
                   <small>
                     {t(HAREKET_TURU_ADI[g.tur])} · {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
@@ -200,7 +203,7 @@ export function NewsGatheringAna() {
 /* --- Programlar --- */
 
 export function ProgramAna() {
-  const { t, y, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const hafta = v.haftalik.find((h) => h.baslangic === planlananHafta(bugun()));
   const programKalemleri = hafta?.kalemler.filter((k) => k.tur === "program") ?? [];
@@ -218,7 +221,9 @@ export function ProgramAna() {
               {programKalemleri.map((k) => (
                 <li key={k.id}>
                   <div className="ad">
-                    <b>{y(k.baslik)}</b>
+                    <b>
+                      <Icerik blok>{k.baslik}</Icerik>
+                    </b>
                     <small>{k.tarih && tarihYaz(k.tarih, dil, "uzun")}</small>
                   </div>
                   <Rozet ton={k.onayli ? "iyi" : ""}>{t(k.onayli ? "onaylandi" : "beklemede")}</Rozet>

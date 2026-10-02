@@ -7,6 +7,27 @@ import type { IcerikTuru, Kisi, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
 
+/*
+ * Kayıt içeriği her arayüz dilinde Arapça ve sağdan sola. Yön `auto`
+ * değil sabit `rtl`: "OPEC+ …" gibi Latin özel isimle başlayan başlık da
+ * sağdan sola aksın, Latin parça kendi içinde doğru okunsun. Satır içi
+ * biçim (`bdi`) arayüz cümlesinin akışını bozmadan yalıtıyor; `blok`
+ * kendi satırını, hücresini ya da paragrafını alıp sağa yaslanıyor.
+ * Ekranlar `dir`/`lang` elle yazmıyor, yön yalnız buradan geliyor.
+ */
+export function Icerik({ children, blok = false, className = "" }: { children?: ReactNode; blok?: boolean; className?: string }) {
+  if (children === undefined || children === null || children === "") return null;
+  const Oge = blok ? "span" : "bdi";
+  return (
+    <Oge dir="rtl" lang="ar" className={`icerik${blok ? " blok" : ""}${className ? ` ${className}` : ""}`}>
+      {children}
+    </Oge>
+  );
+}
+
+/** İçerik yazılan form alanı: yazarken de sağdan sola. Dil denetimi yok; Latin özel isim serbest. */
+export const icerikAlani = { dir: "rtl", lang: "ar" } as const;
+
 export function Kart({
   baslik,
   ikon,
@@ -71,7 +92,7 @@ export function TurRozeti({ tur }: { tur: IcerikTuru }) {
 const ton = (id: string) => Math.round(([...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7) * 137.508) % 360);
 
 export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "" | "kucuk" | "buyuk"; durum?: boolean }) {
-  const { y } = useDil();
+  const { ad: adi } = useDil();
   if (!kisi) return <span className={`avatar ${boy} avatar-fazla`}>?</span>;
   const ad = typeof kisi.ad === "string" ? kisi.ad : kisi.ad.tr;
   const harf = ad
@@ -85,7 +106,7 @@ export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "
     <span
       className={`avatar ${boy} ${durum ? `durum-${kisi.durum}` : ""}`}
       style={{ ["--ton" as string]: ton(kisi.id) }}
-      title={y(kisi.ad)}
+      title={adi(kisi)}
       aria-hidden="true"
     >
       {harf}
@@ -95,12 +116,12 @@ export function Avatar({ kisi, boy = "", durum = false }: { kisi?: Kisi; boy?: "
 }
 
 export function KisiHucre({ kisi, alt }: { kisi?: Kisi; alt?: ReactNode }) {
-  const { y, t } = useDil();
+  const { ad, t } = useDil();
   return (
     <span className="kisi-hucre">
       <Avatar kisi={kisi} boy="kucuk" />
       <span>
-        {kisi ? y(kisi.ad) : t("atanmadi")}
+        {kisi ? ad(kisi) : t("atanmadi")}
         {alt && (
           <>
             <br />
