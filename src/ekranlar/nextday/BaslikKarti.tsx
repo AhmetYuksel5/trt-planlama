@@ -51,7 +51,7 @@ export default function BaslikKarti({
   const cikabilir = !paketler.some((p) => p.durum !== "iptal");
 
   return (
-    <details className="baslik-karti" open>
+    <details className="baslik-karti">
       <summary>
         <span className="sira">{sira + 1}</span>
         <h3>
