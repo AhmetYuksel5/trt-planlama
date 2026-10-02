@@ -1,4 +1,4 @@
-import { CalendarDays, House, Lightbulb, Menu, Package, Plane, Users, type LucideIcon } from "lucide-react";
+import { CalendarDays, House, Lightbulb, MapPinned, Menu, Package, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import type { Kisi } from "../veri";
 import { sayfaGorebilir } from "../yetki";
@@ -17,7 +17,7 @@ const ADAYLAR: { yol: string; ad: Anahtar; adMuhabir?: Anahtar; ikon: LucideIcon
   { yol: "oneriler", ad: "abOneriler", adMuhabir: "abOnerilerim", ikon: Lightbulb },
   { yol: "paketler", ad: "abPaketler", adMuhabir: "abPaketlerim", ikon: Package },
   { yol: "muhabirler", ad: "abMuhabirler", ikon: Users },
-  { yol: "yurtdisi", ad: "abGorevlerim", ikon: Plane },
+  { yol: "saha", ad: "abGorevlerim", ikon: MapPinned },
 ];
 
 export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; acik: string; menuAcik: boolean; onMenu: () => void }) {

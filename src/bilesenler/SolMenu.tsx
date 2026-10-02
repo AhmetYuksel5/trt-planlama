@@ -12,11 +12,10 @@ import {
   Inbox,
   Layers,
   Lightbulb,
-  MapPin,
+  MapPinned,
   MonitorPlay,
   Newspaper,
   Package,
-  Plane,
   Route,
   Settings,
   SpellCheck,
@@ -107,8 +106,7 @@ export const MENU: Grup[] = [
   {
     ad: "mgGorevlendirme",
     maddeler: [
-      { sayfa: "yurtdisi", ad: "mYurtdisi", adMuhabir: "mGorevlerim", ikon: Plane },
-      { sayfa: "yurtici", ad: "mYurtici", ikon: MapPin, muhabirGizle: true },
+      { sayfa: "saha", ad: "mSaha", adMuhabir: "mGorevlerim", ikon: MapPinned },
       { sayfa: "seyahat", ad: "mSeyahat", ikon: Route },
       { sayfa: "talepler", ad: "mTalepler", ikon: Inbox },
     ],

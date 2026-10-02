@@ -127,7 +127,7 @@ export default function ProjePlani() {
           <p>{t("ppNextdayA")}</p>
           <div className="akis-kutulari">
             {NEXTDAY_KUTULARI.map((k) => (
-              <div key={k.no} className={`akis-kutusu ${k.no <= 3 ? "renk-nextday" : k.no <= 7 ? "renk-haftalik" : "renk-yurtdisi"}`}>
+              <div key={k.no} className={`akis-kutusu ${k.no <= 3 ? "renk-nextday" : k.no <= 7 ? "renk-haftalik" : "renk-saha"}`}>
                 <span className="no">{k.no}</span>
                 <b>{t(k.baslik)}</b>
                 <p>{t(k.aciklama)}</p>
@@ -160,7 +160,7 @@ export default function ProjePlani() {
               <b>{t("kolFeature")}</b>
               <p>{t("kolFeatureA")}</p>
             </div>
-            <div className="kol renk-yurtdisi">
+            <div className="kol renk-saha">
               <b>{t("kolProgram")}</b>
               <p>{t("kolProgramA")}</p>
             </div>
@@ -278,7 +278,7 @@ export default function ProjePlani() {
               <b>{t("ppKatmanAkis")}</b>
               <p>{t("ppKatmanAkisA")}</p>
             </div>
-            <div className="kol renk-yurtdisi">
+            <div className="kol renk-saha">
               <b>{t("ppKatmanArayuz")}</b>
               <p>{t("ppKatmanArayuzA")}</p>
             </div>

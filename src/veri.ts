@@ -254,9 +254,15 @@ export interface Gorevlendirme {
   baslangic: string;
   bitis: string;
   aciklama: string;
-  yurtdisi: boolean;
   durum: GorevlendirmeDurum;
 }
+
+/*
+ * Yurt içi ya da yurt dışı ayrımı yok: görevlendirme, seyahat ve diğer
+ * hareketler aynı işlemle yürüyen saha görevlendirmesi. İzin saha işi
+ * değil, yalnız izin listesinde görünüyor.
+ */
+export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
 
 /* --- Öneri: muhabirin gönderdiği haliyle korunur, değerlendirme ayrı alanlarda. --- */
 
@@ -492,7 +498,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 4;
+  surum: 5;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -517,15 +523,19 @@ export interface Durum {
 
 /* --- Saklama ve abonelik --- */
 
-/* Şema değişince anahtar da değişiyor: eski kayıt yeni ekranı bozmasın, örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları). */
-const SAKLA = "trt-planlama-v4";
+/*
+ * Şema değişince anahtar da değişiyor: eski kayıt yeni ekranı bozmasın,
+ * örnekten başlansın (v3: içerik Arapça, v4: e-posta yanıtları, v5:
+ * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi).
+ */
+const SAKLA = "trt-planlama-v5";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 4) return d;
+      if (d.surum === 5) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

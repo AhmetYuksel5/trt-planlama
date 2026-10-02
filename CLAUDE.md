@@ -52,7 +52,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v4`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v5`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.

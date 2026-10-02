@@ -12,8 +12,8 @@ import {
   History,
   Lightbulb,
   ListChecks,
+  MapPinned,
   Network,
-  Plane,
   Tv,
   Users,
   Calendar,
@@ -46,7 +46,7 @@ const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: 
   { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik", aciklama: "ksHaftalikA" },
   { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik", aciklama: "ksAylikA" },
   { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel", aciklama: "ksOzelA" },
-  { sayfa: "yurtdisi", renk: "renk-yurtdisi", ikon: Plane, ad: "ksYurtdisi", aciklama: "ksYurtdisiA" },
+  { sayfa: "saha", renk: "renk-saha", ikon: MapPinned, ad: "ksSaha", aciklama: "ksSahaA" },
 ];
 
 export function PlanKisayollari() {
