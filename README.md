@@ -22,6 +22,10 @@ npm run preview  # derlenmiş hali yerelde
 - **Demo giriş:** kişi seçiliyor. Ana sayfa ve menü birime göre şekilleniyor
   (Planlama, Newsdesk, News Gathering, Programlar, Ekonomi, Output/dil,
   Media Manager, Muhabir, Yönetim).
+- **Ana sayfa:** her birimin kendi çalışma alanlarıyla varsayılan bir
+  sayfası var. Kişi "Sayfayı düzenle" ile istemediği alanı kaldırıyor,
+  sırasını değiştiriyor, yetkisi olan başka birimlerin alanlarını ekliyor ve
+  istediğinde varsayılana dönüyor; düzen yalnız onun sayfasını değiştiriyor.
 - **Next Day planı:**
   - plan açma düğmesi yok: planlar her gün kesintisiz sürüyor, yarının
     planını sistem kendisi açıyor (uygulama açılınca ve gün dönünce);

@@ -60,12 +60,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v10`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v11`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
   Yetki hem düğmede hem eylemde soruluyor.
+- Ana sayfa çalışma alanlarından oluşur (`ekranlar/ana/Calisma.tsx`):
+  her kart bir `Alan` (kimlik, ad, geniş mi, grup, `sayfa`), birimin
+  varsayılan düzeni `VARSAYILAN`'da. Kişi "Sayfayı düzenle" ile alan
+  kaldırır, sıralar, ekler, varsayılana döner; düzeni `Durum.anaSayfa`
+  (`kişi:düzen`). Alan eklemek için alanın `sayfa`'sını görebilmek gerekir
+  ("muhabir" yalnız muhabirin kendi işi, "panel" kapsamı olan yönetici).
+  Müdür birime inince birimin varsayılanını görür (`kisisel={false}`).
+  Yeni kart da böyle eklenir: birim dosyasındaki `*_ALANLARI` listesine.
+  Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
+  için açılışta okunursa döngüde tanımsız kalır.
 - Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
   göstermez: sayılar, birim ışıkları (gerekçesi yazılı), dikkat
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.

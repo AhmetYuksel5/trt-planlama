@@ -8,6 +8,7 @@ import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { acikCagri, useVeri, type Kisi } from "../../veri";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
+import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
 
 /**
@@ -19,18 +20,7 @@ import { SayfaBasi } from "./Planlama";
  * görevlendirmeleri. Başka muhabirin kaydı burada da aramada da yok.
  */
 export default function MuhabirAna({ ben }: { ben: Kisi }) {
-  const { t, ad, dil } = useDil();
-  const v = useVeri();
-  const B = bugun();
-  const paketler = v.paketler.filter((p) => paketGorebilir(ben, p, v)).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
-  const oneriler = v.oneriler.filter((o) => oneriGorebilir(ben, o)).sort((a, b) => b.zaman.localeCompare(a.zaman));
-  const siram = paketler.filter((p) => adimYapabilir(ben, p));
-  const gorevler = v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B);
-  const cagri = acikCagri(v, "nextday", B);
-  const haftalikCagri = acikCagri(v, "haftalik", B);
-  const bildirimler = v.hareketler.filter((h) => bildirimMi(ben, h, v)).slice(0, 6);
-  const aktif = paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
-
+  const { t, ad } = useDil();
   return (
     <>
       <SayfaBasi
@@ -43,7 +33,36 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
           </a>
         }
       />
+      <CalismaAlani ben={ben} duzen="muhabir" />
+    </>
+  );
+}
 
+/* Muhabirin alanları yalnız kendi işi: başka muhabirin kaydı burada da yok. */
+function useMuhabirIsleri(ben: Kisi) {
+  const v = useVeri();
+  const B = bugun();
+  const paketler = v.paketler.filter((p) => paketGorebilir(ben, p, v)).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  const oneriler = v.oneriler.filter((o) => oneriGorebilir(ben, o)).sort((a, b) => b.zaman.localeCompare(a.zaman));
+  return {
+    v,
+    paketler,
+    oneriler,
+    siram: paketler.filter((p) => adimYapabilir(ben, p)),
+    aktif: paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal"),
+    gorevler: v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B),
+    cagri: acikCagri(v, "nextday", B),
+    haftalikCagri: acikCagri(v, "haftalik", B),
+    bildirimler: v.hareketler.filter((h) => bildirimMi(ben, h, v)).slice(0, 6),
+  };
+}
+
+function Cagrilar({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const { cagri, haftalikCagri } = useMuhabirIsleri(ben);
+  if (!cagri && !haftalikCagri) return null;
+  return (
+    <div className="iz">
       {cagri && (
         <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
           <b>{t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })}</b>
@@ -64,17 +83,28 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
           </a>
         </NotKutu>
       )}
+    </div>
+  );
+}
 
-      <div className="sayaclar">
+function Sayaclar({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { oneriler, aktif, siram } = useMuhabirIsleri(ben);
+  return (
+    <div className="sayaclar">
         <Sayac href="#/oneriler" ikon={<Lightbulb size={22} />} renk="renk-nextday" etiket={t("sOnerilerim")} deger={oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length} alt={t("sDegerlendirmede")} />
         <Sayac href="#/oneriler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sPlanaGiren")} deger={oneriler.filter((o) => o.durum === "planaEklendi").length} alt={t("sToplam")} />
         <Sayac href="#/paketler" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={aktif.length} alt={t("sPaket")} />
         <Sayac href="#/paketler" ikon={<Clock size={22} />} ton={siram.length ? "uyari" : ""} etiket={t("seninSiran")} deger={siram.length} alt={t("sBekleyenIs")} />
       </div>
+  );
+}
 
-      <div className="iz iz-ana-yan">
-        <div className="iz">
-          <Kart baslik={t("seninSiran")} ikon={<Clock size={18} />}>
+function Siram({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const { siram } = useMuhabirIsleri(ben);
+  return (
+    <Kart baslik={t("seninSiran")} ikon={<Clock size={18} />}>
             {siram.length === 0 ? (
               <Bos kucuk metin={t("siraBos")} />
             ) : (
@@ -100,8 +130,14 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
               </ul>
             )}
           </Kart>
+  );
+}
 
-          <Kart baslik={t("haberlerim")} ikon={<Newspaper size={18} />} sagUc={<Tumu href="#/paketler" />}>
+function Haberlerim({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { paketler } = useMuhabirIsleri(ben);
+  return (
+    <Kart baslik={t("haberlerim")} ikon={<Newspaper size={18} />} sagUc={<Tumu href="#/paketler" />}>
             {paketler.length === 0 ? (
               <Bos metin={t("paketimYok")} />
             ) : (
@@ -129,8 +165,14 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
               </ul>
             )}
           </Kart>
+  );
+}
 
-          <Kart baslik={t("onerilerim")} ikon={<Lightbulb size={18} />} sagUc={<Tumu href="#/oneriler" />}>
+function Onerilerim({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const { oneriler } = useMuhabirIsleri(ben);
+  return (
+    <Kart baslik={t("onerilerim")} ikon={<Lightbulb size={18} />} sagUc={<Tumu href="#/oneriler" />}>
             {oneriler.length === 0 ? (
               <Bos metin={t("oneriYok")} />
             ) : (
@@ -152,10 +194,14 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
               </ul>
             )}
           </Kart>
-        </div>
+  );
+}
 
-        <div className="iz">
-          <Kart baslik={t("gorevlendirmelerim")} ikon={<Plane size={18} />}>
+function Gorevlerim({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const { gorevler } = useMuhabirIsleri(ben);
+  return (
+    <Kart baslik={t("gorevlendirmelerim")} ikon={<Plane size={18} />}>
             {gorevler.length === 0 ? (
               <Bos kucuk metin={t("gorevlendirmeYok")} />
             ) : (
@@ -176,11 +222,25 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
               </ul>
             )}
           </Kart>
-          <Kart baslik={t("bildirimler")} ikon={<Bell size={18} />}>
-            {bildirimler.length === 0 ? <Bos kucuk metin={t("bildirimYok")} /> : <HareketAkisi hareketler={bildirimler} d={v} />}
-          </Kart>
-        </div>
-      </div>
-    </>
   );
 }
+
+function Bildirimlerim({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { bildirimler, v } = useMuhabirIsleri(ben);
+  return (
+    <Kart baslik={t("bildirimler")} ikon={<Bell size={18} />}>
+            {bildirimler.length === 0 ? <Bos kucuk metin={t("bildirimYok")} /> : <HareketAkisi hareketler={bildirimler} d={v} />}
+          </Kart>
+  );
+}
+
+export const MUHABIR_ALANLARI: Alan[] = [
+  { id: "muCagri", ad: "alAcikCagrilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Cagrilar },
+  { id: "muSayac", ad: "alOzetSayilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Sayaclar },
+  { id: "muSiram", ad: "seninSiran", grup: "muhabir", sayfa: "muhabir", Bilesen: Siram },
+  { id: "muGorev", ad: "gorevlendirmelerim", grup: "muhabir", sayfa: "muhabir", Bilesen: Gorevlerim },
+  { id: "muHaberler", ad: "haberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Haberlerim },
+  { id: "muBildirim", ad: "bildirimler", grup: "muhabir", sayfa: "muhabir", Bilesen: Bildirimlerim },
+  { id: "muOneriler", ad: "onerilerim", grup: "muhabir", sayfa: "muhabir", Bilesen: Onerilerim },
+];

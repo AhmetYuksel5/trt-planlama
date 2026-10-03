@@ -28,7 +28,8 @@ import { gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BIRIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { gundemde, kalemAdi } from "../../haftalik";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
-import { muhabirler, useVeri, type Durum, type Kisi, type NextDayPlan } from "../../veri";
+import { muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
+import { CalismaAlani, type Alan } from "./Calisma";
 
 /**
  * Planlama Birimi ana sayfası (rapor Şekil 4).
@@ -96,7 +97,17 @@ export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; basli
   );
 }
 
-export default function PlanlamaAna({ ben }: { ben: Kisi }) {
+export default function PlanlamaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
+  const { t } = useDil();
+  return (
+    <>
+      <SayfaBasi ikon={<Users size={28} />} baslik={t("planlamaBirimi")} alt={t("planlamaAlt")} />
+      <CalismaAlani ben={ben} duzen="planlama" kisisel={kisisel} />
+    </>
+  );
+}
+
+function PlanlamaSayaclari() {
   const { t } = useDil();
   const v = useVeri();
   const B = bugun();
@@ -104,64 +115,72 @@ export default function PlanlamaAna({ ben }: { ben: Kisi }) {
   const bugunPlan = v.planlar.find((p) => p.tarih === B);
   const planliPaketler = v.paketler.filter((p) => (p.planId === yarinPlan?.id || p.planId === bugunPlan?.id) && p.durum !== "iptal");
   const yediGun = new Date(Date.now() - 7 * 864e5).toISOString();
-
   return (
-    <>
-      <SayfaBasi ikon={<Users size={28} />} baslik={t("planlamaBirimi")} alt={t("planlamaAlt")} />
-      <PlanKisayollari />
+    <div className="sayaclar">
+      <Sayac
+        href="#/oneriler"
+        ikon={<Lightbulb size={22} />}
+        renk="renk-nextday"
+        etiket={t("sYeniOneri")}
+        deger={v.oneriler.filter((o) => o.durum === "yeni").length}
+        alt={t("sBugunGelen", { n: v.oneriler.filter((o) => yerelGun(o.zaman) === B).length })}
+      />
+      <Sayac href="#/paketler" ikon={<Package size={22} />} renk="renk-haftalik" etiket={t("sPlanlanan")} deger={planliPaketler.length} alt={t("sBugunYarin")} />
+      <Sayac
+        href="#/oneriler"
+        ikon={<Clock size={22} />}
+        ton="uyari"
+        etiket={t("sOnayBekleyen")}
+        deger={v.paketler.filter((p) => p.durum === "taslak" || p.durum === "degerlendiriliyor").length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor").length}
+        alt={t("sAksamToplantisi")}
+      />
+      <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={v.paketler.filter((p) => p.durum === "uretimde").length} alt={t("sUretimde")} />
+      <Sayac
+        href="#/paketler"
+        ikon={<CheckCircle size={22} />}
+        ton="iyi"
+        etiket={t("sTamamlanan")}
+        deger={v.paketler.filter((p) => p.durum === "tamamlandi" && p.guncelleme > yediGun).length}
+        alt={t("sSonYediGun")}
+      />
+      <Sayac href="#/uretim" ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={v.paketler.filter((p) => geciktiMi(p)).length} alt={t("sTeslimGecti")} />
+    </div>
+  );
+}
 
-      <div className="sayaclar">
-        <Sayac
-          href="#/oneriler"
-          ikon={<Lightbulb size={22} />}
-          renk="renk-nextday"
-          etiket={t("sYeniOneri")}
-          deger={v.oneriler.filter((o) => o.durum === "yeni").length}
-          alt={t("sBugunGelen", { n: v.oneriler.filter((o) => yerelGun(o.zaman) === B).length })}
-        />
-        <Sayac href="#/paketler" ikon={<Package size={22} />} renk="renk-haftalik" etiket={t("sPlanlanan")} deger={planliPaketler.length} alt={t("sBugunYarin")} />
-        <Sayac
-          href="#/oneriler"
-          ikon={<Clock size={22} />}
-          ton="uyari"
-          etiket={t("sOnayBekleyen")}
-          deger={v.paketler.filter((p) => p.durum === "taslak" || p.durum === "degerlendiriliyor").length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor").length}
-          alt={t("sAksamToplantisi")}
-        />
-        <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={v.paketler.filter((p) => p.durum === "uretimde").length} alt={t("sUretimde")} />
-        <Sayac
-          href="#/paketler"
-          ikon={<CheckCircle size={22} />}
-          ton="iyi"
-          etiket={t("sTamamlanan")}
-          deger={v.paketler.filter((p) => p.durum === "tamamlandi" && p.guncelleme > yediGun).length}
-          alt={t("sSonYediGun")}
-        />
-        <Sayac href="#/uretim" ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={v.paketler.filter((p) => geciktiMi(p)).length} alt={t("sTeslimGecti")} />
-      </div>
+/* Planlama'nın çalışma alanları; Next Day'i görebilen her masa ekleyebilir. */
+const veriyle = (Bilesen: (p: { d: Durum }) => ReactNode) => () => <Bilesen d={useVeri()} />;
+export const PLANLAMA_ALANLARI: Alan[] = [
+  { id: "plKisayol", ad: "alPlanKisayollari", genis: true, grup: "planlama", sayfa: "nextday", Bilesen: () => <PlanKisayollari /> },
+  { id: "plSayac", ad: "alOzetSayilar", genis: true, grup: "planlama", sayfa: "nextday", Bilesen: () => <PlanlamaSayaclari /> },
+  { id: "plHafta", ad: "buHaftaninPlani", genis: true, grup: "planlama", sayfa: "haftalik", Bilesen: veriyle(HaftaKarti) },
+  { id: "plTakvim", ad: "bugununTakvimi", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(BugununTakvimi) },
+  { id: "plToplanti", ad: "yaklasanToplantilar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(YaklasanToplantilar) },
+  { id: "plSonOneri", ad: "sonOneriler", genis: true, grup: "planlama", sayfa: "oneriler", Bilesen: () => <SonOneriler /> },
+  { id: "plPlanlar", ad: "devamEdenPlanlar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(DevamEdenPlanlar) },
+  { id: "plHareket", ad: "sonHareketler", grup: "planlama", sayfa: "nextday", Bilesen: () => <SonHareketler /> },
+  { id: "plMuhabirler", ad: "muhabirlerinDurumu", grup: "planlama", sayfa: "muhabirler", Bilesen: veriyle(MuhabirDurumu) },
+  { id: "plKoordinasyon", ad: "koordinasyon", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(Koordinasyon) },
+  { id: "plDosyalar", ad: "onemliDosyalar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(OnemliDosyalar) },
+];
 
-      <div className="iz iz-pano">
-        <HaftaKarti d={v} />
-        <BugununTakvimi d={v} />
-        <YaklasanToplantilar d={v} />
-      </div>
+function SonOneriler() {
+  const { t } = useDil();
+  const v = useVeri();
+  return (
+    <Kart baslik={t("sonOneriler")} ikon={<ListChecks size={18} />} sagUc={<Tumu href="#/oneriler" />}>
+      <OneriTablosu oneriler={[...v.oneriler].sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
+    </Kart>
+  );
+}
 
-      <div className="iz iz-pano">
-        <Kart baslik={t("sonOneriler")} ikon={<ListChecks size={18} />} sagUc={<Tumu href="#/oneriler" />}>
-          <OneriTablosu oneriler={[...v.oneriler].sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
-        </Kart>
-        <DevamEdenPlanlar d={v} bugunPlan={bugunPlan} yarinPlan={yarinPlan} />
-        <Kart baslik={t("sonHareketler")} ikon={<History size={18} />}>
-          <HareketAkisi hareketler={v.hareketler.slice(0, 7)} d={v} />
-        </Kart>
-      </div>
-
-      <div className="iz iz-3">
-        <MuhabirDurumu d={v} />
-        <Koordinasyon d={v} ben={ben} />
-        <OnemliDosyalar d={v} />
-      </div>
-    </>
+function SonHareketler() {
+  const { t } = useDil();
+  const v = useVeri();
+  return (
+    <Kart baslik={t("sonHareketler")} ikon={<History size={18} />}>
+      <HareketAkisi hareketler={v.hareketler.slice(0, 7)} d={v} />
+    </Kart>
   );
 }
 
@@ -289,8 +308,10 @@ export function YaklasanToplantilar({ d }: { d: Durum }) {
   );
 }
 
-function DevamEdenPlanlar({ d, bugunPlan, yarinPlan }: { d: Durum; bugunPlan?: NextDayPlan; yarinPlan?: NextDayPlan }) {
+function DevamEdenPlanlar({ d }: { d: Durum }) {
   const { t, dil } = useDil();
+  const bugunPlan = d.planlar.find((p) => p.tarih === bugun());
+  const yarinPlan = d.planlar.find((p) => p.tarih === gunEkle(bugun(), 1));
   const bas = planlananHafta(bugun());
   const hafta = d.haftalik.find((h) => h.baslangic === bas);
   const ay = d.aylik[0];
@@ -391,7 +412,7 @@ function MuhabirDurumu({ d }: { d: Durum }) {
  * Koordinasyon gerektiren işler: başka bir birimin hareket etmesini
  * bekleyen kayıtlar. Liste kendiliğinden çıkıyor, ayrıca tutulmuyor.
  */
-function Koordinasyon({ d }: { d: Durum; ben: Kisi }) {
+function Koordinasyon({ d }: { d: Durum }) {
   const { t } = useDil();
   /* Etiket arayüzün, konu içeriğin: konu arayüz cümlesinde de sağdan sola aksın diye ayrı. */
   const satirlar: { id: string; metin: string; konu?: string; birim: string; href: string; ton: string }[] = [];

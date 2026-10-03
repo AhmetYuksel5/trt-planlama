@@ -18,6 +18,7 @@ import PlanlamaAna, { BugununTakvimi, SayfaBasi } from "./ana/Planlama";
 import { Yetkisiz } from "./Ayarlar";
 import { FormAlt } from "./nextday/Formlar";
 import PanelPlanlari from "./PanelPlanlari";
+import { CalismaAlani, type Alan } from "./ana/Calisma";
 
 /**
  * Yönetici paneli.
@@ -348,13 +349,14 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
 function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
   const { t } = useDil();
   const ekran: Partial<Record<Birim, ReactNode>> = {
-    planlama: <PlanlamaAna ben={ben} />,
-    newsdesk: <NewsdeskAna ben={ben} />,
-    newsgathering: <NewsGatheringAna />,
-    program: <ProgramAna />,
-    ekonomi: <EkonomiAna ben={ben} />,
-    output: <OutputAna />,
-    media: <MediaAna />,
+    // Müdür birimin kendi düzenini görüyor, kendi kişisel düzenini değil.
+    planlama: <PlanlamaAna ben={ben} kisisel={false} />,
+    newsdesk: <NewsdeskAna ben={ben} kisisel={false} />,
+    newsgathering: <NewsGatheringAna ben={ben} kisisel={false} />,
+    program: <ProgramAna ben={ben} kisisel={false} />,
+    ekonomi: <EkonomiAna ben={ben} kisisel={false} />,
+    output: <OutputAna ben={ben} kisisel={false} />,
+    media: <MediaAna ben={ben} kisisel={false} />,
   };
   return (
     <>
@@ -374,7 +376,6 @@ function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
 
 export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: string }) {
   const { t } = useDil();
-  const v = useVeri();
   const [talimat, setTalimat] = useState(false);
   const ks = kapsam(ben);
   if (!ks) return <Yetkisiz />;
@@ -385,18 +386,9 @@ export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: stri
     return <BirimGorunumu ben={ben} birim={birim as Birim} />;
   }
 
-  const B = bugun();
-  const kolda = v.paketler.filter((p) => ks.kollar.includes(p.tur));
-  // Müdür ve Ekonomi yöneticisi kolun bütün işini, birim yöneticisi yalnız kendi masasındakini izliyor.
-  const izlenen = ks.kolaGore ? kolda : v.paketler.filter((p) => paketKapsamda(ben, p));
-  const yarinPlan = v.planlar.find((p) => p.tarih === gunEkle(B, 1));
-  const talimatVerir = talimatVerebilir(ben);
-  const acikTalimat = v.oneriler.filter((o) => o.talimatVeren === ben.id && talimatDurumu(o, v).adim < 3 && !talimatDurumu(o, v).iptal).length;
-  const hafta = rapor(v, 7, ks.kollar);
-  const yuzde = (x: number | null) => (x === null ? "—" : `%${Math.round(x * 100)}`);
-  const kapsamAdi = ks.birimler.map((b) => t(BIRIM_ADI[b])).join(", ");
   const programYalniz = ks.kollar.length === 1 && ks.kollar[0] === "program";
-  const gorusBekleyen = gorusBekleyenler(v, ben).length;
+  const kapsamAdi = ks.birimler.map((b) => t(BIRIM_ADI[b])).join(", ");
+  const talimatVerir = talimatVerebilir(ben);
 
   return (
     <>
@@ -418,76 +410,124 @@ export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: stri
           <TaslakEtiketi /> {t("ypProgramTaslak")}
         </NotKutu>
       )}
-
-      <div className="sayaclar">
-        {!programYalniz && yarinPlan && (
-          <Sayac
-            href={`#/nextday/${yarinPlan.id}`}
-            ikon={<ClipboardList size={22} />}
-            renk="renk-nextday"
-            etiket={t("sYarinPlan")}
-            deger={<Rozet ton={PLAN_DURUM_TONU[yarinPlan.durum]}>{t(PLAN_DURUM_ADI[yarinPlan.durum])}</Rozet>}
-            alt={t("planOzeti", { baslik: yarinPlan.basliklar.length, paket: v.paketler.filter((p) => p.planId === yarinPlan.id && p.durum !== "iptal").length })}
-          />
-        )}
-        <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sUretimde")} deger={izlenen.filter((p) => p.durum === "uretimde").length} />
-        <Sayac
-          href="#/paketler"
-          ikon={<CheckCircle size={22} />}
-          ton="iyi"
-          etiket={t("sBugunTamamlanan")}
-          deger={kolda.filter((p) => p.durum === "tamamlandi" && yerelGun(p.guncelleme) === B).length}
-        />
-        <Sayac ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={izlenen.filter((p) => geciktiMi(p)).length} />
-        <Sayac ikon={<Flag size={22} />} ton="uyari" etiket={t("sOncelikli")} deger={izlenen.filter((p) => p.oncelikli && aktifMi(p)).length} />
-        {talimatVerir && <Sayac ikon={<PenLine size={22} />} renk="renk-saha" etiket={t("sTalimatlarim")} deger={acikTalimat} />}
-        {/* Ön inceleme yalnız önünde öneri varken; boş sayaç paneli kalabalıklaştırmasın. */}
-        {gorusBekleyen > 0 && <Sayac ikon={<ClipboardCheck size={22} />} ton="uyari" etiket={t("onIncelemeBekleyen")} deger={gorusBekleyen} />}
-      </div>
-
-      {/* Haftalık toplantıdan önce önüne gelen stok öneriler: yalnız varken. */}
-      {onIncelemeBekleyenler(v, ben).length > 0 && <OnIncelemeKarti ben={ben} />}
-
-      <section className="birim-kartlari" aria-label={t("birimler")}>
-        {ks.birimler.map((b) => (
-          <BirimKarti
-            key={b}
-            durum={birimDurumu(v, b, kolda, t)}
-            ayrinti={!ks.mudur ? "#/" : b === "muhabir" ? "#/muhabirler" : `#/panel/${b}`}
-          />
-        ))}
-      </section>
-
-      <PanelPlanlari />
-
-      <div className="iz iz-2">
-        <DikkatListesi ben={ben} d={v} paketler={izlenen} ks={ks} />
-        {talimatVerir ? <Talimatlarim ben={ben} d={v} /> : <BugununTakvimi d={v} />}
-      </div>
-
-      <div className="iz iz-2">
-        {talimatVerir && <BugununTakvimi d={v} />}
-        <Kart baslik={t("haftaOzeti")} ikon={<CheckCircle size={18} />} sagUc={<Tumu href="#/raporlar" metin={t("mRaporlar")} />}>
-          <dl className="ozet-sayilar">
-            <div>
-              <dt>{t("tamamlananHaber")}</dt>
-              <dd>{hafta.ozet.tamamlanan}</dd>
-            </div>
-            <div>
-              <dt>{t("zamanindaTeslim")}</dt>
-              <dd>{yuzde(hafta.ozet.zamaninda)}</dd>
-            </div>
-            <div>
-              <dt>{t("ilkSeferdeKabul")}</dt>
-              <dd>{yuzde(hafta.ozet.ilkSeferde)}</dd>
-            </div>
-            <div>
-              <dt>{t("oneriKabul")}</dt>
-              <dd>{yuzde(hafta.ozet.oneriKabul)}</dd>
-            </div>
-          </dl>
-        </Kart>
-      </div>
+      <CalismaAlani ben={ben} duzen="panel" />
     </>
   );
 }
+
+/* --- Panelin çalışma alanları --- */
+
+/** Müdür ve Ekonomi yöneticisi kolun bütün işini, birim yöneticisi yalnız kendi masasındakini izliyor. */
+function usePanel(ben: Kisi) {
+  const v = useVeri();
+  const ks = kapsam(ben)!;
+  const kolda = v.paketler.filter((p) => ks.kollar.includes(p.tur));
+  return { v, ks, kolda, izlenen: ks.kolaGore ? kolda : v.paketler.filter((p) => paketKapsamda(ben, p)) };
+}
+
+function PanelSayaclari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { v, ks, kolda, izlenen } = usePanel(ben);
+  const B = bugun();
+  const yarinPlan = v.planlar.find((p) => p.tarih === gunEkle(B, 1));
+  const talimatVerir = talimatVerebilir(ben);
+  const acikTalimat = v.oneriler.filter((o) => o.talimatVeren === ben.id && talimatDurumu(o, v).adim < 3 && !talimatDurumu(o, v).iptal).length;
+  const programYalniz = ks.kollar.length === 1 && ks.kollar[0] === "program";
+  const gorusBekleyen = gorusBekleyenler(v, ben).length;
+  return (
+    <div className="sayaclar">
+      {!programYalniz && yarinPlan && (
+        <Sayac
+          href={`#/nextday/${yarinPlan.id}`}
+          ikon={<ClipboardList size={22} />}
+          renk="renk-nextday"
+          etiket={t("sYarinPlan")}
+          deger={<Rozet ton={PLAN_DURUM_TONU[yarinPlan.durum]}>{t(PLAN_DURUM_ADI[yarinPlan.durum])}</Rozet>}
+          alt={t("planOzeti", { baslik: yarinPlan.basliklar.length, paket: v.paketler.filter((p) => p.planId === yarinPlan.id && p.durum !== "iptal").length })}
+        />
+      )}
+      <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sUretimde")} deger={izlenen.filter((p) => p.durum === "uretimde").length} />
+      <Sayac
+        href="#/paketler"
+        ikon={<CheckCircle size={22} />}
+        ton="iyi"
+        etiket={t("sBugunTamamlanan")}
+        deger={kolda.filter((p) => p.durum === "tamamlandi" && yerelGun(p.guncelleme) === B).length}
+      />
+      <Sayac ikon={<AlertTriangle size={22} />} ton="kotu" etiket={t("sGeciken")} deger={izlenen.filter((p) => geciktiMi(p)).length} />
+      <Sayac ikon={<Flag size={22} />} ton="uyari" etiket={t("sOncelikli")} deger={izlenen.filter((p) => p.oncelikli && aktifMi(p)).length} />
+      {talimatVerir && <Sayac ikon={<PenLine size={22} />} renk="renk-saha" etiket={t("sTalimatlarim")} deger={acikTalimat} />}
+      {/* Ön inceleme yalnız önünde öneri varken; boş sayaç paneli kalabalıklaştırmasın. */}
+      {gorusBekleyen > 0 && <Sayac ikon={<ClipboardCheck size={22} />} ton="uyari" etiket={t("onIncelemeBekleyen")} deger={gorusBekleyen} />}
+    </div>
+  );
+}
+
+/* Haftalık toplantıdan önce önüne gelen stok öneriler: yalnız varken. */
+function PanelOnInceleme({ ben }: { ben: Kisi }) {
+  const v = useVeri();
+  return onIncelemeBekleyenler(v, ben).length > 0 ? <OnIncelemeKarti ben={ben} /> : null;
+}
+
+function BirimKartlari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { v, ks, kolda } = usePanel(ben);
+  return (
+    <section className="birim-kartlari" aria-label={t("birimler")}>
+      {ks.birimler.map((b) => (
+        <BirimKarti key={b} durum={birimDurumu(v, b, kolda, t)} ayrinti={!ks.mudur ? "#/" : b === "muhabir" ? "#/muhabirler" : `#/panel/${b}`} />
+      ))}
+    </section>
+  );
+}
+
+function PanelDikkat({ ben }: { ben: Kisi }) {
+  const { v, ks, izlenen } = usePanel(ben);
+  return <DikkatListesi ben={ben} d={v} paketler={izlenen} ks={ks} />;
+}
+
+function PanelTalimatlar({ ben }: { ben: Kisi }) {
+  const v = useVeri();
+  return talimatVerebilir(ben) ? <Talimatlarim ben={ben} d={v} /> : null;
+}
+
+function HaftaOzeti({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const { v, ks } = usePanel(ben);
+  const hafta = rapor(v, 7, ks.kollar);
+  const yuzde = (x: number | null) => (x === null ? "—" : `%${Math.round(x * 100)}`);
+  return (
+    <Kart baslik={t("haftaOzeti")} ikon={<CheckCircle size={18} />} sagUc={<Tumu href="#/raporlar" metin={t("mRaporlar")} />}>
+      <dl className="ozet-sayilar">
+        <div>
+          <dt>{t("tamamlananHaber")}</dt>
+          <dd>{hafta.ozet.tamamlanan}</dd>
+        </div>
+        <div>
+          <dt>{t("zamanindaTeslim")}</dt>
+          <dd>{yuzde(hafta.ozet.zamaninda)}</dd>
+        </div>
+        <div>
+          <dt>{t("ilkSeferdeKabul")}</dt>
+          <dd>{yuzde(hafta.ozet.ilkSeferde)}</dd>
+        </div>
+        <div>
+          <dt>{t("oneriKabul")}</dt>
+          <dd>{yuzde(hafta.ozet.oneriKabul)}</dd>
+        </div>
+      </dl>
+    </Kart>
+  );
+}
+
+/* Kapsamı olan her yönetici bunları kendi birim sayfasına da ekleyebilir. */
+export const PANEL_ALANLARI: Alan[] = [
+  { id: "ypSayac", ad: "alOzetSayilar", genis: true, grup: "panel", sayfa: "panel", Bilesen: PanelSayaclari },
+  { id: "ypOnInceleme", ad: "onIncelemeBekleyen", genis: true, grup: "panel", sayfa: "panel", Bilesen: PanelOnInceleme },
+  { id: "ypBirimler", ad: "birimler", genis: true, grup: "panel", sayfa: "panel", Bilesen: BirimKartlari },
+  { id: "ypPlanlar", ad: "ypPlanlar", genis: true, grup: "panel", sayfa: "panel", Bilesen: () => <PanelPlanlari /> },
+  { id: "ypDikkat", ad: "dikkatGerektirenler", grup: "panel", sayfa: "panel", Bilesen: PanelDikkat },
+  { id: "ypTalimat", ad: "talimatlarim", grup: "panel", sayfa: "panel", Bilesen: PanelTalimatlar },
+  { id: "ypTakvim", ad: "bugununTakvimi", grup: "panel", sayfa: "panel", Bilesen: () => <BugununTakvimi d={useVeri()} /> },
+  { id: "ypHafta", ad: "haftaOzeti", grup: "panel", sayfa: "panel", Bilesen: HaftaOzeti },
+];
