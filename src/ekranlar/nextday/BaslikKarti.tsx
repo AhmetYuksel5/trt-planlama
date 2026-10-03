@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, CircleCheck, Hourglass, Lightbulb, Pencil, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, useDil } from "../../dil";
 import { paketDurum, paketSil, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { kisiAr, satir, sehirAr } from "../../etiketler";
@@ -34,7 +35,7 @@ export default function BaslikKarti({
   icerik: boolean;
   operasyon: boolean;
 }) {
-  const { t, ad, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [paketForm, setPaketForm] = useState("");
@@ -216,7 +217,7 @@ export default function BaslikKarti({
             {[...oneriler].sort(talimatOnce).map((o) => (
               <div key={o.id} className={`kayit ${o.talimatVeren ? "kayit-talimat" : ""}`}>
                 <div className="kayit-bas">
-                  <Avatar kisi={kisiBul(v, o.muhabirId ?? o.talimatVeren)} boy="kucuk" />
+                  <OneriAvatari oneri={o} d={v} />
                   <div>
                     <b>
                       <Icerik blok>{o.haberBasligi}</Icerik>
@@ -224,7 +225,9 @@ export default function BaslikKarti({
                     <Icerik blok className="kayit-metin">
                       {o.gelisme}
                     </Icerik>
-                    <small>{o.talimatVeren ? <TalimatRozeti veren={kisiBul(v, o.talimatVeren)} /> : ad(kisiBul(v, o.muhabirId))}</small>
+                    <small>
+                      <OneriKaynagi oneri={o} d={v} />
+                    </small>
                   </div>
                   {oneriAcik !== o.id && (
                     <button className="dugme dugme-iyi dugme-kucuk" onClick={() => setOneriAcik(o.id)}>

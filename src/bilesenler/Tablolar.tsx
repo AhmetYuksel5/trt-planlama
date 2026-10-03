@@ -1,11 +1,11 @@
-import { ChevronRight } from "lucide-react";
+import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Tv, type LucideIcon } from "lucide-react";
 import { geciktiMi, paketSahibi, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
-import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
-import { kisiBul, type Durum, type Oneri, type Paket } from "../veri";
-import { AsamaCubugu, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
+import { kisiBul, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
+import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
 
 /*
  * Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek
@@ -151,6 +151,93 @@ export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
   return <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>;
 }
 
+/*
+ * Önerinin kaynağı tek yerde: muhabir, yönetici talimatı ya da Planlama'nın
+ * elle girdiği muhabir dışı kaynak (ajans, resmî duyuru, başka birim).
+ * Elle girilende giren de görünüyor; öneriyi soran ona soruyor.
+ */
+const KAYNAK_IKONU: Record<KaynakTuru, LucideIcon> = { muhabir: Ellipsis, ajans: Rss, resmi: Landmark, medya: Tv, kurum: Building2, diger: Ellipsis };
+
+/** Kişisi olan öneride kişinin avatarı, olmayanda kaynağın ikonu. */
+export function OneriAvatari({ oneri, d, boy = "kucuk" }: { oneri: Oneri; d: Durum; boy?: "" | "kucuk" | "buyuk" }) {
+  const kisi = kisiBul(d, oneri.muhabirId ?? oneri.talimatVeren);
+  if (kisi || !oneri.kaynakTuru) return <Avatar kisi={kisi} boy={boy} />;
+  const Ikon = KAYNAK_IKONU[oneri.kaynakTuru];
+  return (
+    <span className={`avatar avatar-kaynak ${boy}`} aria-hidden="true">
+      <Ikon size={boy === "buyuk" ? 26 : boy === "kucuk" ? 13 : 16} />
+    </span>
+  );
+}
+
+export function KaynakRozeti({ oneri }: { oneri: Oneri }) {
+  const { t } = useDil();
+  if (!oneri.kaynakTuru) return null;
+  return (
+    <span className="rozet rozet-vurgu rozet-kaynak">
+      {/* Tek satır içi öğe: rozet esnek kutu, parçalar ayrı öğe olursa dar alanda üç satıra bölünüyordu. */}
+      <span>
+        {t(KAYNAK_ADI[oneri.kaynakTuru])}
+        {oneri.kaynakAdi && (
+          <>
+            {" · "}
+            <bdi dir="auto">{oneri.kaynakAdi}</bdi>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
+/** Satır içinde kaynak; hücre biçiminde avatar ve altında giren. */
+export function OneriKaynagi({ oneri, d, hucre = false }: { oneri: Oneri; d: Durum; hucre?: boolean }) {
+  const { t, ad } = useDil();
+  const muhabir = kisiBul(d, oneri.muhabirId);
+  const giren = kisiBul(d, oneri.giren);
+  const ana = oneri.talimatVeren ? (
+    <TalimatRozeti veren={kisiBul(d, oneri.talimatVeren)} />
+  ) : muhabir ? (
+    <span>{ad(muhabir)}</span>
+  ) : oneri.kaynakTuru ? (
+    <KaynakRozeti oneri={oneri} />
+  ) : (
+    <span>{t("atanmadi")}</span>
+  );
+  const girdi = giren && t("girdi", { kisi: ad(giren) });
+  if (!hucre)
+    return (
+      <>
+        {ana}
+        {girdi && <span className="sonuk">· {girdi}</span>}
+      </>
+    );
+  return (
+    <span className="kisi-hucre">
+      <OneriAvatari oneri={oneri} d={d} />
+      <span>
+        {ana}
+        {girdi && (
+          <>
+            <br />
+            <small className="sonuk">{girdi}</small>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
+/** Aramada ve düz metin gereken yerde kaynağın adı. */
+export const useKaynakMetni = () => {
+  const { t, ad } = useDil();
+  return (o: Oneri, d: Durum): string => {
+    const kisi = kisiBul(d, o.muhabirId ?? o.talimatVeren);
+    if (kisi) return ad(kisi);
+    if (!o.kaynakTuru) return "";
+    return o.kaynakAdi ? `${t(KAYNAK_ADI[o.kaynakTuru])} · ${o.kaynakAdi}` : t(KAYNAK_ADI[o.kaynakTuru]);
+  };
+};
+
 export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[]; d: Durum; kisa?: boolean }) {
   const { t, dil } = useDil();
   if (!oneriler.length) return <Bos metin={t("oneriYok")} />;
@@ -160,7 +247,7 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
         <thead>
           <tr>
             <th>{t("zaman")}</th>
-            <th>{t("muhabir")}</th>
+            <th>{t("kaynak")}</th>
             <th className="icerik-sutun">{t("haberBasligi")}</th>
             {!kisa && <th>{t("tur")}</th>}
             <th>{t("ulke")}</th>
@@ -176,8 +263,8 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
                 {kisa && yerelGun(o.zaman) === bugun() ? "" : `${tarihYaz(yerelGun(o.zaman), dil, "kisa")} `}
                 {saatYaz(o.zaman, dil)}
               </td>
-              <td data-etiket={t("muhabir")}>
-                {o.talimatVeren ? <TalimatRozeti veren={kisiBul(d, o.talimatVeren)} /> : <KisiHucre kisi={kisiBul(d, o.muhabirId)} />}
+              <td data-etiket={t("kaynak")}>
+                <OneriKaynagi oneri={o} d={d} hucre />
               </td>
               <td className="birincil icerik-sutun">
                 <a className="kalin" href={`#/oneriler/${o.id}`} onClick={(e) => e.stopPropagation()}>

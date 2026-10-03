@@ -60,7 +60,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v8`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v9`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
@@ -71,6 +71,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
   Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
   akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
+- Önerinin üç kaynağı var:
+  - muhabir: uygulamadan, e-posta yanıtından ya da Planlama'nın onun adına
+    girdiği telefon/mesaj/yüz yüze
+  - yönetici talimatı
+  - muhabir dışı kaynak: ajans, resmî, medya, kurum içi (`kaynakTuru`,
+    `kaynakAdi`)
+
+  Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
+  öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
+  kaynak her yerde `OneriKaynagi` / `OneriAvatari` ile gösterilir
+  (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
+  Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
+  plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı

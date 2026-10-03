@@ -2,11 +2,12 @@ import { Ban, Check, Eye, Pencil, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri } from "../../bilesenler/Haftalik";
 import { Icerik, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
 import { kalemKarar, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, onIncelemeyeGidebilir } from "../../haftalik";
-import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
+import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
@@ -157,12 +158,14 @@ const KARAR_DUGMELERI: { karar: Karar; ad: Anahtar; ikon: typeof Check; sinif: s
 export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; dosyaGoster?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
+  const kaynakMetni = useKaynakMetni();
   const [duzenle, setDuzenle] = useState(false);
   const duzenler = haftalikDuzenler(ben, hafta);
   const karar = kararVerebilir(ben, hafta) && gundemde(kalem);
   const plan = planBul(v, kalem.aktarim?.planId);
   const paket = paketBul(v, kalem.aktarim?.paketId);
   const dosya = baslikBul(v, kalem.baslikId);
+  const oneri = oneriBul(v, kalem.oneriId);
   if (duzenle) return <KalemFormu ben={ben} hafta={hafta} mevcut={kalem} kapat={() => setDuzenle(false)} />;
   const onEk = [kalem.baslik, kalem.yer].filter(Boolean).join(" - ");
   return (
@@ -194,9 +197,9 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
             <TurRozeti tur={kalem.tur} />
             {kalem.bicimler.length > 0 && <bdi dir="ltr">{bicimSatiri(kalem)}</bdi>}
             <KararRozeti kalem={kalem} />
-            {kalem.oneriId && (
-              <a href={`#/oneriler/${kalem.oneriId}`}>
-                {t("oneri")} · {ad(kisiBul(v, kalem.muhabirler[0]))}
+            {oneri && (
+              <a href={`#/oneriler/${oneri.id}`}>
+                {t("oneri")} · {kaynakMetni(oneri, v)}
               </a>
             )}
           </small>

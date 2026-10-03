@@ -1,17 +1,18 @@
 import { ArrowLeft, Ban, CalendarDays, Check, Clock, Lightbulb, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Bos, Icerik, NotKutu, Rozet, TalimatRozeti, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
-import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
+import { Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
+import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { baslikEkle, geriDonusGonder, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
+import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
 import { KANAL_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { yerelGun } from "../../tarih";
 import { PLAN_DURUMLARI, kisiBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import BaslikKarti from "./BaslikKarti";
-import { Bolum, CanliBolumu, EkipBolumu, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
+import { Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
 
 /**
  * Next Day planı düzenleme ekranı: promptun "en ayrıntılı geliştirilmesi
@@ -28,9 +29,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
-  const bekleyenGeriDonus = v.oneriler.filter(
-    (o) => o.hedefTarih === plan.tarih && !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum),
-  ).length;
+  const bekleyenGeriDonus = v.oneriler.filter((o) => o.hedefTarih === plan.tarih && geriDonusBekliyor(o)).length;
 
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
@@ -208,9 +207,11 @@ function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: 
 /* --- Bu tarihe gelen öneriler: plan hazırlanırken karar burada veriliyor --- */
 
 function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
-  const { t, ad, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState("");
+  /* Öneri yalnız sistemden gelmiyor: telefonla, ajanstan, resmî duyurudan geleni Planlama burada giriyor. */
+  const [elle, setElle] = useState(false);
   const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
   const oneriler = v.oneriler
     .filter((o) => o.hedefTarih === plan.tarih && o.durum !== "planaEklendi")
@@ -220,6 +221,23 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 
   return (
     <Bolum no="★" baslik={t("buPlanaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
+      {yapabilir(ben, "oneriGonder") &&
+        (elle ? (
+          <ElleOneriFormu
+            ben={ben}
+            hedefTarih={plan.tarih}
+            hemenMetni={t("kaydetVePlanaEkle")}
+            kapat={() => setElle(false)}
+            kaydet={(id, hemen) => {
+              setElle(false);
+              if (hemen) setAcik(id);
+            }}
+          />
+        ) : (
+          <div className="ara-alt-2">
+            <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />
+          </div>
+        ))}
       {oneriler.length === 0 ? (
         <Bos kucuk metin={t("oneriYok")} />
       ) : (
@@ -229,7 +247,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
           return (
             <div key={o.id} className={`kayit ${talimat ? "kayit-talimat" : ""}`}>
               <div className="kayit-bas">
-                <Avatar kisi={k ?? kisiBul(v, o.talimatVeren)} boy="kucuk" />
+                <OneriAvatari oneri={o} d={v} />
                 <div>
                   <b>
                     <Icerik blok>{satir(sehirAr(k?.sehir), o.haberBasligi)}</Icerik>
@@ -244,7 +262,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
                   )}
                   <small>
                     <OneriDurumRozeti oneri={o} />
-                    {talimat ? <TalimatRozeti veren={kisiBul(v, o.talimatVeren)} /> : <span>{ad(k)}</span>}
+                    <OneriKaynagi oneri={o} d={v} />
                     <span>
                       · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
                     </span>

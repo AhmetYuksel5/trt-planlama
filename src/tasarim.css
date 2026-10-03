@@ -146,6 +146,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 .ara-ust { margin-top: var(--ara-1); }
 .ara-ust-2 { margin-top: var(--ara-3); }
+.ara-alt-2 { margin-bottom: var(--ara-3); }
 .sonuk-yazi { color: var(--sonuk); }
 .kucuk-baslik { font-size: var(--punto); margin-bottom: var(--ara-2); }
 .kucuk-baslik span { color: var(--sonuk); font-weight: 500; }
@@ -457,6 +458,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .avatarlar a b { font-size: var(--punto-kucuk); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avatarlar a small { color: var(--sonuk); }
 .avatar-fazla { background: var(--yuzey-2) !important; color: var(--sonuk) !important; }
+/* Kişisi olmayan önerinin kaynağı (ajans, resmî duyuru…): kişi değil, ikon; kişi renkleriyle karışmasın. */
+.avatar-kaynak { background: var(--vurgu-sis); color: var(--vurgu); }
+/* Kaynak adı uzun olabiliyor (bakanlık adı); rozet satırı taşırmasın, sarsın. */
+.rozet-kaynak { white-space: normal; max-width: 100%; }
 
 /* --- İlerleme çubuğu --- */
 

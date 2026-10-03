@@ -2001,6 +2001,83 @@ export const ORNEK = (): Durum => {
     h("mu22", "yanitOneriYok", z, { veri: { tarih: haftaBas } });
   }
 
+  /*
+   * Elle girilen öneriler: sistem dışından gelen. Yarının planına
+   * ajanstan düşen bir haber ve muhabirin telefonla ilettiği öneri; gelecek
+   * haftaya bakanlığın duyurusu ve Program biriminin yüz yüze ilettiği
+   * fikir. Kurum adları gerçek olabilir; kişi adı yok.
+   */
+  const elleOneriler: Oneri[] = [
+    {
+      id: "o-elle-ajans",
+      kaynakTuru: "ajans",
+      kaynakAdi: "وكالة الأناضول",
+      giren: "pl3",
+      ulke: "turkiye",
+      haberBasligi: "قرار البنك المركزي التركي بشأن سعر الفائدة",
+      gelisme: "يعلن البنك المركزي قراره ظهرا؛ التوقعات تميل إلى الإبقاء على السعر مع إشارات إلى خفض لاحق.",
+      tur: "haber",
+      bicim: "pkg",
+      sahaGerekli: false,
+      zaman: bugunSaat("12:10", 40),
+      kanal: "eposta",
+      hedefTarih: planTarihi.yarin,
+      durum: "yeni",
+    },
+    {
+      id: "o-elle-telefon",
+      muhabirId: "mu6",
+      giren: "pl2",
+      ulke: "turkiye",
+      haberBasligi: "معرض إسطنبول للكتاب العربي",
+      gelisme: "اتصل المراسل: افتتاح المعرض صباح الغد بمشاركة دور نشر من عشر دول؛ يمكن مقابلة المنظمين.",
+      paketBasligi: "معرض إسطنبول للكتاب العربي يفتح أبوابه",
+      tur: "haber",
+      bicim: "pkg",
+      sahaGerekli: false,
+      zaman: bugunSaat("13:05", 30),
+      kanal: "telefon",
+      hedefTarih: planTarihi.yarin,
+      durum: "degerlendiriliyor",
+    },
+    {
+      id: "ow-resmi",
+      kaynakTuru: "resmi",
+      kaynakAdi: "وزارة الخارجية التركية",
+      giren: "pl4",
+      ulke: "turkiye",
+      haberBasligi: "اجتماع وزراء خارجية منظمة التعاون الإسلامي في إسطنبول",
+      gelisme: "بيان الوزارة: الاجتماع يناقش الوضع في غزة ولبنان؛ مؤتمر صحفي في ختام اليوم الثاني.",
+      tur: "haber",
+      bicim: "canli",
+      sahaGerekli: false,
+      zaman: arada(0.45),
+      kanal: "eposta",
+      hafta: haftaBas,
+      durum: "yeni",
+    },
+    {
+      id: "ow-kurum",
+      kaynakTuru: "kurum",
+      kaynakAdi: "وحدة البرامج",
+      giren: "pl4",
+      ulke: "turkiye",
+      haberBasligi: "ماردين: مدينة الحجر والأديان",
+      gelisme: "اقتراح من وحدة البرامج: تقرير يرافق حلقة الأسبوع القادم من برنامج السفر.",
+      tur: "feature",
+      bicim: "feature",
+      sahaGerekli: true,
+      zaman: arada(0.55),
+      kanal: "yuzYuze",
+      hafta: haftaBas,
+      durum: "yeni",
+    },
+  ];
+  for (const o of elleOneriler) {
+    h(o.giren!, "oneriGeldi", o.zaman, { oneriId: o.id, veri: { sahip: "planlama", elle: "1" } });
+    if (o.durum === "degerlendiriliyor") h("pl2", "oneriDegerlendirmede", new Date(new Date(o.zaman).getTime() + 10 * DAKIKA).toISOString(), { oneriId: o.id });
+  }
+
   const haftalik: HaftalikPlan[] = [
     {
       id: "hf-gelecek",
@@ -2037,7 +2114,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 8,
+    surum: 9,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -2059,7 +2136,7 @@ export const ORNEK = (): Durum => {
         }),
       ),
     ],
-    oneriler: [...talimatlar, ...haftalikOneriler, ...oneriler],
+    oneriler: [...talimatlar, ...elleOneriler, ...haftalikOneriler, ...oneriler],
     cagrilar: (
       [
         ["c-dun", gun(0), zaman(gun(-1), "09:10")],

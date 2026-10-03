@@ -195,6 +195,7 @@ export const KANAL_ADI: Record<Kanal, Anahtar> = {
   eposta: "knEposta",
   telefon: "knTelefon",
   mesaj: "knMesaj",
+  yuzYuze: "knYuzYuze",
 };
 
 export const KAYNAK_ADI: Record<KaynakTuru, Anahtar> = {
@@ -202,6 +203,7 @@ export const KAYNAK_ADI: Record<KaynakTuru, Anahtar> = {
   ajans: "kyAjans",
   resmi: "kyResmi",
   medya: "kyMedya",
+  kurum: "kyKurum",
   diger: "kyDiger",
 };
 

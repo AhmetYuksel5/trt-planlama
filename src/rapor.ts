@@ -21,7 +21,8 @@ export const donemBasi = (gun: Donem) => gunEkle(bugun(), -(gun - 1));
 
 export interface Rapor {
   ozet: Performans & { iptal: number };
-  oneriler: { gelen: number; planaEklenen: number; reddedilen: number; bekleyen: number; talimat: number; kanallar: [Kanal, number][] };
+  /** elle: Planlama'nın sistem dışından girdiği (muhabir adına ya da başka kaynaktan); çağrının ne kadarını kapsadığını gösteriyor. */
+  oneriler: { gelen: number; planaEklenen: number; reddedilen: number; bekleyen: number; talimat: number; elle: number; kanallar: [Kanal, number][] };
   birimler: { birim: Birim; devamEden: number; geciken: number }[];
   bicimler: [Bicim, number][];
   muhabirler: { kisi: Kisi; p: Performans }[];
@@ -69,6 +70,7 @@ export const rapor = (d: Durum, gun: Donem, kollar: readonly IcerikTuru[]): Rapo
       reddedilen: oneriler.filter((o) => o.durum === "reddedildi").length,
       bekleyen: oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "sonra").length,
       talimat: oneriler.filter((o) => o.talimatVeren).length,
+      elle: oneriler.filter((o) => o.giren).length,
       kanallar: [...kanallar.entries()].sort((a, b) => b[1] - a[1]),
     },
     birimler: [...birimYuku.entries()].map(([birim, s]) => ({ birim, ...s })).sort((a, b) => b.devamEden - a.devamEden),
