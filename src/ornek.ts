@@ -1012,8 +1012,8 @@ const PLAN_ICERIGI: Record<"dun" | "bugun" | "yarin", PlanTanimi> = {
   },
 };
 
-/* [plan başlığı ya da "" (takip), yer, metin, kaynak türü, kaynak adı, öneren] */
-type GelismeTanimi = [string, string | undefined, string, Gelisme["kaynakTuru"], string, string?];
+/* [plan başlığı ya da "" (takip), yer, metin, kaynak türü, kaynak adı, öneren, önceki günden mi] */
+type GelismeTanimi = [string, string | undefined, string, Gelisme["kaynakTuru"], string, string?, true?];
 
 const GELISMELER: Record<"dun" | "bugun" | "yarin", GelismeTanimi[]> = {
   dun: [
@@ -1041,7 +1041,7 @@ const GELISMELER: Record<"dun" | "bugun" | "yarin", GelismeTanimi[]> = {
     ["pb-y-ukrayna", "جنيف", "إحاطة شفهية حول الوضع في أوكرانيا أمام مجلس حقوق الإنسان الأممي.", "resmi", "BM"],
     ["pb-y-turkiye", "أنقرة", "وزير الخارجية التركي يعقد مؤتمرا صحفيا قبل جولته الخليجية.", "resmi", "Dışişleri Bakanlığı"],
     ["pb-y-ekonomi", undefined, "OPEC+ تجتمع الأحد؛ تقلب أسعار النفط قبل القرار.", "ajans", "Reuters"],
-    ["", "واشنطن", "مجلس الشيوخ الأمريكي يعقد جلسته الأخيرة قبل الانتخابات النصفية.", "medya", "AP"],
+    ["", "واشنطن", "مجلس الشيوخ الأمريكي يعقد جلسته الأخيرة قبل الانتخابات النصفية.", "medya", "AP", undefined, true],
     ["", "القاهرة", "مصر تستضيف منتدى للاستثمار في أفريقيا.", "ajans", "MENA"],
     ["", "بروكسل", "وزراء خارجية الاتحاد الأوروبي يبحثون الشرق الأوسط.", "ajans", "AFP"],
   ],
@@ -1192,6 +1192,8 @@ const CANLILAR = (planId: (k: "dun" | "bugun" | "yarin") => string, gun: (n: num
     yer: "الدوحة",
     muhabirId: "mu6",
     notlar: "القمة الأسبوع المقبل؛ تُنقل إلى خطة يوم البث.",
+    // İleri tarihli canlı yayın şablonla dünden geldi.
+    onceki: true,
   },
 ];
 
@@ -1357,19 +1359,28 @@ export const ORNEK = (): Durum => {
   const planTarihi = { dun: gun(-1), bugun: gun(0), yarin: gun(1) };
   const planDurumu = { dun: "devralindi", bugun: "devralindi", yarin: "taslak" } as const;
 
+  /*
+   * Yarının planı bugünkünün şablonuyla açılmış: bugünde de olan ekip
+   * üyesi, hareket ve aynı başlıktaki muhabir "önceki günden" işaretli,
+   * kalanı bugün eklenmiş. Ekranda ikisi yan yana görünsün.
+   */
+  const sablon = PLAN_ICERIGI.bugun;
+  const sablondaMuhabir = (baslikId: string, kisiId: string) => sablon.basliklar.some(([, b, ms]) => b === baslikId && ms.some((m) => m.split("@")[0] === kisiId));
   const planlar: NextDayPlan[] = (["yarin", "bugun", "dun"] as const).map((k) => ({
     id: planId(k),
     tarih: planTarihi[k],
     durum: planDurumu[k],
-    ekip: PLAN_ICERIGI[k].ekip,
+    ekip: k === "yarin" ? PLAN_ICERIGI[k].ekip.map((e) => (sablon.ekip.some((x) => x.kisiId === e.kisiId) ? { ...e, onceki: true as const } : e)) : PLAN_ICERIGI[k].ekip,
     gorevlendirmeler: PLAN_ICERIGI[k].gorevlendirmeler,
+    oncekiHareketler: k === "yarin" ? PLAN_ICERIGI[k].gorevlendirmeler.filter((g) => sablon.gorevlendirmeler.includes(g)) : undefined,
     hazirPaketler: PLAN_ICERIGI[k].hazir,
     basliklar: PLAN_ICERIGI[k].basliklar.map(([id, baslikId, muhabirler]) => ({
       id,
       baslikId,
       muhabirler: muhabirler.map((m) => {
         const [kisiId, saat] = m.split("@");
-        return saat ? { kisiId, saat } : { kisiId };
+        const onceki = k === "yarin" && sablondaMuhabir(baslikId, kisiId) ? { onceki: true as const } : {};
+        return saat ? { kisiId, saat, ...onceki } : { kisiId, ...onceki };
       }),
     })),
     kopyaKaynagi: k === "yarin" ? planId("bugun") : undefined,
@@ -1776,7 +1787,7 @@ export const ORNEK = (): Durum => {
   }
 
   const gelismeler: Gelisme[] = (["dun", "bugun", "yarin"] as const).flatMap((k) =>
-    GELISMELER[k].map(([pb, yer, metin, kaynakTuru, kaynakAdi, onerenId], i) => ({
+    GELISMELER[k].map(([pb, yer, metin, kaynakTuru, kaynakAdi, onerenId, onceki], i) => ({
       id: `g-${k}-${i}`,
       planId: planId(k),
       planBaslikId: pb || undefined,
@@ -1786,6 +1797,7 @@ export const ORNEK = (): Durum => {
       kaynakAdi,
       tarih: k === "yarin" ? bugunSaat("12:00", 20) : zaman(gunEkle(planTarihi[k], -1), "12:00"),
       onerenId,
+      onceki,
     })),
   );
   gelismeler.push({
@@ -2114,7 +2126,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 9,
+    surum: 10,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,

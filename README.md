@@ -23,8 +23,12 @@ npm run preview  # derlenmiş hali yerelde
   (Planlama, Newsdesk, News Gathering, Programlar, Ekonomi, Output/dil,
   Media Manager, Muhabir, Yönetim).
 - **Next Day planı:**
-  - liste ve yeni plan; tarih varsayılan olarak yarın
-  - önceki planı bölüm seçerek kopyalama
+  - liste; planı olmayan sıradaki gün (çoğunlukla yarın) tek düğmeyle açılıyor
+  - yeni plan tek tıkla, önceki planın şablonuyla açılıyor: ekip, devam
+    eden hareketler, başlıklar ve muhabirleri, ileri tarihli canlı yayınlar,
+    gelişmeler ve takipler taşınıyor; paket önerileri ve hazır paketler
+    taşınmıyor. Dünden gelen satırlar çok hafif fonlu; düzenleyince,
+    "Bugün de geçerli" deyince ya da plan onaylanınca fon kalkıyor
   - altı bölümlük düzenleme: ekip ve vardiya, muhabir hareketleri, canlı
     yayınlar, hazır paketler, başlık başlık haber gündemi, takipler
   - durum çizgisi: taslak → haber toplantısında → onaylı → Newsdesk devraldı

@@ -29,6 +29,9 @@
   --vurgu-koyu: #1547ad;
   --vurgu-yazi: #ffffff;
   --vurgu-sis: #e7eefc;
+  /* Önceki günden gelen kayıt: vurgu sisinden de açık; yazıyı bastırmadan "dünden" dedirtecek kadar. */
+  --onceki-fon: #eef3fd;
+  --onceki-cizgi: #d3def5;
 
   /* Sol menü ve marka. */
   --lacivert: #0f1f3a;
@@ -899,6 +902,9 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .dugme-oncelik { background: var(--marka); border-color: var(--marka); color: #fff; }
 .dugme-oncelik:hover { background: var(--marka); border-color: var(--marka); filter: brightness(.92); }
 .kayit-talimat { border-inline-start: 3px solid var(--lacivert); }
+/* Önceki günden gelip dokunulmamış satır ve çip: çok hafif fon. Çıktı kendi düzenini kullandığı için orada yok. */
+.kayit.onceki, .cip.onceki { background: var(--onceki-fon); border-color: var(--onceki-cizgi); }
+.onceki-ornek { display: inline-block; inline-size: 1.6em; block-size: 1em; border-radius: 4px; background: var(--onceki-fon); border: 1px solid var(--onceki-cizgi); vertical-align: middle; margin-inline-end: var(--ara-1); }
 .akis li.yonetici-notu { background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-2); border-top: 0; margin-top: var(--ara-1); }
 .akis li.yonetici-notu .rozet { margin-inline-start: var(--ara-1); }
 

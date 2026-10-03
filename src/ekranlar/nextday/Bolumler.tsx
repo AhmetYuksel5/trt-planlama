@@ -1,8 +1,8 @@
-import { ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Rozet, TurRozeti } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, planGorevlendirmeCikar, planGorevlendirmeEkle } from "../../eylemler";
+import { canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -40,6 +40,19 @@ export function IkonDugme({ ikon, etiket, onClick, ton = "" }: { ikon: ReactNode
       {ikon}
     </button>
   );
+}
+
+/*
+ * Önceki günden gelip dokunulmamış kayıt hafif fonlu ("onceki" sınıfı).
+ * Düğme kaydı değiştirmeden bugünün kaydı sayıyor; düzenlemek de fonu
+ * kaldırıyor.
+ */
+export const oncekiSinif = (onceki: boolean | undefined, sinif: string) => (onceki ? `${sinif} onceki` : sinif);
+
+export function OncekiDugmesi({ planId, hedef }: { planId: string; hedef: OncekiHedef }) {
+  const { t } = useDil();
+  const ben = useBen();
+  return <IkonDugme ikon={<Check size={15} />} etiket={t("bugunDeGecerli")} onClick={() => ben && oncekiOnayla(ben, planId, hedef)} />;
 }
 
 export function EkleDugmesi({ metin, onClick }: { metin: string; onClick: () => void }) {
@@ -84,7 +97,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
               {uyeler.map((e) => {
                 const k = kisiBul(v, e.kisiId);
                 return (
-                  <span key={e.kisiId} className="cip">
+                  <span key={e.kisiId} className={oncekiSinif(e.onceki, "cip")} title={e.onceki ? t("oncekiGunden") : undefined}>
                     <Avatar kisi={k} boy="kucuk" />
                     {k ? ad(k) : "?"}
                     {duzenler ? (
@@ -188,8 +201,9 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
       ) : (
         bagli.map((g) => {
           const k = kisiBul(v, g.kisiId);
+          const onceki = plan.oncekiHareketler?.includes(g.id);
           return (
-            <div key={g.id} className="kayit">
+            <div key={g.id} className={oncekiSinif(onceki, "kayit")} title={onceki ? t("oncekiGunden") : undefined}>
               <div className="kayit-bas">
                 <Avatar kisi={k} boy="kucuk" />
                 <div>
@@ -206,6 +220,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
                 </div>
                 {duzenler && (
                   <div className="islemler">
+                    {onceki && <OncekiDugmesi planId={plan.id} hedef={{ hareket: g.id }} />}
                     <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && planGorevlendirmeCikar(ben, plan.id, g.id)} />
                   </div>
                 )}
@@ -265,7 +280,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
           form === c.id ? (
             <CanliFormu key={c.id} plan={plan} planBaslikId={planBaslikId} mevcut={c} kapat={() => setForm("")} />
           ) : (
-            <div key={c.id} className="kayit">
+            <div key={c.id} className={oncekiSinif(c.onceki, "kayit")} title={c.onceki ? t("oncekiGunden") : undefined}>
               <div className="kayit-bas">
                 <div>
                   <b>
@@ -281,6 +296,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                 </div>
                 {duzenler && (
                   <div className="islemler">
+                    {c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}
                     <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(c.id)} />
                     <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />
                   </div>
@@ -401,7 +417,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
         form === g.id ? (
           <GelismeFormu key={g.id} plan={plan} planBaslikId={planBaslikId} mevcut={g} kapat={() => setForm("")} />
         ) : (
-          <div key={g.id} className="kayit">
+          <div key={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
                 <Icerik blok className="kayit-metin">
@@ -419,6 +435,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
               </div>
               {duzenler && (
                 <div className="islemler">
+                  {g.onceki && <OncekiDugmesi planId={plan.id} hedef={{ gelisme: g.id }} />}
                   <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(g.id)} />
                   <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />
                 </div>

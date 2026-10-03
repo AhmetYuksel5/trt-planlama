@@ -1,11 +1,11 @@
-import { CalendarDays, Copy, FilePlus2, Printer, X } from "lucide-react";
-import { useState } from "react";
-import { Bos, Icerik, Kart, NotKutu, Rozet, bildir } from "../../bilesenler/Parcalar";
+import { CalendarDays, FilePlus2, Printer } from "lucide-react";
+import { useEffect } from "react";
+import { Bos, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { planOlustur } from "../../eylemler";
-import { HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir } from "../../etiketler";
+import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { baslikBul, kisiBul, useVeri, type Gorevlendirme, type Kisi, type NextDayPlan } from "../../veri";
+import { siradakiPlanGunu, useVeri, type Kisi } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
@@ -13,18 +13,29 @@ import { SayfaBasi } from "../ana/Planlama";
 /**
  * Next Day plan listesi ve yeni plan.
  *
- * İlk taslak promptunun 4.1 maddesi: tarih varsayılan olarak yarın ve
- * değiştirilebilir; önceki plan kopyalanırken hangi bölümün taşınacağı
- * seçiliyor. Geçmiş gelişmeler ve eski paket önerileri hiç taşınmıyor,
- * süresi geçmiş canlı yayınlar ve bitmiş muhabir hareketleri listede
- * görünüyor ama seçilemiyor. Kaynak plan olduğu gibi kalıyor.
+ * Yeni plan tek tıkla açılıyor: planı olmayan sıradaki gün, önceki planın
+ * şablonuyla (eylemler.ts → planOlustur). Kurumda da dünün belgesi
+ * kopyalanıp güncelleniyor; neyin taşınacağını seçtiren form bu yüzden
+ * kalktı. Dünden gelenler plan ekranında hafif fonla ayrılıyor.
  */
 export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const [form, setForm] = useState(yeni);
   const planlar = [...v.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih));
   const olusturabilir = yapabilir(ben, "planDuzenle");
+  const sirada = siradakiPlanGunu(v);
+
+  /* Seçim yok: plan önceki planın şablonuyla açılıyor, planlamacı orada düzeltiyor. */
+  const ac = (tarih: string) => {
+    const r = planOlustur(ben, tarih);
+    if (!r) return git("nextday");
+    if (!r.vardi) bildir(r.kaynak ? t("bPlanKopyalandi", { tarih: tarihYaz(r.kaynak, dil, "kisa") }) : t("bPlanOlusturuldu"));
+    git(`nextday/${r.id}`);
+  };
+  /* Ana sayfadaki kısayol (#/nextday/yeni) yarının planına götürüyor; yoksa açıyor. Aynı gün için ikinci plan açılmıyor. */
+  useEffect(() => {
+    if (yeni) ac(gunEkle(bugun(), 1));
+  }, [yeni]);
 
   return (
     <>
@@ -33,14 +44,13 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
         baslik={t("nextdayPlanlari")}
         alt={t("nextdayAlt")}
         sagUc={
-          olusturabilir && !form ? (
-            <button className="dugme" onClick={() => setForm(true)}>
-              <FilePlus2 size={16} /> {t("yeniNextday")}
+          olusturabilir ? (
+            <button className="dugme" onClick={() => ac(sirada)}>
+              <FilePlus2 size={16} /> {t("planiAcTarih", { tarih: tarihYaz(sirada, dil, "uzun") })}
             </button>
           ) : undefined
         }
       />
-      {form && olusturabilir && <YeniPlan ben={ben} planlar={planlar} kapat={() => (yeni ? git("nextday") : setForm(false))} />}
       <Kart baslik={t("planlar")} ikon={<CalendarDays size={18} />}>
         {planlar.length === 0 ? (
           <Bos metin={t("planYok")} />
@@ -103,171 +113,5 @@ export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }
         )}
       </Kart>
     </>
-  );
-}
-
-function YeniPlan({ ben, planlar, kapat }: { ben: Kisi; planlar: NextDayPlan[]; kapat: () => void }) {
-  const { t, dil } = useDil();
-  const v = useVeri();
-  const [tarih, setTarih] = useState(gunEkle(bugun(), 1));
-  const oncekiler = planlar.filter((p) => p.tarih < tarih);
-  const [kopyala, setKopyala] = useState(oncekiler.length > 0);
-  const [kaynakId, setKaynakId] = useState(oncekiler[0]?.id ?? "");
-  const kaynak = planlar.find((p) => p.id === kaynakId) ?? oncekiler[0];
-  const var_ = planlar.find((p) => p.tarih === tarih);
-
-  /* Seçim kümeleri kaynak değişince yeniden kuruluyor: varsayılan olarak taşınabilen her şey seçili. */
-  const devamEden = (kaynak?.gorevlendirmeler ?? []).map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g): g is Gorevlendirme => !!g);
-  const canlilar = v.canliYayinlar.filter((c) => c.planId === kaynak?.id);
-  const [secim, setSecim] = useState<{ kaynak?: string; ekip: boolean; gorev: Set<string>; baslik: Set<string>; muhabir: boolean; canli: Set<string> }>({ ekip: true, gorev: new Set(), baslik: new Set(), muhabir: true, canli: new Set() });
-  if (kaynak && secim.kaynak !== kaynak.id) {
-    setSecim({
-      kaynak: kaynak.id,
-      ekip: true,
-      gorev: new Set(devamEden.filter((g) => g.bitis >= tarih).map((g) => g.id)),
-      baslik: new Set(kaynak.basliklar.map((b) => b.id)),
-      muhabir: true,
-      canli: new Set(canlilar.filter((c) => c.tarih >= tarih).map((c) => c.id)),
-    });
-  }
-  const degistir = (k: "gorev" | "baslik" | "canli", id: string) =>
-    setSecim((s) => {
-      const yeni = new Set(s[k]);
-      if (yeni.has(id)) yeni.delete(id);
-      else yeni.add(id);
-      return { ...s, [k]: yeni };
-    });
-
-  const olustur = () => {
-    if (var_) {
-      git(`nextday/${var_.id}`);
-      return;
-    }
-    const r = planOlustur(
-      ben,
-      tarih,
-      kopyala && kaynak
-        ? {
-            kaynakId: kaynak.id,
-            ekip: secim.ekip,
-            gorevlendirmeler: [...secim.gorev],
-            basliklar: [...secim.baslik],
-            muhabirleriTasi: secim.muhabir,
-            canliYayinlar: [...secim.canli],
-          }
-        : undefined,
-    );
-    if (r) {
-      bildir(t(kopyala ? "bPlanKopyalandi" : "bPlanOlusturuldu"));
-      git(`nextday/${r.id}`);
-    }
-  };
-
-  return (
-    <Kart
-      baslik={t("yeniNextday")}
-      ikon={<FilePlus2 size={18} />}
-      sagUc={
-        <button className="dugme dugme-sade dugme-ikon" onClick={kapat} aria-label={t("kapat")}>
-          <X size={16} />
-        </button>
-      }
-    >
-      <div className="form">
-        <div className="satir">
-          <label>
-            {t("planTarihi")}
-            <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value || gunEkle(bugun(), 1))} />
-          </label>
-          <label>
-            {t("baslangic")}
-            <select value={kopyala ? "kopya" : "bos"} onChange={(e) => setKopyala(e.target.value === "kopya")} disabled={!oncekiler.length}>
-              <option value="bos">{t("bosPlan")}</option>
-              <option value="kopya">{t("oncekiPlaniKopyala")}</option>
-            </select>
-          </label>
-          {kopyala && (
-            <label>
-              {t("kaynakPlan")}
-              <select value={kaynak?.id ?? ""} onChange={(e) => setKaynakId(e.target.value)}>
-                {oncekiler.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {tarihYaz(p.tarih, dil, "tam")}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        {var_ && (
-          <NotKutu ton="uyari">
-            {t("buTarihPlanVar", { tarih: tarihYaz(tarih, dil, "uzun") })}
-          </NotKutu>
-        )}
-
-        {kopyala && kaynak && !var_ && (
-          <div className="form-kutu form">
-            <b>
-              <Copy size={14} /> {t("tasinacaklar")}
-            </b>
-            <label className="secim">
-              <input type="checkbox" checked={secim.ekip} onChange={(e) => setSecim((s) => ({ ...s, ekip: e.target.checked }))} />
-              {t("calismaEkibi")} ({kaynak.ekip.length})
-            </label>
-
-            <div className="alan-etiket">{t("devamEdenHareketler")}</div>
-            {devamEden.length === 0 && <span className="bos-kucuk">{t("kayitYok")}</span>}
-            {devamEden.map((g) => {
-              const bitti = g.bitis < tarih;
-              const k = kisiBul(v, g.kisiId);
-              return (
-                <label key={g.id} className="secim">
-                  <input type="checkbox" disabled={bitti} checked={!bitti && secim.gorev.has(g.id)} onChange={() => degistir("gorev", g.id)} />
-                  <Icerik>{satir(g.yer, kisiAr(k))}</Icerik> · {t(HAREKET_TURU_ADI[g.tur])} ({tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")})
-                  {bitti && <Rozet>{t("suresiDoldu")}</Rozet>}
-                </label>
-              );
-            })}
-
-            <div className="alan-etiket">{t("tekrarKullanilacakBasliklar")}</div>
-            {kaynak.basliklar.map((b) => (
-              <label key={b.id} className="secim">
-                <input type="checkbox" checked={secim.baslik.has(b.id)} onChange={() => degistir("baslik", b.id)} />
-                <Icerik>{baslikBul(v, b.baslikId)?.ad}</Icerik>
-              </label>
-            ))}
-            <label className="secim">
-              <input type="checkbox" checked={secim.muhabir} onChange={(e) => setSecim((s) => ({ ...s, muhabir: e.target.checked }))} />
-              {t("muhabirAtamalariniTasi")}
-            </label>
-
-            <div className="alan-etiket">{t("canliYayinlar")}</div>
-            {canlilar.length === 0 && <span className="bos-kucuk">{t("kayitYok")}</span>}
-            {canlilar.map((c) => {
-              const gecti = c.tarih < tarih;
-              return (
-                <label key={c.id} className="secim">
-                  <input type="checkbox" disabled={gecti} checked={!gecti && secim.canli.has(c.id)} onChange={() => degistir("canli", c.id)} />
-                  <Icerik>{satir(c.yer, c.konu)}</Icerik> · {tarihYaz(c.tarih, dil, "kisa")} {c.saatGmt ? `${c.saatGmt} GMT` : "TBC"}
-                  {gecti && <Rozet>{t("suresiDoldu")}</Rozet>}
-                </label>
-              );
-            })}
-
-            <NotKutu>{t("kopyaKurali")}</NotKutu>
-          </div>
-        )}
-
-        <div className="form-alt">
-          <button className="dugme dugme-ikincil" onClick={kapat}>
-            {t("iptal")}
-          </button>
-          <button className="dugme" onClick={olustur}>
-            {var_ ? t("planiAc") : kopyala ? t("kopyalaOlustur") : t("olustur")}
-          </button>
-        </div>
-      </div>
-    </Kart>
   );
 }
