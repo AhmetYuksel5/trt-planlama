@@ -60,7 +60,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v9`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v10`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
@@ -71,6 +71,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
   Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
   akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
+- Next Day önceki planın şablonuyla açılır (`eylemler.ts → planOlustur`);
+  neyin taşınacağını seçtiren form yok. Taşınan kayıt `onceki` işaretli
+  (hareket bağlantısında `NextDayPlan.oncekiHareketler`) ve ekranda
+  `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
+  (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
+  Paket önerisi ve hazır paket taşınmaz.
 - Önerinin üç kaynağı var:
   - muhabir: uygulamadan, e-posta yanıtından ya da Planlama'nın onun adına
     girdiği telefon/mesaj/yüz yüze

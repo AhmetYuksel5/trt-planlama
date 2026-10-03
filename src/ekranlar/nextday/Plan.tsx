@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
+import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oncekiOnayla, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
 import { KANAL_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { yerelGun } from "../../tarih";
-import { PLAN_DURUMLARI, kisiBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { PLAN_DURUMLARI, kisiBul, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
@@ -30,6 +30,8 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
   const operasyon = planOperasyonDuzenler(ben, plan);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const bekleyenGeriDonus = v.oneriler.filter((o) => o.hedefTarih === plan.tarih && geriDonusBekliyor(o)).length;
+  const sablon = planBul(v, plan.kopyaKaynagi);
+  const onceki = oncekiSayisi(v, plan);
 
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
@@ -114,6 +116,19 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
             </button>
           )}
         </div>
+        {/* Şablondan gelenler hafif fonlu; neyin dünden olduğunu ve fonun ne zaman kalktığını burada söylüyor. */}
+        {sablon && onceki > 0 && (icerik || operasyon) && (
+          <div className="ara-ust-2">
+            <NotKutu ikon={<span className="onceki-ornek" aria-hidden="true" />}>
+              {t("oncekiNotu", { tarih: tarihYaz(sablon.tarih, dil, "kisa") })}
+              <div className="ara-ust">
+                <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => oncekiOnayla(ben, plan.id)}>
+                  <Check size={14} /> {t("hepsiniBuguneAl")}
+                </button>
+              </div>
+            </NotKutu>
+          </div>
+        )}
         {!icerik && (
           <div className="ara-ust-2">
             <NotKutu ikon={<Lock size={16} />}>

@@ -10,6 +10,7 @@ import {
   kaydet,
   kimlik,
   kisiBul,
+  oncekiPlan,
   oneriBul,
   paketBul,
   planBul,
@@ -776,59 +777,60 @@ export const baslikDuzenle = (ben: Kisi, id: string, g: { ad?: string; ulke?: Ul
 
 /* --- Next Day planı --- */
 
-export interface KopyaSecimi {
-  kaynakId: string;
-  ekip: boolean;
-  gorevlendirmeler: string[];
-  basliklar: string[];
-  muhabirleriTasi: boolean;
-  canliYayinlar: string[];
-}
-
 /**
- * Yeni plan. Kopyalanırken yalnız seçilen bölümler taşınıyor: ekip,
- * devam eden muhabir hareketleri, başlıklar (istenirse muhabir
- * atamalarıyla), ileri tarihli canlı yayınlar. Gelişmeler ve paket
- * önerileri hiçbir zaman taşınmıyor; onlar o günün kaydı. Kaynak plan
- * olduğu gibi kalıyor.
+ * Yeni plan önceki planın şablonuyla açılıyor; kurumda da dünün belgesi
+ * kopyalanıp güncelleniyor. Taşınanlar: ekip, devam eden muhabir
+ * hareketleri, başlıklar ve muhabirleri, ileri tarihli canlı yayınlar,
+ * gelişmeler ve takipler. Paket önerileri (üretim kaydı) ve hazır
+ * paketler (o günün stok seçimi) taşınmıyor. Taşınan her şey `onceki`
+ * işaretli; kaynak plan olduğu gibi kalıyor.
  */
-export const planOlustur = (ben: Kisi, tarih: string, kopya?: KopyaSecimi): { id: string; vardi: boolean } | null => {
+export const planOlustur = (ben: Kisi, tarih: string): { id: string; vardi: boolean; kaynak?: string } | null => {
   if (!yapabilir(ben, "planDuzenle")) return null;
   let d = getir();
   const var_ = d.planlar.find((p) => p.tarih === tarih);
   if (var_) return { id: var_.id, vardi: true };
-  const kaynak = kopya ? planBul(d, kopya.kaynakId) : undefined;
+  const kaynak = oncekiPlan(d, tarih);
   const id = kimlik("nd");
   const pbEsle = new Map<string, string>();
-  const basliklar =
-    kaynak && kopya
-      ? kaynak.basliklar
-          .filter((b) => kopya.basliklar.includes(b.id))
-          .map((b) => {
-            const yeniId = kimlik("pb");
-            pbEsle.set(b.id, yeniId);
-            return { id: yeniId, baslikId: b.baslikId, muhabirler: kopya.muhabirleriTasi ? b.muhabirler.map((m) => ({ ...m })) : [] };
-          })
-      : [];
+  const basliklar = (kaynak?.basliklar ?? []).map((b) => {
+    const yeniId = kimlik("pb");
+    pbEsle.set(b.id, yeniId);
+    return { id: yeniId, baslikId: b.baslikId, muhabirler: b.muhabirler.map((m) => ({ ...m, onceki: true as const })) };
+  });
+  // Bitmiş hareket taşınmıyor; plan gününde süren hareket taşınıyor.
+  const hareketler = (kaynak?.gorevlendirmeler ?? []).filter((gid) => {
+    const g = d.gorevlendirmeler.find((x) => x.id === gid);
+    return !!g && g.bitis >= tarih;
+  });
   const plan: NextDayPlan = {
     id,
     tarih,
     durum: "taslak",
-    ekip: kaynak && kopya?.ekip ? kaynak.ekip.map((e) => ({ ...e })) : [],
-    gorevlendirmeler: kaynak && kopya ? kaynak.gorevlendirmeler.filter((g) => kopya.gorevlendirmeler.includes(g)) : [],
+    ekip: (kaynak?.ekip ?? []).map((e) => ({ ...e, onceki: true as const })),
+    gorevlendirmeler: hareketler,
+    oncekiHareketler: hareketler.length ? hareketler : undefined,
     hazirPaketler: [],
     basliklar,
     kopyaKaynagi: kaynak?.id,
     olusturan: ben.id,
     olusturma: simdi(),
   };
-  const canlilar: CanliYayin[] =
-    kaynak && kopya
-      ? d.canliYayinlar
-          .filter((c) => c.planId === kaynak.id && kopya.canliYayinlar.includes(c.id))
-          .map((c) => ({ ...c, id: kimlik("cy"), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined }))
-      : [];
-  d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar] };
+  const canlilar: CanliYayin[] = kaynak
+    ? d.canliYayinlar
+        .filter((c) => c.planId === kaynak.id && c.tarih >= tarih)
+        .map((c) => ({ ...c, id: kimlik("cy"), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true }))
+    : [];
+  /*
+   * Gelişme metniyle taşınıyor; öneri ve haftalık kalem bağı kaynak kayıtta
+   * kalıyor, yoksa aynı öneri iki planda "plana eklendi" görünürdü.
+   */
+  const gelismeler: Gelisme[] = kaynak
+    ? d.gelismeler
+        .filter((g) => g.planId === kaynak.id && (!g.planBaslikId || pbEsle.has(g.planBaslikId)))
+        .map(({ oneriId: _o, haftalikKalemId: _h, ...g }) => ({ ...g, id: kimlik("g"), planId: id, planBaslikId: g.planBaslikId ? pbEsle.get(g.planBaslikId) : undefined, onceki: true }))
+    : [];
+  d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar], gelismeler: [...d.gelismeler, ...gelismeler] };
   d = hareketYaz(d, {
     kisiId: ben.id,
     tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
@@ -842,7 +844,7 @@ export const planOlustur = (ben: Kisi, tarih: string, kopya?: KopyaSecimi): { id
     }
   }
   kaydet(d);
-  return { id, vardi: false };
+  return { id, vardi: false, kaynak: kaynak?.tarih };
 };
 
 /**
@@ -866,6 +868,10 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
   const paketler = d.paketler.filter((p) => p.planId === planId);
 
   if (yeni === "onayli") {
+    // Toplantı planı onayladı: dünden gelen ile bugün eklenen ayrımı artık iş görmüyor.
+    const sade = <T extends { onceki?: true }>(x: T): T => (x.onceki ? { ...x, onceki: undefined } : x);
+    d = planGuncelle(d, planId, (p) => ({ ...p, ekip: p.ekip.map(sade), oncekiHareketler: undefined, basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map(sade) })) }));
+    d = { ...d, gelismeler: d.gelismeler.map((g) => (g.planId === planId ? sade(g) : g)), canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId ? sade(c) : c)) };
     for (const p of paketler.filter((x) => x.durum === "taslak" || x.durum === "degerlendiriliyor")) {
       d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi" }));
       d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { toplanti: "1" } });
@@ -903,16 +909,19 @@ const planIcerik = (ben: Kisi, planId: string, f: (p: NextDayPlan, d: Durum) => 
 
 const ekle = <T>(liste: T[], x: T) => (liste.includes(x) ? liste : [...liste, x]);
 const cikar = <T>(liste: T[], x: T) => liste.filter((y) => y !== x);
+/* Boş işaret listesi saklanmıyor; kayıt sade kalsın. */
+const bosIse = <T>(liste: T[]) => (liste.length ? liste : undefined);
 
 export const ekipEkle = (ben: Kisi, planId: string, uye: EkipUyesi) =>
   planIcerik(ben, planId, (p) => (p.ekip.some((e) => e.kisiId === uye.kisiId) ? p : { ...p, ekip: [...p.ekip, uye] }));
-export const ekipGuncelle = (ben: Kisi, planId: string, kisiId: string, g: Partial<Omit<EkipUyesi, "kisiId">>) =>
-  planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.map((e) => (e.kisiId === kisiId ? { ...e, ...g } : e)) }));
+// Dokunulan kayıt artık bugünün kaydı: "önceki günden" işareti kalkıyor.
+export const ekipGuncelle = (ben: Kisi, planId: string, kisiId: string, g: Partial<Omit<EkipUyesi, "kisiId" | "onceki">>) =>
+  planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.map((e) => (e.kisiId === kisiId ? { ...e, ...g, onceki: undefined } : e)) }));
 export const ekipCikar = (ben: Kisi, planId: string, kisiId: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.filter((e) => e.kisiId !== kisiId) }));
 
 export const planGorevlendirmeCikar = (ben: Kisi, planId: string, id: string) =>
-  planIcerik(ben, planId, (p) => ({ ...p, gorevlendirmeler: cikar(p.gorevlendirmeler, id) }));
+  planIcerik(ben, planId, (p) => ({ ...p, gorevlendirmeler: cikar(p.gorevlendirmeler, id), oncekiHareketler: bosIse(cikar(p.oncekiHareketler ?? [], id)) }));
 export const planGorevlendirmeEkle = (ben: Kisi, planId: string, id: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, gorevlendirmeler: ekle(p.gorevlendirmeler, id) }));
 
@@ -981,7 +990,36 @@ export const planMuhabir = (ben: Kisi, planId: string, pbId: string, kisiId: str
   );
 
 export const planMuhabirGuncelle = (ben: Kisi, planId: string, pbId: string, kisiId: string, g: { yer?: string; saat?: string }) =>
-  planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => m.map((x) => (x.kisiId === kisiId ? { ...x, ...g } : x))));
+  planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => m.map((x) => (x.kisiId === kisiId ? { ...x, ...g, onceki: undefined } : x))));
+
+export type OncekiHedef = { ekip: string } | { hareket: string } | { muhabir: [string, string] } | { gelisme: string } | { canli: string };
+
+/**
+ * "Bugün de geçerli": önceki günden gelen kaydı değiştirmeden bugünün
+ * kaydı sayar. Hedef yoksa planın bütün işaretleri kalkıyor. Canlı yayın
+ * ve gelişme devirden sonra Newsdesk'in de işi olduğu için yetki ikisinden
+ * biri yeterli.
+ */
+export const oncekiOnayla = (ben: Kisi, planId: string, hedef?: OncekiHedef) => {
+  let d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))) return false;
+  const secili = (tur: "ekip" | "hareket" | "gelisme" | "canli", id: string) => !hedef || (tur in hedef && (hedef as Record<string, unknown>)[tur] === id);
+  const muhabirSecili = (pbId: string, kisiId: string) => !hedef || ("muhabir" in hedef && hedef.muhabir[0] === pbId && hedef.muhabir[1] === kisiId);
+  d = planGuncelle(d, planId, (p) => ({
+    ...p,
+    ekip: p.ekip.map((e) => (secili("ekip", e.kisiId) ? { ...e, onceki: undefined } : e)),
+    oncekiHareketler: bosIse((p.oncekiHareketler ?? []).filter((id) => !secili("hareket", id))),
+    basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map((m) => (muhabirSecili(b.id, m.kisiId) ? { ...m, onceki: undefined } : m)) })),
+  }));
+  d = {
+    ...d,
+    gelismeler: d.gelismeler.map((g) => (g.planId === planId && secili("gelisme", g.id) ? { ...g, onceki: undefined } : g)),
+    canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId && secili("canli", c.id) ? { ...c, onceki: undefined } : c)),
+  };
+  kaydet(d);
+  return true;
+};
 
 /* --- Gelişme ve canlı yayın: devirden sonra Newsdesk de ekleyebiliyor (operasyonel güncelleme). --- */
 
@@ -990,7 +1028,7 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
   const plan = planBul(d, g.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (g.id) {
-    kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id } : x)) });
+    kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id, onceki: undefined } : x)) });
   } else {
     kaydet({ ...d, gelismeler: [...d.gelismeler, { ...g, id: kimlik("g") }] });
   }
@@ -1011,7 +1049,7 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   const plan = planBul(d, c.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (c.id) {
-    kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id } : x)) });
+    kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined } : x)) });
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy") }] });
   }

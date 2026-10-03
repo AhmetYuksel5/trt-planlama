@@ -10,7 +10,7 @@ import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, useVeri, type NextDayPlan, type PlanBasligi } from "../../veri";
 import { yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
-import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme } from "./Bolumler";
+import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
 
 /**
@@ -106,7 +106,7 @@ export default function BaslikKarti({
             {pb.muhabirler.map((m) => {
               const k = kisiBul(v, m.kisiId);
               return (
-                <span key={m.kisiId} className="cip">
+                <span key={m.kisiId} className={oncekiSinif(m.onceki, "cip")} title={m.onceki ? t("oncekiGunden") : undefined}>
                   <Avatar kisi={k} boy="kucuk" />
                   <Icerik>{satir(m.yer || sehirAr(k?.sehir), kisiAr(k) || "?")}</Icerik>
                   {icerik ? (

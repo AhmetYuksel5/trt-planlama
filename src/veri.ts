@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
 import { ORNEK } from "./ornek";
+import { bugun, gunEkle } from "./tarih";
 
 /**
  * Veri katmanı: kayıt tipleri, depo, yükle/kaydet.
@@ -167,10 +168,17 @@ export type PlanDurum = (typeof PLAN_DURUMLARI)[number];
 export const EKIP_GOREVLERI = ["yapimciSef", "bultenYapimcisi", "sunucu", "muhabirMasasi", "roportajYapimcisi", "tercuman", "editor", "diger"] as const;
 export type EkipGorevi = (typeof EKIP_GOREVLERI)[number];
 
+/*
+ * Next Day önceki planın şablonuyla açılıyor. Önceki günden taşınıp henüz
+ * dokunulmamış kayıt `onceki` taşıyor; ekranda hafif fonla ayrılıyor ki
+ * planlamacı dünün yazısını bugünün yenisiyle karıştırmasın. Düzenlenince,
+ * "bugün de geçerli" denince ya da plan onaylanınca kalkıyor.
+ */
 export interface EkipUyesi {
   kisiId: string;
   gorev: EkipGorevi;
   vardiya: string;
+  onceki?: true;
 }
 
 /** Başlık altındaki muhabir: yeri ve canlı saati o güne ait ("القدس / ..."; "06G"). */
@@ -178,6 +186,7 @@ export interface PlanMuhabiri {
   kisiId: string;
   yer?: string;
   saat?: string;
+  onceki?: true;
 }
 
 /** Bir başlığın o günkü plandaki yeri: sıra listedeki yerinden, muhabirler o güne ait. */
@@ -196,7 +205,10 @@ export interface NextDayPlan {
   /** Stoktan seçilen paketler (Paket kimliği); plan Newsdesk'e devredilince yayınlanmış sayılıyor. */
   hazirPaketler: string[];
   basliklar: PlanBasligi[];
+  /** Şablonun alındığı önceki plan. */
   kopyaKaynagi?: string;
+  /** Önceki günden taşınıp dokunulmamış hareket bağlantıları; hareket ayrı kayıt, işaret plandaki bağlantıda. */
+  oncekiHareketler?: string[];
   olusturan: string;
   olusturma: string;
 }
@@ -223,6 +235,7 @@ export interface Gelisme {
   oneriId?: string;
   /** Haftalık plandan aktarıldıysa kaynağı olan kalem. */
   haftalikKalemId?: string;
+  onceki?: true;
 }
 
 export interface CanliYayin {
@@ -237,6 +250,7 @@ export interface CanliYayin {
   yer: string;
   muhabirId?: string;
   notlar: string;
+  onceki?: true;
 }
 
 /* --- Muhabir hareketleri: görevlendirme, seyahat, izin. Planlar bunlara bağlantı tutar. --- */
@@ -617,7 +631,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 9;
+  surum: 10;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -647,16 +661,17 @@ export interface Durum {
  * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi,
  * v6: yönetici talimatı, öncelik ve yönetici notu, v7: haftalık plan akışı,
  * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
- * paketi, v9: elle girilen öneri ve muhabir dışı kaynak).
+ * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
+ * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli).
  */
-const SAKLA = "trt-planlama-v9";
+const SAKLA = "trt-planlama-v10";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 9) return d;
+      if (d.surum === 10) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -698,6 +713,25 @@ export const kimlik = (on: string) => `${on}${Date.now().toString(36)}${Math.ran
 export const kisiBul = (d: Durum, id?: string) => d.kisiler.find((k) => k.id === id);
 export const baslikBul = (d: Durum, id?: string) => d.basliklar.find((b) => b.id === id);
 export const planBul = (d: Durum, id?: string) => d.planlar.find((p) => p.id === id);
+
+/** Tarihten önceki en yakın plan: yeni plan onun şablonuyla açılıyor. */
+export const oncekiPlan = (d: Durum, tarih: string) =>
+  d.planlar.filter((p) => p.tarih < tarih).sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
+
+/** Planı olmayan ilk gün, yarından başlayarak: hafta sonu öncesi birkaç gün ileri plan açılabiliyor. */
+export const siradakiPlanGunu = (d: Durum) => {
+  let g = gunEkle(bugun(), 1);
+  while (d.planlar.some((p) => p.tarih === g)) g = gunEkle(g, 1);
+  return g;
+};
+
+/** Planda önceki günden gelip henüz dokunulmamış kayıt sayısı. */
+export const oncekiSayisi = (d: Durum, p: NextDayPlan) =>
+  p.ekip.filter((e) => e.onceki).length +
+  (p.oncekiHareketler?.length ?? 0) +
+  p.basliklar.reduce((n, b) => n + b.muhabirler.filter((m) => m.onceki).length, 0) +
+  d.gelismeler.filter((g) => g.planId === p.id && g.onceki).length +
+  d.canliYayinlar.filter((c) => c.planId === p.id && c.onceki).length;
 export const paketBul = (d: Durum, id?: string) => d.paketler.find((p) => p.id === id);
 export const oneriBul = (d: Durum, id?: string) => d.oneriler.find((o) => o.id === id);
 export const haftaBul = (d: Durum, id?: string) => d.haftalik.find((h) => h.id === id);
