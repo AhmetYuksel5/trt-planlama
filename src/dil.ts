@@ -279,7 +279,7 @@ const M = {
 
   /* Planlama ana sayfası */
   planlamaAlt: m("Haber planları, öneriler, koordinasyon ve takip", "خطط الأخبار والمقترحات والتنسيق والمتابعة", "News plans, proposals, coordination and follow-up"),
-  ksNextday: m("Next Day planı oluştur", "إنشاء خطة الغد", "Create Next Day plan"),
+  ksNextday: m("Yarının planı", "خطة الغد", "Tomorrow's plan"),
   ksNextdayA: m("Günlük haber planını hazırla ve muhabir önerilerini topla", "إعداد خطة الأخبار اليومية وجمع مقترحات المراسلين", "Prepare the daily plan and collect reporter proposals"),
   ksHaftalik: m("Haftalık plan", "الخطة الأسبوعية", "Weekly plan"),
   ksHaftalikA: m("Cumartesi – Cuma haftalık planı hazırla", "إعداد الخطة الأسبوعية من السبت إلى الجمعة", "Prepare the Saturday–Friday plan"),
@@ -401,7 +401,6 @@ const M = {
   paketOnerileri: m("Paket önerileri", "مقترحات التقارير", "Package proposals"),
   ekip: m("Ekip", "الفريق", "Team"),
   kopyaKaynagi: m("Şablonu", "قالبها", "Template"),
-  planiAcTarih: m("{tarih} planını aç", "فتح خطة {tarih}", "Open the {tarih} plan"),
   oncekiGunden: m("Önceki günden", "من اليوم السابق", "From the previous day"),
   bugunDeGecerli: m("Bugün de geçerli", "ساري اليوم أيضا", "Still valid today"),
   oncekiNotu: m(
@@ -752,8 +751,6 @@ const M = {
   anaSayfayaDon: m("Ana sayfaya dön", "العودة إلى الرئيسية", "Back to home"),
 
   /* Bildiriler (eylem sonrası kısa mesaj) */
-  bPlanOlusturuldu: m("Plan oluşturuldu.", "أُنشئت الخطة.", "Plan created."),
-  bPlanKopyalandi: m("Plan {tarih} planının şablonuyla açıldı.", "فُتحت الخطة على قالب خطة {tarih}.", "Plan opened from the {tarih} plan as a template."),
   bToplantiya: m("Plan haber toplantısına götürüldü.", "عُرضت الخطة في اجتماع الأخبار.", "Plan taken to the news meeting."),
   bTaslaga: m("Plan taslağa geri alındı.", "أُعيدت الخطة إلى المسودة.", "Plan returned to draft."),
   bPlanOnaylandi: m("Plan onaylandı; paketler onaylandı olarak işaretlendi.", "اعتُمدت الخطة وتقاريرها.", "Plan approved; its packages are approved."),
@@ -781,6 +778,7 @@ const M = {
   hrGeriDonus: m("{kisi} muhabire geri dönüş yaptı: {sonuc}", "أبلغ {kisi} المراسل بالنتيجة: {sonuc}", "{kisi} sent feedback to the reporter: {sonuc}"),
   hrPlanOlusturuldu: m("{kisi}, {tarih} Next Day planını açtı", "أنشأ {kisi} خطة الغد ليوم {tarih}", "{kisi} opened the {tarih} Next Day plan"),
   hrPlanKopyalandi: m("{kisi}, {tarih} planını {kaynak} planının şablonuyla açtı", "فتح {kisi} خطة {tarih} على قالب خطة {kaynak}", "{kisi} opened the {tarih} plan from the {kaynak} plan"),
+  sistem: m("Sistem", "النظام", "System"),
   hrPlanToplantida: m("{kisi}, {tarih} planını haber toplantısına götürdü", "عرض {kisi} خطة {tarih} في اجتماع الأخبار", "{kisi} took the {tarih} plan to the news meeting"),
   hrPlanTaslaga: m("{kisi}, {tarih} planını taslağa geri aldı", "أعاد {kisi} خطة {tarih} إلى المسودة", "{kisi} returned the {tarih} plan to draft"),
   hrPlanOnaylandi: m("{kisi}, {tarih} planını onayladı", "اعتمد {kisi} خطة {tarih}", "{kisi} approved the {tarih} plan"),
@@ -933,9 +931,9 @@ const M = {
   ppHenuzYok: m("Henüz yok (sonraki adımlar)", "غير متوفر بعد (الخطوات التالية)", "Not yet (next steps)"),
   ppY1: m("Demo giriş; birime göre ana sayfa ve menü", "دخول تجريبي وصفحة رئيسية وقائمة حسب الوحدة", "Demo sign-in; unit-specific home page and menu"),
   ppY2: m(
-    "Next Day: liste; yeni plan tek tıkla önceki planın şablonuyla açılıyor, dünden gelenler hafif fonlu",
-    "خطة الغد: القائمة؛ تُفتح الخطة الجديدة بنقرة على قالب الخطة السابقة، والمنقول منها بخلفية خفيفة",
-    "Next Day: list; a new plan opens in one click from the previous plan, carried-over rows lightly shaded",
+    "Next Day: yarının planı her gün kendiliğinden önceki planın şablonuyla açılıyor, dünden gelenler hafif fonlu",
+    "خطة الغد: تُفتح خطة الغد تلقائيا كل يوم على قالب الخطة السابقة، والمنقول منها بخلفية خفيفة",
+    "Next Day: tomorrow's plan opens by itself every day from the previous plan, carried-over rows lightly shaded",
   ),
   ppY3: m("Plan düzenleme: ekip, hareketler, canlı yayınlar, hazır paketler, başlıklar, takipler", "تعديل الخطة: الفريق والتحركات والبث المباشر والتقارير الجاهزة والعناوين والمتابعات", "Plan editing: team, movements, live slots, ready packages, headings, follow-ups"),
   ppY4: m("Kurumun çıktısıyla aynı düzende Arapça sağdan sola çıktı ve yazdırma", "نسخة مطبوعة بالعربية من اليمين إلى اليسار بتنسيق وثيقة المؤسسة", "Arabic right-to-left output matching the newsroom's document, with printing"),

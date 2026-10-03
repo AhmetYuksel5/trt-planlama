@@ -71,8 +71,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
   Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
   akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
-- Next Day önceki planın şablonuyla açılır (`eylemler.ts → planOlustur`);
-  neyin taşınacağını seçtiren form yok. Taşınan kayıt `onceki` işaretli
+- Next Day her gün kesintisiz sürer: yarının planını kullanıcı değil sistem
+  açar (`eylemler.ts → yarinPlaniniAc`, `App.tsx`'te açılışta ve arada bir;
+  hareket kaydında kişi `SISTEM`). Plan açma düğmesi ve neyin taşınacağını
+  seçtiren form yok; plan önceki planın şablonuyla gelir. Taşınan kayıt `onceki` işaretli
   (hareket bağlantısında `NextDayPlan.oncekiHareketler`) ve ekranda
   `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.

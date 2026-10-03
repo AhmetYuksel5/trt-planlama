@@ -718,12 +718,11 @@ export const planBul = (d: Durum, id?: string) => d.planlar.find((p) => p.id ===
 export const oncekiPlan = (d: Durum, tarih: string) =>
   d.planlar.filter((p) => p.tarih < tarih).sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
 
-/** Planı olmayan ilk gün, yarından başlayarak: hafta sonu öncesi birkaç gün ileri plan açılabiliyor. */
-export const siradakiPlanGunu = (d: Durum) => {
-  let g = gunEkle(bugun(), 1);
-  while (d.planlar.some((p) => p.tarih === g)) g = gunEkle(g, 1);
-  return g;
-};
+/** Kişinin değil sistemin yaptığı iş (yarının planını açmak); hareket kaydında kişi yerine bu. */
+export const SISTEM = "sistem";
+
+/** Yarının planı: sistem her gün açtığı için hep var. */
+export const yarinPlani = (d: Durum) => d.planlar.find((p) => p.tarih === gunEkle(bugun(), 1));
 
 /** Planda önceki günden gelip henüz dokunulmamış kayıt sayısı. */
 export const oncekiSayisi = (d: Durum, p: NextDayPlan) =>

@@ -1,56 +1,26 @@
-import { CalendarDays, FilePlus2, Printer } from "lucide-react";
-import { useEffect } from "react";
-import { Bos, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
+import { CalendarDays, Printer } from "lucide-react";
+import { Bos, Kart, Rozet } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
-import { planOlustur } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { siradakiPlanGunu, useVeri, type Kisi } from "../../veri";
-import { yapabilir } from "../../yetki";
+import { useVeri } from "../../veri";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 
 /**
- * Next Day plan listesi ve yeni plan.
- *
- * Yeni plan tek tıkla açılıyor: planı olmayan sıradaki gün, önceki planın
- * şablonuyla (eylemler.ts → planOlustur). Kurumda da dünün belgesi
- * kopyalanıp güncelleniyor; neyin taşınacağını seçtiren form bu yüzden
- * kalktı. Dünden gelenler plan ekranında hafif fonla ayrılıyor.
+ * Next Day plan listesi. Yeni plan açma düğmesi yok: planlar her gün
+ * kesintisiz sürüyor, yarının planını sistem önceki planın şablonuyla
+ * kendisi açıyor (eylemler.ts → yarinPlaniniAc). Liste yeniden eskiye;
+ * yarının planı en üstte.
  */
-export default function NextDayListe({ ben, yeni }: { ben: Kisi; yeni: boolean }) {
+export default function NextDayListe() {
   const { t, dil } = useDil();
   const v = useVeri();
   const planlar = [...v.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih));
-  const olusturabilir = yapabilir(ben, "planDuzenle");
-  const sirada = siradakiPlanGunu(v);
-
-  /* Seçim yok: plan önceki planın şablonuyla açılıyor, planlamacı orada düzeltiyor. */
-  const ac = (tarih: string) => {
-    const r = planOlustur(ben, tarih);
-    if (!r) return git("nextday");
-    if (!r.vardi) bildir(r.kaynak ? t("bPlanKopyalandi", { tarih: tarihYaz(r.kaynak, dil, "kisa") }) : t("bPlanOlusturuldu"));
-    git(`nextday/${r.id}`);
-  };
-  /* Ana sayfadaki kısayol (#/nextday/yeni) yarının planına götürüyor; yoksa açıyor. Aynı gün için ikinci plan açılmıyor. */
-  useEffect(() => {
-    if (yeni) ac(gunEkle(bugun(), 1));
-  }, [yeni]);
 
   return (
     <>
-      <SayfaBasi
-        ikon={<CalendarDays size={26} />}
-        baslik={t("nextdayPlanlari")}
-        alt={t("nextdayAlt")}
-        sagUc={
-          olusturabilir ? (
-            <button className="dugme" onClick={() => ac(sirada)}>
-              <FilePlus2 size={16} /> {t("planiAcTarih", { tarih: tarihYaz(sirada, dil, "uzun") })}
-            </button>
-          ) : undefined
-        }
-      />
+      <SayfaBasi ikon={<CalendarDays size={26} />} baslik={t("nextdayPlanlari")} alt={t("nextdayAlt")} />
       <Kart baslik={t("planlar")} ikon={<CalendarDays size={18} />}>
         {planlar.length === 0 ? (
           <Bos metin={t("planYok")} />

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import Kabuk from "./bilesenler/Kabuk";
 import AnaSayfa from "./ekranlar/AnaSayfa";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
@@ -21,7 +21,9 @@ import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
 import { useBen } from "./oturum";
-import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri } from "./veri";
+import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
+// veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
+import { yarinPlaniniAc } from "./eylemler";
 import { oneriGorebilir, paketGorebilir, sayfaGorebilir, yapabilir } from "./yetki";
 import { useYol } from "./yol";
 
@@ -33,10 +35,19 @@ import { useYol } from "./yol";
  * ayrıca kaydın görünürlüğüne bakıyor: muhabir başka muhabirin paketinin
  * adresini elle yazsa da "yetkisiz" görüyor.
  */
+/* Gün dönümünü yakalamak için arada bir: uygulama gece açık kalsa da sabah yarının planı hazır. */
+const GUN_YOKLAMA = 10 * 60 * 1000;
+
 export default function App() {
   const yol = useYol();
   const ben = useBen();
   const v = useVeri();
+  // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
+  useEffect(() => {
+    yarinPlaniniAc();
+    const z = setInterval(yarinPlaniniAc, GUN_YOKLAMA);
+    return () => clearInterval(z);
+  }, []);
 
   if (yol.sayfa === "plan") return <ProjePlani />;
   if (!ben) return <Giris />;
@@ -54,11 +65,12 @@ export default function App() {
         icerik = <YoneticiPaneli ben={ben} birim={yol.id} />;
         break;
       case "nextday": {
-        const plan = planBul(v, yol.id);
-        if (yol.id && yol.id !== "yeni" && !plan) icerik = <Yetkisiz />;
+        // "yarin": ana sayfadaki kısayol hangi kimlik olduğunu bilmeden yarının planına gidiyor.
+        const plan = yol.id === "yarin" ? yarinPlani(v) : planBul(v, yol.id);
+        if (yol.id && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
-        else icerik = <NextDayListe ben={ben} yeni={yol.id === "yeni"} />;
+        else icerik = <NextDayListe />;
         break;
       }
       case "haftalik": {
