@@ -4,7 +4,7 @@ import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from ".
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
 import { BIRIM_ADI, ONERI_DURUM_ADI } from "../etiketler";
-import { haftaBul, kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
+import { SISTEM, haftaBul, kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
@@ -134,7 +134,7 @@ export function KonuMetni({ k }: { k: Konu }) {
 
 /** Panolardaki kısa akış: kim, ne yaptı, hangi kayıtta, ne zaman. */
 export function HareketAkisi({ hareketler, d, konu = true }: { hareketler: Hareket[]; d: Durum; konu?: boolean }) {
-  const { dil, ad } = useDil();
+  const { t, dil, ad } = useDil();
   const metni = useHareketMetni();
   const konusu = useHareketKonusu();
   return (
@@ -147,7 +147,7 @@ export function HareketAkisi({ hareketler, d, konu = true }: { hareketler: Harek
             <Avatar kisi={m.kisi} boy="kucuk" />
             <div className="metin">
               {m.once}
-              <b>{m.kisi ? ad(m.kisi) : "?"}</b>
+              <b>{m.kisi ? ad(m.kisi) : h.kisiId === SISTEM ? t("sistem") : "?"}</b>
               {m.sonra}
               {k && (
                 <a href={k.href}>
@@ -192,7 +192,7 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
             <div className="olay">
               <p>
                 {m.once}
-                <b>{m.kisi ? ad(m.kisi) : "?"}</b>
+                <b>{m.kisi ? ad(m.kisi) : h.kisiId === SISTEM ? t("sistem") : "?"}</b>
                 {m.sonra}
               </p>
               <small>

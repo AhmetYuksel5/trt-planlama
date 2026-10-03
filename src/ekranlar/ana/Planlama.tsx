@@ -43,7 +43,7 @@ import { muhabirler, useVeri, type Durum, type Kisi, type NextDayPlan } from "..
  */
 
 const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: Anahtar; aciklama: Anahtar }[] = [
-  { sayfa: "nextday/yeni", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday", aciklama: "ksNextdayA" },
+  { sayfa: "nextday/yarin", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday", aciklama: "ksNextdayA" },
   { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik", aciklama: "ksHaftalikA" },
   { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik", aciklama: "ksAylikA" },
   { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel", aciklama: "ksOzelA" },

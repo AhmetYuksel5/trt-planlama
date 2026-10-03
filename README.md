@@ -23,8 +23,10 @@ npm run preview  # derlenmiş hali yerelde
   (Planlama, Newsdesk, News Gathering, Programlar, Ekonomi, Output/dil,
   Media Manager, Muhabir, Yönetim).
 - **Next Day planı:**
-  - liste; planı olmayan sıradaki gün (çoğunlukla yarın) tek düğmeyle açılıyor
-  - yeni plan tek tıkla, önceki planın şablonuyla açılıyor: ekip, devam
+  - plan açma düğmesi yok: planlar her gün kesintisiz sürüyor, yarının
+    planını sistem kendisi açıyor (uygulama açılınca ve gün dönünce);
+    listede en üstte. Ana sayfadaki "Yarının planı" kısayolu doğrudan ona gidiyor
+  - yeni plan önceki planın şablonuyla geliyor: ekip, devam
     eden hareketler, başlıklar ve muhabirleri, ileri tarihli canlı yayınlar,
     gelişmeler ve takipler taşınıyor; paket önerileri ve hazır paketler
     taşınmıyor. Dünden gelen satırlar çok hafif fonlu; düzenleyince,

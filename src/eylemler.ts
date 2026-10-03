@@ -1,7 +1,7 @@
 import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
-import { haftaBasi, simdi } from "./tarih";
+import { bugun, gunEkle, haftaBasi, simdi } from "./tarih";
 import {
   SEHIRLER,
   cagriTuru,
@@ -10,6 +10,7 @@ import {
   kaydet,
   kimlik,
   kisiBul,
+  SISTEM,
   oncekiPlan,
   oneriBul,
   paketBul,
@@ -629,7 +630,7 @@ export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
  * paket biçimi olan kalemde onaylı paket doğuyor. Yalnız canlı bağlantıysa
  * paket yok, muhabir başlığın altında. Dosyası olmayan kalem takiplere.
  */
-const haftaliktanAktar = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
+const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
   let pbId: string | undefined;
   if (k.baslikId) {
     const var_ = plan.basliklar.find((b) => b.baslikId === k.baslikId);
@@ -685,7 +686,7 @@ const haftaliktanAktar = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
   }
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, paketId: paketId ?? o.paketId } : o)) };
-  return hareketYaz(d, { kisiId: ben.id, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } });
+  return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } });
 };
 
 /* Next Day'e gitmeyen kabul: plansız, onaylı paket; kolun sahibi (stok ekibi, Program) üretime alıyor. */
@@ -733,8 +734,8 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
   for (const k of h.kalemler.filter((x) => gundemde(x) && x.karar === "kabul")) {
     if (k.tur === "haber" && k.tarih) {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
-      // Plan henüz yoksa açıldığında çekiyor (planOlustur); onaylanmış ya da devredilmişse elle eklenir.
-      if (plan && (plan.durum === "taslak" || plan.durum === "toplantida")) d = haftaliktanAktar(d, ben, haftaId, k, plan);
+      // Plan henüz yoksa sistem açınca çekiyor (yarinPlaniniAc); onaylanmış ya da devredilmişse elle eklenir.
+      if (plan && (plan.durum === "taslak" || plan.durum === "toplantida")) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
     } else {
       d = haftaliktanPaket(d, ben, haftaId, k);
     }
@@ -778,18 +779,19 @@ export const baslikDuzenle = (ben: Kisi, id: string, g: { ad?: string; ulke?: Ul
 /* --- Next Day planı --- */
 
 /**
- * Yeni plan önceki planın şablonuyla açılıyor; kurumda da dünün belgesi
+ * Next Day her gün kesintisiz sürüyor; yarının planını kimse açmıyor,
+ * sistem açıyor (uygulama açılınca ve gün dönünce, App.tsx). Plan önceki
+ * planın şablonuyla geliyor; kurumda da dünün belgesi
  * kopyalanıp güncelleniyor. Taşınanlar: ekip, devam eden muhabir
  * hareketleri, başlıklar ve muhabirleri, ileri tarihli canlı yayınlar,
  * gelişmeler ve takipler. Paket önerileri (üretim kaydı) ve hazır
  * paketler (o günün stok seçimi) taşınmıyor. Taşınan her şey `onceki`
  * işaretli; kaynak plan olduğu gibi kalıyor.
  */
-export const planOlustur = (ben: Kisi, tarih: string): { id: string; vardi: boolean; kaynak?: string } | null => {
-  if (!yapabilir(ben, "planDuzenle")) return null;
+export const yarinPlaniniAc = (): string | null => {
+  const tarih = gunEkle(bugun(), 1);
   let d = getir();
-  const var_ = d.planlar.find((p) => p.tarih === tarih);
-  if (var_) return { id: var_.id, vardi: true };
+  if (d.planlar.some((p) => p.tarih === tarih)) return null;
   const kaynak = oncekiPlan(d, tarih);
   const id = kimlik("nd");
   const pbEsle = new Map<string, string>();
@@ -813,7 +815,7 @@ export const planOlustur = (ben: Kisi, tarih: string): { id: string; vardi: bool
     hazirPaketler: [],
     basliklar,
     kopyaKaynagi: kaynak?.id,
-    olusturan: ben.id,
+    olusturan: SISTEM,
     olusturma: simdi(),
   };
   const canlilar: CanliYayin[] = kaynak
@@ -832,7 +834,7 @@ export const planOlustur = (ben: Kisi, tarih: string): { id: string; vardi: bool
     : [];
   d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar], gelismeler: [...d.gelismeler, ...gelismeler] };
   d = hareketYaz(d, {
-    kisiId: ben.id,
+    kisiId: SISTEM,
     tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
     planId: id,
     veri: { tarih, ...(kaynak ? { kaynak: kaynak.tarih } : {}) },
@@ -840,11 +842,11 @@ export const planOlustur = (ben: Kisi, tarih: string): { id: string; vardi: bool
   // Haftalık toplantıda bu güne kabul edilmiş, henüz aktarılmamış haberler kendiliğinden geliyor.
   for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
     for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
-      d = haftaliktanAktar(d, ben, h.id, k, planBul(d, id)!);
+      d = haftaliktanAktar(d, SISTEM, h.id, k, planBul(d, id)!);
     }
   }
   kaydet(d);
-  return { id, vardi: false, kaynak: kaynak?.tarih };
+  return id;
 };
 
 /**
