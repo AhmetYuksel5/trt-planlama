@@ -631,7 +631,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 10;
+  surum: 11;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -650,6 +650,8 @@ export interface Durum {
   hareketler: Hareket[];
   /** Kişi başına son bildirim bakışı; okunmamış sayısı buradan çıkıyor. */
   okundu: Record<string, string>;
+  /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
+  anaSayfa?: Record<string, string[]>;
   sayac: number;
 }
 
@@ -662,16 +664,17 @@ export interface Durum {
  * v6: yönetici talimatı, öncelik ve yönetici notu, v7: haftalık plan akışı,
  * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
- * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli).
+ * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
+ * özel ana sayfa düzeni).
  */
-const SAKLA = "trt-planlama-v10";
+const SAKLA = "trt-planlama-v11";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 10) return d;
+      if (d.surum === 11) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

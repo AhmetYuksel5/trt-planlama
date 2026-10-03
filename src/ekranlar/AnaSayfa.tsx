@@ -18,15 +18,15 @@ export default function AnaSayfa({ ben }: { ben: Kisi }) {
     case "newsdesk":
       return <NewsdeskAna ben={ben} />;
     case "newsgathering":
-      return <NewsGatheringAna />;
+      return <NewsGatheringAna ben={ben} />;
     case "program":
-      return <ProgramAna />;
+      return <ProgramAna ben={ben} />;
     case "ekonomi":
       return <EkonomiAna ben={ben} />;
     case "output":
-      return <OutputAna />;
+      return <OutputAna ben={ben} />;
     case "media":
-      return <MediaAna />;
+      return <MediaAna ben={ben} />;
     case "yonetim":
       return <YoneticiPaneli ben={ben} />;
   }

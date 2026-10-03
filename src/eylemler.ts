@@ -1413,3 +1413,20 @@ export const bildirimleriOku = (ben: Kisi) => {
 
 /** Muhabirin şehrinden ülkesi; öneri formunda varsayılan. */
 export const ulkesi = (s: Sehir): Ulke => SEHIRLER[s];
+
+/* --- Ana sayfa düzeni --- */
+
+/**
+ * Kişinin kendi ana sayfasındaki alanlar ve sırası; null birimin
+ * varsayılanına döndürüyor. İş kaydı değil kişisel tercih: hareket
+ * yazılmıyor, herkes yalnız kendi düzenini değiştiriyor.
+ */
+export const anaSayfaKaydet = (ben: Kisi, duzen: string, alanlar: string[] | null) => {
+  const d = getir();
+  const anahtar = `${ben.id}:${duzen}`;
+  const yeni = { ...(d.anaSayfa ?? {}) };
+  if (alanlar) yeni[anahtar] = [...new Set(alanlar)];
+  else delete yeni[anahtar];
+  kaydet({ ...d, anaSayfa: yeni });
+  return true;
+};

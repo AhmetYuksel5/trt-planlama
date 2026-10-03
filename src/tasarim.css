@@ -908,6 +908,19 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .akis li.yonetici-notu { background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-2); border-top: 0; margin-top: var(--ara-1); }
 .akis li.yonetici-notu .rozet { margin-inline-start: var(--ara-1); }
 
+/* --- Ana sayfanın çalışma alanları: birimin varsayılanı, kişinin düzeni --- */
+
+.alan-arac { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; justify-content: flex-end; }
+.alan-arac .bos-kucuk { margin-inline-end: auto; }
+.alan-izgarasi { display: grid; gap: var(--ara-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); align-items: start; }
+.alan-izgarasi > .alan { min-width: 0; display: flex; flex-direction: column; gap: var(--ara-2); }
+.alan-izgarasi > .alan.genis { grid-column: 1 / -1; }
+/* İçi boş alan (açık çağrı yokken, ön inceleme bekleyen yokken) yer kaplamasın. */
+.alan-izgarasi > .alan:empty { display: none; }
+.alan-izgarasi.duzenleniyor > .alan { outline: 2px dashed var(--onceki-cizgi); outline-offset: 4px; border-radius: var(--yaricap-kart); }
+.alan-cubugu { display: flex; align-items: center; gap: var(--ara-1); background: var(--vurgu-sis); color: var(--vurgu-koyu); border-radius: var(--yaricap); padding: 2px var(--ara-2); font-size: var(--punto-kucuk); }
+.alan-cubugu b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
 .birim-kartlari { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--ara-3); }
 .birim-karti { display: flex; flex-direction: column; gap: var(--ara-3); }
 .birim-karti header { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); flex-wrap: wrap; }
