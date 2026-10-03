@@ -50,6 +50,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
     ["rpBekleyen", r.oneriler.bekleyen],
     ["oneriKabul", yuzde(kabul)],
     ["yoneticiTalimati", r.oneriler.talimat],
+    ["elleGirilen", r.oneriler.elle],
   ];
 
   /*

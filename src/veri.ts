@@ -201,7 +201,8 @@ export interface NextDayPlan {
   olusturma: string;
 }
 
-export const KAYNAK_TURLERI = ["muhabir", "ajans", "resmi", "medya", "diger"] as const;
+/* "kurum": başka bir birimin ya da Planlama'nın kendi takibinden çıkan haber; dışarıdan gelmiyor ama muhabirin de değil. */
+export const KAYNAK_TURLERI = ["muhabir", "ajans", "resmi", "medya", "kurum", "diger"] as const;
 export type KaynakTuru = (typeof KAYNAK_TURLERI)[number];
 
 /**
@@ -266,15 +267,24 @@ export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
 
 export const ONERI_DURUMLARI = ["yeni", "degerlendiriliyor", "planaEklendi", "reddedildi", "sonra"] as const;
 export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
-export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj"] as const;
+export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
 
 export interface Oneri {
   id: string;
-  /** Yöneticinin haber talimatında boş: muhabiri Planlama plana eklerken atıyor. */
+  /** Talimatta ve muhabir dışı kaynakta boş: muhabiri Planlama plana eklerken atıyor. */
   muhabirId?: string;
   /** Haber talimatıysa talimatı veren yönetici; Planlama reddedemiyor, öncelikli. */
   talimatVeren?: string;
+  /*
+   * Öneri yalnız sistemden gelmiyor: ajans, resmî duyuru, başka bir birim.
+   * Muhabir dışı kaynakta tür ve ad burada; plana eklenince gelişmenin
+   * kaynağı da bu oluyor.
+   */
+  kaynakTuru?: KaynakTuru;
+  kaynakAdi?: string;
+  /** Planlama elle girdiyse giren kişi; muhabirin kendi gönderdiğinde boş. */
+  giren?: string;
   ulke: Ulke;
   haberBasligi: string;
   gelisme: string;
@@ -607,7 +617,7 @@ export interface Hareket {
 }
 
 export interface Durum {
-  surum: 8;
+  surum: 9;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -637,16 +647,16 @@ export interface Durum {
  * görevlendirmede yurt içi/yurt dışı ayrımı yok, hepsi saha görevlendirmesi,
  * v6: yönetici talimatı, öncelik ve yönetici notu, v7: haftalık plan akışı,
  * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
- * paketi).
+ * paketi, v9: elle girilen öneri ve muhabir dışı kaynak).
  */
-const SAKLA = "trt-planlama-v8";
+const SAKLA = "trt-planlama-v9";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 8) return d;
+      if (d.surum === 9) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

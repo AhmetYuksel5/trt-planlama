@@ -2,7 +2,7 @@ import { ArrowDown, ArrowLeft, ArrowUp, Ban, CalendarRange, Check, CheckCheck, I
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
+import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI, KANAL_ADI } from "../../etiketler";
 import {
@@ -25,6 +25,7 @@ import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type Hafta
 import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
+import { ElleOneriFormu } from "../oneri/OneriFormu";
 import { KalemFormu, KalemKarti } from "./Kalem";
 
 /**
@@ -206,9 +207,11 @@ function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikP
 }
 
 function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
-  const { t, ad, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState("");
+  /* Perşembe toplantısına giden öneri de yalnız çağrıdan gelmiyor; telefonla ya da ajanstan geleni Planlama burada giriyor. */
+  const [elle, setElle] = useState(false);
   const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
   const gundemdekiler = new Set(hafta.kalemler.map((k) => k.oneriId));
   const oneriler = v.oneriler
@@ -218,15 +221,34 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   return (
     <Bolum no="★" baslik={t("buHaftayaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
       <p className="aciklama">{t("buHaftayaGelenOnerilerAciklama")}</p>
+      {yapabilir(ben, "oneriGonder") && (
+        <div className="ara-ust-2">
+          {elle ? (
+            <ElleOneriFormu
+              ben={ben}
+              hafta={hafta.baslangic}
+              hemenMetni={t("kaydetVeGundemeEkle")}
+              kapat={() => setElle(false)}
+              kaydet={(id, hemen) => {
+                setElle(false);
+                if (hemen) setAcik(id);
+              }}
+            />
+          ) : (
+            <div className="ara-alt-2">
+              <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />
+            </div>
+          )}
+        </div>
+      )}
       {oneriler.length === 0 ? (
         <Bos kucuk metin={t("oneriYok")} />
       ) : (
         oneriler.map((o) => {
-          const k = kisiBul(v, o.muhabirId);
           return (
             <div key={o.id} className="kayit">
               <div className="kayit-bas">
-                <Avatar kisi={k} boy="kucuk" />
+                <OneriAvatari oneri={o} d={v} />
                 <div>
                   <a href={`#/oneriler/${o.id}`} className="kalin-bag">
                     <Icerik blok>{o.haberBasligi}</Icerik>
@@ -239,7 +261,7 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
                   <small>
                     <OneriDurumRozeti oneri={o} />
                     <TurRozeti tur={o.tur} />
-                    <span>{ad(k)}</span>
+                    <OneriKaynagi oneri={o} d={v} />
                     <span>
                       · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
                     </span>

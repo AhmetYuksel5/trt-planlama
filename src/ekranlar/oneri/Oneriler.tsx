@@ -1,37 +1,19 @@
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { OneriDurumRozeti, OneriTablosu } from "../../bilesenler/Tablolar";
-import { aralikYaz, metin, saatYaz, tarihYaz, useDil } from "../../dil";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
+import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaSonu } from "../../haftalik";
-import { oneriDurum, oneriGonder, ulkesi } from "../../eylemler";
+import { oneriDurum, oneriGonder } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import {
-  ICERIK_TURLERI,
-  KANALLAR,
-  ONERI_DURUMLARI,
-  ULKELER,
-  acikCagri,
-  baslikBul,
-  kisiBul,
-  paketBul,
-  planBul,
-  useVeri,
-  type Bicim,
-  type IcerikTuru,
-  type Kanal,
-  type Kisi,
-  type Oneri,
-  type OneriDurum,
-  type Ulke,
-} from "../../veri";
+import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { oneriGorebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
-import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 import { EpostaKaynagi } from "./Eposta";
+import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
 import PlanaEkle from "./PlanaEkle";
 
 /**
@@ -44,8 +26,9 @@ import PlanaEkle from "./PlanaEkle";
  */
 
 export function OnerilerListe({ ben }: { ben: Kisi }) {
-  const { t, ad } = useDil();
+  const { t } = useDil();
   const v = useVeri();
+  const kaynakMetni = useKaynakMetni();
   const [durum, setDurum] = useState<OneriDurum | "hepsi">("hepsi");
   const [tur, setTur] = useState<IcerikTuru | "">("");
   const [ulke, setUlke] = useState<Ulke | "">("");
@@ -59,7 +42,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
         (durum === "hepsi" || o.durum === durum) &&
         (!tur || o.tur === tur) &&
         (!ulke || o.ulke === ulke) &&
-        (!q || `${o.haberBasligi} ${o.gelisme} ${ad(kisiBul(v, o.muhabirId ?? o.talimatVeren))}`.toLocaleLowerCase().includes(q)),
+        (!q || `${o.haberBasligi} ${o.gelisme} ${kaynakMetni(o, v)}`.toLocaleLowerCase().includes(q)),
     )
     .sort((a, b) => b.zaman.localeCompare(a.zaman))
     // Bekleyen yönetici talimatı Planlama'nın önünde en üstte.
@@ -137,6 +120,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const [ret, setRet] = useState<string | null>(null);
   const muhabir = kisiBul(v, oneri.muhabirId);
   const veren = kisiBul(v, oneri.talimatVeren);
+  const giren = kisiBul(v, oneri.giren);
   const plan = planBul(v, oneri.planId);
   const paket = paketBul(v, oneri.paketId);
   const baslik = baslikBul(v, oneri.baslikId);
@@ -152,25 +136,31 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
         <ArrowLeft size={14} className="yon" /> {t(ben.birim === "muhabir" ? "mOnerilerim" : "mOneriler")}
       </a>
       <header className="sayfa-basi">
-        <Avatar kisi={muhabir ?? veren} boy="buyuk" />
+        <OneriAvatari oneri={oneri} d={v} boy="buyuk" />
         <div>
           <h1>
             <Icerik>{oneri.haberBasligi}</Icerik>
           </h1>
           <p>
-            <OneriDurumRozeti oneri={oneri} /> {veren ? <TalimatRozeti veren={veren} /> : ad(muhabir)} · {t(ulkeAdi(oneri.ulke))} ·{" "}
+            <OneriDurumRozeti oneri={oneri} /> <OneriKaynagi oneri={oneri} d={v} /> · {t(ulkeAdi(oneri.ulke))} ·{" "}
             {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
           </p>
         </div>
       </header>
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <Kart baslik={t(yanit ? "oneri" : "oneriOrijinal")} ek={t(yanit ? "oneriEpostadanNot" : "oneriOrijinalNot")}>
+          <Kart baslik={t(yanit ? "oneri" : giren ? "oneriGirildigiHal" : "oneriOrijinal")} ek={t(yanit ? "oneriEpostadanNot" : "oneriOrijinalNot")}>
             <div className="alanlar">
               <div className="alan">
-                <small>{t(veren ? "yoneticiTalimati" : "muhabir")}</small>
-                <b>{veren ? ad(veren) : muhabir ? ad(muhabir) : "?"}</b>
+                <small>{t(veren ? "yoneticiTalimati" : muhabir ? "muhabir" : "kaynak")}</small>
+                {veren || muhabir ? <b>{ad(veren ?? muhabir)}</b> : <KaynakRozeti oneri={oneri} />}
               </div>
+              {giren && (
+                <div className="alan">
+                  <small>{t("giren")}</small>
+                  <b>{ad(giren)}</b>
+                </div>
+              )}
               <div className="alan">
                 <small>{t("ulke")}</small>
                 <b>{t(ulkeAdi(oneri.ulke))}</b>
@@ -357,31 +347,14 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
       : []
     : v.haftalik.filter((h) => h.durum !== "kesinlesti" && h.baslangic > B).map((h) => h.baslangic).sort();
   const [hafta, setHafta] = useState(haftalik ? (haftalikCagri?.tarih ?? haftalar[0] ?? "") : "");
-  const [f, setF] = useState({
-    muhabirId: muhabir ? ben.id : "",
-    ulke: (muhabir ? ulkesi(ben.sehir) : "turkiye") as Ulke,
-    haberBasligi: "",
-    gelisme: "",
-    paketBasligi: "",
-    tur: "haber" as IcerikTuru,
-    bicim: "pkg" as Bicim,
-    sahaGerekli: false,
-    kanal: (muhabir ? "sistem" : "eposta") as Kanal,
-    hedefTarih: cagri?.tarih ?? gunEkle(B, 1),
-  });
-  const gecerli = !!f.muhabirId && !!f.haberBasligi.trim() && !!f.gelisme.trim();
+  const [hedefTarih, setHedefTarih] = useState(cagri?.tarih ?? gunEkle(B, 1));
+  const [f, setF] = useState(() => oneriFormuBaslangic(ben, "eposta"));
+  const gecerli = oneriFormuGecerli(f);
   const gonder = () => {
     if (!gecerli) return;
-    const id = oneriGonder(ben, {
-      ...f,
-      hedefTarih: hafta ? undefined : f.hedefTarih,
-      hafta: hafta || undefined,
-      haberBasligi: f.haberBasligi.trim(),
-      gelisme: f.gelisme.trim(),
-      paketBasligi: f.paketBasligi.trim() || undefined,
-    });
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih: hafta ? undefined : hedefTarih, hafta: hafta || undefined });
     if (id) {
-      bildir(t("bOneriGonderildi"));
+      bildir(t(muhabir ? "bOneriGonderildi" : "bOneriKaydedildi"));
       git(`oneriler/${id}`);
     }
   };
@@ -398,30 +371,6 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
       )}
       <Kart>
         <div className="form">
-          {!muhabir && (
-            <div className="satir">
-              <label>
-                {t("muhabir")}
-                <MuhabirSecici
-                  deger={f.muhabirId}
-                  degistir={(id) => {
-                    const k = kisiBul(v, id);
-                    setF({ ...f, muhabirId: id, ulke: k ? ulkesi(k.sehir) : f.ulke });
-                  }}
-                />
-              </label>
-              <label>
-                {t("kanal")}
-                <select value={f.kanal} onChange={(e) => setF({ ...f, kanal: e.target.value as Kanal })}>
-                  {KANALLAR.filter((k) => k !== "sistem").map((k) => (
-                    <option key={k} value={k}>
-                      {t(KANAL_ADI[k])}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
           {haftalar.length > 0 && (
             <div className="sekmeler" role="tablist" aria-label={t("hedefPlan")}>
               <button type="button" role="tab" aria-selected={!hafta} className={!hafta ? "acik" : ""} onClick={() => setHafta("")}>
@@ -432,71 +381,36 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
               </button>
             </div>
           )}
-          <div className="satir">
-            {hafta ? (
-              <label>
-                {t("hedefPlan")}
-                <select value={hafta} onChange={(e) => setHafta(e.target.value)}>
-                  {haftalar.map((h) => (
-                    <option key={h} value={h}>
-                      {aralikYaz(h, haftaSonu(h), dil)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <label>
-                {t("hedefPlan")}
-                <input type="date" value={f.hedefTarih} min={B} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} />
-              </label>
-            )}
-            <label>
-              {t("ulke")}
-              <select value={f.ulke} onChange={(e) => setF({ ...f, ulke: e.target.value as Ulke })}>
-                {ULKELER.map((u) => (
-                  <option key={u} value={u}>
-                    {t(ulkeAdi(u))}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("tur")}
-              <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-                {ICERIK_TURLERI.map((x) => (
-                  <option key={x} value={x}>
-                    {t(TUR_ADI[x])}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("haberTuru")}
-              <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
-            </label>
-          </div>
-          <label>
-            {t("haberBasligi")}
-            <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} />
-          </label>
-          <label>
-            {t("gelismeAciklama")}
-            <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} />
-          </label>
-          <label>
-            {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
-            <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
-          </label>
-          <label className="secim">
-            <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
-            {t("sahaGerekli")}
-          </label>
+          <OneriAlanlari
+            ben={ben}
+            f={f}
+            setF={setF}
+            hedef={
+              hafta ? (
+                <label>
+                  {t("hedefPlan")}
+                  <select value={hafta} onChange={(e) => setHafta(e.target.value)}>
+                    {haftalar.map((h) => (
+                      <option key={h} value={h}>
+                        {aralikYaz(h, haftaSonu(h), dil)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <label>
+                  {t("hedefPlan")}
+                  <input type="date" value={hedefTarih} min={B} onChange={(e) => setHedefTarih(e.target.value)} />
+                </label>
+              )
+            }
+          />
           <div className="form-alt">
             <a className="dugme dugme-ikincil" href="#/oneriler">
               {t("iptal")}
             </a>
             <button className="dugme" onClick={gonder} disabled={!gecerli}>
-              <Send size={16} className="yon" /> {t("gonder")}
+              <Send size={16} className="yon" /> {t(muhabir ? "gonder" : "kaydet")}
             </button>
           </div>
         </div>

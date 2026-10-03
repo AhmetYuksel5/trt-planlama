@@ -41,8 +41,14 @@ npm run preview  # derlenmiş hali yerelde
   - sunucu gelene kadar köprü: Outlook'tan sürükle-bırak (.msg), .eml ya da
     yapıştırılan metin; sunucunun kullanacağı işlemeden geçiyor
   - gelen öneriler ve değerlendirme
+  - sistem dışından gelen öneri elle giriliyor: Next Day ve haftalık plan
+    ekranındaki "Öneri ekle" ya da öneri sayfası. Muhabir adına (telefon,
+    mesaj, e-posta, yüz yüze) ya da muhabir dışı kaynaktan (ajans, resmî,
+    medya, kurum içi; kaynak adıyla). Öneri listeye "yeni" olarak düşüyor;
+    "Kaydet ve plana ekle" (haftalıkta "gündeme ekle") hemen ekleme
+    formunu açıyor. Kimin girdiği öneride ve hareket geçmişinde görünüyor
   - mevcut ya da yeni başlığa bağlayıp plana ekleme
-  - muhabirlere geri dönüş
+  - muhabirlere geri dönüş (muhabir dışı kaynağa geri dönüş yok)
 - **Haftalık plan** (Cumartesi–Cuma, Perşembe toplantısı):
   - haftalık öneri çağrısı, kurumun e-postası gibi: dönem kırmızı, yanıt
     adresi Kime'deki planlama adresi, altında muhabirin dolduracağı tablo

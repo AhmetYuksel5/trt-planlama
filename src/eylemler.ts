@@ -26,6 +26,7 @@ import {
   type HaftalikKalem,
   type HaftalikPlan,
   type Kanal,
+  type KaynakTuru,
   type Karar,
   type Kisi,
   type NextDayPlan,
@@ -120,7 +121,10 @@ export const cagriKaydet = (
 
 
 export interface OneriGirdisi {
-  muhabirId: string;
+  /** Muhabir adına girilende muhabir; muhabir dışı kaynakta boş, kaynakTuru dolu. */
+  muhabirId?: string;
+  kaynakTuru?: KaynakTuru;
+  kaynakAdi?: string;
   ulke: Ulke;
   haberBasligi: string;
   gelisme: string;
@@ -136,13 +140,24 @@ export interface OneriGirdisi {
 
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   if (!yapabilir(ben, "oneriGonder") || (!g.hafta && !g.hedefTarih)) return null;
-  // Muhabir yalnız kendi adına gönderir; Planlama e-postayla ya da telefonla gelen öneriyi muhabir adına girer.
-  const muhabirId = ben.birim === "muhabir" ? ben.id : g.muhabirId;
-  const kanal: Kanal = ben.birim === "muhabir" ? "sistem" : g.kanal;
+  const muhabir = ben.birim === "muhabir";
+  /*
+   * Muhabir yalnız kendi adına gönderir. Planlama sistem dışından geleni
+   * elle girer: ya bir muhabir adına (telefon, mesaj) ya da muhabir dışı
+   * bir kaynaktan (ajans, resmî duyuru, başka birim); ikisi birden değil.
+   */
+  const muhabirId = muhabir ? ben.id : g.muhabirId || undefined;
+  const kaynakTuru = muhabir || muhabirId ? undefined : g.kaynakTuru;
+  if (!muhabirId && (!kaynakTuru || kaynakTuru === "muhabir")) return null;
+  const kanal: Kanal = muhabir ? "sistem" : g.kanal;
   let d = getir();
-  const cagri = g.hafta
-    ? d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih === g.hafta)
-    : d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih === g.hedefTarih);
+  if (!muhabir && muhabirId && kisiBul(d, muhabirId)?.birim !== "muhabir") return null;
+  // Çağrı muhabirlere gidiyor; ajanstan ya da bakanlıktan gelen öneri ona verilmiş yanıt değil.
+  const cagri = !muhabirId
+    ? undefined
+    : g.hafta
+      ? d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih === g.hafta)
+      : d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih === g.hedefTarih);
   const id = kimlik("o");
   d = {
     ...d,
@@ -150,6 +165,9 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
       {
         id,
         muhabirId,
+        kaynakTuru,
+        kaynakAdi: kaynakTuru ? g.kaynakAdi?.trim() || undefined : undefined,
+        giren: muhabir ? undefined : ben.id,
         ulke: g.ulke,
         haberBasligi: g.haberBasligi,
         gelisme: g.gelisme,
@@ -167,7 +185,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
       ...d.oneriler,
     ],
   };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriGeldi", oneriId: id, veri: { sahip: "planlama" } }));
+  // Elle girilende hareketi yapan giren kişi; geçmişte "gönderdi" değil "girdi" okunsun.
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriGeldi", oneriId: id, veri: { sahip: "planlama", ...(muhabir ? {} : { elle: "1" }) } }));
   return id;
 };
 
@@ -241,7 +260,7 @@ export const oneriPlanaEkle = (
   const o = oneriBul(d, oneriId);
   const plan = planBul(d, g.planId);
   if (!o || !plan || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
-  // Talimatın muhabiri yok; Planlama burada atıyor. Önerinin kendisi değişmiyor.
+  // Talimatın ve muhabir dışı kaynağın muhabiri yok; Planlama burada atıyor. Önerinin kendisi değişmiyor.
   const muhabirId = o.muhabirId ?? (g.muhabirId || undefined);
 
   let baslikId = g.baslikId;
@@ -268,8 +287,9 @@ export const oneriPlanaEkle = (
     planId: plan.id,
     planBaslikId: pbId,
     metin: o.gelisme,
-    kaynakTuru: o.talimatVeren ? "diger" : "muhabir",
-    kaynakAdi: "",
+    // Gelişmenin kaynağı önerinin kaynağı: ajanstan girilen öneri planda da ajans olarak görünsün.
+    kaynakTuru: o.talimatVeren ? "diger" : (o.kaynakTuru ?? "muhabir"),
+    kaynakAdi: o.kaynakAdi ?? "",
     tarih: o.zaman,
     onerenId: muhabirId,
     oneriId: o.id,
@@ -322,8 +342,8 @@ export const oneriPlanaEkle = (
   return true;
 };
 
-/** Kararı verilmiş, muhabire henüz bildirilmemiş öneri. */
-export const geriDonusBekliyor = (o: Oneri) => !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum);
+/** Kararı verilmiş, muhabire henüz bildirilmemiş öneri. Muhabiri olmayan (talimat, ajans, resmî duyuru) öneride geri dönülecek kimse yok. */
+export const geriDonusBekliyor = (o: Oneri) => !!o.muhabirId && !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum);
 
 const geriDonusYaz = (ben: Kisi, kapsamda: (o: Oneri) => boolean, bag: { planId?: string; haftaId?: string }): number => {
   let d = getir();
@@ -618,16 +638,18 @@ const haftaliktanAktar = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: var_ ? p.basliklar.map((b) => (b.id === pb.id ? yeniPb : b)) : [...p.basliklar, yeniPb] }));
   }
   const muhabirId = k.muhabirler[0];
+  // Kalem bir öneriden geldiyse gelişmenin kaynağı o önerinin kaynağı (muhabir, ajans, resmî duyuru…).
+  const oneri = oneriBul(d, k.oneriId);
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
     planBaslikId: pbId,
     yer: k.yer,
     metin: k.baslik ? `${k.baslik} / ${k.metin}` : k.metin,
-    kaynakTuru: k.oneriId ? "muhabir" : "diger",
-    kaynakAdi: "",
+    kaynakTuru: oneri ? (oneri.kaynakTuru ?? (oneri.muhabirId ? "muhabir" : "diger")) : "diger",
+    kaynakAdi: oneri?.kaynakAdi ?? "",
     tarih: simdi(),
-    onerenId: k.oneriId ? muhabirId : undefined,
+    onerenId: oneri?.muhabirId,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
   };
