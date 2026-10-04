@@ -225,7 +225,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const v = useVeri();
   /* Öneri yalnız sistemden gelmiyor: telefonla, ajanstan, resmî duyurudan geleni Planlama burada giriyor. */
   const [elle, setElle] = useState(false);
-  const [gorunum, setGorunum] = useOneriGorunumu();
+  const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const oneriler = v.oneriler
     .filter((o) => o.hedefTarih === plan.tarih && o.durum !== "planaEklendi")

@@ -630,8 +630,11 @@ export interface Hareket {
   veri?: Record<string, string>;
 }
 
+/** Plan ekranında gelen öneriler: müstakil kart ya da tek satır. */
+export type OneriGorunumu = "kart" | "liste";
+
 export interface Durum {
-  surum: 11;
+  surum: 12;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -652,6 +655,8 @@ export interface Durum {
   okundu: Record<string, string>;
   /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
   anaSayfa?: Record<string, string[]>;
+  /** Kişinin plan ekranlarındaki öneri görünümü (kişi → kart ya da liste); yoksa kart. */
+  oneriGorunumu?: Record<string, OneriGorunumu>;
   sayac: number;
 }
 
@@ -665,16 +670,16 @@ export interface Durum {
  * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
- * özel ana sayfa düzeni).
+ * özel ana sayfa düzeni, v12: kişinin öneri görünümü).
  */
-const SAKLA = "trt-planlama-v11";
+const SAKLA = "trt-planlama-v12";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 11) return d;
+      if (d.surum === 12) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
