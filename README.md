@@ -51,6 +51,10 @@ npm run preview  # derlenmiş hali yerelde
   - sunucu gelene kadar köprü: Outlook'tan sürükle-bırak (.msg), .eml ya da
     yapıştırılan metin; sunucunun kullanacağı işlemeden geçiyor
   - gelen öneriler ve değerlendirme
+  - plan ekranlarında her öneri bir kart: kol, haber türü (PKG, Walk &
+    Talk…), ülke, önerilen başlık ve arkasındaki haber, kısa gelişme,
+    kaynak. Karta basınca bütün öneri pencerede açılıyor; plana ekleme ve
+    ret orada. Kart ile liste arasında geçiliyor, seçim hatırlanıyor
   - sistem dışından gelen öneri elle giriliyor: Next Day ve haftalık plan
     ekranındaki "Öneri ekle" ya da öneri sayfası. Muhabir adına (telefon,
     mesaj, e-posta, yüz yüze) ya da muhabir dışı kaynaktan (ajans, resmî,

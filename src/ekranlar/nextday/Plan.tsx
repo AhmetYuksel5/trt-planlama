@@ -1,14 +1,13 @@
-import { ArrowLeft, Ban, CalendarDays, Check, Clock, Lightbulb, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
-import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
-import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oncekiOnayla, oneriDurum, planBaslikEkle, planDurum } from "../../eylemler";
-import { KANAL_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, satir, sehirAr } from "../../etiketler";
+import { metin, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oncekiOnayla, planBaslikEkle, planDurum } from "../../eylemler";
+import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { useBen } from "../../oturum";
-import { yerelGun } from "../../tarih";
-import { PLAN_DURUMLARI, kisiBul, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import BaslikKarti from "./BaslikKarti";
@@ -222,12 +221,12 @@ function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: 
 /* --- Bu tarihe gelen öneriler: plan hazırlanırken karar burada veriliyor --- */
 
 function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
-  const [acik, setAcik] = useState("");
   /* Öneri yalnız sistemden gelmiyor: telefonla, ajanstan, resmî duyurudan geleni Planlama burada giriyor. */
   const [elle, setElle] = useState(false);
-  const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
+  const [gorunum, setGorunum] = useOneriGorunumu();
+  const [pencere, setPencere] = useState<PencereDurumu>(null);
   const oneriler = v.oneriler
     .filter((o) => o.hedefTarih === plan.tarih && o.durum !== "planaEklendi")
     .sort((a, b) => (a.durum === b.durum ? b.zaman.localeCompare(a.zaman) : sira(a) - sira(b)))
@@ -236,105 +235,35 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 
   return (
     <Bolum no="★" baslik={t("buPlanaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
-      {yapabilir(ben, "oneriGonder") &&
-        (elle ? (
-          <ElleOneriFormu
-            ben={ben}
-            hedefTarih={plan.tarih}
-            hemenMetni={t("kaydetVePlanaEkle")}
-            kapat={() => setElle(false)}
-            kaydet={(id, hemen) => {
-              setElle(false);
-              if (hemen) setAcik(id);
-            }}
-          />
-        ) : (
-          <div className="ara-alt-2">
-            <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />
-          </div>
-        ))}
-      {oneriler.length === 0 ? (
-        <Bos kucuk metin={t("oneriYok")} />
+      {elle ? (
+        <ElleOneriFormu
+          ben={ben}
+          hedefTarih={plan.tarih}
+          hemenMetni={t("kaydetVePlanaEkle")}
+          kapat={() => setElle(false)}
+          kaydet={(id, hemen) => {
+            setElle(false);
+            if (hemen) setPencere({ id, mod: "ekle" });
+          }}
+        />
       ) : (
-        oneriler.map((o) => {
-          const k = kisiBul(v, o.muhabirId);
-          const talimat = !!o.talimatVeren;
-          return (
-            <div key={o.id} className={`kayit ${talimat ? "kayit-talimat" : ""}`}>
-              <div className="kayit-bas">
-                <OneriAvatari oneri={o} d={v} />
-                <div>
-                  <b>
-                    <Icerik blok>{satir(sehirAr(k?.sehir), o.haberBasligi)}</Icerik>
-                  </b>
-                  <Icerik blok className="kayit-metin">
-                    {o.gelisme}
-                  </Icerik>
-                  {o.paketBasligi && (
-                    <Icerik blok className="kayit-metin">
-                      {`PKG: ${o.paketBasligi}`}
-                    </Icerik>
-                  )}
-                  <small>
-                    <OneriDurumRozeti oneri={o} />
-                    <OneriKaynagi oneri={o} d={v} />
-                    <span>
-                      · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
-                    </span>
-                    {o.gerekce && <span dir="auto">· {o.gerekce}</span>}
-                  </small>
-                </div>
-                <div className="islemler">
-                  {o.durum !== "reddedildi" && acik !== o.id && (
-                    <button className="dugme dugme-iyi dugme-kucuk" onClick={() => setAcik(o.id)}>
-                      {t("planaEkle")}
-                    </button>
-                  )}
-                  {o.durum === "yeni" && (
-                    <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "degerlendiriliyor")} title={t("degerlendirmeyeAl")}>
-                      <Clock size={14} />
-                    </button>
-                  )}
-                  {/* Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor. */}
-                  {!talimat && o.durum !== "sonra" && o.durum !== "reddedildi" && (
-                    <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "sonra")} title={t("odSonra")}>
-                      <Lightbulb size={14} />
-                    </button>
-                  )}
-                  {!talimat && o.durum !== "reddedildi" && (
-                    <button className="dugme dugme-kotu dugme-kucuk" onClick={() => setRet({ id: o.id, gerekce: "" })} title={t("reddet")}>
-                      <Ban size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-              {acik === o.id && <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={() => setAcik("")} />}
-              {ret?.id === o.id && (
-                <div className="form form-kutu ara-ust-2">
-                  <label>
-                    {t("retGerekcesi")}
-                    <input value={ret.gerekce} onChange={(e) => setRet({ ...ret, gerekce: e.target.value })} autoFocus />
-                  </label>
-                  <div className="form-alt">
-                    <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setRet(null)}>
-                      {t("iptal")}
-                    </button>
-                    <button
-                      className="dugme dugme-kotu dugme-kucuk"
-                      onClick={() => {
-                        oneriDurum(ben, o.id, "reddedildi", ret.gerekce);
-                        setRet(null);
-                      }}
-                    >
-                      {t("reddet")}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })
+        <div className="oneri-arac ara-alt-2">
+          {yapabilir(ben, "oneriGonder") && <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />}
+          <span className="bosluk-esnek" />
+          <GorunumSecici deger={gorunum} degistir={setGorunum} />
+        </div>
       )}
+      <OneriListesi
+        ben={ben}
+        d={v}
+        oneriler={oneriler}
+        gorunum={gorunum}
+        pencere={pencere}
+        setPencere={setPencere}
+        ekleMetni={t("planaEkle")}
+        ekleFormu={(o, kapat) => <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={kapat} />}
+        ertelenebilir
+      />
     </Bolum>
   );
 }

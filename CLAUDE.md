@@ -102,6 +102,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
+- Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
+  (`oneri/OneriKarti.tsx → OneriListesi`):
+  - kartta kol, haber türü, ülke, durum; başlık önerilen paket
+    (`paketBasligi`, yoksa `haberBasligi`), altında arka plan haberi,
+    kısa gelişme, kaynak ve zaman. Renk yalnız kolda.
+  - Karta basınca `Pencere`de bütün öneri: tam gelişme, kaynak, hedef plan,
+    süreç, "Ayrıntı ve geçmiş". Plana/gündeme ekleme ve ret pencerede
+    açılır, ızgarada form açılmaz; değerlendirmeye alma ve erteleme kartta.
+  - Kart/liste seçimi kişinin tarayıcısında (`trt-planlama-oneri-gorunum`),
+    kayıtta değil. Öneriler sayfasının tablosu ve başlık kartındaki küçük
+    liste bu kalıba girmez.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
