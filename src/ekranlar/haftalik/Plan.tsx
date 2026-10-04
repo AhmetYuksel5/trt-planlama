@@ -1,10 +1,9 @@
-import { ArrowDown, ArrowLeft, ArrowUp, Ban, CalendarRange, Check, CheckCheck, Inbox, Lock, Megaphone, Pencil, Plus, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, Inbox, Lock, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, NotKutu, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
-import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI, KANAL_ADI } from "../../etiketler";
+import { Avatar, Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI } from "../../etiketler";
 import {
   anaKonuKaydet,
   anaKonuSil,
@@ -14,18 +13,18 @@ import {
   haftalikGeriDonus,
   haftalikKesinlestir,
   kalanlariKabulEt,
-  oneriDurum,
   oneriGundemeEkle,
   onIncelemeyeGonder,
 } from "../../eylemler";
 import { etiketUret } from "../../eposta";
 import { gundemde, haftaGunleri, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "../../haftalik";
-import { bugun, yerelGun } from "../../tarih";
+import { bugun } from "../../tarih";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
+import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { KalemFormu, KalemKarti } from "./Kalem";
 
 /**
@@ -207,12 +206,12 @@ function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikP
 }
 
 function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
-  const [acik, setAcik] = useState("");
   /* Perşembe toplantısına giden öneri de yalnız çağrıdan gelmiyor; telefonla ya da ajanstan geleni Planlama burada giriyor. */
   const [elle, setElle] = useState(false);
-  const [ret, setRet] = useState<{ id: string; gerekce: string } | null>(null);
+  const [gorunum, setGorunum] = useOneriGorunumu();
+  const [pencere, setPencere] = useState<PencereDurumu>(null);
   const gundemdekiler = new Set(hafta.kalemler.map((k) => k.oneriId));
   const oneriler = v.oneriler
     .filter((o) => o.hafta === hafta.baslangic && !gundemdekiler.has(o.id) && o.durum !== "planaEklendi")
@@ -221,85 +220,36 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   return (
     <Bolum no="★" baslik={t("buHaftayaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
       <p className="aciklama">{t("buHaftayaGelenOnerilerAciklama")}</p>
-      {yapabilir(ben, "oneriGonder") && (
+      {elle ? (
         <div className="ara-ust-2">
-          {elle ? (
-            <ElleOneriFormu
-              ben={ben}
-              hafta={hafta.baslangic}
-              hemenMetni={t("kaydetVeGundemeEkle")}
-              kapat={() => setElle(false)}
-              kaydet={(id, hemen) => {
-                setElle(false);
-                if (hemen) setAcik(id);
-              }}
-            />
-          ) : (
-            <div className="ara-alt-2">
-              <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />
-            </div>
-          )}
+          <ElleOneriFormu
+            ben={ben}
+            hafta={hafta.baslangic}
+            hemenMetni={t("kaydetVeGundemeEkle")}
+            kapat={() => setElle(false)}
+            kaydet={(id, hemen) => {
+              setElle(false);
+              if (hemen) setPencere({ id, mod: "ekle" });
+            }}
+          />
+        </div>
+      ) : (
+        <div className="oneri-arac ara-ust-2 ara-alt-2">
+          {yapabilir(ben, "oneriGonder") && <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />}
+          <span className="bosluk-esnek" />
+          <GorunumSecici deger={gorunum} degistir={setGorunum} />
         </div>
       )}
-      {oneriler.length === 0 ? (
-        <Bos kucuk metin={t("oneriYok")} />
-      ) : (
-        oneriler.map((o) => {
-          return (
-            <div key={o.id} className="kayit">
-              <div className="kayit-bas">
-                <OneriAvatari oneri={o} d={v} />
-                <div>
-                  <a href={`#/oneriler/${o.id}`} className="kalin-bag">
-                    <Icerik blok>{o.haberBasligi}</Icerik>
-                  </a>
-                  {o.gelisme !== o.haberBasligi && (
-                    <Icerik blok className="kayit-metin">
-                      {o.gelisme}
-                    </Icerik>
-                  )}
-                  <small>
-                    <OneriDurumRozeti oneri={o} />
-                    <TurRozeti tur={o.tur} />
-                    <OneriKaynagi oneri={o} d={v} />
-                    <span>
-                      · {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
-                    </span>
-                    {o.gerekce && <span dir="auto">· {o.gerekce}</span>}
-                  </small>
-                </div>
-                {o.durum !== "reddedildi" && acik !== o.id && (
-                  <div className="islemler">
-                    <button className="dugme dugme-iyi dugme-kucuk" onClick={() => setAcik(o.id)}>
-                      <Plus size={14} /> {t("gundemeEkle")}
-                    </button>
-                    <button className="dugme dugme-kotu dugme-kucuk" onClick={() => setRet({ id: o.id, gerekce: "" })} title={t("reddet")} aria-label={t("reddet")}>
-                      <Ban size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
-              {acik === o.id && <GundemeEkle ben={ben} hafta={hafta} oneri={o} kapat={() => setAcik("")} />}
-              {ret?.id === o.id && (
-                <div className="form form-kutu ara-ust-2">
-                  <label>
-                    {t("retGerekcesi")}
-                    <input dir="auto" value={ret.gerekce} onChange={(e) => setRet({ ...ret, gerekce: e.target.value })} autoFocus />
-                  </label>
-                  <FormAlt
-                    kapat={() => setRet(null)}
-                    kaydet={() => {
-                      oneriDurum(ben, o.id, "reddedildi", ret.gerekce);
-                      setRet(null);
-                    }}
-                    kaydetMetni={t("reddet")}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })
-      )}
+      <OneriListesi
+        ben={ben}
+        d={v}
+        oneriler={oneriler}
+        gorunum={gorunum}
+        pencere={pencere}
+        setPencere={setPencere}
+        ekleMetni={t("gundemeEkle")}
+        ekleFormu={(o, kapat) => <GundemeEkle ben={ben} hafta={hafta} oneri={o} kapat={kapat} />}
+      />
     </Bolum>
   );
 }
