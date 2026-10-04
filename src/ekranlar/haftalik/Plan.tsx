@@ -210,7 +210,7 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const v = useVeri();
   /* Perşembe toplantısına giden öneri de yalnız çağrıdan gelmiyor; telefonla ya da ajanstan geleni Planlama burada giriyor. */
   const [elle, setElle] = useState(false);
-  const [gorunum, setGorunum] = useOneriGorunumu();
+  const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const gundemdekiler = new Set(hafta.kalemler.map((k) => k.oneriId));
   const oneriler = v.oneriler

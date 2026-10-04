@@ -4,10 +4,10 @@ import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Penc
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDurum } from "../../eylemler";
+import { oneriDurum, oneriGorunumuKaydet } from "../../eylemler";
 import { haftaSonu } from "../../haftalik";
 import { yerelGun } from "../../tarih";
-import { paketBul, type Durum, type Kisi, type Oneri } from "../../veri";
+import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
 import { FormAlt } from "../nextday/Formlar";
 
 /*
@@ -24,41 +24,26 @@ const baslikOf = (o: Oneri) => o.paketBasligi || o.haberBasligi;
 /** Arka plan haberi yalnız başlıktan farklıysa ayrı satır. */
 const arkaPlan = (o: Oneri) => (o.paketBasligi && o.paketBasligi !== o.haberBasligi ? o.haberBasligi : undefined);
 
-export type Gorunum = "kart" | "liste";
+export type Gorunum = OneriGorunumu;
 export type PencereDurumu = { id: string; mod: "goster" | "ekle" | "ret" } | null;
 
-/* Görünüm kişinin bu tarayıcıdaki tercihi; kayıt değil, saklanamazsa kart. */
-const GORUNUM_ANAHTARI = "trt-planlama-oneri-gorunum";
-export function useOneriGorunumu(): [Gorunum, (g: Gorunum) => void] {
-  const [g, setG] = useState<Gorunum>(() => {
-    try {
-      return localStorage.getItem(GORUNUM_ANAHTARI) === "liste" ? "liste" : "kart";
-    } catch {
-      return "kart";
-    }
-  });
-  const degistir = (yeni: Gorunum) => {
-    setG(yeni);
-    try {
-      localStorage.setItem(GORUNUM_ANAHTARI, yeni);
-    } catch {
-      /* özel pencere: bu oturumda geçerli */
-    }
-  };
-  return [g, degistir];
+/* Görünüm kişinin tercihi (ana sayfa düzeni gibi kayıtta); seçmediyse kart. */
+export function useOneriGorunumu(ben: Kisi): [Gorunum, (g: Gorunum) => void] {
+  const v = useVeri();
+  return [v.oneriGorunumu?.[ben.id] ?? "kart", (g) => oneriGorunumuKaydet(ben, g)];
 }
 
 export function GorunumSecici({ deger, degistir }: { deger: Gorunum; degistir: (g: Gorunum) => void }) {
   const { t } = useDil();
   const secenek = (g: Gorunum, ikon: ReactNode, ad: string) => (
-    <button type="button" className={`dugme dugme-sade dugme-ikon ${deger === g ? "secili" : ""}`} aria-pressed={deger === g} aria-label={ad} title={ad} onClick={() => degistir(g)}>
-      {ikon}
+    <button type="button" className={`dugme dugme-sade dugme-kucuk ${deger === g ? "secili" : ""}`} aria-pressed={deger === g} onClick={() => degistir(g)}>
+      {ikon} {ad}
     </button>
   );
   return (
     <div className="gorunum-secici" role="group" aria-label={t("gorunum")}>
-      {secenek("kart", <LayoutGrid size={16} />, t("kartGorunumu"))}
-      {secenek("liste", <List size={16} />, t("listeGorunumu"))}
+      {secenek("kart", <LayoutGrid size={15} />, t("kartGorunumu"))}
+      {secenek("liste", <List size={15} />, t("listeGorunumu"))}
     </div>
   );
 }

@@ -33,6 +33,7 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oneri,
+  type OneriGorunumu,
   type Paket,
   type PlanDurum,
   type PlanMuhabiri,
@@ -1428,5 +1429,16 @@ export const anaSayfaKaydet = (ben: Kisi, duzen: string, alanlar: string[] | nul
   if (alanlar) yeni[anahtar] = [...new Set(alanlar)];
   else delete yeni[anahtar];
   kaydet({ ...d, anaSayfa: yeni });
+  return true;
+};
+
+/**
+ * Plan ekranlarındaki öneriler kart mı liste mi; ana sayfa düzeni gibi
+ * kişinin tercihi. Aynı tarayıcıda başka biri girince kendi seçimini
+ * görsün diye tarayıcıda değil kayıtta; hareket yazılmıyor.
+ */
+export const oneriGorunumuKaydet = (ben: Kisi, gorunum: OneriGorunumu) => {
+  const d = getir();
+  kaydet({ ...d, oneriGorunumu: { ...(d.oneriGorunumu ?? {}), [ben.id]: gorunum } });
   return true;
 };
