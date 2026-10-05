@@ -444,6 +444,7 @@ const M = {
   calismaEkibi: m("Çalışma ekibi", "فريق العمل", "Team on duty"),
   ekipBos: m("Ekipte kimse yok.", "لا أحد في الفريق.", "Nobody on the team yet."),
   ekibeEkle: m("Ekibe ekle", "إضافة إلى الفريق", "Add to team"),
+  gorevdePersonelYok: m("Bu görevde eklenecek personel yok", "لا يوجد موظفون متاحون لهذه المهمة", "No available staff for this role"),
   vardiya: m("Vardiya", "المناوبة", "Shift"),
   vardiyaGmt: m("Vardiya (GMT)", "المناوبة (غرينتش)", "Shift (GMT)"),
   muhabirHareketleri: m("Muhabirlerin hareketleri ve izinleri", "تحركات وإجازات المراسلين", "Reporter movements and leave"),

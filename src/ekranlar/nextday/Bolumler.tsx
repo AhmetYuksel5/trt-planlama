@@ -73,8 +73,9 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
   const [kisiId, setKisiId] = useState("");
   const [gorev, setGorev] = useState<EkipGorevi>(ilkGorev ?? "bultenYapimcisi");
   const [vardiya, setVardiya] = useState("08:00");
+  // Görev seçilince listede yalnız o pozisyondaki personel: ekip görevi kişinin unvanından (varsayilanEkipGorevi).
   const adaylar = v.kisiler
-    .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id))
+    .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id) && varsayilanEkipGorevi(k.gorev, k.birim) === gorev)
     .sort((a, b) => ad(a).localeCompare(ad(b)));
 
   const kaydet = () => {
@@ -88,16 +89,8 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
       <div className="satir">
         <label>
           {t("personel")}
-          <select
-            value={kisiId}
-            onChange={(e) => {
-              setKisiId(e.target.value);
-              const k = kisiBul(v, e.target.value);
-              // Belgede görev satırından açıldıysa o görev kalıyor; yoksa kişinin olağan görevi.
-              if (k && !ilkGorev) setGorev(varsayilanEkipGorevi(k.gorev, k.birim));
-            }}
-          >
-            <option value="">{t("seciniz")}</option>
+          <select value={kisiId} onChange={(e) => setKisiId(e.target.value)}>
+            <option value="">{t(adaylar.length ? "seciniz" : "gorevdePersonelYok")}</option>
             {adaylar.map((k) => (
               <option key={k.id} value={k.id}>
                 {ad(k)} · {t(GOREV_ADI[k.gorev])}
@@ -107,7 +100,14 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
         </label>
         <label>
           {t("gorev")}
-          <select value={gorev} onChange={(e) => setGorev(e.target.value as EkipGorevi)}>
+          <select
+            value={gorev}
+            onChange={(e) => {
+              setGorev(e.target.value as EkipGorevi);
+              // Seçili kişi yeni görevin listesinde yok; boş kalsın ki yanlış görevle eklenmesin.
+              setKisiId("");
+            }}
+          >
             {EKIP_GOREVLERI.map((x) => (
               <option key={x} value={x}>
                 {t(EKIP_GOREV_ADI[x])}
