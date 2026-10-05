@@ -37,6 +37,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     etiketi `ND-`, haftalık `HP-` (haftanın Cumartesi'si)
   - `haftalik.ts`: haftalık planın okuma kuralları (gündemde mi, karar
     bekleyen, Next Day'e gider mi, ön inceleme bekleyenler)
+  - `takvim.ts`: planlama takviminin okuma kuralları (tekrarların açılımı,
+    yaklaşanlar, hatırlatma, yıllık yoğunluk, arama ve süzgeç)
   - `oturum.ts`: demo giriş
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
@@ -60,7 +62,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v12`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v13`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
@@ -171,8 +173,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   özel yayın, saha); satırda yalnız ad, durum, ilerleme, ayrıntı
   `Pencere`de (yerleşik `<dialog>`). Panele yeni bilgi eklenecekse de bu
   kalıp: önce kısa satır, ayrıntı pencerede.
-- Takvime yalnız akışta tanımlı toplantı girer (akşam haber toplantısı,
-  Newsdesk sabah toplantısı, Perşembe haftalık toplantısı).
+- Toplantı takvimine (`d.toplantilar`) yalnız akışta tanımlı toplantı
+  girer (akşam haber toplantısı, Newsdesk sabah toplantısı, Perşembe
+  haftalık toplantısı). Planlama takvimi ondan ayrı (aşağıda).
+- Planlama takvimi (`ekranlar/takvim/`, `#/takvim/<görünüm>/<gün>`,
+  `#/takvim/faaliyet/<id>`): önceden bilinen faaliyetler (seçim, zirve,
+  resmî gün…), `d.faaliyetler`.
+  - Tekrar saklanmaz; görünüm hangi aralığı çiziyorsa `takvim.ts →
+    olusumlar` açar. Tekrarın kimliği faaliyet + başladığı gün.
+  - Plana kendiliğinden dönüşmez. Editör "… ekle" deyince planda kayıt
+    doğar (Next Day'e gelişme, haftalığa kalem, aylığa onaysız kalem,
+    özel yayına yeni yayın ya da hazırlık maddesi), bağlantı faaliyette
+    (`baglantilar`, çoka çok); plan tarafı değişmez. Plan ekranlarının
+    "Takvimden" bölümü bağlantıyı tersinden okur. Aktarım tek pencereden
+    (`takvim/Ayrinti.tsx → FaaliyetAyrintisi`), plan ekranı da onu açar.
+  - Plana aktarım planın açık olmasını ister (Next Day yalnız bugün ve
+    yarın); değilse düğme pasif, nedeni yazılı.
+  - Yetki: `takvimDuzenle` (Planlama ve Yönetim; öbür masalarda yalnız
+    birim yöneticisi), aktarım o planın kendi yetkisi. Muhabir yalnız
+    sorumlu muhabiri olduğu faaliyeti görür (`faaliyetGorebilir`).
+  - Hafta Cumartesi başlar. Renk yalnız öncelikte (`.on-*`); hatırlatma
+    uygulama içinde (yan panel, ana sayfa kartı, menü sayısı).
+  - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
+    süre korunur, kenar tutamacı tek ucu değiştirir.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

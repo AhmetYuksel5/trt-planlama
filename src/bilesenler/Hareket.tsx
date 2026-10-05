@@ -4,7 +4,7 @@ import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from ".
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
 import { BIRIM_ADI, ONERI_DURUM_ADI } from "../etiketler";
-import { SISTEM, haftaBul, kisiBul, oneriBul, paketBul, planBul, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
+import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
@@ -62,7 +62,12 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   haftaliktanAktarildi: "hrHaftaliktanAktarildi",
   uretimeAlindi: "hrUretimeAlindi",
   stokYayinlandi: "hrStokYayinlandi",
+  faaliyetEklendi: "hrFaaliyetEklendi",
+  faaliyetPlanaAlindi: "hrFaaliyetPlanaAlindi",
 };
+
+/* Faaliyetin girdiği plan: menüdeki adlarıyla. */
+const PLAN_TURU_ADI: Record<BaglantiTuru, Anahtar> = { nextday: "nextday", haftalik: "haftalik", aylik: "aylik", ozel: "ozel" };
 
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
 const sablonSec = (h: Hareket): Anahtar => {
@@ -88,6 +93,7 @@ export function useHareketMetni() {
       muhabir: ad(muhabir),
       sonuc: h.veri?.sonuc ? t(ONERI_DURUM_ADI[h.veri.sonuc as OneriDurum]) : "",
       puan: h.veri?.puan ?? "",
+      plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");
     return { kisi, once, sonra };
@@ -109,6 +115,9 @@ export interface Konu {
 export function useHareketKonusu() {
   const { t, dil } = useDil();
   return (h: Hareket, d: Durum): Konu | null => {
+    /* Takvim hareketinde konu faaliyetin kendisi; plana alındıysa da plan değil, faaliyet. */
+    const f = faaliyetBul(d, h.veri?.faaliyetId);
+    if (f) return { baslik: f.baslik, href: `#/takvim/faaliyet/${f.id}` };
     const p = paketBul(d, h.paketId);
     if (p) return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}` };
     const o = oneriBul(d, h.oneriId);

@@ -3,6 +3,7 @@ import {
   Building,
   Calendar,
   CalendarClock,
+  CalendarCheck,
   CalendarDays,
   CalendarRange,
   ChartColumn,
@@ -32,7 +33,8 @@ import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
-import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir } from "../yetki";
+import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
+import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
 import Logo from "./Logo";
 
 /**
@@ -84,6 +86,14 @@ export const MENU: Grup[] = [
       { sayfa: "haftalik", ad: "mHaftalik", ikon: CalendarRange, say: (d, ben) => gorusBekleyenler(d, ben).length },
       { sayfa: "aylik", ad: "mAylik", ikon: Calendar, taslak: true },
       { sayfa: "ozel", ad: "mOzel", ikon: Tv, taslak: true },
+      // Sayı: zamanı gelen hatırlatmalar; yalnız takvimi tutanlara ve muhabire (kendi faaliyeti), öbür masalara gürültü olmasın.
+      {
+        sayfa: "takvim",
+        ad: "mTakvim",
+        adMuhabir: "mTakvimim",
+        ikon: CalendarCheck,
+        say: (d, ben) => (yapabilir(ben, "takvimDuzenle") || ben.birim === "muhabir" ? bekleyenHatirlatmalar(gorunenFaaliyetler(d, ben)).length : 0),
+      },
     ],
   },
   {

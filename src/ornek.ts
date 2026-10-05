@@ -9,6 +9,8 @@ import type {
   CanliYayin,
   Durum,
   EkipUyesi,
+  Faaliyet,
+  FaaliyetTuru,
   Gelisme,
   Gorevlendirme,
   HareketTipi,
@@ -1259,6 +1261,148 @@ const AY_KALEMLERI: [string, IcerikTuru, boolean][] = [
   ["الترويج لبرامج الموسم الجديد", "program", false],
 ];
 
+/*
+ * Planlama takvimi. Tarihler bugüne göre: takvim hangi gün açılırsa açılsın
+ * önü dolu, arkasında arşiv olsun. Yalnız günü sabit olanlar (ABD ara
+ * seçimi, yıldönümü, resmî gün, BM Genel Kurulu) yılın kendi gününde; onlar
+ * da tekrarlı olduğu için her yıl görünüyor. Bir gün bilerek kalabalık
+ * (+16): ay görünümünde "+N faaliyet daha" görünsün.
+ */
+const FAALIYETLER = (B: string, yil: string): Faaliyet[] => {
+  const gun = (n: number) => gunEkle(B, n);
+  const kayit = zaman(gun(-12), "10:30");
+  const f = (id: string, tur: FaaliyetTuru, baslik: string, baslangic: string, ek: Partial<Faaliyet> = {}): Faaliyet => ({
+    id,
+    tur,
+    baslik,
+    baslangic,
+    bitis: baslangic,
+    oncelik: "normal",
+    potansiyel: "oneri",
+    durum: "takipte",
+    bolge: "kuresel",
+    baglantilar: [],
+    olusturan: "pl2",
+    olusturma: kayit,
+    guncelleme: kayit,
+    ...ek,
+  });
+  const kalabalik = gun(16);
+  return [
+    f("f-abd", "secim", "الانتخابات النصفية الأمريكية", `${yil}-11-03`, {
+      ulke: "abd",
+      bolge: "amerika",
+      sehir: "واشنطن",
+      oncelik: "kritik",
+      potansiyel: "ozelYayin",
+      birim: "planlama",
+      muhabirId: "mu5",
+      hatirlatma: { once: "1a" },
+      durum: "planaAlindi",
+      notlar: "Özel yayın planı açıldı; Washington ekibi ve seçim gecesi yayını oradan izleniyor.",
+      baglantilar: [{ tur: "ozel", planId: "oz-abd", tarih: `${yil}-11-03`, kisiId: "pl2", zaman: zaman(gun(-9), "11:20") }],
+    }),
+    f("f-bm", "toplanti", "الدورة العادية للجمعية العامة للأمم المتحدة", `${yil}-09-22`, {
+      bitis: `${yil}-09-26`,
+      sehir: "نيويورك",
+      oncelik: "yuksek",
+      potansiyel: "kesin",
+      birim: "planlama",
+      muhabirId: "mu27",
+      tekrar: { siklik: "yillik" },
+      hatirlatma: { once: "1h" },
+      notlar: "Türkiye ve Arap liderlerin konuşma saatleri BM programından teyit edilecek.",
+    }),
+    f("f-nato", "zirve", "قمة حلف شمال الأطلسي (الناتو)", gun(38), { bitis: gun(39), ulke: "belcika", bolge: "avrupa", sehir: "بروكسل", oncelik: "yuksek", potansiyel: "kesin", muhabirId: "mu28", hatirlatma: { once: "1h" } }),
+    f("f-cop", "konferans", "مؤتمر الأمم المتحدة للمناخ COP31", gun(35), {
+      bitis: gun(46),
+      ulke: "turkiye",
+      bolge: "turkiyeCevresi",
+      sehir: "أنطاليا",
+      oncelik: "yuksek",
+      potansiyel: "ozelYayin",
+      birim: "planlama",
+      hatirlatma: { once: "1a" },
+      notlar: "Ev sahibi Türkiye: özel yayın adayı. Akreditasyon bir ay önce kapanıyor.",
+    }),
+    f("f-iac", "konferans", "المؤتمر الدولي للملاحة الفضائية (IAC)", gun(0), { bitis: gun(4), saat: "09:00", ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "أنطاليا", birim: "planlama", muhabirId: "mu6", hatirlatma: { once: "3g" } }),
+    f("f-basin", "toplanti", "مؤتمر صحفي لوزير الخارجية التركي", gun(1), { saat: "12:00", ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "أنقرة", muhabirId: "mu30", hatirlatma: { once: "1g" } }),
+    f("f-doha", "ziyaret", "زيارة الرئيس التركي إلى الدوحة", gun(6), { saat: "11:00", ulke: "katar", bolge: "korfez", sehir: "الدوحة", oncelik: "yuksek", potansiyel: "kesin", muhabirId: "mu18", hatirlatma: { once: "1h" } }),
+    f("f-iptal", "zirve", "قمة ثلاثية في عمّان", gun(4), { ulke: "urdun", bolge: "ortadogu", sehir: "عمّان", durum: "iptal", notlar: "Ertelendi; yeni tarih açıklanmadı." }),
+    f("f-gorev", "gorevlendirme", "مهمة تغطية: قمة منظمة الدول التركية", gun(11), {
+      bitis: gun(13),
+      ulke: "azerbaycan",
+      bolge: "turkiyeCevresi",
+      sehir: "باكو",
+      potansiyel: "kesin",
+      birim: "planlama",
+      muhabirId: "mu7",
+      notlar: "Görevlendirme yazısı Planlama'dan; uçuş ve akreditasyon muhabirde.",
+    }),
+    f("f-dava", "dava", "محكمة العدل الدولية: جلسة استماع علنية", gun(14), { saat: "10:00", sehir: "لاهاي", oncelik: "yuksek", potansiyel: "kesin", birim: "newsdesk" }),
+    f("f-ab", "zirve", "قمة قادة الاتحاد الأوروبي", gun(18), { bitis: gun(19), ulke: "belcika", bolge: "avrupa", sehir: "بروكسل", potansiyel: "takip", muhabirId: "mu28" }),
+    f("f-taslak", "ziyaret", "زيارة مرتقبة لوفد أوروبي إلى طرابلس", gun(21), {
+      ulke: "libya",
+      bolge: "kuzeyAfrika",
+      sehir: "طرابلس",
+      oncelik: "dusuk",
+      potansiyel: "takip",
+      durum: "taslak",
+      notlar: "Tarih kesin değil; diplomatik kaynaklardan teyit bekleniyor.",
+      olusturma: zaman(gun(-1), "15:40"),
+      guncelleme: zaman(gun(-1), "15:40"),
+    }),
+    f("f-zirve-arap", "zirve", "القمة العربية الطارئة", kalabalik, { ulke: "misir", bolge: "kuzeyAfrika", sehir: "القاهرة", oncelik: "yuksek", potansiyel: "kesin", muhabirId: "mu4" }),
+    f("f-gazze", "konferans", "مؤتمر المانحين لإعادة إعمار غزة", kalabalik, { saat: "10:00", ulke: "misir", bolge: "kuzeyAfrika", sehir: "القاهرة", oncelik: "kritik", potansiyel: "ozelYayin", muhabirId: "mu8" }),
+    f("f-faiz", "ekonomi", "قرار البنك المركزي التركي بشأن سعر الفائدة", kalabalik, { saat: "14:00", ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "أنقرة", birim: "ekonomi" }),
+    f("f-suudi", "ziyaret", "زيارة وزير الخارجية السعودي إلى أنقرة", kalabalik, { ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "أنقرة" }),
+    f("f-sinema", "kultur", "افتتاح مهرجان القاهرة السينمائي الدولي", kalabalik, { bitis: gun(25), ulke: "misir", bolge: "kuzeyAfrika", sehir: "القاهرة", oncelik: "dusuk", potansiyel: "takip", birim: "program" }),
+    f("f-kitap", "kultur", "معرض الشارقة الدولي للكتاب", gun(30), { bitis: gun(41), ulke: "bae", bolge: "korfez", sehir: "الشارقة", oncelik: "dusuk", birim: "program" }),
+    f("f-irak", "secim", "الانتخابات البرلمانية العراقية", gun(52), {
+      ulke: "irak",
+      bolge: "ortadogu",
+      sehir: "بغداد",
+      oncelik: "kritik",
+      potansiyel: "ozelYayin",
+      birim: "planlama",
+      muhabirId: "mu15",
+      hatirlatma: { once: "1a" },
+      notlar: "تغطية من بغداد وأربيل؛ يُقترح بث خاص ليلة إعلان النتائج.",
+    }),
+    f("f-kupa", "spor", "انطلاق بطولة كأس العرب لكرة القدم", gun(60), { bitis: gun(78), ulke: "katar", bolge: "korfez", sehir: "الدوحة", birim: "newsdesk" }),
+    f("f-opec", "ekonomi", "اجتماع تحالف أوبك+", gun(-35), { saat: "13:00", sehir: "فيينا", birim: "ekonomi", tekrar: { siklik: "aylik" }, notlar: "Her ay; üretim kararı akşam açıklanıyor." }),
+    f("f-15temmuz", "yildonumu", "ذكرى إحباط المحاولة الانقلابية في تركيا", `${yil}-07-15`, { ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "أنقرة", oncelik: "yuksek", potansiyel: "ozelYayin", birim: "program", tekrar: { siklik: "yillik" } }),
+    f("f-arapca", "ozelGun", "اليوم العالمي للغة العربية", `${yil}-12-18`, { birim: "program", tekrar: { siklik: "yillik" }, notlar: "Program biriminin özel içerikleri; sosyal medya kampanyası." }),
+    /* Her yıl aynı günde: yıl görünümünün ilk yarısı da dolu olsun. */
+    f("f-davos", "ekonomi", "المنتدى الاقتصادي العالمي في دافوس", `${yil}-01-20`, { bitis: `${yil}-01-23`, sehir: "دافوس", birim: "ekonomi", tekrar: { siklik: "yillik" } }),
+    f("f-munih", "konferans", "مؤتمر ميونخ للأمن", `${yil}-02-13`, { bitis: `${yil}-02-15`, ulke: "almanya", bolge: "avrupa", sehir: "ميونخ", potansiyel: "takip", tekrar: { siklik: "yillik" } }),
+    f("f-adf", "konferans", "منتدى أنطاليا الدبلوماسي", `${yil}-03-06`, {
+      bitis: `${yil}-03-08`,
+      ulke: "turkiye",
+      bolge: "turkiyeCevresi",
+      sehir: "أنطاليا",
+      oncelik: "yuksek",
+      potansiyel: "kesin",
+      birim: "planlama",
+      tekrar: { siklik: "yillik" },
+    }),
+    f("f-basin-ozgurlugu", "ozelGun", "اليوم العالمي لحرية الصحافة", `${yil}-05-03`, { birim: "program", tekrar: { siklik: "yillik" } }),
+    f("f-nekbe", "yildonumu", "ذكرى النكبة", `${yil}-05-15`, { ulke: "filistin", bolge: "ortadogu", oncelik: "yuksek", potansiyel: "ozelYayin", tekrar: { siklik: "yillik" } }),
+    f("f-multeci", "ozelGun", "اليوم العالمي للاجئين", `${yil}-06-20`, { birim: "program", tekrar: { siklik: "yillik" } }),
+    /* Arşiv: geçmiş, tamamlanmış; biri dünkü Next Day planına gelişme olarak alınmış. */
+    f("f-korfez", "toplanti", "اجتماع وزراء خارجية دول مجلس التعاون الخليجي", gun(-1), {
+      ulke: "suudi",
+      bolge: "korfez",
+      sehir: "الرياض",
+      potansiyel: "kesin",
+      durum: "tamamlandi",
+      baglantilar: [{ tur: "nextday", planId: "nd-dun", kayitId: "g-f-korfez", tarih: gun(-1), kisiId: "pl2", zaman: zaman(gun(-2), "11:05") }],
+    }),
+    f("f-fas", "secim", "الانتخابات التشريعية المغربية", gun(-25), { ulke: "fas", bolge: "kuzeyAfrika", sehir: "الرباط", oncelik: "yuksek", potansiyel: "kesin", muhabirId: "mu24", durum: "tamamlandi" }),
+    f("f-enerji", "konferans", "منتدى إسطنبول للطاقة", gun(-20), { bitis: gun(-19), ulke: "turkiye", bolge: "turkiyeCevresi", sehir: "إسطنبول", birim: "ekonomi", durum: "tamamlandi" }),
+  ];
+};
+
 /* --- Hareket geçmişi üretimi --- */
 
 const DAKIKA = 60_000;
@@ -2123,10 +2267,23 @@ export const ORNEK = (): Durum => {
   ];
 
   const yil = B.slice(0, 4);
+  const faaliyetler = FAALIYETLER(B, yil);
+  /* Takvimden plana alınanların izi: özel yayın ve dünkü planın gelişmesi. */
+  gelismeler.push({
+    id: "g-f-korfez",
+    planId: planId("dun"),
+    yer: "الرياض",
+    metin: "يعقد وزراء خارجية دول مجلس التعاون اجتماعهم الدوري؛ بيان ختامي متوقع مساءً.",
+    kaynakTuru: "kurum",
+    kaynakAdi: "تقويم التخطيط",
+    tarih: zaman(gun(-2), "11:05"),
+  });
+  for (const f of faaliyetler) for (const b of f.baglantilar) h(b.kisiId, "faaliyetPlanaAlindi", b.zaman, { planId: b.tur === "nextday" ? b.planId : undefined, veri: { faaliyetId: f.id, tur: b.tur, tarih: b.tarih } });
+  h("pl2", "faaliyetEklendi", zaman(gun(-1), "15:40"), { veri: { faaliyetId: "f-taslak", tarih: gun(21) } });
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 12,
+    surum: 13,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -2218,6 +2375,7 @@ export const ORNEK = (): Durum => {
       },
     ],
     toplantilar,
+    faaliyetler,
     dosyalar: [
       { id: "d1", ad: "قالب الخطة الأسبوعية", tur: "docx", guncelleme: gun(-6) },
       { id: "d2", ad: "قالب الخطة الشهرية", tur: "xlsx", guncelleme: gun(-11) },

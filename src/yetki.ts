@@ -7,6 +7,7 @@ import {
   paketBul,
   type Birim,
   type Durum,
+  type Faaliyet,
   type Gorev,
   type Gorevlendirme,
   type HaftalikKalem,
@@ -69,6 +70,16 @@ export const IZINLER = {
   haftalikKesinlestir: { ad: "yHaftalikKesinlestir", birimler: ["planlama", "yonetim"], yalnizYonetici: ["planlama"] },
   /* Ayrıca kol soruluyor (onIncelemeci): müdür kendi kolunun, Ekonomi ekonomi kolunun önerisine bakıyor. */
   onInceleme: { ad: "yOnInceleme", birimler: ["yonetim", "ekonomi"] },
+  /*
+   * Planlama takvimi: Planlama ve üst yönetim kayıt tutuyor; öbür masalarda
+   * yalnız birim yöneticisi (kendi biriminin yaklaşan işini girsin diye).
+   * Plana aktarmak ayrıca o planın yetkisini istiyor.
+   */
+  takvimDuzenle: {
+    ad: "yTakvimDuzenle",
+    birimler: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "yonetim"],
+    yalnizYonetici: ["newsdesk", "newsgathering", "program", "ekonomi", "output", "media"],
+  },
 } satisfies Record<string, Izin>;
 export type Eylem = keyof typeof IZINLER;
 
@@ -198,6 +209,9 @@ export const paketGorebilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean
 export const oneriGorebilir = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && (k.birim !== "muhabir" || o.muhabirId === k.id);
 
+/** Muhabir takvimi bütünüyle görmüyor: yalnız sorumlu muhabir olarak atandığı faaliyetleri. */
+export const faaliyetGorebilir = (k: Kisi | undefined, f: Faaliyet): boolean => !!k && (k.birim !== "muhabir" || f.muhabirId === k.id);
+
 export const gorevlendirmeGorebilir = (k: Kisi | undefined, g: Gorevlendirme): boolean =>
   !!k && (k.birim !== "muhabir" || g.kisiId === k.id);
 
@@ -276,6 +290,7 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   ayarlar: BIRIMLER,
   profil: BIRIMLER,
   plan: BIRIMLER,
+  takvim: BIRIMLER,
 };
 
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */

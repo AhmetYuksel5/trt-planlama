@@ -47,6 +47,16 @@ npm run preview  # derlenmiş hali yerelde
   türü, gün gibi seçimler küçük pencerede. Değişiklik plan ekranına
   anında yansıyor; çıktı aynı sayfadan alınıyor. Haftalık toplantıda
   karar da belgenin üzerinden veriliyor
+- **Planlama takvimi:** ileride haber olabilecek, önceden bilinen
+  faaliyetler (seçim, zirve, konferans, resmî ziyaret, dava, spor, özel
+  gün, yıldönümü, muhabir görevlendirmesi…). Yıl, ay, hafta, gün ve
+  yaklaşanlar görünümü; Cumartesi başlayan hafta. Öncelik (renkle), haber
+  potansiyeli, durum, sorumlu birim ve muhabir, hatırlatma, her yıl / ay /
+  hafta tekrar. Arama (arşiv dahil) ve süzgeçler; boş güne basınca o
+  tarihle yeni faaliyet; fareyle sürükleyip taşıma. Ayrıntıdan "Next
+  Day'e / haftalık / aylık / özel yayın planına ekle": kayıt yalnız
+  editörün onayıyla planda açılıyor, plan ekranlarında "Takvimden"
+  bölümünde görünüyor. Muhabir yalnız kendisine atananları görüyor
 - **Öneriler:**
   - öneri çağrısı, kurumun bugünkü e-postası gibi: Kime planlama grubu,
     muhabirler BCC'de, etiketli konu. "Outlook'ta aç" (taslak dosyası),
@@ -166,7 +176,10 @@ npm run preview  # derlenmiş hali yerelde
   yazdır → PDF olarak kaydet.
 - Dosya yükleme ve dosya deposu.
 - iNews ve medya sistemi entegrasyonu. Klip kodu elle giriliyor.
-- Aylık ve özel yayın şimdilik temel liste.
+- Aylık ve özel yayın şimdilik temel liste (takvimden kalem ve yayın
+  eklenebiliyor, düzenleme ekranı yok).
+- Takvim hatırlatmasının e-posta ya da telefon bildirimi; şimdilik
+  uygulama içinde.
 - Stoktaki paketin geçerlilik süresi; eskiyen stoğun ayıklanması.
 - Haftalık plan e-postasının uygulamadan gönderilmesi; şimdilik planlamacı
   çıktıyı alıp kendisi gönderiyor.

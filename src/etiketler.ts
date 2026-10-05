@@ -3,6 +3,13 @@ import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
   Bicim,
   Birim,
+  Bolge,
+  FaaliyetDurum,
+  FaaliyetTuru,
+  HatirlatmaSuresi,
+  Oncelik,
+  Potansiyel,
+  TekrarSikligi,
   CalismaBicimi,
   EkipGorevi,
   Gorev,
@@ -229,6 +236,22 @@ export const KISI_DURUM_ADI: Record<KisiDurum, Anahtar> = {
 };
 
 export const sehirAdi = (s: Sehir): Anahtar => `s_${s}`;
+
+/* Planlama takvimi */
+export const faaliyetTuruAdi = (t: FaaliyetTuru): Anahtar => `ft_${t}`;
+export const oncelikAdi = (o: Oncelik): Anahtar => `on_${o}`;
+export const potansiyelAdi = (p: Potansiyel): Anahtar => `pt_${p}`;
+export const faaliyetDurumAdi = (d: FaaliyetDurum): Anahtar => `fd_${d}`;
+export const bolgeAdi = (b: Bolge): Anahtar => `bl_${b}`;
+export const hatirlatmaAdi = (h: HatirlatmaSuresi): Anahtar => `ht_${h}`;
+export const tekrarAdi = (t: TekrarSikligi): Anahtar => `tk_${t}`;
+export const FAALIYET_DURUM_TONU: Record<FaaliyetDurum, string> = {
+  taslak: "",
+  takipte: "vurgu",
+  planaAlindi: "iyi",
+  tamamlandi: "",
+  iptal: "kotu",
+};
 export const ulkeAdi = (u: Ulke): Anahtar => `u_${u}`;
 
 /*

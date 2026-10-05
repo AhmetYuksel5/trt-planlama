@@ -41,7 +41,7 @@ export interface Alan {
 
 /* Bugünkü birim sayfalarının düzeni; sıra da öyle. */
 export const VARSAYILAN: Record<DuzenAdi, string[]> = {
-  planlama: ["plKisayol", "plSayac", "plHafta", "plTakvim", "plToplanti", "plSonOneri", "plPlanlar", "plHareket", "plMuhabirler", "plKoordinasyon", "plDosyalar"],
+  planlama: ["plKisayol", "plSayac", "plHafta", "plTakvim", "plToplanti", "plFaaliyet", "plSonOneri", "plPlanlar", "plHareket", "plMuhabirler", "plKoordinasyon", "plDosyalar"],
   muhabir: ["muCagri", "muSayac", "muSiram", "muGorev", "muHaberler", "muBildirim", "muOneriler"],
   newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
