@@ -29,6 +29,7 @@ import { BIRIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURU
 import { gundemde, kalemAdi } from "../../haftalik";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
 import { muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
+import { YaklasanFaaliyetlerAlani } from "../takvim/Planlarda";
 import { CalismaAlani, type Alan } from "./Calisma";
 
 /**
@@ -156,6 +157,7 @@ export const PLANLAMA_ALANLARI: Alan[] = [
   { id: "plHafta", ad: "buHaftaninPlani", genis: true, grup: "planlama", sayfa: "haftalik", Bilesen: veriyle(HaftaKarti) },
   { id: "plTakvim", ad: "bugununTakvimi", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(BugununTakvimi) },
   { id: "plToplanti", ad: "yaklasanToplantilar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(YaklasanToplantilar) },
+  { id: "plFaaliyet", ad: "yaklasanFaaliyetler", grup: "planlama", sayfa: "takvim", Bilesen: ({ ben }) => <YaklasanFaaliyetlerAlani ben={ben} /> },
   { id: "plSonOneri", ad: "sonOneriler", genis: true, grup: "planlama", sayfa: "oneriler", Bilesen: () => <SonOneriler /> },
   { id: "plPlanlar", ad: "devamEdenPlanlar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(DevamEdenPlanlar) },
   { id: "plHareket", ad: "sonHareketler", grup: "planlama", sayfa: "nextday", Bilesen: () => <SonHareketler /> },

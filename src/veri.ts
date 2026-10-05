@@ -550,6 +550,112 @@ export interface OzelYayin {
   hazirlik: { id: string; metin: string; tamam: boolean }[];
 }
 
+/* --- Planlama takvimi: ileride haber olabilecek faaliyetler --- */
+
+/*
+ * Toplantı takviminden (d.toplantilar, akıştaki üç toplantı) ayrı: burası
+ * yıl boyunca önceden bilinen seçim, zirve, konferans, resmî gün gibi
+ * faaliyetler. Kendiliğinden plana dönüşmüyor; editör "plana ekle" deyince
+ * ilgili planda kayıt doğuyor ve bağlantısı burada tutuluyor.
+ */
+export const FAALIYET_TURLERI = ["secim", "zirve", "konferans", "toplanti", "ziyaret", "parlamento", "dava", "spor", "kultur", "ekonomi", "ozelGun", "yildonumu", "ozelYayin", "gorevlendirme", "diger"] as const;
+export type FaaliyetTuru = (typeof FAALIYET_TURLERI)[number];
+
+export const ONCELIKLER = ["dusuk", "normal", "yuksek", "kritik"] as const;
+export type Oncelik = (typeof ONCELIKLER)[number];
+
+/** Haber potansiyeli: takipten özel yayın adayına. */
+export const POTANSIYELLER = ["takip", "oneri", "kesin", "ozelYayin"] as const;
+export type Potansiyel = (typeof POTANSIYELLER)[number];
+
+export const FAALIYET_DURUMLARI = ["taslak", "takipte", "planaAlindi", "tamamlandi", "iptal"] as const;
+export type FaaliyetDurum = (typeof FAALIYET_DURUMLARI)[number];
+
+/* Bölge ülkeden çıkıyor ama faaliyette ayrıca tutuluyor: ülkesiz (küresel) ya da bölgesel faaliyet de var. */
+export const BOLGELER = ["ortadogu", "korfez", "kuzeyAfrika", "turkiyeCevresi", "avrupa", "amerika", "kuresel"] as const;
+export type Bolge = (typeof BOLGELER)[number];
+
+export const ULKE_BOLGESI: Record<Ulke, Bolge> = {
+  filistin: "ortadogu",
+  lubnan: "ortadogu",
+  suriye: "ortadogu",
+  irak: "ortadogu",
+  urdun: "ortadogu",
+  iran: "ortadogu",
+  katar: "korfez",
+  suudi: "korfez",
+  yemen: "korfez",
+  kuveyt: "korfez",
+  bae: "korfez",
+  bahreyn: "korfez",
+  umman: "korfez",
+  misir: "kuzeyAfrika",
+  sudan: "kuzeyAfrika",
+  libya: "kuzeyAfrika",
+  tunus: "kuzeyAfrika",
+  fas: "kuzeyAfrika",
+  cezayir: "kuzeyAfrika",
+  turkiye: "turkiyeCevresi",
+  azerbaycan: "turkiyeCevresi",
+  ukrayna: "avrupa",
+  belcika: "avrupa",
+  ingiltere: "avrupa",
+  fransa: "avrupa",
+  almanya: "avrupa",
+  rusya: "avrupa",
+  abd: "amerika",
+  brezilya: "amerika",
+};
+
+export const HATIRLATMA_SURELERI = ["1g", "3g", "1h", "1a"] as const;
+export type HatirlatmaSuresi = (typeof HATIRLATMA_SURELERI)[number];
+export type Hatirlatma = { once: HatirlatmaSuresi } | { zaman: string };
+
+export const TEKRAR_SIKLIKLARI = ["yillik", "aylik", "haftalik"] as const;
+export type TekrarSikligi = (typeof TEKRAR_SIKLIKLARI)[number];
+
+export type BaglantiTuru = "nextday" | "haftalik" | "aylik" | "ozel";
+
+/** Faaliyetin bir plandaki karşılığı; çoka çok: faaliyet birçok plana, plan birçok faaliyete. */
+export interface FaaliyetBaglantisi {
+  tur: BaglantiTuru;
+  planId: string;
+  /** Planda doğan kayıt (gelişme, kalem, aylık kalem, hazırlık maddesi); özel yayının kendisinde yok. */
+  kayitId?: string;
+  /** Hangi gün: tekrarlayan faaliyette hangi tekrar olduğu. */
+  tarih: string;
+  kisiId: string;
+  zaman: string;
+}
+
+export interface Faaliyet {
+  id: string;
+  /** İçerik: Arapça, sağdan sola. */
+  baslik: string;
+  ulke?: Ulke;
+  bolge?: Bolge;
+  /** İçerik: Arapça şehir adı; muhabir şehirlerinden bağımsız serbest yazı. */
+  sehir?: string;
+  baslangic: string;
+  bitis: string;
+  saat?: string;
+  bitisSaati?: string;
+  tur: FaaliyetTuru;
+  oncelik: Oncelik;
+  potansiyel: Potansiyel;
+  birim?: Birim;
+  muhabirId?: string;
+  /** Yazıldığı dilde. */
+  notlar?: string;
+  hatirlatma?: Hatirlatma;
+  tekrar?: { siklik: TekrarSikligi; bitis?: string };
+  durum: FaaliyetDurum;
+  baglantilar: FaaliyetBaglantisi[];
+  olusturan: string;
+  olusturma: string;
+  guncelleme: string;
+}
+
 export interface Toplanti {
   id: string;
   ad: string;
@@ -615,6 +721,8 @@ export const HAREKET_TIPLERI = [
   "haftaliktanAktarildi",
   "uretimeAlindi",
   "stokYayinlandi",
+  "faaliyetEklendi",
+  "faaliyetPlanaAlindi",
 ] as const;
 export type HareketTipi = (typeof HAREKET_TIPLERI)[number];
 
@@ -634,7 +742,7 @@ export interface Hareket {
 export type OneriGorunumu = "kart" | "liste";
 
 export interface Durum {
-  surum: 12;
+  surum: 13;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -649,6 +757,7 @@ export interface Durum {
   aylik: AylikPlan[];
   ozel: OzelYayin[];
   toplantilar: Toplanti[];
+  faaliyetler: Faaliyet[];
   dosyalar: Dosya[];
   hareketler: Hareket[];
   /** Kişi başına son bildirim bakışı; okunmamış sayısı buradan çıkıyor. */
@@ -670,16 +779,17 @@ export interface Durum {
  * ön inceleme, Ekonomi birimi, v8: hazır paket ayrı kayıt değil, stok
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
- * özel ana sayfa düzeni, v12: kişinin öneri görünümü).
+ * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
+ * takvimi, faaliyetler).
  */
-const SAKLA = "trt-planlama-v12";
+const SAKLA = "trt-planlama-v13";
 
 const yukle = (): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 12) return d;
+      if (d.surum === 13) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -742,6 +852,7 @@ export const oncekiSayisi = (d: Durum, p: NextDayPlan) =>
 export const paketBul = (d: Durum, id?: string) => d.paketler.find((p) => p.id === id);
 export const oneriBul = (d: Durum, id?: string) => d.oneriler.find((o) => o.id === id);
 export const haftaBul = (d: Durum, id?: string) => d.haftalik.find((h) => h.id === id);
+export const faaliyetBul = (d: Durum, id?: string) => d.faaliyetler.find((f) => f.id === id);
 export const muhabirler = (d: Durum) => d.kisiler.filter((k) => k.birim === "muhabir");
 
 /** Çağrının türü; alanı olmayan kayıt Next Day. */

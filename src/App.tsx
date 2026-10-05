@@ -22,6 +22,7 @@ import HaftalikCikti from "./ekranlar/haftalik/Cikti";
 import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
+import Takvim from "./ekranlar/takvim/Takvim";
 import { useBen } from "./oturum";
 import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
@@ -87,7 +88,10 @@ export default function App() {
         break;
       }
       case "aylik":
-        icerik = <Aylik />;
+        icerik = <Aylik ben={ben} planId={yol.id} />;
+        break;
+      case "takvim":
+        icerik = <Takvim ben={ben} yol={yol} />;
         break;
       case "ozel":
         icerik = <Ozel />;

@@ -9,6 +9,8 @@ import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetk
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
+import { plandakiFaaliyetler } from "../../takvim";
+import { TakvimdenListe } from "../takvim/Planlarda";
 import BaslikKarti from "./BaslikKarti";
 import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
 
@@ -142,6 +144,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
       </section>
 
       {icerik && <GelenOneriler ben={ben} plan={plan} />}
+      <TakvimdenBolumu ben={ben} plan={plan} ekleyebilir={operasyon} />
 
       <EkipBolumu plan={plan} duzenler={icerik} />
       <HareketBolumu plan={plan} duzenler={icerik} />
@@ -150,6 +153,18 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
       <GundemBolumu plan={plan} icerik={icerik} operasyon={operasyon} />
       <TakipBolumu plan={plan} duzenler={operasyon} d={v} no={6} />
     </>
+  );
+}
+
+/* Planlama takviminden bu güne düşenler; yalnız faaliyet varsa. Plana gelişme olarak, editör ekleyince giriyor. */
+function TakvimdenBolumu({ ben, plan, ekleyebilir }: { ben: Kisi; plan: NextDayPlan; ekleyebilir: boolean }) {
+  const { t } = useDil();
+  const sayi = plandakiFaaliyetler(useVeri(), ben, plan.tarih, plan.tarih).length;
+  if (!sayi) return null;
+  return (
+    <Bolum no="▦" baslik={t("takvimdenGun")} ek={t("nFaaliyet", { n: sayi })}>
+      <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={ekleyebilir} eklemeMetni={t("planaEkle")} />
+    </Bolum>
   );
 }
 

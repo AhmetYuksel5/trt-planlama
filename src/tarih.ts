@@ -51,3 +51,17 @@ export const vardiyaYaz = (saat: string) => {
   const [s, d = "00"] = saat.split(":");
   return `${s}${d === "00" ? "" : d}G`;
 };
+
+/** İki gün arasındaki gün sayısı (b - a); öğlen üzerinden, yaz saatinden etkilenmesin diye. */
+export const gunFarki = (a: string, b: string) => Math.round((new Date(b + "T12:00:00").getTime() - new Date(a + "T12:00:00").getTime()) / 86_400_000);
+
+/** n ay sonrası; ayın son gününü aşan gün o ayın son gününe iner (31 Ocak → 28 Şubat). */
+export const ayEkle = (tarih: string, n: number) => {
+  const [y, a, g] = tarih.split("-").map(Number);
+  const t = new Date(y, a - 1 + n, 1, 12);
+  t.setDate(Math.min(g, new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()));
+  return iso(t);
+};
+
+export const ayBasi = (tarih: string) => tarih.slice(0, 8) + "01";
+export const aySonu = (tarih: string) => gunEkle(ayEkle(ayBasi(tarih), 1), -1);

@@ -1,10 +1,13 @@
 import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
-import { bugun, gunEkle, haftaBasi, simdi } from "./tarih";
+import { TAKVIM_KAYNAGI } from "./takvim";
+import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
   SEHIRLER,
+  ULKE_BOLGESI,
   cagriTuru,
+  faaliyetBul,
   getir,
   haftaBul,
   kaydet,
@@ -17,8 +20,14 @@ import {
   planBul,
   type Birim,
   type CanliYayin,
+  type AylikPlan,
   type Durum,
   type EkipUyesi,
+  type Faaliyet,
+  type FaaliyetBaglantisi,
+  type Oncelik,
+  type FaaliyetDurum,
+  type Potansiyel,
   type Gelisme,
   type Gorevlendirme,
   type Hareket,
@@ -1544,4 +1553,204 @@ export const oneriGorunumuKaydet = (ben: Kisi, gorunum: OneriGorunumu) => {
   const d = getir();
   kaydet({ ...d, oneriGorunumu: { ...(d.oneriGorunumu ?? {}), [ben.id]: gorunum } });
   return true;
+};
+
+/* --- Planlama takvimi --- */
+
+const faaliyetGuncelle = (d: Durum, id: string, f: (x: Faaliyet) => Faaliyet): Durum => ({
+  ...d,
+  faaliyetler: d.faaliyetler.map((x) => (x.id === id ? { ...f(x), guncelleme: simdi() } : x)),
+});
+
+export type FaaliyetGirdisi = Omit<Faaliyet, "id" | "baglantilar" | "olusturan" | "olusturma" | "guncelleme"> & { id?: string };
+
+const bosOlmasin = (x?: string) => x?.trim() || undefined;
+
+/**
+ * Faaliyeti ekler ya da düzeltir; bağlantılar ve kim açtığı düzeltmede
+ * korunuyor. Bitiş boşsa tek günlük; başlangıçtan önce olamaz. Bölge
+ * seçilmediyse ülkeden, ülke de yoksa küresel.
+ */
+export const faaliyetKaydet = (ben: Kisi, g: FaaliyetGirdisi): string | null => {
+  if (!yapabilir(ben, "takvimDuzenle")) return null;
+  const baslik = g.baslik.trim();
+  const bitis = g.bitis || g.baslangic;
+  if (!baslik || !g.baslangic || bitis < g.baslangic) return null;
+  let d = getir();
+  const temiz = {
+    ...g,
+    baslik,
+    bitis,
+    bolge: g.bolge ?? (g.ulke ? ULKE_BOLGESI[g.ulke] : "kuresel"),
+    sehir: bosOlmasin(g.sehir),
+    notlar: bosOlmasin(g.notlar),
+    saat: g.saat || undefined,
+    bitisSaati: g.bitisSaati || undefined,
+    muhabirId: g.muhabirId || undefined,
+    birim: g.birim || undefined,
+    tekrar: g.tekrar ? { siklik: g.tekrar.siklik, bitis: g.tekrar.bitis && g.tekrar.bitis >= g.baslangic ? g.tekrar.bitis : undefined } : undefined,
+  };
+  if (g.id) {
+    if (!faaliyetBul(d, g.id)) return null;
+    kaydet(faaliyetGuncelle(d, g.id, (x) => ({ ...x, ...temiz, id: x.id })));
+    return g.id;
+  }
+  const id = kimlik("f");
+  const z = simdi();
+  d = { ...d, faaliyetler: [...d.faaliyetler, { ...temiz, id, baglantilar: [], olusturan: ben.id, olusturma: z, guncelleme: z }] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "faaliyetEklendi", veri: { faaliyetId: id, tarih: g.baslangic } }));
+  return id;
+};
+
+/* Planlarda doğan kayıtlar (gelişme, kalem…) yerinde kalıyor: plana alınan iş artık planın. */
+export const faaliyetSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  if (!yapabilir(ben, "takvimDuzenle") || !faaliyetBul(d, id)) return false;
+  kaydet({ ...d, faaliyetler: d.faaliyetler.filter((f) => f.id !== id) });
+  return true;
+};
+
+/** Ayrıntıdaki hızlı değişim: öncelik, potansiyel, durum. */
+export const faaliyetDegistir = (ben: Kisi, id: string, g: { oncelik?: Oncelik; potansiyel?: Potansiyel; durum?: FaaliyetDurum }) => {
+  const d = getir();
+  if (!yapabilir(ben, "takvimDuzenle") || !faaliyetBul(d, id)) return false;
+  kaydet(faaliyetGuncelle(d, id, (x) => ({ ...x, ...g })));
+  return true;
+};
+
+/*
+ * Sürükle-bırak. Taşımada süre korunuyor; kenardan sürüklemede yalnız o
+ * uç değişiyor, bitiş başlangıcın önüne geçemiyor. Tekrarlayan faaliyet
+ * sürüklenmiyor: bir tekrarı taşımak bütün seriyi mi kaydırır belirsiz,
+ * tarihi formdan değişiyor.
+ */
+export const faaliyetTasi = (ben: Kisi, id: string, baslangic: string) => {
+  const d = getir();
+  const f = faaliyetBul(d, id);
+  if (!f || f.tekrar || !yapabilir(ben, "takvimDuzenle") || f.baslangic === baslangic) return false;
+  const sure = gunFarki(f.baslangic, f.bitis);
+  kaydet(faaliyetGuncelle(d, id, (x) => ({ ...x, baslangic, bitis: gunEkle(baslangic, sure) })));
+  return true;
+};
+
+export const faaliyetUcu = (ben: Kisi, id: string, uc: "baslangic" | "bitis", tarih: string) => {
+  const d = getir();
+  const f = faaliyetBul(d, id);
+  if (!f || f.tekrar || !yapabilir(ben, "takvimDuzenle") || f[uc] === tarih) return false;
+  const yeni = { ...f, [uc]: tarih };
+  if (yeni.bitis < yeni.baslangic) return false;
+  kaydet(faaliyetGuncelle(d, id, () => yeni));
+  return true;
+};
+
+/*
+ * Plana alma editörün kararı: takvim kendiliğinden plana dönüşmüyor.
+ * Bağlantı faaliyette tutuluyor (plan tarafı değişmiyor); ilk bağlantıda
+ * taslak ya da takipteki faaliyet "plana alındı" oluyor. Tekrarlayanın
+ * durumu bütün seriyi anlattığı için değişmiyor; tekrarın kendisi
+ * bağlantısından "plana alındı" görünüyor (takvim.ts → olusumDurumu).
+ */
+const baglantiYaz = (d: Durum, ben: Kisi, f: Faaliyet, b: Omit<FaaliyetBaglantisi, "kisiId" | "zaman">): Durum => {
+  const durum = !f.tekrar && (f.durum === "taslak" || f.durum === "takipte") ? "planaAlindi" : f.durum;
+  d = faaliyetGuncelle(d, f.id, (x) => ({ ...x, durum, baglantilar: [...x.baglantilar, { ...b, kisiId: ben.id, zaman: simdi() }] }));
+  return hareketYaz(d, {
+    kisiId: ben.id,
+    tip: "faaliyetPlanaAlindi",
+    planId: b.tur === "nextday" ? b.planId : undefined,
+    haftaId: b.tur === "haftalik" ? b.planId : undefined,
+    veri: { faaliyetId: f.id, tur: b.tur, tarih: b.tarih },
+  });
+};
+
+export interface NextDayAktarimi {
+  /** Hangi tekrar: tekrarın başladığı gün. */
+  tarih: string;
+  planId: string;
+  planBaslikId?: string;
+  /** Plana yeni başlık açılacaksa adı; havuzda aynı adda başlık varsa o kullanılıyor. */
+  yeniBaslik?: string;
+  yer?: string;
+  metin: string;
+}
+
+/** Next Day'e gelişme olarak: seçilen başlığın altına, yoksa takiplere. */
+export const faaliyetNextDayeEkle = (ben: Kisi, id: string, g: NextDayAktarimi): string | null => {
+  let d = getir();
+  const f = faaliyetBul(d, id);
+  const plan = planBul(d, g.planId);
+  if (!f || !plan || !planOperasyonDuzenler(ben, plan) || !g.metin.trim()) return null;
+  let planBaslikId = g.planBaslikId || undefined;
+  const ad = g.yeniBaslik?.trim();
+  if (ad) {
+    /* Yeni başlık planın içeriği: devirden sonra Newsdesk açamıyor, Planlama da havuz yetkisiyle açıyor. */
+    if (!planIcerikDuzenler(ben, plan) || !yapabilir(ben, "baslikYonet")) return null;
+    let baslik = d.basliklar.find((b) => b.ad.trim() === ad);
+    if (!baslik) {
+      baslik = { id: kimlik("b"), ad, ulke: f.ulke, aktif: true };
+      d = { ...d, basliklar: [...d.basliklar, baslik] };
+    }
+    const bid = baslik.id;
+    const varolan = plan.basliklar.find((b) => b.baslikId === bid);
+    planBaslikId = varolan?.id ?? kimlik("pb");
+    if (!varolan) d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: [...p.basliklar, { id: planBaslikId!, baslikId: bid, muhabirler: [] }] }));
+  } else if (planBaslikId && !plan.basliklar.some((b) => b.id === planBaslikId)) return null;
+  const gelismeId = kimlik("g");
+  d = {
+    ...d,
+    gelismeler: [
+      ...d.gelismeler,
+      { id: gelismeId, planId: plan.id, planBaslikId, yer: bosOlmasin(g.yer), metin: g.metin.trim(), kaynakTuru: "kurum", kaynakAdi: TAKVIM_KAYNAGI, tarih: simdi() },
+    ],
+  };
+  kaydet(baglantiYaz(d, ben, f, { tur: "nextday", planId: plan.id, kayitId: gelismeId, tarih: g.tarih }));
+  return gelismeId;
+};
+
+/**
+ * Haftalık plana: kalemi plan ekranının formu (KalemFormu) kaydediyor,
+ * bağlantı arkasından buradan kuruluyor; kalem yoksa bağlanmıyor.
+ */
+export const faaliyetHaftalikaBagla = (ben: Kisi, id: string, haftaId: string, kalemId: string, tarih: string) => {
+  const d = getir();
+  const f = faaliyetBul(d, id);
+  const h = haftaBul(d, haftaId);
+  if (!f || !h || !haftalikDuzenler(ben, h) || !h.kalemler.some((k) => k.id === kalemId)) return false;
+  kaydet(baglantiYaz(d, ben, f, { tur: "haftalik", planId: haftaId, kayitId: kalemId, tarih }));
+  return true;
+};
+
+/** Aylık plana kalem olarak; o ayın planı yoksa açılıyor. Kalem onaysız girer, onay aylık planın işi. */
+export const faaliyetAylikaEkle = (ben: Kisi, id: string, tarih: string, tur: IcerikTuru): string | null => {
+  let d = getir();
+  const f = faaliyetBul(d, id);
+  if (!f || !yapabilir(ben, "planDuzenle")) return null;
+  const ay = tarih.slice(0, 7);
+  let plan = d.aylik.find((a) => a.ay === ay);
+  if (!plan) {
+    plan = { id: kimlik("ay"), ay, durum: "hazirlik", kalemler: [] } satisfies AylikPlan;
+    d = { ...d, aylik: [...d.aylik, plan] };
+  }
+  const planId = plan.id;
+  const kalemId = kimlik("ak");
+  d = { ...d, aylik: d.aylik.map((a) => (a.id === planId ? { ...a, kalemler: [...a.kalemler, { id: kalemId, tarih, baslik: f.baslik, tur, ulke: f.ulke, onayli: false }] } : a)) };
+  kaydet(baglantiYaz(d, ben, f, { tur: "aylik", planId, kayitId: kalemId, tarih }));
+  return planId;
+};
+
+/** Özel yayın planına: yeni yayın açılıyor ya da var olan yayına hazırlık maddesi giriyor. */
+export const faaliyetOzeleEkle = (ben: Kisi, id: string, tarih: string, ozelId?: string): string | null => {
+  let d = getir();
+  const f = faaliyetBul(d, id);
+  if (!f || !yapabilir(ben, "planDuzenle")) return null;
+  if (ozelId) {
+    if (!d.ozel.some((o) => o.id === ozelId)) return null;
+    const maddeId = kimlik("oz");
+    d = { ...d, ozel: d.ozel.map((o) => (o.id === ozelId ? { ...o, hazirlik: [...o.hazirlik, { id: maddeId, metin: f.baslik, tamam: false }] } : o)) };
+    kaydet(baglantiYaz(d, ben, f, { tur: "ozel", planId: ozelId, kayitId: maddeId, tarih }));
+    return ozelId;
+  }
+  const yeniId = kimlik("oz");
+  d = { ...d, ozel: [...d.ozel, { id: yeniId, ad: f.baslik, tarih, hazirlik: [] }] };
+  kaydet(baglantiYaz(d, ben, f, { tur: "ozel", planId: yeniId, tarih }));
+  return yeniId;
 };

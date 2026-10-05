@@ -25,6 +25,8 @@ import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
+import { plandakiFaaliyetler } from "../../takvim";
+import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
 
 /**
@@ -142,6 +144,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       </section>
 
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
+      <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />
       <AnaDosyalar ben={ben} hafta={hafta} />
       <GunlukGundem ben={ben} hafta={hafta} />
@@ -150,6 +153,19 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         <HareketGecmisi hareketler={v.hareketler.filter((h) => h.haftaId === hafta.id)} d={v} />
       </Bolum>
     </>
+  );
+}
+
+/* Planlama takviminden bu haftaya düşenler; gündeme kalem olarak, editör ekleyince giriyor. */
+function TakvimdenBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: HaftalikPlan; ekleyebilir: boolean }) {
+  const { t } = useDil();
+  const bit = haftaSonu(hafta.baslangic);
+  const sayi = plandakiFaaliyetler(useVeri(), ben, hafta.baslangic, bit).length;
+  if (!sayi) return null;
+  return (
+    <Bolum no="▦" baslik={t("takvimdenHafta")} ek={t("nFaaliyet", { n: sayi })}>
+      <TakvimdenListe ben={ben} bas={hafta.baslangic} bit={bit} tur="haftalik" planId={hafta.id} ekleyebilir={ekleyebilir} eklemeMetni={t("gundemeEkle")} />
+    </Bolum>
   );
 }
 

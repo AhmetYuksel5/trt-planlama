@@ -22,19 +22,44 @@ import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
 const YENI_DOSYA = "__yeni";
 
 /* `dosya` ve `sonra` belgeden: "altına ekle" denen kalemin dosyası seçili gelir, yeni kalem onun arkasına girer. */
-export function KalemFormu({ ben, hafta, mevcut, tarih, dosya, sonra, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string; kapat: () => void }) {
+/*
+ * `ilk`: yeni kalemin başlangıç değerleri (takvimden aktarımda faaliyetten
+ * dolu); `kaydedildi`: kalem kaydedilince kimliğiyle haber veriyor ki
+ * çağıran (takvim) bağlantısını kursun.
+ */
+export function KalemFormu({
+  ben,
+  hafta,
+  mevcut,
+  tarih,
+  dosya,
+  sonra,
+  ilk,
+  kaydedildi,
+  kapat,
+}: {
+  ben: Kisi;
+  hafta: HaftalikPlan;
+  mevcut?: HaftalikKalem;
+  tarih?: string;
+  dosya?: string;
+  sonra?: string;
+  ilk?: Partial<Pick<HaftalikKalem, "baslik" | "yer" | "metin" | "tur" | "muhabirler">>;
+  kaydedildi?: (id: string) => void;
+  kapat: () => void;
+}) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [f, setF] = useState({
     tarih: mevcut ? (mevcut.tarih ?? "") : (tarih ?? ""),
     baslikId: mevcut?.baslikId ?? dosya ?? "",
     yeniBaslik: "",
-    baslik: mevcut?.baslik ?? "",
-    yer: mevcut?.yer ?? "",
-    metin: mevcut?.metin ?? "",
-    tur: mevcut?.tur ?? ((tarih ? "haber" : "feature") as IcerikTuru),
+    baslik: mevcut?.baslik ?? ilk?.baslik ?? "",
+    yer: mevcut?.yer ?? ilk?.yer ?? "",
+    metin: mevcut?.metin ?? ilk?.metin ?? "",
+    tur: mevcut?.tur ?? ilk?.tur ?? ((tarih ? "haber" : "feature") as IcerikTuru),
     bicimler: mevcut?.bicimler ?? (["pkg"] as Bicim[]),
-    muhabirler: mevcut?.muhabirler ?? ([] as string[]),
+    muhabirler: mevcut?.muhabirler ?? ilk?.muhabirler ?? ([] as string[]),
     not: mevcut?.not ?? "",
   });
   const dosyalar = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
@@ -47,6 +72,7 @@ export function KalemFormu({ ben, hafta, mevcut, tarih, dosya, sonra, kapat }: {
     }, sonra);
     if (id) {
       bildir(t("bKaydedildi"));
+      kaydedildi?.(id);
       kapat();
     }
   };
