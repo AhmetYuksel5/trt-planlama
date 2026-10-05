@@ -303,6 +303,8 @@ const M = {
   ksOzelA: m("Seçim, zirve, özel yayınlar için plan yap", "التخطيط للانتخابات والقمم والبث الخاص", "Plan elections, summits and specials"),
   ksSaha: m("Saha görevlendirmesi", "التكليف الميداني", "Field assignment"),
   ksSahaA: m("Saha görevleri ve seyahat planlarını yönet", "إدارة المهام الميدانية وخطط السفر", "Manage field assignments and travel"),
+  ksTakvim: m("Planlama takvimi", "تقويم التخطيط", "Planning calendar"),
+  ksTakvimA: m("Önceden bilinen seçim, zirve ve resmî günleri izle", "متابعة الانتخابات والقمم والمناسبات المعروفة مسبقا", "Track elections, summits and dates known in advance"),
   sYeniOneri: m("Yeni öneriler", "مقترحات جديدة", "New proposals"),
   sBugunGelen: m("Bugün gelen: {n}", "وصل اليوم: {n}", "Received today: {n}"),
   sPlanlanan: m("Planlanan paketler", "التقارير المخططة", "Planned packages"),

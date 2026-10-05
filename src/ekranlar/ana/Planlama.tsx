@@ -50,6 +50,7 @@ const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: 
   { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik", aciklama: "ksAylikA" },
   { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel", aciklama: "ksOzelA" },
   { sayfa: "saha", renk: "renk-saha", ikon: MapPinned, ad: "ksSaha", aciklama: "ksSahaA" },
+  { sayfa: "takvim", renk: "renk-takvim", ikon: CalendarCheck, ad: "ksTakvim", aciklama: "ksTakvimA" },
 ];
 
 export function PlanKisayollari() {

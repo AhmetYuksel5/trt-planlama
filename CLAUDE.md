@@ -194,6 +194,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sorumlu muhabiri olduğu faaliyeti görür (`faaliyetGorebilir`).
   - Hafta Cumartesi başlar. Renk yalnız öncelikte (`.on-*`); hatırlatma
     uygulama içinde (yan panel, ana sayfa kartı, menü sayısı).
+  - Ana sayfanın plan kısayollarında (`PlanKisayollari`, telefonda Menü
+    de) altıncı kutucuk; beş ana başlıktan biri olmadığı için altıncı
+    renk değil, lacivert (`.renk-takvim`). Altı kutucuk tek sırada yalnız
+    1800 pikselden geniş ekranda, altında üçerli iki sıra.
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
     süre korunur, kenar tutamacı tek ucu değiştirir.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
