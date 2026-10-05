@@ -944,6 +944,9 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .oneri-satiri .satir-tek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pencere .op-arka { font-weight: 600; }
 .pencere .op-ayrinti { justify-self: start; }
+/* Kaynak dar sütunda: uzun talimat rozeti sığmazsa satır kırsın, yandaki alanın üstüne binmesin. */
+.pencere .alan, .pencere .kisi-hucre > span { min-width: 0; }
+.pencere .kisi-hucre, .pencere .kisi-hucre .rozet { white-space: normal; }
 
 /* --- Ana sayfanın çalışma alanları: birimin varsayılanı, kişinin düzeni --- */
 

@@ -56,6 +56,8 @@ npm run preview  # derlenmiş hali yerelde
     kaynak. Karta basınca bütün öneri pencerede açılıyor; plana ekleme ve
     ret orada. Herkes kartla ya da listeyle çalışmayı kendi seçiyor; seçim
     kişiye ait, başka biri girince kendi seçimini görüyor
+  - Haber önerileri sayfasında da aynı "Kartlar | Liste" seçimi (süzgeç
+    satırının sonunda); liste görünümü tablo, kararlar ayrıntı sayfasında
   - sistem dışından gelen öneri elle giriliyor: Next Day ve haftalık plan
     ekranındaki "Öneri ekle" ya da öneri sayfası. Muhabir adına (telefon,
     mesaj, e-posta, yüz yüze) ya da muhabir dışı kaynaktan (ajans, resmî,
