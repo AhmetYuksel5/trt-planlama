@@ -14,6 +14,7 @@ import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
+import { GorunumSecici, OneriKarti, OneriPenceresi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 
 /**
@@ -33,6 +34,10 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
   const [tur, setTur] = useState<IcerikTuru | "">("");
   const [ulke, setUlke] = useState<Ulke | "">("");
   const [aranan, setAranan] = useState("");
+  /* Görünüm plan ekranlarıyla ortak kişisel seçim; kartta karar yok, kararlar ayrıntı sayfasında. */
+  const [gorunum, setGorunum] = useOneriGorunumu(ben);
+  const [acikId, setAcikId] = useState<string | null>(null);
+  const acik = acikId ? v.oneriler.find((o) => o.id === acikId) : undefined;
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.oneriler.filter((o) => oneriGorebilir(ben, o));
   const q = aranan.trim().toLocaleLowerCase();
@@ -96,6 +101,8 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
               </option>
             ))}
           </select>
+          <span className="bosluk-esnek" />
+          <GorunumSecici deger={gorunum} degistir={setGorunum} />
         </div>
         <div className="sekmeler suzgec">
           <button className={durum === "hepsi" ? "acik" : ""} onClick={() => setDurum("hepsi")}>
@@ -107,7 +114,18 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
             </button>
           ))}
         </div>
-        <OneriTablosu oneriler={liste} d={v} />
+        {gorunum === "liste" ? (
+          <OneriTablosu oneriler={liste} d={v} />
+        ) : liste.length === 0 ? (
+          <Bos metin={t("oneriYok")} />
+        ) : (
+          <div className="oneri-kartlari">
+            {liste.map((o) => (
+              <OneriKarti key={o.id} oneri={o} d={v} ac={() => setAcikId(o.id)} />
+            ))}
+          </div>
+        )}
+        {acik && <OneriPenceresi key={acik.id} oneri={acik} d={v} kapat={() => setAcikId(null)} />}
       </Kart>
     </>
   );

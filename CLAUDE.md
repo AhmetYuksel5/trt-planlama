@@ -113,8 +113,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Kart ya da liste kişinin seçimi, ana sayfa düzeni gibi kayıtta
     (`Durum.oneriGorunumu`, `eylemler.ts → oneriGorunumuKaydet`); aynı
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
-    Öneriler sayfasının tablosu ve başlık kartındaki küçük liste bu kalıba
-    girmez.
+  - Öneriler sayfası (`oneri/Oneriler.tsx → OnerilerListe`) da aynı seçimi
+    izler: kartta aynı kart ve pencere ama karar yok (kararlar ayrıntı
+    sayfasında), listede bugünkü tablo. Başlık kartındaki küçük liste bu
+    kalıba girmez.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
