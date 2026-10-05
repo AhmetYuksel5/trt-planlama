@@ -1,17 +1,16 @@
-import { ArrowLeft, CalendarDays, Check, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, FilePen, Lock, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState } from "react";
-import { Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
-import { metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { baslikEkle, geriDonusBekliyor, geriDonusGonder, oncekiOnayla, planBaslikEkle, planDurum } from "../../eylemler";
+import { Bos, NotKutu, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
+import { tarihYaz, useDil, type Anahtar } from "../../dil";
+import { geriDonusBekliyor, geriDonusGonder, oncekiOnayla, planDurum } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
-import { useBen } from "../../oturum";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import BaslikKarti from "./BaslikKarti";
-import { Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
+import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
 
 /**
  * Next Day planı düzenleme ekranı: promptun "en ayrıntılı geliştirilmesi
@@ -63,6 +62,11 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
           <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/cikti`}>
             <Printer size={16} /> {t("ciktiOnizleme")}
           </a>
+          {(icerik || operasyon) && (
+            <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/belge`}>
+              <FilePen size={16} /> {t("belgedeDuzenle")}
+            </a>
+          )}
         </div>
       </header>
 
@@ -153,20 +157,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
 
 function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: boolean; operasyon: boolean }) {
   const { t } = useDil();
-  const v = useVeri();
-  const ben = useBen();
   const [ekle, setEkle] = useState(false);
-  const [yeni, setYeni] = useState("");
-  const plandakiler = new Set(plan.basliklar.map((b) => b.baslikId));
-  const havuz = v.basliklar.filter((b) => b.aktif && !plandakiler.has(b.id));
-
-  const yeniEkle = () => {
-    if (!ben || !yeni.trim()) return;
-    const id = baslikEkle(ben, yeni);
-    if (id) planBaslikEkle(ben, plan.id, id);
-    setYeni("");
-    setEkle(false);
-  };
 
   return (
     <Bolum no={5} baslik={t("haberGundemi")} ek={t("baslikSayisi", { n: plan.basliklar.length })}>
@@ -177,36 +168,7 @@ function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: 
       ))}
       {icerik &&
         (ekle ? (
-          <div className="form form-kutu ara-ust-2">
-            <div className="alan-etiket">{t("baslikHavuzu")}</div>
-            <div className="cipler">
-              {havuz.map((b) => (
-                <button
-                  key={b.id}
-                  className="dugme dugme-ikincil dugme-kucuk"
-                  onClick={() => {
-                    if (ben) planBaslikEkle(ben, plan.id, b.id);
-                  }}
-                >
-                  <Plus size={13} /> <Icerik>{b.ad}</Icerik>
-                </button>
-              ))}
-            </div>
-            <div className="satir">
-              <label>
-                {t("havuzaYeniBaslik")}
-                <input {...icerikAlani} value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={metin("yeniBaslikIpucu", "ar")} onKeyDown={(e) => e.key === "Enter" && yeniEkle()} />
-              </label>
-            </div>
-            <div className="form-alt">
-              <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setEkle(false)}>
-                {t("kapat")}
-              </button>
-              <button className="dugme dugme-kucuk" onClick={yeniEkle} disabled={!yeni.trim()}>
-                {t("olusturVeEkle")}
-              </button>
-            </div>
-          </div>
+          <BaslikEkleFormu plan={plan} kapat={() => setEkle(false)} />
         ) : (
           <div className="ara-ust-2">
             <button className="dugme dugme-ikincil" onClick={() => setEkle(true)}>

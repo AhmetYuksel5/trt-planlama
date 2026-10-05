@@ -21,12 +21,13 @@ import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
 
 const YENI_DOSYA = "__yeni";
 
-export function KalemFormu({ ben, hafta, mevcut, tarih, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: HaftalikKalem; tarih?: string; kapat: () => void }) {
+/* `dosya` ve `sonra` belgeden: "altına ekle" denen kalemin dosyası seçili gelir, yeni kalem onun arkasına girer. */
+export function KalemFormu({ ben, hafta, mevcut, tarih, dosya, sonra, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string; kapat: () => void }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [f, setF] = useState({
     tarih: mevcut ? (mevcut.tarih ?? "") : (tarih ?? ""),
-    baslikId: mevcut?.baslikId ?? "",
+    baslikId: mevcut?.baslikId ?? dosya ?? "",
     yeniBaslik: "",
     baslik: mevcut?.baslik ?? "",
     yer: mevcut?.yer ?? "",
@@ -43,7 +44,7 @@ export function KalemFormu({ ben, hafta, mevcut, tarih, kapat }: { ben: Kisi; ha
       id: mevcut?.id,
       baslikId: f.baslikId === YENI_DOSYA ? undefined : f.baslikId,
       yeniBaslik: f.baslikId === YENI_DOSYA ? f.yeniBaslik : undefined,
-    });
+    }, sonra);
     if (id) {
       bildir(t("bKaydedildi"));
       kapat();
