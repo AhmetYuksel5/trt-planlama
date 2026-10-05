@@ -76,7 +76,8 @@ export function MuhabirSecici({ deger, degistir, bosEtiket }: { deger: string; d
   );
 }
 
-export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; kapat: () => void }) {
+/* `sonra`: belgede "altına ekle" denen satır; yeni kayıt onun arkasına giriyor. */
+export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; sonra?: string; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
   const [f, setF] = useState({
@@ -100,7 +101,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, kapat }: { plan: Next
       tarih: girdidenIso(f.tarih) ?? simdi(),
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
-    });
+    }, sonra);
     kapat();
   };
   return (
@@ -200,7 +201,7 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
   );
 }
 
-export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; kapat: () => void }) {
+export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; sonra?: string; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const ben = useBen();
@@ -237,7 +238,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       yayin: f.yayin ? zaman(plan.tarih, f.yayin) : undefined,
       sahaGerekli: f.sahaGerekli,
       slug: f.slug.trim() || undefined,
-    });
+    }, sonra);
     if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
     kapat();
   };

@@ -1,8 +1,8 @@
 import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Avatar, Bos, Icerik, Rozet, TurRozeti } from "../../bilesenler/Parcalar";
-import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
+import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
+import { baslikEkle, canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -65,13 +65,13 @@ export function EkleDugmesi({ metin, onClick }: { metin: string; onClick: () => 
 
 /* --- 1. Çalışma ekibi --- */
 
-export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
+/** Ekibe kişi ekleme: plan ekranında bölümün altında, belgede pencerede. */
+export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayPlan; gorev?: EkipGorevi; kapat: () => void }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ben = useBen();
-  const [ekle, setEkle] = useState(false);
   const [kisiId, setKisiId] = useState("");
-  const [gorev, setGorev] = useState<EkipGorevi>("bultenYapimcisi");
+  const [gorev, setGorev] = useState<EkipGorevi>(ilkGorev ?? "bultenYapimcisi");
   const [vardiya, setVardiya] = useState("08:00");
   const adaylar = v.kisiler
     .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id))
@@ -80,9 +80,63 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
   const kaydet = () => {
     if (!ben || !kisiId) return;
     ekipEkle(ben, plan.id, { kisiId, gorev, vardiya });
-    setKisiId("");
-    setEkle(false);
+    kapat();
   };
+
+  return (
+    <div className="form form-kutu ara-ust-2">
+      <div className="satir">
+        <label>
+          {t("personel")}
+          <select
+            value={kisiId}
+            onChange={(e) => {
+              setKisiId(e.target.value);
+              const k = kisiBul(v, e.target.value);
+              // Belgede görev satırından açıldıysa o görev kalıyor; yoksa kişinin olağan görevi.
+              if (k && !ilkGorev) setGorev(varsayilanEkipGorevi(k.gorev, k.birim));
+            }}
+          >
+            <option value="">{t("seciniz")}</option>
+            {adaylar.map((k) => (
+              <option key={k.id} value={k.id}>
+                {ad(k)} · {t(GOREV_ADI[k.gorev])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("gorev")}
+          <select value={gorev} onChange={(e) => setGorev(e.target.value as EkipGorevi)}>
+            {EKIP_GOREVLERI.map((x) => (
+              <option key={x} value={x}>
+                {t(EKIP_GOREV_ADI[x])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("vardiyaGmt")}
+          <input type="time" value={vardiya} onChange={(e) => setVardiya(e.target.value)} />
+        </label>
+      </div>
+      <div className="form-alt">
+        <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button className="dugme dugme-kucuk" onClick={kaydet} disabled={!kisiId}>
+          {t("ekle")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const [ekle, setEkle] = useState(false);
 
   return (
     <Bolum no={1} baslik={t("calismaEkibi")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
@@ -132,50 +186,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
       })}
       {duzenler &&
         (ekle ? (
-          <div className="form form-kutu ara-ust-2">
-            <div className="satir">
-              <label>
-                {t("personel")}
-                <select
-                  value={kisiId}
-                  onChange={(e) => {
-                    setKisiId(e.target.value);
-                    const k = kisiBul(v, e.target.value);
-                    if (k) setGorev(varsayilanEkipGorevi(k.gorev, k.birim));
-                  }}
-                >
-                  <option value="">{t("seciniz")}</option>
-                  {adaylar.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {ad(k)} · {t(GOREV_ADI[k.gorev])}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t("gorev")}
-                <select value={gorev} onChange={(e) => setGorev(e.target.value as EkipGorevi)}>
-                  {EKIP_GOREVLERI.map((x) => (
-                    <option key={x} value={x}>
-                      {t(EKIP_GOREV_ADI[x])}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t("vardiyaGmt")}
-                <input type="time" value={vardiya} onChange={(e) => setVardiya(e.target.value)} />
-              </label>
-            </div>
-            <div className="form-alt">
-              <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setEkle(false)}>
-                {t("iptal")}
-              </button>
-              <button className="dugme dugme-kucuk" onClick={kaydet} disabled={!kisiId}>
-                {t("ekle")}
-              </button>
-            </div>
-          </div>
+          <EkipEkleFormu plan={plan} kapat={() => setEkle(false)} />
         ) : (
           <div className="ara-ust-2">
             <EkleDugmesi metin={t("ekibeEkle")} onClick={() => setEkle(true)} />
@@ -187,13 +198,44 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
 
 /* --- 2. Muhabir hareketleri ve izinleri --- */
 
+/** O güne düşen, plana henüz bağlanmamış hareketler; seçilen plana bağlanıyor. */
+export function KayitliHareketSecici({ plan, kapat }: { plan: NextDayPlan; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const eklenebilir = v.gorevlendirmeler.filter((g) => !plan.gorevlendirmeler.includes(g.id) && g.bitis >= plan.tarih && g.baslangic <= plan.tarih);
+  return (
+    <div className="form form-kutu ara-ust-2">
+      {eklenebilir.length === 0 ? (
+        <Bos kucuk metin={t("kayitYok")} />
+      ) : (
+        eklenebilir.map((g) => {
+          const k = kisiBul(v, g.kisiId);
+          return (
+            <div key={g.id} className="dugmeler">
+              <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && planGorevlendirmeEkle(ben, plan.id, g.id)} aria-label={t("ekle")}>
+                <Plus size={14} />
+              </button>
+              <Icerik>{satir(g.yer, kisiAr(k))}</Icerik> · {t(HAREKET_TURU_ADI[g.tur])}
+            </div>
+          );
+        })
+      )}
+      <div className="form-alt">
+        <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+          {t("kapat")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState<"" | "yeni" | "mevcut">("");
   const bagli = plan.gorevlendirmeler.map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g) => g !== undefined);
-  const eklenebilir = v.gorevlendirmeler.filter((g) => !plan.gorevlendirmeler.includes(g.id) && g.bitis >= plan.tarih && g.baslangic <= plan.tarih);
   return (
     <Bolum no={2} baslik={t("muhabirHareketleri")} ek={String(bagli.length)}>
       {bagli.length === 0 ? (
@@ -230,30 +272,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
         })
       )}
       {duzenler && form === "yeni" && <GorevlendirmeFormu plan={plan} kapat={() => setForm("")} />}
-      {duzenler && form === "mevcut" && (
-        <div className="form form-kutu ara-ust-2">
-          {eklenebilir.length === 0 ? (
-            <Bos kucuk metin={t("kayitYok")} />
-          ) : (
-            eklenebilir.map((g) => {
-              const k = kisiBul(v, g.kisiId);
-              return (
-                <div key={g.id} className="dugmeler">
-                  <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && planGorevlendirmeEkle(ben, plan.id, g.id)}>
-                    <Plus size={14} />
-                  </button>
-                  <Icerik>{satir(g.yer, kisiAr(k))}</Icerik> · {t(HAREKET_TURU_ADI[g.tur])}
-                </div>
-              );
-            })
-          )}
-          <div className="form-alt">
-            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setForm("")}>
-              {t("kapat")}
-            </button>
-          </div>
-        </div>
-      )}
+      {duzenler && form === "mevcut" && <KayitliHareketSecici plan={plan} kapat={() => setForm("")} />}
       {duzenler && !form && (
         <div className="dugmeler ara-ust-2">
           <EkleDugmesi metin={t("yeniHareket")} onClick={() => setForm("yeni")} />
@@ -332,13 +351,9 @@ export function CanliBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
  * seçiliyor; plan Newsdesk'e devredilince yayınlanmış sayılıp stoktan
  * düşüyor. Çıktıdaki "التقارير الجاهزة" bölümü bunlar.
  */
-export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler: boolean; d: Durum }) {
+function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
   const { t } = useDil();
-  const ben = useBen();
-  const [sec, setSec] = useState(false);
-  const secili = plan.hazirPaketler.map((id) => paketBul(d, id)).filter((p): p is Paket => !!p);
-  const stokta = d.paketler.filter((p) => stokDurumu(p) === "stokta" && !plan.hazirPaketler.includes(p.id));
-  const hazirSatiri = (p: Paket) => (
+  return (
     <>
       <a href={`#/paketler/${p.id}`} className="kalin-bag">
         <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}</Icerik>
@@ -358,13 +373,52 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
       </small>
     </>
   );
+}
+
+/** Stoktaki, plana henüz seçilmemiş paketler. */
+export function StoktanSecici({ plan, d, kapat }: { plan: NextDayPlan; d: Durum; kapat: () => void }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const stokta = d.paketler.filter((p) => stokDurumu(p) === "stokta" && !plan.hazirPaketler.includes(p.id));
+  return (
+    <div className="form form-kutu ara-ust-2">
+      <div className="alan-etiket">{t("stoktakiPaketler")}</div>
+      {stokta.length === 0 && <Bos kucuk metin={t("stokBos")} />}
+      {stokta.map((p) => (
+        <div key={p.id} className="kayit">
+          <div className="kayit-bas">
+            <div>
+              <HazirSatiri p={p} d={d} />
+            </div>
+            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, p.id)}>
+              <Plus size={14} /> {t("sec")}
+            </button>
+          </div>
+        </div>
+      ))}
+      <div className="form-alt">
+        <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+          {t("kapat")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler: boolean; d: Durum }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const [sec, setSec] = useState(false);
+  const secili = plan.hazirPaketler.map((id) => paketBul(d, id)).filter((p): p is Paket => !!p);
   return (
     <Bolum no={4} baslik={t("hazirPaketler")} ek={String(secili.length)}>
       {secili.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
       {secili.map((p) => (
         <div key={p.id} className="kayit">
           <div className="kayit-bas">
-            <div>{hazirSatiri(p)}</div>
+            <div>
+              <HazirSatiri p={p} d={d} />
+            </div>
             {duzenler && (
               <div className="islemler">
                 <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, p.id)} />
@@ -375,31 +429,66 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
       ))}
       {duzenler &&
         (sec ? (
-          <div className="form form-kutu ara-ust-2">
-            <div className="alan-etiket">{t("stoktakiPaketler")}</div>
-            {stokta.length === 0 && <Bos kucuk metin={t("stokBos")} />}
-            {stokta.map((p) => (
-              <div key={p.id} className="kayit">
-                <div className="kayit-bas">
-                  <div>{hazirSatiri(p)}</div>
-                  <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, p.id)}>
-                    <Plus size={14} /> {t("sec")}
-                  </button>
-                </div>
-              </div>
-            ))}
-            <div className="form-alt">
-              <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setSec(false)}>
-                {t("kapat")}
-              </button>
-            </div>
-          </div>
+          <StoktanSecici plan={plan} d={d} kapat={() => setSec(false)} />
         ) : (
           <div className="ara-ust-2">
             <EkleDugmesi metin={t("stoktanSec")} onClick={() => setSec(true)} />
           </div>
         ))}
     </Bolum>
+  );
+}
+
+/** Habere başlık: havuzdan seç ya da havuza yeni başlık aç. Belgede "altına ekle" ile `sonra` geliyor. */
+export function BaslikEkleFormu({ plan, sonra, kapat }: { plan: NextDayPlan; sonra?: string; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const [yeni, setYeni] = useState("");
+  const plandakiler = new Set(plan.basliklar.map((b) => b.baslikId));
+  const havuz = v.basliklar.filter((b) => b.aktif && !plandakiler.has(b.id));
+
+  const yeniEkle = () => {
+    if (!ben || !yeni.trim()) return;
+    const id = baslikEkle(ben, yeni);
+    if (id) planBaslikEkle(ben, plan.id, id, sonra);
+    setYeni("");
+    kapat();
+  };
+
+  return (
+    <div className="form form-kutu ara-ust-2">
+      <div className="alan-etiket">{t("baslikHavuzu")}</div>
+      <div className="cipler">
+        {havuz.map((b) => (
+          <button
+            key={b.id}
+            className="dugme dugme-ikincil dugme-kucuk"
+            onClick={() => {
+              if (ben) planBaslikEkle(ben, plan.id, b.id, sonra);
+              // Belgede tek başlık ekleniyor; plan ekranında arka arkaya seçilebilsin diye form açık kalıyor.
+              if (sonra !== undefined) kapat();
+            }}
+          >
+            <Plus size={13} /> <Icerik>{b.ad}</Icerik>
+          </button>
+        ))}
+      </div>
+      <div className="satir">
+        <label>
+          {t("havuzaYeniBaslik")}
+          <input {...icerikAlani} value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={metin("yeniBaslikIpucu", "ar")} onKeyDown={(e) => e.key === "Enter" && yeniEkle()} />
+        </label>
+      </div>
+      <div className="form-alt">
+        <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+          {t("kapat")}
+        </button>
+        <button className="dugme dugme-kucuk" onClick={yeniEkle} disabled={!yeni.trim()}>
+          {t("olusturVeEkle")}
+        </button>
+      </div>
+    </div>
   );
 }
 

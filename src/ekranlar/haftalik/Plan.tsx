@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, Inbox, Lock, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Lock, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -84,6 +84,11 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
             <Printer size={16} /> {t("ciktiOnizleme")}
           </a>
+          {duzenler && (
+            <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/belge`}>
+              <FilePen size={16} /> {t("belgedeDuzenle")}
+            </a>
+          )}
         </div>
       </header>
 
@@ -302,10 +307,10 @@ function MuhabirHareketleri({ hafta }: { hafta: HaftalikPlan }) {
 
 /* --- Haftanın ana dosyaları (أهم ملفات الأسبوع) --- */
 
-function AnaKonuFormu({ ben, hafta, mevcut, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: AnaKonu; kapat: () => void }) {
+export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: AnaKonu; sonra?: string; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ baslik: mevcut?.baslik ?? "", metin: mevcut?.metin ?? "" });
-  const kaydet = () => anaKonuKaydet(ben, hafta.id, { id: mevcut?.id, ...f }) && kapat();
+  const kaydet = () => anaKonuKaydet(ben, hafta.id, { id: mevcut?.id, ...f }, sonra) && kapat();
   return (
     <div className="form form-kutu ara-ust-2">
       <label>

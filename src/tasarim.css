@@ -800,6 +800,55 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .cikti .cikti-kalem + .cikti-kalem { margin-top: 8px; }
 .cikti mark { background: var(--cikti-sari); color: inherit; padding: 0 2px; }
 
+/* --- Belge görünümü: planı çıktının üzerinde düzenleme --- */
+
+/*
+ * Düzenlenen satır üzerine gelince ya da içine girilince çerçevelenir;
+ * şerit satırın altında açılır, satırı itmeden üstte durur (masaüstü).
+ * Şerit gizliyken de sekmeyle ulaşılabilsin diye opaklıkla gizleniyor.
+ */
+.belge-satir { position: relative; border-radius: var(--yaricap); margin-inline: calc(-1 * var(--ara-2)); padding-inline: var(--ara-2); }
+.belge-satir:hover, .belge-satir:focus-within { background: var(--vurgu-sis); }
+.belge-satir.onceki { background: var(--onceki-fon); box-shadow: inset 0 0 0 1px var(--onceki-cizgi); }
+.belge-satir.soluk > :not(.satir-seridi) { opacity: .5; }
+.satir-seridi {
+  position: absolute; inset-block-start: 100%; inset-inline-start: var(--ara-1); z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 2px;
+  background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); box-shadow: var(--golge-acilir);
+  font-family: var(--yazi); font-size: var(--punto-kucuk); line-height: 1.2;
+  opacity: 0; pointer-events: none; transition: opacity .12s;
+}
+.satir-seridi:lang(ar) { font-family: var(--yazi-arapca); }
+.belge-satir:hover > .satir-seridi, .belge-satir:focus-within > .satir-seridi { opacity: 1; pointer-events: auto; }
+.satir-seridi .rozet { margin-inline: var(--ara-1); }
+.satir-seridi .dugme.secili { background: var(--vurgu-sis); color: var(--vurgu); }
+/* Pencerede (ekip üyesi) şerit satıra bağlı değil, akışta duruyor. */
+.pencere .satir-seridi { position: static; opacity: 1; pointer-events: auto; box-shadow: none; margin-top: var(--ara-3); }
+
+.yerinde { cursor: text; border-radius: 3px; outline: 1px dashed transparent; outline-offset: 1px; }
+.yerinde:hover, .yerinde:focus-visible { outline-color: var(--vurgu); }
+.yerinde-bos { color: var(--sonuk); font-weight: 400; font-style: italic; font-size: var(--punto-kucuk); }
+.yerinde-kutu { font: inherit; color: inherit; padding: 1px 4px; border: 1px solid var(--vurgu); border-radius: 4px; background: var(--yuzey); max-width: 100%; }
+.yerinde-kutu.cok { display: block; width: 100%; resize: vertical; }
+
+.belge-kisi { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted var(--sonuk); text-underline-offset: 4px; }
+.belge-kisi.onceki { background: var(--onceki-fon); }
+.belge-kisi:hover, .belge-kisi:focus-visible { color: var(--vurgu); }
+
+.belge-ekle { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-block: var(--ara-1) var(--ara-3); font-family: var(--yazi); }
+.belge-ekle:lang(ar) { font-family: var(--yazi-arapca); }
+.belge-ekle .dugme { color: var(--vurgu); }
+.belge-not { font-family: var(--yazi); font-size: var(--punto-kucuk); color: var(--sonuk); }
+.belge-not:lang(ar) { font-family: var(--yazi-arapca); }
+.belge-not a { color: var(--vurgu); font-weight: 600; }
+
+/* Temiz kopya: ekranda yer kaplamadan çizili (kopyala ve Word metni düzgün alsın), baskıda tek görünen. */
+.belge-temiz { position: fixed; inset-block-start: 0; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }
+/* Dokunmatik ekranda üzerine gelme yok: şerit genişte de hep açık. */
+@media (hover: none) {
+  .satir-seridi { position: static; opacity: 1; pointer-events: auto; box-shadow: none; }
+}
+
 /* --- Yönetici paneli: sayaçta durum rozeti, plan sekmeleri, ayrıntı penceresi --- */
 .sayac b > .rozet { display: inline-flex; font-size: var(--punto-kucuk); font-weight: 700; line-height: 1.6; margin-block: 2px; padding: 1px var(--ara-2); }
 .sayac b > .rozet-uyari { color: var(--uyari); }
@@ -1017,6 +1066,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .sayfa { padding: 0; }
   .cikti-sarici { background: none; padding: 0; }
   .cikti { box-shadow: none; padding: 0; max-width: none; }
+  .belge-temiz { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
 }
 
 /* --- Dar ekranlar --- */
@@ -1128,6 +1178,13 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .sekmeler button { min-height: 38px; white-space: nowrap; }
   .form-alt .dugme { flex: 1; }
   .cip button { width: 32px; height: 32px; }
+
+  /* Belgede üzerine gelme yok: şerit her satırın altında hep açık, düğmeler 44 piksel. */
+  .satir-seridi { position: static; opacity: 1; pointer-events: auto; box-shadow: none; border: 0; background: none; padding: 0; margin-block: 2px var(--ara-2); }
+  .belge-satir { margin-inline: 0; padding-inline: 0; }
+  .belge-satir:hover, .belge-satir:focus-within { background: none; }
+  .belge-kisi { display: inline-flex; align-items: center; min-height: var(--dokunma); }
+  .yerinde { display: inline-block; min-height: var(--dokunma); }
 
   /* Tablo → kart. Her satır bir kart; başlık üstte, diğer hücreler
      etiketiyle alt alta. Etiket hücrenin `data-etiket` özniteliğinden

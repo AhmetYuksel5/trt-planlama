@@ -8,6 +8,8 @@ import Basliklar from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
+import NextDayBelge from "./ekranlar/belge/NextDayBelge";
+import HaftalikBelge from "./ekranlar/belge/HaftalikBelge";
 import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
 import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
@@ -69,6 +71,7 @@ export default function App() {
         const plan = yol.id === "yarin" ? yarinPlani(v) : planBul(v, yol.id);
         if (yol.id && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
+        else if (plan && yol.alt === "belge") icerik = <NextDayBelge ben={ben} plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
         else icerik = <NextDayListe />;
         break;
@@ -77,6 +80,7 @@ export default function App() {
         const hafta = haftaBul(v, yol.id);
         if (yol.id && !hafta) icerik = <Yetkisiz />;
         else if (hafta && yol.alt === "cikti") icerik = <HaftalikCikti hafta={hafta} />;
+        else if (hafta && yol.alt === "belge") icerik = <HaftalikBelge ben={ben} hafta={hafta} />;
         else if (hafta && yol.alt === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <HaftalikCagri ben={ben} hafta={hafta} /> : <Yetkisiz />;
         else if (hafta) icerik = <HaftalikPlanEkrani ben={ben} hafta={hafta} />;
         else icerik = <HaftalikListe ben={ben} />;

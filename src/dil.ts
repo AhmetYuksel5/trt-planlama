@@ -527,9 +527,9 @@ const M = {
   yazdir: m("Yazdır / PDF", "طباعة / PDF", "Print / PDF"),
   planaDon: m("Plana dön", "العودة إلى الخطة", "Back to plan"),
   ciktiNotu: m(
-    "Akşam haber toplantısına götürülen çıktı. Boş bölümler görünmez. Word/PDF dışa aktarma sonraki adımda; şimdilik yazdırma penceresinden PDF olarak kaydedilebilir.",
-    "النسخة التي تُعرض في اجتماع الأخبار المسائي. لا تظهر الأقسام الفارغة. التصدير إلى Word/PDF في الخطوة التالية؛ ويمكن الآن الحفظ كـ PDF من نافذة الطباعة.",
-    "The document taken to the evening news meeting. Empty sections are hidden. Word/PDF export comes next; for now save as PDF from the print dialog.",
+    "Akşam haber toplantısına götürülen çıktı. Boş bölümler görünmez. Yazdır (PDF olarak kaydet dahil), Word dosyası indir ya da metni kopyala.",
+    "النسخة التي تُعرض في اجتماع الأخبار المسائي. لا تظهر الأقسام الفارغة. يمكن الطباعة (ومنها الحفظ كـ PDF) أو تنزيل ملف Word أو نسخ النص.",
+    "The document taken to the evening news meeting. Empty sections are hidden. Print (including save as PDF), download a Word file or copy the text.",
   ),
 
   /* Öneriler */
@@ -567,6 +567,30 @@ const M = {
   arkaPlanHaber: m("Arka plan haberi", "الخبر الأساس", "Background story"),
   surec: m("Süreç", "المسار", "Progress"),
   ayrintiVeGecmis: m("Ayrıntı ve geçmiş", "التفاصيل والسجل", "Details and history"),
+  belgedeDuzenle: m("Belgede düzenle", "التحرير على المستند", "Edit on the document"),
+  belgeNotu: m(
+    "Planı çıktı belgesinin üzerinde düzenliyorsun. Yazıya basıp yerinde düzelt; satırın üzerine gelince altında açılan düğmelerle taşı, altına ekle, ayrıntılarını aç ya da çıkar. Değişiklik plan ekranına da anında yansır; yazdır, Word ve kopya yalnız çıktıya girenleri alır.",
+    "أنت تحرّر الخطة على مستند المخرجات نفسه. انقر على النص لتعديله في مكانه؛ وعند المرور على السطر تظهر تحته أزرار للنقل والإضافة تحته وفتح التفاصيل والإزالة. ينعكس كل تعديل فورا على شاشة الخطة، والطباعة وWord والنسخ تأخذ ما يدخل المخرجات فقط.",
+    "You are editing the plan on the output document itself. Click any text to fix it in place; hover a line to get buttons below it to move, add below, open details or remove. Changes show up on the plan screen at once; print, Word and copy take only what goes into the output.",
+  ),
+  belgeKararNotu: m(
+    "Plan toplantıda: her kalemin şeridinde Kabul, Bilgi ve Ret var. Karar bekleyen kalem soluk görünür ve çıktıya girmez.",
+    "الخطة في الاجتماع: في شريط كل بند أزرار القبول والعلم والرفض. البند الذي ينتظر القرار يظهر باهتا ولا يدخل المخرجات.",
+    "The plan is in the meeting: each item's bar has Accept, Info and Reject. Items awaiting a decision look faded and stay out of the output.",
+  ),
+  altinaEkle: m("Altına ekle", "إضافة تحته", "Add below"),
+  beklenenNotu: m(
+    "Bu bölüm haber olaylarındaki PKG satırlarından oluşuyor; düzenlemek için başlığın altındaki PKG satırını kullan.",
+    "يتكوّن هذا القسم من سطور PKG في الأحداث الإخبارية؛ للتعديل استخدم سطر PKG تحت العنوان.",
+    "This section is built from the PKG lines under the news events; edit them under their heading.",
+  ),
+  haftalikHareketNotu: m(
+    "Bu satırlar o haftaya düşen saha görevlendirmelerinden geliyor; değiştirmek için saha görevlendirmeleri sayfasını kullan.",
+    "تأتي هذه السطور من التكليفات الميدانية في هذا الأسبوع؛ للتعديل استخدم صفحة التكليفات الميدانية.",
+    "These lines come from the week's field assignments; change them on the field assignments page.",
+  ),
+  takipEkle: m("Takip ekle", "إضافة متابعة", "Add follow-up"),
+  paketiAc: m("Paketi aç", "فتح التقرير", "Open package"),
   odDegerlendiriliyor: m("Değerlendiriliyor", "قيد التقييم", "Under review"),
   odPlanaEklendi: m("Plana eklendi", "أُضيف إلى الخطة", "Added to plan"),
   odReddedildi: m("Reddedildi", "مرفوض", "Rejected"),

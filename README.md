@@ -39,7 +39,14 @@ npm run preview  # derlenmiş hali yerelde
     yayınlar, hazır paketler, başlık başlık haber gündemi, takipler
   - durum çizgisi: taslak → haber toplantısında → onaylı → Newsdesk devraldı
 - **Çıktı önizleme:** kurumun "الأجندة الإخبارية" belgesinin düzeninde.
-  Arapça ve sağdan sola, boş bölümler gizli, yazdırılabilir.
+  Arapça ve sağdan sola, boş bölümler gizli; yazdır/PDF, Word ve kopyala.
+- **Belge görünümü** ("Belgede düzenle", Next Day ve haftalık): plan,
+  Word'de çalışır gibi çıktı belgesinin üzerinde hazırlanıyor. Yazıya
+  basıp yerinde düzeltiliyor; satırın altındaki oklarla taşınıyor, altına
+  ekleniyor, ayrıntısı açılıyor ya da çıkarılıyor. Muhabir, saat, haber
+  türü, gün gibi seçimler küçük pencerede. Değişiklik plan ekranına
+  anında yansıyor; çıktı aynı sayfadan alınıyor. Haftalık toplantıda
+  karar da belgenin üzerinden veriliyor
 - **Öneriler:**
   - öneri çağrısı, kurumun bugünkü e-postası gibi: Kime planlama grubu,
     muhabirler BCC'de, etiketli konu. "Outlook'ta aç" (taslak dosyası),

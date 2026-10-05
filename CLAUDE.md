@@ -133,6 +133,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `planOlustur`'da çağrılır.
   - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
     (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
+- Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
+  `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
+  girişi çıktı önizlemesinde ve plan başlığında "Belgede düzenle".
+  - Belge bileşeni tek (`NextDayBelgesi`, `HaftalikBelgesi`): `duzen`
+    verilmezse çıktı, verilirse aynı kağıt düzenlenebilir. Çıktı sayfaları
+    da bunu çağırır; belge ile çıktı ayrışmaz. Bileşenin içinde bileşen
+    tanımlanmaz, yoksa yazı kutusu her kayıtta sıfırlanır.
+  - Satır `BelgeSatiri` + `SatirSeridi` (taşı, altına ekle, düzenle, bugün
+    de geçerli, çıkar); yazılar `YerindeMetin`, seçimler plan ekranının
+    formlarıyla `Pencere`de. Yeni satır türü eklenince hem belgeye hem
+    şeride girer; eylemi plan ekranınınki.
+  - Sıra dizinin sırası: taşıma aynı grubun komşusuyla yer değiştirir
+    (`komsuylaDegis`), "altına ekle" `sonra` ile satırın arkasına koyar
+    (`arkasina`). Canlı yayın saatle sıralı, taşınmaz; haftalık hareketler
+    saha görevlendirmelerinden türer, belgede salt.
+  - Yetki plan ekranıyla aynı (`planIcerikDuzenler`/`planOperasyonDuzenler`,
+    `haftalikDuzenler`, toplantıda `kararVerebilir`). Haftalıkta belgede
+    yedi gün ve karar bekleyen kalem (soluk) de var; çıktıda yok.
+  - Baskı, Word ve kopya ekranda görünmeyen temiz kopyadan (`.belge-temiz`);
+    Word ortak (`bilesenler/indir.ts → wordIndir`), Next Day'de de var.
 - Stok haberi ayrı kayıt değil, `Paket` (`stok: true`): haftalıkta kabul
   edilen plansız feature, ekonomi ya da günü olmayan haber. Durumu
   saklanmaz, kayıttan çıkar (`akis.ts → stokDurumu`): üretime alınacak →
