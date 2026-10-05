@@ -319,9 +319,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .iz-esit { align-items: stretch; }
 .iz-esit > .kart { height: 100%; }
 
-/* --- Plan kısayolları (beş ana başlık) --- */
+/* --- Plan kısayolları (beş ana başlık ve planlama takvimi) --- */
 
-.kisayollar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ara-3); }
+/* Altı kutucuk tek sırada yalnız geniş ekranda okunuyor; altında üçerli iki sıra. */
+.kisayollar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ara-3); }
+@media (min-width: 1800px) {
+  .kisayollar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
 .kisayol {
   display: flex; gap: var(--ara-3); align-items: flex-start;
   background: var(--sis); border: 1px solid transparent; border-radius: var(--yaricap-kart);
@@ -336,6 +340,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .renk-aylik { --renk: var(--aylik); --sis: var(--aylik-sis); }
 .renk-ozel { --renk: var(--ozel); --sis: var(--ozel-sis); }
 .renk-saha { --renk: var(--saha); --sis: var(--saha-sis); }
+/* Planlama takvimi beş ana başlıktan biri değil, onları besliyor: altıncı renk yerine markanın laciverti. */
+.renk-takvim { --renk: var(--lacivert); --sis: var(--yuzey-3); }
 
 /* --- Sayaçlar --- */
 
@@ -1245,7 +1251,6 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 @media (max-width: 1380px) {
   .iz-pano { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .iz-pano > :first-child { grid-column: 1 / -1; }
-  .kisayollar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 1100px) {
   .iz-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
