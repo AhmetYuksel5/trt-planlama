@@ -35,22 +35,24 @@ import { CalismaAlani, type Alan } from "./Calisma";
 /**
  * Planlama Birimi ana sayfası (rapor Şekil 4).
  *
- * Plan üretimini ve muhabirlerden gelen editoryal girdiyi merkeze alıyor;
- * diğer birimlerin durumu koordinasyon için özet olarak görünüyor.
- * Promptun 3. maddesindeki beş alan: bugünün ve yaklaşan günlerin Next Day
- * planları, haftalık/aylık erişim, değerlendirme bekleyen öneriler,
- * hazırlanan planlar ve özel yayınlar, koordinasyon gerektiren işler.
+ * Plan üretimini ve muhabirlerden gelen editoryal girdiyi merkeze alıyor.
+ * Varsayılan düzen bilerek yalın: planlara geçiş, gelen öneriler,
+ * muhabirlerin durumu ve son hareketler. Birim her gün bu dördüyle
+ * çalışıyor; sayaçlar, haftanın planı, takvim, koordinasyon gibi öbür
+ * alanlar katalogda duruyor, isteyen "Sayfayı düzenle" ile ekliyor.
+ * Sayfa başlığı yok: ana sayfa birimin kendisi, adını yazmak yer kaplıyordu.
  * Görseldeki tür dağılımı halkası promptun "gereksiz grafik kullanma"
- * kuralı yüzünden yok; yerini koordinasyon listesi aldı.
+ * kuralı yüzünden yok.
  */
 
-const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: Anahtar; aciklama: Anahtar }[] = [
-  { sayfa: "nextday/yarin", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday", aciklama: "ksNextdayA" },
-  { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik", aciklama: "ksHaftalikA" },
-  { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik", aciklama: "ksAylikA" },
-  { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel", aciklama: "ksOzelA" },
-  { sayfa: "saha", renk: "renk-saha", ikon: MapPinned, ad: "ksSaha", aciklama: "ksSahaA" },
-  { sayfa: "takvim", renk: "renk-takvim", ikon: CalendarCheck, ad: "ksTakvim", aciklama: "ksTakvimA" },
+/* Kutucukta yalnız ad: açıklama satırı kutucukları uzatıyordu, adlar birimin her gün kullandığı adlar (Next Day, Weekly…). */
+const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: Anahtar }[] = [
+  { sayfa: "nextday/yarin", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday" },
+  { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik" },
+  { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik" },
+  { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel" },
+  { sayfa: "saha", renk: "renk-saha", ikon: MapPinned, ad: "ksSaha" },
+  { sayfa: "takvim", renk: "renk-takvim", ikon: CalendarCheck, ad: "ksTakvim" },
 ];
 
 export function PlanKisayollari() {
@@ -64,10 +66,7 @@ export function PlanKisayollari() {
             <span className="ikon">
               <Ikon size={22} />
             </span>
-            <span>
-              <b>{t(k.ad)}</b>
-              <small>{t(k.aciklama)}</small>
-            </span>
+            <b>{t(k.ad)}</b>
           </a>
         );
       })}
@@ -100,13 +99,7 @@ export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; basli
 }
 
 export default function PlanlamaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
-  const { t } = useDil();
-  return (
-    <>
-      <SayfaBasi ikon={<Users size={28} />} baslik={t("planlamaBirimi")} alt={t("planlamaAlt")} />
-      <CalismaAlani ben={ben} duzen="planlama" kisisel={kisisel} />
-    </>
-  );
+  return <CalismaAlani ben={ben} duzen="planlama" kisisel={kisisel} />;
 }
 
 function PlanlamaSayaclari() {

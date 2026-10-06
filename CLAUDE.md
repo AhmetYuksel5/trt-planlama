@@ -76,6 +76,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`kişi:düzen`). Alan eklemek için alanın `sayfa`'sını görebilmek gerekir
   ("muhabir" yalnız muhabirin kendi işi, "panel" kapsamı olan yönetici).
   Müdür birime inince birimin varsayılanını görür (`kisisel={false}`).
+  Planlama'nın sayfasında başlık yok; varsayılanı dört alan (plan
+  kısayolları, muhabir önerileri, muhabirlerin durumu, son hareketler).
+  Kısayol kutucuğunda yalnız ad, açıklama yok; Türkçe ve İngilizce adlar
+  birimin kullandığı adlar (Next Day, Weekly, Special Coverage), Arapça
+  kendi adları.
   Yeni kart da böyle eklenir: birim dosyasındaki `*_ALANLARI` listesine.
   Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
   için açılışta okunursa döngüde tanımsız kalır.

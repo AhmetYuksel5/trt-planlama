@@ -26,10 +26,13 @@ npm run preview  # derlenmiş hali yerelde
   sayfası var. Kişi "Sayfayı düzenle" ile istemediği alanı kaldırıyor,
   sırasını değiştiriyor, yetkisi olan başka birimlerin alanlarını ekliyor ve
   istediğinde varsayılana dönüyor; düzen yalnız onun sayfasını değiştiriyor.
+  Planlama'nın varsayılanı yalın: plan kısayolları (Next Day, Weekly,
+  Aylık plan, Special Coverage, saha, takvim), son gelen muhabir önerileri,
+  muhabirlerin durumu ve son hareketler; öbür alanlar katalogda.
 - **Next Day planı:**
   - plan açma düğmesi yok: planlar her gün kesintisiz sürüyor, yarının
     planını sistem kendisi açıyor (uygulama açılınca ve gün dönünce);
-    listede en üstte. Ana sayfadaki "Yarının planı" kısayolu doğrudan ona gidiyor
+    listede en üstte. Ana sayfadaki "Next Day" kısayolu doğrudan ona gidiyor
   - yeni plan önceki planın şablonuyla geliyor: ekip, devam
     eden hareketler, başlıklar ve muhabirleri, ileri tarihli canlı yayınlar,
     gelişmeler ve takipler taşınıyor; paket önerileri ve hazır paketler
