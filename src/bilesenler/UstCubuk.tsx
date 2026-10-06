@@ -12,16 +12,18 @@ import { Avatar, Bos, Icerik } from "./Parcalar";
 import Logo from "./Logo";
 
 /**
- * Üst çubuk: logo, arama, dil, bildirimler ve kullanıcı menüsü. Logo
- * beyaz zeminde olduğu için levhasız; sol menü kalkınca markanın yeri
- * burası oldu.
+ * Üst çubuk: arama, dil, bildirimler ve kullanıcı menüsü.
  *
  * Arama yalnız kişinin görebildiği kayıtlarda geziyor; muhabir başka
  * muhabirin paketini aramayla da bulamıyor. Bildirimler hareket
  * kaydından süzülüyor (yetki.ts → bildirimMi); zil açılınca okundu
  * sayılıyor.
  */
-export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => void }) {
+/*
+ * Menü düğmesi masaüstünde sol menüyü gizleyip gösteriyor, tablette
+ * çekmeceyi açıyor; etiketi o an ne yapacağını söylüyor.
+ */
+export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: Kisi; onMenu: () => void; masaustu: boolean; menuGorunur: boolean }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "arama">("");
@@ -76,12 +78,18 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
 
   return (
     <header className="ust" ref={kap}>
-      <button className="ikon-dugme menu-dugme" onClick={onMenu} aria-label={t("menuAc")}>
+      <button
+        className="ikon-dugme menu-dugme"
+        onClick={onMenu}
+        aria-label={masaustu ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster") : t("menuAc")}
+        title={masaustu ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster") : undefined}
+        aria-expanded={menuGorunur}
+        aria-controls="ana-menu"
+      >
         <Menu size={18} />
       </button>
-      <a className="marka ust-marka" href="#/" aria-label={t("uygulama")}>
+      <a className="marka marka-mobil" href="#/" aria-label={t("uygulama")}>
         <Logo />
-        <span className="marka-alt">{t("markaAlt")}</span>
       </a>
       <div className={`arama ${acik === "arama" ? "acik" : ""}`}>
         <Search size={16} />

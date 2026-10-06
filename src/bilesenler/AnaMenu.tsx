@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Building,
   Calendar,
   CalendarClock,
   CalendarCheck,
@@ -29,17 +30,19 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
+import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
+import Logo from "./Logo";
 
 /**
- * Menünün tek tablosu. Masaüstünde üstteki şerit (AnaMenu), tablette ve
- * telefonda Menü paneli (MobilMenu) buradan çiziliyor; yeni sayfa yalnız
- * buraya girer. Gruplar ilk taslak promptunun 2. maddesindeki ana başlıklar:
+ * Menünün tek tablosu: sol menü (AnaMenu) ve telefondaki Menü paneli
+ * (MobilMenu) buradan çiziliyor; yeni sayfa yalnız buraya girer.
+ * Gruplar ilk taslak promptunun 2. maddesindeki ana başlıklar:
  * Planlama, Personel, İçerik ve haberler, Görevlendirmeler, İş akışları,
  * Raporlar. Her kişi yalnız yetkisi olan maddeleri görüyor; muhabirin
  * menüsü kendi işlerine daralıyor. Henüz yalnız taslağı olan sayfalar
@@ -152,18 +155,38 @@ export const MENU: Grup[] = [
 ];
 
 /*
- * Bir madde: ikon, ad (muhabirde kendi adı), varsa önündeki iş sayısı,
- * yoksa taslak noktası. Şeritteki doğrudan bağlantı da açılır listedeki
- * madde de bu.
+ * Açık gruplar tarayıcıda hatırlanıyor (dil seçimi gibi kişiye değil
+ * tarayıcıya bağlı bir görünüm tercihi; kayıt şeması değişmiyor). Özel
+ * pencerede saklanamazsa yalnız açık sayfanın grubu açık kalır.
  */
-function MenuBagi({ m, ben, acik, kapat }: { m: Madde; ben: Kisi; acik: string; kapat: () => void }) {
+const GRUPLAR_SAKLA = "trt-planlama-menu-gruplar";
+const acikGruplariOku = (): string[] => {
+  try {
+    const ham = localStorage.getItem(GRUPLAR_SAKLA);
+    return ham ? (JSON.parse(ham) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
+const acikGruplariYaz = (gruplar: string[]) => {
+  try {
+    localStorage.setItem(GRUPLAR_SAKLA, JSON.stringify(gruplar));
+  } catch {
+    /* saklanamıyorsa yalnız bu oturumda geçerli */
+  }
+};
+
+/** Sayfanın başlıklı grubu; ana sayfa ve panelin grubu yok. */
+const sayfaGrubu = (sayfa: string) => MENU.find((g) => g.ad && g.maddeler.some((m) => m.sayfa === sayfa))?.ad;
+
+function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const { t } = useDil();
   const v = useVeri();
   const sayi = m.say?.(v, ben) ?? 0;
   const Ikon = m.ikon;
   return (
-    <a href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""} aria-current={acik === m.sayfa ? "page" : undefined} onClick={kapat}>
-      <Ikon size={17} />
+    <a href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""} aria-current={acik === m.sayfa ? "page" : undefined}>
+      <Ikon size={18} />
       {t(ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad)}
       {sayi > 0 ? <span className="say">{sayi}</span> : m.taslak ? <span className="taslak-nokta" title={t("taslakAkis")} /> : null}
     </a>
@@ -171,78 +194,75 @@ function MenuBagi({ m, ben, acik, kapat }: { m: Madde; ben: Kisi; acik: string; 
 }
 
 /**
- * Masaüstündeki menü şeridi: üst çubuğun altında, gruplar basınca açılıyor.
- *
- * Sol menü bütün maddeleri hep açık tutuyordu ve kalabalık görünüyordu;
- * şimdi yalnız grup adları duruyor, sayfalar basınca altında açılıyor.
- * Gruptaki iş sayıları grubun yanında toplanıyor ki kapalıyken de neyin
- * beklediği görünsün. Başlıksız grup (ana sayfa, panel) ve kişinin tek
- * maddesini gördüğü grup açılır değil, doğrudan bağlantı: tek seçenek için
- * liste açtırmak boşuna bir basış. Aynı anda tek liste açık; dışarı
- * basmak, Escape ve sayfa değişimi kapatıyor. Kapalı listenin bağlantıları
- * DOM'da `hidden` duruyor; ekran okuyucu ve sayfa içi arama için.
+ * Sol menü. Bütün maddeler hep açık dururken kalabalık görünüyordu;
+ * gruplar artık basınca açılıp kapanıyor ve kapalı grubun yanında
+ * maddelerin iş sayıları toplanıyor ki neyin beklediği yine görünsün.
+ * Açık sayfanın grubu her sayfa değişiminde kendiliğinden açılıyor.
+ * Başlıksız grup (ana sayfa, panel) ve kişinin tek maddesini gördüğü grup
+ * (muhabirde "Takvimim") katlanmıyor: tek seçenek için grup açtırmak
+ * boşuna bir basış. Menünün tamamı üst çubuktaki düğmeyle gizleniyor
+ * (Kabuk); `id` o düğmenin hedefi.
  */
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const { t } = useDil();
   const v = useVeri();
-  const [acikGrup, setAcikGrup] = useState<number | null>(null);
-  const kap = useRef<HTMLElement>(null);
-  const dugmeler = useRef<(HTMLButtonElement | null)[]>([]);
-  const kapat = () => setAcikGrup(null);
+  const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
-  useEffect(() => setAcikGrup(null), [acik]);
   useEffect(() => {
-    if (acikGrup === null) return;
-    const disari = (e: MouseEvent) => {
-      if (kap.current && !kap.current.contains(e.target as Node)) setAcikGrup(null);
-    };
-    const tus = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      dugmeler.current[acikGrup]?.focus();
-      setAcikGrup(null);
-    };
-    document.addEventListener("mousedown", disari);
-    document.addEventListener("keydown", tus);
-    return () => {
-      document.removeEventListener("mousedown", disari);
-      document.removeEventListener("keydown", tus);
-    };
-  }, [acikGrup]);
+    const g = sayfaGrubu(acik);
+    if (g) setAcikGruplar((x) => (x.includes(g) ? x : [...x, g]));
+  }, [acik]);
+  useEffect(() => acikGruplariYaz(acikGruplar), [acikGruplar]);
+
+  const degistir = (g: string) => setAcikGruplar((x) => (x.includes(g) ? x.filter((y) => y !== g) : [...x, g]));
 
   return (
-    <nav className="ana-menu" ref={kap} aria-label={t("anaMenu")}>
+    <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
+      <a className="marka" href="#/" aria-label={t("uygulama")}>
+        <Logo levha />
+      </a>
+      <span className="marka-alt">{t("markaAlt")}</span>
+      <div className="birim-kutusu">
+        <Building size={20} />
+        <div>
+          {t(BIRIM_ADI[ben.birim])}
+          <small>{t(GOREV_ADI[ben.gorev])}</small>
+        </div>
+      </div>
       {MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
-        if (!g.ad || maddeler.length === 1) return maddeler.map((m) => <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} kapat={kapat} />);
-        const sayi = maddeler.reduce((s, m) => s + (m.say?.(v, ben) ?? 0), 0);
-        const burada = maddeler.some((m) => m.sayfa === acik);
-        const id = `ana-menu-${i}`;
-        return (
-          <div className="menu-grubu" key={i}>
-            <button
-              type="button"
-              ref={(e) => {
-                dugmeler.current[i] = e;
-              }}
-              className={`grup-dugme${burada ? " burada" : ""}`}
-              aria-expanded={acikGrup === i}
-              aria-controls={id}
-              aria-current={burada ? "true" : undefined}
-              onClick={() => setAcikGrup(acikGrup === i ? null : i)}
-            >
-              {t(g.ad)}
-              {sayi > 0 && <span className="say">{sayi}</span>}
-              <ChevronDown size={15} className="ok" aria-hidden="true" />
-            </button>
-            <div className="acilir-grup" id={id} hidden={acikGrup !== i}>
+        if (!g.ad || maddeler.length === 1) {
+          return (
+            <div className="menu-grup" key={i}>
               {maddeler.map((m) => (
-                <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} kapat={kapat} />
+                <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+              ))}
+            </div>
+          );
+        }
+        const grupAcik = acikGruplar.includes(g.ad);
+        const sayi = maddeler.reduce((s, m) => s + (m.say?.(v, ben) ?? 0), 0);
+        const id = `menu-grup-${i}`;
+        return (
+          <div className="menu-grup" key={i}>
+            <button type="button" className="menu-grup-bas" aria-expanded={grupAcik} aria-controls={id} onClick={() => degistir(g.ad!)}>
+              {t(g.ad)}
+              {!grupAcik && sayi > 0 && <span className="say">{sayi}</span>}
+              <ChevronDown size={14} className="ok" aria-hidden="true" />
+            </button>
+            <div className="menu-grup-maddeler" id={id} hidden={!grupAcik}>
+              {maddeler.map((m) => (
+                <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
               ))}
             </div>
           </div>
         );
       })}
+      <div className="menu-alt">
+        <b>TRT</b>
+        {t("ornekVeriKisa")}
+      </div>
     </nav>
   );
 }
