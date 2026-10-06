@@ -4,9 +4,9 @@ TRT Arapça haber merkezi için tıklanabilir ilk prototip. Haber önerisinden
 yayına kadar bütün süreç tek kayıt üzerinde yürüyor. Planlar tek yerde
 hazırlanıyor, her birim kendi işini kendi ekranından yürütüyor.
 
-**Adres:** https://ahmetyuksel5.github.io/arabiflow/ (depo adı `arabiflow`
-olduktan sonra; öncesinde `…/trt-planlama/`). Girişsiz açılan proje planı
-sayfası: adresin sonuna `#/plan`.
+**Adres:** https://ahmetyuksel5.github.io/TRTArabiFlow/ (depo adı
+`TRTArabiFlow` olduktan sonra; öncesinde `…/trt-planlama/`). Girişsiz
+açılan proje planı sayfası: adresin sonuna `#/plan`.
 
 ## Çalıştırma
 
@@ -225,7 +225,12 @@ npm run preview  # derlenmiş hali yerelde
 - Örnek veride son iki ayın tamamlanmış işlerinden kurgusal bir arşiv var;
   göstergeler boş görünmesin diye.
 - Logo kanalın resmî dosyası (`src/varliklar/logo-trt-arabi.png`), her
-  dilde aynı. Koyu lacivert zeminlerde (sol menü, giriş, proje planı)
-  köşeleri yuvarlatılmış beyaz bir levhanın üstünde duruyor; logonun
-  "عربي" kısmı lacivert olduğu için levhasız okunmuyor. Dosyanın kendisi
-  değiştirilmedi.
+  dilde aynı. Koyu lacivert zeminlerde (giriş, proje planı) köşeleri
+  yuvarlatılmış beyaz bir levhanın üstünde duruyor; logonun "عربي" kısmı
+  lacivert olduğu için levhasız okunmuyor. Uygulamanın içinde üst çubukta,
+  beyaz zeminde. Dosyanın kendisi değiştirilmedi.
+- Menü masaüstünde üstte: üst çubuğun altındaki lacivert şeritte grup
+  adları (Planlama, Personel, İçerik ve haberler, Görevlendirmeler, İş
+  akışları, Diğer); basınca o grubun sayfaları açılıyor, bekleyen iş
+  sayısı grubun yanında. Sayfa tam genişlik. Tablette ve telefonda aynı
+  sayfalar Menü panelinde.

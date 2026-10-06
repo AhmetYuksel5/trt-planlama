@@ -12,7 +12,9 @@ import { Avatar, Bos, Icerik } from "./Parcalar";
 import Logo from "./Logo";
 
 /**
- * Üst çubuk: arama, dil, bildirimler ve kullanıcı menüsü.
+ * Üst çubuk: logo, arama, dil, bildirimler ve kullanıcı menüsü. Logo
+ * beyaz zeminde olduğu için levhasız; sol menü kalkınca markanın yeri
+ * burası oldu.
  *
  * Arama yalnız kişinin görebildiği kayıtlarda geziyor; muhabir başka
  * muhabirin paketini aramayla da bulamıyor. Bildirimler hareket
@@ -77,8 +79,9 @@ export default function UstCubuk({ ben, onMenu }: { ben: Kisi; onMenu: () => voi
       <button className="ikon-dugme menu-dugme" onClick={onMenu} aria-label={t("menuAc")}>
         <Menu size={18} />
       </button>
-      <a className="marka marka-mobil" href="#/" aria-label={t("uygulama")}>
+      <a className="marka ust-marka" href="#/" aria-label={t("uygulama")}>
         <Logo />
+        <span className="marka-alt">{t("markaAlt")}</span>
       </a>
       <div className={`arama ${acik === "arama" ? "acik" : ""}`}>
         <Search size={16} />
