@@ -4,9 +4,9 @@ TRT Arapça haber merkezi için tıklanabilir ilk prototip. Haber önerisinden
 yayına kadar bütün süreç tek kayıt üzerinde yürüyor. Planlar tek yerde
 hazırlanıyor, her birim kendi işini kendi ekranından yürütüyor.
 
-**Adres:** https://ahmetyuksel5.github.io/arabiflow/ (depo adı `arabiflow`
-olduktan sonra; öncesinde `…/trt-planlama/`). Girişsiz açılan proje planı
-sayfası: adresin sonuna `#/plan`.
+**Adres:** https://ahmetyuksel5.github.io/TRTArabiFlow/ (depo adı
+`TRTArabiFlow` olduktan sonra; öncesinde `…/trt-planlama/`). Girişsiz
+açılan proje planı sayfası: adresin sonuna `#/plan`.
 
 ## Çalıştırma
 

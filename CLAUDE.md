@@ -7,7 +7,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   çıktıyı `docs/` içine üretiyor. **Derlemeden gönderme:** `docs/` elle
   düzenlenmez, kaynak değişince yeniden derlenir.
 - GitHub Pages `main` dalındaki `docs/` klasöründen yayınlıyor. `base`
-  göreli (`./`); depo adı değişse de (trt-planlama → arabiflow)
+  göreli (`./`); depo adı değişse de (trt-planlama → TRTArabiFlow)
   yapılandırma değişmiyor.
 - Dayanağı dört belge:
   - notlardaki beş aşama ve birimler

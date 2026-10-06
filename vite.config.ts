@@ -8,7 +8,7 @@ import react from "@vitejs/plugin-react";
  * yapmıyor; çıktıyı depoya koyunca yayınlamak "gönder ve bitti" kalıyor.
  * `base` göreli: sayfalar adres çubuğundaki `#` ile açıldığı için tek bir
  * index.html var ve varlıklar ona göre bulunuyor. Böylece depo adı
- * değişse de (trt-planlama → arabiflow) ya da site kurum içi bir sunucuya
+ * değişse de (trt-planlama → TRTArabiFlow) ya da site kurum içi bir sunucuya
  * taşınsa da yapılandırmaya dokunmak gerekmiyor.
  */
 export default defineConfig({
