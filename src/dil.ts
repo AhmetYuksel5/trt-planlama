@@ -53,6 +53,8 @@ const M = {
   kullaniciMenusu: m("Kullanıcı menüsü", "قائمة المستخدم", "User menu"),
   kisiDegistir: m("Kişi değiştir / çıkış", "تغيير المستخدم / خروج", "Switch user / sign out"),
   menuAc: m("Menüyü aç", "فتح القائمة", "Open menu"),
+  menuyuGizle: m("Menüyü gizle", "إخفاء القائمة", "Hide menu"),
+  menuyuGoster: m("Menüyü göster", "إظهار القائمة", "Show menu"),
   kisiDegistirKisa: m("Kişi değiştir", "تغيير المستخدم", "Switch user"),
   tercihler: m("Tercihler", "التفضيلات", "Preferences"),
 

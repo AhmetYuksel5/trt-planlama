@@ -56,10 +56,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Kişi adı içerik değil: arayüz dilinin yazımıyla (`useDil().ad`).
     Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
 - Logo resmî dosya (`src/varliklar/logo-trt-arabi.png`, `bilesenler/Logo.tsx`);
-  her dilde aynı, dosyaya dokunulmaz. Koyu zeminde (giriş, proje planı)
-  `<Logo levha />` beyaz levhada durur ("عربي" lacivert, levhasız
-  kaybolur); uygulamanın içinde üst çubukta, beyaz zeminde levhasız. Boyu
-  yerine göre `--logo-*` token'larından. Favicon logonun "TRT" kısmından
+  her dilde aynı, dosyaya dokunulmaz. Koyu zeminde (sol menü, giriş, proje
+  planı) `<Logo levha />` beyaz levhada durur ("عربي" lacivert, levhasız
+  kaybolur); menü gizliyken ve telefonda üst çubukta, beyaz zeminde
+  levhasız. Boyu yerine göre `--logo-*` token'larından. Favicon logonun "TRT" kısmından
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
@@ -207,18 +207,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Arapçada sağdan sola kendiliğinden. Tek bilinçli istisna içerik
   hizası: içerik her dilde sağa yaslı.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız
-  oraya girer; şeritte de panelde de çıkar.
-  - Masaüstünde (1101 piksel ve üstü) sol sütun yok, sayfa tam genişlik.
-    Üst çubuğun altında lacivert şerit (`AnaMenu`); yalnız grup adları,
-    sayfalar basınca açılan listede. Aynı anda tek liste; dışarı basma,
-    Escape ve sayfa değişimi kapatır. Grupta maddelerin sayıları toplanır.
-    Başlıksız grup (ana sayfa, panel) ve kişinin tek maddesini gördüğü grup
-    doğrudan bağlantı. Üst çubuk ve şerit birlikte yapışkan (`.ust-kap`).
-  - Tablette (761–1100) şerit sığmaz; üst çubuktaki düğme Menü panelini
-    (`MobilMenu`) açar. Pencere büyüyünce panel kapanır (`Kabuk`).
+  oraya girer; sol menüde de telefondaki panelde de çıkar.
+  - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
+    kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
+    sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)
+    ve kişinin tek maddesini gördüğü grup katlanmaz.
+  - Üst çubuktaki ☰ masaüstünde menüyü tamamen gizler (sayfa tam
+    genişlik, logo üst çubuğa geçer), tablette (761–960) çekmeceyi açar.
+  - Gizleme ve açık gruplar kişiye değil tarayıcıya bağlı görünüm
+    tercihi (dil gibi): `localStorage`, `trt-planlama-menu` ve
+    `trt-planlama-menu-gruplar`; kayıt şeması değişmez.
 - Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
   bir düzen:
-  - alta sekme çubuğu (`AltCubuk`) geliyor
+  - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor
   - "Menü" (`MobilMenu`) plan kısayollarını, bütün sayfaları, dili ve
     oturumu bir panelde topluyor
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede

@@ -225,12 +225,11 @@ npm run preview  # derlenmiş hali yerelde
 - Örnek veride son iki ayın tamamlanmış işlerinden kurgusal bir arşiv var;
   göstergeler boş görünmesin diye.
 - Logo kanalın resmî dosyası (`src/varliklar/logo-trt-arabi.png`), her
-  dilde aynı. Koyu lacivert zeminlerde (giriş, proje planı) köşeleri
-  yuvarlatılmış beyaz bir levhanın üstünde duruyor; logonun "عربي" kısmı
-  lacivert olduğu için levhasız okunmuyor. Uygulamanın içinde üst çubukta,
-  beyaz zeminde. Dosyanın kendisi değiştirilmedi.
-- Menü masaüstünde üstte: üst çubuğun altındaki lacivert şeritte grup
-  adları (Planlama, Personel, İçerik ve haberler, Görevlendirmeler, İş
-  akışları, Diğer); basınca o grubun sayfaları açılıyor, bekleyen iş
-  sayısı grubun yanında. Sayfa tam genişlik. Tablette ve telefonda aynı
-  sayfalar Menü panelinde.
+  dilde aynı. Koyu lacivert zeminlerde (sol menü, giriş, proje planı)
+  köşeleri yuvarlatılmış beyaz bir levhanın üstünde duruyor; logonun
+  "عربي" kısmı lacivert olduğu için levhasız okunmuyor. Menü gizliyken üst
+  çubukta, beyaz zeminde. Dosyanın kendisi değiştirilmedi.
+- Sol menüde gruplar (Planlama, Personel, İçerik ve haberler,
+  Görevlendirmeler, İş akışları, Diğer) basınca açılıp kapanıyor; kapalı
+  grubun yanında bekleyen iş sayısı. Üst çubuktaki ☰ menüyü tamamen
+  gizliyor, sayfa tam genişliğe geçiyor; seçim tarayıcıda hatırlanıyor.
