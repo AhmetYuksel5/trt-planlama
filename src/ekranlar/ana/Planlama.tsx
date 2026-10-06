@@ -99,7 +99,14 @@ export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; basli
 }
 
 export default function PlanlamaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
-  return <CalismaAlani ben={ben} duzen="planlama" kisisel={kisisel} />;
+  const { t } = useDil();
+  return (
+    <>
+      {/* Görünen başlık yok ama ekran okuyucu sayfanın adını yine h1'den okuyor. */}
+      <h1 className="gizli-metin">{t(BIRIM_ADI.planlama)}</h1>
+      <CalismaAlani ben={ben} duzen="planlama" kisisel={kisisel} />
+    </>
+  );
 }
 
 function PlanlamaSayaclari() {
