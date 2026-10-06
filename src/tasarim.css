@@ -350,14 +350,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   .kisayollar { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 }
 .kisayol {
-  display: flex; gap: var(--ara-3); align-items: flex-start;
+  display: flex; gap: var(--ara-3); align-items: center;
   background: var(--sis); border: 1px solid transparent; border-radius: var(--yaricap-kart);
   padding: var(--ara-4); min-width: 0;
 }
 .kisayol:hover { border-color: var(--renk); }
 .kisayol .ikon { width: 44px; height: 44px; border-radius: var(--yaricap); background: var(--renk); color: #fff; display: grid; place-items: center; flex: none; }
 .kisayol b { display: block; font-size: var(--punto-orta); line-height: 1.25; }
-.kisayol small { display: block; color: var(--sonuk); margin-top: var(--ara-1); font-size: var(--punto-kucuk); }
 .renk-nextday { --renk: var(--nextday); --sis: var(--nextday-sis); }
 .renk-haftalik { --renk: var(--haftalik); --sis: var(--haftalik-sis); }
 .renk-aylik { --renk: var(--aylik); --sis: var(--aylik-sis); }
@@ -717,10 +716,15 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* --- Alanlar (detay sayfası) --- */
 
+/*
+ * Kurallar .alanlar ızgarasına bağlı: ana sayfanın çalışma alanları da
+ * "alan" sınıfını taşıyor; bağsız kural oradaki kartlara sızıp bağlantıları
+ * ve kısayol adlarını harf ortasından bölüyordu.
+ */
 .alanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--ara-3) var(--ara-4); }
-.alan small { display: block; font-size: var(--punto-mini); color: var(--sonuk); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-.alan b, .alan span { font-weight: 600; font-size: var(--punto); overflow-wrap: anywhere; }
-.alan a { color: var(--vurgu); font-weight: 600; overflow-wrap: anywhere; }
+.alanlar > .alan small { display: block; font-size: var(--punto-mini); color: var(--sonuk); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.alanlar > .alan b, .alanlar > .alan span { font-weight: 600; font-size: var(--punto); overflow-wrap: anywhere; }
+.alanlar > .alan a { color: var(--vurgu); font-weight: 600; overflow-wrap: anywhere; }
 .kilitli { display: inline-flex; align-items: center; gap: 4px; color: var(--silik); font-size: var(--punto-kucuk); font-weight: 500; }
 .metin-kutu { white-space: pre-wrap; background: var(--zemin); border-radius: var(--yaricap); padding: var(--ara-3) var(--ara-4); font-size: var(--punto); line-height: 1.7; }
 
@@ -1320,10 +1324,9 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .iz-2, .iz-3, .iz-pano { grid-template-columns: minmax(0, 1fr); }
   .iz-pano > :first-child { grid-column: auto; }
   .kisayollar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
-  .kisayol { padding: var(--ara-3); align-items: center; gap: var(--ara-2); }
+  .kisayol { padding: var(--ara-3); gap: var(--ara-2); }
   .kisayol .ikon { width: 34px; height: 34px; }
   .kisayol b { font-size: var(--punto-kucuk); }
-  .kisayol small { display: none; }
   .sayaclar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sayac { padding: var(--ara-3); gap: var(--ara-2); }
   .sayac .ikon { width: 36px; height: 36px; }

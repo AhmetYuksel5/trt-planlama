@@ -173,7 +173,6 @@ const M = {
   biMedia: m("Media Manager", "إدارة الوسائط", "Media Manager"),
   biMuhabir: m("Muhabir", "المراسلون", "Reporters"),
   biYonetim: m("Yönetim", "الإدارة", "Management"),
-  planlamaBirimi: m("Planlama Birimi", "وحدة التخطيط", "Planning Unit"),
 
   /* Görevler (personel) */
   goMuhabir: m("Muhabir", "مراسل", "Reporter"),
@@ -280,8 +279,7 @@ const M = {
   prototipeDon: m("Prototipe dön", "العودة إلى النموذج", "Back to the prototype"),
 
   /* Planlama ana sayfası */
-  planlamaAlt: m("Haber planları, öneriler, koordinasyon ve takip", "خطط الأخبار والمقترحات والتنسيق والمتابعة", "News plans, proposals, coordination and follow-up"),
-  ksNextday: m("Yarının planı", "خطة الغد", "Tomorrow's plan"),
+  ksNextday: m("Next Day", "خطة الغد", "Next Day"),
   sayfayiDuzenle: m("Sayfayı düzenle", "تخصيص الصفحة", "Customise page"),
   alanDuzenNotu: m(
     "Alanları sırala ya da kaldır; aşağıdan yenilerini ekle. Seçimin yalnız senin sayfanı değiştirir.",
@@ -296,17 +294,11 @@ const M = {
   alOzetSayilar: m("Özet sayılar", "أرقام موجزة", "Key figures"),
   alPlanKisayollari: m("Plan kısayolları", "اختصارات الخطط", "Plan shortcuts"),
   alAcikCagrilar: m("Açık öneri çağrıları", "طلبات المقترحات المفتوحة", "Open calls for proposals"),
-  ksNextdayA: m("Günlük haber planını hazırla ve muhabir önerilerini topla", "إعداد خطة الأخبار اليومية وجمع مقترحات المراسلين", "Prepare the daily plan and collect reporter proposals"),
-  ksHaftalik: m("Haftalık plan", "الخطة الأسبوعية", "Weekly plan"),
-  ksHaftalikA: m("Cumartesi – Cuma haftalık planı hazırla", "إعداد الخطة الأسبوعية من السبت إلى الجمعة", "Prepare the Saturday–Friday plan"),
+  ksHaftalik: m("Weekly", "الخطة الأسبوعية", "Weekly"),
   ksAylik: m("Aylık plan", "الخطة الشهرية", "Monthly plan"),
-  ksAylikA: m("Aylık yayın ve içerik planını hazırla", "إعداد خطة البث والمحتوى الشهرية", "Prepare the monthly broadcast and content plan"),
-  ksOzel: m("Özel yayın planı", "خطة البث الخاص", "Special broadcast"),
-  ksOzelA: m("Seçim, zirve, özel yayınlar için plan yap", "التخطيط للانتخابات والقمم والبث الخاص", "Plan elections, summits and specials"),
+  ksOzel: m("Special Coverage", "خطة البث الخاص", "Special Coverage"),
   ksSaha: m("Saha görevlendirmesi", "التكليف الميداني", "Field assignment"),
-  ksSahaA: m("Saha görevleri ve seyahat planlarını yönet", "إدارة المهام الميدانية وخطط السفر", "Manage field assignments and travel"),
   ksTakvim: m("Planlama takvimi", "تقويم التخطيط", "Planning calendar"),
-  ksTakvimA: m("Önceden bilinen seçim, zirve ve resmî günleri izle", "متابعة الانتخابات والقمم والمناسبات المعروفة مسبقا", "Track elections, summits and dates known in advance"),
   sYeniOneri: m("Yeni öneriler", "مقترحات جديدة", "New proposals"),
   sBugunGelen: m("Bugün gelen: {n}", "وصل اليوم: {n}", "Received today: {n}"),
   sPlanlanan: m("Planlanan paketler", "التقارير المخططة", "Planned packages"),

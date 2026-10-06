@@ -39,9 +39,13 @@ export interface Alan {
   Bilesen: (p: { ben: Kisi }) => ReactNode;
 }
 
-/* Bugünkü birim sayfalarının düzeni; sıra da öyle. */
+/*
+ * Bugünkü birim sayfalarının düzeni; sıra da öyle. Planlama'nın on iki
+ * alanı varsayılanda kalabalıktı; birimin istediği dört alan kaldı, öbürleri
+ * katalogda.
+ */
 export const VARSAYILAN: Record<DuzenAdi, string[]> = {
-  planlama: ["plKisayol", "plSayac", "plHafta", "plTakvim", "plToplanti", "plFaaliyet", "plSonOneri", "plPlanlar", "plHareket", "plMuhabirler", "plKoordinasyon", "plDosyalar"],
+  planlama: ["plKisayol", "plSonOneri", "plMuhabirler", "plHareket"],
   muhabir: ["muCagri", "muSayac", "muSiram", "muGorev", "muHaberler", "muBildirim", "muOneriler"],
   newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
