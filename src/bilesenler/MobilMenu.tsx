@@ -8,14 +8,14 @@ import type { Kisi } from "../veri";
 import { sayfaGorebilir } from "../yetki";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
-import { MENU, maddeGorunur } from "./SolMenu";
+import { MENU, maddeGorunur } from "./AnaMenu";
 
 /**
- * Telefonda "Menü"nün açtığı panel: plan kısayolları, bütün sayfalar,
- * dil ve oturum. Masaüstünde bunlar sol menüye ve üst çubuğa dağılmış;
- * telefonda ikisine birden yer yok, tek panelde topluyoruz. Sayfa listesi
- * sol menünün `MENU` tablosundan geliyor: yeni sayfa oraya girince burada
- * da çıkıyor.
+ * Telefonda ve tablette "Menü"nün açtığı panel: plan kısayolları, bütün
+ * sayfalar, dil ve oturum. Masaüstünde bunlar menü şeridine ve üst çubuğa
+ * dağılmış; dar ekranda şerit sığmıyor, tek panelde topluyoruz. Sayfa
+ * listesi şeridin `MENU` tablosundan geliyor (AnaMenu.tsx): yeni sayfa
+ * oraya girince burada da çıkıyor.
  */
 export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: string; onKapat: () => void }) {
   const { t, ad } = useDil();
