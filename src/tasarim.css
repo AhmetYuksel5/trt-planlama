@@ -118,6 +118,8 @@
 
   /* Workspace: bölmeler arası ayraç ve bölmenin en dar/alçak hali; daha dar bölmede sayfa okunmuyor. */
   --ayrac: 10px;
+  /* Üst şeritteki ikon düğmeleri ve kısayol kutucukları; telefonda dokunma boyu. */
+  --serit-dugme: 36px;
   --bolme-en-dar: 320px;
   --bolme-en-alcak: 300px;
 
@@ -1484,25 +1486,52 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 
 /* --- Workspace: birkaç sayfa bir arada --- */
 
-/* Ana sayfanın üstündeki sekmeler: ana sayfa, kişinin workspace'leri, yenisi. */
-.ortam-sekmeleri { display: flex; align-items: flex-end; gap: var(--ara-1); overflow-x: auto; border-bottom: 1px solid var(--cizgi); scrollbar-width: thin; }
-.ortam-sekmeleri a, .ortam-sekmeleri .yeni-ortam {
-  display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 40px; padding: 0 var(--ara-3);
-  border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none;
-  color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk); white-space: nowrap;
+/*
+ * Ana sayfanın ve workspace'in tek üst şeridi: ana sayfa, workspace'ler,
+ * açık sayfanın işleri ve kısayollar. Her şey ikon, ad üzerine gelince;
+ * eskiden ayrı satırlar (sekmeler, araç satırı, plan kutucukları) sayfanın
+ * kullanılır alanını yiyordu.
+ */
+.ana-serit {
+  display: flex; align-items: center; gap: var(--ara-2); flex: none;
+  padding-bottom: var(--ara-2); border-bottom: 1px solid var(--cizgi);
+  overflow-x: auto; scrollbar-width: thin;
 }
-.ortam-sekmeleri a:hover { color: var(--murekkep); }
-.ortam-sekmeleri a.acik { color: var(--murekkep); border-bottom-color: var(--vurgu); }
-.ortam-sekmeleri bdi { display: inline-block; max-inline-size: 22ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
-.ortam-sekmeleri .yeni-ortam { color: var(--vurgu); }
-.ortam-sekmeleri .yeni-ortam:disabled { color: var(--silik); cursor: not-allowed; }
-.ortam-sekmeleri .bos-kucuk { align-self: center; white-space: nowrap; }
+.serit-grup { display: flex; align-items: center; gap: var(--ara-1); flex: none; }
+.serit-ayrac { inline-size: 1px; block-size: 24px; background: var(--cizgi); flex: none; }
+.serit-dugme {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: none;
+  min-inline-size: var(--serit-dugme); block-size: var(--serit-dugme); padding-inline: var(--ara-2);
+  border: 1px solid transparent; border-radius: var(--yaricap); background: none;
+  color: var(--sonuk); font-weight: 700; font-size: var(--punto-kucuk);
+}
+.serit-dugme:hover { background: var(--yuzey-2); color: var(--murekkep); }
+.serit-dugme.acik { background: var(--lacivert); color: #fff; }
+.serit-dugme.pasif, .serit-dugme.pasif:hover { background: none; color: var(--silik); cursor: not-allowed; }
+.serit-dugme.yeni-ortam { border: 1px dashed var(--cizgi); color: var(--vurgu); }
+.ortam-dugmesi .sira { font-variant-numeric: tabular-nums; }
+.serit-secici .dugme-ikon { width: var(--serit-dugme); height: var(--serit-dugme); }
+
+/* Kısayollar şeridin sonunda. Renk yalnız planların beş ana başlığında ve takvimde; öbür sayfalar sade. */
+.kisayol-seridi { margin-inline-start: auto; }
+.kisayol-kutu {
+  display: inline-grid; place-items: center; flex: none; inline-size: var(--serit-dugme); block-size: var(--serit-dugme);
+  border: 1px solid transparent; border-radius: var(--yaricap); background: var(--renk); color: #fff;
+}
+.kisayol-kutu:hover { outline: 2px solid var(--renk); outline-offset: 2px; }
+.renk-genel { --renk: var(--lacivert); --sis: var(--yuzey-2); }
+.kisayol-kutu.renk-genel { background: var(--yuzey); color: var(--lacivert); border-color: var(--cizgi); }
+span.kisayol-kutu { inline-size: 28px; block-size: 28px; }
+.kisayol-listesi { display: grid; gap: var(--ara-1); }
+.kisayol-listesi li { display: flex; align-items: center; gap: var(--ara-2); padding: var(--ara-1) var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.kisayol-adi { flex: 1; min-width: 0; font-weight: 600; }
+.modul-secenek .ekle-isareti { margin-inline-start: auto; color: var(--sonuk); }
+.modul-secenek:disabled { opacity: .5; cursor: not-allowed; }
 
 /* Workspace sayfası ekran boyunda; kayan sayfa değil, bölmeler kendi içinde kayıyor. */
 .uygulama.ortam-acik { height: 100vh; height: 100dvh; min-height: 0; }
 .ortam-acik .ana { min-height: 0; }
 .ortam-acik .sayfa { flex: 1; min-height: 0; max-width: none; gap: var(--ara-3); padding-bottom: var(--ara-4); }
-.ortam-arac { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
 
 /*
  * Bölmeler tek ızgarada; yerleşim ve sıra yalnız ızgara alanından
@@ -1528,7 +1557,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .bolme-bas > svg { color: var(--lacivert); flex: none; }
 .bolme-ad { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--punto-kucuk); }
 .bolme-eylemleri { display: flex; align-items: center; gap: 2px; flex: none; }
-.bolme-menu.acilir { width: max-content; max-width: 260px; }
+.islem-menusu.acilir { width: max-content; max-width: 260px; }
 .bolme-cerceve {
   flex: 1; min-height: 0; inline-size: 100%; display: block; border: 0; background: var(--zemin);
   border-end-start-radius: var(--yaricap-kart); border-end-end-radius: var(--yaricap-kart);
@@ -1573,12 +1602,12 @@ html.gomulu body { background: var(--zemin); }
 .bolme-uyari { display: grid; justify-items: center; gap: var(--ara-3); padding-block: var(--ara-8); }
 
 @media (max-width: 760px) {
-  .ortam-sekmeleri a, .ortam-sekmeleri .yeni-ortam { min-height: var(--dokunma); }
+  .serit-dugme, .kisayol-kutu { min-inline-size: var(--dokunma); block-size: var(--dokunma); }
   .bolme-sekme-listesi button { height: var(--dokunma); }
   .ortam-acik .sayfa { padding: var(--ara-3); gap: var(--ara-2); }
   .gomulu-kabuk > .sayfa { padding: var(--ara-3); }
 }
 
 @media print {
-  .ortam-sekmeleri, .ortam-arac, .bolme-sekmeleri, .ayrac { display: none !important; }
+  .ana-serit, .bolme-sekmeleri, .ayrac { display: none !important; }
 }

@@ -1,6 +1,7 @@
 import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_ADI_EN_UZUN, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
@@ -1558,6 +1559,22 @@ export const anaSayfaKaydet = (ben: Kisi, duzen: string, alanlar: string[] | nul
 export const oneriGorunumuKaydet = (ben: Kisi, gorunum: OneriGorunumu) => {
   const d = getir();
   kaydet({ ...d, oneriGorunumu: { ...(d.oneriGorunumu ?? {}), [ben.id]: gorunum } });
+  return true;
+};
+
+/* --- Üst şeritteki kısayollar --- */
+
+/**
+ * Kişinin kısayolları ve sırası; null birimin varsayılanına döndürüyor.
+ * Ana sayfa düzeni gibi kişisel tercih: hareket yazılmıyor. Görünmeyen
+ * sayfa ve sınırın üstü düğmede olduğu gibi burada da eleniyor.
+ */
+export const kisayollariKaydet = (ben: Kisi, liste: string[] | null) => {
+  const d = getir();
+  const yeni = { ...(d.kisayollar ?? {}) };
+  if (liste) yeni[ben.id] = [...new Set(liste)].filter((k) => kisayolGorebilir(ben, k)).slice(0, KISAYOL_EN_COK);
+  else delete yeni[ben.id];
+  kaydet({ ...d, kisayollar: yeni });
   return true;
 };
 

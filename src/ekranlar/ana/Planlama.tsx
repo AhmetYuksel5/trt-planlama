@@ -36,16 +36,20 @@ import { CalismaAlani, type Alan } from "./Calisma";
  * Planlama Birimi ana sayfası (rapor Şekil 4).
  *
  * Plan üretimini ve muhabirlerden gelen editoryal girdiyi merkeze alıyor.
- * Varsayılan düzen bilerek yalın: planlara geçiş, gelen öneriler,
- * muhabirlerin durumu ve son hareketler. Birim her gün bu dördüyle
- * çalışıyor; sayaçlar, haftanın planı, takvim, koordinasyon gibi öbür
- * alanlar katalogda duruyor, isteyen "Sayfayı düzenle" ile ekliyor.
- * Sayfa başlığı yok: ana sayfa birimin kendisi, adını yazmak yer kaplıyordu.
+ * Varsayılan düzen bilerek yalın: gelen öneriler, muhabirlerin durumu ve
+ * son hareketler; planlara geçiş üst şeritteki kısayollarda. Sayaçlar,
+ * haftanın planı, takvim, koordinasyon gibi öbür alanlar katalogda duruyor,
+ * isteyen "Sayfayı düzenle" ile ekliyor. Sayfa başlığı yok: ana sayfa
+ * birimin kendisi, adını yazmak yer kaplıyordu.
  * Görseldeki tür dağılımı halkası promptun "gereksiz grafik kullanma"
  * kuralı yüzünden yok.
  */
 
-/* Kutucukta yalnız ad: açıklama satırı kutucukları uzatıyordu, adlar birimin her gün kullandığı adlar (Next Day, Weekly…). */
+/*
+ * Telefondaki Menü panelinin plan kutucukları. Ana sayfada aynı planlar
+ * üst şeritte yalnız ikon (ekranlar/ortam/Kisayollar.tsx); kutucuklar sayfada
+ * uzun yer kaplıyordu.
+ */
 const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: Anahtar }[] = [
   { sayfa: "nextday/yarin", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday" },
   { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik" },
@@ -153,7 +157,6 @@ function PlanlamaSayaclari() {
 /* Planlama'nın çalışma alanları; Next Day'i görebilen her masa ekleyebilir. */
 const veriyle = (Bilesen: (p: { d: Durum }) => ReactNode) => () => <Bilesen d={useVeri()} />;
 export const PLANLAMA_ALANLARI: Alan[] = [
-  { id: "plKisayol", ad: "alPlanKisayollari", genis: true, grup: "planlama", sayfa: "nextday", Bilesen: () => <PlanKisayollari /> },
   { id: "plSayac", ad: "alOzetSayilar", genis: true, grup: "planlama", sayfa: "nextday", Bilesen: () => <PlanlamaSayaclari /> },
   { id: "plHafta", ad: "buHaftaninPlani", genis: true, grup: "planlama", sayfa: "haftalik", Bilesen: veriyle(HaftaKarti) },
   { id: "plTakvim", ad: "bugununTakvimi", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(BugununTakvimi) },

@@ -1,4 +1,4 @@
-import { Columns2, LayoutGrid, LayoutPanelLeft, PanelsTopLeft, Pencil, Plus, Rows2, Trash2 } from "lucide-react";
+import { Columns2, LayoutGrid, LayoutPanelLeft, PanelsTopLeft, Pencil, Rows2, SquarePlus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Bos, Pencere } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -6,12 +6,12 @@ import { bolmeDegistir, bolmeEkle, bolmeKapat, bolmePaylari, bolmeTasi, ortamAdl
 import { BOLME_EN_COK, ORTAM_ADI_EN_UZUN, bolmePayi, ortamBul, yerlesim } from "../../ortam";
 import { ORTAM_DUZENLERI, useVeri, type Bolme, type Kisi, type Ortam, type OrtamDuzeni } from "../../veri";
 import { git, type BolmeBildirimi, type BolmeKomutu } from "../../yol";
-import { IkonDugme } from "../nextday/Bolumler";
 import { useTelefon } from "../takvim/ortak";
 import { Ayrac, BolmeCercevesi, BolmeEylemleri, useModul, type BolmeDurumu, type BolmeIslemleri } from "./Bolme";
 import { acikBolmeyiYaz, bolmeYolu, bolmeYolunuYaz, bolmeyiUnut, buyukBolmeyiYaz, ortamiUnut, useOrtamGorunumu } from "./gorunum";
+import { IslemMenusu } from "./IslemMenusu";
 import { ModulSecici } from "./ModulSecici";
-import { OrtamSekmeleri, useOrtamAdi } from "./Sekmeler";
+import { AnaSerit, useOrtamAdi } from "./Serit";
 
 /**
  * Workspace: kişinin birlikte açtığı sayfalar. Her bölme uygulamanın
@@ -28,13 +28,23 @@ const DUZEN: Record<OrtamDuzeni, { ad: Anahtar; ikon: ReactNode }> = {
   sekme: { ad: "duzenSekme", ikon: <PanelsTopLeft size={15} /> },
 };
 
+/* Üst şeritte yalnız ikon; adı üzerine gelince. */
 function DuzenSecici({ deger, degistir }: { deger: OrtamDuzeni; degistir: (d: OrtamDuzeni) => void }) {
   const { t } = useDil();
   return (
-    <div className="gorunum-secici" role="group" aria-label={t("duzen")}>
+    <div className="gorunum-secici serit-secici" role="group" aria-label={t("duzen")}>
       {ORTAM_DUZENLERI.map((d) => (
-        <button key={d} type="button" className={`dugme dugme-sade dugme-kucuk ${deger === d ? "secili" : ""}`} aria-pressed={deger === d} data-duzen={d} onClick={() => degistir(d)}>
-          {DUZEN[d].ikon} {t(DUZEN[d].ad)}
+        <button
+          key={d}
+          type="button"
+          className={`dugme dugme-sade dugme-ikon ${deger === d ? "secili" : ""}`}
+          aria-pressed={deger === d}
+          aria-label={t(DUZEN[d].ad)}
+          title={t(DUZEN[d].ad)}
+          data-duzen={d}
+          onClick={() => degistir(d)}
+        >
+          {DUZEN[d].ikon}
         </button>
       ))}
     </div>
@@ -86,9 +96,15 @@ export default function OrtamSayfasi({ ben, id }: { ben: Kisi; id?: string }) {
   return (
     <>
       <h1 className="gizli-metin">{o ? adi(o) : t("ortam")}</h1>
-      <OrtamSekmeleri ben={ben} acik={id} />
       {/* Workspace değişince bölmeler, seçici ve sürükleme durumu sıfırdan kurulsun. */}
-      {o ? <OrtamGovdesi key={o.id} ben={ben} ortam={o} /> : <Bos metin={t("ortamBulunamadi")} ikon={<LayoutPanelLeft size={28} />} />}
+      {o ? (
+        <OrtamGovdesi key={o.id} ben={ben} ortam={o} />
+      ) : (
+        <>
+          <AnaSerit ben={ben} acik={id} />
+          <Bos metin={t("ortamBulunamadi")} ikon={<LayoutPanelLeft size={28} />} />
+        </>
+      )}
     </>
   );
 }
@@ -134,6 +150,7 @@ function OrtamGovdesi({ ben, ortam: o }: { ben: Kisi; ortam: Ortam }) {
   const gosterilen = canli ? o.bolmeler.map((b) => (canli[b.id] === undefined ? b : { ...b, pay: { ...b.pay, [eksen]: canli[b.id] } })) : o.bolmeler;
   const y = yerlesim(duzen, gosterilen, { buyuk, acik: gorunum.acik[o.id] });
   const dolu = o.bolmeler.length >= BOLME_EN_COK;
+  const eklemeAdi = dolu ? t("bolmeDolu", { n: BOLME_EN_COK }) : t("modulEkle");
   const durumu = (b: Bolme): BolmeDurumu => durumlar[b.id] ?? { yol: bolmeYolu(b.id, b.yol), geri: false };
 
   const islemler = (b: Bolme, i: number): BolmeIslemleri => ({
@@ -179,16 +196,35 @@ function OrtamGovdesi({ ben, ortam: o }: { ben: Kisi; ortam: Ortam }) {
 
   return (
     <>
-      <div className="ortam-arac">
-        {!telefon && <DuzenSecici deger={o.duzen} degistir={(d) => ortamDuzeni(ben, o.id, d)} />}
-        <button type="button" className="dugme dugme-kucuk" onClick={() => setSecici({})} disabled={dolu}>
-          <Plus size={15} /> {t("modulEkle")}
-        </button>
-        {dolu && <span className="bos-kucuk">{t("bolmeDolu", { n: BOLME_EN_COK })}</span>}
-        <span className="bosluk-esnek" />
-        <IkonDugme ikon={<Pencil size={15} />} etiket={t("ortamiAdlandir")} onClick={() => setAdlandir(true)} />
-        <IkonDugme ikon={<Trash2 size={15} />} etiket={t("ortamiSil")} ton="kotu-yazi" onClick={sil} />
-      </div>
+      <AnaSerit
+        ben={ben}
+        acik={o.id}
+        ek={
+          <>
+            {!telefon && <DuzenSecici deger={o.duzen} degistir={(d) => ortamDuzeni(ben, o.id, d)} />}
+            {/* Pasif düğme ipucu göstermiyor; sınırda düğme odaklanabilir kalıyor, nedeni ipucunda. */}
+            <button
+              type="button"
+              className={`serit-dugme ${dolu ? "pasif" : ""}`}
+              onClick={() => !dolu && setSecici({})}
+              aria-disabled={dolu}
+              aria-label={eklemeAdi}
+              title={eklemeAdi}
+              data-modul-ekle
+            >
+              <SquarePlus size={18} />
+            </button>
+            <IslemMenusu etiket={t("ortamIslemleri")} dugmeSinifi="serit-dugme">
+              <button type="button" role="menuitem" className="acilir-satir" onClick={() => setAdlandir(true)}>
+                <Pencil size={16} /> {t("ortamiAdlandir")}
+              </button>
+              <button type="button" role="menuitem" className="acilir-satir kotu-yazi" onClick={sil}>
+                <Trash2 size={16} /> {t("ortamiSil")}
+              </button>
+            </IslemMenusu>
+          </>
+        }
+      />
 
       {o.bolmeler.length === 0 ? (
         <Bos metin={t("ortamBos")} ikon={<LayoutPanelLeft size={28} />} />

@@ -771,7 +771,7 @@ export interface Ortam {
 }
 
 export interface Durum {
-  surum: 14;
+  surum: 15;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -797,6 +797,8 @@ export interface Durum {
   oneriGorunumu?: Record<string, OneriGorunumu>;
   /** Kişinin workspace'leri (kişi → sekme sırasıyla); ana sayfa düzeni gibi kişisel. */
   ortamlar?: Record<string, Ortam[]>;
+  /** Kişinin üst şeritteki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
+  kisayollar?: Record<string, string[]>;
   sayac: number;
 }
 
@@ -811,9 +813,9 @@ export interface Durum {
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
- * takvimi, faaliyetler, v14: workspace).
+ * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları).
  */
-const SAKLA = "trt-planlama-v14";
+const SAKLA = "trt-planlama-v15";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
@@ -858,7 +860,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 14) return d;
+      if (d.surum === 15) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */

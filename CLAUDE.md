@@ -63,12 +63,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v14`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v15`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v14-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v15-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -82,11 +82,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`kişi:düzen`). Alan eklemek için alanın `sayfa`'sını görebilmek gerekir
   ("muhabir" yalnız muhabirin kendi işi, "panel" kapsamı olan yönetici).
   Müdür birime inince birimin varsayılanını görür (`kisisel={false}`).
-  Planlama'nın sayfasında başlık yok; varsayılanı dört alan (plan
-  kısayolları, muhabir önerileri, muhabirlerin durumu, son hareketler).
-  Kısayol kutucuğunda yalnız ad, açıklama yok; Türkçe ve İngilizce adlar
-  birimin kullandığı adlar (Next Day, Weekly, Special Coverage), Arapça
-  kendi adları.
+  Planlama'nın sayfasında başlık yok; varsayılanı üç alan (muhabir
+  önerileri, muhabirlerin durumu, son hareketler). Plan kısayolları alan
+  değil, üst şeritte (aşağıda).
   Yeni kart da böyle eklenir: birim dosyasındaki `*_ALANLARI` listesine.
   Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
   için açılışta okunursa döngüde tanımsız kalır.
@@ -206,10 +204,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sorumlu muhabiri olduğu faaliyeti görür (`faaliyetGorebilir`).
   - Hafta Cumartesi başlar. Renk yalnız öncelikte (`.on-*`); hatırlatma
     uygulama içinde (yan panel, ana sayfa kartı, menü sayısı).
-  - Ana sayfanın plan kısayollarında (`PlanKisayollari`, telefonda Menü
-    de) altıncı kutucuk; beş ana başlıktan biri olmadığı için altıncı
-    renk değil, lacivert (`.renk-takvim`). Altı kutucuk tek sırada yalnız
-    1800 pikselden geniş ekranda, altında üçerli iki sıra.
+  - Üst şeridin varsayılan kısayollarında ve telefondaki Menü'nün plan
+    kutucuklarında (`PlanKisayollari`) altıncı; beş ana başlıktan biri
+    olmadığı için altıncı renk değil, lacivert (`.renk-takvim`).
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
     süre korunur, kenar tutamacı tek ucu değiştirir.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
@@ -220,9 +217,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
   arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
   akışı panosunun adı.
-  - Ana sayfanın üstündeki sekmelerde durur (`OrtamSekmeleri`): Ana sayfa,
-    kişinin workspace'leri, "New Workspace". Menüde ayrı madde değil, ana
-    sayfanın alt sayfası; menüde ana sayfa vurgulu kalır.
+  - Üst şeritte durur (aşağıda): ana sayfa, kişinin workspace'leri, "+".
+    Menüde ayrı madde değil, ana sayfanın alt sayfası; menüde ana sayfa
+    vurgulu kalır.
   - Kayıtta `Durum.ortamlar` (kişi → workspace'ler), eylemler
     `eylemler.ts → ortam*/bolme*`, kurallar `ortam.ts` (sınırlar,
     `BOLMEYE_GIRMEZ`, `yerlesim`). Bölmeye kişinin menüde gördüğü sayfalar
@@ -246,6 +243,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Bölmenin içindeki yer, açık sekme ve büyütülen bölme tarayıcıda
     (`trt-planlama-ortam`), kayıtta değil: her tıklama bütün bölmelere
     kaydı yeniden okutmasın.
+- Üst şerit (`ekranlar/ortam/Serit.tsx → AnaSerit`): ana sayfanın ve
+  workspace'in tek satırı; bütün birimlerde. Sayfanın kullanılır alanı
+  geniş kalsın diye her şey ikon, ad ipucunda (`title`, `aria-label`).
+  Ayrı sekme şeridi, araç satırı ya da büyük kutucuk eklenmez; yeni iş bu
+  şeride ikon olarak girer.
+  - Başta ana sayfa, kişinin workspace'leri (sıra numarasıyla, ad yok),
+    "+" (New Workspace).
+  - Ortada açık sayfanın işleri (`ek`):
+    - ana sayfada "Sayfayı düzenle" (`Calisma.tsx → SayfaDuzenDugmesi`;
+      düzen kipi şeritle alanlar arasında `SeritteDuzen` ile paylaşılıyor);
+    - workspace'te yerleşim, modül ekleme ve ⋯ (adlandır, sil).
+  - Sonda kişinin kısayolları (`Kisayollar.tsx`). Kurallar `kisayol.ts`:
+    - varsayılan planların beş ana başlığı ve takvim; muhabirde kendi
+      işleri;
+    - görebildiği sayfalar, en çok 10.
+  - Kısayollar kayıtta `Durum.kisayollar` (kişi → sıralı yol), eylem
+    `kisayollariKaydet`. Ad, ikon ve renk menüden. Renk yalnız planların
+    ana başlıklarında, öbür sayfalar sade (`.renk-genel`).
+  - Sınırda düğme pasif görünür ama odaklanabilir kalır (`aria-disabled`);
+    nedeni ipucunda, çünkü pasif düğme ipucu göstermiyor.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız
   oraya girer; sol menüde de telefondaki panelde de çıkar.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp

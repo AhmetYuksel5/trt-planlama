@@ -24,7 +24,8 @@ import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
 import OrtamSayfasi from "./ekranlar/ortam/Ortam";
-import { OrtamSekmeleri } from "./ekranlar/ortam/Sekmeler";
+import { AnaSerit } from "./ekranlar/ortam/Serit";
+import { SayfaDuzenDugmesi, SeritteDuzen } from "./ekranlar/ana/Calisma";
 import Takvim from "./ekranlar/takvim/Takvim";
 import { useBen } from "./oturum";
 import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
@@ -88,10 +89,11 @@ export default function App() {
         icerik = GOMULU ? (
           <AnaSayfa ben={ben} />
         ) : (
-          <>
-            <OrtamSekmeleri ben={ben} />
+          // "Sayfayı düzenle" ayrı satırda değil, üst şeritte.
+          <SeritteDuzen.Provider value={true}>
+            <AnaSerit ben={ben} ek={<SayfaDuzenDugmesi />} />
             <AnaSayfa ben={ben} />
-          </>
+          </SeritteDuzen.Provider>
         );
         break;
       case "ortam":
