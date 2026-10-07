@@ -291,6 +291,7 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   profil: BIRIMLER,
   plan: BIRIMLER,
   takvim: BIRIMLER,
+  ortam: BIRIMLER,
 };
 
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */

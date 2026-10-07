@@ -741,8 +741,37 @@ export interface Hareket {
 /** Plan ekranında gelen öneriler: müstakil kart ya da tek satır. */
 export type OneriGorunumu = "kart" | "liste";
 
+/* --- Workspace: birkaç sayfayı bir arada açan kişisel çalışma ortamı --- */
+
+/** Yan yana, alt alta, 2×2 ızgara ya da tek seferde bir bölme (sekmeli). */
+export const ORTAM_DUZENLERI = ["yan", "alt", "izgara", "sekme"] as const;
+export type OrtamDuzeni = (typeof ORTAM_DUZENLERI)[number];
+/** Ayraçla boyutlanan iki yerleşim; payı her biri için ayrı tutuluyor. */
+export type BolmeEkseni = "yan" | "alt";
+
+export interface Bolme {
+  id: string;
+  /** Bölmede açılan sayfa, `#/` olmadan: "nextday", "paketler/p-1". */
+  yol: string;
+  /*
+   * Ayraçla verilen boyut (fr). Bölmenin üstünde duruyor: taşıma ya da
+   * kapatmada ayrı bir oranlar dizisi bölmelerle hizasını kaybederdi.
+   */
+  pay?: Partial<Record<BolmeEkseni, number>>;
+}
+
+export interface Ortam {
+  id: string;
+  /** Adı verilmemişse "Workspace {no}". */
+  no: number;
+  ad?: string;
+  duzen: OrtamDuzeni;
+  /** Dizideki sıra ekrandaki sıra. */
+  bolmeler: Bolme[];
+}
+
 export interface Durum {
-  surum: 13;
+  surum: 14;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -766,6 +795,8 @@ export interface Durum {
   anaSayfa?: Record<string, string[]>;
   /** Kişinin plan ekranlarındaki öneri görünümü (kişi → kart ya da liste); yoksa kart. */
   oneriGorunumu?: Record<string, OneriGorunumu>;
+  /** Kişinin workspace'leri (kişi → sekme sırasıyla); ana sayfa düzeni gibi kişisel. */
+  ortamlar?: Record<string, Ortam[]>;
   sayac: number;
 }
 
@@ -780,39 +811,94 @@ export interface Durum {
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
- * takvimi, faaliyetler).
+ * takvimi, faaliyetler, v14: workspace).
  */
-const SAKLA = "trt-planlama-v13";
+const SAKLA = "trt-planlama-v14";
 
-const yukle = (): Durum => {
+/*
+ * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
+ * kaydı paylaşıyor; iki sekme de öyle. Her kopyanın bellekte kendi `durum`u
+ * var, `kaydet` kaydın tamamını yazıyor: bayat kopyayla yazan, öbürünün
+ * işini siler. Bu yüzden her yazış yeni bir iz bırakıyor; `getir` iz
+ * değişmişse kaydı yeniden okuyor, yani her eylem en taze kayıttan
+ * başlıyor. Aynı kökenli çerçeveler tek iş parçacığında çalıştığından
+ * oku-değiştir-yaz arada bölünmüyor. `storage` olayı da öbür kopyaları
+ * yeniden çizdiriyor.
+ */
+const IZ = `${SAKLA}-iz`;
+const izOku = () => {
+  try {
+    return localStorage.getItem(IZ);
+  } catch {
+    return null;
+  }
+};
+const yeniIz = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+
+let iz = izOku();
+
+const yaz = (d: Durum) => {
+  try {
+    localStorage.setItem(SAKLA, JSON.stringify(d));
+    iz = yeniIz();
+    localStorage.setItem(IZ, iz);
+  } catch {
+    /* saklanamazsa bellekte kalır */
+  }
+};
+
+/*
+ * Kayıt yoksa örnek veri hemen yazılıyor: workspace'in bölmeleri açılırken
+ * her biri kendi örneğini kurmasın, hepsi aynı kaydı okusun. Başka bir
+ * kopyanın olayıyla tazelerken yazılmıyor; yoksa kopyalar sırayla birbirinin
+ * örneğini yazıp durur.
+ */
+const yukle = (eksikseYaz: boolean): Durum => {
   try {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 13) return d;
+      if (d.surum === 14) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
   }
-  return ORNEK();
+  const d = ORNEK();
+  if (eksikseYaz) yaz(d);
+  return d;
 };
 
-let durum: Durum = yukle();
+let durum: Durum = yukle(true);
 const dinleyiciler = new Set<() => void>();
+const bildir = () => dinleyiciler.forEach((d) => d());
 
-export const getir = () => durum;
+/** Başka kopya yazdıysa kaydı yeniden oku; değiştiyse true. */
+const tazele = () => {
+  const yeni = izOku();
+  if (yeni === iz) return false;
+  iz = yeni;
+  durum = yukle(false);
+  return true;
+};
+
+/* Haber vermiyor: çizim sırasında da çağrılıyor (Takvim); yeniden çizim `storage` olayından. */
+export const getir = () => {
+  tazele();
+  return durum;
+};
 
 export const kaydet = (yeni: Durum) => {
   durum = yeni;
-  try {
-    localStorage.setItem(SAKLA, JSON.stringify(yeni));
-  } catch {
-    /* saklanamazsa bellekte kalır */
-  }
-  dinleyiciler.forEach((d) => d());
+  yaz(yeni);
+  bildir();
 };
 
 export const sifirla = () => kaydet(ORNEK());
+
+/* Başka bölme ya da sekme yazınca bu kopya da yeni kayıtla çizilsin; anahtarsız olay localStorage.clear. */
+window.addEventListener("storage", (e) => {
+  if ((e.key === IZ || e.key === null) && tazele()) bildir();
+});
 
 export function useVeri(): Durum {
   return useSyncExternalStore(

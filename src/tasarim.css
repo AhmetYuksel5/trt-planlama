@@ -116,6 +116,11 @@
   --menu-genislik: 244px;
   --ust-yukseklik: 60px;
 
+  /* Workspace: bölmeler arası ayraç ve bölmenin en dar/alçak hali; daha dar bölmede sayfa okunmuyor. */
+  --ayrac: 10px;
+  --bolme-en-dar: 320px;
+  --bolme-en-alcak: 300px;
+
   --yazi: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
   --yazi-arapca: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
   /* Arapça harekeler ve noktalar için Latin metinden biraz geniş satır. */
@@ -1475,4 +1480,105 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .tk-satir-dugme { flex-basis: 100%; }
   .form .tk-oncelik-secici label { min-height: var(--dokunma); }
   .tk-hatirlatma-zamani { padding-inline-start: var(--ara-1); }
+}
+
+/* --- Workspace: birkaç sayfa bir arada --- */
+
+/* Ana sayfanın üstündeki sekmeler: ana sayfa, kişinin workspace'leri, yenisi. */
+.ortam-sekmeleri { display: flex; align-items: flex-end; gap: var(--ara-1); overflow-x: auto; border-bottom: 1px solid var(--cizgi); scrollbar-width: thin; }
+.ortam-sekmeleri a, .ortam-sekmeleri .yeni-ortam {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 40px; padding: 0 var(--ara-3);
+  border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none;
+  color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk); white-space: nowrap;
+}
+.ortam-sekmeleri a:hover { color: var(--murekkep); }
+.ortam-sekmeleri a.acik { color: var(--murekkep); border-bottom-color: var(--vurgu); }
+.ortam-sekmeleri bdi { display: inline-block; max-inline-size: 22ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.ortam-sekmeleri .yeni-ortam { color: var(--vurgu); }
+.ortam-sekmeleri .yeni-ortam:disabled { color: var(--silik); cursor: not-allowed; }
+.ortam-sekmeleri .bos-kucuk { align-self: center; white-space: nowrap; }
+
+/* Workspace sayfası ekran boyunda; kayan sayfa değil, bölmeler kendi içinde kayıyor. */
+.uygulama.ortam-acik { height: 100vh; height: 100dvh; min-height: 0; }
+.ortam-acik .ana { min-height: 0; }
+.ortam-acik .sayfa { flex: 1; min-height: 0; max-width: none; gap: var(--ara-3); padding-bottom: var(--ara-4); }
+.ortam-arac { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+
+/*
+ * Bölmeler tek ızgarada; yerleşim ve sıra yalnız ızgara alanından
+ * (ortam.ts → yerlesim). Bölme DOM'da yer değiştirmiyor: iframe taşınırsa
+ * yeniden yüklenir.
+ */
+.ortam-sahne { flex: 1; min-height: 0; display: grid; overflow: auto; }
+.ortam-sahne[data-duzen="izgara"] { gap: var(--ara-3); }
+/* Sürüklerken fare iframe'in üstüne gelince olayları iframe yutmasın. */
+.ortam-sahne.suruklen { user-select: none; }
+.ortam-sahne.suruklen .bolme-cerceve { pointer-events: none; }
+.ortam-sahne.suruklen[data-duzen="yan"] { cursor: col-resize; }
+.ortam-sahne.suruklen[data-duzen="alt"] { cursor: row-resize; }
+
+.bolme {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); box-shadow: var(--golge-kart);
+}
+.bolme:focus-within { border-color: var(--vurgu); }
+/* Arkadaki bölme görünmüyor ama boyutunu koruyor: içindeki sayfa düzen değiştirip sıçramasın. */
+.bolme.arkada { visibility: hidden; }
+.bolme-bas { display: flex; align-items: center; gap: var(--ara-2); min-height: var(--dokunma); padding-block: 2px; padding-inline: var(--ara-3) var(--ara-1); border-bottom: 1px solid var(--cizgi); }
+.bolme-bas > svg { color: var(--lacivert); flex: none; }
+.bolme-ad { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--punto-kucuk); }
+.bolme-eylemleri { display: flex; align-items: center; gap: 2px; flex: none; }
+.bolme-menu.acilir { width: max-content; max-width: 260px; }
+.bolme-cerceve {
+  flex: 1; min-height: 0; inline-size: 100%; display: block; border: 0; background: var(--zemin);
+  border-end-start-radius: var(--yaricap-kart); border-end-end-radius: var(--yaricap-kart);
+}
+
+/* Sekmelide bölmenin adı ve işlemleri sahnenin üstündeki satırda. */
+.ortam-sahne[data-duzen="sekme"] .bolme-bas { display: none; }
+.ortam-sahne[data-duzen="sekme"] .bolme-cerceve { border-radius: var(--yaricap-kart); }
+.bolme-sekmeleri { display: flex; align-items: center; gap: var(--ara-2); }
+.bolme-sekme-listesi { flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.bolme-sekme-listesi button { flex: none; white-space: nowrap; }
+
+/* Ayraç: ince tutamaç; dokunmatik ekranda yakalama alanı parmak boyunda. */
+.ayrac { position: relative; z-index: 1; touch-action: none; border-radius: var(--yaricap); }
+.ayrac[aria-orientation="vertical"] { cursor: col-resize; }
+.ayrac[aria-orientation="horizontal"] { cursor: row-resize; }
+.ayrac::after { content: ""; position: absolute; inset: 0; margin: auto; border-radius: var(--yaricap-hap); background: var(--cizgi); }
+.ayrac[aria-orientation="vertical"]::after { inline-size: 4px; block-size: 48px; }
+.ayrac[aria-orientation="horizontal"]::after { block-size: 4px; inline-size: 48px; }
+.ayrac:hover::after, .ayrac:focus-visible::after, .suruklen .ayrac::after { background: var(--vurgu); }
+.ayrac:focus-visible { outline: 2px solid var(--vurgu); outline-offset: -2px; }
+@media (pointer: coarse) {
+  .ayrac::before { content: ""; position: absolute; }
+  .ayrac[aria-orientation="vertical"]::before { inset-block: 0; inset-inline: calc((var(--ayrac) - var(--dokunma)) / 2); }
+  .ayrac[aria-orientation="horizontal"]::before { inset-inline: 0; inset-block: calc((var(--ayrac) - var(--dokunma)) / 2); }
+}
+
+/* Modül seçici: menünün grupları, büyük düğmeler. */
+.modul-secici { display: grid; gap: var(--ara-4); }
+.modul-grup h3 { font-size: var(--punto-kucuk); color: var(--sonuk); font-weight: 700; margin-bottom: var(--ara-2); }
+.modul-secenekler { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: var(--ara-2); }
+.modul-secenek {
+  display: flex; align-items: center; gap: var(--ara-2); min-height: var(--dokunma); padding: var(--ara-2) var(--ara-3);
+  border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); color: var(--murekkep); font-weight: 600; text-align: start;
+}
+.modul-secenek:hover { border-color: var(--vurgu); color: var(--vurgu); }
+.modul-secenek svg { color: var(--lacivert); flex: none; }
+
+/* Bölmenin içi: uygulama menüsüz ve üst çubuksuz (gömülü kip). */
+html.gomulu body { background: var(--zemin); }
+.gomulu-kabuk > .sayfa { max-width: none; padding: var(--ara-4); }
+.bolme-uyari { display: grid; justify-items: center; gap: var(--ara-3); padding-block: var(--ara-8); }
+
+@media (max-width: 760px) {
+  .ortam-sekmeleri a, .ortam-sekmeleri .yeni-ortam { min-height: var(--dokunma); }
+  .bolme-sekme-listesi button { height: var(--dokunma); }
+  .ortam-acik .sayfa { padding: var(--ara-3); gap: var(--ara-2); }
+  .gomulu-kabuk > .sayfa { padding: var(--ara-3); }
+}
+
+@media print {
+  .ortam-sekmeleri, .ortam-arac, .bolme-sekmeleri, .ayrac { display: none !important; }
 }

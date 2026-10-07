@@ -37,11 +37,15 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
       if (kap.current && !kap.current.contains(e.target as Node)) setAcik("");
     };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setAcik("");
+    // Workspace bölmesine (iframe) basmak bu belgeye tıklama göndermiyor; pencere odağı kaybedince de kapansın.
+    const odakGitti = () => setAcik("");
     document.addEventListener("mousedown", kapat);
     document.addEventListener("keydown", esc);
+    window.addEventListener("blur", odakGitti);
     return () => {
       document.removeEventListener("mousedown", kapat);
       document.removeEventListener("keydown", esc);
+      window.removeEventListener("blur", odakGitti);
     };
   }, []);
 

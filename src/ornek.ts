@@ -2283,7 +2283,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 13,
+    surum: 14,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,

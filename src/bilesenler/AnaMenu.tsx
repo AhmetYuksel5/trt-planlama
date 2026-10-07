@@ -8,6 +8,7 @@ import {
   CalendarRange,
   ChartColumn,
   ChevronDown,
+  CircleUser,
   Clapperboard,
   Contact,
   Gauge,
@@ -35,6 +36,7 @@ import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
+import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
 import Logo from "./Logo";
@@ -49,7 +51,7 @@ import Logo from "./Logo";
  * gri bir noktayla işaretli.
  */
 
-interface Madde {
+export interface Madde {
   sayfa: string;
   ad: Anahtar;
   adMuhabir?: Anahtar;
@@ -154,6 +156,20 @@ export const MENU: Grup[] = [
   },
 ];
 
+/** Maddenin kişiye göre adı: muhabirin menüsü kendi işine daralıyor ("İşlerim", "Önerilerim"). */
+export const maddeAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad);
+
+/* Menüde olmayan ama adresle açılan sayfa; workspace bölmesinin başlığı onu da adlandırsın. */
+const PROFIL: Madde = { sayfa: "profil", ad: "profilim", ikon: CircleUser };
+
+/** Sayfanın menü maddesi: workspace bölmesi adını ve ikonunu buradan alıyor. */
+export const sayfaMaddesi = (sayfa: string): Madde | undefined =>
+  sayfa === PROFIL.sayfa ? PROFIL : MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === sayfa);
+
+/** Workspace'e eklenebilecek sayfalar, menünün gruplarıyla; kişi menüde ne görüyorsa o. */
+export const bolmeModulleri = (ben: Kisi) =>
+  MENU.map((g) => ({ ad: g.ad, maddeler: g.maddeler.filter((m) => maddeGorunur(ben, m) && bolmeyeGirer(ben, m.sayfa)) })).filter((g) => g.maddeler.length > 0);
+
 /*
  * Açık gruplar tarayıcıda hatırlanıyor (dil seçimi gibi kişiye değil
  * tarayıcıya bağlı bir görünüm tercihi; kayıt şeması değişmiyor). Özel
@@ -187,7 +203,7 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   return (
     <a href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""} aria-current={acik === m.sayfa ? "page" : undefined}>
       <Ikon size={18} />
-      {t(ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad)}
+      {t(maddeAdi(ben, m))}
       {sayi > 0 ? <span className="say">{sayi}</span> : m.taslak ? <span className="taslak-nokta" title={t("taslakAkis")} /> : null}
     </a>
   );

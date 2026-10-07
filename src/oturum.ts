@@ -12,15 +12,26 @@ import { kisiBul, useVeri, type Kisi } from "./veri";
 
 const SAKLA = "trt-planlama-oturum";
 
-let kisiId: string | null = (() => {
+const oku = () => {
   try {
     return localStorage.getItem(SAKLA);
   } catch {
     return null;
   }
-})();
+};
+
+let kisiId: string | null = oku();
 
 const dinleyiciler = new Set<() => void>();
+
+/* Çıkış üst pencerede; açık bölmeler ve öbür sekmeler eski kişiyle kalmasın. */
+window.addEventListener("storage", (e) => {
+  if (e.key !== SAKLA && e.key !== null) return;
+  const yeni = oku();
+  if (yeni === kisiId) return;
+  kisiId = yeni;
+  dinleyiciler.forEach((d) => d());
+});
 
 const ayarla = (id: string | null) => {
   kisiId = id;

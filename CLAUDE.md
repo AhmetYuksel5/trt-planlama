@@ -63,10 +63,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v13`;
+- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v14`;
   şema değişince anahtar da değişir)
   ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
   içindeki yükle/kaydet değişecek.
+  - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
+    Her yazış bir iz bırakır (`trt-planlama-v14-iz`); `getir` iz
+    değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
+  - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
+  - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
+    kopyası bayat olabilir, onunla yazma.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
   Yetki hem düğmede hem eylemde soruluyor.
 - Ana sayfa çalışma alanlarından oluşur (`ekranlar/ana/Calisma.tsx`):
@@ -211,6 +217,35 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
   Arapçada sağdan sola kendiliğinden. Tek bilinçli istisna içerik
   hizası: içerik her dilde sağa yaslı.
+- Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
+  arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
+  akışı panosunun adı.
+  - Ana sayfanın üstündeki sekmelerde durur (`OrtamSekmeleri`): Ana sayfa,
+    kişinin workspace'leri, "New Workspace". Menüde ayrı madde değil, ana
+    sayfanın alt sayfası; menüde ana sayfa vurgulu kalır.
+  - Kayıtta `Durum.ortamlar` (kişi → workspace'ler), eylemler
+    `eylemler.ts → ortam*/bolme*`, kurallar `ortam.ts` (sınırlar,
+    `BOLMEYE_GIRMEZ`, `yerlesim`). Bölmeye kişinin menüde gördüğü sayfalar
+    girer (`AnaMenu.tsx → bolmeModulleri`).
+  - Bölme uygulamanın kendisi: iframe, `?bolme=1` gömülü kip
+    (`yol.ts → GOMULU`, `bilesenler/Gomulu.tsx`). Menü, üst çubuk ve demo
+    şeridi yok. Giriş ekranı, proje planı ve workspace bölmede açılmaz;
+    yarının planını yalnız üst pencere açar.
+  - Bölme geçmişi büyütmeden gezinir. Navigation API geçmişe ekleyen adres
+    değişimini yerinde değişime çevirir; önceki yollar bölmenin kendi
+    yığınındadır. Bölme yerini `postMessage` ile bildirir
+    (`BolmeBildirimi`), üst pencere `BolmeKomutu` gönderir.
+  - iframe DOM'da taşınmaz, `src`'i değişmez; taşınırsa yeniden yüklenir,
+    içindeki iş gider.
+    - Sıra ve yerleşim yalnız ızgara alanından (`gridArea`).
+    - Arkadaki bölme `visibility: hidden`.
+    - Modül değişimi bölmeye mesajla gider.
+  - Yerleşim: yan yana, alt alta, ızgara 2×2, sekmeli. Telefonda hep
+    sekmeli. Ayraç sürüklenir ya da ok tuşuyla kayar; boyut bölmenin
+    payında (`Bolme.pay`).
+  - Bölmenin içindeki yer, açık sekme ve büyütülen bölme tarayıcıda
+    (`trt-planlama-ortam`), kayıtta değil: her tıklama bütün bölmelere
+    kaydı yeniden okutmasın.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız
   oraya girer; sol menüde de telefondaki panelde de çıkar.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
