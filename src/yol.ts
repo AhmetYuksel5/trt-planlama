@@ -61,6 +61,10 @@ export interface BolmeBildirimi {
   yol: string;
   geri: boolean;
 }
+/** Bölmeden üst pencereye: arama penceresini aç. Bölmenin içindeki tuşlar üst pencereye ulaşmıyor. */
+export interface BolmeAramasi {
+  tur: "trt-bolme-ara";
+}
 /** Üst pencereden bölmeye: bölmenin kendi geçmişinde geri git ya da başka sayfa aç. */
 export type BolmeKomutu = { tur: "trt-bolme-geri" } | { tur: "trt-bolme-git"; yol: string };
 
@@ -145,6 +149,13 @@ if (GOMULU) {
     }
   });
   window.addEventListener("trt-yol", bildirUste);
+  document.addEventListener("keydown", (e) => {
+    // Tuşun yeri (code): Arapça klavyede de K tuşu.
+    if (!(e.ctrlKey || e.metaKey) || e.code !== "KeyK") return;
+    e.preventDefault();
+    const m: BolmeAramasi = { tur: "trt-bolme-ara" };
+    window.parent.postMessage(m, location.origin);
+  });
   bildirUste();
 }
 
@@ -152,6 +163,13 @@ export const git = (yol: string) => {
   if (GOMULU) yerine(`#/${yol}`);
   else location.hash = `#/${yol}`;
 };
+
+/**
+ * Geçmişe adım eklemeden gider: yeni workspace seçim sayfasından ve kapanan
+ * workspace'ten çıkış. Tarayıcının Geri tuşu yarım kalmış seçime ya da
+ * artık olmayan workspace'e dönmesin.
+ */
+export const yerineGit = (yol: string) => location.replace(`#/${yol}`);
 
 /**
  * Sayfayı yeniden çizmeden adresi günceller (takvimin görünümü ve günü):

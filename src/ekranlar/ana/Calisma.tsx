@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Check, LayoutGrid, Plus, RotateCcw, X } from "lucide-react";
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Kart } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { BIRIM_ADI } from "../../etiketler";
@@ -42,7 +42,7 @@ export interface Alan {
 /*
  * Bugünkü birim sayfalarının düzeni; sıra da öyle. Planlama'nın on iki
  * alanı varsayılanda kalabalıktı; birimin istediği alanlar kaldı, öbürleri
- * katalogda. Plan kısayolları alan değil, üst şeritte.
+ * katalogda. Plan kısayolları alan değil, üst çubukta.
  */
 export const VARSAYILAN: Record<DuzenAdi, string[]> = {
   planlama: ["plSonOneri", "plMuhabirler", "plHareket"],
@@ -65,48 +65,6 @@ export const alanUygun = (ben: Kisi, a: Alan) =>
 
 export const duzenAnahtari = (kisiId: string, duzen: DuzenAdi) => `${kisiId}:${duzen}`;
 
-/*
- * Ana sayfada "Sayfayı düzenle" ayrı bir satırda değil, üst şeritte (yer
- * kazanmak için). Şeritteki düğme ile alanlar aynı düzen kipini paylaşıyor;
- * şerit olmayan yerde (yönetici panelinin kendi sayfası) düğme alanların
- * üstünde kalıyor.
- */
-export const SeritteDuzen = createContext(false);
-
-let duzenKipi = false;
-const duzenDinleyicileri = new Set<() => void>();
-const duzenKipiniAyarla = (acik: boolean) => {
-  if (duzenKipi === acik) return;
-  duzenKipi = acik;
-  duzenDinleyicileri.forEach((d) => d());
-};
-const useDuzenKipi = () =>
-  useSyncExternalStore(
-    (d) => {
-      duzenDinleyicileri.add(d);
-      return () => duzenDinleyicileri.delete(d);
-    },
-    () => duzenKipi,
-  );
-
-/** Üst şeritteki "Sayfayı düzenle" düğmesi. */
-export function SayfaDuzenDugmesi() {
-  const { t } = useDil();
-  const acik = useDuzenKipi();
-  return (
-    <button
-      type="button"
-      className={`serit-dugme ${acik ? "acik" : ""}`}
-      aria-pressed={acik}
-      aria-label={t("sayfayiDuzenle")}
-      title={t("sayfayiDuzenle")}
-      onClick={() => duzenKipiniAyarla(!acik)}
-    >
-      <LayoutGrid size={17} />
-    </button>
-  );
-}
-
 /**
  * Kişinin düzeni; kendi seçimi yoksa birimin varsayılanı. Kişisel değilse
  * (müdürün birime inip baktığı görünüm) her zaman varsayılan.
@@ -114,13 +72,7 @@ export function SayfaDuzenDugmesi() {
 export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen: DuzenAdi; kisisel?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
-  const seritte = useContext(SeritteDuzen) && kisisel;
-  const [yerelDuzen, setYerelDuzen] = useState(false);
-  const ortakDuzen = useDuzenKipi();
-  const duzenle = seritte ? ortakDuzen : yerelDuzen;
-  const setDuzenle = seritte ? duzenKipiniAyarla : setYerelDuzen;
-  // Sayfadan çıkınca düzen kipi kapansın; dönünce sayfa düzenlenir hâlde açılmasın.
-  useEffect(() => () => duzenKipiniAyarla(false), []);
+  const [duzenle, setDuzenle] = useState(false);
   const uygunlar = katalog().filter((a) => alanUygun(ben, a));
   const bul = (id: string) => uygunlar.find((a) => a.id === id);
   const kayitli = kisisel ? v.anaSayfa?.[duzenAnahtari(ben.id, duzen)] : undefined;
@@ -138,23 +90,16 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
 
   return (
     <>
-      {kisisel && (duzenle || !seritte) && (
-        <div className="alan-arac">
-          {duzenle ? (
-            <>
-              <span className="bos-kucuk">{t("alanDuzenNotu")}</span>
-              <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet(null)} disabled={!kayitli}>
-                <RotateCcw size={14} /> {t("varsayilanaDon")}
-              </button>
-              <button className="dugme dugme-kucuk" onClick={() => setDuzenle(false)}>
-                <Check size={14} /> {t("bitti")}
-              </button>
-            </>
-          ) : (
-            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setDuzenle(true)}>
-              <LayoutGrid size={14} /> {t("sayfayiDuzenle")}
-            </button>
-          )}
+      {/* Düzenlerken üstte yapışkan çubuk; kaydırırken "Bitti" elde dursun. Düzenlemezken sayfanın üstünde satır yok. */}
+      {kisisel && duzenle && (
+        <div className="alan-arac duzen-cubugu">
+          <span className="bos-kucuk">{t("alanDuzenNotu")}</span>
+          <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet(null)} disabled={!kayitli}>
+            <RotateCcw size={14} /> {t("varsayilanaDon")}
+          </button>
+          <button className="dugme dugme-kucuk" onClick={() => setDuzenle(false)}>
+            <Check size={14} /> {t("bitti")}
+          </button>
         </div>
       )}
       <div className={`alan-izgarasi ${duzenle ? "duzenleniyor" : ""}`}>
@@ -176,6 +121,14 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
           );
         })}
       </div>
+      {/* "Sayfayı düzenle" sayfanın sonunda: sayfanın üstü çalışma alanına kalsın; "Alan ekle" de burada açılıyor. */}
+      {kisisel && !duzenle && (
+        <div className="alan-son">
+          <button className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenle(true)}>
+            <LayoutGrid size={14} /> {t("sayfayiDuzenle")}
+          </button>
+        </div>
+      )}
       {duzenle && (
         <Kart baslik={t("alanEkle")} ikon={<Plus size={18} />} className="ara-ust-2">
           {eklenebilir.length === 0 ? (

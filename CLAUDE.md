@@ -82,9 +82,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`kişi:düzen`). Alan eklemek için alanın `sayfa`'sını görebilmek gerekir
   ("muhabir" yalnız muhabirin kendi işi, "panel" kapsamı olan yönetici).
   Müdür birime inince birimin varsayılanını görür (`kisisel={false}`).
-  Planlama'nın sayfasında başlık yok; varsayılanı üç alan (muhabir
-  önerileri, muhabirlerin durumu, son hareketler). Plan kısayolları alan
-  değil, üst şeritte (aşağıda).
+  "Sayfayı düzenle" sayfanın sonunda sakin bir düğme; düzenlerken üstte
+  yapışkan düzen çubuğu (not, Varsayılana dön, Bitti), sayfadan çıkınca
+  düzen kipi kapanır. Planlama'nın sayfasında başlık yok; varsayılanı üç
+  alan (muhabir önerileri, muhabirlerin durumu, son hareketler). Plan
+  kısayolları alan değil, üst çubukta (aşağıda).
   Yeni kart da böyle eklenir: birim dosyasındaki `*_ALANLARI` listesine.
   Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
   için açılışta okunursa döngüde tanımsız kalır.
@@ -204,9 +206,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sorumlu muhabiri olduğu faaliyeti görür (`faaliyetGorebilir`).
   - Hafta Cumartesi başlar. Renk yalnız öncelikte (`.on-*`); hatırlatma
     uygulama içinde (yan panel, ana sayfa kartı, menü sayısı).
-  - Üst şeridin varsayılan kısayollarında ve telefondaki Menü'nün plan
-    kutucuklarında (`PlanKisayollari`) altıncı; beş ana başlıktan biri
-    olmadığı için altıncı renk değil, lacivert (`.renk-takvim`).
+  - Varsayılan kısayollarda (üst çubuk, telefonda Menü'nün Kısayollarım'ı)
+    altıncı; beş ana başlıktan biri olmadığı için altıncı renk değil,
+    lacivert (`.renk-takvim`).
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
     süre korunur, kenar tutamacı tek ucu değiştirir.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
@@ -217,50 +219,93 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
   arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
   akışı panosunun adı.
-  - Üst şeritte durur (aşağıda): ana sayfa, kişinin workspace'leri, "+".
-    Menüde ayrı madde değil, ana sayfanın alt sayfası; menüde ana sayfa
-    vurgulu kalır.
+  - Üst çubukta sekme olarak durur (aşağıda). Menüde ayrı madde değil;
+    workspace'teyken menüde vurgulu sayfa yok, etkin olan sekmesi.
+  - Adı ve numarası yok: sekmede bölmelerin şimdiki sayfalarının kısa
+    adları, ekrandaki sırayla ("Next Day · Öneriler +1";
+    `Sekmeler.tsx → useOrtamEtiketi`). Kısa ad menüde zorunlu
+    (`AnaMenu.tsx → Madde.kisa`, `dil.ts → ka*`).
+  - Boş workspace yok. "+" seçim sayfasını açar (`#/ortam/yeni`,
+    `YeniOrtam.tsx`): sayfalar sırayla seçilir (en çok 4), "Aç" tek
+    yazışla kurar (`ortamOlustur`). "+"ya basılan sayfa ilk sırada seçili
+    gelir. Seçim sayfası ve kapanan workspace tarayıcı geçmişine girmez
+    (`yol.ts → yerineGit`).
+  - Eylemlerin yeri: workspace'in işleri sekmesinde (▾ yerleşim, sayfa
+    ekle, kapat; ×), sayfanın işleri bölme başlığında (geri, yanına sayfa
+    aç, büyüt, ⋯, ×), genel işler çubukta. Sayfanın üstünde ayrı satır yok.
+  - Sayfa seçimi yerinde (`ModulIzgarasi.tsx`, önce kısayollar, sonra
+    menünün grupları). "Yanına sayfa aç" ve "Sayfa ekle" geçici bölme açar;
+    bölme kayda girmez (`gorunum.ts → eklemeyiAc`). "Sayfayı değiştir"
+    bölmenin üstünde katmandır.
+  - Kapatma onaysız, bildirimde "Geri al" (`Sekmeler.tsx → useOrtamKapat`,
+    `ortamGeriAc`): aynı yere aynı bölmeler, boyutlar ve iç sayfalar. Yalnız
+    bölmede açık pencere (yarım form) varsa sorulur. Orta tık ve Delete de
+    kapatır; son bölmeyi kapatmak workspace'i kapatır.
   - Kayıtta `Durum.ortamlar` (kişi → workspace'ler), eylemler
     `eylemler.ts → ortam*/bolme*`, kurallar `ortam.ts` (sınırlar,
     `BOLMEYE_GIRMEZ`, `yerlesim`). Bölmeye kişinin menüde gördüğü sayfalar
     girer (`AnaMenu.tsx → bolmeModulleri`).
   - Bölme uygulamanın kendisi: iframe, `?bolme=1` gömülü kip
-    (`yol.ts → GOMULU`, `bilesenler/Gomulu.tsx`). Menü, üst çubuk ve demo
-    şeridi yok. Giriş ekranı, proje planı ve workspace bölmede açılmaz;
-    yarının planını yalnız üst pencere açar.
+    (`yol.ts → GOMULU`, `bilesenler/Gomulu.tsx`).
+    - Menü, üst çubuk ve prototip etiketi yok.
+    - Giriş ekranı, proje planı, workspace ve seçim sayfası bölmede açılmaz.
+    - Yarının planını yalnız üst pencere açar.
+    - Bölmedeki Ctrl+K üst pencerenin aramasını açar (`BolmeAramasi`).
   - Bölme geçmişi büyütmeden gezinir. Navigation API geçmişe ekleyen adres
     değişimini yerinde değişime çevirir; önceki yollar bölmenin kendi
     yığınındadır. Bölme yerini `postMessage` ile bildirir
     (`BolmeBildirimi`), üst pencere `BolmeKomutu` gönderir.
   - iframe DOM'da taşınmaz, `src`'i değişmez; taşınırsa yeniden yüklenir,
     içindeki iş gider.
-    - Sıra ve yerleşim yalnız ızgara alanından (`gridArea`).
+    - Sıra ve yerleşim yalnız ızgara alanından (`gridArea`); geçici bölme
+      iframe'lerden sonra çizilir.
     - Arkadaki bölme `visibility: hidden`.
-    - Modül değişimi bölmeye mesajla gider.
+    - Sayfa değişimi bölmeye mesajla gider.
   - Yerleşim: yan yana, alt alta, ızgara 2×2, sekmeli. Telefonda hep
     sekmeli. Ayraç sürüklenir ya da ok tuşuyla kayar; boyut bölmenin
     payında (`Bolme.pay`).
   - Bölmenin içindeki yer, açık sekme ve büyütülen bölme tarayıcıda
     (`trt-planlama-ortam`), kayıtta değil: her tıklama bütün bölmelere
     kaydı yeniden okutmasın.
-- Üst şerit (`ekranlar/ortam/Serit.tsx → AnaSerit`): ana sayfanın ve
-  workspace'in tek satırı; bütün birimlerde. Sayfanın kullanılır alanı
-  geniş kalsın diye her şey ikon, ad ipucunda (`title`, `aria-label`).
-  Ayrı sekme şeridi, araç satırı ya da büyük kutucuk eklenmez; yeni iş bu
-  şeride ikon olarak girer.
-  - Başta ana sayfa, kişinin workspace'leri (sıra numarasıyla, ad yok),
-    "+" (New Workspace).
-  - Ortada açık sayfanın işleri (`ek`):
-    - ana sayfada "Sayfayı düzenle" (`Calisma.tsx → SayfaDuzenDugmesi`;
-      düzen kipi şeritle alanlar arasında `SeritteDuzen` ile paylaşılıyor);
-    - workspace'te yerleşim, modül ekleme ve ⋯ (adlandır, sil).
-  - Sonda kişinin kısayolları (`Kisayollar.tsx`). Kurallar `kisayol.ts`:
+- Üst çubuk (`bilesenler/UstCubuk.tsx`): bütün sayfaların tek ince satırı
+  (`--ust-yukseklik`, 52 piksel). Sayfanın kullanılır alanı geniş kalsın
+  diye sayfanın üstüne başka satır (şerit, araç satırı, demo satırı, büyük
+  kutucuk) eklenmez. Yeni genel iş çubuğa ikon olarak girer, adı ipucunda
+  (`title`, `aria-label`).
+  - Sıra: ☰, (menü gizliyken) logo, sekmeler ve "+", kısayollar, prototip
+    etiketi, arama, dil (TR ▾), zil, avatar (ad, birim ve görev menünün
+    başında).
+  - Sekmeler (`ekranlar/ortam/Sekmeler.tsx → UstSekmeler`) tarayıcıdaki
+    gibi:
+    - sabit ilk sekme bulunulan sayfanın ikonu ve kısa adı; workspace'teyken
+      bırakılan sayfaya döner (`gorunum.ts → sonAnaYolu`);
+    - sonra workspace'ler, sonda "+";
+    - etkin sekme sayfanın zeminiyle birleşir;
+    - sığmayınca sekmeler daralır, kayar ve "Bütün workspace'ler" listesi
+      çıkar.
+
+    Kayan şeridin içindeki menü üst katmanda açılır
+    (`IslemMenusu katman`, popover); yoksa şerit kırpar.
+  - Kısayollar (`Kisayollar.tsx → UstKisayollar`): ilk altısı renkli ikon;
+    ★ hepsini adıyla ve "Kısayolları düzenle"yi gösterir. Kurallar
+    `kisayol.ts`:
     - varsayılan planların beş ana başlığı ve takvim; muhabirde kendi
       işleri;
     - görebildiği sayfalar, en çok 10.
-  - Kısayollar kayıtta `Durum.kisayollar` (kişi → sıralı yol), eylem
+
+    Kayıtta `Durum.kisayollar` (kişi → sıralı yol), eylem
     `kisayollariKaydet`. Ad, ikon ve renk menüden. Renk yalnız planların
     ana başlıklarında, öbür sayfalar sade (`.renk-genel`).
+  - Daralma çubuğun kendi eninden (`@container ust`, sol menüden bağımsız):
+    önce prototip yazısı, sonra satırdaki kısayollar ★'a çekilir.
+  - Prototip etiketi her sayfada: örnek veri gerçek sanılmasın. Tam cümle
+    (`demoSerit`) ipucunda, basınca ve telefonda Menü panelinin başında.
+  - Arama penceresi (`bilesenler/KomutPaleti.tsx`, kurallar `arama.ts`):
+    - açılış: 🔍, Ctrl/⌘+K ya da yazı alanı dışında "/" (tuş `e.code` ile,
+      Arapça klavyede de);
+    - arananlar: sayfalar (adlar üç dilde), workspace'ler, paket, öneri,
+      kişi; yalnız kişinin görebildikleri (`kayitAra`);
+    - boşken kısayollar ve workspace'ler.
   - Sınırda düğme pasif görünür ama odaklanabilir kalır (`aria-disabled`);
     nedeni ipucunda, çünkü pasif düğme ipucu göstermiyor.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız
@@ -277,8 +322,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
   bir düzen:
   - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor
-  - "Menü" (`MobilMenu`) plan kısayollarını, bütün sayfaları, dili ve
-    oturumu bir panelde topluyor
+  - üst çubukta yalnız logo, arama, prototip, zil ve avatar (44 piksel)
+  - "Menü" (`MobilMenu`) prototip notunu, kişiyi, Kısayollarım'ı,
+    workspace'leri, bütün sayfaları ve dili bir panelde topluyor
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

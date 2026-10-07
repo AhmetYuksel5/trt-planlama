@@ -1,4 +1,5 @@
-import { DILLER, metin, yaz } from "./dil";
+import { sade, ucDilde } from "./arama";
+import { DILLER, yaz } from "./dil";
 import { bolgeAdi, faaliyetTuruAdi, ulkeAdi } from "./etiketler";
 import { ayBasi, ayEkle, aySonu, bugun, gunEkle, gunFarki, zaman } from "./tarih";
 import { ULKE_BOLGESI, kisiBul, type Birim, type Bolge, type Durum, type Faaliyet, type FaaliyetBaglantisi, type FaaliyetDurum, type FaaliyetTuru, type IcerikTuru, type Kisi, type Oncelik, type Potansiyel, type Ulke } from "./veri";
@@ -149,22 +150,10 @@ export const takvimOzeti = (liste: Faaliyet[], b = bugun()) => {
 /* --- Arama ve süzgeç --- */
 
 /*
- * Arama dilden bağımsız: Arapçada hareke, hemze ve tatvil, Türkçede
- * nokta ve şapka fark etmiyor ("secim" "seçim"i, "انتخابات" "الإنتخابات"ı
- * buluyor). Ülke, bölge, tür ve muhabir adı üç dilde de aranıyor; Türkçe
- * arayüzdeki kullanıcı "Irak" da yazsa "العراق" da bulsun.
+ * Arama dilden bağımsız (arama.ts → sade). Ülke, bölge, tür ve muhabir
+ * adı üç dilde de aranıyor; Türkçe arayüzdeki kullanıcı "Irak" da yazsa
+ * "العراق" da bulsun.
  */
-const sade = (s: string) =>
-  s
-    .toLocaleLowerCase("tr")
-    .normalize("NFD")
-    .replace(/[̀-ًͯ-ٰٟـ]/g, "")
-    .replace(/ı/g, "i")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي");
-
-const ucDilde = (k: Parameters<typeof metin>[0]) => DILLER.map((d) => metin(k, d)).join(" ");
-
 export const aramaUyar = (d: Durum, f: Faaliyet, sorgu: string) => {
   const sozcukler = sade(sorgu).split(/\s+/).filter(Boolean);
   if (!sozcukler.length) return true;

@@ -1,6 +1,4 @@
-import { FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { useDil } from "../dil";
 import type { Kisi } from "../veri";
 import AltCubuk from "./AltCubuk";
 import MobilMenu from "./MobilMenu";
@@ -9,11 +7,11 @@ import AnaMenu from "./AnaMenu";
 import UstCubuk from "./UstCubuk";
 
 /**
- * Sayfa çerçevesi: sol menü, üst çubuk, demo şeridi ve içerik.
+ * Sayfa çerçevesi: sol menü, üst çubuk ve içerik.
  *
- * Demo şeridi her sayfada duruyor; prompt örnek verinin gerçek kurum
- * verisi gibi görünmemesini ve kalıcılığın sınırının açıkça
- * söylenmesini istiyor.
+ * Prototip uyarısı (örnek veri gerçek kurum verisi gibi görünmesin,
+ * kalıcılığın sınırı söylensin) ayrı bir satır değil, üst çubukta her
+ * sayfada görünen etiket; satırı sayfaya kalıyor.
  *
  * Üç genişlik: masaüstünde sol menü; tablette kenardan açılan çekmece;
  * telefonda (760 px ve altı) ayrı düzen, sol menü yok, alta sekme çubuğu
@@ -27,9 +25,9 @@ import UstCubuk from "./UstCubuk";
  * değişmiyor. Tablette aynı düğme çekmeceyi açıyor; gizleme tercihi
  * çekmeceyi etkilemiyor.
  *
- * Workspace ana sayfanın alt sayfası (menüde ayrı madde yok): menüde ana
- * sayfa vurgulu kalıyor, sayfa ekran boyunda duruyor ki bölmeler kendi
- * içinde kaysın.
+ * Workspace üst çubuğun sekmesi (menüde ayrı madde yok): menüde vurgulu
+ * madde kalmıyor, etkin olan sekme. Sayfa ekran boyunda duruyor ki
+ * bölmeler kendi içinde kaysın.
  */
 
 /* CSS'teki kırılımla aynı: bunun üstünde menü sabit, altında çekmece. */
@@ -54,8 +52,7 @@ function useMasaustu() {
     () => matchMedia(MASAUSTU).matches,
   );
 }
-export default function Kabuk({ ben, sayfa, children }: { ben: Kisi; sayfa: string; children: ReactNode }) {
-  const { t } = useDil();
+export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben: Kisi; sayfa: string; ortamAcik?: boolean; children: ReactNode }) {
   const [menuAcik, setMenuAcik] = useState(false);
   const [menuGizli, setMenuGizli] = useState(gizliMi);
   const masaustu = useMasaustu();
@@ -70,18 +67,13 @@ export default function Kabuk({ ben, sayfa, children }: { ben: Kisi; sayfa: stri
     }
   }, [menuGizli]);
   const menuDugmesi = () => (masaustu ? setMenuGizli((g) => !g) : setMenuAcik((a) => !a));
-  const ortam = sayfa === "ortam";
-  const menuSayfasi = ortam ? "ana" : sayfa;
+  const menuSayfasi = sayfa === "ortam" ? "" : sayfa;
   return (
-    <div className={`uygulama ${menuAcik ? "menu-acik" : ""} ${menuGizli ? "menu-gizli" : ""} ${ortam ? "ortam-acik" : ""}`}>
+    <div className={`uygulama ${menuAcik ? "menu-acik" : ""} ${menuGizli ? "menu-gizli" : ""} ${ortamAcik ? "ortam-acik" : ""}`}>
       <AnaMenu ben={ben} acik={menuSayfasi} />
       <div className="perde" onClick={kapat} />
       <div className="ana">
         <UstCubuk ben={ben} onMenu={menuDugmesi} masaustu={masaustu} menuGorunur={masaustu ? !menuGizli : menuAcik} />
-        <div className="demo-serit">
-          <FlaskConical size={14} />
-          {t("demoSerit")}
-        </div>
         <main className="sayfa">{children}</main>
       </div>
       <AltCubuk ben={ben} acik={menuSayfasi} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />

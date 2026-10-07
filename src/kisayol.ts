@@ -3,13 +3,13 @@ import type { Durum, Kisi } from "./veri";
 import { sayfaGorebilir } from "./yetki";
 
 /**
- * Üst şeritteki kısayollar: kişinin sık açtığı sayfalar, yalnız ikon.
- * Kısayolun kimliği açtığı yol ("haftalik", "nextday/yarin"); ad, ikon ve
- * renk menüden (ekranlar/ortam/Kisayollar.tsx). Kişi kendi şeridini
- * düzenliyor; kayıt ana sayfa düzeni gibi kişiye ait.
+ * Üst çubuktaki kısayollar: kişinin sık açtığı sayfalar, çubukta yalnız
+ * ikon. Kısayolun kimliği açtığı yol ("haftalik", "nextday/yarin"); ad,
+ * ikon ve renk menüden (ekranlar/ortam/Kisayollar.tsx). Kişi kendi
+ * kısayollarını düzenliyor; kayıt ana sayfa düzeni gibi kişiye ait.
  */
 
-/* Şerit tek satır kalsın; fazlası ikonu okunmaz kılıyor. */
+/* Çubukta ilk altısı, hepsi ★ menüsünde; daha uzun listede aranan kısayol kayboluyor. */
 export const KISAYOL_EN_COK = 10;
 
 /* Planların beş ana başlığı ve takvim: Planlama'nın her gün açtıkları. Next Day doğrudan yarının planı. */

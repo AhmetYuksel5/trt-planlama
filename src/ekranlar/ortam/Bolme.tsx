@@ -1,11 +1,11 @@
-import { ArrowLeft, ExternalLink, LayoutPanelLeft, Maximize2, Minimize2, MoveLeft, MoveRight, Replace, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, LayoutPanelLeft, Maximize2, Minimize2, MoveLeft, MoveRight, Replace, SquareSplitHorizontal, SquareSplitVertical, X } from "lucide-react";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { maddeAdi, sayfaMaddesi } from "../../bilesenler/AnaMenu";
 import { useDil } from "../../dil";
-import { payKaydir, yolSayfasi, type Ayrac as AyracBilgisi } from "../../ortam";
+import { BOLME_EN_COK, payKaydir, yolSayfasi, type Ayrac as AyracBilgisi } from "../../ortam";
 import type { Bolme, Kisi } from "../../veri";
 import { bolmeYolu } from "./gorunum";
-import { IslemMenusu } from "./IslemMenusu";
+import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 
 /* Workspace bölmesi: başlık ve işlemler üst pencerede, sayfanın kendisi iframe'de (gömülü kip). */
 
@@ -22,6 +22,12 @@ export interface BolmeIslemleri {
   buyuk: boolean;
   onceye?: () => void;
   sonraya?: () => void;
+  /** Yanına sayfa aç (VS Code'un "böl"ü gibi); sekmelide yok, orada sekmelerin sonundaki "+". */
+  yaninaAc?: () => void;
+  /** Alt alta yerleşimde yeni sayfa alta açılıyor; ikon ona göre. */
+  altAlta?: boolean;
+  /** Bölme sınırında: yanına açma pasif, nedeni ipucunda. */
+  dolu: boolean;
   degistir: () => void;
   kapat: () => void;
   /** Bölmenin şimdiki yeri, tam uygulamada. */
@@ -61,7 +67,7 @@ function DahaFazla({ islem }: { islem: BolmeIslemleri }) {
         </button>
       )}
       <button type="button" role="menuitem" className="acilir-satir" onClick={islem.degistir}>
-        <Replace size={16} /> {t("modulDegistir")}
+        <Replace size={16} /> {t("sayfayiDegistir")}
       </button>
       <a role="menuitem" className="acilir-satir" href={islem.yeniSekme} target="_blank" rel="noopener">
         <ExternalLink size={16} /> {t("yeniSekmedeAc")}
@@ -70,11 +76,24 @@ function DahaFazla({ islem }: { islem: BolmeIslemleri }) {
   );
 }
 
+/* Sınırda pasif ama odaklanabilir: pasif düğme ipucu göstermiyor, nedeni ipucunda. */
+function YaninaAc({ ac, altAlta, dolu }: { ac: () => void; altAlta: boolean; dolu: boolean }) {
+  const { t } = useDil();
+  const etiket = dolu ? t("bolmeDolu", { n: BOLME_EN_COK }) : t("yaninaAc");
+  const Ikon = altAlta ? SquareSplitVertical : SquareSplitHorizontal;
+  return (
+    <button type="button" className={`dugme dugme-sade dugme-ikon ${dolu ? "pasif" : ""}`} aria-disabled={dolu} title={etiket} aria-label={etiket} data-bolme-yanina onClick={() => !dolu && ac()}>
+      <Ikon size={16} />
+    </button>
+  );
+}
+
 export function BolmeEylemleri({ durum, islem }: { durum: BolmeDurumu; islem: BolmeIslemleri }) {
   const { t } = useDil();
   return (
     <div className="bolme-eylemleri">
       <Dugme ikon={<ArrowLeft size={16} className="yon" />} etiket={t("bolmeGeri")} onClick={islem.geri} devre={!durum.geri} />
+      {islem.yaninaAc && <YaninaAc ac={islem.yaninaAc} altAlta={!!islem.altAlta} dolu={islem.dolu} />}
       {islem.buyut && (
         <Dugme
           ikon={islem.buyuk ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -100,6 +119,7 @@ export function BolmeCercevesi({
   yer,
   islem,
   cerceve,
+  katman,
 }: {
   ben: Kisi;
   bolme: Bolme;
@@ -107,6 +127,8 @@ export function BolmeCercevesi({
   yer: { alan: string; arkada: boolean };
   islem: BolmeIslemleri;
   cerceve: (f: HTMLIFrameElement | null) => void;
+  /** Sayfayı değiştirirken kutucuklar iframe'in üstünde; iframe yerinde kalıyor, içindeki iş gitmiyor. */
+  katman?: ReactNode;
 }) {
   const { t } = useDil();
   const modul = useModul(ben);
@@ -121,6 +143,7 @@ export function BolmeCercevesi({
         <BolmeEylemleri durum={durum} islem={islem} />
       </header>
       <iframe ref={cerceve} className="bolme-cerceve" src={src} title={etiket} />
+      {katman && <div className="bolme-ust-katman">{katman}</div>}
     </section>
   );
 }
