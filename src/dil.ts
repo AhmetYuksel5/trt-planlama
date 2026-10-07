@@ -292,7 +292,6 @@ const M = {
   alanEkle: m("Alan ekle", "إضافة مساحة", "Add an area"),
   eklenecekAlanYok: m("Eklenecek başka alan yok.", "لا توجد مساحات أخرى للإضافة.", "No other areas to add."),
   alOzetSayilar: m("Özet sayılar", "أرقام موجزة", "Key figures"),
-  alPlanKisayollari: m("Plan kısayolları", "اختصارات الخطط", "Plan shortcuts"),
   alAcikCagrilar: m("Açık öneri çağrıları", "طلبات المقترحات المفتوحة", "Open calls for proposals"),
   ksHaftalik: m("Weekly", "الخطة الأسبوعية", "Weekly"),
   ksAylik: m("Aylık plan", "الخطة الشهرية", "Monthly plan"),
@@ -1844,6 +1843,20 @@ const M = {
   bolmeIcIce: m("Workspace bir modülün içinde açılmaz.", "لا تُفتح مساحة العمل داخل صفحة.", "A workspace can't open inside a module."),
   bolmeProjePlani: m("Proje planı ayrı sekmede açılır.", "تُفتح خطة المشروع في تبويب مستقل.", "The project plan opens in its own tab."),
   bolmeOturumYok: m("Oturum kapandı; ana pencereden giriş yap.", "انتهت الجلسة؛ سجّل الدخول من النافذة الرئيسية.", "Signed out; sign in from the main window."),
+  ortamIslemleri: m("Workspace işlemleri", "إجراءات مساحة العمل", "Workspace actions"),
+
+  /* Üst şeritteki kısayollar: yalnız ikon, ad üzerine gelince. */
+  kisayollar: m("Kısayollar", "الاختصارات", "Shortcuts"),
+  kisayollariDuzenle: m("Kısayolları düzenle", "تعديل الاختصارات", "Edit shortcuts"),
+  kisayolDuzenNotu: m(
+    "Sırala, kaldır ya da aşağıdan ekle. Yalnız senin şeridini değiştirir.",
+    "رتّب الاختصارات أو احذفها أو أضف غيرها من الأسفل. يتغير شريطك فقط.",
+    "Reorder, remove or add below. Only your strip changes.",
+  ),
+  kisayolEkle: m("Kısayol ekle", "إضافة اختصار", "Add a shortcut"),
+  kisayoluKaldir: m("Kısayolu kaldır", "إزالة الاختصار", "Remove shortcut"),
+  kisayolSiniri: m("En çok {n} kısayol eklenebilir.", "يمكن إضافة {n} اختصارات على الأكثر.", "You can add at most {n} shortcuts."),
+  kisayolYok: m("Şeritte kısayol yok; aşağıdan ekle.", "لا اختصارات في الشريط؛ أضفها من الأسفل.", "No shortcuts yet; add some below."),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;

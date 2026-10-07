@@ -26,11 +26,18 @@ npm run preview  # derlenmiş hali yerelde
   sayfası var. Kişi "Sayfayı düzenle" ile istemediği alanı kaldırıyor,
   sırasını değiştiriyor, yetkisi olan başka birimlerin alanlarını ekliyor ve
   istediğinde varsayılana dönüyor; düzen yalnız onun sayfasını değiştiriyor.
-  Planlama'nın varsayılanı yalın: plan kısayolları (Next Day, Weekly,
-  Aylık plan, Special Coverage, saha, takvim), son gelen muhabir önerileri,
+  Planlama'nın varsayılanı yalın: son gelen muhabir önerileri,
   muhabirlerin durumu ve son hareketler; öbür alanlar katalogda.
-- **Workspace:** ana sayfanın üstündeki "New Workspace" ile birkaç sayfa
-  (Next Day, haber önerileri, başlıklar, takvim…) bir arada açılıyor.
+- **Üst şerit:** ana sayfanın üstünde tek satır, yalnız ikonlar (ad
+  üzerine gelince).
+  - Başta ana sayfa, workspace'ler ve "+".
+  - Ortada açık sayfanın işleri: Sayfayı düzenle, workspace yerleşimi,
+    modül ekleme.
+  - Sonda kısayollar: Next Day, Weekly, Aylık plan, Special Coverage, saha,
+    takvim. Kalem ikonuyla kişi kendi kısayollarını seçiyor, sıralıyor,
+    varsayılana dönüyor.
+- **Workspace:** üst şeritteki "+" ile birkaç sayfa (Next Day, haber
+  önerileri, başlıklar, takvim…) bir arada açılıyor.
   - Her bölme kendi içinde geziniyor. Birinde yapılan iş öbüründe
     yeniden yüklemeden görünüyor.
   - Yerleşim: yan yana, alt alta, 2×2 ızgara ya da sekmeli. Aradaki çizgi

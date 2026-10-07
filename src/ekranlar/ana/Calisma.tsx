@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Check, LayoutGrid, Plus, RotateCcw, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Kart } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { BIRIM_ADI } from "../../etiketler";
@@ -41,11 +41,11 @@ export interface Alan {
 
 /*
  * Bugünkü birim sayfalarının düzeni; sıra da öyle. Planlama'nın on iki
- * alanı varsayılanda kalabalıktı; birimin istediği dört alan kaldı, öbürleri
- * katalogda.
+ * alanı varsayılanda kalabalıktı; birimin istediği alanlar kaldı, öbürleri
+ * katalogda. Plan kısayolları alan değil, üst şeritte.
  */
 export const VARSAYILAN: Record<DuzenAdi, string[]> = {
-  planlama: ["plKisayol", "plSonOneri", "plMuhabirler", "plHareket"],
+  planlama: ["plSonOneri", "plMuhabirler", "plHareket"],
   muhabir: ["muCagri", "muSayac", "muSiram", "muGorev", "muHaberler", "muBildirim", "muOneriler"],
   newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
@@ -65,6 +65,48 @@ export const alanUygun = (ben: Kisi, a: Alan) =>
 
 export const duzenAnahtari = (kisiId: string, duzen: DuzenAdi) => `${kisiId}:${duzen}`;
 
+/*
+ * Ana sayfada "Sayfayı düzenle" ayrı bir satırda değil, üst şeritte (yer
+ * kazanmak için). Şeritteki düğme ile alanlar aynı düzen kipini paylaşıyor;
+ * şerit olmayan yerde (yönetici panelinin kendi sayfası) düğme alanların
+ * üstünde kalıyor.
+ */
+export const SeritteDuzen = createContext(false);
+
+let duzenKipi = false;
+const duzenDinleyicileri = new Set<() => void>();
+const duzenKipiniAyarla = (acik: boolean) => {
+  if (duzenKipi === acik) return;
+  duzenKipi = acik;
+  duzenDinleyicileri.forEach((d) => d());
+};
+const useDuzenKipi = () =>
+  useSyncExternalStore(
+    (d) => {
+      duzenDinleyicileri.add(d);
+      return () => duzenDinleyicileri.delete(d);
+    },
+    () => duzenKipi,
+  );
+
+/** Üst şeritteki "Sayfayı düzenle" düğmesi. */
+export function SayfaDuzenDugmesi() {
+  const { t } = useDil();
+  const acik = useDuzenKipi();
+  return (
+    <button
+      type="button"
+      className={`serit-dugme ${acik ? "acik" : ""}`}
+      aria-pressed={acik}
+      aria-label={t("sayfayiDuzenle")}
+      title={t("sayfayiDuzenle")}
+      onClick={() => duzenKipiniAyarla(!acik)}
+    >
+      <LayoutGrid size={17} />
+    </button>
+  );
+}
+
 /**
  * Kişinin düzeni; kendi seçimi yoksa birimin varsayılanı. Kişisel değilse
  * (müdürün birime inip baktığı görünüm) her zaman varsayılan.
@@ -72,7 +114,13 @@ export const duzenAnahtari = (kisiId: string, duzen: DuzenAdi) => `${kisiId}:${d
 export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen: DuzenAdi; kisisel?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
-  const [duzenle, setDuzenle] = useState(false);
+  const seritte = useContext(SeritteDuzen) && kisisel;
+  const [yerelDuzen, setYerelDuzen] = useState(false);
+  const ortakDuzen = useDuzenKipi();
+  const duzenle = seritte ? ortakDuzen : yerelDuzen;
+  const setDuzenle = seritte ? duzenKipiniAyarla : setYerelDuzen;
+  // Sayfadan çıkınca düzen kipi kapansın; dönünce sayfa düzenlenir hâlde açılmasın.
+  useEffect(() => () => duzenKipiniAyarla(false), []);
   const uygunlar = katalog().filter((a) => alanUygun(ben, a));
   const bul = (id: string) => uygunlar.find((a) => a.id === id);
   const kayitli = kisisel ? v.anaSayfa?.[duzenAnahtari(ben.id, duzen)] : undefined;
@@ -90,7 +138,7 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
 
   return (
     <>
-      {kisisel && (
+      {kisisel && (duzenle || !seritte) && (
         <div className="alan-arac">
           {duzenle ? (
             <>

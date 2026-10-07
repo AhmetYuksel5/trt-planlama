@@ -1,10 +1,11 @@
-import { ArrowLeft, Ellipsis, ExternalLink, LayoutPanelLeft, Maximize2, Minimize2, MoveLeft, MoveRight, Replace, X } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { ArrowLeft, ExternalLink, LayoutPanelLeft, Maximize2, Minimize2, MoveLeft, MoveRight, Replace, X } from "lucide-react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { maddeAdi, sayfaMaddesi } from "../../bilesenler/AnaMenu";
 import { useDil } from "../../dil";
 import { payKaydir, yolSayfasi, type Ayrac as AyracBilgisi } from "../../ortam";
 import type { Bolme, Kisi } from "../../veri";
 import { bolmeYolu } from "./gorunum";
+import { IslemMenusu } from "./IslemMenusu";
 
 /* Workspace bölmesi: başlık ve işlemler üst pencerede, sayfanın kendisi iframe'de (gömülü kip). */
 
@@ -44,57 +45,28 @@ function Dugme({ ikon, etiket, onClick, devre, ton = "" }: { ikon: ReactNode; et
   );
 }
 
-/*
- * Az kullanılan işlemler (taşı, değiştir, yeni sekme) bir menüde; başlık dar
- * bölmede de sığsın. iframe'e basmak bu belgeye tıklama göndermiyor, menü
- * pencere odağı kaybedince de kapanıyor.
- */
+/* Az kullanılan işlemler (taşı, değiştir, yeni sekme) menüde; başlık dar bölmede de sığsın. */
 function DahaFazla({ islem }: { islem: BolmeIslemleri }) {
   const { t } = useDil();
-  const [acik, setAcik] = useState(false);
-  const kap = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!acik) return;
-    const disari = (e: MouseEvent) => kap.current && !kap.current.contains(e.target as Node) && setAcik(false);
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setAcik(false);
-    const kapat = () => setAcik(false);
-    document.addEventListener("mousedown", disari);
-    document.addEventListener("keydown", esc);
-    window.addEventListener("blur", kapat);
-    return () => {
-      document.removeEventListener("mousedown", disari);
-      document.removeEventListener("keydown", esc);
-      window.removeEventListener("blur", kapat);
-    };
-  }, [acik]);
-  const sec = (f?: () => void) => () => {
-    setAcik(false);
-    f?.();
-  };
   return (
-    <div className="acilir-kap" ref={kap}>
-      <Dugme ikon={<Ellipsis size={16} />} etiket={t("bolmeIslemleri")} onClick={() => setAcik((a) => !a)} />
-      {acik && (
-        <div className="acilir bolme-menu" role="menu">
-          {islem.onceye && (
-            <button type="button" role="menuitem" className="acilir-satir" onClick={sec(islem.onceye)}>
-              <MoveLeft size={16} className="yon" /> {t("bolmeOnceye")}
-            </button>
-          )}
-          {islem.sonraya && (
-            <button type="button" role="menuitem" className="acilir-satir" onClick={sec(islem.sonraya)}>
-              <MoveRight size={16} className="yon" /> {t("bolmeSonraya")}
-            </button>
-          )}
-          <button type="button" role="menuitem" className="acilir-satir" onClick={sec(islem.degistir)}>
-            <Replace size={16} /> {t("modulDegistir")}
-          </button>
-          <a role="menuitem" className="acilir-satir" href={islem.yeniSekme} target="_blank" rel="noopener" onClick={sec()}>
-            <ExternalLink size={16} /> {t("yeniSekmedeAc")}
-          </a>
-        </div>
+    <IslemMenusu etiket={t("bolmeIslemleri")} dugmeSinifi="dugme dugme-sade dugme-ikon">
+      {islem.onceye && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={islem.onceye}>
+          <MoveLeft size={16} className="yon" /> {t("bolmeOnceye")}
+        </button>
       )}
-    </div>
+      {islem.sonraya && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={islem.sonraya}>
+          <MoveRight size={16} className="yon" /> {t("bolmeSonraya")}
+        </button>
+      )}
+      <button type="button" role="menuitem" className="acilir-satir" onClick={islem.degistir}>
+        <Replace size={16} /> {t("modulDegistir")}
+      </button>
+      <a role="menuitem" className="acilir-satir" href={islem.yeniSekme} target="_blank" rel="noopener">
+        <ExternalLink size={16} /> {t("yeniSekmedeAc")}
+      </a>
+    </IslemMenusu>
   );
 }
 
