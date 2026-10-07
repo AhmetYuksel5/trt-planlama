@@ -26,6 +26,10 @@ import UstCubuk from "./UstCubuk";
  * tercihi (dil seçimi gibi): tarayıcıda saklanıyor, kayıt şeması
  * değişmiyor. Tablette aynı düğme çekmeceyi açıyor; gizleme tercihi
  * çekmeceyi etkilemiyor.
+ *
+ * Workspace ana sayfanın alt sayfası (menüde ayrı madde yok): menüde ana
+ * sayfa vurgulu kalıyor, sayfa ekran boyunda duruyor ki bölmeler kendi
+ * içinde kaysın.
  */
 
 /* CSS'teki kırılımla aynı: bunun üstünde menü sabit, altında çekmece. */
@@ -66,9 +70,11 @@ export default function Kabuk({ ben, sayfa, children }: { ben: Kisi; sayfa: stri
     }
   }, [menuGizli]);
   const menuDugmesi = () => (masaustu ? setMenuGizli((g) => !g) : setMenuAcik((a) => !a));
+  const ortam = sayfa === "ortam";
+  const menuSayfasi = ortam ? "ana" : sayfa;
   return (
-    <div className={`uygulama ${menuAcik ? "menu-acik" : ""} ${menuGizli ? "menu-gizli" : ""}`}>
-      <AnaMenu ben={ben} acik={sayfa} />
+    <div className={`uygulama ${menuAcik ? "menu-acik" : ""} ${menuGizli ? "menu-gizli" : ""} ${ortam ? "ortam-acik" : ""}`}>
+      <AnaMenu ben={ben} acik={menuSayfasi} />
       <div className="perde" onClick={kapat} />
       <div className="ana">
         <UstCubuk ben={ben} onMenu={menuDugmesi} masaustu={masaustu} menuGorunur={masaustu ? !menuGizli : menuAcik} />
@@ -78,8 +84,8 @@ export default function Kabuk({ ben, sayfa, children }: { ben: Kisi; sayfa: stri
         </div>
         <main className="sayfa">{children}</main>
       </div>
-      <AltCubuk ben={ben} acik={sayfa} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />
-      {menuAcik && <MobilMenu ben={ben} acik={sayfa} onKapat={kapat} />}
+      <AltCubuk ben={ben} acik={menuSayfasi} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />
+      {menuAcik && <MobilMenu ben={ben} acik={menuSayfasi} onKapat={kapat} />}
       <Bildiri />
     </div>
   );

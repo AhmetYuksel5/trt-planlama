@@ -8,7 +8,7 @@ import type { Kisi } from "../veri";
 import { sayfaGorebilir } from "../yetki";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
-import { MENU, maddeGorunur } from "./AnaMenu";
+import { MENU, maddeAdi, maddeGorunur } from "./AnaMenu";
 
 /**
  * Telefonda "Menü"nün açtığı panel: plan kısayolları, bütün sayfalar,
@@ -19,7 +19,6 @@ import { MENU, maddeGorunur } from "./AnaMenu";
  */
 export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: string; onKapat: () => void }) {
   const { t, ad } = useDil();
-  const muhabir = ben.birim === "muhabir";
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
@@ -84,7 +83,7 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
                 return (
                   <a key={m.sayfa} href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""}>
                     <Ikon size={18} />
-                    {t(muhabir && m.adMuhabir ? m.adMuhabir : m.ad)}
+                    {t(maddeAdi(ben, m))}
                   </a>
                 );
               })}

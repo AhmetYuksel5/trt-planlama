@@ -8,6 +8,7 @@ import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
+import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 import { indir } from "../../bilesenler/indir";
@@ -485,7 +486,7 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
         sagUc={
           <>
             {cagrilar.length > 0 && (
-              <select className="girdi girdi-kisa" value={cagri?.id} onChange={(e) => (location.hash = `#/oneriler/yanitlar/${e.target.value}`)} aria-label={t("oneriCagrisi")}>
+              <select className="girdi girdi-kisa" value={cagri?.id} onChange={(e) => git(`oneriler/yanitlar/${e.target.value}`)} aria-label={t("oneriCagrisi")}>
                 {cagrilar.map((c) => (
                   <option key={c.id} value={c.id}>
                     {cagriAdi(c)}
@@ -700,7 +701,7 @@ export function EpostaKaynagi({ ben, oneri, yanit }: { ben: Kisi; oneri: Oneri; 
               const id = yanittanOneri(ben, yanit.id, g);
               if (id) {
                 bildir(t("bOneriAyrildi"));
-                location.hash = `#/oneriler/${id}`;
+                git(`oneriler/${id}`);
               }
               return !!id;
             }}

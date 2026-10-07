@@ -29,6 +29,14 @@ npm run preview  # derlenmiş hali yerelde
   Planlama'nın varsayılanı yalın: plan kısayolları (Next Day, Weekly,
   Aylık plan, Special Coverage, saha, takvim), son gelen muhabir önerileri,
   muhabirlerin durumu ve son hareketler; öbür alanlar katalogda.
+- **Workspace:** ana sayfanın üstündeki "New Workspace" ile birkaç sayfa
+  (Next Day, haber önerileri, başlıklar, takvim…) bir arada açılıyor.
+  - Her bölme kendi içinde geziniyor. Birinde yapılan iş öbüründe
+    yeniden yüklemeden görünüyor.
+  - Yerleşim: yan yana, alt alta, 2×2 ızgara ya da sekmeli. Aradaki çizgi
+    sürüklenerek boyutlanıyor, bölme tek tuşla büyüyor.
+  - Workspace'ler kişiye kayıtlı ve adlandırılabiliyor. Telefonda bölmeler
+    sekmeli.
 - **Next Day planı:**
   - plan açma düğmesi yok: planlar her gün kesintisiz sürüyor, yarının
     planını sistem kendisi açıyor (uygulama açılınca ve gün dönünce);

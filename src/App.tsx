@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
 import AnaSayfa from "./ekranlar/AnaSayfa";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
@@ -22,13 +23,15 @@ import HaftalikCikti from "./ekranlar/haftalik/Cikti";
 import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
+import OrtamSayfasi from "./ekranlar/ortam/Ortam";
+import { OrtamSekmeleri } from "./ekranlar/ortam/Sekmeler";
 import Takvim from "./ekranlar/takvim/Takvim";
 import { useBen } from "./oturum";
 import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { yarinPlaniniAc } from "./eylemler";
 import { oneriGorebilir, paketGorebilir, sayfaGorebilir, yapabilir } from "./yetki";
-import { useYol } from "./yol";
+import { GOMULU, useYol } from "./yol";
 
 /**
  * Uygulamanın girişi: oturum yoksa demo giriş, varsa kabuk ve sayfa.
@@ -37,6 +40,9 @@ import { useYol } from "./yol";
  * Her sayfa önce birim iznine (yetki.ts → SAYFA_IZNI), kayıt sayfaları
  * ayrıca kaydın görünürlüğüne bakıyor: muhabir başka muhabirin paketinin
  * adresini elle yazsa da "yetkisiz" görüyor.
+ *
+ * Workspace bölmesinde (GOMULU) aynı sayfalar kabuksuz çiziliyor; menü ve
+ * üst çubuk üst pencerede bir kez duruyor.
  */
 /* Gün dönümünü yakalamak için arada bir: uygulama gece açık kalsa da sabah yarının planı hazır. */
 const GUN_YOKLAMA = 10 * 60 * 1000;
@@ -46,14 +52,31 @@ export default function App() {
   const ben = useBen();
   const v = useVeri();
   // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
+  // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın.
   useEffect(() => {
+    if (GOMULU) return;
     yarinPlaniniAc();
     const z = setInterval(yarinPlaniniAc, GUN_YOKLAMA);
     return () => clearInterval(z);
   }, []);
 
-  if (yol.sayfa === "plan") return <ProjePlani />;
-  if (!ben) return <Giris />;
+  if (yol.sayfa === "plan")
+    return GOMULU ? (
+      <GomuluKabuk>
+        <BolmeUyarisi tur="projePlani" />
+      </GomuluKabuk>
+    ) : (
+      <ProjePlani />
+    );
+  // Bölmede giriş ekranı yok: oradan kişi seçmek bütün pencerenin oturumunu değiştirirdi.
+  if (!ben)
+    return GOMULU ? (
+      <GomuluKabuk>
+        <BolmeUyarisi tur="oturumYok" />
+      </GomuluKabuk>
+    ) : (
+      <Giris />
+    );
 
   const sayfa = yol.sayfa;
   let icerik: ReactNode;
@@ -62,7 +85,17 @@ export default function App() {
   } else {
     switch (sayfa) {
       case "ana":
-        icerik = <AnaSayfa ben={ben} />;
+        icerik = GOMULU ? (
+          <AnaSayfa ben={ben} />
+        ) : (
+          <>
+            <OrtamSekmeleri ben={ben} />
+            <AnaSayfa ben={ben} />
+          </>
+        );
+        break;
+      case "ortam":
+        icerik = GOMULU ? <BolmeUyarisi tur="icIce" /> : <OrtamSayfasi ben={ben} id={yol.id} />;
         break;
       case "panel":
         icerik = <YoneticiPaneli ben={ben} birim={yol.id} />;
@@ -158,7 +191,9 @@ export default function App() {
     }
   }
 
-  return (
+  return GOMULU ? (
+    <GomuluKabuk>{icerik}</GomuluKabuk>
+  ) : (
     <Kabuk ben={ben} sayfa={sayfa}>
       {icerik}
     </Kabuk>

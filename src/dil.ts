@@ -1798,6 +1798,52 @@ const M = {
   tk_yillik: m("Her yıl", "سنويا", "Yearly"),
   tk_aylik: m("Her ay", "شهريا", "Monthly"),
   tk_haftalik: m("Her hafta", "أسبوعيا", "Weekly"),
+
+  /* Workspace: birkaç sayfa bir arada. Ad kullanıcının sözcüğü (Next Day, Weekly gibi); Arapçada "وحدة" birim demek, modül "صفحة". */
+  ortam: m("Workspace", "مساحة العمل", "Workspace"),
+  ortamlar: m("Workspace'ler", "مساحات العمل", "Workspaces"),
+  ortamSekmeleri: m("Ana sayfa ve workspace'ler", "الرئيسية ومساحات العمل", "Home and workspaces"),
+  yeniOrtam: m("New Workspace", "مساحة عمل جديدة", "New Workspace"),
+  ortamAdi: m("Workspace {n}", "مساحة العمل {n}", "Workspace {n}"),
+  ortamiAdlandir: m("Adını değiştir", "إعادة التسمية", "Rename"),
+  ortamAdiEtiket: m("Workspace adı", "اسم مساحة العمل", "Workspace name"),
+  ortamAdiNotu: m("Boş bırakırsan varsayılan ada döner.", "إذا تركته فارغا يعود إلى الاسم الافتراضي.", "Leave it empty to go back to the default name."),
+  ortamiSil: m("Workspace'i sil", "حذف مساحة العمل", "Delete workspace"),
+  ortamSilinsinMi: m(
+    "\"{ad}\" silinsin mi? Bölmelerde açık kayıtlar silinmez.",
+    "هل تريد حذف \"{ad}\"؟ لا تُحذف السجلات المفتوحة فيها.",
+    "Delete \"{ad}\"? Records open in it are not deleted.",
+  ),
+  ortamBulunamadi: m("Bu workspace yok ya da silinmiş.", "مساحة العمل هذه غير موجودة أو حُذفت.", "This workspace doesn't exist or was deleted."),
+  ortamSiniri: m("En çok {n} workspace açılabilir.", "يمكن فتح {n} مساحات عمل على الأكثر.", "You can open at most {n} workspaces."),
+  ortamBos: m(
+    "Bu workspace boş. Birlikte çalışacağın modülleri ekle.",
+    "مساحة العمل فارغة. أضف الصفحات التي تعمل عليها معا.",
+    "This workspace is empty. Add the modules you want to work on together.",
+  ),
+  duzen: m("Yerleşim", "التخطيط", "Layout"),
+  duzenYan: m("Yan yana", "جنبا إلى جنب", "Side by side"),
+  duzenAlt: m("Alt alta", "فوق بعضها", "Stacked"),
+  duzenIzgara: m("Izgara 2×2", "شبكة 2×2", "Grid 2×2"),
+  duzenSekme: m("Sekmeli", "تبويبات", "Tabs"),
+  modulEkle: m("Modül ekle", "إضافة صفحة", "Add module"),
+  modulSec: m("Modül seç", "اختر صفحة", "Choose a module"),
+  modulSecAlt: m("Seçtiğin sayfa bu workspace'te bir bölmede açılır.", "تُفتح الصفحة المختارة في جزء من مساحة العمل.", "The page opens in a pane of this workspace."),
+  modulDegistir: m("Modülü değiştir", "تغيير الصفحة", "Change module"),
+  bolmeDolu: m("Bir workspace'te en çok {n} modül açılır.", "تتسع مساحة العمل لـ{n} صفحات على الأكثر.", "A workspace holds at most {n} modules."),
+  bolmeGeri: m("Geri", "رجوع", "Back"),
+  bolmeBuyut: m("Büyüt", "تكبير", "Maximise"),
+  bolmeKucult: m("Küçült", "تصغير", "Restore"),
+  bolmeKapat: m("Modülü kapat", "إغلاق الصفحة", "Close module"),
+  bolmeOnceye: m("Öne taşı", "نقل إلى الأمام", "Move earlier"),
+  bolmeSonraya: m("Arkaya taşı", "نقل إلى الخلف", "Move later"),
+  yeniSekmedeAc: m("Yeni sekmede aç", "فتح في تبويب جديد", "Open in new tab"),
+  bolmeIslemleri: m("Modül işlemleri", "إجراءات الصفحة", "Module actions"),
+  bolmeCercevesi: m("{ad} modülü", "صفحة {ad}", "{ad} module"),
+  ayracEtiketi: m("Modül boyutunu değiştir", "تغيير حجم الصفحة", "Resize module"),
+  bolmeIcIce: m("Workspace bir modülün içinde açılmaz.", "لا تُفتح مساحة العمل داخل صفحة.", "A workspace can't open inside a module."),
+  bolmeProjePlani: m("Proje planı ayrı sekmede açılır.", "تُفتح خطة المشروع في تبويب مستقل.", "The project plan opens in its own tab."),
+  bolmeOturumYok: m("Oturum kapandı; ana pencereden giriş yap.", "انتهت الجلسة؛ سجّل الدخول من النافذة الرئيسية.", "Signed out; sign in from the main window."),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;
@@ -1806,14 +1852,16 @@ export type Anahtar = keyof typeof M;
 
 const SAKLA = "trt-planlama-dil";
 
-let dil: Dil = (() => {
+const dilOku = (): Dil => {
   try {
     const k = localStorage.getItem(SAKLA);
     return DILLER.includes(k as Dil) ? (k as Dil) : "tr";
   } catch {
     return "tr";
   }
-})();
+};
+
+let dil: Dil = dilOku();
 
 const dinleyiciler = new Set<() => void>();
 
@@ -1824,6 +1872,16 @@ const uygula = () => {
   document.title = M.uygulama[dil];
 };
 uygula();
+
+/* Dil üst pencerede seçiliyor; workspace bölmeleri ve öbür sekmeler yeniden yüklenmeden ona dönsün. */
+window.addEventListener("storage", (e) => {
+  if (e.key !== SAKLA && e.key !== null) return;
+  const yeni = dilOku();
+  if (yeni === dil) return;
+  dil = yeni;
+  uygula();
+  dinleyiciler.forEach((d) => d());
+});
 
 export const dilAyarla = (yeni: Dil) => {
   dil = yeni;

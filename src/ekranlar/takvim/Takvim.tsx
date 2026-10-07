@@ -19,7 +19,7 @@ import {
 import { ayEkle, bugun, gunEkle } from "../../tarih";
 import { BIRIMLER, BOLGELER, FAALIYET_DURUMLARI, FAALIYET_TURLERI, ONCELIKLER, POTANSIYELLER, ULKELER, faaliyetBul, getir, muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
 import { faaliyetGorebilir, yapabilir } from "../../yetki";
-import type { Yol } from "../../yol";
+import { yerindeDegistir, type Yol } from "../../yol";
 import { Yetkisiz } from "../Ayarlar";
 import { SayfaBasi } from "../ana/Planlama";
 import { FaaliyetAyrintisi, type AcikFaaliyet } from "./Ayrinti";
@@ -93,7 +93,7 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
   const B = bugun();
 
   useEffect(() => {
-    history.replaceState(null, "", `#/takvim/${gorunum}/${tarih}`);
+    yerindeDegistir(`takvim/${gorunum}/${tarih}`);
   }, [gorunum, tarih]);
 
   const git = useCallback((g: Gorunum, x: string) => {

@@ -1,9 +1,11 @@
 import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { BOLME_EN_COK, ORTAM_ADI_EN_UZUN, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
+  ORTAM_DUZENLERI,
   SEHIRLER,
   ULKE_BOLGESI,
   cagriTuru,
@@ -19,6 +21,7 @@ import {
   paketBul,
   planBul,
   type Birim,
+  type BolmeEkseni,
   type CanliYayin,
   type AylikPlan,
   type Durum,
@@ -26,6 +29,8 @@ import {
   type Faaliyet,
   type FaaliyetBaglantisi,
   type Oncelik,
+  type Ortam,
+  type OrtamDuzeni,
   type FaaliyetDurum,
   type Potansiyel,
   type Gelisme,
@@ -61,6 +66,7 @@ import {
   planIcerikDuzenler,
   planOperasyonDuzenler,
   profilDuzenler,
+  sayfaGorebilir,
   talimatVerebilir,
   uretimeAlabilir,
   yapabilir,
@@ -1554,6 +1560,101 @@ export const oneriGorunumuKaydet = (ben: Kisi, gorunum: OneriGorunumu) => {
   kaydet({ ...d, oneriGorunumu: { ...(d.oneriGorunumu ?? {}), [ben.id]: gorunum } });
   return true;
 };
+
+/* --- Workspace --- */
+
+/*
+ * Workspace kişinin kendi çalışma düzeni, ana sayfa düzeni gibi: hareket
+ * yazılmıyor, herkes yalnız kendi workspace'lerini değiştiriyor (kayıt
+ * kişinin kimliği altında, başka kişininkine yol yok).
+ */
+const ortamlariYaz = (d: Durum, ben: Kisi, f: (l: Ortam[]) => Ortam[]) =>
+  kaydet({ ...d, ortamlar: { ...(d.ortamlar ?? {}), [ben.id]: f(kisininOrtamlari(d, ben.id)) } });
+
+const ortamGuncelle = (ben: Kisi, id: string, f: (o: Ortam) => Ortam | null) => {
+  const d = getir();
+  const o = kisininOrtamlari(d, ben.id).find((x) => x.id === id);
+  const yeni = o && f(o);
+  if (!yeni) return false;
+  ortamlariYaz(d, ben, (l) => l.map((x) => (x.id === id ? yeni : x)));
+  return true;
+};
+
+/** Yeni boş workspace; kimliği döner, sınıra gelinmişse null. */
+export const ortamOlustur = (ben: Kisi): string | null => {
+  const d = getir();
+  const liste = kisininOrtamlari(d, ben.id);
+  if (!sayfaGorebilir(ben, "ortam") || liste.length >= ORTAM_EN_COK) return null;
+  const id = kimlik("or");
+  // Numara sürekli artıyor: silinenin adı yenisine geçip "Workspace 2" iki kez görünmesin.
+  const no = Math.max(0, ...liste.map((o) => o.no)) + 1;
+  ortamlariYaz(d, ben, (l) => [...l, { id, no, duzen: "yan", bolmeler: [] }]);
+  return id;
+};
+
+/** Boş ad "Workspace {no}"ya döndürüyor. */
+export const ortamAdlandir = (ben: Kisi, id: string, ad: string) =>
+  ortamGuncelle(ben, id, (o) => {
+    const temiz = ad.trim().slice(0, ORTAM_ADI_EN_UZUN);
+    const { ad: _eski, ...kalan } = o;
+    return temiz ? { ...kalan, ad: temiz } : kalan;
+  });
+
+export const ortamSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  if (!kisininOrtamlari(d, ben.id).some((o) => o.id === id)) return false;
+  ortamlariYaz(d, ben, (l) => l.filter((o) => o.id !== id));
+  return true;
+};
+
+export const ortamDuzeni = (ben: Kisi, id: string, duzen: OrtamDuzeni) =>
+  ORTAM_DUZENLERI.includes(duzen) && ortamGuncelle(ben, id, (o) => ({ ...o, duzen }));
+
+/** Bölmeye sayfa ekler; kimliği döner. Sınır ve sayfa izni düğmede olduğu gibi burada da soruluyor. */
+export const bolmeEkle = (ben: Kisi, ortamId: string, yol: string): string | null => {
+  if (!bolmeyeGirer(ben, yol)) return null;
+  const id = kimlik("bo");
+  const tamam = ortamGuncelle(ben, ortamId, (o) =>
+    o.bolmeler.length >= BOLME_EN_COK ? null : { ...o, bolmeler: [...o.bolmeler, { id, yol: yolTemizle(yol) }] },
+  );
+  return tamam ? id : null;
+};
+
+/** Bölmede başka sayfa; boyutu ve yeri aynı kalıyor. */
+export const bolmeDegistir = (ben: Kisi, ortamId: string, bolmeId: string, yol: string) =>
+  bolmeyeGirer(ben, yol) &&
+  ortamGuncelle(ben, ortamId, (o) =>
+    o.bolmeler.some((b) => b.id === bolmeId) ? { ...o, bolmeler: o.bolmeler.map((b) => (b.id === bolmeId ? { ...b, yol: yolTemizle(yol) } : b)) } : null,
+  );
+
+export const bolmeKapat = (ben: Kisi, ortamId: string, bolmeId: string) =>
+  ortamGuncelle(ben, ortamId, (o) => (o.bolmeler.some((b) => b.id === bolmeId) ? { ...o, bolmeler: o.bolmeler.filter((b) => b.id !== bolmeId) } : null));
+
+/** Bölmeyi komşusuyla yer değiştirir (ekrandaki sıra). */
+export const bolmeTasi = (ben: Kisi, ortamId: string, bolmeId: string, yon: -1 | 1) =>
+  ortamGuncelle(ben, ortamId, (o) => {
+    const i = o.bolmeler.findIndex((b) => b.id === bolmeId);
+    const j = i + yon;
+    if (i < 0 || j < 0 || j >= o.bolmeler.length) return null;
+    const yeni = [...o.bolmeler];
+    [yeni[i], yeni[j]] = [yeni[j], yeni[i]];
+    return { ...o, bolmeler: yeni };
+  });
+
+/* Payların uç değerleri: sürüklemede piksel sınırı zaten var, bu bozuk değere karşı. */
+const PAY_EN_AZ = 0.05;
+const PAY_EN_COK = 20;
+
+/** Ayraçtan gelen boyutlar (bölme → fr); geçersiz değer yazılmıyor. */
+export const bolmePaylari = (ben: Kisi, ortamId: string, eksen: BolmeEkseni, paylar: Record<string, number>) =>
+  ortamGuncelle(ben, ortamId, (o) => ({
+    ...o,
+    bolmeler: o.bolmeler.map((b) => {
+      const p = paylar[b.id];
+      if (p === undefined || !Number.isFinite(p)) return b;
+      return { ...b, pay: { ...b.pay, [eksen]: Math.min(Math.max(p, PAY_EN_AZ), PAY_EN_COK) } };
+    }),
+  }));
 
 /* --- Planlama takvimi --- */
 
