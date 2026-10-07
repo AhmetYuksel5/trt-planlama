@@ -760,11 +760,12 @@ export interface Bolme {
   pay?: Partial<Record<BolmeEkseni, number>>;
 }
 
+/*
+ * Adı yok: sekmede içindeki sayfaların kısa adları yazıyor (türetiliyor).
+ * Eski kayıtta `ad` ve `no` durabilir; okunmuyor, şema değişmiyor.
+ */
 export interface Ortam {
   id: string;
-  /** Adı verilmemişse "Workspace {no}". */
-  no: number;
-  ad?: string;
   duzen: OrtamDuzeni;
   /** Dizideki sıra ekrandaki sıra. */
   bolmeler: Bolme[];
@@ -797,7 +798,7 @@ export interface Durum {
   oneriGorunumu?: Record<string, OneriGorunumu>;
   /** Kişinin workspace'leri (kişi → sekme sırasıyla); ana sayfa düzeni gibi kişisel. */
   ortamlar?: Record<string, Ortam[]>;
-  /** Kişinin üst şeritteki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
+  /** Kişinin üst çubuktaki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
   kisayollar?: Record<string, string[]>;
   sayac: number;
 }

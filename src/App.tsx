@@ -24,8 +24,7 @@ import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import ProjePlani from "./ekranlar/ProjePlani";
 import OrtamSayfasi from "./ekranlar/ortam/Ortam";
-import { AnaSerit } from "./ekranlar/ortam/Serit";
-import { SayfaDuzenDugmesi, SeritteDuzen } from "./ekranlar/ana/Calisma";
+import YeniOrtam from "./ekranlar/ortam/YeniOrtam";
 import Takvim from "./ekranlar/takvim/Takvim";
 import { useBen } from "./oturum";
 import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
@@ -86,18 +85,10 @@ export default function App() {
   } else {
     switch (sayfa) {
       case "ana":
-        icerik = GOMULU ? (
-          <AnaSayfa ben={ben} />
-        ) : (
-          // "Sayfayı düzenle" ayrı satırda değil, üst şeritte.
-          <SeritteDuzen.Provider value={true}>
-            <AnaSerit ben={ben} ek={<SayfaDuzenDugmesi />} />
-            <AnaSayfa ben={ben} />
-          </SeritteDuzen.Provider>
-        );
+        icerik = <AnaSayfa ben={ben} />;
         break;
       case "ortam":
-        icerik = GOMULU ? <BolmeUyarisi tur="icIce" /> : <OrtamSayfasi ben={ben} id={yol.id} />;
+        icerik = GOMULU ? <BolmeUyarisi tur="icIce" /> : yol.id === "yeni" ? <YeniOrtam ben={ben} /> : <OrtamSayfasi ben={ben} id={yol.id} />;
         break;
       case "panel":
         icerik = <YoneticiPaneli ben={ben} birim={yol.id} />;
@@ -196,7 +187,7 @@ export default function App() {
   return GOMULU ? (
     <GomuluKabuk>{icerik}</GomuluKabuk>
   ) : (
-    <Kabuk ben={ben} sayfa={sayfa}>
+    <Kabuk ben={ben} sayfa={sayfa} ortamAcik={sayfa === "ortam" && yol.id !== "yeni"}>
       {icerik}
     </Kabuk>
   );

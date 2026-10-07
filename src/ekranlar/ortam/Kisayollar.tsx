@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, Pencil, Plus, X, type LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Star, X, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { MENU, maddeAdi, maddeGorunur, sayfaMaddesi } from "../../bilesenler/AnaMenu";
+import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { Bos, Pencere } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { kisayollariKaydet } from "../../eylemler";
@@ -143,20 +144,70 @@ function KisayolPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   );
 }
 
-/** Üst şeridin kısayol grubu: yalnız ikon, ad üzerine gelince; sonda düzenleme. */
-export function KisayolSeridi({ ben }: { ben: Kisi }) {
+/* Çubukta satır içinde en çok bu kadar kısayol; fazlası ve adları ★ menüsünde. */
+const CUBUKTA = 6;
+
+/**
+ * Üst çubuğun kısayolları: ilk altısı renkli ikon (ad ipucunda); ★ hepsini
+ * adıyla ve "Kısayolları düzenle"yi açıyor. Dar çubukta yalnız ★ kalıyor
+ * (CSS); tarayıcının yer imleri çubuğundaki "»" gibi.
+ */
+export function UstKisayollar({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const [duzen, setDuzen] = useState(false);
-  // Pencere gezinme bölgesinin dışında: içindeki küçük kutucuklar şeridin kısayolu sayılmasın.
+  const liste = kisininKisayollari(v, ben);
+  // Pencere gezinme bölgesinin dışında: içindeki küçük kutucuklar çubuğun kısayolu sayılmasın.
   return (
     <>
-      <nav className="serit-grup kisayol-seridi" aria-label={t("kisayollar")}>
-        {kisininKisayollari(v, ben).map((k) => (
-          <KisayolKutusu key={k} ben={ben} kimlik={k} />
-        ))}
-        <button type="button" className="serit-dugme" onClick={() => setDuzen(true)} aria-label={t("kisayollariDuzenle")} title={t("kisayollariDuzenle")}>
-          <Pencil size={15} />
+      <nav className="ust-kisayollar" aria-label={t("kisayollar")}>
+        <span className="ust-kisayol-satiri">
+          {liste.slice(0, CUBUKTA).map((k) => (
+            <KisayolKutusu key={k} ben={ben} kimlik={k} />
+          ))}
+        </span>
+        <IslemMenusu etiket={t("tumKisayollar")} dugmeSinifi="ikon-dugme" ikon={<Star size={17} />} menuSinifi="kisayol-menusu">
+          {liste.map((k) => {
+            const b = kisayolBilgisi(ben, k);
+            return (
+              b && (
+                <a key={k} role="menuitem" className="acilir-satir" href={`#/${k}`} data-kisayol-menu={k}>
+                  <KisayolKutusu ben={ben} kimlik={k} bag={false} /> {t(b.ad)}
+                </a>
+              )
+            );
+          })}
+          <button type="button" role="menuitem" className="acilir-satir" onClick={() => setDuzen(true)}>
+            <Pencil size={16} /> {t("kisayollariDuzenle")}
+          </button>
+        </IslemMenusu>
+      </nav>
+      {duzen && <KisayolPenceresi ben={ben} kapat={() => setDuzen(false)} />}
+    </>
+  );
+}
+
+/** Telefondaki Menü paneli: kısayollar adıyla, dokunmaya uygun; sonda düzenleme. */
+export function KisayolKutulari({ ben, sec }: { ben: Kisi; sec?: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [duzen, setDuzen] = useState(false);
+  const liste = kisininKisayollari(v, ben);
+  return (
+    <>
+      <nav className="kisayol-kutulari" aria-label={t("kisayollarim")}>
+        {liste.map((k) => {
+          const b = kisayolBilgisi(ben, k);
+          return (
+            b && (
+              <a key={k} href={`#/${k}`} data-kisayol={k} onClick={sec}>
+                <KisayolKutusu ben={ben} kimlik={k} bag={false} /> {t(b.ad)}
+              </a>
+            )
+          );
+        })}
+        <button type="button" onClick={() => setDuzen(true)}>
+          <Pencil size={16} /> {t("kisayollariDuzenle")}
         </button>
       </nav>
       {duzen && <KisayolPenceresi ben={ben} kapat={() => setDuzen(false)} />}

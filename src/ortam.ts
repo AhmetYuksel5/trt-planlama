@@ -13,7 +13,9 @@ import { sayfaGorebilir } from "./yetki";
 /* Sekme şeridi taşmasın, bölmeler okunur kalsın; her bölme uygulamayı ayrıca yüklüyor. */
 export const ORTAM_EN_COK = 8;
 export const BOLME_EN_COK = 4;
-export const ORTAM_ADI_EN_UZUN = 40;
+
+/** Seçim sayfasının önerdiği yerleşim: dört sayfa yan yana okunmuyor, ızgara oluyor. */
+export const varsayilanDuzen = (bolmeSayisi: number): OrtamDuzeni => (bolmeSayisi >= 4 ? "izgara" : "yan");
 
 /*
  * Bölmeye girmeyen sayfalar: workspace kendi içinde açılmaz; proje planının

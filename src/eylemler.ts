@@ -2,7 +2,7 @@ import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimA
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
-import { BOLME_EN_COK, ORTAM_ADI_EN_UZUN, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, yolTemizle } from "./ortam";
+import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
@@ -1562,7 +1562,7 @@ export const oneriGorunumuKaydet = (ben: Kisi, gorunum: OneriGorunumu) => {
   return true;
 };
 
-/* --- Üst şeritteki kısayollar --- */
+/* --- Üst çubuktaki kısayollar --- */
 
 /**
  * Kişinin kısayolları ve sırası; null birimin varsayılanına döndürüyor.
@@ -1597,25 +1597,36 @@ const ortamGuncelle = (ben: Kisi, id: string, f: (o: Ortam) => Ortam | null) => 
   return true;
 };
 
-/** Yeni boş workspace; kimliği döner, sınıra gelinmişse null. */
-export const ortamOlustur = (ben: Kisi): string | null => {
+/**
+ * Seçim sayfasında seçilen sayfalarla yeni workspace; kimliği döner.
+ * Bölmeler tek yazışta kuruluyor: her bölme ayrı yazılsa açık çerçeveler
+ * kaydı birkaç kez yeniden okurdu. Boş workspace yok; seçilecek sayfa
+ * yoksa, sayfa görünmüyorsa ya da sınırdaysa null.
+ */
+export const ortamOlustur = (ben: Kisi, yollar: string[], duzen?: OrtamDuzeni): string | null => {
   const d = getir();
   const liste = kisininOrtamlari(d, ben.id);
-  if (!sayfaGorebilir(ben, "ortam") || liste.length >= ORTAM_EN_COK) return null;
+  const gecerli = [...new Set(yollar.map(yolTemizle))].filter((y) => bolmeyeGirer(ben, y)).slice(0, BOLME_EN_COK);
+  if (!sayfaGorebilir(ben, "ortam") || liste.length >= ORTAM_EN_COK || gecerli.length === 0) return null;
   const id = kimlik("or");
-  // Numara sürekli artıyor: silinenin adı yenisine geçip "Workspace 2" iki kez görünmesin.
-  const no = Math.max(0, ...liste.map((o) => o.no)) + 1;
-  ortamlariYaz(d, ben, (l) => [...l, { id, no, duzen: "yan", bolmeler: [] }]);
+  const bolmeler = gecerli.map((yol) => ({ id: kimlik("bo"), yol }));
+  const secilen = duzen && ORTAM_DUZENLERI.includes(duzen) ? duzen : varsayilanDuzen(bolmeler.length);
+  ortamlariYaz(d, ben, (l) => [...l, { id, duzen: secilen, bolmeler }]);
   return id;
 };
 
-/** Boş ad "Workspace {no}"ya döndürüyor. */
-export const ortamAdlandir = (ben: Kisi, id: string, ad: string) =>
-  ortamGuncelle(ben, id, (o) => {
-    const temiz = ad.trim().slice(0, ORTAM_ADI_EN_UZUN);
-    const { ad: _eski, ...kalan } = o;
-    return temiz ? { ...kalan, ad: temiz } : kalan;
+/** Kapatılan workspace'i aynı yerine geri koyar (bildirimdeki "Geri al"). */
+export const ortamGeriAc = (ben: Kisi, ortam: Ortam, sira: number) => {
+  const d = getir();
+  const liste = kisininOrtamlari(d, ben.id);
+  if (liste.some((o) => o.id === ortam.id) || liste.length >= ORTAM_EN_COK) return false;
+  ortamlariYaz(d, ben, (l) => {
+    const yeni = [...l];
+    yeni.splice(Math.min(Math.max(sira, 0), yeni.length), 0, ortam);
+    return yeni;
   });
+  return true;
+};
 
 export const ortamSil = (ben: Kisi, id: string) => {
   const d = getir();
@@ -1627,13 +1638,21 @@ export const ortamSil = (ben: Kisi, id: string) => {
 export const ortamDuzeni = (ben: Kisi, id: string, duzen: OrtamDuzeni) =>
   ORTAM_DUZENLERI.includes(duzen) && ortamGuncelle(ben, id, (o) => ({ ...o, duzen }));
 
-/** Bölmeye sayfa ekler; kimliği döner. Sınır ve sayfa izni düğmede olduğu gibi burada da soruluyor. */
-export const bolmeEkle = (ben: Kisi, ortamId: string, yol: string): string | null => {
+/**
+ * Bölmeye sayfa ekler; kimliği döner. "Yanına sayfa aç" yeni bölmeyi
+ * basılan bölmenin hemen arkasına koyuyor (`sonra`), yoksa sona. Sınır ve
+ * sayfa izni düğmede olduğu gibi burada da soruluyor.
+ */
+export const bolmeEkle = (ben: Kisi, ortamId: string, yol: string, sonra?: string): string | null => {
   if (!bolmeyeGirer(ben, yol)) return null;
   const id = kimlik("bo");
-  const tamam = ortamGuncelle(ben, ortamId, (o) =>
-    o.bolmeler.length >= BOLME_EN_COK ? null : { ...o, bolmeler: [...o.bolmeler, { id, yol: yolTemizle(yol) }] },
-  );
+  const tamam = ortamGuncelle(ben, ortamId, (o) => {
+    if (o.bolmeler.length >= BOLME_EN_COK) return null;
+    const yeni = [...o.bolmeler];
+    const i = sonra ? yeni.findIndex((b) => b.id === sonra) : -1;
+    yeni.splice(i < 0 ? yeni.length : i + 1, 0, { id, yol: yolTemizle(yol) });
+    return { ...o, bolmeler: yeni };
+  });
   return tamam ? id : null;
 };
 

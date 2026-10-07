@@ -28,22 +28,31 @@ npm run preview  # derlenmiş hali yerelde
   istediğinde varsayılana dönüyor; düzen yalnız onun sayfasını değiştiriyor.
   Planlama'nın varsayılanı yalın: son gelen muhabir önerileri,
   muhabirlerin durumu ve son hareketler; öbür alanlar katalogda.
-- **Üst şerit:** ana sayfanın üstünde tek satır, yalnız ikonlar (ad
-  üzerine gelince).
-  - Başta ana sayfa, workspace'ler ve "+".
-  - Ortada açık sayfanın işleri: Sayfayı düzenle, workspace yerleşimi,
-    modül ekleme.
-  - Sonda kısayollar: Next Day, Weekly, Aylık plan, Special Coverage, saha,
-    takvim. Kalem ikonuyla kişi kendi kısayollarını seçiyor, sıralıyor,
-    varsayılana dönüyor.
-- **Workspace:** üst şeritteki "+" ile birkaç sayfa (Next Day, haber
-  önerileri, başlıklar, takvim…) bir arada açılıyor.
+- **Üst çubuk:** bütün sayfalarda tek ince satır; sayfanın üstünde başka
+  satır yok, çalışma alanı geniş.
+  - Tarayıcı gibi sekmeler: başta bulunulan sayfa, sonra workspace'ler,
+    sonda "+".
+  - Kısayollar renkli ikon: Next Day, Weekly, Aylık plan, Special Coverage,
+    saha, takvim. ★ hepsini adıyla gösteriyor; kişi kendi kısayollarını
+    seçiyor, sıralıyor, varsayılana dönüyor.
+  - Küçük "Prototip" etiketi, arama ikonu, dil (TR ▾), bildirimler, avatar.
+- **Arama penceresi:** 🔍, Ctrl/⌘+K ya da "/" ile açılıyor. Sayfalar,
+  workspace'ler, paket kodu, haber ve kişi aranıyor; herkes yalnız
+  görebildiğini buluyor.
+- **Workspace:** "+" seçim sayfasını açıyor; birlikte açılacak sayfalar
+  (Next Day, haber önerileri, başlıklar, takvim…) sırayla seçilip "Aç"
+  deniyor.
+  - Sekmede numara yok, açık sayfaların kısa adları yazıyor
+    ("Next Day · Öneriler").
   - Her bölme kendi içinde geziniyor. Birinde yapılan iş öbüründe
     yeniden yüklemeden görünüyor.
-  - Yerleşim: yan yana, alt alta, 2×2 ızgara ya da sekmeli. Aradaki çizgi
-    sürüklenerek boyutlanıyor, bölme tek tuşla büyüyor.
-  - Workspace'ler kişiye kayıtlı ve adlandırılabiliyor. Telefonda bölmeler
-    sekmeli.
+  - Bölme başlığındaki "Yanına sayfa aç" ya da sekmenin ▾ menüsündeki
+    "Sayfa ekle" yeni sayfayı yerinde seçtiriyor.
+  - Yerleşim (▾ menüsü): yan yana, alt alta, 2×2 ızgara ya da sekmeli.
+    Aradaki çizgi sürüklenerek boyutlanıyor, bölme tek tuşla büyüyor.
+  - Sekmedeki × hemen kapatıyor; bildirimdeki "Geri al" olduğu gibi geri
+    getiriyor. Workspace'ler kişiye kayıtlı; telefonda Menü panelinde,
+    bölmeler sekmeli.
 - **Next Day planı:**
   - plan açma düğmesi yok: planlar her gün kesintisiz sürüyor, yarının
     planını sistem kendisi açıyor (uygulama açılınca ve gün dönünce);

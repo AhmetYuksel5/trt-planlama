@@ -55,6 +55,9 @@ export interface Madde {
   sayfa: string;
   ad: Anahtar;
   adMuhabir?: Anahtar;
+  /* Kısa ad zorunlu: workspace sekmesi ve arama penceresi onu yazıyor; yeni sayfa kısa adsız derlenmesin. */
+  kisa: Anahtar;
+  kisaMuhabir?: Anahtar;
   ikon: LucideIcon;
   taslak?: boolean;
   /** Sayfa izninin üstüne kişiye göre ek koşul. */
@@ -77,26 +80,30 @@ export const MENU: Grup[] = [
         sayfa: "ana",
         ad: "mAna",
         adMuhabir: "mIslerim",
+        kisa: "kaAna",
+        kisaMuhabir: "kaIslerim",
         ikon: House,
         say: (d, ben) => d.paketler.filter((p) => p.durum === "uretimde" && siramMi(ben, p) && paketGorebilir(ben, p, d)).length,
       },
       // Yönetim biriminde panel zaten ana sayfa; birim yöneticisi ona buradan ulaşıyor.
-      { sayfa: "panel", ad: "mPanel", ikon: Gauge, goster: (ben) => ben.birim !== "yonetim" },
+      { sayfa: "panel", ad: "mPanel", kisa: "kaPanel", ikon: Gauge, goster: (ben) => ben.birim !== "yonetim" },
     ],
   },
   {
     ad: "mgPlanlama",
     maddeler: [
-      { sayfa: "nextday", ad: "mNextday", ikon: CalendarDays },
+      { sayfa: "nextday", ad: "mNextday", kisa: "kaNextday", ikon: CalendarDays },
       // Sayı: kişinin önündeki ön inceleme (müdür, Ekonomi).
-      { sayfa: "haftalik", ad: "mHaftalik", ikon: CalendarRange, say: (d, ben) => gorusBekleyenler(d, ben).length },
-      { sayfa: "aylik", ad: "mAylik", ikon: Calendar, taslak: true },
-      { sayfa: "ozel", ad: "mOzel", ikon: Tv, taslak: true },
+      { sayfa: "haftalik", ad: "mHaftalik", kisa: "kaHaftalik", ikon: CalendarRange, say: (d, ben) => gorusBekleyenler(d, ben).length },
+      { sayfa: "aylik", ad: "mAylik", kisa: "kaAylik", ikon: Calendar, taslak: true },
+      { sayfa: "ozel", ad: "mOzel", kisa: "kaOzel", ikon: Tv, taslak: true },
       // Sayı: zamanı gelen hatırlatmalar; yalnız takvimi tutanlara ve muhabire (kendi faaliyeti), öbür masalara gürültü olmasın.
       {
         sayfa: "takvim",
         ad: "mTakvim",
         adMuhabir: "mTakvimim",
+        kisa: "kaTakvim",
+        kisaMuhabir: "kaTakvimim",
         ikon: CalendarCheck,
         say: (d, ben) => (yapabilir(ben, "takvimDuzenle") || ben.birim === "muhabir" ? bekleyenHatirlatmalar(gorunenFaaliyetler(d, ben)).length : 0),
       },
@@ -105,10 +112,10 @@ export const MENU: Grup[] = [
   {
     ad: "mgPersonel",
     maddeler: [
-      { sayfa: "muhabirler", ad: "mMuhabirler", ikon: Users },
-      { sayfa: "editorler", ad: "mEditorler", ikon: UserRound },
-      { sayfa: "personel", ad: "mPersonel", ikon: Contact },
-      { sayfa: "izinler", ad: "mIzinler", ikon: CalendarClock },
+      { sayfa: "muhabirler", ad: "mMuhabirler", kisa: "kaMuhabirler", ikon: Users },
+      { sayfa: "editorler", ad: "mEditorler", kisa: "kaEditorler", ikon: UserRound },
+      { sayfa: "personel", ad: "mPersonel", kisa: "kaPersonel", ikon: Contact },
+      { sayfa: "izinler", ad: "mIzinler", kisa: "kaIzinler", ikon: CalendarClock },
     ],
   },
   {
@@ -118,40 +125,42 @@ export const MENU: Grup[] = [
         sayfa: "oneriler",
         ad: "mOneriler",
         adMuhabir: "mOnerilerim",
+        kisa: "kaOneriler",
+        kisaMuhabir: "kaOnerilerim",
         ikon: Lightbulb,
         say: (d, ben) => (ben.birim === "muhabir" ? 0 : d.oneriler.filter((o) => o.durum === "yeni").length),
       },
-      { sayfa: "basliklar", ad: "mBasliklar", ikon: Newspaper },
-      { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", ikon: Package },
-      { sayfa: "feature", ad: "mFeature", ikon: TrendingUp },
-      { sayfa: "programlar", ad: "mProgramlar", ikon: Clapperboard },
+      { sayfa: "basliklar", ad: "mBasliklar", kisa: "kaBasliklar", ikon: Newspaper },
+      { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", kisa: "kaPaketler", kisaMuhabir: "kaPaketlerim", ikon: Package },
+      { sayfa: "feature", ad: "mFeature", kisa: "kaFeature", ikon: TrendingUp },
+      { sayfa: "programlar", ad: "mProgramlar", kisa: "kaProgramlar", ikon: Clapperboard },
       // Sayı: kişinin üretime alabileceği paketler (Planlama'da feature/stok ekibi).
-      { sayfa: "stok", ad: "mStok", ikon: Layers, say: (d, ben) => d.paketler.filter((p) => uretimeAlabilir(ben, p)).length },
+      { sayfa: "stok", ad: "mStok", kisa: "kaStok", ikon: Layers, say: (d, ben) => d.paketler.filter((p) => uretimeAlabilir(ben, p)).length },
     ],
   },
   {
     ad: "mgGorevlendirme",
     maddeler: [
-      { sayfa: "saha", ad: "mSaha", adMuhabir: "mGorevlerim", ikon: MapPinned },
-      { sayfa: "seyahat", ad: "mSeyahat", ikon: Route },
-      { sayfa: "talepler", ad: "mTalepler", ikon: Inbox },
+      { sayfa: "saha", ad: "mSaha", adMuhabir: "mGorevlerim", kisa: "kaSaha", kisaMuhabir: "kaGorevlerim", ikon: MapPinned },
+      { sayfa: "seyahat", ad: "mSeyahat", kisa: "kaSeyahat", ikon: Route },
+      { sayfa: "talepler", ad: "mTalepler", kisa: "kaTalepler", ikon: Inbox },
     ],
   },
   {
     ad: "mgIsAkisi",
     maddeler: [
-      { sayfa: "uretim", ad: "mUretim", ikon: Workflow },
-      { sayfa: "metinkontrol", ad: "mMetinKontrol", ikon: SpellCheck },
-      { sayfa: "video", ad: "mVideo", ikon: MonitorPlay },
+      { sayfa: "uretim", ad: "mUretim", kisa: "kaUretim", ikon: Workflow },
+      { sayfa: "metinkontrol", ad: "mMetinKontrol", kisa: "kaMetinKontrol", ikon: SpellCheck },
+      { sayfa: "video", ad: "mVideo", kisa: "kaVideo", ikon: MonitorPlay },
     ],
   },
   {
     ad: "mgDiger",
     maddeler: [
-      { sayfa: "ucretler", ad: "mUcretler", ikon: Wallet },
-      { sayfa: "raporlar", ad: "mRaporlar", ikon: ChartColumn },
-      { sayfa: "plan", ad: "mProjePlani", ikon: BookOpen },
-      { sayfa: "ayarlar", ad: "mAyarlar", ikon: Settings },
+      { sayfa: "ucretler", ad: "mUcretler", kisa: "kaUcretler", ikon: Wallet },
+      { sayfa: "raporlar", ad: "mRaporlar", kisa: "kaRaporlar", ikon: ChartColumn },
+      { sayfa: "plan", ad: "mProjePlani", kisa: "kaProjePlani", ikon: BookOpen },
+      { sayfa: "ayarlar", ad: "mAyarlar", kisa: "kaAyarlar", ikon: Settings },
     ],
   },
 ];
@@ -159,8 +168,11 @@ export const MENU: Grup[] = [
 /** Maddenin kişiye göre adı: muhabirin menüsü kendi işine daralıyor ("İşlerim", "Önerilerim"). */
 export const maddeAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad);
 
+/** Maddenin kısa adı (workspace sekmesi, arama penceresi); muhabirde kendi işi. */
+export const kisaAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.kisaMuhabir ? m.kisaMuhabir : m.kisa);
+
 /* Menüde olmayan ama adresle açılan sayfa; workspace bölmesinin başlığı onu da adlandırsın. */
-const PROFIL: Madde = { sayfa: "profil", ad: "profilim", ikon: CircleUser };
+const PROFIL: Madde = { sayfa: "profil", ad: "profilim", kisa: "kaProfil", ikon: CircleUser };
 
 /** Sayfanın menü maddesi: workspace bölmesi adını ve ikonunu buradan alıyor. */
 export const sayfaMaddesi = (sayfa: string): Madde | undefined =>

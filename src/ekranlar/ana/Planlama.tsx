@@ -12,11 +12,8 @@ import {
   History,
   Lightbulb,
   ListChecks,
-  MapPinned,
   Network,
-  Tv,
   Users,
-  Calendar,
   Package,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -37,46 +34,13 @@ import { CalismaAlani, type Alan } from "./Calisma";
  *
  * Plan üretimini ve muhabirlerden gelen editoryal girdiyi merkeze alıyor.
  * Varsayılan düzen bilerek yalın: gelen öneriler, muhabirlerin durumu ve
- * son hareketler; planlara geçiş üst şeritteki kısayollarda. Sayaçlar,
+ * son hareketler; planlara geçiş üst çubuktaki kısayollarda. Sayaçlar,
  * haftanın planı, takvim, koordinasyon gibi öbür alanlar katalogda duruyor,
  * isteyen "Sayfayı düzenle" ile ekliyor. Sayfa başlığı yok: ana sayfa
  * birimin kendisi, adını yazmak yer kaplıyordu.
  * Görseldeki tür dağılımı halkası promptun "gereksiz grafik kullanma"
  * kuralı yüzünden yok.
  */
-
-/*
- * Telefondaki Menü panelinin plan kutucukları. Ana sayfada aynı planlar
- * üst şeritte yalnız ikon (ekranlar/ortam/Kisayollar.tsx); kutucuklar sayfada
- * uzun yer kaplıyordu.
- */
-const KISAYOLLAR: { sayfa: string; renk: string; ikon: typeof CalendarDays; ad: Anahtar }[] = [
-  { sayfa: "nextday/yarin", renk: "renk-nextday", ikon: CalendarDays, ad: "ksNextday" },
-  { sayfa: "haftalik", renk: "renk-haftalik", ikon: CalendarRange, ad: "ksHaftalik" },
-  { sayfa: "aylik", renk: "renk-aylik", ikon: Calendar, ad: "ksAylik" },
-  { sayfa: "ozel", renk: "renk-ozel", ikon: Tv, ad: "ksOzel" },
-  { sayfa: "saha", renk: "renk-saha", ikon: MapPinned, ad: "ksSaha" },
-  { sayfa: "takvim", renk: "renk-takvim", ikon: CalendarCheck, ad: "ksTakvim" },
-];
-
-export function PlanKisayollari() {
-  const { t } = useDil();
-  return (
-    <nav className="kisayollar" aria-label={t("planlar")}>
-      {KISAYOLLAR.map((k) => {
-        const Ikon = k.ikon;
-        return (
-          <a key={k.sayfa} className={`kisayol ${k.renk}`} href={`#/${k.sayfa}`}>
-            <span className="ikon">
-              <Ikon size={22} />
-            </span>
-            <b>{t(k.ad)}</b>
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
 
 export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; baslik: string; alt: string; sagUc?: ReactNode }) {
   const { dil } = useDil();

@@ -406,11 +406,27 @@ export function AsamaBuyuk({ paket }: { paket: Paket }) {
 
 /* --- Kısa bildirim: eylemin sonucunu söyleyip kayboluyor. --- */
 
-let goster: ((m: string) => void) | null = null;
-export const bildir = (m: string) => goster?.(m);
+/** Bildirimdeki tek düğme ("Geri al"): yanlış basılan kapatma onaysız geri alınsın. */
+export interface BildiriEylemi {
+  ad: string;
+  f: () => void;
+}
+
+interface BildiriMesaji {
+  metin: string;
+  eylem?: BildiriEylemi;
+}
+
+let goster: ((m: BildiriMesaji) => void) | null = null;
+export const bildir = (metin: string, eylem?: BildiriEylemi) => goster?.({ metin, eylem });
+
+/* Düğmeli bildirim daha uzun duruyor; fare üstündeyken ya da odaktayken kaybolmuyor ki "Geri al"a yetişilsin. */
+const SURE = 3200;
+const EYLEMLI_SURE = 6000;
 
 export function Bildiri() {
-  const [mesaj, setMesaj] = useState<string | null>(null);
+  const [mesaj, setMesaj] = useState<BildiriMesaji | null>(null);
+  const [tutuluyor, setTutuluyor] = useState(false);
   useEffect(() => {
     goster = setMesaj;
     return () => {
@@ -418,13 +434,29 @@ export function Bildiri() {
     };
   }, []);
   useEffect(() => {
-    if (!mesaj) return;
-    const z = setTimeout(() => setMesaj(null), 3200);
+    if (!mesaj || tutuluyor) return;
+    const z = setTimeout(() => setMesaj(null), mesaj.eylem ? EYLEMLI_SURE : SURE);
     return () => clearTimeout(z);
-  }, [mesaj]);
-  return mesaj ? (
-    <div className="bildiri" role="status">
-      {mesaj}
+  }, [mesaj, tutuluyor]);
+  if (!mesaj) return null;
+  const tut = () => setTutuluyor(true);
+  const birak = () => setTutuluyor(false);
+  return (
+    <div className="bildiri" role="status" onMouseEnter={tut} onMouseLeave={birak} onFocus={tut} onBlur={birak}>
+      <span>{mesaj.metin}</span>
+      {mesaj.eylem && (
+        <button
+          type="button"
+          className="bildiri-eylem"
+          onClick={() => {
+            mesaj.eylem?.f();
+            setMesaj(null);
+            setTutuluyor(false);
+          }}
+        >
+          {mesaj.eylem.ad}
+        </button>
+      )}
     </div>
-  ) : null;
+  );
 }
