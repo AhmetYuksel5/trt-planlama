@@ -1,9 +1,20 @@
-import { Bell, BookOpen, CircleUser, FlaskConical, LogOut, Menu, Search, Settings, X } from "lucide-react";
+import {
+  Bell,
+  BookOpen,
+  CircleUser,
+  FlaskConical,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
-import { cikisYap } from "../oturum";
+import { GERCEK } from "../kip";
+import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
@@ -14,6 +25,7 @@ import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { KomutPaleti } from "./KomutPaleti";
 import { Avatar, Bos } from "./Parcalar";
 import Logo from "./Logo";
+import { useUcTik } from "./UcTik";
 
 /**
  * Üst çubuk: tek ince satır. Sayfanın üstünde başka satır yok; sekmeler,
@@ -29,10 +41,23 @@ import Logo from "./Logo";
  * Menü düğmesi masaüstünde sol menüyü gizleyip gösteriyor, tablette
  * çekmeceyi açıyor; etiketi o an ne yapacağını söylüyor.
  */
-export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: Kisi; onMenu: () => void; masaustu: boolean; menuGorunur: boolean }) {
+export default function UstCubuk({
+  ben,
+  onMenu,
+  masaustu,
+  menuGorunur,
+}: {
+  ben: Kisi;
+  onMenu: () => void;
+  masaustu: boolean;
+  menuGorunur: boolean;
+}) {
   const { t, ad } = useDil();
+  const ucTik = useUcTik();
   const v = useVeri();
-  const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">("");
+  const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">(
+    "",
+  );
   const [palet, setPalet] = useState(false);
   const kap = useRef<HTMLDivElement>(null);
   const araDugmesi = useRef<HTMLButtonElement>(null);
@@ -47,11 +72,20 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
     const tus = (e: KeyboardEvent) => {
       if (e.key === "Escape") setAcik("");
       // Tuşun yeri (code): Arapça klavyede de çalışsın. "/" yazı alanında ve açık pencere varken yazının kendisi.
-      const yazi = (e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable]");
+      const yazi = (e.target as HTMLElement | null)?.closest?.(
+        "input, textarea, select, [contenteditable]",
+      );
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyK") {
         e.preventDefault();
         setPalet(true);
-      } else if (e.code === "Slash" && !e.ctrlKey && !e.metaKey && !e.altKey && !yazi && !document.querySelector("dialog[open]")) {
+      } else if (
+        e.code === "Slash" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !yazi &&
+        !document.querySelector("dialog[open]")
+      ) {
         e.preventDefault();
         setPalet(true);
       }
@@ -59,7 +93,10 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
     // Workspace bölmesine (iframe) basmak bu belgeye tıklama göndermiyor; pencere odağı kaybedince de kapansın.
     const odakGitti = () => setAcik("");
     // Bölmenin içindeki Ctrl+K üst pencereye ulaşmıyor; bölme mesajla bildiriyor (yol.ts).
-    const mesaj = (e: MessageEvent<BolmeAramasi>) => e.origin === location.origin && e.data?.tur === "trt-bolme-ara" && setPalet(true);
+    const mesaj = (e: MessageEvent<BolmeAramasi>) =>
+      e.origin === location.origin &&
+      e.data?.tur === "trt-bolme-ara" &&
+      setPalet(true);
     document.addEventListener("mousedown", kapat);
     document.addEventListener("keydown", tus);
     window.addEventListener("blur", odakGitti);
@@ -73,7 +110,9 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
   }, []);
 
   const sonBakis = v.okundu[ben.id] ?? "";
-  const bildirimler = v.hareketler.filter((h) => bildirimMi(ben, h, v)).slice(0, 25);
+  const bildirimler = v.hareketler
+    .filter((h) => bildirimMi(ben, h, v))
+    .slice(0, 25);
   const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length;
 
   const ac = (n: typeof acik) => {
@@ -95,43 +134,77 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
       <button
         className="ikon-dugme menu-dugme"
         onClick={onMenu}
-        aria-label={masaustu ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster") : t("menuAc")}
-        title={masaustu ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster") : undefined}
+        aria-label={
+          masaustu
+            ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster")
+            : t("menuAc")
+        }
+        title={
+          masaustu ? t(menuGorunur ? "menuyuGizle" : "menuyuGoster") : undefined
+        }
         aria-expanded={menuGorunur}
         aria-controls="ana-menu"
       >
         <Menu size={18} />
       </button>
-      <a className="marka marka-mobil" href="#/" aria-label={t("uygulama")}>
+      <a
+        className="marka marka-mobil"
+        href="#/"
+        aria-label={t("uygulama")}
+        onClick={ucTik}
+      >
         <Logo />
       </a>
       <UstSekmeler ben={ben} />
       <UstKisayollar ben={ben} />
       {/*
-       * Prototip uyarısı her sayfada görünmeli (örnek veri gerçek kurum verisi
-       * sanılmasın, kalıcılığın sınırı söylensin); bir satır kaplamasın diye
-       * çubukta etiket, tam cümle ipucunda ve basınca.
+       * Prototip uyarısı demonun her sayfasında görünmeli (örnek veri gerçek
+       * kurum verisi sanılmasın, kalıcılığın sınırı söylensin); bir satır
+       * kaplamasın diye çubukta etiket, tam cümle ipucunda ve basınca.
+       * Gerçek kipte kayıt gerçek, etiket yok.
        */}
-      <div className="acilir-kap">
-        <button type="button" className="prototip" data-prototip onClick={() => ac("prototip")} aria-expanded={acik === "prototip"} title={t("demoSerit")}>
-          <FlaskConical size={14} aria-hidden="true" />
-          <span className="prototip-yazi">{t("prototip")}</span>
-          <span className="gizli-metin">{t("demoSerit")}</span>
-        </button>
-        {acik === "prototip" && (
-          <div className="acilir prototip-notu" role="note">
-            <FlaskConical size={16} /> {t("demoSerit")}
-          </div>
-        )}
-      </div>
-      <button ref={araDugmesi} className="ikon-dugme" data-ara onClick={() => setPalet(true)} aria-label={araAdi} title={araAdi}>
+      {!GERCEK && (
+        <div className="acilir-kap">
+          <button
+            type="button"
+            className="prototip"
+            data-prototip
+            onClick={() => ac("prototip")}
+            aria-expanded={acik === "prototip"}
+            title={t("demoSerit")}
+          >
+            <FlaskConical size={14} aria-hidden="true" />
+            <span className="prototip-yazi">{t("prototip")}</span>
+            <span className="gizli-metin">{t("demoSerit")}</span>
+          </button>
+          {acik === "prototip" && (
+            <div className="acilir prototip-notu" role="note">
+              <FlaskConical size={16} /> {t("demoSerit")}
+            </div>
+          )}
+        </div>
+      )}
+      <button
+        ref={araDugmesi}
+        className="ikon-dugme"
+        data-ara
+        onClick={() => setPalet(true)}
+        aria-label={araAdi}
+        title={araAdi}
+      >
         <Search size={18} />
       </button>
       <span className="ust-dil">
         <DilSecici kompakt />
       </span>
       <div className="acilir-kap">
-        <button className="ikon-dugme" onClick={() => ac("bildirim")} aria-label={t("bildirimler")} title={t("bildirimler")} aria-expanded={acik === "bildirim"}>
+        <button
+          className="ikon-dugme"
+          onClick={() => ac("bildirim")}
+          aria-label={t("bildirimler")}
+          title={t("bildirimler")}
+          aria-expanded={acik === "bildirim"}
+        >
           <Bell size={18} />
           {okunmamis > 0 && <span className="rozet-say">{okunmamis}</span>}
         </button>
@@ -150,7 +223,12 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
                 const m = metni(h, v);
                 const k = konusu(h, v);
                 return (
-                  <a key={h.id} className={`acilir-satir ${h.zaman > sonBakis ? "yeni" : ""}`} href={k?.href ?? "#/"} onClick={() => setAcik("")}>
+                  <a
+                    key={h.id}
+                    className={`acilir-satir ${h.zaman > sonBakis ? "yeni" : ""}`}
+                    href={k?.href ?? "#/"}
+                    onClick={() => setAcik("")}
+                  >
                     <Avatar kisi={m.kisi} boy="kucuk" />
                     <div>
                       {m.once}
@@ -171,7 +249,13 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
       </div>
       <div className="acilir-kap">
         {/* Yalnız avatar: ad, birim ve görev menünün başında (masaüstünde sol menüde de yazıyor). */}
-        <button className="kullanici" onClick={() => ac("kullanici")} aria-expanded={acik === "kullanici"} aria-label={t("kullaniciMenusu")} title={ad(ben)}>
+        <button
+          className="kullanici"
+          onClick={() => ac("kullanici")}
+          aria-expanded={acik === "kullanici"}
+          aria-label={t("kullaniciMenusu")}
+          title={ad(ben)}
+        >
           <Avatar kisi={ben} durum />
         </button>
         {acik === "kullanici" && (
@@ -182,24 +266,37 @@ export default function UstCubuk({ ben, onMenu, masaustu, menuGorunur }: { ben: 
                 {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
               </small>
             </div>
-            <a className="acilir-satir" href="#/profil" onClick={() => setAcik("")}>
+            <a
+              className="acilir-satir"
+              href="#/profil"
+              onClick={() => setAcik("")}
+            >
               <CircleUser size={16} /> {t("profilim")}
             </a>
-            <a className="acilir-satir" href="#/ayarlar" onClick={() => setAcik("")}>
+            <a
+              className="acilir-satir"
+              href="#/ayarlar"
+              onClick={() => setAcik("")}
+            >
               <Settings size={16} /> {t("mAyarlar")}
             </a>
-            <a className="acilir-satir" href="#/plan" onClick={() => setAcik("")}>
+            <a
+              className="acilir-satir"
+              href="#/plan"
+              onClick={() => setAcik("")}
+            >
               <BookOpen size={16} /> {t("mProjePlani")}
             </a>
             <button
               className="acilir-satir"
               onClick={() => {
                 setAcik("");
-                cikisYap();
-                location.hash = "#/";
+                oturumdanCik();
               }}
+              data-cikis
             >
-              <LogOut size={16} className="yon" /> {t("kisiDegistir")}
+              <LogOut size={16} className="yon" />{" "}
+              {t(GERCEK ? "cikisYap" : "kisiDegistir")}
             </button>
           </div>
         )}

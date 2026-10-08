@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
+import { GERCEK } from "./kip";
 import { ORNEK } from "./ornek";
 import { bugun, gunEkle } from "./tarih";
 
@@ -18,10 +19,10 @@ import { bugun, gunEkle } from "./tarih";
  * özel isim içerikte serbest; dil denetimi yok. Tek istisna kişi adı:
  * rehberdeki kimlik, arayüz dilinin yazımıyla (Latin ya da Arapça) okunuyor.
  *
- * Bu sürümde her şey tarayıcıda (localStorage) duruyor ve örnek veriyle
- * açılıyor. Çok kullanıcılı sunucu katmanı geldiğinde yalnız bu dosyanın
- * yükle/kaydet kısmı değişecek; ekranlar `useVeri` ve `eylemler.ts`'i aynı
- * biçimde çağırmaya devam edecek.
+ * Demo kipinde her şey tarayıcıda (localStorage) duruyor ve örnek veriyle
+ * açılıyor. Gerçek kipte (kip.ts) kayıt Firestore'da; yalnız bu dosyanın
+ * yükle/kaydet kısmı farklı (depo/firebase.ts), ekranlar `useVeri` ve
+ * `eylemler.ts`'i aynı biçimde çağırıyor.
  */
 
 /* --- Birimler ve kişiler --- */
@@ -138,6 +139,10 @@ export interface Kisi {
   durum: KisiDurum;
   /** Newsdesk içinde ücret alanlarını görebilen kişi (rapor bölüm 9). */
   ucretYetkisi?: boolean;
+  /** Gerçek kip: hesabı kapatılmış kişi; girse de kayda erişemiyor (firestore.rules). */
+  pasif?: boolean;
+  /** Gerçek kip: davet gönderebilen, hesapları yöneten kişi (Kullanıcılar sayfası). */
+  hesapYoneticisi?: boolean;
 }
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
@@ -871,12 +876,93 @@ const yukle = (eksikseYaz: boolean): Durum => {
   return d;
 };
 
-let durum: Durum = yukle(true);
+/** Örnek kayıtsız iskelet: gerçek kip bununla başlıyor, kişiler davetle, gerisi kullanımla doluyor. */
+export const bosDurum = (): Durum => ({
+  surum: 15,
+  kisiler: [],
+  basliklar: [],
+  planlar: [],
+  gelismeler: [],
+  canliYayinlar: [],
+  gorevlendirmeler: [],
+  oneriler: [],
+  cagrilar: [],
+  yanitlar: [],
+  paketler: [],
+  haftalik: [],
+  aylik: [],
+  ozel: [],
+  toplantilar: [],
+  faaliyetler: [],
+  dosyalar: [],
+  hareketler: [],
+  okundu: {},
+  sayac: 0,
+});
+
+/**
+ * Gerçek kipte davetle gelen kişinin kaydı: davette yalnız ad, e-posta,
+ * birim, görev ve rol var; gerisi (şehir, diller, telefon…) kişi ya da
+ * yönetici profilden sonra dolduruyor.
+ */
+export const yeniKisi = (k: { id: string; ad: Yazi; eposta: string; birim: Birim; gorev: Gorev; rol: Rol; hesapYoneticisi?: boolean }): Kisi => {
+  const latin = (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.en || k.eposta)
+    .normalize("NFD")
+    .replace(/[^A-Za-z ]/g, "")
+    .trim()
+    .split(/ +/)
+    .filter(Boolean);
+  const ilk = latin[0] ?? k.eposta;
+  const son = latin[latin.length - 1] ?? k.eposta;
+  return {
+    id: k.id,
+    ad: k.ad,
+    birim: k.birim,
+    rol: k.rol,
+    gorev: k.gorev,
+    sehir: "istanbul",
+    diller: [],
+    telefon: "",
+    eposta: k.eposta,
+    kisaltma: (ilk[0] + son.slice(latin.length > 1 ? 0 : 1, latin.length > 1 ? 2 : 3)).toUpperCase(),
+    calisma: "kadrolu",
+    digerUlkeler: [],
+    bicimler: [],
+    durum: "gorevde",
+    pasif: false,
+    hesapYoneticisi: !!k.hesapYoneticisi,
+  };
+};
+
+/**
+ * Gerçek kipin deposu (depo/firebase.ts): kaydı Firestore'dan dinliyor,
+ * farkı yazıyor. Bağlanana kadar kayıt boş ve ekran "yükleniyor" diyor.
+ */
+export interface UzakDepo {
+  yaz: (eski: Durum, yeni: Durum) => void;
+}
+let uzak: UzakDepo | null = null;
+
+let durum: Durum = GERCEK ? bosDurum() : yukle(true);
 const dinleyiciler = new Set<() => void>();
 const bildir = () => dinleyiciler.forEach((d) => d());
 
+/** Gerçek kip: depo bağlandı; bundan sonra kayıt dışarıdan (başka kişiden) de değişebilir. */
+export const uzakDepoyuTak = (d: UzakDepo, ilk: Durum) => {
+  uzak = d;
+  durum = ilk;
+  bildir();
+};
+
+/** Gerçek kip: Firestore'dan gelen değişiklik (başka kişi ya da bölme yazdı). */
+export const disaridanGeldi = (yeni: Durum) => {
+  durum = yeni;
+  bildir();
+};
+
 /** Başka kopya yazdıysa kaydı yeniden oku; değiştiyse true. */
 const tazele = () => {
+  if (GERCEK) return false;
   const yeni = izOku();
   if (yeni === iz) return false;
   iz = yeni;
@@ -891,17 +977,24 @@ export const getir = () => {
 };
 
 export const kaydet = (yeni: Durum) => {
+  const eski = durum;
   durum = yeni;
-  yaz(yeni);
+  if (!GERCEK) yaz(yeni);
+  // Depo bağlanmadan yazılan (olmamalı: ekran o sırada "yükleniyor") kayda gitmiyor.
+  else uzak?.yaz(eski, yeni);
   bildir();
 };
 
-export const sifirla = () => kaydet(ORNEK());
+/* Örnek veriye dönüş yalnız demoda; gerçek kayıt silinmiyor. */
+export const sifirla = () => {
+  if (!GERCEK) kaydet(ORNEK());
+};
 
-/* Başka bölme ya da sekme yazınca bu kopya da yeni kayıtla çizilsin; anahtarsız olay localStorage.clear. */
-window.addEventListener("storage", (e) => {
-  if ((e.key === IZ || e.key === null) && tazele()) bildir();
-});
+/* Başka bölme ya da sekme yazınca bu kopya da yeni kayıtla çizilsin; anahtarsız olay localStorage.clear. Gerçek kipte Firestore haber veriyor. */
+if (!GERCEK)
+  window.addEventListener("storage", (e) => {
+    if ((e.key === IZ || e.key === null) && tazele()) bildir();
+  });
 
 export function useVeri(): Durum {
   return useSyncExternalStore(

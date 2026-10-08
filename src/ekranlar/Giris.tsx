@@ -7,6 +7,7 @@ import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
 import { BIRIMLER, useVeri, type Birim, type Kisi } from "../veri";
 import Logo from "../bilesenler/Logo";
+import { useUcTik } from "../bilesenler/UcTik";
 
 /**
  * Demo giriş.
@@ -23,6 +24,7 @@ const OZELLIKLER: Anahtar[] = ["girisOz1", "girisOz2", "girisOz3", "girisOz4"];
 
 export default function Giris() {
   const { t, ad } = useDil();
+  const ucTik = useUcTik();
   const v = useVeri();
   const [birim, setBirim] = useState<Birim | "hepsi">("hepsi");
   const [aranan, setAranan] = useState("");
@@ -51,7 +53,8 @@ export default function Giris() {
   return (
     <div className="giris">
       <aside className="giris-sol">
-        <span className="marka">
+        {/* Gizli gerçek giriş: logoya art arda üç tık (UcTik.ts). */}
+        <span className="marka" onClick={ucTik}>
           <Logo levha />
         </span>
         <h1>{t("girisBaslik")}</h1>

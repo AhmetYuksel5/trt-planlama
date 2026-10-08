@@ -1,6 +1,7 @@
 import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { GERCEK } from "./kip";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -1575,6 +1576,22 @@ export const kisayollariKaydet = (ben: Kisi, liste: string[] | null) => {
   if (liste) yeni[ben.id] = [...new Set(liste)].filter((k) => kisayolGorebilir(ben, k)).slice(0, KISAYOL_EN_COK);
   else delete yeni[ben.id];
   kaydet({ ...d, kisayollar: yeni });
+  return true;
+};
+
+/* --- Gerçek kip: hesaplar --- */
+
+/**
+ * Hesap yöneticisinin kişi hesabı üzerindeki işi: kapatma/açma ve hesap
+ * yöneticiliği. Kurallar da aynısını soruyor (firestore.rules); kişi kendi
+ * hesabını kapatamıyor, yöneticiliğini bırakamıyor: sistem yöneticisiz
+ * kalmasın.
+ */
+export const kisiHesabi = (ben: Kisi, kisiId: string, ayar: { pasif?: boolean; hesapYoneticisi?: boolean }) => {
+  if (!GERCEK || !ben.hesapYoneticisi || kisiId === ben.id) return false;
+  const d = getir();
+  if (!d.kisiler.some((k) => k.id === kisiId)) return false;
+  kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, ...ayar } : k)) });
   return true;
 };
 

@@ -1,36 +1,4 @@
-import {
-  BookOpen,
-  Building,
-  Calendar,
-  CalendarClock,
-  CalendarCheck,
-  CalendarDays,
-  CalendarRange,
-  ChartColumn,
-  ChevronDown,
-  CircleUser,
-  Clapperboard,
-  Contact,
-  Gauge,
-  House,
-  Inbox,
-  Layers,
-  Lightbulb,
-  MapPinned,
-  MonitorPlay,
-  Newspaper,
-  Package,
-  Route,
-  Settings,
-  SpellCheck,
-  TrendingUp,
-  Tv,
-  UserRound,
-  Users,
-  Wallet,
-  Workflow,
-  type LucideIcon,
-} from "lucide-react";
+import { BookOpen, Building, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserCog, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
@@ -39,7 +7,9 @@ import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
+import { GERCEK } from "../kip";
 import Logo from "./Logo";
+import { useUcTik } from "./UcTik";
 
 /**
  * Menünün tek tablosu: sol menü (AnaMenu) ve telefondaki Menü paneli
@@ -160,6 +130,7 @@ export const MENU: Grup[] = [
       { sayfa: "ucretler", ad: "mUcretler", kisa: "kaUcretler", ikon: Wallet },
       { sayfa: "raporlar", ad: "mRaporlar", kisa: "kaRaporlar", ikon: ChartColumn },
       { sayfa: "plan", ad: "mProjePlani", kisa: "kaProjePlani", ikon: BookOpen },
+      { sayfa: "kullanicilar", ad: "mKullanicilar", kisa: "kaKullanicilar", ikon: UserCog },
       { sayfa: "ayarlar", ad: "mAyarlar", kisa: "kaAyarlar", ikon: Settings },
     ],
   },
@@ -233,6 +204,7 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
  */
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const { t } = useDil();
+  const ucTik = useUcTik();
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -246,7 +218,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
 
   return (
     <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
-      <a className="marka" href="#/" aria-label={t("uygulama")}>
+      <a className="marka" href="#/" aria-label={t("uygulama")} onClick={ucTik}>
         <Logo levha />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
@@ -289,7 +261,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
       })}
       <div className="menu-alt">
         <b>TRT</b>
-        {t("ornekVeriKisa")}
+        {!GERCEK && t("ornekVeriKisa")}
       </div>
     </nav>
   );
