@@ -840,6 +840,29 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .bildiri-eylem { flex: none; margin-inline-start: var(--ara-2); min-height: 32px; padding-inline: var(--ara-3); border: 1px solid var(--lacivert-yazi); border-radius: var(--yaricap); background: none; color: #fff; font-weight: 700; }
 .bildiri-eylem:hover { background: var(--lacivert-3); }
 
+/*
+ * Gerçek kip: gizli girişin sayfası. Demo giriş ekranından ayrı ve sade:
+ * logo, tek form; menü ve prototip etiketi yok.
+ */
+.gercek-giris { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--ara-4); background: var(--zemin); }
+.gercek-giris-kart {
+  inline-size: min(420px, 100%); display: grid; gap: var(--ara-4); padding: var(--ara-6);
+  background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); box-shadow: var(--golge-kart);
+}
+.gercek-giris-kart .logo { block-size: var(--logo-giris); justify-self: start; }
+.gercek-giris-kart h1 { font-size: var(--punto-buyuk); }
+.gercek-giris-kart .not-kutu svg { flex: none; margin-top: 2px; }
+.gg-baglantilar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--ara-2); }
+.gg-alt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ara-2); padding-top: var(--ara-3); border-top: 1px solid var(--cizgi); }
+.yukleniyor-sayfa { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; }
+.islem-hucre { white-space: nowrap; text-align: end; }
+@media (max-width: 760px) {
+  .gercek-giris { padding: var(--ara-3); align-items: start; }
+  .gercek-giris-kart { padding: var(--ara-4); }
+  .gercek-giris-kart input { font-size: 16px; }
+  .islem-hucre { white-space: normal; text-align: start; }
+}
+
 /* --- Alanlar (detay sayfası) --- */
 
 /*

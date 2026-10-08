@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// TRT Arapça Planlama · gerçek kip kuralları.
+//
+// Kayıt düzeni src/depo/fark.ts'te: Durum'un her dizi alanı ve kişiye bağlı
+// her harita bir koleksiyon; "kisiler" ve "davetler" ayrıca denetleniyor.
+//
+// Bu kurallar "kurumdan, etkin kişi" diyor. Birim ve görev yetkisi (kim
+// neyi düzenler) bugün uygulamada soruluyor (src/yetki.ts); kurala
+// taşınması sonraki adım.
+//
+// KURUCU: ilk yönetici, boş sistemde davetsiz girebilen tek adres.
+// src/firebase-ayar.ts → kurucu ile aynı olmalı; yayımlamadan önce değiştirin.
+
+service cloud.firestore {
+  match /databases/{veritabani}/documents {
+    function kurucuEposta() { return "KURUCU_EPOSTA@ornek.com"; }
+
+    function oturum() { return request.auth != null; }
+    function eposta() { return request.auth.token.email.lower(); }
+    function kisiYolu() { return /databases/$(veritabani)/documents/kisiler/$(request.auth.uid); }
+    function etkin() { return oturum() && exists(kisiYolu()) && get(kisiYolu()).data.pasif != true; }
+    function hesapYoneticisi() { return etkin() && get(kisiYolu()).data.hesapYoneticisi == true; }
+    function davetYolu() { return /databases/$(veritabani)/documents/davetler/$(eposta()); }
+    function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta"]; }
+
+    match /davetler/{adres} {
+      allow read: if hesapYoneticisi() || (oturum() && eposta() == adres);
+      allow create, delete: if hesapYoneticisi();
+      // Yönetici her şeyi; davetli yalnız kendi davetini "kullanıldı" yapabilir (ilk girişte).
+      allow update: if hesapYoneticisi()
+        || (oturum() && eposta() == adres
+            && resource.data.durum == "bekliyor"
+            && request.resource.data.durum == "kullanildi"
+            && request.resource.data.kullanan == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["durum", "kullanan"]));
+    }
+
+    match /kisiler/{id} {
+      // Kişi kendi kaydını her zaman okuyabiliyor: pasif olduğunu da öğrenmeli.
+      allow read: if etkin() || (oturum() && id == request.auth.uid);
+      // İlk giriş: kendi kaydı, bekleyen davetle (davetteki yetkiyle) ya da kurucu olarak.
+      allow create: if hesapYoneticisi()
+        || (oturum() && id == request.auth.uid
+            && request.resource.data.eposta == eposta()
+            && request.resource.data.pasif == false
+            && ((exists(davetYolu())
+                 && get(davetYolu()).data.durum == "bekliyor"
+                 && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi)
+                || (eposta() == kurucuEposta() && request.auth.token.email_verified == true)));
+      // Etkin herkes kişi kaydını düzenleyebiliyor (profil, durum); yetki alanlarını yalnız hesap yöneticisi.
+      allow update: if hesapYoneticisi()
+        || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari()));
+      allow delete: if hesapYoneticisi();
+    }
+
+    // Öbür bütün kayıt: etkin kişiler okur ve yazar.
+    match /{alan}/{belge} {
+      allow read, write: if etkin() && !(alan in ["kisiler", "davetler"]);
+    }
+  }
+}

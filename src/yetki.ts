@@ -1,5 +1,6 @@
 import { ADIM_ADI, URETIM_ADIMLARI, YARDIMCI_SAHIP, adimSahibi, paketSahibi, type UretimAdimi } from "./akis";
 import type { Anahtar } from "./dil";
+import { GERCEK } from "./kip";
 import {
   BIRIMLER,
   ICERIK_TURLERI,
@@ -296,7 +297,13 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
 
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */
 export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
-  !!k && (sayfa === "panel" ? !!kapsam(k) : !!SAYFA_IZNI[sayfa]?.includes(k.birim));
+  !!k &&
+  (sayfa === "panel"
+    ? !!kapsam(k)
+    : // Hesaplar yalnız gerçek kipte ve hesap yöneticisinde: demoda davet edilecek kimse yok.
+      sayfa === "kullanicilar"
+      ? GERCEK && !!k.hesapYoneticisi
+      : !!SAYFA_IZNI[sayfa]?.includes(k.birim));
 
 /* --- Proje planı için matris: tablolardan üretiliyor, elle yazılmıyor --- */
 

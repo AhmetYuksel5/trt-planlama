@@ -2,10 +2,15 @@ import { BookOpen, FlaskConical, LogOut, Plus, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDil } from "../dil";
 import { KisayolKutulari } from "../ekranlar/ortam/Kisayollar";
-import { useOrtamEtiketi, useOrtamKapat, useYeniOrtam } from "../ekranlar/ortam/Sekmeler";
+import {
+  useOrtamEtiketi,
+  useOrtamKapat,
+  useYeniOrtam,
+} from "../ekranlar/ortam/Sekmeler";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { kisininOrtamlari } from "../ortam";
-import { cikisYap } from "../oturum";
+import { GERCEK } from "../kip";
+import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { useYol } from "../yol";
 import { sayfaGorebilir } from "../yetki";
@@ -21,7 +26,15 @@ import { MENU, maddeAdi, maddeGorunur } from "./AnaMenu";
  * sol menünün `MENU` tablosundan geliyor: yeni sayfa oraya girince burada
  * da çıkıyor.
  */
-export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: string; onKapat: () => void }) {
+export default function MobilMenu({
+  ben,
+  acik,
+  onKapat,
+}: {
+  ben: Kisi;
+  acik: string;
+  onKapat: () => void;
+}) {
   const { t, ad } = useDil();
   const v = useVeri();
   const yol = useYol();
@@ -43,21 +56,38 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
   }, [onKapat]);
 
   return (
-    <div className="mobil-menu" role="dialog" aria-modal="true" aria-label={t("abMenu")}>
+    <div
+      className="mobil-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("abMenu")}
+    >
       <div className="mobil-menu-ust">
         <strong>{t("abMenu")}</strong>
-        <button type="button" className="ikon-dugme" onClick={onKapat} aria-label={t("kapat")}>
+        <button
+          type="button"
+          className="ikon-dugme"
+          onClick={onKapat}
+          aria-label={t("kapat")}
+        >
           <X size={20} />
         </button>
       </div>
 
       {/* Çubuktaki etiketin tam cümlesi; telefonda ipucu yok. */}
-      <p className="mobil-prototip">
-        <FlaskConical size={16} /> {t("demoSerit")}
-      </p>
+      {!GERCEK && (
+        <p className="mobil-prototip">
+          <FlaskConical size={16} /> {t("demoSerit")}
+        </p>
+      )}
 
       <div className="mobil-kisi">
-        <a className="mobil-kisi-bag" href="#/profil" onClick={onKapat} aria-label={t("profilim")}>
+        <a
+          className="mobil-kisi-bag"
+          href="#/profil"
+          onClick={onKapat}
+          aria-label={t("profilim")}
+        >
           <Avatar kisi={ben} durum />
           <div>
             <b>{ad(ben)}</b>
@@ -71,11 +101,11 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
           className="dugme dugme-ikincil dugme-kucuk"
           onClick={() => {
             onKapat();
-            cikisYap();
-            location.hash = "#/";
+            oturumdanCik();
           }}
         >
-          <LogOut size={15} className="yon" /> {t("kisiDegistirKisa")}
+          <LogOut size={15} className="yon" />{" "}
+          {t(GERCEK ? "cikisYap" : "kisiDegistirKisa")}
         </button>
       </div>
 
@@ -89,11 +119,26 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
             const e = etiket(o);
             const etkin = yol.sayfa === "ortam" && yol.id === o.id;
             return (
-              <div key={o.id} className={`mobil-ortam ${etkin ? "acik" : ""}`} data-ortam={o.id}>
-                <a href={`#/ortam/${o.id}`} aria-current={etkin ? "page" : undefined} onClick={onKapat}>
+              <div
+                key={o.id}
+                className={`mobil-ortam ${etkin ? "acik" : ""}`}
+                data-ortam={o.id}
+              >
+                <a
+                  href={`#/ortam/${o.id}`}
+                  aria-current={etkin ? "page" : undefined}
+                  onClick={onKapat}
+                >
                   <e.Ikon size={18} /> <span>{e.kisa}</span>
                 </a>
-                <button type="button" className="ikon-dugme" aria-label={t("ortamKapat", { ad: e.kisa })} title={t("ortamKapat", { ad: e.kisa })} data-ortam-kapat={o.id} onClick={() => kapat(o)}>
+                <button
+                  type="button"
+                  className="ikon-dugme"
+                  aria-label={t("ortamKapat", { ad: e.kisa })}
+                  title={t("ortamKapat", { ad: e.kisa })}
+                  data-ortam-kapat={o.id}
+                  onClick={() => kapat(o)}
+                >
                   <X size={18} />
                 </button>
               </div>
@@ -126,7 +171,11 @@ export default function MobilMenu({ ben, acik, onKapat }: { ben: Kisi; acik: str
               {maddeler.map((m) => {
                 const Ikon = m.ikon;
                 return (
-                  <a key={m.sayfa} href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""}>
+                  <a
+                    key={m.sayfa}
+                    href={`#/${m.sayfa}`}
+                    className={acik === m.sayfa ? "acik" : ""}
+                  >
                     <Ikon size={18} />
                     {t(maddeAdi(ben, m))}
                   </a>

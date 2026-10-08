@@ -19,6 +19,11 @@ npm run preview  # derlenmiş hali yerelde
 
 ## Bu prototipte çalışanlar
 
+- **Gerçek kip (gizli giriş):** program demo olarak açılır; logoya art arda
+  üç kez basınca kurum girişi açılır. Hesaplar davetle açılıyor: kişi
+  e-postasındaki bağlantıyla hesabını etkinleştirip şifresini belirliyor.
+  Kayıt Firebase'de ve herkes için ortak; boş başlıyor. Kurulum ve sınırlar
+  `belgeler/gercek-kip.md`'de.
 - **Demo giriş:** kişi seçiliyor. Ana sayfa ve menü birime göre şekilleniyor
   (Planlama, Newsdesk, News Gathering, Programlar, Ekonomi, Output/dil,
   Media Manager, Muhabir, Yönetim).

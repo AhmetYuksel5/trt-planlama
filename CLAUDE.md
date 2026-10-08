@@ -39,7 +39,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     bekleyen, Next Day'e gider mi, ön inceleme bekleyenler)
   - `takvim.ts`: planlama takviminin okuma kuralları (tekrarların açılımı,
     yaklaşanlar, hatırlatma, yıllık yoğunluk, arama ve süzgeç)
-  - `oturum.ts`: demo giriş
+  - `oturum.ts`: oturumdaki kişi (demoda seçim, gerçek kipte Firebase)
+  - `kip.ts`: demo/gerçek kip ve gerçek kipin açılış durumu
+  - `depo/fark.ts`: gerçek kipte eski ve yeni `Durum` arasındaki yazılacak
+    belgeler (saf); `depo/firebase.ts`: Auth, davet, Firestore (yalnız
+    gerçek kipte, sonradan yüklenen parça)
   - `ornek.ts`: örnek veri
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
   `src/dil.ts` içinde tek tabloda ve üç dil zorunlu; eksik çeviri derlemeyi
@@ -63,10 +67,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Veri bu sürümde tarayıcıda (`localStorage`, anahtar `trt-planlama-v15`;
-  şema değişince anahtar da değişir)
-  ve örnek kayıtla açılıyor. Sunucu katmanı geldiğinde yalnız `src/veri.ts`
-  içindeki yükle/kaydet değişecek.
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v15`;
+  şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
+  kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
+  `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
+  yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
     Her yazış bir iz bırakır (`trt-planlama-v15-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
@@ -75,6 +80,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kopyası bayat olabilir, onunla yazma.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
   Yetki hem düğmede hem eylemde soruluyor.
+- Gerçek kip (`kip.ts`, `belgeler/gercek-kip.md`): program her açılışta
+  demo; logoya art arda üç tık (`bilesenler/UcTik.ts`) gizli kurum
+  girişini açar (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`).
+  - Hesap davetle açılır (`ekranlar/Kullanicilar.tsx`, yalnız hesap
+    yöneticisi). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
+    belirler; kişi kaydı davetten kurulur, kimliği Firebase uid'si.
+  - Kurucu (ilk yönetici) davetsiz girebilen tek adres:
+    `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.
+  - Kayıt boş başlar. `Durum`'un her dizi alanı bir koleksiyon, her öğe bir
+    belge (`{s: sıra, j: JSON}`); kişiye bağlı haritalarda anahtar başına
+    belge. `kaydet` yalnız farkı yazar (`depo/fark.ts`); eylemler değişmeyen
+    öğenin nesnesine dokunmamalı, fark nesne kimliğiyle çıkıyor.
+  - Kurallar (`firestore.rules`) yalnız "etkin kişi" ve hesap alanlarını
+    (`pasif`, `hesapYoneticisi`, `eposta`) denetliyor; birim yetkisi
+    programda. Davetler `Durum`'da değil, `davetler` koleksiyonunda.
+  - Gerçek kipte prototip etiketi, örnek veri ve "Örnek veriye dön" yok;
+    çıkış demoya döner. Firebase yapılandırması boşsa gizli giriş nedenini
+    yazar, demo etkilenmez.
 - Ana sayfa çalışma alanlarından oluşur (`ekranlar/ana/Calisma.tsx`):
   her kart bir `Alan` (kimlik, ad, geniş mi, grup, `sayfa`), birimin
   varsayılan düzeni `VARSAYILAN`'da. Kişi "Sayfayı düzenle" ile alan
@@ -331,7 +354,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Dokunma hedefi en az 44 piksel. Telefonda yazı alanları 16 piksel; daha
   küçüğünde iPhone sayfayı yakınlaştırıyor.
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
-  yatay taşmanın sıfır olduğuna bakılır, Arapçada da.
+  yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Gerçek kip Firebase
+  emülatörüyle denenir (`belgeler/gercek-kip.md`).
 - Örnek veri kurgusal; kurumun belgelerindeki adlar dahil gerçek personel
   adı yazılmaz.
 - Yorumlar Türkçe ve "neden" anlatır, "ne" değil.

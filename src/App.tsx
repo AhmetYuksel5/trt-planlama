@@ -7,6 +7,8 @@ import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
 import Raporlar from "./ekranlar/Raporlar";
 import Basliklar from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
+import GercekGiris from "./ekranlar/GercekGiris";
+import Kullanicilar from "./ekranlar/Kullanicilar";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
 import NextDayBelge from "./ekranlar/belge/NextDayBelge";
@@ -14,9 +16,17 @@ import HaftalikBelge from "./ekranlar/belge/HaftalikBelge";
 import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
 import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
-import { OneriDetay, OnerilerListe, YeniOneri } from "./ekranlar/oneri/Oneriler";
+import {
+  OneriDetay,
+  OnerilerListe,
+  YeniOneri,
+} from "./ekranlar/oneri/Oneriler";
 import PaketDetay from "./ekranlar/PaketDetay";
-import { Gorevlendirmeler, KisiDetay, PersonelListe } from "./ekranlar/Personel";
+import {
+  Gorevlendirmeler,
+  KisiDetay,
+  PersonelListe,
+} from "./ekranlar/Personel";
 import { Aylik, Ozel } from "./ekranlar/Planlar";
 import HaftalikCagri from "./ekranlar/haftalik/Cagri";
 import HaftalikCikti from "./ekranlar/haftalik/Cikti";
@@ -26,11 +36,28 @@ import ProjePlani from "./ekranlar/ProjePlani";
 import OrtamSayfasi from "./ekranlar/ortam/Ortam";
 import YeniOrtam from "./ekranlar/ortam/YeniOrtam";
 import Takvim from "./ekranlar/takvim/Takvim";
+import { Bos, bildir } from "./bilesenler/Parcalar";
+import { useDil } from "./dil";
+import { gercekKipKurulu } from "./firebase-ayar";
+import { GERCEK, firebaseYukle, useGercekDurum } from "./kip";
 import { useBen } from "./oturum";
-import { haftaBul, kisiBul, oneriBul, paketBul, planBul, useVeri, yarinPlani } from "./veri";
+import {
+  haftaBul,
+  kisiBul,
+  oneriBul,
+  paketBul,
+  planBul,
+  useVeri,
+  yarinPlani,
+} from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { yarinPlaniniAc } from "./eylemler";
-import { oneriGorebilir, paketGorebilir, sayfaGorebilir, yapabilir } from "./yetki";
+import {
+  oneriGorebilir,
+  paketGorebilir,
+  sayfaGorebilir,
+  yapabilir,
+} from "./yetki";
 import { GOMULU, useYol } from "./yol";
 
 /**
@@ -43,22 +70,70 @@ import { GOMULU, useYol } from "./yol";
  *
  * Workspace bölmesinde (GOMULU) aynı sayfalar kabuksuz çiziliyor; menü ve
  * üst çubuk üst pencerede bir kez duruyor.
+ *
+ * Gerçek kipte (kip.ts) kayıt Firebase'den geliyor: oturum ve kayıt hazır
+ * olana kadar "yükleniyor", oturum yoksa gerçek giriş. Demo giriş ekranı
+ * yalnız demoda.
  */
 /* Gün dönümünü yakalamak için arada bir: uygulama gece açık kalsa da sabah yarının planı hazır. */
 const GUN_YOKLAMA = 10 * 60 * 1000;
 
+/* E-postadaki etkinleştirme bağlantısı uygulamaya bu sorguyla dönüyor (depo/firebase.ts → donusAdresi). */
+const BAGLANTI_DONUSU =
+  new URLSearchParams(location.search).get("giris") === "baglanti";
+
 export default function App() {
+  const { t } = useDil();
   const yol = useYol();
   const ben = useBen();
   const v = useVeri();
-  // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
-  // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın.
+  const gd = useGercekDurum();
+  const kayitHazir = !GERCEK || gd.tur === "hazir";
+
+  // Gerçek kipte Firebase sonradan yükleniyor; oturum ve kayıt gelince ekran açılıyor.
   useEffect(() => {
-    if (GOMULU) return;
+    if (GERCEK && gercekKipKurulu())
+      firebaseYukle().then((f) => f.gercekKipiBaslat());
+  }, []);
+  // Ortak kayda yazılamadıysa (bağlantı, yetki) kişi bilsin; iş ekranda kaldı ama kayda gitmedi.
+  useEffect(() => {
+    const f = () => bildir(t("kayitHatasi"));
+    window.addEventListener("trt-kayit-hatasi", f);
+    return () => window.removeEventListener("trt-kayit-hatasi", f);
+  }, [t]);
+  // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
+  // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın. Gerçek kipte kayıt gelince.
+  useEffect(() => {
+    if (GOMULU || !kayitHazir) return;
     yarinPlaniniAc();
     const z = setInterval(yarinPlaniniAc, GUN_YOKLAMA);
     return () => clearInterval(z);
-  }, []);
+  }, [kayitHazir]);
+
+  // Gizli gerçek giriş ve e-posta bağlantısının dönüşü; bölmede açılmıyor.
+  if (yol.sayfa === "gercek-giris" || BAGLANTI_DONUSU)
+    return GOMULU ? (
+      <GomuluKabuk>
+        <BolmeUyarisi tur="oturumYok" />
+      </GomuluKabuk>
+    ) : (
+      <GercekGiris />
+    );
+  if (GERCEK && !kayitHazir) {
+    if (gd.tur === "yukleniyor" && gercekKipKurulu())
+      return (
+        <div className="yukleniyor-sayfa">
+          <Bos metin={t("yukleniyor")} />
+        </div>
+      );
+    return GOMULU ? (
+      <GomuluKabuk>
+        <BolmeUyarisi tur="oturumYok" />
+      </GomuluKabuk>
+    ) : (
+      <GercekGiris />
+    );
+  }
 
   if (yol.sayfa === "plan")
     return GOMULU ? (
@@ -74,6 +149,8 @@ export default function App() {
       <GomuluKabuk>
         <BolmeUyarisi tur="oturumYok" />
       </GomuluKabuk>
+    ) : GERCEK ? (
+      <GercekGiris />
     ) : (
       <Giris />
     );
@@ -88,7 +165,13 @@ export default function App() {
         icerik = <AnaSayfa ben={ben} />;
         break;
       case "ortam":
-        icerik = GOMULU ? <BolmeUyarisi tur="icIce" /> : yol.id === "yeni" ? <YeniOrtam ben={ben} /> : <OrtamSayfasi ben={ben} id={yol.id} />;
+        icerik = GOMULU ? (
+          <BolmeUyarisi tur="icIce" />
+        ) : yol.id === "yeni" ? (
+          <YeniOrtam ben={ben} />
+        ) : (
+          <OrtamSayfasi ben={ben} id={yol.id} />
+        );
         break;
       case "panel":
         icerik = <YoneticiPaneli ben={ben} birim={yol.id} />;
@@ -98,7 +181,8 @@ export default function App() {
         const plan = yol.id === "yarin" ? yarinPlani(v) : planBul(v, yol.id);
         if (yol.id && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
-        else if (plan && yol.alt === "belge") icerik = <NextDayBelge ben={ben} plan={plan} />;
+        else if (plan && yol.alt === "belge")
+          icerik = <NextDayBelge ben={ben} plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
         else icerik = <NextDayListe />;
         break;
@@ -106,9 +190,16 @@ export default function App() {
       case "haftalik": {
         const hafta = haftaBul(v, yol.id);
         if (yol.id && !hafta) icerik = <Yetkisiz />;
-        else if (hafta && yol.alt === "cikti") icerik = <HaftalikCikti hafta={hafta} />;
-        else if (hafta && yol.alt === "belge") icerik = <HaftalikBelge ben={ben} hafta={hafta} />;
-        else if (hafta && yol.alt === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <HaftalikCagri ben={ben} hafta={hafta} /> : <Yetkisiz />;
+        else if (hafta && yol.alt === "cikti")
+          icerik = <HaftalikCikti hafta={hafta} />;
+        else if (hafta && yol.alt === "belge")
+          icerik = <HaftalikBelge ben={ben} hafta={hafta} />;
+        else if (hafta && yol.alt === "cagri")
+          icerik = yapabilir(ben, "cagriHazirla") ? (
+            <HaftalikCagri ben={ben} hafta={hafta} />
+          ) : (
+            <Yetkisiz />
+          );
         else if (hafta) icerik = <HaftalikPlanEkrani ben={ben} hafta={hafta} />;
         else icerik = <HaftalikListe ben={ben} />;
         break;
@@ -123,12 +214,28 @@ export default function App() {
         icerik = <Ozel />;
         break;
       case "oneriler": {
-        if (yol.id === "yeni") icerik = <YeniOneri ben={ben} haftalik={yol.alt === "haftalik"} />;
-        else if (yol.id === "cagri") icerik = yapabilir(ben, "cagriHazirla") ? <Cagri ben={ben} tarih={yol.alt} /> : <Yetkisiz />;
-        else if (yol.id === "yanitlar") icerik = yapabilir(ben, "cagriHazirla") ? <Yanitlar ben={ben} cagriId={yol.alt} /> : <Yetkisiz />;
+        if (yol.id === "yeni")
+          icerik = <YeniOneri ben={ben} haftalik={yol.alt === "haftalik"} />;
+        else if (yol.id === "cagri")
+          icerik = yapabilir(ben, "cagriHazirla") ? (
+            <Cagri ben={ben} tarih={yol.alt} />
+          ) : (
+            <Yetkisiz />
+          );
+        else if (yol.id === "yanitlar")
+          icerik = yapabilir(ben, "cagriHazirla") ? (
+            <Yanitlar ben={ben} cagriId={yol.alt} />
+          ) : (
+            <Yetkisiz />
+          );
         else if (yol.id) {
           const o = oneriBul(v, yol.id);
-          icerik = o && oneriGorebilir(ben, o) ? <OneriDetay ben={ben} oneri={o} /> : <Yetkisiz />;
+          icerik =
+            o && oneriGorebilir(ben, o) ? (
+              <OneriDetay ben={ben} oneri={o} />
+            ) : (
+              <Yetkisiz />
+            );
         } else icerik = <OnerilerListe ben={ben} />;
         break;
       }
@@ -138,7 +245,12 @@ export default function App() {
       case "paketler":
         if (yol.id) {
           const p = paketBul(v, yol.id);
-          icerik = p && paketGorebilir(ben, p, v) ? <PaketDetay ben={ben} paket={p} /> : <Yetkisiz />;
+          icerik =
+            p && paketGorebilir(ben, p, v) ? (
+              <PaketDetay ben={ben} paket={p} />
+            ) : (
+              <Yetkisiz />
+            );
         } else icerik = <Paketler ben={ben} sayfa="paketler" />;
         break;
       case "feature":
@@ -179,6 +291,9 @@ export default function App() {
       case "ayarlar":
         icerik = <Ayarlar ben={ben} />;
         break;
+      case "kullanicilar":
+        icerik = <Kullanicilar ben={ben} />;
+        break;
       default:
         icerik = <Yetkisiz />;
     }
@@ -187,7 +302,11 @@ export default function App() {
   return GOMULU ? (
     <GomuluKabuk>{icerik}</GomuluKabuk>
   ) : (
-    <Kabuk ben={ben} sayfa={sayfa} ortamAcik={sayfa === "ortam" && yol.id !== "yeni"}>
+    <Kabuk
+      ben={ben}
+      sayfa={sayfa}
+      ortamAcik={sayfa === "ortam" && yol.id !== "yeni"}
+    >
       {icerik}
     </Kabuk>
   );
