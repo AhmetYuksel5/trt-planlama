@@ -1803,3 +1803,28 @@ html.gomulu body { background: var(--zemin); }
 @media print {
   .bolme-sekmeleri, .ayrac, .secim-tepsisi, .duzen-cubugu, .alan-son { display: none !important; }
 }
+
+/* Muhabirin önündeki düzeltme isteği: not ve düzelt düğmesi sayfa başının altında tek blok. */
+.duzeltme-istegi { display: grid; gap: var(--ara-3); justify-items: start; margin-block-end: var(--ara-4); }
+.duzeltme-istegi > .not-kutu, .duzeltme-istegi > .form { justify-self: stretch; }
+.duzeltme-istegi .not-kutu p { margin-block-start: var(--ara-1); color: var(--murekkep); white-space: pre-line; }
+/* Yeniden gönderilen önerinin hareketteki önceki hali. */
+.onceki-hal { margin-block-start: var(--ara-1); font-size: var(--punto-kucuk); }
+.onceki-hal summary { cursor: pointer; color: var(--sonuk); }
+.onceki-hal .icerik.blok { margin-block-start: var(--ara-1); }
+
+/* --- Next Day: başlıktaki araç düğmeleri ve en üstteki "bugüne al" şeridi --- */
+.dugme-sayi {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--kotu); color: #fff;
+  font-style: normal; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center;
+}
+.onceki-seridi {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-3); margin-block: var(--ara-4);
+  padding: var(--ara-3) var(--ara-4); background: var(--onceki-fon); border: 1px solid var(--onceki-cizgi); border-radius: var(--yaricap-kart);
+}
+.onceki-sayi { display: inline-flex; align-items: center; gap: var(--ara-2); color: var(--sonuk); font-size: var(--punto-kucuk); font-weight: 600; }
+.bolum-ar { font-size: 1.06em; }
+/* Arapça adlı bölümün başlık satırı her arayüz dilinde sağdan sola; gövde arayüz dilinde kalıyor. */
+.bolum.ar > summary { direction: rtl; }
+.plan-durum-karti { margin-block-start: var(--ara-4); }
+dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }

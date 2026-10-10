@@ -1,7 +1,7 @@
 import { AlertTriangle, ArrowLeft, CheckCircle, CirclePlay, ClipboardCheck, ClipboardList, Eye, Flag, Gauge, PenLine } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, adimAdi, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
-import { Bos, Icerik, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Bos, Icerik, Kart, Rozet, Sayac, Tumu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OnIncelemeKarti } from "../bilesenler/Haftalik";
 import { OncelikDugmesi } from "../bilesenler/Yonetici";
 import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -307,7 +307,6 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   };
   return (
     <div className="form form-kutu talimat-formu">
-      <p className="ipucu">{t("talimatAciklama")}</p>
       <label>
         {t("haberBasligi")}
         <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("talimatBaslikIpucu", "ar")} />
@@ -386,7 +385,6 @@ export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: stri
     return <BirimGorunumu ben={ben} birim={birim as Birim} />;
   }
 
-  const programYalniz = ks.kollar.length === 1 && ks.kollar[0] === "program";
   const kapsamAdi = ks.birimler.map((b) => t(BIRIM_ADI[b])).join(", ");
   const talimatVerir = talimatVerebilir(ben);
 
@@ -405,11 +403,6 @@ export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: stri
         }
       />
       {talimat && <TalimatFormu ben={ben} kapat={() => setTalimat(false)} />}
-      {programYalniz && (
-        <NotKutu>
-          <TaslakEtiketi /> {t("ypProgramTaslak")}
-        </NotKutu>
-      )}
       <CalismaAlani ben={ben} duzen="panel" />
     </>
   );

@@ -180,7 +180,7 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
           <input type="date" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
         </label>
         <label>
-          {t("saatGmt")} <span className="ipucu">{t("saatBosTbc")}</span>
+          {t("saatGmt")}
           <input type="time" value={f.saatGmt} onChange={(e) => setF({ ...f, saatGmt: e.target.value })} />
         </label>
         <label>

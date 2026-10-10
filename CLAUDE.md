@@ -67,13 +67,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`).
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v15`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v16`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v15-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v16-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -126,6 +126,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
   Paket önerisi ve hazır paket taşınmaz.
+- Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
+  bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
+  düğmeler (`PlanAraclari`: gelen öneriler ve takvimden bu güne, sayılarıyla;
+  çağrı, çıktı, belge); öneriler ve takvim geniş `Pencere`de açılır. Simgeli
+  kare satır denendi, beğenilmedi. "Hepsini bugüne al" günün başlangıç işi:
+  başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
+  Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
+  dönüş) en altta `PlanDurumKarti`.
+  - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
+    Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez. Başlık satırı
+    da çıktıdaki gibi sağdan başlar (`.bolum.ar > summary`), gövde
+    arayüz dilinde kalır.
 - Önerinin üç kaynağı var:
   - muhabir: uygulamadan, e-posta yanıtından ya da Planlama'nın onun adına
     girdiği telefon/mesaj/yüz yüze
@@ -147,6 +159,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Karta basınca `Pencere`de bütün öneri: tam gelişme, kaynak, hedef plan,
     süreç, "Ayrıntı ve geçmiş". Plana/gündeme ekleme ve ret pencerede
     açılır, ızgarada form açılmaz; değerlendirmeye alma ve erteleme kartta.
+  - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
+    ve muhabir dışı kaynak değil), ne değişmesi gerektiği yazılmadan
+    gitmez (`DuzeltmeFormu`, `eylemler.ts → oneriDuzeltmeIste`). Durum
+    `duzeltme`, not `duzeltmeNotu` (ret `gerekce`'sinden ayrı). Sıra
+    muhabirde: öneri ayrıntısında notu görür, "Düzelt ve yeniden gönder"
+    (`oneriYenidenGonder`) aynı öneriyi günceller ve "yeni"ye döndürür;
+    önceki hal hareketin verisinde. Kurallar `yetki.ts →
+    oneriDuzeltmeyeGider`, `oneriYenidenGonderebilir`.
   - Kart ya da liste kişinin seçimi, ana sayfa düzeni gibi kayıtta
     (`Durum.oneriGorunumu`, `eylemler.ts → oneriGorunumuKaydet`); aynı
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
@@ -239,6 +259,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
   Arapçada sağdan sola kendiliğinden. Tek bilinçli istisna içerik
   hizası: içerik her dilde sağa yaslı.
+- Ekranlarda kullanımı anlatan metin yok: açıklama paragrafı, yönerge
+  kutusu, ipucu, sayfa alt yazısı. Anlaşılmayan yer olursa kullanıcı
+  kendisi ekletir. Kalan kısa satırlar durum bildirir (onay bekleniyor,
+  sınır doldu, adım başka birimde). Simge düğmesinin adı `title` ve
+  `aria-label`'da kalır. Kullanım anlatımı birim birim kılavuzda (PDF).
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
   arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
   akışı panosunun adı.

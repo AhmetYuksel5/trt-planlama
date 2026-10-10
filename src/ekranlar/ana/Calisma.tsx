@@ -93,7 +93,6 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
       {/* Düzenlerken üstte yapışkan çubuk; kaydırırken "Bitti" elde dursun. Düzenlemezken sayfanın üstünde satır yok. */}
       {kisisel && duzenle && (
         <div className="alan-arac duzen-cubugu">
-          <span className="bos-kucuk">{t("alanDuzenNotu")}</span>
           <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet(null)} disabled={!kayitli}>
             <RotateCcw size={14} /> {t("varsayilanaDon")}
           </button>

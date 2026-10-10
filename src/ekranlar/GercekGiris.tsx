@@ -170,7 +170,6 @@ export default function GercekGiris() {
   else if (adim === "baglanti")
     govde = (
       <form className="form" onSubmit={baglantiyiTamamla}>
-        <p className="aciklama">{t("ggBaglantiAciklama")}</p>
         {epostaAlani}
         <button className="dugme" disabled={bekle} data-gg-devam>
           <Mail size={16} /> {t("ggBaglantiyiOnayla")}
@@ -180,7 +179,6 @@ export default function GercekGiris() {
   else if (adim === "sifre")
     govde = (
       <form className="form" onSubmit={sifreKaydet}>
-        <p className="aciklama">{t("ggSifreAciklama", { n: SIFRE_EN_AZ })}</p>
         <label>
           {t("ggYeniSifre")}
           <input type="password" autoComplete="new-password" value={sifre} onChange={(e) => setSifre(e.target.value)} required data-gg-sifre />

@@ -98,7 +98,8 @@ export const MENU: Grup[] = [
         kisa: "kaOneriler",
         kisaMuhabir: "kaOnerilerim",
         ikon: Lightbulb,
-        say: (d, ben) => (ben.birim === "muhabir" ? 0 : d.oneriler.filter((o) => o.durum === "yeni").length),
+        // Muhabirin önündeki iş düzeltmesi istenen önerisi; Planlama'nınki yeni gelen.
+        say: (d, ben) => (ben.birim === "muhabir" ? d.oneriler.filter((o) => o.muhabirId === ben.id && o.durum === "duzeltme").length : d.oneriler.filter((o) => o.durum === "yeni").length),
       },
       { sayfa: "basliklar", ad: "mBasliklar", kisa: "kaBasliklar", ikon: Newspaper },
       { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", kisa: "kaPaketler", kisaMuhabir: "kaPaketlerim", ikon: Package },

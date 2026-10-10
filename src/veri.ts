@@ -284,7 +284,11 @@ export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
 
 /* --- Öneri: muhabirin gönderdiği haliyle korunur, değerlendirme ayrı alanlarda. --- */
 
-export const ONERI_DURUMLARI = ["yeni", "degerlendiriliyor", "planaEklendi", "reddedildi", "sonra"] as const;
+/*
+ * "duzeltme": Planlama öneriyi notla muhabire geri gönderdi; karar muhabirde
+ * bekliyor. Muhabir düzeltip yeniden gönderince öneri "yeni"ye döner.
+ */
+export const ONERI_DURUMLARI = ["yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra"] as const;
 export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
 export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
@@ -323,6 +327,14 @@ export interface Oneri {
   planId?: string;
   paketId?: string;
   gerekce?: string;
+  /*
+   * Planlama'nın düzeltme isteği; ret gerekçesinden ayrı, çünkü düzeltilip
+   * yeniden gönderilen öneri sonra reddedilirse ikisi de okunmalı. Muhabir
+   * yeniden gönderince silinmiyor: neye göre düzeltildiği görünsün.
+   */
+  duzeltmeNotu?: string;
+  /** Kaç kez düzeltmeye gönderildi. */
+  duzeltmeSayisi?: number;
   geriDonus?: boolean;
   /** E-postayla geldiyse kaynağı olan yanıt; orijinal metin orada değişmeden duruyor. */
   yanitId?: string;
@@ -712,6 +724,8 @@ export const HAREKET_TIPLERI = [
   "profilGuncellendi",
   "yanitOneriYok",
   "oneriDuzenlendi",
+  "oneriDuzeltmeIstendi",
+  "oneriYenidenGonderildi",
   "talimatVerildi",
   "paketOncelikli",
   "paketOncelikKalkti",
@@ -819,9 +833,10 @@ export interface Durum {
  * paketi, v9: elle girilen öneri ve muhabir dışı kaynak, v10: Next Day
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
- * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları).
+ * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
+ * gönderilebiliyor).
  */
-const SAKLA = "trt-planlama-v15";
+const SAKLA = "trt-planlama-v16";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı

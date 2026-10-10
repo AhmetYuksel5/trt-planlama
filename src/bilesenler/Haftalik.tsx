@@ -164,7 +164,6 @@ export function OnIncelemeKarti({ ben }: { ben: Kisi }) {
   const liste = onIncelemeBekleyenler(v, ben);
   return (
     <Kart baslik={t("onIncelemeBekleyen")} ikon={<ClipboardCheck size={18} />} ek={liste.length ? String(liste.length) : undefined} className="on-inceleme-karti">
-      <p className="bos-kucuk">{t("onIncelemeAciklama")}</p>
       {liste.length === 0 ? (
         <Bos kucuk metin={t("onIncelemeYok")} />
       ) : (

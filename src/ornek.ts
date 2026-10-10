@@ -733,6 +733,9 @@ interface OneriTanimi {
   baslikId?: string;
   paketId?: string;
   gerekce?: string;
+  /** Planlama'nın düzeltme isteği; `onceki` doluysa muhabir düzeltip yeniden göndermiş. */
+  duzeltme?: string;
+  onceki?: { haber: string; gelisme: string };
   saat: string;
 }
 
@@ -937,6 +940,35 @@ const ONERILER: OneriTanimi[] = [
     tur: "feature",
     durum: "reddedildi",
     gerekce: "Güncel bir gelişme yok; stok feature olarak yeniden önerilebilir.",
+  },
+  // Düzeltmeye gönderilen: karar muhabirde bekliyor.
+  {
+    id: "o-guta",
+    muhabirId: "mu13",
+    gun: "bugun",
+    saat: "09:40",
+    haber: "عودة اللاجئين إلى ريف دمشق",
+    gelisme: "عائلات تعود إلى بلدات في الغوطة الشرقية.",
+    paket: "العودة إلى الغوطة",
+    saha: true,
+    kanal: "sistem",
+    durum: "duzeltme",
+    duzeltme: "Kaç aile döndüğüne dair resmî ya da BM rakamı ekleyin; paket başlığında hangi beldeler olduğu belli olsun.",
+  },
+  // Düzeltilip yeniden gönderilen: Planlama'nın önüne yeniden düştü.
+  {
+    id: "o-istanbul-liman",
+    muhabirId: "mu11",
+    gun: "bugun",
+    saat: "09:15",
+    haber: "ميناء حيدر باشا يعود إلى العمل",
+    gelisme: "وزارة النقل التركية: الميناء يستقبل أولى سفن الحاويات الأسبوع المقبل بعد تأخر الترميم عامين.",
+    paket: "حيدر باشا: من محطة تاريخية إلى ميناء تجاري",
+    tur: "ekonomi",
+    kanal: "sistem",
+    durum: "yeni",
+    duzeltme: "Açıyı ekonomiye çevirin: limanın kapasitesi ve Arap ülkeleriyle ticarete etkisi. Bakanlık açıklamasını kaynak olarak yazın.",
+    onceki: { haber: "ميناء حيدر باشا", gelisme: "أعمال الترميم في الميناء التاريخي تقترب من نهايتها." },
   },
 ];
 
@@ -1557,6 +1589,8 @@ export const ORNEK = (): Durum => {
       planId: o.durum === "planaEklendi" ? planId(hedef) : undefined,
       paketId: o.paketId,
       gerekce: o.gerekce,
+      duzeltmeNotu: o.duzeltme,
+      duzeltmeSayisi: o.duzeltme ? 1 : undefined,
       geriDonus: o.gun === "dun",
     };
   });
@@ -1586,6 +1620,10 @@ export const ORNEK = (): Durum => {
     h(o.muhabirId, "oneriGeldi", o.zaman, { oneriId: o.id, veri: { sahip: "planlama" } });
     const sonra = (dk: number) => new Date(Math.min(new Date(o.zaman).getTime() + dk * DAKIKA, an - 5 * DAKIKA)).toISOString();
     if (o.durum === "degerlendiriliyor") h("pl2", "oneriDegerlendirmede", sonra(40), { oneriId: o.id });
+    const tanim = ONERILER.find((x) => x.id === o.id);
+    if (tanim?.duzeltme) h("pl3", "oneriDuzeltmeIstendi", sonra(35), { oneriId: o.id, veri: { not: tanim.duzeltme } });
+    if (tanim?.onceki)
+      h(o.muhabirId, "oneriYenidenGonderildi", sonra(90), { oneriId: o.id, veri: { sahip: "planlama", haberBasligi: tanim.onceki.haber, gelisme: tanim.onceki.gelisme } });
     if (o.durum === "sonra") h("pl3", "oneriSonra", sonra(55), { oneriId: o.id, veri: { gerekce: o.gerekce ?? "" } });
     if (o.durum === "reddedildi") h("pl3", "oneriReddedildi", sonra(60), { oneriId: o.id, veri: { gerekce: o.gerekce ?? "" } });
     if (o.durum === "planaEklendi") {

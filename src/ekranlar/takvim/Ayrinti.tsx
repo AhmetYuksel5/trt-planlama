@@ -1,6 +1,6 @@
 import { CalendarDays, CalendarRange, Calendar, Link2, Pencil, Trash2, Tv } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { Icerik, KisiHucre, NotKutu, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Icerik, KisiHucre, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BIRIM_ADI, TUR_ADI, bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, hatirlatmaAdi, oncelikAdi, potansiyelAdi, tekrarAdi } from "../../etiketler";
 import { faaliyetAylikaEkle, faaliyetDegistir, faaliyetHaftalikaBagla, faaliyetNextDayeEkle, faaliyetOzeleEkle, faaliyetSil } from "../../eylemler";
@@ -326,7 +326,6 @@ function Ayrinti({ o, ben, ac, kapat }: { o: Olusum; ben: Kisi; ac: (e: Ekran) =
       {aktarabilir(ben) && (
         <section className="tk-aktarim" aria-label={t("planaAktar")}>
           <div className="alan-etiket">{t("planaAktar")}</div>
-          <p>{t("aktarimNotu")}</p>
           <div className="tk-aktarim-dugmeleri">
             {AKTARIM.map((a) => (
               <div key={a.tur}>
@@ -473,7 +472,7 @@ function HaftalikAktarim({ o, ben, haftaId, geri }: { o: Olusum; ben: Kisi; haft
 }
 
 function AylikAktarim({ o, ben, geri }: { o: Olusum; ben: Kisi; geri: () => void }) {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const f = o.f;
   const [tur, setTur] = useState<IcerikTuru>(faaliyetKolu(f));
   const kaydet = () => {
@@ -498,7 +497,6 @@ function AylikAktarim({ o, ben, geri }: { o: Olusum; ben: Kisi; geri: () => void
         </>
       }
     >
-      <NotKutu>{t("aylikNotu", { ay: tarihYaz(o.bas.slice(0, 7) + "-01", dil, "ay") })}</NotKutu>
       <div className="form">
         <label>
           {t("tur")}

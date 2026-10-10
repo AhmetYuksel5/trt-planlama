@@ -78,7 +78,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
 
   return (
     <>
-      <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} alt={t("kullanicilarAlt")} />
+      <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />
       <Kart baslik={t("davetEt")} ikon={<Send size={18} />}>
         <form className="form" onSubmit={davetEt} data-davet-formu>
           <div className="satir">
@@ -134,7 +134,6 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
           <label className="secim">
             <input type="checkbox" checked={form.hesapYoneticisi} onChange={(e) => alan("hesapYoneticisi", e.target.checked)} />
             {t("hesapYoneticisi")}
-            <span className="ipucu">{t("hesapYoneticisiAciklama")}</span>
           </label>
           <div className="form-alt">
             <button className="dugme" disabled={bekle} data-davet-gonder>

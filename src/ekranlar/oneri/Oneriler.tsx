@@ -1,20 +1,20 @@
-import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send } from "lucide-react";
+import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaSonu } from "../../haftalik";
-import { oneriDurum, oneriGonder } from "../../eylemler";
+import { oneriDurum, oneriGonder, oneriYenidenGonder } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
-import { oneriGorebilir, yapabilir } from "../../yetki";
+import { oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
-import { EpostaKaynagi } from "./Eposta";
+import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
-import { GorunumSecici, OneriKarti, OneriPenceresi, useOneriGorunumu } from "./OneriKarti";
+import { DuzeltmeFormu, GorunumSecici, OneriKarti, OneriPenceresi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 
 /**
@@ -58,7 +58,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
       <SayfaBasi
         ikon={<Lightbulb size={26} />}
         baslik={t(muhabir ? "mOnerilerim" : "mOneriler")}
-        alt={t(muhabir ? "onerilerimAlt" : "onerilerAlt")}
+       
         sagUc={
           <>
             {yapabilir(ben, "cagriHazirla") && (
@@ -136,6 +136,8 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const v = useVeri();
   const [ekle, setEkle] = useState(false);
   const [ret, setRet] = useState<string | null>(null);
+  const [duzelt, setDuzelt] = useState(false);
+  const [yenile, setYenile] = useState(false);
   const muhabir = kisiBul(v, oneri.muhabirId);
   const veren = kisiBul(v, oneri.talimatVeren);
   const giren = kisiBul(v, oneri.giren);
@@ -147,6 +149,8 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
+  // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
+  const muhabirde = oneri.durum === "duzeltme";
 
   return (
     <>
@@ -165,9 +169,34 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
           </p>
         </div>
       </header>
+      {oneriYenidenGonderebilir(ben, oneri) && (
+        <div className="duzeltme-istegi" data-duzeltme-istegi>
+          <NotKutu ton="uyari" ikon={<Undo2 size={16} />}>
+            <b>{t("duzeltmeIstegi")}</b>
+            <p dir="auto">{oneri.duzeltmeNotu}</p>
+          </NotKutu>
+          {yenile ? (
+            <KisaOneriFormu
+              ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
+              kaydet={(g) => {
+                const ok = oneriYenidenGonder(ben, oneri.id, g);
+                if (ok) bildir(t("bYenidenGonderildi"));
+                return ok;
+              }}
+              kapat={() => setYenile(false)}
+              kaydetMetni={t("yenidenGonder")}
+              gelismeGerekli
+            />
+          ) : (
+            <button className="dugme" onClick={() => setYenile(true)} data-duzelt-ac>
+              <Send size={15} className="yon" /> {t("duzeltVeYenidenGonder")}
+            </button>
+          )}
+        </div>
+      )}
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <Kart baslik={t(yanit ? "oneri" : giren ? "oneriGirildigiHal" : "oneriOrijinal")} ek={t(yanit ? "oneriEpostadanNot" : "oneriOrijinalNot")}>
+          <Kart baslik={t(yanit ? "oneri" : giren ? "oneriGirildigiHal" : "oneriOrijinal")}>
             <div className="alanlar">
               <div className="alan">
                 <small>{t(veren ? "yoneticiTalimati" : muhabir ? "muhabir" : "kaynak")}</small>
@@ -263,6 +292,18 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                 </NotKutu>
               </div>
             )}
+            {/* Muhabire kendi kutusunda (sayfa başında) gösteriliyor; düzeltilip gönderildiyse burada neye göre düzeltildiği kalıyor. */}
+            {oneri.duzeltmeNotu && !oneriYenidenGonderebilir(ben, oneri) && (
+              <div className="ara-ust-2">
+                <div className="alan-etiket">
+                  {t("duzeltmeIstegi")}
+                  {(oneri.duzeltmeSayisi ?? 0) > 1 && ` · ${t("duzeltmeSayisi", { n: oneri.duzeltmeSayisi! })}`}
+                </div>
+                <NotKutu ton={muhabirde ? "uyari" : ""} ikon={<Undo2 size={16} />}>
+                  <span dir="auto">{oneri.duzeltmeNotu}</span>
+                </NotKutu>
+              </div>
+            )}
             {oneri.geriDonus && (
               <div className="ara-ust-2">
                 <Rozet ton="iyi">{t("geriDonusYapildi")}</Rozet>
@@ -272,6 +313,8 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               <div className="ara-ust-2">
                 {ekle ? (
                   <PlanaEkle ben={ben} oneri={oneri} kapat={() => setEkle(false)} />
+                ) : duzelt ? (
+                  <DuzeltmeFormu ben={ben} oneri={oneri} kapat={() => setDuzelt(false)} />
                 ) : ret !== null ? (
                   <div className="form form-kutu">
                     <label>
@@ -296,12 +339,12 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                 ) : (
                   <div className="dugmeler">
                     {/* Haftalık öneri Next Day'e değil haftalık planın gündemine alınıyor. */}
-                    {oneri.durum !== "reddedildi" && haftaPlani && (
+                    {oneri.durum !== "reddedildi" && !muhabirde && haftaPlani && (
                       <a className="dugme dugme-iyi" href={`#/haftalik/${haftaPlani.id}`}>
                         {t("haftalikPlandaDegerlendir")}
                       </a>
                     )}
-                    {oneri.durum !== "reddedildi" && !oneri.hafta && (
+                    {oneri.durum !== "reddedildi" && !muhabirde && !oneri.hafta && (
                       <button className="dugme dugme-iyi" onClick={() => setEkle(true)}>
                         {t("planaEkle")}
                       </button>
@@ -311,7 +354,12 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                         <Clock size={15} /> {t("degerlendirmeyeAl")}
                       </button>
                     )}
-                    {!veren && oneri.durum !== "sonra" && oneri.durum !== "reddedildi" && (
+                    {oneriDuzeltmeyeGider(ben, oneri) && (
+                      <button className="dugme dugme-ikincil" onClick={() => setDuzelt(true)} data-duzeltmeye-gonder>
+                        <Undo2 size={15} /> {t("duzeltmeyeGonder")}
+                      </button>
+                    )}
+                    {!veren && !muhabirde && oneri.durum !== "sonra" && oneri.durum !== "reddedildi" && (
                       <button className="dugme dugme-ikincil" onClick={() => oneriDurum(ben, oneri.id, "sonra")}>
                         {t("odSonra")}
                       </button>
@@ -322,9 +370,6 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                       </button>
                     )}
                   </div>
-                )}
-                {veren && !ekle && (
-                  <p className="bos-kucuk ara-ust">{t("talimatReddedilmez")}</p>
                 )}
               </div>
             )}
@@ -381,7 +426,7 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
       <a className="geri-bag" href="#/oneriler">
         <ArrowLeft size={14} className="yon" /> {t(muhabir ? "mOnerilerim" : "mOneriler")}
       </a>
-      <SayfaBasi ikon={<Send size={26} className="yon" />} baslik={t(muhabir ? "yeniOneriGonder" : "oneriKaydet")} alt={t(muhabir ? "yeniOneriAlt" : "oneriKaydetAlt")} />
+      <SayfaBasi ikon={<Send size={26} className="yon" />} baslik={t(muhabir ? "yeniOneriGonder" : "oneriKaydet")} />
       {cagri && (
         <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
           {t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })} · {t("acikCagriAciklama", { saat: cagri.sonSaat })}

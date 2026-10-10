@@ -1,7 +1,7 @@
 import { ChartColumn, FileDown, Printer } from "lucide-react";
 import { useState } from "react";
 import { indir } from "../bilesenler/indir";
-import { Bos, Ilerleme, Kart, KisiHucre, NotKutu, Sayac } from "../bilesenler/Parcalar";
+import { Bos, Ilerleme, Kart, KisiHucre, Sayac } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, TUR_ADI } from "../etiketler";
 import { DONEMLER, donemBasi, rapor, type Donem } from "../rapor";
@@ -100,7 +100,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
       <SayfaBasi
         ikon={<ChartColumn size={26} />}
         baslik={t("mRaporlar")}
-        alt={t("raporlarAlt")}
+       
         sagUc={
           <>
             <button className="dugme dugme-ikincil" onClick={() => window.print()}>
@@ -253,7 +253,6 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
           </div>
         )}
       </Kart>
-      <NotKutu>{t("rpTanimNotu")}</NotKutu>
     </>
   );
 }

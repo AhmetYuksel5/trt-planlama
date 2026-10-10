@@ -1,6 +1,6 @@
-import { ExternalLink, FilePen, Lock, Printer } from "lucide-react";
+import { ExternalLink, Printer } from "lucide-react";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
-import { NotKutu, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
 import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
 import {
@@ -33,7 +33,7 @@ import { EKIP_GOREVLERI, baslikBul, kisiBul, paketBul, useVeri, type CanliYayin,
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, StoktanSecici } from "../nextday/Bolumler";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
-import { BelgeNotu, BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
+import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
  * Next Day planının belgesi (الأجندة الإخبارية). Biçim kurumun bugünkü
@@ -312,7 +312,6 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
       {paketler.length > 0 && (
         <section>
           <h2 className="yesil">{c("ciktiBeklenen")}</h2>
-          {d && <BelgeNotu>{t("beklenenNotu")}</BelgeNotu>}
           {paketler.map((p) => (
             <Satir key={p.id} yer={sehirAr(p.sehir)}>
               {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
@@ -591,13 +590,6 @@ export default function NextDayBelge({ ben, plan }: { ben: Kisi; plan: NextDayPl
   const [pencere, setPencere] = useState<NdPencere | null>(null);
   const temiz = useRef<HTMLElement>(null);
   const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere } : undefined;
-  const not = icerik
-    ? t("belgeNotu")
-    : plan.durum === "devralindi"
-      ? t(operasyon ? "kilitOperasyon" : "kilitDevralindi")
-      : plan.durum === "onayli"
-        ? t("kilitOnayli")
-        : t("kilitYetki");
 
   return (
     <>
@@ -611,9 +603,6 @@ export default function NextDayBelge({ ben, plan }: { ben: Kisi; plan: NextDayPl
           </a>
         }
       />
-      <div className="yazdirma-gizle">
-        <NotKutu ikon={icerik ? <FilePen size={16} /> : <Lock size={16} />}>{not}</NotKutu>
-      </div>
       <div className="cikti-sarici belge-duzen yazdirma-gizle">
         <NextDayBelgesi plan={plan} duzen={duzen} />
       </div>

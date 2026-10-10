@@ -20,7 +20,7 @@ export default function NextDayListe() {
 
   return (
     <>
-      <SayfaBasi ikon={<CalendarDays size={26} />} baslik={t("nextdayPlanlari")} alt={t("nextdayAlt")} />
+      <SayfaBasi ikon={<CalendarDays size={26} />} baslik={t("nextdayPlanlari")} />
       <Kart baslik={t("planlar")} ikon={<CalendarDays size={18} />}>
         {planlar.length === 0 ? (
           <Bos metin={t("planYok")} />

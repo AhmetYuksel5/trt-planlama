@@ -1,6 +1,6 @@
 import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Pencil, Scissors, Smartphone, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
-import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { cagriKaydet, epostaYanitiIsle, oneriDuzenle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
@@ -79,14 +79,13 @@ export function AliciAlanlari({ kime, setKime, bcc, setBcc }: { kime: string; se
   return (
     <>
       <label>
-        {t("kime")} <span className="ipucu">{t("kimeIpucu")}</span>
+        {t("kime")}
         <input type="email" dir="ltr" value={kime} onChange={(e) => setKime(e.target.value)} />
       </label>
       <div>
         <div className="alan-etiket">
           {t("bccAlicilar")} · {t("aliciSayisi", { n: bcc.length })}
         </div>
-        <p className="bos-kucuk">{t("bccNotu")}</p>
         <div className="dugmeler ara-ust">
           <button className="dugme dugme-sade dugme-kucuk" onClick={() => setAliciAcik(!aliciAcik)}>
             {t("alicilariDuzenle")}
@@ -188,16 +187,13 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
       <SayfaBasi
         ikon={<Megaphone size={26} />}
         baslik={t("oneriCagrisi")}
-        alt={t("cagriAlt")}
+       
         sagUc={
           <a className="dugme dugme-ikincil" href="#/oneriler/yanitlar">
             <Inbox size={16} /> {t("gelenYanitlar")}
           </a>
         }
       />
-      <NotKutu ton="vurgu" ikon={<Mail size={16} />}>
-        {t("cagriDemoNotu")}
-      </NotKutu>
       <div className="iz iz-ana-yan">
         <Kart>
           <div className="form">
@@ -229,7 +225,6 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
             <AliciAlanlari kime={kime} setKime={setKime} bcc={bcc} setBcc={setBcc} />
             <EpostaOnizleme eposta={eposta} govde={govde} setGovde={setGovde} />
             <GonderDugmeleri eposta={eposta} dosyaAdi={`cagri-${hedef}.eml`} once={kaydet} />
-            <p className="bos-kucuk">{t("outlookIpucu")}</p>
           </div>
         </Kart>
         <OncekiCagrilar />
@@ -359,7 +354,6 @@ function IceAktar({ ben, cagri }: { ben: Kisi; cagri?: CagriKaydi }) {
   const kisi = kisiBul(v, yapistir.kisiId);
   return (
     <Kart baslik={t("iceAktar")} ikon={<Upload size={18} />}>
-      <p className="bos-kucuk">{t("iceAktarNotu")}</p>
       <label
         className={`birakma-alani ara-ust-2 ${ustunde ? "ustunde" : ""}`}
         onDragOver={(e) => {
@@ -405,7 +399,6 @@ function Eslesmeyenler({ ben, cagri }: { ben: Kisi; cagri?: CagriKaydi }) {
   if (!liste.length) return null;
   return (
     <Kart baslik={t("eslesmeyenler")} ikon={<MailQuestion size={18} />} ek={String(liste.length)}>
-      <p className="bos-kucuk">{t("eslesmeyenNotu")}</p>
       {liste.map((y) => (
         <div key={y.id} className="kayit ara-ust-2">
           <div className="kayit-bas">
@@ -482,7 +475,7 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
       <SayfaBasi
         ikon={<Inbox size={26} />}
         baslik={t("gelenYanitlar")}
-        alt={t("gelenYanitlarAlt")}
+       
         sagUc={
           <>
             {cagrilar.length > 0 && (
@@ -578,7 +571,21 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
 
 /* --- Öneri detayındaki kaynak e-posta: orijinali, düzenleme ve bölme --- */
 
-function KisaOneriFormu({ ilk, kaydet, kapat }: { ilk: YanitOneriGirdisi; kaydet: (g: YanitOneriGirdisi) => boolean; kapat: () => void }) {
+/* Muhabirin düzeltip yeniden gönderdiği öneri de aynı alanlarla (OneriDetay). */
+export function KisaOneriFormu({
+  ilk,
+  kaydet,
+  kapat,
+  kaydetMetni,
+  gelismeGerekli = false,
+}: {
+  ilk: YanitOneriGirdisi;
+  kaydet: (g: YanitOneriGirdisi) => boolean;
+  kapat: () => void;
+  kaydetMetni?: string;
+  /** Yeniden gönderilen öneride gelişme boş kalamaz; yanıttan ayırırken seçili metin boş olabilir. */
+  gelismeGerekli?: boolean;
+}) {
   const { t } = useDil();
   const [f, setF] = useState<YanitOneriGirdisi & { bicim: Bicim }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
   return (
@@ -619,8 +626,8 @@ function KisaOneriFormu({ ilk, kaydet, kapat }: { ilk: YanitOneriGirdisi; kaydet
         <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim()} onClick={() => kaydet(f) && kapat()}>
-          {t("kaydet")}
+        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim())} onClick={() => kaydet(f) && kapat()} data-kisa-kaydet>
+          {kaydetMetni ?? t("kaydet")}
         </button>
       </div>
     </div>
@@ -694,7 +701,6 @@ export function EpostaKaynagi({ ben, oneri, yanit }: { ben: Kisi; oneri: Oneri; 
       )}
       {form === "ayir" && (
         <>
-          <p className="bos-kucuk ara-ust-2">{t("yanittanAyirNotu")}</p>
           <KisaOneriFormu
             ilk={{ haberBasligi: secili.split("\n")[0]?.slice(0, 140) ?? "", gelisme: secili, tur: "haber", sahaGerekli: false }}
             kaydet={(g) => {

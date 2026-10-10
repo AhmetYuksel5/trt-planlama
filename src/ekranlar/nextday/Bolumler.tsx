@@ -20,13 +20,24 @@ import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
  * söylüyor.
  */
 
-export function Bolum({ no, baslik, ek, children }: { no: number | string; baslik: string; ek?: ReactNode; children: ReactNode }) {
+export function Bolum({ no, baslik, ek, children, ar = false }: { no: number | string; baslik: string; ek?: ReactNode; children: ReactNode; ar?: boolean }) {
   return (
-    <details className="bolum">
+    <details className={`bolum${ar ? " ar" : ""}`}>
+      {/* Next Day'in bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki Arapçasıyla; satır da çıktıdaki gibi sağdan başlıyor. */}
       <summary>
         <span className="no">{no}</span>
-        {baslik}
-        {ek && <span className="ek">{ek}</span>}
+        {ar ? (
+          <bdi dir="rtl" lang="ar" className="bolum-ar">
+            {baslik}
+          </bdi>
+        ) : (
+          baslik
+        )}
+        {ek && (
+          <span className="ek">
+            <bdi>{ek}</bdi>
+          </span>
+        )}
         <ChevronDown size={18} className="ok" />
       </summary>
       <div className="bolum-govde">{children}</div>
@@ -139,7 +150,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
   const [ekle, setEkle] = useState(false);
 
   return (
-    <Bolum no={1} baslik={t("calismaEkibi")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
+    <Bolum ar no={1} baslik={metin("calismaEkibi", "ar")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
       {plan.ekip.length === 0 && <Bos kucuk metin={t("ekipBos")} />}
       {EKIP_GOREVLERI.map((g) => {
         const uyeler = plan.ekip.filter((e) => e.gorev === g);
@@ -237,7 +248,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
   const [form, setForm] = useState<"" | "yeni" | "mevcut">("");
   const bagli = plan.gorevlendirmeler.map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g) => g !== undefined);
   return (
-    <Bolum no={2} baslik={t("muhabirHareketleri")} ek={String(bagli.length)}>
+    <Bolum ar no={2} baslik={metin("muhabirHareketleri", "ar")} ek={String(bagli.length)}>
       {bagli.length === 0 ? (
         <Bos kucuk metin={t("kayitYok")} />
       ) : (
@@ -335,10 +346,9 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
 }
 
 export function CanliBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler: boolean; d: Durum }) {
-  const { t } = useDil();
   const canlilar = d.canliYayinlar.filter((c) => c.planId === plan.id && !c.planBaslikId);
   return (
-    <Bolum no={3} baslik={t("canliYayinlar")} ek={String(canlilar.length)}>
+    <Bolum ar no={3} baslik={metin("canliYayinlar", "ar")} ek={String(canlilar.length)}>
       <CanliListesi plan={plan} canlilar={canlilar} duzenler={duzenler} />
     </Bolum>
   );
@@ -411,7 +421,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
   const [sec, setSec] = useState(false);
   const secili = plan.hazirPaketler.map((id) => paketBul(d, id)).filter((p): p is Paket => !!p);
   return (
-    <Bolum no={4} baslik={t("hazirPaketler")} ek={String(secili.length)}>
+    <Bolum ar no={4} baslik={metin("hazirPaketler", "ar")} ek={String(secili.length)}>
       {secili.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
       {secili.map((p) => (
         <div key={p.id} className="kayit">
@@ -546,11 +556,9 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
 /* --- Takipler (متابعات): başlığa bağlı olmayan gelişmeler --- */
 
 export function TakipBolumu({ plan, duzenler, d, no }: { plan: NextDayPlan; duzenler: boolean; d: Durum; no: number }) {
-  const { t } = useDil();
   const takipler = d.gelismeler.filter((g) => g.planId === plan.id && !g.planBaslikId);
   return (
-    <Bolum no={no} baslik={t("takipler")} ek={String(takipler.length)}>
-      <p className="aciklama">{t("takiplerAciklama")}</p>
+    <Bolum ar no={no} baslik={metin("takipler", "ar")} ek={String(takipler.length)}>
       <GelismeListesi plan={plan} gelismeler={takipler} duzenler={duzenler} />
     </Bolum>
   );

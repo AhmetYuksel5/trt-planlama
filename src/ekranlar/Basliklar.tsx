@@ -26,7 +26,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
 
   return (
     <>
-      <SayfaBasi ikon={<Newspaper size={26} />} baslik={t("mBasliklar")} alt={t("basliklarAlt")} />
+      <SayfaBasi ikon={<Newspaper size={26} />} baslik={t("mBasliklar")} />
       {yonetir && (
         <Kart baslik={t("yeniBaslik")}>
           <div className="form">

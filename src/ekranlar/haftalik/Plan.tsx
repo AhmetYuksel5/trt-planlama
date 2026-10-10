@@ -1,7 +1,7 @@
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Lock, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, NotKutu, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI } from "../../etiketler";
 import {
@@ -133,14 +133,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         </div>
         {hafta.durum === "toplantida" && bekleyen > 0 && <p className="bos-kucuk ara-ust">{t("kesinlestirmeIcinKarar", { n: bekleyen })}</p>}
         {hafta.durum === "toplantida" && duzenler && !yapabilir(ben, "haftalikKesinlestir") && <p className="bos-kucuk ara-ust">{t("kesinlestirmeYoneticide")}</p>}
-        {hafta.durum === "kesinlesti" && (
-          <div className="ara-ust-2">
-            <NotKutu ikon={<Lock size={16} />}>
-              {t("haftalikKilit")}
-              {aktarimBekleyen > 0 && ` ${t("aktarimBekliyor", { n: aktarimBekleyen })}`}
-            </NotKutu>
-          </div>
-        )}
+        {hafta.durum === "kesinlesti" && aktarimBekleyen > 0 && <p className="bos-kucuk ara-ust">{t("aktarimBekliyor", { n: aktarimBekleyen })}</p>}
       </section>
 
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
@@ -240,7 +233,6 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const bekleyen = oneriler.filter((o) => o.durum !== "reddedildi").length;
   return (
     <Bolum no="★" baslik={t("buHaftayaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
-      <p className="aciklama">{t("buHaftayaGelenOnerilerAciklama")}</p>
       {elle ? (
         <div className="ara-ust-2">
           <ElleOneriFormu
@@ -286,7 +278,6 @@ function MuhabirHareketleri({ hafta }: { hafta: HaftalikPlan }) {
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
   return (
     <Bolum no={1} baslik={t("muhabirHareketleriHafta")} ek={String(liste.length)}>
-      <p className="aciklama">{t("muhabirHareketleriHaftaAciklama")}</p>
       {liste.length === 0 ? (
         <Bos kucuk metin={t("kayitYok")} />
       ) : (
@@ -348,7 +339,6 @@ function AnaDosyalar({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const duzenler = haftalikDuzenler(ben, hafta);
   return (
     <Bolum no={2} baslik={t("haftaninAnaDosyalari")} ek={String(hafta.anaKonular.length)}>
-      <p className="aciklama">{t("haftaninAnaDosyalariAciklama")}</p>
       {hafta.anaKonular.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
       {hafta.anaKonular.map((a, i) =>
         form === a.id ? (
@@ -423,7 +413,6 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const gunlu = hafta.kalemler.filter((k) => k.tarih);
   return (
     <Bolum no={3} baslik={t("gunlukGundem")} ek={t("kalemSayisi", { n: gunlu.length })}>
-      <p className="aciklama">{t("gunlukGundemAciklama")}</p>
       {haftaGunleri(hafta.baslangic).map((g) => {
         const kalemler = gunlu.filter((k) => k.tarih === g);
         return (
@@ -460,7 +449,6 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const gidebilir = stok.filter(onIncelemeyeGidebilir);
   return (
     <Bolum no={4} baslik={t("zamanaBagliOlmayan")} ek={t("kalemSayisi", { n: gundemdeki.length })}>
-      <p className="aciklama">{t("stokDosyasiAciklama")}</p>
       {duzenler && gidebilir.length > 0 && (
         <div className="dugmeler">
           <button

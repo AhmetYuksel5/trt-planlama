@@ -210,6 +210,17 @@ export const paketGorebilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean
 export const oneriGorebilir = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && (k.birim !== "muhabir" || o.muhabirId === k.id);
 
+/*
+ * Düzeltmeye gönderme yalnız muhabirin önerisinde: talimatı yönetici verdi,
+ * ajansın ya da bakanlığın önerisini düzeltecek kimse yok. Elle girileni
+ * (telefon, mesaj) muhabir uygulamadan düzeltip yeniden gönderebiliyor.
+ */
+export const oneriDuzeltmeyeGider = (k: Kisi | undefined, o: Oneri): boolean =>
+  !!k && yapabilir(k, "oneriDegerlendir") && !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum);
+
+/** Düzeltme isteğini yalnız önerinin muhabiri karşılıyor. */
+export const oneriYenidenGonderebilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "duzeltme" && o.muhabirId === k.id;
+
 /** Muhabir takvimi bütünüyle görmüyor: yalnız sorumlu muhabir olarak atandığı faaliyetleri. */
 export const faaliyetGorebilir = (k: Kisi | undefined, f: Faaliyet): boolean => !!k && (k.birim !== "muhabir" || f.muhabirId === k.id);
 

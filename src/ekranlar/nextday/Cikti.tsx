@@ -1,6 +1,5 @@
 import { FilePen } from "lucide-react";
 import { useRef } from "react";
-import { NotKutu } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil } from "../../dil";
 import { useBen } from "../../oturum";
 import type { NextDayPlan } from "../../veri";
@@ -34,10 +33,6 @@ export default function Cikti({ plan }: { plan: NextDayPlan }) {
           )
         }
       />
-      <div className="yazdirma-gizle">
-        <NotKutu>{t("ciktiNotu")}</NotKutu>
-      </div>
-
       <div className="cikti-sarici">
         <NextDayBelgesi plan={plan} belgeRef={belge} />
       </div>
