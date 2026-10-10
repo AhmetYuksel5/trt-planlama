@@ -21,10 +21,10 @@ import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBo
  * akış eylemleri en altta. Temiz çıktı ayrı ekranda (çıktı önizleme).
  */
 /*
- * Planın araçları (çağrı, çıktı, belge, gelen öneriler, takvim) bölümlerin
- * üstünde tek satırda kare simgeler; ekran doğrudan doldurulan bölümlerle
- * (1–6) başlıyor. Öneriler ve takvim pencerede açılıyor. Simge satırı iki
- * biçimde deneniyor: altında kısa adıyla ve yalnız simge (adı ipucunda).
+ * Planın araçları (çağrı, çıktı, belge, gelen öneriler, takvim) başlığın
+ * yanında yazılı düğmeler; ekran doğrudan doldurulan bölümlerle (1–6)
+ * başlıyor. Öneriler ve takvim pencerede açılıyor. Dünden gelenleri bugüne
+ * alma planın başlangıç işi: başlığın hemen altında.
  */
 type AracPenceresi = "oneriler" | "takvim" | null;
 
@@ -54,12 +54,10 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
             {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}
           </p>
         </div>
+        <PlanAraclari ben={ben} plan={plan} ac={setArac} />
       </header>
 
-      <div className="arac-denemesi">
-        <PlanAraclari ben={ben} plan={plan} ac={setArac} yazili />
-        <PlanAraclari ben={ben} plan={plan} ac={setArac} />
-      </div>
+      <OncekiSeridi ben={ben} plan={plan} />
 
       <EkipBolumu plan={plan} duzenler={icerik} />
       <HareketBolumu plan={plan} duzenler={icerik} />
@@ -84,24 +82,21 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
   );
 }
 
-function PlanAraclari({ ben, plan, ac, yazili = false }: { ben: Kisi; plan: NextDayPlan; ac: (a: AracPenceresi) => void; yazili?: boolean }) {
+function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a: AracPenceresi) => void }) {
   const { t } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const bekleyen = v.oneriler.filter((o) => o.hedefTarih === plan.tarih && (o.durum === "yeni" || o.durum === "degerlendiriliyor")).length;
   const faaliyet = plandakiFaaliyetler(v, ben, plan.tarih, plan.tarih).length;
-  const kare = (anahtar: string, ikon: ReactNode, ad: Anahtar, tam: Anahtar, hedef: string | (() => void), sayi = 0) => {
+  const arac = (anahtar: string, ikon: ReactNode, ad: Anahtar, hedef: string | (() => void), sayi = 0) => {
     const ic = (
       <>
-        <span className="arac-simge">
-          {ikon}
-          {sayi > 0 && <em className="arac-sayi">{sayi}</em>}
-        </span>
-        {yazili && <span className="arac-ad">{t(ad)}</span>}
+        {ikon} {t(ad)}
+        {sayi > 0 && <em className="dugme-sayi">{sayi}</em>}
       </>
     );
-    const ortak = { className: "arac-kare", title: t(tam), "aria-label": t(tam), "data-arac": anahtar };
+    const ortak = { className: "dugme dugme-ikincil", "data-arac": anahtar };
     return typeof hedef === "string" ? (
       <a key={anahtar} href={hedef} {...ortak}>
         {ic}
@@ -113,13 +108,32 @@ function PlanAraclari({ ben, plan, ac, yazili = false }: { ben: Kisi; plan: Next
     );
   };
   return (
-    <nav className={`plan-araclari${yazili ? " yazili" : ""}`} aria-label={t("planAraclari")}>
-      {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && kare("cagri", <Megaphone size={22} />, "araCagri", "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
-      {kare("cikti", <Printer size={22} />, "araCikti", "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}
-      {(icerik || operasyon) && kare("belge", <FilePen size={22} />, "araBelge", "belgedeDuzenle", `#/nextday/${plan.id}/belge`)}
-      {icerik && kare("oneriler", <Lightbulb size={22} />, "araOneriler", "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
-      {kare("takvim", <CalendarSearch size={22} />, "araTakvim", "takvimdenGun", () => ac("takvim"), faaliyet)}
+    <nav className="sag-uc plan-araclari" aria-label={t("planAraclari")}>
+      {icerik && arac("oneriler", <Lightbulb size={16} />, "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
+      {arac("takvim", <CalendarSearch size={16} />, "takvimdenGun", () => ac("takvim"), faaliyet)}
+      {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
+      {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}
+      {(icerik || operasyon) && arac("belge", <FilePen size={16} />, "belgedeDuzenle", `#/nextday/${plan.id}/belge`)}
     </nav>
+  );
+}
+
+/* Şablondan (dünden) gelenleri bugünün taslağına alma: planlamacının güne başladığı iş, en üstte. */
+function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const sablon = planBul(v, plan.kopyaKaynagi);
+  const onceki = oncekiSayisi(v, plan);
+  if (!sablon || onceki === 0 || !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))) return null;
+  return (
+    <div className="onceki-seridi">
+      <button className="dugme" onClick={() => oncekiOnayla(ben, plan.id)} data-bugune-al>
+        <Check size={16} /> {t("hepsiniBuguneAl")}
+      </button>
+      <span className="onceki-sayi">
+        <span className="onceki-ornek" aria-hidden="true" /> {t("dundenGelen", { n: onceki })}
+      </span>
+    </div>
   );
 }
 
@@ -127,11 +141,7 @@ function PlanAraclari({ ben, plan, ac, yazili = false }: { ben: Kisi; plan: Next
 function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t } = useDil();
   const v = useVeri();
-  const icerik = planIcerikDuzenler(ben, plan);
-  const operasyon = planOperasyonDuzenler(ben, plan);
   const bekleyenGeriDonus = v.oneriler.filter((o) => o.hedefTarih === plan.tarih && geriDonusBekliyor(o)).length;
-  const sablon = planBul(v, plan.kopyaKaynagi);
-  const onceki = oncekiSayisi(v, plan);
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
   };
@@ -179,12 +189,6 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
             }}
           >
             <Send size={16} className="yon" /> {t("geriDonusGonder", { n: bekleyenGeriDonus })}
-          </button>
-        )}
-        {/* Şablondan gelenler hafif fonlu; düğmenin yanındaki örnek fon neyin dünden olduğunu gösteriyor. */}
-        {sablon && onceki > 0 && (icerik || operasyon) && (
-          <button className="dugme dugme-ikincil" onClick={() => oncekiOnayla(ben, plan.id)}>
-            <span className="onceki-ornek" aria-hidden="true" /> {t("hepsiniBuguneAl")}
           </button>
         )}
       </div>

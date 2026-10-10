@@ -1813,26 +1813,16 @@ html.gomulu body { background: var(--zemin); }
 .onceki-hal summary { cursor: pointer; color: var(--sonuk); }
 .onceki-hal .icerik.blok { margin-block-start: var(--ara-1); }
 
-/* --- Next Day plan araçları: bölümlerin üstünde kare simgeler (iki deneme: adlı ve yalnız simge) --- */
-.arac-denemesi { display: grid; gap: var(--ara-3); margin-block: var(--ara-4); }
-.plan-araclari { display: flex; flex-wrap: wrap; gap: var(--ara-3); }
-.arac-kare {
-  display: inline-flex; flex-direction: column; align-items: center; gap: var(--ara-1);
-  background: none; border: 0; padding: 0; color: var(--murekkep); text-decoration: none; cursor: pointer; font: inherit;
+/* --- Next Day: başlıktaki araç düğmeleri ve en üstteki "bugüne al" şeridi --- */
+.dugme-sayi {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--kotu); color: #fff;
+  font-style: normal; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center;
 }
-.arac-simge {
-  position: relative; width: 52px; height: 52px; border-radius: var(--yaricap-kart);
-  background: var(--nextday-sis); color: var(--nextday); display: grid; place-items: center;
-  border: 1px solid transparent; transition: border-color .15s, background .15s;
+.onceki-seridi {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-3); margin-block: var(--ara-4);
+  padding: var(--ara-3) var(--ara-4); background: var(--onceki-fon); border: 1px solid var(--onceki-cizgi); border-radius: var(--yaricap-kart);
 }
-.arac-kare:hover .arac-simge, .arac-kare:focus-visible .arac-simge { border-color: var(--nextday); background: var(--yuzey); }
-.arac-kare:focus-visible { outline: none; }
-.plan-araclari:not(.yazili) .arac-simge { width: 44px; height: 44px; }
-.arac-ad { font-size: var(--punto-kucuk); font-weight: 600; color: var(--sonuk); line-height: 1.1; max-width: 64px; text-align: center; }
-.arac-sayi {
-  position: absolute; inset-block-start: -6px; inset-inline-end: -6px; min-width: 18px; height: 18px; padding: 0 5px;
-  border-radius: 9px; background: var(--kotu); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; display: grid; place-items: center;
-}
+.onceki-sayi { display: inline-flex; align-items: center; gap: var(--ara-2); color: var(--sonuk); font-size: var(--punto-kucuk); font-weight: 600; }
 .bolum-ar { font-size: 1.06em; }
 .plan-durum-karti { margin-block-start: var(--ara-4); }
 dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }

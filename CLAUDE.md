@@ -127,12 +127,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
   Paket önerisi ve hazır paket taşınmaz.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
-  bölümlerle (1–6) başlar. Üstünde planın araçları kare simge satırında
-  (`PlanAraclari`: çağrı, çıktı, belge, gelen öneriler, takvimden bu güne);
-  öneriler ve takvim geniş `Pencere`de açılır. Satır şimdilik iki denemeyle
-  duruyor (altında kısa adıyla ve yalnız simge); kullanıcı seçince biri
-  kalkar. Durum çizgisi ve akış eylemleri (toplantıya götür, onayla,
-  devral, geri dönüş, hepsini bugüne al) en altta `PlanDurumKarti`.
+  bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
+  düğmeler (`PlanAraclari`: gelen öneriler ve takvimden bu güne, sayılarıyla;
+  çağrı, çıktı, belge); öneriler ve takvim geniş `Pencere`de açılır. Simgeli
+  kare satır denendi, beğenilmedi. "Hepsini bugüne al" günün başlangıç işi:
+  başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
+  Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
+  dönüş) en altta `PlanDurumKarti`.
   - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
     Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez.
 - Önerinin üç kaynağı var:
