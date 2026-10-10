@@ -15,11 +15,10 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
       <SayfaBasi
         ikon={<Settings size={26} />}
         baslik={t("mAyarlar")}
-        alt={t("ayarlarAlt")}
+       
       />
       <div className="iz iz-2">
         <Kart baslik={t("arayuzDili")}>
-          <p className="aciklama">{t("arayuzDiliAciklama")}</p>
           <DilSecici />
         </Kart>
         <Kart baslik={t("oturum")}>
@@ -27,13 +26,9 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
             <b>{ad(ben)}</b> · {t(BIRIM_ADI[ben.birim])} ·{" "}
             {t(GOREV_ADI[ben.gorev])}
           </p>
-          <p className="aciklama ara-ust">
-            {t(GERCEK ? "gercekOturumAciklama" : "oturumAciklama")}
-          </p>
         </Kart>
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>
-            <p className="aciklama">{t("kaliciligAciklama")}</p>
             <button
               className="dugme dugme-kotu"
               onClick={() => {

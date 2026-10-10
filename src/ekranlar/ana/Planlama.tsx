@@ -42,7 +42,7 @@ import { CalismaAlani, type Alan } from "./Calisma";
  * kuralı yüzünden yok.
  */
 
-export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; baslik: string; alt: string; sagUc?: ReactNode }) {
+export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; baslik: string; alt?: ReactNode; sagUc?: ReactNode }) {
   const { dil } = useDil();
   const B = bugun();
   return (
@@ -50,7 +50,7 @@ export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; basli
       <span className="ikon-kutu">{ikon}</span>
       <div>
         <h1>{baslik}</h1>
-        <p>{alt}</p>
+        {alt && <p>{alt}</p>}
       </div>
       <div className="sag-uc">
         {sagUc}
@@ -446,7 +446,6 @@ function OnemliDosyalar({ d }: { d: Durum }) {
           </li>
         ))}
       </ul>
-      <p className="bos-kucuk">{t("dosyaDeposuSonra")}</p>
     </Kart>
   );
 }

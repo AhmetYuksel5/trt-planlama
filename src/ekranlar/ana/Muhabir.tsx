@@ -77,7 +77,6 @@ function Cagrilar({ ben }: { ben: Kisi }) {
         <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
           <b>{t("acikHaftalikCagri", { aralik: aralikYaz(haftalikCagri.tarih, gunEkle(haftalikCagri.tarih, 6), dil) })}</b>
           <br />
-          {t("acikHaftalikCagriAciklama")}{" "}
           <a href="#/oneriler/yeni/haftalik">
             <b>{t("oneriGonder")} →</b>
           </a>
@@ -170,7 +169,9 @@ function Haberlerim({ ben }: { ben: Kisi }) {
 
 function Onerilerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
-  const { oneriler } = useMuhabirIsleri(ben);
+  const { oneriler: hepsi } = useMuhabirIsleri(ben);
+  // Düzeltme istenen öneri muhabirin önündeki iş: listenin başında.
+  const oneriler = [...hepsi.filter((o) => o.durum === "duzeltme"), ...hepsi.filter((o) => o.durum !== "duzeltme")];
   return (
     <Kart baslik={t("onerilerim")} ikon={<Lightbulb size={18} />} sagUc={<Tumu href="#/oneriler" />}>
             {oneriler.length === 0 ? (
@@ -185,7 +186,7 @@ function Onerilerim({ ben }: { ben: Kisi }) {
                       </a>
                       <small>
                         {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
-                        {o.gerekce && ` · ${o.gerekce}`}
+                        {o.durum === "duzeltme" ? ` · ${o.duzeltmeNotu ?? ""}` : o.gerekce && ` · ${o.gerekce}`}
                       </small>
                     </div>
                     <OneriDurumRozeti oneri={o} />

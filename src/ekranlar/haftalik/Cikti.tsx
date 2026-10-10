@@ -1,6 +1,5 @@
 import { FilePen } from "lucide-react";
 import { useRef } from "react";
-import { NotKutu } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, useDil } from "../../dil";
 import { haftaSonu } from "../../haftalik";
 import { useBen } from "../../oturum";
@@ -39,9 +38,6 @@ export default function HaftalikCikti({ hafta }: { hafta: HaftalikPlan }) {
           )
         }
       />
-      <div className="yazdirma-gizle">
-        <NotKutu>{t(hafta.durum === "kesinlesti" ? "haftalikCiktiNotu" : "haftalikCiktiTaslakNotu")}</NotKutu>
-      </div>
 
       <div className="cikti-sarici">
         <HaftalikBelgesi hafta={hafta} belgeRef={belge} />

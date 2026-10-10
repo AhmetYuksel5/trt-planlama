@@ -1,8 +1,8 @@
-import { BookOpen, CheckCircle, Search } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Avatar, Rozet } from "../bilesenler/Parcalar";
-import { useDil, type Anahtar } from "../dil";
+import { useDil } from "../dil";
 import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
 import { BIRIMLER, useVeri, type Birim, type Kisi } from "../veri";
@@ -19,8 +19,6 @@ import { useUcTik } from "../bilesenler/UcTik";
  */
 
 export const DEMO_KISILERI = ["pl1", "pl2", "mu1", "nd1", "nd2", "ng1", "pr1", "ek1", "ou5", "ou2", "me2", "yo1", "yo2"];
-
-const OZELLIKLER: Anahtar[] = ["girisOz1", "girisOz2", "girisOz3", "girisOz4"];
 
 export default function Giris() {
   const { t, ad } = useDil();
@@ -58,16 +56,7 @@ export default function Giris() {
           <Logo levha />
         </span>
         <h1>{t("girisBaslik")}</h1>
-        <p>{t("girisAciklama")}</p>
         <DilSecici />
-        <ul className="ozellikler">
-          {OZELLIKLER.map((k) => (
-            <li key={k}>
-              <CheckCircle size={16} />
-              {t(k)}
-            </li>
-          ))}
-        </ul>
         <a className="dugme dugme-ikincil kendi-hizasi" href="#/plan">
           <BookOpen size={16} /> {t("mProjePlani")}
         </a>
@@ -76,9 +65,6 @@ export default function Giris() {
       <main className="giris-sag">
         <div>
           <h2>{t("girisKimsin")}</h2>
-          <p className="sonuk-yazi">
-            {t("girisKimsinAciklama")}
-          </p>
         </div>
         <section>
           <h3 className="kucuk-baslik">{t("girisOnerilen")}</h3>

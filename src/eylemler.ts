@@ -63,6 +63,8 @@ import {
   haftalikDuzenler,
   kararVerebilir,
   mudahaleEdebilir,
+  oneriDuzeltmeyeGider,
+  oneriYenidenGonderebilir,
   onIncelemeci,
   paketGorebilir,
   planIcerikDuzenler,
@@ -261,6 +263,52 @@ export const oneriDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "s
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: yeni, gerekce: gerekce || x.gerekce } : x)) };
   const tip = yeni === "degerlendiriliyor" ? "oneriDegerlendirmede" : yeni === "sonra" ? "oneriSonra" : "oneriReddedildi";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, oneriId: id, veri: gerekce ? { gerekce } : undefined }));
+  return true;
+};
+
+/**
+ * Öneriyi neyin değişmesi gerektiğini yazarak muhabire geri gönderir. Not
+ * zorunlu: muhabir ne yapacağını bilmeden geri dönen öneri bir tur daha
+ * kaybettirir. Hareketin sahibi yok; muhabir kendi işindeki hareketten
+ * bildirimi zaten alıyor.
+ */
+export const oneriDuzeltmeIste = (ben: Kisi, id: string, not: string) => {
+  const metin = not.trim();
+  let d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !metin || !oneriDuzeltmeyeGider(ben, o)) return false;
+  d = {
+    ...d,
+    oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: "duzeltme" as const, duzeltmeNotu: metin, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 } : x)),
+  };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDuzeltmeIstendi", oneriId: id, veri: { not: metin } }));
+  return true;
+};
+
+/*
+ * Muhabir düzeltilen öneriyi yeniden gönderir; öneri aynı kayıt kalır
+ * (geçmiş, çağrı ve hedef plan kopmasın), Planlama'nın önüne yeniden
+ * "yeni" olarak düşer. Önceki hal hareketin verisinde: önerinin
+ * gönderildiği hal böylece kaybolmuyor.
+ */
+export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) => {
+  let d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim()) return false;
+  const onceki: Record<string, string> = { haberBasligi: o.haberBasligi, gelisme: o.gelisme };
+  if (o.paketBasligi) onceki.paketBasligi = o.paketBasligi;
+  const yeni: Oneri = {
+    ...o,
+    haberBasligi: g.haberBasligi.trim(),
+    gelisme: g.gelisme.trim(),
+    paketBasligi: g.paketBasligi?.trim() || undefined,
+    tur: g.tur,
+    bicim: g.bicim,
+    sahaGerekli: g.sahaGerekli,
+    durum: "yeni",
+  };
+  d = { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? yeni : x)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriYenidenGonderildi", oneriId: id, veri: { sahip: "planlama", ...onceki } }));
   return true;
 };
 
@@ -800,7 +848,8 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
       if (o.hafta !== h.baslangic) return o;
       const k = kalemi.get(o.id);
       if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.onInceleme?.gerekce ?? o.gerekce } : { ...o, durum: "planaEklendi" };
-      return o.durum === "yeni" || o.durum === "degerlendiriliyor" ? { ...o, durum: "reddedildi" } : o;
+      // Düzeltmesi beklenen öneri de kapanıyor: hafta kesinleşti, yeniden gönderilecek gündem kalmadı.
+      return o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme" ? { ...o, durum: "reddedildi" } : o;
     }),
   };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic } }));

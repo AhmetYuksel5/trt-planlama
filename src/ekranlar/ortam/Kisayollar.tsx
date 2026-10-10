@@ -91,7 +91,6 @@ function KisayolPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   return (
     <Pencere
       baslik={t("kisayollariDuzenle")}
-      alt={t("kisayolDuzenNotu")}
       kapat={kapat}
       altBilgi={
         <>

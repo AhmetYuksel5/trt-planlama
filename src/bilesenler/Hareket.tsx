@@ -47,6 +47,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   nitelikPuanlandi: "hrNitelik",
   yanitOneriYok: "hrYanitOneriYok",
   oneriDuzenlendi: "hrOneriDuzenlendi",
+  oneriDuzeltmeIstendi: "hrOneriDuzeltmeIstendi",
+  oneriYenidenGonderildi: "hrOneriYenidenGonderildi",
   profilGuncellendi: "hrProfil",
   talimatVerildi: "hrTalimat",
   paketOncelikli: "hrOncelikli",
@@ -188,7 +190,7 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
         const sahip = h.veri?.sahip as Birim | undefined;
         const adim = h.veri?.adim as UretimAdimi | "tamam" | "metin" | undefined;
         const paket = paketBul(d, h.paketId);
-        const nokta = h.tip === "geriGonderildi" || h.tip === "oneriReddedildi" || h.tip === "paketIptal" ? "geri" : h.tip === "tamamlandi" ? "tamam" : "";
+        const nokta = h.tip === "geriGonderildi" || h.tip === "oneriReddedildi" || h.tip === "oneriDuzeltmeIstendi" || h.tip === "paketIptal" ? "geri" : h.tip === "tamamlandi" ? "tamam" : "";
         return (
           <li key={h.id}>
             <time dateTime={h.zaman}>
@@ -217,7 +219,18 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
                 )}
                 {adim === "tamam" && <Rozet ton="iyi">{t(h.veri?.stok ? "sdStokta" : ASAMA_ADI[ASAMALAR[4]])}</Rozet>}
               </small>
-              {h.veri?.gerekce && <blockquote dir="auto">{h.veri.gerekce}</blockquote>}
+              {(h.veri?.gerekce || h.veri?.not) && <blockquote dir="auto">{h.veri.gerekce || h.veri.not}</blockquote>}
+              {/* Yeniden gönderilen önerinin önceki hali; öneri aynı kayıtta güncellendiği için yalnız burada kalıyor. */}
+              {h.tip === "oneriYenidenGonderildi" && h.veri?.haberBasligi && (
+                <details className="onceki-hal">
+                  <summary>{t("oncekiHali")}</summary>
+                  <Icerik blok>{h.veri.haberBasligi}</Icerik>
+                  <Icerik blok className="sonuk-yazi">
+                    {h.veri.gelisme}
+                  </Icerik>
+                  {h.veri.paketBasligi && <Icerik blok>{h.veri.paketBasligi}</Icerik>}
+                </details>
+              )}
             </div>
           </li>
         );

@@ -45,7 +45,6 @@ export function TakvimdenListe({
   const plandaMi = (o: Olusum) => !!planId && olusumBaglantilari(o).some((b) => b.tur === tur && b.planId === planId);
   return (
     <>
-      <p className="aciklama">{t("takvimdenNotu")}</p>
       {liste.length ? (
         <ul className="tk-satirlar">
           {liste.map((o) => (

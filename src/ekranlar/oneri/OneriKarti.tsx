@@ -1,13 +1,14 @@
-import { ArrowRight, Ban, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned } from "lucide-react";
+import { ArrowRight, Ban, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Undo2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti } from "../../bilesenler/Parcalar";
+import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDurum, oneriGorunumuKaydet } from "../../eylemler";
+import { oneriDuzeltmeIste, oneriDurum, oneriGorunumuKaydet } from "../../eylemler";
 import { haftaSonu } from "../../haftalik";
 import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
+import { oneriDuzeltmeyeGider } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
 
 /*
@@ -25,7 +26,7 @@ const baslikOf = (o: Oneri) => o.paketBasligi || o.haberBasligi;
 const arkaPlan = (o: Oneri) => (o.paketBasligi && o.paketBasligi !== o.haberBasligi ? o.haberBasligi : undefined);
 
 export type Gorunum = OneriGorunumu;
-export type PencereDurumu = { id: string; mod: "goster" | "ekle" | "ret" } | null;
+export type PencereDurumu = { id: string; mod: "goster" | "ekle" | "ret" | "duzelt" } | null;
 
 /* Görünüm kişinin tercihi (ana sayfa düzeni gibi kayıtta); seçmediyse kart. */
 export function useOneriGorunumu(ben: Kisi): [Gorunum, (g: Gorunum) => void] {
@@ -131,7 +132,7 @@ export function OneriSatiri({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Du
   );
 }
 
-/* Süreç çizgisinin adımları: ret ve erteleme çizgide değil, gerekçesiyle ayrı gösteriliyor. */
+/* Süreç çizgisinin adımları: ret, erteleme ve düzeltme isteği çizgide değil, notuyla ayrı gösteriliyor. */
 const SUREC: Partial<Record<Oneri["durum"], number>> = { yeni: 0, degerlendiriliyor: 1, planaEklendi: 2 };
 
 /** Bütün öneri: içerik, kaynak, hedef, süreç ve ayrıntı bağlantısı; karar formu altta. */
@@ -179,9 +180,10 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
       </div>
       <div>
         <div className="alan-etiket">{t("surec")}</div>
-        {o.durum === "reddedildi" || o.durum === "sonra" ? (
+        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" ? (
           <NotKutu ton="uyari">
-            <OneriDurumRozeti oneri={o} /> {o.gerekce && <span dir="auto">{o.gerekce}</span>}
+            <OneriDurumRozeti oneri={o} />{" "}
+            {(o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce) && <span dir="auto">{o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce}</span>}
           </NotKutu>
         ) : (
           <DurumCizgisi
@@ -215,6 +217,29 @@ function RetFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () =>
         <input dir="auto" value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus />
       </label>
       <FormAlt kapat={kapat} kaydet={() => oneriDurum(ben, oneri.id, "reddedildi", gerekce) && kapat()} kaydetMetni={t("reddet")} />
+    </div>
+  );
+}
+
+/*
+ * Düzeltme isteği muhabire gidiyor: ne değişmesi gerektiği yazılmadan
+ * gönderilmiyor. Uzun olabileceği için ret gerekçesi gibi tek satır değil.
+ */
+export function DuzeltmeFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
+  const { t } = useDil();
+  const [not, setNot] = useState("");
+  const gonder = () => {
+    if (!oneriDuzeltmeIste(ben, oneri.id, not)) return;
+    bildir(t("bDuzeltmeyeGonderildi"));
+    kapat();
+  };
+  return (
+    <div className="form form-kutu" data-duzeltme-formu>
+      <label>
+        {t("duzeltmeNotu")}
+        <textarea dir="auto" rows={4} value={not} onChange={(e) => setNot(e.target.value)} autoFocus />
+      </label>
+      <FormAlt kapat={kapat} kaydet={gonder} devre={!not.trim()} kaydetMetni={t("duzeltmeyeGonder")} />
     </div>
   );
 }
@@ -254,6 +279,8 @@ export function OneriListesi({
     // Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor.
     const talimat = !!o.talimatVeren;
     const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi";
+    // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
+    const muhabirde = o.durum === "duzeltme";
     const ikonlu = (ikon: ReactNode, ad: string, sinif: string, f: () => void) => (
       <button key={ad} type="button" className={`dugme ${sinif} dugme-kucuk`} onClick={f} title={ad} aria-label={tam ? undefined : ad}>
         {ikon}
@@ -261,13 +288,14 @@ export function OneriListesi({
       </button>
     );
     const dugmeler = [
-      kararAcik && (
+      kararAcik && !muhabirde && (
         <button key="ekle" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })}>
           {ekleMetni}
         </button>
       ),
       ertelenebilir && o.durum === "yeni" && ikonlu(<Clock size={14} />, t("degerlendirmeyeAl"), "dugme-ikincil", () => oneriDurum(ben, o.id, "degerlendiriliyor")),
-      ertelenebilir && kararAcik && !talimat && o.durum !== "sonra" && ikonlu(<Lightbulb size={14} />, t("odSonra"), "dugme-ikincil", () => oneriDurum(ben, o.id, "sonra")),
+      oneriDuzeltmeyeGider(ben, o) && ikonlu(<Undo2 size={14} />, t("duzeltmeyeGonder"), "dugme-ikincil", () => setPencere({ id: o.id, mod: "duzelt" })),
+      ertelenebilir && kararAcik && !muhabirde && !talimat && o.durum !== "sonra" && ikonlu(<Lightbulb size={14} />, t("odSonra"), "dugme-ikincil", () => oneriDurum(ben, o.id, "sonra")),
       kararAcik && !talimat && ikonlu(<Ban size={14} />, t("reddet"), "dugme-kotu", () => setPencere({ id: o.id, mod: "ret" })),
     ].filter(Boolean);
     // Karar kalmadıysa (reddedilmiş ya da plana girmiş) kartta da pencerede de boş şerit çizilmesin.
@@ -291,6 +319,7 @@ export function OneriListesi({
         <OneriPenceresi key={acik.id} oneri={acik} d={d} kapat={kapat} altBilgi={pencere?.mod === "goster" ? eylemler(acik, true) : undefined}>
           {pencere?.mod === "ekle" && ekleFormu(acik, kapat)}
           {pencere?.mod === "ret" && <RetFormu ben={ben} oneri={acik} kapat={kapat} />}
+          {pencere?.mod === "duzelt" && <DuzeltmeFormu ben={ben} oneri={acik} kapat={kapat} />}
         </OneriPenceresi>
       )}
     </>

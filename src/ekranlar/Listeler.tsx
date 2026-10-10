@@ -1,7 +1,7 @@
 import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, URETIM_ADIMLARI, adimSahibi, geciktiMi, stokDurumu, type StokDurumu } from "../akis";
-import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, Rozet, Sayac, TaslakEtiketi, TurRozeti, bildir } from "../bilesenler/Parcalar";
+import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, type Anahtar } from "../dil";
 import { BIRIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
@@ -43,8 +43,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} alt={t(ayar.alt)} />
-      {sayfa === "programlar" && <NotKutu>{t("programTaslakNotu")}</NotKutu>}
+      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} />
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">
@@ -96,7 +95,7 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
   const uretimde = v.paketler.filter((p) => p.durum === "uretimde");
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} alt={t(ayar.alt)} />
+      <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} />
       <div className="pano">
         {ayar.adimlar.map((a) => {
           const paketler = uretimde.filter((p) => p.adim === a);
@@ -160,7 +159,7 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
   const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdStokta", yayinlandi: "sdYayinlanan" };
   return (
     <>
-      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} alt={t("stokAlt")} />
+      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} />
       <div className="sayaclar">
         {STOK_DURUMLARI.map((s) => (
           <Sayac key={s} ikon={<Layers size={22} />} ton={s === "bekliyor" && bekleyen.length ? "uyari" : ""} renk="renk-haftalik" etiket={t(STOK_DURUM_ADI[s])} deger={durumda(s).length} />
@@ -208,7 +207,6 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
           />
         </div>
       </Kart>
-      <NotKutu>{t("stokNotu")}</NotKutu>
     </>
   );
 }
@@ -224,8 +222,7 @@ export function Ucretler({ ben }: { ben: Kisi }) {
     ucretli.filter((p) => p.ucret?.durum === durum && ucretGorebilir(ben, p)).reduce((s, p) => s + (p.ucret?.tutar ?? 0), 0);
   return (
     <>
-      <SayfaBasi ikon={<Wallet size={26} />} baslik={t("mUcretler")} alt={t("ucretAlt")} sagUc={<TaslakEtiketi metin={t("ornekEkran")} />} />
-      <NotKutu>{t("ucretYetkiNotu")}</NotKutu>
+      <SayfaBasi ikon={<Wallet size={26} />} baslik={t("mUcretler")} sagUc={<TaslakEtiketi metin={t("ornekEkran")} />} />
       {gorebilir && (
         <div className="sayaclar">
           {(["bekliyor", "onaylandi", "odendi"] as const).map((d) => (

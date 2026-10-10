@@ -1,6 +1,6 @@
-import { ArrowLeft, Inbox, Mail, Megaphone } from "lucide-react";
+import { ArrowLeft, Inbox, Megaphone } from "lucide-react";
 import { useState } from "react";
-import { Kart, NotKutu } from "../../bilesenler/Parcalar";
+import { Kart } from "../../bilesenler/Parcalar";
 import { aralikYaz, useDil } from "../../dil";
 import { cagriKaydet } from "../../eylemler";
 import { HAFTALIK_TABLO, cagriKonusu, etiketUret, haftaAraligiAr, haftalikGovde, type GidenEposta } from "../../eposta";
@@ -59,16 +59,12 @@ export default function HaftalikCagri({ ben, hafta }: { ben: Kisi; hafta: Haftal
           ) : undefined
         }
       />
-      <NotKutu ton="vurgu" ikon={<Mail size={16} />}>
-        {t("haftalikCagriNotu")}
-      </NotKutu>
       <div className="iz iz-ana-yan">
         <Kart>
           <div className="form">
             <AliciAlanlari kime={kime} setKime={kimeDegistir} bcc={bcc} setBcc={setBcc} />
             <EpostaOnizleme eposta={eposta} govde={govde} setGovde={setGovde} />
             <GonderDugmeleri eposta={eposta} dosyaAdi={`haftalik-cagri-${bas}.eml`} once={kaydet} />
-            <p className="bos-kucuk">{t("outlookIpucu")}</p>
           </div>
         </Kart>
         <OncekiCagrilar tur="haftalik" />

@@ -168,7 +168,7 @@ export function KalemFormu({
         </div>
       </div>
       <label>
-        {t("kalemNotu")} <span className="ipucu">{t("kalemNotuIpucu")}</span>
+        {t("kalemNotu")}
         <input dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} />
       </label>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim() || (f.baslikId === YENI_DOSYA && !f.yeniBaslik.trim())} />

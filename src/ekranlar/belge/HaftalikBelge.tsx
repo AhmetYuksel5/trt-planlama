@@ -1,7 +1,7 @@
-import { Ban, Check, Eye, FilePen, Lock, Printer } from "lucide-react";
+import { Ban, Check, Eye, Printer } from "lucide-react";
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri } from "../../bilesenler/Haftalik";
-import { NotKutu, Pencere } from "../../bilesenler/Parcalar";
+import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
@@ -11,7 +11,7 @@ import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { KalemFormu } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
-import { BelgeNotu, BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
+import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
  * Haftalık planın belgesi (الأجندة الأسبوعية): kurumun Word belgesinin
@@ -219,11 +219,6 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
       {hareketSatirlari.length > 0 && (
         <section>
           <h2 className="yesil">{c("ciktiHareketler")}</h2>
-          {duzen && (
-            <BelgeNotu>
-              {t("haftalikHareketNotu")} <a href="#/saha">{t("mSaha")} →</a>
-            </BelgeNotu>
-          )}
           {hareketSatirlari.map((grup) => {
             const g = grup[0];
             return (
@@ -346,17 +341,6 @@ export default function HaftalikBelge({ ben, hafta }: { ben: Kisi; hafta: Haftal
           </a>
         }
       />
-      <div className="yazdirma-gizle">
-        <NotKutu ikon={duzenler ? <FilePen size={16} /> : <Lock size={16} />}>
-          {duzenler ? t("belgeNotu") : hafta.durum === "kesinlesti" ? t("haftalikKilit") : t("kilitYetki")}
-          {karar && (
-            <>
-              <br />
-              {t("belgeKararNotu")}
-            </>
-          )}
-        </NotKutu>
-      </div>
       <div className="cikti-sarici belge-duzen yazdirma-gizle">
         <HaftalikBelgesi hafta={hafta} duzen={duzen} />
       </div>

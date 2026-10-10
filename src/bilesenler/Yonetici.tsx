@@ -41,7 +41,6 @@ export function YoneticiKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   };
   return (
     <Kart baslik={t("yoneticiKarti")} ikon={<Gauge size={18} />} className="yonetici-karti">
-      <p className="bos-kucuk">{t("yoneticiKartiAciklama")}</p>
       <div className="dugmeler ara-ust">
         <OncelikDugmesi ben={ben} paket={paket} />
       </div>

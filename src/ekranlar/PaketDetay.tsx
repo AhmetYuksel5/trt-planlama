@@ -100,7 +100,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             </Kart>
           )}
           <Notlar ben={ben} paket={paket} />
-          <Kart baslik={t("hareketGecmisi")} ek={t("hareketGecmisiAciklama")}>
+          <Kart baslik={t("hareketGecmisi")}>
             {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}
           </Kart>
         </div>
@@ -227,7 +227,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   if (paket.durum === "onaylandi" && uretimeAlabilir(ben, paket)) {
     return (
       <Kart baslik={t("seninIslemin")}>
-        <p className="aciklama">{t(paket.stok ? "uretimeAlStokAciklama" : "uretimeAlAciklama")}</p>
         <div className="dugmeler">
           <button className="dugme" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
             <CirclePlay size={15} /> {t("uretimeAl")}
@@ -241,7 +240,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     if (!yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal", "onaylandi"].includes(paket.durum)) return null;
     return (
       <Kart baslik={t("seninIslemin")}>
-        <p className="aciklama">{t("paketDegerlendirAciklama")}</p>
         <div className="dugmeler">
           {paket.durum === "taslak" && (
             <button className="dugme dugme-ikincil" onClick={() => paketDurum(ben, paket.id, "degerlendiriliyor")}>
@@ -275,7 +273,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
       <div className="form">
         {adim === "gorevlendirme" && (
           <>
-            <p className="aciklama">{t("eGorevlendirme")}</p>
             <label>
               {t("sahaMuhabiri")}
               <MuhabirSecici deger={muhabirId} degistir={setMuhabirId} />
@@ -289,7 +286,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "newsdesk" && (
           <>
-            <p className="aciklama">{t("eGorevVer")}</p>
             <div className="satir">
               <label>
                 {t("muhabir")}
@@ -309,7 +305,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "metin" && (
           <>
-            <p className="aciklama">{t("eMetin")}</p>
             <textarea {...icerikAlani} value={metin} onChange={(e) => setMetin(e.target.value)} rows={8} placeholder={dilMetni("metinIpucu", "ar")} />
             <div className="form-alt">
               <button className="dugme" disabled={!metin.trim()} onClick={() => ilerle({ metin })}>
@@ -320,7 +315,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {(adim === "kontrol" || adim === "dil") && (
           <>
-            <p className="aciklama">{t(adim === "kontrol" ? "eKontrol" : "eDil")}</p>
             {paket.metin && (
               <div className="metin-kutu">
                 <Icerik blok>{paket.metin}</Icerik>
@@ -340,7 +334,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "video" && (
           <>
-            <p className="aciklama">{t("eVideo")}</p>
             <label>
               {t("videoBaglantisi")}
               <input value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://" dir="ltr" />
@@ -354,7 +347,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "iletim" && (
           <>
-            <p className="aciklama">{t("eIletim")}</p>
             <div className="form-alt">
               <button className="dugme" onClick={() => ilerle({})}>
                 {t("mediayaIlet")}
@@ -364,7 +356,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "media" && (
           <>
-            <p className="aciklama">{t("eMedia")}</p>
             <label>
               {t("klipKodu")}
               <input value={klip} onChange={(e) => setKlip(e.target.value.toUpperCase())} dir="ltr" />
@@ -378,7 +369,6 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "inews" && (
           <>
-            <p className="aciklama">{t(paket.stok ? "eStokYukleme" : "eInews")}</p>
             <div className="form-alt">
               <button className="dugme dugme-iyi" onClick={() => ilerle({})}>
                 <CircleCheck size={15} /> {t(paket.stok ? "stogaAl" : "inewsTamam")}

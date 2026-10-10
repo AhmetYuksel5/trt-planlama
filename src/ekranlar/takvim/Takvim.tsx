@@ -123,7 +123,7 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
       <SayfaBasi
         ikon={<CalendarCheck size={26} />}
         baslik={t(muhabir ? "mTakvimim" : "mTakvim")}
-        alt={t(muhabir ? "takvimAltMuhabir" : "takvimAlt")}
+       
         sagUc={
           duzenler && (
             <button type="button" className="dugme" onClick={() => setYeni(gorunum === "liste" ? B : tarih)}>
@@ -134,9 +134,9 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
       />
       <div className="sayaclar ara-alt">
         <Sayac ikon={<CalendarDays size={20} />} etiket={t("tkBuAy")} deger={ozet.buAy} href={`#/takvim/ay/${B}`} />
-        <Sayac ikon={<TriangleAlert size={20} />} etiket={t("tkYuksek")} deger={ozet.yuksek} alt={t("tkYuksekAlt")} ton={ozet.yuksek ? "kotu" : ""} />
-        <Sayac ikon={<CalendarClock size={20} />} etiket={t("tkYaklasan")} deger={ozet.yaklasan} alt={t("tkYaklasanAlt")} href="#/takvim/liste" />
-        <Sayac ikon={<Link2 size={20} />} etiket={t("tkAktarilan")} deger={ozet.aktarilan} alt={t("tkAktarilanAlt")} ton="iyi" />
+        <Sayac ikon={<TriangleAlert size={20} />} etiket={t("tkYuksek")} deger={ozet.yuksek} ton={ozet.yuksek ? "kotu" : ""} />
+        <Sayac ikon={<CalendarClock size={20} />} etiket={t("tkYaklasan")} deger={ozet.yaklasan} href="#/takvim/liste" />
+        <Sayac ikon={<Link2 size={20} />} etiket={t("tkAktarilan")} deger={ozet.aktarilan} ton="iyi" />
       </div>
 
       <div className="tk-arac">
@@ -288,7 +288,7 @@ function AramaSonuclari({ sonuclar, ac }: { sonuclar: ReturnType<typeof gorunenF
   const ileri = ol.filter((o) => o.bit >= B).sort((a, b) => a.bas.localeCompare(b.bas));
   const geri = ol.filter((o) => o.bit < B).sort((a, b) => b.bas.localeCompare(a.bas));
   return (
-    <Kart baslik={t("aramaSonuclari")} ek={`${ol.length} · ${t("aramaArsivNotu")}`} className="tk-sonuclar ara-alt">
+    <Kart baslik={t("aramaSonuclari")} ek={String(ol.length)} className="tk-sonuclar ara-alt">
       {ol.length ? (
         <ul className="tk-satirlar">
           {[...ileri, ...geri].map((o) => (

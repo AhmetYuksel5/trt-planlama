@@ -49,7 +49,7 @@ export default function HaftalikListe({ ben }: { ben: Kisi }) {
       <SayfaBasi
         ikon={<CalendarRange size={26} />}
         baslik={t("haftalikPlanlar")}
-        alt={t("haftalikAlt")}
+       
         sagUc={
           olusturabilir && !form ? (
             <button className="dugme" onClick={() => setForm(true)}>

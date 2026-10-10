@@ -1,6 +1,6 @@
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
 import { profilGuncelle, type ProfilGirdisi } from "../eylemler";
@@ -54,7 +54,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
 
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} alt={t(ayar.alt)} />
+      <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} />
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">
@@ -217,7 +217,7 @@ function HaberTurleri() {
   const v = useVeri();
   const muhabirler = v.kisiler.filter((k) => k.birim === "muhabir");
   return (
-    <Kart baslik={t("haberTurleri")} ek={t("haberTurleriAlt")}>
+    <Kart baslik={t("haberTurleri")}>
       <div className="tablo-sar">
         <table className="tablo kartli">
           <thead>
@@ -321,8 +321,8 @@ function PerformansKarti({ kisi }: { kisi: Kisi }) {
         <Sayac ikon={<Radio size={20} />} etiket={t("verilenHaber")} deger={pf.verilen} alt={`${t("devamEdenIs")}: ${pf.devamEden}`} />
         <Sayac ikon={<ThumbsUp size={20} />} etiket={t("tamamlananHaber")} deger={pf.tamamlanan} alt={pf.verilen ? yuzde(pf.tamamlanan / pf.verilen) : undefined} ton="iyi" />
         <Sayac ikon={<Clock size={20} />} etiket={t("zamanindaTeslim")} deger={yuzde(pf.zamaninda)} ton={pf.zamaninda !== null && pf.zamaninda < 0.7 ? "uyari" : ""} />
-        <Sayac ikon={<CalendarClock size={20} />} etiket={t("ortTeslimSuresi")} deger={pf.ortSaat === null ? "—" : t("saatKisa", { n: ondalik(pf.ortSaat, dil) })} alt={t("ortTeslimAlt")} />
-        <Sayac ikon={<Pencil size={20} />} etiket={t("ilkSeferdeKabul")} deger={yuzde(pf.ilkSeferde)} alt={t("ilkSeferdeAlt")} />
+        <Sayac ikon={<CalendarClock size={20} />} etiket={t("ortTeslimSuresi")} deger={pf.ortSaat === null ? "—" : t("saatKisa", { n: ondalik(pf.ortSaat, dil) })} />
+        <Sayac ikon={<Pencil size={20} />} etiket={t("ilkSeferdeKabul")} deger={yuzde(pf.ilkSeferde)} />
         <Sayac ikon={<Star size={20} />} etiket={t("nitelikPuani")} deger={pf.puan === null ? "—" : `${ondalik(pf.puan, dil)} / 5`} alt={t("puanSayisi", { n: pf.puanSayisi })} />
         <Sayac ikon={<Inbox size={20} />} etiket={t("oneriKabul")} deger={yuzde(pf.oneriKabul)} />
       </div>
@@ -340,7 +340,6 @@ function PerformansKarti({ kisi }: { kisi: Kisi }) {
           </ul>
         </div>
       )}
-      <p className="bos-kucuk ara-ust-2">{t("performansNotu")}</p>
     </Kart>
   );
 }
@@ -382,7 +381,7 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
           <input dir="ltr" type="email" value={f.kisiselEposta} onChange={(e) => setF({ ...f, kisiselEposta: e.target.value })} />
         </label>
         <label>
-          {t("irtibat")} <span className="ipucu">{t("irtibatIpucu")}</span>
+          {t("irtibat")}
           <input dir="auto" value={f.irtibat} onChange={(e) => setF({ ...f, irtibat: e.target.value })} />
         </label>
         <div className="satir">
@@ -612,7 +611,6 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                 </li>
               )}
             </ul>
-            <p className="bos-kucuk">{t("ornekIletisimNotu")}</p>
           </Kart>
           <Kart baslik={t("bilgiler")}>
             <div className="alanlar">
@@ -688,8 +686,7 @@ export function Gorevlendirmeler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir ? "mGorevlerim" : ayar.baslik)} alt={t(muhabir ? "gorevlerimAlt" : ayar.alt)} sagUc={muhabir ? undefined : <TaslakEtiketi />} />
-      {!muhabir && <NotKutu>{t("ngTaslakNotu")}</NotKutu>}
+      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir ? "mGorevlerim" : ayar.baslik)} sagUc={muhabir ? undefined : <TaslakEtiketi />} />
       <Kart>{liste.length === 0 ? <Bos metin={t("gorevlendirmeYok")} /> : <GorevListesi gorevler={liste} />}</Kart>
     </>
   );

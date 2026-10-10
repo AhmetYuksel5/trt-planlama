@@ -26,7 +26,7 @@ import { geciktiMi } from "../../akis";
 import { planDurum } from "../../eylemler";
 import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Kart, NotKutu, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
@@ -54,7 +54,7 @@ export function NewsdeskAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: bool
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<Building size={26} />} baslik={t("biNewsdesk")} alt={t("newsdeskAlt")} />
+      <SayfaBasi ikon={<Building size={26} />} baslik={t("biNewsdesk")} />
       <CalismaAlani ben={ben} duzen="newsdesk" kisisel={kisisel} />
     </>
   );
@@ -152,7 +152,6 @@ function UcretKarti() {
   const { t } = useDil();
   return (
     <Kart baslik={t("mUcretler")} ikon={<Wallet size={18} />} sagUc={<TaslakEtiketi metin={t("ornekEkran")} />}>
-      <p className="aciklama">{t("ucretKartAciklama")}</p>
       <a className="dugme dugme-ikincil" href="#/ucretler">
         {t("ucretleriAc")}
       </a>
@@ -166,9 +165,8 @@ export function NewsGatheringAna({ ben, kisisel = true }: { ben: Kisi; kisisel?:
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<MapPin size={26} />} baslik={t("biNewsgathering")} alt={t("ngAlt")} sagUc={<TaslakEtiketi />} />
+      <SayfaBasi ikon={<MapPin size={26} />} baslik={t("biNewsgathering")} sagUc={<TaslakEtiketi />} />
       <CalismaAlani ben={ben} duzen="newsgathering" kisisel={kisisel} />
-      <NotKutu>{t("ngTaslakNotu")}</NotKutu>
     </>
   );
 }
@@ -296,9 +294,8 @@ export function EkonomiAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boole
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} alt={t("ekonomiAlt")} />
+      <SayfaBasi ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} />
       <CalismaAlani ben={ben} duzen="ekonomi" kisisel={kisisel} />
-      <NotKutu>{t("ekonomiNotu")}</NotKutu>
     </>
   );
 }
@@ -373,9 +370,8 @@ export function ProgramAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boole
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<Clapperboard size={26} />} baslik={t("biProgram")} alt={t("programAlt")} sagUc={<TaslakEtiketi />} />
+      <SayfaBasi ikon={<Clapperboard size={26} />} baslik={t("biProgram")} sagUc={<TaslakEtiketi />} />
       <CalismaAlani ben={ben} duzen="program" kisisel={kisisel} />
-      <NotKutu>{t("programTaslakNotu")}</NotKutu>
     </>
   );
 }
@@ -426,7 +422,7 @@ export function OutputAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolea
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<SpellCheck size={26} />} baslik={t("biOutput")} alt={t("outputAlt")} />
+      <SayfaBasi ikon={<SpellCheck size={26} />} baslik={t("biOutput")} />
       <CalismaAlani ben={ben} duzen="output" kisisel={kisisel} />
     </>
   );
@@ -484,7 +480,7 @@ export function MediaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<MonitorPlay size={26} />} baslik={t("biMedia")} alt={t("mediaAlt")} />
+      <SayfaBasi ikon={<MonitorPlay size={26} />} baslik={t("biMedia")} />
       <CalismaAlani ben={ben} duzen="media" kisisel={kisisel} />
     </>
   );

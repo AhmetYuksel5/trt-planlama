@@ -222,7 +222,22 @@ export function Sayac({
  * kalıyor, Esc ve arka plana basmak kapatıyor; panel gibi özet ekranlar
  * ayrıntıyı sayfayı uzatmadan burada gösteriyor.
  */
-export function Pencere({ baslik, alt, kapat, children, altBilgi }: { baslik: ReactNode; alt?: ReactNode; kapat: () => void; children: ReactNode; altBilgi?: ReactNode }) {
+export function Pencere({
+  baslik,
+  alt,
+  kapat,
+  children,
+  altBilgi,
+  genis = false,
+}: {
+  baslik: ReactNode;
+  alt?: ReactNode;
+  kapat: () => void;
+  children: ReactNode;
+  altBilgi?: ReactNode;
+  /** Liste ya da kart ızgarası taşıyan pencere (plan araçları). */
+  genis?: boolean;
+}) {
   const { t } = useDil();
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
@@ -231,8 +246,9 @@ export function Pencere({ baslik, alt, kapat, children, altBilgi }: { baslik: Re
     if (d && !d.open) d.showModal();
     return () => d?.close();
   }, []);
+  // React close olayını üstteki pencerelere de iletiyor; içteki pencere kapanınca dıştaki kapanmasın.
   return (
-    <dialog ref={ref} className="pencere" aria-labelledby={id} onClose={kapat} onClick={(e) => e.target === ref.current && kapat()}>
+    <dialog ref={ref} className={`pencere${genis ? " genis" : ""}`} aria-labelledby={id} onClose={(e) => e.target === ref.current && kapat()} onClick={(e) => e.target === ref.current && kapat()}>
       <header>
         <div>
           <h2 id={id}>{baslik}</h2>

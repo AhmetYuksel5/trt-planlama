@@ -1,6 +1,6 @@
 import { Calendar, CalendarCheck, CheckCircle, ChevronLeft, ChevronRight, Circle, Tv } from "lucide-react";
 import { useState } from "react";
-import { Bos, Icerik, Ilerleme, Kart, NotKutu, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
+import { Bos, Icerik, Ilerleme, Kart, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../dil";
 import { ayEkle, aySonu, bugun } from "../tarih";
 import { useVeri, type Kisi } from "../veri";
@@ -29,8 +29,7 @@ export function Aylik({ ben, planId }: { ben: Kisi; planId?: string }) {
   const kaydir = (n: number) => setAy(ayEkle(bas, n).slice(0, 7));
   return (
     <>
-      <SayfaBasi ikon={<Calendar size={26} />} baslik={t("aylik")} alt={t("aylikAlt")} sagUc={<TaslakEtiketi />} />
-      <NotKutu>{t("aylikTaslakNotu")}</NotKutu>
+      <SayfaBasi ikon={<Calendar size={26} />} baslik={t("aylik")} sagUc={<TaslakEtiketi />} />
       <div className="tk-donem ara-ust-2">
         <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => kaydir(-1)} aria-label={t("oncekiAy")} title={t("oncekiAy")}>
           <ChevronLeft size={18} className="yon" />
@@ -73,8 +72,7 @@ export function Ozel() {
   const v = useVeri();
   return (
     <>
-      <SayfaBasi ikon={<Tv size={26} />} baslik={t("ozel")} alt={t("ozelAlt")} sagUc={<TaslakEtiketi />} />
-      <NotKutu>{t("ozelTaslakNotu")}</NotKutu>
+      <SayfaBasi ikon={<Tv size={26} />} baslik={t("ozel")} sagUc={<TaslakEtiketi />} />
       <div className="iz iz-2">
         {v.ozel.map((o) => (
           <Kart key={o.id} baslik={<Icerik>{o.ad}</Icerik>} ek={tarihYaz(o.tarih, dil, "uzun")}>
