@@ -135,7 +135,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
   - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
-    Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez.
+    Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez. Başlık satırı
+    da çıktıdaki gibi sağdan başlar (`.bolum.ar > summary`), gövde
+    arayüz dilinde kalır.
 - Önerinin üç kaynağı var:
   - muhabir: uygulamadan, e-posta yanıtından ya da Planlama'nın onun adına
     girdiği telefon/mesaj/yüz yüze

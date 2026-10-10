@@ -22,10 +22,10 @@ import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
 
 export function Bolum({ no, baslik, ek, children, ar = false }: { no: number | string; baslik: string; ek?: ReactNode; children: ReactNode; ar?: boolean }) {
   return (
-    <details className="bolum">
+    <details className={`bolum${ar ? " ar" : ""}`}>
+      {/* Next Day'in bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki Arapçasıyla; satır da çıktıdaki gibi sağdan başlıyor. */}
       <summary>
         <span className="no">{no}</span>
-        {/* Next Day'in bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki Arapçasıyla. */}
         {ar ? (
           <bdi dir="rtl" lang="ar" className="bolum-ar">
             {baslik}
@@ -33,7 +33,11 @@ export function Bolum({ no, baslik, ek, children, ar = false }: { no: number | s
         ) : (
           baslik
         )}
-        {ek && <span className="ek">{ek}</span>}
+        {ek && (
+          <span className="ek">
+            <bdi>{ek}</bdi>
+          </span>
+        )}
         <ChevronDown size={18} className="ok" />
       </summary>
       <div className="bolum-govde">{children}</div>
