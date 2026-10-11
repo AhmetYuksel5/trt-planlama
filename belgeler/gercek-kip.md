@@ -118,8 +118,9 @@ Bir kez yapılacaklar:
 
 1. **Anahtar:** Firebase konsolu › Proje ayarları (dişli) › *Hizmet hesapları* › **Yeni özel anahtar oluştur**. İnen JSON dosyasının içeriğinin tamamı GitHub'da depo › *Settings* › *Secrets and variables* › *Actions* › **New repository secret** ile `FIREBASE_SERVICE_ACCOUNT` adıyla eklenir. Dosya kimseyle paylaşılmaz, sohbete yapıştırılmaz; eklendikten sonra bilgisayardan silinir.
 2. **İzinli adres:** Firebase konsolu › Authentication › *Settings* › *Authorized domains* › `plannersflow.net` (ve gerekirse `www.plannersflow.net`) eklenir; `planners-flow-2026.web.app` zaten izinli. Yoksa e-posta bağlantısıyla giriş bu adreste çalışmaz.
-3. **İlk yayın:** GitHub › *Actions* › *Firebase yayın* › **Run workflow**.
-4. **Alan adı:** ilk yayından sonra Firebase konsolu › Hosting › **Add custom domain** › `plannersflow.net`. Firebase'in verdiği A ve TXT kayıtları Cloudflare › plannersflow.net › DNS › Records'a girilir; *Proxy status* gri bulut (**DNS only**) olmalı, turuncu bulutta Firebase sertifika veremez. Cloudflare'in eski A/AAAA kayıtları silinir.
+3. **Kural yetkisi:** Google Cloud › IAM (`console.cloud.google.com/iam-admin/iam?project=planners-flow-2026`) › `firebase-adminsdk-…` hizmet hesabı › kalem › **Add another role** › **Firebase Rules Admin** › Save. Yoksa yayının "Firestore kuralları" adımı 403 ("The caller does not have permission") verir; site yine yayınlanır.
+4. **İlk yayın:** GitHub › *Actions* › *Firebase yayın* › **Run workflow**.
+5. **Alan adı:** ilk yayından sonra Firebase konsolu › Hosting › **Add custom domain** › `plannersflow.net`. Firebase'in verdiği A ve TXT kayıtları Cloudflare › plannersflow.net › DNS › Records'a girilir; *Proxy status* gri bulut (**DNS only**) olmalı, turuncu bulutta Firebase sertifika veremez. Cloudflare'in eski A/AAAA kayıtları silinir. `www.plannersflow.net` ayrı alan adı olarak eklenir, "Redirect" ile ana adrese yönlenir; Cloudflare'de `www` → `planners-flow-2026.web.app` CNAME kaydı, yine DNS only.
 
 Anahtar eklenmeden iş uyarıyla atlanır. GitHub Pages yeni adres denendikten sonra kapatılabilir (depo › *Settings* › *Pages*).
 
