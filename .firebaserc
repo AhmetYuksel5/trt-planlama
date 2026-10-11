@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "plannersflow-d03d0"
+  },
+  "targets": {
+    "plannersflow-d03d0": {
+      "hosting": {
+        "uygulama": [
+          "planners-flow-2026"
+        ]
+      }
+    }
   }
 }

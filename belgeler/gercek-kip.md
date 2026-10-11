@@ -109,3 +109,16 @@ Tarayıcıda `localStorage["trt-planlama-firebase"]` alanına deneme yapılandı
 - `emulator: { auth: "http://127.0.0.1:9099", firestoreHost: "127.0.0.1", firestorePort: 8080 }`.
 
 Etkinleştirme bağlantıları emülatörün `oobCodes` uç noktasında görünür.
+
+## Yayın: Firebase Hosting
+
+Uygulama `https://planners-flow-2026.web.app` adresinde. `main`'e her gönderimde GitHub Actions (`.github/workflows/firebase-yayin.yml`) derlenmiş `docs/` klasörünü bu siteye yayınlar ve Firestore kurallarını depodaki `firestore.rules` ile eşitler; kuralları konsola elle yapıştırmak gerekmez.
+
+Bir kez yapılacaklar:
+
+1. **Anahtar:** Firebase konsolu › Proje ayarları (dişli) › *Hizmet hesapları* › **Yeni özel anahtar oluştur**. İnen JSON dosyasının içeriğinin tamamı GitHub'da depo › *Settings* › *Secrets and variables* › *Actions* › **New repository secret** ile `FIREBASE_SERVICE_ACCOUNT` adıyla eklenir. Dosya kimseyle paylaşılmaz, sohbete yapıştırılmaz; eklendikten sonra bilgisayardan silinir.
+2. **İzinli adres:** Firebase konsolu › Authentication › *Settings* › *Authorized domains* › `planners-flow-2026.web.app` eklenir. Yoksa e-posta bağlantısıyla giriş bu adreste çalışmaz.
+3. **İlk yayın:** GitHub › *Actions* › *Firebase yayın* › **Run workflow**.
+
+Anahtar eklenmeden iş uyarıyla atlanır. GitHub Pages yeni adres denendikten sonra kapatılabilir (depo › *Settings* › *Pages*).
+

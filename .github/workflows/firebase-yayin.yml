@@ -1,0 +1,62 @@
+# Firebase Hosting'e yayın: main'e her gönderimde docs/ (derlenmiş uygulama)
+# planners-flow-2026.web.app'e çıkıyor, Firestore kuralları da depodakiyle
+# eşitleniyor; kuralları konsola elle yapıştırmak gerekmesin.
+#
+# Anahtar: depo ayarlarında FIREBASE_SERVICE_ACCOUNT gizli değeri (Firebase
+# konsolu › Proje ayarları › Hizmet hesapları › Yeni özel anahtar). Yoksa
+# iş uyarıyla atlanıyor, kırmızıya dönmüyor. Derleme burada yapılmıyor:
+# docs/ depoda derlenmiş duruyor (CLAUDE.md), GitHub Pages ile aynı çıktı.
+name: Firebase yayın
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-yayin
+  cancel-in-progress: false
+
+jobs:
+  yayin:
+    runs-on: ubuntu-latest
+    env:
+      ANAHTAR: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    steps:
+      - name: Anahtar var mı
+        id: anahtar
+        run: |
+          if [ -z "$ANAHTAR" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT gizli değeri yok; yayın atlandı."
+            echo "var=hayir" >> "$GITHUB_OUTPUT"
+          else
+            echo "var=evet" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.anahtar.outputs.var == 'evet'
+
+      - uses: actions/setup-node@v4
+        if: steps.anahtar.outputs.var == 'evet'
+        with:
+          node-version: 20
+
+      - name: Anahtarı dosyaya yaz
+        if: steps.anahtar.outputs.var == 'evet'
+        run: printf '%s' "$ANAHTAR" > "$RUNNER_TEMP/anahtar.json"
+
+      - name: Hosting
+        if: steps.anahtar.outputs.var == 'evet'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
+        run: npx --yes firebase-tools@13 deploy --only hosting:uygulama --project plannersflow-d03d0 --non-interactive
+
+      - name: Firestore kuralları
+        if: steps.anahtar.outputs.var == 'evet'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project plannersflow-d03d0 --non-interactive
+
+      - name: Anahtarı sil
+        if: always() && steps.anahtar.outputs.var == 'evet'
+        run: rm -f "$RUNNER_TEMP/anahtar.json"

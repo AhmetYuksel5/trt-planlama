@@ -6,9 +6,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - React + TypeScript + Vite. `npm install` bir kez; `npm run build`
   çıktıyı `docs/` içine üretiyor. **Derlemeden gönderme:** `docs/` elle
   düzenlenmez, kaynak değişince yeniden derlenir.
-- GitHub Pages `main` dalındaki `docs/` klasöründen yayınlıyor. `base`
-  göreli (`./`); depo adı değişse de (trt-planlama → TRTArabiFlow)
-  yapılandırma değişmiyor.
+- Yayın iki yerde, ikisi de `main`'deki `docs/`'tan:
+  - Firebase Hosting, `planners-flow-2026.web.app`
+    (`.github/workflows/firebase-yayin.yml`; `firebase.json` hedefi
+    `uygulama`). Aynı iş Firestore kurallarını da depodakiyle eşitler.
+    Anahtar depo gizli değeri `FIREBASE_SERVICE_ACCOUNT`; yoksa iş
+    uyarıyla atlanır. `index.html` önbelleğe alınmaz, sürüm hemen görünür.
+  - GitHub Pages (eski adres, kapatılana kadar).
+
+  `base` göreli (`./`); depo adı ya da alan adı değişse de yapılandırma
+  değişmiyor. Demo verisi tarayıcıda adrese bağlı: yeni adreste demo
+  örnek kayıtla baştan açılır.
 - Dayanağı dört belge:
   - notlardaki beş aşama ve birimler
   - "Görselli Kapsamlı Rapor": Next Day'in on kutusu, haftalık akış ve üç
