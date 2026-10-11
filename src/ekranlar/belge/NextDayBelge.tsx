@@ -1,4 +1,5 @@
 import { ExternalLink, Printer } from "lucide-react";
+import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
@@ -482,7 +483,7 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
           <select value={e.gorev} onChange={(x) => ekipGuncelle(ben, plan.id, kisiId, { gorev: x.target.value as EkipGorevi })}>
             {EKIP_GOREVLERI.map((x) => (
               <option key={x} value={x}>
-                {t(EKIP_GOREV_ADI[x])}
+                {c(EKIP_GOREV_ADI[x])}
               </option>
             ))}
           </select>
@@ -598,9 +599,12 @@ export default function NextDayBelge({ ben, plan }: { ben: Kisi; plan: NextDayPl
         belge={temiz}
         word={{ ad: `nextday-plan-${plan.tarih}.doc`, baslik: `${c("ciktiBaslik")} ${ciktiTarihi(plan.tarih, "ar")}` }}
         ek={
-          <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/cikti`}>
-            <Printer size={16} /> {t("ciktiOnizleme")}
-          </a>
+          <>
+            <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/cikti`}>
+              <Printer size={16} /> {t("ciktiOnizleme")}
+            </a>
+            {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+          </>
         }
       />
       <div className="cikti-sarici belge-duzen yazdirma-gizle">

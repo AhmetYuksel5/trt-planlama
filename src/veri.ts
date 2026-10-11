@@ -749,6 +749,8 @@ export const HAREKET_TIPLERI = [
   "geriDonus",
   "planOlusturuldu",
   "planKopyalandi",
+  "planGeriAlindi",
+  "planIceAktarildi",
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",
@@ -1039,9 +1041,17 @@ export const getir = () => {
   return durum;
 };
 
+/*
+ * Her yazışı dinleyenler (plan ekranlarının geri alma kaydı, geriAl.ts):
+ * eski ve yeni kayıt nesne kimliğiyle karşılaştırılıp yalnız değişen öğe
+ * tutuluyor; yazışın kendisine karışmıyorlar.
+ */
+export const yazisDinleyicileri = new Set<(eski: Durum, yeni: Durum) => void>();
+
 export const kaydet = (yeni: Durum) => {
   const eski = durum;
   durum = yeni;
+  for (const f of yazisDinleyicileri) f(eski, yeni);
   if (!GERCEK) yaz(yeni);
   // Depo bağlanmadan yazılan (olmamalı: ekran o sırada "yükleniyor") kayda gitmiyor.
   else uzak?.yaz(eski, yeni);

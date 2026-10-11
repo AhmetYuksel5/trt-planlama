@@ -110,7 +110,7 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
           >
             {EKIP_GOREVLERI.map((x) => (
               <option key={x} value={x}>
-                {t(EKIP_GOREV_ADI[x])}
+                {metin(EKIP_GOREV_ADI[x], "ar")}
               </option>
             ))}
           </select>
@@ -157,7 +157,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
         if (!uyeler.length) return null;
         return (
           <div key={g} className="ara-ust-2">
-            <div className="alan-etiket">{t(EKIP_GOREV_ADI[g])}</div>
+            <div className="alan-etiket">{metin(EKIP_GOREV_ADI[g], "ar")}</div>
             <div className="cipler ara-ust">
               {uyeler.map((e) => {
                 const k = kisiBul(v, e.kisiId);
@@ -177,7 +177,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                         <select className="girdi gorev-secici" value={e.gorev} aria-label={t("gorev")} onChange={(x) => ben && ekipGuncelle(ben, plan.id, e.kisiId, { gorev: x.target.value as EkipGorevi })}>
                           {EKIP_GOREVLERI.map((x) => (
                             <option key={x} value={x}>
-                              {t(EKIP_GOREV_ADI[x])}
+                              {metin(EKIP_GOREV_ADI[x], "ar")}
                             </option>
                           ))}
                         </select>

@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -12,6 +12,8 @@ import PlanaEkle from "../oneri/PlanaEkle";
 import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import BaslikKarti from "./BaslikKarti";
+import GeriAlDugmesi from "../../bilesenler/GeriAl";
+import IceAktarPenceresi from "./IceAktar";
 import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
 
 /**
@@ -26,7 +28,7 @@ import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBo
  * başlıyor. Öneriler ve takvim pencerede açılıyor. Dünden gelenleri bugüne
  * alma planın başlangıç işi: başlığın hemen altında.
  */
-type AracPenceresi = "oneriler" | "takvim" | null;
+type AracPenceresi = "oneriler" | "takvim" | "aktar" | null;
 
 export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t, dil } = useDil();
@@ -78,6 +80,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
           <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={operasyon} eklemeMetni={t("planaEkle")} />
         </Pencere>
       )}
+      {arac === "aktar" && <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setArac(null)} />}
     </>
   );
 }
@@ -114,6 +117,13 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
       {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
       {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}
       {(icerik || operasyon) && arac("belge", <FilePen size={16} />, "belgedeDuzenle", `#/nextday/${plan.id}/belge`)}
+      {/* Geri alma ve geçmiş plandan aktarma yer kaplamasın: yalnız simge, adı ipucunda. */}
+      {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+      {icerik && (
+        <button type="button" className="dugme dugme-ikincil dugme-ikon" title={t("planIceAktar")} aria-label={t("planIceAktar")} onClick={() => ac("aktar")} data-arac="aktar">
+          <FileUp size={16} />
+        </button>
+      )}
     </nav>
   );
 }
@@ -124,14 +134,14 @@ function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const v = useVeri();
   const sablon = planBul(v, plan.kopyaKaynagi);
   const onceki = oncekiSayisi(v, plan);
-  if (!sablon || onceki === 0 || !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))) return null;
+  if (onceki === 0 || !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))) return null;
   return (
     <div className="onceki-seridi">
       <button className="dugme" onClick={() => oncekiOnayla(ben, plan.id)} data-bugune-al>
         <Check size={16} /> {t("hepsiniBuguneAl")}
       </button>
       <span className="onceki-sayi">
-        <span className="onceki-ornek" aria-hidden="true" /> {t("dundenGelen", { n: onceki })}
+        <span className="onceki-ornek" aria-hidden="true" /> {t(sablon ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
       </span>
     </div>
   );

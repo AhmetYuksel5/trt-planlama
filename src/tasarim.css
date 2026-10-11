@@ -447,6 +447,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .sayfa-basi h1 { font-size: var(--punto-dev); line-height: 1.15; letter-spacing: -.01em; }
 .sayfa-basi p { color: var(--sonuk); margin-top: 2px; }
 .sayfa-basi .sag-uc { margin-inline-start: auto; display: flex; gap: var(--ara-2); flex-wrap: wrap; align-items: center; }
+/* Planın araçları kendi satırında, sayfaya ortalı: Türkçe ve Arapça arayüzde aynı yerde dursun. */
+.sayfa-basi .plan-araclari { flex-basis: 100%; margin-inline-start: 0; justify-content: center; }
+/* Yazılı düğmelerin yanında simge düğmesi de aynı boyda dursun. */
+@media (min-width: 761px) { .plan-araclari .dugme-ikon, .dugmeler .dugme-ikon { width: 36px; height: 36px; } }
 .geri-bag { display: inline-flex; align-items: center; gap: var(--ara-1); color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk); }
 .geri-bag:hover { color: var(--vurgu); }
 .tarih-kart { display: flex; align-items: center; gap: var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); padding: var(--ara-2) var(--ara-4); }
@@ -967,6 +971,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .dene-adimlari li > span:first-child { width: 26px; height: 26px; border-radius: 50%; background: var(--lacivert); color: #fff; font-weight: 700; display: grid; place-items: center; flex: none; font-size: var(--punto-kucuk); }
 .dene-adimlari li p { flex: 1; font-size: var(--punto-kucuk); }
 .dene-adimlari li p small { display: block; color: var(--sonuk); }
+
+.aktar-ozet { display: grid; gap: var(--ara-3); margin-top: var(--ara-4); }
+.aktar-ozet ul { margin: 0; padding-inline-start: var(--ara-5); display: grid; gap: var(--ara-1); }
+.aktar-basliklar { max-height: 220px; overflow: auto; list-style: none; padding: 0; }
 
 /* --- Plan çıktısı: ekranda önizleme, yazıcıda temiz sayfa --- */
 

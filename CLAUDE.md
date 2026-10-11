@@ -67,6 +67,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `icerik-sutun`. Ekranlar `dir`/`lang` elle yazmaz.
   - Form alanı `{...icerikAlani}` alır, yer tutucu örneği Arapça.
   - Dil denetimi yok: Latin harfli özel isim (NATO, OPEC+) serbest.
+  - Next Day çalışma ekibindeki görev adları (منتج تنفيذي…) her arayüz
+    dilinde çıktıdaki Arapçasıyla, form seçiminde de.
   - Planın "ŞEHİR / BAŞLIK / MUHABİR" satırı çıktıdaki gibi baştan sona
     Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
   - Kişi adı her arayüz dilinde Arapça yazımıyla (`useDil().ad`; kurum
@@ -189,6 +191,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
+  - Araç düğmeleri kendi satırında sayfaya ortalı (`.plan-araclari`):
+    Türkçe ve Arapça arayüzde aynı yerde dursun.
+  - Geri al (↶, Ctrl/⌘+Z yazı alanı dışında; `bilesenler/GeriAl.tsx`)
+    Next Day, haftalık ve belge görünümünde. Kişinin o plandaki son
+    düzenlemesini geri alır (`geriAl.ts`, `eylemler.ts → planGeriAl`):
+    kaydın tamamı değil, yalnız o yazışta değişen öğeler eski haline
+    döner; öğe o arada başkasınca değiştiyse geri alınmaz. Yığın bellekte,
+    pencereye bağlı; hareket kaydı geri alınmaz, geri alma ayrı hareket.
+    Sistemin yazışı (yarının planı) yığına girmez.
+  - Geçmiş plandan aktar (yalnız simge; `nextday/IceAktar.tsx`,
+    `planAktar.ts`, `eylemler.ts → planIceAktar`): kurumun eski
+    الأجندة الإخبارية belgesi (.docx) ya da Plannersflow'un Word/HTML
+    çıktısı satırlarına ayrılıp bölüm adlarıyla eşlenir. Ekip, canlı,
+    başlık (havuzda aynı adla varsa o), gelişme, muhabir ve takip gelir;
+    hareket ve paket gelmez. Kişi Arapça adla eşleşir, bulunamayan
+    önizlemede yazılır. Gelenler şablondan gelen gibi `onceki` işaretli;
+    eski ikili .doc okunmaz, .docx istenir.
   - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
     Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez. Başlık satırı
     da çıktıdaki gibi sağdan başlar (`.bolum.ar > summary`), gövde

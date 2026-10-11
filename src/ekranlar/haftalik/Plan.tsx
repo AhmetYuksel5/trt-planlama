@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -72,7 +73,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
             {t("haftaOzetSatiri", { kalem: gundem.length, bekleyen, dosya: hafta.anaKonular.length })}
           </p>
         </div>
-        <div className="sag-uc">
+        <div className="sag-uc plan-araclari">
           {yapabilir(ben, "cagriHazirla") && hafta.durum === "hazirlik" && (
             <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cagri`}>
               <Megaphone size={16} /> {t(cagri ? "haftalikCagriyiAc" : "haftalikCagri")}
@@ -91,6 +92,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               <FilePen size={16} /> {t("belgedeDuzenle")}
             </a>
           )}
+          {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
         </div>
       </header>
 

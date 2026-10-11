@@ -1,4 +1,5 @@
 import { Ban, Check, Eye, Printer } from "lucide-react";
+import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri } from "../../bilesenler/Haftalik";
 import { Pencere } from "../../bilesenler/Parcalar";
@@ -336,9 +337,12 @@ export default function HaftalikBelge({ ben, hafta }: { ben: Kisi; hafta: Haftal
         word={{ ad: `haftalik-plan-${bas}.doc`, baslik: `${c("haftalikCiktiBaslik")} ${aralikYaz(bas, haftaSonu(bas), "ar")}` }}
         yazdirMetni="rpYazdir"
         ek={
-          <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
-            <Printer size={16} /> {t("ciktiOnizleme")}
-          </a>
+          <>
+            <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
+              <Printer size={16} /> {t("ciktiOnizleme")}
+            </a>
+            {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
+          </>
         }
       />
       <div className="cikti-sarici belge-duzen yazdirma-gizle">

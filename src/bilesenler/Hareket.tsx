@@ -25,6 +25,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   geriDonus: "hrGeriDonus",
   planOlusturuldu: "hrPlanOlusturuldu",
   planKopyalandi: "hrPlanKopyalandi",
+  planGeriAlindi: "hrPlanGeriAlindi",
+  planIceAktarildi: "hrPlanIceAktarildi",
   planToplantida: "hrPlanToplantida",
   planTaslaga: "hrPlanTaslaga",
   planOnaylandi: "hrPlanOnaylandi",
@@ -95,6 +97,8 @@ export function useHareketMetni() {
       muhabir: ad(muhabir),
       sonuc: h.veri?.sonuc ? t(ONERI_DURUM_ADI[h.veri.sonuc as OneriDurum]) : "",
       puan: h.veri?.puan ?? "",
+      dosya: h.veri?.dosya ?? "",
+      sayi: h.veri?.sayi ?? "",
       plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");

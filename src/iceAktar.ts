@@ -17,7 +17,7 @@ import { CALISMA_BICIMLERI, SEHIRLER, type CalismaBicimi, type Sehir } from "./v
 const u16 = (b: Uint8Array, i: number) => b[i] | (b[i + 1] << 8);
 const u32 = (b: Uint8Array, i: number) => (b[i] | (b[i + 1] << 8) | (b[i + 2] << 16) | (b[i + 3] << 24)) >>> 0;
 
-const zipAc = async (veri: ArrayBuffer): Promise<Map<string, () => Promise<string>>> => {
+export const zipAc = async (veri: ArrayBuffer): Promise<Map<string, () => Promise<string>>> => {
   const b = new Uint8Array(veri);
   // Merkezî dizinin sonu: dosyanın sonundan geriye "PK\x05\x06".
   let son = -1;

@@ -3,6 +3,8 @@ import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, 
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
+import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
+import { arSade, type PlanTaslagi } from "./planAktar";
 import type { Yazi } from "./dil";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
@@ -2120,4 +2122,98 @@ export const faaliyetOzeleEkle = (ben: Kisi, id: string, tarih: string, ozelId?:
   d = { ...d, ozel: [...d.ozel, { id: yeniId, ad: f.baslik, tarih, hazirlik: [] }] };
   kaydet(baglantiYaz(d, ben, f, { tur: "ozel", planId: yeniId, tarih }));
   return yeniId;
+};
+
+/* --- Geri alma ve geçmiş plandan aktarma --- */
+
+/**
+ * Kişinin bu plandaki son düzenlemesini geri alıyor (geriAl.ts). Yetki
+ * bugünkü yetki: plan o arada kilitlendiyse geri alınmıyor. Değişen
+ * kayıt başkasınca yeniden değiştirildiyse "degisti": üzerine yazılmıyor.
+ */
+export const planGeriAl = (ben: Kisi, planId: string): "tamam" | "bos" | "yetkisiz" | "degisti" => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  const hafta = plan ? undefined : haftaBul(d, planId);
+  if (plan ? !planOperasyonDuzenler(ben, plan) : !hafta || !yapabilir(ben, "haftalikDuzenle")) return "yetkisiz";
+  const adim = sonAdimiAl(ben.id, planId);
+  if (!adim) return "bos";
+  const yeni = geriUygula(d, adim);
+  if (!yeni) return "degisti";
+  const iz = plan ? { planId, veri: { tarih: plan.tarih } } : { haftaId: planId, veri: { tarih: hafta!.baslangic } };
+  sessizce(() => kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "planGeriAlindi", ...iz })));
+  return "tamam";
+};
+
+/**
+ * Geçmiş planın belgesinden (planAktar.ts) bugünün taslağına: kayıtlar
+ * şablondan gelen gibi `onceki` işaretli, planlamacı gözden geçirip
+ * "bugün de geçerli" diyor ya da düzenliyor. Başlık havuzda aynı adla
+ * varsa o kullanılıyor (havuz ikiye bölünmesin), yoksa açılıyor; başlık
+ * açma yetkisi olmayanın yeni başlığı atlanıyor. Plandaki kayıt
+ * çoğalmıyor: aynı kişi, aynı başlık bir kez.
+ */
+export const planIceAktar = (ben: Kisi, planId: string, t: PlanTaslagi, dosya: string): number => {
+  let d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan)) return 0;
+  let sayi = 0;
+  const ekip = [...plan.ekip];
+  for (const e of t.ekip)
+    if (!ekip.some((x) => x.kisiId === e.kisiId)) {
+      ekip.push({ ...e, onceki: true });
+      sayi++;
+    }
+  const havuz = [...d.basliklar];
+  const pbler = plan.basliklar.map((b) => ({ ...b, muhabirler: [...b.muhabirler] }));
+  const gelismeler: Gelisme[] = [];
+  const gelisme = (g: { yer?: string; metin: string }, planBaslikId?: string): Gelisme => ({
+    id: kimlik("g"),
+    planId,
+    planBaslikId,
+    yer: g.yer,
+    metin: g.metin,
+    kaynakTuru: "kurum",
+    kaynakAdi: dosya,
+    tarih: simdi(),
+    onceki: true,
+  });
+  for (const b of t.basliklar) {
+    const ad = arSade(b.ad);
+    const bulunan = havuz.filter((x) => arSade(x.ad) === ad).sort((x, y) => Number(y.aktif) - Number(x.aktif))[0];
+    let baslikId = bulunan?.id;
+    if (!baslikId) {
+      if (!yapabilir(ben, "baslikYonet")) continue;
+      baslikId = kimlik("b");
+      havuz.push({ id: baslikId, ad: b.ad.trim(), aktif: true });
+    }
+    let pb = pbler.find((x) => x.baslikId === baslikId);
+    if (!pb) {
+      pb = { id: kimlik("pb"), baslikId, muhabirler: [] };
+      pbler.push(pb);
+      sayi++;
+    }
+    for (const m of b.muhabirler)
+      if (!pb.muhabirler.some((x) => x.kisiId === m.kisiId)) {
+        pb.muhabirler.push({ kisiId: m.kisiId, ...(m.yer && { yer: m.yer }), ...(m.saat && { saat: m.saat }), onceki: true });
+        sayi++;
+      }
+    for (const g of b.gelismeler) gelismeler.push(gelisme(g, pb.id));
+  }
+  const op = planOperasyonDuzenler(ben, plan);
+  if (op) gelismeler.push(...t.takipler.map((g) => gelisme(g)));
+  const canlilar: CanliYayin[] = op
+    ? t.canlilar.map((c) => ({ id: kimlik("cy"), planId, konu: c.konu, aciklama: c.aciklama, tarih: plan.tarih, saatGmt: c.saatGmt, yer: c.yer, muhabirId: c.muhabirId, notlar: "", onceki: true }))
+    : [];
+  sayi += gelismeler.length + canlilar.length;
+  if (!sayi) return 0;
+  // Değişmeyen plan nesnesine dokunulmuyor; burada plan her zaman değişiyor.
+  const basliklar = pbler.map((b, i) => {
+    const eski = plan.basliklar[i];
+    return eski && eski.id === b.id && eski.muhabirler.length === b.muhabirler.length ? eski : b;
+  });
+  d = planGuncelle({ ...d, basliklar: havuz.length === d.basliklar.length ? d.basliklar : havuz }, planId, (p) => ({ ...p, ekip: ekip.length === p.ekip.length ? p.ekip : ekip, basliklar }));
+  d = { ...d, gelismeler: [...d.gelismeler, ...gelismeler], canliYayinlar: [...d.canliYayinlar, ...canlilar] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "planIceAktarildi", planId, veri: { tarih: plan.tarih, dosya, sayi: String(sayi) } }));
+  return sayi;
 };
