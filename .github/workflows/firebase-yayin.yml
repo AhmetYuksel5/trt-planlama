@@ -57,8 +57,10 @@ jobs:
             // Yapıştırırken araya giren boşluk ve karakterler: { ile } arası alınıyor.
             const ham = fs.readFileSync(yol, "utf8").replace(/^\uFEFF/, "");
             const bas = ham.indexOf("{"), son = ham.lastIndexOf("}");
+            // Dıştaki { } seçilmeden kopyalandıysa içerik yine tam: çerçeve yeniden ekleniyor.
+            const metin = bas >= 0 && son > bas ? ham.slice(bas, son + 1) : "{" + ham.trim().replace(/,\s*$/, "") + "}";
             let a;
-            try { a = JSON.parse(ham.slice(bas, son + 1)); }
+            try { a = JSON.parse(metin); }
             catch (e) {
               console.log("::error::Anahtar JSON değil; dosyanın tamamı kopyalanmamış olabilir.");
               console.log("Uzunluk: " + ham.length + ", { var: " + (bas >= 0) + ", } var: " + (son >= 0) + ", özel anahtar satırı var: " + ham.includes("BEGIN PRIVATE KEY") + ", sonu var: " + ham.includes("END PRIVATE KEY"));
