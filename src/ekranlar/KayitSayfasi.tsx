@@ -41,7 +41,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
     setHata(false);
     setBekle(true);
     // Ad üç dilde; boş bırakılan dil öbüründen (davet formundaki gibi).
-    const tr = f.adTr.trim() || f.adEn.trim();
+    const tr = f.adTr.trim() || f.adEn.trim() || f.adAr.trim();
     const ad = { tr, ar: f.adAr.trim() || tr, en: f.adEn.trim() || tr };
     firebaseYukle()
       .then((x) => x.kayitBaglantisiGonder(f.eposta, { kod, ad, birim: f.birim, gorev: f.gorev }, dil))
@@ -75,14 +75,14 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
           {t("eposta")}
           <input type="email" dir="ltr" autoComplete="email" value={f.eposta} onChange={(e) => alan("eposta", e.target.value)} required data-kayit-eposta />
         </label>
-        {/* Kişi adı içerik değil: arayüz dilinin yazımıyla okunuyor; üç yazımı ayrı. */}
-        <label>
-          {t("adTurkce")}
-          <input autoComplete="name" value={f.adTr} onChange={(e) => alan("adTr", e.target.value)} required data-kayit-ad />
-        </label>
+        {/* Ad her arayüz dilinde Arapça görünüyor, o yüzden zorunlu ve önde. */}
         <label>
           {t("adArapca")}
-          <input dir="rtl" lang="ar" value={f.adAr} onChange={(e) => alan("adAr", e.target.value)} data-kayit-ad-ar />
+          <input dir="rtl" lang="ar" value={f.adAr} onChange={(e) => alan("adAr", e.target.value)} required data-kayit-ad-ar />
+        </label>
+        <label>
+          {t("adTurkce")}
+          <input autoComplete="name" value={f.adTr} onChange={(e) => alan("adTr", e.target.value)} data-kayit-ad />
         </label>
         <label>
           {t("adIngilizce")}

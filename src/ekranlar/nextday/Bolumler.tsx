@@ -84,7 +84,7 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
   const [kisiId, setKisiId] = useState("");
   const [gorev, setGorev] = useState<EkipGorevi>(ilkGorev ?? "bultenYapimcisi");
   const [vardiya, setVardiya] = useState("08:00");
-  // Görev seçilince listede yalnız o pozisyondaki personel: ekip görevi kişinin unvanından (varsayilanEkipGorevi).
+  // Önce görev seçiliyor, personel listesinde yalnız o görevdekiler: ekip görevi kişinin unvanından (varsayilanEkipGorevi).
   const adaylar = v.kisiler
     .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id) && varsayilanEkipGorevi(k.gorev, k.birim) === gorev)
     .sort((a, b) => ad(a).localeCompare(ad(b)));
@@ -99,17 +99,6 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
     <div className="form form-kutu ara-ust-2">
       <div className="satir">
         <label>
-          {t("personel")}
-          <select value={kisiId} onChange={(e) => setKisiId(e.target.value)}>
-            <option value="">{t(adaylar.length ? "seciniz" : "gorevdePersonelYok")}</option>
-            {adaylar.map((k) => (
-              <option key={k.id} value={k.id}>
-                {ad(k)} · {t(GOREV_ADI[k.gorev])}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
           {t("gorev")}
           <select
             value={gorev}
@@ -122,6 +111,17 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
             {EKIP_GOREVLERI.map((x) => (
               <option key={x} value={x}>
                 {t(EKIP_GOREV_ADI[x])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("personel")}
+          <select value={kisiId} onChange={(e) => setKisiId(e.target.value)}>
+            <option value="">{t(adaylar.length ? "seciniz" : "gorevdePersonelYok")}</option>
+            {adaylar.map((k) => (
+              <option key={k.id} value={k.id}>
+                {ad(k)} · {t(GOREV_ADI[k.gorev])}
               </option>
             ))}
           </select>

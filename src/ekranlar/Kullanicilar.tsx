@@ -56,7 +56,7 @@ const YETKI_ADI: Record<HesapYetkisi, Anahtar> = {
   hesapsizKisi: "hyHesapsizKisi",
 };
 
-/* Üç yazımlı ad; boş bırakılan dil öbüründen (kişi adı arayüz dilinin yazımıyla okunuyor). */
+/* Üç yazımlı ad; boş bırakılan dil öbüründen. Ekranda Arapçası okunuyor, Latin yazım arama ve baş harf için. */
 const adKur = (tr0: string, ar0: string, en0: string, yedek: string) => {
   const tr = tr0.trim() || en0.trim() || ar0.trim() || yedek;
   return { tr, ar: ar0.trim() || tr, en: en0.trim() || tr };
@@ -182,15 +182,15 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                 </label>
               )}
             </div>
-            {/* Kişi adı içerik değil: arayüz dilinin yazımıyla okunuyor; üç yazımı ayrı. */}
+            {/* Ad her arayüz dilinde Arapça görünüyor, o yüzden zorunlu ve önde; Latin yazımlar aramada ve baş harfte. */}
             <div className="satir">
               <label>
-                {t("adTurkce")}
-                <input value={form.adTr} onChange={(e) => alan("adTr", e.target.value)} required data-davet-ad />
+                {t("adArapca")}
+                <input dir="rtl" lang="ar" value={form.adAr} onChange={(e) => alan("adAr", e.target.value)} required data-davet-ad-ar />
               </label>
               <label>
-                {t("adArapca")}
-                <input dir="rtl" lang="ar" value={form.adAr} onChange={(e) => alan("adAr", e.target.value)} />
+                {t("adTurkce")}
+                <input value={form.adTr} onChange={(e) => alan("adTr", e.target.value)} data-davet-ad />
               </label>
               <label>
                 {t("adIngilizce")}
@@ -518,12 +518,12 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
     <Pencere baslik={ad(kisi)} alt={kisi.eposta} kapat={kapat}>
       <div className="form" data-pozisyon-formu>
         <label>
-          {t("adTurkce")}
-          <input value={p.tr} onChange={(e) => setP({ ...p, tr: e.target.value })} data-pozisyon-ad />
+          {t("adArapca")}
+          <input dir="rtl" lang="ar" value={p.ar} onChange={(e) => setP({ ...p, ar: e.target.value })} data-pozisyon-ad-ar />
         </label>
         <label>
-          {t("adArapca")}
-          <input dir="rtl" lang="ar" value={p.ar} onChange={(e) => setP({ ...p, ar: e.target.value })} />
+          {t("adTurkce")}
+          <input value={p.tr} onChange={(e) => setP({ ...p, tr: e.target.value })} data-pozisyon-ad />
         </label>
         <label>
           {t("adIngilizce")}

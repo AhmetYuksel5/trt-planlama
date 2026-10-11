@@ -463,8 +463,8 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
   const oneriler = v.oneriler.filter((o) => o.muhabirId === kisi.id).sort((a, b) => b.zaman.localeCompare(a.zaman));
   const gorevler = v.gorevlendirmeler.filter((g) => g.kisiId === kisi.id);
   const kendisi = ben.id === kisi.id;
-  /* Adın öbür yazımı: arayüz Arapçaysa Latin, değilse Arapça; ikisi de rehberde aranıyor. */
-  const obur = yaz(kisi.ad, dil === "ar" ? "tr" : "ar");
+  /* Ad her dilde Arapça; altında Latin yazımı (Arapça arayüzde Türkçesi), rehberde ikisi de aranıyor. */
+  const obur = yaz(kisi.ad, dil === "ar" ? "tr" : dil);
   return (
     <>
       {!kendisi && (

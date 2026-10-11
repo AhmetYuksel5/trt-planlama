@@ -1813,7 +1813,8 @@ export function useDil() {
   return {
     dil: simdiki,
     t: (k: Anahtar, p?: Degisken) => metin(k, simdiki, p),
-    ad: (k: { ad: Yazi } | undefined) => (k ? yaz(k.ad, simdiki) : ""),
+    // Kişi adı her arayüz dilinde Arapça yazımıyla (kurum kararı); Arapçası yoksa yaz öbürüne düşüyor.
+    ad: (k: { ad: Yazi } | undefined) => (k ? yaz(k.ad, "ar") : ""),
   };
 }
 

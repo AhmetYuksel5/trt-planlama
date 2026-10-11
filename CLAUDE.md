@@ -67,8 +67,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Dil denetimi yok: Latin harfli özel isim (NATO, OPEC+) serbest.
   - Planın "ŞEHİR / BAŞLIK / MUHABİR" satırı çıktıdaki gibi baştan sona
     Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
-  - Kişi adı içerik değil: arayüz dilinin yazımıyla (`useDil().ad`).
-    Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
+  - Kişi adı her arayüz dilinde Arapça yazımıyla (`useDil().ad`; kurum
+    kararı). Latin yazım aramada, avatarın baş harfinde ve profilde adın
+    altında. Kişi formlarında (davet, hesapsız, kayıt, düzenle) Arapça ad
+    önde ve zorunlu. Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
 - Logo resmî dosya (`src/varliklar/logo-trt-arabi.png`, `bilesenler/Logo.tsx`);
   her dilde aynı, dosyaya dokunulmaz. Koyu zeminde (sol menü, giriş, proje
   planı) `<Logo levha />` beyaz levhada durur ("عربي" lacivert, levhasız
