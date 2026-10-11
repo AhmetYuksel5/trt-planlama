@@ -30,6 +30,7 @@ import {
 } from "firebase/firestore";
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
+import { hesabaGecir } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { BIRIMLER, GOREVLER, bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type Durum, type Gorev, type Rol } from "../veri";
@@ -98,6 +99,8 @@ export const gercekKipiBaslat = () => {
       }
       kopar = kayitBagla(() => {
         girisYap(u.uid);
+        // Hesapsız kaydı bu hesaba bağlandıysa geçmiş bir kez taşınıyor.
+        hesabaGecir(u.uid);
         gercekDurumuYaz({ tur: "hazir" });
       });
     } catch (e) {
@@ -326,6 +329,8 @@ export interface Davet {
   davetEden: string;
   zaman: string;
   kullanan?: string;
+  /** Hesaba bağlanan hesapsız kişinin kimliği; etkinleşince kaydı bu hesaba geçer (eylemler.ts → hesabaGecir). */
+  kisiId?: string;
 }
 
 /**
@@ -346,7 +351,10 @@ export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): 
   );
   const kisiRef = doc(db, "kisiler", u.uid);
   if (davet?.durum === "bekliyor") {
-    const k = yeniKisi({ id: u.uid, ad: davet.ad, eposta, birim: davet.birim, gorev: davet.gorev, rol: davet.rol, hesapYoneticisi: davet.hesapYoneticisi });
+    const k = {
+      ...yeniKisi({ id: u.uid, ad: davet.ad, eposta, birim: davet.birim, gorev: davet.gorev, rol: davet.rol, hesapYoneticisi: davet.hesapYoneticisi }),
+      ...(davet.kisiId ? { oncekiKimlik: davet.kisiId } : {}),
+    };
     const b = writeBatch(db);
     b.set(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
     b.update(davetRef, { durum: "kullanildi", kullanan: u.uid });
@@ -376,7 +384,9 @@ export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): 
 
 export const davetEt = async (d: Omit<Davet, "durum" | "zaman" | "eposta"> & { eposta: string }, dil: string) => {
   const eposta = ePosta(d.eposta);
-  const kayit: Davet = { ...d, eposta, durum: "bekliyor", zaman: new Date().toISOString() };
+  // Firestore undefined saklamıyor: kisiId yoksa alan hiç yazılmıyor.
+  const { kisiId, ...geri } = d;
+  const kayit: Davet = { ...geri, ...(kisiId ? { kisiId } : {}), eposta, durum: "bekliyor", zaman: new Date().toISOString() };
   await setDoc(doc(db, "davetler", eposta), kayit);
   await baglantiGonder(eposta, dil);
 };

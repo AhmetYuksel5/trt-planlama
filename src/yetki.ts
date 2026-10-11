@@ -14,6 +14,7 @@ import {
   type HaftalikKalem,
   type HaftalikPlan,
   type Hareket,
+  type HesapYetkisi,
   type IcerikTuru,
   type Kisi,
   type NextDayPlan,
@@ -306,14 +307,17 @@ export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
   ortam: BIRIMLER,
 };
 
+/* Hesap işleri: tam yönetici hepsini yapar, öbürü yalnız kendisine verileni (firestore.rules → yetkiVar ile aynı). */
+export const hesapYetkisi = (k: Kisi | undefined, y: HesapYetkisi) => !!k && (!!k.hesapYoneticisi || !!k.yetkiler?.includes(y));
+
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */
 export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
   !!k &&
   (sayfa === "panel"
     ? !!kapsam(k)
-    : // Hesaplar yalnız gerçek kipte ve hesap yöneticisinde: demoda davet edilecek kimse yok.
+    : // Hesaplar yalnız gerçek kipte ve hesap yetkisi olanda: demoda davet edilecek kimse yok.
       sayfa === "kullanicilar"
-      ? GERCEK && !!k.hesapYoneticisi
+      ? GERCEK && (!!k.hesapYoneticisi || !!k.yetkiler?.length)
       : !!SAYFA_IZNI[sayfa]?.includes(k.birim));
 
 /* --- Proje planı için matris: tablolardan üretiliyor, elle yazılmıyor --- */

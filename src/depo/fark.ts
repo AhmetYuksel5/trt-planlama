@@ -49,6 +49,9 @@ export interface OgeBelgesi {
   pasif?: boolean;
   hesapYoneticisi?: boolean;
   kayitKodu?: string;
+  hesapsiz?: boolean;
+  oncekiKimlik?: string;
+  yetkiler?: string[];
 }
 
 export type Islem =
@@ -119,12 +122,20 @@ type Oge = { id: string };
 export const ogeBelgesi = (alan: string, oge: Oge, s: number): OgeBelgesi => {
   const b: OgeBelgesi = { s, j: JSON.stringify(oge) };
   if (alan === "kisiler") {
-    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string };
+    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string; hesapsiz?: boolean; oncekiKimlik?: string; yetkiler?: string[] };
     b.eposta = (k.eposta ?? "").toLowerCase();
     b.pasif = !!k.pasif;
     b.hesapYoneticisi = !!k.hesapYoneticisi;
     // Kayıt bağlantısıyla gelen kişide kural ilk yazışta bağlantıyı bu alandan buluyor.
     if (k.kayitKodu) b.kayitKodu = k.kayitKodu;
+    /*
+     * Yalnız doluyken yazılıyor: alanı olmayan eski kişi belgesine başkası
+     * yazınca alan "eklenmiş" sayılmasın, kural yetki alanı değişti diye
+     * reddetmesin.
+     */
+    if (k.hesapsiz) b.hesapsiz = true;
+    if (k.oncekiKimlik) b.oncekiKimlik = k.oncekiKimlik;
+    if (k.yetkiler?.length) b.yetkiler = [...k.yetkiler];
   }
   return b;
 };

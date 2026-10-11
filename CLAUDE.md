@@ -96,6 +96,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
     "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).
+  - Hesapsız kişi (pilot; sistemi kullanmayan personel): yalnız adı var
+    (`Kisi.hesapsiz`), her seçimde görünür, giriş yapamaz; işini Planlama
+    onun adına görür. Kullanıcılar'daki "Kişi ekle" kartından
+    (`eylemler.ts → hesapsizKisiEkle`). "Hesaba bağla" davete `kisiId`
+    koyar; kişi etkinleşince `oncekiKimlik` taşır ve açılışta
+    `hesabaGecir` eski kimliği bütün kayıtlarda yenisiyle değiştirir,
+    eski kaydın profilini alır, eski kişi belgesini siler (kural bunu
+    yalnız `oncekiKimlik`'i onu gösterene izin verir).
+  - Seçmeli hesap yetkileri (`veri.ts → HESAP_YETKILERI`, `Kisi.yetkiler`):
+    davet, kayıt bağlantısı, kişi düzenleme, hesap kapatma/açma, hesapsız
+    kişi ekleme. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki
+    vermek ve tam yönetici yapmak yalnız onda ("Yetkiler" penceresi,
+    `kisiYetkileri`). Programda `yetki.ts → hesapYetkisi`, kuralda
+    `yetkiVar`; davet yetkisiyle yönetici davet edilemez, tam yöneticinin
+    hesabı yalnız tam yöneticice kapatılır. Kişi belgesinde bu alanlar
+    yalnız doluyken yazılır (`depo/fark.ts`), yoksa eski belgeye yazış
+    yetki alanı değişmiş sayılır.
   - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
     girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.

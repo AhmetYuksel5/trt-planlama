@@ -40,6 +40,26 @@ Davetin yanında ikinci yol:
 
 Kurallar bağlantının açık ve süresinin geçmemiş olmasını, e-postanın bağlantıyla doğrulanmasını ve hesabın yönetici olmamasını denetler (`firestore.rules → kayitGecerli`). Bağlantı Firestore'da `kayitBaglantilari` koleksiyonunda; kodu bilen yalnız o belgeyi okuyabilir.
 
+### Hesapsız kişi (pilot)
+
+Sistemi henüz kullanmayan personel yalnız adıyla kayıtta durur:
+
+1. *Kullanıcılar › Kişi ekle › Hesapsız kişi*: ad (üç dilde), birim, görev; e-posta ve telefon isteğe bağlı.
+2. Kişi her seçimde (muhabir, ekip, plan satırı) görünür, giriş yapamaz. Listede "Hesap yok". İşini Planlama onun adına görür: öneriyi onun adına girer, e-posta adresi varsa öneri çağrısı ona da gider.
+3. Sisteme geçeceği zaman satırdaki **Hesaba bağla** e-posta adresine davet gönderir. Kişi etkinleşince eski kaydı (ve ona verilmiş işler, önerileri, hareketler) yeni hesabına geçer; ayrı bir kayıt kalmaz.
+
+### Seçmeli yetkiler
+
+Tam yönetici (hesap yöneticisi) satırdaki **Yetkiler** penceresinden başkasına şunları ayrı ayrı verebilir:
+
+- davet gönderme,
+- kayıt bağlantısı açma,
+- kişi bilgilerini düzenleme,
+- hesap kapatma ve açma,
+- hesapsız kişi ekleme.
+
+Aynı pencerede "Tam yönetici" seçilirse kişi hepsine ve yetki vermeye sahip olur. Yetkisi olan kişi Kullanıcılar sayfasında yalnız kendisine verilen kısmı görür. Sınırlar kurallarda da var: davet yetkisiyle yönetici davet edilemez, tam yöneticinin hesabı yalnız tam yöneticice kapatılır, yetki yalnız tam yöneticiden verilir.
+
 ### Kurucu (ilk yönetici)
 
 Boş sistemde ilk kişi kurucudur. Adresi iki yerde yazılıdır:

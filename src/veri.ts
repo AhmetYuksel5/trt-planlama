@@ -147,7 +147,21 @@ export interface Kisi {
   kayitKodu?: string;
   /** Bilgilerini kendisi girdi, hesap yöneticisi henüz bakmadı; "Düzenle"de kaydedince kalkar. */
   kontrolBekliyor?: boolean;
+  /**
+   * Gerçek kip, pilot: yalnız adı olan kişi; giriş yapamaz, işini Planlama
+   * onun adına görür. "Hesaba bağla" ile davet edilip etkinleşince kaydı
+   * hesabına geçer (eylemler.ts → hesabaGecir).
+   */
+  hesapsiz?: boolean;
+  /** Hesaba bağlanırken bırakılan hesapsız kaydın kimliği; geçiş o kimliği her kayıtta bununla değiştiriyor. */
+  oncekiKimlik?: string;
+  /** Tam yöneticinin verdiği seçmeli hesap yetkileri; tam yönetici (hesapYoneticisi) hepsine sahip. */
+  yetkiler?: HesapYetkisi[];
 }
+
+/* Kullanıcılar sayfasının parça parça verilebilen işleri; yetki vermek ve tam yönetici yapmak bunların dışında, yalnız tam yöneticide. */
+export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi"] as const;
+export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
 

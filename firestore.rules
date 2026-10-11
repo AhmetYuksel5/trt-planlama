@@ -23,7 +23,11 @@ service cloud.firestore {
     function etkin() { return oturum() && exists(kisiYolu()) && get(kisiYolu()).data.pasif != true; }
     function hesapYoneticisi() { return etkin() && get(kisiYolu()).data.hesapYoneticisi == true; }
     function davetYolu() { return /databases/$(veritabani)/documents/davetler/$(eposta()); }
-    function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta"]; }
+    // Seçmeli hesap yetkisi: tam yönetici hepsine sahip, öbürü yalnız verilene (src/yetki.ts → hesapYetkisi).
+    function yetkiVar(y) { return hesapYoneticisi() || (etkin() && get(kisiYolu()).data.get("yetkiler", []).hasAny([y])); }
+    function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]; }
+    // Tam yönetici olmayanın yazdığı kişi: yöneticisiz, yetkisiz.
+    function yetkisiz(k) { return k.get("hesapYoneticisi", false) == false && k.get("yetkiler", []).size() == 0; }
     function kayitYolu(kod) { return /databases/$(veritabani)/documents/kayitBaglantilari/$(kod); }
     // Kayıt bağlantısıyla gelen: açık, süresi geçmemiş bağlantı; yetkisiz (hesap yöneticisi değil).
     function kayitGecerli(k) {
@@ -31,14 +35,19 @@ service cloud.firestore {
         && exists(kayitYolu(k.kayitKodu))
         && get(kayitYolu(k.kayitKodu)).data.acik == true
         && request.time.toMillis() < get(kayitYolu(k.kayitKodu)).data.bitis
-        && k.hesapYoneticisi == false;
+        && yetkisiz(k)
+        && k.get("hesapsiz", false) == false
+        && k.get("oncekiKimlik", "") == "";
     }
 
     match /davetler/{adres} {
-      allow read: if hesapYoneticisi() || (oturum() && eposta() == adres);
-      allow create, delete: if hesapYoneticisi();
+      allow read: if yetkiVar("davet") || (oturum() && eposta() == adres);
+      // Davet yetkisiyle yönetici davet edilemez: yöneticilik yalnız tam yöneticiden.
+      allow create: if hesapYoneticisi() || (yetkiVar("davet") && yetkisiz(request.resource.data));
+      allow delete: if yetkiVar("davet");
       // Yönetici her şeyi; davetli yalnız kendi davetini "kullanıldı" yapabilir (ilk girişte).
       allow update: if hesapYoneticisi()
+        || (yetkiVar("davet") && yetkisiz(request.resource.data))
         || (oturum() && eposta() == adres
             && resource.data.durum == "bekliyor"
             && request.resource.data.durum == "kullanildi"
@@ -49,7 +58,7 @@ service cloud.firestore {
     // Paylaşılan kayıt bağlantısı: kodu bilen (oturumsuz da) yalnız o bağlantıyı okuyabiliyor; liste ve yazma yöneticide.
     match /kayitBaglantilari/{kod} {
       allow get: if true;
-      allow list, create, update, delete: if hesapYoneticisi();
+      allow list, create, update, delete: if yetkiVar("kayitBaglantisi");
     }
 
     match /kisiler/{id} {
@@ -57,19 +66,31 @@ service cloud.firestore {
       allow read: if etkin() || (oturum() && id == request.auth.uid);
       // İlk giriş: kendi kaydı, bekleyen davetle (davetteki yetkiyle), kayıt bağlantısıyla ya da kurucu olarak.
       // Bağlantıda adresin sahibi olduğu e-posta bağlantısıyla kanıtlanmış olmalı (email_verified).
+      // Hesapsız kişi (yalnız adı olan): giriş yapamaz, yetkisiz.
       allow create: if hesapYoneticisi()
+        || (yetkiVar("hesapsizKisi") && request.resource.data.get("hesapsiz", false) == true
+            && yetkisiz(request.resource.data) && request.resource.data.get("oncekiKimlik", "") == "")
         || (oturum() && id == request.auth.uid
             && request.resource.data.eposta == eposta()
             && request.resource.data.pasif == false
+            && request.resource.data.get("hesapsiz", false) == false
+            && request.resource.data.get("yetkiler", []).size() == 0
             && ((exists(davetYolu())
                  && get(davetYolu()).data.durum == "bekliyor"
-                 && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi)
+                 && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi
+                 && request.resource.data.get("oncekiKimlik", "") == get(davetYolu()).data.get("kisiId", ""))
                 || (request.auth.token.email_verified == true && kayitGecerli(request.resource.data))
                 || (eposta() == kurucuEposta() && request.auth.token.email_verified == true)));
       // Etkin herkes kişi kaydını düzenleyebiliyor (profil, durum); yetki alanlarını yalnız hesap yöneticisi.
+      // Hesap kapatma yetkisi olan, tam yönetici olmayanın hesabını kapatıp açabiliyor.
       allow update: if hesapYoneticisi()
-        || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari()));
-      allow delete: if hesapYoneticisi();
+        || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari()))
+        || (yetkiVar("hesapAcKapa") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]));
+      // Hesaba bağlanan kişi kendi eski hesapsız kaydını kaldırıyor (oncekiKimlik onu gösteriyor).
+      allow delete: if hesapYoneticisi()
+        || (resource.data.get("hesapsiz", false) == true && etkin()
+            && get(kisiYolu()).data.get("oncekiKimlik", "") == id);
     }
 
     // Öbür bütün kayıt: etkin kişiler okur ve yazar.

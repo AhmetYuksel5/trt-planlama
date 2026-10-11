@@ -18,6 +18,7 @@ import {
   kaydet,
   kimlik,
   kisiBul,
+  yeniKisi,
   SISTEM,
   oncekiPlan,
   oneriBul,
@@ -49,6 +50,7 @@ import {
   type Kanal,
   type KaynakTuru,
   type Karar,
+  type HesapYetkisi,
   type Kisi,
   type NextDayPlan,
   type Oneri,
@@ -64,6 +66,7 @@ import {
 import {
   adimYapabilir,
   haftalikDuzenler,
+  hesapYetkisi,
   kararVerebilir,
   mudahaleEdebilir,
   oneriDuzeltmeyeGider,
@@ -1634,28 +1637,49 @@ export const kisayollariKaydet = (ben: Kisi, liste: string[] | null) => {
 /* --- Gerçek kip: hesaplar --- */
 
 /**
- * Hesap yöneticisinin kişi hesabı üzerindeki işi: kapatma/açma ve hesap
- * yöneticiliği. Kurallar da aynısını soruyor (firestore.rules); kişi kendi
+ * Hesabı kapatma/açma (hesapAcKapa yetkisi) ve tam yöneticilik (yalnız tam
+ * yönetici). Kurallar da aynısını soruyor (firestore.rules); kişi kendi
  * hesabını kapatamıyor, yöneticiliğini bırakamıyor: sistem yöneticisiz
- * kalmasın.
+ * kalmasın. Tam yöneticinin hesabını yalnız tam yönetici kapatıyor.
  */
 export const kisiHesabi = (ben: Kisi, kisiId: string, ayar: { pasif?: boolean; hesapYoneticisi?: boolean }) => {
+  if (!GERCEK || kisiId === ben.id) return false;
+  const d = getir();
+  const k = d.kisiler.find((x) => x.id === kisiId);
+  if (!k || k.hesapsiz) return false;
+  if (ayar.hesapYoneticisi !== undefined && !ben.hesapYoneticisi) return false;
+  if (ayar.pasif !== undefined && !(ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi))) return false;
+  kaydet({ ...d, kisiler: d.kisiler.map((x) => (x.id === kisiId ? { ...x, ...ayar } : x)) });
+  return true;
+};
+
+/* Seçmeli hesap yetkileri: yalnız tam yönetici verir, kendisininkine dokunmaz. */
+export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[]) => {
   if (!GERCEK || !ben.hesapYoneticisi || kisiId === ben.id) return false;
   const d = getir();
-  if (!d.kisiler.some((k) => k.id === kisiId)) return false;
-  kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, ...ayar } : k)) });
+  const k = d.kisiler.find((x) => x.id === kisiId);
+  if (!k || k.hesapsiz) return false;
+  const temiz = [...new Set(yetkiler)];
+  kaydet({
+    ...d,
+    kisiler: d.kisiler.map((x) => {
+      if (x.id !== kisiId) return x;
+      const { yetkiler: _, ...kalan } = x;
+      return temiz.length ? { ...kalan, yetkiler: temiz } : kalan;
+    }),
+  });
   return true;
 };
 
 /*
- * Pozisyon (birim, görev, rol) ve ad değişince hesap yöneticisi düzeltiyor;
- * kendi kaydı da dahil (kurucu ilk girişte varsayılan pozisyonla açılıyor).
- * Kayıt bağlantısıyla gelen kişinin girdiklerine yönetici böyle bakıyor;
- * kaydedince "kontrol bekliyor" kalkıyor. Hesap alanları (pasif,
- * yöneticilik) burada değişmiyor.
+ * Pozisyon (birim, görev, rol) ve ad değişince hesap yöneticisi (ya da
+ * kisiDuzenle yetkisi olan) düzeltiyor; kendi kaydı da dahil (kurucu ilk
+ * girişte varsayılan pozisyonla açılıyor). Kayıt bağlantısıyla gelen kişinin
+ * girdiklerine yönetici böyle bakıyor; kaydedince "kontrol bekliyor"
+ * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
 export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gorev: Gorev; rol: Rol; ad?: Yazi }) => {
-  if (!GERCEK || !ben.hesapYoneticisi) return false;
+  if (!GERCEK || !hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
   if (!d.kisiler.some((k) => k.id === kisiId)) return false;
   kaydet({
@@ -1666,6 +1690,83 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gore
       return { ...kalan, birim: p.birim, gorev: p.gorev, rol: p.rol, ...(p.ad ? { ad: p.ad } : {}) };
     }),
   });
+  return true;
+};
+
+/**
+ * Pilot: sistemi kullanmayan personel yalnız adıyla kayıtta. Her seçimde
+ * (muhabir, ekip, plan satırı) görünüyor, giriş yapamıyor; işini Planlama
+ * onun adına görüyor. Yetkisiz: rolü personel.
+ */
+export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: Birim; gorev: Gorev; eposta?: string; telefon?: string; sehir?: Sehir }) => {
+  if (!GERCEK || !hesapYetkisi(ben, "hesapsizKisi")) return null;
+  const d = getir();
+  const yeni: Kisi = {
+    ...yeniKisi({ id: kimlik("kh"), ad: k.ad, eposta: (k.eposta ?? "").trim().toLowerCase(), birim: k.birim, gorev: k.gorev, rol: "personel", hesapYoneticisi: false }),
+    ...(k.telefon ? { telefon: k.telefon.trim() } : {}),
+    ...(k.sehir ? { sehir: k.sehir } : {}),
+    hesapsiz: true,
+  };
+  kaydet({ ...d, kisiler: [...d.kisiler, yeni] });
+  return yeni.id;
+};
+
+/*
+ * Kayıttaki her değerde eski kimliği yenisiyle değiştiriyor: kimlik bir
+ * değerin tamamı olarak geçiyor (muhabirId, ekip, hareketin kişisi…),
+ * JSON'da tırnaklı aranınca başka metne değmiyor. Değişmeyen öğenin nesnesi
+ * aynı kalıyor; fark yalnız değişenleri yazsın.
+ */
+const kimlikDegistir = <T>(x: T, eski: string, yeni: string): T => {
+  const j = JSON.stringify(x);
+  const ara = JSON.stringify(eski);
+  return j.includes(ara) ? (JSON.parse(j.split(ara).join(JSON.stringify(yeni))) as T) : x;
+};
+
+/**
+ * Hesapsız kişi hesaba bağlandı (davet `kisiId` taşıyordu): yeni hesap
+ * etkinleşince eski kaydın bilgileri yeni kişiye geçiyor, kayıtlardaki eski
+ * kimlik yenisiyle değişiyor ve eski kişi kaydı siliniyor. Kişi kendisi
+ * yapıyor (gercekKipiBaslat, kayıt gelince); kurallar eski kaydı yalnız
+ * `oncekiKimlik`'i onu gösteren kişiye sildiriyor. Bir kez çalışır: eski
+ * kayıt kalmayınca yapacak iş yok.
+ */
+export const hesabaGecir = (benId: string) => {
+  if (!GERCEK) return false;
+  const d = getir();
+  const ben = d.kisiler.find((k) => k.id === benId);
+  const eski = ben?.oncekiKimlik;
+  const eskiKisi = eski ? d.kisiler.find((k) => k.id === eski && k.hesapsiz) : undefined;
+  if (!ben || !eski || !eskiKisi) return false;
+  const { hesapsiz: _, kontrolBekliyor: __, ...profil } = eskiKisi;
+  // Profil (şehir, telefon, diller, kısaltma…) eski kayıttan; hesap alanları yeni hesaptan.
+  const birlesik: Kisi = { ...profil, id: ben.id, ad: ben.ad, birim: ben.birim, gorev: ben.gorev, rol: ben.rol, eposta: ben.eposta, oncekiKimlik: eski, ...(ben.hesapYoneticisi ? { hesapYoneticisi: true } : {}), ...(ben.yetkiler ? { yetkiler: ben.yetkiler } : {}) };
+  const yeni: Durum = { ...d };
+  for (const [alan, deger] of Object.entries(d) as [keyof Durum, unknown][]) {
+    if (alan === "kisiler") continue;
+    if (Array.isArray(deger)) {
+      let degisti = false;
+      const liste = deger.map((o) => {
+        const n = kimlikDegistir(o, eski, ben.id);
+        if (n !== o) degisti = true;
+        return n;
+      });
+      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = liste;
+    } else if (deger && typeof deger === "object") {
+      // Kişiye bağlı haritalar: anahtar kişi ya da "kişi:…".
+      const m: Record<string, unknown> = {};
+      let degisti = false;
+      for (const [k, v] of Object.entries(deger)) {
+        const yk = k === eski ? ben.id : k.startsWith(`${eski}:`) ? ben.id + k.slice(eski.length) : k;
+        const yv = kimlikDegistir(v, eski, ben.id);
+        if (yk !== k || yv !== v) degisti = true;
+        m[yk] = yv;
+      }
+      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = m;
+    }
+  }
+  yeni.kisiler = d.kisiler.filter((k) => k.id !== eski).map((k) => (k.id === ben.id ? birlesik : kimlikDegistir(k, eski, ben.id)));
+  kaydet(yeni);
   return true;
 };
 
