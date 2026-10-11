@@ -1,7 +1,8 @@
 import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
-import { metin, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { useSekmeAdi } from "../../sekmeAdi";
 import { geriDonusBekliyor, geriDonusGonder, oncekiOnayla, planDurum } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
@@ -37,6 +38,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
   const operasyon = planOperasyonDuzenler(ben, plan);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const [arac, setArac] = useState<AracPenceresi>(null);
+  useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
 
   return (
     <>
@@ -44,11 +46,11 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
         <ArrowLeft size={14} className="yon" /> {t("nextdayPlanlari")}
       </a>
       <header className="sayfa-basi">
-        <span className="ikon-kutu">
+        <span className="ikon-kutu sayfa-adi-tekrar">
           <CalendarDays size={26} />
         </span>
         <div>
-          <h1>
+          <h1 className="sayfa-adi-tekrar">
             {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
           </h1>
           <p>

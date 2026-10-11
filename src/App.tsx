@@ -5,7 +5,7 @@ import AnaSayfa from "./ekranlar/AnaSayfa";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
 import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
 import Raporlar from "./ekranlar/Raporlar";
-import Basliklar from "./ekranlar/Basliklar";
+import Basliklar, { BaslikSayfasi } from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import GercekGiris from "./ekranlar/GercekGiris";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
@@ -243,7 +243,7 @@ export default function App() {
         break;
       }
       case "basliklar":
-        icerik = <Basliklar ben={ben} />;
+        icerik = yol.id ? <BaslikSayfasi ben={ben} id={yol.id} /> : <Basliklar ben={ben} />;
         break;
       case "paketler":
         if (yol.id) {

@@ -1,3 +1,4 @@
+import { useSekmeAdi } from "../../sekmeAdi";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
@@ -44,6 +45,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const { t, dil } = useDil();
   const v = useVeri();
   const bas = hafta.baslangic;
+  useSekmeAdi(`${t("haftalik")} · ${aralikYaz(bas, haftaSonu(bas), dil)}`);
   const duzenler = haftalikDuzenler(ben, hafta);
   const bekleyen = kararBekleyenler(hafta).length;
   const gundem = hafta.kalemler.filter(gundemde);
@@ -61,11 +63,11 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         <ArrowLeft size={14} className="yon" /> {t("haftalikPlanlar")}
       </a>
       <header className="sayfa-basi">
-        <span className="ikon-kutu">
+        <span className="ikon-kutu sayfa-adi-tekrar">
           <CalendarRange size={26} />
         </span>
         <div>
-          <h1>
+          <h1 className="sayfa-adi-tekrar">
             {t("haftalik")} · {aralikYaz(bas, haftaSonu(bas), dil)}
           </h1>
           <p>

@@ -1,6 +1,7 @@
+import { useSekmeAdiOku } from "../../sekmeAdi";
 import { ChevronDown, Columns2, House, LayoutGrid, PanelsTopLeft, Plus, Rows2, SquarePlus, X, type LucideIcon } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { kisaAdi, sayfaMaddesi } from "../../bilesenler/AnaMenu";
+import { kisaAdi, maddeAdi, sayfaMaddesi } from "../../bilesenler/AnaMenu";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { bildir } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -192,7 +193,15 @@ export function UstSekmeler({ ben }: { ben: Kisi }) {
 
   const anaYol = ortamda ? sonAnaYolu() : simdikiYol();
   const anaMadde = sayfaMaddesi(yolSayfasi(anaYol)) ?? sayfaMaddesi("ana");
-  const anaAd = anaMadde ? t(kisaAdi(ben, anaMadde)) : t("mAna");
+  const sayfaAdi = useSekmeAdiOku();
+  const kisaAd = anaMadde ? t(kisaAdi(ben, anaMadde)) : t("mAna");
+  /*
+   * Sayfanın adı menüdekinin aynısı ya da uzunuysa ("Haber önerileri",
+   * "Next Day planları") sekme kısa adda kalıyor; kayıt eki ("Next Day ·
+   * 12 Eki") ve menüde olmayan alt sayfa ("Öneri çağrısı") yazılıyor.
+   */
+  const anaAd =
+    !ortamda && sayfaAdi && sayfaAdi !== (anaMadde && t(maddeAdi(ben, anaMadde))) && (sayfaAdi.startsWith(`${kisaAd} ·`) || !sayfaAdi.startsWith(kisaAd)) ? sayfaAdi : kisaAd;
   const AnaIkon = yolSayfasi(anaYol) === "ana" || !anaMadde ? House : anaMadde.ikon;
 
 

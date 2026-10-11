@@ -34,7 +34,7 @@ export default function YeniOrtam({ ben }: { ben: Kisi }) {
   const dolu = secili.length >= BOLME_EN_COK;
   const adi = (yol: string) => {
     const b = kisayolBilgisi(ben, yol);
-    return b ? t(b.ad) : yol;
+    return b ? (b.icerik ?? t(b.ad)) : yol;
   };
 
   if (kisininOrtamlari(v, ben.id).length >= ORTAM_EN_COK)

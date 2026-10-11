@@ -1696,6 +1696,54 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gore
   return true;
 };
 
+/* Kişiye bağlı haritadan kişinin anahtarları çıkıyor; değişmeyen harita aynı nesne kalsın (fark.ts). */
+const anahtarlariAt = <T>(h: Record<string, T> | undefined, at: (k: string) => boolean) =>
+  h && Object.keys(h).some(at) ? Object.fromEntries(Object.entries(h).filter(([k]) => !at(k))) : h;
+
+/**
+ * Kişiyi silmek: tam yönetici ya da kişi silme yetkisi olan (tam yöneticiyi
+ * değil). Kendini silemiyor, sistem yöneticisiz kalmasın. Açık planlarda
+ * (taslak, toplantıda) ekipten ve başlık muhabirlerinden çıkıyor; geçmiş
+ * kayıtlar (paket, hareket, onaylı plan) kimliği tutuyor, geçmiş
+ * değiştirilmiyor. Kişinin görünüm tercihleri de gidiyor. Gerçek kipte
+ * Firebase'deki giriş hesabı kalır ama kişi kaydı olmadan giremez.
+ */
+export const kisiSil = (ben: Kisi, kisiId: string) => {
+  if (kisiId === ben.id) return false;
+  const d = getir();
+  const k = d.kisiler.find((x) => x.id === kisiId);
+  if (!k || !(ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi))) return false;
+  const planlar = d.planlar.map((p) => {
+    if (p.durum !== "taslak" && p.durum !== "toplantida") return p;
+    const ekipte = p.ekip.some((e) => e.kisiId === kisiId);
+    const baslikta = p.basliklar.some((b) => b.muhabirler.some((m) => m.kisiId === kisiId));
+    if (!ekipte && !baslikta) return p;
+    return {
+      ...p,
+      ekip: ekipte ? p.ekip.filter((e) => e.kisiId !== kisiId) : p.ekip,
+      basliklar: baslikta ? p.basliklar.map((b) => (b.muhabirler.some((m) => m.kisiId === kisiId) ? { ...b, muhabirler: b.muhabirler.filter((m) => m.kisiId !== kisiId) } : b)) : p.basliklar,
+    };
+  });
+  const kendi = (x: string) => x === kisiId;
+  const ad = typeof k.ad === "string" ? k.ad : k.ad.ar || k.ad.tr;
+  kaydet(
+    hareketYaz(
+      {
+        ...d,
+        kisiler: d.kisiler.filter((x) => x.id !== kisiId),
+        planlar: planlar.some((p, i) => p !== d.planlar[i]) ? planlar : d.planlar,
+        okundu: anahtarlariAt(d.okundu, kendi) ?? {},
+        anaSayfa: anahtarlariAt(d.anaSayfa, (x) => x.startsWith(`${kisiId}:`)),
+        oneriGorunumu: anahtarlariAt(d.oneriGorunumu, kendi),
+        ortamlar: anahtarlariAt(d.ortamlar, kendi),
+        kisayollar: anahtarlariAt(d.kisayollar, kendi),
+      },
+      { kisiId: ben.id, tip: "kisiSilindi", veri: { ad } },
+    ),
+  );
+  return true;
+};
+
 /**
  * Pilot: sistemi kullanmayan personel yalnız adıyla kayıtta. Her seçimde
  * (muhabir, ekip, plan satırı) görünüyor, giriş yapamıyor; işini Planlama

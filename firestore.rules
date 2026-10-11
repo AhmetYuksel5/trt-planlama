@@ -88,7 +88,9 @@ service cloud.firestore {
         || (yetkiVar("hesapAcKapa") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]));
       // Hesaba bağlanan kişi kendi eski hesapsız kaydını kaldırıyor (oncekiKimlik onu gösteriyor).
+      // Kişi silme yetkisi olan, tam yönetici olmayanı siliyor; kendini silemiyor (sistem yöneticisiz kalmasın).
       allow delete: if hesapYoneticisi()
+        || (yetkiVar("kisiSil") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid)
         || (resource.data.get("hesapsiz", false) == true && etkin()
             && get(kisiYolu()).data.get("oncekiKimlik", "") == id);
     }

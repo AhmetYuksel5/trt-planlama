@@ -28,6 +28,6 @@ export default function AnaSayfa({ ben }: { ben: Kisi }) {
     case "media":
       return <MediaAna ben={ben} />;
     case "yonetim":
-      return <YoneticiPaneli ben={ben} />;
+      return <YoneticiPaneli ben={ben} ana />;
   }
 }

@@ -180,7 +180,7 @@ export interface Kisi {
 }
 
 /* Kullanıcılar sayfasının parça parça verilebilen işleri; yetki vermek ve tam yönetici yapmak bunların dışında, yalnız tam yöneticide. */
-export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi"] as const;
+export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil"] as const;
 export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
@@ -751,6 +751,7 @@ export const HAREKET_TIPLERI = [
   "planKopyalandi",
   "planGeriAlindi",
   "planIceAktarildi",
+  "kisiSilindi",
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",

@@ -1,3 +1,4 @@
+import { useSekmeAdi } from "../../sekmeAdi";
 import {
   AlertTriangle,
   CalendarCheck,
@@ -42,14 +43,16 @@ import { CalismaAlani, type Alan } from "./Calisma";
  * kuralı yüzünden yok.
  */
 
-export function SayfaBasi({ ikon, baslik, alt, sagUc }: { ikon: ReactNode; baslik: string; alt?: ReactNode; sagUc?: ReactNode }) {
+/* Birimlerin ana sayfası sekmede "Ana sayfa" kalıyor (`sekme={false}`); birimin adı sol menünün başında zaten yazılı. */
+export function SayfaBasi({ ikon, baslik, alt, sagUc, sekme = true }: { ikon: ReactNode; baslik: string; alt?: ReactNode; sagUc?: ReactNode; sekme?: boolean }) {
   const { dil } = useDil();
   const B = bugun();
+  useSekmeAdi(sekme ? baslik : undefined);
   return (
     <header className="sayfa-basi">
-      <span className="ikon-kutu">{ikon}</span>
+      <span className="ikon-kutu sayfa-adi-tekrar">{ikon}</span>
       <div>
-        <h1>{baslik}</h1>
+        <h1 className="sayfa-adi-tekrar">{baslik}</h1>
         {alt && <p>{alt}</p>}
       </div>
       <div className="sag-uc">

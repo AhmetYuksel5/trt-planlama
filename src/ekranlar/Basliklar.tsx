@@ -1,10 +1,12 @@
-import { Check, Newspaper, Pencil, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, Newspaper, Pencil, Pin, PinOff, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { Bos, Icerik, Kart, Rozet, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../dil";
-import { baslikDuzenle, baslikEkle } from "../eylemler";
-import { ulkeAdi } from "../etiketler";
-import { ULKELER, useVeri, type Kisi, type Ulke } from "../veri";
+import { baslikDuzenle, baslikEkle, kisayollariKaydet } from "../eylemler";
+import { PAKET_DURUM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, ulkeAdi } from "../etiketler";
+import { kalemAdi } from "../haftalik";
+import { KISAYOL_EN_COK, kisininKisayollari } from "../kisayol";
+import { ULKELER, baslikBul, kisiBul, useVeri, type Kisi, type Ulke } from "../veri";
 import { yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -75,6 +77,7 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                   <th>{t("kullanim")}</th>
                   <th>{t("sonKullanim")}</th>
                   <th>{t("durum")}</th>
+                  <th className="dar" />
                   {yonetir && <th className="dar" />}
                 </tr>
               </thead>
@@ -88,7 +91,9 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                         {duzenleniyor ? (
                           <input className="girdi" {...icerikAlani} value={duzen.ad} onChange={(e) => setDuzen({ ...duzen, ad: e.target.value })} autoFocus />
                         ) : (
-                          <Icerik blok>{b.ad}</Icerik>
+                          <a href={`#/basliklar/${b.id}`} data-baslik-bag={b.id}>
+                            <Icerik blok>{b.ad}</Icerik>
+                          </a>
                         )}
                       </td>
                       <td data-etiket={t("ulke")}>
@@ -118,6 +123,9 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
                         ) : (
                           <Rozet ton={b.aktif ? "iyi" : ""}>{t(b.aktif ? "aktif" : "pasif")}</Rozet>
                         )}
+                      </td>
+                      <td className="dar eylem">
+                        <BaslikKisayolu ben={ben} baslikId={b.id} />
                       </td>
                       {yonetir && (
                         <td className="dar eylem">
@@ -152,6 +160,130 @@ export default function Basliklar({ ben }: { ben: Kisi }) {
           </div>
         )}
       </Kart>
+    </>
+  );
+}
+
+/**
+ * Sabit başlığı kişinin kısayollarına sabitlemek: başlığı çalışan (bir
+ * dosyayı izleyen muhabir masası, editör) ona üst çubuktan tek tıkla
+ * ulaşsın. Kısayol başlığın sayfası (`basliklar/<id>`); kişinin öbür
+ * kısayollarıyla aynı listede ve aynı sınırda.
+ */
+export function BaslikKisayolu({ ben, baslikId, yazili = false }: { ben: Kisi; baslikId: string; yazili?: boolean }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const kimlik = `basliklar/${baslikId}`;
+  const liste = kisininKisayollari(v, ben);
+  const var_ = liste.includes(kimlik);
+  const dolu = !var_ && liste.length >= KISAYOL_EN_COK;
+  const ad = t(dolu ? "kisayolSiniri" : var_ ? "kisayoldanCikar" : "kisayolaEkle", { n: KISAYOL_EN_COK });
+  return (
+    <button
+      type="button"
+      className={`dugme ${yazili ? "dugme-ikincil" : "dugme-sade dugme-ikon"}${dolu ? " pasif" : ""}${var_ ? " secili" : ""}`}
+      aria-disabled={dolu}
+      aria-pressed={var_}
+      title={ad}
+      aria-label={ad}
+      onClick={() => !dolu && kisayollariKaydet(ben, var_ ? liste.filter((k) => k !== kimlik) : [...liste, kimlik])}
+      data-baslik-kisayol={baslikId}
+    >
+      {var_ ? <PinOff size={15} /> : <Pin size={15} />}
+      {yazili && ` ${ad}`}
+    </button>
+  );
+}
+
+/**
+ * Bir başlığın sayfası: kısayolun açtığı yer. Başlığı çalışanın aradığı
+ * her şey tek yerde: son Next Day planlarındaki gelişmeler, muhabirler ve
+ * paketler, haftalık plandaki kalemler. Düzenleme planların kendisinde.
+ */
+export function BaslikSayfasi({ ben, id }: { ben: Kisi; id: string }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const b = baslikBul(v, id);
+  if (!b) return <Bos metin={t("kayitYok")} />;
+  const planlar = v.planlar
+    .filter((p) => p.basliklar.some((x) => x.baslikId === id))
+    .sort((x, y) => y.tarih.localeCompare(x.tarih))
+    .slice(0, 7);
+  const kalemler = v.haftalik
+    .flatMap((h) => h.kalemler.filter((k) => k.baslikId === id).map((k) => ({ h, k })))
+    .sort((x, y) => y.h.baslangic.localeCompare(x.h.baslangic))
+    .slice(0, 10);
+  return (
+    <>
+      <a className="geri-bag" href="#/basliklar">
+        <ArrowLeft size={14} className="yon" /> {t("mBasliklar")}
+      </a>
+      <header className="sayfa-basi">
+        <span className="ikon-kutu">
+          <Newspaper size={26} />
+        </span>
+        <div>
+          <h1>
+            <Icerik>{b.ad}</Icerik>
+          </h1>
+          <p>
+            <Rozet ton={b.aktif ? "iyi" : ""}>{t(b.aktif ? "aktif" : "pasif")}</Rozet> {b.ulke ? t(ulkeAdi(b.ulke)) : ""}
+          </p>
+        </div>
+        <div className="sag-uc">
+          <BaslikKisayolu ben={ben} baslikId={id} yazili />
+        </div>
+      </header>
+      <Kart baslik={t("nextday")} ek={String(planlar.length)}>
+        {planlar.length === 0 ? (
+          <Bos kucuk metin={t("kayitYok")} />
+        ) : (
+          <div className="baslik-gunleri">
+            {planlar.map((p) => {
+              const pb = p.basliklar.find((x) => x.baslikId === id)!;
+              const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
+              const paketler = v.paketler.filter((x) => x.planBaslikId === pb.id && x.durum !== "iptal");
+              return (
+                <section key={p.id} className="baslik-gunu" data-baslik-gunu={p.id}>
+                  <h3>
+                    <a href={`#/nextday/${p.id}`}>{tarihYaz(p.tarih, dil, "tam")}</a> <Rozet ton={PLAN_DURUM_TONU[p.durum]}>{t(PLAN_DURUM_ADI[p.durum])}</Rozet>
+                  </h3>
+                  {gelismeler.map((g) => (
+                    <Icerik key={g.id} blok>
+                      {g.yer ? `${g.yer} / ${g.metin}` : g.metin}
+                    </Icerik>
+                  ))}
+                  {pb.muhabirler.length > 0 && (
+                    <p className="sonuk">
+                      {t("muhabirler")}:{" "}
+                      <Icerik>{pb.muhabirler.map((m) => kisiAr(kisiBul(v, m.kisiId))).join("، ")}</Icerik>
+                    </p>
+                  )}
+                  {paketler.map((x) => (
+                    <p key={x.id}>
+                      <a href={`#/paketler/${x.id}`}>
+                        <Icerik>{x.baslik}</Icerik>
+                      </a>{" "}
+                      <Rozet>{t(PAKET_DURUM_ADI[x.durum])}</Rozet>
+                    </p>
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </Kart>
+      {kalemler.length > 0 && (
+        <Kart baslik={t("haftalik")} ek={String(kalemler.length)}>
+          <div className="baslik-gunleri">
+            {kalemler.map(({ h, k }) => (
+              <p key={k.id}>
+                <a href={`#/haftalik/${h.id}`}>{tarihYaz(k.tarih ?? h.baslangic, dil, "kisa")}</a> · <Icerik>{kalemAdi(k)}</Icerik>
+              </p>
+            ))}
+          </div>
+        </Kart>
+      )}
     </>
   );
 }

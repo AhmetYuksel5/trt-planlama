@@ -54,7 +54,7 @@ export function NewsdeskAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: bool
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<Building size={26} />} baslik={t("biNewsdesk")} />
+      <SayfaBasi sekme={!kisisel} ikon={<Building size={26} />} baslik={t("biNewsdesk")} />
       <CalismaAlani ben={ben} duzen="newsdesk" kisisel={kisisel} />
     </>
   );
@@ -165,7 +165,7 @@ export function NewsGatheringAna({ ben, kisisel = true }: { ben: Kisi; kisisel?:
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<MapPin size={26} />} baslik={t("biNewsgathering")} sagUc={<TaslakEtiketi />} />
+      <SayfaBasi sekme={!kisisel} ikon={<MapPin size={26} />} baslik={t("biNewsgathering")} sagUc={<TaslakEtiketi />} />
       <CalismaAlani ben={ben} duzen="newsgathering" kisisel={kisisel} />
     </>
   );
@@ -294,7 +294,7 @@ export function EkonomiAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boole
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} />
+      <SayfaBasi sekme={!kisisel} ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} />
       <CalismaAlani ben={ben} duzen="ekonomi" kisisel={kisisel} />
     </>
   );
@@ -370,7 +370,7 @@ export function ProgramAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boole
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<Clapperboard size={26} />} baslik={t("biProgram")} sagUc={<TaslakEtiketi />} />
+      <SayfaBasi sekme={!kisisel} ikon={<Clapperboard size={26} />} baslik={t("biProgram")} sagUc={<TaslakEtiketi />} />
       <CalismaAlani ben={ben} duzen="program" kisisel={kisisel} />
     </>
   );
@@ -422,7 +422,7 @@ export function OutputAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolea
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<SpellCheck size={26} />} baslik={t("biOutput")} />
+      <SayfaBasi sekme={!kisisel} ikon={<SpellCheck size={26} />} baslik={t("biOutput")} />
       <CalismaAlani ben={ben} duzen="output" kisisel={kisisel} />
     </>
   );
@@ -480,7 +480,7 @@ export function MediaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi ikon={<MonitorPlay size={26} />} baslik={t("biMedia")} />
+      <SayfaBasi sekme={!kisisel} ikon={<MonitorPlay size={26} />} baslik={t("biMedia")} />
       <CalismaAlani ben={ben} duzen="media" kisisel={kisisel} />
     </>
   );

@@ -95,7 +95,7 @@ export function KomutPaleti({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
           ad: "kisayollarim",
           secenekler: kisininKisayollari(v, ben).flatMap((k) => {
             const b = kisayolBilgisi(ben, k);
-            return b ? [{ id: `k-${k}`, href: `#/${k}`, ikon: <KisayolKutusu ben={ben} kimlik={k} bag={false} />, metin: t(b.ad) }] : [];
+            return b ? [{ id: `k-${k}`, href: `#/${k}`, ikon: <KisayolKutusu ben={ben} kimlik={k} bag={false} />, metin: b.icerik ?? t(b.ad) }] : [];
           }),
         },
         { ad: "ortamlar", secenekler: ortamlar.map(ortamSecenegi) },

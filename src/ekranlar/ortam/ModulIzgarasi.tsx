@@ -69,7 +69,7 @@ export function ModulIzgarasi({
           <div className="modul-secenekler">
             {kisayollar.map((k) => {
               const b = kisayolBilgisi(ben, k);
-              return b && kutu(k, <KisayolKutusu ben={ben} kimlik={k} bag={false} />, t(b.ad));
+              return b && kutu(k, <KisayolKutusu ben={ben} kimlik={k} bag={false} />, b.icerik ?? t(b.ad));
             })}
           </div>
         </section>

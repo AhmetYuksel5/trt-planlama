@@ -24,6 +24,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
   return (
     <>
       <SayfaBasi
+        sekme={false}
         ikon={<Newspaper size={26} />}
         baslik={t("merhaba", { ad: ad(ben).split(" ")[0] })}
         alt={`${t("biMuhabir")} · ${t(sehirAdi(ben.sehir))}`}

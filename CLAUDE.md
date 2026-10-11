@@ -137,11 +137,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     davet, kayıt bağlantısı, kişi düzenleme, hesap kapatma/açma, hesapsız
     kişi ekleme. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki
     vermek ve tam yönetici yapmak yalnız onda ("Yetkiler" penceresi,
-    `kisiYetkileri`). Programda `yetki.ts → hesapYetkisi`, kuralda
+    `kisiYetkileri`); kişi silme de bu listede. Programda `yetki.ts → hesapYetkisi`, kuralda
     `yetkiVar`; davet yetkisiyle yönetici davet edilemez, tam yöneticinin
     hesabı yalnız tam yöneticice kapatılır. Kişi belgesinde bu alanlar
     yalnız doluyken yazılır (`depo/fark.ts`), yoksa eski belgeye yazış
     yetki alanı değişmiş sayılır.
+  - Kişi silme (`eylemler.ts → kisiSil`, yetki `kisiSil`): tam yönetici ya
+    da yetkili (tam yöneticiyi değil); kimse kendini silemez. Açık
+    planlarda (taslak, toplantıda) ekipten ve başlık muhabirlerinden
+    çıkar, kişiye bağlı görünüm kayıtları gider; geçmiş kayıtlar kimliği
+    tutar. Kural `kisiler` silmede aynısını sorar. Firebase'deki giriş
+    hesabı kalır ama kişi kaydı olmadan giremez.
   - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
     girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.
@@ -419,7 +425,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - görebildiği sayfalar, en çok 10.
 
     Kayıtta `Durum.kisayollar` (kişi → sıralı yol), eylem
-    `kisayollariKaydet`. Ad, ikon ve renk menüden. Renk yalnız planların
+    `kisayollariKaydet`. Sabit haber başlığı da kısayol olur
+    (`basliklar/<id>`; başlık havuzunda ve başlığın sayfasında 📌,
+    `Basliklar.tsx → BaslikKisayolu`): adı başlığın kendisi (içerik).
+    Başlığın sayfası (`BaslikSayfasi`) son Next Day planlarındaki
+    gelişmeleri, muhabirleri, paketleri ve haftalık kalemleri toplar. Ad, ikon ve renk menüden. Renk yalnız planların
     ana başlıklarında, öbür sayfalar sade (`.renk-genel`).
   - Daralma çubuğun kendi eninden (`@container ust`, sol menüden bağımsız):
     önce prototip yazısı, sonra satırdaki kısayollar ★'a çekilir.
@@ -432,6 +442,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - arananlar: sayfalar (adlar üç dilde), workspace'ler, paket, öneri,
       kişi; yalnız kişinin görebildikleri (`kayitAra`);
     - boşken kısayollar ve workspace'ler.
+  - Sayfanın adı sabit sekmede (`sekmeAdi.ts → useSekmeAdi`): `SayfaBasi`
+    başlığını, plan ekranları planı ve tarihini ("Next Day · 12 Eki Pzt")
+    bildirir. Altındaki büyük başlık ve ikon masaüstünde tekrar olduğu için
+    görünmez (`.sayfa-adi-tekrar`; h1 ekran okuyucuda kalır); telefonda
+    sekme yok, orada görünür. Kaydın kendisini adlandıran başlık (paket,
+    öneri, kişi profili, haber başlığı) yerinde kalır.
   - Sınırda düğme pasif görünür ama odaklanabilir kalır (`aria-disabled`);
     nedeni ipucunda, çünkü pasif düğme ipucu göstermiyor.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız

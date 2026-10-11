@@ -1,10 +1,10 @@
-import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, UserCog, UserPlus, X } from "lucide-react";
+import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
-import { hesapsizKisiEkle, kisiHesabi, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { firebaseYukle } from "../kip";
 import { BIRIMLER, GOREVLER, HESAP_YETKILERI, useVeri, type Birim, type Gorev, type HesapYetkisi, type Kisi, type Rol } from "../veri";
@@ -55,6 +55,7 @@ const YETKI_ADI: Record<HesapYetkisi, Anahtar> = {
   kisiDuzenle: "hyKisiDuzenle",
   hesapAcKapa: "hyHesapAcKapa",
   hesapsizKisi: "hyHesapsizKisi",
+  kisiSil: "hyKisiSil",
 };
 
 /* Üç yazımlı ad; boş bırakılan dil öbüründen. Ekranda Arapçası okunuyor, Latin yazım arama ve baş harf için. */
@@ -152,6 +153,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
   const acikBaglantilar = (baglantilar ?? []).filter((b) => b.acik && Date.now() < b.bitis);
 
   const kisiler = [...v.kisiler].sort((a, b) => Number(!!a.pasif) - Number(!!b.pasif) || Number(!!a.hesapsiz) - Number(!!b.hesapsiz) || ad(a).localeCompare(ad(b)));
+  const silebilir = (k: Kisi) => k.id !== ben.id && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi));
   const kapatabilir = (k: Kisi) => k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
   const ekleyebilir = davetYetkisi || hesapsizYetkisi;
   const hesapsizTur = tur === "hesapsiz";
@@ -414,6 +416,18 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                   {ben.hesapYoneticisi && k.id !== ben.id && !k.hesapsiz && (
                     <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setYetkiVerilen(k)} data-yetkiler>
                       <KeyRound size={14} /> {t("yetkiler")}
+                    </button>
+                  )}
+                  {silebilir(k) && (
+                    <button
+                      type="button"
+                      className="dugme dugme-sade dugme-kucuk kotu-yazi"
+                      onClick={() => {
+                        if (confirm(t("kisiSilinsinMi", { ad: ad(k) })) && kisiSil(ben, k.id)) bildir(t("kisiSilindi", { ad: ad(k) }));
+                      }}
+                      data-kisi-sil
+                    >
+                      <Trash2 size={14} /> {t("kisiSil")}
                     </button>
                   )}
                 </td>

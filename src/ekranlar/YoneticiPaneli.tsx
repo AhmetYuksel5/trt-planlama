@@ -373,7 +373,7 @@ function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
 
 /* --- Panel --- */
 
-export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: string }) {
+export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi; birim?: string; ana?: boolean }) {
   const { t } = useDil();
   const [talimat, setTalimat] = useState(false);
   const ks = kapsam(ben);
@@ -391,6 +391,7 @@ export default function YoneticiPaneli({ ben, birim }: { ben: Kisi; birim?: stri
   return (
     <>
       <SayfaBasi
+        sekme={!ana}
         ikon={<Gauge size={26} />}
         baslik={t("mPanel")}
         alt={`${t(GOREV_ADI[ben.gorev])} · ${t("ypKapsam", { birimler: kapsamAdi })}`}

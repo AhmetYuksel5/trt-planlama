@@ -182,6 +182,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .kucuk-baslik span { color: var(--sonuk); font-weight: 500; }
 .kendi-hizasi { align-self: flex-start; }
 .gizli-metin { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Sayfanın adı masaüstünde sekmede yazıyor (sekmeAdi.ts); altında tekrar etmesin. Telefonda sekme yok, başlık duruyor. */
+@media (min-width: 761px) {
+  .sayfa-basi .ikon-kutu.sayfa-adi-tekrar { display: none; }
+  .sayfa-basi h1.sayfa-adi-tekrar { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
 
 /* --- İskelet --- */
 
@@ -972,6 +977,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .dene-adimlari li p { flex: 1; font-size: var(--punto-kucuk); }
 .dene-adimlari li p small { display: block; color: var(--sonuk); }
 
+.baslik-gunleri { display: grid; gap: var(--ara-4); }
+.baslik-gunu { display: grid; gap: var(--ara-1); }
+.baslik-gunu + .baslik-gunu { border-block-start: 1px solid var(--cizgi); padding-block-start: var(--ara-3); }
+.baslik-gunu h3 { font-size: var(--punto-orta); display: flex; gap: var(--ara-2); align-items: center; }
+.dugme.secili { color: var(--vurgu); }
 .aktar-ozet { display: grid; gap: var(--ara-3); margin-top: var(--ara-4); }
 .aktar-ozet ul { margin: 0; padding-inline-start: var(--ara-5); display: grid; gap: var(--ara-1); }
 .aktar-basliklar { max-height: 220px; overflow: auto; list-style: none; padding: 0; }

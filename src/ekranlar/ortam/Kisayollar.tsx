@@ -2,12 +2,12 @@ import { ArrowDown, ArrowUp, Pencil, Plus, Star, X, type LucideIcon } from "luci
 import { useState } from "react";
 import { MENU, maddeAdi, maddeGorunur, sayfaMaddesi } from "../../bilesenler/AnaMenu";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
-import { Bos, Pencere } from "../../bilesenler/Parcalar";
+import { Bos, Icerik, Pencere } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { kisayollariKaydet } from "../../eylemler";
 import { KISAYOL_EN_COK, kisayolGorebilir, kisininKisayollari } from "../../kisayol";
 import { yolSayfasi } from "../../ortam";
-import { useVeri, type Kisi } from "../../veri";
+import { baslikBul, getir, useVeri, type Kisi } from "../../veri";
 import { IkonDugme } from "../nextday/Bolumler";
 
 /*
@@ -34,10 +34,16 @@ const PLAN_ADI: Record<string, Anahtar> = {
   takvim: "ksTakvim",
 };
 
-export function kisayolBilgisi(ben: Kisi, kimlik: string): { ad: Anahtar; ikon: LucideIcon; renk: string } | undefined {
+export function kisayolBilgisi(ben: Kisi, kimlik: string): { ad: Anahtar; icerik?: string; ikon: LucideIcon; renk: string } | undefined {
   const sayfa = yolSayfasi(kimlik);
   const m = sayfaMaddesi(sayfa);
   if (!m) return undefined;
+  // Sabit haber başlığına kısayol: adı başlığın kendisi (içerik, Arapça); başlığı çalışan kendi çubuğuna koyuyor.
+  const baslikId = sayfa === "basliklar" ? kimlik.split("/")[1] : undefined;
+  if (baslikId) {
+    const b = baslikBul(getir(), baslikId);
+    return b ? { ad: m.ad, icerik: b.ad, ikon: m.ikon, renk: "renk-genel" } : undefined;
+  }
   // Yarının planı menüde ayrı madde değil; muhabir Next Day'i zaten görmüyor.
   const ad = PLAN_ADI[kimlik] && (ben.birim !== "muhabir" || kimlik === "nextday/yarin") ? PLAN_ADI[kimlik] : maddeAdi(ben, m);
   return { ad, ikon: m.ikon, renk: RENK[sayfa] ?? "renk-genel" };
@@ -56,7 +62,7 @@ export function KisayolKutusu({ ben, kimlik, bag = true }: { ben: Kisi; kimlik: 
   const b = kisayolBilgisi(ben, kimlik);
   if (!b) return null;
   const Ikon = b.ikon;
-  const ad = t(b.ad);
+  const ad = b.icerik ?? t(b.ad);
   return bag ? (
     <a href={`#/${kimlik}`} className={`kisayol-kutu ${b.renk}`} data-kisayol={kimlik} aria-label={ad} title={ad}>
       <Ikon size={18} />
@@ -86,7 +92,7 @@ function KisayolPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   };
   const adi = (k: string) => {
     const b = kisayolBilgisi(ben, k);
-    return b ? t(b.ad) : k;
+    return b ? (b.icerik ?? t(b.ad)) : k;
   };
   return (
     <Pencere
@@ -171,7 +177,7 @@ export function UstKisayollar({ ben }: { ben: Kisi }) {
             return (
               b && (
                 <a key={k} role="menuitem" className="acilir-satir" href={`#/${k}`} data-kisayol-menu={k}>
-                  <KisayolKutusu ben={ben} kimlik={k} bag={false} /> {t(b.ad)}
+                  <KisayolKutusu ben={ben} kimlik={k} bag={false} /> {b.icerik ? <Icerik>{b.icerik}</Icerik> : t(b.ad)}
                 </a>
               )
             );
@@ -206,7 +212,7 @@ export function KisayolKutulari({ ben, sec }: { ben: Kisi; sec?: () => void }) {
             <span className="ikon">
               <Ikon size={22} />
             </span>
-            <b>{t(b.ad)}</b>
+            <b>{b.icerik ? <Icerik>{b.icerik}</Icerik> : t(b.ad)}</b>
           </a>
         );
       })}
