@@ -53,7 +53,7 @@ export default function Giris() {
       <aside className="giris-sol">
         {/* Gizli gerçek giriş: logoya art arda üç tık (UcTik.ts). */}
         <span className="marka" onClick={ucTik}>
-          <Logo levha />
+          <Logo koyu />
         </span>
         <h1>{t("girisBaslik")}</h1>
         <DilSecici />

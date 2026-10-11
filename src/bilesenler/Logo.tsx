@@ -1,17 +1,14 @@
-import { useDil } from "../dil";
-import logo from "../varliklar/logo-trt-arabi.png";
+import logoAcik from "../varliklar/logo-plannersflow.png";
+import logoKoyu from "../varliklar/logo-plannersflow-koyu.png";
 
 /*
- * Kanalın resmî logosu her arayüz dilinde aynı: "TRT عربي". Arayüz
- * Türkçe ya da İngilizce seçilse de kanalın adı değişmiyor, Arapçada
- * aynalanmıyor.
+ * Plannersflow markası her arayüz dilinde aynı; Arapçada aynalanmıyor.
+ * Yatay düzen (işaret solda, yazı sağda): menü ve üst çubuğun alçak
+ * satırında alt alta düzenin yazısı okunmaz kalıyordu.
  *
- * Logonun "عربي" kısmı koyu lacivert; koyu zeminde kaybolmasın diye
- * orada `levha` ile beyaz bir zeminin üstünde duruyor. Logo dosyasının
- * kendisine dokunulmuyor. Boyu bulunduğu yerin CSS token'ından geliyor.
+ * Koyu zeminde (sol menü, giriş, proje planı) "Planners" beyaz sürüm;
+ * lacivert yazı orada kaybolur. Boyu bulunduğu yerin CSS token'ından.
  */
-export default function Logo({ levha = false }: { levha?: boolean }) {
-  const { t } = useDil();
-  const resim = <img className="logo" src={logo} alt={`TRT ${t("markaArapca")}`} />;
-  return levha ? <span className="logo-levha">{resim}</span> : resim;
+export default function Logo({ koyu = false }: { koyu?: boolean }) {
+  return <img className="logo" src={koyu ? logoKoyu : logoAcik} alt="Plannersflow" />;
 }

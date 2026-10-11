@@ -220,7 +220,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   return (
     <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
       <a className="marka" href="#/" aria-label={t("uygulama")} onClick={ucTik}>
-        <Logo levha />
+        <Logo koyu />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
       <div className="birim-kutusu">
@@ -261,7 +261,6 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
         );
       })}
       <div className="menu-alt">
-        <b>TRT</b>
         {!GERCEK && t("ornekVeriKisa")}
       </div>
     </nav>

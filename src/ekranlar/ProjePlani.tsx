@@ -85,7 +85,7 @@ export default function ProjePlani() {
     <div className="belge-sayfa">
       <header className="belge-ust">
         <span className="marka">
-          <Logo levha />
+          <Logo koyu />
         </span>
         <span className="bosluk" />
         <DilSecici />

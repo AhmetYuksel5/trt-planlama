@@ -205,7 +205,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .marka { display: flex; align-items: center; padding: var(--ara-1) 0 var(--ara-2); }
 .logo { display: block; height: var(--logo-menu); width: auto; }
-.logo-levha { display: inline-flex; background: var(--yuzey); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); }
 .marka-alt { display: block; font-size: var(--punto-mini); color: var(--lacivert-silik); font-weight: 500; letter-spacing: .02em; padding: 0 var(--ara-1) var(--ara-3); }
 
 .birim-kutusu {
@@ -248,7 +247,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .menu a .taslak-nokta { margin-inline-start: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--lacivert-silik); }
 .menu-alt { margin-top: auto; padding: var(--ara-4) var(--ara-3) 0; color: var(--lacivert-silik); font-size: var(--punto-mini); }
-.menu-alt b { display: block; color: #fff; font-size: 26px; letter-spacing: .08em; font-weight: 800; opacity: .9; }
 
 .perde { display: none; }
 

@@ -73,12 +73,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kararı). Latin yazım aramada, avatarın baş harfinde ve profilde adın
     altında. Kişi formlarında (davet, hesapsız, kayıt, düzenle) Arapça ad
     önde ve zorunlu. Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
-- Logo resmî dosya (`src/varliklar/logo-trt-arabi.png`, `bilesenler/Logo.tsx`);
-  her dilde aynı, dosyaya dokunulmaz. Koyu zeminde (sol menü, giriş, proje
-  planı) `<Logo levha />` beyaz levhada durur ("عربي" lacivert, levhasız
-  kaybolur); menü gizliyken ve telefonda üst çubukta, beyaz zeminde
-  levhasız. Boyu yerine göre `--logo-*` token'larından. Favicon logonun "TRT" kısmından
-  (`varliklar/simge.png`).
+- Marka Plannersflow (`bilesenler/Logo.tsx`; dosyalar `src/varliklar/
+  logo-plannersflow*.png`). Her dilde aynı, aynalanmaz. Yatay düzen (işaret
+  solda, yazı sağda): menünün ve üst çubuğun alçak satırında alt alta
+  düzenin yazısı okunmaz. Koyu zeminde (sol menü, giriş, proje planı)
+  `<Logo koyu />` ("Planners" beyaz), açık zeminde düz `<Logo />`. Boyu
+  yerine göre `--logo-*` token'larından. Favicon işaretin kendisi
+  (`varliklar/simge.png`, `simge-180.png`). Kurumun eski logosu kalktı;
+  paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
 - Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v16`;

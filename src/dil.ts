@@ -30,9 +30,8 @@ export type Yazi = string | Metin;
 const m = (tr: string, ar: string, en: string): Metin => ({ tr, ar, en });
 
 const M = {
-  uygulama: m("TRT Arapça · Planlama ve Koordinasyon", "تي آر تي عربي · التخطيط والتنسيق", "TRT Arabi · Planning and Coordination"),
+  uygulama: m("Plannersflow · Planlama ve Koordinasyon", "Plannersflow · التخطيط والتنسيق", "Plannersflow · Planning and Coordination"),
   /* Logonun alt metni: kanalın adı her dilde aynı (bkz. Logo.tsx). */
-  markaArapca: m("عربي", "عربي", "عربي"),
   markaAlt: m("Planlama ve Koordinasyon", "التخطيط والتنسيق", "Planning & Coordination"),
   dilAdi: m("Türkçe", "العربية", "English"),
   dilSec: m("Arayüz dili", "لغة الواجهة", "Interface language"),
@@ -769,7 +768,7 @@ const M = {
   k10a: m("Son kontrol tamamlanır, iş biter; haber planlamadan yayına bütün aşamaları geçmiş olur.", "يكتمل التدقيق الأخير وينتهي العمل بعد مرور الخبر بكل المراحل.", "The final check is done; the story has passed every stage from planning to air."),
 
   /* Proje planı sayfası */
-  ppBaslik: m("TRT Arapça Planlama ve Birimler Arası Koordinasyon Platformu", "منصة تي آر تي عربي للتخطيط والتنسيق بين الوحدات", "TRT Arabi Planning and Cross-Unit Coordination Platform"),
+  ppBaslik: m("Plannersflow · Planlama ve Birimler Arası Koordinasyon Platformu", "Plannersflow · منصة التخطيط والتنسيق بين الوحدات", "Plannersflow · Planning and Cross-Unit Coordination Platform"),
   ppOzet: m(
     "Haberlerin planlanmasından hazırlanmasına, muhabirlerin görevlendirilmesinden işin tamamlanmasına kadar bütün süreci tek platformda yönetmek için. Bugün e-posta, Excel ve birimlerin kendi takip yöntemleriyle yürüyen işler ortak bir sistemde birleşiyor.",
     "لإدارة المسار كله في منصة واحدة: من تخطيط الأخبار وإعدادها إلى تكليف المراسلين وإنجاز العمل. تجتمع في نظام مشترك أعمال تُدار اليوم بالبريد وملفات Excel وأساليب متابعة كل وحدة.",
