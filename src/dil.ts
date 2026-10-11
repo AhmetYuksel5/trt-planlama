@@ -30,9 +30,9 @@ export type Yazi = string | Metin;
 const m = (tr: string, ar: string, en: string): Metin => ({ tr, ar, en });
 
 const M = {
-  uygulama: m("Plannersflow · Planlama ve Koordinasyon", "Plannersflow · التخطيط والتنسيق", "Plannersflow · Planning and Coordination"),
+  uygulama: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط غرفة الأخبار", "Plannersflow · Newsroom Planner"),
   /* Logonun alt metni: kanalın adı her dilde aynı (bkz. Logo.tsx). */
-  markaAlt: m("Planlama ve Koordinasyon", "التخطيط والتنسيق", "Planning & Coordination"),
+  markaAlt: m("Haber Merkezi Planlama", "تخطيط غرفة الأخبار", "Newsroom Planner"),
   dilAdi: m("Türkçe", "العربية", "English"),
   dilSec: m("Arayüz dili", "لغة الواجهة", "Interface language"),
   demo: m("Demo", "نسخة تجريبية", "Demo"),
@@ -249,7 +249,7 @@ const M = {
   mAyarlar: m("Ayarlar", "الإعدادات", "Settings"),
 
   /* Giriş */
-  girisBaslik: m("Planlama ve Birimler Arası Koordinasyon Platformu", "منصة التخطيط والتنسيق بين الوحدات", "Planning and Cross-Unit Coordination Platform"),
+  girisBaslik: m("Haber Merkezi Planlama", "تخطيط غرفة الأخبار", "Newsroom Planner"),
   girisDemoNotu: m(
     "Prototip: kurum içi giriş henüz bağlanmadı. Bir kişi seçerek o kişinin ekranını görürsünüz; şifre yok. Veriler bu tarayıcıda saklanır.",
     "نموذج أولي: لم يُربط تسجيل الدخول المؤسسي بعد. اختر شخصا لترى شاشته؛ لا توجد كلمة مرور. تُحفظ البيانات في هذا المتصفح.",
@@ -768,7 +768,7 @@ const M = {
   k10a: m("Son kontrol tamamlanır, iş biter; haber planlamadan yayına bütün aşamaları geçmiş olur.", "يكتمل التدقيق الأخير وينتهي العمل بعد مرور الخبر بكل المراحل.", "The final check is done; the story has passed every stage from planning to air."),
 
   /* Proje planı sayfası */
-  ppBaslik: m("Plannersflow · Planlama ve Birimler Arası Koordinasyon Platformu", "Plannersflow · منصة التخطيط والتنسيق بين الوحدات", "Plannersflow · Planning and Cross-Unit Coordination Platform"),
+  ppBaslik: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط غرفة الأخبار", "Plannersflow · Newsroom Planner"),
   ppOzet: m(
     "Haberlerin planlanmasından hazırlanmasına, muhabirlerin görevlendirilmesinden işin tamamlanmasına kadar bütün süreci tek platformda yönetmek için. Bugün e-posta, Excel ve birimlerin kendi takip yöntemleriyle yürüyen işler ortak bir sistemde birleşiyor.",
     "لإدارة المسار كله في منصة واحدة: من تخطيط الأخبار وإعدادها إلى تكليف المراسلين وإنجاز العمل. تجتمع في نظام مشترك أعمال تُدار اليوم بالبريد وملفات Excel وأساليب متابعة كل وحدة.",
