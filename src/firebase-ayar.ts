@@ -19,10 +19,10 @@ export interface FirebaseAyari {
 }
 
 const AYAR: FirebaseAyari = {
-  apiKey: "AIzaSyAy6HuCT0QNvdX-0apsRStde4b2mrhqzW8",
-  authDomain: "plannersflow-d03d0.firebaseapp.com",
-  projectId: "plannersflow-d03d0",
-  appId: "1:342673726023:web:e9611591ce44688d546f62",
+  apiKey: "AIzaSyB2HmZgg1J_kXqszuBuRAUA7vAZ_X3OyHM",
+  authDomain: "planners-flow-2026.firebaseapp.com",
+  projectId: "planners-flow-2026",
+  appId: "1:293900578655:web:7bde04c1c93d314f1990ea",
   kurucu: "adminplannersflow@gmail.com",
 };
 

@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "plannersflow-d03d0"
+    "default": "planners-flow-2026"
   },
   "targets": {
-    "plannersflow-d03d0": {
+    "planners-flow-2026": {
       "hosting": {
         "uygulama": [
-          "plannersflow-d03d0"
+          "planners-flow-2026"
         ]
       }
     }

@@ -1,5 +1,5 @@
 # Firebase Hosting'e yayın: main'e her gönderimde docs/ (derlenmiş uygulama)
-# plannersflow.net'e (projenin kendi sitesi plannersflow-d03d0) çıkıyor, Firestore kuralları da depodakiyle
+# plannersflow.net'e (projenin kendi sitesi planners-flow-2026) çıkıyor, Firestore kuralları da depodakiyle
 # eşitleniyor; kuralları konsola elle yapıştırmak gerekmesin.
 #
 # Anahtar: depo ayarlarında FIREBASE_SERVICE_ACCOUNT gizli değeri (Firebase
@@ -68,7 +68,7 @@ jobs:
             }
             fs.writeFileSync(yol, JSON.stringify(a));
             if (a.type !== "service_account" || !a.private_key || !a.client_email) { console.log("::error::Bu bir hizmet hesabı anahtarı değil ya da eksik."); process.exit(1); }
-            if (a.project_id !== "plannersflow-d03d0") { console.log("::error::Anahtar başka projenin: " + a.project_id); process.exit(1); }
+            if (a.project_id !== "planners-flow-2026") { console.log("::error::Anahtar başka projenin: " + a.project_id); process.exit(1); }
             console.log("Hesap: " + a.client_email);
             console.log("Anahtar kimliğinin başı: " + String(a.private_key_id).slice(0, 6));
           '
@@ -77,13 +77,13 @@ jobs:
         if: steps.anahtar.outputs.var == 'evet'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
-        run: npx --yes firebase-tools@13 deploy --only hosting:uygulama --project plannersflow-d03d0 --non-interactive
+        run: npx --yes firebase-tools@13 deploy --only hosting:uygulama --project planners-flow-2026 --non-interactive
 
       - name: Firestore kuralları
         if: steps.anahtar.outputs.var == 'evet'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
-        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project plannersflow-d03d0 --non-interactive
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project planners-flow-2026 --non-interactive
 
       - name: Anahtarı sil
         if: always() && steps.anahtar.outputs.var == 'evet'

@@ -8,7 +8,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   düzenlenmez, kaynak değişince yeniden derlenir.
 - Yayın iki yerde, ikisi de `main`'deki `docs/`'tan:
   - Firebase Hosting, `plannersflow.net` (projenin kendi sitesi
-    `plannersflow-d03d0.web.app`; alan adı Cloudflare'de, DNS kaydı
+    `planners-flow-2026.web.app`; alan adı Cloudflare'de, DNS kaydı
     "DNS only")
     (`.github/workflows/firebase-yayin.yml`; `firebase.json` hedefi
     `uygulama`). Aynı iş Firestore kurallarını da depodakiyle eşitler.
