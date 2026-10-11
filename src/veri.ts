@@ -177,9 +177,14 @@ export interface Kisi {
   oncekiKimlik?: string;
   /** Tam yöneticinin verdiği seçmeli hesap yetkileri; tam yönetici (hesapYoneticisi) hepsine sahip. */
   yetkiler?: HesapYetkisi[];
+  /** Planın ekip satırında yazılan ad parçası (PlanAdi); yoksa tam ad. */
+  planAdi?: PlanAdi;
 }
 
 /* Kullanıcılar sayfasının parça parça verilebilen işleri; yetki vermek ve tam yönetici yapmak bunların dışında, yalnız tam yöneticide. */
+/* Planın ekip satırında adın yazılan parçası; yoksa tam ad. Yazı uzamasın diye kurum adı ya da soyadı yazıyor. */
+export type PlanAdi = "ad" | "soyad";
+
 export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil"] as const;
 export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 

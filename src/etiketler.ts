@@ -26,6 +26,7 @@ import type {
   PlanDurum,
   Sehir,
   Ulke,
+  PlanAdi,
 } from "./veri";
 
 /*
@@ -264,4 +265,22 @@ export const ulkeAdi = (u: Ulke): Anahtar => `u_${u}`;
  */
 export const sehirAr = (s?: Sehir) => (s ? metin(sehirAdi(s), "ar") : "");
 export const kisiAr = (k?: { ad: Yazi }) => (k ? yaz(k.ad, "ar") : "");
+/* Arapça adın parçaları: "عبد المنعم", "أبو بكر" gibi bileşik ad tek parça sayılıyor, yoksa "عبد" tek başına yazılırdı. */
+const BILESIK = new Set(["عبد", "أبو", "ابو", "أبي", "بن", "ابن", "بنت"]);
+export const adParcalari = (tam: string) => {
+  const s = tam.trim().split(/\s+/).filter(Boolean);
+  const p: string[] = [];
+  for (let i = 0; i < s.length; i++) {
+    if (BILESIK.has(s[i]) && i + 1 < s.length) p.push(`${s[i]} ${s[++i]}`);
+    else p.push(s[i]);
+  }
+  return p;
+};
+export const planAdiYaz = (tam: string, secim?: PlanAdi) => {
+  const p = adParcalari(tam);
+  if (!secim || p.length < 2) return tam;
+  return secim === "ad" ? p[0] : p[p.length - 1];
+};
+/** Planın ekip satırındaki ad: kurum yazı uzamasın diye adı ya da soyadı yazıyor (Kisi.planAdi). */
+export const ekipAdi = (k?: { ad: Yazi; planAdi?: PlanAdi }) => (k ? planAdiYaz(yaz(k.ad, "ar"), k.planAdi) : "");
 export const satir = (...parcalar: (string | undefined)[]) => parcalar.filter(Boolean).join(" / ");

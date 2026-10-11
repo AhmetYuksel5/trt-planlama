@@ -2,12 +2,12 @@ import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { baslikEkle, canliSil, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { EKIP_GOREV_ADI, GOREV_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
+import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { EKIP_GOREV_ADI, GOREV_ADI, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { EKIP_GOREVLERI, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type NextDayPlan, type Paket } from "../../veri";
+import { EKIP_GOREVLERI, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
 
 /**
@@ -77,6 +77,33 @@ export function EkleDugmesi({ metin, onClick }: { metin: string; onClick: () => 
 /* --- 1. Çalışma ekibi --- */
 
 /** Ekibe kişi ekleme: plan ekranında bölümün altında, belgede pencerede. */
+/**
+ * Planın ekip satırında kişinin hangi adı yazılsın: tam ad, ad ya da
+ * soyad. Seçenekler adın kendisiyle görünüyor; seçim kişinin kaydında,
+ * bütün planlarda geçerli (kisiPlanAdi).
+ */
+export function PlanAdiSecici({ kisi, sinif = "girdi" }: { kisi: Kisi; sinif?: string }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const tam = kisiAr(kisi);
+  const parcalar = adParcalari(tam);
+  if (parcalar.length < 2) return null;
+  return (
+    <select
+      className={sinif}
+      value={kisi.planAdi ?? ""}
+      aria-label={t("planAdi")}
+      title={t("planAdi")}
+      onChange={(x) => ben && kisiPlanAdi(ben, kisi.id, (x.target.value || undefined) as PlanAdi | undefined)}
+      data-plan-adi={kisi.id}
+    >
+      <option value="">{tam}</option>
+      <option value="ad">{planAdiYaz(tam, "ad")}</option>
+      <option value="soyad">{planAdiYaz(tam, "soyad")}</option>
+    </select>
+  );
+}
+
 export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayPlan; gorev?: EkipGorevi; kapat: () => void }) {
   const { t, ad } = useDil();
   const v = useVeri();
@@ -144,7 +171,7 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
 }
 
 export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
-  const { t, ad } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [ekle, setEkle] = useState(false);
@@ -164,9 +191,10 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                 return (
                   <span key={e.kisiId} className={oncekiSinif(e.onceki, "cip")} title={e.onceki ? t("oncekiGunden") : undefined}>
                     <Avatar kisi={k} boy="kucuk" />
-                    {k ? ad(k) : "?"}
+                    {k ? <Icerik>{ekipAdi(k)}</Icerik> : "?"}
                     {duzenler ? (
                       <>
+                        {k && <PlanAdiSecici kisi={k} sinif="girdi ad-secici" />}
                         <input
                           className="girdi vardiya-girdi"
                           type="time"

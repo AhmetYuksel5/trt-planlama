@@ -22,6 +22,14 @@ import { EKIP_GOREVLERI, type Durum, type EkipGorevi } from "./veri";
 
 export class DesteklenmeyenDosya extends Error {}
 
+/*
+ * Haber başlığı satırının işareti. Başlık kurumun belgesinde biçimle
+ * (altı çizili) ayrılıyor, düz satırda ayrılmıyor: başlığın altındaki
+ * gelişmenin de "ŞEHİR /"u olmayabiliyor. İşaretli satır varsa yalnız
+ * onlar başlık; yoksa eski kural (eğik çizgisiz satır başlık).
+ */
+export const BASLIK_ISARETI = "## ";
+
 const xmlMetni = (s: string) => {
   const belge = new DOMParser().parseFromString(s, "application/xml");
   return [...belge.getElementsByTagName("w:p")].map((p) => {
@@ -30,7 +38,13 @@ const xmlMetni = (s: string) => {
       if (x.tagName === "w:t") metin += x.textContent ?? "";
       else if (x.tagName === "w:tab") metin += " ";
     }
-    return metin;
+    // Kurumun belgesinde haber başlığı altı çizili; yazısı olan her parça çiziliyse başlık.
+    const parcalar = [...p.getElementsByTagName("w:r")].filter((r) => (r.getElementsByTagName("w:t")[0]?.textContent ?? "").trim());
+    const cizili = (r: Element) => {
+      const u = r.getElementsByTagName("w:u")[0];
+      return !!u && u.getAttribute("w:val") !== "none";
+    };
+    return parcalar.length && parcalar.every(cizili) ? `${BASLIK_ISARETI}${metin}` : metin;
   });
 };
 
@@ -38,7 +52,7 @@ const xmlMetni = (s: string) => {
 const htmlMetni = (s: string) => {
   const belge = new DOMParser().parseFromString(s, "text/html");
   const BLOK = "h1,h2,h3,h4,h5,h6,p,li,td,th,div";
-  return [...belge.body.querySelectorAll(BLOK)].filter((x) => !x.querySelector(BLOK)).map((x) => x.textContent ?? "");
+  return [...belge.body.querySelectorAll(BLOK)].filter((x) => !x.querySelector(BLOK)).map((x) => (x.tagName === "H3" ? BASLIK_ISARETI : "") + (x.textContent ?? ""));
 };
 
 export const belgeSatirlari = async (dosya: File): Promise<string[]> => {
@@ -58,7 +72,7 @@ export const belgeSatirlari = async (dosya: File): Promise<string[]> => {
     const yazi = new TextDecoder().decode(veri);
     satirlar = /<(html|body|p|div|h\d)[\s>]/i.test(yazi) ? htmlMetni(yazi) : yazi.split(/\r?\n/);
   }
-  return satirlar.map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean);
+  return satirlar.map((s) => s.replace(/\s+/g, " ").replace(/\u200b/g, "").trim()).filter(Boolean);
 };
 
 /* --- Satırlar → taslak --- */
@@ -75,6 +89,8 @@ export interface PlanTaslagi {
   takipler: { yer?: string; metin: string }[];
   /** Kayıtta bulunamayan adlar. */
   bulunamayan: string[];
+  /** Ekipte olup kayıtta bulunamayanlar, göreviyle: toplu yüklemede kişi kaydı olarak açılıyor. */
+  yeniEkip: { ad: string; gorev: EkipGorevi; vardiya: string }[];
 }
 
 /* Harekeler, tatvil ve elif/te-marbuta/ye yazım farkları eşleşmeyi bozmasın. */
@@ -132,7 +148,7 @@ export const planTaslagi = (satirlar: string[], d: Durum): PlanTaslagi => {
     if (k.pasif) continue;
     for (const ad of [yaz(k.ad, "ar"), yaz(k.ad, "tr"), yaz(k.ad, "en")]) if (ad) kisiler.set(arSade(ad), k.id);
   }
-  const t: PlanTaslagi = { ekip: [], canlilar: [], basliklar: [], takipler: [], bulunamayan: [] };
+  const t: PlanTaslagi = { ekip: [], canlilar: [], basliklar: [], takipler: [], bulunamayan: [], yeniEkip: [] };
   const bulunamadi = (ad: string) => !t.bulunamayan.includes(ad) && t.bulunamayan.push(ad);
   /* "Ad 06G" → kişi ve saat */
   const kisiOku = (s: string) => {
@@ -140,35 +156,44 @@ export const planTaslagi = (satirlar: string[], d: Durum): PlanTaslagi => {
     const ad = (m?.[1] ?? s).trim();
     const kisiId = kisiler.get(arSade(ad));
     if (!kisiId && ad) bulunamadi(ad);
-    return { kisiId, saat: m?.[2] ? saatOku(m[2]) : "" };
+    return { kisiId, saat: m?.[2] ? saatOku(m[2]) : "", ad };
   };
   const gorevler = EKIP_GOREVLERI.map((g) => [arSade(metin(EKIP_GOREV_ADI[g], "ar")), g] as const);
-  const muhabirBasligi = new Set([arSade(metin("ciktiMuhabirler", "ar")), arSade(metin("ciktiMuhabir", "ar"))]);
+  // Kurumun belgesinde kadın muhabir için "المراسلة" de yazılıyor.
+  const muhabirBasligi = new Set([arSade(metin("ciktiMuhabirler", "ar")), arSade(metin("ciktiMuhabir", "ar")), arSade("المراسلة"), arSade("المراسلات")]);
+  const isaretli = satirlar.some((s) => s.startsWith(BASLIK_ISARETI));
 
   let bolum: Bolum | null = null;
   let alt: "gelisme" | "muhabir" | "paket" = "gelisme";
-  for (const satir of satirlar) {
-    const yeni = bolumBul(satir);
+  for (let satir of satirlar) {
+    const yeni = bolumBul(satir.replace(BASLIK_ISARETI, ""));
     if (yeni) {
       bolum = yeni;
       alt = "gelisme";
       continue;
     }
+    const baslikSatiri = satir.startsWith(BASLIK_ISARETI);
+    if (baslikSatiri) satir = satir.slice(BASLIK_ISARETI.length).trim();
     if (bolum === "ekip") {
       const i = satir.indexOf(":");
       if (i < 0) continue;
       const rol = arSade(satir.slice(0, i));
       const gorev = gorevler.find(([ad]) => ad === rol)?.[1] ?? "diger";
       for (const parca of satir.slice(i + 1).split("|")) {
-        const { kisiId, saat } = kisiOku(parca);
+        if (!parca.trim()) continue;
+        const { kisiId, saat, ad } = kisiOku(parca);
         if (kisiId && !t.ekip.some((e) => e.kisiId === kisiId)) t.ekip.push({ kisiId, gorev, vardiya: saat });
+        else if (!kisiId && ad && !t.yeniEkip.some((e) => arSade(e.ad) === arSade(ad))) t.yeniEkip.push({ ad, gorev, vardiya: saat });
       }
     } else if (bolum === "canli") {
       // "YER / konu · açıklama / 07G / muhabir"
       const p = satir.split("/").map((x) => x.trim());
       if (p.length < 2) continue;
+      // Saat ayrı parçada ("/ 07G /") ya da konunun sonunda ("... 2026. 11G").
+      const sondaki = p.length === 2 ? p[1].match(/\s+(\d{1,4}\s*G|TBC)\.?$/i) : null;
+      if (sondaki) p[1] = p[1].slice(0, sondaki.index).trim();
       const [konu, ...aciklama] = p[1].split(" · ");
-      const saatGmt = p[2] ? saatOku(p[2]) : "";
+      const saatGmt = sondaki ? saatOku(sondaki[1]) : p[2] ? saatOku(p[2]) : "";
       const ad = p.slice(saatGmt || /^TBC$/i.test(p[2] ?? "") ? 3 : 2).join(" / ");
       const muhabirId = ad ? kisiOku(ad).kisiId : undefined;
       t.canlilar.push({ yer: p[0], konu, aciklama: aciklama.join(" · "), saatGmt, muhabirId });
@@ -178,18 +203,29 @@ export const planTaslagi = (satirlar: string[], d: Durum): PlanTaslagi => {
         alt = "muhabir";
         continue;
       }
-      if (/^pkg$/i.test(s)) {
+      // Paket alt başlığı: "PKG", "PKGS", "LIVE+PKGS", "SOT أو PKG (...)"; paketler taslağa gelmiyor.
+      if (/^(live\s*\+\s*)?pkgs?$/i.test(s) || /^sot\b/i.test(s)) {
         alt = "paket";
         continue;
       }
-      if (!satir.includes("/")) {
+      if (isaretli ? baslikSatiri : !satir.includes("/")) {
         t.basliklar.push({ ad: satir, gelismeler: [], muhabirler: [] });
         alt = "gelisme";
         continue;
       }
       const b = t.basliklar.at(-1);
-      if (!b || alt === "paket") continue;
+      if (!b) continue;
       const { yer, metin: m } = yerAyir(satir);
+      /*
+       * Muhabir ya da paket listesinden sonra aynı başlıkta yeni gelişme
+       * gelebiliyor; alt başlık yazılmıyor. Ad kısa, paket "yer / başlık /
+       * muhabir"; uzun ve tek eğik çizgili satır gelişmedir.
+       */
+      const uzun = m.split(/\s+/).length > 6 && satir.split("/").length === 2;
+      if (alt !== "gelisme" && uzun) alt = "gelisme";
+      // Muhabir satırı hep "ŞEHİR / ad"; çizgisiz satır listenin bittiğini gösteriyor (yapım notu ya da yeni gelişme).
+      if (alt === "muhabir" && !satir.includes("/")) alt = "gelisme";
+      if (alt === "paket") continue;
       if (alt === "muhabir") {
         const { kisiId, saat } = kisiOku(m);
         if (kisiId && !b.muhabirler.some((x) => x.kisiId === kisiId)) b.muhabirler.push({ kisiId, yer, saat: saat || undefined });
@@ -204,3 +240,30 @@ export const planTaslagi = (satirlar: string[], d: Durum): PlanTaslagi => {
 };
 
 export const taslakBosMu = (t: PlanTaslagi) => !t.ekip.length && !t.canlilar.length && !t.basliklar.length && !t.takipler.length;
+
+/* --- Geçmiş planların toplu dosyası (tek seferlik yükleme) --- */
+
+export const GECMIS_TURU = "plannersflow-gecmis-planlar";
+export interface GecmisGun {
+  tarih: string;
+  satirlar: string[];
+}
+
+/**
+ * Toplu dosya: günler ve her günün belgesinin satırları (başlık "## "
+ * işaretli). Satırlar plan belgesinin kendisi; okuma kuralları tek
+ * yerde (planTaslagi) kalsın diye dosya yapılandırılmış plan taşımıyor.
+ */
+export const gecmisDosyaOku = (yazi: string): GecmisGun[] | null => {
+  try {
+    const x = JSON.parse(yazi.replace(/^\uFEFF/, ""));
+    if (x?.tur !== GECMIS_TURU || !Array.isArray(x.gunler)) return null;
+    const gunler = (x.gunler as unknown[]).filter(
+      (g): g is GecmisGun =>
+        !!g && typeof (g as GecmisGun).tarih === "string" && /^\d{4}-\d{2}-\d{2}$/.test((g as GecmisGun).tarih) && Array.isArray((g as GecmisGun).satirlar),
+    );
+    return gunler.length ? gunler.map((g) => ({ tarih: g.tarih, satirlar: g.satirlar.map(String).map((s) => s.replace(/\s+/g, " ").trim()).filter(Boolean) })) : null;
+  } catch {
+    return null;
+  }
+};

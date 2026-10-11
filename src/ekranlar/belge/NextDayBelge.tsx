@@ -3,7 +3,7 @@ import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
+import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, adParcalari, ekipAdi, kisiAr, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -32,7 +32,7 @@ import {
 import { vardiyaYaz } from "../../tarih";
 import { EKIP_GOREVLERI, baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGorevi, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
-import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, StoktanSecici } from "../nextday/Bolumler";
+import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici } from "../nextday/Bolumler";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
@@ -180,11 +180,11 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                             title={e.onceki ? t("oncekiGunden") : t("duzenle")}
                             onClick={() => ac({ tur: "ekipUye", kisiId: e.kisiId })}
                           >
-                            {kisiAdi(e.kisiId)} {vardiyaYaz(e.vardiya)}
+                            {ekipAdi(kisiBul(v, e.kisiId))} {vardiyaYaz(e.vardiya)}
                           </button>
                         </Fragment>
                       ))
-                    : uyeler.map((e) => `${kisiAdi(e.kisiId)} ${vardiyaYaz(e.vardiya)}`).join(" | ")}
+                    : uyeler.map((e) => `${ekipAdi(kisiBul(v, e.kisiId))} ${vardiyaYaz(e.vardiya)}`).join(" | ")}
                 </p>
               </BelgeSatiri>
             );
@@ -471,7 +471,9 @@ function PaketBaglantisi({ id }: { id: string }) {
 
 function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan; kisiId: string; kapat: () => void }) {
   const { t } = useDil();
+  const v = useVeri();
   const e = plan.ekip.find((x) => x.kisiId === kisiId);
+  const kisi = kisiBul(v, kisiId);
   if (!e) return null;
   const grup = plan.ekip.filter((x) => x.gorev === e.gorev);
   const sira = grup.findIndex((x) => x.kisiId === kisiId);
@@ -492,6 +494,12 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
           {t("vardiyaGmt")}
           <input type="time" value={e.vardiya} onChange={(x) => ekipGuncelle(ben, plan.id, kisiId, { vardiya: x.target.value })} />
         </label>
+        {kisi && adParcalari(kisiAr(kisi)).length > 1 && (
+          <label>
+            {t("planAdi")}
+            <PlanAdiSecici kisi={kisi} sinif="" />
+          </label>
+        )}
       </div>
       <SatirSeridi
         yukari={sira > 0 ? () => ekipTasi(ben, plan.id, kisiId, -1) : undefined}

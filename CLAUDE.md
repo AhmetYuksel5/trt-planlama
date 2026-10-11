@@ -213,7 +213,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlık (havuzda aynı adla varsa o), gelişme, muhabir ve takip gelir;
     hareket ve paket gelmez. Kişi Arapça adla eşleşir, bulunamayan
     önizlemede yazılır. Gelenler şablondan gelen gibi `onceki` işaretli;
-    eski ikili .doc okunmaz, .docx istenir.
+    eski ikili .doc okunmaz, .docx istenir. Haber başlığı satırı belgede
+    biçimle ayrılır: .docx'te altı çizili paragraf, HTML'de h3, düz
+    metinde "## " (`BASLIK_ISARETI`); işaretli satır varsa yalnız onlar
+    başlık, yoksa eğik çizgisiz satır başlık.
+  - Geçmiş planları toplu yükleme (tek seferlik, gerçek kip; Next Day
+    planları sayfasında simge; `eylemler.ts → gecmisPlanlariYukle`):
+    dosya `{tur: "plannersflow-gecmis-planlar", gunler: [{tarih,
+    satirlar}]}`, satırlar belgenin kendisi ve aynı okuyucudan geçer.
+    Ekipte adı geçip kayıtta olmayan hesapsız kişi olarak açılır
+    (`kontrolBekliyor`; birimi ve görevi ekip görevinden, `EKIP_KISISI`),
+    yönetici tam adını Kullanıcılar'da düzeltir. Günün planı yoksa açılır
+    (geçmiş gün devredilmiş), varsa içine eklenir; ikinci yüklemede kişi,
+    başlık, gelişme ve canlı çoğalmaz. Muhabir yalnız kayıttakiyle eşleşir:
+    önce muhabir listesi (Excel), sonra planlar. Gerçek adlar depoya ve
+    demoya girmez; dosya gerçek sitede yüklenir.
+  - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
+    yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
+    ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün
+    planlamacılar seçer (`kisiPlanAdi`, `planDuzenle`): ekip çipinde ve
+    belgedeki ekip penceresinde, seçenekler adın kendisiyle.
   - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
     Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez. Başlık satırı
     da çıktıdaki gibi sağdan başlar (`.bolum.ar > summary`), gövde

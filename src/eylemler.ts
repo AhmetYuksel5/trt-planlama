@@ -4,7 +4,7 @@ import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGideb
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
-import { arSade, type PlanTaslagi } from "./planAktar";
+import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import type { Yazi } from "./dil";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
@@ -29,6 +29,8 @@ import {
   planBul,
   type Birim,
   type Gorev,
+  type EkipGorevi,
+  type PlanAdi,
   type Rol,
   type BolmeEkseni,
   type CanliYayin,
@@ -2202,14 +2204,28 @@ export const planGeriAl = (ben: Kisi, planId: string): "tamam" | "bos" | "yetkis
  * çoğalmıyor: aynı kişi, aynı başlık bir kez.
  */
 export const planIceAktar = (ben: Kisi, planId: string, t: PlanTaslagi, dosya: string): number => {
-  let d = getir();
+  const d = getir();
   const plan = planBul(d, planId);
   if (!plan || !planIcerikDuzenler(ben, plan)) return 0;
+  const r = taslakUygula(d, ben, plan, t, dosya, true);
+  if (!r.sayi) return 0;
+  kaydet(hareketYaz(r.d, { kisiId: ben.id, tip: "planIceAktarildi", planId, veri: { tarih: plan.tarih, dosya, sayi: String(r.sayi) } }));
+  return r.sayi;
+};
+
+/*
+ * Taslağı plana yazan ortak parça (tek plan aktarımı ve toplu geçmiş
+ * yüklemesi). `isaretle`: açık plana gelen kayıt "gözden geçirilecek"
+ * (onceki) işaretli; kapanmış geçmiş planda işaretin anlamı yok.
+ */
+const taslakUygula = (d: Durum, ben: Kisi, plan: NextDayPlan, t: PlanTaslagi, dosya: string, isaretle: boolean): { d: Durum; sayi: number } => {
+  const planId = plan.id;
+  const isaret = isaretle ? ({ onceki: true } as const) : {};
   let sayi = 0;
   const ekip = [...plan.ekip];
   for (const e of t.ekip)
     if (!ekip.some((x) => x.kisiId === e.kisiId)) {
-      ekip.push({ ...e, onceki: true });
+      ekip.push({ ...e, ...isaret });
       sayi++;
     }
   const havuz = [...d.basliklar];
@@ -2224,8 +2240,11 @@ export const planIceAktar = (ben: Kisi, planId: string, t: PlanTaslagi, dosya: s
     kaynakTuru: "kurum",
     kaynakAdi: dosya,
     tarih: simdi(),
-    onceki: true,
+    ...isaret,
   });
+  // Aynı belge ikinci kez gelince (muhabir listesi sonradan yüklendi) yalnız eksikler eklensin, gelişme çoğalmasın.
+  const varMi = (g: { yer?: string; metin: string }, planBaslikId?: string) =>
+    d.gelismeler.some((x) => x.planId === planId && x.planBaslikId === planBaslikId && x.metin === g.metin && (x.yer ?? "") === (g.yer ?? ""));
   for (const b of t.basliklar) {
     const ad = arSade(b.ad);
     const bulunan = havuz.filter((x) => arSade(x.ad) === ad).sort((x, y) => Number(y.aktif) - Number(x.aktif))[0];
@@ -2243,25 +2262,100 @@ export const planIceAktar = (ben: Kisi, planId: string, t: PlanTaslagi, dosya: s
     }
     for (const m of b.muhabirler)
       if (!pb.muhabirler.some((x) => x.kisiId === m.kisiId)) {
-        pb.muhabirler.push({ kisiId: m.kisiId, ...(m.yer && { yer: m.yer }), ...(m.saat && { saat: m.saat }), onceki: true });
+        pb.muhabirler.push({ kisiId: m.kisiId, ...(m.yer && { yer: m.yer }), ...(m.saat && { saat: m.saat }), ...isaret });
         sayi++;
       }
-    for (const g of b.gelismeler) gelismeler.push(gelisme(g, pb.id));
+    for (const g of b.gelismeler) if (!varMi(g, pb.id)) gelismeler.push(gelisme(g, pb.id));
   }
-  const op = planOperasyonDuzenler(ben, plan);
-  if (op) gelismeler.push(...t.takipler.map((g) => gelisme(g)));
-  const canlilar: CanliYayin[] = op
-    ? t.canlilar.map((c) => ({ id: kimlik("cy"), planId, konu: c.konu, aciklama: c.aciklama, tarih: plan.tarih, saatGmt: c.saatGmt, yer: c.yer, muhabirId: c.muhabirId, notlar: "", onceki: true }))
-    : [];
+  gelismeler.push(...t.takipler.filter((g) => !varMi(g)).map((g) => gelisme(g)));
+  const canlilar: CanliYayin[] = t.canlilar.filter((c) => !d.canliYayinlar.some((x) => x.planId === planId && x.konu === c.konu && x.saatGmt === c.saatGmt)).map((c) => ({ id: kimlik("cy"), planId, konu: c.konu, aciklama: c.aciklama, tarih: plan.tarih, saatGmt: c.saatGmt, yer: c.yer, muhabirId: c.muhabirId, notlar: "", ...isaret }));
   sayi += gelismeler.length + canlilar.length;
-  if (!sayi) return 0;
+  if (!sayi) return { d, sayi };
   // Değişmeyen plan nesnesine dokunulmuyor; burada plan her zaman değişiyor.
   const basliklar = pbler.map((b, i) => {
     const eski = plan.basliklar[i];
     return eski && eski.id === b.id && eski.muhabirler.length === b.muhabirler.length ? eski : b;
   });
   d = planGuncelle({ ...d, basliklar: havuz.length === d.basliklar.length ? d.basliklar : havuz }, planId, (p) => ({ ...p, ekip: ekip.length === p.ekip.length ? p.ekip : ekip, basliklar }));
-  d = { ...d, gelismeler: [...d.gelismeler, ...gelismeler], canliYayinlar: [...d.canliYayinlar, ...canlilar] };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "planIceAktarildi", planId, veri: { tarih: plan.tarih, dosya, sayi: String(sayi) } }));
-  return sayi;
+  return { d: { ...d, gelismeler: [...d.gelismeler, ...gelismeler], canliYayinlar: [...d.canliYayinlar, ...canlilar] }, sayi };
+};
+
+/* Ekip görevinden kişi kaydının birimi ve görevi: "Ekibe ekle" onu bu görevin listesinde göstersin (varsayilanEkipGorevi'nin tersi). */
+const EKIP_KISISI: Record<EkipGorevi, { birim: Birim; gorev: Gorev }> = {
+  yapimciSef: { birim: "newsdesk", gorev: "yonetici" },
+  bultenYapimcisi: { birim: "newsdesk", gorev: "newsdesk" },
+  sunucu: { birim: "newsdesk", gorev: "sunucu" },
+  muhabirMasasi: { birim: "planlama", gorev: "planlamaci" },
+  roportajYapimcisi: { birim: "program", gorev: "programEditoru" },
+  tercuman: { birim: "newsdesk", gorev: "tercuman" },
+  editor: { birim: "output", gorev: "editor" },
+  diger: { birim: "newsdesk", gorev: "koordinator" },
+};
+
+export interface GecmisYukleme {
+  plan: number;
+  yeniPlan: number;
+  kisi: number;
+  kayit: number;
+}
+
+/**
+ * Geçmiş planları toplu yüklemek (tek seferlik, gerçek kipte): her gün
+ * belgenin satırlarıyla geliyor (planAktar.ts → planTaslagi okuyor).
+ * Ekipte adı geçip kayıtta olmayan kişi hesapsız kişi olarak açılıyor,
+ * "kontrol bekliyor" işaretli: belgede çoğu kez tek adı yazılı, yönetici
+ * Kullanıcılar'da tam adını düzeltiyor. O günün planı yoksa açılıyor
+ * (geçmiş gün devredilmiş sayılıyor), varsa içine ekleniyor; ikinci
+ * yüklemede kişi, başlık ve ekip çoğalmıyor. Muhabir yalnız kayıttakiyle
+ * eşleşiyor (muhabir listesi Excel'den geliyor, ad çeşitlemesi çift kayıt
+ * açmasın). Gerçek kişi adı demoya girmesin diye yalnız gerçek kipte.
+ */
+export const gecmisPlanlariYukle = (ben: Kisi, gunler: { tarih: string; satirlar: string[] }[], dosya: string): GecmisYukleme | null => {
+  if (!GERCEK || !yapabilir(ben, "planDuzenle") || !hesapYetkisi(ben, "hesapsizKisi")) return null;
+  let d = getir();
+  const sonuc: GecmisYukleme = { plan: 0, yeniPlan: 0, kisi: 0, kayit: 0 };
+  // Önce kişiler: bütün günlerin ekibinde bulunamayanlar, ilk göründükleri görevle bir kez.
+  const yeniler = new Map<string, { ad: string; gorev: EkipGorevi }>();
+  for (const g of gunler) for (const e of planTaslagi(g.satirlar, d).yeniEkip) if (!yeniler.has(arSade(e.ad))) yeniler.set(arSade(e.ad), e);
+  const kisiler: Kisi[] = [...yeniler.values()].map((e) => ({
+    ...yeniKisi({ id: kimlik("kh"), ad: { tr: e.ad, ar: e.ad, en: e.ad }, eposta: "", ...EKIP_KISISI[e.gorev], rol: "personel", hesapYoneticisi: false }),
+    hesapsiz: true,
+    kontrolBekliyor: true,
+  }));
+  if (kisiler.length) d = { ...d, kisiler: [...d.kisiler, ...kisiler] };
+  sonuc.kisi = kisiler.length;
+  for (const g of [...gunler].sort((x, y) => x.tarih.localeCompare(y.tarih))) {
+    let plan = d.planlar.find((p) => p.tarih === g.tarih);
+    const vardi = !!plan;
+    if (!plan) {
+      plan = { id: kimlik("nd"), tarih: g.tarih, durum: g.tarih < bugun() ? "devralindi" : "taslak", ekip: [], gorevlendirmeler: [], hazirPaketler: [], basliklar: [], olusturan: ben.id, olusturma: simdi() };
+      d = { ...d, planlar: [plan, ...d.planlar] };
+      sonuc.yeniPlan++;
+    }
+    // Kapanmış plana yazmak yalnız bu yüklemede; açık plana gelen "gözden geçirilecek" işaretli.
+    const acik = plan.durum === "taslak" || plan.durum === "toplantida";
+    const r = taslakUygula(d, ben, plan, planTaslagi(g.satirlar, d), dosya, vardi && acik);
+    d = r.d;
+    sonuc.plan++;
+    sonuc.kayit += r.sayi;
+    d = hareketYaz(d, { kisiId: ben.id, tip: "planIceAktarildi", planId: plan.id, veri: { tarih: g.tarih, dosya, sayi: String(r.sayi) } });
+  }
+  kaydet(d);
+  return sonuc;
+};
+
+/** Planın ekip satırında kişinin adının hangi parçası yazılsın: bütün planlamacılar seçiyor, kayıtta kişinin üzerinde. */
+export const kisiPlanAdi = (ben: Kisi, kisiId: string, secim: PlanAdi | undefined) => {
+  if (!yapabilir(ben, "planDuzenle")) return false;
+  const d = getir();
+  if (!d.kisiler.some((k) => k.id === kisiId)) return false;
+  kaydet({
+    ...d,
+    kisiler: d.kisiler.map((k) => {
+      if (k.id !== kisiId) return k;
+      const { planAdi: _, ...kalan } = k;
+      return secim ? { ...kalan, planAdi: secim } : kalan;
+    }),
+  });
+  return true;
 };

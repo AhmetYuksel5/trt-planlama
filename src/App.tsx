@@ -187,7 +187,7 @@ export default function App() {
         else if (plan && yol.alt === "belge")
           icerik = <NextDayBelge ben={ben} plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
-        else icerik = <NextDayListe />;
+        else icerik = <NextDayListe ben={ben} />;
         break;
       }
       case "haftalik": {

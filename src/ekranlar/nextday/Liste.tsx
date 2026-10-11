@@ -1,9 +1,14 @@
-import { CalendarDays, Printer } from "lucide-react";
-import { Bos, Kart, Rozet } from "../../bilesenler/Parcalar";
+import { CalendarDays, Printer, Upload } from "lucide-react";
+import { useState } from "react";
+import { Bos, Icerik, Kart, Pencere, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { useVeri } from "../../veri";
+import { gecmisPlanlariYukle } from "../../eylemler";
+import { GERCEK } from "../../kip";
+import { arSade, gecmisDosyaOku, planTaslagi, type GecmisGun } from "../../planAktar";
+import { getir, useVeri, type Kisi } from "../../veri";
+import { hesapYetkisi, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 
@@ -13,14 +18,28 @@ import { SayfaBasi } from "../ana/Planlama";
  * kendisi açıyor (eylemler.ts → yarinPlaniniAc). Liste yeniden eskiye;
  * yarının planı en üstte.
  */
-export default function NextDayListe() {
+export default function NextDayListe({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
+  const [yukle, setYukle] = useState(false);
   const planlar = [...v.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih));
+  // Geçmiş planların tek seferlik yüklemesi: gerçek kipte, ekip adlarından kişi kaydı açabilen planlamacı.
+  const yukleyebilir = GERCEK && yapabilir(ben, "planDuzenle") && hesapYetkisi(ben, "hesapsizKisi");
 
   return (
     <>
-      <SayfaBasi ikon={<CalendarDays size={26} />} baslik={t("nextdayPlanlari")} />
+      <SayfaBasi
+        ikon={<CalendarDays size={26} />}
+        baslik={t("nextdayPlanlari")}
+        sagUc={
+          yukleyebilir && (
+            <button type="button" className="dugme dugme-ikincil dugme-ikon" title={t("gecmisPlanlar")} aria-label={t("gecmisPlanlar")} onClick={() => setYukle(true)} data-gecmis-planlar>
+              <Upload size={16} />
+            </button>
+          )
+        }
+      />
+      {yukle && <GecmisPenceresi ben={ben} kapat={() => setYukle(false)} />}
       <Kart baslik={t("planlar")} ikon={<CalendarDays size={18} />}>
         {planlar.length === 0 ? (
           <Bos metin={t("planYok")} />
@@ -83,5 +102,80 @@ export default function NextDayListe() {
         )}
       </Kart>
     </>
+  );
+}
+
+/* Toplu dosyanın önizlemesi: kaç gün, kaç kayıt, hangi ekip adları kişi olarak açılacak, hangi muhabir bulunamadı. */
+function GecmisPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t, dil } = useDil();
+  const [dosya, setDosya] = useState<{ ad: string; gunler: GecmisGun[] } | null>(null);
+  const [hata, setHata] = useState(false);
+  const sec = async (f?: File) => {
+    setDosya(null);
+    setHata(false);
+    if (!f) return;
+    const gunler = gecmisDosyaOku(await f.text());
+    if (gunler) setDosya({ ad: f.name, gunler });
+    else setHata(true);
+  };
+  const d = getir();
+  const taslaklar = dosya?.gunler.map((g) => ({ g, x: planTaslagi(g.satirlar, d) })) ?? [];
+  const yeniEkip = new Map<string, string>();
+  for (const { x } of taslaklar) for (const e of x.yeniEkip) yeniEkip.set(arSade(e.ad), e.ad);
+  const bulunamayan = [...new Set(taslaklar.flatMap(({ x }) => x.bulunamayan).filter((a) => !yeniEkip.has(arSade(a))))];
+  const kayit = taslaklar.reduce((n, { x }) => n + x.ekip.length + x.canlilar.length + x.takipler.length + x.basliklar.reduce((m, b) => m + 1 + b.gelismeler.length + b.muhabirler.length, 0), 0);
+  const yeniPlan = taslaklar.filter(({ g }) => !d.planlar.some((p) => p.tarih === g.tarih)).length;
+  const yukle = () => {
+    if (!dosya) return;
+    const r = gecmisPlanlariYukle(ben, dosya.gunler, dosya.ad);
+    if (r) bildir(t("gecmisYuklendi", { plan: r.plan, kisi: r.kisi }));
+    kapat();
+  };
+  return (
+    <Pencere
+      baslik={t("gecmisPlanlar")}
+      kapat={kapat}
+      altBilgi={
+        <button className="dugme" disabled={!dosya} onClick={yukle} data-gecmis-yukle>
+          <Upload size={16} /> {t("gecmisYukle")}
+        </button>
+      }
+    >
+      <div className="form">
+        <label>
+          {t("gecmisDosya")}
+          <input type="file" accept=".json,application/json" onChange={(e) => sec(e.target.files?.[0])} data-gecmis-dosya />
+        </label>
+      </div>
+      {hata && (
+        <p className="not-kutu uyari" role="alert">
+          {t("gecmisGecersiz")}
+        </p>
+      )}
+      {dosya && (
+        <div className="aktar-ozet" data-gecmis-ozet>
+          <p>
+            <b>{t("gecmisOzet", { plan: dosya.gunler.length, yeni: yeniPlan, kayit })}</b>
+          </p>
+          <ul>
+            {taslaklar.map(({ g, x }) => (
+              <li key={g.tarih}>
+                {tarihYaz(g.tarih, dil, "tam")}: {t("baslik")} {x.basliklar.length} · {t("calismaEkibi")} {x.ekip.length + x.yeniEkip.length}
+              </li>
+            ))}
+          </ul>
+          {yeniEkip.size > 0 && (
+            <p data-gecmis-yeni-kisi={yeniEkip.size}>
+              {t("gecmisYeniKisiler")}: <Icerik>{[...yeniEkip.values()].join("، ")}</Icerik>
+            </p>
+          )}
+          {bulunamayan.length > 0 && (
+            <p className="not-kutu uyari" data-gecmis-bulunamayan>
+              {t("aktarBulunamayan")}: <Icerik>{bulunamayan.join("، ")}</Icerik>
+            </p>
+          )}
+        </div>
+      )}
+    </Pencere>
   );
 }
