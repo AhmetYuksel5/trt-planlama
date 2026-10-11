@@ -53,9 +53,18 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
+            const yol = process.env.RUNNER_TEMP + "/anahtar.json";
+            // Yapıştırırken araya giren boşluk ve karakterler: { ile } arası alınıyor.
+            const ham = fs.readFileSync(yol, "utf8").replace(/^\uFEFF/, "");
+            const bas = ham.indexOf("{"), son = ham.lastIndexOf("}");
             let a;
-            try { a = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/anahtar.json", "utf8")); }
-            catch (e) { console.log("::error::Anahtar JSON değil; dosyanın tamamı ({ ile } arası) kopyalanmamış olabilir."); process.exit(1); }
+            try { a = JSON.parse(ham.slice(bas, son + 1)); }
+            catch (e) {
+              console.log("::error::Anahtar JSON değil; dosyanın tamamı kopyalanmamış olabilir.");
+              console.log("Uzunluk: " + ham.length + ", { var: " + (bas >= 0) + ", } var: " + (son >= 0) + ", özel anahtar satırı var: " + ham.includes("BEGIN PRIVATE KEY") + ", sonu var: " + ham.includes("END PRIVATE KEY"));
+              process.exit(1);
+            }
+            fs.writeFileSync(yol, JSON.stringify(a));
             if (a.type !== "service_account" || !a.private_key || !a.client_email) { console.log("::error::Bu bir hizmet hesabı anahtarı değil ya da eksik."); process.exit(1); }
             if (a.project_id !== "plannersflow-d03d0") { console.log("::error::Anahtar başka projenin: " + a.project_id); process.exit(1); }
             console.log("Hesap: " + a.client_email);
