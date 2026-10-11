@@ -23,7 +23,7 @@ const AYAR: FirebaseAyari = {
   authDomain: "plannersflow-d03d0.firebaseapp.com",
   projectId: "plannersflow-d03d0",
   appId: "1:342673726023:web:e9611591ce44688d546f62",
-  kurucu: "",
+  kurucu: "adminplannersflow@gmail.com",
 };
 
 /*

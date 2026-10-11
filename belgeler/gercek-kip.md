@@ -44,10 +44,10 @@ Kurucu girişte **Etkinleştirme bağlantısı iste** ile bağlantı alır, şif
 3. **Authentication › Settings › Authorized domains** listesine `ahmetyuksel5.github.io` adresini ekleyin. Depo adı değişirse aynı alan adı kalır.
 4. **Authentication › Templates** bölümünde e-posta şablonlarının dilini Türkçe yapın; isterseniz gönderen adını da değiştirin.
 5. **Firestore Database** oluşturun (production mode).
-6. `firestore.rules` dosyasındaki `KURUCU_EPOSTA@ornek.com` yerine kurucunun adresini yazın. Kuralları yayımlamanın iki yolu var:
+6. Kuralları yayımlayın (kurucunun adresi `firestore.rules`'ta yazılı). İki yol var:
    - **Firestore › Rules** sekmesine dosyanın içeriğini yapıştırıp yayımlamak;
    - `firebase deploy --only firestore:rules` komutunu çalıştırmak.
-7. Proje ayarlarındaki web uygulaması yapılandırmasından `apiKey`, `authDomain`, `projectId` ve `appId` değerlerini ve kurucunun e-postasını bana iletin; `src/firebase-ayar.ts`'e yazıp derleyeceğim.
+7. Web uygulamasının `apiKey`, `authDomain`, `projectId` ve `appId` değerleri ve kurucunun e-postası `src/firebase-ayar.ts`'te. Şu anki proje: `plannersflow-d03d0`, kurucu `adminplannersflow@gmail.com`.
 
 Bu değerler gizli değildir: tarayıcıya giden web uygulaması kimliğidir. Erişimi değerler değil, kurallar sınırlar.
 

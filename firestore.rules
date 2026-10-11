@@ -14,7 +14,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{veritabani}/documents {
-    function kurucuEposta() { return "KURUCU_EPOSTA@ornek.com"; }
+    function kurucuEposta() { return "adminplannersflow@gmail.com"; }
 
     function oturum() { return request.auth != null; }
     function eposta() { return request.auth.token.email.lower(); }
