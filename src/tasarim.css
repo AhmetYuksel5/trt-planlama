@@ -286,6 +286,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border: 1px solid var(--cizgi); background: var(--yuzey); border-radius: var(--yaricap);
 }
 .ikon-dugme:hover { background: var(--yuzey-2); }
+/* WhatsApp'ın kendi yeşili: tanınsın diye markanın rengi, tasarım dilinin vurgusu değil. */
+.ikon-dugme.whatsapp { --whatsapp: #25d366; color: #fff; background: var(--whatsapp); border-color: var(--whatsapp); }
+.ikon-dugme.whatsapp:hover { filter: brightness(.95); background: var(--whatsapp); }
+.kisi-whatsapp { display: flex; align-items: center; gap: var(--ara-2); }
 .ikon-dugme .rozet-say {
   position: absolute; top: -5px; inset-inline-end: -5px;
   background: var(--marka); color: #fff; font-size: 10px; font-weight: 700;

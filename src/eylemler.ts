@@ -2,6 +2,7 @@ import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimA
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
+import type { MuhabirTaslagi } from "./iceAktar";
 import type { Yazi } from "./dil";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
@@ -1709,6 +1710,43 @@ export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: Birim; gorev: 
   };
   kaydet({ ...d, kisiler: [...d.kisiler, yeni] });
   return yeni.id;
+};
+
+/*
+ * Kurumun muhabir listesi (iceAktar.ts) hesapsız muhabir olarak, tek
+ * yazışta. Zaten kayıtlı olan (aynı e-posta ya da aynı Arapça ad) atlanıyor:
+ * liste ikinci kez yüklenince kişi çoğalmasın. Hepsi hesapsız; yönetici
+ * zamanla "Hesaba bağla" ile davet edip etkinleştiriyor.
+ */
+export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {
+  if (!GERCEK || !hesapYetkisi(ben, "hesapsizKisi")) return null;
+  const d = getir();
+  const epostalar = new Set(d.kisiler.flatMap((k) => [k.eposta, k.kisiselEposta ?? ""]).filter(Boolean).map((e) => e.toLowerCase()));
+  const adlar = new Set(d.kisiler.map((k) => (typeof k.ad === "string" ? k.ad : k.ad.ar).trim()));
+  const eklenen: Kisi[] = [];
+  let atlanan = 0;
+  taslaklar.forEach((t, i) => {
+    const var_ = (t.eposta && epostalar.has(t.eposta)) || (t.kisiselEposta && epostalar.has(t.kisiselEposta)) || adlar.has(t.adAr.trim());
+    if (var_) {
+      atlanan++;
+      return;
+    }
+    const k: Kisi = {
+      ...yeniKisi({ id: `${kimlik("kh")}${i}`, ad: { tr: t.adLatin || t.adAr, ar: t.adAr, en: t.adLatin || t.adAr }, eposta: t.eposta, birim: "muhabir", gorev: "muhabir", rol: "personel", hesapYoneticisi: false }),
+      sehir: t.sehir,
+      ...(t.telefon ? { telefon: t.telefon } : {}),
+      ...(t.kisaltma ? { kisaltma: t.kisaltma } : {}),
+      ...(t.kisiselEposta ? { kisiselEposta: t.kisiselEposta } : {}),
+      ...(t.irtibat ? { irtibat: t.irtibat } : {}),
+      ...(t.calisma ? { calisma: t.calisma } : {}),
+      hesapsiz: true,
+    };
+    eklenen.push(k);
+    if (t.eposta) epostalar.add(t.eposta);
+    adlar.add(t.adAr.trim());
+  });
+  if (eklenen.length) kaydet({ ...d, kisiler: [...d.kisiler, ...eklenen] });
+  return { eklenen: eklenen.length, atlanan };
 };
 
 /*

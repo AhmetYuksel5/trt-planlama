@@ -1,10 +1,11 @@
-import { Copy, KeyRound, Link2, Mail, Plus, RotateCcw, Send, UserCog, UserPlus, X } from "lucide-react";
+import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
-import { hesapsizKisiEkle, kisiHesabi, kisiPozisyonu, kisiYetkileri } from "../eylemler";
+import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
+import { hesapsizKisiEkle, kisiHesabi, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { firebaseYukle } from "../kip";
 import { BIRIMLER, GOREVLER, HESAP_YETKILERI, useVeri, type Birim, type Gorev, type HesapYetkisi, type Kisi, type Rol } from "../veri";
 import { hesapYetkisi } from "../yetki";
@@ -77,6 +78,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
   const [duzenlenen, setDuzenlenen] = useState<Kisi | null>(null);
   const [baglanan, setBaglanan] = useState<Kisi | null>(null);
   const [yetkiVerilen, setYetkiVerilen] = useState<Kisi | null>(null);
+  const [aktar, setAktar] = useState(false);
   const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
 
   // Yalnız yetkisi olan dinliyor: kurallar öbürüne okutmuyor, boşuna hata vermesin.
@@ -158,7 +160,17 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
     <>
       <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />
       {ekleyebilir && (
-        <Kart baslik={t("kisiEkle")} ikon={<UserPlus size={18} />}>
+        <Kart
+          baslik={t("kisiEkle")}
+          ikon={<UserPlus size={18} />}
+          sagUc={
+            hesapsizYetkisi && (
+              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAktar(true)} data-excel-aktar>
+                <FileSpreadsheet size={14} /> {t("excelAktar")}
+              </button>
+            )
+          }
+        >
           <form className="form" onSubmit={ekle} data-davet-formu>
             {davetYetkisi && hesapsizYetkisi && (
               <div className="sekmeler" role="tablist" aria-label={t("kisiEkle")}>
@@ -413,7 +425,116 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
       {duzenlenen && <PozisyonPenceresi ben={ben} kisi={duzenlenen} kapat={() => setDuzenlenen(null)} />}
       {baglanan && <BaglaPenceresi ben={ben} kisi={baglanan} kapat={() => setBaglanan(null)} />}
       {yetkiVerilen && <YetkiPenceresi ben={ben} kisi={yetkiVerilen} kapat={() => setYetkiVerilen(null)} />}
+      {aktar && <AktarPenceresi ben={ben} kapat={() => setAktar(false)} />}
     </>
+  );
+}
+
+/*
+ * Kurumun muhabir listesini (Excel) hesapsız muhabir olarak alır. Dosya
+ * tarayıcıda okunuyor, sunucuya ya da depoya gitmiyor; önce önizleme,
+ * onayla tek yazışta kayda.
+ */
+function AktarPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [liste, setListe] = useState<MuhabirTaslagi[] | null>(null);
+  const [hata, setHata] = useState(false);
+  const [bekle, setBekle] = useState(false);
+  const sec = async (dosya?: File) => {
+    if (!dosya) return;
+    setHata(false);
+    setBekle(true);
+    try {
+      const l = muhabirTaslaklari(await xlsxOku(await dosya.arrayBuffer()));
+      setListe(l);
+      if (!l.length) setHata(true);
+    } catch (e) {
+      console.error(e);
+      setHata(true);
+      setListe(null);
+    } finally {
+      setBekle(false);
+    }
+  };
+  // Önizlemede kayıtlı olanlar işaretli; eylem de aynı ölçüyle atlıyor.
+  const epostalar = new Set(v.kisiler.flatMap((k) => [k.eposta, k.kisiselEposta ?? ""]).filter(Boolean).map((e) => e.toLowerCase()));
+  const adlar = new Set(v.kisiler.map((k) => (typeof k.ad === "string" ? k.ad : k.ad.ar).trim()));
+  const kayitli = (m: MuhabirTaslagi) => (!!m.eposta && epostalar.has(m.eposta)) || (!!m.kisiselEposta && epostalar.has(m.kisiselEposta)) || adlar.has(m.adAr.trim());
+  const yeni = (liste ?? []).filter((m) => !kayitli(m));
+  const taninmayan = (liste ?? []).filter((m) => m.taninmadi);
+  const ekle = () => {
+    const r = muhabirleriIceAktar(ben, liste ?? []);
+    if (r) {
+      bildir(t("aktarSonuc", { n: String(r.eklenen), atlanan: String(r.atlanan) }));
+      kapat();
+    }
+  };
+  return (
+    <Pencere baslik={t("excelAktar")} kapat={kapat} genis>
+      <div className="form" data-aktar-penceresi>
+        <label>
+          {t("aktarDosya")}
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(e) => sec(e.target.files?.[0])} data-aktar-dosya />
+        </label>
+        {bekle && <p>{t("yukleniyor")}</p>}
+        {hata && <p className="not-kutu uyari">{t("aktarOkunamadi")}</p>}
+        {liste && liste.length > 0 && (
+          <>
+            <p data-aktar-ozet>{t("aktarOzet", { n: String(liste.length), yeni: String(yeni.length), kayitli: String(liste.length - yeni.length) })}</p>
+            {taninmayan.length > 0 && (
+              <p className="not-kutu uyari" data-aktar-taninmayan>
+                {t("aktarTaninmayan", { liste: taninmayan.map((m) => m.konum || "—").join(", ") })}
+              </p>
+            )}
+            <div className="tablo-sar">
+              <table className="tablo kartli">
+                <thead>
+                  <tr>
+                    <th>{t("ad")}</th>
+                    <th>{t("konum")}</th>
+                    <th>{t("telefon")}</th>
+                    <th>{t("eposta")}</th>
+                    <th>{t("durum")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liste.map((m, i) => (
+                    <tr key={i} data-aktar-satir>
+                      <td className="birincil">
+                        <bdi>{m.adAr}</bdi>
+                        <small className="sonuk ince">
+                          <bdi>{m.adLatin}</bdi>
+                        </small>
+                      </td>
+                      <td data-etiket={t("konum")}>
+                        {t(sehirAdi(m.sehir))}
+                        {m.taninmadi && <small className="sonuk"> · {m.konum}</small>}
+                      </td>
+                      <td data-etiket={t("telefon")}>
+                        <bdi>{m.telefon || "—"}</bdi>
+                      </td>
+                      <td data-etiket={t("eposta")}>
+                        <bdi>{m.eposta || "—"}</bdi>
+                      </td>
+                      <td data-etiket={t("durum")}>{kayitli(m) ? <Rozet>{t("aktarKayitli")}</Rozet> : <Rozet ton="iyi">{t("aktarYeni")}</Rozet>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+            {t("iptal")}
+          </button>
+          <button type="button" className="dugme dugme-kucuk" disabled={!yeni.length} onClick={ekle} data-aktar-ekle>
+            <FileSpreadsheet size={14} /> {t("aktarEkle", { n: String(yeni.length) })}
+          </button>
+        </div>
+      </div>
+    </Pencere>
   );
 }
 

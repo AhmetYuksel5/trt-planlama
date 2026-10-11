@@ -1,3 +1,4 @@
+import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
@@ -113,15 +114,18 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                   return (
                     <tr key={k.id}>
                       <td className="birincil">
-                        <a className="kisi-hucre kalin" href={`#/muhabirler/${k.id}`}>
-                          <Avatar kisi={k} boy="kucuk" durum />
-                          <span>
-                            {ad(k)}
-                            <small className="sonuk ince">
-                              <bdi>{k.kisaltma}</bdi> · {t(CALISMA_ADI[k.calisma])}
-                            </small>
-                          </span>
-                        </a>
+                        <span className="kisi-whatsapp">
+                          <a className="kisi-hucre kalin" href={`#/muhabirler/${k.id}`}>
+                            <Avatar kisi={k} boy="kucuk" durum />
+                            <span>
+                              {ad(k)}
+                              <small className="sonuk ince">
+                                <bdi>{k.kisaltma}</bdi> · {t(CALISMA_ADI[k.calisma])}
+                              </small>
+                            </span>
+                          </a>
+                          <WhatsAppDugmesi telefon={k.telefon} />
+                        </span>
                       </td>
                       <td data-etiket={t("anaGorevBolgesi")}>
                         {t(sehirAdi(k.sehir))} <small className="sonuk">· {t(ulkeAdi(SEHIRLER[k.sehir]))}</small>
@@ -584,6 +588,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                   <small>{t("telefon")}</small>
                   <b dir="ltr">{kisi.telefon}</b>
                 </div>
+                <WhatsAppDugmesi telefon={kisi.telefon} />
               </li>
               <li>
                 <Mail size={16} className="sonuk-yazi" />

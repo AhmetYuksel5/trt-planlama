@@ -120,6 +120,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `hesabaGecir` eski kimliği bütün kayıtlarda yenisiyle değiştirir,
     eski kaydın profilini alır, eski kişi belgesini siler (kural bunu
     yalnız `oncekiKimlik`'i onu gösterene izin verir).
+  - Kurumun muhabir listesi (Excel) Kullanıcılar › "Excel'den muhabir
+    aktar" ile hesapsız muhabir olarak girer (`iceAktar.ts`: kitaplıksız
+    .xlsx okuyucu ve başlık adıyla sütun eşleştirme; `eylemler.ts →
+    muhabirleriIceAktar`). Gerçek kişi bilgisi depoya ve koda girmez,
+    dosya tarayıcıda okunur. Pasaport, cinsiyet, doğum sütunları okunmaz.
+    Aynı e-posta ya da Arapça ad kayıtlıysa atlanır; liste ikinci kez
+    yüklenince çoğalmaz. Listedeki konum yazımları `KONUM` tablosuyla
+    şehre bağlanır; tanınmayan İstanbul'a yazılır ve önizlemede uyarılır.
+  - Muhabir listesinde ve profilde WhatsApp düğmesi (`bilesenler/
+    WhatsApp.tsx`): telefonda `wa.me`, bilgisayarda WhatsApp Web; numara
+    uluslararası biçime çevrilir ("00…", başta tek sıfır Türkiye).
   - Seçmeli hesap yetkileri (`veri.ts → HESAP_YETKILERI`, `Kisi.yetkiler`):
     davet, kayıt bağlantısı, kişi düzenleme, hesap kapatma/açma, hesapsız
     kişi ekleme. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki

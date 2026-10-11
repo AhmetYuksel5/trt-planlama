@@ -90,6 +90,26 @@ export const SEHIRLER = {
   newyork: "abd",
   bruksel: "belcika",
   londra: "ingiltere",
+  elhalil: "filistin",
+  nablus: "filistin",
+  musul: "irak",
+  portsudan: "sudan",
+  maskat: "umman",
+  kuveyt: "kuveyt",
+  cezayir: "cezayir",
+  nuaksot: "moritanya",
+  mogadisu: "somali",
+  encamena: "cad",
+  addisababa: "etiyopya",
+  islamabad: "pakistan",
+  kabil: "afganistan",
+  moskova: "rusya",
+  paris: "fransa",
+  madrid: "ispanya",
+  amsterdam: "hollanda",
+  saraybosna: "bosna",
+  saopaulo: "brezilya",
+  buenosaires: "arjantin",
 } as const;
 /*
  * Muhabirin şehri olmayan ama çalışabildiği ülkeler ("çalışabildiği diğer
@@ -640,6 +660,16 @@ export const ULKE_BOLGESI: Record<Ulke, Bolge> = {
   rusya: "avrupa",
   abd: "amerika",
   brezilya: "amerika",
+  pakistan: "kuresel",
+  afganistan: "kuresel",
+  somali: "kuresel",
+  cad: "kuresel",
+  etiyopya: "kuresel",
+  moritanya: "kuzeyAfrika",
+  ispanya: "avrupa",
+  hollanda: "avrupa",
+  bosna: "avrupa",
+  arjantin: "amerika",
 };
 
 export const HATIRLATMA_SURELERI = ["1g", "3g", "1h", "1a"] as const;

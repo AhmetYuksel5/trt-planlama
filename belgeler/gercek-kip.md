@@ -48,6 +48,15 @@ Sistemi henüz kullanmayan personel yalnız adıyla kayıtta durur:
 2. Kişi her seçimde (muhabir, ekip, plan satırı) görünür, giriş yapamaz. Listede "Hesap yok". İşini Planlama onun adına görür: öneriyi onun adına girer, e-posta adresi varsa öneri çağrısı ona da gider.
 3. Sisteme geçeceği zaman satırdaki **Hesaba bağla** e-posta adresine davet gönderir. Kişi etkinleşince eski kaydı (ve ona verilmiş işler, önerileri, hareketler) yeni hesabına geçer; ayrı bir kayıt kalmaz.
 
+### Muhabir listesini içe aktarma
+
+*Kullanıcılar › Kişi ekle › Excel'den muhabir aktar*: kurumun muhabir listesi (.xlsx) seçilir, önizlemede kaç muhabirin yeni, kaçının zaten kayıtlı olduğu ve tanınmayan konumlar görünür; **N muhabiri ekle** ile hepsi tek seferde hesapsız muhabir olarak eklenir.
+
+- Okunan sütunlar: ad soyad, Arapça ad, ülke/şehir, kısaltma, telefon, kişisel ve kurumsal e-posta, uydu/yapım şirketi, retainer. Pasaport, cinsiyet, doğum tarihi ve yeri **okunmaz**.
+- Dosya tarayıcıda okunur; depoya ya da sitenin koduna girmez.
+- Davet adresi kurumsal e-posta, yoksa kişisel e-posta. Muhabirler zamanla **Hesaba bağla** ile davet edilip etkinleşir.
+- Liste ikinci kez yüklenirse kayıtlı olanlar atlanır.
+
 ### Seçmeli yetkiler
 
 Tam yönetici (hesap yöneticisi) satırdaki **Yetkiler** penceresinden başkasına şunları ayrı ayrı verebilir:
