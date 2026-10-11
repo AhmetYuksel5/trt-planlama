@@ -84,9 +84,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   demo; logoya art arda üç tık (`bilesenler/UcTik.ts`) gizli kurum
   girişini açar (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`).
   - Hesap davetle açılır (`ekranlar/Kullanicilar.tsx`, yalnız hesap
-    yöneticisi). Etkin kişinin birimi, görevi ve rolü aynı sayfada "Düzenle"
-    ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki dahil). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
+    yöneticisi). Etkin kişinin adı, birimi, görevi ve rolü aynı sayfada
+    "Düzenle" ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki
+    dahil). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
     belirler; kişi kaydı davetten kurulur, kimliği Firebase uid'si.
+  - İkinci yol kayıt bağlantısı: yönetici paylaşılabilir, 7 günlük bağlantı
+    açar (`kayitBaglantilari` koleksiyonu, `#/kayit/<kod>`,
+    `ekranlar/KayitSayfasi.tsx`; demo açıkken de çalışır). Kişi adını,
+    birimini, görevini kendisi girer; bilgiler e-posta bağlantısının dönüş
+    adresinde (`kayit=`) taşınır, `ilkKayit` kaydı onunla kurar. Personel,
+    hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
+    "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
+    süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).
   - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
     girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.

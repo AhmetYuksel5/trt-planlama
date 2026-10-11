@@ -143,6 +143,10 @@ export interface Kisi {
   pasif?: boolean;
   /** Gerçek kip: davet gönderebilen, hesapları yöneten kişi (Kullanıcılar sayfası). */
   hesapYoneticisi?: boolean;
+  /** Gerçek kip: kendini kayıt bağlantısıyla kaydeden kişinin bağlantısı. */
+  kayitKodu?: string;
+  /** Bilgilerini kendisi girdi, hesap yöneticisi henüz bakmadı; "Düzenle"de kaydedince kalkar. */
+  kontrolBekliyor?: boolean;
 }
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */

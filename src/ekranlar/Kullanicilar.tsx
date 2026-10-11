@@ -1,8 +1,8 @@
-import { Mail, RotateCcw, Send, UserCog, X } from "lucide-react";
+import { Copy, Link2, Mail, Plus, RotateCcw, Send, UserCog, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
-import { useDil, type Anahtar } from "../dil";
-import type { Davet } from "../depo/firebase";
+import { tarihYaz, useDil, type Anahtar } from "../dil";
+import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { kisiHesabi, kisiPozisyonu } from "../eylemler";
 import { firebaseYukle } from "../kip";
@@ -12,13 +12,16 @@ import { SayfaBasi } from "./ana/Planlama";
 /**
  * Gerçek kipte hesaplar (yalnız hesap yöneticisi; yetki.ts → sayfaGorebilir).
  *
- * Kayıt formu yok, kişi davetle geliyor: yönetici e-posta, ad, birim ve
- * görevi yazıp davet ediyor; Firebase kişiye etkinleştirme bağlantısını
- * gönderiyor (depo/firebase.ts → davetEt). Kişi bağlantıyla girip
- * şifresini belirleyince kaydı davetten kuruluyor.
+ * Kişi iki yoldan geliyor:
+ * - davet: yönetici e-posta, ad, birim ve görevi yazıp davet ediyor; Firebase
+ *   kişiye etkinleştirme bağlantısını gönderiyor (depo/firebase.ts → davetEt).
+ *   Kişi bağlantıyla girip şifresini belirleyince kaydı davetten kuruluyor.
+ * - kayıt bağlantısı: yönetici paylaşılabilir bir bağlantı açıyor, kişi
+ *   bilgilerini kendisi giriyor (KayitSayfasi). Yetkisiz personel olarak
+ *   açılıyor, "kontrol bekliyor" işaretiyle; yönetici "Düzenle" ile bakıyor.
  *
- * Davetler kaydın (`Durum`) parçası değil: hesap işi, planlama kaydına
- * karışmasın; doğrudan Firestore'dan dinleniyor.
+ * Davetler ve bağlantılar kaydın (`Durum`) parçası değil: hesap işi,
+ * planlama kaydına karışmasın; doğrudan Firestore'dan dinleniyor.
  */
 
 const DAVET_DURUM_ADI: Record<Davet["durum"], Anahtar> = { bekliyor: "davetBekliyor", kullanildi: "davetKullanildi", iptal: "davetIptal" };
@@ -30,6 +33,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [davetler, setDavetler] = useState<Davet[] | null>(null);
+  const [baglantilar, setBaglantilar] = useState<KayitBaglantisi[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
   const [form, setForm] = useState(BOS_FORM);
   const [bekle, setBekle] = useState(false);
@@ -40,7 +44,13 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
     let kopar: (() => void) | undefined;
     let bitti = false;
     firebaseYukle().then((f) => {
-      if (!bitti) kopar = f.davetleriIzle(setDavetler, setHata);
+      if (bitti) return;
+      const k1 = f.davetleriIzle(setDavetler, setHata);
+      const k2 = f.kayitBaglantilariIzle(setBaglantilar, setHata);
+      kopar = () => {
+        k1();
+        k2();
+      };
     });
     return () => {
       bitti = true;
@@ -74,6 +84,23 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
       .then(() => bildir(t("davetGonderildi", { eposta })))
       .catch(() => bildir(t("davetGonderilemedi")));
   const iptalEt = (eposta: string) => firebaseYukle().then((f) => f.davetIptal(eposta));
+
+  const baglantiAc = () =>
+    firebaseYukle()
+      .then((f) => f.kayitBaglantisiOlustur(ben.id))
+      .then((b) => kopyala(b.kod))
+      .catch((x) => {
+        console.error(x);
+        bildir(t("ghBilinmeyen"));
+      });
+  const kopyala = (kod: string) =>
+    firebaseYukle()
+      .then((f) => navigator.clipboard.writeText(f.kayitAdresi(kod)))
+      .then(() => bildir(t("bKopyalandi")))
+      .catch(() => bildir(t("kopyalanamadi")));
+  const baglantiKapat = (kod: string) => firebaseYukle().then((f) => f.kayitBaglantisiKapat(kod));
+  // Kapalı ve süresi geçmiş bağlantı listede kalabalık etmesin; yalnız geçerliler.
+  const acikBaglantilar = (baglantilar ?? []).filter((b) => b.acik && Date.now() < b.bitis);
 
   const kisiler = [...v.kisiler].sort((a, b) => Number(!!a.pasif) - Number(!!b.pasif) || ad(a).localeCompare(ad(b)));
 
@@ -142,6 +169,37 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
             </button>
           </div>
         </form>
+      </Kart>
+
+      <Kart
+        baslik={t("kayitBaglantilari")}
+        ikon={<Link2 size={18} />}
+        sagUc={
+          <button type="button" className="dugme dugme-kucuk" onClick={baglantiAc} data-kayit-baglantisi-ac>
+            <Plus size={14} /> {t("yeniKayitBaglantisi")}
+          </button>
+        }
+      >
+        {!baglantilar ? (
+          <Bos kucuk metin={t("yukleniyor")} />
+        ) : acikBaglantilar.length === 0 ? (
+          <Bos kucuk metin={t("kayitBaglantisiYok")} />
+        ) : (
+          <ul className="kayit-baglantilari">
+            {acikBaglantilar.map((b) => (
+              <li key={b.kod} data-kayit-baglantisi={b.kod}>
+                <input readOnly dir="ltr" value={`…/#/kayit/${b.kod}`} aria-label={t("kayitBaglantilari")} onFocus={(e) => e.target.select()} />
+                <span className="soluk">{t("sonGecerlilik", { tarih: tarihYaz(new Date(b.bitis).toISOString()) })}</span>
+                <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kopyala(b.kod)} data-kayit-kopyala>
+                  <Copy size={14} /> {t("baglantiyiKopyala")}
+                </button>
+                <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => baglantiKapat(b.kod)} data-kayit-kapat>
+                  <X size={14} /> {t("baglantiyiKapat")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Kart>
 
       <Kart baslik={t("davetler")} ek={davetler ? String(davetler.length) : undefined}>
@@ -220,7 +278,12 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                   {t(BIRIM_ADI[k.birim])} · {t(GOREV_ADI[k.gorev])}
                 </td>
                 <td data-etiket={t("durum")}>
-                  <Rozet ton={k.pasif ? "" : "iyi"}>{t(k.pasif ? "hesapPasif" : "hesapEtkin")}</Rozet> {k.hesapYoneticisi && <Rozet ton="koyu">{t("hesapYoneticisi")}</Rozet>}
+                  <Rozet ton={k.pasif ? "" : "iyi"}>{t(k.pasif ? "hesapPasif" : "hesapEtkin")}</Rozet> {k.hesapYoneticisi && <Rozet ton="koyu">{t("hesapYoneticisi")}</Rozet>}{" "}
+                  {k.kontrolBekliyor && (
+                    <span data-kontrol-bekliyor>
+                      <Rozet ton="uyari">{t("kontrolBekliyor")}</Rozet>
+                    </span>
+                  )}
                 </td>
                 <td className="islem-hucre">
                   <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenlenen(k)} data-pozisyon-duzenle>
@@ -248,12 +311,14 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
   );
 }
 
-/* Etkin kişinin birimi, görevi ve rolü; davet formundaki seçimlerin aynısı. */
+/* Etkin kişinin adı, birimi, görevi ve rolü; davet formundaki alanların aynısı. */
 function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
   const { t, ad } = useDil();
-  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol });
+  const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol, ...ilk });
   const kaydet = () => {
-    if (kisiPozisyonu(ben, kisi.id, p)) {
+    const tr = p.tr.trim() || p.en.trim() || ad(kisi);
+    if (kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, rol: p.rol, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) {
       bildir(t("bKaydedildi"));
       kapat();
     }
@@ -261,6 +326,18 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
   return (
     <Pencere baslik={ad(kisi)} alt={kisi.eposta} kapat={kapat}>
       <div className="form" data-pozisyon-formu>
+        <label>
+          {t("adTurkce")}
+          <input value={p.tr} onChange={(e) => setP({ ...p, tr: e.target.value })} data-pozisyon-ad />
+        </label>
+        <label>
+          {t("adArapca")}
+          <input dir="rtl" lang="ar" value={p.ar} onChange={(e) => setP({ ...p, ar: e.target.value })} />
+        </label>
+        <label>
+          {t("adIngilizce")}
+          <input dir="ltr" value={p.en} onChange={(e) => setP({ ...p, en: e.target.value })} />
+        </label>
         <label>
           {t("birim")}
           <select value={p.birim} onChange={(e) => setP({ ...p, birim: e.target.value as Birim })} data-pozisyon-birim>

@@ -18,7 +18,7 @@ import { useSyncExternalStore } from "react";
 export const DILLER = ["tr", "ar", "en"] as const;
 export type Dil = (typeof DILLER)[number];
 
-interface Metin {
+export interface Metin {
   tr: string;
   ar: string;
   en: string;
@@ -1704,6 +1704,20 @@ const M = {
   hesabiKapat: m("Hesabı kapat", "إغلاق الحساب", "Close account"),
   hesabiAc: m("Hesabı aç", "فتح الحساب", "Reopen account"),
   yoneticiYap: m("Hesap yöneticisi yap", "تعيين مسؤولا للحسابات", "Make administrator"),
+  kayitBaglantilari: m("Kayıt bağlantısı", "رابط التسجيل", "Sign-up link"),
+  yeniKayitBaglantisi: m("Yeni bağlantı", "رابط جديد", "New link"),
+  kayitBaglantisiYok: m("Açık bağlantı yok.", "لا روابط مفتوحة.", "No open links."),
+  sonGecerlilik: m("Son geçerlilik: {tarih}", "صالح حتى: {tarih}", "Valid until: {tarih}"),
+  baglantiyiKopyala: m("Kopyala", "نسخ", "Copy"),
+  baglantiyiKapat: m("Kapat", "إغلاق", "Close"),
+  kontrolBekliyor: m("Kendi kaydı · kontrol bekliyor", "تسجيل ذاتي · بانتظار المراجعة", "Self sign-up · awaiting review"),
+  kayitBaslik: m("Hesap oluştur", "إنشاء حساب", "Create an account"),
+  kayitOl: m("Etkinleştirme bağlantısı gönder", "أرسل رابط التفعيل", "Send activation link"),
+  kayitBaglantisiGecersiz: m(
+    "Bu kayıt bağlantısı kapatılmış ya da süresi dolmuş. Yeni bağlantı için hesap yöneticisine başvur.",
+    "رابط التسجيل هذا مغلق أو منتهي الصلاحية. تواصل مع مسؤول الحسابات للحصول على رابط جديد.",
+    "This sign-up link is closed or has expired. Ask an account administrator for a new link.",
+  ),
   yoneticiligiKaldir: m("Yöneticiliği kaldır", "إلغاء صلاحية المسؤول", "Remove administrator"),
 
   /* Üst çubuktaki kısayollar: yalnız ikon, ad üzerine gelince; hepsi adıyla ★ menüsünde. */

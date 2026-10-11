@@ -8,6 +8,7 @@ import Raporlar from "./ekranlar/Raporlar";
 import Basliklar from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import GercekGiris from "./ekranlar/GercekGiris";
+import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import Kullanicilar from "./ekranlar/Kullanicilar";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
@@ -110,6 +111,8 @@ export default function App() {
     return () => clearInterval(z);
   }, [kayitHazir]);
 
+  // Kayıt bağlantısı (hesap yöneticisinin paylaştığı); demo açıkken de, bölmede değil.
+  if (yol.sayfa === "kayit" && !GOMULU && !BAGLANTI_DONUSU) return <KayitSayfasi kod={yol.id ?? ""} />;
   // Gizli gerçek giriş ve e-posta bağlantısının dönüşü; bölmede açılmıyor.
   if (yol.sayfa === "gercek-giris" || BAGLANTI_DONUSU)
     return GOMULU ? (

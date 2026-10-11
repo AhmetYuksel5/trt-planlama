@@ -28,11 +28,11 @@ import {
   type Firestore,
   type Unsubscribe,
 } from "firebase/firestore";
-import type { Yazi } from "../dil";
+import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
-import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type Durum, type Gorev, type Rol } from "../veri";
+import { BIRIMLER, GOREVLER, bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type Durum, type Gorev, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
@@ -333,7 +333,7 @@ export interface Davet {
  * ve davet "kullanıldı" oluyor; ikisi tek yazışta. Kurallar ikisini de
  * denetliyor (firestore.rules).
  */
-export const ilkKayit = async (): Promise<KisiHali | "davetYok"> => {
+export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): Promise<KisiHali | "davetYok"> => {
   const u = auth.currentUser;
   if (!u?.email) return "davetYok";
   const hal = await kisiHali(u);
@@ -360,6 +360,17 @@ export const ilkKayit = async (): Promise<KisiHali | "davetYok"> => {
     await setDoc(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
     return "etkin";
   }
+  // Kayıt bağlantısı: bilgileri kişi girdi; yetkisiz personel olarak açılıyor, yönetici sonra düzeltiyor.
+  const baglanti = kayit ? await kayitBaglantisiOku(kayit.kod).catch(() => null) : null;
+  if (kayit && baglanti && kayitAcik(baglanti)) {
+    const k = {
+      ...yeniKisi({ id: u.uid, ad: kayit.ad, eposta, birim: kayit.birim, gorev: kayit.gorev, rol: "personel", hesapYoneticisi: false }),
+      kayitKodu: kayit.kod,
+      kontrolBekliyor: true,
+    };
+    await setDoc(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
+    return "etkin";
+  }
   return "davetYok";
 };
 
@@ -378,3 +389,87 @@ export const davetleriIzle = (f: (l: Davet[]) => void, hataGeldi: (kod: string) 
     (s) => f(s.docs.map((x) => x.data() as Davet).sort((a, b) => b.zaman.localeCompare(a.zaman))),
     (e) => hataGeldi(hataKodu(e)),
   );
+
+/* --- Kayıt bağlantısı --- */
+
+/**
+ * Davetin yanında ikinci yol: hesap yöneticisi paylaşılabilir bir bağlantı
+ * açıyor; bağlantıyı açan kişi adını, birimini ve görevini kendisi girip
+ * e-postasına gelen bağlantıyla etkinleşiyor. Rolü personel, hesap
+ * yöneticisi değil; yönetici "Düzenle" ile düzeltiyor. Bağlantı süreli ve
+ * yönetici istediğinde kapatıyor (firestore.rules → kayitGecerli).
+ */
+export interface KayitBaglantisi {
+  kod: string;
+  acik: boolean;
+  /** Son geçerlilik, milisaniye; kural `request.time` ile karşılaştırıyor. */
+  bitis: number;
+  olusturan: string;
+  zaman: string;
+}
+
+/** Kişinin kendi girdiği bilgiler; e-posta bağlantısının dönüş adresinde taşınıyor, başka cihazda açılsa da kaybolmasın. */
+export interface KayitBilgisi {
+  kod: string;
+  ad: Metin;
+  birim: Birim;
+  gorev: Gorev;
+}
+
+export const KAYIT_SURESI_GUN = 7;
+
+export const kayitAcik = (b: KayitBaglantisi) => b.acik && Date.now() < b.bitis;
+
+export const kayitAdresi = (kod: string) => `${location.origin}${location.pathname}#/kayit/${kod}`;
+
+/* Tahmin edilemeyen kod: bağlantıyı bilen kayıt olabiliyor. */
+const yeniKod = () => {
+  const a = new Uint8Array(12);
+  crypto.getRandomValues(a);
+  return [...a].map((x) => x.toString(16).padStart(2, "0")).join("");
+};
+
+export const kayitBaglantisiOlustur = async (olusturan: string) => {
+  const kod = yeniKod();
+  const b: KayitBaglantisi = { kod, acik: true, bitis: Date.now() + KAYIT_SURESI_GUN * 864e5, olusturan, zaman: new Date().toISOString() };
+  await setDoc(doc(db, "kayitBaglantilari", kod), b);
+  return b;
+};
+
+export const kayitBaglantisiKapat = (kod: string) => updateDoc(doc(db, "kayitBaglantilari", kod), { acik: false });
+
+export const kayitBaglantilariIzle = (f: (l: KayitBaglantisi[]) => void, hataGeldi: (kod: string) => void) =>
+  onSnapshot(
+    collection(db, "kayitBaglantilari"),
+    (s) => f(s.docs.map((x) => x.data() as KayitBaglantisi).sort((a, b) => b.zaman.localeCompare(a.zaman))),
+    (e) => hataGeldi(hataKodu(e)),
+  );
+
+export const kayitBaglantisiOku = async (kod: string) => {
+  baslat();
+  const s = await getDoc(doc(db, "kayitBaglantilari", kod));
+  return s.exists() ? (s.data() as KayitBaglantisi) : null;
+};
+
+export const kayitBaglantisiGonder = (eposta: string, bilgi: KayitBilgisi, dil: string) => {
+  baslat();
+  auth.languageCode = dil;
+  const e = ePosta(eposta);
+  return sendSignInLinkToEmail(auth, e, { url: `${donusAdresi(e)}&kayit=${encodeURIComponent(JSON.stringify(bilgi))}`, handleCodeInApp: true });
+};
+
+/* Dönüş adresindeki bilgi kişinin elinden geçti: yalnız tanınan birim ve görev kabul. */
+export const kayitBilgisiOku = (): KayitBilgisi | null => {
+  try {
+    const ham = new URLSearchParams(location.search).get("kayit");
+    if (!ham) return null;
+    const b = JSON.parse(ham) as KayitBilgisi;
+    if (typeof b.kod !== "string" || !BIRIMLER.includes(b.birim) || !GOREVLER.includes(b.gorev)) return null;
+    const ad = (x: unknown) => (typeof x === "string" ? x.trim().slice(0, 80) : "");
+    const tr = ad(b.ad?.tr) || ad(b.ad?.en) || ad(b.ad?.ar);
+    if (!tr) return null;
+    return { kod: b.kod, birim: b.birim, gorev: b.gorev, ad: { tr, ar: ad(b.ad.ar) || tr, en: ad(b.ad.en) || tr } };
+  } catch {
+    return null;
+  }
+};

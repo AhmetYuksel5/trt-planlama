@@ -2,6 +2,7 @@ import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimA
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
+import type { Yazi } from "./dil";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -1647,15 +1648,24 @@ export const kisiHesabi = (ben: Kisi, kisiId: string, ayar: { pasif?: boolean; h
 };
 
 /*
- * Pozisyon (birim, görev, rol) değişince hesap yöneticisi düzeltiyor; kendi
- * kaydı da dahil (kurucu ilk girişte varsayılan pozisyonla açılıyor).
- * Hesap alanları (pasif, yöneticilik) burada değişmiyor.
+ * Pozisyon (birim, görev, rol) ve ad değişince hesap yöneticisi düzeltiyor;
+ * kendi kaydı da dahil (kurucu ilk girişte varsayılan pozisyonla açılıyor).
+ * Kayıt bağlantısıyla gelen kişinin girdiklerine yönetici böyle bakıyor;
+ * kaydedince "kontrol bekliyor" kalkıyor. Hesap alanları (pasif,
+ * yöneticilik) burada değişmiyor.
  */
-export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gorev: Gorev; rol: Rol }) => {
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gorev: Gorev; rol: Rol; ad?: Yazi }) => {
   if (!GERCEK || !ben.hesapYoneticisi) return false;
   const d = getir();
   if (!d.kisiler.some((k) => k.id === kisiId)) return false;
-  kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, birim: p.birim, gorev: p.gorev, rol: p.rol } : k)) });
+  kaydet({
+    ...d,
+    kisiler: d.kisiler.map((k) => {
+      if (k.id !== kisiId) return k;
+      const { kontrolBekliyor: _, ...kalan } = k;
+      return { ...kalan, birim: p.birim, gorev: p.gorev, rol: p.rol, ...(p.ad ? { ad: p.ad } : {}) };
+    }),
+  });
   return true;
 };
 

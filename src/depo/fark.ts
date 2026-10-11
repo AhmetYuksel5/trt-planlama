@@ -48,6 +48,7 @@ export interface OgeBelgesi {
   eposta?: string;
   pasif?: boolean;
   hesapYoneticisi?: boolean;
+  kayitKodu?: string;
 }
 
 export type Islem =
@@ -118,10 +119,12 @@ type Oge = { id: string };
 export const ogeBelgesi = (alan: string, oge: Oge, s: number): OgeBelgesi => {
   const b: OgeBelgesi = { s, j: JSON.stringify(oge) };
   if (alan === "kisiler") {
-    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean };
+    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string };
     b.eposta = (k.eposta ?? "").toLowerCase();
     b.pasif = !!k.pasif;
     b.hesapYoneticisi = !!k.hesapYoneticisi;
+    // Kayıt bağlantısıyla gelen kişide kural ilk yazışta bağlantıyı bu alandan buluyor.
+    if (k.kayitKodu) b.kayitKodu = k.kayitKodu;
   }
   return b;
 };

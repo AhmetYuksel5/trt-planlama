@@ -3,7 +3,8 @@ rules_version = '2';
 // TRT Arapça Planlama · gerçek kip kuralları.
 //
 // Kayıt düzeni src/depo/fark.ts'te: Durum'un her dizi alanı ve kişiye bağlı
-// her harita bir koleksiyon; "kisiler" ve "davetler" ayrıca denetleniyor.
+// her harita bir koleksiyon; "kisiler", "davetler" ve "kayitBaglantilari"
+// ayrıca denetleniyor.
 //
 // Bu kurallar "kurumdan, etkin kişi" diyor. Birim ve görev yetkisi (kim
 // neyi düzenler) bugün uygulamada soruluyor (src/yetki.ts); kurala
@@ -23,6 +24,15 @@ service cloud.firestore {
     function hesapYoneticisi() { return etkin() && get(kisiYolu()).data.hesapYoneticisi == true; }
     function davetYolu() { return /databases/$(veritabani)/documents/davetler/$(eposta()); }
     function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta"]; }
+    function kayitYolu(kod) { return /databases/$(veritabani)/documents/kayitBaglantilari/$(kod); }
+    // Kayıt bağlantısıyla gelen: açık, süresi geçmemiş bağlantı; yetkisiz (hesap yöneticisi değil).
+    function kayitGecerli(k) {
+      return k.kayitKodu is string
+        && exists(kayitYolu(k.kayitKodu))
+        && get(kayitYolu(k.kayitKodu)).data.acik == true
+        && request.time.toMillis() < get(kayitYolu(k.kayitKodu)).data.bitis
+        && k.hesapYoneticisi == false;
+    }
 
     match /davetler/{adres} {
       allow read: if hesapYoneticisi() || (oturum() && eposta() == adres);
@@ -36,10 +46,17 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["durum", "kullanan"]));
     }
 
+    // Paylaşılan kayıt bağlantısı: kodu bilen (oturumsuz da) yalnız o bağlantıyı okuyabiliyor; liste ve yazma yöneticide.
+    match /kayitBaglantilari/{kod} {
+      allow get: if true;
+      allow list, create, update, delete: if hesapYoneticisi();
+    }
+
     match /kisiler/{id} {
       // Kişi kendi kaydını her zaman okuyabiliyor: pasif olduğunu da öğrenmeli.
       allow read: if etkin() || (oturum() && id == request.auth.uid);
-      // İlk giriş: kendi kaydı, bekleyen davetle (davetteki yetkiyle) ya da kurucu olarak.
+      // İlk giriş: kendi kaydı, bekleyen davetle (davetteki yetkiyle), kayıt bağlantısıyla ya da kurucu olarak.
+      // Bağlantıda adresin sahibi olduğu e-posta bağlantısıyla kanıtlanmış olmalı (email_verified).
       allow create: if hesapYoneticisi()
         || (oturum() && id == request.auth.uid
             && request.resource.data.eposta == eposta()
@@ -47,6 +64,7 @@ service cloud.firestore {
             && ((exists(davetYolu())
                  && get(davetYolu()).data.durum == "bekliyor"
                  && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi)
+                || (request.auth.token.email_verified == true && kayitGecerli(request.resource.data))
                 || (eposta() == kurucuEposta() && request.auth.token.email_verified == true)));
       // Etkin herkes kişi kaydını düzenleyebiliyor (profil, durum); yetki alanlarını yalnız hesap yöneticisi.
       allow update: if hesapYoneticisi()
@@ -56,7 +74,7 @@ service cloud.firestore {
 
     // Öbür bütün kayıt: etkin kişiler okur ve yazar.
     match /{alan}/{belge} {
-      allow read, write: if etkin() && !(alan in ["kisiler", "davetler"]);
+      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari"]);
     }
   }
 }
