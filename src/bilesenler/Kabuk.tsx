@@ -1,4 +1,7 @@
+import { FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useDil } from "../dil";
+import { GERCEK } from "../kip";
 import type { Kisi } from "../veri";
 import AltCubuk from "./AltCubuk";
 import MobilMenu from "./MobilMenu";
@@ -53,6 +56,7 @@ function useMasaustu() {
   );
 }
 export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben: Kisi; sayfa: string; ortamAcik?: boolean; children: ReactNode }) {
+  const { t } = useDil();
   const [menuAcik, setMenuAcik] = useState(false);
   const [menuGizli, setMenuGizli] = useState(gizliMi);
   const masaustu = useMasaustu();
@@ -74,6 +78,12 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
       <div className="perde" onClick={kapat} />
       <div className="ana">
         <UstCubuk ben={ben} onMenu={menuDugmesi} masaustu={masaustu} menuGorunur={masaustu ? !menuGizli : menuAcik} />
+        {/* Telefonda prototip notu çubuğun altında tam cümle; masaüstünde çubuktaki etiket. */}
+        {!GERCEK && (
+          <p className="demo-serit yalniz-telefon" data-demo-serit>
+            <FlaskConical size={14} aria-hidden="true" /> {t("demoSerit")}
+          </p>
+        )}
         <main className="sayfa">{children}</main>
       </div>
       <AltCubuk ben={ben} acik={menuSayfasi} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />

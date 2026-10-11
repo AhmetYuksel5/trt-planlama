@@ -187,29 +187,29 @@ export function UstKisayollar({ ben }: { ben: Kisi }) {
 }
 
 /** Telefondaki Menü paneli: kısayollar adıyla, dokunmaya uygun; sonda düzenleme. */
+/*
+ * Telefonda kısayollar ana sayfanın başında ve Menü panelinde büyük renkli
+ * kutular (workspace öncesi düzen): telefonun üst çubuğunda kısayola yer
+ * yok, planlara giriş buradan. Düzenleme masaüstünde, üst çubuktaki ★'dan.
+ */
 export function KisayolKutulari({ ben, sec }: { ben: Kisi; sec?: () => void }) {
   const { t } = useDil();
   const v = useVeri();
-  const [duzen, setDuzen] = useState(false);
-  const liste = kisininKisayollari(v, ben);
   return (
-    <>
-      <nav className="kisayol-kutulari" aria-label={t("kisayollarim")}>
-        {liste.map((k) => {
-          const b = kisayolBilgisi(ben, k);
-          return (
-            b && (
-              <a key={k} href={`#/${k}`} data-kisayol={k} onClick={sec}>
-                <KisayolKutusu ben={ben} kimlik={k} bag={false} /> {t(b.ad)}
-              </a>
-            )
-          );
-        })}
-        <button type="button" onClick={() => setDuzen(true)}>
-          <Pencil size={16} /> {t("kisayollariDuzenle")}
-        </button>
-      </nav>
-      {duzen && <KisayolPenceresi ben={ben} kapat={() => setDuzen(false)} />}
-    </>
+    <nav className="kisayollar" aria-label={t("kisayollarim")}>
+      {kisininKisayollari(v, ben).map((k) => {
+        const b = kisayolBilgisi(ben, k);
+        if (!b) return null;
+        const Ikon = b.ikon;
+        return (
+          <a key={k} className={`kisayol ${b.renk}`} href={`#/${k}`} data-kisayol={k} onClick={sec}>
+            <span className="ikon">
+              <Ikon size={22} />
+            </span>
+            <b>{t(b.ad)}</b>
+          </a>
+        );
+      })}
+    </nav>
   );
 }

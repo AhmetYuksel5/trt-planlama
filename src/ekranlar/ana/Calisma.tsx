@@ -7,6 +7,7 @@ import { anaSayfaKaydet } from "../../eylemler";
 import { useVeri, type Birim, type Kisi } from "../../veri";
 import { kapsam, sayfaGorebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
+import { KisayolKutulari } from "../ortam/Kisayollar";
 import { PANEL_ALANLARI } from "../YoneticiPaneli";
 import { BIRIM_ALANLARI } from "./Birimler";
 import { MUHABIR_ALANLARI } from "./Muhabir";
@@ -99,6 +100,12 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
           <button className="dugme dugme-kucuk" onClick={() => setDuzenle(false)}>
             <Check size={14} /> {t("bitti")}
           </button>
+        </div>
+      )}
+      {/* Telefonda planlara giriş: üst çubukta kısayola yer yok. Muhabirin işleri alt çubukta. */}
+      {kisisel && ben.birim !== "muhabir" && !duzenle && (
+        <div className="yalniz-telefon ara-alt-2">
+          <KisayolKutulari ben={ben} />
         </div>
       )}
       <div className={`alan-izgarasi ${duzenle ? "duzenleniyor" : ""}`}>

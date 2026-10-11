@@ -1,28 +1,19 @@
-import { BookOpen, FlaskConical, LogOut, Plus, X } from "lucide-react";
+import { BookOpen, LogOut, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDil } from "../dil";
 import { KisayolKutulari } from "../ekranlar/ortam/Kisayollar";
-import {
-  useOrtamEtiketi,
-  useOrtamKapat,
-  useYeniOrtam,
-} from "../ekranlar/ortam/Sekmeler";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
-import { kisininOrtamlari } from "../ortam";
 import { GERCEK } from "../kip";
 import { oturumdanCik } from "../oturum";
-import { useVeri, type Kisi } from "../veri";
-import { useYol } from "../yol";
-import { sayfaGorebilir } from "../yetki";
+import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
 import { MENU, maddeAdi, maddeGorunur } from "./AnaMenu";
 
 /**
- * Telefonda "Menü"nün açtığı panel: kısayollar, workspace'ler, bütün
- * sayfalar, dil ve oturum. Masaüstünde bunlar sol menüye ve üst çubuğa
- * dağılmış; telefonun üst çubuğunda sekmelere ve kısayollara yer yok, tek
- * panelde topluyoruz. Sayfa listesi
+ * Telefonda "Menü"nün açtığı panel: kişi, kısayollar (renkli plan
+ * kutuları), bütün sayfalar, dil ve oturum. Workspace telefonda yok:
+ * dar ekranda birkaç sayfayı bir arada açmak işe yaramıyor. Sayfa listesi
  * sol menünün `MENU` tablosundan geliyor: yeni sayfa oraya girince burada
  * da çıkıyor.
  */
@@ -36,12 +27,6 @@ export default function MobilMenu({
   onKapat: () => void;
 }) {
   const { t, ad } = useDil();
-  const v = useVeri();
-  const yol = useYol();
-  const etiket = useOrtamEtiketi(ben);
-  const kapat = useOrtamKapat(ben);
-  const yeni = useYeniOrtam(ben);
-  const ortamlar = kisininOrtamlari(v, ben.id);
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
@@ -74,13 +59,6 @@ export default function MobilMenu({
         </button>
       </div>
 
-      {/* Çubuktaki etiketin tam cümlesi; telefonda ipucu yok. */}
-      {!GERCEK && (
-        <p className="mobil-prototip">
-          <FlaskConical size={16} /> {t("demoSerit")}
-        </p>
-      )}
-
       <div className="mobil-kisi">
         <a
           className="mobil-kisi-bag"
@@ -111,55 +89,6 @@ export default function MobilMenu({
 
       <h3>{t("kisayollarim")}</h3>
       <KisayolKutulari ben={ben} sec={onKapat} />
-
-      {sayfaGorebilir(ben, "ortam") && (
-        <section className="mobil-ortamlar" aria-label={t("ortamlar")}>
-          <h3>{t("ortamlar")}</h3>
-          {ortamlar.map((o) => {
-            const e = etiket(o);
-            const etkin = yol.sayfa === "ortam" && yol.id === o.id;
-            return (
-              <div
-                key={o.id}
-                className={`mobil-ortam ${etkin ? "acik" : ""}`}
-                data-ortam={o.id}
-              >
-                <a
-                  href={`#/ortam/${o.id}`}
-                  aria-current={etkin ? "page" : undefined}
-                  onClick={onKapat}
-                >
-                  <e.Ikon size={18} /> <span>{e.kisa}</span>
-                </a>
-                <button
-                  type="button"
-                  className="ikon-dugme"
-                  aria-label={t("ortamKapat", { ad: e.kisa })}
-                  title={t("ortamKapat", { ad: e.kisa })}
-                  data-ortam-kapat={o.id}
-                  onClick={() => kapat(o)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            );
-          })}
-          {/* Sınırda pasif ama odaklanabilir; nedeni yazılı. */}
-          <button
-            type="button"
-            className={`mobil-ortam-yeni ${yeni.dolu ? "pasif" : ""}`}
-            aria-disabled={yeni.dolu}
-            data-yeni-ortam
-            onClick={() => {
-              if (yeni.dolu) return;
-              onKapat();
-              yeni.ac();
-            }}
-          >
-            <Plus size={18} /> {yeni.ad}
-          </button>
-        </section>
-      )}
 
       {MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));

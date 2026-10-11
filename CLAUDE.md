@@ -249,7 +249,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sorumlu muhabiri olduğu faaliyeti görür (`faaliyetGorebilir`).
   - Hafta Cumartesi başlar. Renk yalnız öncelikte (`.on-*`); hatırlatma
     uygulama içinde (yan panel, ana sayfa kartı, menü sayısı).
-  - Varsayılan kısayollarda (üst çubuk, telefonda Menü'nün Kısayollarım'ı)
+  - Varsayılan kısayollarda (üst çubuk; telefonda ana sayfa ve Menü'deki renkli kutular)
     altıncı; beş ana başlıktan biri olmadığı için altıncı renk değil,
     lacivert (`.renk-takvim`).
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
@@ -347,7 +347,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Daralma çubuğun kendi eninden (`@container ust`, sol menüden bağımsız):
     önce prototip yazısı, sonra satırdaki kısayollar ★'a çekilir.
   - Prototip etiketi her sayfada: örnek veri gerçek sanılmasın. Tam cümle
-    (`demoSerit`) ipucunda, basınca ve telefonda Menü panelinin başında.
+    (`demoSerit`) ipucunda ve basınca; telefonda çubukta etiket yok, tam
+    cümle çubuğun altında şerit (`Kabuk → .demo-serit`).
   - Arama penceresi (`bilesenler/KomutPaleti.tsx`, kurallar `arama.ts`):
     - açılış: 🔍, Ctrl/⌘+K ya da yazı alanı dışında "/" (tuş `e.code` ile,
       Arapça klavyede de);
@@ -368,11 +369,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tercihi (dil gibi): `localStorage`, `trt-planlama-menu` ve
     `trt-planlama-menu-gruplar`; kayıt şeması değişmez.
 - Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
-  bir düzen:
+  bir düzen. Workspace ve üst çubuk değişikliklerinden önceki haliyle
+  duruyor; o değişiklikler telefonda beğenilmedi:
   - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor
-  - üst çubukta yalnız logo, arama, prototip, zil ve avatar (44 piksel)
-  - "Menü" (`MobilMenu`) prototip notunu, kişiyi, Kısayollarım'ı,
-    workspace'leri, bütün sayfaları ve dili bir panelde topluyor
+  - üst çubukta yalnız logo, arama ve zil (çerçeveli, 44 piksel) ve
+    avatar; altında prototip şeridi
+  - ana sayfanın başında kısayollar renkli plan kutuları (`KisayolKutulari`,
+    `.yalniz-telefon`; muhabirde yok, işleri alt çubukta)
+  - "Menü" (`MobilMenu`) kişiyi, aynı renkli kutuları, bütün sayfaları ve
+    dili bir panelde topluyor. Workspace telefonda yok (bağlantıyla açılan
+    çalışır); kısayol düzenleme masaüstünde
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

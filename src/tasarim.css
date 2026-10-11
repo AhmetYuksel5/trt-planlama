@@ -1511,10 +1511,10 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .ust .marka-mobil .logo { height: var(--logo-ust); }
   .ikon-dugme, .ust .ikon-dugme { width: var(--dokunma); height: var(--dokunma); }
   .ust .kullanici { min-width: var(--dokunma); min-height: var(--dokunma); justify-content: center; }
-  /* Etiket yalnız ikon ama dokunma hedefi tam boy; tam cümle Menü panelinin başında. */
-  .prototip { min-width: var(--dokunma); block-size: var(--dokunma); justify-content: center; background: none; }
-  .prototip > svg { padding: 6px; box-sizing: content-box; border-radius: var(--yaricap-hap); background: var(--uyari-sis); }
-  .prototip-yazi { display: none; }
+  /* Workspace öncesi telefon düzeni: prototip notu çubuğun altında şerit, arama ve zil çerçeveli düğme. */
+  .ust .prototip { display: none; }
+  .ust .ikon-dugme { border-color: var(--cizgi); background: var(--yuzey); color: var(--murekkep); }
+  .demo-serit { padding: 6px var(--ara-4); }
 
   /* Dokunma hedefleri ve iPhone'un yakınlaştırmasını tetiklemeyen yazı alanları. */
   .dugme, .dugme-kucuk { min-height: var(--dokunma); }
@@ -1646,25 +1646,6 @@ span.kisayol-kutu svg { color: inherit; }
 .modul-secenek:disabled { opacity: .5; cursor: not-allowed; }
 
 /* Telefondaki Menü panelinde kısayollar adıyla, workspace'ler satır satır. */
-.kisayol-kutulari { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
-.kisayol-kutulari a, .kisayol-kutulari button {
-  display: flex; align-items: center; gap: var(--ara-2); min-width: 0; min-height: var(--dokunma); padding: var(--ara-1) var(--ara-2);
-  border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); font-weight: 600; font-size: var(--punto-kucuk); text-align: start;
-}
-.kisayol-kutulari button { color: var(--vurgu); }
-.mobil-prototip { display: flex; gap: var(--ara-2); align-items: flex-start; margin-bottom: var(--ara-3); padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap); background: var(--uyari-sis); color: var(--uyari); font-size: var(--punto-kucuk); font-weight: 600; }
-.mobil-prototip svg { flex: none; margin-top: 2px; }
-.mobil-ortamlar { display: grid; gap: var(--ara-2); }
-.mobil-ortamlar h3 { margin-bottom: 0; }
-.mobil-ortam { display: flex; align-items: center; border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); }
-.mobil-ortam.acik { border-color: var(--vurgu); background: var(--vurgu-sis); color: var(--vurgu-koyu); }
-.mobil-ortam a { display: flex; align-items: center; gap: var(--ara-2); flex: 1; min-width: 0; min-height: var(--dokunma); padding-inline: var(--ara-3); font-weight: 600; }
-.mobil-ortam a span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mobil-ortam .ikon-dugme { border-color: transparent; background: none; }
-.mobil-ortam-yeni {
-  display: flex; align-items: center; gap: var(--ara-2); width: 100%; min-height: var(--dokunma); padding-inline: var(--ara-3);
-  border: 1px dashed var(--cizgi); border-radius: var(--yaricap); background: none; color: var(--vurgu); font-weight: 600; text-align: start;
-}
 
 /* Workspace sayfası ekran boyunda; kayan sayfa değil, bölmeler kendi içinde kayıyor. */
 .uygulama.ortam-acik { height: 100vh; height: 100dvh; min-height: 0; }
@@ -1828,3 +1809,27 @@ html.gomulu body { background: var(--zemin); }
 .bolum.ar > summary { direction: rtl; }
 .plan-durum-karti { margin-block-start: var(--ara-4); }
 dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
+
+/* --- Telefonun workspace öncesi düzeni: prototip şeridi ve renkli plan kutuları (yalnız 760 piksel ve altı) --- */
+.yalniz-telefon { display: none; }
+@media (max-width: 760px) {
+  .yalniz-telefon { display: block; }
+  .demo-serit.yalniz-telefon { display: flex; }
+}
+.demo-serit { align-items: center; gap: var(--ara-2); background: var(--uyari-sis); color: var(--uyari); font-size: var(--punto-mini); font-weight: 600; }
+.demo-serit svg { flex: none; }
+.kisayollar { display: grid; gap: var(--ara-3); }
+.kisayol {
+  display: flex; gap: var(--ara-3); align-items: center;
+  background: var(--sis); border: 1px solid transparent; border-radius: var(--yaricap-kart);
+  padding: var(--ara-4); min-width: 0; color: var(--murekkep); text-decoration: none;
+}
+.kisayol:hover { border-color: var(--renk); }
+.kisayol .ikon { width: 44px; height: 44px; border-radius: var(--yaricap); background: var(--renk); color: #fff; display: grid; place-items: center; flex: none; }
+.kisayol b { display: block; font-size: var(--punto-orta); line-height: 1.25; }
+@media (max-width: 760px) {
+  .kisayollar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+  .kisayol { padding: var(--ara-3); gap: var(--ara-2); }
+  .kisayol .ikon { width: 34px; height: 34px; }
+  .kisayol b { font-size: var(--punto-kucuk); }
+}
