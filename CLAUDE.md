@@ -265,6 +265,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yedi gün ve karar bekleyen kalem (soluk) de var; çıktıda yok.
   - Baskı, Word ve kopya ekranda görünmeyen temiz kopyadan (`.belge-temiz`);
     Word ortak (`bilesenler/indir.ts → wordIndir`), Next Day'de de var.
+  - Aralık kurumun kuralı: aynı başlığın altındaki satırlar 1,15, başlıklar
+    ve bölümler arası 1,30 satır; satırlar arasına başka boşluk girmez.
+    Ekran, baskı (`.cikti`) ve Word (`WORD_BICIMI`) aynı değerde.
 - Stok haberi ayrı kayıt değil, `Paket` (`stok: true`): haftalıkta kabul
   edilen plansız feature, ekonomi ya da günü olmayan haber. Durumu
   saklanmaz, kayıttan çıkar (`akis.ts → stokDurumu`): üretime alınacak →

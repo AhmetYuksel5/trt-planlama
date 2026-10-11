@@ -13,14 +13,15 @@ export const indir = (ad: string, icerik: string, tur: string) => {
  * kurumun belgesindeki kırmızı, yeşil ve sarı vurgu. Next Day ve haftalık
  * plan aynı biçimi kullanıyor.
  */
+// Ekrandaki çıktıyla aynı aralık: satırlar 1,15, başlıklar arası 1,30 satır (13pt × 1,15 × 1,3 ≈ 19pt).
 const WORD_BICIMI = `
-body { font-family: Calibri, Arial, sans-serif; font-size: 13pt; direction: rtl; text-align: right; }
-h1 { font-size: 16pt; text-align: center; color: #c00000; }
-h2 { font-size: 14pt; margin: 14pt 0 4pt; }
+body { font-family: Calibri, Arial, sans-serif; font-size: 13pt; line-height: 115%; direction: rtl; text-align: right; }
+h1 { font-size: 16pt; line-height: 115%; text-align: center; color: #c00000; margin: 0; }
+h2 { font-size: 14pt; line-height: 115%; margin: 19pt 0 0; }
 h2.yesil { color: #4f7a28; } h2.kirmizi { color: #c00000; } h2.ortali { text-align: center; }
-h3 { font-size: 13pt; text-decoration: underline; margin: 10pt 0 2pt; }
-h4.gun { font-size: 13pt; color: #c00000; margin: 14pt 0 4pt; }
-p { margin: 0 0 3pt; }
+h3 { font-size: 13pt; line-height: 115%; text-decoration: underline; margin: 19pt 0 0; }
+h4.gun { font-size: 13pt; line-height: 115%; color: #c00000; margin: 19pt 0 0; }
+p { margin: 0; line-height: 115%; }
 .alt-baslik { font-weight: bold; }
 .cikti-aciklama { color: #333333; }
 .cikti-slug { font-size: 11pt; }

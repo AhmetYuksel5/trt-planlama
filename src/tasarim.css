@@ -973,26 +973,29 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .cikti-sarici { background: var(--yuzey-3); border-radius: var(--yaricap-kart); padding: var(--ara-6); }
 .cikti {
   background: #fff; color: #111; max-width: 820px; margin: 0 auto; padding: 48px 56px;
-  box-shadow: var(--golge-kart); font-size: 14.5px; line-height: 1.75;
+  box-shadow: var(--golge-kart); font-size: 14.5px; line-height: 1.15;
   font-family: Calibri, Arial, var(--yazi);
 }
+/*
+ * Kurumun aralık kuralı: aynı başlığın altındaki satırlar 1,15 aralıklı ve
+ * aralarında başka boşluk yok; başlıklar (bölüm, alt başlık, gün) arasında
+ * 1,30 satır. Word çıktısı da aynısını kullanıyor (indir.ts → WORD_BICIMI).
+ */
 .cikti[dir="rtl"] { font-family: Calibri, Arial, var(--yazi-arapca); }
-.cikti h1 { font-size: 18px; text-align: center; color: var(--cikti-kirmizi); margin-bottom: 18px; }
-.cikti section { margin-bottom: 18px; }
-.cikti h2 { font-size: 16px; margin: 0 0 4px; }
+.cikti h1 { font-size: 18px; text-align: center; color: var(--cikti-kirmizi); margin: 0 0 1.3em; }
+.cikti section { margin: 0; }
+.cikti section + section { margin-top: 1.3em; }
+.cikti h2 { font-size: 16px; margin: 0; }
 .cikti h2.yesil { color: var(--cikti-yesil); }
 .cikti h2.kirmizi { color: var(--cikti-kirmizi); }
-.cikti h2.ortali { text-align: center; margin-bottom: 10px; }
-.cikti h3 { font-size: 15px; text-decoration: underline; text-underline-offset: 4px; margin: 14px 0 2px; }
-.cikti p { margin: 0 0 3px; }
-.cikti .alt-baslik { font-weight: 700; margin-top: 4px; }
+.cikti h2.ortali { text-align: center; }
+.cikti h3 { font-size: 15px; text-decoration: underline; text-underline-offset: 4px; margin: 1.3em 0 0; }
+.cikti p { margin: 0; }
+.cikti .alt-baslik { font-weight: 700; }
 .cikti .cikti-aciklama { color: #333; }
 .cikti .cikti-slug { font-size: 13px; letter-spacing: .02em; }
-.cikti .cikti-paket + .cikti-paket { margin-top: 8px; }
-.cikti .cikti-baslik { margin-bottom: 12px; }
 
-.cikti h4.gun { font-size: 15px; color: var(--cikti-kirmizi); margin: 18px 0 4px; }
-.cikti .cikti-kalem + .cikti-kalem { margin-top: 8px; }
+.cikti h4.gun { font-size: 15px; color: var(--cikti-kirmizi); margin: 1.3em 0 0; }
 .cikti mark { background: var(--cikti-sari); color: inherit; padding: 0 2px; }
 
 /* --- Belge görünümü: planı çıktının üzerinde düzenleme --- */
