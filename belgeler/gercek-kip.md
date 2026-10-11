@@ -24,7 +24,7 @@ Gerçek kipteyken prototip etiketi ve demo kişi seçimi yoktur. Kullanıcı men
 1. **Davet:** hesap yöneticisi *Diğer › Kullanıcılar* sayfasında e-posta, ad, birim, görev ve rolü yazıp davet eder. Firebase kişiye etkinleştirme bağlantısını kendi postasıyla gönderir.
 2. **Etkinleştirme:** kişi bağlantıya basar, e-postasını onaylar ve şifresini belirler (en az 8 karakter). Kişi kaydı davetten kurulur; davet "Etkinleşti" olur.
 3. **Sonraki girişler** e-posta ve şifreyle yapılır.
-4. **Hesap yöneticisi** davetleri yeniden gönderebilir ya da iptal edebilir; hesap kapatabilir, açabilir ve başka kişiyi hesap yöneticisi yapabilir.
+4. **Hesap yöneticisi** davetleri yeniden gönderebilir ya da iptal edebilir; hesap kapatabilir, açabilir ve başka kişiyi hesap yöneticisi yapabilir. **Düzenle** ile etkin bir kişinin birimini, görevini ve rolünü değiştirebilir (kendisininki dahil).
    - Kişi kendi hesabını kapatamaz, yöneticiliğini bırakamaz.
 5. **Davetsiz e-posta:** bağlantı istese de giremez ("Bu e-posta için davet yok").
 6. **Kapalı hesap:** kayda erişemez, açık oturumu da hemen kapanır.
@@ -35,7 +35,7 @@ Boş sistemde ilk kişi kurucudur. Adresi iki yerde yazılıdır:
 - `src/firebase-ayar.ts` → `kurucu`;
 - `firestore.rules` → `kurucuEposta()`.
 
-Kurucu girişte **Etkinleştirme bağlantısı iste** ile bağlantı alır, şifresini belirler ve *Yönetim* biriminde hesap yöneticisi olarak açılır. Sonra öbür kişileri davet eder.
+Kurucu girişte **Etkinleştirme bağlantısı iste** ile bağlantı alır, şifresini belirler ve *Planlama* biriminde (planlamacı, yönetici rolü) hesap yöneticisi olarak açılır; pozisyonu Kullanıcılar sayfasındaki **Düzenle** ile değişir. Sonra öbür kişileri davet eder.
 
 ## Firebase konsolunda yapılacaklar
 

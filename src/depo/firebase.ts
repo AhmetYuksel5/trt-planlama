@@ -356,7 +356,7 @@ export const ilkKayit = async (): Promise<KisiHali | "davetYok"> => {
   const kurucu = ePosta(firebaseAyari().kurucu);
   if (kurucu && eposta === kurucu) {
     const ad = eposta.split("@")[0];
-    const k = yeniKisi({ id: u.uid, ad: { tr: ad, ar: ad, en: ad }, eposta, birim: "yonetim", gorev: "inputMuduru", rol: "yonetici", hesapYoneticisi: true });
+    const k = yeniKisi({ id: u.uid, ad: { tr: ad, ar: ad, en: ad }, eposta, birim: "planlama", gorev: "planlamaci", rol: "yonetici", hesapYoneticisi: true });
     await setDoc(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
     return "etkin";
   }

@@ -1,10 +1,10 @@
 import { Mail, RotateCcw, Send, UserCog, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { Avatar, Bos, Kart, Rozet, bildir } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../dil";
 import type { Davet } from "../depo/firebase";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
-import { kisiHesabi } from "../eylemler";
+import { kisiHesabi, kisiPozisyonu } from "../eylemler";
 import { firebaseYukle } from "../kip";
 import { BIRIMLER, GOREVLER, useVeri, type Birim, type Gorev, type Kisi, type Rol } from "../veri";
 import { SayfaBasi } from "./ana/Planlama";
@@ -33,6 +33,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
   const [hata, setHata] = useState<string | null>(null);
   const [form, setForm] = useState(BOS_FORM);
   const [bekle, setBekle] = useState(false);
+  const [duzenlenen, setDuzenlenen] = useState<Kisi | null>(null);
   const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
 
   useEffect(() => {
@@ -222,6 +223,9 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                   <Rozet ton={k.pasif ? "" : "iyi"}>{t(k.pasif ? "hesapPasif" : "hesapEtkin")}</Rozet> {k.hesapYoneticisi && <Rozet ton="koyu">{t("hesapYoneticisi")}</Rozet>}
                 </td>
                 <td className="islem-hucre">
+                  <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenlenen(k)} data-pozisyon-duzenle>
+                    {t("duzenle")}
+                  </button>
                   {/* Kendi hesabını kapatamıyor, yöneticiliğini bırakamıyor: sistem yöneticisiz kalmasın. */}
                   {k.id !== ben.id && (
                     <>
@@ -239,6 +243,60 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
           </tbody>
         </table>
       </Kart>
+      {duzenlenen && <PozisyonPenceresi ben={ben} kisi={duzenlenen} kapat={() => setDuzenlenen(null)} />}
     </>
+  );
+}
+
+/* Etkin kişinin birimi, görevi ve rolü; davet formundaki seçimlerin aynısı. */
+function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
+  const { t, ad } = useDil();
+  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol });
+  const kaydet = () => {
+    if (kisiPozisyonu(ben, kisi.id, p)) {
+      bildir(t("bKaydedildi"));
+      kapat();
+    }
+  };
+  return (
+    <Pencere baslik={ad(kisi)} alt={kisi.eposta} kapat={kapat}>
+      <div className="form" data-pozisyon-formu>
+        <label>
+          {t("birim")}
+          <select value={p.birim} onChange={(e) => setP({ ...p, birim: e.target.value as Birim })} data-pozisyon-birim>
+            {BIRIMLER.map((b) => (
+              <option key={b} value={b}>
+                {t(BIRIM_ADI[b])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("gorev")}
+          <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value as Gorev })} data-pozisyon-gorev>
+            {GOREVLER.map((g) => (
+              <option key={g} value={g}>
+                {t(GOREV_ADI[g])}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("rol")}
+          <select value={p.rol} onChange={(e) => setP({ ...p, rol: e.target.value as Rol })} data-pozisyon-rol>
+            <option value="personel">{t("rolPersonel")}</option>
+            <option value="yonetici">{t("rolYonetici")}</option>
+          </select>
+        </label>
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+            {t("iptal")}
+          </button>
+          <button type="button" className="dugme dugme-kucuk" onClick={kaydet} data-pozisyon-kaydet>
+            {t("kaydet")}
+          </button>
+        </div>
+      </div>
+    </Pencere>
   );
 }

@@ -23,6 +23,8 @@ import {
   paketBul,
   planBul,
   type Birim,
+  type Gorev,
+  type Rol,
   type BolmeEkseni,
   type CanliYayin,
   type AylikPlan,
@@ -1641,6 +1643,19 @@ export const kisiHesabi = (ben: Kisi, kisiId: string, ayar: { pasif?: boolean; h
   const d = getir();
   if (!d.kisiler.some((k) => k.id === kisiId)) return false;
   kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, ...ayar } : k)) });
+  return true;
+};
+
+/*
+ * Pozisyon (birim, görev, rol) değişince hesap yöneticisi düzeltiyor; kendi
+ * kaydı da dahil (kurucu ilk girişte varsayılan pozisyonla açılıyor).
+ * Hesap alanları (pasif, yöneticilik) burada değişmiyor.
+ */
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gorev: Gorev; rol: Rol }) => {
+  if (!GERCEK || !ben.hesapYoneticisi) return false;
+  const d = getir();
+  if (!d.kisiler.some((k) => k.id === kisiId)) return false;
+  kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, birim: p.birim, gorev: p.gorev, rol: p.rol } : k)) });
   return true;
 };
 

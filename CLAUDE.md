@@ -84,9 +84,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   demo; logoya art arda üç tık (`bilesenler/UcTik.ts`) gizli kurum
   girişini açar (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`).
   - Hesap davetle açılır (`ekranlar/Kullanicilar.tsx`, yalnız hesap
-    yöneticisi). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
+    yöneticisi). Etkin kişinin birimi, görevi ve rolü aynı sayfada "Düzenle"
+    ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki dahil). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
     belirler; kişi kaydı davetten kurulur, kimliği Firebase uid'si.
-  - Kurucu (ilk yönetici) davetsiz girebilen tek adres:
+  - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
+    girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.
   - Kayıt boş başlar. `Durum`'un her dizi alanı bir koleksiyon, her öğe bir
     belge (`{s: sıra, j: JSON}`); kişiye bağlı haritalarda anahtar başına
