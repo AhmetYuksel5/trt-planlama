@@ -45,6 +45,23 @@ jobs:
         if: steps.anahtar.outputs.var == 'evet'
         run: printf '%s' "$ANAHTAR" > "$RUNNER_TEMP/anahtar.json"
 
+      # Kimlik doğrulanamazsa nedeni görünsün: biçim bozuk mu, başka proje mi,
+      # silinmiş anahtar mı (kimliğin başı konsoldaki anahtar listesiyle
+      # karşılaştırılır). Gizli anahtarın kendisi yazılmıyor.
+      - name: Anahtarı denetle
+        if: steps.anahtar.outputs.var == 'evet'
+        run: |
+          node -e '
+            const fs = require("fs");
+            let a;
+            try { a = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/anahtar.json", "utf8")); }
+            catch (e) { console.log("::error::Anahtar JSON değil; dosyanın tamamı ({ ile } arası) kopyalanmamış olabilir."); process.exit(1); }
+            if (a.type !== "service_account" || !a.private_key || !a.client_email) { console.log("::error::Bu bir hizmet hesabı anahtarı değil ya da eksik."); process.exit(1); }
+            if (a.project_id !== "plannersflow-d03d0") { console.log("::error::Anahtar başka projenin: " + a.project_id); process.exit(1); }
+            console.log("Hesap: " + a.client_email);
+            console.log("Anahtar kimliğinin başı: " + String(a.private_key_id).slice(0, 6));
+          '
+
       - name: Hosting
         if: steps.anahtar.outputs.var == 'evet'
         env:
