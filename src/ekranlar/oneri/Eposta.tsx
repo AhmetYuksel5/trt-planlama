@@ -1,9 +1,9 @@
-import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Pencil, Scissors, Smartphone, Upload } from "lucide-react";
+import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, FileDown, Globe, Pencil, Scissors, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { cagriKaydet, epostaYanitiIsle, oneriDuzenle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
-import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
+import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, outlookWebUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type Yanit } from "../../veri";
@@ -39,27 +39,44 @@ export const panoya = async (metin: string, t: (k: Anahtar) => string) => {
 export const adresler = (v: ReturnType<typeof useVeri>, kimlikler: string[]) =>
   kimlikler.map((id) => kisiBul(v, id)?.eposta).filter((a): a is string => !!a);
 
-/** Giden e-postayı açan düğmeler; açmak çağrıyı da kaydediyor ki yanıtlar eşleşsin. */
+/**
+ * Giden e-postayı açan düğmeler; açmak çağrıyı da kaydediyor ki yanıtlar
+ * eşleşsin. "Outlook'ta aç" dosya indirmeden e-posta uygulamasını açıyor;
+ * biçimli (kırmızı vurgulu, tablolu) taslak dosyası ikinci planda.
+ */
 export function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEposta; dosyaAdi: string; once?: () => void }) {
   const { t } = useDil();
+  // BCC adrese sığmıyorsa adresten çıkıyor ve basınca panoya gidiyor; kişi BCC alanına yapıştırıyor.
+  const bccli = mailtoUret(eposta).length <= ADRES_SINIRI && outlookWebUret(eposta).length <= ADRES_SINIRI;
+  const ac = () => {
+    once?.();
+    if (!bccli)
+      navigator.clipboard.writeText(eposta.bcc.join("; ")).then(
+        () => bildir(t("bccPanoda")),
+        () => bildir(t("kopyalanamadi")),
+      );
+  };
   return (
     <div className="form-alt">
       <button className="dugme dugme-ikincil" onClick={() => panoya(eposta.bcc.join("; "), t)}>
         <ClipboardCopy size={16} /> {t("bccKopyala")}
       </button>
-      <a className="dugme dugme-ikincil" href={mailtoUret(eposta)} onClick={() => once?.()}>
-        <Smartphone size={16} /> {t("telefondaAc")}
-      </a>
       <button
-        className="dugme"
-        title={t("outlookIpucu")}
+        className="dugme dugme-ikincil"
         onClick={() => {
           once?.();
           indir(dosyaAdi, emlUret(eposta), "message/rfc822");
         }}
+        data-taslak-dosyasi
       >
-        <Mail size={16} /> {t("outlooktaAc")}
+        <FileDown size={16} /> {t("taslakDosyasi")}
       </button>
+      <a className="dugme dugme-ikincil" href={outlookWebUret(eposta, bccli)} target="_blank" rel="noopener" onClick={ac} data-outlook-web>
+        <Globe size={16} /> {t("outlookWebdeAc")}
+      </a>
+      <a className="dugme" href={mailtoUret(eposta, bccli)} onClick={ac} data-outlookta-ac>
+        <Mail size={16} /> {t("outlooktaAc")}
+      </a>
     </div>
   );
 }
