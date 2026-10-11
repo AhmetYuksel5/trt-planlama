@@ -112,13 +112,14 @@ Etkinleştirme bağlantıları emülatörün `oobCodes` uç noktasında görün�
 
 ## Yayın: Firebase Hosting
 
-Uygulama `https://planners-flow-2026.web.app` adresinde. `main`'e her gönderimde GitHub Actions (`.github/workflows/firebase-yayin.yml`) derlenmiş `docs/` klasörünü bu siteye yayınlar ve Firestore kurallarını depodaki `firestore.rules` ile eşitler; kuralları konsola elle yapıştırmak gerekmez.
+Uygulama `https://plannersflow.net` adresinde (projenin kendi sitesi `plannersflow-d03d0.web.app`; alan adı Cloudflare'de kayıtlı, DNS kayıtları gri bulut "DNS only"). `main`'e her gönderimde GitHub Actions (`.github/workflows/firebase-yayin.yml`) derlenmiş `docs/` klasörünü bu siteye yayınlar ve Firestore kurallarını depodaki `firestore.rules` ile eşitler; kuralları konsola elle yapıştırmak gerekmez.
 
 Bir kez yapılacaklar:
 
 1. **Anahtar:** Firebase konsolu › Proje ayarları (dişli) › *Hizmet hesapları* › **Yeni özel anahtar oluştur**. İnen JSON dosyasının içeriğinin tamamı GitHub'da depo › *Settings* › *Secrets and variables* › *Actions* › **New repository secret** ile `FIREBASE_SERVICE_ACCOUNT` adıyla eklenir. Dosya kimseyle paylaşılmaz, sohbete yapıştırılmaz; eklendikten sonra bilgisayardan silinir.
-2. **İzinli adres:** Firebase konsolu › Authentication › *Settings* › *Authorized domains* › `planners-flow-2026.web.app` eklenir. Yoksa e-posta bağlantısıyla giriş bu adreste çalışmaz.
+2. **İzinli adres:** Firebase konsolu › Authentication › *Settings* › *Authorized domains* › `plannersflow.net` (ve gerekirse `www.plannersflow.net`) eklenir; `plannersflow-d03d0.web.app` zaten izinli. Yoksa e-posta bağlantısıyla giriş bu adreste çalışmaz.
 3. **İlk yayın:** GitHub › *Actions* › *Firebase yayın* › **Run workflow**.
+4. **Alan adı:** ilk yayından sonra Firebase konsolu › Hosting › **Add custom domain** › `plannersflow.net`. Firebase'in verdiği A ve TXT kayıtları Cloudflare › plannersflow.net › DNS › Records'a girilir; *Proxy status* gri bulut (**DNS only**) olmalı, turuncu bulutta Firebase sertifika veremez. Cloudflare'in eski A/AAAA kayıtları silinir.
 
 Anahtar eklenmeden iş uyarıyla atlanır. GitHub Pages yeni adres denendikten sonra kapatılabilir (depo › *Settings* › *Pages*).
 

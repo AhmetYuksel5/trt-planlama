@@ -1,5 +1,5 @@
 # Firebase Hosting'e yayın: main'e her gönderimde docs/ (derlenmiş uygulama)
-# planners-flow-2026.web.app'e çıkıyor, Firestore kuralları da depodakiyle
+# plannersflow.net'e (projenin kendi sitesi plannersflow-d03d0) çıkıyor, Firestore kuralları da depodakiyle
 # eşitleniyor; kuralları konsola elle yapıştırmak gerekmesin.
 #
 # Anahtar: depo ayarlarında FIREBASE_SERVICE_ACCOUNT gizli değeri (Firebase
