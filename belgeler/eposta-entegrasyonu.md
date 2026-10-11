@@ -18,19 +18,17 @@ yanıtlarının, kimse elle aktarmadan uygulamaya öneri olarak düşmesi.
 Sunucu yokken de kullanılabilir:
 
 - **Çağrı ekranı** (`#/oneriler/cagri`):
-  - "Outlook'ta aç" dosya indirmeden bilgisayarın e-posta uygulamasını açıyor
-    (`mailto:`; kurum bilgisayarında Outlook, telefonda Outlook/Gmail/Mail).
-    Kime, BCC, etiketli konu ve düz metin gövde dolu. Kurumdan izin ya da
-    uygulama kaydı istemiyor.
-  - "Outlook Web'de aç" aynısını Outlook Web'in "Yeni ileti" sayfasında,
-    yeni sekmede açıyor (`outlook.office.com/mail/deeplink/compose`).
-  - Adres çubuğunun sınırı (`eposta.ts → ADRES_SINIRI`) aşılırsa BCC adresten
-    çıkıyor, basınca panoya kopyalanıyor; kesilen BCC'de muhabir sessizce
-    düşmesin.
-  - "Taslak dosyası" biçimli `.eml` taslağı indiriyor: gövde sağdan sola,
-    kırmızı vurgulu, haftalıkta tablolu, `X-Unsent: 1`. Outlook dosyayı
-    gönderilmemiş taslak olarak açıyor. Tarayıcıda "bu türdeki dosyaları her
-    zaman aç" seçilirse tek tıkla açılır.
+  - "Outlook'ta aç" bir `.eml` taslağı indiriyor. Taslakta Kime, BCC ve etiketli
+    konu dolu, gövde sağdan sola, `X-Unsent: 1`. Outlook dosyayı gönderilmemiş
+    taslak olarak açıyor, kullanıcı yalnız Gönder'e basıyor. Tarayıcıda "bu
+    türdeki dosyaları her zaman aç" seçilirse tek tıkla açılır.
+    - Dosyasız `mailto:` ve Outlook Web bağlantısı denendi: mailto varsayılan
+      e-posta uygulaması yoksa ya da adres Windows'un sınırını aşınca
+      tarayıcıda sessizce hiçbir şey yapmadı, Outlook Web kullanışlı
+      bulunmadı.
+  - "Telefonda aç" bir `mailto:` bağlantısı açıyor. Adres sınırı
+    (`eposta.ts → ADRES_SINIRI`) aşılırsa BCC adresten çıkıyor, basınca
+    panoya kopyalanıyor; kesilen BCC'de muhabir sessizce düşmesin.
   - "BCC adreslerini kopyala" adresleri panoya alıyor.
   - Çağrı açıldığında kaydediliyor.
 - **Gelen yanıtlar ekranı** (`#/oneriler/yanitlar`):

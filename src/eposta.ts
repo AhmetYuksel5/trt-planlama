@@ -131,26 +131,16 @@ export const emlUret = (e: GidenEposta) => {
 export const duzMetin = (e: Pick<GidenEposta, "govde" | "tablo">) => (e.tablo ? `${e.govde}\n\n${e.tablo.map((b) => `${b}:`).join("\n")}` : e.govde);
 
 /*
- * Dosyasız açılış: bilgisayarın e-posta uygulaması (mailto; kurum
- * bilgisayarında Outlook, telefonda Outlook/Gmail/Mail) ya da Outlook Web'in
- * "Yeni ileti" sayfası. İkisi de kurumdan izin ya da uygulama kaydı
- * istemiyor; bedeli gövdenin düz metin olması (biçimli hali taslak dosyasında).
- *
- * Adres çubuğunun bir sınırı var. Sığmayınca BCC adresten çıkıp panoya
- * gidiyor (GonderDugmeleri): kesilen BCC'de muhabir sessizce düşerdi. Sıra
- * da bu yüzden Kime, BCC, konu, gövde: istemci yine de keserse kesilen
- * gövde olur, ekranda görülür.
+ * Telefondaki e-posta uygulaması (Gmail, Outlook, Mail) için; gövde düz
+ * metin. Adres çubuğunun bir sınırı var: sığmayınca BCC adresten çıkıp
+ * panoya gidiyor (GonderDugmeleri). Sıra Kime, BCC, konu, gövde: istemci
+ * yine de keserse kesilen gövde olur, ekranda görülür.
  */
 export const ADRES_SINIRI = 8000;
 
-const adresSorgusu = (e: GidenEposta, bccli: boolean, ayrac: string) =>
-  [bccli && e.bcc.length ? `bcc=${encodeURIComponent(e.bcc.join(ayrac))}` : "", `subject=${encodeURIComponent(e.konu)}`, `body=${encodeURIComponent(duzMetin(e))}`].filter(Boolean).join("&");
-
-export const mailtoUret = (e: GidenEposta, bccli = true) => `mailto:${encodeURIComponent(e.kime)}?${adresSorgusu(e, bccli, ",")}`;
-
-/** Outlook Web (Microsoft 365) "Yeni ileti": tarayıcıda Outlook kullanan için. */
-export const outlookWebUret = (e: GidenEposta, bccli = true) =>
-  `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(e.kime)}&${adresSorgusu(e, bccli, ";")}`;
+export const mailtoUret = (e: GidenEposta, bccli = true) =>
+  `mailto:${encodeURIComponent(e.kime)}?` +
+  [bccli && e.bcc.length ? `bcc=${e.bcc.map(encodeURIComponent).join(",")}` : "", `subject=${encodeURIComponent(e.konu)}`, `body=${encodeURIComponent(duzMetin(e))}`].filter(Boolean).join("&");
 
 /* --- Gelen yanıt --- */
 

@@ -39,9 +39,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     nitelik) hesaplanır, sınırlı hareket kaydından değil
   - `rapor.ts`: raporlar; performans gibi saklanmaz, aynı ölçümle
     (`olcumler`) kayıtlardan hesaplanır
-  - `eposta.ts`: çağrı e-postası ("Outlook'ta aç" dosyasız `mailto`,
-    Outlook Web bağlantısı, biçimli `.eml` taslak dosyası; BCC adrese
-    sığmazsa panoya) ve gelen yanıtı
+  - `eposta.ts`: çağrı e-postası ("Outlook'ta aç" `.eml` taslak dosyası;
+    dosyasız mailto denendi, bilgisayarda sessizce açılmadı. "Telefonda aç"
+    mailto, BCC sığmazsa panoya) ve gelen yanıtı
     eşleştirme kuralları; saf, sunucu fazında posta kutusunu izleyen hizmet
     de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`). Next Day
     etiketi `ND-`, haftalık `HP-` (haftanın Cumartesi'si)
