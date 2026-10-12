@@ -535,10 +535,17 @@ export const kayitOl = async (eposta: string, sifre: string, bilgi: KayitBilgisi
       (c) => c.user,
       () => null,
     );
-    if (!u || u.emailVerified) {
-      await signOut(auth).catch(() => {});
-      // Başvuru kaydedildi; kişi şifresiyle (bilmiyorsa "Şifremi unuttum"la) girince kaydı kurulur.
-      throw { code: "kayit/hesap-var" };
+    // Aynı şifre ve doğrulanmış e-posta: kişi zaten kendisi; oturum açık kalıyor, sayfa kaydı kurup içeri alıyor.
+    if (u?.emailVerified) return "girildi" as const;
+    if (!u) {
+      /*
+       * Hesap önceki bir denemede (davet ya da başka şifreyle) açılmış. Kişiyi "Şifremi unuttum"a
+       * yollamak yerine şifre belirleme e-postası buradan gidiyor; o bağlantı e-postayı da
+       * doğrulanmış sayıyor, kişi yeni şifresiyle girince kaydı başvurudan kuruluyor.
+       */
+      auth.languageCode = "en";
+      await sendPasswordResetEmail(auth, e, { url: sifreDonusu(e) });
+      throw { code: "kayit/sifre-gitti" };
     }
     user = u;
   }
@@ -553,6 +560,7 @@ export const kayitOl = async (eposta: string, sifre: string, bilgi: KayitBilgisi
     // Kişi doğrulayıp şifresiyle girecek; demo açıkken oturum açık kalmasın.
     await signOut(auth).catch(() => {});
   }
+  return "gonderildi" as const;
 };
 
 /** Doğrulama e-postası gitmediyse ya da kaybolduysa: oturumdaki (doğrulanmamış) kişiye yeniden. */

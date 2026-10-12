@@ -113,8 +113,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`kayitBasvurulari/<e-posta>`, kural yalnız açık bağlantının koduyla
     yazdırır), doğrulama e-postasının dönüş adresinde (`kayit=`) ve
     tarayıcıda taşınır; `ilkKayit` kaydı hangisi varsa onunla kurar. Hesap
-    önceden açılmışsa form "bilgilerin kaydedildi, şifrenle gir" der; kişi
-    "Şifremi unuttum"la girse de kaydı başvurudan kurulur. Personel,
+    önceden açılmışsa: şifre aynı ve e-posta doğrulanmışsa form kaydı kurup
+    içeri alır; değilse şifre belirleme e-postasını kendisi gönderir
+    (`kayit/sifre-gitti`), kişi yeni şifresiyle girince kaydı başvurudan kurulur. Personel,
     hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
     "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).

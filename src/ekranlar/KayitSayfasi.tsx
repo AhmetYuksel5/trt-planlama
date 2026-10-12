@@ -5,7 +5,7 @@ import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil, type Anahtar } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
-import { firebaseYukle } from "../kip";
+import { firebaseYukle, gercegeGec } from "../kip";
 import { SIFRE_EN_AZ, hataAnahtari, hataKodu } from "./GercekGiris";
 import type { BirimId, GorevId } from "../veri";
 
@@ -49,8 +49,15 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
     const tr = f.adTr.trim() || f.adEn.trim() || f.adAr.trim();
     const ad = { tr, ar: f.adAr.trim() || tr, en: f.adEn.trim() || tr };
     firebaseYukle()
-      .then((x) => x.kayitOl(f.eposta, f.sifre, { kod, ad, birim: f.birim, gorev: f.gorev }, dil))
-      .then(() => setAdim("gonderildi"))
+      .then(async (x) => {
+        const bilgi = { kod, ad, birim: f.birim, gorev: f.gorev };
+        if ((await x.kayitOl(f.eposta, f.sifre, bilgi, dil)) === "gonderildi") return setAdim("gonderildi");
+        // Hesap zaten vardı ve şifre onunki: kayıt kurulup doğrudan gerçek kipe geçiliyor.
+        const hal = await x.ilkKayit(bilgi);
+        if (hal === "etkin") return gercegeGec();
+        await x.oturumuKapat().catch(() => {});
+        throw { code: hal === "pasif" ? "kayit/pasif" : "kayit/hesap-var" };
+      })
       .catch((x) => {
         // Kayıtlı e-posta, zayıf şifre gibi durumlar beklenen; yalnız bilinmeyen hata günlüğe.
         const anahtar = hataAnahtari(x);
@@ -140,7 +147,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
             {hata.anahtar === "ghBilinmeyen" && hata.kod ? t("ghBilinmeyenKod", { kod: hata.kod }) : t(hata.anahtar)}
           </p>
         )}
-        {hata?.anahtar === "kayitHesapVar" && (
+        {(hata?.anahtar === "kayitHesapVar" || hata?.anahtar === "kayitSifreGitti") && (
           <a className="dugme" href={`?giris=sifre&e=${encodeURIComponent(f.eposta.trim().toLowerCase())}`} data-kayit-girise>
             {t("ggGirisYap")}
           </a>
