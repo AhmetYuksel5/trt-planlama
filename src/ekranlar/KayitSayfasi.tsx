@@ -6,6 +6,7 @@ import Logo from "../bilesenler/Logo";
 import { useDil } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
 import { firebaseYukle } from "../kip";
+import { hataKodu } from "./GercekGiris";
 import type { BirimId, GorevId } from "../veri";
 
 /**
@@ -25,7 +26,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   const kurulu = gercekKipKurulu();
   const [adim, setAdim] = useState<Adim>("yukleniyor");
   const [f, setF] = useState({ eposta: "", adTr: "", adAr: "", adEn: "", birim: "newsdesk" as BirimId, gorev: "editor" as GorevId });
-  const [hata, setHata] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
   const [bekle, setBekle] = useState(false);
   const alan = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
 
@@ -38,7 +39,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
 
   const gonder = (e: FormEvent) => {
     e.preventDefault();
-    setHata(false);
+    setHata(null);
     setBekle(true);
     // Ad üç dilde; boş bırakılan dil öbüründen (davet formundaki gibi).
     const tr = f.adTr.trim() || f.adEn.trim() || f.adAr.trim();
@@ -48,7 +49,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
       .then(() => setAdim("gonderildi"))
       .catch((x) => {
         console.error(x);
-        setHata(true);
+        setHata(hataKodu(x));
       })
       .finally(() => setBekle(false));
   };
@@ -122,7 +123,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         {govde}
         {hata && (
           <p className="not-kutu uyari" role="alert">
-            {t("ghBilinmeyen")}
+            {hata ? t("ghBilinmeyenKod", { kod: hata }) : t("ghBilinmeyen")}
           </p>
         )}
         <div className="gg-alt">

@@ -18,6 +18,9 @@ import { GERCEK, demoyaDon, firebaseYukle, gercegeGec, useGercekDurum } from "..
  *
  * Davet yoksa ya da hesap kapalıysa nedeni yazılı, oturum kapatılıyor.
  * Firebase'in hata kodu ekranda çıplak görünmüyor; anahtara çevriliyor.
+ * Tanınmayan kod ise "beklenmeyen hata"nın yanında yazılıyor: gerçek
+ * Firebase emülatörde çıkmayan kodlar döndürebiliyor, kişi kodu iletince
+ * neden bulunsun.
  */
 
 type Adim = "giris" | "baglanti" | "sifre" | "davetYok" | "pasif" | "gonderildi" | "sifirlandi";
@@ -34,10 +37,24 @@ const HATALAR: Record<string, Anahtar> = {
   "auth/invalid-action-code": "ghBaglantiGecersiz",
   "auth/expired-action-code": "ghBaglantiGecersiz",
   "auth/weak-password": "ghSifreZayif",
+  // Projede şifre kuralı açıksa (büyük harf, rakam…) Firebase bunu döndürüyor.
+  "auth/password-does-not-meet-requirements": "ghSifreKurali",
+  "auth/user-disabled": "ghHesapKapali",
+  // Konsolda e-posta bağlantısı ya da e-posta/şifre girişi kapalı.
+  "auth/operation-not-allowed": "ghYontemKapali",
+  "auth/admin-restricted-operation": "ghYontemKapali",
+  "auth/unauthorized-domain": "ghAdresIzinsiz",
+  "auth/unauthorized-continue-uri": "ghAdresIzinsiz",
+  "auth/invalid-continue-uri": "ghAdresIzinsiz",
+  "auth/argument-error": "ghBaglantiGecersiz",
+  "auth/missing-action-code": "ghBaglantiGecersiz",
+  "deadline-exceeded": "ghAgYok",
   "auth/requires-recent-login": "ghYenidenGir",
   "permission-denied": "ghYetkiYok",
 };
-const hataAnahtari = (e: unknown): Anahtar => HATALAR[e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : ""] ?? "ghBilinmeyen";
+export const hataKodu = (e: unknown): string =>
+  e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : e instanceof Error ? e.name : "";
+const hataAnahtari = (e: unknown): Anahtar => HATALAR[hataKodu(e)] ?? "ghBilinmeyen";
 
 /* Firebase'in kendi alt sınırı 6; kurumda daha uzunu isteniyor. */
 const SIFRE_EN_AZ = 8;
@@ -52,6 +69,7 @@ export default function GercekGiris() {
   const [sifre, setSifre] = useState("");
   const [sifre2, setSifre2] = useState("");
   const [hata, setHata] = useState<Anahtar | null>(null);
+  const [hataKod, setHataKod] = useState("");
   const [bekle, setBekle] = useState(false);
   const kurulu = gercekKipKurulu();
 
@@ -77,6 +95,7 @@ export default function GercekGiris() {
     } catch (e) {
       // Yanlış şifre gibi kullanıcı hataları beklenen durum; yalnız bilinmeyenler günlüğe.
       const k = hataAnahtari(e);
+      setHataKod(hataKodu(e));
       if (k === "ghBilinmeyen") console.error(e);
       setHata(k);
     } finally {
@@ -234,7 +253,7 @@ export default function GercekGiris() {
         {govde}
         {hata && (
           <p className="not-kutu uyari" role="alert" data-gg-hata={hata}>
-            {t(hata)}
+            {hata === "ghBilinmeyen" && hataKod ? t("ghBilinmeyenKod", { kod: hataKod }) : t(hata)}
           </p>
         )}
         <div className="gg-alt">
