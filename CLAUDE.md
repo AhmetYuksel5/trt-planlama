@@ -151,6 +151,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     çıkar, kişiye bağlı görünüm kayıtları gider; geçmiş kayıtlar kimliği
     tutar. Kural `kisiler` silmede aynısını sorar. Firebase'deki giriş
     hesabı kalır ama kişi kaydı olmadan giremez.
+  - Davet ve kayıt bağlantısı aynı Firebase e-posta bağlantısını kullanır; ücretsiz
+    planda günlük gönderim sınırı düşük. Dolunca Firebase `auth/quota-exceeded`
+    döndürür: ekranda "günlük sınır doldu" (davet kaydı kalır, ertesi gün "Yeniden
+    gönder"). Tanınmayan hata kodu mesajda yazılır (`GercekGiris.tsx → hataKodu`).
   - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
     girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.

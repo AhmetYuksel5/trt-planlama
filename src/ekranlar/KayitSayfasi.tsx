@@ -48,7 +48,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
       .then((x) => x.kayitBaglantisiGonder(f.eposta, { kod, ad, birim: f.birim, gorev: f.gorev }, dil))
       .then(() => setAdim("gonderildi"))
       .catch((x) => {
-        console.error(x);
+        // Günlük sınır beklenen durum; yalnız bilinmeyen hata günlüğe.
+        if (hataKodu(x) !== "auth/quota-exceeded") console.error(x);
         setHata(hataKodu(x));
       })
       .finally(() => setBekle(false));
@@ -123,7 +124,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         {govde}
         {hata && (
           <p className="not-kutu uyari" role="alert">
-            {hata ? t("ghBilinmeyenKod", { kod: hata }) : t("ghBilinmeyen")}
+            {hata === "auth/quota-exceeded" ? t("ghGunlukSinir") : hata ? t("ghBilinmeyenKod", { kod: hata }) : t("ghBilinmeyen")}
           </p>
         )}
         <div className="gg-alt">

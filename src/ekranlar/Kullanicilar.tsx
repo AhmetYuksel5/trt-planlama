@@ -2,7 +2,8 @@ import { birimAdi, birimListesi, gorevAdi, unvanListesi } from "../yapi";
 import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
-import { tarihYaz, useDil, type Anahtar } from "../dil";
+import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
+import { hataKodu } from "./GercekGiris";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
@@ -65,6 +66,15 @@ const adKur = (tr0: string, ar0: string, en0: string, yedek: string) => {
   return { tr, ar: ar0.trim() || tr, en: en0.trim() || tr };
 };
 
+/*
+ * Davet kaydı yazılıp e-posta gönderilemezse davet "bekliyor" kalıyor;
+ * günlük sınır dolduysa ertesi gün "Yeniden gönder" ile gidiyor.
+ */
+const gonderimHatasi = (x: unknown) => {
+  if (hataKodu(x) !== "auth/quota-exceeded") console.error(x);
+  return metin(hataKodu(x) === "auth/quota-exceeded" ? "ghGunlukSinirDavet" : "davetGonderilemedi");
+};
+
 export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomulu?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
@@ -122,10 +132,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
         bildir(t("davetGonderildi", { eposta }));
         setForm(BOS_FORM);
       })
-      .catch((x) => {
-        console.error(x);
-        bildir(t("davetGonderilemedi"));
-      })
+      .catch((x) => bildir(gonderimHatasi(x)))
       .finally(() => setBekle(false));
   };
 
@@ -133,7 +140,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
     firebaseYukle()
       .then((f) => f.baglantiGonder(eposta, dil))
       .then(() => bildir(t("davetGonderildi", { eposta })))
-      .catch(() => bildir(t("davetGonderilemedi")));
+      .catch((x) => bildir(gonderimHatasi(x)));
   const iptalEt = (eposta: string) => firebaseYukle().then((f) => f.davetIptal(eposta));
 
   const baglantiAc = () =>
@@ -569,10 +576,7 @@ function BaglaPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
         bildir(t("davetGonderildi", { eposta: adres }));
         kapat();
       })
-      .catch((x) => {
-        console.error(x);
-        bildir(t("davetGonderilemedi"));
-      })
+      .catch((x) => bildir(gonderimHatasi(x)))
       .finally(() => setBekle(false));
   };
   return (

@@ -1741,6 +1741,16 @@ const M = {
   ghHesapKapali: m("Bu hesap kapatılmış.", "هذا الحساب مغلق.", "This account is disabled."),
   ghYontemKapali: m("Bu giriş yöntemi Firebase'de kapalı; yönetici açmalı.", "طريقة الدخول هذه معطّلة في Firebase؛ على المسؤول تفعيلها.", "This sign-in method is disabled in Firebase; an administrator must enable it."),
   ghAdresIzinsiz: m("Bu adres Firebase'de izinli değil; yönetici eklemeli.", "هذا العنوان غير مسموح في Firebase؛ على المسؤول إضافته.", "This address is not authorised in Firebase; an administrator must add it."),
+  ghGunlukSinir: m(
+    "Bugün gönderilebilecek giriş bağlantısı sınırı doldu. Yarın tekrar dene ya da yöneticiye haber ver.",
+    "بلغنا الحد اليومي لروابط الدخول. حاول غدا أو أبلغ المسؤول.",
+    "Today's limit for sign-in links has been reached. Try again tomorrow or tell an administrator.",
+  ),
+  ghGunlukSinirDavet: m(
+    "Davet kaydedildi ama e-posta gitmedi: günlük bağlantı sınırı doldu. Yarın \"Yeniden gönder\" ile gönder.",
+    "حُفظت الدعوة لكن البريد لم يُرسل: بلغنا الحد اليومي للروابط. أرسلها غدا بـ«إعادة الإرسال».",
+    "The invitation was saved but the email was not sent: the daily link limit was reached. Send it tomorrow with \"Resend\".",
+  ),
   ghBilinmeyen: m("Beklenmeyen bir hata oldu; tekrar dene.", "حدث خطأ غير متوقع؛ حاول مجددا.", "Something went wrong; try again."),
   davetEt: m("Davet et", "دعوة", "Invite"),
   davetGonder: m("Davet gönder", "إرسال الدعوة", "Send invitation"),

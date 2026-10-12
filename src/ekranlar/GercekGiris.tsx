@@ -37,6 +37,8 @@ const HATALAR: Record<string, Anahtar> = {
   "auth/invalid-action-code": "ghBaglantiGecersiz",
   "auth/expired-action-code": "ghBaglantiGecersiz",
   "auth/weak-password": "ghSifreZayif",
+  // Ücretsiz planda günde gönderilebilen giriş bağlantısı sınırlı; ertesi gün açılıyor.
+  "auth/quota-exceeded": "ghGunlukSinir",
   // Projede şifre kuralı açıksa (büyük harf, rakam…) Firebase bunu döndürüyor.
   "auth/password-does-not-meet-requirements": "ghSifreKurali",
   "auth/user-disabled": "ghHesapKapali",
