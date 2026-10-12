@@ -61,6 +61,18 @@ service cloud.firestore {
       allow list, create, update, delete: if yetkiVar("kayitBaglantisi");
     }
 
+    // Kayıt başvurusu (src/depo/firebase.ts → basvuruKaydet): formu dolduran, açık bağlantının koduyla yazar;
+    // kişi yalnız kendi adresininkini okur. Kişi kaydını kurmak yine e-postanın doğrulanmasını istiyor.
+    match /kayitBasvurulari/{adres} {
+      allow get: if (oturum() && eposta() == adres) || yetkiVar("kayitBaglantisi");
+      allow list, delete: if yetkiVar("kayitBaglantisi");
+      allow create, update: if request.resource.data.keys().hasOnly(["kod", "ad", "birim", "gorev", "zaman"])
+        && request.resource.data.kod is string
+        && exists(kayitYolu(request.resource.data.kod))
+        && get(kayitYolu(request.resource.data.kod)).data.acik == true
+        && request.time.toMillis() < get(kayitYolu(request.resource.data.kod)).data.bitis;
+    }
+
     match /kisiler/{id} {
       // Kişi kendi kaydını her zaman okuyabiliyor: pasif olduğunu da öğrenmeli.
       allow read: if etkin() || (oturum() && id == request.auth.uid);
@@ -104,7 +116,7 @@ service cloud.firestore {
 
     // Öbür bütün kayıt: etkin kişiler okur ve yazar.
     match /{alan}/{belge} {
-      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "yapilar", "yapiTaslaklari"]);
+      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]);
     }
   }
 }

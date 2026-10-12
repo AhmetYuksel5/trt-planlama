@@ -1914,6 +1914,11 @@ const M = {
     "{eposta} is not verified yet. Click the verification link in the email, then sign in again.",
   ),
   ggDogrulamaIste: m("Doğrulama e-postasını yeniden gönder", "إعادة إرسال بريد التحقق", "Resend verification email"),
+  kayitHesapVar: m(
+    "Bilgilerin kaydedildi. Bu e-postayla hesap zaten var: şifrenle giriş yap. Şifreni bilmiyorsan girişteki \"Şifremi unuttum\" ile belirle.",
+    "حُفظت بياناتك. يوجد حساب بهذا البريد: ادخل بكلمة المرور. إن لم تعرفها فعيّنها عبر «نسيت كلمة المرور» في صفحة الدخول.",
+    "Your details were saved. An account with this email already exists: sign in with your password. If you don't know it, set one with \"Forgot password\" on the sign-in page.",
+  ),
   ghEpostaKayitli: m(
     "Bu e-posta ile hesap zaten var. Giriş yap ya da \"Şifremi unuttum\" ile şifreni yenile.",
     "يوجد حساب بهذا البريد. سجّل الدخول أو جدّد كلمة المرور عبر «نسيت كلمة المرور».",

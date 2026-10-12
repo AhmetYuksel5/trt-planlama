@@ -378,7 +378,7 @@ export interface Davet {
  * ve davet "kullanıldı" oluyor; ikisi tek yazışta. Kurallar ikisini de
  * denetliyor (firestore.rules).
  */
-export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): Promise<KisiHali | "davetYok" | "dogrulanmadi"> => {
+export const ilkKayit = async (verilen?: KayitBilgisi | null): Promise<KisiHali | "davetYok" | "dogrulanmadi"> => {
   const u = auth.currentUser;
   if (!u?.email) return "davetYok";
   const hal = await kisiHali(u);
@@ -409,6 +409,7 @@ export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): 
     return "etkin";
   }
   // Kayıt bağlantısı: bilgileri kişi girdi; yetkisiz personel olarak açılıyor, yönetici sonra düzeltiyor.
+  const kayit = verilen ?? kayitBilgisiOku() ?? (await basvuruOku(eposta).catch(() => null));
   const baglanti = kayit ? await kayitBaglantisiOku(kayit.kod).catch(() => null) : null;
   if (kayit && baglanti && kayitAcik(baglanti)) {
     // Kural e-postanın sahibi olduğunu istiyor; doğrulamadan önce kayıt kurulmuyor.
@@ -522,19 +523,22 @@ export const kayitOl = async (eposta: string, sifre: string, bilgi: KayitBilgisi
   baslat();
   auth.languageCode = dil;
   const e = ePosta(eposta);
+  // Önce başvuru: hesap zaten varsa da bilgiler kalsın, kişi şifresiyle girince kaydı kurulsun.
+  await basvuruKaydet(e, bilgi);
   let user: User;
   try {
     user = (await createUserWithEmailAndPassword(auth, e, sifre)).user;
   } catch (x) {
-    // Önceki deneme hesabı açıp e-postayı gönderemediyse: aynı şifreyle doğrulanmamış hesap yeniden deneniyor.
     if (hataKodu(x) !== "auth/email-already-in-use") throw x;
+    // Önceki deneme hesabı açıp e-postayı gönderemediyse: aynı şifreyle doğrulanmamış hesaba yeniden gönderiliyor.
     const u = await signInWithEmailAndPassword(auth, e, sifre).then(
       (c) => c.user,
       () => null,
     );
     if (!u || u.emailVerified) {
       await signOut(auth).catch(() => {});
-      throw x;
+      // Başvuru kaydedildi; kişi şifresiyle (bilmiyorsa "Şifremi unuttum"la) girince kaydı kurulur.
+      throw { code: "kayit/hesap-var" };
     }
     user = u;
   }
@@ -560,7 +564,19 @@ export const dogrulamaGonder = async (dil: string) => {
   await sendEmailVerification(u, { url: bilgi ? kayitAdresi_(ePosta(u.email), bilgi) : sifreDonusu(ePosta(u.email)) });
 };
 
-/* Dönüş adresindeki bilgi kişinin elinden geçti: yalnız tanınan birim ve görev kabul. */
+/* Bilgi kişinin elinden geçti (adres, tarayıcı, başvuru belgesi): yalnız biçimi tutan birim ve görev kabul. */
+const kayitBilgisiCoz = (b: Partial<KayitBilgisi> | null | undefined): KayitBilgisi | null => {
+  if (!b) return null;
+  // Birim ve ünvan yöneticinin açtıkları da olabilir (yapi.ts); yalnız biçim denetleniyor.
+  const kimlikGibi = (x: unknown): x is string => typeof x === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(x);
+  if (typeof b.kod !== "string" || !kimlikGibi(b.birim) || !kimlikGibi(b.gorev)) return null;
+  const ad = (x: unknown) => (typeof x === "string" ? x.trim().slice(0, 80) : "");
+  const m = (typeof b.ad === "object" ? b.ad : {}) as Partial<Metin>;
+  const tr = ad(m.tr) || ad(m.en) || ad(m.ar);
+  if (!tr) return null;
+  return { kod: b.kod, birim: b.birim, gorev: b.gorev, ad: { tr, ar: ad(m.ar) || tr, en: ad(m.en) || tr } };
+};
+
 export const kayitBilgisiOku = (): KayitBilgisi | null => {
   try {
     let ham = new URLSearchParams(location.search).get("kayit");
@@ -570,16 +586,19 @@ export const kayitBilgisiOku = (): KayitBilgisi | null => {
       } catch {
         ham = null;
       }
-    if (!ham) return null;
-    // Birim ve ünvan yöneticinin açtıkları da olabilir (yapi.ts); yalnız biçim denetleniyor.
-    const kimlikGibi = (x: unknown) => typeof x === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(x);
-    const b = JSON.parse(ham) as KayitBilgisi;
-    if (typeof b.kod !== "string" || !kimlikGibi(b.birim) || !kimlikGibi(b.gorev)) return null;
-    const ad = (x: unknown) => (typeof x === "string" ? x.trim().slice(0, 80) : "");
-    const tr = ad(b.ad?.tr) || ad(b.ad?.en) || ad(b.ad?.ar);
-    if (!tr) return null;
-    return { kod: b.kod, birim: b.birim, gorev: b.gorev, ad: { tr, ar: ad(b.ad.ar) || tr, en: ad(b.ad.en) || tr } };
+    return ham ? kayitBilgisiCoz(JSON.parse(ham)) : null;
   } catch {
     return null;
   }
 };
+
+/*
+ * Başvuru: formdaki bilgiler e-posta adresiyle Firestore'da da duruyor
+ * (`kayitBasvurulari/<e-posta>`). Kişi doğrulama bağlantısına başka cihazda
+ * basabilir, hesabı önceden açılmış olabilir ya da şifresini "Şifremi
+ * unuttum"la belirleyebilir; hangi yoldan girerse girsin kaydı bununla
+ * kuruluyor. Kural yalnız açık kayıt bağlantısıyla yazdırıyor; kaydı
+ * kurmak yine e-postanın doğrulanmasını istiyor (kişiler kuralı).
+ */
+const basvuruKaydet = (e: string, b: KayitBilgisi) => setDoc(doc(db, "kayitBasvurulari", e), { ...b, zaman: new Date().toISOString() });
+const basvuruOku = async (e: string) => kayitBilgisiCoz((await getDoc(doc(db, "kayitBasvurulari", e))).data() as Partial<KayitBilgisi> | undefined);

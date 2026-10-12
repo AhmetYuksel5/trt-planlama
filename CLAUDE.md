@@ -109,9 +109,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - İkinci yol kayıt bağlantısı: yönetici paylaşılabilir, 7 günlük bağlantı
     açar (`kayitBaglantilari` koleksiyonu, `#/kayit/<kod>`,
     `ekranlar/KayitSayfasi.tsx`; demo açıkken de çalışır). Kişi adını,
-    birimini, görevini ve şifresini kendisi girer; bilgiler doğrulama
-    e-postasının dönüş adresinde (`kayit=`) ve tarayıcıda taşınır, `ilkKayit`
-    kaydı onunla kurar. Personel,
+    birimini, görevini ve şifresini kendisi girer; bilgiler başvuru belgesinde
+    (`kayitBasvurulari/<e-posta>`, kural yalnız açık bağlantının koduyla
+    yazdırır), doğrulama e-postasının dönüş adresinde (`kayit=`) ve
+    tarayıcıda taşınır; `ilkKayit` kaydı hangisi varsa onunla kurar. Hesap
+    önceden açılmışsa form "bilgilerin kaydedildi, şifrenle gir" der; kişi
+    "Şifremi unuttum"la girse de kaydı başvurudan kurulur. Personel,
     hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
     "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).

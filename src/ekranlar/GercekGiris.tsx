@@ -38,6 +38,8 @@ const HATALAR: Record<string, Anahtar> = {
   "auth/expired-action-code": "ghBaglantiGecersiz",
   "auth/weak-password": "ghSifreZayif",
   "auth/email-already-in-use": "ghEpostaKayitli",
+  // Kayıt formu: hesap önceden açılmış; başvuru kaydedildi, kişi şifresiyle girince kaydı kurulur.
+  "kayit/hesap-var": "kayitHesapVar",
   // Ücretsiz planda günde gönderilebilen giriş bağlantısı sınırlı; ertesi gün açılıyor.
   "auth/quota-exceeded": "ghGunlukSinir",
   // Projede şifre kuralı açıksa (büyük harf, rakam…) Firebase bunu döndürüyor.

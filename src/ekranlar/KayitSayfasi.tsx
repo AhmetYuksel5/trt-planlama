@@ -140,6 +140,11 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
             {hata.anahtar === "ghBilinmeyen" && hata.kod ? t("ghBilinmeyenKod", { kod: hata.kod }) : t(hata.anahtar)}
           </p>
         )}
+        {hata?.anahtar === "kayitHesapVar" && (
+          <a className="dugme" href={`?giris=sifre&e=${encodeURIComponent(f.eposta.trim().toLowerCase())}`} data-kayit-girise>
+            {t("ggGirisYap")}
+          </a>
+        )}
         <div className="gg-alt">
           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => (location.hash = "#/")}>
             <ArrowLeft size={14} className="yon" /> {t("ggDemoyaDon")}

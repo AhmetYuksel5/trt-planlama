@@ -82,7 +82,7 @@ Kurucu girişte **Etkinleştirme bağlantısı iste** ile bağlantı alır, şif
 1. [console.firebase.google.com](https://console.firebase.google.com) üzerinden bir proje açın; bir **web uygulaması** ekleyin.
 2. **Authentication › Sign-in method** bölümünde **Email/Password**'ü açın. **Email link (passwordless sign-in)** artık yeni davet ve kayıt için kullanılmıyor (ücretsiz planda günde yalnız 5 e-posta); açık kalması yalnız daha önce gönderilmiş bağlantıların çalışması için.
    - Davet: davetliye rastgele şifreli hesap açılır ve "şifreni belirle" (şifre sıfırlama) e-postası gider (ücretsiz planda günde 150). Kişi şifresini Firebase'in sayfasında belirler, `?giris=sifre` ile giriş ekranına döner, şifresiyle girer; kaydı davetten kurulur.
-   - Kayıt bağlantısı: kişi formda şifresini de belirler; hesabı açılır, doğrulama e-postası gider (günde 1000). Doğrulamadan girerse kayıt kurulmaz, "doğrula" ekranı ve yeniden gönderme çıkar.
+   - Kayıt bağlantısı: kişi formda şifresini de belirler; bilgileri önce `kayitBasvurulari/<e-posta>` belgesine yazılır, hesabı açılır, doğrulama e-postası gider (günde 1000). Doğrulamadan girerse kayıt kurulmaz, "doğrula" ekranı ve yeniden gönderme çıkar. Hesap önceden varsa form "bilgilerin kaydedildi, şifrenle gir" der; kişi şifresini bilmiyorsa "Şifremi unuttum"la belirler, girince kaydı başvurudan kurulur.
    - Davet ve "Şifremi unuttum" e-postası Firebase'in "Password reset" şablonuyla, İngilizce (`languageCode: "en"`) gidiyor. Şablon API'yle değiştirilemiyor (Firebase `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED` döndürüyor); konsoldan elle: Authentication › *Templates* › *Password reset* › kalem. Kullanılan metin:
      - Sender name: `Plannersflow`
      - Subject: `Set your Plannersflow password`
