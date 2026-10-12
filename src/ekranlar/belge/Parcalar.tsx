@@ -75,6 +75,10 @@ export function YerindeMetin({
     );
 
   const bitir = () => {
+    // Telefonda klavye dili değişirken (Gboard'da klavye seçimi) sistem penceresi odağı bir an sayfadan alıyor;
+    // bu da kutuya blur gönderiyor. Kutu kapanırsa klavye de gidiyordu: odak sayfanın dışına çıktıysa düzen sürer,
+    // pencere dönünce odak aynı kutuya döner.
+    if (!document.hasFocus()) return;
     setDuzen(false);
     if (!vazgecildi.current && taslak.trim() !== deger.trim()) kaydet(taslak.trim());
   };
