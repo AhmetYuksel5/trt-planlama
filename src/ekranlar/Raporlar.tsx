@@ -1,9 +1,10 @@
+import { birimAdi } from "../yapi";
 import { ChartColumn, FileDown, Printer } from "lucide-react";
 import { useState } from "react";
 import { indir } from "../bilesenler/indir";
 import { Bos, Ilerleme, Kart, KisiHucre, Sayac } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
-import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, TUR_ADI } from "../etiketler";
+import { BICIM_ADI, KANAL_ADI, TUR_ADI } from "../etiketler";
 import { DONEMLER, donemBasi, rapor, type Donem } from "../rapor";
 import { bugun } from "../tarih";
 import { ICERIK_TURLERI, useVeri, type Kisi } from "../veri";
@@ -75,7 +76,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
       ...r.oneriler.kanallar.map(([k, n]) => [`${t("kanal")}: ${t(KANAL_ADI[k])}`, n]),
       [],
       [t("rpBirimler"), t("sDevamEden"), t("sGeciken")],
-      ...r.birimler.map((b) => [t(BIRIM_ADI[b.birim]), b.devamEden, b.geciken]),
+      ...r.birimler.map((b) => [birimAdi(b.birim), b.devamEden, b.geciken]),
       [],
       [t("turDagilimi")],
       ...r.bicimler.map(([b, n]) => [t(BICIM_ADI(b)), n]),
@@ -181,7 +182,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
                 <tbody>
                   {r.birimler.map((b) => (
                     <tr key={b.birim}>
-                      <td className="birincil">{t(BIRIM_ADI[b.birim])}</td>
+                      <td className="birincil">{birimAdi(b.birim)}</td>
                       <td data-etiket={t("sDevamEden")}>{b.devamEden}</td>
                       <td data-etiket={t("sGeciken")} className={b.geciken ? "kotu-yazi" : ""}>
                         {b.geciken}

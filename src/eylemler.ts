@@ -1,4 +1,4 @@
-import { KOL_SAHIBI, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
+import { akisDamgasi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
@@ -30,6 +30,8 @@ import {
   type Birim,
   type Gorev,
   type EkipGorevi,
+  type BirimId,
+  type GorevId,
   type Mesaj,
   type PlanAdi,
   type Rol,
@@ -833,7 +835,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
   d = { ...d, paketler: [paket, ...d.paketler] };
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
-  return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: KOL_SAHIBI[k.tur] } });
+  return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: kolSahibi(k.tur) } });
 };
 
 /**
@@ -999,8 +1001,10 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
   if (yeni === "devralindi") {
     for (const p of paketler.filter((x) => x.durum === "onaylandi")) {
       const adim = ilkAdim(p);
-      d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "uretimde", adim }));
-      const sahip = paketSahibi({ ...p, durum: "uretimde", adim });
+      // Akışın o anki sürümü pakette kalıyor: sonradan yayınlanan düzen yarım işi bozmasın.
+      const akis = akisDamgasi(p);
+      d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "uretimde", adim, akis }));
+      const sahip = paketSahibi({ ...p, durum: "uretimde", adim, akis });
       d = hareketYaz(d, { kisiId: ben.id, tip: "planDevralindi", paketId: p.id, planId, veri: { adim, sahip: sahip ?? "" } });
     }
     // Plana stoktan seçilen paketler bu planla yayına çıkıyor; stoktan düşüp arşive geçiyor.
@@ -1323,8 +1327,9 @@ export const uretimeAl = (ben: Kisi, paketId: string) => {
   const p = paketBul(d, paketId);
   if (!p || !uretimeAlabilir(ben, p)) return false;
   const adim = ilkAdim(p);
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, durum: "uretimde", adim }));
-  const sahip = paketSahibi({ ...p, durum: "uretimde", adim });
+  const akis = akisDamgasi(p);
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, durum: "uretimde", adim, akis }));
+  const sahip = paketSahibi({ ...p, durum: "uretimde", adim, akis });
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimeAlindi", paketId, veri: { adim, sahip: sahip ?? "" } }));
   return true;
 };
@@ -1687,7 +1692,7 @@ export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[
  * girdiklerine yönetici böyle bakıyor; kaydedince "kontrol bekliyor"
  * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
-export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: Birim; gorev: Gorev; rol: Rol; ad?: Yazi }) => {
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; rol: Rol; ad?: Yazi }) => {
   if (!GERCEK || !hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
   if (!d.kisiler.some((k) => k.id === kisiId)) return false;
@@ -1755,7 +1760,7 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
  * (muhabir, ekip, plan satırı) görünüyor, giriş yapamıyor; işini Planlama
  * onun adına görüyor. Yetkisiz: rolü personel.
  */
-export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: Birim; gorev: Gorev; eposta?: string; telefon?: string; sehir?: Sehir }) => {
+export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: BirimId; gorev: GorevId; eposta?: string; telefon?: string; sehir?: Sehir }) => {
   if (!GERCEK || !hesapYetkisi(ben, "hesapsizKisi")) return null;
   const d = getir();
   const yeni: Kisi = {
@@ -2448,7 +2453,7 @@ export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => 
 };
 
 /** Muhabire öneri gönderebilecek birimler: yalnız tam yönetici seçiyor. */
-export const muhabireOneriBirimleriKaydet = (ben: Kisi, birimler: Birim[]) => {
+export const muhabireOneriBirimleriKaydet = (ben: Kisi, birimler: BirimId[]) => {
   if (!ben.hesapYoneticisi) return false;
   const d = getir();
   kaydet({ ...d, muhabireOneriBirimleri: [...new Set(birimler)].filter((b) => b !== "muhabir") });

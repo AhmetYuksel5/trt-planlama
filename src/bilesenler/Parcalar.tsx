@@ -346,7 +346,7 @@ const PAKET_DURUM_TONU: Record<Paket["durum"], string> = {
 export function PaketDurumRozeti({ paket }: { paket: Paket }) {
   const { t } = useDil();
   if (paket.durum === "uretimde" && paket.adim) {
-    return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{t(adimAdi(paket.adim as UretimAdimi, paket))}</Rozet>;
+    return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{adimAdi(paket.adim as UretimAdimi, paket)}</Rozet>;
   }
   const stok = stokDurumu(paket);
   if (stok === "stokta" || stok === "yayinlandi" || stok === "bekliyor") return <Rozet ton={STOK_DURUM_TONU[stok]}>{t(STOK_DURUM_ADI[stok])}</Rozet>;
@@ -411,7 +411,7 @@ export function AsamaBuyuk({ paket }: { paket: Paket }) {
         <div className="adim-seridi">
           {yol.map((a, i) => (
             <span key={a} className={i < adimSirasi ? "gecti" : i === adimSirasi ? (gecikti ? "gecikti" : "simdi") : ""}>
-              {t(adimAdi(a, paket))}
+              {adimAdi(a, paket)}
             </span>
           ))}
         </div>

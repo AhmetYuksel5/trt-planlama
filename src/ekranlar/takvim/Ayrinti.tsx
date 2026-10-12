@@ -1,8 +1,9 @@
+import { birimAdi } from "../../yapi";
 import { CalendarDays, CalendarRange, Calendar, Link2, Pencil, Trash2, Tv } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Icerik, KisiHucre, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
-import { BIRIM_ADI, TUR_ADI, bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, hatirlatmaAdi, oncelikAdi, potansiyelAdi, tekrarAdi } from "../../etiketler";
+import { TUR_ADI, bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, hatirlatmaAdi, oncelikAdi, potansiyelAdi, tekrarAdi } from "../../etiketler";
 import { faaliyetAylikaEkle, faaliyetDegistir, faaliyetHaftalikaBagla, faaliyetNextDayeEkle, faaliyetOzeleEkle, faaliyetSil } from "../../eylemler";
 import { haftaSonu } from "../../haftalik";
 import { useBen } from "../../oturum";
@@ -241,7 +242,7 @@ function Ayrinti({ o, ben, ac, kapat }: { o: Olusum; ben: Kisi; ac: (e: Ekran) =
         {f.birim && (
           <div className="alan">
             <small>{t("sorumluBirim")}</small>
-            <b>{t(BIRIM_ADI[f.birim])}</b>
+            <b>{birimAdi(f.birim)}</b>
           </div>
         )}
         {f.muhabirId && (

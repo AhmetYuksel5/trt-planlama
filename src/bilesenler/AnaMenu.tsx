@@ -1,7 +1,7 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { BookOpen, Building, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserCog, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
@@ -226,8 +226,8 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
       <div className="birim-kutusu">
         <Building size={20} />
         <div>
-          {t(BIRIM_ADI[ben.birim])}
-          <small>{t(GOREV_ADI[ben.gorev])}</small>
+          {birimAdi(ben.birim)}
+          <small>{gorevAdi(ben.gorev)}</small>
         </div>
       </div>
       {MENU.map((g, i) => {

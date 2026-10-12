@@ -1,9 +1,9 @@
+import { birimAdi } from "../yapi";
 import { ArrowRight, Check, Circle, LogIn, X } from "lucide-react";
 import { NEXTDAY_KUTULARI } from "../akis";
 import DilSecici from "../bilesenler/DilSecici";
 import { Avatar, Rozet } from "../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../dil";
-import { BIRIM_ADI } from "../etiketler";
 import { girisYap, useBen } from "../oturum";
 import { BIRIMLER, kisiBul, useVeri, type Birim } from "../veri";
 import { yetkiMatrisi } from "../yetki";
@@ -135,7 +135,7 @@ export default function ProjePlani() {
                   <Rozet>{t(k.vakit)}</Rozet>
                   {k.birimler.map((b) => (
                     <Rozet key={b} ton="vurgu">
-                      {t(BIRIM_ADI[b])}
+                      {birimAdi(b)}
                     </Rozet>
                   ))}
                 </div>
@@ -187,7 +187,7 @@ export default function ProjePlani() {
                 <tbody>
                   {BIRIM_PENCERESI.map(([b, g, e]) => (
                     <tr key={b}>
-                      <td className="kalin birincil">{t(BIRIM_ADI[b])}</td>
+                      <td className="kalin birincil">{birimAdi(b)}</td>
                       <td data-etiket={t("ppGorevi")}>{t(g)}</td>
                       <td className="sonuk" data-etiket={t("ppAnaSayfasinda")}>
                         {t(e)}
@@ -230,7 +230,7 @@ export default function ProjePlani() {
                   <tr>
                     <th>{t("ppIslem")}</th>
                     {BIRIMLER.map((b) => (
-                      <th key={b}>{t(BIRIM_ADI[b])}</th>
+                      <th key={b}>{birimAdi(b)}</th>
                     ))}
                   </tr>
                 </thead>
@@ -333,7 +333,7 @@ export default function ProjePlani() {
                   <p>
                     {t(adim)}
                     <small>
-                      {ad(k)} · {k ? t(BIRIM_ADI[k.birim]) : ""}
+                      {ad(k)} · {k ? birimAdi(k.birim) : ""}
                     </small>
                   </p>
                   <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => dene(id, hedef)}>

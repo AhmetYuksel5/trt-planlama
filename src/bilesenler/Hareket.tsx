@@ -1,9 +1,10 @@
+import { birimAdi } from "../yapi";
 import { ArrowRight } from "lucide-react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, adimAdi, type UretimAdimi } from "../akis";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
-import { BIRIM_ADI, ONERI_DURUM_ADI } from "../etiketler";
+import { ONERI_DURUM_ADI } from "../etiketler";
 import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
@@ -217,15 +218,15 @@ export function HareketGecmisi({ hareketler, d }: { hareketler: Hareket[]; d: Du
                 {m.sonra}
               </p>
               <small>
-                {m.kisi && <span>{t(BIRIM_ADI[m.kisi.birim])}</span>}
+                {m.kisi && <span>{birimAdi(m.kisi.birim)}</span>}
                 {sahip && m.kisi && sahip !== m.kisi.birim && (
                   <>
                     <ArrowRight size={12} className="yon" />
-                    <span>{t(BIRIM_ADI[sahip])}</span>
+                    <span>{birimAdi(sahip)}</span>
                   </>
                 )}
                 {adim && adim !== "tamam" && adim in ADIM_ADI && (
-                  <Rozet ton="vurgu">{t(paket ? adimAdi(adim as UretimAdimi, paket) : ADIM_ADI[adim as UretimAdimi])}</Rozet>
+                  <Rozet ton="vurgu">{paket ? adimAdi(adim, paket) : t(ADIM_ADI[adim as UretimAdimi])}</Rozet>
                 )}
                 {adim === "tamam" && <Rozet ton="iyi">{t(h.veri?.stok ? "sdStokta" : ASAMA_ADI[ASAMALAR[4]])}</Rozet>}
               </small>

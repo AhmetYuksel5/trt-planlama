@@ -1,9 +1,10 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
-import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
+import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { firebaseYukle } from "../kip";
@@ -217,7 +218,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                 <select value={form.birim} onChange={(e) => alan("birim", e.target.value as Birim)} data-davet-birim>
                   {BIRIMLER.map((b) => (
                     <option key={b} value={b}>
-                      {t(BIRIM_ADI[b])}
+                      {birimAdi(b)}
                     </option>
                   ))}
                 </select>
@@ -227,7 +228,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                 <select value={form.gorev} onChange={(e) => alan("gorev", e.target.value as Gorev)} data-davet-gorev>
                   {GOREVLER.map((g) => (
                     <option key={g} value={g}>
-                      {t(GOREV_ADI[g])}
+                      {gorevAdi(g)}
                     </option>
                   ))}
                 </select>
@@ -324,7 +325,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                     </td>
                     <td data-etiket={t("ad")}>{ad({ ad: d.ad })}</td>
                     <td data-etiket={t("birim")}>
-                      {t(BIRIM_ADI[d.birim])} · {t(GOREV_ADI[d.gorev])}
+                      {birimAdi(d.birim)} · {gorevAdi(d.gorev)}
                     </td>
                     <td data-etiket={t("durum")}>
                       <Rozet ton={DAVET_DURUM_TONU[d.durum]}>{t(DAVET_DURUM_ADI[d.durum])}</Rozet>
@@ -372,7 +373,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
                   <bdi>{k.eposta || "—"}</bdi>
                 </td>
                 <td data-etiket={t("birim")}>
-                  {t(BIRIM_ADI[k.birim])} · {t(GOREV_ADI[k.gorev])}
+                  {birimAdi(k.birim)} · {gorevAdi(k.gorev)}
                 </td>
                 <td data-etiket={t("durum")}>
                   {k.hesapsiz ? (
@@ -669,7 +670,7 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
           <select value={p.birim} onChange={(e) => setP({ ...p, birim: e.target.value as Birim })} data-pozisyon-birim>
             {BIRIMLER.map((b) => (
               <option key={b} value={b}>
-                {t(BIRIM_ADI[b])}
+                {birimAdi(b)}
               </option>
             ))}
           </select>
@@ -679,7 +680,7 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
           <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value as Gorev })} data-pozisyon-gorev>
             {GOREVLER.map((g) => (
               <option key={g} value={g}>
-                {t(GOREV_ADI[g])}
+                {gorevAdi(g)}
               </option>
             ))}
           </select>

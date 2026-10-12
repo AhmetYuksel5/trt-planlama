@@ -1,10 +1,11 @@
+import { birimAdi } from "../../yapi";
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
-import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
+import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { acikCagri, useVeri, type Kisi, type Oneri } from "../../veri";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
@@ -116,7 +117,7 @@ function Siram({ ben }: { ben: Kisi }) {
                         <Icerik blok>{p.baslik}</Icerik>
                       </a>
                       <small>
-                        {t(adimAdi(p.adim as UretimAdimi, p))}
+                        {adimAdi(p.adim as UretimAdimi, p)}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
                       </small>
                     </div>
@@ -152,8 +153,8 @@ function Haberlerim({ ben }: { ben: Kisi }) {
                           <Icerik blok>{p.baslik}</Icerik>
                         </a>
                         <small>
-                          {sahip ? t("simdiKimdeKisa", { birim: t(BIRIM_ADI[sahip]) }) : t("pdTamamlandi")}
-                          {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: t(adimAdi(sonraki, p)) })}`}
+                          {sahip ? t("simdiKimdeKisa", { birim: birimAdi(sahip) }) : t("pdTamamlandi")}
+                          {sonraki && sonraki !== "tamam" && ` · ${t("siradaKisa", { adim: adimAdi(sonraki, p) })}`}
                         </small>
                       </div>
                       {p.oncelikli && <OncelikRozeti />}

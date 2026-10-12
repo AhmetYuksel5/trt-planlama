@@ -1,9 +1,10 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Avatar, Rozet } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
-import { BIRIM_ADI, GOREV_ADI, sehirAdi } from "../etiketler";
+import { sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
 import { BIRIMLER, useVeri, type Birim, type Kisi } from "../veri";
 import Logo from "../bilesenler/Logo";
@@ -41,9 +42,9 @@ export default function Giris() {
       <div>
         <b>{ad(k)}</b>
         <small>
-          {t(GOREV_ADI[k.gorev])} · {t(sehirAdi(k.sehir))}
+          {gorevAdi(k.gorev)} · {t(sehirAdi(k.sehir))}
         </small>
-        <Rozet ton={k.rol === "yonetici" ? "koyu" : ""}>{t(BIRIM_ADI[k.birim])}</Rozet>
+        <Rozet ton={k.rol === "yonetici" ? "koyu" : ""}>{birimAdi(k.birim)}</Rozet>
       </div>
     </button>
   );
@@ -85,7 +86,7 @@ export default function Giris() {
               </button>
               {BIRIMLER.map((b) => (
                 <button key={b} className={birim === b ? "acik" : ""} onClick={() => setBirim(b)}>
-                  {t(BIRIM_ADI[b])}
+                  {birimAdi(b)}
                   <em>{v.kisiler.filter((k) => k.birim === b).length}</em>
                 </button>
               ))}

@@ -1,8 +1,9 @@
+import { birimAdi } from "../../yapi";
 import { Bell, CalendarCheck, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Link2, Plus, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bos, Kart, Sayac } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
-import { BIRIM_ADI, bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, oncelikAdi, potansiyelAdi, ulkeAdi } from "../../etiketler";
+import { bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, oncelikAdi, potansiyelAdi, ulkeAdi } from "../../etiketler";
 import {
   aramaUyar,
   etkinSuzgecSayisi,
@@ -247,7 +248,7 @@ function Suzgecler({ ben, suzgec, degistir }: { ben: Kisi; suzgec: Suzgec; degis
           {secim("oncelik", t("oncelik"), ONCELIKLER.map((x) => [x, t(oncelikAdi(x))]))}
           {secim("potansiyel", t("haberPotansiyeli"), POTANSIYELLER.map((x) => [x, t(potansiyelAdi(x))]))}
           {secim("durum", t("durum"), FAALIYET_DURUMLARI.map((x) => [x, t(faaliyetDurumAdi(x))]))}
-          {secim("birim", t("sorumluBirim"), BIRIMLER.filter((b) => b !== "muhabir").map((b) => [b, t(BIRIM_ADI[b])]))}
+          {secim("birim", t("sorumluBirim"), BIRIMLER.filter((b) => b !== "muhabir").map((b) => [b, birimAdi(b)]))}
           {ben.birim !== "muhabir" &&
             secim(
               "muhabirId",

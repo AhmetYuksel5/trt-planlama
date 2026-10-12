@@ -1711,7 +1711,7 @@ export const ORNEK = (): Durum => {
     const plan = t.plan ? planlar.find((p) => p.id === planId(t.plan!)) : undefined;
     const tarih = plan?.tarih ?? gun(-2);
     const tur = t.tur ?? "haber";
-    const yol = uretimYolu({ sahaGerekli: !!t.saha });
+    const yol = uretimYolu({ sahaGerekli: !!t.saha, tur });
     const bitti = t.durum === "tamamlandi";
     const geçilen = t.durum === "uretimde" ? yol.slice(0, yol.indexOf(t.adim!)) : bitti ? yol : [];
     const p: Paket = {
@@ -1771,7 +1771,7 @@ export const ORNEK = (): Durum => {
       const son = plan?.id === planId("dun") ? new Date(zaman(gun(-1), "20:00")).getTime() : an - (5 + i * 3) * DAKIKA;
       const adimlar = geçilen.flatMap((a) => (a === "kontrol" && t.geriGonder ? (["metin", "geri", "kontrol"] as const) : [a]));
       // Geri gönderilen pakette metin iki kez geliyor: önce gelen metin, geri gönderme, düzeltilmiş metin.
-      const sira: (UretimAdimi | "geri")[] = [];
+      const sira: string[] = [];
       for (const a of adimlar) {
         if (a === "metin" && sira.includes("metin")) continue;
         sira.push(a);
@@ -1791,7 +1791,7 @@ export const ORNEK = (): Durum => {
         if (a === "gorevlendirme") veri.muhabir = t.muhabirId;
         if (a === "newsdesk") p.gorevZamani = zamanlar[j];
         if (a === "video") p.muhabirTeslimi = zamanlar[j];
-        h(kisi, ADIM_HAREKETI[a], zamanlar[j], { paketId: p.id, planId: plan?.id, veri });
+        h(kisi, ADIM_HAREKETI[a as keyof typeof ADIM_HAREKETI], zamanlar[j], { paketId: p.id, planId: plan?.id, veri });
       });
       if (t.geriGonder && sira.includes("geri")) p.duzeltmeSayisi = 1;
       if (bitti) p.nitelik = 4;
@@ -2351,7 +2351,7 @@ export const ORNEK = (): Durum => {
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 16,
+    surum: 17,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -2452,6 +2452,7 @@ export const ORNEK = (): Durum => {
     ],
     hareketler: hareketler.sort(sirala),
     mesajlar,
+    yapilar: [],
     okundu: {},
     sayac,
   };

@@ -1,3 +1,4 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { AlertTriangle, ArrowLeft, CheckCircle, CirclePlay, ClipboardCheck, ClipboardList, Eye, Flag, Gauge, PenLine } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, adimAdi, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
@@ -5,7 +6,7 @@ import { Bos, Icerik, Kart, Rozet, Sayac, Tumu, bildir, icerikAlani } from "../b
 import { OnIncelemeKarti } from "../bilesenler/Haftalik";
 import { OncelikDugmesi } from "../bilesenler/Yonetici";
 import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
-import { BIRIM_ADI, GOREV_ADI, KISI_DURUM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, ulkeAdi } from "../etiketler";
+import { KISI_DURUM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, ulkeAdi } from "../etiketler";
 import { talimatVer } from "../eylemler";
 import { aralikYaz } from "../dil";
 import { gorusBekleyenler, haftaSonu, onIncelemeBekleyenler } from "../haftalik";
@@ -144,7 +145,7 @@ function BirimKarti({ durum, ayrinti }: { durum: BirimDurumu; ayrinti: string })
   return (
     <section className="kart birim-karti">
       <header>
-        <h3>{t(BIRIM_ADI[durum.birim])}</h3>
+        <h3>{birimAdi(durum.birim)}</h3>
         <span className={`isik isik-${isik}`}>
           <i aria-hidden="true" />
           {gerekce}
@@ -183,7 +184,7 @@ function DikkatListesi({ ben, d, paketler, ks }: { ben: Kisi; d: Durum; paketler
   const an = Date.now();
   const kimde = (p: Paket) => {
     const b = paketSahibi(p);
-    return b ? t(BIRIM_ADI[b]) : "";
+    return b ? birimAdi(b) : "";
   };
   const satirlar: DikkatSatiri[] = [];
   for (const p of paketler.filter((x) => geciktiMi(x))) {
@@ -191,7 +192,7 @@ function DikkatListesi({ ben, d, paketler, ks }: { ben: Kisi; d: Durum; paketler
     satirlar.push({ anahtar: `g-${p.id}`, ton: "kotu", baslik: p.baslik, icerik: true, alt: t("dkGecikti", { sure: sureYaz(dk, t), birim: kimde(p) }), href: `#/paketler/${p.id}`, paket: p });
   }
   for (const p of paketler.filter((x) => x.oncelikli && aktifMi(x) && !geciktiMi(x))) {
-    const asama = p.durum === "uretimde" && p.adim ? t(adimAdi(p.adim as UretimAdimi, p)) : kimde(p);
+    const asama = p.durum === "uretimde" && p.adim ? adimAdi(p.adim as UretimAdimi, p) : kimde(p);
     const teslim = p.teslim ? ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}` : "";
     satirlar.push({ anahtar: `o-${p.id}`, ton: "vurgu", baslik: p.baslik, icerik: true, alt: `${t("oncelikli")} · ${asama}${teslim}`, href: `#/paketler/${p.id}`, paket: p });
   }
@@ -361,7 +362,7 @@ function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
     <>
       <div className="gozlem-bandi" role="note">
         <Eye size={16} />
-        <span>{t("gozlemBandi", { birim: t(BIRIM_ADI[birim]) })}</span>
+        <span>{t("gozlemBandi", { birim: birimAdi(birim) })}</span>
         <a className="dugme dugme-ikincil dugme-kucuk" href="#/panel">
           <ArrowLeft size={14} className="yon" /> {t("panelaDon")}
         </a>
@@ -385,7 +386,7 @@ export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi;
     return <BirimGorunumu ben={ben} birim={birim as Birim} />;
   }
 
-  const kapsamAdi = ks.birimler.map((b) => t(BIRIM_ADI[b])).join(", ");
+  const kapsamAdi = ks.birimler.map((b) => birimAdi(b)).join(", ");
   const talimatVerir = talimatVerebilir(ben);
 
   return (
@@ -394,7 +395,7 @@ export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi;
         sekme={!ana}
         ikon={<Gauge size={26} />}
         baslik={t("mPanel")}
-        alt={`${t(GOREV_ADI[ben.gorev])} · ${t("ypKapsam", { birimler: kapsamAdi })}`}
+        alt={`${gorevAdi(ben.gorev)} · ${t("ypKapsam", { birimler: kapsamAdi })}`}
         sagUc={
           talimatVerir && !talimat ? (
             <button className="dugme" onClick={() => setTalimat(true)}>

@@ -1,3 +1,4 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
@@ -5,7 +6,7 @@ import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac,
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
 import { profilGuncelle, type ProfilGirdisi } from "../eylemler";
-import { BICIM_ACIKLAMA, BICIM_ADI, BIRIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, GOREV_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, BIRIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type Birim, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
@@ -87,7 +88,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
               <option value="">{t("tumBirimler")}</option>
               {BIRIMLER.filter((b) => tum.some((k) => k.birim === b)).map((b) => (
                 <option key={b} value={b}>
-                  {t(BIRIM_ADI[b])}
+                  {birimAdi(b)}
                 </option>
               ))}
             </select>
@@ -162,9 +163,9 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                         <Avatar kisi={k} boy="kucuk" durum /> {ad(k)}
                       </a>
                     </td>
-                    <td data-etiket={t("birim")}>{t(BIRIM_ADI[k.birim])}</td>
+                    <td data-etiket={t("birim")}>{birimAdi(k.birim)}</td>
                     <td className="sonuk" data-etiket={t("gorev")}>
-                      {t(GOREV_ADI[k.gorev])}
+                      {gorevAdi(k.gorev)}
                       {k.calisma !== "kadrolu" && (
                         <>
                           {" "}
@@ -425,7 +426,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
           <h1>{ad(kisi)}</h1>
           {obur !== ad(kisi) && <p className="obur-ad">{obur}</p>}
           <p>
-            {t(BIRIM_ADI[kisi.birim])} · {t(GOREV_ADI[kisi.gorev])} · {t(sehirAdi(kisi.sehir))}
+            {birimAdi(kisi.birim)} · {gorevAdi(kisi.gorev)} · {t(sehirAdi(kisi.sehir))}
           </p>
           <p className="rozetler">
             <Rozet ton={kisi.durum === "sahada" ? "vurgu" : kisi.durum === "yolda" ? "uyari" : kisi.durum === "izinli" ? "" : "iyi"}>{t(KISI_DURUM_ADI[kisi.durum])}</Rozet>

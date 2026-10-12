@@ -1,8 +1,8 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { GERCEK } from "../kip";
 import { muhabireOneriBirimleriKaydet } from "../eylemler";
 import { BIRIMLER, sifirla, useVeri, type Kisi } from "../veri";
@@ -25,8 +25,8 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         </Kart>
         <Kart baslik={t("oturum")}>
           <p>
-            <b>{ad(ben)}</b> · {t(BIRIM_ADI[ben.birim])} ·{" "}
-            {t(GOREV_ADI[ben.gorev])}
+            <b>{ad(ben)}</b> · {birimAdi(ben.birim)} ·{" "}
+            {gorevAdi(ben.gorev)}
           </p>
         </Kart>
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
@@ -66,7 +66,7 @@ function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
               onChange={(e) => muhabireOneriBirimleriKaydet(ben, e.target.checked ? [...secili, b] : secili.filter((x) => x !== b))}
               data-birim={b}
             />
-            {t(BIRIM_ADI[b])}
+            {birimAdi(b)}
           </label>
         ))}
       </div>

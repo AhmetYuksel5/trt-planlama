@@ -1,7 +1,8 @@
+import { birimAdi } from "../yapi";
 import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Tv, type LucideIcon } from "lucide-react";
 import { geciktiMi, paketSahibi, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
-import { BICIM_ADI, BIRIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
 import { git } from "../yol";
 import { kisiBul, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
@@ -97,7 +98,7 @@ export function PaketTablosu({
                     </div>
                   </td>
                 )}
-                {var_("kimde") && <td data-etiket={t("simdiKimde")}>{sahip ? t(BIRIM_ADI[sahip]) : "—"}</td>}
+                {var_("kimde") && <td data-etiket={t("simdiKimde")}>{sahip ? birimAdi(sahip) : "—"}</td>}
                 {var_("teslim") && (
                   <td className="dar" data-etiket={t("teslim")}>
                     {p.teslim ? (

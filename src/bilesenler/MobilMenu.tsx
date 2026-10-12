@@ -1,8 +1,8 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { BookOpen, LogOut, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDil } from "../dil";
 import { KisayolKutulari } from "../ekranlar/ortam/Kisayollar";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { GERCEK } from "../kip";
 import { oturumdanCik } from "../oturum";
 import type { Kisi } from "../veri";
@@ -70,7 +70,7 @@ export default function MobilMenu({
           <div>
             <b>{ad(ben)}</b>
             <small>
-              {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
+              {birimAdi(ben.birim)} · {gorevAdi(ben.gorev)}
             </small>
           </div>
         </a>

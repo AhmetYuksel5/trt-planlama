@@ -1,3 +1,4 @@
+import { birimAdi } from "../../yapi";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,7 +8,7 @@ import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablos
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaSonu } from "../../haftalik";
 import { oneriDurum, oneriGonder, oneriYenidenGonder } from "../../eylemler";
-import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
+import { KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
@@ -391,7 +392,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                 <div>
                   <b>{ad(muhabir)}</b>
                   <small>
-                    {t(BIRIM_ADI[muhabir.birim])} · {t(sehirAdi(muhabir.sehir))}
+                    {birimAdi(muhabir.birim)} · {t(sehirAdi(muhabir.sehir))}
                   </small>
                 </div>
               </div>

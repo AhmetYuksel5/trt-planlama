@@ -1,7 +1,7 @@
 import { geciktiMi, paketSahibi } from "./akis";
 import { olcumler, type Performans } from "./performans";
 import { bugun, gunEkle, yerelGun } from "./tarih";
-import type { Bicim, Birim, Durum, IcerikTuru, Kanal, Kisi } from "./veri";
+import type { Bicim, BirimId, Durum, IcerikTuru, Kanal, Kisi } from "./veri";
 
 /**
  * Raporlar.
@@ -23,7 +23,7 @@ export interface Rapor {
   ozet: Performans & { iptal: number };
   /** elle: Planlama'nın sistem dışından girdiği (muhabir adına ya da başka kaynaktan); çağrının ne kadarını kapsadığını gösteriyor. */
   oneriler: { gelen: number; planaEklenen: number; reddedilen: number; bekleyen: number; talimat: number; elle: number; kanallar: [Kanal, number][] };
-  birimler: { birim: Birim; devamEden: number; geciken: number }[];
+  birimler: { birim: BirimId; devamEden: number; geciken: number }[];
   bicimler: [Bicim, number][];
   muhabirler: { kisi: Kisi; p: Performans }[];
 }
@@ -39,7 +39,7 @@ export const rapor = (d: Durum, gun: Donem, kollar: readonly IcerikTuru[]): Rapo
   for (const o of oneriler) kanallar.set(o.kanal, (kanallar.get(o.kanal) ?? 0) + 1);
 
   const aktif = kolda.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
-  const birimYuku = new Map<Birim, { devamEden: number; geciken: number }>();
+  const birimYuku = new Map<BirimId, { devamEden: number; geciken: number }>();
   for (const p of aktif) {
     const b = paketSahibi(p);
     if (!b) continue;

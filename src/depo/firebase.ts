@@ -33,7 +33,7 @@ import { firebaseAyari } from "../firebase-ayar";
 import { hesabaGecir } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
-import { BIRIMLER, GOREVLER, bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type Durum, type Gorev, type Rol } from "../veri";
+import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
@@ -322,8 +322,8 @@ export type DavetDurumu = "bekliyor" | "kullanildi" | "iptal";
 export interface Davet {
   eposta: string;
   ad: Yazi;
-  birim: Birim;
-  gorev: Gorev;
+  birim: BirimId;
+  gorev: GorevId;
   rol: Rol;
   hesapYoneticisi: boolean;
   durum: DavetDurumu;
@@ -423,8 +423,8 @@ export interface KayitBaglantisi {
 export interface KayitBilgisi {
   kod: string;
   ad: Metin;
-  birim: Birim;
-  gorev: Gorev;
+  birim: BirimId;
+  gorev: GorevId;
 }
 
 export const KAYIT_SURESI_GUN = 7;
@@ -474,8 +474,10 @@ export const kayitBilgisiOku = (): KayitBilgisi | null => {
   try {
     const ham = new URLSearchParams(location.search).get("kayit");
     if (!ham) return null;
+    // Birim ve ünvan yöneticinin açtıkları da olabilir (yapi.ts); yalnız biçim denetleniyor.
+    const kimlikGibi = (x: unknown) => typeof x === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(x);
     const b = JSON.parse(ham) as KayitBilgisi;
-    if (typeof b.kod !== "string" || !BIRIMLER.includes(b.birim) || !GOREVLER.includes(b.gorev)) return null;
+    if (typeof b.kod !== "string" || !kimlikGibi(b.birim) || !kimlikGibi(b.gorev)) return null;
     const ad = (x: unknown) => (typeof x === "string" ? x.trim().slice(0, 80) : "");
     const tr = ad(b.ad?.tr) || ad(b.ad?.en) || ad(b.ad?.ar);
     if (!tr) return null;

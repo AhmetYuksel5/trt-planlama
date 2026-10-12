@@ -17,7 +17,7 @@ import { SISTEM, yazisDinleyicileri, type Durum } from "./veri";
  */
 
 /* Kişiye bağlı görünüm tercihleri (harita) ve geçmiş geri alınmıyor. */
-const ATLA = new Set<keyof Durum>(["hareketler", "kisiler", "okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "surum", "sayac", "mesajlar", "muhabireOneriBirimleri"]);
+const ATLA = new Set<keyof Durum>(["hareketler", "kisiler", "okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "surum", "sayac", "mesajlar", "muhabireOneriBirimleri", "yapilar", "yapiTaslaklari"]);
 const SINIR = 30;
 
 type Oge = { id: string };

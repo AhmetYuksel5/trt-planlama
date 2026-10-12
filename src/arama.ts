@@ -1,5 +1,5 @@
+import { birimAdi } from "./yapi";
 import { DILLER, metin, yaz, type Anahtar, type Dil } from "./dil";
-import { BIRIM_ADI } from "./etiketler";
 import type { Durum, Kisi } from "./veri";
 import { oneriGorebilir, paketGorebilir } from "./yetki";
 
@@ -70,6 +70,6 @@ export function kayitAra(d: Durum, ben: Kisi, sorgu: string, dil: Dil): KayitSon
       : d.kisiler
           .filter((k) => uyar(kisiAdlari(k)))
           .slice(0, 4)
-          .map((k): KayitSonucu => ({ id: k.id, tur: "kisi", ust: metin(BIRIM_ADI[k.birim], dil), metin: yaz(k.ad, "ar"), icerik: false, href: `#/muhabirler/${k.id}` }))),
+          .map((k): KayitSonucu => ({ id: k.id, tur: "kisi", ust: birimAdi(k.birim), metin: yaz(k.ad, "ar"), icerik: false, href: `#/muhabirler/${k.id}` }))),
   ];
 }

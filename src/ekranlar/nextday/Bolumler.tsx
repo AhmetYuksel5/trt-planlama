@@ -1,9 +1,10 @@
+import { gorevAdi } from "../../yapi";
 import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { EKIP_GOREV_ADI, GOREV_ADI, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
+import { EKIP_GOREV_ADI, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
@@ -148,7 +149,7 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
             <option value="">{t(adaylar.length ? "seciniz" : "gorevdePersonelYok")}</option>
             {adaylar.map((k) => (
               <option key={k.id} value={k.id}>
-                {ad(k)} · {t(GOREV_ADI[k.gorev])}
+                {ad(k)} · {gorevAdi(k.gorev)}
               </option>
             ))}
           </select>

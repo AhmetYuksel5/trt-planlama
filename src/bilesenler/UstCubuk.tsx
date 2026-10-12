@@ -1,3 +1,4 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import {
   Bell,
   BookOpen,
@@ -12,7 +13,6 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { GERCEK } from "../kip";
 import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
@@ -263,7 +263,7 @@ export default function UstCubuk({
             <div className="kullanici-bas">
               <b>{ad(ben)}</b>
               <small>
-                {t(BIRIM_ADI[ben.birim])} · {t(GOREV_ADI[ben.gorev])}
+                {birimAdi(ben.birim)} · {gorevAdi(ben.gorev)}
               </small>
             </div>
             <a

@@ -1,12 +1,13 @@
+import { birimAdi } from "../yapi";
 import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { ADIM_KUTUSU, adimAdi, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "../akis";
+import { adimAdi, adimKutusu, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, uretimeAl } from "../eylemler";
-import { BIRIM_ADI, STOK_DURUM_ADI, sehirAdi } from "../etiketler";
+import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
 import { adimYapabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
@@ -59,7 +60,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <div>
             <small>{t("simdiKimde")}</small>
             <b>
-              {sahip ? t(BIRIM_ADI[sahip]) : stok ? t(STOK_DURUM_ADI[stok]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
+              {sahip ? birimAdi(sahip) : stok ? t(STOK_DURUM_ADI[stok]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
               {sahip === "muhabir" && muhabir && ` · ${ad(muhabir)}`}
             </b>
           </div>
@@ -67,14 +68,15 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             <div>
               <small>{t("buAdim")}</small>
               <b>
-                {t(adimAdi(paket.adim as UretimAdimi, paket))} · {t("raporKutusu", { n: ADIM_KUTUSU[paket.adim as UretimAdimi] })}
+                {adimAdi(paket.adim, paket)}
+                {adimKutusu(paket, paket.adim!) !== undefined && ` · ${t("raporKutusu", { n: adimKutusu(paket, paket.adim!)! })}`}
               </b>
             </div>
           )}
           {sonraki && (
             <div>
               <small>{t("sirada")}</small>
-              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${t(adimAdi(sonraki, paket))} · ${t(BIRIM_ADI[adimSahibi(sonraki, paket.tur)])}`}</b>
+              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${adimAdi(sonraki, paket)} · ${birimAdi(adimSahibi(sonraki, paket.tur))}`}</b>
             </div>
           )}
           {paket.teslim && (
@@ -261,7 +263,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     const sahip = paketSahibi(paket);
     return (
       <NotKutu>
-        {t("baskaBirimde", { birim: sahip ? t(BIRIM_ADI[sahip]) : "", adim: t(adimAdi(paket.adim as UretimAdimi, paket)) })}
+        {t("baskaBirimde", { birim: sahip ? birimAdi(sahip) : "", adim: adimAdi(paket.adim as UretimAdimi, paket) })}
       </NotKutu>
     );
   }
@@ -269,7 +271,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const adim = paket.adim as UretimAdimi;
   const geriGonderebilir = adim === "kontrol" || adim === "dil";
   return (
-    <Kart baslik={`${t("seninSiran")}: ${t(adimAdi(adim, paket))}`}>
+    <Kart baslik={`${t("seninSiran")}: ${adimAdi(adim, paket)}`}>
       <div className="form">
         {adim === "gorevlendirme" && (
           <>
@@ -426,7 +428,7 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
             <li key={n.id} className={n.yonetici ? "yonetici-notu" : ""}>
               <Avatar kisi={k} boy="kucuk" />
               <div className="metin">
-                <b>{k ? ad(k) : "?"}</b> <span className="sonuk-yazi">· {k ? t(BIRIM_ADI[k.birim]) : ""}</span>
+                <b>{k ? ad(k) : "?"}</b> <span className="sonuk-yazi">· {k ? birimAdi(k.birim) : ""}</span>
                 {n.yonetici && <span className="rozet rozet-talimat">{t("yoneticiNotu")}</span>}
                 <p dir="auto">{n.metin}</p>
               </div>

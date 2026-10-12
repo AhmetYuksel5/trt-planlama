@@ -3,6 +3,7 @@ import type { Yazi } from "./dil";
 import { GERCEK } from "./kip";
 import { ORNEK } from "./ornek";
 import { bugun, gunEkle } from "./tarih";
+import type { Yapi } from "./yapi";
 
 /**
  * Veri katmanı: kayıt tipleri, depo, yükle/kaydet.
@@ -34,6 +35,8 @@ import { bugun, gunEkle } from "./tarih";
  */
 export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "muhabir", "yonetim"] as const;
 export type Birim = (typeof BIRIMLER)[number];
+/** Yerleşik birim ya da yöneticinin açtığı birim (yapi.ts). */
+export type BirimId = Birim | (string & {});
 
 export type Rol = "yonetici" | "personel";
 
@@ -57,6 +60,8 @@ export const GOREVLER = [
   "stokTakip",
 ] as const;
 export type Gorev = (typeof GOREVLER)[number];
+/** Yerleşik ünvan ya da yöneticinin açtığı ünvan (yapi.ts). */
+export type GorevId = Gorev | (string & {});
 
 export type KisiDurum = "gorevde" | "sahada" | "yolda" | "izinli";
 
@@ -137,9 +142,9 @@ export type CalismaBicimi = (typeof CALISMA_BICIMLERI)[number];
 export interface Kisi {
   id: string;
   ad: Yazi;
-  birim: Birim;
+  birim: BirimId;
   rol: Rol;
-  gorev: Gorev;
+  gorev: GorevId;
   /** Ana görev yeri; ülkesi `SEHIRLER`'den. */
   sehir: Sehir;
   diller: string[];
@@ -491,6 +496,8 @@ export interface Paket {
   slug?: string;
   /** Yalnız "üretimde" iken anlamlı; adımlar `akis.ts`'te. */
   adim?: string;
+  /** Üretime girdiği akış ve yapı sürümü; sonradan yayınlanan düzen bu pakete uygulanmıyor (yapi.ts). */
+  akis?: { id: string; surum: number };
   sahaGerekli: boolean;
   oneriId?: string;
   metin?: string;
@@ -870,7 +877,7 @@ export interface Ortam {
 }
 
 export interface Durum {
-  surum: 16;
+  surum: 17;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -889,6 +896,10 @@ export interface Durum {
   dosyalar: Dosya[];
   hareketler: Hareket[];
   mesajlar: Mesaj[];
+  /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
+  yapilar: Yapi[];
+  /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
+  yapiTaslaklari?: Record<string, Yapi>;
   /** Kişi başına son bildirim bakışı; okunmamış sayısı buradan çıkıyor. */
   okundu: Record<string, string>;
   /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
@@ -900,7 +911,7 @@ export interface Durum {
   /** Kişinin üst çubuktaki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
   kisayollar?: Record<string, string[]>;
   /** Muhabire doğrudan haber önerebilen birimler; yönetici seçiyor. Yoksa yalnız Planlama. */
-  muhabireOneriBirimleri?: Birim[];
+  muhabireOneriBirimleri?: BirimId[];
   sayac: number;
 }
 
@@ -916,9 +927,9 @@ export interface Durum {
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
  * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
- * gönderilebiliyor, v17: öneri yazışması, muhabire öneri).
+ * gönderilebiliyor, v17: öneri yazışması, muhabire öneri, v18: kurum yapısı (birim, ünvan, akış)).
  */
-const SAKLA = "trt-planlama-v17";
+const SAKLA = "trt-planlama-v18";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
@@ -963,7 +974,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 16) return d;
+      if (d.surum === 17) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -975,7 +986,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
 
 /** Örnek kayıtsız iskelet: gerçek kip bununla başlıyor, kişiler davetle, gerisi kullanımla doluyor. */
 export const bosDurum = (): Durum => ({
-  surum: 16,
+  surum: 17,
   kisiler: [],
   basliklar: [],
   planlar: [],
@@ -994,6 +1005,7 @@ export const bosDurum = (): Durum => ({
   dosyalar: [],
   hareketler: [],
   mesajlar: [],
+  yapilar: [],
   okundu: {},
   sayac: 0,
 });
@@ -1003,7 +1015,7 @@ export const bosDurum = (): Durum => ({
  * birim, görev ve rol var; gerisi (şehir, diller, telefon…) kişi ya da
  * yönetici profilden sonra dolduruyor.
  */
-export const yeniKisi = (k: { id: string; ad: Yazi; eposta: string; birim: Birim; gorev: Gorev; rol: Rol; hesapYoneticisi?: boolean }): Kisi => {
+export const yeniKisi = (k: { id: string; ad: Yazi; eposta: string; birim: BirimId; gorev: GorevId; rol: Rol; hesapYoneticisi?: boolean }): Kisi => {
   const latin = (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.en || k.eposta)
     .normalize("NFD")
     .replace(/[^A-Za-z ]/g, "")
@@ -1041,7 +1053,23 @@ export interface UzakDepo {
 }
 let uzak: UzakDepo | null = null;
 
-let durum: Durum = GERCEK ? bosDurum() : yukle(true);
+/*
+ * Tembel: örnek veri akış kurallarını (akis.ts → yapi.ts → veri.ts döngüsü)
+ * kullanıyor; kayıt modül açılırken kurulsaydı akış henüz tanımsız olabilirdi.
+ */
+let durum: Durum | null = null;
+let kuruluyor = false;
+const simdi = (): Durum => {
+  if (!durum) {
+    kuruluyor = true;
+    try {
+      durum = GERCEK ? bosDurum() : yukle(true);
+    } finally {
+      kuruluyor = false;
+    }
+  }
+  return durum;
+};
 const dinleyiciler = new Set<() => void>();
 const bildir = () => dinleyiciler.forEach((d) => d());
 
@@ -1069,9 +1097,13 @@ const tazele = () => {
 };
 
 /* Haber vermiyor: çizim sırasında da çağrılıyor (Takvim); yeniden çizim `storage` olayından. */
+/** Taze okumadan şimdiki kayıt: çizim sırasında çok kez sorulan yapı (yapi.ts) için; eylemler getir'i kullanır. */
+/* Kayıt kurulurken (örnek veri akışı soruyor) null: yapı o sırada varsayılan. */
+export const anlik = (): Durum | null => (kuruluyor ? null : simdi());
+
 export const getir = () => {
   tazele();
-  return durum;
+  return simdi();
 };
 
 /*
@@ -1082,7 +1114,7 @@ export const getir = () => {
 export const yazisDinleyicileri = new Set<(eski: Durum, yeni: Durum) => void>();
 
 export const kaydet = (yeni: Durum) => {
-  const eski = durum;
+  const eski = simdi();
   durum = yeni;
   for (const f of yazisDinleyicileri) f(eski, yeni);
   if (!GERCEK) yaz(yeni);
@@ -1108,7 +1140,7 @@ export function useVeri(): Durum {
       dinleyiciler.add(d);
       return () => dinleyiciler.delete(d);
     },
-    () => durum,
+    () => simdi(),
   );
 }
 

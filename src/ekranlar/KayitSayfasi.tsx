@@ -1,9 +1,9 @@
+import { birimAdi, gorevAdi } from "../yapi";
 import { ArrowLeft, Mail, ShieldAlert } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil } from "../dil";
-import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { gercekKipKurulu } from "../firebase-ayar";
 import { firebaseYukle } from "../kip";
 import { BIRIMLER, GOREVLER, type Birim, type Gorev } from "../veri";
@@ -93,7 +93,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
           <select value={f.birim} onChange={(e) => alan("birim", e.target.value as Birim)} data-kayit-birim>
             {BIRIMLER.map((b) => (
               <option key={b} value={b}>
-                {t(BIRIM_ADI[b])}
+                {birimAdi(b)}
               </option>
             ))}
           </select>
@@ -103,7 +103,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
           <select value={f.gorev} onChange={(e) => alan("gorev", e.target.value as Gorev)} data-kayit-gorev>
             {GOREVLER.map((g) => (
               <option key={g} value={g}>
-                {t(GOREV_ADI[g])}
+                {gorevAdi(g)}
               </option>
             ))}
           </select>

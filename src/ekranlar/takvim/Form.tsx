@@ -1,7 +1,8 @@
+import { birimAdi } from "../../yapi";
 import { useState } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
-import { BIRIM_ADI, bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, hatirlatmaAdi, oncelikAdi, potansiyelAdi, tekrarAdi, ulkeAdi } from "../../etiketler";
+import { bolgeAdi, faaliyetDurumAdi, faaliyetTuruAdi, hatirlatmaAdi, oncelikAdi, potansiyelAdi, tekrarAdi, ulkeAdi } from "../../etiketler";
 import { faaliyetKaydet } from "../../eylemler";
 import { girdidenIso, yerelGirdi, zaman } from "../../tarih";
 import {
@@ -214,7 +215,7 @@ export function FaaliyetFormu({ ben, mevcut, tarih, kapat, kaydedildi }: { ben: 
                   <option value="">{t("yok")}</option>
                   {BIRIMLER.filter((b) => b !== "muhabir").map((b) => (
                     <option key={b} value={b}>
-                      {t(BIRIM_ADI[b])}
+                      {birimAdi(b)}
                     </option>
                   ))}
                 </select>

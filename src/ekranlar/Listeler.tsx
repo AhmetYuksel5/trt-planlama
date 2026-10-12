@@ -1,10 +1,11 @@
+import { birimAdi } from "../yapi";
 import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, URETIM_ADIMLARI, adimSahibi, geciktiMi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, type Anahtar } from "../dil";
-import { BIRIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
+import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
 import { uretimeAl } from "../eylemler";
 import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
@@ -105,7 +106,7 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
               <header>
                 <b>{t(ADIM_ADI[adim])}</b>
                 <Rozet>{paketler.length}</Rozet>
-                <small>{t(BIRIM_ADI[adimSahibi(adim, "haber")])}</small>
+                <small>{birimAdi(adimSahibi(adim, "haber"))}</small>
               </header>
               {paketler.length === 0 && <p className="bos-kucuk">{t("bos")}</p>}
               {paketler.map((p) => (
@@ -120,7 +121,7 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
                   <span className="pano-alt">
                     <TurRozeti tur={p.tur} />
                     {/* Sütunun sahibi haber koluna göre; stok paketinde adım başka birimdeyse kartta yazıyor. */}
-                    {adimSahibi(adim, p.tur) !== adimSahibi(adim, "haber") && <Rozet ton="vurgu">{t(BIRIM_ADI[adimSahibi(adim, p.tur)])}</Rozet>}
+                    {adimSahibi(adim, p.tur) !== adimSahibi(adim, "haber") && <Rozet ton="vurgu">{birimAdi(adimSahibi(adim, p.tur))}</Rozet>}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
                     <AsamaCubugu paket={p} />
                   </span>

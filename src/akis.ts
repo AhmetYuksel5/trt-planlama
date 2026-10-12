@@ -1,5 +1,6 @@
-import type { Anahtar } from "./dil";
-import type { Birim, IcerikTuru, Paket } from "./veri";
+import { metin, yaz, type Anahtar } from "./dil";
+import { anlik, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
+import { yapi, yapiSurumu, type Akis, type Durak, type Sorumlu, type Yapi } from "./yapi";
 
 /**
  * İş akışı: bir paket önerisinin plandan yayına kadar izlediği yol.
@@ -36,23 +37,15 @@ export const URETIM_ADIMLARI = [
 export type UretimAdimi = (typeof URETIM_ADIMLARI)[number];
 
 /*
- * "kol" yazan adımların sahibi içerik türüne göre değişiyor (rapor bölüm 4):
- * haber/güncel Newsdesk'te, feature/ekonomi Planlama'nın takip biriminde,
- * program Program Birimi'nde. Ayrıntılı program akışı henüz tanımlanmadı;
- * şimdilik ortak adımlarda Program Birimi koordinatör olarak duruyor.
+ * Adımların sahibi, sırası ve adı artık kurum yapısında (yapi.ts): yönetici
+ * akışı düzenleyebiliyor. Buradaki işlevler paketin üretime girdiği
+ * sürümün akışını okuyor; varsayılan yapı bugünkü sabitlerle aynı.
+ * "kol" sorumlusu içerik türüne göre değişiyor (rapor bölüm 4): haber/güncel
+ * Newsdesk'te, feature/ekonomi Planlama'nın takip biriminde, program
+ * Program Birimi'nde.
  */
-const ADIM_SAHIBI: Record<UretimAdimi, Birim | "kol"> = {
-  gorevlendirme: "newsgathering",
-  newsdesk: "kol",
-  metin: "muhabir",
-  kontrol: "output",
-  dil: "output",
-  video: "muhabir",
-  iletim: "kol",
-  media: "media",
-  inews: "kol",
-};
 
+/** Varsayılan kol sahipleri; yapıda değiştirilebiliyor (`kolSahibi`). */
 export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
   haber: "newsdesk",
   feature: "planlama",
@@ -60,15 +53,47 @@ export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
   program: "program",
 };
 
-/* Belgede "Newsdesk / Output" metin kontrolünü birlikte yapıyor; düğme ikisine de görünsün. */
-export const YARDIMCI_SAHIP: Partial<Record<UretimAdimi, Birim[]>> = {
-  kontrol: ["newsdesk"],
+export const kolSahibi = (tur: IcerikTuru, y: Yapi = yapi()): BirimId => y.kolSahibi[tur] ?? KOL_SAHIBI[tur];
+
+type AkisPaketi = Pick<Paket, "tur" | "sahaGerekli"> & Partial<Pick<Paket, "akis">>;
+
+/** Kolun yeni paketlerde izleyeceği akış. */
+export const akisSec = (tur: IcerikTuru, y: Yapi = yapi()): Akis => y.akislar.find((a) => a.kollar.includes(tur)) ?? y.akislar[0];
+
+/** Paketin akışı: üretime girdiği sürümdeki akış; girmemişse kolun bugünkü akışı. */
+export const paketAkisi = (p: AkisPaketi): Akis => {
+  if (!p.akis) return akisSec(p.tur);
+  const y = yapiSurumu(p.akis.surum);
+  return y.akislar.find((a) => a.id === p.akis!.id) ?? akisSec(p.tur, y);
 };
 
-export const adimSahibi = (adim: UretimAdimi, tur: IcerikTuru): Birim => {
-  const s = ADIM_SAHIBI[adim];
-  return s === "kol" ? KOL_SAHIBI[tur] : s;
+/** Paketin akış damgası: üretime girerken yazılıyor. */
+export const akisDamgasi = (p: Pick<Paket, "tur">): { id: string; surum: number } => {
+  const y = yapi();
+  return { id: akisSec(p.tur, y).id, surum: y.surum };
 };
+
+export const durakBul = (p: AkisPaketi, id: string | undefined): Durak | undefined => (id ? paketAkisi(p).duraklar.find((d) => d.id === id) : undefined);
+
+/** Sorumlunun birimi: kol sahibi, birim, ünvanın birimi ya da sorumlu kişinin birimi. */
+export const sorumluBirimi = (s: Sorumlu, tur: IcerikTuru, y: Yapi = yapi()): BirimId => {
+  if (s.tur === "kol") return kolSahibi(tur, y);
+  if (s.tur === "birim") return s.birim;
+  if (s.tur === "unvan") return s.birim ?? y.unvanlar.find((u) => u.id === s.unvan)?.birimler[0] ?? "";
+  return anlik()?.kisiler.find((k) => k.id === s.kisiler[0])?.birim ?? "";
+};
+
+/** Durağın sahibi birim; durak bulunamazsa (silinmiş akış) kol sahibi. */
+export const durakSahibi = (p: AkisPaketi, id: string): BirimId => {
+  const d = durakBul(p, id);
+  return d ? sorumluBirimi(d.sorumlu, p.tur) : kolSahibi(p.tur);
+};
+
+/** Varsayılan akışta adımın sahibi (örnek veri, yetki tablosu). */
+export const adimSahibi = (adim: string, tur: IcerikTuru): BirimId => durakSahibi({ tur, sahaGerekli: true }, adim);
+
+/** Durakta sorumluyla birlikte çalışan birimler. */
+export const yardimciBirimler = (p: AkisPaketi, id: string): BirimId[] => durakBul(p, id)?.yardimci ?? [];
 
 export const ADIM_ADI: Record<UretimAdimi, Anahtar> = {
   gorevlendirme: "adGorevlendirme",
@@ -92,12 +117,19 @@ const STOK_ADIM_ADI: Partial<Record<UretimAdimi, Anahtar>> = {
   inews: "adStokYukleme",
 };
 
-/** Adımın paketin koluna göre adı. */
-export const adimAdi = (adim: UretimAdimi, p: Pick<Paket, "tur">): Anahtar =>
-  (KOL_SAHIBI[p.tur] === "planlama" && STOK_ADIM_ADI[adim]) || ADIM_ADI[adim];
+/** Durağın ekrandaki adı: yöneticinin verdiği, yoksa türün adı (stok kolunda kolun adı). */
+export const adimAdi = (adim: string | undefined, p: AkisPaketi): string => {
+  if (!adim) return "";
+  const d = durakBul(p, adim);
+  if (d?.ad) return yaz(d.ad);
+  const tur = (d?.tur ?? adim) as UretimAdimi | "is";
+  if (tur === "is") return adim;
+  const anahtar = (kolSahibi(p.tur) === "planlama" && d?.sorumlu.tur === "kol" && STOK_ADIM_ADI[tur]) || ADIM_ADI[tur];
+  return anahtar ? metin(anahtar) : adim;
+};
 
-/** Raporun Next Day şemasındaki kutu numarası; detay ekranında "rapor adımı" diye görünüyor. */
-export const ADIM_KUTUSU: Record<UretimAdimi, number> = {
+/** Raporun Next Day şemasındaki kutu numarası; yöneticinin eklediği genel durakta yok. */
+const ADIM_KUTUSU: Record<UretimAdimi, number> = {
   gorevlendirme: 4,
   newsdesk: 4,
   metin: 5,
@@ -108,17 +140,20 @@ export const ADIM_KUTUSU: Record<UretimAdimi, number> = {
   media: 8,
   inews: 9,
 };
+export const adimKutusu = (p: AkisPaketi, adim: string): number | undefined => {
+  const tur = durakBul(p, adim)?.tur;
+  return tur && tur !== "is" ? ADIM_KUTUSU[tur] : undefined;
+};
 
-/** Paketin üretimde izleyeceği adımlar; saha yoksa News Gathering atlanıyor. */
-export const uretimYolu = (p: Pick<Paket, "sahaGerekli">): UretimAdimi[] =>
-  URETIM_ADIMLARI.filter((a) => a !== "gorevlendirme" || p.sahaGerekli);
+/** Paketin üretimde izleyeceği duraklar; koşulu tutmayan (saha yokken görevlendirme) atlanıyor. */
+export const uretimYolu = (p: AkisPaketi): string[] => paketAkisi(p).duraklar.filter((d) => d.kosul !== "saha" || p.sahaGerekli).map((d) => d.id);
 
-export const ilkAdim = (p: Pick<Paket, "sahaGerekli">): UretimAdimi => uretimYolu(p)[0];
+export const ilkAdim = (p: AkisPaketi): string => uretimYolu(p)[0];
 
-/** Sıradaki adım; son adımdan sonra paket tamamlanıyor (rapor 10. kutu). */
-export const sonrakiAdim = (p: Paket): UretimAdimi | "tamam" => {
+/** Sıradaki durak; son duraktan sonra paket tamamlanıyor (rapor 10. kutu). */
+export const sonrakiAdim = (p: AkisPaketi & Pick<Paket, "adim">): string | "tamam" => {
   const yol = uretimYolu(p);
-  const i = yol.indexOf(p.adim as UretimAdimi);
+  const i = yol.indexOf(p.adim ?? "");
   return i >= 0 && i < yol.length - 1 ? yol[i + 1] : "tamam";
 };
 
@@ -135,22 +170,11 @@ export const ASAMA_ADI: Record<Asama, Anahtar> = {
   teknik: "asTeknik",
 };
 
-const ADIM_ASAMASI: Record<UretimAdimi, Asama> = {
-  gorevlendirme: "newsgathering",
-  newsdesk: "newsdesk",
-  metin: "uretim",
-  kontrol: "uretim",
-  dil: "uretim",
-  video: "uretim",
-  iletim: "teknik",
-  media: "teknik",
-  inews: "teknik",
-};
 
 /** Paket hangi aşamada; iptal edilmişse null. Tamamlanan paket beşinci aşamanın sonunda sayılıyor. */
 export const asamaBul = (p: Paket): number | null => {
   if (p.durum === "iptal") return null;
-  if (p.durum === "uretimde" && p.adim) return ASAMALAR.indexOf(ADIM_ASAMASI[p.adim as UretimAdimi]);
+  if (p.durum === "uretimde" && p.adim) return ASAMALAR.indexOf(durakBul(p, p.adim)?.asama ?? "uretim");
   if (p.durum === "tamamlandi") return ASAMALAR.length;
   return 0;
 };
@@ -161,9 +185,9 @@ export const asamaBul = (p: Paket): number | null => {
  * paket kolun sahibinde bekliyor: feature/ekonomi Planlama'nın stok
  * ekibinde, program Program biriminde.
  */
-export const paketSahibi = (p: Paket): Birim | null => {
-  if (p.durum === "uretimde" && p.adim) return adimSahibi(p.adim as UretimAdimi, p.tur);
-  if (p.durum === "onaylandi" && !p.planId) return KOL_SAHIBI[p.tur];
+export const paketSahibi = (p: Paket): BirimId | null => {
+  if (p.durum === "uretimde" && p.adim) return durakSahibi(p, p.adim);
+  if (p.durum === "onaylandi" && !p.planId) return kolSahibi(p.tur);
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
   return null;
 };

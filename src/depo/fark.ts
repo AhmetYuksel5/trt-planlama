@@ -32,10 +32,11 @@ export const DIZI_ALANLARI = [
   "dosyalar",
   "hareketler",
   "mesajlar",
+  "yapilar",
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];
 
-export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar"] as const satisfies readonly (keyof Durum)[];
+export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari"] as const satisfies readonly (keyof Durum)[];
 export type HaritaAlani = (typeof HARITA_ALANLARI)[number];
 
 /** Tekil değerler (paket kodu sayacı) tek belgede. */

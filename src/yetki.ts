@@ -1,4 +1,5 @@
-import { ADIM_ADI, URETIM_ADIMLARI, YARDIMCI_SAHIP, adimSahibi, paketSahibi, type UretimAdimi } from "./akis";
+import { ADIM_ADI, durakBul, kolSahibi, paketSahibi, sorumluBirimi } from "./akis";
+import { varsayilanYapi, type Sorumlu } from "./yapi";
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
 import {
@@ -7,6 +8,7 @@ import {
   oneriBul,
   paketBul,
   type Birim,
+  type BirimId,
   type Durum,
   type Faaliyet,
   type Gorev,
@@ -42,8 +44,8 @@ import {
 
 interface Izin {
   ad: Anahtar;
-  birimler: Birim[];
-  yalnizYonetici?: Birim[];
+  birimler: BirimId[];
+  yalnizYonetici?: BirimId[];
 }
 
 export const IZINLER = {
@@ -127,10 +129,10 @@ export const MUDURLUKLER: Partial<Record<Gorev, Pick<Kapsam, "birimler" | "kolla
 export const kapsam = (k: Kisi | undefined): Kapsam | null => {
   if (!k) return null;
   if (k.birim === "yonetim")
-    return { ...(MUDURLUKLER[k.gorev] ?? { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] }), mudur: true, kolaGore: true };
+    return { ...(MUDURLUKLER[k.gorev as Gorev] ?? { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] }), mudur: true, kolaGore: true };
   if (k.rol === "yonetici" && k.birim !== "muhabir") {
-    const kol = KOL_BIRIMLERI[k.birim];
-    return { birimler: [k.birim], kollar: kol ?? [...ICERIK_TURLERI], mudur: false, kolaGore: !!kol };
+    const kol = KOL_BIRIMLERI[k.birim as Birim];
+    return { birimler: [k.birim as Birim], kollar: kol ?? [...ICERIK_TURLERI], mudur: false, kolaGore: !!kol };
   }
   return null;
 };
@@ -173,7 +175,8 @@ export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) =>
 /** Ön incelemeyi kim yapar: kolu kapsamında olan müdür; ekonomi kaleminde Ekonomi birimi de. */
 export const onIncelemeci = (k: Kisi | undefined, kalem: Pick<HaftalikKalem, "tur">): boolean => {
   if (!k || !yapabilir(k, "onInceleme")) return false;
-  if (KOL_BIRIMLERI[k.birim]) return KOL_BIRIMLERI[k.birim]!.includes(kalem.tur);
+  const kol = KOL_BIRIMLERI[k.birim as Birim];
+  if (kol) return kol.includes(kalem.tur);
   const ks = kapsam(k);
   return !!ks?.mudur && ks.kollar.includes(kalem.tur);
 };
@@ -187,12 +190,25 @@ export const onIncelemeci = (k: Kisi | undefined, kalem: Pick<HaftalikKalem, "tu
  */
 const ekipte = (k: Kisi) => k.birim !== "planlama" || k.gorev === "stokTakip" || k.rol === "yonetici";
 
+/*
+ * Durağın sorumlusu mu: belirli kişi, ünvan (istenirse bir birimde), birim
+ * ya da kolun sahibi. Muhabir birimine düşen durak yalnız paketin
+ * muhabirinin; birime düşen durak birimdekilerin (Planlama'da stok ekibi).
+ */
+export const sorumluMu = (k: Kisi, p: Paket, s: Sorumlu): boolean => {
+  if (s.tur === "kisi") return s.kisiler.includes(k.id);
+  if (s.tur === "unvan") return k.gorev === s.unvan && (!s.birim || k.birim === s.birim);
+  const birim = s.tur === "birim" ? s.birim : kolSahibi(p.tur);
+  if (birim === "muhabir") return k.birim === "muhabir" && p.muhabirId === k.id;
+  return birim === k.birim && ekipte(k);
+};
+
 export const adimYapabilir = (k: Kisi | undefined, p: Paket): boolean => {
   if (!k || p.durum !== "uretimde" || !p.adim) return false;
-  const adim = p.adim as UretimAdimi;
-  if (k.birim === "muhabir") return adimSahibi(adim, p.tur) === "muhabir" && p.muhabirId === k.id;
-  if (adimSahibi(adim, p.tur) === k.birim) return ekipte(k);
-  return !!YARDIMCI_SAHIP[adim]?.includes(k.birim);
+  const d = durakBul(p, p.adim);
+  // Akışı silinmiş (eski sürümü bulunamayan) paket kolun sahibinde kalıyor; iş yarıda kalmasın.
+  if (!d) return sorumluMu(k, p, { tur: "kol" });
+  return sorumluMu(k, p, d.sorumlu) || (d.yardimci ?? []).includes(k.birim);
 };
 
 /** Plansız onaylı paketi (haftalık toplantının kabulü) kolun sahibi üretime alıyor; Planlama'da stok ekibi. */
@@ -220,7 +236,7 @@ export const oneriDuzeltmeyeGider = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && yapabilir(k, "oneriDegerlendir") && !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum);
 
 /* Muhabire doğrudan haber önermek: yöneticinin seçtiği birimler; seçilmemişse Planlama. */
-export const MUHABIRE_ONERI_VARSAYILAN: readonly Birim[] = ["planlama"];
+export const MUHABIRE_ONERI_VARSAYILAN: readonly BirimId[] = ["planlama"];
 export const muhabireOneriBirimleri = (d: Durum) => d.muhabireOneriBirimleri ?? MUHABIRE_ONERI_VARSAYILAN;
 export const muhabireOneriGonderebilir = (k: Kisi | undefined, d: Durum): boolean =>
   !!k && k.birim !== "muhabir" && (!!k.hesapYoneticisi || muhabireOneriBirimleri(d).includes(k.birim));
@@ -293,7 +309,7 @@ export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
 
 const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
 
-export const SAYFA_IZNI: Record<string, readonly Birim[]> = {
+export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   ana: BIRIMLER,
   nextday: MASA,
   haftalik: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
@@ -341,17 +357,16 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
 
 export interface MatrisSatiri {
   ad: Anahtar;
-  birimler: Birim[];
-  yonetici: Birim[];
+  birimler: BirimId[];
+  yonetici: BirimId[];
 }
 
 export const yetkiMatrisi = (): MatrisSatiri[] => [
   ...Object.values(IZINLER).map((iz: Izin) => ({ ad: iz.ad, birimler: iz.birimler, yonetici: iz.yalnizYonetici ?? [] })),
-  ...URETIM_ADIMLARI.map((a) => ({
-    ad: ADIM_ADI[a],
-    birimler: [...new Set([adimSahibi(a, "haber"), ...(YARDIMCI_SAHIP[a] ?? [])])],
-    yonetici: [],
-  })),
+  // Proje planı raporun akışını anlatıyor: koddaki varsayılan akıştan, yöneticinin düzeninden değil.
+  ...varsayilanYapi().akislar[0].duraklar.flatMap((d) =>
+    d.tur === "is" ? [] : [{ ad: ADIM_ADI[d.tur], birimler: [...new Set([sorumluBirimi(d.sorumlu, "haber", varsayilanYapi()), ...(d.yardimci ?? [])])], yonetici: [] }],
+  ),
 ];
 
 /** Paketin şimdiki sahibi kişiye düşüyor mu ("Senin sıran" kutusu); plansız onaylı pakette üretime alacak olana. */

@@ -1,3 +1,4 @@
+import { birimAdi } from "../../yapi";
 import { useSekmeAdi } from "../../sekmeAdi";
 import {
   AlertTriangle,
@@ -391,7 +392,7 @@ function Koordinasyon({ d }: { d: Durum }) {
   const satirlar: { id: string; metin: string; konu?: string; birim: string; href: string; ton: string }[] = [];
   for (const p of d.paketler.filter((x) => geciktiMi(x))) {
     const s = paketSahibi(p);
-    satirlar.push({ id: p.id, metin: t("kGeciken"), konu: p.baslik, birim: s ? t(BIRIM_ADI[s]) : "", href: `#/paketler/${p.id}`, ton: "kotu" });
+    satirlar.push({ id: p.id, metin: t("kGeciken"), konu: p.baslik, birim: s ? birimAdi(s) : "", href: `#/paketler/${p.id}`, ton: "kotu" });
   }
   for (const p of d.paketler.filter((x) => (x.durum === "degerlendiriliyor" || x.durum === "taslak") && x.sahaGerekli)) {
     satirlar.push({ id: p.id + "s", metin: t("kSaha"), konu: p.baslik, birim: t("biNewsgathering"), href: `#/paketler/${p.id}`, ton: "uyari" });
