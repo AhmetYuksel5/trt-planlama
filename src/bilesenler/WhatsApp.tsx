@@ -65,7 +65,9 @@ const uygulamadaAc = (numara: string, olmazsa?: () => void) => {
   window.addEventListener("blur", odakGitti);
   document.addEventListener("visibilitychange", odakGitti);
   const a = document.createElement("a");
-  a.href = `whatsapp://send?phone=${numara}`;
+  // WhatsApp'ın kendi wa.me sayfasının uygulamaya verdiği biçim: düz "send?phone=" telefonda kayıtlı
+  // olmayan numarada "kayıtlı değil" diyordu; type=phone_number numarayla sohbet açtırıyor.
+  a.href = `whatsapp://send/?phone=${numara}&text&type=phone_number&app_absent=0`;
   a.click();
   setTimeout(() => {
     window.removeEventListener("blur", odakGitti);
