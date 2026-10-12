@@ -1,3 +1,4 @@
+import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
@@ -9,7 +10,7 @@ import { oneriDurum, oneriGonder, oneriYenidenGonder } from "../../eylemler";
 import { BIRIM_ADI, KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
-import { oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
@@ -37,6 +38,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
   /* Görünüm plan ekranlarıyla ortak kişisel seçim; kartta karar yok, kararlar ayrıntı sayfasında. */
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [acikId, setAcikId] = useState<string | null>(null);
+  const [muhabireOner, setMuhabireOner] = useState(false);
   const acik = acikId ? v.oneriler.find((o) => o.id === acikId) : undefined;
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.oneriler.filter((o) => oneriGorebilir(ben, o));
@@ -71,6 +73,11 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
                 </a>
               </>
             )}
+            {muhabireOneriGonderebilir(ben, v) && (
+              <button type="button" className="dugme dugme-ikincil" onClick={() => setMuhabireOner(true)} data-muhabire-oner>
+                <Send size={16} className="yon" /> {t("muhabireHaberOner")}
+              </button>
+            )}
             {yapabilir(ben, "oneriGonder") && (
               <a className="dugme" href="#/oneriler/yeni">
                 <Send size={16} className="yon" /> {t(muhabir ? "yeniOneriGonder" : "oneriKaydet")}
@@ -79,6 +86,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
           </>
         }
       />
+      {muhabireOner && <MuhabireOneriPenceresi ben={ben} kapat={() => setMuhabireOner(false)} />}
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">
@@ -145,7 +153,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const paket = paketBul(v, oneri.paketId);
   const baslik = baslikBul(v, oneri.baslikId);
   const haftaPlani = oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined;
-  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi";
+  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif";
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
@@ -169,6 +177,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
           </p>
         </div>
       </header>
+      <TeklifYaniti ben={ben} oneri={oneri} />
       {oneriYenidenGonderebilir(ben, oneri) && (
         <div className="duzeltme-istegi" data-duzeltme-istegi>
           <NotKutu ton="uyari" ikon={<Undo2 size={16} />}>
@@ -204,7 +213,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
               {giren && (
                 <div className="alan">
-                  <small>{t("giren")}</small>
+                  <small>{t(oneri.yon ? "oneren" : "giren")}</small>
                   <b>{ad(giren)}</b>
                 </div>
               )}
@@ -254,6 +263,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
               </div>
             )}
           </Kart>
+          <OneriYazismasi ben={ben} oneri={oneri} />
           {yanit && <EpostaKaynagi ben={ben} oneri={oneri} yanit={yanit} />}
           <Kart baslik={t("hareketGecmisi")}>
             {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}

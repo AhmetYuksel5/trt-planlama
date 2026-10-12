@@ -180,7 +180,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
       </div>
       <div>
         <div className="alan-etiket">{t("surec")}</div>
-        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" ? (
+        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" || o.durum === "teklif" ? (
           <NotKutu ton="uyari">
             <OneriDurumRozeti oneri={o} />{" "}
             {(o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce) && <span dir="auto">{o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce}</span>}
@@ -278,7 +278,8 @@ export function OneriListesi({
   const eylemler = (o: Oneri, tam = false) => {
     // Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor.
     const talimat = !!o.talimatVeren;
-    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi";
+    // Muhabire önerilen haberde sıra muhabirde; kabul edene kadar karar yok.
+    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif";
     // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
     const muhabirde = o.durum === "duzeltme";
     const ikonlu = (ikon: ReactNode, ad: string, sinif: string, f: () => void) => (

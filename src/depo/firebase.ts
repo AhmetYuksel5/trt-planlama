@@ -223,8 +223,9 @@ const kayitBagla = (hazir: () => void): (() => void) => {
       doc(db, GENEL.koleksiyon, GENEL.id),
       (s) => {
         const sayac = (s.data()?.sayac as number | undefined) ?? 0;
-        const degisti = sayac !== d.sayac;
-        if (degisti) d = { ...d, sayac };
+        const birimler = s.data()?.muhabireOneriBirimleri as Birim[] | undefined;
+        const degisti = sayac !== d.sayac || JSON.stringify(birimler) !== JSON.stringify(d.muhabireOneriBirimleri);
+        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler };
         geldi(GENEL.koleksiyon, degisti);
       },
       hata,
@@ -242,7 +243,7 @@ const kayitBagla = (hazir: () => void): (() => void) => {
     if (!sonuc.islemler.length) return;
     const nesne = (alan: string, id: string): unknown => {
       const deger = yeni[alan as keyof Durum];
-      return Array.isArray(deger) ? deger.find((o: { id: string }) => o.id === id) : (deger as Record<string, unknown> | undefined)?.[id];
+      return Array.isArray(deger) ? (deger as { id: string }[]).find((o) => o.id === id) : (deger as Record<string, unknown> | undefined)?.[id];
     };
     for (const i of sonuc.islemler) {
       const m = onbellek[i.koleksiyon];

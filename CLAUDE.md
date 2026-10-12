@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v16`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v17`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v16-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v17-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -266,6 +266,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriYenidenGonder`) aynı öneriyi günceller ve "yeni"ye döndürür;
     önceki hal hareketin verisinde. Kurallar `yetki.ts →
     oneriDuzeltmeyeGider`, `oneriYenidenGonderebilir`.
+  - Önerinin yazışması (`oneri/Yazisma.tsx → OneriYazismasi`): muhabir ile
+    Planlama arasında, önerinin ayrıntı sayfasında; her önerinin
+    yazışması ayrı. Mesaj öneriden ayrı kayıt (`Durum.mesajlar`, gerçek
+    kipte `mesajlar` koleksiyonu): iki taraf aynı anda yazınca öneri
+    belgesi ezilmesin. Yazabilen `yetki.ts → oneriYazisabilir`; bildirim
+    karşı tarafa (`oneriMesaji` hareketi). Geri almaya girmez.
+  - Muhabire haber önerisi (`muhabireOneriGonder`): Planlama (ya da
+    yöneticinin Ayarlar'da seçtiği birimler, `Durum.muhabireOneriBirimleri`,
+    yoksa Planlama; gerçek kipte genel ayar belgesinde) öneriler sayfasından
+    ya da muhabirin profilinden öneri gönderir. Öneri `yon: "muhabire"`,
+    durum `teklif` ("muhabirin yanıtı bekleniyor"); sıra muhabirde, karar
+    düğmesi yok. Muhabir kabul edince `degerlendiriliyor`, gerekçeyle geri
+    çevirince `reddedildi` (`teklifYanitla`). Öneriler sayfasını görmeyen
+    gönderen önerisini ve yazışmasını muhabirin profilinde izler
+    (`MuhabireOnerilenler`).
   - Kart ya da liste kişinin seçimi, ana sayfa düzeni gibi kayıtta
     (`Durum.oneriGorunumu`, `eylemler.ts → oneriGorunumuKaydet`); aynı
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
@@ -470,7 +485,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Sınırda düğme pasif görünür ama odaklanabilir kalır (`aria-disabled`);
     nedeni ipucunda, çünkü pasif düğme ipucu göstermiyor.
 - Menü tek tablo: `bilesenler/AnaMenu.tsx → MENU`. Yeni sayfa yalnız
-  oraya girer; sol menüde de telefondaki panelde de çıkar.
+  oraya girer; sol menüde de telefondaki panelde de çıkar. Planların
+  menü adları "plan" sözcüğü olmadan: Next Day, Weekly, Aylık, Özel yayın.
+  Muhabir listesinde diğer ülkeler, haber türleri ve nitelik puanı
+  sütunu yok (süzgeçler duruyor).
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
     sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)

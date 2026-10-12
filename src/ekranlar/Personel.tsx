@@ -1,5 +1,5 @@
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
+import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -9,7 +9,8 @@ import { BICIM_ACIKLAMA, BICIM_ADI, BIRIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, BIRIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type Birim, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
-import { gorevlendirmeGorebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
+import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
+import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -32,7 +33,7 @@ const ondalik = (x: number | null, dil: string) => (x === null ? "—" : x.toLoc
 const ulkeleri = (k: Kisi): Ulke[] => [SEHIRLER[k.sehir], ...k.digerUlkeler];
 
 export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
-  const { t, ad, dil } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
   const ayar = PERSONEL_SAYFASI[sayfa] ?? PERSONEL_SAYFASI.personel;
   const muhabirSayfasi = sayfa === "muhabirler";
@@ -100,11 +101,8 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                 <tr>
                   <th>{t("muhabir")}</th>
                   <th>{t("anaGorevBolgesi")}</th>
-                  <th>{t("digerUlkeler")}</th>
-                  <th>{t("haberTurleri")}</th>
                   {perfGorur && <th>{t("verilenTamamlanan")}</th>}
                   {perfGorur && <th>{t("zamanindaTeslim")}</th>}
-                  {perfGorur && <th>{t("nitelikPuani")}</th>}
                   <th>{t("durum")}</th>
                 </tr>
               </thead>
@@ -130,33 +128,12 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                       <td data-etiket={t("anaGorevBolgesi")}>
                         {t(sehirAdi(k.sehir))} <small className="sonuk">· {t(ulkeAdi(SEHIRLER[k.sehir]))}</small>
                       </td>
-                      <td className="sonuk" data-etiket={t("digerUlkeler")}>
-                        {k.digerUlkeler.length ? k.digerUlkeler.map((u) => t(ulkeAdi(u))).join(", ") : "—"}
-                      </td>
-                      <td data-etiket={t("haberTurleri")}>
-                        <span className="rozetler">
-                          {k.bicimler.map((b) => (
-                            <BicimRozeti key={b} bicim={b} />
-                          ))}
-                        </span>
-                      </td>
                       {pf && (
                         <td data-etiket={t("verilenTamamlanan")}>
                           <b>{pf.verilen}</b> / {pf.tamamlanan}
                         </td>
                       )}
                       {pf && <td data-etiket={t("zamanindaTeslim")}>{yuzde(pf.zamaninda)}</td>}
-                      {pf && (
-                        <td data-etiket={t("nitelikPuani")}>
-                          {pf.puan === null ? (
-                            "—"
-                          ) : (
-                            <span className="puan">
-                              <Star size={13} /> {ondalik(pf.puan, dil)}
-                            </span>
-                          )}
-                        </td>
-                      )}
                       <td data-etiket={t("durum")}>
                         <Rozet ton={k.durum === "sahada" ? "vurgu" : k.durum === "izinli" ? "" : k.durum === "yolda" ? "uyari" : "iyi"}>{t(KISI_DURUM_ADI[k.durum])}</Rozet>
                       </td>
@@ -210,45 +187,10 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
         </div>
         {liste.length === 0 && <Bos metin={t("kayitYok")} />}
       </Kart>
-      {muhabirSayfasi && <HaberTurleri />}
     </>
   );
 }
 
-/** Haber türleri ve tanımları: planlamanın ortak sözlüğü; kaç muhabirin üretebildiği yanında. */
-function HaberTurleri() {
-  const { t } = useDil();
-  const v = useVeri();
-  const muhabirler = v.kisiler.filter((k) => k.birim === "muhabir");
-  return (
-    <Kart baslik={t("haberTurleri")}>
-      <div className="tablo-sar">
-        <table className="tablo kartli">
-          <thead>
-            <tr>
-              <th>{t("haberTuru")}</th>
-              <th>{t("turAciklama")}</th>
-              <th>{t("muhabir")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {BICIMLER.map((b) => (
-              <tr key={b}>
-                <td className="birincil kalin">
-                  <bdi>{t(BICIM_ADI(b))}</bdi>
-                </td>
-                <td data-etiket={t("turAciklama")}>{t(BICIM_ACIKLAMA(b))}</td>
-                <td className="sonuk" data-etiket={t("muhabir")}>
-                  {t("turUretebilen", { n: muhabirler.filter((k) => k.bicimler.includes(b)).length })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Kart>
-  );
-}
 
 /*
  * Fotoğraf tarayıcıda saklanıyor: kare kırpılıp 256 piksele küçültülüyor
@@ -460,6 +402,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [duzen, setDuzen] = useState(false);
+  const [oner, setOner] = useState(false);
   const muhabir = kisi.birim === "muhabir";
   const paketler = v.paketler.filter((p) => p.muhabirId === kisi.id).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   const devam = paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal");
@@ -492,14 +435,22 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
             </Rozet>
           </p>
         </div>
-        {profilDuzenler(ben, kisi) && !duzen && (
+        {((profilDuzenler(ben, kisi) && !duzen) || (muhabir && muhabireOneriGonderebilir(ben, v))) && (
           <div className="sag-uc">
-            <button className="dugme dugme-ikincil" onClick={() => setDuzen(true)}>
-              <Pencil size={15} /> {t("profiliDuzenle")}
-            </button>
+            {muhabir && muhabireOneriGonderebilir(ben, v) && (
+              <button className="dugme" onClick={() => setOner(true)} data-muhabire-oner>
+                <Send size={15} className="yon" /> {t("muhabireHaberOner")}
+              </button>
+            )}
+            {profilDuzenler(ben, kisi) && !duzen && (
+              <button className="dugme dugme-ikincil" onClick={() => setDuzen(true)}>
+                <Pencil size={15} /> {t("profiliDuzenle")}
+              </button>
+            )}
           </div>
         )}
       </header>
+      {oner && <MuhabireOneriPenceresi ben={ben} muhabirId={kisi.id} kapat={() => setOner(false)} />}
       <div className="iz iz-ana-yan">
         <div className="iz">
           {muhabir && performansGorebilir(ben, kisi) && <PerformansKarti kisi={kisi} />}
@@ -536,6 +487,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                   </ul>
                 )}
               </Kart>
+              <MuhabireOnerilenler ben={ben} kisi={kisi} />
               <Kart baslik={t("oneriGecmisi")}>
                 <OneriTablosu oneriler={oneriler} d={v} kisa />
               </Kart>

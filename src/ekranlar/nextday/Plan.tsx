@@ -284,5 +284,5 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 }
 
 // Düzeltmedeki öneri muhabirde bekliyor; Planlama'nın önündekilerin arkasında.
-const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, sonra: 3, reddedildi: 4, planaEklendi: 5 };
+const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, teklif: 3, sonra: 4, reddedildi: 5, planaEklendi: 6 };
 const sira = (o: Oneri) => SIRA[o.durum];

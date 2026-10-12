@@ -203,7 +203,8 @@ export function OneriKaynagi({ oneri, d, hucre = false }: { oneri: Oneri; d: Dur
   ) : (
     <span>{t("atanmadi")}</span>
   );
-  const girdi = giren && t("girdi", { kisi: ad(giren) });
+  // Planlama'nın muhabire önerdiği haberde gönderen "önerdi", elle girilende "girdi".
+  const girdi = giren && t(oneri.yon ? "onerdi" : "girdi", { kisi: ad(giren) });
   if (!hucre)
     return (
       <>

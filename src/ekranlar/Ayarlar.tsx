@@ -1,10 +1,12 @@
-import { Database, Lock, RotateCcw, Settings } from "lucide-react";
+import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../etiketler";
 import { GERCEK } from "../kip";
-import { sifirla, type Kisi } from "../veri";
+import { muhabireOneriBirimleriKaydet } from "../eylemler";
+import { BIRIMLER, sifirla, useVeri, type Kisi } from "../veri";
+import { muhabireOneriBirimleri } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
@@ -27,6 +29,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
             {t(GOREV_ADI[ben.gorev])}
           </p>
         </Kart>
+        {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>
             <button
@@ -44,6 +47,30 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         )}
       </div>
     </>
+  );
+}
+
+/* Muhabire doğrudan haber önerebilen birimler: yalnız tam yönetici seçiyor; seçilmemişse Planlama. */
+function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const secili = muhabireOneriBirimleri(v);
+  return (
+    <Kart baslik={t("muhabireOneriBirimleri")} ikon={<Send size={18} className="yon" />}>
+      <div className="yetki-listesi" data-muhabire-oneri-birimleri>
+        {BIRIMLER.filter((b) => b !== "muhabir").map((b) => (
+          <label key={b} className="secim">
+            <input
+              type="checkbox"
+              checked={secili.includes(b)}
+              onChange={(e) => muhabireOneriBirimleriKaydet(ben, e.target.checked ? [...secili, b] : secili.filter((x) => x !== b))}
+              data-birim={b}
+            />
+            {t(BIRIM_ADI[b])}
+          </label>
+        ))}
+      </div>
+    </Kart>
   );
 }
 

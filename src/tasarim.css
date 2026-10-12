@@ -982,6 +982,17 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .baslik-gunu + .baslik-gunu { border-block-start: 1px solid var(--cizgi); padding-block-start: var(--ara-3); }
 .baslik-gunu h3 { font-size: var(--punto-orta); display: flex; gap: var(--ara-2); align-items: center; }
 .dugme.secili { color: var(--vurgu); }
+.yazisma { display: grid; gap: var(--ara-3); }
+.mesajlar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); max-height: 420px; overflow: auto; }
+.mesajlar li { display: flex; gap: var(--ara-2); align-items: flex-start; max-width: 85%; }
+.mesajlar li > div { background: var(--yuzey-2); border-radius: var(--yaricap-kart); padding: var(--ara-2) var(--ara-3); }
+.mesajlar li.benim { margin-inline-start: auto; flex-direction: row-reverse; }
+.mesajlar li.benim > div { background: var(--vurgu-sis); }
+.mesajlar small { color: var(--sonuk); display: block; }
+.mesajlar p { margin: var(--ara-1) 0 0; white-space: pre-wrap; }
+.mesaj-yaz { display: flex; gap: var(--ara-2); align-items: flex-end; }
+.mesaj-yaz textarea { flex: 1; min-height: 44px; }
+.bag-dugme { background: none; border: 0; padding: 0; font: inherit; color: var(--vurgu); cursor: pointer; text-align: start; }
 .aktar-ozet { display: grid; gap: var(--ara-3); margin-top: var(--ara-4); }
 .aktar-ozet ul { margin: 0; padding-inline-start: var(--ara-5); display: grid; gap: var(--ara-1); }
 .aktar-basliklar { max-height: 220px; overflow: auto; list-style: none; padding: 0; }

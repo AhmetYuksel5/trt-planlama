@@ -31,6 +31,7 @@ export const DIZI_ALANLARI = [
   "faaliyetler",
   "dosyalar",
   "hareketler",
+  "mesajlar",
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];
 
@@ -178,7 +179,9 @@ export function farkCikar(eski: Durum, yeni: Durum, siralar: Siralar): { islemle
     for (const k of Object.keys(a)) if (!(k in b)) islemler.push({ tur: "sil", koleksiyon: alan, id: belgeKimligi(k) });
   }
 
-  if (eski.sayac !== yeni.sayac) islemler.push({ tur: "yaz", koleksiyon: GENEL.koleksiyon, id: GENEL.id, veri: { sayac: yeni.sayac } });
+  // Genel belge tek parça yazılıyor (set): değişen alan ötekini silmesin diye ikisi birlikte.
+  if (eski.sayac !== yeni.sayac || eski.muhabireOneriBirimleri !== yeni.muhabireOneriBirimleri)
+    islemler.push({ tur: "yaz", koleksiyon: GENEL.koleksiyon, id: GENEL.id, veri: { sayac: yeni.sayac, ...(yeni.muhabireOneriBirimleri && { muhabireOneriBirimleri: yeni.muhabireOneriBirimleri }) } });
 
   return { islemler, siralar: yeniSiralar };
 }

@@ -6,7 +6,7 @@ import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BIRIM_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { acikCagri, useVeri, type Kisi } from "../../veri";
+import { acikCagri, useVeri, type Kisi, type Oneri } from "../../veri";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
@@ -172,7 +172,9 @@ function Onerilerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const { oneriler: hepsi } = useMuhabirIsleri(ben);
   // Düzeltme istenen öneri muhabirin önündeki iş: listenin başında.
-  const oneriler = [...hepsi.filter((o) => o.durum === "duzeltme"), ...hepsi.filter((o) => o.durum !== "duzeltme")];
+  // Sırası muhabirde olanlar (düzeltme, Planlama'nın önerdiği) başta.
+  const bende = (o: Oneri) => o.durum === "duzeltme" || o.durum === "teklif";
+  const oneriler = [...hepsi.filter(bende), ...hepsi.filter((o) => !bende(o))];
   return (
     <Kart baslik={t("onerilerim")} ikon={<Lightbulb size={18} />} sagUc={<Tumu href="#/oneriler" />}>
             {oneriler.length === 0 ? (

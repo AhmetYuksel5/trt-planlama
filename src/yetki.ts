@@ -219,6 +219,23 @@ export const oneriGorebilir = (k: Kisi | undefined, o: Oneri): boolean =>
 export const oneriDuzeltmeyeGider = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && yapabilir(k, "oneriDegerlendir") && !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum);
 
+/* Muhabire doğrudan haber önermek: yöneticinin seçtiği birimler; seçilmemişse Planlama. */
+export const MUHABIRE_ONERI_VARSAYILAN: readonly Birim[] = ["planlama"];
+export const muhabireOneriBirimleri = (d: Durum) => d.muhabireOneriBirimleri ?? MUHABIRE_ONERI_VARSAYILAN;
+export const muhabireOneriGonderebilir = (k: Kisi | undefined, d: Durum): boolean =>
+  !!k && k.birim !== "muhabir" && (!!k.hesapYoneticisi || muhabireOneriBirimleri(d).includes(k.birim));
+
+/** Önerilen haberi yalnız muhabiri kabul ya da geri çeviriyor. */
+export const teklifYanitlayabilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "teklif" && o.muhabirId === k.id;
+
+/*
+ * Önerinin yazışması iki taraf arasında: muhabiri, öneriyi gönderen ya da
+ * giren, talimatı veren ve önerileri değerlendiren Planlama. Muhabiri
+ * olmayan (ajans, kurum) öneride yazışacak kimse yok.
+ */
+export const oneriYazisabilir = (k: Kisi | undefined, o: Oneri): boolean =>
+  !!k && !!o.muhabirId && (k.id === o.muhabirId || k.id === o.giren || k.id === o.talimatVeren || yapabilir(k, "oneriDegerlendir"));
+
 /** Düzeltme isteğini yalnız önerinin muhabiri karşılıyor. */
 export const oneriYenidenGonderebilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "duzeltme" && o.muhabirId === k.id;
 

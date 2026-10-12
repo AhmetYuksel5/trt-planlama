@@ -30,6 +30,7 @@ import {
   type Birim,
   type Gorev,
   type EkipGorevi,
+  type Mesaj,
   type PlanAdi,
   type Rol,
   type BolmeEkseni,
@@ -74,7 +75,10 @@ import {
   hesapYetkisi,
   kararVerebilir,
   mudahaleEdebilir,
+  muhabireOneriGonderebilir,
   oneriDuzeltmeyeGider,
+  oneriYazisabilir,
+  teklifYanitlayabilir,
   oneriYenidenGonderebilir,
   onIncelemeci,
   paketGorebilir,
@@ -2357,5 +2361,96 @@ export const kisiPlanAdi = (ben: Kisi, kisiId: string, secim: PlanAdi | undefine
       return secim ? { ...kalan, planAdi: secim } : kalan;
     }),
   });
+  return true;
+};
+
+/* --- Muhabire haber önerisi ve önerinin yazışması --- */
+
+export interface MuhabireOneriGirdisi {
+  muhabirId: string;
+  haberBasligi: string;
+  gelisme: string;
+  paketBasligi?: string;
+  ulke: Ulke;
+  tur: IcerikTuru;
+  bicim?: Bicim;
+  sahaGerekli: boolean;
+  hedefTarih?: string;
+}
+
+/**
+ * Planlama (ya da yöneticinin izin verdiği birim) muhabire haber önerir.
+ * Öneri muhabirin önerileri arasına "yanıt bekleniyor" olarak düşer;
+ * muhabir kabul edince Planlama'nın değerlendirmesine girer, geri
+ * çevirirse gerekçesiyle kapanır.
+ */
+export const muhabireOneriGonder = (ben: Kisi, g: MuhabireOneriGirdisi): string | null => {
+  let d = getir();
+  const m = kisiBul(d, g.muhabirId);
+  if (!muhabireOneriGonderebilir(ben, d) || !m || m.birim !== "muhabir" || !g.haberBasligi.trim() || !g.gelisme.trim()) return null;
+  const id = kimlik("o");
+  const o: Oneri = {
+    id,
+    muhabirId: m.id,
+    giren: ben.id,
+    yon: "muhabire",
+    ulke: g.ulke,
+    haberBasligi: g.haberBasligi.trim(),
+    gelisme: g.gelisme.trim(),
+    ...(g.paketBasligi?.trim() && { paketBasligi: g.paketBasligi.trim() }),
+    tur: g.tur,
+    ...(g.bicim && { bicim: g.bicim }),
+    sahaGerekli: g.sahaGerekli,
+    zaman: simdi(),
+    kanal: "sistem",
+    ...(g.hedefTarih && { hedefTarih: g.hedefTarih }),
+    durum: "teklif",
+  };
+  d = { ...d, oneriler: [o, ...d.oneriler] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMuhabireGonderildi", oneriId: id, veri: { kime: m.id, muhabir: m.id } }));
+  return id;
+};
+
+/** Muhabirin yanıtı: kabulde öneri Planlama'nın önüne "değerlendiriliyor" olarak gider; retde gerekçe zorunlu. */
+export const teklifYanitla = (ben: Kisi, id: string, kabul: boolean, gerekce = "") => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !teklifYanitlayabilir(ben, o)) return false;
+  if (!kabul && !gerekce.trim()) return false;
+  const yeni: Oneri = kabul ? { ...o, durum: "degerlendiriliyor" } : { ...o, durum: "reddedildi", gerekce: gerekce.trim() };
+  // Gönderen Planlama dışından olabilir; o da haberdar olsun.
+  const kime = o.giren && kisiBul(d, o.giren)?.birim !== "planlama" ? o.giren : "";
+  kaydet(
+    hareketYaz(
+      { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? yeni : x)) },
+      { kisiId: ben.id, tip: kabul ? "teklifKabulEdildi" : "teklifReddedildi", oneriId: id, veri: { sahip: "planlama", ...(kime && { kime }), ...(!kabul && { gerekce: gerekce.trim() }) } },
+    ),
+  );
+  return true;
+};
+
+/**
+ * Önerinin yazışmasına yazmak. Bildirim karşı tarafa: muhabir yazdıysa
+ * Planlama'ya (ve Planlama dışından gönderen kişiye), Planlama yazdıysa
+ * muhabire.
+ */
+export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !oneriYazisabilir(ben, o) || !metin.trim()) return false;
+  const mesaj: Mesaj = { id: kimlik("ms"), oneriId, kisiId: ben.id, metin: metin.trim(), zaman: simdi() };
+  d = { ...d, mesajlar: [...d.mesajlar, mesaj] };
+  const muhabirYazdi = ben.id === o.muhabirId;
+  const disaridan = o.giren && kisiBul(d, o.giren)?.birim !== "planlama" ? o.giren : "";
+  const veri: Record<string, string> = muhabirYazdi ? { sahip: "planlama", ...(disaridan && { kime: disaridan }) } : { kime: o.muhabirId! };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMesaji", oneriId, veri }));
+  return true;
+};
+
+/** Muhabire öneri gönderebilecek birimler: yalnız tam yönetici seçiyor. */
+export const muhabireOneriBirimleriKaydet = (ben: Kisi, birimler: Birim[]) => {
+  if (!ben.hesapYoneticisi) return false;
+  const d = getir();
+  kaydet({ ...d, muhabireOneriBirimleri: [...new Set(birimler)].filter((b) => b !== "muhabir") });
   return true;
 };

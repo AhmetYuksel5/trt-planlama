@@ -4,6 +4,7 @@ import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_AD
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
+  Mesaj,
   Baslik,
   Cagri,
   CanliYayin,
@@ -2318,10 +2319,39 @@ export const ORNEK = (): Durum => {
   });
   for (const f of faaliyetler) for (const b of f.baglantilar) h(b.kisiId, "faaliyetPlanaAlindi", b.zaman, { planId: b.tur === "nextday" ? b.planId : undefined, veri: { faaliyetId: f.id, tur: b.tur, tarih: b.tarih } });
   h("pl2", "faaliyetEklendi", zaman(gun(-1), "15:40"), { veri: { faaliyetId: "f-taslak", tarih: gun(21) } });
+  // Planlama'nın muhabire önerdiği haber (yanıt bekliyor) ve iki önerinin yazışması.
+  const muhabireOneriler: Oneri[] = [
+    {
+      id: "o-teklif-1",
+      muhabirId: "mu1",
+      giren: "pl2",
+      yon: "muhabire",
+      ulke: SEHIR_ULKESI.gazze,
+      haberBasligi: "عودة الدراسة في مدارس غزة",
+      gelisme: "مدارس الإيواء تستعد لاستقبال الطلاب رغم الدمار؛ نقترح تقريرا من داخل أحد الصفوف المؤقتة.",
+      paketBasligi: "الدراسة بين الركام",
+      tur: "haber",
+      bicim: "pkg",
+      sahaGerekli: true,
+      zaman: zaman(gun(0), "09:15"),
+      kanal: "sistem",
+      hedefTarih: gun(1),
+      durum: "teklif",
+    },
+  ];
+  h("pl2", "oneriMuhabireGonderildi", zaman(gun(0), "09:15"), { oneriId: "o-teklif-1", veri: { kime: "mu1", muhabir: "mu1" } });
+  const mesajlar: Mesaj[] = [
+    { id: "ms-1", oneriId: "o-kudus", kisiId: "pl2", metin: "هل يمكن إضافة تصريح من دائرة الأوقاف؟", zaman: zaman(gun(-1), "11:05") },
+    { id: "ms-2", oneriId: "o-kudus", kisiId: "mu2", metin: "نعم، تواصلت معهم وسأرسل التصريح قبل الظهر.", zaman: zaman(gun(-1), "11:20") },
+    { id: "ms-3", oneriId: "o-teklif-1", kisiId: "pl2", metin: "نحتاج المادة قبل الساعة 14G إن أمكن.", zaman: zaman(gun(0), "09:17") },
+  ];
+  h("pl2", "oneriMesaji", zaman(gun(-1), "11:05"), { oneriId: "o-kudus", veri: { kime: "mu2" } });
+  h("mu2", "oneriMesaji", zaman(gun(-1), "11:20"), { oneriId: "o-kudus", veri: { sahip: "planlama" } });
+  h("pl2", "oneriMesaji", zaman(gun(0), "09:17"), { oneriId: "o-teklif-1", veri: { kime: "mu1" } });
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 15,
+    surum: 16,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -2343,7 +2373,7 @@ export const ORNEK = (): Durum => {
         }),
       ),
     ],
-    oneriler: [...talimatlar, ...elleOneriler, ...haftalikOneriler, ...oneriler],
+    oneriler: [...muhabireOneriler, ...talimatlar, ...elleOneriler, ...haftalikOneriler, ...oneriler],
     cagrilar: (
       [
         ["c-dun", gun(0), zaman(gun(-1), "09:10")],
@@ -2421,6 +2451,7 @@ export const ORNEK = (): Durum => {
       { id: "d4", ad: "قائمة الاتصال بالمراسلين", tur: "xlsx", guncelleme: gun(-21) },
     ],
     hareketler: hareketler.sort(sirala),
+    mesajlar,
     okundu: {},
     sayac,
   };

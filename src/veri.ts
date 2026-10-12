@@ -331,7 +331,11 @@ export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
  * "duzeltme": Planlama öneriyi notla muhabire geri gönderdi; karar muhabirde
  * bekliyor. Muhabir düzeltip yeniden gönderince öneri "yeni"ye döner.
  */
-export const ONERI_DURUMLARI = ["yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra"] as const;
+/*
+ * "teklif": Planlama'nın muhabire önerdiği haber, muhabirin yanıtını
+ * bekliyor; kabul edince Planlama'nın değerlendirmesine giriyor.
+ */
+export const ONERI_DURUMLARI = ["teklif", "yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra"] as const;
 export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
 export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
@@ -381,6 +385,21 @@ export interface Oneri {
   geriDonus?: boolean;
   /** E-postayla geldiyse kaynağı olan yanıt; orijinal metin orada değişmeden duruyor. */
   yanitId?: string;
+  /** Planlama'dan muhabire giden öneri (gönderen `giren`); yoksa muhabirden ya da kaynaktan gelen. */
+  yon?: "muhabire";
+}
+
+/**
+ * Önerinin kendi yazışması: muhabir ile Planlama arasında, uygulamanın
+ * içinde. Her önerinin yazışması ayrı; konu karışmasın. Öneriden ayrı
+ * kayıt, çünkü iki taraf aynı anda yazınca öneri belgesi ezilmesin.
+ */
+export interface Mesaj {
+  id: string;
+  oneriId: string;
+  kisiId: string;
+  metin: string;
+  zaman: string;
 }
 
 /*
@@ -757,6 +776,10 @@ export const HAREKET_TIPLERI = [
   "planGeriAlindi",
   "planIceAktarildi",
   "kisiSilindi",
+  "oneriMuhabireGonderildi",
+  "teklifKabulEdildi",
+  "teklifReddedildi",
+  "oneriMesaji",
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",
@@ -847,7 +870,7 @@ export interface Ortam {
 }
 
 export interface Durum {
-  surum: 15;
+  surum: 16;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -865,6 +888,7 @@ export interface Durum {
   faaliyetler: Faaliyet[];
   dosyalar: Dosya[];
   hareketler: Hareket[];
+  mesajlar: Mesaj[];
   /** Kişi başına son bildirim bakışı; okunmamış sayısı buradan çıkıyor. */
   okundu: Record<string, string>;
   /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
@@ -875,6 +899,8 @@ export interface Durum {
   ortamlar?: Record<string, Ortam[]>;
   /** Kişinin üst çubuktaki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
   kisayollar?: Record<string, string[]>;
+  /** Muhabire doğrudan haber önerebilen birimler; yönetici seçiyor. Yoksa yalnız Planlama. */
+  muhabireOneriBirimleri?: Birim[];
   sayac: number;
 }
 
@@ -890,9 +916,9 @@ export interface Durum {
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
  * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
- * gönderilebiliyor).
+ * gönderilebiliyor, v17: öneri yazışması, muhabire öneri).
  */
-const SAKLA = "trt-planlama-v16";
+const SAKLA = "trt-planlama-v17";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
@@ -937,7 +963,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 15) return d;
+      if (d.surum === 16) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -949,7 +975,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
 
 /** Örnek kayıtsız iskelet: gerçek kip bununla başlıyor, kişiler davetle, gerisi kullanımla doluyor. */
 export const bosDurum = (): Durum => ({
-  surum: 15,
+  surum: 16,
   kisiler: [],
   basliklar: [],
   planlar: [],
@@ -967,6 +993,7 @@ export const bosDurum = (): Durum => ({
   faaliyetler: [],
   dosyalar: [],
   hareketler: [],
+  mesajlar: [],
   okundu: {},
   sayac: 0,
 });

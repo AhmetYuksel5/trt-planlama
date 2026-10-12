@@ -113,6 +113,7 @@ export const PAKET_DURUM_ADI: Record<PaketDurum, Anahtar> = {
 };
 
 export const ONERI_DURUM_ADI: Record<OneriDurum, Anahtar> = {
+  teklif: "odTeklif",
   yeni: "odYeni",
   degerlendiriliyor: "odDegerlendiriliyor",
   duzeltme: "odDuzeltme",
@@ -122,6 +123,7 @@ export const ONERI_DURUM_ADI: Record<OneriDurum, Anahtar> = {
 };
 
 export const ONERI_DURUM_TONU: Record<OneriDurum, string> = {
+  teklif: "uyari",
   yeni: "vurgu",
   degerlendiriliyor: "uyari",
   duzeltme: "uyari",
