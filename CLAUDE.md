@@ -180,8 +180,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.
   - Kişiler: birim → ünvan ağacı, "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
+  - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir
+    akışı (yeni akış seçilenin kopyasıyla açılır, kol tek akışta). Durak kartı
+    taşınır (oklar, sürükle), eklenir, silinir (son durak değil; bekleyen paket
+    varsa söylenir). Durak: tür (programın bildiği iş ya da genel iş "Tamamla ve
+    geç"), sorumlu (kolun sahibi, birim, ünvan [birimde], kişiler), birlikte
+    çalışan birimler, "yalnız sahada", "geri gönderebilir", aşama.
+  - Davranış durağın kimliğinden değil türünden: ekran ve eylem `adimTuru(p)`
+    sorar, `p.adim === "kontrol"` yazılmaz. Geri gönderilen iş geride kalan son
+    metin durağına, yoksa bir öncekine döner (`geriHedefi`). Genel iş
+    `adimIlerle` ile ilerler, notu pakete, `durakTamamlandi` hareketi.
+  - Üretim panosunun sütunları yayındaki akışın durakları; eski sürümle süren
+    paketin durağı bugün yoksa kendi sütununda. Sırası gelen işler her birimin
+    kataloğunda "Sıradaki işlerim" (`genSiram`); örneksiz yeni birimin ana
+    sayfası onunla açılır.
   - Üretime giren paket akışın sürümünü taşır (`Paket.akis`, `akisDamgasi`):
-    sonradan yayınlanan düzen yalnız yeni paketlere uygulanır.
+    sonradan yayınlanan düzen yalnız yeni paketlere uygulanır. Damgasız ama
+    üretimdeki paket (damgadan önce girmiş) başlangıç düzeniyle (sürüm 0) sürer.
   - `veri.ts` kaydı tembel kurar: örnek veri akış kurallarını kullanıyor,
     `akis → yapi → veri` döngüsünde açılışta akış henüz tanımsız olurdu.
     Kurulurken `anlik()` null döner, yapı o an varsayılan.

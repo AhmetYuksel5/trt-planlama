@@ -1,4 +1,4 @@
-import { akisDamgasi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
+import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
@@ -1344,6 +1344,8 @@ export interface AdimGirdisi {
   metin?: string;
   video?: string;
   klipKodu?: string;
+  /** Genel durakta sorumlunun kısa notu; paketin notlarına giriyor. */
+  not?: string;
 }
 
 const ADIM_HAREKETI: Record<UretimAdimi, Hareket["tip"]> = {
@@ -1363,7 +1365,8 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   let d = getir();
   const p = paketBul(d, paketId);
   if (!p || !adimYapabilir(ben, p)) return false;
-  const adim = p.adim as UretimAdimi;
+  // Davranış durağın türünden: yöneticinin eklediği ikinci bir kontrol durağı da kontrol gibi işliyor.
+  const adim = adimTuru(p) ?? "is";
   if (adim === "gorevlendirme" && !(g.muhabirId || p.muhabirId)) return false;
   if (adim === "metin" && !g.metin?.trim()) return false;
   if (adim === "video" && !g.video?.trim()) return false;
@@ -1377,6 +1380,7 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
     ...(g.metin ? { metin: g.metin } : {}),
     ...(g.video ? { video: g.video } : {}),
     ...(g.klipKodu ? { klipKodu: g.klipKodu } : {}),
+    ...(g.not?.trim() ? { notlar: [...p.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: g.not.trim() }] } : {}),
     ...(adim === "newsdesk" ? { gorevZamani: simdi() } : {}),
     ...(adim === "video" ? { muhabirTeslimi: simdi() } : {}),
     ...(sonraki === "tamam" ? { durum: "tamamlandi", adim: undefined } : { adim: sonraki }),
@@ -1387,23 +1391,29 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   if (sonraki === "tamam" && p.stok) veri.stok = "1";
   if (g.klipKodu) veri.kod = g.klipKodu;
   if (g.muhabirId) veri.muhabir = g.muhabirId;
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
+  if (adim === "is") veri.durak = p.adim ?? "";
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
   return true;
 };
 
-/** Metin kontrolü ya da dil denetimi metni gerekçeyle muhabire geri gönderebiliyor. */
+/**
+ * Geri gönderen durak (varsayılanda metin kontrolü ve dil denetimi) işi
+ * gerekçeyle geri yolluyor: metin durağına, yoksa bir önceki durağa
+ * (akis.ts → geriHedefi).
+ */
 export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
   let d = getir();
   const p = paketBul(d, paketId);
-  if (!p || !adimYapabilir(ben, p) || !["kontrol", "dil"].includes(p.adim ?? "") || !gerekce.trim()) return false;
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: "metin", duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 }));
+  const hedef = p && geriHedefi(p);
+  if (!p || !hedef || !adimYapabilir(ben, p) || !gerekce.trim()) return false;
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: hedef, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 }));
   kaydet(
     hareketYaz(d, {
       kisiId: ben.id,
       tip: "geriGonderildi",
       paketId,
       planId: p.planId,
-      veri: { gerekce: gerekce.trim(), adim: "metin", sahip: "muhabir" },
+      veri: { gerekce: gerekce.trim(), adim: hedef, sahip: durakSahibi(p, hedef) },
     }),
   );
   return true;

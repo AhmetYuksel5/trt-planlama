@@ -5,7 +5,7 @@ import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from ".
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
 import { ONERI_DURUM_ADI } from "../etiketler";
-import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum } from "../veri";
+import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum, type Paket } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
@@ -48,6 +48,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   metinGeldi: "hrMetinGeldi",
   kontrolEdildi: "hrKontrolEdildi",
   geriGonderildi: "hrGeriGonderildi",
+  durakTamamlandi: "hrDurakTamamlandi",
   sonScript: "hrSonScript",
   videoGeldi: "hrVideoGeldi",
   mediayaGonderildi: "hrMediayaGonderildi",
@@ -92,6 +93,9 @@ const sablonSec = (h: Hareket): Anahtar => {
   return SABLON[h.tip];
 };
 
+/* Genel durağın adı paketin kendi akışından; paket silinmişse kimliği. */
+const durakAdi = (id: string, p: Paket | undefined) => (p ? adimAdi(id, p) : id);
+
 export function useHareketMetni() {
   const { t, ad, dil } = useDil();
   return (h: Hareket, d: Durum) => {
@@ -108,6 +112,7 @@ export function useHareketMetni() {
       dosya: h.veri?.dosya ?? "",
       ad: h.veri?.ad ?? "",
       birim: h.veri?.birim ? birimAdi(h.veri.birim) : "",
+      durak: h.veri?.durak ? durakAdi(h.veri.durak, paketBul(d, h.paketId)) : "",
       gorev: h.veri?.gorev ? gorevAdi(h.veri.gorev) : "",
       sayi: h.veri?.sayi ?? "",
       plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",

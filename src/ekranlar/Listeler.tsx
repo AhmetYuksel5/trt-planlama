@@ -1,10 +1,10 @@
-import { birimAdi } from "../yapi";
+import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
 import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { ADIM_ADI, STOK_DURUMLARI, URETIM_ADIMLARI, adimSahibi, geciktiMi, stokDurumu, type StokDurumu } from "../akis";
+import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { PaketTablosu } from "../bilesenler/Tablolar";
-import { useDil, type Anahtar } from "../dil";
+import { useDil, yaz, type Anahtar } from "../dil";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
 import { uretimeAl } from "../eylemler";
 import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
@@ -83,50 +83,69 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
 
 /* --- İş akışları: üretim adımlarına göre pano --- */
 
-const PANO: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: ReactNode; adimlar: readonly string[] }> = {
-  uretim: { baslik: "mUretim", alt: "uretimAlt", ikon: <Workflow size={26} />, adimlar: URETIM_ADIMLARI },
-  metinkontrol: { baslik: "mMetinKontrol", alt: "metinKontrolAlt", ikon: <SpellCheck size={26} />, adimlar: ["metin", "kontrol", "dil"] },
-  video: { baslik: "mVideo", alt: "videoAlt", ikon: <MonitorPlay size={26} />, adimlar: ["video", "iletim", "media", "inews"] },
+/* Sayfanın gösterdiği durak türleri; boşsa hepsi (yöneticinin eklediği genel duraklar da). */
+const PANO: Record<string, { baslik: Anahtar; ikon: ReactNode; turler?: readonly DurakTuru[] }> = {
+  uretim: { baslik: "mUretim", ikon: <Workflow size={26} /> },
+  metinkontrol: { baslik: "mMetinKontrol", ikon: <SpellCheck size={26} />, turler: ["metin", "kontrol", "dil"] },
+  video: { baslik: "mVideo", ikon: <MonitorPlay size={26} />, turler: ["video", "iletim", "media", "inews"] },
 };
 
+/*
+ * Sütunlar yayındaki akışın durakları. Eski sürümün akışıyla süren paketin
+ * durağı bugünkü akışta yoksa kendi sütununda, sonda: yarım iş görünmez
+ * olmasın.
+ */
 export function IsAkisi({ sayfa }: { sayfa: string }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ayar = PANO[sayfa] ?? PANO.uretim;
-  const uretimde = v.paketler.filter((p) => p.durum === "uretimde");
+  const uretimde = v.paketler.filter((p) => p.durum === "uretimde" && (!ayar.turler || ayar.turler.includes(adimTuru(p) ?? "is")));
+  const y = guncelYapi(v);
+  const duraklar = y.akislar.flatMap((a) => a.duraklar).filter((d, i, l) => l.findIndex((x) => x.id === d.id) === i && (!ayar.turler || ayar.turler.includes(d.tur)));
+  const sutunlar = [
+    ...duraklar.map((d) => ({ id: d.id, ad: d.ad ? yaz(d.ad) : d.tur === "is" ? d.id : t(ADIM_ADI[d.tur]), sahip: sorumluBirimi(d.sorumlu, "haber", y) })),
+    ...[...new Set(uretimde.map((p) => p.adim ?? ""))]
+      .filter((a) => a && !duraklar.some((d) => d.id === a))
+      .map((a) => {
+        const p = uretimde.find((x) => x.adim === a)!;
+        return { id: a, ad: adimAdi(a, p), sahip: durakSahibi(p, a) };
+      }),
+  ];
   return (
     <>
       <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} />
       <div className="pano">
-        {ayar.adimlar.map((a) => {
-          const paketler = uretimde.filter((p) => p.adim === a);
-          const adim = a as (typeof URETIM_ADIMLARI)[number];
+        {sutunlar.map((s) => {
+          const paketler = uretimde.filter((p) => p.adim === s.id);
           return (
-            <section key={a} className="pano-sutun">
+            <section key={s.id} className="pano-sutun" data-pano-sutun={s.id}>
               <header>
-                <b>{t(ADIM_ADI[adim])}</b>
+                <b>{s.ad}</b>
                 <Rozet>{paketler.length}</Rozet>
-                <small>{birimAdi(adimSahibi(adim, "haber"))}</small>
+                <small>{birimAdi(s.sahip)}</small>
               </header>
               {paketler.length === 0 && <p className="bos-kucuk">{t("bos")}</p>}
-              {paketler.map((p) => (
-                <a key={p.id} className={`pano-kart ${geciktiMi(p) ? "gecikmis" : ""}`} href={`#/paketler/${p.id}`}>
-                  <b>
-                    <Icerik blok>{p.baslik}</Icerik>
-                  </b>
-                  <span className="kisi-hucre">
-                    <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" />
-                    <small>{p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}</small>
-                  </span>
-                  <span className="pano-alt">
-                    <TurRozeti tur={p.tur} />
-                    {/* Sütunun sahibi haber koluna göre; stok paketinde adım başka birimdeyse kartta yazıyor. */}
-                    {adimSahibi(adim, p.tur) !== adimSahibi(adim, "haber") && <Rozet ton="vurgu">{birimAdi(adimSahibi(adim, p.tur))}</Rozet>}
-                    {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
-                    <AsamaCubugu paket={p} />
-                  </span>
-                </a>
-              ))}
+              {paketler.map((p) => {
+                const sahip = durakSahibi(p, s.id);
+                return (
+                  <a key={p.id} className={`pano-kart ${geciktiMi(p) ? "gecikmis" : ""}`} href={`#/paketler/${p.id}`}>
+                    <b>
+                      <Icerik blok>{p.baslik}</Icerik>
+                    </b>
+                    <span className="kisi-hucre">
+                      <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" />
+                      <small>{p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}</small>
+                    </span>
+                    <span className="pano-alt">
+                      <TurRozeti tur={p.tur} />
+                      {/* Sütunun sahibi haber koluna göre; stok paketinde adım başka birimdeyse kartta yazıyor. */}
+                      {sahip !== s.sahip && <Rozet ton="vurgu">{birimAdi(sahip)}</Rozet>}
+                      {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+                      <AsamaCubugu paket={p} />
+                    </span>
+                  </a>
+                );
+              })}
             </section>
           );
         })}
@@ -182,7 +201,7 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
                 {p.haftalikKalemId && <HaftalikRozeti />}
                 <TurRozeti tur={p.tur} />
                 {uretimeAlabilir(ben, p) && (
-                  <button className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))}>
+                  <button className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
                     <CirclePlay size={14} /> {t("uretimeAl")}
                   </button>
                 )}

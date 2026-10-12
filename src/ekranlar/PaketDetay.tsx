@@ -1,7 +1,7 @@
 import { birimAdi } from "../yapi";
 import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimKutusu, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "../akis";
+import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
@@ -221,6 +221,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const [video, setVideo] = useState(paket.video ?? "");
   const [klip, setKlip] = useState(paket.klipKodu ?? `TRTA_${(plan(v, paket) ?? "").slice(2).replace(/-/g, "")}_${String(v.sayac % 1000).padStart(3, "0")}`);
   const [gerekce, setGerekce] = useState<string | null>(null);
+  const [not, setNot] = useState("");
 
   const ilerle = (g: Parameters<typeof adimIlerle>[2]) => {
     if (adimIlerle(ben, paket.id, g)) bildir(t("bAdimTamam"));
@@ -263,15 +264,16 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     const sahip = paketSahibi(paket);
     return (
       <NotKutu>
-        {t("baskaBirimde", { birim: sahip ? birimAdi(sahip) : "", adim: adimAdi(paket.adim as UretimAdimi, paket) })}
+        {t("baskaBirimde", { birim: sahip ? birimAdi(sahip) : "", adim: adimAdi(paket.adim, paket) })}
       </NotKutu>
     );
   }
 
-  const adim = paket.adim as UretimAdimi;
-  const geriGonderebilir = adim === "kontrol" || adim === "dil";
+  // Form durağın türünden; yöneticinin eklediği genel durak "Tamamla ve geç".
+  const adim = adimTuru(paket) ?? "is";
+  const geriGonderebilir = !!geriHedefi(paket);
   return (
-    <Kart baslik={`${t("seninSiran")}: ${adimAdi(adim, paket)}`}>
+    <Kart baslik={`${t("seninSiran")}: ${adimAdi(paket.adim, paket)}`}>
       <div className="form">
         {adim === "gorevlendirme" && (
           <>
@@ -311,6 +313,21 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
             <div className="form-alt">
               <button className="dugme" disabled={!metin.trim()} onClick={() => ilerle({ metin })}>
                 {t("metniGonder")}
+              </button>
+            </div>
+          </>
+        )}
+        {adim === "is" && (
+          <>
+            <textarea dir="auto" rows={3} value={not} onChange={(e) => setNot(e.target.value)} aria-label={t("not")} data-durak-notu />
+            <div className="form-alt">
+              {geriGonderebilir && gerekce === null && (
+                <button className="dugme dugme-kotu" onClick={() => setGerekce("")} data-durak-geri>
+                  <Undo2 size={15} /> {t("geriGonder")}
+                </button>
+              )}
+              <button className="dugme dugme-iyi" onClick={() => ilerle({ not })} data-durak-tamamla>
+                <CircleCheck size={15} /> {t("tamamlaVeGec")}
               </button>
             </div>
           </>

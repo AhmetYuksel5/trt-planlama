@@ -1,6 +1,6 @@
 import { metin, yaz, type Anahtar } from "./dil";
 import { anlik, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
-import { yapi, yapiSurumu, type Akis, type Durak, type Sorumlu, type Yapi } from "./yapi";
+import { yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
  * İş akışı: bir paket önerisinin plandan yayına kadar izlediği yol.
@@ -55,14 +55,18 @@ export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
 
 export const kolSahibi = (tur: IcerikTuru, y: Yapi = yapi()): BirimId => y.kolSahibi[tur] ?? KOL_SAHIBI[tur];
 
-type AkisPaketi = Pick<Paket, "tur" | "sahaGerekli"> & Partial<Pick<Paket, "akis">>;
+type AkisPaketi = Pick<Paket, "tur" | "sahaGerekli"> & Partial<Pick<Paket, "akis" | "durum">>;
 
 /** Kolun yeni paketlerde izleyeceği akış. */
 export const akisSec = (tur: IcerikTuru, y: Yapi = yapi()): Akis => y.akislar.find((a) => a.kollar.includes(tur)) ?? y.akislar[0];
 
-/** Paketin akışı: üretime girdiği sürümdeki akış; girmemişse kolun bugünkü akışı. */
+/**
+ * Paketin akışı: üretime girdiği sürümdeki akış; girmemişse kolun bugünkü
+ * akışı. Damgasız ama üretimdeki paket damga gelmeden önce üretime girmiş:
+ * başlangıç düzeniyle (sürüm 0) sürüyor.
+ */
 export const paketAkisi = (p: AkisPaketi): Akis => {
-  if (!p.akis) return akisSec(p.tur);
+  if (!p.akis) return p.durum === "uretimde" ? akisSec(p.tur, yapiSurumu(0)) : akisSec(p.tur);
   const y = yapiSurumu(p.akis.surum);
   return y.akislar.find((a) => a.id === p.akis!.id) ?? akisSec(p.tur, y);
 };
@@ -149,6 +153,24 @@ export const adimKutusu = (p: AkisPaketi, adim: string): number | undefined => {
 export const uretimYolu = (p: AkisPaketi): string[] => paketAkisi(p).duraklar.filter((d) => d.kosul !== "saha" || p.sahaGerekli).map((d) => d.id);
 
 export const ilkAdim = (p: AkisPaketi): string => uretimYolu(p)[0];
+
+/** Paketin bulunduğu durağın türü: ekranlar ve eylemler davranışı buna göre seçiyor, durağın kimliğine göre değil. */
+export const adimTuru = (p: AkisPaketi & Pick<Paket, "adim">): DurakTuru | undefined => (p.adim ? (durakBul(p, p.adim)?.tur ?? (p.adim as DurakTuru)) : undefined);
+
+/**
+ * Geri gönderilen iş nereye dönüyor: yolda geride kalan son metin durağına
+ * (muhabir düzeltsin), metin durağı yoksa bir önceki durağa. Durak geri
+ * göndermiyorsa undefined.
+ */
+export const geriHedefi = (p: AkisPaketi & Pick<Paket, "adim">): string | undefined => {
+  const d = durakBul(p, p.adim);
+  if (!d?.geriGonderir) return undefined;
+  const yol = uretimYolu(p);
+  const i = yol.indexOf(d.id);
+  if (i <= 0) return undefined;
+  const once = yol.slice(0, i);
+  return [...once].reverse().find((id) => durakBul(p, id)?.tur === "metin") ?? once[once.length - 1];
+};
 
 /** Sıradaki durak; son duraktan sonra paket tamamlanıyor (rapor 10. kutu). */
 export const sonrakiAdim = (p: AkisPaketi & Pick<Paket, "adim">): string | "tamam" => {

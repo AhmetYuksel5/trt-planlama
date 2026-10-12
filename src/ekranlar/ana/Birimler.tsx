@@ -24,7 +24,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { birimAdi } from "../../yapi";
-import { geciktiMi } from "../../akis";
+import { adimTuru, geciktiMi } from "../../akis";
 import { planDurum } from "../../eylemler";
 import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
 import { HareketAkisi } from "../../bilesenler/Hareket";
@@ -70,7 +70,7 @@ function useNewsdesk(ben: Kisi) {
     v,
     bugunPlan,
     yarinPlan: v.planlar.find((p) => p.tarih === gunEkle(B, 1)),
-    kontrol: uretimdeki(v).filter((p) => ["kontrol", "iletim", "inews"].includes(p.adim ?? "") && adimYapabilir(ben, p)),
+    kontrol: uretimdeki(v).filter((p) => ["kontrol", "iletim", "inews"].includes(adimTuru(p) ?? "") && adimYapabilir(ben, p)),
     geciken: v.paketler.filter((p) => geciktiMi(p)),
     bugunku: v.paketler.filter((p) => p.planId === bugunPlan?.id && p.durum !== "iptal"),
   };
@@ -130,6 +130,22 @@ function KontrolBekleyen({ ben }: { ben: Kisi }) {
   );
 }
 
+/*
+ * Akışta sırası kişiye gelmiş paketler: durağın sorumlusu birim, ünvan ya
+ * da kişi olsun (Organizasyon › İş akışları). Yöneticinin açtığı birimin
+ * ana sayfası bununla açılıyor; her birim kataloğundan ekleyebiliyor.
+ */
+function SiradakiIsler({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const benim = uretimdeki(v).filter((p) => adimYapabilir(ben, p));
+  return (
+    <Kart baslik={t("siradakiIslerim")} ikon={<ListChecks size={18} />} ek={String(benim.length)}>
+      <PaketTablosu paketler={benim} d={v} sutunlar={["baslik", "asama", "teslim"]} bosMetin={t("siraBos")} />
+    </Kart>
+  );
+}
+
 function BugununUretimi({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const { v, bugunku } = useNewsdesk(ben);
@@ -179,7 +195,7 @@ function useNewsGathering() {
   return {
     v,
     B,
-    sahaAdimi: uretimdeki(v).filter((p) => p.adim === "gorevlendirme"),
+    sahaAdimi: uretimdeki(v).filter((p) => adimTuru(p) === "gorevlendirme"),
     sahaGerekecek: v.paketler.filter((p) => p.sahaGerekli && ["taslak", "degerlendiriliyor", "onaylandi"].includes(p.durum)),
     talepler: v.gorevlendirmeler.filter((g) => g.durum === "talep"),
     sahada: muhabirler(v).filter((k) => k.durum === "sahada" || k.durum === "yolda"),
@@ -430,8 +446,8 @@ export function OutputAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolea
   );
 }
 
-const kontrolde = (d: Durum) => uretimdeki(d).filter((p) => p.adim === "kontrol");
-const dilde = (d: Durum) => uretimdeki(d).filter((p) => p.adim === "dil");
+const kontrolde = (d: Durum) => uretimdeki(d).filter((p) => adimTuru(p) === "kontrol");
+const dilde = (d: Durum) => uretimdeki(d).filter((p) => adimTuru(p) === "dil");
 
 function OutputSayaclari() {
   const { t } = useDil();
@@ -503,7 +519,7 @@ function YuklemeKuyrugu() {
   const v = useVeri();
   return (
     <Kart baslik={t("yuklemeKuyrugu")} ikon={<Upload size={18} />}>
-      <PaketTablosu paketler={uretimdeki(v).filter((p) => p.adim === "media")} d={v} sutunlar={["kod", "baslik", "muhabir", "teslim"]} bosMetin={t("siraBos")} />
+      <PaketTablosu paketler={uretimdeki(v).filter((p) => adimTuru(p) === "media")} d={v} sutunlar={["kod", "baslik", "muhabir", "teslim"]} bosMetin={t("siraBos")} />
     </Kart>
   );
 }
@@ -513,7 +529,7 @@ function YakindaGelecek() {
   const v = useVeri();
   return (
     <Kart baslik={t("yakindaGelecek")} ikon={<Clock size={18} />}>
-      <PaketTablosu paketler={uretimdeki(v).filter((p) => p.adim === "iletim" || p.adim === "video")} d={v} sutunlar={["baslik", "asama", "kimde"]} bosMetin={t("kayitYok")} />
+      <PaketTablosu paketler={uretimdeki(v).filter((p) => adimTuru(p) === "iletim" || adimTuru(p) === "video")} d={v} sutunlar={["baslik", "asama", "kimde"]} bosMetin={t("kayitYok")} />
     </Kart>
   );
 }
@@ -535,6 +551,7 @@ function SonYuklenenler() {
  * herkesin kendi listesi.
  */
 export const BIRIM_ALANLARI: Alan[] = [
+  { id: "genSiram", ad: "siradakiIslerim", grup: "genel", sayfa: "paketler", Bilesen: SiradakiIsler },
   { id: "ndSayac", ad: "alOzetSayilar", genis: true, grup: "newsdesk", sayfa: "uretim", Bilesen: NewsdeskSayaclari },
   { id: "ndPlan", ad: "uygulanacakPlan", grup: "newsdesk", sayfa: "nextday", Bilesen: UygulanacakPlan },
   { id: "ndKontrol", ad: "kontrolBekleyen", grup: "newsdesk", sayfa: "metinkontrol", Bilesen: KontrolBekleyen },

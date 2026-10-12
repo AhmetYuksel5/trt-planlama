@@ -1,6 +1,6 @@
 import { birimAdi } from "../../yapi";
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
-import { adimAdi, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
+import { adimAdi, adimTuru, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
@@ -124,7 +124,7 @@ function Siram({ ben }: { ben: Kisi }) {
                     {p.oncelikli && <OncelikRozeti />}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
                     <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
-                      {t(p.adim === "metin" ? "metniGonder" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
+                      {t(adimTuru(p) === "metin" ? "metniGonder" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
                     </a>
                   </li>
                 ))}

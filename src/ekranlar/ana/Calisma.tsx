@@ -77,8 +77,8 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
   const uygunlar = katalog().filter((a) => alanUygun(ben, a));
   const bul = (id: string) => uygunlar.find((a) => a.id === id);
   const kayitli = kisisel ? v.anaSayfa?.[duzenAnahtari(ben.id, duzen)] : undefined;
-  // Yöneticinin açtığı birim örnek aldığı birimin varsayılanıyla başlıyor (yapi.ts → izinBirimi); örneksiz boş.
-  const secili = (kayitli ?? VARSAYILAN[(duzen === "panel" ? duzen : izinBirimi(duzen)) as Birim | "panel"] ?? []).filter((id) => !!bul(id));
+  // Yöneticinin açtığı birim örnek aldığı birimin varsayılanıyla başlıyor (yapi.ts → izinBirimi); örneksiz sıradaki işleriyle.
+  const secili = (kayitli ?? VARSAYILAN[(duzen === "panel" ? duzen : izinBirimi(duzen)) as Birim | "panel"] ?? ["genSiram"]).filter((id) => !!bul(id));
   const kaydet = (ids: string[] | null) => anaSayfaKaydet(ben, duzen, ids);
   const tasi = (i: number, yon: -1 | 1) => {
     const yeni = [...secili];
@@ -88,7 +88,7 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
   const eklenebilir = uygunlar.filter((a) => !secili.includes(a.id));
   const gruplar = [...new Set(eklenebilir.map((a) => a.grup))];
   const adi = (a: Alan) => (a.ek ? `${t(a.ad)} · ${t(a.ek)}` : t(a.ad));
-  const grupAdi = (g: DuzenAdi) => (g === "panel" ? t("mPanel") : birimAdi(g));
+  const grupAdi = (g: DuzenAdi) => (g === "panel" ? t("mPanel") : g === "genel" ? t("alGenel") : birimAdi(g));
 
   return (
     <>

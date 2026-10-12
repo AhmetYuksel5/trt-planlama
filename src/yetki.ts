@@ -324,7 +324,7 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   izinler: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
   oneriler: ["planlama", "yonetim", "muhabir"],
   basliklar: ["planlama", "newsdesk", "program", "yonetim"],
-  paketler: BIRIMLER,
+  paketler: HERKES,
   feature: MASA,
   programlar: ["planlama", "program", "yonetim"],
   stok: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],

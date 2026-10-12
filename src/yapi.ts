@@ -73,6 +73,8 @@ export interface Durak {
   yardimci?: BirimId[];
   /** "saha": yalnız sahada çekim gerekiyorsa yola giriyor. */
   kosul?: "saha";
+  /** Sorumlu işi gerekçeyle geri gönderebiliyor (metin kontrolü, dil denetimi). */
+  geriGonderir?: boolean;
   asama: Asama;
 }
 
@@ -105,8 +107,8 @@ const VARSAYILAN_DURAKLAR: Durak[] = [
   { id: "newsdesk", tur: "newsdesk", sorumlu: { tur: "kol" }, asama: "newsdesk" },
   { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
   // Belgede "Newsdesk / Output" metin kontrolünü birlikte yapıyor.
-  { id: "kontrol", tur: "kontrol", sorumlu: { tur: "birim", birim: "output" }, yardimci: ["newsdesk"], asama: "uretim" },
-  { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "output" }, asama: "uretim" },
+  { id: "kontrol", tur: "kontrol", sorumlu: { tur: "birim", birim: "output" }, yardimci: ["newsdesk"], geriGonderir: true, asama: "uretim" },
+  { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "output" }, geriGonderir: true, asama: "uretim" },
   { id: "video", tur: "video", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
   { id: "iletim", tur: "iletim", sorumlu: { tur: "kol" }, asama: "teknik" },
   { id: "media", tur: "media", sorumlu: { tur: "birim", birim: "media" }, asama: "teknik" },
@@ -231,6 +233,8 @@ export const silinebilir = (e: Etki) => e.kisiler === 0 && e.duraklar === 0;
 
 export const birimGuncelle = (y: Yapi, id: BirimId, f: (b: BirimTanimi) => BirimTanimi): Yapi => ({ ...y, birimler: y.birimler.map((b) => (b.id === id ? f(b) : b)) });
 export const unvanGuncelle = (y: Yapi, id: GorevId, f: (u: UnvanTanimi) => UnvanTanimi): Yapi => ({ ...y, unvanlar: y.unvanlar.map((u) => (u.id === id ? f(u) : u)) });
+
+export const akisGuncelle = (y: Yapi, id: string, f: (a: Akis) => Akis): Yapi => ({ ...y, akislar: y.akislar.map((a) => (a.id === id ? f(a) : a)) });
 
 /** İki yapı aynı mı (yayınlanacak bir şey var mı); sürüm bilgileri sayılmıyor. */
 export const ayniYapi = (a: Yapi, b: Yapi) => {

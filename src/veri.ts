@@ -802,6 +802,7 @@ export const HAREKET_TIPLERI = [
   "metinGeldi",
   "kontrolEdildi",
   "geriGonderildi",
+  "durakTamamlandi",
   "sonScript",
   "videoGeldi",
   "mediayaGonderildi",

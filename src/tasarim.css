@@ -1892,3 +1892,27 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 .org-unvan { padding-inline-start: var(--ara-4); margin-block: var(--ara-2); }
 .org-unvan h4 { margin: 0 0 var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); font-weight: 600; }
 tr.soluk > td { opacity: .5; }
+.durak-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); counter-reset: none; }
+.durak-karti {
+  display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-2) var(--ara-3);
+  border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); position: relative;
+}
+/* Duraklar arası ok: akışın yönü (Arapçada da yukarıdan aşağı). */
+.durak-karti + .durak-karti::before {
+  content: ""; position: absolute; inset-inline-start: 26px; top: calc(-1 * var(--ara-2)); height: var(--ara-2);
+  border-inline-start: 2px solid var(--cizgi);
+}
+.durak-karti.surukleniyor { opacity: .5; }
+.durak-no { display: inline-flex; align-items: center; gap: 2px; min-width: 40px; font-weight: 700; color: var(--sonuk); cursor: grab; }
+.durak-govde { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.durak-govde small { color: var(--sonuk); }
+.durak-rozetler { display: flex; flex-wrap: wrap; gap: var(--ara-1); }
+.durak-islem { display: flex; flex-wrap: wrap; gap: 2px; }
+.kisi-secimi { display: grid; gap: var(--ara-2); }
+.kisi-secimi-liste { max-height: 220px; overflow-y: auto; display: grid; gap: 2px; border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2); }
+.secim-grubu { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--ara-3); }
+@media (max-width: 760px) {
+  .durak-karti { flex-wrap: wrap; }
+  .durak-islem { width: 100%; justify-content: flex-end; }
+  .durak-islem .dugme-ikon { min-width: 44px; min-height: 44px; }
+}
