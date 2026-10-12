@@ -3,7 +3,7 @@ import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Tr
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
-import { hataKodu } from "./GercekGiris";
+import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
@@ -71,8 +71,12 @@ const adKur = (tr0: string, ar0: string, en0: string, yedek: string) => {
  * günlük sınır dolduysa ertesi gün "Yeniden gönder" ile gidiyor.
  */
 const gonderimHatasi = (x: unknown) => {
-  if (hataKodu(x) !== "auth/quota-exceeded") console.error(x);
-  return metin(hataKodu(x) === "auth/quota-exceeded" ? "ghGunlukSinirDavet" : "davetGonderilemedi");
+  const kod = hataKodu(x);
+  if (kod === "auth/quota-exceeded") return metin("ghGunlukSinirDavet");
+  console.error(x);
+  // Tanınan hata kendi mesajıyla (yetki yok, ağ…); tanınmayan kodu yazılı, neden bulunsun.
+  const anahtar = hataAnahtari(x);
+  return anahtar !== "ghBilinmeyen" ? `${metin("davetGonderilemedi")} ${metin(anahtar)}` : metin("davetGonderilemediKod", undefined, { kod: kod || "?" });
 };
 
 export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomulu?: boolean }) {

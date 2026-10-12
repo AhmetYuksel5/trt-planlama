@@ -1756,6 +1756,7 @@ const M = {
   davetGonder: m("Davet gönder", "إرسال الدعوة", "Send invitation"),
   davetGonderildi: m("Davet gönderildi: {eposta}", "أُرسلت الدعوة: {eposta}", "Invitation sent: {eposta}"),
   davetGonderilemedi: m("Davet gönderilemedi.", "تعذّر إرسال الدعوة.", "The invitation could not be sent."),
+  davetGonderilemediKod: m("Davet gönderilemedi ({kod}).", "تعذّر إرسال الدعوة ({kod}).", "The invitation could not be sent ({kod})."),
   davetler: m("Davetler", "الدعوات", "Invitations"),
   davetYok: m("Henüz davet yok.", "لا دعوات بعد.", "No invitations yet."),
   davetBekliyor: m("Bekliyor", "بانتظار التفعيل", "Pending"),
