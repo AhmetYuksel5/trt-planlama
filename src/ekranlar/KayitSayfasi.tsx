@@ -5,7 +5,7 @@ import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil, type Anahtar } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
-import { firebaseYukle, gercegeGec } from "../kip";
+import { firebaseYukle, gercegeGec, tanitimiAc } from "../kip";
 import { SIFRE_EN_AZ, hataAnahtari, hataKodu } from "./GercekGiris";
 import type { BirimId, GorevId } from "../veri";
 
@@ -153,8 +153,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
           </a>
         )}
         <div className="gg-alt">
-          <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => (location.hash = "#/")}>
-            <ArrowLeft size={14} className="yon" /> {t("ggDemoyaDon")}
+          <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={tanitimiAc}>
+            <ArrowLeft size={14} className="yon" /> {t("ggAnaSayfa")}
           </button>
           <DilSecici />
         </div>

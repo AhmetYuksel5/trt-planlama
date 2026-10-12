@@ -4,10 +4,10 @@ import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil, type Anahtar } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
-import { GERCEK, demoyaDon, firebaseYukle, gercegeGec, useGercekDurum } from "../kip";
+import { GERCEK, firebaseYukle, gercegeGec, tanitimaDon, tanitimiAc, useGercekDurum } from "../kip";
 
 /**
- * Gerçek girişin sayfası (`#/gercek-giris`, logoya art arda üç tıkla).
+ * Gerçek girişin sayfası (`#/gercek-giris`, tanıtımdaki "Giriş").
  *
  * Adımlar:
  * - giriş: e-posta ve şifre; "Şifremi unuttum" ve "Etkinleştirme bağlantısı
@@ -95,6 +95,20 @@ export default function GercekGiris() {
     });
   }, [gd.tur]);
 
+  // Demodan "Giriş"e basan kişinin oturumu bu tarayıcıda açıksa (demoyu denemeye geçmiş) şifre sorulmuyor.
+  useEffect(() => {
+    if (GERCEK || !kurulu || sorgu.get("giris")) return;
+    firebaseYukle().then(async (f) => {
+      if (!(await f.sakliOturum().catch(() => ""))) return;
+      const hal = await f.ilkKayit().catch(() => "davetYok" as const);
+      if (hal === "etkin") gercegeGec();
+      else if (hal === "dogrulanmadi") {
+        setEposta(f.oturumdakiEposta());
+        setAdim("dogrula");
+      } else await f.oturumuKapat().catch(() => {});
+    });
+  }, []);
+
   const calis = async (f: () => Promise<void>) => {
     setHata(null);
     setBekle(true);
@@ -180,17 +194,14 @@ export default function GercekGiris() {
     });
 
   const geri = async () => {
-    if (!GERCEK) {
-      location.hash = "#/";
-      return;
-    }
-    // Yapılandırma boşsa Firebase başlamıyor; yine de demoya dönülsün.
+    if (!GERCEK) return tanitimiAc();
+    // Yapılandırma boşsa Firebase başlamıyor; yine de tanıtıma dönülsün.
     try {
       await (await firebaseYukle()).oturumuKapat();
     } catch {
       /* oturum zaten yok */
     }
-    demoyaDon();
+    tanitimaDon();
   };
 
   const epostaAlani = (
@@ -292,7 +303,7 @@ export default function GercekGiris() {
         )}
         <div className="gg-alt">
           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={geri}>
-            <ArrowLeft size={14} className="yon" /> {t("ggDemoyaDon")}
+            <ArrowLeft size={14} className="yon" /> {t("ggAnaSayfa")}
           </button>
           <DilSecici />
         </div>

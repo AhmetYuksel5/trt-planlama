@@ -6,8 +6,11 @@ import { useSyncExternalStore } from "react";
  * - Demo (varsayılan): örnek veri, kişi seçerek giriş, kayıt tarayıcıda.
  *   Program her açılışta böyle başlıyor; kurumun içinde gösterilen yüz bu.
  * - Gerçek: davetle açılan hesaplar, e-postayla etkinleşme, kayıt
- *   Firebase'de ve herkes için ortak. Girişi gizli (logoya art arda üç tık,
- *   `#/gercek-giris`); demo gösterilirken gerçek kayıt ekranda belirmesin.
+ *   Firebase'de ve herkes için ortak. Girişi tanıtım sayfasındaki "Giriş"
+ *   (`#/gercek-giris`).
+ *
+ * Adres çıplak açılınca (hash yok) demoda tanıtım sayfası geliyor; gerçek
+ * kipte kalmış kişi doğrudan sisteme giriyor.
  *
  * Kip tarayıcıda saklanıyor ve açılışta bir kez okunuyor: oturumun ortasında
  * veri kaynağı değişmesin. Kip değişince sayfa baştan yükleniyor.
@@ -39,11 +42,22 @@ const kipeGec = (kip: Kip, hash: string) => {
   location.reload();
 };
 
-/** Firebase katmanı ayrı parça: yalnız gerçek kipte ve gizli girişte indiriliyor. */
+/** Firebase katmanı ayrı parça: yalnız gerçek kipte ve giriş ekranında indiriliyor. */
 export const firebaseYukle = () => import("./depo/firebase");
 
 export const gercegeGec = () => kipeGec("gercek", "#/");
 export const demoyaDon = () => kipeGec("demo", "#/");
+/** Gerçek hesaptan çıkış: tanıtım sayfasına (hash'siz adres). */
+export const tanitimaDon = () => kipeGec("demo", "");
+
+/** Tanıtımın düğmeleri. Gerçek kipten demoya geçmek Firebase oturumunu kapatmıyor; "Giriş" geri getiriyor. */
+export const demoyuAc = () => (GERCEK ? demoyaDon() : (location.hash = "#/"));
+export const girisiAc = () => (location.hash = GERCEK ? "#/" : "#/gercek-giris");
+
+/** Uygulamanın içinden tanıtım: kip değişmiyor, adresi `#/tanitim`. */
+export const tanitimiAc = () => {
+  location.hash = "#/tanitim";
+};
 
 /* --- Gerçek kipin açılış durumu --- */
 

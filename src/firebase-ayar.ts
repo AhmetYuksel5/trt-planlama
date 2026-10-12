@@ -5,7 +5,7 @@
  * kimliği. Erişimi değerler değil güvenlik kuralları sınırlıyor
  * (`firestore.rules`). Nasıl doldurulacağı `belgeler/gercek-kip.md`'de.
  *
- * Boşken gizli giriş "yapılandırılmadı" diyor; demo etkilenmiyor.
+ * Boşken kurum girişi "yapılandırılmadı" diyor; demo etkilenmiyor.
  */
 export interface FirebaseAyari {
   apiKey: string;

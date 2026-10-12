@@ -354,6 +354,13 @@ export const oturumuKapat = () => {
 
 export const oturumdakiEposta = () => auth?.currentUser?.email ?? "";
 
+/** Tarayıcıda saklı oturum okununca: demodan "Giriş"e basan, oturumu açıksa şifre girmeden içeri. */
+export const sakliOturum = async () => {
+  baslat();
+  await auth.authStateReady();
+  return auth.currentUser?.email ?? "";
+};
+
 /* --- Davet --- */
 
 export type DavetDurumu = "bekliyor" | "kullanildi" | "iptal";

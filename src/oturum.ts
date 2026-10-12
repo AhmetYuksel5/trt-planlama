@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { GERCEK, demoyaDon, firebaseYukle } from "./kip";
+import { GERCEK, tanitimaDon, firebaseYukle } from "./kip";
 import { kisiBul, useVeri, type Kisi } from "./veri";
 
 /**
@@ -66,7 +66,7 @@ export const oturumdanCik = () => {
   firebaseYukle()
     .then((f) => f.oturumuKapat())
     .catch(() => {})
-    .then(demoyaDon);
+    .then(tanitimaDon);
 };
 
 /** Oturumdaki kişi; örnek veri sıfırlanıp kişi silinmişse oturum yok sayılıyor. */

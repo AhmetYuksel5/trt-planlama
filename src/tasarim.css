@@ -403,7 +403,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .prototip:hover, .prototip[aria-expanded="true"] { border-color: var(--uyari); }
 .prototip-notu { display: flex; gap: var(--ara-2); align-items: flex-start; width: min(320px, calc(100vw - 24px)); padding: var(--ara-3); color: var(--uyari); font-size: var(--punto-kucuk); font-weight: 600; }
 .prototip-notu svg { flex: none; margin-top: 2px; }
-.ust .dil-kompakt { width: auto; display: inline-flex; gap: 2px; padding-inline: var(--ara-2); font-size: var(--punto-kucuk); font-weight: 700; }
+.ust .dil-kompakt, .tanitim-ust .dil-kompakt { width: auto; display: inline-flex; gap: 2px; padding-inline: var(--ara-2); font-size: var(--punto-kucuk); font-weight: 700; }
 .dil-menusu { min-inline-size: 150px; }
 
 @container ust (max-width: 1100px) {
@@ -852,7 +852,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .bildiri-eylem:hover { background: var(--lacivert-3); }
 
 /*
- * Gerçek kip: gizli girişin sayfası. Demo giriş ekranından ayrı ve sade:
+ * Gerçek kip: kurum girişinin sayfası (tanıtımdaki "Giriş"). Demo giriş ekranından ayrı ve sade:
  * logo, tek form; menü ve prototip etiketi yok.
  */
 .gercek-giris { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: var(--ara-4); background: var(--zemin); }
@@ -1941,4 +1941,99 @@ tr.soluk > td { opacity: .5; }
   /* Dört 44 piksellik düğme ad ile aynı satıra sığmıyor, adı harf harf bölüyordu: düğmeler alt satıra iniyor. */
   .unvan-adi { flex-basis: 60%; }
   .unvan-islem { margin-inline-start: auto; }
+}
+
+/* --- Tanıtım sayfası (ekranlar/Tanitim.tsx) ---
+ * plannersflow.net'in ilk yüzü. Uygulamanın kabuğu yok; üst satırda Demo ve
+ * Giriş. Kahraman bölümü lacivert (sol menü ve giriş ekranıyla aynı zemin),
+ * gövde açık; içerik dar sütunda okunur kalsın.
+ */
+.tanitim { min-height: 100vh; background: var(--zemin); color: var(--murekkep); }
+.tanitim-ust {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--ara-4);
+  padding: var(--ara-3) var(--ara-6); background: var(--yuzey); border-bottom: 1px solid var(--cizgi);
+}
+.tanitim-marka { display: inline-flex; flex: none; }
+.tanitim .logo { block-size: var(--logo-menu); }
+.tanitim-nav { display: flex; gap: var(--ara-1); margin-inline-start: var(--ara-4); }
+.tanitim-nav button { background: none; border: 0; padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap); color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk); }
+.tanitim-nav button:hover { background: var(--yuzey-2); color: var(--murekkep); }
+.tanitim-ust-sag { display: flex; align-items: center; gap: var(--ara-3); margin-inline-start: auto; }
+.tanitim-dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+
+.tanitim-kahraman { background: var(--lacivert); color: #fff; padding: calc(var(--ara-8) * 2) var(--ara-6); }
+.tanitim-kahraman-ic { max-inline-size: 1120px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: calc(var(--ara-8) * 1.5); align-items: center; }
+.tanitim-etiket { display: inline-block; padding: var(--ara-1) var(--ara-3); border-radius: var(--yaricap-hap); background: var(--lacivert-3); color: var(--lacivert-yazi); font-size: var(--punto-kucuk); font-weight: 600; }
+.tanitim-kahraman h1 { font-size: calc(var(--punto-dev) * 1.55); line-height: 1.15; margin: var(--ara-4) 0; letter-spacing: -.01em; }
+.tanitim-kahraman p { color: var(--lacivert-yazi); font-size: var(--punto-orta); line-height: 1.65; margin: 0 0 var(--ara-6); }
+.tanitim-kahraman small { display: block; margin-top: var(--ara-4); color: var(--lacivert-silik); font-size: var(--punto-kucuk); }
+.tanitim-kahraman .dugme { height: 44px; padding: 0 var(--ara-5); font-size: var(--punto); }
+.tanitim-kahraman .dugme-ikincil { background: transparent; color: #fff; border-color: var(--lacivert-silik); }
+.tanitim-kahraman .dugme-ikincil:hover { background: var(--lacivert-2); }
+
+/* Süs kağıdı: plan satırları ve bir paketin beş aşamadaki yeri. */
+.tanitim-kagit { background: var(--yuzey); color: var(--murekkep); border-radius: var(--yaricap-kart); padding: var(--ara-6); box-shadow: var(--golge-acilir); display: grid; gap: var(--ara-3); }
+.tanitim-kagit-bas { display: flex; align-items: center; gap: var(--ara-2); margin-bottom: var(--ara-2); }
+.tanitim-kagit-bas span { inline-size: 12px; block-size: 12px; border-radius: 3px; background: var(--renk); }
+.tanitim-satir { block-size: 10px; border-radius: var(--yaricap-hap); background: var(--yuzey-3); }
+.tanitim-satir:nth-child(2) { inline-size: 78%; }
+.tanitim-satir:nth-child(3) { inline-size: 92%; }
+.tanitim-satir:nth-child(4) { inline-size: 64%; }
+.tanitim-satir:nth-child(5) { inline-size: 85%; }
+.tanitim-satir:nth-child(6) { inline-size: 70%; }
+.tanitim-iz { list-style: none; margin: var(--ara-4) 0 0; padding: var(--ara-4) 0 0; border-top: 1px solid var(--cizgi); display: grid; gap: var(--ara-2); }
+.tanitim-iz li { display: flex; align-items: center; gap: var(--ara-3); font-size: var(--punto-kucuk); color: var(--silik); }
+.tanitim-iz i { inline-size: 14px; block-size: 14px; border-radius: 50%; border: 2px solid var(--cizgi); flex: none; }
+.tanitim-iz .gecti { color: var(--sonuk); }
+.tanitim-iz .gecti i { background: var(--iyi); border-color: var(--iyi); }
+.tanitim-iz .simdi { color: var(--murekkep); font-weight: 600; }
+.tanitim-iz .simdi i { border-color: var(--vurgu); box-shadow: 0 0 0 4px var(--vurgu-sis); }
+
+.tanitim-govde { max-inline-size: 1120px; margin: 0 auto; padding: 0 var(--ara-6); }
+.tanitim-bolum { padding: calc(var(--ara-8) * 2) 0 0; scroll-margin-top: 72px; }
+.tanitim-bolum h2, .tanitim-son h2 { font-size: var(--punto-dev); margin: 0 0 var(--ara-2); }
+.tanitim-alt { color: var(--sonuk); font-size: var(--punto-orta); margin: 0 0 var(--ara-6); }
+.tanitim-adimlar { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ara-3); }
+.tanitim-adimlar li { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); padding: var(--ara-4); }
+.tanitim-sira { display: inline-grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: var(--vurgu-sis); color: var(--vurgu); font-weight: 700; font-size: var(--punto-kucuk); }
+.tanitim-adimlar h3, .tanitim-kart h3, .tanitim-ilkeler h3 { font-size: var(--punto-orta); margin: var(--ara-3) 0 var(--ara-2); }
+.tanitim-adimlar p, .tanitim-kart p, .tanitim-ilkeler p { color: var(--sonuk); font-size: var(--punto); line-height: 1.6; margin: 0; }
+.tanitim-kartlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--ara-4); }
+.tanitim-kart { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); padding: var(--ara-5); box-shadow: var(--golge-kart); }
+.tanitim-ikon { display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--yaricap); background: var(--sis); color: var(--renk); }
+.tanitim-ilkeler { margin-top: calc(var(--ara-8) * 2); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ara-6); padding: var(--ara-8); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
+.tanitim-ilkeler svg { color: var(--vurgu); }
+.tanitim-birimler { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+.tanitim-birimler li { padding: var(--ara-2) var(--ara-4); border-radius: var(--yaricap-hap); background: var(--yuzey); border: 1px solid var(--cizgi); font-weight: 600; font-size: var(--punto-kucuk); }
+
+.tanitim-son { margin: calc(var(--ara-8) * 2) auto 0; max-inline-size: 1120px; padding: var(--ara-8) var(--ara-6); text-align: center; display: grid; justify-items: center; gap: var(--ara-3); }
+.tanitim-son p { color: var(--sonuk); font-size: var(--punto-orta); margin: 0 0 var(--ara-3); max-inline-size: 560px; }
+.tanitim-son .dugme { height: 44px; padding: 0 var(--ara-5); font-size: var(--punto); }
+.tanitim-alt-bilgi { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-4); padding: var(--ara-6); border-top: 1px solid var(--cizgi); background: var(--yuzey); color: var(--sonuk); font-size: var(--punto-kucuk); }
+.tanitim-alt-bilgi .logo { block-size: var(--logo-ust); }
+.tanitim-alt-bilgi a { margin-inline-start: auto; color: var(--sonuk); }
+
+@media (max-width: 960px) {
+  .tanitim-nav { display: none; }
+  .tanitim-kahraman-ic { grid-template-columns: minmax(0, 1fr); }
+  .tanitim-adimlar { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .tanitim-ilkeler { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .tanitim-ust { padding: var(--ara-2) var(--ara-4); gap: var(--ara-2); flex-wrap: wrap; }
+  .tanitim-ust .logo { block-size: var(--logo-ust); }
+  /* Telefonda üstte logo ve dil, altında Demo ile Giriş yarı yarıya: tek satıra sığmıyor (Arapça adlar uzun). */
+  .tanitim-ust-sag { display: contents; }
+  .tanitim-ust .acilir-kap { margin-inline-start: auto; }
+  .tanitim-ust .tanitim-dugmeler { flex: 1 1 100%; flex-wrap: nowrap; }
+  .tanitim-ust .dugme { height: var(--dokunma); flex: 1 1 0; }
+  .tanitim-kahraman { padding: var(--ara-8) var(--ara-4); }
+  .tanitim-kahraman h1 { font-size: var(--punto-dev); }
+  .tanitim-kahraman .dugme, .tanitim-son .dugme { flex: 1 1 auto; }
+  .tanitim-gorsel { display: none; }
+  .tanitim-govde { padding: 0 var(--ara-4); }
+  .tanitim-bolum { padding-top: calc(var(--ara-8) + var(--ara-4)); }
+  .tanitim-ilkeler { padding: var(--ara-5); margin-top: calc(var(--ara-8) + var(--ara-4)); }
+  .tanitim-son { padding: var(--ara-8) var(--ara-4); }
+  .tanitim-son .tanitim-dugmeler { inline-size: 100%; }
 }

@@ -265,6 +265,135 @@ const M = {
     "نموذج أولي: لم يُربط تسجيل الدخول المؤسسي بعد. اختر شخصا لترى شاشته؛ لا توجد كلمة مرور. تُحفظ البيانات في هذا المتصفح.",
     "Prototype: corporate sign-in is not connected yet. Pick a person to see their screen; there is no password. Data is stored in this browser.",
   ),
+  /* Tanıtım sayfası (adres çıplak açılınca; ekranlar/Tanitim.tsx). Kullanım anlatmayan tek sayfa kuralının istisnası: tanıtım. */
+  tanitimSayfasi: m("Tanıtım", "التعريف بالنظام", "About"),
+  demoyuDene: m("Demoyu dene", "جرّب النسخة التجريبية", "Try the demo"),
+  tnNasil: m("Nasıl çalışır", "كيف يعمل", "How it works"),
+  tnOzellikler: m("Özellikler", "الميزات", "Features"),
+  tnBirimler: m("Birimler", "الوحدات", "Units"),
+  tnEtiket: m("Haber merkezi planlama sistemi", "نظام تخطيط غرفة الأخبار", "Newsroom planning system"),
+  tnBaslik: m(
+    "Öneriden yayına, haber merkezinin bütün planı tek akışta.",
+    "من الاقتراح إلى البث: خطة غرفة الأخبار كلها في مسار واحد.",
+    "From pitch to broadcast: the whole newsroom plan in one flow.",
+  ),
+  tnAlt: m(
+    "Plannersflow; Planlama, News Gathering, Newsdesk, muhabirler ve üretim birimlerini aynı kayıt üzerinde buluşturur. Next Day ve haftalık plan, muhabir önerileri, paketlerin üretim akışı ve planlama takvimi tek yerde; herkes kendi payına düşeni görerek çalışır.",
+    "يجمع Plannersflow وحدات التخطيط وجمع الأخبار وغرفة الأخبار والمراسلين والإنتاج على سجل واحد. خطة Next Day والخطة الأسبوعية واقتراحات المراسلين ومسار إنتاج التقارير وتقويم التخطيط في مكان واحد، ويعمل كل شخص على ما يخصه.",
+    "Plannersflow brings Planning, News Gathering, Newsdesk, reporters and production together on one shared record. The Next Day and weekly plans, reporter pitches, the package production flow and the planning calendar live in one place, and everyone works on their own part.",
+  ),
+  tnDemoNotu: m(
+    "Demo kurgusal örnek veriyle açılır; şifre gerekmez, yaptıklarınız yalnız bu tarayıcıda kalır.",
+    "تُفتح النسخة التجريبية ببيانات نموذجية وهمية؛ لا حاجة إلى كلمة مرور، وما تفعله يبقى في هذا المتصفح فقط.",
+    "The demo opens with fictional sample data; no password needed, and what you do stays in this browser only.",
+  ),
+  tnNasilAlt: m(
+    "Her haber beş aşamadan geçer; sistem her adımda işin kimde olduğunu gösterir.",
+    "يمر كل خبر بخمس مراحل، ويُظهر النظام في كل خطوة لدى من يوجد العمل.",
+    "Every story moves through five stages; at each step the system shows who has the work.",
+  ),
+  tnAdimPlanlama: m(
+    "Muhabir önerileri, ajans ve resmî kaynaklar toplanır; akşam toplantısında Next Day planı kurulur, başlıklar ve görevler dağıtılır.",
+    "تُجمع اقتراحات المراسلين ومصادر الوكالات والجهات الرسمية، وتُبنى خطة Next Day في اجتماع المساء وتوزَّع العناوين والمهام.",
+    "Reporter pitches, agency and official sources are gathered; the Next Day plan is built at the evening meeting and stories and assignments are handed out.",
+  ),
+  tnAdimNewsgathering: m(
+    "Görev sahaya iner: muhabir ve ekip görevlendirilir, canlı yayınlar ve çekimler planlanır.",
+    "تنتقل المهمة إلى الميدان: يُكلَّف المراسل والفريق وتُخطَّط البثوث المباشرة والتصوير.",
+    "The assignment goes to the field: reporters and crews are assigned, live shots and filming are scheduled.",
+  ),
+  tnAdimNewsdesk: m(
+    "Sabah toplantısında gün kesinleşir; Newsdesk paketleri, canlıları ve bülten sırasını yönetir.",
+    "يُحسم اليوم في اجتماع الصباح، وتدير غرفة الأخبار التقارير والبثوث المباشرة وترتيب النشرات.",
+    "The day is locked at the morning meeting; the Newsdesk runs packages, live shots and bulletin order.",
+  ),
+  tnAdimUretim: m(
+    "Muhabirin metni kontrol edilir ve dil denetiminden geçer; montaj ve seslendirme yapılır.",
+    "يُراجَع نص المراسل ويمر بالتدقيق اللغوي، ثم يُنفَّذ المونتاج والتعليق الصوتي.",
+    "The reporter's script is reviewed and language-checked; editing and voice-over follow.",
+  ),
+  tnAdimTeknik: m(
+    "Teknik kontrol ve yüklemeyle paket yayına hazır olur; süreç ölçülür ve raporlanır.",
+    "بالفحص الفني والرفع يصبح التقرير جاهزا للبث، وتُقاس العملية ويُعدّ عنها تقرير.",
+    "With the technical check and upload the package is ready to air; the process is measured and reported.",
+  ),
+  tnOzNextday: m("Next Day planı", "خطة Next Day", "Next Day plan"),
+  tnOzNextdayMetin: m(
+    "Yarının planı her gün kendiliğinden açılır, dünden kalanlar taşınır; kurumun ajanda belgesi biçiminde çıktı ve Word alınır.",
+    "تُفتح خطة الغد تلقائيا كل يوم مع نقل ما تبقى من الأمس، وتُستخرج بصيغة الأجندة الإخبارية للمؤسسة وبملف Word.",
+    "Tomorrow's plan opens automatically every day, carrying over yesterday's items; export it in the newsroom's agenda format or as Word.",
+  ),
+  tnOzHaftalik: m("Haftalık plan", "الخطة الأسبوعية", "Weekly plan"),
+  tnOzHaftalikMetin: m(
+    "Cumartesi–Cuma haftası ve Perşembe toplantısı; kabul edilen haberler Next Day'e kendiliğinden geçer.",
+    "أسبوع من السبت إلى الجمعة واجتماع يوم الخميس؛ تنتقل الأخبار المقبولة إلى Next Day تلقائيا.",
+    "A Saturday–Friday week with a Thursday meeting; accepted stories move to Next Day automatically.",
+  ),
+  tnOzOneri: m("Haber önerileri", "اقتراحات الأخبار", "Story pitches"),
+  tnOzOneriMetin: m(
+    "Muhabirler uygulamadan ya da e-postayla önerir; Planlama plana alır, düzeltmeye gönderir ya da gerekçesiyle reddeder.",
+    "يقترح المراسلون عبر التطبيق أو البريد الإلكتروني، فيضيفها التخطيط إلى الخطة أو يعيدها للتعديل أو يرفضها مع ذكر السبب.",
+    "Reporters pitch from the app or by email; Planning adds them to the plan, sends them back for changes or declines them with a reason.",
+  ),
+  tnOzUretim: m("Üretim akışı", "مسار الإنتاج", "Production flow"),
+  tnOzUretimMetin: m(
+    "Her paket duraktan durağa ilerler; pano işin hangi birimde, kimde beklediğini gösterir.",
+    "يتقدم كل تقرير من محطة إلى أخرى، وتُظهر اللوحة في أي وحدة ولدى من ينتظر العمل.",
+    "Each package moves from step to step; the board shows which unit, and who, it is waiting on.",
+  ),
+  tnOzTakvim: m("Planlama takvimi", "تقويم التخطيط", "Planning calendar"),
+  tnOzTakvimMetin: m(
+    "Seçim, zirve, resmî gün gibi önceden bilinen olaylar; tek tıkla plana aktarılır, hatırlatması gelir.",
+    "الأحداث المعروفة مسبقا كالانتخابات والقمم والمناسبات الرسمية، تُنقل إلى الخطة بنقرة واحدة وتصل تذكيراتها.",
+    "Known events such as elections, summits and official days; added to a plan in one click, with reminders.",
+  ),
+  tnOzPanel: m("Yönetici paneli", "لوحة المدير", "Manager dashboard"),
+  tnOzPanelMetin: m(
+    "Birimlerin durumu, dikkat gerektiren işler ve talimatlar tek bakışta.",
+    "حالة الوحدات والأعمال التي تحتاج إلى انتباه والتعليمات في نظرة واحدة.",
+    "Unit status, items that need attention and instructions at a glance.",
+  ),
+  tnOzOrganizasyon: m("Organizasyon ve iş akışları", "الهيكل ومسارات العمل", "Organisation and workflows"),
+  tnOzOrganizasyonMetin: m(
+    "Birimler, ünvanlar ve iş akışının durakları yönetici tarafından programın içinden düzenlenir.",
+    "يعدّل المدير الوحدات والمسميات الوظيفية ومحطات مسار العمل من داخل البرنامج.",
+    "Units, job titles and workflow steps are edited by administrators inside the app.",
+  ),
+  tnOzOrtam: m("Workspace", "مساحة العمل", "Workspace"),
+  tnOzOrtamMetin: m(
+    "Birkaç sayfa yan yana aynı ekranda: plan, öneriler ve pano birlikte açık.",
+    "عدة صفحات جنبا إلى جنب على شاشة واحدة: الخطة والاقتراحات واللوحة معا.",
+    "Several pages side by side on one screen: plan, pitches and board open together.",
+  ),
+  tnIlkeKayit: m("Tek kayıt", "سجل واحد", "One shared record"),
+  tnIlkeKayitMetin: m(
+    "Bütün birimler aynı planı görür; bir değişiklik herkese anında yansır.",
+    "ترى كل الوحدات الخطة نفسها، ويظهر أي تعديل للجميع فورا.",
+    "Every unit sees the same plan; a change reaches everyone instantly.",
+  ),
+  tnIlkeYetki: m("Herkes kendi işini görür", "كلٌّ يرى عمله", "Everyone sees their own work"),
+  tnIlkeYetkiMetin: m(
+    "Yetki birime, role ve göreve göre; muhabir yalnız kendi işini görür.",
+    "الصلاحيات بحسب الوحدة والدور والمهمة، والمراسل يرى عمله فقط.",
+    "Access follows unit, role and position; reporters see only their own work.",
+  ),
+  tnIlkeDil: m("Üç dil, Arapça içerik", "ثلاث لغات ومحتوى عربي", "Three languages, Arabic content"),
+  tnIlkeDilMetin: m(
+    "Arayüz Türkçe, Arapça ve İngilizce; haber içeriği her dilde Arapça ve sağdan sola.",
+    "الواجهة بالتركية والعربية والإنجليزية، ومحتوى الأخبار بالعربية ومن اليمين إلى اليسار في كل اللغات.",
+    "The interface is in Turkish, Arabic and English; story content is always Arabic, right to left.",
+  ),
+  tnBirimlerAlt: m(
+    "Her birim kendi ekranıyla çalışır; iş birimden birime akışla geçer.",
+    "تعمل كل وحدة بشاشتها الخاصة، وينتقل العمل بين الوحدات عبر المسار.",
+    "Each unit works on its own screen; work passes between units along the flow.",
+  ),
+  tnSonBaslik: m("Kendiniz deneyin", "جرّبه بنفسك", "Try it yourself"),
+  tnSonAlt: m(
+    "Demoda bir kişi seçin ve günü onun ekranından planlayın. Kurum hesabınız varsa giriş yapın.",
+    "اختر شخصا في النسخة التجريبية وخطط اليوم من شاشته. إن كان لديك حساب مؤسسي فسجّل الدخول.",
+    "Pick a person in the demo and plan the day from their screen. If you have an organisation account, sign in.",
+  ),
   girisKimsin: m("Kim olarak gireceksiniz?", "بأي صفة ستدخل؟", "Who are you signing in as?"),
   girisOnerilen: m("Önerilen demo kişileri", "أشخاص مقترحون للتجربة", "Suggested demo people"),
   girisTumu: m("Tüm personel", "كل الموظفين", "All staff"),
@@ -1679,7 +1808,7 @@ const M = {
   sonucSayisi: m("{n} sonuç", "{n} نتيجة", "{n} results"),
   prototip: m("Prototip", "نموذج أولي", "Prototype"),
 
-  /* Gerçek kip: gizli giriş (logoya üç tık), davetle hesap, e-posta bağlantısıyla etkinleştirme. */
+  /* Gerçek kip: kurum girişi (tanıtımdaki "Giriş"), davetle hesap, e-posta bağlantısıyla etkinleştirme. */
   mKullanicilar: m("Kullanıcılar", "المستخدمون", "Users"),
   kaKullanicilar: m("Kullanıcılar", "المستخدمون", "Users"),
   eposta: m("E-posta", "البريد الإلكتروني", "Email"),
@@ -1695,7 +1824,7 @@ const M = {
   ggGirisYap: m("Giriş yap", "دخول", "Sign in"),
   ggSifremiUnuttum: m("Şifremi unuttum", "نسيت كلمة المرور", "Forgot password"),
   ggBaglantiIste: m("Etkinleştirme bağlantısı iste", "طلب رابط التفعيل", "Request activation link"),
-  ggDemoyaDon: m("Demoya dön", "العودة إلى العرض التجريبي", "Back to demo"),
+  ggAnaSayfa: m("Ana sayfa", "الصفحة الرئيسية", "Home"),
   ggKurulmadi: m(
     "Gerçek kip henüz yapılandırılmadı (Firebase). Ayrıntı: belgeler/gercek-kip.md.",
     "لم يُهيأ الوضع الحقيقي بعد (Firebase). التفاصيل: belgeler/gercek-kip.md.",

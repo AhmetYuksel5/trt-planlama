@@ -1,9 +1,9 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { BookOpen, LogOut, X } from "lucide-react";
+import { BookOpen, FlaskConical, Info, LogIn, LogOut, X } from "lucide-react";
 import { useEffect } from "react";
 import { useDil } from "../dil";
 import { KisayolKutulari } from "../ekranlar/ortam/Kisayollar";
-import { GERCEK } from "../kip";
+import { GERCEK, demoyuAc, girisiAc } from "../kip";
 import { oturumdanCik } from "../oturum";
 import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
@@ -123,6 +123,18 @@ export default function MobilMenu({
       <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/plan">
         <BookOpen size={16} /> {t("mProjePlani")}
       </a>
+      <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/tanitim" onClick={onKapat}>
+        <Info size={16} /> {t("tanitimSayfasi")}
+      </a>
+      {GERCEK ? (
+        <button type="button" className="dugme dugme-ikincil ara-ust-2 tam-genislik" onClick={demoyuAc} data-mobil-demo>
+          <FlaskConical size={16} /> {t("demoyuDene")}
+        </button>
+      ) : (
+        <button type="button" className="dugme dugme-ikincil ara-ust-2 tam-genislik" onClick={girisiAc} data-mobil-giris>
+          <LogIn size={16} className="yon" /> {t("ggBaslik")}
+        </button>
+      )}
     </div>
   );
 }

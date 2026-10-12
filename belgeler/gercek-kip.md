@@ -5,19 +5,20 @@ Program her açılışta **demo** olarak başlar: örnek veri, kişi seçerek gi
 - kişi e-postasındaki bağlantıyla hesabını etkinleştirir ve şifresini belirler;
 - kayıt Firebase'de (Firestore) durur.
 
-## Gizli giriş
+## Giriş
 
-Logoya **art arda üç kez** basınca (1,5 saniye içinde) kurum girişi açılır (`#/gercek-giris`). Logo şu yerlerde olabilir:
-- demo giriş ekranında;
-- sol menüde;
-- menü gizliyken ya da telefonda üst çubukta.
+plannersflow.net çıplak açılınca **tanıtım sayfası** gelir (`#/tanitim` her zaman açar). Üstte iki düğme:
+- **Demo**: demo kişi seçimine;
+- **Giriş**: kurum girişine (`#/gercek-giris`). Bu tarayıcıda oturumu açık kişi şifre girmeden içeri alınır.
 
-Tek tık eskisi gibi ana sayfaya gider. Kurum girişinde:
+Demonun içinden kurum girişi kullanıcı menüsündeki **Kurum girişi**. Logoya üç tıkla açılan gizli giriş kalktı. Gerçek kipte kalmış kişi adresi açınca tanıtımı görmeden sisteme girer.
+
+Kurum girişinde:
 - e-posta ve şifre ile giriş;
 - **Şifremi unuttum**: sıfırlama e-postası;
 - **Etkinleştirme bağlantısı iste**: ilk yönetici (kurucu) ya da bağlantısının süresi geçen davetli için.
 
-Gerçek kipteyken prototip etiketi ve demo kişi seçimi yoktur. Kullanıcı menüsündeki **Çıkış yap** oturumu kapatır ve programı demoya döndürür.
+Gerçek kipteyken prototip etiketi ve demo kişi seçimi yoktur. Üst çubuktaki **Demo** (telefonda menüde **Demoyu dene**) oturumu kapatmadan demoya geçer; tanıtımdaki **Giriş** geri getirir. Kullanıcı menüsündeki **Çıkış yap** oturumu kapatır ve tanıtım sayfasına döner.
 
 ## Hesaplar: davet ve etkinleştirme
 

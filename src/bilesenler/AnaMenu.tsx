@@ -9,7 +9,6 @@ import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
 import { GERCEK } from "../kip";
 import Logo from "./Logo";
-import { useUcTik } from "./UcTik";
 
 /**
  * Menünün tek tablosu: sol menü (AnaMenu) ve telefondaki Menü paneli
@@ -205,7 +204,6 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
  */
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const { t } = useDil();
-  const ucTik = useUcTik();
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -219,7 +217,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
 
   return (
     <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
-      <a className="marka" href="#/" aria-label={t("uygulama")} onClick={ucTik}>
+      <a className="marka" href="#/" aria-label={t("uygulama")}>
         <Logo koyu />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>

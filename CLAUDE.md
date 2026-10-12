@@ -98,9 +98,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kopyası bayat olabilir, onunla yazma.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
   Yetki hem düğmede hem eylemde soruluyor.
-- Gerçek kip (`kip.ts`, `belgeler/gercek-kip.md`): program her açılışta
-  demo; logoya art arda üç tık (`bilesenler/UcTik.ts`) gizli kurum
-  girişini açar (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`).
+- Tanıtım sayfası (`ekranlar/Tanitim.tsx`): adres çıplak açılınca (hash
+  yok) demoda tanıtım gelir; `#/tanitim` her kipte açar. Üstte Demo
+  (demo kişi seçimi) ve Giriş (`#/gercek-giris`). Gerçek kipte kalmış
+  kişi çıplak adreste doğrudan sisteme girer. Sayfa içi bağlantı `#…`
+  olamaz (hash yönlendirmesi), bölümlere düğmeyle kayılır. Logoya üç tık
+  kalktı.
+- Gerçek kip (`kip.ts`, `belgeler/gercek-kip.md`): giriş tanıtımdaki
+  "Giriş"ten (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`); demodan
+  kullanıcı menüsündeki "Kurum girişi"nden de.
+  - Gerçek kipte üst çubukta "Demo" (ve kullanıcı menüsünde "Demoyu
+    dene"; `kip.ts → demoyuAc`): Firebase oturumu kapanmadan demoya geçer.
+    Girişe dönen kişinin oturumu tarayıcıda açıksa şifre sorulmaz
+    (`depo/firebase.ts → sakliOturum`). Çıkış oturumu kapatıp tanıtıma döner.
   - Hesap davetle açılır (`ekranlar/Kullanicilar.tsx`, yalnız hesap
     yöneticisi). Etkin kişinin adı, birimi, görevi ve rolü aynı sayfada
     "Düzenle" ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki
@@ -177,7 +187,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`pasif`, `hesapYoneticisi`, `eposta`) denetliyor; birim yetkisi
     programda. Davetler `Durum`'da değil, `davetler` koleksiyonunda.
   - Gerçek kipte prototip etiketi, örnek veri ve "Örnek veriye dön" yok;
-    çıkış demoya döner. Firebase yapılandırması boşsa gizli giriş nedenini
+    çıkış tanıtıma döner. Firebase yapılandırması boşsa giriş ekranı nedenini
     yazar, demo etkilenmez.
 - Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
   menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
@@ -445,6 +455,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kendisi ekletir. Kalan kısa satırlar durum bildirir (onay bekleniyor,
   sınır doldu, adım başka birimde). Simge düğmesinin adı `title` ve
   `aria-label`'da kalır. Kullanım anlatımı birim birim kılavuzda (PDF).
+  Tek istisna tanıtım sayfası: işi sistemi anlatmak.
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
   arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
   akışı panosunun adı.

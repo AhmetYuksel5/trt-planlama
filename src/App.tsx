@@ -8,6 +8,7 @@ import Raporlar from "./ekranlar/Raporlar";
 import Basliklar, { BaslikSayfasi } from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import GercekGiris from "./ekranlar/GercekGiris";
+import Tanitim from "./ekranlar/Tanitim";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
@@ -113,9 +114,11 @@ export default function App() {
     return () => clearInterval(z);
   }, [kayitHazir]);
 
+  // Tanıtım: adres çıplak açılınca (demoda; gerçek kipte kalmış kişi doğrudan sisteme) ya da `#/tanitim`.
+  if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;
   // Kayıt bağlantısı (hesap yöneticisinin paylaştığı); demo açıkken de, bölmede değil.
   if (yol.sayfa === "kayit" && !GOMULU && !BAGLANTI_DONUSU) return <KayitSayfasi kod={yol.id ?? ""} />;
-  // Gizli gerçek giriş ve e-posta bağlantısının dönüşü; bölmede açılmıyor.
+  // Gerçek giriş (tanıtımdaki "Giriş") ve e-posta bağlantısının dönüşü; bölmede açılmıyor.
   if (yol.sayfa === "gercek-giris" || BAGLANTI_DONUSU)
     return GOMULU ? (
       <GomuluKabuk>

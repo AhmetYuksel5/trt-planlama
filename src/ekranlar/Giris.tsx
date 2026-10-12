@@ -8,7 +8,6 @@ import { sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
 import { useVeri, type BirimId, type Kisi } from "../veri";
 import Logo from "../bilesenler/Logo";
-import { useUcTik } from "../bilesenler/UcTik";
 
 /**
  * Demo giriş.
@@ -23,7 +22,6 @@ export const DEMO_KISILERI = ["pl1", "pl2", "mu1", "nd1", "nd2", "ng1", "pr1", "
 
 export default function Giris() {
   const { t, ad } = useDil();
-  const ucTik = useUcTik();
   const v = useVeri();
   const [birim, setBirim] = useState<BirimId | "hepsi">("hepsi");
   const [aranan, setAranan] = useState("");
@@ -52,10 +50,10 @@ export default function Giris() {
   return (
     <div className="giris">
       <aside className="giris-sol">
-        {/* Gizli gerçek giriş: logoya art arda üç tık (UcTik.ts). */}
-        <span className="marka" onClick={ucTik}>
+        {/* Logo tanıtım sayfasına; kurum girişi oradaki "Giriş". */}
+        <a className="marka" href="#/tanitim" aria-label={t("ggAnaSayfa")}>
           <Logo koyu />
-        </span>
+        </a>
         <h1>{t("girisBaslik")}</h1>
         <DilSecici />
         <a className="dugme dugme-ikincil kendi-hizasi" href="#/plan">

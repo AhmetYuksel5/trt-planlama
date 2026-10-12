@@ -4,6 +4,8 @@ import {
   BookOpen,
   CircleUser,
   FlaskConical,
+  Info,
+  LogIn,
   LogOut,
   Menu,
   Search,
@@ -13,7 +15,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
-import { GERCEK } from "../kip";
+import { GERCEK, demoyuAc, girisiAc } from "../kip";
 import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
@@ -25,7 +27,6 @@ import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { KomutPaleti } from "./KomutPaleti";
 import { Avatar, Bos } from "./Parcalar";
 import Logo from "./Logo";
-import { useUcTik } from "./UcTik";
 
 /**
  * Üst çubuk: tek ince satır. Sayfanın üstünde başka satır yok; sekmeler,
@@ -53,7 +54,6 @@ export default function UstCubuk({
   menuGorunur: boolean;
 }) {
   const { t, ad } = useDil();
-  const ucTik = useUcTik();
   const v = useVeri();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">(
     "",
@@ -151,7 +151,7 @@ export default function UstCubuk({
         className="marka marka-mobil"
         href="#/"
         aria-label={t("uygulama")}
-        onClick={ucTik}
+       
       >
         <Logo />
       </a>
@@ -183,6 +183,13 @@ export default function UstCubuk({
             </div>
           )}
         </div>
+      )}
+      {/* Gerçek kipte demoya geçiş; oturum kapanmıyor, tanıtımdaki "Giriş" geri getiriyor. */}
+      {GERCEK && (
+        <button type="button" className="prototip" onClick={demoyuAc} title={t("demoyuDene")} aria-label={t("demoyuDene")} data-demoya-gec>
+          <FlaskConical size={14} aria-hidden="true" />
+          <span className="prototip-yazi">{t("demo")}</span>
+        </button>
       )}
       <button
         ref={araDugmesi}
@@ -287,6 +294,18 @@ export default function UstCubuk({
             >
               <BookOpen size={16} /> {t("mProjePlani")}
             </a>
+            <a className="acilir-satir" href="#/tanitim" onClick={() => setAcik("")} data-menu-tanitim>
+              <Info size={16} /> {t("tanitimSayfasi")}
+            </a>
+            {GERCEK ? (
+              <button className="acilir-satir" onClick={demoyuAc} data-menu-demo>
+                <FlaskConical size={16} /> {t("demoyuDene")}
+              </button>
+            ) : (
+              <button className="acilir-satir" onClick={girisiAc} data-menu-giris>
+                <LogIn size={16} className="yon" /> {t("ggBaslik")}
+              </button>
+            )}
             <button
               className="acilir-satir"
               onClick={() => {
