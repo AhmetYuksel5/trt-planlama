@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v18`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v19`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v18-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v19-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -321,12 +321,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - muhabir dışı kaynak: ajans, resmî, medya, kurum içi (`kaynakTuru`,
     `kaynakAdi`)
 
+  Öneri formunda ülke sorulmaz, muhabirin şehrinden gelir; yalnız "Saha
+  görevlendirmesi gerekiyor" işaretlenince (ve muhabiri olmayan kaynakta)
+  sorulur. Kolun ekrandaki adı "Masa" (`dil.ts → tur`). "Yeni öneri"
+  sayfasının başlığı yok, doğrudan form. Haftalık öneride muhabir günü
+  seçer (`Oneri.haftaGunu`, boşsa zamana bağlı değil); gündeme eklerken
+  gün hazır gelir.
+
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
   kaynak her yerde `OneriKaynagi` / `OneriAvatari` ile gösterilir
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
+- Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`, `Durum.takipler`):
+  muhabirin izlediği güncel konu (olay, toplantı, etkinlik); iş önerisi
+  değil, bilgilendirme. Muhabir menüsünde "Takiplerim" (öneriler menüden
+  kalktı, İşlerim'de "Yeni öneri gönder"in yanında "Önerilerim" düğmesi);
+  Planlama ve Yönetim'de "Muhabir takipleri", muhabirin profilinde de.
+  Muhabir ekler, düzeltir, bitirir, siler (`takipKaydet`, `takipKapat`,
+  `takipSil`; yalnız kendisininki, `yetki.ts → takipEkleyebilir`,
+  `takipGorebilir`); yeni takip Planlama'ya bildirim (`takipEklendi`).
+  Planlama WhatsApp'tan ulaşır ya da "İşe dönüştür"le muhabire öneri
+  penceresini takiple dolu açar; öneri `takipId` taşır ve bilinen
+  "muhabire öneri" akışına girer, takip kartı neye dönüştüğünü gösterir.
 - Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
   (`oneri/OneriKarti.tsx → OneriListesi`):
   - kartta kol, haber türü, ülke, durum; başlık önerilen paket

@@ -5,14 +5,15 @@ import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
-import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
-import { haftaSonu } from "../../haftalik";
+import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
+import { haftaGunleri, haftaSonu } from "../../haftalik";
 import { oneriDurum, oneriGonder, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
+import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
@@ -230,7 +231,7 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
                 <small>{t("hedefPlan")}</small>
                 <b>
                   {oneri.hafta
-                    ? `${t("haftalik")} · ${aralikYaz(oneri.hafta, haftaSonu(oneri.hafta), dil)}`
+                    ? `${t("haftalik")} · ${aralikYaz(oneri.hafta, haftaSonu(oneri.hafta), dil)} · ${oneri.haftaGunu ? tarihYaz(oneri.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`
                     : oneri.hedefTarih && tarihYaz(oneri.hedefTarih, dil, "tam")}
                 </b>
               </div>
@@ -423,10 +424,19 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   const [hafta, setHafta] = useState(haftalik ? (haftalikCagri?.tarih ?? haftalar[0] ?? "") : "");
   const [hedefTarih, setHedefTarih] = useState(cagri?.tarih ?? gunEkle(B, 1));
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "eposta"));
-  const gecerli = oneriFormuGecerli(f);
+  /* Haftalık öneride muhabir haberi hangi gün yapacağını söylüyor; "stok": zamana bağlı değil. Planlama gündeme eklerken gün hazır geliyor. */
+  const [haftaGunu, setHaftaGunu] = useState("");
+  const gecerli = oneriFormuGecerli(f) && (!hafta || !!haftaGunu);
+  // Sayfanın başlığı yok, doğrudan form; adı sekmede.
+  useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
   const gonder = () => {
     if (!gecerli) return;
-    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih: hafta ? undefined : hedefTarih, hafta: hafta || undefined });
+    const id = oneriGonder(ben, {
+      ...oneriFormuGirdisi(f),
+      hedefTarih: hafta ? undefined : hedefTarih,
+      hafta: hafta || undefined,
+      haftaGunu: hafta && haftaGunu !== "stok" ? haftaGunu : undefined,
+    });
     if (id) {
       bildir(t(muhabir ? "bOneriGonderildi" : "bOneriKaydedildi"));
       git(`oneriler/${id}`);
@@ -437,7 +447,6 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
       <a className="geri-bag" href="#/oneriler">
         <ArrowLeft size={14} className="yon" /> {t(muhabir ? "mOnerilerim" : "mOneriler")}
       </a>
-      <SayfaBasi ikon={<Send size={26} className="yon" />} baslik={t(muhabir ? "yeniOneriGonder" : "oneriKaydet")} />
       {cagri && (
         <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
           {t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })} · {t("acikCagriAciklama", { saat: cagri.sonSaat })}
@@ -461,16 +470,38 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
             setF={setF}
             hedef={
               hafta ? (
-                <label>
-                  {t("hedefPlan")}
-                  <select value={hafta} onChange={(e) => setHafta(e.target.value)}>
-                    {haftalar.map((h) => (
-                      <option key={h} value={h}>
-                        {aralikYaz(h, haftaSonu(h), dil)}
+                <>
+                  <label>
+                    {t("hedefPlan")}
+                    <select
+                      value={hafta}
+                      onChange={(e) => {
+                        setHafta(e.target.value);
+                        setHaftaGunu("");
+                      }}
+                    >
+                      {haftalar.map((h) => (
+                        <option key={h} value={h}>
+                          {aralikYaz(h, haftaSonu(h), dil)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    {t("gun")}
+                    <select value={haftaGunu} onChange={(e) => setHaftaGunu(e.target.value)} required data-oneri-gun>
+                      <option value="" disabled>
+                        {t("seciniz")}
                       </option>
-                    ))}
-                  </select>
-                </label>
+                      {haftaGunleri(hafta).map((g) => (
+                        <option key={g} value={g}>
+                          {gunAdi(g, dil)} · {tarihYaz(g, dil, "kisa")}
+                        </option>
+                      ))}
+                      <option value="stok">{t("zamanaBagliDegil")}</option>
+                    </select>
+                  </label>
+                </>
               ) : (
                 <label>
                   {t("hedefPlan")}

@@ -32,6 +32,7 @@ export const DIZI_ALANLARI = [
   "dosyalar",
   "hareketler",
   "mesajlar",
+  "takipler",
   "yapilar",
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];

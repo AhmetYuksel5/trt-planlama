@@ -85,6 +85,24 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
       </select>
     </label>
   );
+  /*
+   * Ülke muhabirin bulunduğu yerden geliyor, sormak gereksizdi. Yalnız saha
+   * görevlendirmesi istenince (muhabir başka ülkeye gidebilir) ve muhabiri
+   * olmayan kaynakta soruluyor.
+   */
+  const ulkeSecici = (
+    <label>
+      {t("ulke")}
+      <select value={f.ulke} onChange={(e) => setF({ ...f, ulke: e.target.value as Ulke })} data-oneri-ulke>
+        {ULKELER.map((u) => (
+          <option key={u} value={u}>
+            {t(ulkeAdi(u))}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  const baskaKaynak = !muhabir && f.kaynak === "baska";
   return (
     <>
       {!muhabir && (
@@ -131,21 +149,12 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
               </>
             )}
             {kanalSecici}
+            {baskaKaynak && ulkeSecici}
           </div>
         </>
       )}
       <div className="satir">
         {hedef}
-        <label>
-          {t("ulke")}
-          <select value={f.ulke} onChange={(e) => setF({ ...f, ulke: e.target.value as Ulke })}>
-            {ULKELER.map((u) => (
-              <option key={u} value={u}>
-                {t(ulkeAdi(u))}
-              </option>
-            ))}
-          </select>
-        </label>
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
@@ -174,9 +183,19 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
       </label>
       <label className="secim">
-        <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
+        <input
+          type="checkbox"
+          checked={f.sahaGerekli}
+          onChange={(e) => {
+            // İşaret kalkınca seçilen ülke de kalksın: öneri yine muhabirin bulunduğu ülkenin.
+            const m = muhabir ? ben : kisiBul(v, f.muhabirId);
+            setF({ ...f, sahaGerekli: e.target.checked, ...(!e.target.checked && m && !baskaKaynak && { ulke: ulkesi(m.sehir) }) });
+          }}
+          data-oneri-saha
+        />
         {t("sahaGerekli")}
       </label>
+      {f.sahaGerekli && !baskaKaynak && ulkeSecici}
     </>
   );
 }

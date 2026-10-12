@@ -22,6 +22,9 @@ import { SayfaBasi } from "./Planlama";
  */
 export default function MuhabirAna({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
+  const v = useVeri();
+  // Önerilerim menüden kalktı; düzeltme ya da yanıt bekleyen önerinin sayısı düğmede.
+  const bekleyen = v.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif")).length;
   return (
     <>
       <SayfaBasi
@@ -30,9 +33,15 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
         baslik={t("merhaba", { ad: ad(ben).split(" ")[0] })}
         alt={`${t("biMuhabir")} · ${t(sehirAdi(ben.sehir))}`}
         sagUc={
-          <a className="dugme" href="#/oneriler/yeni">
-            <Send size={16} className="yon" /> {t("yeniOneriGonder")}
-          </a>
+          <>
+            <a className="dugme dugme-ikincil" href="#/oneriler" data-onerilerim>
+              <Lightbulb size={16} /> {t("mOnerilerim")}
+              {bekleyen > 0 && <span className="rozet-say satir-ici">{bekleyen}</span>}
+            </a>
+            <a className="dugme" href="#/oneriler/yeni">
+              <Send size={16} className="yon" /> {t("yeniOneriGonder")}
+            </a>
+          </>
         }
       />
       <CalismaAlani ben={ben} duzen="muhabir" />

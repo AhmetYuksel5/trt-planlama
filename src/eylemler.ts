@@ -68,6 +68,7 @@ import {
   type PlanDurum,
   type PlanMuhabiri,
   type Sehir,
+  type TakipTuru,
   type Ulke,
   type Yanit,
   type YanitDurum,
@@ -89,6 +90,7 @@ import {
   planOperasyonDuzenler,
   profilDuzenler,
   sayfaGorebilir,
+  takipEkleyebilir,
   talimatVerebilir,
   uretimeAlabilir,
   yapabilir,
@@ -177,6 +179,8 @@ export interface OneriGirdisi {
   /** Biri dolu: Next Day önerisinde planın günü, haftalık öneride haftanın Cumartesi'si. */
   hedefTarih?: string;
   hafta?: string;
+  /** Haftalık öneride muhabirin haberi yapacağı gün (haftanın içinde); boşsa zamana bağlı değil. */
+  haftaGunu?: string;
 }
 
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
@@ -220,6 +224,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
         kanal,
         hedefTarih: g.hafta ? undefined : g.hedefTarih,
         hafta: g.hafta,
+        ...(g.hafta && g.haftaGunu && g.haftaGunu >= g.hafta && g.haftaGunu <= gunEkle(g.hafta, 6) && { haftaGunu: g.haftaGunu }),
         durum: "yeni",
         cagriId: cagri?.id,
       },
@@ -2450,6 +2455,8 @@ export interface MuhabireOneriGirdisi {
   bicim?: Bicim;
   sahaGerekli: boolean;
   hedefTarih?: string;
+  /** Muhabirin takibinden dönüştürülüyorsa takip; takip kartı öneriyi gösteriyor. */
+  takipId?: string;
 }
 
 /**
@@ -2478,6 +2485,7 @@ export const muhabireOneriGonder = (ben: Kisi, g: MuhabireOneriGirdisi): string 
     zaman: simdi(),
     kanal: "sistem",
     ...(g.hedefTarih && { hedefTarih: g.hedefTarih }),
+    ...(g.takipId && d.takipler.some((x) => x.id === g.takipId && x.muhabirId === m.id) && { takipId: g.takipId }),
     durum: "teklif",
   };
   d = { ...d, oneriler: [o, ...d.oneriler] };
@@ -2526,5 +2534,55 @@ export const muhabireOneriBirimleriKaydet = (ben: Kisi, birimler: BirimId[]) => 
   if (!ben.hesapYoneticisi) return false;
   const d = getir();
   kaydet({ ...d, muhabireOneriBirimleri: [...new Set(birimler)].filter((b) => b !== "muhabir") });
+  return true;
+};
+
+/* --- Muhabirin takipleri --- */
+
+export interface TakipGirdisi {
+  id?: string;
+  konu: string;
+  aciklama?: string;
+  tur: TakipTuru;
+  tarih?: string;
+}
+
+/**
+ * Muhabir izlediği konuyu ekler ya da düzeltir; yalnız kendi takibini.
+ * Yeni takip Planlama'ya bildirim: işe dönüştürmek ya da muhabirle
+ * konuşmak onların kararı.
+ */
+export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
+  if (!takipEkleyebilir(ben) || !g.konu.trim()) return null;
+  let d = getir();
+  const alanlar = { konu: g.konu.trim(), tur: g.tur, ...(g.aciklama?.trim() && { aciklama: g.aciklama.trim() }), ...(g.tarih && { tarih: g.tarih }) };
+  if (g.id) {
+    const eski = d.takipler.find((x) => x.id === g.id);
+    if (!eski || eski.muhabirId !== ben.id) return null;
+    const { aciklama: _, tarih: __, ...kalan } = eski;
+    kaydet({ ...d, takipler: d.takipler.map((x) => (x === eski ? { ...kalan, ...alanlar } : x)) });
+    return eski.id;
+  }
+  const id = kimlik("tk");
+  d = { ...d, takipler: [{ id, muhabirId: ben.id, sehir: ben.sehir, zaman: simdi(), ...alanlar }, ...d.takipler] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", veri: { takipId: id, sahip: "planlama" } }));
+  return id;
+};
+
+/** Takip bitti (ya da yeniden açıldı); kayıt geçmişte kalıyor. */
+export const takipKapat = (ben: Kisi, id: string, kapandi: boolean) => {
+  const d = getir();
+  const t = d.takipler.find((x) => x.id === id);
+  if (!t || t.muhabirId !== ben.id) return false;
+  const { kapandi: _, ...kalan } = t;
+  kaydet({ ...d, takipler: d.takipler.map((x) => (x === t ? { ...kalan, ...(kapandi && { kapandi: true }) } : x)) });
+  return true;
+};
+
+export const takipSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const t = d.takipler.find((x) => x.id === id);
+  if (!t || t.muhabirId !== ben.id) return false;
+  kaydet({ ...d, takipler: d.takipler.filter((x) => x !== t) });
   return true;
 };

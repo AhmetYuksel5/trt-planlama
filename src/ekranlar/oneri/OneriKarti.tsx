@@ -141,7 +141,11 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
   const arka = arkaPlan(o);
   const paket = paketBul(d, o.paketId);
   const siniflama = [t(TUR_ADI[o.tur]), o.bicim ? t(BICIM_ADI(o.bicim)) : "", t(ulkeAdi(o.ulke))].filter(Boolean).join(" · ");
-  const hedef = o.hafta ? `${t("haftalik")} · ${aralikYaz(o.hafta, haftaSonu(o.hafta), dil)}` : o.hedefTarih ? tarihYaz(o.hedefTarih, dil, "tam") : "—";
+  const hedef = o.hafta
+    ? `${t("haftalik")} · ${aralikYaz(o.hafta, haftaSonu(o.hafta), dil)} · ${o.haftaGunu ? tarihYaz(o.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`
+    : o.hedefTarih
+      ? tarihYaz(o.hedefTarih, dil, "tam")
+      : "—";
   return (
     <Pencere baslik={<Icerik>{baslikOf(o)}</Icerik>} alt={siniflama} kapat={kapat} altBilgi={altBilgi}>
       {arka && (

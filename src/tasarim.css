@@ -301,6 +301,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   min-width: 18px; height: 18px; border-radius: var(--yaricap-hap);
   display: grid; place-items: center; padding: 0 4px;
 }
+/* Düğmenin yazısının yanında duran sayı (İşlerim › Önerilerim). */
+.rozet-say.satir-ici { background: var(--marka); color: #fff; font-size: var(--punto-mini); font-weight: 700; min-width: 18px; height: 18px; border-radius: var(--yaricap-hap); display: inline-grid; place-items: center; padding: 0 4px; }
 .arama { position: relative; flex: 1; max-width: 520px; }
 .arama svg { position: absolute; top: 50%; inset-inline-start: 12px; transform: translateY(-50%); color: var(--silik); }
 .arama input {
@@ -2036,4 +2038,14 @@ tr.soluk > td { opacity: .5; }
   .tanitim-ilkeler { padding: var(--ara-5); margin-top: calc(var(--ara-8) + var(--ara-4)); }
   .tanitim-son { padding: var(--ara-8) var(--ara-4); }
   .tanitim-son .tanitim-dugmeler { inline-size: 100%; }
+}
+
+/* --- Muhabirin takipleri (ekranlar/Takipler.tsx) --- */
+.takip-listesi { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--ara-3); }
+.takip-listesi .kayit + .kayit { margin-top: 0; }
+.kayit.takip { display: grid; align-content: start; font-size: var(--punto); }
+.kayit.takip.soluk { opacity: .65; }
+@media (max-width: 760px) {
+  .takip-listesi { grid-template-columns: minmax(0, 1fr); }
+  .kayit.takip .dugme-kucuk { height: var(--dokunma); }
 }

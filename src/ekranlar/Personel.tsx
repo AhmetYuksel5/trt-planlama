@@ -12,6 +12,7 @@ import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
 import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
+import { ProfilTakipleri } from "./Takipler";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -488,6 +489,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                   </ul>
                 )}
               </Kart>
+              <ProfilTakipleri ben={ben} kisi={kisi} />
               <MuhabireOnerilenler ben={ben} kisi={kisi} />
               <Kart baslik={t("oneriGecmisi")}>
                 <OneriTablosu oneriler={oneriler} d={v} kisa />

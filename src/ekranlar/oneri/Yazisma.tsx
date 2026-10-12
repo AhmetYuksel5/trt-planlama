@@ -4,7 +4,7 @@ import { Avatar, Bos, Icerik, Kart, NotKutu, Pencere, bildir, icerikAlani } from
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { muhabireOneriGonder, oneriMesajiGonder, teklifYanitla, ulkesi } from "../../eylemler";
-import { ICERIK_TURLERI, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri } from "../../veri";
+import { ICERIK_TURLERI, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri, type Takip } from "../../veri";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { oneriYazisabilir, teklifYanitlayabilir } from "../../yetki";
@@ -127,24 +127,26 @@ export function TeklifYaniti({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
  * Muhabire haber önerme formu: muhabir sabitse (profil sayfası) seçici
  * yok. Hedef gün varsayılan yarın, Next Day'in günü.
  */
-export function MuhabireOneriPenceresi({ ben, muhabirId: sabit, kapat }: { ben: Kisi; muhabirId?: string; kapat: () => void }) {
+export function MuhabireOneriPenceresi({ ben, muhabirId, takip, kapat }: { ben: Kisi; muhabirId?: string; takip?: Takip; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
+  // Takipten işe dönüştürülüyorsa muhabir, konu ve gün takipten; Planlama yalnız haber türünü ve paketi belirliyor.
+  const sabit = takip?.muhabirId ?? muhabirId;
   const [f, setF] = useState({
     muhabirId: sabit ?? "",
-    haberBasligi: "",
-    gelisme: "",
+    haberBasligi: takip?.konu ?? "",
+    gelisme: takip?.aciklama ?? takip?.konu ?? "",
     paketBasligi: "",
     tur: "haber" as IcerikTuru,
     bicim: "pkg" as Bicim,
     sahaGerekli: true,
-    hedefTarih: gunEkle(bugun(), 1),
+    hedefTarih: takip?.tarih && takip.tarih > bugun() ? takip.tarih : gunEkle(bugun(), 1),
   });
   const muhabir = kisiBul(v, f.muhabirId);
   const hazir = !!muhabir && !!f.haberBasligi.trim() && !!f.gelisme.trim();
   const gonder = () => {
     if (!muhabir) return;
-    const id = muhabireOneriGonder(ben, { ...f, ulke: ulkesi(muhabir.sehir) });
+    const id = muhabireOneriGonder(ben, { ...f, ulke: ulkesi(muhabir.sehir), takipId: takip?.id });
     if (id) {
       bildir(t("muhabireOnerildi"));
       kapat();

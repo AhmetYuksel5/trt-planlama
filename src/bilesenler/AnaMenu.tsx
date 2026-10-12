@@ -1,5 +1,5 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
@@ -97,8 +97,17 @@ export const MENU: Grup[] = [
         kisa: "kaOneriler",
         kisaMuhabir: "kaOnerilerim",
         ikon: Lightbulb,
-        // Muhabirin önündeki iş düzeltmesi istenen önerisi; Planlama'nınki yeni gelen.
-        say: (d, ben) => (ben.birim === "muhabir" ? d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif")).length : d.oneriler.filter((o) => o.durum === "yeni").length),
+        // Muhabirin önerileri menüde değil, İşlerim'de "Yeni öneri gönder"in yanında; menüde yerine takipleri.
+        goster: (ben) => ben.birim !== "muhabir",
+        say: (d) => d.oneriler.filter((o) => o.durum === "yeni").length,
+      },
+      {
+        sayfa: "takipler",
+        ad: "mMuhabirTakipleri",
+        adMuhabir: "mTakiplerim",
+        kisa: "kaMuhabirTakipleri",
+        kisaMuhabir: "kaTakiplerim",
+        ikon: Binoculars,
       },
       { sayfa: "basliklar", ad: "mBasliklar", kisa: "kaBasliklar", ikon: Newspaper },
       { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", kisa: "kaPaketler", kisaMuhabir: "kaPaketlerim", ikon: Package },

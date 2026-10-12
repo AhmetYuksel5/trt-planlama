@@ -35,6 +35,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   teklifKabulEdildi: "hrTeklifKabulEdildi",
   teklifReddedildi: "hrTeklifReddedildi",
   oneriMesaji: "hrOneriMesaji",
+  takipEklendi: "hrTakipEklendi",
   planToplantida: "hrPlanToplantida",
   planTaslaga: "hrPlanTaslaga",
   planOnaylandi: "hrPlanOnaylandi",
@@ -140,6 +141,8 @@ export function useHareketKonusu() {
     /* Takvim hareketinde konu faaliyetin kendisi; plana alındıysa da plan değil, faaliyet. */
     const f = faaliyetBul(d, h.veri?.faaliyetId);
     if (f) return { baslik: f.baslik, href: `#/takvim/faaliyet/${f.id}` };
+    const tk = d.takipler.find((x) => x.id === h.veri?.takipId);
+    if (tk) return { baslik: tk.konu, href: "#/takipler" };
     const p = paketBul(d, h.paketId);
     if (p) return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}` };
     const o = oneriBul(d, h.oneriId);

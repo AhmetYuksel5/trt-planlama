@@ -5,6 +5,7 @@ import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
   Mesaj,
+  Takip,
   Baslik,
   Cagri,
   CanliYayin,
@@ -2328,6 +2329,7 @@ export const ORNEK = (): Durum => {
       muhabirId: "mu1",
       giren: "pl2",
       yon: "muhabire",
+      takipId: "tk-gazze-ilk",
       ulke: SEHIR_ULKESI.gazze,
       haberBasligi: "عودة الدراسة في مدارس غزة",
       gelisme: "مدارس الإيواء تستعد لاستقبال الطلاب رغم الدمار؛ نقترح تقريرا من داخل أحد الصفوف المؤقتة.",
@@ -2350,10 +2352,19 @@ export const ORNEK = (): Durum => {
   h("pl2", "oneriMesaji", zaman(gun(-1), "11:05"), { oneriId: "o-kudus", veri: { kime: "mu2" } });
   h("mu2", "oneriMesaji", zaman(gun(-1), "11:20"), { oneriId: "o-kudus", veri: { sahip: "planlama" } });
   h("pl2", "oneriMesaji", zaman(gun(0), "09:17"), { oneriId: "o-teklif-1", veri: { kime: "mu1" } });
+  // Muhabirlerin takipleri: biri işe dönüştürülmüş (muhabire öneri o-teklif-1).
+  const takipler: Takip[] = [
+    { id: "tk-gazze-toplanti", muhabirId: "mu1", konu: "اجتماع لجنة إعادة الإعمار في غزة", aciklama: "اجتماع تنسيقي للمنظمات الدولية حول خطة إزالة الركام.", tur: "toplanti", tarih: gun(2), sehir: "gazze", zaman: zaman(gun(-1), "16:40") },
+    { id: "tk-kudus-olay", muhabirId: "mu2", konu: "توتر عند باب العامود", tur: "olay", sehir: "kudus", zaman: zaman(gun(0), "08:20") },
+    { id: "tk-kahire-etkinlik", muhabirId: "mu4", konu: "معرض القاهرة للكتاب: الاستعدادات", aciklama: "المؤتمر الصحفي للهيئة العامة للكتاب.", tur: "etkinlik", tarih: gun(4), sehir: "kahire", zaman: zaman(gun(-2), "12:00") },
+    { id: "tk-gazze-ilk", muhabirId: "mu1", konu: "عودة مستشفى في شمال غزة إلى العمل", tur: "olay", sehir: "gazze", zaman: zaman(gun(-1), "09:00") },
+  ];
+  h("mu1", "takipEklendi", zaman(gun(-1), "16:40"), { veri: { takipId: "tk-gazze-toplanti", sahip: "planlama" } });
+  h("mu2", "takipEklendi", zaman(gun(0), "08:20"), { veri: { takipId: "tk-kudus-olay", sahip: "planlama" } });
   const sirala = (a: Hareket, b: Hareket) => b.zaman.localeCompare(a.zaman);
 
   return {
-    surum: 17,
+    surum: 18,
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,
@@ -2454,6 +2465,7 @@ export const ORNEK = (): Durum => {
     ],
     hareketler: hareketler.sort(sirala),
     mesajlar,
+    takipler,
     yapilar: [],
     okundu: {},
     sayac,

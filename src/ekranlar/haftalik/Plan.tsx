@@ -171,7 +171,8 @@ function TakvimdenBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: Haftal
 function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const [f, setF] = useState({ tarih: "", baslikId: oneri.baslikId ?? "", yeniBaslik: "" });
+  // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
+  const [f, setF] = useState({ tarih: oneri.haftaGunu ?? "", baslikId: oneri.baslikId ?? "", yeniBaslik: "" });
   const kaydet = () => {
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {
       tarih: f.tarih || undefined,

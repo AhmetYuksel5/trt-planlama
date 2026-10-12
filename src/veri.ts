@@ -392,6 +392,34 @@ export interface Oneri {
   yanitId?: string;
   /** Planlama'dan muhabire giden öneri (gönderen `giren`); yoksa muhabirden ya da kaynaktan gelen. */
   yon?: "muhabire";
+  /** Haftalık öneride muhabirin haberi yapacağı gün; boşsa zamana bağlı değil. Gündeme eklerken gün hazır gelsin. */
+  haftaGunu?: string;
+  /** Muhabirin takibinden işe dönüştürülen öneri: takip kartı neye dönüştüğünü gösteriyor. */
+  takipId?: string;
+}
+
+/*
+ * Muhabirin takibi: ülkesinde izlediği güncel konu (olay, toplantı,
+ * etkinlik). İş önerisi değil, bilgilendirme: Planlama görüyor, gerekirse
+ * muhabirle konuşuyor ya da takibi muhabire iş önerisine (paket ya da
+ * başka haber türü) dönüştürüyor; öneri `takipId` taşıyor.
+ */
+export const TAKIP_TURLERI = ["olay", "toplanti", "etkinlik", "diger"] as const;
+export type TakipTuru = (typeof TAKIP_TURLERI)[number];
+
+export interface Takip {
+  id: string;
+  muhabirId: string;
+  /** İçerik: Arapça. */
+  konu: string;
+  aciklama?: string;
+  tur: TakipTuru;
+  /** Olayın günü; süregelen konuda boş. */
+  tarih?: string;
+  sehir: Sehir;
+  zaman: string;
+  /** Muhabir takibi bitirince kapanıyor; geçmişte kalıyor. */
+  kapandi?: boolean;
 }
 
 /**
@@ -789,6 +817,7 @@ export const HAREKET_TIPLERI = [
   "teklifKabulEdildi",
   "teklifReddedildi",
   "oneriMesaji",
+  "takipEklendi",
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",
@@ -880,7 +909,7 @@ export interface Ortam {
 }
 
 export interface Durum {
-  surum: 17;
+  surum: 18;
   kisiler: Kisi[];
   basliklar: Baslik[];
   planlar: NextDayPlan[];
@@ -899,6 +928,7 @@ export interface Durum {
   dosyalar: Dosya[];
   hareketler: Hareket[];
   mesajlar: Mesaj[];
+  takipler: Takip[];
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
@@ -930,9 +960,10 @@ export interface Durum {
  * önceki planın şablonuyla açılıyor, taşınan kayıt işaretli, v11: kişiye
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
  * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
- * gönderilebiliyor, v17: öneri yazışması, muhabire öneri, v18: kurum yapısı (birim, ünvan, akış)).
+ * gönderilebiliyor, v17: öneri yazışması, muhabire öneri, v18: kurum yapısı (birim, ünvan, akış),
+ * v19: muhabirin takipleri, haftalık öneride gün).
  */
-const SAKLA = "trt-planlama-v18";
+const SAKLA = "trt-planlama-v19";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
@@ -977,7 +1008,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
     const ham = localStorage.getItem(SAKLA);
     if (ham) {
       const d = JSON.parse(ham) as Durum;
-      if (d.surum === 17) return d;
+      if (d.surum === 18) return d;
     }
   } catch {
     /* bozuk kayıt: örnekten başla */
@@ -989,7 +1020,7 @@ const yukle = (eksikseYaz: boolean): Durum => {
 
 /** Örnek kayıtsız iskelet: gerçek kip bununla başlıyor, kişiler davetle, gerisi kullanımla doluyor. */
 export const bosDurum = (): Durum => ({
-  surum: 17,
+  surum: 18,
   kisiler: [],
   basliklar: [],
   planlar: [],
@@ -1008,6 +1039,7 @@ export const bosDurum = (): Durum => ({
   dosyalar: [],
   hareketler: [],
   mesajlar: [],
+  takipler: [],
   yapilar: [],
   okundu: {},
   sayac: 0,

@@ -21,6 +21,7 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oneri,
+  type Takip,
   type Paket,
 } from "./veri";
 
@@ -323,6 +324,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   personel: MASA,
   izinler: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
   oneriler: ["planlama", "yonetim", "muhabir"],
+  // Muhabirin takipleri: muhabir kendisininkini, Planlama ve Yönetim hepsini.
+  takipler: ["planlama", "yonetim", "muhabir"],
   basliklar: ["planlama", "newsdesk", "program", "yonetim"],
   paketler: HERKES,
   feature: MASA,
@@ -384,3 +387,11 @@ export const siramMi = (k: Kisi, p: Paket) =>
     : p.durum === "onaylandi" && !p.planId
       ? uretimeAlabilir(k, p)
       : paketSahibi(p) === k.birim && k.birim === "planlama";
+
+/* --- Takipler --- */
+
+/** Takibi muhabir kendisi girer: izlediği konu onun sahası. */
+export const takipEkleyebilir = (k: Kisi | undefined): boolean => !!k && k.birim === "muhabir" && !k.hesapsiz;
+
+/** Muhabir yalnız kendi takibini görür; sayfayı gören masa (Planlama, Yönetim) hepsini. */
+export const takipGorebilir = (k: Kisi | undefined, t: Takip): boolean => !!k && (k.birim === "muhabir" ? t.muhabirId === k.id : sayfaGorebilir(k, "takipler"));
