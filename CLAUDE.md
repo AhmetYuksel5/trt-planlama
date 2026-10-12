@@ -184,7 +184,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - "Birimler ve ünvanlar": her birim bir kart, ünvanları içinde kıdem
     sırasıyla (`BirimTanimi.unvanlar`; ör. Newsdesk'te Executive Producer,
     Program Editor, Senior Producer…). Ünvan yazılıp eklenir (başka birimdeki
-    ünvanın adı yazılırsa aynı ünvan eklenir, çoğalmaz), oklarla sıralanır,
+    ünvanın adı yazılırsa aynı ünvan eklenir, çoğalmaz; benzeyenler kutunun
+    altında düğme, `datalist` değil: Android'de klavye dili değişince klavyeyi kapatıyordu), oklarla sıralanır,
     kalemle adı (üç dilde) ve plandaki ekip görevi değişir, birimden çıkarılır
     (kişisi ya da durağı varsa çıkmaz). Seçimler (`unvanListesi(birim)`) ve
     Kişiler ağacı bu sırayı izler; birimin ünvanı yoksa bütün ünvanlar.

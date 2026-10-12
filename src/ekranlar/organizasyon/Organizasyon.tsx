@@ -343,6 +343,14 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
     taslak.akislar.flatMap((a) => a.duraklar).filter((d) => d.sorumlu.tur === "unvan" && d.sorumlu.unvan === id && (!d.sorumlu.birim || d.sorumlu.birim === b.id)).length;
   // Başka birimdeki ünvan adıyla yazılırsa yenisi açılmıyor, aynı ünvan ekleniyor.
   const baskaBirimde = taslak.unvanlar.filter((u) => !unvanlar.includes(u.id));
+  const aranan = yeni.trim().toLocaleLowerCase();
+  const benzerler = aranan
+    ? baskaBirimde.filter((u) => (["tr", "ar", "en"] as const).some((d) => gorevAdiDilde(u.id, d, taslak).toLocaleLowerCase().includes(aranan))).slice(0, 5)
+    : [];
+  const ekleVar = (id: string) => {
+    degistir((y) => birimeUnvanEkle(y, b.id, id));
+    setYeni("");
+  };
   const ekle = (e: FormEvent) => {
     e.preventDefault();
     const ad = yeni.trim();
@@ -441,16 +449,22 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
         })}
       </ol>
       <form className="form unvan-ekle" onSubmit={ekle}>
-        <input value={yeni} onChange={(e) => setYeni(e.target.value)} list={`unvanlar-${b.id}`} aria-label={t("orgUnvanEkle")} data-unvan-yeni={b.id} />
-        <datalist id={`unvanlar-${b.id}`}>
-          {baskaBirimde.map((u) => (
-            <option key={u.id} value={gorevAdi(u.id, taslak)} />
-          ))}
-        </datalist>
+        <input value={yeni} onChange={(e) => setYeni(e.target.value)} aria-label={t("orgUnvanEkle")} data-unvan-yeni={b.id} />
         <button type="submit" className="dugme dugme-ikincil dugme-kucuk" disabled={!yeni.trim()} data-unvan-ekle={b.id}>
           <Plus size={14} /> {t("orgUnvanEkle")}
         </button>
       </form>
+      {/* datalist yerine sayfanın kendi düğmeleri: Android Chrome datalist'i klavyenin üstünde ayrı sistem
+          penceresinde açıyor; klavye dili değişince o pencere klavyeyi kapatıyordu. */}
+      {benzerler.length > 0 && (
+        <div className="unvan-onerileri" data-unvan-onerileri={b.id}>
+          {benzerler.map((u) => (
+            <button key={u.id} type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => ekleVar(u.id)} data-unvan-oneri={u.id}>
+              <Plus size={14} /> {gorevAdi(u.id, taslak)}
+            </button>
+          ))}
+        </div>
+      )}
       {unvan && <UnvanPenceresi ben={ben} unvan={unvan} kapat={() => setUnvan(null)} />}
     </section>
   );

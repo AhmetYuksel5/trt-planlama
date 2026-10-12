@@ -1933,8 +1933,12 @@ tr.soluk > td { opacity: .5; }
 .unvan-islem { display: flex; gap: 0; }
 .unvan-ekle { display: flex; gap: var(--ara-2); }
 .unvan-ekle input { flex: 1; min-width: 0; }
+.unvan-onerileri { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-top: var(--ara-2); }
 @media (max-width: 760px) {
   .org-birimler { grid-template-columns: 1fr; }
   .unvan-islem .dugme-ikon { min-width: 44px; min-height: 44px; }
   .unvan-listesi > li { flex-wrap: wrap; }
+  /* Dört 44 piksellik düğme ad ile aynı satıra sığmıyor, adı harf harf bölüyordu: düğmeler alt satıra iniyor. */
+  .unvan-adi { flex-basis: 60%; }
+  .unvan-islem { margin-inline-start: auto; }
 }
