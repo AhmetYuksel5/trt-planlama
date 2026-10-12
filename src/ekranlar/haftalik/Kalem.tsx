@@ -194,7 +194,6 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
   const dosya = baslikBul(v, kalem.baslikId);
   const oneri = oneriBul(v, kalem.oneriId);
   if (duzenle) return <KalemFormu ben={ben} hafta={hafta} mevcut={kalem} kapat={() => setDuzenle(false)} />;
-  const onEk = [kalem.baslik, kalem.yer].filter(Boolean).join(" - ");
   return (
     <div className={`kayit kalem ${gundemde(kalem) ? "" : "dusmus"}`} data-karar={kalem.karar}>
       <div className="kayit-bas">
@@ -205,7 +204,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
             </small>
           )}
           <Icerik blok className="kalem-satiri">
-            {onEk && <b>{onEk} / </b>}
+            {kalem.yer && <b>{kalem.yer} / </b>}
             {kalem.metin}
           </Icerik>
           {kalem.muhabirler.length > 0 && (
@@ -219,6 +218,13 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
                 );
               })}
             </small>
+          )}
+          {/* Konu (olayın adı) belgedeki gibi altta, Next Day'in paket satırı gibi. */}
+          {kalem.baslik && (
+            <Icerik blok className="kalem-satiri">
+              {kalem.yer && <b>{kalem.yer} / </b>}
+              {kalem.baslik}
+            </Icerik>
           )}
           <small>
             <TurRozeti tur={kalem.tur} />

@@ -17,11 +17,13 @@ import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, Yerin
 /**
  * Haftalık planın belgesi (الأجندة الأسبوعية): kurumun Word belgesinin
  * bölümleri ve sırası. تحركات المراسلين, أهم ملفات الأسبوع, الأجندة اليومية
- * (gün gün; dosya başlıkları altında "ad - YER / metin", muhabirler
- * "isim / şehir", biçim satırı, sarı not), زمانا غير مرتبطة.
+ * (gün gün; dosya başlıkları altında "YER / metin", muhabirler "isim /
+ * şehir", biçim satırı, en altta konu "YER / konu / muhabir", sarı not),
+ * زمانا غير مرتبطة.
  *
- * Çıktıda yalnız kabul ve bilgi kalemleri basılıyor, yalnız kalemi olan
- * günler görünüyor. Belgede yedi günün hepsi ve karar bekleyen kalemler de
+ * Kesinleşen planın çıktısında yalnız kabul ve bilgi kalemleri basılıyor;
+ * kesinleşmeden önizleme karar bekleyenleri de basıyor, yoksa hazırlıkta
+ * yapılan iş önizlemede hiç görünmüyordu. Yalnız kalemi olan günler görünüyor. Belgede yedi günün hepsi ve karar bekleyen kalemler de
  * var (soluk): plan hazırlıkta bütün kalemler bekliyor, kağıt boş kalmasın,
  * toplantı kararı belgenin üzerinde verilebilsin. Reddedilen kalem ikisinde
  * de yok.
@@ -69,14 +71,14 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
   { karar: "ret", ad: "krRet", ikon: <Ban size={15} /> },
 ];
 
-/** Bir kalem: "ad - YER / metin", muhabirler, biçim, not; bilgi kaleminde "(لا نتابع)". */
+/** Bir kalem: "YER / metin", muhabirler, biçim, konu, not; bilgi kaleminde "(لا نتابع)". */
 function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
   const { t } = useDil();
   const v = useVeri();
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
   const ben = duzen?.ben;
   const yaz = (g: Partial<KalemGirdisi>) => ben && kalemKaydet(ben, hafta.id, kalemGirdisi(k, g));
-  const onEk = [k.baslik, k.yer].filter(Boolean).join(" - ");
+  const muhabirAdlari = k.muhabirler.map(kisiAdi).join(" - ");
   const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
 
@@ -109,19 +111,11 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
     >
       <div className="cikti-kalem">
         {duzen ? (
-          <Satir
-            yer={
-              <>
-                <YerindeMetin acik deger={k.baslik ?? ""} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} />
-                {" - "}
-                <YerindeMetin acik deger={k.yer ?? ""} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />
-              </>
-            }
-          >
+          <Satir yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}>
             <YerindeMetin acik cokSatir deger={k.metin} etiket={t("metin")} kaydet={(x) => x && yaz({ metin: x })} />
           </Satir>
         ) : (
-          <Satir yer={onEk || undefined}>{k.metin}</Satir>
+          <Satir yer={k.yer}>{k.metin}</Satir>
         )}
         {k.muhabirler.length > 0 && (
           <>
@@ -140,16 +134,26 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             </b>
           </p>
         )}
-        {duzen ? (
+        {/* Konu (olayın adı) Next Day'deki paket satırı gibi kalemin en altında: "YER / konu / muhabir". */}
+        {k.baslik && (
+          <p>
+            {k.yer && <b>{k.yer} / </b>}
+            {duzen ? <YerindeMetin acik deger={k.baslik} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} /> : k.baslik}
+            {muhabirAdlari && (
+              <>
+                {" / "}
+                <b>{muhabirAdlari}</b>
+              </>
+            )}
+          </p>
+        )}
+        {/* Boş not satır kaplamıyor (Next Day belgesi gibi); not "Düzenle" penceresinden giriliyor. */}
+        {duzen && k.not ? (
           <p>
             {k.karar === "bilgi" && <mark>{c("laNutabi")}</mark>}{" "}
-            {k.not ? (
-              <mark>
-                <YerindeMetin acik deger={k.not} etiket={t("kalemNotu")} kaydet={(x) => yaz({ not: x })} />
-              </mark>
-            ) : (
-              <YerindeMetin acik deger="" etiket={t("kalemNotu")} kaydet={(x) => yaz({ not: x })} />
-            )}
+            <mark>
+              <YerindeMetin acik deger={k.not} etiket={t("kalemNotu")} kaydet={(x) => yaz({ not: x })} />
+            </mark>
           </p>
         ) : (
           notlar.length > 0 && (
@@ -207,7 +211,7 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
   /* Aynı yere aynı süreyle giden ekip tek satırda, kurumun belgesindeki gibi: "YER / ad - ad - ad في مهمة حتى …". */
   const hareketSatirlari = [...hareketler.reduce((m, g) => m.set(`${g.yer}|${g.tur}|${g.bitis}`, [...(m.get(`${g.yer}|${g.tur}|${g.bitis}`) ?? []), g]), new Map<string, typeof hareketler>()).values()];
-  const kalemler = duzen ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
+  const kalemler = duzen || hafta.durum !== "kesinlesti" ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
   const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g));
   const stok = kalemler.filter((k) => !k.tarih);
 
