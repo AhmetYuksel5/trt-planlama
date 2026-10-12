@@ -33,6 +33,13 @@ export interface BirimTanimi {
    * açık sayfalar ve akışta kendisine düşen duraklar.
    */
   ornek?: Birim;
+  /**
+   * Birimdeki ünvanlar, kıdem sırasıyla (en üstte en kıdemli): Newsdesk'te
+   * Executive Producer, Program Editor, Senior Producer… Yönetici
+   * Organizasyon'da ekler, sıralar, çıkarır. Boşsa (eski yayın) ünvanın
+   * `birimler` alanından.
+   */
+  unvanlar?: GorevId[];
 }
 
 export interface UnvanTanimi {
@@ -115,6 +122,19 @@ const VARSAYILAN_DURAKLAR: Durak[] = [
   { id: "inews", tur: "inews", sorumlu: { tur: "kol" }, asama: "teknik" },
 ];
 
+/* Yerleşik birimlerin başlangıçtaki ünvanları, kıdem sırasıyla (bugün birimde kullanılanlar). */
+const VARSAYILAN_UNVANLAR: Record<Birim, GorevId[]> = {
+  planlama: ["yonetici", "planlamaci", "stokTakip"],
+  newsdesk: ["yonetici", "newsdesk", "editor", "sunucu"],
+  newsgathering: ["yonetici", "koordinator"],
+  program: ["yonetici", "programEditoru", "sunucu"],
+  ekonomi: ["yonetici", "editor"],
+  output: ["yonetici", "dilDenetmeni", "editor", "tercuman"],
+  media: ["yonetici", "mediaManager"],
+  yonetim: ["inputMuduru", "programMuduru", "koordinator"],
+  muhabir: ["muhabir"],
+};
+
 /* Yerleşik ünvanların plandaki ekip görevi (etiketler.ts → varsayilanEkipGorevi'nin birime bakmayan kısmı). */
 const ESKI_EKIP: Partial<Record<GorevId, EkipGorevi>> = {
   newsdesk: "bultenYapimcisi",
@@ -134,7 +154,7 @@ export const varsayilanYapi = (): Yapi =>
     id: "y0",
     zaman: "",
     yayinlayan: "",
-    birimler: BIRIMLER.map((id) => ({ id })),
+    birimler: BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id] })),
     unvanlar: GOREVLER.map((id) => ({ id, birimler: [], ...(ESKI_EKIP[id] && { ekipGorevi: ESKI_EKIP[id] }) })),
     akislar: [{ id: "uretim", kollar: ["haber", "feature", "ekonomi", "program"], duraklar: VARSAYILAN_DURAKLAR }],
     kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "planlama", program: "program" },
@@ -192,9 +212,24 @@ export const gorevAdi = (id: GorevId | undefined, y: Yapi = yapi()): string => {
 /** Seçimlerde görünen birimler (gizli olmayanlar); `dahil` gizli de olsa listede kalsın (kişinin şimdiki birimi). */
 export const birimListesi = (dahil?: BirimId, y: Yapi = yapi()): BirimId[] => y.birimler.filter((b) => !b.gizli || b.id === dahil).map((b) => b.id);
 
-/** Birimde seçilebilen ünvanlar. */
-export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi()): GorevId[] =>
-  y.unvanlar.filter((u) => u.id === dahil || (!u.gizli && (!birim || !u.birimler.length || u.birimler.includes(birim)))).map((u) => u.id);
+/** Birimin ünvanları kıdem sırasıyla (gizliler dahil). */
+export const birimUnvanlari = (birim: BirimId, y: Yapi = yapi()): GorevId[] => {
+  const b = y.birimler.find((x) => x.id === birim);
+  if (b?.unvanlar) return b.unvanlar.filter((id) => y.unvanlar.some((u) => u.id === id));
+  return y.unvanlar.filter((u) => !u.birimler.length || u.birimler.includes(birim)).map((u) => u.id);
+};
+
+/**
+ * Seçimde görünen ünvanlar: birim verilirse onun ünvanları kıdem sırasıyla;
+ * birimin henüz ünvanı yoksa hepsi (yeni birime tayin yarım kalmasın).
+ * `dahil` gizli ya da birim dışı da olsa listede (kişinin şimdiki ünvanı).
+ */
+export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi()): GorevId[] => {
+  const gorunur = (id: GorevId) => !y.unvanlar.find((u) => u.id === id)?.gizli;
+  const birimde = birim ? birimUnvanlari(birim, y).filter(gorunur) : [];
+  const l = birimde.length ? birimde : y.unvanlar.filter((u) => !u.gizli).map((u) => u.id);
+  return dahil && !l.includes(dahil) ? [...l, dahil] : l;
+};
 
 /** Ünvanın plandaki ekip görevi; tanımlı değilse undefined. */
 export const unvanEkipGorevi = (id: GorevId, y: Yapi = yapi()): EkipGorevi | undefined => y.unvanlar.find((u) => u.id === id)?.ekipGorevi;
@@ -233,6 +268,34 @@ export const silinebilir = (e: Etki) => e.kisiler === 0 && e.duraklar === 0;
 
 export const birimGuncelle = (y: Yapi, id: BirimId, f: (b: BirimTanimi) => BirimTanimi): Yapi => ({ ...y, birimler: y.birimler.map((b) => (b.id === id ? f(b) : b)) });
 export const unvanGuncelle = (y: Yapi, id: GorevId, f: (u: UnvanTanimi) => UnvanTanimi): Yapi => ({ ...y, unvanlar: y.unvanlar.map((u) => (u.id === id ? f(u) : u)) });
+
+/* Birimin ünvan listesi; düzenlemeden önce eski yayının (birimler alanı) listesi açıkça yazılıyor. */
+const unvanlariYaz = (y: Yapi, birim: BirimId, f: (l: GorevId[]) => GorevId[]): Yapi => {
+  const l = f(birimUnvanlari(birim, y));
+  return birimGuncelle(y, birim, (b) => ({ ...b, unvanlar: l }));
+};
+
+/** Birime ünvan: yeni ünvan tanımıyla ya da başka birimde olan ünvanın kimliğiyle; listenin sonuna (en az kıdemli). */
+export const birimeUnvanEkle = (y: Yapi, birim: BirimId, u: GorevId | UnvanTanimi): Yapi => {
+  const id = typeof u === "string" ? u : u.id;
+  const y2 = typeof u === "string" ? y : { ...y, unvanlar: [...y.unvanlar, u] };
+  return unvanlariYaz(y2, birim, (l) => (l.includes(id) ? l : [...l, id]));
+};
+
+/** Ünvanı birimden çıkarıyor; yerleşik değilse ve başka birimde de yoksa tanımı da siliniyor. */
+export const birimdenUnvanCikar = (y: Yapi, birim: BirimId, id: GorevId): Yapi => {
+  const y2 = unvanlariYaz(y, birim, (l) => l.filter((x) => x !== id));
+  const baskaYerde = y2.birimler.some((b) => b.id !== birim && birimUnvanlari(b.id, y2).includes(id));
+  return baskaYerde || yerlesikGorev(id) ? y2 : { ...y2, unvanlar: y2.unvanlar.filter((u) => u.id !== id) };
+};
+
+export const unvanTasi = (y: Yapi, birim: BirimId, i: number, j: number): Yapi =>
+  unvanlariYaz(y, birim, (l) => {
+    const k = [...l];
+    const [x] = k.splice(i, 1);
+    k.splice(j, 0, x);
+    return k;
+  });
 
 export const akisGuncelle = (y: Yapi, id: string, f: (a: Akis) => Akis): Yapi => ({ ...y, akislar: y.akislar.map((a) => (a.id === id ? f(a) : a)) });
 

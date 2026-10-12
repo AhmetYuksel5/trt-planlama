@@ -164,8 +164,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
   menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
   yapısı veri (`yapi.ts`). Varsayılan yapı koddaki sabitlerin birebir karşılığı.
-  - Birimler, Ünvanlar (ad üç dilde, gizle, sil; ünvanın birimleri ve plandaki
-    ekip görevi) taslakta düzenlenir (`Durum.yapiTaslaklari`, yönetici başına),
+  - "Birimler ve ünvanlar": her birim bir kart, ünvanları içinde kıdem
+    sırasıyla (`BirimTanimi.unvanlar`; ör. Newsdesk'te Executive Producer,
+    Program Editor, Senior Producer…). Ünvan yazılıp eklenir (başka birimdeki
+    ünvanın adı yazılırsa aynı ünvan eklenir, çoğalmaz), oklarla sıralanır,
+    kalemle adı (üç dilde) ve plandaki ekip görevi değişir, birimden çıkarılır
+    (kişisi ya da durağı varsa çıkmaz). Seçimler (`unvanListesi(birim)`) ve
+    Kişiler ağacı bu sırayı izler; birimin ünvanı yoksa bütün ünvanlar.
+    Birim: ad üç dilde, gizle, sil. Hepsi taslakta düzenlenir (`Durum.yapiTaslaklari`, yönetici başına),
     "Yayınla" yeni sürüm açar (`Durum.yapilar`); Sürümler'de eskisi taslağa
     alınıp geri getirilir. Yalnız tam yönetici (`yetki.ts → yapiDuzenleyebilir`,
     kuralda `yapilar`/`yapiTaslaklari` yazımı); demoda kurgusal yönetici `yo3`
