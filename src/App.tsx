@@ -9,7 +9,7 @@ import Basliklar, { BaslikSayfasi } from "./ekranlar/Basliklar";
 import Giris from "./ekranlar/Giris";
 import GercekGiris from "./ekranlar/GercekGiris";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
-import Kullanicilar from "./ekranlar/Kullanicilar";
+import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
 import NextDayBelge from "./ekranlar/belge/NextDayBelge";
@@ -294,8 +294,12 @@ export default function App() {
       case "ayarlar":
         icerik = <Ayarlar ben={ben} />;
         break;
+      case "organizasyon":
+        icerik = <Organizasyon ben={ben} sekme={yol.id} />;
+        break;
+      /* Eski adres: hesaplar artık Organizasyon'un sekmesi. */
       case "kullanicilar":
-        icerik = <Kullanicilar ben={ben} />;
+        icerik = <Organizasyon ben={ben} sekme="hesaplar" />;
         break;
       default:
         icerik = <Yetkisiz />;

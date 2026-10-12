@@ -1,4 +1,4 @@
-import { birimAdi, gorevAdi } from "../yapi";
+import { birimAdi, birimListesi, gorevAdi } from "../yapi";
 import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
@@ -6,7 +6,7 @@ import { Avatar, Rozet } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
 import { sehirAdi } from "../etiketler";
 import { girisYap } from "../oturum";
-import { BIRIMLER, useVeri, type Birim, type Kisi } from "../veri";
+import { useVeri, type BirimId, type Kisi } from "../veri";
 import Logo from "../bilesenler/Logo";
 import { useUcTik } from "../bilesenler/UcTik";
 
@@ -25,7 +25,7 @@ export default function Giris() {
   const { t, ad } = useDil();
   const ucTik = useUcTik();
   const v = useVeri();
-  const [birim, setBirim] = useState<Birim | "hepsi">("hepsi");
+  const [birim, setBirim] = useState<BirimId | "hepsi">("hepsi");
   const [aranan, setAranan] = useState("");
   const q = aranan.trim().toLocaleLowerCase();
 
@@ -84,7 +84,7 @@ export default function Giris() {
               <button className={birim === "hepsi" ? "acik" : ""} onClick={() => setBirim("hepsi")}>
                 {t("hepsi")}
               </button>
-              {BIRIMLER.map((b) => (
+              {birimListesi().map((b) => (
                 <button key={b} className={birim === b ? "acik" : ""} onClick={() => setBirim(b)}>
                   {birimAdi(b)}
                   <em>{v.kisiler.filter((k) => k.birim === b).length}</em>

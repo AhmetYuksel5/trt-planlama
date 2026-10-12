@@ -1,4 +1,4 @@
-import { birimAdi } from "../yapi";
+import { birimAdi, gorevAdi } from "../yapi";
 import { ArrowRight } from "lucide-react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, adimAdi, type UretimAdimi } from "../akis";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -29,6 +29,8 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   planGeriAlindi: "hrPlanGeriAlindi",
   planIceAktarildi: "hrPlanIceAktarildi",
   kisiSilindi: "hrKisiSilindi",
+  kisiTayinEdildi: "hrKisiTayinEdildi",
+  yapiYayinlandi: "hrYapiYayinlandi",
   oneriMuhabireGonderildi: "hrOneriMuhabireGonderildi",
   teklifKabulEdildi: "hrTeklifKabulEdildi",
   teklifReddedildi: "hrTeklifReddedildi",
@@ -105,6 +107,8 @@ export function useHareketMetni() {
       puan: h.veri?.puan ?? "",
       dosya: h.veri?.dosya ?? "",
       ad: h.veri?.ad ?? "",
+      birim: h.veri?.birim ? birimAdi(h.veri.birim) : "",
+      gorev: h.veri?.gorev ? gorevAdi(h.veri.gorev) : "",
       sayi: h.veri?.sayi ?? "",
       plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",
     };

@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v17`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v18`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v17-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v18-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -161,6 +161,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Gerçek kipte prototip etiketi, örnek veri ve "Örnek veriye dön" yok;
     çıkış demoya döner. Firebase yapılandırması boşsa gizli giriş nedenini
     yazar, demo etkilenmez.
+- Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
+  menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
+  yapısı veri (`yapi.ts`). Varsayılan yapı koddaki sabitlerin birebir karşılığı.
+  - Birimler, Ünvanlar (ad üç dilde, gizle, sil; ünvanın birimleri ve plandaki
+    ekip görevi) taslakta düzenlenir (`Durum.yapiTaslaklari`, yönetici başına),
+    "Yayınla" yeni sürüm açar (`Durum.yapilar`); Sürümler'de eskisi taslağa
+    alınıp geri getirilir. Yalnız tam yönetici (`yetki.ts → yapiDuzenleyebilir`,
+    kuralda `yapilar`/`yapiTaslaklari` yazımı); demoda kurgusal yönetici `yo3`
+    (örnek kişi listesinin sonunda: örnek veri sıradan türüyor).
+  - Yerleşik birim ve ünvan silinmez, gizlenir; kişisi ya da durağı bağlı olan
+    da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
+    yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır
+    (`BirimTanimi.ornek`, `izinBirimi`: sayfa ve işlem izinleri, ana sayfanın
+    varsayılanı), örneksizse yalnız herkese açık sayfalar (`SAYFA_IZNI` `HERKES`).
+  - Ekranda birim ve ünvan adı `birimAdi`/`gorevAdi`, seçimler
+    `birimListesi`/`unvanListesi` (gizli olan yalnız şimdiki değerse görünür).
+    `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.
+  - Kişiler: birim → ünvan ağacı, "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
+    değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
+  - Üretime giren paket akışın sürümünü taşır (`Paket.akis`, `akisDamgasi`):
+    sonradan yayınlanan düzen yalnız yeni paketlere uygulanır.
+  - `veri.ts` kaydı tembel kurar: örnek veri akış kurallarını kullanıyor,
+    `akis → yapi → veri` döngüsünde açılışta akış henüz tanımsız olurdu.
+    Kurulurken `anlik()` null döner, yapı o an varsayılan.
 - Ana sayfa çalışma alanlarından oluşur (`ekranlar/ana/Calisma.tsx`):
   her kart bir `Alan` (kimlik, ad, geniş mi, grup, `sayfa`), birimin
   varsayılan düzeni `VARSAYILAN`'da. Kişi "Sayfayı düzenle" ile alan

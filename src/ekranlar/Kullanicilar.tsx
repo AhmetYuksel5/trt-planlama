@@ -1,4 +1,4 @@
-import { birimAdi, gorevAdi } from "../yapi";
+import { birimAdi, birimListesi, gorevAdi, unvanListesi } from "../yapi";
 import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -8,7 +8,7 @@ import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { firebaseYukle } from "../kip";
-import { BIRIMLER, GOREVLER, HESAP_YETKILERI, useVeri, type Birim, type Gorev, type HesapYetkisi, type Kisi, type Rol } from "../veri";
+import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Rol } from "../veri";
 import { hesapYetkisi } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -43,8 +43,8 @@ const BOS_FORM = {
   adTr: "",
   adAr: "",
   adEn: "",
-  birim: "planlama" as Birim,
-  gorev: "planlamaci" as Gorev,
+  birim: "planlama" as BirimId,
+  gorev: "planlamaci" as GorevId,
   rol: "personel" as Rol,
   hesapYoneticisi: false,
   telefon: "",
@@ -65,7 +65,7 @@ const adKur = (tr0: string, ar0: string, en0: string, yedek: string) => {
   return { tr, ar: ar0.trim() || tr, en: en0.trim() || tr };
 };
 
-export default function Kullanicilar({ ben }: { ben: Kisi }) {
+export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomulu?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const davetYetkisi = hesapYetkisi(ben, "davet");
@@ -161,7 +161,7 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
 
   return (
     <>
-      <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />
+      {!gomulu && <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />}
       {ekleyebilir && (
         <Kart
           baslik={t("kisiEkle")}
@@ -215,8 +215,8 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
             <div className="satir">
               <label>
                 {t("birim")}
-                <select value={form.birim} onChange={(e) => alan("birim", e.target.value as Birim)} data-davet-birim>
-                  {BIRIMLER.map((b) => (
+                <select value={form.birim} onChange={(e) => alan("birim", e.target.value)} data-davet-birim>
+                  {birimListesi(form.birim).map((b) => (
                     <option key={b} value={b}>
                       {birimAdi(b)}
                     </option>
@@ -225,8 +225,8 @@ export default function Kullanicilar({ ben }: { ben: Kisi }) {
               </label>
               <label>
                 {t("gorev")}
-                <select value={form.gorev} onChange={(e) => alan("gorev", e.target.value as Gorev)} data-davet-gorev>
-                  {GOREVLER.map((g) => (
+                <select value={form.gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
+                  {unvanListesi(form.birim, form.gorev).map((g) => (
                     <option key={g} value={g}>
                       {gorevAdi(g)}
                     </option>
@@ -638,11 +638,16 @@ function YetkiPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
   );
 }
 
-/* Etkin kişinin adı, birimi, görevi ve rolü; davet formundaki alanların aynısı. */
-function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
+/* Kişinin adı, birimi, görevi ve rolü; davet formundaki alanların aynısı. Organizasyon'da tayin de bu pencere. */
+export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
   const { t, ad } = useDil();
   const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
   const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol, ...ilk });
+  // Ünvan birimde seçilemiyorsa birimin ilk ünvanına geçiyor; kişi birimde olmayan ünvanla kalmasın.
+  const birimSec = (birim: BirimId) => {
+    const l = unvanListesi(birim);
+    setP({ ...p, birim, gorev: l.includes(p.gorev) ? p.gorev : (l[0] ?? p.gorev) });
+  };
   const kaydet = () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
     if (kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, rol: p.rol, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) {
@@ -667,8 +672,8 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
         </label>
         <label>
           {t("birim")}
-          <select value={p.birim} onChange={(e) => setP({ ...p, birim: e.target.value as Birim })} data-pozisyon-birim>
-            {BIRIMLER.map((b) => (
+          <select value={p.birim} onChange={(e) => birimSec(e.target.value)} data-pozisyon-birim>
+            {birimListesi(p.birim).map((b) => (
               <option key={b} value={b}>
                 {birimAdi(b)}
               </option>
@@ -677,8 +682,8 @@ function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat:
         </label>
         <label>
           {t("gorev")}
-          <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value as Gorev })} data-pozisyon-gorev>
-            {GOREVLER.map((g) => (
+          <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value })} data-pozisyon-gorev>
+            {unvanListesi(p.birim, p.gorev).map((g) => (
               <option key={g} value={g}>
                 {gorevAdi(g)}
               </option>

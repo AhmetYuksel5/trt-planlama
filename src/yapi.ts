@@ -1,7 +1,7 @@
 import type { Asama, UretimAdimi } from "./akis";
 import { metin, yaz, type Yazi } from "./dil";
 import { BIRIM_ADI, GOREV_ADI } from "./etiketler";
-import { BIRIMLER, GOREVLER, anlik, type BirimId, type Durum, type EkipGorevi, type Gorev, type GorevId, type IcerikTuru } from "./veri";
+import { BIRIMLER, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type Gorev, type GorevId, type IcerikTuru } from "./veri";
 
 /**
  * Kurumun yapısı veri olarak: birimler, ünvanlar ve haber üretim akışları.
@@ -27,6 +27,12 @@ export interface BirimTanimi {
   /** Yerleşikte boşsa dil tablosundaki ad. */
   ad?: Yazi;
   gizli?: boolean;
+  /**
+   * Yöneticinin açtığı birim hangi yerleşik birim gibi çalışıyor: sayfa ve
+   * işlem izinleri, ana sayfanın varsayılanı ondan. Boşsa yalnız herkese
+   * açık sayfalar ve akışta kendisine düşen duraklar.
+   */
+  ornek?: Birim;
 }
 
 export interface UnvanTanimi {
@@ -88,6 +94,8 @@ export interface Yapi {
   unvanlar: UnvanTanimi[];
   akislar: Akis[];
   kolSahibi: Record<IcerikTuru, BirimId>;
+  /** Yayınlayanın kısa notu: ne değişti. */
+  not?: string;
 }
 
 /* --- Varsayılan: bugünkü sabitler (rapor bölüm 2 ve 4, notlardaki beş aşama) --- */
@@ -188,3 +196,68 @@ export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi())
 
 /** Ünvanın plandaki ekip görevi; tanımlı değilse undefined. */
 export const unvanEkipGorevi = (id: GorevId, y: Yapi = yapi()): EkipGorevi | undefined => y.unvanlar.find((u) => u.id === id)?.ekipGorevi;
+
+/**
+ * İzinlerde birimin yerine geçen yerleşik birim: yerleşik birim kendisi,
+ * yöneticinin açtığı birim örnek aldığı birim. Birime özel davranış
+ * (Planlama planı yapar…) yine yalnız yerleşik birimde.
+ */
+export const izinBirimi = (id: BirimId, y: Yapi = yapi()): BirimId => (yerlesikBirim(id) ? id : (y.birimler.find((b) => b.id === id)?.ornek ?? id));
+
+/* --- Düzenleme: saf, taslak üzerinde (eylemler.ts → yapiTaslagi) --- */
+
+/** Değişikliğin dokunduğu kayıt: silmeden ve gizlemeden önce yöneticiye söyleniyor. */
+export interface Etki {
+  kisiler: number;
+  duraklar: number;
+}
+
+const durakAdiGeciyor = (d: Durak, f: (s: Sorumlu) => boolean) => f(d.sorumlu);
+
+export const birimEtkisi = (y: Yapi, kisiler: { birim: BirimId }[], id: BirimId): Etki => ({
+  kisiler: kisiler.filter((k) => k.birim === id).length,
+  duraklar:
+    y.akislar.flatMap((a) => a.duraklar).filter((d) => d.yardimci?.includes(id) || durakAdiGeciyor(d, (s) => (s.tur === "birim" && s.birim === id) || (s.tur === "unvan" && s.birim === id))).length +
+    Object.values(y.kolSahibi).filter((b) => b === id).length,
+});
+
+export const unvanEtkisi = (y: Yapi, kisiler: { gorev: GorevId }[], id: GorevId): Etki => ({
+  kisiler: kisiler.filter((k) => k.gorev === id).length,
+  duraklar: y.akislar.flatMap((a) => a.duraklar).filter((d) => d.sorumlu.tur === "unvan" && d.sorumlu.unvan === id).length,
+});
+
+/** Yerleşik olmayan, hiçbir kişinin ve durağın bağlı olmadığı birim silinebilir; öbürü gizlenir. */
+export const silinebilir = (e: Etki) => e.kisiler === 0 && e.duraklar === 0;
+
+export const birimGuncelle = (y: Yapi, id: BirimId, f: (b: BirimTanimi) => BirimTanimi): Yapi => ({ ...y, birimler: y.birimler.map((b) => (b.id === id ? f(b) : b)) });
+export const unvanGuncelle = (y: Yapi, id: GorevId, f: (u: UnvanTanimi) => UnvanTanimi): Yapi => ({ ...y, unvanlar: y.unvanlar.map((u) => (u.id === id ? f(u) : u)) });
+
+/** İki yapı aynı mı (yayınlanacak bir şey var mı); sürüm bilgileri sayılmıyor. */
+export const ayniYapi = (a: Yapi, b: Yapi) => {
+  const govde = ({ birimler, unvanlar, akislar, kolSahibi }: Yapi) => JSON.stringify({ birimler, unvanlar, akislar, kolSahibi });
+  return govde(a) === govde(b);
+};
+
+/** Taslak ile yayındaki arasındaki değişiklikler: yayınlamadan önce yöneticiye liste olarak gösteriliyor. */
+export interface Degisiklik {
+  tur: "birim" | "unvan" | "akis";
+  id: string;
+  islem: "eklendi" | "degisti" | "silindi";
+}
+
+export const yapiFarki = (yayindaki: Yapi, taslak: Yapi): Degisiklik[] => {
+  const karsilastir = <T extends { id: string }>(tur: Degisiklik["tur"], a: T[], b: T[]): Degisiklik[] => {
+    const eski = new Map(a.map((x) => [x.id, JSON.stringify(x)]));
+    const yeni = new Map(b.map((x) => [x.id, JSON.stringify(x)]));
+    return [
+      ...b.filter((x) => !eski.has(x.id)).map((x) => ({ tur, id: x.id, islem: "eklendi" as const })),
+      ...b.filter((x) => eski.has(x.id) && eski.get(x.id) !== yeni.get(x.id)).map((x) => ({ tur, id: x.id, islem: "degisti" as const })),
+      ...a.filter((x) => !yeni.has(x.id)).map((x) => ({ tur, id: x.id, islem: "silindi" as const })),
+    ];
+  };
+  return [
+    ...karsilastir("birim", yayindaki.birimler, taslak.birimler),
+    ...karsilastir("unvan", yayindaki.unvanlar, taslak.unvanlar),
+    ...karsilastir("akis", yayindaki.akislar, taslak.akislar),
+  ];
+};

@@ -761,13 +761,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* --- Sekmeler ve süzgeç --- */
 
 .sekmeler { display: flex; gap: var(--ara-1); flex-wrap: wrap; }
-.sekmeler button {
+.sekmeler button, .sekmeler > a {
   height: 32px; padding: 0 var(--ara-3); border-radius: var(--yaricap-hap); border: 1px solid var(--cizgi);
   background: var(--yuzey); color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk);
   display: inline-flex; align-items: center; gap: 6px;
 }
 .sekmeler button em { font-style: normal; font-size: var(--punto-mini); background: var(--yuzey-2); border-radius: var(--yaricap-hap); padding: 0 6px; }
-.sekmeler button.acik { background: var(--lacivert); color: #fff; border-color: var(--lacivert); }
+.sekmeler button.acik, .sekmeler > a.acik { background: var(--lacivert); color: #fff; border-color: var(--lacivert); }
 .sekmeler button.acik em { background: var(--lacivert-3); }
 .suzgec { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; margin-bottom: var(--ara-3); }
 .suzgec .girdi { width: auto; min-width: 160px; height: 34px; min-height: 34px; padding-block: 0; font-size: var(--punto-kucuk); }
@@ -1559,7 +1559,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .form .secim { min-height: var(--dokunma); }
   .form .secim input { width: 20px; height: 20px; }
   .sekmeler { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .sekmeler button { min-height: 38px; white-space: nowrap; }
+  .sekmeler button, .sekmeler > a { min-height: 38px; white-space: nowrap; }
   .form-alt .dugme { flex: 1; }
   .cip button { width: 32px; height: 32px; }
 
@@ -1876,3 +1876,19 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 /* Kullanıcılar · yetki penceresi: seçmeli yetkiler alt alta; tam yönetici seçiliyken hepsi işaretli ve kilitli. */
 .yetki-listesi { border: 0; margin: 0; padding: 0; display: grid; gap: var(--ara-2); }
 .yetki-listesi:disabled { opacity: 0.6; }
+
+/* --- Organizasyon (ekranlar/organizasyon) --- */
+.taslak-cubugu {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ara-2);
+  padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap);
+  background: var(--uyari-sis); border: 1px solid var(--uyari);
+  position: sticky; top: var(--ara-2); z-index: 2;
+}
+.taslak-cubugu .dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+.sekmeler > a { display: inline-flex; align-items: center; text-decoration: none; }
+.org-agac { display: grid; gap: var(--ara-2); }
+.org-agac > details { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); }
+.org-agac > details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: var(--ara-2); }
+.org-unvan { padding-inline-start: var(--ara-4); margin-block: var(--ara-2); }
+.org-unvan h4 { margin: 0 0 var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); font-weight: 600; }
+tr.soluk > td { opacity: .5; }

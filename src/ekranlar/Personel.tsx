@@ -1,4 +1,4 @@
-import { birimAdi, gorevAdi } from "../yapi";
+import { birimAdi, birimListesi, gorevAdi } from "../yapi";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
@@ -9,7 +9,7 @@ import { profilGuncelle, type ProfilGirdisi } from "../eylemler";
 import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
-import { BICIMLER, BIRIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type Birim, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
+import { BICIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
 import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { SayfaBasi } from "./ana/Planlama";
@@ -39,7 +39,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const ayar = PERSONEL_SAYFASI[sayfa] ?? PERSONEL_SAYFASI.personel;
   const muhabirSayfasi = sayfa === "muhabirler";
   const [aranan, setAranan] = useState("");
-  const [birim, setBirim] = useState<Birim | "">("");
+  const [birim, setBirim] = useState<BirimId>("");
   const [ulke, setUlke] = useState<Ulke | "">("");
   const [bicim, setBicim] = useState<Bicim | "">("");
   const q = aranan.trim().toLocaleLowerCase();
@@ -84,9 +84,9 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
               </select>
             </>
           ) : (
-            <select className="girdi" value={birim} onChange={(e) => setBirim(e.target.value as Birim | "")} aria-label={t("birim")}>
+            <select className="girdi" value={birim} onChange={(e) => setBirim(e.target.value)} aria-label={t("birim")}>
               <option value="">{t("tumBirimler")}</option>
-              {BIRIMLER.filter((b) => tum.some((k) => k.birim === b)).map((b) => (
+              {birimListesi().filter((b) => tum.some((k) => k.birim === b)).map((b) => (
                 <option key={b} value={b}>
                   {birimAdi(b)}
                 </option>

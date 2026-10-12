@@ -5,7 +5,8 @@ import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
-import type { Yazi } from "./dil";
+import { yaz, type Yazi } from "./dil";
+import { ayniYapi, guncelYapi, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -91,6 +92,7 @@ import {
   talimatVerebilir,
   uretimeAlabilir,
   yapabilir,
+  yapiDuzenleyebilir,
 } from "./yetki";
 
 /**
@@ -1693,18 +1695,75 @@ export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[
  * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
 export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; rol: Rol; ad?: Yazi }) => {
-  if (!GERCEK || !hesapYetkisi(ben, "kisiDuzenle")) return false;
+  // Demoda hesap yetkisi yalnız örnek yöneticide; tayini Organizasyon'da o deniyor.
+  if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
-  if (!d.kisiler.some((k) => k.id === kisiId)) return false;
-  kaydet({
+  const eski = d.kisiler.find((k) => k.id === kisiId);
+  if (!eski) return false;
+  let yeni: Durum = {
     ...d,
     kisiler: d.kisiler.map((k) => {
       if (k.id !== kisiId) return k;
       const { kontrolBekliyor: _, ...kalan } = k;
       return { ...kalan, birim: p.birim, gorev: p.gorev, rol: p.rol, ...(p.ad ? { ad: p.ad } : {}) };
     }),
-  });
+  };
+  // Birim ya da ünvan değiştiyse tayin: geçmişte kalsın, kişiye de bildirim düşsün.
+  if (eski.birim !== p.birim || eski.gorev !== p.gorev)
+    yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "kisiTayinEdildi", veri: { ad: yaz(eski.ad), kime: kisiId, birim: p.birim, gorev: p.gorev, eskiBirim: eski.birim, eskiGorev: eski.gorev } });
+  kaydet(yeni);
   return true;
+};
+
+/* --- Kurumun yapısı (yapi.ts): taslak, yayın, sürüme dönüş; yalnız tam yönetici --- */
+
+/** Yöneticinin taslağı; yoksa yayındaki yapının kopyası (henüz kaydedilmemiş). */
+export const yapiTaslagi = (d: Durum, ben: Kisi): Yapi => d.yapiTaslaklari?.[ben.id] ?? guncelYapi(d);
+
+/**
+ * Taslağı değiştiriyor. Yayındaki yapıya dokunmuyor: yönetici birkaç
+ * değişikliği birlikte görüp tek seferde yayınlıyor, yarım düzen kimsenin
+ * işini bozmuyor. Değişiklik yayındakine dönerse taslak kalkıyor.
+ */
+export const yapiTaslagiDegistir = (ben: Kisi, f: (y: Yapi) => Yapi) => {
+  if (!yapiDuzenleyebilir(ben)) return false;
+  const d = getir();
+  const yeni = f(yapiTaslagi(d, ben));
+  const { [ben.id]: _, ...kalan } = d.yapiTaslaklari ?? {};
+  kaydet({ ...d, yapiTaslaklari: ayniYapi(yeni, guncelYapi(d)) ? kalan : { ...kalan, [ben.id]: yeni } });
+  return true;
+};
+
+export const yapiTaslaginiAt = (ben: Kisi) => {
+  const d = getir();
+  if (!yapiDuzenleyebilir(ben) || !d.yapiTaslaklari?.[ben.id]) return false;
+  const { [ben.id]: _, ...kalan } = d.yapiTaslaklari ?? {};
+  kaydet({ ...d, yapiTaslaklari: kalan });
+  return true;
+};
+
+/**
+ * Taslağı yeni sürüm olarak yayınlıyor. Eski sürümler kalıyor: üretimdeki
+ * paket girdiği sürümün akışıyla bitiyor (Paket.akis), yönetici de istediği
+ * sürüme geri dönebiliyor.
+ */
+export const yapiYayinla = (ben: Kisi, not = "") => {
+  const d = getir();
+  const taslak = d.yapiTaslaklari?.[ben.id];
+  if (!yapiDuzenleyebilir(ben) || !taslak) return false;
+  const surum = Math.max(0, ...d.yapilar.map((y) => y.surum)) + 1;
+  const yayin: Yapi = { ...taslak, surum, id: kimlik("y"), zaman: simdi(), yayinlayan: ben.id, ...(not.trim() ? { not: not.trim() } : { not: undefined }) };
+  const { [ben.id]: _, ...kalan } = d.yapiTaslaklari ?? {};
+  kaydet(hareketYaz({ ...d, yapilar: [...d.yapilar, yayin], yapiTaslaklari: kalan }, { kisiId: ben.id, tip: "yapiYayinlandi", veri: { sayi: String(surum) } }));
+  return true;
+};
+
+/** Eski sürümü taslağa alıyor; yönetici bakıp yayınlayınca yeni sürüm olarak geri geliyor. */
+export const yapiSurumunuTaslagaAl = (ben: Kisi, surum: number) => {
+  const d = getir();
+  const eski = surum === 0 ? varsayilanYapi() : d.yapilar.find((y) => y.surum === surum);
+  if (!eski) return false;
+  return yapiTaslagiDegistir(ben, () => eski);
 };
 
 /* Kişiye bağlı haritadan kişinin anahtarları çıkıyor; değişmeyen harita aynı nesne kalsın (fark.ts). */

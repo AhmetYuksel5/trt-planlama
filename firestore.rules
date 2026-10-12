@@ -95,9 +95,16 @@ service cloud.firestore {
             && get(kisiYolu()).data.get("oncekiKimlik", "") == id);
     }
 
+    // Kurumun yapısı (birimler, ünvanlar, iş akışı; src/yapi.ts) ve taslağı: herkes okur (kayıt bütün
+    // koleksiyonları dinliyor), yalnız tam yönetici yazar.
+    match /{alan}/{belge} {
+      allow read: if etkin() && alan in ["yapilar", "yapiTaslaklari"];
+      allow write: if hesapYoneticisi() && alan in ["yapilar", "yapiTaslaklari"];
+    }
+
     // Öbür bütün kayıt: etkin kişiler okur ve yazar.
     match /{alan}/{belge} {
-      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari"]);
+      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "yapilar", "yapiTaslaklari"]);
     }
   }
 }

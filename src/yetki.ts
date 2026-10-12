@@ -1,5 +1,5 @@
 import { ADIM_ADI, durakBul, kolSahibi, paketSahibi, sorumluBirimi } from "./akis";
-import { varsayilanYapi, type Sorumlu } from "./yapi";
+import { izinBirimi, varsayilanYapi, type Sorumlu } from "./yapi";
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
 import {
@@ -90,8 +90,9 @@ export type Eylem = keyof typeof IZINLER;
 export const yapabilir = (k: Kisi | undefined, e: Eylem): boolean => {
   if (!k) return false;
   const iz: Izin = IZINLER[e];
-  if (!iz.birimler.includes(k.birim)) return false;
-  if (iz.yalnizYonetici?.includes(k.birim) && k.rol !== "yonetici") return false;
+  const b = izinBirimi(k.birim);
+  if (!iz.birimler.includes(b)) return false;
+  if (iz.yalnizYonetici?.includes(b) && k.rol !== "yonetici") return false;
   return true;
 };
 
@@ -308,6 +309,8 @@ export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
 /* --- Sayfalar --- */
 
 const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
+/* Her birime açık sayfa; yöneticinin sonradan açtığı birime de (listede adı olmasa da). */
+const HERKES: readonly BirimId[] = ["*"];
 
 export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   ana: BIRIMLER,
@@ -333,12 +336,15 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   video: ["newsdesk", "media", "planlama", "yonetim"],
   ucretler: ["newsdesk", "yonetim"],
   raporlar: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "yonetim"],
-  ayarlar: BIRIMLER,
-  profil: BIRIMLER,
-  plan: BIRIMLER,
-  takvim: BIRIMLER,
-  ortam: BIRIMLER,
+  ayarlar: HERKES,
+  profil: HERKES,
+  plan: HERKES,
+  takvim: HERKES,
+  ortam: HERKES,
 };
+
+/* Kurumun yapısı (birim, ünvan, iş akışı) yalnız tam yöneticide; firestore.rules da öyle. */
+export const yapiDuzenleyebilir = (k: Kisi | undefined) => !!k?.hesapYoneticisi;
 
 /* Hesap işleri: tam yönetici hepsini yapar, öbürü yalnız kendisine verileni (firestore.rules → yetkiVar ile aynı). */
 export const hesapYetkisi = (k: Kisi | undefined, y: HesapYetkisi) => !!k && (!!k.hesapYoneticisi || !!k.yetkiler?.includes(y));
@@ -351,7 +357,9 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
     : // Hesaplar yalnız gerçek kipte ve hesap yetkisi olanda: demoda davet edilecek kimse yok.
       sayfa === "kullanicilar"
       ? GERCEK && (!!k.hesapYoneticisi || !!k.yetkiler?.length)
-      : !!SAYFA_IZNI[sayfa]?.includes(k.birim));
+      : sayfa === "organizasyon"
+        ? yapiDuzenleyebilir(k) || hesapYetkisi(k, "kisiDuzenle") || (GERCEK && !!k.yetkiler?.length)
+        : SAYFA_IZNI[sayfa] === HERKES || !!SAYFA_IZNI[sayfa]?.includes(izinBirimi(k.birim)));
 
 /* --- Proje planı için matris: tablolardan üretiliyor, elle yazılmıyor --- */
 

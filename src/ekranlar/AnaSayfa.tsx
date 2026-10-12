@@ -1,6 +1,6 @@
 import type { Kisi } from "../veri";
 import YoneticiPaneli from "./YoneticiPaneli";
-import { EkonomiAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
+import { EkonomiAna, GenelAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
 import MuhabirAna from "./ana/Muhabir";
 import PlanlamaAna from "./ana/Planlama";
 
@@ -29,5 +29,7 @@ export default function AnaSayfa({ ben }: { ben: Kisi }) {
       return <MediaAna ben={ben} />;
     case "yonetim":
       return <YoneticiPaneli ben={ben} ana />;
+    default:
+      return <GenelAna ben={ben} />;
   }
 }

@@ -1,4 +1,4 @@
-import { birimAdi, gorevAdi } from "../yapi";
+import { birimAdi, birimListesi, gorevAdi, unvanListesi } from "../yapi";
 import { ArrowLeft, Mail, ShieldAlert } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import DilSecici from "../bilesenler/DilSecici";
@@ -6,7 +6,7 @@ import Logo from "../bilesenler/Logo";
 import { useDil } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
 import { firebaseYukle } from "../kip";
-import { BIRIMLER, GOREVLER, type Birim, type Gorev } from "../veri";
+import type { BirimId, GorevId } from "../veri";
 
 /**
  * Kayıt bağlantısının sayfası (`#/kayit/<kod>`): hesap yöneticisinin
@@ -24,7 +24,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   const { t, dil } = useDil();
   const kurulu = gercekKipKurulu();
   const [adim, setAdim] = useState<Adim>("yukleniyor");
-  const [f, setF] = useState({ eposta: "", adTr: "", adAr: "", adEn: "", birim: "newsdesk" as Birim, gorev: "editor" as Gorev });
+  const [f, setF] = useState({ eposta: "", adTr: "", adAr: "", adEn: "", birim: "newsdesk" as BirimId, gorev: "editor" as GorevId });
   const [hata, setHata] = useState(false);
   const [bekle, setBekle] = useState(false);
   const alan = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
@@ -90,8 +90,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         </label>
         <label>
           {t("birim")}
-          <select value={f.birim} onChange={(e) => alan("birim", e.target.value as Birim)} data-kayit-birim>
-            {BIRIMLER.map((b) => (
+          <select value={f.birim} onChange={(e) => alan("birim", e.target.value)} data-kayit-birim>
+            {birimListesi().map((b) => (
               <option key={b} value={b}>
                 {birimAdi(b)}
               </option>
@@ -100,8 +100,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         </label>
         <label>
           {t("gorev")}
-          <select value={f.gorev} onChange={(e) => alan("gorev", e.target.value as Gorev)} data-kayit-gorev>
-            {GOREVLER.map((g) => (
+          <select value={f.gorev} onChange={(e) => alan("gorev", e.target.value)} data-kayit-gorev>
+            {unvanListesi(f.birim, f.gorev).map((g) => (
               <option key={g} value={g}>
                 {gorevAdi(g)}
               </option>

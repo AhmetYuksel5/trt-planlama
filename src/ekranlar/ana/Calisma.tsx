@@ -2,9 +2,9 @@ import { ArrowDown, ArrowUp, Check, LayoutGrid, Plus, RotateCcw, X } from "lucid
 import { useState, type ReactNode } from "react";
 import { Kart } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI } from "../../etiketler";
 import { anaSayfaKaydet } from "../../eylemler";
-import { useVeri, type Birim, type Kisi } from "../../veri";
+import { useVeri, type Birim, type BirimId, type Kisi } from "../../veri";
+import { birimAdi, izinBirimi } from "../../yapi";
 import { kapsam, sayfaGorebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { KisayolKutulari } from "../ortam/Kisayollar";
@@ -21,7 +21,7 @@ import { PLANLAMA_ALANLARI } from "./Planlama";
  */
 
 /** Düzenin sahibi: birimin ana sayfası ya da yöneticinin paneli. */
-export type DuzenAdi = Birim | "panel";
+export type DuzenAdi = BirimId | "panel";
 
 export interface Alan {
   id: string;
@@ -45,7 +45,7 @@ export interface Alan {
  * alanı varsayılanda kalabalıktı; birimin istediği alanlar kaldı, öbürleri
  * katalogda. Plan kısayolları alan değil, üst çubukta.
  */
-export const VARSAYILAN: Record<DuzenAdi, string[]> = {
+export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plSonOneri", "plMuhabirler", "plHareket"],
   muhabir: ["muCagri", "muSayac", "muSiram", "muGorev", "muHaberler", "muBildirim", "muOneriler"],
   newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
@@ -77,7 +77,8 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
   const uygunlar = katalog().filter((a) => alanUygun(ben, a));
   const bul = (id: string) => uygunlar.find((a) => a.id === id);
   const kayitli = kisisel ? v.anaSayfa?.[duzenAnahtari(ben.id, duzen)] : undefined;
-  const secili = (kayitli ?? VARSAYILAN[duzen]).filter((id) => !!bul(id));
+  // Yöneticinin açtığı birim örnek aldığı birimin varsayılanıyla başlıyor (yapi.ts → izinBirimi); örneksiz boş.
+  const secili = (kayitli ?? VARSAYILAN[(duzen === "panel" ? duzen : izinBirimi(duzen)) as Birim | "panel"] ?? []).filter((id) => !!bul(id));
   const kaydet = (ids: string[] | null) => anaSayfaKaydet(ben, duzen, ids);
   const tasi = (i: number, yon: -1 | 1) => {
     const yeni = [...secili];
@@ -87,7 +88,7 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
   const eklenebilir = uygunlar.filter((a) => !secili.includes(a.id));
   const gruplar = [...new Set(eklenebilir.map((a) => a.grup))];
   const adi = (a: Alan) => (a.ek ? `${t(a.ad)} · ${t(a.ek)}` : t(a.ad));
-  const grupAdi = (g: DuzenAdi) => t(g === "panel" ? "mPanel" : BIRIM_ADI[g]);
+  const grupAdi = (g: DuzenAdi) => (g === "panel" ? t("mPanel") : birimAdi(g));
 
   return (
     <>

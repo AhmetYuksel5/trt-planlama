@@ -1,11 +1,11 @@
-import { birimAdi, gorevAdi } from "../yapi";
+import { birimAdi, birimListesi, gorevAdi } from "../yapi";
 import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
 import { GERCEK } from "../kip";
 import { muhabireOneriBirimleriKaydet } from "../eylemler";
-import { BIRIMLER, sifirla, useVeri, type Kisi } from "../veri";
+import { sifirla, useVeri, type Kisi } from "../veri";
 import { muhabireOneriBirimleri } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -58,7 +58,7 @@ function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
   return (
     <Kart baslik={t("muhabireOneriBirimleri")} ikon={<Send size={18} className="yon" />}>
       <div className="yetki-listesi" data-muhabire-oneri-birimleri>
-        {BIRIMLER.filter((b) => b !== "muhabir").map((b) => (
+        {birimListesi().filter((b) => b !== "muhabir").map((b) => (
           <label key={b} className="secim">
             <input
               type="checkbox"

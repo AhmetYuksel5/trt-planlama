@@ -130,6 +130,8 @@ const KISILER: KisiSatiri[] = [
   ["mu30", "Hatice Arslan", "هاتيجة أرسلان", "muhabir", "personel", "muhabir", "ankara"],
   ["mu31", "Nabil Awad", "نبيل عوض", "muhabir", "personel", "muhabir", "ramallah"],
   ["mu32", "Rasha Qasim", "رشا قاسم", "muhabir", "personel", "muhabir", "kudus"],
+  // Sistem yöneticisi: Organizasyon'u (birim, ünvan, iş akışı, tayin) demoda deneyen kişi. Kurgusal; sona eklendi, örnek veri sıradan türüyor.
+  ["yo3", "Selma Korkmaz", "سلمى كوركماز", "yonetim", "yonetici", "koordinator", "istanbul", { hesapYoneticisi: true }],
 ];
 
 const ALAN_KODU: Partial<Record<Sehir, string>> = {

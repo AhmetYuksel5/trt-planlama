@@ -1,5 +1,5 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { BookOpen, Building, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserCog, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
@@ -131,7 +131,7 @@ export const MENU: Grup[] = [
       { sayfa: "ucretler", ad: "mUcretler", kisa: "kaUcretler", ikon: Wallet },
       { sayfa: "raporlar", ad: "mRaporlar", kisa: "kaRaporlar", ikon: ChartColumn },
       { sayfa: "plan", ad: "mProjePlani", kisa: "kaProjePlani", ikon: BookOpen },
-      { sayfa: "kullanicilar", ad: "mKullanicilar", kisa: "kaKullanicilar", ikon: UserCog },
+      { sayfa: "organizasyon", ad: "mOrganizasyon", kisa: "kaOrganizasyon", ikon: Building2 },
       { sayfa: "ayarlar", ad: "mAyarlar", kisa: "kaAyarlar", ikon: Settings },
     ],
   },

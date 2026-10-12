@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   Building,
+  Building2,
   CalendarDays,
   CalendarRange,
   CheckCircle,
@@ -22,6 +23,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { birimAdi } from "../../yapi";
 import { geciktiMi } from "../../akis";
 import { planDurum } from "../../eylemler";
 import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
@@ -482,6 +484,16 @@ export function MediaAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean
     <>
       <SayfaBasi sekme={!kisisel} ikon={<MonitorPlay size={26} />} baslik={t("biMedia")} />
       <CalismaAlani ben={ben} duzen="media" kisisel={kisisel} />
+    </>
+  );
+}
+
+/* Yöneticinin açtığı birim (Organizasyon): birime özel alan yok, kişi katalogdan seçiyor. */
+export function GenelAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
+  return (
+    <>
+      <SayfaBasi sekme={!kisisel} ikon={<Building2 size={26} />} baslik={birimAdi(ben.birim)} />
+      <CalismaAlani ben={ben} duzen={ben.birim} kisisel={kisisel} />
     </>
   );
 }
