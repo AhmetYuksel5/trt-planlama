@@ -85,6 +85,15 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
         run: npx --yes firebase-tools@13 deploy --only firestore:rules --project planners-flow-2026 --non-interactive
 
+      # Davet ("şifreni belirle") e-postasının şablonu depodaki metinle (araclar/eposta-sablonu.mjs).
+      # Hata yayını durdurmasın: site ve kurallar çıktı, şablon ayrı iş.
+      - name: E-posta şablonu
+        if: steps.anahtar.outputs.var == 'evet'
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/anahtar.json
+        run: node araclar/eposta-sablonu.mjs
+
       - name: Anahtarı sil
         if: always() && steps.anahtar.outputs.var == 'evet'
         run: rm -f "$RUNNER_TEMP/anahtar.json"

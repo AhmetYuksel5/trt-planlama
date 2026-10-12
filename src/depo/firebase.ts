@@ -278,9 +278,10 @@ export const sifreyleGir = (eposta: string, sifre: string) => {
   return signInWithEmailAndPassword(auth, ePosta(eposta), sifre);
 };
 
-export const sifreSifirla = (eposta: string, dil: string) => {
+export const sifreSifirla = (eposta: string, _dil?: string) => {
   baslat();
-  auth.languageCode = dil;
+  // Davetle aynı şablon (İngilizce); bkz. baglantiGonder.
+  auth.languageCode = "en";
   return sendPasswordResetEmail(auth, ePosta(eposta));
 };
 
@@ -322,11 +323,12 @@ const hesapAc = async (e: string) => {
 const sifreDonusu = (eposta: string) => `${location.origin}${location.pathname}?giris=sifre&e=${encodeURIComponent(eposta)}`;
 
 /** Etkinleştirme: davet edilene ya da (kurucu, süresi geçen davetli) kendisine "şifreni belirle" e-postası. */
-export const baglantiGonder = async (eposta: string, dil: string) => {
+export const baglantiGonder = async (eposta: string, _dil?: string) => {
   baslat();
   const e = ePosta(eposta);
   await hesapAc(e);
-  auth.languageCode = dil;
+  // Şablon İngilizce (araclar/eposta-sablonu.mjs); dil verilirse Firebase kendi Türkçe/Arapça hazır metnini seçebiliyor.
+  auth.languageCode = "en";
   await sendPasswordResetEmail(auth, e, { url: sifreDonusu(e) });
 };
 
