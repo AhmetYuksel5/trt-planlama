@@ -79,9 +79,11 @@ import { GOMULU, useYol } from "./yol";
 /* Gün dönümünü yakalamak için arada bir: uygulama gece açık kalsa da sabah yarının planı hazır. */
 const GUN_YOKLAMA = 10 * 60 * 1000;
 
-/* E-postadaki etkinleştirme bağlantısı uygulamaya bu sorguyla dönüyor (depo/firebase.ts → donusAdresi). */
-const BAGLANTI_DONUSU =
-  new URLSearchParams(location.search).get("giris") === "baglanti";
+/*
+ * E-postadan dönüş: eski giriş bağlantısı (baglanti), şifre belirleme ve
+ * doğrulama (sifre; depo/firebase.ts → sifreDonusu). İkisi de giriş ekranını açar.
+ */
+const BAGLANTI_DONUSU = ["baglanti", "sifre"].includes(new URLSearchParams(location.search).get("giris") ?? "");
 
 export default function App() {
   const { t } = useDil();

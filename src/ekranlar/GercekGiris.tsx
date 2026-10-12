@@ -23,7 +23,7 @@ import { GERCEK, demoyaDon, firebaseYukle, gercegeGec, useGercekDurum } from "..
  * neden bulunsun.
  */
 
-type Adim = "giris" | "baglanti" | "sifre" | "davetYok" | "pasif" | "gonderildi" | "sifirlandi";
+type Adim = "giris" | "baglanti" | "sifre" | "davetYok" | "pasif" | "gonderildi" | "sifirlandi" | "dogrula" | "dogrulamaGitti";
 
 const HATALAR: Record<string, Anahtar> = {
   "auth/invalid-credential": "ghBilgiYanlis",
@@ -37,6 +37,7 @@ const HATALAR: Record<string, Anahtar> = {
   "auth/invalid-action-code": "ghBaglantiGecersiz",
   "auth/expired-action-code": "ghBaglantiGecersiz",
   "auth/weak-password": "ghSifreZayif",
+  "auth/email-already-in-use": "ghEpostaKayitli",
   // Ücretsiz planda günde gönderilebilen giriş bağlantısı sınırlı; ertesi gün açılıyor.
   "auth/quota-exceeded": "ghGunlukSinir",
   // Projede şifre kuralı açıksa (büyük harf, rakam…) Firebase bunu döndürüyor.
@@ -56,10 +57,10 @@ const HATALAR: Record<string, Anahtar> = {
 };
 export const hataKodu = (e: unknown): string =>
   e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : e instanceof Error ? e.name : "";
-const hataAnahtari = (e: unknown): Anahtar => HATALAR[hataKodu(e)] ?? "ghBilinmeyen";
+export const hataAnahtari = (e: unknown): Anahtar => HATALAR[hataKodu(e)] ?? "ghBilinmeyen";
 
 /* Firebase'in kendi alt sınırı 6; kurumda daha uzunu isteniyor. */
-const SIFRE_EN_AZ = 8;
+export const SIFRE_EN_AZ = 8;
 
 export default function GercekGiris() {
   const { t, dil } = useDil();
@@ -85,6 +86,7 @@ export default function GercekGiris() {
       setEposta(f.oturumdakiEposta());
       const hal = await f.ilkKayit().catch(() => "davetYok" as const);
       if (hal === "etkin") setAdim("sifre");
+      else if (hal === "dogrulanmadi") setAdim("dogrula");
       else bitir(hal === "pasif" ? "pasif" : "davetYok");
     });
   }, [gd.tur]);
@@ -118,6 +120,8 @@ export default function GercekGiris() {
       await f.sifreyleGir(eposta, sifre);
       const hal = await f.ilkKayit();
       if (hal === "etkin") gercegeGec();
+      // Kayıt bağlantısıyla gelen, e-postasını henüz doğrulamamış: oturum açık kalıyor, yeniden gönderebilsin.
+      else if (hal === "dogrulanmadi") setAdim("dogrula");
       else await bitir(hal === "pasif" ? "pasif" : "davetYok");
     });
   };
@@ -155,6 +159,13 @@ export default function GercekGiris() {
     calis(async () => {
       await (await firebaseYukle()).sifreSifirla(eposta, dil);
       setAdim("sifirlandi");
+    });
+
+  const dogrulamaIste = () =>
+    calis(async () => {
+      const f = await firebaseYukle();
+      await f.dogrulamaGonder(dil);
+      await bitir("dogrulamaGitti");
     });
 
   const baglantiIste = () =>
@@ -212,6 +223,23 @@ export default function GercekGiris() {
           <KeyRound size={16} /> {t("ggSifreKaydet")}
         </button>
       </form>
+    );
+  else if (adim === "dogrula")
+    govde = (
+      <div className="form" data-gg-dogrula>
+        <p className="not-kutu uyari">
+          <Mail size={16} /> {t("ggDogrulaBekliyor", { eposta })}
+        </p>
+        <button type="button" className="dugme dugme-ikincil" onClick={dogrulamaIste} disabled={bekle} data-gg-dogrulama-iste>
+          {t("ggDogrulamaIste")}
+        </button>
+      </div>
+    );
+  else if (adim === "dogrulamaGitti")
+    govde = (
+      <p className="not-kutu iyi" data-gg-gonderildi>
+        <Mail size={16} /> {t("kayitDogrulamaGitti", { eposta })}
+      </p>
     );
   else if (adim === "davetYok" || adim === "pasif")
     govde = (

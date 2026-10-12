@@ -80,7 +80,10 @@ Kurucu girişte **Etkinleştirme bağlantısı iste** ile bağlantı alır, şif
 ## Firebase konsolunda yapılacaklar
 
 1. [console.firebase.google.com](https://console.firebase.google.com) üzerinden bir proje açın; bir **web uygulaması** ekleyin.
-2. **Authentication › Sign-in method** bölümünde **Email/Password**'ü açın; altındaki **Email link (passwordless sign-in)** seçeneğini de açın.
+2. **Authentication › Sign-in method** bölümünde **Email/Password**'ü açın. **Email link (passwordless sign-in)** artık yeni davet ve kayıt için kullanılmıyor (ücretsiz planda günde yalnız 5 e-posta); açık kalması yalnız daha önce gönderilmiş bağlantıların çalışması için.
+   - Davet: davetliye rastgele şifreli hesap açılır ve "şifreni belirle" (şifre sıfırlama) e-postası gider (ücretsiz planda günde 150). Kişi şifresini Firebase'in sayfasında belirler, `?giris=sifre` ile giriş ekranına döner, şifresiyle girer; kaydı davetten kurulur.
+   - Kayıt bağlantısı: kişi formda şifresini de belirler; hesabı açılır, doğrulama e-postası gider (günde 1000). Doğrulamadan girerse kayıt kurulmaz, "doğrula" ekranı ve yeniden gönderme çıkar.
+   - E-posta metinleri Firebase konsolu › Authentication › *Templates* bölümünden Türkçe/Arapça düzenlenebilir ("Password reset" şablonunun konusu "Plannersflow hesabını etkinleştir" gibi yazılabilir).
 3. **Authentication › Settings › Authorized domains** listesine `ahmetyuksel5.github.io` adresini ekleyin. Depo adı değişirse aynı alan adı kalır.
 4. **Authentication › Templates** bölümünde e-posta şablonlarının dilini Türkçe yapın; isterseniz gönderen adını da değiştirin.
 5. **Firestore Database** oluşturun (production mode).

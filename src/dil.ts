@@ -1713,9 +1713,9 @@ const M = {
   ),
   ggPasif: m("Bu hesap kapatılmış. Hesap yöneticisine başvur.", "هذا الحساب مغلق. تواصل مع مسؤول الحسابات.", "This account is closed. Contact an account administrator."),
   ggBaglantiGonderildi: m(
-    "{eposta} adresine etkinleştirme bağlantısı gönderildi; e-postadaki bağlantıyla devam et.",
-    "أُرسل رابط التفعيل إلى {eposta}؛ تابع عبر الرابط في البريد.",
-    "An activation link was sent to {eposta}; continue from the link in the email.",
+    "{eposta} adresine şifre belirleme e-postası gönderildi. E-postadaki bağlantıyla şifreni belirle, sonra buradan e-posta ve şifrenle gir.",
+    "أُرسل بريد تعيين كلمة المرور إلى {eposta}. عيّن كلمة المرور من الرابط في البريد ثم ادخل من هنا ببريدك وكلمة المرور.",
+    "A set-password email was sent to {eposta}. Set your password from the link in the email, then sign in here with your email and password.",
   ),
   ggSifirlamaGonderildi: m(
     "{eposta} adresine şifre sıfırlama e-postası gönderildi.",
@@ -1901,7 +1901,23 @@ const M = {
   baglantiyiKapat: m("Kapat", "إغلاق", "Close"),
   kontrolBekliyor: m("Kendi kaydı · kontrol bekliyor", "تسجيل ذاتي · بانتظار المراجعة", "Self sign-up · awaiting review"),
   kayitBaslik: m("Hesap oluştur", "إنشاء حساب", "Create an account"),
-  kayitOl: m("Etkinleştirme bağlantısı gönder", "أرسل رابط التفعيل", "Send activation link"),
+  kayitOl: m("Hesabı oluştur", "إنشاء الحساب", "Create account"),
+  kayitDogrulamaGitti: m(
+    "{eposta} adresine doğrulama e-postası gönderildi. E-postadaki bağlantıya tıkla, sonra e-posta ve şifrenle gir.",
+    "أُرسل بريد التحقق إلى {eposta}. انقر الرابط في البريد ثم ادخل ببريدك وكلمة المرور.",
+    "A verification email was sent to {eposta}. Click the link in the email, then sign in with your email and password.",
+  ),
+  ggDogrulaBekliyor: m(
+    "{eposta} henüz doğrulanmadı. E-postadaki doğrulama bağlantısına tıkla, sonra yeniden gir.",
+    "لم يتم التحقق من {eposta} بعد. انقر رابط التحقق في البريد ثم ادخل مجددا.",
+    "{eposta} is not verified yet. Click the verification link in the email, then sign in again.",
+  ),
+  ggDogrulamaIste: m("Doğrulama e-postasını yeniden gönder", "إعادة إرسال بريد التحقق", "Resend verification email"),
+  ghEpostaKayitli: m(
+    "Bu e-posta ile hesap zaten var. Giriş yap ya da \"Şifremi unuttum\" ile şifreni yenile.",
+    "يوجد حساب بهذا البريد. سجّل الدخول أو جدّد كلمة المرور عبر «نسيت كلمة المرور».",
+    "An account with this email already exists. Sign in or use \"Forgot password\".",
+  ),
   kayitBaglantisiGecersiz: m(
     "Bu kayıt bağlantısı kapatılmış ya da süresi dolmuş. Yeni bağlantı için hesap yöneticisine başvur.",
     "رابط التسجيل هذا مغلق أو منتهي الصلاحية. تواصل مع مسؤول الحسابات للحصول على رابط جديد.",

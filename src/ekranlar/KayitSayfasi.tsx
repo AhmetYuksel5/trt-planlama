@@ -3,18 +3,19 @@ import { ArrowLeft, Mail, ShieldAlert } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
-import { useDil } from "../dil";
+import { useDil, type Anahtar } from "../dil";
 import { gercekKipKurulu } from "../firebase-ayar";
 import { firebaseYukle } from "../kip";
-import { hataKodu } from "./GercekGiris";
+import { SIFRE_EN_AZ, hataAnahtari, hataKodu } from "./GercekGiris";
 import type { BirimId, GorevId } from "../veri";
 
 /**
  * Kayıt bağlantısının sayfası (`#/kayit/<kod>`): hesap yöneticisinin
- * paylaştığı bağlantıyı açan kişi bilgilerini kendisi giriyor, e-postasına
- * etkinleştirme bağlantısı gidiyor. Bağlantıyla dönünce gerçek giriş
- * (GercekGiris) kişi kaydını bu bilgilerle kuruyor (depo/firebase.ts →
- * ilkKayit) ve şifresini belirletiyor.
+ * paylaştığı bağlantıyı açan kişi bilgilerini ve şifresini kendisi giriyor;
+ * hesabı açılıp adresine doğrulama e-postası gidiyor. Doğrulayıp şifresiyle
+ * girince gerçek giriş (GercekGiris) kişi kaydını bu bilgilerle kuruyor
+ * (depo/firebase.ts → ilkKayit). Giriş bağlantısı (e-posta linki)
+ * kullanılmıyor: Firebase'in ücretsiz planı günde yalnız 5 gönderiyor.
  *
  * Demo açıkken de çalışıyor: bağlantıyı açan kişinin tarayıcısı demoda.
  */
@@ -25,8 +26,9 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   const { t, dil } = useDil();
   const kurulu = gercekKipKurulu();
   const [adim, setAdim] = useState<Adim>("yukleniyor");
-  const [f, setF] = useState({ eposta: "", adTr: "", adAr: "", adEn: "", birim: "newsdesk" as BirimId, gorev: "editor" as GorevId });
-  const [hata, setHata] = useState<string | null>(null);
+  const [f, setF] = useState({ eposta: "", adTr: "", adAr: "", adEn: "", birim: "newsdesk" as BirimId, gorev: "editor" as GorevId, sifre: "", sifre2: "" });
+  // Hata ya tanınan anahtar ya da (tanınmayan) Firebase kodu.
+  const [hata, setHata] = useState<{ anahtar: Anahtar; kod: string } | null>(null);
   const [bekle, setBekle] = useState(false);
   const alan = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
 
@@ -40,17 +42,20 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   const gonder = (e: FormEvent) => {
     e.preventDefault();
     setHata(null);
+    if (f.sifre.length < SIFRE_EN_AZ) return setHata({ anahtar: "ghSifreKisa", kod: "" });
+    if (f.sifre !== f.sifre2) return setHata({ anahtar: "ghSifreUyusmuyor", kod: "" });
     setBekle(true);
     // Ad üç dilde; boş bırakılan dil öbüründen (davet formundaki gibi).
     const tr = f.adTr.trim() || f.adEn.trim() || f.adAr.trim();
     const ad = { tr, ar: f.adAr.trim() || tr, en: f.adEn.trim() || tr };
     firebaseYukle()
-      .then((x) => x.kayitBaglantisiGonder(f.eposta, { kod, ad, birim: f.birim, gorev: f.gorev }, dil))
+      .then((x) => x.kayitOl(f.eposta, f.sifre, { kod, ad, birim: f.birim, gorev: f.gorev }, dil))
       .then(() => setAdim("gonderildi"))
       .catch((x) => {
-        // Günlük sınır beklenen durum; yalnız bilinmeyen hata günlüğe.
-        if (hataKodu(x) !== "auth/quota-exceeded") console.error(x);
-        setHata(hataKodu(x));
+        // Kayıtlı e-posta, zayıf şifre gibi durumlar beklenen; yalnız bilinmeyen hata günlüğe.
+        const anahtar = hataAnahtari(x);
+        if (anahtar === "ghBilinmeyen") console.error(x);
+        setHata({ anahtar, kod: hataKodu(x) });
       })
       .finally(() => setBekle(false));
   };
@@ -67,7 +72,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   else if (adim === "gonderildi")
     govde = (
       <p className="not-kutu iyi" data-kayit-gonderildi>
-        <Mail size={16} /> {t("ggBaglantiGonderildi", { eposta: f.eposta.trim() })}
+        <Mail size={16} /> {t("kayitDogrulamaGitti", { eposta: f.eposta.trim() })}
       </p>
     );
   else
@@ -110,6 +115,14 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
             ))}
           </select>
         </label>
+        <label>
+          {t("sifre")}
+          <input type="password" autoComplete="new-password" value={f.sifre} onChange={(e) => alan("sifre", e.target.value)} required data-kayit-sifre />
+        </label>
+        <label>
+          {t("ggSifreTekrar")}
+          <input type="password" autoComplete="new-password" value={f.sifre2} onChange={(e) => alan("sifre2", e.target.value)} required data-kayit-sifre2 />
+        </label>
         <button className="dugme" disabled={bekle} data-kayit-gonder>
           <Mail size={16} /> {t("kayitOl")}
         </button>
@@ -123,8 +136,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         <h1>{t("kayitBaslik")}</h1>
         {govde}
         {hata && (
-          <p className="not-kutu uyari" role="alert">
-            {hata === "auth/quota-exceeded" ? t("ghGunlukSinir") : hata ? t("ghBilinmeyenKod", { kod: hata }) : t("ghBilinmeyen")}
+          <p className="not-kutu uyari" role="alert" data-kayit-hata={hata.anahtar}>
+            {hata.anahtar === "ghBilinmeyen" && hata.kod ? t("ghBilinmeyenKod", { kod: hata.kod }) : t(hata.anahtar)}
           </p>
         )}
         <div className="gg-alt">

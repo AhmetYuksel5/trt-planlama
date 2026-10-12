@@ -1,11 +1,12 @@
 import { initializeApp } from "firebase/app";
 import {
   connectAuthEmulator,
+  createUserWithEmailAndPassword,
   getAuth,
   isSignInWithEmailLink,
   onAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
-  sendSignInLinkToEmail,
   signInWithEmailAndPassword,
   signInWithEmailLink,
   signOut,
@@ -272,9 +273,6 @@ const kayitBagla = (hazir: () => void): (() => void) => {
 
 /* --- Giriş, etkinleştirme, şifre --- */
 
-/* E-posta bağlantısı uygulamaya bu adresle dönüyor; adres kişinin e-postasını taşıyor, başka tarayıcıda açılsa da sorulmasın. */
-const donusAdresi = (eposta: string) => `${location.origin}${location.pathname}?giris=baglanti&e=${encodeURIComponent(eposta)}`;
-
 export const sifreyleGir = (eposta: string, sifre: string) => {
   baslat();
   return signInWithEmailAndPassword(auth, ePosta(eposta), sifre);
@@ -286,11 +284,50 @@ export const sifreSifirla = (eposta: string, dil: string) => {
   return sendPasswordResetEmail(auth, ePosta(eposta));
 };
 
-/** Etkinleştirme bağlantısı: davet edilene ya da (kurucu, süresi geçen davetli) kendisine. */
-export const baglantiGonder = (eposta: string, dil: string) => {
+/*
+ * Etkinleştirme e-postası artık giriş bağlantısı değil, "şifreni belirle"
+ * (şifre sıfırlama) e-postası: Firebase'in ücretsiz planı günde yalnız 5
+ * giriş bağlantısı gönderiyor, şifre sıfırlamada sınır 150. Davetliye
+ * önce rastgele şifreli bir hesap açılıyor; e-postadaki bağlantıyla
+ * şifresini kendisi belirleyip şifreyle giriyor (davet ilkKayit'te).
+ *
+ * Hesap ikinci bir Firebase örneğinde açılıyor: birincisinde açmak
+ * yöneticinin oturumunu yeni hesaba çevirirdi.
+ */
+let hesapAcici: Auth | null = null;
+const ikinciAuth = () => {
+  if (hesapAcici) return hesapAcici;
+  const a = firebaseAyari();
+  const app = initializeApp({ apiKey: a.apiKey, authDomain: a.authDomain || `${a.projectId}.firebaseapp.com`, projectId: a.projectId, appId: a.appId }, "hesap-acici");
+  hesapAcici = getAuth(app);
+  if (a.emulator) connectAuthEmulator(hesapAcici, a.emulator.auth, { disableWarnings: true });
+  return hesapAcici;
+};
+
+const rastgeleSifre = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
+
+/** Hesap yoksa rastgele şifreyle açıyor; varsa (daha önce davet edilmiş, kurucu) dokunmuyor. */
+const hesapAc = async (e: string) => {
+  const ia = ikinciAuth();
+  try {
+    await createUserWithEmailAndPassword(ia, e, rastgeleSifre());
+  } catch (x) {
+    if (hataKodu(x) !== "auth/email-already-in-use") throw x;
+  } finally {
+    await signOut(ia).catch(() => {});
+  }
+};
+
+/* Şifre belirlendikten sonra Firebase'in sayfası buraya döndürüyor: giriş ekranı, e-posta hazır. */
+const sifreDonusu = (eposta: string) => `${location.origin}${location.pathname}?giris=sifre&e=${encodeURIComponent(eposta)}`;
+
+/** Etkinleştirme: davet edilene ya da (kurucu, süresi geçen davetli) kendisine "şifreni belirle" e-postası. */
+export const baglantiGonder = async (eposta: string, dil: string) => {
   baslat();
+  const e = ePosta(eposta);
+  await hesapAc(e);
   auth.languageCode = dil;
-  return sendSignInLinkToEmail(auth, ePosta(eposta), { url: donusAdresi(ePosta(eposta)), handleCodeInApp: true });
+  await sendPasswordResetEmail(auth, e, { url: sifreDonusu(e) });
 };
 
 export const baglantiMi = () => {
@@ -339,7 +376,7 @@ export interface Davet {
  * ve davet "kullanıldı" oluyor; ikisi tek yazışta. Kurallar ikisini de
  * denetliyor (firestore.rules).
  */
-export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): Promise<KisiHali | "davetYok"> => {
+export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): Promise<KisiHali | "davetYok" | "dogrulanmadi"> => {
   const u = auth.currentUser;
   if (!u?.email) return "davetYok";
   const hal = await kisiHali(u);
@@ -372,12 +409,19 @@ export const ilkKayit = async (kayit: KayitBilgisi | null = kayitBilgisiOku()): 
   // Kayıt bağlantısı: bilgileri kişi girdi; yetkisiz personel olarak açılıyor, yönetici sonra düzeltiyor.
   const baglanti = kayit ? await kayitBaglantisiOku(kayit.kod).catch(() => null) : null;
   if (kayit && baglanti && kayitAcik(baglanti)) {
+    // Kural e-postanın sahibi olduğunu istiyor; doğrulamadan önce kayıt kurulmuyor.
+    if (!u.emailVerified) return "dogrulanmadi";
     const k = {
       ...yeniKisi({ id: u.uid, ad: kayit.ad, eposta, birim: kayit.birim, gorev: kayit.gorev, rol: "personel", hesapYoneticisi: false }),
       kayitKodu: kayit.kod,
       kontrolBekliyor: true,
     };
     await setDoc(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
+    try {
+      localStorage.removeItem(BEKLEYEN_KAYIT);
+    } catch {
+      /* yok */
+    }
     return "etkin";
   }
   return "davetYok";
@@ -462,17 +506,68 @@ export const kayitBaglantisiOku = async (kod: string) => {
   return s.exists() ? (s.data() as KayitBaglantisi) : null;
 };
 
-export const kayitBaglantisiGonder = (eposta: string, bilgi: KayitBilgisi, dil: string) => {
+/*
+ * Kayıt bağlantısıyla gelen kişi şifresini formda belirliyor; hesabı açılıp
+ * adresine doğrulama e-postası gidiyor (günlük sınırı 1000; giriş bağlantısı
+ * 5). Doğrulayıp şifreyle girince kaydı kuruluyor (ilkKayit, kural
+ * e-postanın doğrulanmasını istiyor). Bilgiler hem doğrulamanın dönüş
+ * adresinde hem bu tarayıcıda: kişi bağlantıya başka cihazda basabilir.
+ */
+const BEKLEYEN_KAYIT = "trt-planlama-kayit-bekleyen";
+const kayitAdresi_ = (e: string, bilgi: KayitBilgisi) => `${sifreDonusu(e)}&kayit=${encodeURIComponent(JSON.stringify(bilgi))}`;
+
+export const kayitOl = async (eposta: string, sifre: string, bilgi: KayitBilgisi, dil: string) => {
   baslat();
   auth.languageCode = dil;
   const e = ePosta(eposta);
-  return sendSignInLinkToEmail(auth, e, { url: `${donusAdresi(e)}&kayit=${encodeURIComponent(JSON.stringify(bilgi))}`, handleCodeInApp: true });
+  let user: User;
+  try {
+    user = (await createUserWithEmailAndPassword(auth, e, sifre)).user;
+  } catch (x) {
+    // Önceki deneme hesabı açıp e-postayı gönderemediyse: aynı şifreyle doğrulanmamış hesap yeniden deneniyor.
+    if (hataKodu(x) !== "auth/email-already-in-use") throw x;
+    const u = await signInWithEmailAndPassword(auth, e, sifre).then(
+      (c) => c.user,
+      () => null,
+    );
+    if (!u || u.emailVerified) {
+      await signOut(auth).catch(() => {});
+      throw x;
+    }
+    user = u;
+  }
+  try {
+    localStorage.setItem(BEKLEYEN_KAYIT, JSON.stringify(bilgi));
+  } catch {
+    /* özel pencere: bilgi yine dönüş adresinde */
+  }
+  try {
+    await sendEmailVerification(user, { url: kayitAdresi_(e, bilgi) });
+  } finally {
+    // Kişi doğrulayıp şifresiyle girecek; demo açıkken oturum açık kalmasın.
+    await signOut(auth).catch(() => {});
+  }
+};
+
+/** Doğrulama e-postası gitmediyse ya da kaybolduysa: oturumdaki (doğrulanmamış) kişiye yeniden. */
+export const dogrulamaGonder = async (dil: string) => {
+  const u = auth.currentUser;
+  if (!u?.email) throw { code: "auth/user-signed-out" };
+  auth.languageCode = dil;
+  const bilgi = kayitBilgisiOku();
+  await sendEmailVerification(u, { url: bilgi ? kayitAdresi_(ePosta(u.email), bilgi) : sifreDonusu(ePosta(u.email)) });
 };
 
 /* Dönüş adresindeki bilgi kişinin elinden geçti: yalnız tanınan birim ve görev kabul. */
 export const kayitBilgisiOku = (): KayitBilgisi | null => {
   try {
-    const ham = new URLSearchParams(location.search).get("kayit");
+    let ham = new URLSearchParams(location.search).get("kayit");
+    if (!ham)
+      try {
+        ham = localStorage.getItem(BEKLEYEN_KAYIT);
+      } catch {
+        ham = null;
+      }
     if (!ham) return null;
     // Birim ve ünvan yöneticinin açtıkları da olabilir (yapi.ts); yalnız biçim denetleniyor.
     const kimlikGibi = (x: unknown) => typeof x === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(x);

@@ -109,8 +109,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - İkinci yol kayıt bağlantısı: yönetici paylaşılabilir, 7 günlük bağlantı
     açar (`kayitBaglantilari` koleksiyonu, `#/kayit/<kod>`,
     `ekranlar/KayitSayfasi.tsx`; demo açıkken de çalışır). Kişi adını,
-    birimini, görevini kendisi girer; bilgiler e-posta bağlantısının dönüş
-    adresinde (`kayit=`) taşınır, `ilkKayit` kaydı onunla kurar. Personel,
+    birimini, görevini ve şifresini kendisi girer; bilgiler doğrulama
+    e-postasının dönüş adresinde (`kayit=`) ve tarayıcıda taşınır, `ilkKayit`
+    kaydı onunla kurar. Personel,
     hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
     "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).
@@ -151,10 +152,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     çıkar, kişiye bağlı görünüm kayıtları gider; geçmiş kayıtlar kimliği
     tutar. Kural `kisiler` silmede aynısını sorar. Firebase'deki giriş
     hesabı kalır ama kişi kaydı olmadan giremez.
-  - Davet ve kayıt bağlantısı aynı Firebase e-posta bağlantısını kullanır; ücretsiz
-    planda günlük gönderim sınırı düşük. Dolunca Firebase `auth/quota-exceeded`
-    döndürür: ekranda "günlük sınır doldu" (davet kaydı kalır, ertesi gün "Yeniden
-    gönder"). Tanınmayan hata kodu mesajda yazılır (`GercekGiris.tsx → hataKodu`).
+  - Etkinleştirmede Firebase giriş bağlantısı (e-posta linki) kullanılmıyor:
+    ücretsiz planda günde 5. Davette davetliye ikinci Firebase örneğinde
+    (`hesap-acici`, yöneticinin oturumu değişmesin) rastgele şifreli hesap
+    açılır, "şifreni belirle" e-postası gider (`baglantiGonder`, günde 150);
+    kişi şifreyle girer (`?giris=sifre`). Kayıt bağlantısında kişi şifresini
+    formda belirler, doğrulama e-postası gider (`kayitOl`, günde 1000);
+    doğrulamadan kayıt kurulmaz (`ilkKayit → "dogrulanmadi"`). Eski
+    bağlantılar (`?giris=baglanti`) çalışmaya devam eder. Sınır dolarsa
+    `auth/quota-exceeded` açık mesajla; tanınmayan kod mesajda yazılır
+    (`GercekGiris.tsx → hataKodu`).
   - Kurucu (ilk yönetici; Planlama'da planlamacı, yönetici rolü) davetsiz
     girebilen tek adres:
     `firebase-ayar.ts → kurucu` ve `firestore.rules → kurucuEposta()`.
