@@ -146,11 +146,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yüklenince çoğalmaz. Listedeki konum yazımları `KONUM` tablosuyla
     şehre bağlanır; tanınmayan İstanbul'a yazılır ve önizlemede uyarılır.
   - Muhabir listesinde ve profilde WhatsApp düğmesi (`bilesenler/
-    WhatsApp.tsx`): telefonda `wa.me`, bilgisayarda WhatsApp Web; numara
-    uluslararası biçime çevrilir ("00…", başta tek sıfır Türkiye). Bağlantı
-    sabit adlı pencereye açılır (`plannersflow-whatsapp`, `rel` yok; noopener
-    adı yok saydırıyor): ilk tıklama sekme açar, sonrakiler aynı sekmeyi
-    kullanır.
+    WhatsApp.tsx`): telefonda `wa.me`; numara uluslararası biçime çevrilir
+    ("00…", başta tek sıfır Türkiye). Bilgisayarda önce masaüstü uygulaması
+    (`whatsapp://`; kurum onu kullanıyor, açık uygulamada sohbet açılır).
+    Uygulama açılınca sayfa odağı kaybeder; 1,5 saniyede kaybetmezse
+    uygulama yok sayılır, WhatsApp Web açılır. Ayarlar'da "Bilgisayarda
+    WhatsApp": otomatik / uygulama / Web, tarayıcıda (`trt-planlama-whatsapp`).
+    Web sabit adlı pencereye açılır (`plannersflow-whatsapp`, `rel` yok);
+    kişinin kendi açtığı WhatsApp Web sekmesine site ulaşamaz.
   - Seçmeli hesap yetkileri (`veri.ts → HESAP_YETKILERI`, `Kisi.yetkiler`):
     davet, kayıt bağlantısı, kişi düzenleme, hesap kapatma/açma, hesapsız
     kişi ekleme. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki

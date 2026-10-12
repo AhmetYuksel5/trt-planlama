@@ -1,8 +1,10 @@
 import { birimAdi, birimListesi, gorevAdi } from "../yapi";
 import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
+import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
+import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
 import { Kart, bildir } from "../bilesenler/Parcalar";
-import { useDil } from "../dil";
+import { useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { muhabireOneriBirimleriKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
@@ -29,6 +31,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
             {gorevAdi(ben.gorev)}
           </p>
         </Kart>
+        <WhatsappAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>
@@ -47,6 +50,36 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         )}
       </div>
     </>
+  );
+}
+
+/* Bilgisayarda WhatsApp düğmesinin yolu; bu bilgisayarda saklanıyor (WhatsApp.tsx). */
+const WHATSAPP_YOLU_ADI: Record<WhatsappYolu, Anahtar> = { otomatik: "waOtomatik", uygulama: "waUygulama", web: "waWeb" };
+
+function WhatsappAyari() {
+  const { t } = useDil();
+  const [yol, setYol] = useState(whatsappYolu);
+  return (
+    <Kart baslik={t("waAyar")}>
+      <fieldset className="secim-grubu" data-whatsapp-yolu>
+        <legend className="gizli-metin">{t("waAyar")}</legend>
+        {WHATSAPP_YOLLARI.map((y) => (
+          <label key={y} className="secim-cip">
+            <input
+              type="radio"
+              name="whatsapp-yolu"
+              checked={yol === y}
+              onChange={() => {
+                whatsappYoluKaydet(y);
+                setYol(y);
+              }}
+              data-yol={y}
+            />
+            {t(WHATSAPP_YOLU_ADI[y])}
+          </label>
+        ))}
+      </fieldset>
+    </Kart>
   );
 }
 

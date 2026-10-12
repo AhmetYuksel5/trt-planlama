@@ -1,9 +1,12 @@
+import type { MouseEvent } from "react";
 import { useDil } from "../dil";
 
 /*
- * Muhabire WhatsApp'tan yazmak. Telefonda wa.me uygulamayı açıyor;
- * bilgisayarda wa.me önce bir ara sayfa gösteriyor, o yüzden doğrudan
- * WhatsApp Web.
+ * Muhabire WhatsApp'tan yazmak. Telefonda wa.me uygulamayı açıyor.
+ * Bilgisayarda önce masaüstü uygulaması (whatsapp://): açıksa sohbet onun
+ * içinde açılıyor, yeni sekme yok. Kurum uygulamayı kullanıyor ama kurulu
+ * olmayan bilgisayar da var; uygulama açılmazsa WhatsApp Web. Web sekmesini
+ * yeniden kullanmak olmuyor: kişinin kendi açtığı sekmeye site ulaşamıyor.
  */
 
 /* Listede numaralar "00 961 …", "+90 5…", "0 5…" diye yazılmış: uluslararası, yalnız rakam. */
@@ -23,6 +26,54 @@ export const whatsappAdresi = (telefon: string) => {
   return telefondaMi() ? `https://wa.me/${n}` : `https://web.whatsapp.com/send?phone=${n}`;
 };
 
+/* Bilgisayarda hangi WhatsApp: kişiye değil bilgisayara bağlı (dil gibi), kayıtta değil. */
+export type WhatsappYolu = "otomatik" | "uygulama" | "web";
+export const WHATSAPP_YOLLARI: WhatsappYolu[] = ["otomatik", "uygulama", "web"];
+const SAKLA = "trt-planlama-whatsapp";
+
+export const whatsappYolu = (): WhatsappYolu => {
+  try {
+    const y = localStorage.getItem(SAKLA);
+    return y === "uygulama" || y === "web" ? y : "otomatik";
+  } catch {
+    return "otomatik";
+  }
+};
+
+export const whatsappYoluKaydet = (y: WhatsappYolu) => {
+  try {
+    if (y === "otomatik") localStorage.removeItem(SAKLA);
+    else localStorage.setItem(SAKLA, y);
+  } catch {
+    /* saklanamazsa otomatik kalır */
+  }
+};
+
+/*
+ * Uygulama açıldı mı, tarayıcı söylemiyor: açılınca öne geçiyor ve sayfa
+ * odağı kaybediyor. Bu sürede odak gitmediyse uygulama yok sayılıyor.
+ * Süre kısa tutuldu: Web sekmesi tıklamanın verdiği izinle açılabilsin
+ * (açılır pencere engeline takılmasın).
+ */
+const UYGULAMA_BEKLE = 1500;
+
+const uygulamadaAc = (numara: string, olmazsa?: () => void) => {
+  let gitti = false;
+  const odakGitti = () => {
+    gitti = true;
+  };
+  window.addEventListener("blur", odakGitti);
+  document.addEventListener("visibilitychange", odakGitti);
+  const a = document.createElement("a");
+  a.href = `whatsapp://send?phone=${numara}`;
+  a.click();
+  setTimeout(() => {
+    window.removeEventListener("blur", odakGitti);
+    document.removeEventListener("visibilitychange", odakGitti);
+    if (!gitti) olmazsa?.();
+  }, UYGULAMA_BEKLE);
+};
+
 /*
  * Sabit adlı pencere: ilk tıklama WhatsApp'ı bir sekmede açıyor, sonrakiler
  * aynı sekmeyi bu muhabirin sohbetine götürüyor; her muhabir için yeni
@@ -35,8 +86,15 @@ export function WhatsAppDugmesi({ telefon }: { telefon: string }) {
   const { t } = useDil();
   const adres = whatsappAdresi(telefon);
   if (!adres) return null;
+  const ac = (e: MouseEvent<HTMLAnchorElement>) => {
+    const yol = whatsappYolu();
+    // Telefonda wa.me zaten uygulamayı açıyor; Web seçiliyse bağlantının kendisi.
+    if (telefondaMi() || yol === "web") return;
+    e.preventDefault();
+    uygulamadaAc(whatsappNumarasi(telefon), yol === "otomatik" ? () => window.open(adres, PENCERE) : undefined);
+  };
   return (
-    <a className="ikon-dugme whatsapp" href={adres} target={PENCERE} title={t("whatsapp")} aria-label={t("whatsapp")} data-whatsapp>
+    <a className="ikon-dugme whatsapp" href={adres} target={PENCERE} onClick={ac} title={t("whatsapp")} aria-label={t("whatsapp")} data-whatsapp>
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
       </svg>
