@@ -3,7 +3,7 @@ import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { EKIP_GOREV_ADI, HAREKET_TURU_ADI, adParcalari, ekipAdi, kisiAr, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, adParcalari, ekipAdi, kisiAr, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -30,9 +30,10 @@ import {
   planMuhabirTasi,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
-import { EKIP_GOREVLERI, baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGorevi, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
+import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
-import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici } from "../nextday/Bolumler";
+import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi } from "../nextday/Bolumler";
+import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
@@ -51,7 +52,7 @@ import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, Yerin
  */
 
 export type NdPencere =
-  | { tur: "ekipEkle"; gorev?: EkipGorevi }
+  | { tur: "ekipEkle"; gorev?: EkipGoreviId }
   | { tur: "ekipUye"; kisiId: string }
   | { tur: "hareketEkle" }
   | { tur: "canli"; mevcut?: CanliYayin }
@@ -163,13 +164,13 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
       {(plan.ekip.length > 0 || ic) && (
         <section>
           <h2 className="yesil">{c("calismaEkibi")}</h2>
-          {EKIP_GOREVLERI.map((g) => {
+          {ekipSirasi(plan).map((g) => {
             const uyeler = plan.ekip.filter((e) => e.gorev === g);
             if (!uyeler.length) return null;
             return (
               <BelgeSatiri key={g} duzen={ic} serit={<SatirSeridi ekle={() => ac({ tur: "ekipEkle", gorev: g })} ekleEtiket={t("ekibeEkle")} />}>
                 <p>
-                  <b>{c(EKIP_GOREV_ADI[g])}: </b>
+                  <b>{ekipGorevAdi(g)}: </b>
                   {ic
                     ? uyeler.map((e, i) => (
                         <Fragment key={e.kisiId}>
@@ -482,10 +483,10 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
       <div className="satir">
         <label>
           {t("gorev")}
-          <select value={e.gorev} onChange={(x) => ekipGuncelle(ben, plan.id, kisiId, { gorev: x.target.value as EkipGorevi })}>
-            {EKIP_GOREVLERI.map((x) => (
-              <option key={x} value={x}>
-                {c(EKIP_GOREV_ADI[x])}
+          <select value={e.gorev} onChange={(x) => ekipGuncelle(ben, plan.id, kisiId, { gorev: x.target.value })}>
+            {ekipGorevListesi(e.gorev).map((x) => (
+              <option key={x} value={x} lang="ar">
+                {ekipGorevAdi(x)}
               </option>
             ))}
           </select>

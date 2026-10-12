@@ -123,6 +123,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
               <label>
                 {t("muhabir")}
                 <MuhabirSecici
+                  ic={false}
                   deger={f.muhabirId}
                   degistir={(id) => {
                     const k = kisiBul(v, id);

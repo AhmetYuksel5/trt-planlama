@@ -19,10 +19,12 @@ import {
   type HareketTuru,
   type IcerikTuru,
   type KaynakTuru,
+  type Kisi,
   type NextDayPlan,
   type Paket,
   type Sehir,
 } from "../../veri";
+import { icMuhabirMi } from "../../yapi";
 
 /*
  * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
@@ -59,19 +61,34 @@ export function BicimSecici({ deger, degistir }: { deger: Bicim; degistir: (b: B
   );
 }
 
-/** Muhabir seçici: ad ve şehir, alfabetik. */
-export function MuhabirSecici({ deger, degistir, bosEtiket }: { deger: string; degistir: (id: string) => void; bosEtiket?: string }) {
+/**
+ * Muhabir seçici: ad ve şehir, alfabetik. Plan ve paket işlerinde (`ic`)
+ * haber merkezinin muhabirleri de ayrı grupta (ünvanı Organizasyon'da
+ * "muhabir seçimlerinde" işaretli); öneri akışında yalnız dış muhabirler,
+ * çünkü öneriyi muhabir kendi ekranından gönderiyor ve yanıtlıyor.
+ */
+export function MuhabirSecici({ deger, degistir, bosEtiket, ic = true }: { deger: string; degistir: (id: string) => void; bosEtiket?: string; ic?: boolean }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const liste = [...muhabirler(v)].sort((a, b) => ad(a).localeCompare(ad(b)));
+  const sirali = (l: Kisi[]) => [...l].sort((a, b) => ad(a).localeCompare(ad(b)));
+  const dis = sirali(muhabirler(v));
+  const icler = ic ? sirali(v.kisiler.filter((k) => !k.pasif && icMuhabirMi(k))) : [];
+  const secenek = (k: Kisi) => (
+    <option key={k.id} value={k.id}>
+      {ad(k)} · {t(sehirAdi(k.sehir))}
+    </option>
+  );
   return (
     <select value={deger} onChange={(e) => degistir(e.target.value)}>
       <option value="">{bosEtiket ?? t("seciniz")}</option>
-      {liste.map((k) => (
-        <option key={k.id} value={k.id}>
-          {ad(k)} · {t(sehirAdi(k.sehir))}
-        </option>
-      ))}
+      {icler.length ? (
+        <>
+          <optgroup label={t("orgKokDis")}>{dis.map(secenek)}</optgroup>
+          <optgroup label={t("icMuhabirler")}>{icler.map(secenek)}</optgroup>
+        </>
+      ) : (
+        dis.map(secenek)
+      )}
     </select>
   );
 }
@@ -137,7 +154,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
         </label>
         <label>
           {t("onerenMuhabir")}
-          <MuhabirSecici deger={f.onerenId} degistir={(id) => setF({ ...f, onerenId: id })} bosEtiket={t("yok")} />
+          <MuhabirSecici deger={f.onerenId} degistir={(id) => setF({ ...f, onerenId: id })} bosEtiket={t("yok")} ic={false} />
         </label>
       </div>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />

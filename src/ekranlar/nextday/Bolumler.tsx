@@ -1,14 +1,14 @@
-import { gorevAdi } from "../../yapi";
+import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { EKIP_GOREV_ADI, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr, varsayilanEkipGorevi } from "../../etiketler";
+import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { EKIP_GOREVLERI, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGorevi, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
+import { kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
 
 /**
@@ -105,16 +105,17 @@ export function PlanAdiSecici({ kisi, sinif = "girdi" }: { kisi: Kisi; sinif?: s
   );
 }
 
-export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayPlan; gorev?: EkipGorevi; kapat: () => void }) {
+export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayPlan; gorev?: EkipGoreviId; kapat: () => void }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ben = useBen();
+  const gorevler = ekipGorevListesi();
   const [kisiId, setKisiId] = useState("");
-  const [gorev, setGorev] = useState<EkipGorevi>(ilkGorev ?? "bultenYapimcisi");
+  const [gorev, setGorev] = useState<EkipGoreviId>(ilkGorev ?? gorevler[0] ?? "diger");
   const [vardiya, setVardiya] = useState("08:00");
-  // Önce görev seçiliyor, personel listesinde yalnız o görevdekiler: ekip görevi kişinin unvanından (varsayilanEkipGorevi).
+  // Önce görev seçiliyor; personel listesinde yalnız görevin kuralına uyanlar (Organizasyon › Plan ekibi: birimler ve ünvanlar).
   const adaylar = v.kisiler
-    .filter((k) => k.birim !== "muhabir" && !plan.ekip.some((e) => e.kisiId === k.id) && varsayilanEkipGorevi(k.gorev, k.birim) === gorev)
+    .filter((k) => !k.pasif && !plan.ekip.some((e) => e.kisiId === k.id) && ekipAdayi(k, gorev))
     .sort((a, b) => ad(a).localeCompare(ad(b)));
 
   const kaydet = () => {
@@ -131,14 +132,14 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
           <select
             value={gorev}
             onChange={(e) => {
-              setGorev(e.target.value as EkipGorevi);
+              setGorev(e.target.value);
               // Seçili kişi yeni görevin listesinde yok; boş kalsın ki yanlış görevle eklenmesin.
               setKisiId("");
             }}
           >
-            {EKIP_GOREVLERI.map((x) => (
-              <option key={x} value={x}>
-                {metin(EKIP_GOREV_ADI[x], "ar")}
+            {gorevler.map((x) => (
+              <option key={x} value={x} lang="ar">
+                {ekipGorevAdi(x)}
               </option>
             ))}
           </select>
@@ -171,6 +172,12 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
   );
 }
 
+/** Planın ekibi görev sırasıyla: kurumun görev listesi, sonra listeden kalkmış ama planda duran görevler. */
+export const ekipSirasi = (plan: NextDayPlan): EkipGoreviId[] => {
+  const l = ekipGorevListesi();
+  return [...l, ...new Set(plan.ekip.map((e) => e.gorev).filter((g) => !l.includes(g)))];
+};
+
 export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
   const { t } = useDil();
   const v = useVeri();
@@ -180,12 +187,12 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
   return (
     <Bolum ar no={1} baslik={metin("calismaEkibi", "ar")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
       {plan.ekip.length === 0 && <Bos kucuk metin={t("ekipBos")} />}
-      {EKIP_GOREVLERI.map((g) => {
+      {ekipSirasi(plan).map((g) => {
         const uyeler = plan.ekip.filter((e) => e.gorev === g);
         if (!uyeler.length) return null;
         return (
           <div key={g} className="ara-ust-2">
-            <div className="alan-etiket">{metin(EKIP_GOREV_ADI[g], "ar")}</div>
+            <div className="alan-etiket">{ekipGorevAdi(g)}</div>
             <div className="cipler ara-ust">
               {uyeler.map((e) => {
                 const k = kisiBul(v, e.kisiId);
@@ -203,10 +210,10 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                           aria-label={t("vardiya")}
                           onChange={(x) => ben && ekipGuncelle(ben, plan.id, e.kisiId, { vardiya: x.target.value })}
                         />
-                        <select className="girdi gorev-secici" value={e.gorev} aria-label={t("gorev")} onChange={(x) => ben && ekipGuncelle(ben, plan.id, e.kisiId, { gorev: x.target.value as EkipGorevi })}>
-                          {EKIP_GOREVLERI.map((x) => (
+                        <select className="girdi gorev-secici" value={e.gorev} aria-label={t("gorev")} onChange={(x) => ben && ekipGuncelle(ben, plan.id, e.kisiId, { gorev: x.target.value })}>
+                          {ekipGorevListesi(e.gorev).map((x) => (
                             <option key={x} value={x}>
-                              {metin(EKIP_GOREV_ADI[x], "ar")}
+                              {ekipGorevAdi(x)}
                             </option>
                           ))}
                         </select>

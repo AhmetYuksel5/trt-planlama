@@ -1,7 +1,7 @@
-import { EKIP_GOREV_ADI } from "./etiketler";
 import { metin, yaz, type Anahtar } from "./dil";
 import { zipAc } from "./iceAktar";
-import { EKIP_GOREVLERI, type Durum, type EkipGorevi } from "./veri";
+import { type Durum, type EkipGoreviId } from "./veri";
+import { ekipGorevAdi, ekipGorevleri, guncelYapi } from "./yapi";
 
 /**
  * Geçmiş bir Next Day planını (kurumun الأجندة الإخبارية belgesi ya da
@@ -83,14 +83,14 @@ export interface AktarilanKisi {
   saat?: string;
 }
 export interface PlanTaslagi {
-  ekip: { kisiId: string; gorev: EkipGorevi; vardiya: string }[];
+  ekip: { kisiId: string; gorev: EkipGoreviId; vardiya: string }[];
   canlilar: { yer: string; konu: string; aciklama: string; saatGmt: string; muhabirId?: string }[];
   basliklar: { ad: string; gelismeler: { yer?: string; metin: string }[]; muhabirler: AktarilanKisi[] }[];
   takipler: { yer?: string; metin: string }[];
   /** Kayıtta bulunamayan adlar. */
   bulunamayan: string[];
   /** Ekipte olup kayıtta bulunamayanlar, göreviyle: toplu yüklemede kişi kaydı olarak açılıyor. */
-  yeniEkip: { ad: string; gorev: EkipGorevi; vardiya: string }[];
+  yeniEkip: { ad: string; gorev: EkipGoreviId; vardiya: string }[];
 }
 
 /* Harekeler, tatvil ve elif/te-marbuta/ye yazım farkları eşleşmeyi bozmasın. */
@@ -158,7 +158,9 @@ export const planTaslagi = (satirlar: string[], d: Durum): PlanTaslagi => {
     if (!kisiId && ad) bulunamadi(ad);
     return { kisiId, saat: m?.[2] ? saatOku(m[2]) : "", ad };
   };
-  const gorevler = EKIP_GOREVLERI.map((g) => [arSade(metin(EKIP_GOREV_ADI[g], "ar")), g] as const);
+  // Görev adları kurumun kendi listesinden (Organizasyon › Plan ekibi): belgede kurumun yazdığı ad.
+  const y = guncelYapi(d);
+  const gorevler = ekipGorevleri(y).map((g) => [arSade(ekipGorevAdi(g.id, "ar", y)), g.id] as const);
   // Kurumun belgesinde kadın muhabir için "المراسلة" de yazılıyor.
   const muhabirBasligi = new Set([arSade(metin("ciktiMuhabirler", "ar")), arSade(metin("ciktiMuhabir", "ar")), arSade("المراسلة"), arSade("المراسلات")]);
   const isaretli = satirlar.some((s) => s.startsWith(BASLIK_ISARETI));

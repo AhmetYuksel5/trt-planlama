@@ -220,6 +220,8 @@ export type PlanDurum = (typeof PLAN_DURUMLARI)[number];
  */
 export const EKIP_GOREVLERI = ["yapimciSef", "bultenYapimcisi", "sunucu", "muhabirMasasi", "roportajYapimcisi", "tercuman", "editor", "diger"] as const;
 export type EkipGorevi = (typeof EKIP_GOREVLERI)[number];
+/** Ekip görevleri artık kurumun yapısında (yapi.ts → Yapi.ekipGorevleri); yerleşikler eski planlarla uyumlu. */
+export type EkipGoreviId = EkipGorevi | (string & {});
 
 /*
  * Next Day önceki planın şablonuyla açılıyor. Önceki günden taşınıp henüz
@@ -229,7 +231,7 @@ export type EkipGorevi = (typeof EKIP_GOREVLERI)[number];
  */
 export interface EkipUyesi {
   kisiId: string;
-  gorev: EkipGorevi;
+  gorev: EkipGoreviId;
   vardiya: string;
   onceki?: true;
 }

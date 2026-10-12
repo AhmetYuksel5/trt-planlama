@@ -2049,3 +2049,23 @@ tr.soluk > td { opacity: .5; }
   .takip-listesi { grid-template-columns: minmax(0, 1fr); }
   .kayit.takip .dugme-kucuk { height: var(--dokunma); }
 }
+
+/* --- Organizasyon: birim ağacı ve plan ekibi --- */
+/* Alt birim üstünün altında girintili (--derinlik satırın kendisinde, yapi.ts → birimAgaci). */
+.org-birimler { grid-template-columns: minmax(0, 1fr); }
+.org-birim, .org-agac > details, .secim-listesi .secim { margin-inline-start: calc(var(--derinlik, 0) * var(--ara-5)); }
+.ekip-gorevleri { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
+.ekip-gorevleri > li { display: flex; align-items: center; gap: var(--ara-2); padding: var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.ekip-gorevleri > li.soluk { opacity: .6; }
+.ekip-gorevi-ad { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ekip-gorevi-ad b { text-align: start; }
+.ekip-gorevi-ad small { font-size: var(--punto-kucuk); overflow-wrap: anywhere; }
+.secim-listesi { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); margin: 0; display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
+.secim-listesi legend { font-size: var(--punto-kucuk); font-weight: 600; color: var(--sonuk); padding: 0 var(--ara-1); }
+@media (max-width: 760px) {
+  .ekip-gorevleri > li { flex-wrap: wrap; }
+  .ekip-gorevi-ad { flex-basis: 60%; }
+  .ekip-gorevleri .unvan-islem { margin-inline-start: auto; }
+  .ekip-gorevleri .dugme-ikon { min-width: var(--dokunma); min-height: var(--dokunma); }
+  .org-birim, .org-agac > details { margin-inline-start: calc(var(--derinlik, 0) * var(--ara-2)); }
+}

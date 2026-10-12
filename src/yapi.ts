@@ -1,7 +1,7 @@
 import type { Asama, UretimAdimi } from "./akis";
-import { metin, yaz, type Yazi } from "./dil";
-import { BIRIM_ADI, GOREV_ADI } from "./etiketler";
-import { BIRIMLER, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type Gorev, type GorevId, type IcerikTuru } from "./veri";
+import { metin, yaz, type Anahtar, type Dil, type Metin, type Yazi } from "./dil";
+import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI } from "./etiketler";
+import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru } from "./veri";
 
 /**
  * Kurumun yapısı veri olarak: birimler, ünvanlar ve haber üretim akışları.
@@ -40,6 +40,12 @@ export interface BirimTanimi {
    * `birimler` alanından.
    */
   unvanlar?: GorevId[];
+  /**
+   * Üst birim: yapı serbest derinlikte bir ağaç (Haber Merkezi › Input ›
+   * Planlama). Kökler kadro: haber merkezi personeli ve dış muhabirler.
+   * Üst birim yalnız düzen ve süzgeç için; izinler birimin kendisinden.
+   */
+  ust?: BirimId;
 }
 
 export interface UnvanTanimi {
@@ -47,9 +53,29 @@ export interface UnvanTanimi {
   ad?: Yazi;
   /** Hangi birimlerde seçilebilir; boşsa her birimde. */
   birimler: BirimId[];
-  /** Plandaki çalışma ekibinde hangi görevin listesine düşüyor. */
+  /** Eski yayında plandaki ekip görevi; artık ekip görevlerinin kuralından (Yapi.ekipGorevleri), yalnız eski yayını tamamlarken okunuyor. */
   ekipGorevi?: EkipGorevi;
   gizli?: boolean;
+  /**
+   * Bu ünvandaki haber merkezi personeli muhabir seçimlerinde (paket,
+   * başlık, canlı yayın) dış muhabirlerle birlikte çıkıyor: görevlere giden
+   * iç muhabir. Boşsa yerleşik "muhabir" ünvanı işaretli sayılıyor.
+   */
+  muhabir?: boolean;
+}
+
+/**
+ * Plandaki çalışma ekibinin görevi (منتج تنفيذي, بلتن…): adı çıktıdaki
+ * Arapçasıyla, sırası plandaki sırası. Kural kime yazılabileceğini
+ * söylüyor: birimler (alt birimleriyle) ve ünvanlar; boş liste "hepsi"
+ * (birim boşsa haber merkezinin tamamı, dış muhabir değil).
+ */
+export interface EkipGorevTanimi {
+  id: EkipGoreviId;
+  ad?: Yazi;
+  gizli?: boolean;
+  birimler: BirimId[];
+  unvanlar: GorevId[];
 }
 
 /**
@@ -103,6 +129,8 @@ export interface Yapi {
   unvanlar: UnvanTanimi[];
   akislar: Akis[];
   kolSahibi: Record<IcerikTuru, BirimId>;
+  /** Plandaki ekip görevleri sırasıyla; eski yayında yok, okurken ünvanların ekip görevinden tamamlanıyor. */
+  ekipGorevleri?: EkipGorevTanimi[];
   /** Yayınlayanın kısa notu: ne değişti. */
   not?: string;
 }
@@ -146,26 +174,93 @@ const ESKI_EKIP: Partial<Record<GorevId, EkipGorevi>> = {
   dilDenetmeni: "editor",
 };
 
+/*
+ * Varsayılan ağaç: iki kadro (haber merkezi, dış muhabirler), haber
+ * merkezinin içinde bölümler (Input, Output, Program). Gruplar yerleşik
+ * değil: kurum adını değiştirir, taşır, siler; izinleri yok, yalnız düzen.
+ */
+export const KOK_MERKEZ = "kHaberMerkezi";
+export const KOK_DIS = "kDisMuhabirler";
+const VARSAYILAN_GRUPLAR: { id: BirimId; ad: Anahtar; ust?: BirimId }[] = [
+  { id: KOK_MERKEZ, ad: "orgKokMerkez" },
+  { id: "bInput", ad: "orgBolumInput", ust: KOK_MERKEZ },
+  { id: "bOutput", ad: "orgBolumOutput", ust: KOK_MERKEZ },
+  { id: "bProgram", ad: "orgBolumProgram", ust: KOK_MERKEZ },
+  { id: KOK_DIS, ad: "orgKokDis" },
+];
+const VARSAYILAN_UST: Record<Birim, BirimId> = {
+  planlama: "bInput",
+  newsdesk: "bInput",
+  newsgathering: "bInput",
+  ekonomi: "bInput",
+  output: "bOutput",
+  media: "bOutput",
+  program: "bProgram",
+  yonetim: KOK_MERKEZ,
+  muhabir: KOK_DIS,
+};
+
+const dilde = (k: Anahtar): Metin => ({ tr: metin(k, "tr"), ar: metin(k, "ar"), en: metin(k, "en") });
+
+/* Ekip görevlerinin kuralı eski yayında ünvanın ekip görevinden; yapımcı şefi Newsdesk'in yöneticisi (etiketler.ts'teki eski özel durum). */
+const ekipKurallari = (unvanlar: UnvanTanimi[]): EkipGorevTanimi[] =>
+  EKIP_GOREVLERI.map((id) =>
+    id === "yapimciSef"
+      ? { id, birimler: ["newsdesk"], unvanlar: ["yonetici"] }
+      : { id, birimler: [], unvanlar: id === "diger" ? [] : unvanlar.filter((u) => u.ekipGorevi === id).map((u) => u.id) },
+  );
+
 let varsayilan: Yapi | null = null;
 /* Tembel: veri.ts ile karşılıklı içe aktarma var, açılışta BIRIMLER henüz tanımsız olabilir. */
-export const varsayilanYapi = (): Yapi =>
-  (varsayilan ??= {
+export const varsayilanYapi = (): Yapi => {
+  if (varsayilan) return varsayilan;
+  const unvanlar: UnvanTanimi[] = GOREVLER.map((id) => ({ id, birimler: [], ...(ESKI_EKIP[id] && { ekipGorevi: ESKI_EKIP[id] }) }));
+  return (varsayilan = {
     surum: 0,
     id: "y0",
     zaman: "",
     yayinlayan: "",
-    birimler: BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id] })),
-    unvanlar: GOREVLER.map((id) => ({ id, birimler: [], ...(ESKI_EKIP[id] && { ekipGorevi: ESKI_EKIP[id] }) })),
+    birimler: [
+      // Grubun kendi ünvanı yok (boş liste): yoksa eski yayınla uyum için bütün ünvanları alıyordu.
+      ...VARSAYILAN_GRUPLAR.map((g) => ({ id: g.id, ad: dilde(g.ad), unvanlar: [], ...(g.ust && { ust: g.ust }) })),
+      ...BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id], ust: VARSAYILAN_UST[id] })),
+    ],
+    unvanlar,
     akislar: [{ id: "uretim", kollar: ["haber", "feature", "ekonomi", "program"], duraklar: VARSAYILAN_DURAKLAR }],
     kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "planlama", program: "program" },
+    ekipGorevleri: ekipKurallari(unvanlar),
   });
+};
+
+/*
+ * Ağaçtan ve ekip görevlerinden önce yayınlanmış yapı: okurken eksikler
+ * varsayılandan tamamlanıyor (gruplar, üst birimler, ekip kuralları), kurum
+ * hiçbir şey yapmadan yeni düzeni görüyor. Kayıttaki sürüm değişmiyor;
+ * yönetici bir sonraki yayında tamamlanmış hali yayınlıyor.
+ */
+const tamamlanan = new WeakMap<Yapi, Yapi>();
+export const tamamla = (y: Yapi): Yapi => {
+  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust))) return y;
+  const hazir = tamamlanan.get(y);
+  if (hazir) return hazir;
+  let birimler = y.birimler;
+  if (!birimler.some((b) => b.ust)) {
+    const v = varsayilanYapi();
+    const gruplar = v.birimler.filter((b) => VARSAYILAN_GRUPLAR.some((g) => g.id === b.id) && !birimler.some((x) => x.id === b.id));
+    // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
+    birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
+  }
+  const t = { ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) };
+  tamamlanan.set(y, t);
+  return t;
+};
 
 /* --- Okuma --- */
 
 /** Yayınlanmış en son yapı; yoksa varsayılan. */
 export const guncelYapi = (d: Pick<Durum, "yapilar">): Yapi => {
   const y = d.yapilar ?? [];
-  return y.length ? y.reduce((a, b) => (b.surum > a.surum ? b : a)) : varsayilanYapi();
+  return y.length ? tamamla(y.reduce((a, b) => (b.surum > a.surum ? b : a))) : varsayilanYapi();
 };
 
 /* Ekranlar her çizimde çok kez soruyor; kayıt değişmedikçe aynı nesne. */
@@ -185,7 +280,8 @@ export const yapi = (): Yapi => {
 export const yapiSurumu = (surum: number | undefined): Yapi => {
   if (surum === undefined) return yapi();
   if (surum === 0) return varsayilanYapi();
-  return anlik()?.yapilar?.find((y) => y.surum === surum) ?? yapi();
+  const y = anlik()?.yapilar?.find((x) => x.surum === surum);
+  return y ? tamamla(y) : yapi();
 };
 
 /* --- Adlar --- */
@@ -231,8 +327,91 @@ export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi())
   return dahil && !l.includes(dahil) ? [...l, dahil] : l;
 };
 
-/** Ünvanın plandaki ekip görevi; tanımlı değilse undefined. */
-export const unvanEkipGorevi = (id: GorevId, y: Yapi = yapi()): EkipGorevi | undefined => y.unvanlar.find((u) => u.id === id)?.ekipGorevi;
+/* --- Ağaç --- */
+
+export const ustBirim = (id: BirimId, y: Yapi = yapi()): BirimId | undefined => y.birimler.find((b) => b.id === id)?.ust;
+
+/** Birimin üstleri, yakından uzağa; bozuk (döngülü) kayıtta sonsuza gitmesin. */
+export const ustBirimler = (id: BirimId, y: Yapi = yapi()): BirimId[] => {
+  const l: BirimId[] = [];
+  for (let u = ustBirim(id, y); u && !l.includes(u) && u !== id; u = ustBirim(u, y)) l.push(u);
+  return l;
+};
+
+/** Birim `ata`nın kendisi ya da altında mı. */
+export const altindaMi = (id: BirimId, ata: BirimId, y: Yapi = yapi()) => id === ata || ustBirimler(id, y).includes(ata);
+
+export interface AgacSatiri {
+  id: BirimId;
+  derinlik: number;
+}
+
+/**
+ * Birimler ağaç sırasıyla (her birimin altında alt birimleri, dizideki
+ * sırayla) ve derinlikleriyle: seçimlerde girintili, Organizasyon'da iç içe.
+ * Üstü bulunamayan birim kök sayılıyor.
+ */
+export const birimAgaci = (y: Yapi = yapi(), gizliDahil = true): AgacSatiri[] => {
+  const ids = new Set(y.birimler.map((b) => b.id));
+  const l: AgacSatiri[] = [];
+  const gez = (ust: BirimId | undefined, derinlik: number) => {
+    for (const b of y.birimler) {
+      const kok = !b.ust || !ids.has(b.ust) || b.ust === b.id;
+      if ((ust === undefined ? kok : b.ust === ust && !kok) && !l.some((x) => x.id === b.id) && (gizliDahil || !b.gizli)) {
+        l.push({ id: b.id, derinlik });
+        gez(b.id, derinlik + 1);
+      }
+    }
+  };
+  gez(undefined, 0);
+  return l;
+};
+
+/** Seçimdeki girintili ad: alt birim üstünün altında okunsun. */
+export const agacAdi = (s: AgacSatiri, y: Yapi = yapi()) => `${"\u00a0\u00a0".repeat(s.derinlik)}${s.derinlik ? "› " : ""}${birimAdi(s.id, y)}`;
+
+/* --- Kadro: dış muhabir ve iç muhabir --- */
+
+/** Dış muhabir: muhabir birimi ya da onun gibi çalışan birim (planlamanın iletişim kurduğu muhabirler). */
+export const disMuhabirMi = (k: { birim: BirimId }, y: Yapi = yapi()) => izinBirimi(k.birim, y) === "muhabir";
+
+/** Ünvan muhabir seçimlerinde çıkıyor mu (yönetici işaretler; yerleşik "muhabir" işaretli). */
+export const unvanMuhabirMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.muhabir ?? id === "muhabir";
+
+/** Haber merkezinde çalışıp görevlere giden muhabir: dış muhabirlerle birlikte seçilebiliyor. */
+export const icMuhabirMi = (k: { birim: BirimId; gorev: GorevId }, y: Yapi = yapi()) => !disMuhabirMi(k, y) && unvanMuhabirMi(k.gorev, y);
+
+/* --- Plan ekibi görevleri --- */
+
+export const ekipGorevleri = (y: Yapi = yapi()): EkipGorevTanimi[] => tamamla(y).ekipGorevleri ?? [];
+
+export const yerlesikEkipGorevi = (id: EkipGoreviId) => (EKIP_GOREVLERI as readonly string[]).includes(id);
+
+/** Seçimde görünen ekip görevleri sırasıyla; `dahil` gizli de olsa (üyenin şimdiki görevi). */
+export const ekipGorevListesi = (dahil?: EkipGoreviId, y: Yapi = yapi()): EkipGoreviId[] =>
+  ekipGorevleri(y)
+    .filter((g) => !g.gizli || g.id === dahil)
+    .map((g) => g.id);
+
+/** Görevin adı: çıktıdaki gibi varsayılan Arapça; yöneticinin verdiği ad, yoksa dil tablosu. */
+export const ekipGorevAdi = (id: EkipGoreviId, d: Dil = "ar", y: Yapi = yapi()): string => {
+  const g = ekipGorevleri(y).find((x) => x.id === id);
+  if (g?.ad) return yaz(g.ad, d);
+  return yerlesikEkipGorevi(id) ? metin(EKIP_GOREV_ADI[id as EkipGorevi], d) : id;
+};
+
+/**
+ * Kişi bu ekip görevine yazılabilir mi: kuraldaki birimlerden birinin
+ * (alt birimleri dahil) ve kuraldaki ünvanlardan birinin içinde. Boş birim
+ * listesi haber merkezinin tamamı: dış muhabir ancak birimi açıkça
+ * yazılırsa ekibe girer.
+ */
+export const ekipAdayi = (k: { birim: BirimId; gorev: GorevId }, id: EkipGoreviId, y: Yapi = yapi()) => {
+  const g = ekipGorevleri(y).find((x) => x.id === id);
+  if (!g) return false;
+  const birimde = g.birimler.length ? g.birimler.some((b) => altindaMi(k.birim, b, y)) : !disMuhabirMi(k, y);
+  return birimde && (!g.unvanlar.length || g.unvanlar.includes(k.gorev));
+};
 
 /**
  * İzinlerde birimin yerine geçen yerleşik birim: yerleşik birim kendisi,
@@ -299,20 +478,65 @@ export const unvanTasi = (y: Yapi, birim: BirimId, i: number, j: number): Yapi =
 
 export const akisGuncelle = (y: Yapi, id: string, f: (a: Akis) => Akis): Yapi => ({ ...y, akislar: y.akislar.map((a) => (a.id === id ? f(a) : a)) });
 
+/** Birimi başka birimin altına (ya da köke) taşıyor; kendi altına taşınamaz (döngü). */
+export const birimTasi = (y: Yapi, id: BirimId, ust: BirimId | undefined): Yapi => {
+  if (ust && (ust === id || altindaMi(ust, id, y))) return y;
+  return birimGuncelle(y, id, (b) => {
+    const { ust: _, ...kalan } = b;
+    return ust ? { ...kalan, ust } : kalan;
+  });
+};
+
+/** Birimi aynı üstün altındaki komşusuyla yer değiştiriyor (ağaçtaki sıra dizinin sırası). */
+export const birimSiraTasi = (y: Yapi, id: BirimId, yon: -1 | 1): Yapi => {
+  const b = y.birimler.find((x) => x.id === id);
+  if (!b) return y;
+  const kardesler = y.birimler.filter((x) => (x.ust ?? "") === (b.ust ?? ""));
+  const i = kardesler.indexOf(b);
+  const komsu = kardesler[i + yon];
+  if (!komsu) return y;
+  const l = [...y.birimler];
+  const a = l.indexOf(b);
+  const c = l.indexOf(komsu);
+  [l[a], l[c]] = [l[c], l[a]];
+  return { ...y, birimler: l };
+};
+
+const ekipYaz = (y: Yapi, f: (l: EkipGorevTanimi[]) => EkipGorevTanimi[]): Yapi => ({ ...y, ekipGorevleri: f(ekipGorevleri(y)) });
+
+export const ekipGoreviGuncelle = (y: Yapi, id: EkipGoreviId, f: (g: EkipGorevTanimi) => EkipGorevTanimi): Yapi => ekipYaz(y, (l) => l.map((g) => (g.id === id ? f(g) : g)));
+export const ekipGoreviEkle = (y: Yapi, g: EkipGorevTanimi): Yapi => ekipYaz(y, (l) => [...l, g]);
+/** Yerleşik görev silinmez (gizlenir): eski planlar onu taşıyor. */
+export const ekipGoreviSil = (y: Yapi, id: EkipGoreviId): Yapi => (yerlesikEkipGorevi(id) ? y : ekipYaz(y, (l) => l.filter((g) => g.id !== id)));
+export const ekipGorevTasi = (y: Yapi, id: EkipGoreviId, yon: -1 | 1): Yapi =>
+  ekipYaz(y, (l) => {
+    const i = l.findIndex((g) => g.id === id);
+    const j = i + yon;
+    if (i < 0 || j < 0 || j >= l.length) return l;
+    const k = [...l];
+    [k[i], k[j]] = [k[j], k[i]];
+    return k;
+  });
+
 /** İki yapı aynı mı (yayınlanacak bir şey var mı); sürüm bilgileri sayılmıyor. */
 export const ayniYapi = (a: Yapi, b: Yapi) => {
-  const govde = ({ birimler, unvanlar, akislar, kolSahibi }: Yapi) => JSON.stringify({ birimler, unvanlar, akislar, kolSahibi });
+  const govde = (y: Yapi) => {
+    const { birimler, unvanlar, akislar, kolSahibi, ekipGorevleri } = tamamla(y);
+    return JSON.stringify({ birimler, unvanlar, akislar, kolSahibi, ekipGorevleri });
+  };
   return govde(a) === govde(b);
 };
 
 /** Taslak ile yayındaki arasındaki değişiklikler: yayınlamadan önce yöneticiye liste olarak gösteriliyor. */
 export interface Degisiklik {
-  tur: "birim" | "unvan" | "akis";
+  tur: "birim" | "unvan" | "akis" | "ekip";
   id: string;
   islem: "eklendi" | "degisti" | "silindi";
 }
 
-export const yapiFarki = (yayindaki: Yapi, taslak: Yapi): Degisiklik[] => {
+export const yapiFarki = (eski: Yapi, yeni: Yapi): Degisiklik[] => {
+  const yayindaki = tamamla(eski);
+  const taslak = tamamla(yeni);
   const karsilastir = <T extends { id: string }>(tur: Degisiklik["tur"], a: T[], b: T[]): Degisiklik[] => {
     const eski = new Map(a.map((x) => [x.id, JSON.stringify(x)]));
     const yeni = new Map(b.map((x) => [x.id, JSON.stringify(x)]));
@@ -326,5 +550,6 @@ export const yapiFarki = (yayindaki: Yapi, taslak: Yapi): Degisiklik[] => {
     ...karsilastir("birim", yayindaki.birimler, taslak.birimler),
     ...karsilastir("unvan", yayindaki.unvanlar, taslak.unvanlar),
     ...karsilastir("akis", yayindaki.akislar, taslak.akislar),
+    ...karsilastir("ekip", yayindaki.ekipGorevleri ?? [], taslak.ekipGorevleri ?? []),
   ];
 };

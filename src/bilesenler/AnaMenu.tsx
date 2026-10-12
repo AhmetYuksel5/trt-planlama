@@ -1,5 +1,5 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { Binoculars, BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, UserRound, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
@@ -82,7 +82,6 @@ export const MENU: Grup[] = [
     ad: "mgPersonel",
     maddeler: [
       { sayfa: "muhabirler", ad: "mMuhabirler", kisa: "kaMuhabirler", ikon: Users },
-      { sayfa: "editorler", ad: "mEditorler", kisa: "kaEditorler", ikon: UserRound },
       { sayfa: "personel", ad: "mPersonel", kisa: "kaPersonel", ikon: Contact },
       { sayfa: "izinler", ad: "mIzinler", kisa: "kaIzinler", ikon: CalendarClock },
     ],

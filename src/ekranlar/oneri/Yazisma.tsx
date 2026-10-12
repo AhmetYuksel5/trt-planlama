@@ -167,7 +167,7 @@ export function MuhabireOneriPenceresi({ ben, muhabirId, takip, kapat }: { ben: 
           {!sabit && (
             <label>
               {t("muhabir")}
-              <MuhabirSecici deger={f.muhabirId} degistir={(id) => setF({ ...f, muhabirId: id })} />
+              <MuhabirSecici deger={f.muhabirId} degistir={(id) => setF({ ...f, muhabirId: id })} ic={false} />
             </label>
           )}
           <label>

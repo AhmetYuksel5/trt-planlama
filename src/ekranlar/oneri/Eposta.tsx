@@ -387,7 +387,7 @@ function IceAktar({ ben, cagri }: { ben: Kisi; cagri?: CagriKaydi }) {
       </label>
       <div className="form ara-ust-2">
         <div className="alan-etiket">{t("metinYapistir")}</div>
-        <MuhabirSecici deger={yapistir.kisiId} degistir={(id) => setYapistir({ ...yapistir, kisiId: id })} />
+        <MuhabirSecici deger={yapistir.kisiId} degistir={(id) => setYapistir({ ...yapistir, kisiId: id })} ic={false} />
         <textarea {...icerikAlani} value={yapistir.metin} onChange={(e) => setYapistir({ ...yapistir, metin: e.target.value })} />
         <div className="form-alt">
           <button
@@ -441,7 +441,7 @@ function Eslesmeyenler({ ben, cagri }: { ben: Kisi; cagri?: CagriKaydi }) {
           </div>
           {cagri && yapabilir(ben, "oneriDegerlendir") && (
             <div className="form ara-ust">
-              <MuhabirSecici deger={secim[y.id] ?? ""} degistir={(id) => setSecim({ ...secim, [y.id]: id })} />
+              <MuhabirSecici deger={secim[y.id] ?? ""} degistir={(id) => setSecim({ ...secim, [y.id]: id })} ic={false} />
               <div className="form-alt">
                 <button
                   className="dugme dugme-kucuk"

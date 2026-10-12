@@ -14,7 +14,7 @@ import {
   UserCog,
   X,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import {
   Avatar,
   Bos,
@@ -33,7 +33,7 @@ import {
   type Anahtar,
   type Metin,
 } from "../../dil";
-import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI } from "../../etiketler";
+import { BIRIM_ADI, GOREV_ADI } from "../../etiketler";
 import {
   yapiSurumunuTaslagaAl,
   yapiTaslagi,
@@ -45,23 +45,29 @@ import { GERCEK } from "../../kip";
 import { yerelGun } from "../../tarih";
 import {
   BIRIMLER,
-  EKIP_GOREVLERI,
   kimlik,
   kisiBul,
   useVeri,
   type Birim,
-  type EkipGorevi,
+  type BirimId,
   type Gorev,
   type Kisi,
 } from "../../veri";
 import {
+  KOK_MERKEZ,
+  agacAdi,
+  altindaMi,
+  birimAgaci,
+  birimSiraTasi,
+  birimTasi,
+  unvanMuhabirMi,
   birimAdi,
   birimEtkisi,
   birimGuncelle,
-  birimListesi,
   birimUnvanlari,
   birimdenUnvanCikar,
   birimeUnvanEkle,
+  ekipGorevAdi,
   gorevAdi,
   guncelYapi,
   silinebilir,
@@ -78,6 +84,7 @@ import {
 } from "../../yapi";
 import { hesapYetkisi, yapiDuzenleyebilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
+import { EkipSekmesi } from "./EkipSekmesi";
 import Kullanicilar, { PozisyonPenceresi } from "../Kullanicilar";
 import { AkislarSekmesi } from "./Akislar";
 import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
@@ -87,10 +94,13 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
  *
  * - Kişiler: birim → ünvan ağacında herkes; tayin (birim, ünvan, rol)
  *   hemen geçerli, geçmişe yazılıyor.
- * - Birimler: her birimin kartında ünvanları kıdem sırasıyla. Taslakta
+ * - Birimler: ağaç (Haber Merkezi › Input › Planlama…), her birimin
+ *   kartında ünvanları kıdem sırasıyla. Taslakta
  *   düzenleniyor, "Yayınla" ile yeni sürüm oluyor (yapi.ts). Yerleşik birim
  *   silinmiyor, gizleniyor; kişisi ya da durağı bağlı birim ve ünvan da
  *   kaldırılamıyor, nedeni düğmenin ipucunda.
+ * - Plan ekibi (EkipSekmesi.tsx): plandaki ekip görevleri, adları, sırası
+ *   ve kime yazılabileceği (birim ve ünvan kuralı).
  * - İş akışları (Akislar.tsx): durakların sırası, sorumlusu, koşulu.
  * - Sürümler: yayınlanan her düzen; eskisi taslağa alınıp geri getirilebiliyor.
  * - Hesaplar (gerçek kip): davet, kayıt bağlantısı, hesap yetkileri.
@@ -99,6 +109,7 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
 type Sekme =
   | "kisiler"
   | "birimler"
+  | "ekip"
   | "akislar"
   | "surumler"
   | "hesaplar";
@@ -106,19 +117,20 @@ type Sekme =
 const SEKME_ADI: Record<Sekme, Anahtar> = {
   kisiler: "orgKisiler",
   birimler: "orgBirimler",
+  ekip: "orgPlanEkibi",
   akislar: "orgAkislar",
   surumler: "orgSurumler",
   hesaplar: "orgHesaplar",
 };
 
 /* Taslak üzerinde çalışan sekmeler: üstlerinde yayın çubuğu. */
-const YAPI_SEKMELERI: Sekme[] = ["birimler", "akislar"];
+const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "akislar"];
 
 export const orgSekmeleri = (ben: Kisi): Sekme[] => {
   const yapi = yapiDuzenleyebilir(ben);
   return [
     ...(yapi || hesapYetkisi(ben, "kisiDuzenle") ? (["kisiler"] as const) : []),
-    ...(yapi ? (["birimler", "akislar", "surumler"] as const) : []),
+    ...(yapi ? (["birimler", "ekip", "akislar", "surumler"] as const) : []),
     ...(GERCEK && (ben.hesapYoneticisi || ben.yetkiler?.length)
       ? (["hesaplar"] as const)
       : []),
@@ -161,6 +173,7 @@ export default function Organizasyon({
       {YAPI_SEKMELERI.includes(acik) && <TaslakCubugu ben={ben} />}
       {acik === "kisiler" && <KisilerSekmesi ben={ben} />}
       {acik === "birimler" && <BirimlerSekmesi ben={ben} />}
+      {acik === "ekip" && <EkipSekmesi ben={ben} />}
       {acik === "akislar" && <AkislarSekmesi ben={ben} />}
       {acik === "surumler" && <SurumlerSekmesi ben={ben} />}
       {acik === "hesaplar" && <Kullanicilar ben={ben} gomulu />}
@@ -170,7 +183,7 @@ export default function Organizasyon({
 
 /* --- Taslak ve yayın --- */
 
-function useTaslak(ben: Kisi) {
+export function useTaslak(ben: Kisi) {
   const v = useVeri();
   const yayindaki = guncelYapi(v);
   const taslak = yapiTaslagi(v, ben);
@@ -200,11 +213,14 @@ function DegisiklikAdi({
       ? birimAdi(d.id, y)
       : d.tur === "unvan"
         ? gorevAdi(d.id, y)
-        : yaz(y.akislar.find((a) => a.id === d.id)?.ad) || d.id;
+        : d.tur === "ekip"
+          ? ekipGorevAdi(d.id, "ar", y)
+          : yaz(y.akislar.find((a) => a.id === d.id)?.ad) || d.id;
   const tur: Record<Degisiklik["tur"], Anahtar> = {
     birim: "birim",
     unvan: "orgUnvan",
     akis: "orgAkis",
+    ekip: "orgEkipGorevi",
   };
   const islem: Record<Degisiklik["islem"], Anahtar> = {
     eklendi: "orgEklendi",
@@ -320,22 +336,26 @@ function BirimlerSekmesi({ ben }: { ben: Kisi }) {
         </button>
       }
     >
+      {/* Ağaç sırasıyla, alt birim üstünün altında girintili (yapi.ts → birimAgaci). */}
       <div className="org-birimler" data-birim-tablosu>
-        {taslak.birimler.map((b) => (
-          <BirimKarti key={b.id} ben={ben} birim={b} duzenle={() => setAcik(b)} />
-        ))}
+        {birimAgaci(taslak).map(({ id, derinlik }) => {
+          const b = taslak.birimler.find((x) => x.id === id)!;
+          return <BirimKarti key={id} ben={ben} birim={b} derinlik={derinlik} duzenle={() => setAcik(b)} />;
+        })}
       </div>
       {acik && <BirimPenceresi ben={ben} birim={acik === "yeni" ? null : acik} kapat={() => setAcik(null)} />}
     </Kart>
   );
 }
 
-function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi; duzenle: () => void }) {
+function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: BirimTanimi; derinlik: number; duzenle: () => void }) {
   const { t } = useDil();
   const { v, taslak, degistir } = useTaslak(ben);
   const [yeni, setYeni] = useState("");
   const [unvan, setUnvan] = useState<UnvanTanimi | null>(null);
   const etki = birimEtkisi(taslak, v.kisiler, b.id);
+  // Altında birim olan silinmez: alt birimler sahipsiz köke düşerdi.
+  const altBirimi = taslak.birimler.some((x) => x.ust === b.id);
   const yerlesik = yerlesikBirim(b.id);
   const unvanlar = birimUnvanlari(b.id, taslak);
   const kisiSayisi = (id: string) => v.kisiler.filter((k) => k.birim === b.id && k.gorev === id).length;
@@ -362,7 +382,7 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
     setYeni("");
   };
   return (
-    <section className={`org-birim${b.gizli ? " soluk" : ""}`} data-birim-satiri={b.id}>
+    <section className={`org-birim${b.gizli ? " soluk" : ""}`} style={{ "--derinlik": derinlik } as CSSProperties} data-birim-satiri={b.id} data-derinlik={derinlik}>
       <header>
         <div>
           <b>{birimAdi(b.id, taslak)}</b> {b.gizli && <Rozet>{t("orgGizli")}</Rozet>}
@@ -371,6 +391,12 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
           </small>
         </div>
         <div className="dugmeler">
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => degistir((y) => birimSiraTasi(y, b.id, -1))} title={t("yukari")} aria-label={t("yukari")} data-birim-yukari={b.id}>
+            <ArrowUp size={15} />
+          </button>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => degistir((y) => birimSiraTasi(y, b.id, 1))} title={t("asagi")} aria-label={t("asagi")} data-birim-asagi={b.id}>
+            <ArrowDown size={15} />
+          </button>
           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={duzenle} data-birim-duzenle={b.id}>
             <Pencil size={14} /> {t("duzenle")}
           </button>
@@ -385,8 +411,8 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
           {!yerlesik && (
             <SinirliDugme
               className="dugme dugme-sade dugme-kucuk kotu-yazi"
-              izin={silinebilir(etki)}
-              neden={t("orgSilinemez", { kisi: etki.kisiler, durak: etki.duraklar })}
+              izin={silinebilir(etki) && !altBirimi}
+              neden={altBirimi ? t("orgAltBirimVar") : t("orgSilinemez", { kisi: etki.kisiler, durak: etki.duraklar })}
               onClick={() => confirm(t("orgSilinsinMi", { ad: birimAdi(b.id, taslak) })) && degistir((y) => ({ ...y, birimler: y.birimler.filter((x) => x.id !== b.id) }))}
               data-sil={b.id}
             >
@@ -405,12 +431,7 @@ function BirimKarti({ ben, birim: b, duzenle }: { ben: Kisi; birim: BirimTanimi;
               <span className="kidem">{i + 1}</span>
               <span className="unvan-adi">
                 <b>{gorevAdi(id, taslak)}</b>
-                {/* Ekip görevi kurumun terimi: her arayüz dilinde çıktıdaki Arapçasıyla. */}
-                {u.ekipGorevi && (
-                  <small lang="ar" dir="rtl">
-                    {metin(EKIP_GOREV_ADI[u.ekipGorevi], "ar")}
-                  </small>
-                )}
+                {unvanMuhabirMi(id, taslak) && <small>{t("orgMuhabirUnvani")}</small>}
               </span>
               <em className="sonuk-yazi" title={t("orgKisi")}>
                 {n}
@@ -479,23 +500,30 @@ const gorevAdiDilde = (id: string, d: "tr" | "ar" | "en", y: Yapi) => {
 
 function BirimPenceresi({ ben, birim, kapat }: { ben: Kisi; birim: BirimTanimi | null; kapat: () => void }) {
   const { t } = useDil();
-  const { degistir } = useTaslak(ben);
+  const { taslak, degistir } = useTaslak(ben);
   const yerlesik = !!birim && yerlesikBirim(birim.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(birim?.ad) ? birim.ad : undefined);
   const [ornek, setOrnek] = useState<Birim | "">(birim?.ornek ?? "");
+  const [ust, setUst] = useState<BirimId>(birim?.ust ?? KOK_MERKEZ);
   const temiz = adTemizle(ad);
   const hazir = yerlesik || !!temiz;
+  // Üst birim seçiminde kendisi ve altındakiler yok: birim kendi altına taşınamaz.
+  const ustler = birimAgaci(taslak).filter((s) => !birim || !altindaMi(s.id, birim.id, taslak));
   const kaydet = () => {
     if (!hazir) return;
     if (!birim) {
-      const yeni: BirimTanimi = { id: kimlik("b"), ad: temiz, unvanlar: [], ...(ornek ? { ornek } : {}) };
+      const yeni: BirimTanimi = { id: kimlik("b"), ad: temiz, unvanlar: [], ...(ornek ? { ornek } : {}), ...(ust ? { ust } : {}) };
       degistir((y) => ({ ...y, birimler: [...y.birimler, yeni] }));
     } else
       degistir((y) =>
-        birimGuncelle(y, birim.id, (x) => {
-          const { ad: _, ornek: __, ...kalan } = x;
-          return { ...kalan, ...(temiz ? { ad: temiz } : {}), ...(!yerlesik && ornek ? { ornek } : {}) };
-        }),
+        birimTasi(
+          birimGuncelle(y, birim.id, (x) => {
+            const { ad: _, ornek: __, ...kalan } = x;
+            return { ...kalan, ...(temiz ? { ad: temiz } : {}), ...(!yerlesik && ornek ? { ornek } : {}) };
+          }),
+          birim.id,
+          ust || undefined,
+        ),
       );
     kapat();
   };
@@ -512,6 +540,17 @@ function BirimPenceresi({ ben, birim, kapat }: { ben: Kisi; birim: BirimTanimi |
     >
       <div className="form" data-birim-formu>
         <AdAlanlari deger={ad} varsayilan={varsayilan} degistir={setAd} />
+        <label>
+          {t("orgUstBirim")}
+          <select value={ust} onChange={(e) => setUst(e.target.value)} data-birim-ust>
+            <option value="">{t("orgKok")}</option>
+            {ustler.map((s) => (
+              <option key={s.id} value={s.id}>
+                {agacAdi(s, taslak)}
+              </option>
+            ))}
+          </select>
+        </label>
         {!yerlesik && (
           <label>
             {t("orgCalisma")}
@@ -536,15 +575,15 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
   const { degistir } = useTaslak(ben);
   const yerlesik = yerlesikGorev(unvan.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(unvan.ad) ? unvan.ad : undefined);
-  const [ekip, setEkip] = useState<EkipGorevi | "">(unvan.ekipGorevi ?? "");
+  const [muhabir, setMuhabir] = useState(unvanMuhabirMi(unvan.id));
   const temiz = adTemizle(ad);
   const hazir = yerlesik || !!temiz;
   const kaydet = () => {
     if (!hazir) return;
     degistir((y) =>
       unvanGuncelle(y, unvan.id, (x) => {
-        const { ad: _, ekipGorevi: __, ...kalan } = x;
-        return { ...kalan, ...(ekip ? { ekipGorevi: ekip } : {}), ...(temiz ? { ad: temiz } : {}) };
+        const { ad: _, muhabir: __, ...kalan } = x;
+        return { ...kalan, muhabir, ...(temiz ? { ad: temiz } : {}) };
       }),
     );
     kapat();
@@ -562,16 +601,9 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
     >
       <div className="form" data-unvan-formu>
         <AdAlanlari deger={ad} varsayilan={varsayilan} degistir={setAd} />
-        <label>
-          {t("orgEkipGorevi")}
-          <select value={ekip} onChange={(e) => setEkip(e.target.value as EkipGorevi | "")} data-unvan-ekip>
-            <option value="">—</option>
-            {EKIP_GOREVLERI.map((g) => (
-              <option key={g} value={g} lang="ar">
-                {metin(EKIP_GOREV_ADI[g], "ar")}
-              </option>
-            ))}
-          </select>
+        <label className="secim">
+          <input type="checkbox" checked={muhabir} onChange={(e) => setMuhabir(e.target.checked)} data-unvan-muhabir />
+          {t("orgMuhabirUnvaniSec")}
         </label>
       </div>
     </Pencere>
@@ -593,13 +625,18 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
       (x) => x.toLocaleLowerCase().includes(ara),
     );
   const kisiler = v.kisiler.filter(uyan);
-  // Gizli birimde ya da yapıdan çıkmış birimde kalan kişi de görünsün: yönetici onu tayin etsin.
+  /*
+   * Ağaç sırasıyla (Haber Merkezi › Input › Planlama…): kendisinde ya da
+   * altında kişi olan birimler, derinliğine göre girintili; sayı alt
+   * birimleriyle. Gizli birimde ya da yapıdan çıkmış birimde kalan kişi de
+   * görünsün, yönetici onu tayin etsin.
+   */
+  const altta = (b: BirimId) => kisiler.filter((k) => altindaMi(k.birim, b));
+  const agac = birimAgaci();
   const birimler = [
-    ...birimListesi(),
-    ...new Set(kisiler.map((k) => k.birim)),
-  ].filter(
-    (b, i, a) => a.indexOf(b) === i && kisiler.some((k) => k.birim === b),
-  );
+    ...agac.filter((s) => altta(s.id).length),
+    ...[...new Set(kisiler.map((k) => k.birim))].filter((b) => !agac.some((s) => s.id === b)).map((id) => ({ id, derinlik: 0 })),
+  ];
   return (
     <Kart baslik={t("orgKisiler")} ek={String(kisiler.length)}>
       <label className="arama ara-alt-2">
@@ -615,7 +652,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
       </label>
       {!birimler.length && <Bos kucuk metin={t("kisiYok")} />}
       <div className="org-agac" data-org-agac>
-        {birimler.map((b) => {
+        {birimler.map(({ id: b, derinlik }) => {
           const birimdekiler = kisiler.filter((k) => k.birim === b);
           // Ünvan grupları birimin kıdem sırasıyla; listede olmayan ünvandaki kişi sonda.
           const sira = birimUnvanlari(b);
@@ -623,12 +660,13 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
           return (
             <details
               key={b}
-              open={!!ara || birimler.length <= 3}
+              open={!!ara || birimler.length <= 3 || !birimdekiler.length}
+              style={{ "--derinlik": derinlik } as CSSProperties}
               data-org-birim={b}
             >
               <summary>
                 <b>{birimAdi(b)}</b>{" "}
-                <em className="sonuk-yazi">{birimdekiler.length}</em>
+                <em className="sonuk-yazi">{altta(b).length}</em>
               </summary>
               {unvanlar.map((g) => (
                 <div key={g} className="org-unvan" data-org-unvan={g}>

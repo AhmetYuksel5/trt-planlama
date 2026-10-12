@@ -1,6 +1,6 @@
-import { birimAdi, birimListesi, gorevAdi } from "../yapi";
+import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, UserRound, Users } from "lucide-react";
+import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -22,10 +22,15 @@ import { SayfaBasi } from "./ana/Planlama";
  * üretir, işini ne hızda ve hangi nitelikte teslim ediyor.
  */
 
+/*
+ * İki kadro: haber merkezi personeli (birim ağacında bölüm › birim › ünvan)
+ * ve dış muhabirler (planlamanın iletişim kurduğu muhabirler). Ayrım kişinin
+ * biriminden (yapi.ts → disMuhabirMi), koda yazılı ünvan listesinden değil;
+ * eski "Editörler" sayfası haber merkezi personeline açılıyor.
+ */
 const PERSONEL_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: ReactNode; suz: (k: Kisi) => boolean }> = {
-  muhabirler: { baslik: "mMuhabirler", alt: "muhabirlerAlt", ikon: <Users size={26} />, suz: (k) => k.birim === "muhabir" },
-  editorler: { baslik: "mEditorler", alt: "editorlerAlt", ikon: <UserRound size={26} />, suz: (k) => ["editor", "dilDenetmeni", "newsdesk", "programEditoru", "planlamaci"].includes(k.gorev) },
-  personel: { baslik: "mPersonel", alt: "personelAlt", ikon: <Contact size={26} />, suz: (k) => k.birim !== "muhabir" },
+  muhabirler: { baslik: "mMuhabirler", alt: "muhabirlerAlt", ikon: <Users size={26} />, suz: (k) => disMuhabirMi(k) },
+  personel: { baslik: "mPersonel", alt: "personelAlt", ikon: <Contact size={26} />, suz: (k) => !disMuhabirMi(k) },
 };
 
 const yuzde = (x: number | null) => (x === null ? "—" : `%${Math.round(x * 100)}`);
@@ -41,6 +46,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const muhabirSayfasi = sayfa === "muhabirler";
   const [aranan, setAranan] = useState("");
   const [birim, setBirim] = useState<BirimId>("");
+  const [unvan, setUnvan] = useState("");
   const [ulke, setUlke] = useState<Ulke | "">("");
   const [bicim, setBicim] = useState<Bicim | "">("");
   const q = aranan.trim().toLocaleLowerCase();
@@ -48,7 +54,8 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const liste = tum
     .filter(
       (k) =>
-        (!birim || k.birim === birim) &&
+        (!birim || altindaMi(k.birim, birim)) &&
+        (!unvan || k.gorev === unvan) &&
         (!ulke || ulkeleri(k).includes(ulke)) &&
         (!bicim || k.bicimler.includes(bicim)) &&
         (!q || `${ad(k)} ${yaz(k.ad, "ar")} ${k.kisaltma} ${t(sehirAdi(k.sehir))}`.toLocaleLowerCase().includes(q)),
@@ -85,14 +92,36 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
               </select>
             </>
           ) : (
-            <select className="girdi" value={birim} onChange={(e) => setBirim(e.target.value)} aria-label={t("birim")}>
-              <option value="">{t("tumBirimler")}</option>
-              {birimListesi().filter((b) => tum.some((k) => k.birim === b)).map((b) => (
-                <option key={b} value={b}>
-                  {birimAdi(b)}
-                </option>
-              ))}
-            </select>
+            <>
+              {/* Ağaçtan: bölüm seçilince altındaki birimlerin hepsi (Input › Planlama, Newsdesk…). */}
+              <select
+                className="girdi"
+                value={birim}
+                onChange={(e) => {
+                  setBirim(e.target.value);
+                  setUnvan("");
+                }}
+                aria-label={t("birim")}
+                data-personel-birim
+              >
+                <option value="">{t("tumBirimler")}</option>
+                {birimAgaci(undefined, false)
+                  .filter((s) => tum.some((k) => altindaMi(k.birim, s.id)))
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {agacAdi(s)}
+                    </option>
+                  ))}
+              </select>
+              <select className="girdi" value={unvan} onChange={(e) => setUnvan(e.target.value)} aria-label={t("gorev")} data-personel-unvan>
+                <option value="">{t("tumUnvanlar")}</option>
+                {[...new Set(tum.filter((k) => !birim || altindaMi(k.birim, birim)).map((k) => k.gorev))].map((g) => (
+                  <option key={g} value={g}>
+                    {gorevAdi(g)}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
           <span className="bos-kucuk">{t("kisiSayisi", { n: liste.length })}</span>
         </div>
@@ -160,7 +189,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                 {liste.map((k) => (
                   <tr key={k.id}>
                     <td className="birincil">
-                      <a className="kisi-hucre kalin" href={`#/${k.birim === "muhabir" ? "muhabirler" : "personel"}/${k.id}`}>
+                      <a className="kisi-hucre kalin" href={`#/${disMuhabirMi(k) ? "muhabirler" : "personel"}/${k.id}`}>
                         <Avatar kisi={k} boy="kucuk" durum /> {ad(k)}
                       </a>
                     </td>

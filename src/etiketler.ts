@@ -1,11 +1,8 @@
 import type { StokDurumu } from "./akis";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
-import { unvanEkipGorevi } from "./yapi";
 import type {
   Bicim,
   Birim,
-  BirimId,
-  GorevId,
   Bolge,
   FaaliyetDurum,
   FaaliyetTuru,
@@ -78,12 +75,6 @@ export const EKIP_GOREV_ADI: Record<EkipGorevi, Anahtar> = {
   diger: "egDiger",
 };
 
-/** Kişiyi ekibe eklerken önerilen görev; kullanıcı değiştirebiliyor. */
-export const varsayilanEkipGorevi = (gorev: GorevId, birim: BirimId): EkipGorevi => {
-  // Newsdesk yöneticisi yapımcı şefi; öbür ünvanların ekip görevi yönetici yapısında (Ünvanlar).
-  if (gorev === "yonetici" && birim === "newsdesk") return "yapimciSef";
-  return unvanEkipGorevi(gorev) ?? "diger";
-};
 
 export const TUR_ADI: Record<IcerikTuru, Anahtar> = {
   haber: "turHaber",

@@ -6,7 +6,7 @@ import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { yaz, type Yazi } from "./dil";
-import { ayniYapi, guncelYapi, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, ekipGorevleri, guncelYapi, unvanListesi, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -29,8 +29,7 @@ import {
   paketBul,
   planBul,
   type Birim,
-  type Gorev,
-  type EkipGorevi,
+  type EkipGoreviId,
   type BirimId,
   type GorevId,
   type Mesaj,
@@ -2363,16 +2362,15 @@ const taslakUygula = (d: Durum, ben: Kisi, plan: NextDayPlan, t: PlanTaslagi, do
   return { d: { ...d, gelismeler: [...d.gelismeler, ...gelismeler], canliYayinlar: [...d.canliYayinlar, ...canlilar] }, sayi };
 };
 
-/* Ekip görevinden kişi kaydının birimi ve görevi: "Ekibe ekle" onu bu görevin listesinde göstersin (varsayilanEkipGorevi'nin tersi). */
-const EKIP_KISISI: Record<EkipGorevi, { birim: Birim; gorev: Gorev }> = {
-  yapimciSef: { birim: "newsdesk", gorev: "yonetici" },
-  bultenYapimcisi: { birim: "newsdesk", gorev: "newsdesk" },
-  sunucu: { birim: "newsdesk", gorev: "sunucu" },
-  muhabirMasasi: { birim: "planlama", gorev: "planlamaci" },
-  roportajYapimcisi: { birim: "program", gorev: "programEditoru" },
-  tercuman: { birim: "newsdesk", gorev: "tercuman" },
-  editor: { birim: "output", gorev: "editor" },
-  diger: { birim: "newsdesk", gorev: "koordinator" },
+/*
+ * Ekip görevinden kişi kaydının birimi ve görevi: "Ekibe ekle" onu bu
+ * görevin listesinde göstersin. Görevin kuralındaki ilk birim ve ilk ünvan
+ * (Organizasyon › Plan ekibi); kural boşsa Newsdesk, ünvansız.
+ */
+const ekipKisisi = (gorev: EkipGoreviId, y: Yapi): { birim: BirimId; gorev: GorevId } => {
+  const g = ekipGorevleri(y).find((x) => x.id === gorev);
+  const birim = g?.birimler[0] ?? "newsdesk";
+  return { birim, gorev: g?.unvanlar[0] ?? unvanListesi(birim, undefined, y)[0] ?? "koordinator" };
 };
 
 export interface GecmisYukleme {
@@ -2398,10 +2396,10 @@ export const gecmisPlanlariYukle = (ben: Kisi, gunler: { tarih: string; satirlar
   let d = getir();
   const sonuc: GecmisYukleme = { plan: 0, yeniPlan: 0, kisi: 0, kayit: 0 };
   // Önce kişiler: bütün günlerin ekibinde bulunamayanlar, ilk göründükleri görevle bir kez.
-  const yeniler = new Map<string, { ad: string; gorev: EkipGorevi }>();
+  const yeniler = new Map<string, { ad: string; gorev: EkipGoreviId }>();
   for (const g of gunler) for (const e of planTaslagi(g.satirlar, d).yeniEkip) if (!yeniler.has(arSade(e.ad))) yeniler.set(arSade(e.ad), e);
   const kisiler: Kisi[] = [...yeniler.values()].map((e) => ({
-    ...yeniKisi({ id: kimlik("kh"), ad: { tr: e.ad, ar: e.ad, en: e.ad }, eposta: "", ...EKIP_KISISI[e.gorev], rol: "personel", hesapYoneticisi: false }),
+    ...yeniKisi({ id: kimlik("kh"), ad: { tr: e.ad, ar: e.ad, en: e.ad }, eposta: "", ...ekipKisisi(e.gorev, guncelYapi(d)), rol: "personel", hesapYoneticisi: false }),
     hesapsiz: true,
     kontrolBekliyor: true,
   }));

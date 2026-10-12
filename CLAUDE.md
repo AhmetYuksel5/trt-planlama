@@ -200,7 +200,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Program Editor, Senior Producer…). Ünvan yazılıp eklenir (başka birimdeki
     ünvanın adı yazılırsa aynı ünvan eklenir, çoğalmaz; benzeyenler kutunun
     altında düğme, `datalist` değil: Android'de klavye dili değişince klavyeyi kapatıyordu), oklarla sıralanır,
-    kalemle adı (üç dilde) ve plandaki ekip görevi değişir, birimden çıkarılır
+    kalemle adı (üç dilde) ve "muhabir ünvanı" işareti değişir, birimden çıkarılır
     (kişisi ya da durağı varsa çıkmaz). Seçimler (`unvanListesi(birim)`) ve
     Kişiler ağacı bu sırayı izler; birimin ünvanı yoksa bütün ünvanlar.
     Birim: ad üç dilde, gizle, sil. Hepsi taslakta düzenlenir (`Durum.yapiTaslaklari`, yönetici başına),
@@ -208,6 +208,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     alınıp geri getirilir. Yalnız tam yönetici (`yetki.ts → yapiDuzenleyebilir`,
     kuralda `yapilar`/`yapiTaslaklari` yazımı); demoda kurgusal yönetici `yo3`
     (örnek kişi listesinin sonunda: örnek veri sıradan türüyor).
+  - Birimler ağaç (`BirimTanimi.ust`, derinlik serbest): iki kök, "Haber
+    merkezi" (`KOK_MERKEZ`) ve "Dış muhabirler" (`KOK_DIS`); varsayılanda
+    Input (Planlama, Newsdesk, News Gathering, Ekonomi), Output (Output,
+    Media), Program, Yönetim ve Dış muhabirler › Muhabir. Grup düğümünün
+    ünvanı yok. Birim penceresinde üst birim seçilir, oklar kardeşler arasında
+    sıralar; altında birim olan silinmez (`orgAltBirimVar`). Yardımcılar
+    `birimAgaci`, `ustBirimler`, `altindaMi`, `disMuhabirMi`. Eski yayın
+    okunurken `tamamla` ağacı ve ekip görevlerini varsayılandan doldurur.
+  - Plan ekibi (`organizasyon/EkipSekmesi.tsx`, `Yapi.ekipGorevleri`): Next
+    Day ekibindeki görevler (منتج تنفيذي…) ve kuralları. Görev adı Arapça
+    zorunlu; kural birim + ünvan seçimi (boşsa hepsi; birim seçimi altını da
+    kapsar), pencerede kurala uyan kişi sayısı. Ekibe ekleme formu ve belge
+    penceresi adayı `ekipAdayi(kisi, gorev)` ile süzer; sıra ve ad
+    `ekipGorevListesi`/`ekipGorevAdi`. Geçmiş plan yüklemesinde açılan kişi
+    görevin kuralındaki ilk birim/ünvanla (`eylemler.ts → ekipKisisi`).
+  - İç muhabir: haber merkezindeki birimde "muhabir ünvanı" işaretli ünvan
+    (`UnvanTanimi.muhabir`, `icMuhabirMi`). Plan ve paket muhabir seçicisinde
+    (`MuhabirSecici`) dış muhabirlerden ayrı grupta; öneri, e-posta çağrısı
+    ve yazışma seçicilerinde yok (`ic={false}`).
   - Yerleşik birim ve ünvan silinmez, gizlenir; kişisi ya da durağı bağlı olan
     da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
     yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır
@@ -216,7 +235,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Ekranda birim ve ünvan adı `birimAdi`/`gorevAdi`, seçimler
     `birimListesi`/`unvanListesi` (gizli olan yalnız şimdiki değerse görünür).
     `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.
-  - Kişiler: birim → ünvan ağacı, "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
+  - Kişiler: birim ağacı → ünvan (sayılar alt birimleri de toplar), "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
   - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir
     akışı (yeni akış seçilenin kopyasıyla açılır, kol tek akışta). Durak kartı
@@ -299,7 +318,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     dosya `{tur: "plannersflow-gecmis-planlar", gunler: [{tarih,
     satirlar}]}`, satırlar belgenin kendisi ve aynı okuyucudan geçer.
     Ekipte adı geçip kayıtta olmayan hesapsız kişi olarak açılır
-    (`kontrolBekliyor`; birimi ve görevi ekip görevinden, `EKIP_KISISI`),
+    (`kontrolBekliyor`; birimi ve görevi ekip görevinden, `ekipKisisi`),
     yönetici tam adını Kullanıcılar'da düzeltir. Günün planı yoksa açılır
     (geçmiş gün devredilmiş), varsa içine eklenir; ikinci yüklemede kişi,
     başlık, gelişme ve canlı çoğalmaz. Muhabir yalnız kayıttakiyle eşleşir:
@@ -589,7 +608,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   oraya girer; sol menüde de telefondaki panelde de çıkar. Planların
   menü adları "plan" sözcüğü olmadan: Next Day, Weekly, Aylık, Özel yayın.
   Muhabir listesinde diğer ülkeler, haber türleri ve nitelik puanı
-  sütunu yok (süzgeçler duruyor).
+  sütunu yok (süzgeçler duruyor). Personel iki sayfa: "Haber merkezi
+  personeli" (`#/personel`, dış muhabir olmayan herkes; birim ağacı ve ünvan
+  süzgeci) ve "Dış muhabirler" (`#/muhabirler`, `KOK_DIS` altındakiler);
+  Editörler ve Diğer personel kalktı.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
     sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)
