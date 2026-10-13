@@ -465,6 +465,20 @@ export const kayitlariTemizle = (ben: Kisi, secim: TemizlikSecimi): number | nul
 };
 
 /**
+ * Tek öneriyi izleriyle silmek (öneri sayfasında "İzleriyle sil"): toplu
+ * temizlikle aynı kural. Hareket silinen öneriye bağlanmıyor (o da iz
+ * sayılıp giderdi); başlığı verisinde kalıyor.
+ */
+export const oneriSil = (ben: Kisi, id: string): number | null => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !kayitTemizleyebilir(ben)) return null;
+  const { yeni, toplam } = temizle(d, { turler: ["oneriler"], idler: [id] });
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "oneriSilindi", veri: { baslik: o.haberBasligi, sayi: String(toplam) } }));
+  return toplam;
+};
+
+/**
  * Muhabire geri bildirim gönderildi (e-postayı ekran şablondan kuruyor,
  * kişi Outlook'ta ya da telefonda gönderiyor). Kayıtta zamanı ve şablonu;
  * "takip edilsin" denirse ve e-postayla takip açıksa haber muhabirin

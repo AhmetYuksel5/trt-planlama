@@ -457,6 +457,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .sayfa-basi h1 { font-size: var(--punto-dev); line-height: 1.15; letter-spacing: -.01em; }
 .sayfa-basi p { color: var(--sonuk); margin-top: 2px; }
 .sayfa-basi .sag-uc { margin-inline-start: auto; display: flex; gap: var(--ara-2); flex-wrap: wrap; align-items: center; }
+/* Tam yöneticinin "İzleriyle sil"i: başlığın sonunda, pencerede satırın sonunda */
+.sayfa-basi .oneri-sil { margin-inline-start: auto; }
+p > .oneri-sil { margin-inline-start: var(--ara-2); }
 /* Planın araçları kendi satırında, sayfaya ortalı: Türkçe ve Arapça arayüzde aynı yerde dursun. */
 .sayfa-basi .plan-araclari { flex-basis: 100%; margin-inline-start: 0; justify-content: center; }
 /* Yazılı düğmelerin yanında simge düğmesi de aynı boyda dursun. */

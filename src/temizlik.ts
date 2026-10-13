@@ -27,6 +27,8 @@ export interface TemizlikSecimi {
   bas?: string;
   /** YYYY-MM-DD; boşsa bugüne kadar her şey (ileri tarihli plan dahil). */
   bit?: string;
+  /** Tek tek silme (öneri sayfasındaki "İzleriyle sil"): tarih yerine bu kayıtlar; izler aynı kuralla. */
+  idler?: string[];
 }
 
 /** Silinen kayıt sayıları; izler kendi kalemlerinde. */
@@ -41,7 +43,9 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     if (!g) return !s.bas && !s.bit;
     return (!s.bas || g >= s.bas) && (!s.bit || g <= s.bit);
   };
-  const sec = <T extends { id: string }>(l: T[], t: TemizlikTuru, z: (x: T) => string | undefined) => new Set(tur.has(t) ? l.filter((x) => aralikta(z(x))).map((x) => x.id) : []);
+  const idler = s.idler && new Set(s.idler);
+  const sec = <T extends { id: string }>(l: T[], t: TemizlikTuru, z: (x: T) => string | undefined) =>
+    new Set(tur.has(t) ? l.filter((x) => (idler ? idler.has(x.id) : aralikta(z(x)))).map((x) => x.id) : []);
 
   // 1. Seçilen kayıtlar
   const oneriler = sec(d.oneriler, "oneriler", (o) => o.zaman);
@@ -67,7 +71,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
   const silinen = new Set([...oneriler, ...planlar, ...paketler, ...haftalik, ...aylik, ...ozel, ...cagrilar, ...yanitlar, ...takipler, ...faaliyetler, ...gorevler, ...gelismeler, ...canlilar, ...mesajlar, ...kalemler]);
   // Hareket silinen kayda değiyorsa (doğrudan ya da verisindeki kimlikle) iz sayılıyor.
   const deger = (h: Hareket) =>
-    [h.oneriId, h.paketId, h.planId, h.haftaId, ...Object.values(h.veri ?? {})].some((x) => x && silinen.has(x)) || (tur.has("hareketler") && aralikta(h.zaman));
+    [h.oneriId, h.paketId, h.planId, h.haftaId, ...Object.values(h.veri ?? {})].some((x) => x && silinen.has(x)) || (tur.has("hareketler") && (idler ? idler.has(h.id) : aralikta(h.zaman)));
   const hareketler = new Set(d.hareketler.filter(deger).map((h) => h.id));
 
   // 3. Kalan kayıtlarda kopan bağlantılar; değişmeyen nesne aynı kalıyor

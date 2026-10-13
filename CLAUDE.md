@@ -417,7 +417,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   değen hareket. Kalan kayıttaki bağlantı kopar (önerinin planı, planın
   hazır paketi, takvim bağlantısı…). Sayılar silmeden önce aynı kuraldan;
   temizliğin kendisi tek hareket (`kayitTemizlendi`). Kişiler, kurum
-  yapısı ve ayarlar girmez. Geri alınamaz, onay sorulur.
+  yapısı ve ayarlar girmez. Geri alınamaz, onay sorulur. Tek tek silme
+  öneri sayfasında: tam yöneticiye ayrıntıda (sayfa ve pencere) "İzleriyle
+  sil" (`eylemler.ts → oneriSil`, aynı kural `idler` ile); onayda kaç kayıt
+  gideceği yazılı, hareketi `oneriSilindi` (başlık verisinde, öneriye bağlı
+  değil; bağlansa iz sayılıp giderdi).
 - Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`, `Durum.takipler`):
   muhabirin izlediği güncel konu (olay, toplantı, etkinlik); iş önerisi
   değil, bilgilendirme. Muhabir menüsünde "Takiplerim" (öneriler menüden

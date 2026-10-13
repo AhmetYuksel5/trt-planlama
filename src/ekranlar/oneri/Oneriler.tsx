@@ -1,17 +1,18 @@
 import { birimAdi } from "../../yapi";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
-import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
+import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaGunleri, haftaSonu } from "../../haftalik";
-import { oneriDurum, oneriGonder, oneriYenidenGonder } from "../../eylemler";
+import { oneriDurum, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
-import { muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { temizle } from "../../temizlik";
+import { kayitTemizleyebilir, muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -153,6 +154,30 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
  * (`pencerede`) aynı içeriği gösteriyor; pencerede geri bağlantısı ve
  * sayfa başlığı yok, başlık pencerenin kendisinde.
  */
+/**
+ * Tam yöneticinin tek öneriyi izleriyle silmesi (deneme kayıtları). Onayda
+ * kaç kaydın gideceği toplu temizlikle aynı kuraldan. Sayfada silinince
+ * listeye dönülüyor; pencere öneri kayıttan kalkınca kendiliğinden kapanıyor.
+ */
+function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: Oneri; sayfada?: boolean }) {
+  const { t } = useDil();
+  const v = useVeri();
+  if (!kayitTemizleyebilir(ben)) return null;
+  const sil = () => {
+    const n = temizle(v, { turler: ["oneriler"], idler: [oneri.id] }).toplam;
+    if (!confirm(t("oneriSilOnay", { n }))) return;
+    if (oneriSil(ben, oneri.id) !== null) {
+      bildir(t("oneriSilindi"));
+      if (sayfada) git("oneriler");
+    }
+  };
+  return (
+    <button type="button" className="dugme dugme-sade dugme-kucuk kotu-yazi oneri-sil" onClick={sil} data-oneri-sil>
+      <Trash2 size={14} /> {t("oneriSil")}
+    </button>
+  );
+}
+
 export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri: Oneri; pencerede?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
@@ -177,6 +202,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   const ust = pencerede ? (
     <p className="ara-alt-2">
       <OneriDurumRozeti oneri={oneri} /> <OneriKaynagi oneri={oneri} d={v} /> · {t(ulkeAdi(oneri.ulke))} · {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
+      <OneriSilDugmesi ben={ben} oneri={oneri} />
     </p>
   ) : (
     <>
@@ -194,6 +220,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
             {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
           </p>
         </div>
+        <OneriSilDugmesi ben={ben} oneri={oneri} sayfada />
       </header>
     </>
   );
