@@ -17,8 +17,8 @@ import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, Yerin
 /**
  * Haftalık planın belgesi (الأجندة الأسبوعية): kurumun Word belgesinin
  * bölümleri ve sırası. تحركات المراسلين, أهم ملفات الأسبوع, الأجندة اليومية
- * (gün gün; dosya başlıkları altında "YER / metin", muhabirler "isim /
- * şehir", biçim satırı, en altta konu "YER / konu / muhabir", sarı not),
+ * (gün gün; dosya başlıkları altında "YER / metin", olayın adı varsa
+ * "YER - OLAY / metin", muhabirler "isim / şehir", biçim satırı, sarı not),
  * زمانا غير مرتبطة.
  *
  * Kesinleşen planın çıktısında yalnız kabul ve bilgi kalemleri basılıyor;
@@ -40,11 +40,20 @@ export interface HfDuzen {
 
 const c = (k: Anahtar, p?: Record<string, string | number>) => metin(k, "ar", p);
 
-/* "YER / metin" satırı; render dışında ki yazı kutusu her kayıtta sıfırlanmasın. */
-function Satir({ yer, children }: { yer?: ReactNode; children: ReactNode }) {
+/*
+ * "YER / metin" satırı; olayın adı yazılmışsa "YER - OLAY / metin" (kurumun
+ * yazımı). Render dışında ki yazı kutusu her kayıtta sıfırlanmasın.
+ */
+function Satir({ yer, olay, children }: { yer?: ReactNode; olay?: ReactNode; children: ReactNode }) {
   return (
     <p>
-      {yer && <b>{yer} / </b>}
+      {(yer || olay) && (
+        <b>
+          {yer}
+          {yer && olay && " - "}
+          {olay} /{" "}
+        </b>
+      )}
       {children}
     </p>
   );
@@ -71,14 +80,13 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
   { karar: "ret", ad: "krRet", ikon: <Ban size={15} /> },
 ];
 
-/** Bir kalem: "YER / metin", muhabirler, biçim, konu, not; bilgi kaleminde "(لا نتابع)". */
+/** Bir kalem: "YER - OLAY / metin", muhabirler, biçim, not; bilgi kaleminde "(لا نتابع)". */
 function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
   const { t } = useDil();
   const v = useVeri();
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
   const ben = duzen?.ben;
   const yaz = (g: Partial<KalemGirdisi>) => ben && kalemKaydet(ben, hafta.id, kalemGirdisi(k, g));
-  const muhabirAdlari = k.muhabirler.map(kisiAdi).join(" - ");
   const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
 
@@ -111,11 +119,16 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
     >
       <div className="cikti-kalem">
         {duzen ? (
-          <Satir yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}>
+          <Satir
+            yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}
+            olay={k.baslik && <YerindeMetin acik deger={k.baslik} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} />}
+          >
             <YerindeMetin acik cokSatir deger={k.metin} etiket={t("metin")} kaydet={(x) => x && yaz({ metin: x })} />
           </Satir>
         ) : (
-          <Satir yer={k.yer}>{k.metin}</Satir>
+          <Satir yer={k.yer} olay={k.baslik}>
+            {k.metin}
+          </Satir>
         )}
         {k.muhabirler.length > 0 && (
           <>
@@ -132,19 +145,6 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             <b>
               <bdi>{bicimSatiri(k)}</bdi>
             </b>
-          </p>
-        )}
-        {/* Konu (olayın adı) Next Day'deki paket satırı gibi kalemin en altında: "YER / konu / muhabir". */}
-        {k.baslik && (
-          <p>
-            {k.yer && <b>{k.yer} / </b>}
-            {duzen ? <YerindeMetin acik deger={k.baslik} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} /> : k.baslik}
-            {muhabirAdlari && (
-              <>
-                {" / "}
-                <b>{muhabirAdlari}</b>
-              </>
-            )}
           </p>
         )}
         {/* Boş not satır kaplamıyor (Next Day belgesi gibi); not "Düzenle" penceresinden giriliyor. */}

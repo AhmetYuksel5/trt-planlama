@@ -441,8 +441,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
     Kesinleşen planın çıktısında yalnız kabul ve bilgi; kesinleşmeden
     önizleme karar bekleyenleri de basar (yoksa hazırlıktaki iş görünmüyordu).
-    Kalem: "YER / metin", muhabirler, biçim; konu (olayın adı) Next Day'in
-    paket satırı gibi en altta "YER / konu / muhabir". Belgede boş alan
+    Kalem: "YER / metin", olayın adı yazılmışsa "YER - OLAY / metin";
+    sonra muhabirler, biçim, not. Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
