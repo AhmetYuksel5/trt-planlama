@@ -144,6 +144,19 @@ export const MENU: Grup[] = [
   },
 ];
 
+/*
+ * Muhabirin menüsü: işi az, seçenekleri az. Gruplar (İçerik ve haberler,
+ * Diğer) birer ikişer maddeyle katlanıp maddeleri saklıyordu; muhabire
+ * başlıksız tek liste, kendi işlerinin sırasıyla. Ayarlar altta ayrık.
+ * Telefondaki panel ve alt çubuk eski haliyle (orada beğenildi).
+ */
+const MUHABIR_MENUSU = ["ana", "oneriler", "takipler", "paketler", "saha", "takvim"];
+const MUHABIR_ALT = ["ayarlar"];
+const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
+  sayfalar.map((s) => MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === s)).filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa));
+/* Muhabirde Önerilerim'in sayısı önündeki iş: düzeltme istenen ve Planlama'nın ona önerdiği. */
+const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif")).length;
+
 /** Maddenin kişiye göre adı: muhabirin menüsü kendi işine daralıyor ("İşlerim", "Önerilerim"). */
 export const maddeAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad);
 
@@ -189,7 +202,7 @@ const sayfaGrubu = (sayfa: string) => MENU.find((g) => g.ad && g.maddeler.some((
 function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const { t } = useDil();
   const v = useVeri();
-  const sayi = m.say?.(v, ben) ?? 0;
+  const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : (m.say?.(v, ben) ?? 0);
   const Ikon = m.ikon;
   return (
     <a href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""} aria-current={acik === m.sayfa ? "page" : undefined}>
@@ -211,7 +224,8 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
  * (Kabuk); `id` o düğmenin hedefi.
  */
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
-  const { t } = useDil();
+  const { t, ad } = useDil();
+  const muhabir = ben.birim === "muhabir";
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -229,14 +243,29 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
         <Logo koyu />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
+      {/* Muhabirde birim de ünvan da "Muhabir" yazıyordu; kendi adı ve yeriyle ünvanı ("Beyrut muhabiri"). */}
       <div className="birim-kutusu">
         <Building size={20} />
         <div>
-          {birimAdi(ben.birim)}
+          {muhabir ? ad(ben) : birimAdi(ben.birim)}
           <small>{gorevAdi(ben.gorev)}</small>
         </div>
       </div>
-      {MENU.map((g, i) => {
+      {muhabir && (
+        <>
+          <div className="menu-grup" data-muhabir-menusu>
+            {muhabirMaddeleri(ben, MUHABIR_MENUSU).map((m) => (
+              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+            ))}
+          </div>
+          <div className="menu-grup menu-alta">
+            {muhabirMaddeleri(ben, MUHABIR_ALT).map((m) => (
+              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+            ))}
+          </div>
+        </>
+      )}
+      {!muhabir && MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         if (!g.ad || maddeler.length === 1) {

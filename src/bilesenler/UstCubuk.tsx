@@ -156,7 +156,8 @@ export default function UstCubuk({
         <Logo />
       </a>
       <UstSekmeler ben={ben} />
-      <UstKisayollar ben={ben} />
+      {/* Muhabirin kısayolları menüsünün aynısıydı (işleri az): çubukta yalnız sayfanın adı. */}
+      {ben.birim !== "muhabir" && <UstKisayollar ben={ben} />}
       {/*
        * Prototip uyarısı demonun her sayfasında görünmeli (örnek veri gerçek
        * kurum verisi sanılmasın, kalıcılığın sınırı söylensin); bir satır

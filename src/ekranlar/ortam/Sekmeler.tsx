@@ -163,7 +163,9 @@ export function UstSekmeler({ ben }: { ben: Kisi }) {
   const yol = useYol();
   const etiket = useOrtamEtiketi(ben);
   const kapat = useOrtamKapat(ben);
-  const liste = kisininOrtamlari(v, ben.id);
+  // Muhabirde workspace yok: birkaç sayfayı yan yana açacak kadar işi yok, sekme ve "+" çubuğu kalabalıklaştırıyordu.
+  const sade = ben.birim === "muhabir";
+  const liste = sade ? [] : kisininOrtamlari(v, ben.id);
   const ortamda = yol.sayfa === "ortam";
   const yeniSayfa = ortamda && yol.id === "yeni";
   const yeni = useYeniOrtam(ben);
@@ -294,9 +296,11 @@ export function UstSekmeler({ ben }: { ben: Kisi }) {
         </IslemMenusu>
       )}
       {/* Pasif düğme ipucu göstermiyor; sınırda odaklanabilir kalıyor, nedeni ipucunda. */}
-      <button type="button" className={`ikon-dugme yeni-ortam ${yeni.dolu ? "pasif" : ""}`} data-yeni-ortam onClick={yeni.ac} aria-disabled={yeni.dolu} aria-label={yeni.ad} title={yeni.ad}>
-        <Plus size={18} />
-      </button>
+      {!sade && (
+        <button type="button" className={`ikon-dugme yeni-ortam ${yeni.dolu ? "pasif" : ""}`} data-yeni-ortam onClick={yeni.ac} aria-disabled={yeni.dolu} aria-label={yeni.ad} title={yeni.ad}>
+          <Plus size={18} />
+        </button>
+      )}
     </div>
   );
 }

@@ -47,7 +47,7 @@ export interface Alan {
  */
 export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plSonOneri", "plMuhabirler", "plHareket"],
-  muhabir: ["muCagri", "muSayac", "muSiram", "muGorev", "muHaberler", "muBildirim", "muOneriler"],
+  muhabir: ["muCagri", "muSayac", "muSiram", "muHaberler", "muGorev", "muOneriler", "muBildirim"],
   newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   ekonomi: ["ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],

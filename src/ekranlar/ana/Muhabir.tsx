@@ -22,9 +22,7 @@ import { SayfaBasi } from "./Planlama";
  */
 export default function MuhabirAna({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
-  const v = useVeri();
-  // Önerilerim menüden kalktı; düzeltme ya da yanıt bekleyen önerinin sayısı düğmede.
-  const bekleyen = v.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif")).length;
+  // Önerilerim menüde (sayısıyla) ve sayaçta; başlıkta yalnız muhabirin asıl işi: yeni öneri.
   return (
     <>
       <SayfaBasi
@@ -33,15 +31,9 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
         baslik={t("merhaba", { ad: ad(ben).split(" ")[0] })}
         alt={`${t("biMuhabir")} · ${t(sehirAdi(ben.sehir))}`}
         sagUc={
-          <>
-            <a className="dugme dugme-ikincil" href="#/oneriler" data-onerilerim>
-              <Lightbulb size={16} /> {t("mOnerilerim")}
-              {bekleyen > 0 && <span className="rozet-say satir-ici">{bekleyen}</span>}
-            </a>
-            <a className="dugme" href="#/oneriler/yeni">
-              <Send size={16} className="yon" /> {t("yeniOneriGonder")}
-            </a>
-          </>
+          <a className="dugme" href="#/oneriler/yeni" data-yeni-oneri>
+            <Send size={16} className="yon" /> {t("yeniOneriGonder")}
+          </a>
         }
       />
       <CalismaAlani ben={ben} duzen="muhabir" />
@@ -72,28 +64,28 @@ function Cagrilar({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const { cagri, haftalikCagri } = useMuhabirIsleri(ben);
   if (!cagri && !haftalikCagri) return null;
+  // İki çağrı alt alta iki kutuydu; tek kartta iki satır.
   return (
-    <div className="iz">
-      {cagri && (
-        <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
-          <b>{t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })}</b>
-          <br />
-          {t("acikCagriAciklama", { saat: cagri.sonSaat })}{" "}
-          <a href="#/oneriler/yeni">
-            <b>{t("oneriGonder")} →</b>
-          </a>
-        </NotKutu>
-      )}
-      {haftalikCagri && (
-        <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
-          <b>{t("acikHaftalikCagri", { aralik: aralikYaz(haftalikCagri.tarih, gunEkle(haftalikCagri.tarih, 6), dil) })}</b>
-          <br />
-          <a href="#/oneriler/yeni/haftalik">
-            <b>{t("oneriGonder")} →</b>
-          </a>
-        </NotKutu>
-      )}
-    </div>
+    <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
+      <div className="cagri-satirlari" data-cagrilar>
+        {cagri && (
+          <div>
+            <b>{t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })}</b> · {t("acikCagriAciklama", { saat: cagri.sonSaat })}{" "}
+            <a href="#/oneriler/yeni">
+              <b>{t("oneriGonder")} →</b>
+            </a>
+          </div>
+        )}
+        {haftalikCagri && (
+          <div>
+            <b>{t("acikHaftalikCagri", { aralik: aralikYaz(haftalikCagri.tarih, gunEkle(haftalikCagri.tarih, 6), dil) })}</b>{" "}
+            <a href="#/oneriler/yeni/haftalik">
+              <b>{t("oneriGonder")} →</b>
+            </a>
+          </div>
+        )}
+      </div>
+    </NotKutu>
   );
 }
 
@@ -101,7 +93,7 @@ function Sayaclar({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const { oneriler, aktif, siram } = useMuhabirIsleri(ben);
   return (
-    <div className="sayaclar">
+    <div className="sayaclar ince">
         <Sayac href="#/oneriler" ikon={<Lightbulb size={22} />} renk="renk-nextday" etiket={t("sOnerilerim")} deger={oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length} alt={t("sDegerlendirmede")} />
         <Sayac href="#/oneriler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sPlanaGiren")} deger={oneriler.filter((o) => o.durum === "planaEklendi").length} alt={t("sToplam")} />
         <Sayac href="#/paketler" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={aktif.length} alt={t("sPaket")} />
@@ -249,12 +241,13 @@ function Bildirimlerim({ ben }: { ben: Kisi }) {
   );
 }
 
+/* Muhabirin sayfası tek sütun: işi az, kartlar yan yana sıkışınca okunmuyordu; hepsi geniş. */
 export const MUHABIR_ALANLARI: Alan[] = [
   { id: "muCagri", ad: "alAcikCagrilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Cagrilar },
   { id: "muSayac", ad: "alOzetSayilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Sayaclar },
-  { id: "muSiram", ad: "seninSiran", grup: "muhabir", sayfa: "muhabir", Bilesen: Siram },
-  { id: "muGorev", ad: "gorevlendirmelerim", grup: "muhabir", sayfa: "muhabir", Bilesen: Gorevlerim },
+  { id: "muSiram", ad: "seninSiran", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Siram },
+  { id: "muGorev", ad: "gorevlendirmelerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Gorevlerim },
   { id: "muHaberler", ad: "haberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Haberlerim },
-  { id: "muBildirim", ad: "bildirimler", grup: "muhabir", sayfa: "muhabir", Bilesen: Bildirimlerim },
-  { id: "muOneriler", ad: "onerilerim", grup: "muhabir", sayfa: "muhabir", Bilesen: Onerilerim },
+  { id: "muBildirim", ad: "bildirimler", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Bildirimlerim },
+  { id: "muOneriler", ad: "onerilerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Onerilerim },
 ];

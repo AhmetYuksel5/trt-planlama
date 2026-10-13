@@ -591,8 +591,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Kısayollar (`Kisayollar.tsx → UstKisayollar`): ilk altısı renkli ikon;
     ★ hepsini adıyla ve "Kısayolları düzenle"yi gösterir. Kurallar
     `kisayol.ts`:
-    - varsayılan planların beş ana başlığı ve takvim; muhabirde kendi
-      işleri;
+    - varsayılan planların beş ana başlığı ve takvim; muhabirde çubukta
+      kısayol yok (menüsünün aynısıydı);
     - görebildiği sayfalar, en çok 10.
 
     Kayıtta `Durum.kisayollar` (kişi → sıralı yol), eylem
@@ -629,6 +629,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   personeli" (`#/personel`, dış muhabir olmayan herkes; birim ağacı ve ünvan
   süzgeci) ve "Dış muhabirler" (`#/muhabirler`, `KOK_DIS` altındakiler);
   Editörler ve Diğer personel kalktı.
+  - Muhabirin masaüstü düzeni sade (işi az): sol menü başlıksız tek liste
+    (`AnaMenu.tsx → MUHABIR_MENUSU`: İşlerim, Önerilerim, Takiplerim,
+    Haberlerim, Görevlendirmelerim, Takvimim; Ayarlar altta ayrık), kutuda
+    kendi adı ve ünvanı. Üst çubukta workspace sekmeleri, "+" ve kısayollar
+    yok, yalnız sayfanın adı. İşlerim tek sütun: başlıkta "Yeni öneri gönder",
+    çağrılar tek kartta, sayaçlar ince satır (`.sayaclar.ince`). Telefon
+    düzeni (alt çubuk, Menü paneli) ayrı ve öbürleriyle aynı kalıyor.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
     sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)

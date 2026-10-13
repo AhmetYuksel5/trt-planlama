@@ -251,6 +251,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   display: grid; place-items: center; padding: 0 6px;
 }
 .menu a .taslak-nokta { margin-inline-start: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--lacivert-silik); }
+/* Muhabirin Ayarlar'ı listenin altında ayrık; ardındaki not onun hemen altında. */
+.menu-alta { margin-block-start: auto; }
+.menu-alta ~ .menu-alt { margin-top: 0; }
 .menu-alt { margin-top: auto; padding: var(--ara-4) var(--ara-3) 0; color: var(--lacivert-silik); font-size: var(--punto-mini); }
 
 .perde { display: none; }
@@ -512,6 +515,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   padding: var(--ara-4); box-shadow: var(--golge-kart);
 }
 .sayac:hover { border-color: var(--silik); }
+/* İnce sayaç satırı (muhabirin sayfası): sayılar bir bakışta, kartlar işe yer bıraksın. */
+.sayaclar.ince { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--ara-2); }
+.sayaclar.ince .sayac { padding-block: var(--ara-2); }
+.sayaclar.ince .sayac .ikon { width: 32px; height: 32px; }
+.sayaclar.ince .sayac b { font-size: var(--punto-buyuk); }
+.sayaclar.ince .sayac small { display: none; }
+.cagri-satirlari { display: grid; gap: var(--ara-1); }
 .sayac .ikon { width: 44px; height: 44px; border-radius: var(--yaricap); background: var(--sis, var(--yuzey-2)); color: var(--renk, var(--lacivert)); display: grid; place-items: center; flex: none; }
 .sayac span { display: block; color: var(--sonuk); font-size: var(--punto-kucuk); font-weight: 500; }
 .sayac b { display: block; font-size: var(--punto-dev); line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums; }
