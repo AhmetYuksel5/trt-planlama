@@ -119,6 +119,8 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
   const hazirlar = plan.hazirPaketler.map((id) => paketBul(v, id)).filter((h) => h !== undefined);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const takipler = v.gelismeler.filter((g) => g.planId === plan.id && !g.planBaslikId);
+  // Plana dosyasız giren haber (başlığa bağlanmamış paket) çıktıda hiç görünmüyordu; متابعات'in altında. Hazır paketler kendi bölümünde.
+  const dosyasizPaketler = paketler.filter((p) => !plan.basliklar.some((pb) => pb.id === p.planBaslikId) && !plan.hazirPaketler.includes(p.id));
 
   /* Gelişme satırı: başlığın altında da takiplerde de aynı; başlıkta yer yoksa öneren muhabirin şehri. */
   const gelismeSatiri = (g: Gelisme, i: number, liste: Gelisme[], planBaslikId?: string) => {
@@ -444,10 +446,17 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
         </section>
       )}
 
-      {(takipler.length > 0 || op) && (
+      {(takipler.length > 0 || dosyasizPaketler.length > 0 || op) && (
         <section>
           <h2 className="yesil">{c("takipler")}</h2>
           {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
+          {dosyasizPaketler.map((p) => (
+            <BelgeSatiri key={p.id} duzen={ic} serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}>
+              <Satir yer={sehirAr(p.sehir)}>
+                {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+              </Satir>
+            </BelgeSatiri>
+          ))}
           {op && (
             <EkleCubugu>
               <EkleDugmesi metin={t("takipEkle")} onClick={() => ac({ tur: "gelisme", sonra: takipler.at(-1)?.id })} />

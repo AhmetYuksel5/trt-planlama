@@ -19,7 +19,7 @@ body { font-family: Calibri, Arial, sans-serif; font-size: 13pt; line-height: 11
 h1 { font-size: 16pt; line-height: 115%; text-align: center; color: #c00000; margin: 0; }
 h2 { font-size: 14pt; line-height: 115%; margin: 19pt 0 0; }
 h2.yesil { color: #4f7a28; } h2.kirmizi { color: #c00000; } h2.ortali { text-align: center; }
-h3 { font-size: 13pt; line-height: 115%; text-decoration: underline; margin: 19pt 0 0; }
+h3 { font-size: 13pt; line-height: 115%; text-decoration: underline; margin: 19pt 0 0; } h3.yesil { color: #4f7a28; text-decoration: none; }
 h4.gun { font-size: 13pt; line-height: 115%; color: #c00000; margin: 19pt 0 0; }
 p { margin: 0; line-height: 115%; }
 .alt-baslik { font-weight: bold; }

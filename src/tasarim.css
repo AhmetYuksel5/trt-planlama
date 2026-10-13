@@ -1031,6 +1031,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .cikti h2.kirmizi { color: var(--cikti-kirmizi); }
 .cikti h2.ortali { text-align: center; }
 .cikti h3 { font-size: 15px; text-decoration: underline; text-underline-offset: 4px; margin: 1.3em 0 0; }
+/* Dosyasız haberlerin başlığı (متابعات): kurumun belgesindeki gibi yeşil, kalın, altı çizgisiz. */
+.cikti h3.yesil { color: var(--cikti-yesil); text-decoration: none; }
 .cikti p { margin: 0; }
 .cikti .alt-baslik { font-weight: 700; }
 .cikti .cikti-aciklama { color: #333; }

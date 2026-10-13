@@ -350,6 +350,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün
     planlamacılar seçer (`kisiPlanAdi`, `planDuzenle`): ekip çipinde ve
     belgedeki ekip penceresinde, seçenekler adın kendisiyle.
+  - Dosyasız kayıt çıktının sonundaki yeşil "متابعات" bölümünde: başlıksız
+    gelişmeler ve plana başlıksız giren haberler (paket, "YER / haber /
+    muhabir"; hazır paketler kendi bölümünde).
   - 1–6 bölüm adları kurumun terimi: her arayüz dilinde çıktıdaki
     Arapçasıyla (`Bolum ar`, `metin(k, "ar")`); çevrilmez. Başlık satırı
     da çıktıdaki gibi sağdan başlar (`.bolum.ar > summary`), gövde
@@ -442,7 +445,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kesinleşen planın çıktısında yalnız kabul ve bilgi; kesinleşmeden
     önizleme karar bekleyenleri de basar (yoksa hazırlıktaki iş görünmüyordu).
     Kalem: "YER / metin", olayın adı yazılmışsa "YER - OLAY / metin";
-    sonra muhabirler, biçim, not. Belgede boş alan
+    sonra muhabirler, biçim, not. Dosyasız kalemler günün en altında yeşil,
+    kalın "متابعات" başlığıyla (`Dosyalar takipBasligi`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
