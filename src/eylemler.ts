@@ -6,8 +6,7 @@ import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { metin, yaz, type Yazi } from "./dil";
-import { ulkeAdi } from "./etiketler";
-import { ayniYapi, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, ulkeMuhabirUnvani, ulkeMuhabirUnvaniId, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -1772,46 +1771,49 @@ export const yapiYayinla = (ben: Kisi, not = "") => {
   return true;
 };
 
-/** Ünvanı hâlâ genel "Muhabir" olan dış muhabirler: ülke ünvanına geçecekler (elle verilmiş ünvana dokunulmuyor). */
+/** Ünvanı sistemin verdiği (genel ya da eski yer ünvanı) ve olması gerekenden farklı dış muhabirler; elle verilmiş ünvana dokunulmuyor. */
 export const ulkeUnvaniBekleyenler = (d: Durum): Kisi[] => {
   const y = guncelYapi(d);
-  return d.kisiler.filter((k) => disMuhabirMi(k, y) && k.gorev === "muhabir");
+  return d.kisiler.filter((k) => disMuhabirMi(k, y) && otomatikMuhabirUnvaniMi(k.gorev) && k.gorev !== muhabirYerUnvani(k, d.kisiler, y).id);
 };
 
 /**
- * Dış muhabirlere bulundukları ülkeye göre ünvan ("Lübnan muhabiri"):
- * eksik ülke ünvanları kişinin birimine eklenip yeni sürüm olarak
- * yayınlanıyor, sonra ünvanı genel "Muhabir" olanlar ülkesininkine geçiyor.
- * Tek yazış: kişi yayında olmayan ünvanla kalmasın. Ünvanlar birim değil,
- * çünkü yetki ve ekranlar birimin "muhabir" olmasına bakıyor. Yöneticinin
- * açık taslağına da aynı ünvanlar ekleniyor, yayınlayınca geri gitmesin.
+ * Dış muhabirlere yerine göre ünvan: ülkede tek muhabir varsa "Lübnan
+ * muhabiri", birden fazla varsa şehir ("Gazze muhabiri"). Eksik ünvanlar
+ * kişinin birimine eklenip yeni sürüm olarak yayınlanıyor, artık kimsede
+ * kalmayan yer ünvanı birimden çıkıyor; kişiler aynı yazışta geçiyor, kimse
+ * yayında olmayan ünvanla kalmasın. Ünvan birim değil, çünkü yetki ve
+ * ekranlar birimin "muhabir" olmasına bakıyor. Yöneticinin açık taslağına
+ * da aynı değişiklik uygulanıyor, yayınlayınca geri gitmesin.
  */
 export const muhabirlereUlkeUnvaniVer = (ben: Kisi) => {
   if (!yapiDuzenleyebilir(ben)) return 0;
   const d = getir();
+  const yayinda = guncelYapi(d);
   const adaylar = ulkeUnvaniBekleyenler(d);
   if (!adaylar.length) return 0;
-  const ad = (k: Kisi) => metin(ulkeAdi(SEHIRLER[k.sehir]), "tr");
-  const sirali = [...adaylar].sort((a, b) => ad(a).localeCompare(ad(b), "tr"));
-  const ekle = (y: Yapi) =>
-    sirali.reduce((y2, k) => {
-      const u = ulkeMuhabirUnvani(SEHIRLER[k.sehir]);
+  const hedef = new Map(adaylar.map((k) => [k.id, muhabirYerUnvani(k, d.kisiler, yayinda)]));
+  const kisiler = d.kisiler.map((k) => (hedef.has(k.id) ? { ...k, gorev: hedef.get(k.id)!.id } : k));
+  const sirali = [...adaylar].sort((a, b) => yaz(hedef.get(a.id)!.ad!, "tr").localeCompare(yaz(hedef.get(b.id)!.ad!, "tr"), "tr"));
+  const kullanilan = new Set(kisiler.map((k) => k.gorev));
+  const uygula = (y: Yapi) => {
+    const eklenmis = sirali.reduce((y2, k) => {
+      const u = hedef.get(k.id)!;
       return birimeUnvanEkle(y2, k.birim, y2.unvanlar.some((x) => x.id === u.id) ? u.id : u);
     }, y);
-  const yayinda = guncelYapi(d);
-  const yeniYapi = ekle(yayinda);
+    // Eski yer ünvanı kimsede kalmadıysa listede durmasın (genel "Muhabir" yerleşik, kalıyor).
+    return eklenmis.birimler.reduce(
+      (y2, b) => birimUnvanlari(b.id, y2).filter((u) => u.startsWith("muhabir-") && !kullanilan.has(u)).reduce((y3, u) => birimdenUnvanCikar(y3, b.id, u), y2),
+      eklenmis,
+    );
+  };
+  const yeniYapi = uygula(yayinda);
   const surum = Math.max(0, ...d.yapilar.map((y) => y.surum)) + 1;
   const yapilar = ayniYapi(yeniYapi, yayinda)
     ? d.yapilar
     : [...d.yapilar, { ...yeniYapi, surum, id: kimlik("y"), zaman: simdi(), yayinlayan: ben.id, not: metin("orgUlkeUnvanlari", "tr") }];
   const taslak = d.yapiTaslaklari?.[ben.id];
-  const ids = new Set(adaylar.map((k) => k.id));
-  let yeni: Durum = {
-    ...d,
-    yapilar,
-    ...(taslak ? { yapiTaslaklari: { ...d.yapiTaslaklari, [ben.id]: ekle(taslak) } } : {}),
-    kisiler: d.kisiler.map((k) => (ids.has(k.id) ? { ...k, gorev: ulkeMuhabirUnvaniId(SEHIRLER[k.sehir]) } : k)),
-  };
+  let yeni: Durum = { ...d, yapilar, kisiler, ...(taslak ? { yapiTaslaklari: { ...d.yapiTaslaklari, [ben.id]: uygula(taslak) } } : {}) };
   if (yapilar !== d.yapilar) yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "yapiYayinlandi", veri: { sayi: String(surum) } });
   kaydet(yeni);
   return adaylar.length;
@@ -1904,9 +1906,14 @@ export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {
   const adlar = new Set(d.kisiler.map((k) => (typeof k.ad === "string" ? k.ad : k.ad.ar).trim()));
   const eklenen: Kisi[] = [];
   let atlanan = 0;
-  // Ülke ünvanları kurulmuşsa yeni gelen de ülkesininkini alıyor; kurulmamışsa genel "Muhabir".
-  const muhabirUnvanlari = unvanListesi("muhabir", undefined, guncelYapi(d));
-  const ulkeUnvani = (s: Kisi["sehir"]) => (muhabirUnvanlari.includes(ulkeMuhabirUnvaniId(SEHIRLER[s])) ? ulkeMuhabirUnvaniId(SEHIRLER[s]) : "muhabir");
+  // Yer ünvanı yayında varsa yeni gelen onu alıyor; yoksa genel "Muhabir" (sayılar değişince "yer ünvanı ver" yeniden düzenliyor).
+  const yayinda = guncelYapi(d);
+  const muhabirUnvanlari = unvanListesi("muhabir", undefined, yayinda);
+  const tumu = [...d.kisiler, ...taslaklar.map((t) => ({ birim: "muhabir", sehir: t.sehir }))];
+  const ulkeUnvani = (s: Kisi["sehir"]) => {
+    const u = muhabirYerUnvani({ sehir: s }, tumu, yayinda).id;
+    return muhabirUnvanlari.includes(u) ? u : "muhabir";
+  };
   taslaklar.forEach((t, i) => {
     const var_ = (t.eposta && epostalar.has(t.eposta)) || (t.kisiselEposta && epostalar.has(t.kisiselEposta)) || adlar.has(t.adAr.trim());
     if (var_) {

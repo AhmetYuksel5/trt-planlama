@@ -1,7 +1,7 @@
 import type { Asama, UretimAdimi } from "./akis";
 import { metin, yaz, type Anahtar, type Dil, type Metin, type Yazi } from "./dil";
-import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, ulkeAdi } from "./etiketler";
-import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol, type Ulke } from "./veri";
+import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, sehirAdi, ulkeAdi } from "./etiketler";
+import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol, type Sehir, type Ulke, SEHIRLER } from "./veri";
 
 /**
  * Kurumun yapısı veri olarak: birimler, ünvanlar ve haber üretim akışları.
@@ -409,18 +409,33 @@ export const disMuhabirMi = (k: { birim: BirimId }, y: Yapi = yapi()) => izinBir
 /** Ünvan muhabir seçimlerinde çıkıyor mu (yönetici işaretler; yerleşik "muhabir" işaretli). */
 export const unvanMuhabirMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.muhabir ?? id === "muhabir";
 
-/**
- * Dış muhabirin ülkesine göre ünvanı ("Lübnan muhabiri", "مراسل لبنان"):
- * kimlik ülkeden, kurulum ikinci kez çalışınca ünvan çoğalmasın. Muhabir
- * seçimlerinde çıkıyor (genel "Muhabir" ünvanı gibi).
+/*
+ * Dış muhabirin yerine göre ünvanı: ülkede tek muhabir varsa ülkeden
+ * ("Lübnan muhabiri", "مراسل لبنان"), aynı ülkede birden fazla varsa o
+ * ülkedekilerin hepsi şehirden ("Gazze muhabiri", "Kudüs muhabiri").
+ * Kimlik yerden (`muhabir-<ülke>`, `muhabir-s-<şehir>`; şehirle ülke aynı
+ * adı taşıyabildiği için ayrı ön ek), kurulum tekrar çalışınca çoğalmasın.
+ * Muhabir seçimlerinde çıkıyor (genel "Muhabir" ünvanı gibi).
  */
 export const ulkeMuhabirUnvaniId = (ulke: Ulke): GorevId => `muhabir-${ulke}`;
-export const ulkeMuhabirUnvani = (ulke: Ulke): UnvanTanimi => ({
-  id: ulkeMuhabirUnvaniId(ulke),
+export const sehirMuhabirUnvaniId = (sehir: Sehir): GorevId => `muhabir-s-${sehir}`;
+
+const yerUnvani = (id: GorevId, yer: Anahtar): UnvanTanimi => ({
+  id,
   birimler: [],
   muhabir: true,
-  ad: { tr: metin("ulkeMuhabiri", "tr", { ulke: metin(ulkeAdi(ulke), "tr") }), ar: metin("ulkeMuhabiri", "ar", { ulke: metin(ulkeAdi(ulke), "ar") }), en: metin("ulkeMuhabiri", "en", { ulke: metin(ulkeAdi(ulke), "en") }) },
+  ad: { tr: metin("yerMuhabiri", "tr", { yer: metin(yer, "tr") }), ar: metin("yerMuhabiri", "ar", { yer: metin(yer, "ar") }), en: metin("yerMuhabiri", "en", { yer: metin(yer, "en") }) },
 });
+
+/** Sistemin verdiği muhabir ünvanı (genel ya da yere göre): kurulum bunları yeniden hesaplıyor, elle verilene dokunmuyor. */
+export const otomatikMuhabirUnvaniMi = (id: GorevId) => id === "muhabir" || id.startsWith("muhabir-");
+
+/** Kişinin olması gereken yer ünvanı; `kisiler` aynı ülkedeki dış muhabirleri saymak için (kendisi dahil). */
+export const muhabirYerUnvani = (k: { sehir: Sehir }, kisiler: { birim: BirimId; sehir: Sehir; pasif?: boolean }[], y: Yapi = yapi()): UnvanTanimi => {
+  const ulke = SEHIRLER[k.sehir];
+  const ayniUlke = kisiler.filter((x) => !x.pasif && disMuhabirMi(x, y) && SEHIRLER[x.sehir] === ulke).length;
+  return ayniUlke > 1 ? yerUnvani(sehirMuhabirUnvaniId(k.sehir), sehirAdi(k.sehir)) : yerUnvani(ulkeMuhabirUnvaniId(ulke), ulkeAdi(ulke));
+};
 
 const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru"];
 
