@@ -244,7 +244,8 @@ export default function App() {
           const o = oneriBul(v, yol.id);
           icerik =
             o && oneriGorebilir(ben, o) ? (
-              <OneriDetay ben={ben} oneri={o} />
+              // Öneriden öneriye geçince sayfa baştan kuruluyor: açık form ve pencere öncekinin içeriğini taşımasın.
+              <OneriDetay key={o.id} ben={ben} oneri={o} />
             ) : (
               <Yetkisiz />
             );

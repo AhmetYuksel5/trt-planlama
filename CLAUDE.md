@@ -427,6 +427,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     süreç, yazışma ve hareket geçmişi (ayrıntı sayfasına gitmek gerekmiyor).
     Plana/gündeme ekleme ve ret pencerede açılır, ızgarada form açılmaz;
     değerlendirmeye alma ve erteleme kartta.
+  - Plana ekleme formu (`oneri/PlanaEkle.tsx`) önerinin bağlı olduğu
+    başlıkla, yoksa önerinin kendi Header'ıyla yeni başlıkla açılır. Aynı
+    ülkenin plandaki başlığı varsayılan değil: başka muhabirin haberi
+    olabilir, fark edilmeden eklenen öneri onun başlığına giriyordu.
   - Next Day'in gelen önerilerinde plana eklenen öneri kalır, en sonda,
     altında "Plana eklendi · başlık" notuyla. Paketli öneri plana eklenince
     başlığın altına haberin kendisi (önerinin haber başlığı) gelişme olarak

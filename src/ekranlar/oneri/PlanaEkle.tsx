@@ -10,9 +10,11 @@ import { MuhabirSecici } from "../nextday/Formlar";
  * Öneriyi plana ekleme formu.
  *
  * Promptun 4.2 maddesi: öneri mevcut bir haber başlığına bağlanabilsin ya
- * da yeni başlık oluşturabilsin. Varsayılan seçim önce önerinin bağlı
- * olduğu başlık, sonra aynı ülkenin plandaki başlığı; hiçbiri yoksa
- * önerinin kendi başlığıyla yeni başlık. Paket başlığı önerilmişse paket
+ * da yeni başlık oluşturabilsin. Varsayılan seçim önerinin bağlı olduğu
+ * başlık, yoksa önerinin kendi başlığıyla yeni başlık. Aynı ülkenin
+ * plandaki başlığı varsayılan olmuyor: başka muhabirin haberi olabilir,
+ * fark edilmeden eklenen öneri onun başlığına girip muhabiri de oraya
+ * yazıyordu. Mevcut başlığa bağlamak elle seçiliyor. Paket başlığı önerilmişse paket
  * önerisi de doğuyor; onu kapatmak yalnız gelişmeyi ekliyor.
  *
  * Yönetici talimatında muhabir yok: Planlama burada atıyor. Talimat bir
@@ -27,12 +29,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
   const plan = planlar.find((p) => p.id === pId);
 
   const plandakiler = plan?.basliklar.map((b) => b.baslikId) ?? [];
-  const varsayilan =
-    oneri.baslikId ??
-    v.basliklar.find((b) => plandakiler.includes(b.id) && b.ulke === oneri.ulke)?.id ??
-    v.basliklar.find((b) => b.aktif && b.ulke === oneri.ulke)?.id ??
-    "yeni";
-  const [baslikId, setBaslikId] = useState(varsayilan);
+  const [baslikId, setBaslikId] = useState(oneri.baslikId ?? "yeni");
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const talimat = !!oneri.talimatVeren;
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
