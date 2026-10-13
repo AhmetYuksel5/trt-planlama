@@ -407,6 +407,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   haber muhabirin İşlerim'inde ("Takipteki haberlerim", `muTakip`).
   "Tamamlandı"yı muhabir ya da Planlama işaretler (`takipTamamla`,
   `takipTamamlayabilir`). Diğer birimler devreye girince ayar kapanır.
+- Kayıt temizliği (Ayarlar, yalnız tam yönetici; `temizlik.ts`,
+  `eylemler.ts → kayitlariTemizle`, `ekranlar/KayitTemizligi.tsx`):
+  deneme sürecinde girilenler tarih aralığı ve türle (öneri, Next Day,
+  paket, haftalık, aylık/özel, çağrı ve yanıt, takip, takvim,
+  görevlendirme, hareket ve bildirim, kullanılmayan başlık) izleriyle
+  silinir. İz: önerinin yazışması, gelişmesi, paketi, haftalık kalemi;
+  planın gelişmesi, canlı yayını, paketi; çağrının yanıtı; silinen kayda
+  değen hareket. Kalan kayıttaki bağlantı kopar (önerinin planı, planın
+  hazır paketi, takvim bağlantısı…). Sayılar silmeden önce aynı kuraldan;
+  temizliğin kendisi tek hareket (`kayitTemizlendi`). Kişiler, kurum
+  yapısı ve ayarlar girmez. Geri alınamaz, onay sorulur.
 - Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`, `Durum.takipler`):
   muhabirin izlediği güncel konu (olay, toplantı, etkinlik); iş önerisi
   değil, bilgilendirme. Muhabir menüsünde "Takiplerim" (öneriler menüden
@@ -431,6 +442,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlıkla, yoksa önerinin kendi Header'ıyla yeni başlıkla açılır. Aynı
     ülkenin plandaki başlığı varsayılan değil: başka muhabirin haberi
     olabilir, fark edilmeden eklenen öneri onun başlığına giriyordu.
+    Önerinin başlığı pasifse (listede yoksa) yine yeni başlık: seçici
+    başka seçeneği gösterip kayıt görünmeyen başlığa gitmesin; haftalık
+    gündem formunda da aynısı. Öneri penceresi ve ayrıntı sayfası öneriye
+    göre yeniden kurulur (`key`), form bir öneriden ötekine iz taşımaz.
   - Next Day'in gelen önerilerinde plana eklenen öneri kalır, en sonda,
     altında "Plana eklendi · başlık" notuyla. Paketli öneri plana eklenince
     başlığın altına haberin kendisi (önerinin haber başlığı) gelişme olarak

@@ -577,6 +577,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .liste > li { display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-2) 0; border-top: 1px solid var(--cizgi); min-width: 0; }
 .liste > li:first-child { border-top: 0; padding-top: 0; }
 .liste .ad { flex: 1; min-width: 0; }
+/* Kayıt temizliği: tür ve silinecek sayısı aynı satırda; izler soluk */
+.temizlik-turleri > li > :first-child { flex: 1; min-width: 0; }
+.temizlik-turleri > li.soluk { color: var(--sonuk); }
 .liste .ad > b, .liste .ad > a { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .liste .ad > a:hover { color: var(--vurgu); }
 .liste .ad small { display: block; color: var(--sonuk); font-size: var(--punto-kucuk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

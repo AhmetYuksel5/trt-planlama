@@ -164,7 +164,9 @@ function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikP
   const { t, dil } = useDil();
   const v = useVeri();
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
-  const [f, setF] = useState({ tarih: oneri.haftaGunu ?? "", baslikId: oneri.baslikId ?? "", yeniBaslik: "" });
+  // Önerinin dosyası pasifse listede yok; seçici başka seçeneği gösterip kayıt görünmeyen dosyaya gitmesin.
+  const dosya = oneri.baslikId && v.basliklar.some((b) => b.id === oneri.baslikId && b.aktif) ? oneri.baslikId : "";
+  const [f, setF] = useState({ tarih: oneri.haftaGunu ?? "", baslikId: dosya, yeniBaslik: "" });
   const kaydet = () => {
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {
       tarih: f.tarih || undefined,
@@ -177,7 +179,7 @@ function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikP
     }
   };
   return (
-    <div className="form form-kutu ara-ust-2">
+    <div className="form form-kutu ara-ust-2" data-gundeme-ekle-formu={oneri.id}>
       <div className="satir">
         <label>
           {t("gun")}
@@ -192,7 +194,7 @@ function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikP
         </label>
         <label>
           {t("dosya")}
-          <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })}>
+          <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-ge-dosya>
             <option value="">{t("dosyasiz")}</option>
             {v.basliklar
               .filter((b) => b.aktif)

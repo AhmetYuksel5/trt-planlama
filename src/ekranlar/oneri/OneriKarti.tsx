@@ -326,7 +326,7 @@ export function OneriListesi({
     );
     const dugmeler = [
       kararAcik && !muhabirde && (
-        <button key="ekle" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })}>
+        <button key="ekle" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })} data-oneri-ekle>
           {ekleMetni}
         </button>
       ),

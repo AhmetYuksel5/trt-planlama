@@ -11,6 +11,7 @@ import { ayniYapi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhab
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
+import { temizle, type TemizlikSecimi } from "./temizlik";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
   ORTAM_DUZENLERI,
@@ -100,6 +101,7 @@ import {
   uretimeAlabilir,
   yapabilir,
   yapiDuzenleyebilir,
+  kayitTemizleyebilir,
 } from "./yetki";
 
 /**
@@ -447,6 +449,19 @@ export const oneriPlanaEkle = (
     }),
   );
   return true;
+};
+
+/**
+ * Kayıt temizliği: tam yönetici deneme sürecinde girilenleri izleriyle
+ * siliyor (temizlik.ts). Silinen sayısı döner; temizliğin kendisi tek
+ * hareket olarak kalıyor: kimin ne zaman sildiği izlensin.
+ */
+export const kayitlariTemizle = (ben: Kisi, secim: TemizlikSecimi): number | null => {
+  if (!kayitTemizleyebilir(ben) || !secim.turler.length) return null;
+  const { yeni, toplam } = temizle(getir(), secim);
+  if (!toplam) return 0;
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "kayitTemizlendi", veri: { sayi: String(toplam) } }));
+  return toplam;
 };
 
 /**

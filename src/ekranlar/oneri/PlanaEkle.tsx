@@ -29,7 +29,9 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
   const plan = planlar.find((p) => p.id === pId);
 
   const plandakiler = plan?.basliklar.map((b) => b.baslikId) ?? [];
-  const [baslikId, setBaslikId] = useState(oneri.baslikId ?? "yeni");
+  // Önerinin başlığı listede yoksa (pasif) seçici ilk seçeneği gösterir ama kayıt görünmeyen başlığa giderdi; ekranla kayıt ayrışmasın.
+  const secilebilir = (id?: string) => !!id && v.basliklar.some((b) => b.id === id && (b.aktif || plandakiler.includes(id)));
+  const [baslikId, setBaslikId] = useState(secilebilir(oneri.baslikId) ? oneri.baslikId! : "yeni");
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const talimat = !!oneri.talimatVeren;
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
@@ -52,11 +54,11 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
   };
 
   return (
-    <div className="form form-kutu">
+    <div className="form form-kutu" data-plana-ekle-formu={oneri.id}>
       <div className="satir">
         <label>
           {t("plan")}
-          <select value={pId} onChange={(e) => setPId(e.target.value)}>
+          <select value={pId} onChange={(e) => setPId(e.target.value)} data-pe-plan>
             {planlar.map((p) => (
               <option key={p.id} value={p.id}>
                 {t("nextday")} · {tarihYaz(p.tarih, dil, "tam")}
@@ -66,7 +68,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
         </label>
         <label>
           {t("haberBasligi")}
-          <select value={baslikId} onChange={(e) => setBaslikId(e.target.value)}>
+          <select value={baslikId} onChange={(e) => setBaslikId(e.target.value)} data-pe-baslik>
             <optgroup label={t("plandakiBasliklar")}>
               {plan.basliklar.map((b) => (
                 <option key={b.baslikId} value={b.baslikId}>
@@ -90,7 +92,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
       {baslikId === "yeni" && (
         <label>
           {t("yeniBaslikAdi")}
-          <input {...icerikAlani} value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} />
+          <input {...icerikAlani} value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} data-pe-yeni />
         </label>
       )}
       {!oneri.muhabirId && (
@@ -111,7 +113,7 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
         <button className="dugme dugme-ikincil" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-iyi" onClick={ekle} disabled={baslikId === "yeni" && !yeniBaslik.trim()}>
+        <button className="dugme dugme-iyi" onClick={ekle} disabled={baslikId === "yeni" && !yeniBaslik.trim()} data-pe-ekle>
           {t("planaEkle")}
         </button>
       </div>

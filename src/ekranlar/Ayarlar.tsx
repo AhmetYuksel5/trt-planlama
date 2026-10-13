@@ -8,8 +8,9 @@ import { useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { muhabireOneriBirimleriKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
-import { geriBildirimSablonuDuzenler, muhabireOneriBirimleri } from "../yetki";
+import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
+import { KayitTemizligi } from "./KayitTemizligi";
 import { SayfaBasi } from "./ana/Planlama";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
@@ -35,6 +36,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         <WhatsappAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
+        {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>
             <button
