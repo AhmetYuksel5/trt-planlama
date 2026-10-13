@@ -55,6 +55,7 @@ export interface OgeBelgesi {
   hesapsiz?: boolean;
   oncekiKimlik?: string;
   yetkiler?: string[];
+  yeniEposta?: string;
 }
 
 export type Islem =
@@ -125,7 +126,7 @@ type Oge = { id: string };
 export const ogeBelgesi = (alan: string, oge: Oge, s: number): OgeBelgesi => {
   const b: OgeBelgesi = { s, j: JSON.stringify(oge) };
   if (alan === "kisiler") {
-    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string; hesapsiz?: boolean; oncekiKimlik?: string; yetkiler?: string[] };
+    const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string; hesapsiz?: boolean; oncekiKimlik?: string; yetkiler?: string[]; yeniEposta?: string };
     b.eposta = (k.eposta ?? "").toLowerCase();
     b.pasif = !!k.pasif;
     b.hesapYoneticisi = !!k.hesapYoneticisi;
@@ -139,6 +140,7 @@ export const ogeBelgesi = (alan: string, oge: Oge, s: number): OgeBelgesi => {
     if (k.hesapsiz) b.hesapsiz = true;
     if (k.oncekiKimlik) b.oncekiKimlik = k.oncekiKimlik;
     if (k.yetkiler?.length) b.yetkiler = [...k.yetkiler];
+    if (k.yeniEposta) b.yeniEposta = k.yeniEposta.toLowerCase();
   }
   return b;
 };

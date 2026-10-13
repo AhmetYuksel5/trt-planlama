@@ -75,6 +75,7 @@ import {
   adimYapabilir,
   haftalikDuzenler,
   hesapYetkisi,
+  epostaDegistirebilir,
   kararVerebilir,
   mudahaleEdebilir,
   muhabireOneriGonderebilir,
@@ -1728,6 +1729,34 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
   return true;
 };
 
+/**
+ * Kişinin e-postası. Hesapsızda (ve demoda) doğrudan değişiyor. Etkin
+ * hesapta giriş adresi Firebase'de, yönetici onu değiştiremiyor: yeni
+ * adres "yeniEposta" olarak işaretleniyor, o adrese aktivasyon daveti
+ * (ekran gönderiyor) gidiyor; kişi etkinleşince kaydı yeni hesaba geçiyor.
+ * Şimdiki adres yazılırsa bekleyen değişiklik kalkıyor.
+ */
+export const kisiEpostasi = (ben: Kisi, kisiId: string, eposta: string): "degisti" | "aktivasyon" | "geriAlindi" | false => {
+  const d = getir();
+  const k = d.kisiler.find((x) => x.id === kisiId);
+  const adres = eposta.trim().toLowerCase();
+  if (!k || !epostaDegistirebilir(ben, k)) return false;
+  const dogrudan = !GERCEK || !!k.hesapsiz;
+  if (adres && d.kisiler.some((x) => x.id !== kisiId && (x.eposta ?? "").toLowerCase() === adres)) return false;
+  const sonuc = dogrudan ? "degisti" : adres === (k.eposta ?? "").toLowerCase() ? "geriAlindi" : "aktivasyon";
+  if (!dogrudan && !adres) return false;
+  kaydet({
+    ...d,
+    kisiler: d.kisiler.map((x) => {
+      if (x.id !== kisiId) return x;
+      if (dogrudan) return { ...x, eposta: adres };
+      const { yeniEposta: _, ...kalan } = x;
+      return sonuc === "geriAlindi" ? kalan : { ...kalan, yeniEposta: adres };
+    }),
+  });
+  return sonuc;
+};
+
 /* --- Kurumun yapısı (yapi.ts): taslak, yayın, sürüme dönüş; yalnız tam yönetici --- */
 
 /** Yöneticinin taslağı; yoksa yayındaki yapının kopyası (henüz kaydedilmemiş). */
@@ -1951,7 +1980,8 @@ const kimlikDegistir = <T>(x: T, eski: string, yeni: string): T => {
 };
 
 /**
- * Hesapsız kişi hesaba bağlandı (davet `kisiId` taşıyordu): yeni hesap
+ * Hesapsız kişi hesaba bağlandı ya da etkin hesabın e-postası değişti
+ * (davet `kisiId` taşıyordu): yeni hesap
  * etkinleşince eski kaydın bilgileri yeni kişiye geçiyor, kayıtlardaki eski
  * kimlik yenisiyle değişiyor ve eski kişi kaydı siliniyor. Kişi kendisi
  * yapıyor (gercekKipiBaslat, kayıt gelince); kurallar eski kaydı yalnız
@@ -1963,9 +1993,10 @@ export const hesabaGecir = (benId: string) => {
   const d = getir();
   const ben = d.kisiler.find((k) => k.id === benId);
   const eski = ben?.oncekiKimlik;
-  const eskiKisi = eski ? d.kisiler.find((k) => k.id === eski && k.hesapsiz) : undefined;
+  // Eski kayıt hesapsız kişi ya da e-postası bu hesabın adresine değişen hesap (kural da aynısını soruyor).
+  const eskiKisi = eski ? d.kisiler.find((k) => k.id === eski && (k.hesapsiz || (!!k.yeniEposta && k.yeniEposta === ben?.eposta?.toLowerCase()))) : undefined;
   if (!ben || !eski || !eskiKisi) return false;
-  const { hesapsiz: _, kontrolBekliyor: __, ...profil } = eskiKisi;
+  const { hesapsiz: _, kontrolBekliyor: __, yeniEposta: ___, pasif: ____, ...profil } = eskiKisi;
   // Profil (şehir, telefon, diller, kısaltma…) eski kayıttan; hesap alanları yeni hesaptan.
   const birlesik: Kisi = { ...profil, id: ben.id, ad: ben.ad, birim: ben.birim, gorev: ben.gorev, rol: ben.rol, eposta: ben.eposta, oncekiKimlik: eski, ...(ben.hesapYoneticisi ? { hesapYoneticisi: true } : {}), ...(ben.yetkiler ? { yetkiler: ben.yetkiler } : {}) };
   const yeni: Durum = { ...d };

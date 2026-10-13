@@ -168,17 +168,17 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
 }
 
 /*
- * Dosyalar kalemin dizideki ilk görünüşüne göre sıralı. Gün gün gündemde
- * dosyasız kalemler günün en altında yeşil "متابعات" başlığının altında
- * (Next Day'in sonundaki متابعات gibi); zamana bağlı olmayanlarda başlıksız.
+ * Dosyalar kalemin dizideki ilk görünüşüne göre sıralı. Dosyasız kalemler
+ * bölümün (günün, zamana bağlı olmayanların) en altında yeşil "متابعات"
+ * başlığının altında, Next Day'in sonundaki متابعات gibi.
  */
-function Dosyalar({ liste, hafta, duzen, takipBasligi = false }: { liste: HaftalikKalem[]; hafta: HaftalikPlan; duzen?: HfDuzen; takipBasligi?: boolean }) {
+function Dosyalar({ liste, hafta, duzen }: { liste: HaftalikKalem[]; hafta: HaftalikPlan; duzen?: HfDuzen }) {
   const { t } = useDil();
   const v = useVeri();
   const ben = duzen?.ben;
   const gruplar = new Map<string, HaftalikKalem[]>();
   for (const k of liste) gruplar.set(k.baslikId ?? "", [...(gruplar.get(k.baslikId ?? "") ?? []), k]);
-  const sirali = takipBasligi ? [...gruplar.entries()].sort(([a], [b]) => Number(!a) - Number(!b)) : [...gruplar.entries()];
+  const sirali = [...gruplar.entries()].sort(([a], [b]) => Number(!a) - Number(!b));
   return (
     <>
       {sirali.map(([baslikId, ks]) => {
@@ -193,7 +193,7 @@ function Dosyalar({ liste, hafta, duzen, takipBasligi = false }: { liste: Haftal
                 <h3>{ben && yapabilir(ben, "baslikYonet") ? <YerindeMetin acik deger={ad} etiket={t("dosya")} kaydet={(x) => x && baslikDuzenle(ben, baslikId, { ad: x })} /> : ad}</h3>
               </BelgeSatiri>
             )}
-            {!baslikId && takipBasligi && <h3 className="yesil">{c("takipler")}</h3>}
+            {!baslikId && <h3 className="yesil">{c("takipler")}</h3>}
             {ks.map((k, i) => (
               <Kalem key={k.id} k={k} hafta={hafta} duzen={duzen} ilk={i === 0} son={i === ks.length - 1} />
             ))}
@@ -288,7 +288,7 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
           {gunler.map((g) => (
             <div key={g} className="cikti-gun">
               <h4 className="gun">{ciktiGunu(g, "ar")}</h4>
-              <Dosyalar liste={kalemler.filter((k) => k.tarih === g)} hafta={hafta} duzen={duzen} takipBasligi />
+              <Dosyalar liste={kalemler.filter((k) => k.tarih === g)} hafta={hafta} duzen={duzen} />
               {duzen && (
                 <EkleCubugu>
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: g })} />

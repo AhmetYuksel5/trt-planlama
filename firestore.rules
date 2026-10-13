@@ -25,7 +25,7 @@ service cloud.firestore {
     function davetYolu() { return /databases/$(veritabani)/documents/davetler/$(eposta()); }
     // Seçmeli hesap yetkisi: tam yönetici hepsine sahip, öbürü yalnız verilene (src/yetki.ts → hesapYetkisi).
     function yetkiVar(y) { return hesapYoneticisi() || (etkin() && get(kisiYolu()).data.get("yetkiler", []).hasAny([y])); }
-    function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]; }
+    function yetkiAlanlari() { return ["pasif", "hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik", "yeniEposta"]; }
     // Tam yönetici olmayanın yazdığı kişi: yöneticisiz, yetkisiz.
     function yetkisiz(k) { return k.get("hesapYoneticisi", false) == false && k.get("yetkiler", []).size() == 0; }
     function kayitYolu(kod) { return /databases/$(veritabani)/documents/kayitBaglantilari/$(kod); }
@@ -86,25 +86,37 @@ service cloud.firestore {
             && request.resource.data.eposta == eposta()
             && request.resource.data.pasif == false
             && request.resource.data.get("hesapsiz", false) == false
-            && request.resource.data.get("yetkiler", []).size() == 0
+            && request.resource.data.get("yeniEposta", "") == ""
+            // Yetkiler yalnız davetten (e-posta değişikliğinde kişinin yetkileri taşınıyor); öbür yollarda yetkisiz.
             && ((exists(davetYolu())
                  && get(davetYolu()).data.durum == "bekliyor"
                  && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi
+                 && request.resource.data.get("yetkiler", []) == get(davetYolu()).data.get("yetkiler", [])
                  && request.resource.data.get("oncekiKimlik", "") == get(davetYolu()).data.get("kisiId", ""))
-                || (request.auth.token.email_verified == true && kayitGecerli(request.resource.data))
-                || (eposta() == kurucuEposta() && request.auth.token.email_verified == true)));
+                || (request.resource.data.get("yetkiler", []).size() == 0
+                    && ((request.auth.token.email_verified == true && kayitGecerli(request.resource.data))
+                        || (eposta() == kurucuEposta() && request.auth.token.email_verified == true)))));
       // Etkin herkes kişi kaydını düzenleyebiliyor (profil, durum); yetki alanlarını yalnız hesap yöneticisi.
       // Hesap kapatma yetkisi olan, tam yönetici olmayanın hesabını kapatıp açabiliyor.
       allow update: if hesapYoneticisi()
         || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari()))
+        // Kişi düzenleme yetkisi olan, tam yönetici olmayanın e-postasını değiştiriyor: hesapsızda doğrudan,
+        // etkin hesapta yalnız "yeni e-posta" işareti (aktivasyon daveti onun adresine gidiyor).
+        || (yetkiVar("kisiDuzenle") && resource.data.get("hesapYoneticisi", false) == false
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["s", "j", "eposta", "yeniEposta"])
+            && (resource.data.get("hesapsiz", false) == true || !request.resource.data.diff(resource.data).affectedKeys().hasAny(["eposta"])))
         || (yetkiVar("hesapAcKapa") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]));
-      // Hesaba bağlanan kişi kendi eski hesapsız kaydını kaldırıyor (oncekiKimlik onu gösteriyor).
+      // Hesaba bağlanan kişi kendi eski kaydını kaldırıyor (oncekiKimlik onu gösteriyor): hesapsız kayıt ya da e-postası değişen hesap.
       // Kişi silme yetkisi olan, tam yönetici olmayanı siliyor; kendini silemiyor (sistem yöneticisiz kalmasın).
       allow delete: if hesapYoneticisi()
         || (yetkiVar("kisiSil") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid)
-        || (resource.data.get("hesapsiz", false) == true && etkin()
-            && get(kisiYolu()).data.get("oncekiKimlik", "") == id);
+        || (etkin() && get(kisiYolu()).data.get("oncekiKimlik", "") == id
+            && (resource.data.get("hesapsiz", false) == true
+                // E-postası değişen etkin hesap: yalnız yöneticinin yazdığı yeni adresin sahibi, aynı yetkilerle.
+                || (resource.data.get("yeniEposta", "") == eposta()
+                    && resource.data.get("hesapYoneticisi", false) == get(kisiYolu()).data.get("hesapYoneticisi", false)
+                    && resource.data.get("yetkiler", []) == get(kisiYolu()).data.get("yetkiler", []))));
     }
 
     // Kurumun yapısı (birimler, ünvanlar, iş akışı; src/yapi.ts) ve taslağı: herkes okur (kayıt bütün

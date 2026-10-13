@@ -34,7 +34,7 @@ import { firebaseAyari } from "../firebase-ayar";
 import { hesabaGecir } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
-import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type Rol } from "../veri";
+import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
@@ -378,6 +378,8 @@ export interface Davet {
   kullanan?: string;
   /** Hesaba bağlanan hesapsız kişinin kimliği; etkinleşince kaydı bu hesaba geçer (eylemler.ts → hesabaGecir). */
   kisiId?: string;
+  /** E-postası değişen hesabın seçmeli yetkileri: yeni hesap aynı yetkilerle açılsın (kural davetle karşılaştırıyor). */
+  yetkiler?: HesapYetkisi[];
 }
 
 /**
@@ -401,6 +403,7 @@ export const ilkKayit = async (verilen?: KayitBilgisi | null): Promise<KisiHali 
     const k = {
       ...yeniKisi({ id: u.uid, ad: davet.ad, eposta, birim: davet.birim, gorev: davet.gorev, rol: davet.rol, hesapYoneticisi: davet.hesapYoneticisi }),
       ...(davet.kisiId ? { oncekiKimlik: davet.kisiId } : {}),
+      ...(davet.yetkiler?.length ? { yetkiler: davet.yetkiler } : {}),
     };
     const b = writeBatch(db);
     b.set(kisiRef, ogeBelgesi("kisiler", k, Date.now()));
@@ -440,8 +443,8 @@ export const ilkKayit = async (verilen?: KayitBilgisi | null): Promise<KisiHali 
 export const davetEt = async (d: Omit<Davet, "durum" | "zaman" | "eposta"> & { eposta: string }, dil: string) => {
   const eposta = ePosta(d.eposta);
   // Firestore undefined saklamıyor: kisiId yoksa alan hiç yazılmıyor.
-  const { kisiId, ...geri } = d;
-  const kayit: Davet = { ...geri, ...(kisiId ? { kisiId } : {}), eposta, durum: "bekliyor", zaman: new Date().toISOString() };
+  const { kisiId, yetkiler, ...geri } = d;
+  const kayit: Davet = { ...geri, ...(kisiId ? { kisiId } : {}), ...(yetkiler?.length ? { yetkiler } : {}), eposta, durum: "bekliyor", zaman: new Date().toISOString() };
   await setDoc(doc(db, "davetler", eposta), kayit);
   await baglantiGonder(eposta, dil);
 };

@@ -7,11 +7,11 @@ import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
-import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
-import { firebaseYukle } from "../kip";
+import { GERCEK, firebaseYukle } from "../kip";
 import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi } from "../veri";
-import { hesapYetkisi } from "../yetki";
+import { epostaDegistirebilir, hesapYetkisi } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
 /**
@@ -387,6 +387,11 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                       </Rozet>
                     </span>
                   )}{" "}
+                  {k.yeniEposta && (
+                    <span data-eposta-bekliyor>
+                      <Rozet ton="uyari">{t("epostaBekliyor", { eposta: k.yeniEposta })}</Rozet>
+                    </span>
+                  )}{" "}
                   {k.kontrolBekliyor && (
                     <span data-kontrol-bekliyor>
                       <Rozet ton="uyari">{t("kontrolBekliyor")}</Rozet>
@@ -633,16 +638,56 @@ function YetkiPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
 
 /* Kişinin adı, birimi ve görevi (rol ünvandan, yapi.ts → unvandanRol); davet formundaki alanların aynısı. Organizasyon'da tayin de bu pencere. */
 export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
-  const { t, ad } = useDil();
+  const { t, ad, dil } = useDil();
   const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+  const v = useVeri();
   const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, ...ilk });
+  const [eposta, setEposta] = useState(kisi.yeniEposta ?? kisi.eposta ?? "");
+  const [bekle, setBekle] = useState(false);
+  const epostaAcik = epostaDegistirebilir(ben, kisi);
   // Ünvan birimde seçilemiyorsa birimin ilk ünvanına geçiyor; kişi birimde olmayan ünvanla kalmasın.
   const birimSec = (birim: BirimId) => setP({ ...p, birim, gorev: birimeUygunUnvan(birim, p.gorev) });
-  const kaydet = () => {
+
+  /*
+   * E-posta: hesapsızda (ve demoda) doğrudan değişiyor. Etkin hesapta önce
+   * yeni adrese aktivasyon daveti gidiyor (kişi, yöneticiliği ve yetkileriyle),
+   * sonra kayıtta "yeni e-posta" işareti; kişi etkinleşene kadar eskisiyle
+   * giriyor. Şimdiki adres geri yazılırsa bekleyen davet iptal.
+   */
+  const epostaKaydet = async (): Promise<boolean> => {
+    const adres = eposta.trim().toLowerCase();
+    const simdiki = (kisi.yeniEposta ?? kisi.eposta ?? "").toLowerCase();
+    if (!epostaAcik || adres === simdiki) return true;
+    if (adres && v.kisiler.some((x) => x.id !== kisi.id && (x.eposta ?? "").toLowerCase() === adres)) {
+      bildir(t("epostaKayitli"));
+      return false;
+    }
+    if (!GERCEK || kisi.hesapsiz) return !!kisiEpostasi(ben, kisi.id, adres);
+    if (!adres) return false;
+    const f = await firebaseYukle();
+    if (kisi.yeniEposta) await f.davetIptal(kisi.yeniEposta).catch(() => {});
+    if (adres !== (kisi.eposta ?? "").toLowerCase()) {
+      const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+      await f.davetEt({ eposta: adres, ad: adi, birim: p.birim, gorev: p.gorev, rol: unvandanRol(p.gorev, kisi), hesapYoneticisi: !!kisi.hesapYoneticisi, yetkiler: kisi.yetkiler, davetEden: ben.id, kisiId: kisi.id }, dil);
+    }
+    const sonuc = kisiEpostasi(ben, kisi.id, adres);
+    if (sonuc === "aktivasyon") bildir(t("epostaAktivasyon", { eposta: adres }));
+    return !!sonuc;
+  };
+
+  const kaydet = async () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
-    if (kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) {
-      bildir(t("bKaydedildi"));
-      kapat();
+    if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
+    setBekle(true);
+    try {
+      if (await epostaKaydet()) {
+        bildir(t("bKaydedildi"));
+        kapat();
+      }
+    } catch (x) {
+      bildir(gonderimHatasi(x));
+    } finally {
+      setBekle(false);
     }
   };
   return (
@@ -661,6 +706,23 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
           <input dir="ltr" value={p.en} onChange={(e) => setP({ ...p, en: e.target.value })} />
         </label>
         <label>
+          {t("eposta")}
+          <input
+            type="email"
+            dir="ltr"
+            value={eposta}
+            onChange={(e) => setEposta(e.target.value)}
+            disabled={!epostaAcik}
+            title={epostaAcik ? undefined : t("epostaYalnizTamYonetici")}
+            data-pozisyon-eposta
+          />
+          {kisi.yeniEposta && (
+            <small data-pozisyon-eposta-bekliyor>
+              {t("epostaBekliyor", { eposta: kisi.yeniEposta })}
+            </small>
+          )}
+        </label>
+        <label>
           {t("birim")}
           <select value={p.birim} onChange={(e) => birimSec(e.target.value)} data-pozisyon-birim>
             <BirimSecenekleri dahil={kisi.birim} />
@@ -677,7 +739,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}
           </button>
-          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev} onClick={kaydet} data-pozisyon-kaydet>
+          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev || bekle} onClick={kaydet} data-pozisyon-kaydet>
             {t("kaydet")}
           </button>
         </div>

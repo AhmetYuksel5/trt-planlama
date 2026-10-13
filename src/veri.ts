@@ -180,6 +180,13 @@ export interface Kisi {
   hesapsiz?: boolean;
   /** Hesaba bağlanırken bırakılan hesapsız kaydın kimliği; geçiş o kimliği her kayıtta bununla değiştiriyor. */
   oncekiKimlik?: string;
+  /**
+   * Etkin hesabın e-postası değişiyor: yönetici yeni adresi yazdı, o adrese
+   * aktivasyon daveti gitti. Kişi yeni adresle etkinleşene kadar eskisiyle
+   * giriyor; etkinleşince kaydı yeni hesaba geçiyor (eylemler.ts →
+   * hesabaGecir). Kural eski kaydı yalnız bu adresin sahibine sildiriyor.
+   */
+  yeniEposta?: string;
   /** Tam yöneticinin verdiği seçmeli hesap yetkileri; tam yönetici (hesapYoneticisi) hepsine sahip. */
   yetkiler?: HesapYetkisi[];
   /** Planın ekip satırında yazılan ad parçası (PlanAdi); yoksa tam ad. */

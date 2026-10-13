@@ -120,6 +120,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     "Düzenle" ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki
     dahil). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
     belirler; kişi kaydı davetten kurulur, kimliği Firebase uid'si.
+  - E-posta "Düzenle" penceresinden (`eylemler.ts → kisiEpostasi`, yetki
+    `yetki.ts → epostaDegistirebilir`): hesapsız kişide (ve demoda) doğrudan
+    değişir. Etkin hesapta giriş adresi Firebase'de: yeni adres kişide
+    `yeniEposta` olarak işaretlenir, o adrese `kisiId`'li aktivasyon daveti
+    gider (yöneticilik ve yetkiler davette, `Davet.yetkiler`); listede
+    "aktivasyon bekleniyor". Kişi yeni adresle etkinleşince `hesabaGecir`
+    kaydı yeni hesaba taşır, eski kaydı siler; o zamana kadar eskisiyle
+    girer. Kural eski kaydı yalnız `yeniEposta` adresinin sahibine, aynı
+    yetkilerle sildirir. Yöneticinin ya da yetkili kişinin adresini yalnız
+    tam yönetici değiştirir.
   - İkinci yol kayıt bağlantısı: yönetici paylaşılabilir, 7 günlük bağlantı
     açar (`kayitBaglantilari` koleksiyonu, `#/kayit/<kod>`,
     `ekranlar/KayitSayfasi.tsx`; demo açıkken de çalışır). Kişi adını,
@@ -445,8 +455,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kesinleşen planın çıktısında yalnız kabul ve bilgi; kesinleşmeden
     önizleme karar bekleyenleri de basar (yoksa hazırlıktaki iş görünmüyordu).
     Kalem: "YER / metin", olayın adı yazılmışsa "YER - OLAY / metin";
-    sonra muhabirler, biçim, not. Dosyasız kalemler günün en altında yeşil,
-    kalın "متابعات" başlığıyla (`Dosyalar takipBasligi`). Belgede boş alan
+    sonra muhabirler, biçim, not. Dosyasız kalemler bölümün (günün, zamana
+    bağlı olmayanların) en altında yeşil, kalın "متابعات" başlığıyla
+    (`HaftalikBelge.tsx → Dosyalar`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;

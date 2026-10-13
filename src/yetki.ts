@@ -334,6 +334,19 @@ const muhabirBildirimi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   return false;
 };
 
+/**
+ * E-posta değiştirme: hesapsız kişide kişi düzenleme yetkisi; etkin hesapta
+ * davet de gerekiyor (aktivasyon davetle gidiyor). Yöneticinin ya da yetki
+ * verilmiş kişinin adresini yalnız tam yönetici değiştiriyor: yeni hesap aynı
+ * yetkilerle açılıyor (kural da yalnız tam yöneticinin davetine izin veriyor).
+ */
+export const epostaDegistirebilir = (ben: Kisi, k: Kisi): boolean => {
+  if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
+  if (k.hesapsiz) return true;
+  if ((k.hesapYoneticisi || k.yetkiler?.length) && !ben.hesapYoneticisi) return false;
+  return hesapYetkisi(ben, "davet");
+};
+
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
 export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean => !!k && (k.id === kisi.id || yapabilir(k, "profilDuzenle"));
 
