@@ -4,6 +4,7 @@ import {
   Building2,
   Eye,
   EyeOff,
+  Globe,
   History,
   Pencil,
   Plus,
@@ -40,6 +41,8 @@ import {
   yapiTaslagiDegistir,
   yapiTaslaginiAt,
   yapiYayinla,
+  muhabirlereUlkeUnvaniVer,
+  ulkeUnvaniBekleyenler,
 } from "../../eylemler";
 import { GERCEK } from "../../kip";
 import { yerelGun } from "../../tarih";
@@ -640,12 +643,29 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
    */
   const altta = (b: BirimId) => kisiler.filter((k) => altindaMi(k.birim, b));
   const agac = birimAgaci();
+  const ulkeBekleyen = ulkeUnvaniBekleyenler(v);
   const birimler = [
     ...agac.filter((s) => altta(s.id).length),
     ...[...new Set(kisiler.map((k) => k.birim))].filter((b) => !agac.some((s) => s.id === b)).map((id) => ({ id, derinlik: 0 })),
   ];
   return (
-    <Kart baslik={t("orgKisiler")} ek={String(kisiler.length)}>
+    <Kart
+      baslik={t("orgKisiler")}
+      ek={String(kisiler.length)}
+      sagUc={
+        yapiDuzenleyebilir(ben) &&
+        ulkeBekleyen.length > 0 && (
+          <button
+            type="button"
+            className="dugme dugme-ikincil dugme-kucuk"
+            onClick={() => confirm(t("orgUlkeUnvanlariSoru", { n: ulkeBekleyen.length })) && bildir(t("orgUlkeUnvanlariTamam", { n: muhabirlereUlkeUnvaniVer(ben) }))}
+            data-ulke-unvanlari
+          >
+            <Globe size={14} /> {t("orgUlkeUnvanlari")}
+          </button>
+        )
+      }
+    >
       <label className="arama ara-alt-2">
         <Search size={16} />
         <input

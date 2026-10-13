@@ -234,6 +234,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Rol seçilmez, ünvandan gelir (`UnvanTanimi.yonetici`, "yönetici ünvanı";
     yerleşikte yönetici ve müdürler): yönetici ünvanına gelen yönetici,
     ayrılan personel olur, öbür tayinde rol değişmez (`unvandanRol`).
+  - Dış muhabirin ünvanı ülkesinden ("Lübnan muhabiri", kimlik `muhabir-<ülke>`,
+    `yapi.ts → ulkeMuhabirUnvani`): Kişiler sekmesindeki "Muhabirlere ülke
+    ünvanı ver" (`eylemler.ts → muhabirlereUlkeUnvaniVer`, tam yönetici) eksik
+    ünvanları kişinin birimine ekleyip yeni sürüm yayınlar ve ünvanı genel
+    "Muhabir" olanları geçirir; elle verilmiş ünvana dokunmaz, ikinci kez
+    çoğalmaz. Excel'den gelen ülke ünvanı yayındaysa onu alır. Ülke birim değil
+    ünvan: yetki ve ekranlar birimin "muhabir" olmasına bakıyor.
   - Yerleşik birim ve ünvan silinmez, gizlenir; kişisi ya da durağı bağlı olan
     da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
     yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır

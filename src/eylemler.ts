@@ -5,8 +5,9 @@ import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
-import { yaz, type Yazi } from "./dil";
-import { ayniYapi, ekipGorevleri, guncelYapi, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
+import { metin, yaz, type Yazi } from "./dil";
+import { ulkeAdi } from "./etiketler";
+import { ayniYapi, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, ulkeMuhabirUnvani, ulkeMuhabirUnvaniId, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -1771,6 +1772,51 @@ export const yapiYayinla = (ben: Kisi, not = "") => {
   return true;
 };
 
+/** Ünvanı hâlâ genel "Muhabir" olan dış muhabirler: ülke ünvanına geçecekler (elle verilmiş ünvana dokunulmuyor). */
+export const ulkeUnvaniBekleyenler = (d: Durum): Kisi[] => {
+  const y = guncelYapi(d);
+  return d.kisiler.filter((k) => disMuhabirMi(k, y) && k.gorev === "muhabir");
+};
+
+/**
+ * Dış muhabirlere bulundukları ülkeye göre ünvan ("Lübnan muhabiri"):
+ * eksik ülke ünvanları kişinin birimine eklenip yeni sürüm olarak
+ * yayınlanıyor, sonra ünvanı genel "Muhabir" olanlar ülkesininkine geçiyor.
+ * Tek yazış: kişi yayında olmayan ünvanla kalmasın. Ünvanlar birim değil,
+ * çünkü yetki ve ekranlar birimin "muhabir" olmasına bakıyor. Yöneticinin
+ * açık taslağına da aynı ünvanlar ekleniyor, yayınlayınca geri gitmesin.
+ */
+export const muhabirlereUlkeUnvaniVer = (ben: Kisi) => {
+  if (!yapiDuzenleyebilir(ben)) return 0;
+  const d = getir();
+  const adaylar = ulkeUnvaniBekleyenler(d);
+  if (!adaylar.length) return 0;
+  const ad = (k: Kisi) => metin(ulkeAdi(SEHIRLER[k.sehir]), "tr");
+  const sirali = [...adaylar].sort((a, b) => ad(a).localeCompare(ad(b), "tr"));
+  const ekle = (y: Yapi) =>
+    sirali.reduce((y2, k) => {
+      const u = ulkeMuhabirUnvani(SEHIRLER[k.sehir]);
+      return birimeUnvanEkle(y2, k.birim, y2.unvanlar.some((x) => x.id === u.id) ? u.id : u);
+    }, y);
+  const yayinda = guncelYapi(d);
+  const yeniYapi = ekle(yayinda);
+  const surum = Math.max(0, ...d.yapilar.map((y) => y.surum)) + 1;
+  const yapilar = ayniYapi(yeniYapi, yayinda)
+    ? d.yapilar
+    : [...d.yapilar, { ...yeniYapi, surum, id: kimlik("y"), zaman: simdi(), yayinlayan: ben.id, not: metin("orgUlkeUnvanlari", "tr") }];
+  const taslak = d.yapiTaslaklari?.[ben.id];
+  const ids = new Set(adaylar.map((k) => k.id));
+  let yeni: Durum = {
+    ...d,
+    yapilar,
+    ...(taslak ? { yapiTaslaklari: { ...d.yapiTaslaklari, [ben.id]: ekle(taslak) } } : {}),
+    kisiler: d.kisiler.map((k) => (ids.has(k.id) ? { ...k, gorev: ulkeMuhabirUnvaniId(SEHIRLER[k.sehir]) } : k)),
+  };
+  if (yapilar !== d.yapilar) yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "yapiYayinlandi", veri: { sayi: String(surum) } });
+  kaydet(yeni);
+  return adaylar.length;
+};
+
 /** Eski sürümü taslağa alıyor; yönetici bakıp yayınlayınca yeni sürüm olarak geri geliyor. */
 export const yapiSurumunuTaslagaAl = (ben: Kisi, surum: number) => {
   const d = getir();
@@ -1858,6 +1904,9 @@ export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {
   const adlar = new Set(d.kisiler.map((k) => (typeof k.ad === "string" ? k.ad : k.ad.ar).trim()));
   const eklenen: Kisi[] = [];
   let atlanan = 0;
+  // Ülke ünvanları kurulmuşsa yeni gelen de ülkesininkini alıyor; kurulmamışsa genel "Muhabir".
+  const muhabirUnvanlari = unvanListesi("muhabir", undefined, guncelYapi(d));
+  const ulkeUnvani = (s: Kisi["sehir"]) => (muhabirUnvanlari.includes(ulkeMuhabirUnvaniId(SEHIRLER[s])) ? ulkeMuhabirUnvaniId(SEHIRLER[s]) : "muhabir");
   taslaklar.forEach((t, i) => {
     const var_ = (t.eposta && epostalar.has(t.eposta)) || (t.kisiselEposta && epostalar.has(t.kisiselEposta)) || adlar.has(t.adAr.trim());
     if (var_) {
@@ -1865,7 +1914,7 @@ export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {
       return;
     }
     const k: Kisi = {
-      ...yeniKisi({ id: `${kimlik("kh")}${i}`, ad: { tr: t.adLatin || t.adAr, ar: t.adAr, en: t.adLatin || t.adAr }, eposta: t.eposta, birim: "muhabir", gorev: "muhabir", rol: "personel", hesapYoneticisi: false }),
+      ...yeniKisi({ id: `${kimlik("kh")}${i}`, ad: { tr: t.adLatin || t.adAr, ar: t.adAr, en: t.adLatin || t.adAr }, eposta: t.eposta, birim: "muhabir", gorev: ulkeUnvani(t.sehir), rol: "personel", hesapYoneticisi: false }),
       sehir: t.sehir,
       ...(t.telefon ? { telefon: t.telefon } : {}),
       ...(t.kisaltma ? { kisaltma: t.kisaltma } : {}),
