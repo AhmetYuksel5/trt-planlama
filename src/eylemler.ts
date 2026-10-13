@@ -185,6 +185,8 @@ export interface OneriGirdisi {
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   if (!yapabilir(ben, "oneriGonder") || (!g.hafta && !g.hedefTarih)) return null;
   const muhabir = ben.birim === "muhabir";
+  // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı).
+  if (muhabir && (!g.haberBasligi?.trim() || !g.gelisme?.trim() || !g.paketBasligi?.trim())) return null;
   /*
    * Muhabir yalnız kendi adına gönderir. Planlama sistem dışından geleni
    * elle girer: ya bir muhabir adına (telefon, mesaj) ya da muhabir dışı
@@ -317,7 +319,7 @@ export const oneriDuzeltmeIste = (ben: Kisi, id: string, not: string) => {
 export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) => {
   let d = getir();
   const o = oneriBul(d, id);
-  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim()) return false;
+  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || !g.paketBasligi?.trim()) return false;
   const onceki: Record<string, string> = { haberBasligi: o.haberBasligi, gelisme: o.gelisme };
   if (o.paketBasligi) onceki.paketBasligi = o.paketBasligi;
   const yeni: Oneri = {

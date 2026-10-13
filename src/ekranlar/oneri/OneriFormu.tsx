@@ -49,7 +49,9 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
   };
 };
 
-export const oneriFormuGecerli = (f: OneriFormDurumu) => (f.kaynak === "baska" || !!f.muhabirId) && !!f.haberBasligi.trim() && !!f.gelisme.trim();
+/* Muhabir kendi önerisinde header, gelişme ve strap'i boş bırakamıyor; Planlama'nın elle girdiğinde strap isteğe bağlı. */
+export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) =>
+  (f.kaynak === "baska" || !!f.muhabirId) && !!f.haberBasligi.trim() && !!f.gelisme.trim() && (!strapGerekli || !!f.paketBasligi.trim());
 
 /** Formdan eyleme: seçilmeyen kaynağın alanları gitmiyor, yoksa muhabir adına girilen öneri ajans gibi de görünürdü. */
 export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedefTarih" | "hafta"> => ({
@@ -180,8 +182,8 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} />
       </label>
       <label>
-        {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
-        <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
+        {t("onerilenPaketBasligi")} {ben.birim !== "muhabir" && <span className="ipucu">{t("varsa")}</span>}
+        <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} required={ben.birim === "muhabir"} data-oneri-strap />
       </label>
       <label className="secim">
         <input

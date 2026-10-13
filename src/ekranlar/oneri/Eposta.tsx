@@ -595,6 +595,7 @@ export function KisaOneriFormu({
   kapat,
   kaydetMetni,
   gelismeGerekli = false,
+  strapGerekli = false,
 }: {
   ilk: YanitOneriGirdisi;
   kaydet: (g: YanitOneriGirdisi) => boolean;
@@ -602,6 +603,8 @@ export function KisaOneriFormu({
   kaydetMetni?: string;
   /** Yeniden gönderilen öneride gelişme boş kalamaz; yanıttan ayırırken seçili metin boş olabilir. */
   gelismeGerekli?: boolean;
+  /** Muhabirin düzeltip yeniden gönderdiği öneride strap de zorunlu. */
+  strapGerekli?: boolean;
 }) {
   const { t } = useDil();
   const [f, setF] = useState<YanitOneriGirdisi & { bicim: Bicim }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
@@ -616,7 +619,7 @@ export function KisaOneriFormu({
         <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} />
       </label>
       <label>
-        {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
+        {t("onerilenPaketBasligi")} {!strapGerekli && <span className="ipucu">{t("varsa")}</span>}
         <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
       </label>
       <div className="satir">
@@ -643,7 +646,7 @@ export function KisaOneriFormu({
         <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim())} onClick={() => kaydet(f) && kapat()} data-kisa-kaydet>
+        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim()) || (strapGerekli && !f.paketBasligi?.trim())} onClick={() => kaydet(f) && kapat()} data-kisa-kaydet>
           {kaydetMetni ?? t("kaydet")}
         </button>
       </div>

@@ -374,6 +374,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - muhabir dışı kaynak: ajans, resmî, medya, kurum içi (`kaynakTuru`,
     `kaynakAdi`)
 
+  Önerinin haber başlığının ekrandaki adı "Header", önerilen paket
+  başlığınınki "Strap" (Arapçada العنوان الإخباري, عنوان التقرير المقترح).
+  Muhabirin kendi önerisinde header, gelişme ve strap zorunlu (formda
+  `oneriFormuGecerli(f, true)`, eylemde `oneriGonder`/`oneriYenidenGonder`);
+  Planlama'nın elle girdiğinde strap isteğe bağlı.
+
   Öneri formunda ülke sorulmaz, muhabirin şehrinden gelir; yalnız "Saha
   görevlendirmesi gerekiyor" işaretlenince (ve muhabiri olmayan kaynakta)
   sorulur. Kolun ekrandaki adı "Masa" (`dil.ts → tur`). "Yeni öneri"

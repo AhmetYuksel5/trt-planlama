@@ -218,6 +218,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               kapat={() => setYenile(false)}
               kaydetMetni={t("yenidenGonder")}
               gelismeGerekli
+              strapGerekli
             />
           ) : (
             <button className="dugme" onClick={() => setYenile(true)} data-duzelt-ac>
@@ -447,7 +448,7 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "eposta"));
   /* Haftalık öneride muhabir haberi hangi gün yapacağını söylüyor; "stok": zamana bağlı değil. Planlama gündeme eklerken gün hazır geliyor. */
   const [haftaGunu, setHaftaGunu] = useState("");
-  const gecerli = oneriFormuGecerli(f) && (!hafta || !!haftaGunu);
+  const gecerli = oneriFormuGecerli(f, muhabir) && (!hafta || !!haftaGunu);
   // Sayfanın başlığı yok, doğrudan form; adı sekmede.
   useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
   const gonder = () => {
