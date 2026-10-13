@@ -16,6 +16,7 @@ import {
   type HaftalikKalem,
   type HaftalikPlan,
   type Hareket,
+  type HareketTipi,
   type HesapYetkisi,
   type IcerikTuru,
   type Kisi,
@@ -292,8 +293,45 @@ export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   if (h.kisiId === k.id) return false;
   const kime = h.veri?.kime ? h.veri.kime.split(",") : [];
   if (kime.includes(k.id)) return true;
-  if (k.birim === "muhabir") return !kime.length && hareketGorebilir(k, h, d);
+  if (k.birim === "muhabir") return !kime.length && muhabirBildirimi(k, h, d);
   return h.veri?.sahip === k.birim;
+};
+
+/* Muhabirin önerisinde ona dönen karar ve yanıtlar; ara işler (paket önerisi, plan) değil. */
+const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
+  "geriDonus",
+  "oneriDegerlendirmede",
+  "oneriPlanaEklendi",
+  "oneriReddedildi",
+  "oneriSonra",
+  "oneriDuzeltmeIstendi",
+  "oneriDuzenlendi",
+  "oneriMuhabireGonderildi",
+  "oneriMesaji",
+];
+/* Muhabirin haberinde sonucu ona dokunan olaylar; sıra ona geçtiğinde ayrıca (sahip "muhabir"). */
+const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "tamamlandi"];
+
+/**
+ * Muhabir yalnız kendisiyle ilgili bildirimi alıyor. Eskiden gördüğü
+ * paket ve önerideki her hareket (metin kontrolü, Media'nın klip kodu,
+ * not) ve her öneri çağrısı zile düşüyordu; şimdi:
+ * - öneri çağrısı yalnız alıcısıysa (çağrının BCC listesi),
+ * - kendi önerisinde ona dönen karar ve yanıtlar,
+ * - kendi haberinde sıranın ona geçtiği adım (görev verildi, düzeltmeye
+ *   döndü) ve sonucu (öncelik, iptal, yayın).
+ */
+const muhabirBildirimi = (k: Kisi, h: Hareket, d: Durum): boolean => {
+  if (h.tip === "cagriHazirlandi") {
+    const haftalik = !!h.veri?.hafta;
+    const c = d.cagrilar.find((x) => x.tarih === h.veri?.tarih && (x.tur === "haftalik") === haftalik);
+    return !!c?.bcc.includes(k.id);
+  }
+  const o = oneriBul(d, h.oneriId);
+  if (o) return o.muhabirId === k.id && MUHABIR_ONERI_BILDIRIMI.includes(h.tip);
+  const p = paketBul(d, h.paketId);
+  if (p) return p.muhabirId === k.id && (h.veri?.sahip === "muhabir" || MUHABIR_PAKET_BILDIRIMI.includes(h.tip));
+  return false;
 };
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */

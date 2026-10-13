@@ -97,6 +97,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
     kopyası bayat olabilir, onunla yazma.
 - Giriş demo: kişi seçiliyor, şifre yok. Muhabir yalnız kendi işini görür.
+  Bildirimi de yalnız kendisiyle ilgili (`yetki.ts → muhabirBildirimi`):
+  ona yazılan, alıcısı olduğu çağrı, kendi önerisine dönen karar ve yanıt,
+  kendi haberinde sıranın ona geçtiği adım ve sonucu (öncelik, iptal,
+  yayın); ara işler (kontrol, Media, not) zile düşmez.
   Yetki hem düğmede hem eylemde soruluyor.
 - Tanıtım sayfası (`ekranlar/Tanitim.tsx`): adres çıplak açılınca (hash
   yok) demoda tanıtım gelir; `#/tanitim` her kipte açar. Üstte Demo
