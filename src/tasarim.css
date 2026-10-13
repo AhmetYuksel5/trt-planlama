@@ -1228,12 +1228,13 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .ok-alt { display: flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; margin-top: auto; font-size: var(--punto-kucuk); color: var(--murekkep); }
 .ok-kaynak { display: inline-flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; min-width: 0; }
 .ok-saha { display: inline-grid; place-items: center; color: var(--vurgu); margin-inline-start: auto; }
+/* Plana eklenen öneri listede kalıyor; altında yeşil not. */
+.ok-plana-eklendi { display: flex; align-items: center; gap: var(--ara-1); margin: var(--ara-2) 0 0; color: var(--iyi); font-size: var(--punto-kucuk); font-weight: 600; }
 .ok-gerekce { color: var(--sonuk); font-size: var(--punto-kucuk); }
 .ok-eylem { display: flex; gap: var(--ara-1); flex-wrap: wrap; padding-top: var(--ara-2); border-top: 1px solid var(--cizgi); }
 .oneri-satiri .ok-baslik { font-size: var(--punto-kucuk); text-align: inherit; }
 .oneri-satiri .satir-tek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pencere .op-arka { font-weight: 600; }
-.pencere .op-ayrinti { justify-self: start; }
 /* Kaynak dar sütunda: uzun talimat rozeti sığmazsa satır kırsın, yandaki alanın üstüne binmesin. */
 .pencere .alan, .pencere .kisi-hucre > span { min-width: 0; }
 .pencere .kisi-hucre, .pencere .kisi-hucre .rozet { white-space: normal; }

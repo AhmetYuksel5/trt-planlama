@@ -651,7 +651,6 @@ const M = {
   oneriyiAc: m("Öneriyi aç", "فتح المقترح", "Open proposal"),
   arkaPlanHaber: m("Arka plan haberi", "الخبر الأساس", "Background story"),
   surec: m("Süreç", "المسار", "Progress"),
-  ayrintiVeGecmis: m("Ayrıntı ve geçmiş", "التفاصيل والسجل", "Details and history"),
   belgedeDuzenle: m("Belgede düzenle", "التحرير على المستند", "Edit on the document"),
   altinaEkle: m("Altına ekle", "إضافة تحته", "Add below"),
   takipEkle: m("Takip ekle", "إضافة متابعة", "Add follow-up"),

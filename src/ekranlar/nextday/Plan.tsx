@@ -244,7 +244,8 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const oneriler = v.oneriler
-    .filter((o) => o.hedefTarih === plan.tarih && o.durum !== "planaEklendi")
+    // Plana eklenen de listede kalıyor (en sonda, "Plana eklendi" notuyla): ne geldiği ve ne olduğu bir arada görünsün.
+    .filter((o) => o.hedefTarih === plan.tarih)
     .sort((a, b) => (a.durum === b.durum ? b.zaman.localeCompare(a.zaman) : sira(a) - sira(b)))
     .sort(talimatOnce);
 

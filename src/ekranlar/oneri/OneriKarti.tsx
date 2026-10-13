@@ -1,4 +1,4 @@
-import { ArrowRight, Ban, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Undo2 } from "lucide-react";
+import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Undo2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
@@ -10,6 +10,9 @@ import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
 import { oneriDuzeltmeyeGider } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
+import { HareketGecmisi } from "../../bilesenler/Hareket";
+import { useBen } from "../../oturum";
+import { OneriYazismasi } from "./Yazisma";
 
 /*
  * Plan hazırlanırken gelen öneri: müstakil kart, basınca pencerede bütün
@@ -97,8 +100,27 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
           {o.gerekce}
         </p>
       )}
+      <PlanaEklendiNotu oneri={o} d={d} />
       {eylemler && <div className="ok-eylem">{eylemler}</div>}
     </article>
+  );
+}
+
+/** Plana eklenen öneri listede kalıyor; altında hangi başlığa girdiği. */
+function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
+  const { t } = useDil();
+  if (o.durum !== "planaEklendi") return null;
+  const baslik = o.baslikId ? d.basliklar.find((b) => b.id === o.baslikId)?.ad : undefined;
+  return (
+    <p className="ok-plana-eklendi" data-plana-eklendi>
+      <CircleCheck size={14} /> {t("odPlanaEklendi")}
+      {baslik && (
+        <>
+          {" · "}
+          <Icerik>{baslik}</Icerik>
+        </>
+      )}
+    </p>
   );
 }
 
@@ -125,6 +147,7 @@ export function OneriSatiri({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Du
             </span>
             {o.gerekce && <span dir="auto">· {o.gerekce}</span>}
           </small>
+          <PlanaEklendiNotu oneri={o} d={d} />
         </div>
         {eylemler && <div className="islemler">{eylemler}</div>}
       </div>
@@ -138,8 +161,10 @@ const SUREC: Partial<Record<Oneri["durum"], number>> = { yeni: 0, degerlendirili
 /** Bütün öneri: içerik, kaynak, hedef, süreç ve ayrıntı bağlantısı; karar formu altta. */
 export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { oneri: Oneri; d: Durum; kapat: () => void; altBilgi?: ReactNode; children?: ReactNode }) {
   const { t, dil } = useDil();
+  const ben = useBen();
   const arka = arkaPlan(o);
   const paket = paketBul(d, o.paketId);
+  const gecmis = d.hareketler.filter((h) => h.oneriId === o.id);
   const siniflama = [t(TUR_ADI[o.tur]), o.bicim ? t(BICIM_ADI(o.bicim)) : "", t(ulkeAdi(o.ulke))].filter(Boolean).join(" · ");
   const hedef = o.hafta
     ? `${t("haftalik")} · ${aralikYaz(o.hafta, haftaSonu(o.hafta), dil)} · ${o.haftaGunu ? tarihYaz(o.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`
@@ -203,9 +228,14 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
           </p>
         )}
       </div>
-      <a className="tumu op-ayrinti" href={`#/oneriler/${o.id}`}>
-        {t("ayrintiVeGecmis")} <ArrowRight size={13} className="yon" />
-      </a>
+      {/* Yazışma ve geçmiş pencerenin içinde: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
+      {ben && <OneriYazismasi ben={ben} oneri={o} />}
+      {gecmis.length > 0 && (
+        <div>
+          <div className="alan-etiket">{t("hareketGecmisi")}</div>
+          <HareketGecmisi hareketler={gecmis} d={d} />
+        </div>
+      )}
       {children}
     </Pencere>
   );

@@ -404,8 +404,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`paketBasligi`, yoksa `haberBasligi`), altında arka plan haberi,
     kısa gelişme, kaynak ve zaman. Renk yalnız kolda.
   - Karta basınca `Pencere`de bütün öneri: tam gelişme, kaynak, hedef plan,
-    süreç, "Ayrıntı ve geçmiş". Plana/gündeme ekleme ve ret pencerede
-    açılır, ızgarada form açılmaz; değerlendirmeye alma ve erteleme kartta.
+    süreç, yazışma ve hareket geçmişi (ayrıntı sayfasına gitmek gerekmiyor).
+    Plana/gündeme ekleme ve ret pencerede açılır, ızgarada form açılmaz;
+    değerlendirmeye alma ve erteleme kartta.
+  - Next Day'in gelen önerilerinde plana eklenen öneri kalır, en sonda,
+    altında "Plana eklendi · başlık" notuyla. Paketli öneri plana eklenince
+    başlığın altına haberin kendisi (önerinin haber başlığı) gelişme olarak
+    girer; paketin başlığı beklenen paketlerde ve PKG satırında
+    (`eylemler.ts → oneriPlanaEkle`).
   - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
     ve muhabir dışı kaynak değil), ne değişmesi gerektiği yazılmadan
     gitmez (`DuzeltmeFormu`, `eylemler.ts → oneriDuzeltmeIste`). Durum
@@ -433,8 +439,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`Durum.oneriGorunumu`, `eylemler.ts → oneriGorunumuKaydet`); aynı
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
   - Öneriler sayfası (`oneri/Oneriler.tsx → OnerilerListe`) da aynı seçimi
-    izler: kartta aynı kart ve pencere ama karar yok (kararlar ayrıntı
-    sayfasında), listede bugünkü tablo. Başlık kartındaki küçük liste bu
+    izler: kartta karta basınca geniş pencerede ayrıntı sayfasının tamamı
+    (`OneriDetay pencerede`: kararlar, yazışma, geçmiş), listede bugünkü
+    tablo. Başlık kartındaki küçük liste bu
     kalıba girmez.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.

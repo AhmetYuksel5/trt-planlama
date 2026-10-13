@@ -3,7 +3,7 @@ import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma"
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaGunleri, haftaSonu } from "../../haftalik";
@@ -17,7 +17,7 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
-import { DuzeltmeFormu, GorunumSecici, OneriKarti, OneriPenceresi, useOneriGorunumu } from "./OneriKarti";
+import { DuzeltmeFormu, GorunumSecici, OneriKarti, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 
 /**
@@ -135,13 +135,24 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
             ))}
           </div>
         )}
-        {acik && <OneriPenceresi key={acik.id} oneri={acik} d={v} kapat={() => setAcikId(null)} />}
+        {/* Karta basınca önerinin bütün ayrıntısı pencerede: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
+        {acik && (
+          <Pencere key={acik.id} genis baslik={<Icerik>{acik.haberBasligi}</Icerik>} kapat={() => setAcikId(null)}>
+            <OneriDetay ben={ben} oneri={acik} pencerede />
+          </Pencere>
+        )}
       </Kart>
     </>
   );
 }
 
-export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+/**
+ * Önerinin bütün ayrıntısı: kararlar, yazışma, geçmiş. Ayrıntı sayfası
+ * (`#/oneriler/:id`) ve öneriler sayfasında karta basınca açılan pencere
+ * (`pencerede`) aynı içeriği gösteriyor; pencerede geri bağlantısı ve
+ * sayfa başlığı yok, başlık pencerenin kendisinde.
+ */
+export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri: Oneri; pencerede?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [ekle, setEkle] = useState(false);
@@ -162,7 +173,11 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
   const muhabirde = oneri.durum === "duzeltme";
 
-  return (
+  const ust = pencerede ? (
+    <p className="ara-alt-2">
+      <OneriDurumRozeti oneri={oneri} /> <OneriKaynagi oneri={oneri} d={v} /> · {t(ulkeAdi(oneri.ulke))} · {tarihYaz(yerelGun(oneri.zaman), dil, "uzun")} {saatYaz(oneri.zaman, dil)}
+    </p>
+  ) : (
     <>
       <a className="geri-bag" href="#/oneriler">
         <ArrowLeft size={14} className="yon" /> {t(ben.birim === "muhabir" ? "mOnerilerim" : "mOneriler")}
@@ -179,6 +194,12 @@ export function OneriDetay({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
           </p>
         </div>
       </header>
+    </>
+  );
+
+  return (
+    <>
+      {ust}
       <TeklifYaniti ben={ben} oneri={oneri} />
       {oneriYenidenGonderebilir(ben, oneri) && (
         <div className="duzeltme-istegi" data-duzeltme-istegi>

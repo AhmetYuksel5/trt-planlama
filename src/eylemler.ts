@@ -373,11 +373,19 @@ export const oneriPlanaEkle = (
     basliklar: p.basliklar.some((b) => b.id === pbId) ? p.basliklar.map((b) => (b.id === pbId ? yeniPb : b)) : [...p.basliklar, yeniPb],
   }));
 
+  /*
+   * Paketli öneride başlığın altına haberin kendisi (önerinin haber
+   * başlığı) giriyor; paketin başlığı beklenen paketlerde ve PKG satırında,
+   * muhabirin açıklaması paketin açıklamasında. Kurumun planında konu
+   * başlığının altında pakete konu olan haber yazılıyor. Paketsizde
+   * gelişme metni.
+   */
+  const paketli = g.paketOlustur && !!o.paketBasligi;
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
     planBaslikId: pbId,
-    metin: o.gelisme,
+    metin: paketli ? o.haberBasligi || o.gelisme : o.gelisme,
     // Gelişmenin kaynağı önerinin kaynağı: ajanstan girilen öneri planda da ajans olarak görünsün.
     kaynakTuru: o.talimatVeren ? "diger" : (o.kaynakTuru ?? "muhabir"),
     kaynakAdi: o.kaynakAdi ?? "",
@@ -388,7 +396,7 @@ export const oneriPlanaEkle = (
   d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
 
   let paketId: string | undefined;
-  if (g.paketOlustur && o.paketBasligi) {
+  if (paketli) {
     const muhabir = kisiBul(d, muhabirId);
     let kod: string;
     [kod, d] = yeniKod(d);
@@ -398,7 +406,7 @@ export const oneriPlanaEkle = (
       kod,
       planId: plan.id,
       planBaslikId: pbId,
-      baslik: o.paketBasligi,
+      baslik: o.paketBasligi ?? "",
       sehir: muhabir?.sehir ?? "istanbul",
       muhabirId,
       aciklama: o.gelisme,
