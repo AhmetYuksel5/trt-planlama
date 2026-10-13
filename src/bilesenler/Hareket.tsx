@@ -32,6 +32,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   kisiSilindi: "hrKisiSilindi",
   kayitTemizlendi: "hrKayitTemizlendi",
   oneriSilindi: "hrOneriSilindi",
+  baslikBirlestirildi: "hrBaslikBirlestirildi",
   kisiTayinEdildi: "hrKisiTayinEdildi",
   yapiYayinlandi: "hrYapiYayinlandi",
   oneriMuhabireGonderildi: "hrOneriMuhabireGonderildi",
@@ -119,6 +120,10 @@ export function useHareketMetni() {
       durak: h.veri?.durak ? durakAdi(h.veri.durak, paketBul(d, h.paketId)) : "",
       gorev: h.veri?.gorev ? gorevAdi(h.veri.gorev) : "",
       sayi: h.veri?.sayi ?? "",
+      // Başlık adları (birleştirme, öneri silme) içerik: Arapça, olduğu gibi.
+      baslik: h.veri?.baslik ?? "",
+      katilan: h.veri?.katilan ?? "",
+      hedef: h.veri?.hedef ?? "",
       plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");

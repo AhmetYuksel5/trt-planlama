@@ -415,6 +415,8 @@ export interface Oneri {
   haftaGunu?: string;
   /** Muhabirin takibinden işe dönüştürülen öneri: takip kartı neye dönüştüğünü gösteriyor. */
   takipId?: string;
+  /** Planlama düzeltmeden önceki hal (ilk düzenlemede bir kez): gönderenin yazdığı kaybolmasın. */
+  ilkHali?: { haberBasligi: string; gelisme: string; paketBasligi?: string };
 }
 
 /*
@@ -858,6 +860,7 @@ export const HAREKET_TIPLERI = [
   "kisiSilindi",
   "kayitTemizlendi",
   "oneriSilindi",
+  "baslikBirlestirildi",
   "kisiTayinEdildi",
   "yapiYayinlandi",
   "oneriMuhabireGonderildi",

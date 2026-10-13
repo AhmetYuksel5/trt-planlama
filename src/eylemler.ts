@@ -102,6 +102,7 @@ import {
   yapabilir,
   yapiDuzenleyebilir,
   kayitTemizleyebilir,
+  oneriDuzenleyebilir,
 } from "./yetki";
 
 /**
@@ -1209,6 +1210,48 @@ export const planBaslikCikar = (ben: Kisi, planId: string, pbId: string) => {
   return true;
 };
 
+/*
+ * Planda bir başlığı başka başlığın içine katmak ("+" menüsü ya da
+ * sürükle-bırak): kaynak başlığın gelişmeleri, PKG önerileri ve canlı
+ * yayınları hedef başlığa geçiyor, hedefin kendi kayıtlarının arkasına
+ * (kendi aralarındaki sırayla); muhabirler hedefte yoksa saat ve yerleriyle
+ * ekleniyor. Bu plandaki öneriler de hedef başlığa bağlanıyor ki "plana
+ * eklendi · başlık" notu doğru başlığı göstersin. Kaynak başlık plandan
+ * çıkıyor; havuzdaki başlığa dokunulmuyor (başka planlarda olabilir).
+ */
+export const planBaslikBirlestir = (ben: Kisi, planId: string, kaynakId: string, hedefId: string) => {
+  let d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan) || kaynakId === hedefId) return false;
+  const kaynak = plan.basliklar.find((b) => b.id === kaynakId);
+  const hedef = plan.basliklar.find((b) => b.id === hedefId);
+  if (!kaynak || !hedef) return false;
+  // Taşınan kayıtlar dizide hedefin son kaydının arkasına: ekran ve çıktı dizinin sırasını izliyor.
+  const tasi = <T extends { planBaslikId?: string }>(l: T[]): T[] => {
+    const gelen = l.filter((x) => x.planBaslikId === kaynakId).map((x) => ({ ...x, planBaslikId: hedefId }));
+    if (!gelen.length) return l;
+    const kalan = l.filter((x) => x.planBaslikId !== kaynakId);
+    const son = kalan.map((x) => x.planBaslikId).lastIndexOf(hedefId);
+    const yer = son < 0 ? kalan.length : son + 1;
+    return [...kalan.slice(0, yer), ...gelen, ...kalan.slice(yer)];
+  };
+  d = {
+    ...d,
+    gelismeler: tasi(d.gelismeler),
+    canliYayinlar: tasi(d.canliYayinlar),
+    paketler: tasi(d.paketler),
+    oneriler: d.oneriler.map((o) => (o.planId === planId && o.baslikId === kaynak.baslikId ? { ...o, baslikId: hedef.baslikId } : o)),
+  };
+  const muhabirler = [...hedef.muhabirler, ...kaynak.muhabirler.filter((m) => !hedef.muhabirler.some((x) => x.kisiId === m.kisiId))];
+  d = planGuncelle(d, planId, (p) => ({
+    ...p,
+    basliklar: p.basliklar.filter((b) => b.id !== kaynakId).map((b) => (b.id === hedefId ? { ...b, muhabirler } : b)),
+  }));
+  const ad = (id: string) => d.basliklar.find((b) => b.id === id)?.ad ?? "";
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "baslikBirlestirildi", planId, veri: { katilan: ad(kaynak.baslikId), hedef: ad(hedef.baslikId), tarih: plan.tarih } }));
+  return true;
+};
+
 export const planBaslikTasi = (ben: Kisi, planId: string, pbId: string, yon: -1 | 1) =>
   planIcerik(ben, planId, (p) => {
     const i = p.basliklar.findIndex((b) => b.id === pbId);
@@ -1668,17 +1711,21 @@ export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi):
 };
 
 /*
- * E-postadan otomatik düşen önerinin başlığı yalnız ilk satır; plancı
- * değerlendirmeden önce düzeltiyor. Muhabirin uygulamadan gönderdiği öneri
- * düzenlenmiyor (orijinal haliyle korunur); burada orijinal, yanıtın kendisi.
+ * Planlama öneriyi her aşamada düzeltiyor: e-postadan düşen önerinin ilk
+ * satırı, eksik ya da yanlış yazılmış başlık, plana eklendikten sonra da.
+ * Gönderenin yazdığı ilk düzenlemede `ilkHali`'ne bir kez saklanıyor.
+ * Plana eklenmiş önerinin gelişmesi ve paketi de güncelleniyor; ama yalnız
+ * plandaki metin hâlâ önerinin eski metniyse (planda ayrıca elle
+ * değiştirilmişse o emek ezilmesin). Başlık havuzundaki başlığın adına
+ * dokunulmuyor: başka gelişmeler de onun altında olabilir.
  */
 export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) => {
-  if (!yapabilir(ben, "oneriDegerlendir") || !g.haberBasligi.trim()) return false;
-  const d = getir();
+  let d = getir();
   const o = oneriBul(d, oneriId);
-  if (!o || !o.yanitId || !["yeni", "degerlendiriliyor", "sonra"].includes(o.durum)) return false;
+  if (!o || !oneriDuzenleyebilir(ben, o) || !g.haberBasligi.trim()) return false;
   const yeni: Oneri = {
     ...o,
+    ilkHali: o.ilkHali ?? { haberBasligi: o.haberBasligi, gelisme: o.gelisme, ...(o.paketBasligi && { paketBasligi: o.paketBasligi }) },
     haberBasligi: g.haberBasligi.trim(),
     gelisme: g.gelisme.trim(),
     paketBasligi: g.paketBasligi?.trim() || undefined,
@@ -1686,7 +1733,24 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
   };
-  kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "oneriDuzenlendi", oneriId }));
+  // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla: paketliyse haberin kendisi (Header), değilse gelişme.
+  const metin = (x: Oneri, paketli: boolean) => (paketli ? x.haberBasligi || x.gelisme : x.gelisme);
+  const paketli = !!o.paketId;
+  d = {
+    ...d,
+    oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)),
+    gelismeler: d.gelismeler.map((x) => (x.oneriId === oneriId && x.metin === metin(o, paketli) && metin(o, paketli) !== metin(yeni, paketli) ? { ...x, metin: metin(yeni, paketli) } : x)),
+    paketler: d.paketler.map((p) => {
+      if (p.oneriId !== oneriId) return p;
+      const baslik = p.baslik === (o.paketBasligi ?? "") && yeni.paketBasligi ? yeni.paketBasligi : p.baslik;
+      const aciklama = p.aciklama === o.gelisme ? yeni.gelisme : p.aciklama;
+      const tur = p.tur === o.tur ? yeni.tur : p.tur;
+      const bicim = p.bicim === o.bicim ? yeni.bicim : p.bicim;
+      if (baslik === p.baslik && aciklama === p.aciklama && tur === p.tur && bicim === p.bicim) return p;
+      return { ...p, baslik, aciklama, tur, ...(bicim ? { bicim } : {}), guncelleme: simdi() };
+    }),
+  };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDuzenlendi", oneriId, veri: { onceki: o.haberBasligi } }));
   return true;
 };
 

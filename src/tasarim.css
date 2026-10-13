@@ -126,6 +126,7 @@
   --ust-sekme-en-genis: 300px;
   /* Kısayolun renkli kutusu; çubukta ikon, menülerde adın yanında. */
   --kisayol-kutu: 30px;
+  --kisayol-yazili: 40px;
 
   /* Workspace: bölmeler arası ayraç ve bölmenin en dar/alçak hali; daha dar bölmede sayfa okunmuyor. */
   --ayrac: 10px;
@@ -415,7 +416,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   .prototip { padding-inline: 6px; }
   .prototip-yazi { display: none; }
 }
-@container ust (max-width: 880px) {
+@container ust (max-width: 1000px) {
   .ust-kisayol-satiri { display: none; }
 }
 
@@ -809,6 +810,10 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .baslik-karti + .baslik-karti { margin-top: var(--ara-3); }
 .baslik-karti > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-3) var(--ara-4); }
 .baslik-karti > summary::-webkit-details-marker { display: none; }
+/* Başlık başka başlığın üstüne sürüklenince: bırakılacak yer belli olsun */
+.baslik-karti.birakilir { border-color: var(--vurgu); box-shadow: 0 0 0 2px var(--vurgu); }
+.baslik-karti > summary[draggable="true"] { cursor: grab; }
+.dugmeler.dikey { flex-direction: column; align-items: stretch; }
 .baslik-karti > summary h3 { font-size: var(--punto-orta); }
 .baslik-karti > summary .sira { width: 24px; height: 24px; border-radius: 6px; background: var(--yuzey-2); display: grid; place-items: center; font-weight: 700; font-size: var(--punto-mini); color: var(--sonuk); flex: none; }
 .baslik-karti > summary .sayimlar { display: flex; gap: var(--ara-2); color: var(--sonuk); font-size: var(--punto-mini); flex-wrap: wrap; }
@@ -1689,6 +1694,15 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   border: 1px solid transparent; border-radius: var(--yaricap); background: var(--renk); color: #fff;
 }
 a.kisayol-kutu:hover { outline: 2px solid var(--renk); outline-offset: 2px; }
+/* Çubuktaki kutu: simgenin altında küçük harfle kısa adı; kutu yazıya göre genişliyor, sade kalıyor */
+.kisayol-kutu.yazili {
+  display: inline-flex; flex-direction: column; justify-content: center; gap: 2px;
+  inline-size: auto; min-inline-size: 46px; max-inline-size: 124px; block-size: var(--kisayol-yazili); padding-inline: var(--ara-2);
+}
+.kisayol-yazi {
+  max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--punto-mini); font-weight: 500; line-height: 1.1; letter-spacing: .01em;
+}
 .renk-genel { --renk: var(--lacivert); --sis: var(--yuzey-2); }
 .kisayol-kutu.renk-genel { background: var(--yuzey); color: var(--lacivert); border-color: var(--cizgi); }
 span.kisayol-kutu { inline-size: 26px; block-size: 26px; }

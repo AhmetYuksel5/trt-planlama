@@ -1,19 +1,20 @@
-import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Undo2 } from "lucide-react";
+import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Undo2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDuzeltmeIste, oneriDurum, oneriGorunumuKaydet } from "../../eylemler";
+import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet } from "../../eylemler";
 import { haftaSonu } from "../../haftalik";
 import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
-import { oneriDuzeltmeyeGider } from "../../yetki";
+import { oneriDuzenleyebilir, oneriDuzeltmeyeGider } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { useBen } from "../../oturum";
 import { OneriYazismasi } from "./Yazisma";
 import { GeriBildirimBolumu } from "./GeriBildirim";
+import { KisaOneriFormu } from "./Eposta";
 
 /*
  * Plan hazırlanırken gelen öneri: müstakil kart, basınca pencerede bütün
@@ -163,6 +164,8 @@ const SUREC: Partial<Record<Oneri["durum"], number>> = { yeni: 0, degerlendirili
 export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { oneri: Oneri; d: Durum; kapat: () => void; altBilgi?: ReactNode; children?: ReactNode }) {
   const { t, dil } = useDil();
   const ben = useBen();
+  // Planlama plan ekranından da düzeltiyor; plana eklenmiş önerinin gelişmesi ve paketi eylemde güncelleniyor.
+  const [duzenle, setDuzenle] = useState(false);
   const arka = arkaPlan(o);
   const paket = paketBul(d, o.paketId);
   const gecmis = d.hareketler.filter((h) => h.oneriId === o.id);
@@ -174,6 +177,26 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
       : "—";
   return (
     <Pencere baslik={<Icerik>{baslikOf(o)}</Icerik>} alt={siniflama} kapat={kapat} altBilgi={altBilgi}>
+      {ben && oneriDuzenleyebilir(ben, o) &&
+        (duzenle ? (
+          <div data-oneri-duzenle-formu>
+            <KisaOneriFormu
+              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
+              kaydet={(g) => {
+                const ok = oneriDuzenle(ben, o.id, g);
+                if (ok) bildir(t("bKaydedildi"));
+                return ok;
+              }}
+              kapat={() => setDuzenle(false)}
+            />
+          </div>
+        ) : (
+          <div className="dugmeler">
+            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenle(true)} data-oneri-duzenle>
+              <Pencil size={14} /> {t("duzenle")}
+            </button>
+          </div>
+        ))}
       {arka && (
         <div>
           <div className="alan-etiket">{t("arkaPlanHaber")}</div>

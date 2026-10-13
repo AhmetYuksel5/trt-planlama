@@ -355,6 +355,8 @@ export const epostaDegistirebilir = (ben: Kisi, k: Kisi): boolean => {
 export const geriBildirimGonderebilir = (ben: Kisi | undefined, o: Oneri): boolean =>
   !!ben && yapabilir(ben, "geriDonus") && !!o.muhabirId && (o.durum === "planaEklendi" || o.durum === "reddedildi" || o.durum === "sonra");
 export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean => !!ben && (!!ben.hesapYoneticisi || (ben.birim === "planlama" && ben.rol === "yonetici"));
+/** Planlama öneriyi her aşamada düzeltebiliyor (plana eklendikten sonra da); muhabire gönderilmiş teklif muhabirin. */
+export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri): boolean => !!ben && yapabilir(ben, "oneriDegerlendir") && o.durum !== "teklif";
 /** Kayıt temizliği (deneme kayıtlarını izleriyle silmek) yalnız tam yöneticide: geri alınamıyor. */
 export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean => !!ben?.hesapYoneticisi && !ben.pasif;
 export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>

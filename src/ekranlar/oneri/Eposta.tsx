@@ -1,8 +1,8 @@
-import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Pencil, Scissors, Smartphone, Upload } from "lucide-react";
+import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Scissors, Smartphone, Upload } from "lucide-react";
 import { useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { cagriKaydet, epostaYanitiIsle, oneriDuzenle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
+import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
@@ -614,15 +614,15 @@ export function KisaOneriFormu({
     <div className="form form-kutu ara-ust-2">
       <label>
         {t("haberBasligi")}
-        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} />
+        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} data-kisa-header />
       </label>
       <label>
         {t("gelismeAciklama")}
-        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} />
+        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} data-kisa-gelisme />
       </label>
       <label>
         {t("onerilenPaketBasligi")} {!strapGerekli && <span className="ipucu">{t("varsa")}</span>}
-        <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} />
+        <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kisa-strap />
       </label>
       <div className="satir">
         <label>
@@ -663,7 +663,6 @@ export function EpostaKaynagi({ ben, oneri, yanit }: { ben: Kisi; oneri: Oneri; 
   const [secili, setSecili] = useState("");
   const kardesler = v.oneriler.filter((o) => o.yanitId === yanit.id && o.id !== oneri.id);
   const degerlendirir = yapabilir(ben, "oneriDegerlendir");
-  const duzenlenir = degerlendirir && ["yeni", "degerlendiriliyor", "sonra"].includes(oneri.durum);
   return (
     <Kart baslik={t("orijinalEposta")} ikon={<Mail size={18} />} ek={t(yanit.kaynak === "posta" ? "kaynakPosta" : "kaynakIceAktarma")}>
       <p className="sonuk-yazi">
@@ -700,26 +699,10 @@ export function EpostaKaynagi({ ben, oneri, yanit }: { ben: Kisi; oneri: Oneri; 
       )}
       {degerlendirir && !form && (
         <div className="dugmeler ara-ust-2">
-          {duzenlenir && (
-            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setForm("duzenle")}>
-              <Pencil size={14} /> {t("oneriyiDuzenle")}
-            </button>
-          )}
           <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setForm("ayir")} title={t("yanittanAyirNotu")}>
             <Scissors size={14} /> {t("yanittanAyir")}
           </button>
         </div>
-      )}
-      {form === "duzenle" && (
-        <KisaOneriFormu
-          ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
-          kaydet={(g) => {
-            const ok = oneriDuzenle(ben, oneri.id, g);
-            if (ok) bildir(t("bKaydedildi"));
-            return ok;
-          }}
-          kapat={() => setForm("")}
-        />
       )}
       {form === "ayir" && (
         <>

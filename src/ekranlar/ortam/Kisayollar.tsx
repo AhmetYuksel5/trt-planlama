@@ -34,7 +34,7 @@ const PLAN_ADI: Record<string, Anahtar> = {
   takvim: "ksTakvim",
 };
 
-export function kisayolBilgisi(ben: Kisi, kimlik: string): { ad: Anahtar; icerik?: string; ikon: LucideIcon; renk: string } | undefined {
+export function kisayolBilgisi(ben: Kisi, kimlik: string): { ad: Anahtar; kisa: Anahtar; icerik?: string; ikon: LucideIcon; renk: string } | undefined {
   const sayfa = yolSayfasi(kimlik);
   const m = sayfaMaddesi(sayfa);
   if (!m) return undefined;
@@ -42,11 +42,12 @@ export function kisayolBilgisi(ben: Kisi, kimlik: string): { ad: Anahtar; icerik
   const baslikId = sayfa === "basliklar" ? kimlik.split("/")[1] : undefined;
   if (baslikId) {
     const b = baslikBul(getir(), baslikId);
-    return b ? { ad: m.ad, icerik: b.ad, ikon: m.ikon, renk: "renk-genel" } : undefined;
+    return b ? { ad: m.ad, kisa: m.kisa, icerik: b.ad, ikon: m.ikon, renk: "renk-genel" } : undefined;
   }
   // Yarının planı menüde ayrı madde değil; muhabir Next Day'i zaten görmüyor.
   const ad = PLAN_ADI[kimlik] && (ben.birim !== "muhabir" || kimlik === "nextday/yarin") ? PLAN_ADI[kimlik] : maddeAdi(ben, m);
-  return { ad, ikon: m.ikon, renk: RENK[sayfa] ?? "renk-genel" };
+  // Kutunun içindeki yazı menünün kısa adı (Next Day, Weekly…); uzun ad ipucunda.
+  return { ad, kisa: m.kisa, ikon: m.ikon, renk: RENK[sayfa] ?? "renk-genel" };
 }
 
 /** Eklenebilecek kısayollar, menünün gruplarıyla; Next Day'in başında yarının planı. */
@@ -64,8 +65,10 @@ export function KisayolKutusu({ ben, kimlik, bag = true }: { ben: Kisi; kimlik: 
   const Ikon = b.ikon;
   const ad = b.icerik ?? t(b.ad);
   return bag ? (
-    <a href={`#/${kimlik}`} className={`kisayol-kutu ${b.renk}`} data-kisayol={kimlik} aria-label={ad} title={ad}>
-      <Ikon size={18} />
+    // Yalnız simge anlaşılmıyordu: altında küçük harfle kısa adı.
+    <a href={`#/${kimlik}`} className={`kisayol-kutu yazili ${b.renk}`} data-kisayol={kimlik} aria-label={ad} title={ad}>
+      <Ikon size={15} />
+      <span className="kisayol-yazi">{b.icerik ? <Icerik>{b.icerik}</Icerik> : t(b.kisa)}</span>
     </a>
   ) : (
     <span className={`kisayol-kutu ${b.renk}`} aria-hidden="true">

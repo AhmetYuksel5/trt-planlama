@@ -1,18 +1,18 @@
 import { birimAdi } from "../../yapi";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
-import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaGunleri, haftaSonu } from "../../haftalik";
-import { oneriDurum, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriDurum, oneriDuzenle, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { kayitTemizleyebilir, muhabireOneriGonderebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { kayitTemizleyebilir, muhabireOneriGonderebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -185,6 +185,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   const [ret, setRet] = useState<string | null>(null);
   const [duzelt, setDuzelt] = useState(false);
   const [yenile, setYenile] = useState(false);
+  const [duzenle, setDuzenle] = useState(false);
   const muhabir = kisiBul(v, oneri.muhabirId);
   const veren = kisiBul(v, oneri.talimatVeren);
   const giren = kisiBul(v, oneri.giren);
@@ -257,7 +258,30 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
       )}
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <Kart baslik={t(yanit ? "oneri" : giren ? "oneriGirildigiHal" : "oneriOrijinal")}>
+          <Kart
+            baslik={t(yanit ? "oneri" : giren ? "oneriGirildigiHal" : "oneriOrijinal")}
+            sagUc={
+              oneriDuzenleyebilir(ben, oneri) &&
+              !duzenle && (
+                <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenle(true)} data-oneri-duzenle>
+                  <Pencil size={14} /> {t("duzenle")}
+                </button>
+              )
+            }
+          >
+            {duzenle && (
+              <div className="ara-alt-2" data-oneri-duzenle-formu>
+                <KisaOneriFormu
+                  ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
+                  kaydet={(g) => {
+                    const ok = oneriDuzenle(ben, oneri.id, g);
+                    if (ok) bildir(t("bKaydedildi"));
+                    return ok;
+                  }}
+                  kapat={() => setDuzenle(false)}
+                />
+              </div>
+            )}
             <div className="alanlar">
               <div className="alan">
                 <small>{t(veren ? "yoneticiTalimati" : muhabir ? "muhabir" : "kaynak")}</small>
@@ -313,6 +337,14 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                   <Icerik blok>{oneri.paketBasligi}</Icerik>
                 </div>
               </div>
+            )}
+            {oneri.ilkHali && (
+              <details className="ara-ust-2 ilk-hal" data-oneri-ilk-hali>
+                <summary>{t("oneriIlkHali")}</summary>
+                <Icerik blok>{oneri.ilkHali.haberBasligi}</Icerik>
+                <Icerik blok>{oneri.ilkHali.gelisme}</Icerik>
+                {oneri.ilkHali.paketBasligi && <Icerik blok>{oneri.ilkHali.paketBasligi}</Icerik>}
+              </details>
             )}
           </Kart>
           <OneriYazismasi ben={ben} oneri={oneri} />

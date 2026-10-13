@@ -324,6 +324,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
+  - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
+    başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden) ya da
+    başlığı sürükleyip öbürünün üstüne bırakmak; onay sorulur, ↶ geri alır.
+    Gelişmeler, PKG önerileri ve canlılar hedefin kendi kayıtlarının
+    arkasına (kendi sıralarıyla), muhabirler yoksa saat ve yerleriyle;
+    bu plandaki öneriler hedef başlığa bağlanır. Pencere kartın dışında
+    çizilir (kapalı `<details>` içini göstermiyor).
   - Araç düğmeleri kendi satırında sayfaya ortalı (`.plan-araclari`):
     Türkçe ve Arapça arayüzde aynı yerde dursun.
   - Geri al (↶, Ctrl/⌘+Z yazı alanı dışında; `bilesenler/GeriAl.tsx`)
@@ -386,6 +393,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sayfasının başlığı yok, doğrudan form. Haftalık öneride muhabir günü
   seçer (`Oneri.haftaGunu`, boşsa zamana bağlı değil); gündeme eklerken
   gün hazır gelir.
+
+  Planlama öneriyi her aşamada düzeltir, plana eklendikten sonra da
+  (`eylemler.ts → oneriDuzenle`, yetki `oneriDuzenleyebilir`; muhabire
+  gönderilmiş teklif hariç): ayrıntıda ve plan ekranının öneri penceresinde
+  "Düzenle". Gönderenin yazdığı ilk düzenlemede `Oneri.ilkHali`'nde kalır
+  ("Gönderildiği hal"). Plana eklenmişse gelişme ve paket de güncellenir,
+  ama yalnız plandaki metin hâlâ önerinin eski metniyse; havuzdaki başlığın
+  adına dokunulmaz.
 
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
@@ -657,7 +672,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 
     Kayan şeridin içindeki menü üst katmanda açılır
     (`IslemMenusu katman`, popover); yoksa şerit kırpar.
-  - Kısayollar (`Kisayollar.tsx → UstKisayollar`): ilk altısı renkli ikon;
+  - Kısayollar (`Kisayollar.tsx → UstKisayollar`): ilk altısı renkli kutu,
+    simgenin altında küçük harfle menünün kısa adı (`Madde.kisa`; yalnız
+    simge anlaşılmıyordu), kutu yazıya göre genişler (`.kisayol-kutu.yazili`);
     ★ hepsini adıyla ve "Kısayolları düzenle"yi gösterir. Kurallar
     `kisayol.ts`:
     - varsayılan planların beş ana başlığı ve takvim; muhabirde çubukta

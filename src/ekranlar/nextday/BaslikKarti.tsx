@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, CircleCheck, Hourglass, Lightbulb, Pencil, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, useDil } from "../../dil";
-import { paketDurum, paketSil, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { paketDurum, paketSil, planBaslikBirlestir, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { kisiAr, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { vardiyaYaz } from "../../tarih";
@@ -20,6 +21,9 @@ import { MuhabirSecici, PaketFormu } from "./Formlar";
  * paket önerileri hazır paketlerden ayrı; ajanstan gelen gelişmenin paket
  * olması gerekmiyor.
  */
+/* Sürüklenen başlığın kimliği bu türle taşınıyor: dosya ya da metin bırakılınca birleştirme denenmesin. */
+const SURUKLENEN = "application/x-plan-baslik";
+
 export default function BaslikKarti({
   plan,
   pb,
@@ -41,7 +45,18 @@ export default function BaslikKarti({
   const [paketForm, setPaketForm] = useState("");
   const [muhabirEkle, setMuhabirEkle] = useState(false);
   const [oneriAcik, setOneriAcik] = useState("");
+  const [katPenceresi, setKatPenceresi] = useState(false);
+  const [birakilir, setBirakilir] = useState(false);
   const baslik = baslikBul(v, pb.baslikId);
+  const adi = (x: PlanBasligi) => baslikBul(v, x.baslikId)?.ad ?? "";
+  // Kaynak başlık hedefin içine katılıyor; onay soruluyor (geri al ↶ ile de dönülüyor).
+  const kat = (kaynakId: string, hedefId: string) => {
+    const k = plan.basliklar.find((b) => b.id === kaynakId);
+    const h = plan.basliklar.find((b) => b.id === hedefId);
+    if (!ben || !k || !h || k.id === h.id) return;
+    if (!confirm(t("baslikKatilsinMi", { katilan: adi(k), hedef: adi(h) }))) return;
+    if (planBaslikBirlestir(ben, plan.id, k.id, h.id)) bildir(t("baslikKatildi"));
+  };
   const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
   const paketler = v.paketler.filter((p) => p.planBaslikId === pb.id);
   const canlilar = v.canliYayinlar.filter((c) => c.planBaslikId === pb.id);
@@ -52,8 +67,31 @@ export default function BaslikKarti({
   const cikabilir = !paketler.some((p) => p.durum !== "iptal");
 
   return (
-    <details className="baslik-karti">
-      <summary>
+    <>
+    <details
+      className={`baslik-karti${birakilir ? " birakilir" : ""}`}
+      data-plan-baslik={pb.id}
+      onDragOver={(e) => {
+        if (!icerik || !e.dataTransfer.types.includes(SURUKLENEN)) return;
+        e.preventDefault();
+        setBirakilir(true);
+      }}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setBirakilir(false)}
+      onDrop={(e) => {
+        const kaynak = e.dataTransfer.getData(SURUKLENEN);
+        setBirakilir(false);
+        if (!kaynak) return;
+        e.preventDefault();
+        kat(kaynak, pb.id);
+      }}
+    >
+      <summary
+        draggable={icerik}
+        onDragStart={(e) => {
+          e.dataTransfer.setData(SURUKLENEN, pb.id);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+      >
         <span className="sira">{sira + 1}</span>
         <h3>
           <Icerik>{baslik?.ad}</Icerik>
@@ -75,6 +113,11 @@ export default function BaslikKarti({
         </span>
         {icerik && (
           <span className="sag-uc" onClick={(e) => e.preventDefault()}>
+            <IslemMenusu etiket={t("baslikIslemleri")} dugmeSinifi="dugme dugme-sade dugme-ikon" ikon={<Plus size={15} />} katman>
+              <button type="button" role="menuitem" className="acilir-satir" disabled={toplam < 2} onClick={() => setKatPenceresi(true)} data-baslika-kat>
+                <Combine size={16} /> {t("baslikaKat")}
+              </button>
+            </IslemMenusu>
             <IkonDugme ikon={<ArrowUp size={15} />} etiket={t("yukariTasi")} onClick={() => ben && sira > 0 && planBaslikTasi(ben, plan.id, pb.id, -1)} />
             <IkonDugme ikon={<ArrowDown size={15} />} etiket={t("asagiTasi")} onClick={() => ben && sira < toplam - 1 && planBaslikTasi(ben, plan.id, pb.id, 1)} />
             <IkonDugme
@@ -242,5 +285,29 @@ export default function BaslikKarti({
         )}
       </div>
     </details>
+    {/* Pencere kartın dışında: kapalı <details> içindekini göstermiyor. */}
+    {katPenceresi && (
+      <Pencere baslik={t("baslikaKat")} alt={<Icerik>{baslik?.ad}</Icerik>} kapat={() => setKatPenceresi(false)}>
+        <div className="dugmeler dikey" data-kat-hedefleri>
+          {plan.basliklar
+            .filter((x) => x.id !== pb.id)
+            .map((x) => (
+              <button
+                key={x.id}
+                type="button"
+                className="dugme dugme-ikincil"
+                data-kat-hedef={x.id}
+                onClick={() => {
+                  setKatPenceresi(false);
+                  kat(pb.id, x.id);
+                }}
+              >
+                <Icerik>{adi(x)}</Icerik>
+              </button>
+            ))}
+        </div>
+      </Pencere>
+    )}
+    </>
   );
 }
