@@ -5,6 +5,7 @@ import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
+import { geriBildirimAyari, sablonlar } from "./geriBildirim";
 import { metin, yaz, type Yazi } from "./dil";
 import { ayniYapi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
@@ -46,6 +47,8 @@ import {
   type OrtamDuzeni,
   type FaaliyetDurum,
   type Potansiyel,
+  type GeriBildirimAyari,
+  type GeriBildirimSablonu,
   type Gelisme,
   type Gorevlendirme,
   type Hareket,
@@ -76,6 +79,9 @@ import {
   haftalikDuzenler,
   hesapYetkisi,
   epostaDegistirebilir,
+  geriBildirimGonderebilir,
+  geriBildirimSablonuDuzenler,
+  takipTamamlayabilir,
   kararVerebilir,
   mudahaleEdebilir,
   muhabireOneriGonderebilir,
@@ -443,34 +449,67 @@ export const oneriPlanaEkle = (
   return true;
 };
 
-/** Kararı verilmiş, muhabire henüz bildirilmemiş öneri. Muhabiri olmayan (talimat, ajans, resmî duyuru) öneride geri dönülecek kimse yok. */
-export const geriDonusBekliyor = (o: Oneri) => !!o.muhabirId && !o.geriDonus && ["planaEklendi", "reddedildi", "sonra"].includes(o.durum);
-
-const geriDonusYaz = (ben: Kisi, kapsamda: (o: Oneri) => boolean, bag: { planId?: string; haftaId?: string }): number => {
+/**
+ * Muhabire geri bildirim gönderildi (e-postayı ekran şablondan kuruyor,
+ * kişi Outlook'ta ya da telefonda gönderiyor). Kayıtta zamanı ve şablonu;
+ * "takip edilsin" denirse ve e-postayla takip açıksa haber muhabirin
+ * işlerinde takibe giriyor ve yazışmaya deneme süreci mesajı düşüyor.
+ * Takip karardan bağımsız seçenek: onaylanan öneride önerilir, ötekinde
+ * istenirse.
+ */
+export const geriBildirimKaydet = (ben: Kisi, oneriId: string, g: { sablonId?: string; takip: boolean }) => {
   let d = getir();
-  const hedef = d.oneriler.filter((o) => kapsamda(o) && geriDonusBekliyor(o));
-  if (!hedef.length) return 0;
-  const ids = new Set(hedef.map((o) => o.id));
-  d = { ...d, oneriler: d.oneriler.map((o) => (ids.has(o.id) ? { ...o, geriDonus: true } : o)) };
-  for (const o of hedef) {
-    d = hareketYaz(d, { kisiId: ben.id, tip: "geriDonus", oneriId: o.id, ...bag, veri: { sonuc: o.durum } });
+  const o = oneriBul(d, oneriId);
+  if (!o || !geriBildirimGonderebilir(ben, o)) return false;
+  const ayar = geriBildirimAyari(d);
+  const takipEt = g.takip && ayar.epostaIleTakip && o.takip !== "tamamlandi";
+  const z = simdi();
+  d = {
+    ...d,
+    oneriler: d.oneriler.map((x) =>
+      x.id === o.id ? { ...x, geriDonus: true, geriBildirim: { zaman: z, kisiId: ben.id, ...(g.sablonId ? { sablonId: g.sablonId } : {}) }, ...(takipEt ? { takip: "acik" as const } : {}) } : x,
+    ),
+  };
+  if (takipEt && o.takip !== "acik" && ayar.takipMesaji.trim()) {
+    d = { ...d, mesajlar: [...d.mesajlar, { id: kimlik("ms"), oneriId: o.id, kisiId: ben.id, metin: ayar.takipMesaji.trim(), zaman: z }] };
   }
-  kaydet(d);
-  return hedef.length;
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "geriDonus", oneriId: o.id, planId: o.planId, veri: { sonuc: o.durum, kime: o.muhabirId ?? "" } }));
+  return true;
 };
 
-/** Toplantıdan sonra muhabirlere kabul/ret bilgisi. E-posta yerine bildirim; gönderim entegrasyonu sonra. */
-export const geriDonusGonder = (ben: Kisi, planId: string): number => {
-  const plan = planBul(getir(), planId);
-  if (!plan || !yapabilir(ben, "geriDonus")) return 0;
-  return geriDonusYaz(ben, (o) => o.hedefTarih === plan.tarih, { planId });
+/** Takipteki haber bitti: muhabir kendisi ya da Planlama işaretliyor; karşı taraf bildirim alıyor. */
+export const takipTamamla = (ben: Kisi, oneriId: string) => {
+  const d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !takipTamamlayabilir(ben, o)) return false;
+  const muhabir = ben.id === o.muhabirId;
+  const yeni: Durum = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, takip: "tamamlandi", takipBitis: simdi(), takipBitiren: ben.id } : x)) };
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
+  return true;
 };
 
-/** Haftalık toplantının kararı muhabire: plan kesinleştikten sonra. */
-export const haftalikGeriDonus = (ben: Kisi, haftaId: string): number => {
-  const h = haftaBul(getir(), haftaId);
-  if (!h || h.durum !== "kesinlesti" || !yapabilir(ben, "geriDonus")) return 0;
-  return geriDonusYaz(ben, (o) => o.hafta === h.baslangic, { haftaId });
+/* Şablonlar ve ayar: yalnız tam yönetici ve Planlama yöneticisi. Kayıtta şablon yoksa varsayılanlardan başlanıyor. */
+export const geriBildirimSablonuKaydet = (ben: Kisi, s: GeriBildirimSablonu) => {
+  if (!geriBildirimSablonuDuzenler(ben) || !s.ad.trim() || !s.konu.trim() || !s.govde.trim()) return false;
+  const d = getir();
+  const l = sablonlar(d);
+  const yeni = l.some((x) => x.id === s.id) ? l.map((x) => (x.id === s.id ? s : x)) : [...l, s];
+  kaydet({ ...d, geriBildirimSablonlari: yeni });
+  return true;
+};
+
+export const geriBildirimSablonuSil = (ben: Kisi, id: string) => {
+  if (!geriBildirimSablonuDuzenler(ben)) return false;
+  const d = getir();
+  kaydet({ ...d, geriBildirimSablonlari: sablonlar(d).filter((x) => x.id !== id) });
+  return true;
+};
+
+export const geriBildirimAyariKaydet = (ben: Kisi, ayar: GeriBildirimAyari) => {
+  if (!geriBildirimSablonuDuzenler(ben)) return false;
+  const d = getir();
+  kaydet({ ...d, geriBildirimAyari: ayar });
+  return true;
 };
 
 /* --- Haftalık plan --- */

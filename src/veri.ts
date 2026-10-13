@@ -397,6 +397,16 @@ export interface Oneri {
   /** Kaç kez düzeltmeye gönderildi. */
   duzeltmeSayisi?: number;
   geriDonus?: boolean;
+  /** Muhabire giden geri bildirim e-postası (şablondan); ne zaman, kim, hangi şablonla. */
+  geriBildirim?: { zaman: string; kisiId: string; sablonId?: string };
+  /*
+   * Deneme süreci: geri bildirimle birlikte "takip edilsin" denen haberin
+   * uygulaması e-postayla yürüyor; muhabirin işlerinde görünüyor, muhabir ya
+   * da Planlama bitince "tamamlandı" işaretliyor.
+   */
+  takip?: "acik" | "tamamlandi";
+  takipBitis?: string;
+  takipBitiren?: string;
   /** E-postayla geldiyse kaynağı olan yanıt; orijinal metin orada değişmeden duruyor. */
   yanitId?: string;
   /** Planlama'dan muhabire giden öneri (gönderen `giren`); yoksa muhabirden ya da kaynaktan gelen. */
@@ -436,6 +446,31 @@ export interface Takip {
  * içinde. Her önerinin yazışması ayrı; konu karışmasın. Öneriden ayrı
  * kayıt, çünkü iki taraf aynı anda yazınca öneri belgesi ezilmesin.
  */
+/*
+ * Muhabire geri bildirim e-postasının şablonu. Ayarlar'da düzenleniyor;
+ * metin içerik gibi (Arapça), {muhabir} {header} {strap} {plan} {gerekce}
+ * {not} alanları gönderirken dolduruluyor. Kime her zaman muhabir; CC ve
+ * BCC virgülle ayrılmış adresler.
+ */
+export const GERI_BILDIRIM_KARARLARI = ["planaEklendi", "reddedildi", "sonra"] as const;
+export type GeriBildirimKarari = (typeof GERI_BILDIRIM_KARARLARI)[number];
+export interface GeriBildirimSablonu {
+  id: string;
+  ad: string;
+  /** Hangi kararda kendiliğinden seçili gelir; boşsa elle seçilir. */
+  karar?: GeriBildirimKarari;
+  konu: string;
+  govde: string;
+  cc: string;
+  bcc: string;
+}
+/** Deneme süreci ayarı: diğer birimler devreye girince kapatılıyor, takip uygulamadaki akışa dönüyor. */
+export interface GeriBildirimAyari {
+  epostaIleTakip: boolean;
+  /** Takip seçilince önerinin yazışmasına düşen mesaj. */
+  takipMesaji: string;
+}
+
 export interface Mesaj {
   id: string;
   oneriId: string;
@@ -815,6 +850,7 @@ export const HAREKET_TIPLERI = [
   "oneriReddedildi",
   "oneriSonra",
   "geriDonus",
+  "takipTamamlandi",
   "planOlusturuldu",
   "planKopyalandi",
   "planGeriAlindi",
@@ -938,6 +974,7 @@ export interface Durum {
   hareketler: Hareket[];
   mesajlar: Mesaj[];
   takipler: Takip[];
+  geriBildirimSablonlari: GeriBildirimSablonu[];
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
@@ -954,6 +991,8 @@ export interface Durum {
   kisayollar?: Record<string, string[]>;
   /** Muhabire doğrudan haber önerebilen birimler; yönetici seçiyor. Yoksa yalnız Planlama. */
   muhabireOneriBirimleri?: BirimId[];
+  /** Geri bildirim ve e-postayla takip ayarı (gerçek kipte genel ayar belgesinde). */
+  geriBildirimAyari?: GeriBildirimAyari;
   sayac: number;
 }
 
@@ -1049,6 +1088,7 @@ export const bosDurum = (): Durum => ({
   hareketler: [],
   mesajlar: [],
   takipler: [],
+  geriBildirimSablonlari: [],
   yapilar: [],
   okundu: {},
   sayac: 0,

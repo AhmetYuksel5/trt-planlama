@@ -88,6 +88,8 @@ const utf8Base64 = (s: string) => {
 
 export interface GidenEposta {
   kime: string;
+  /** Bilgi: geri bildirimde şablonun CC'si. */
+  cc?: string[];
   bcc: string[];
   konu: string;
   govde: string;
@@ -113,6 +115,7 @@ export const emlUret = (e: GidenEposta) => {
   const govde = utf8Base64(`<html><body>${govdeHtml(e.govde, e)}</body></html>`).replace(/.{76}/g, "$&\r\n");
   return [
     `To: ${e.kime}`,
+    ...(e.cc?.length ? [`Cc: ${e.cc.join(", ")}`] : []),
     `Bcc: ${bcc.join(",\r\n ")}`,
     `Subject: =?UTF-8?B?${utf8Base64(e.konu)}?=`,
     "X-Unsent: 1",
@@ -140,7 +143,7 @@ export const ADRES_SINIRI = 8000;
 
 export const mailtoUret = (e: GidenEposta, bccli = true) =>
   `mailto:${encodeURIComponent(e.kime)}?` +
-  [bccli && e.bcc.length ? `bcc=${e.bcc.map(encodeURIComponent).join(",")}` : "", `subject=${encodeURIComponent(e.konu)}`, `body=${encodeURIComponent(duzMetin(e))}`].filter(Boolean).join("&");
+  [e.cc?.length ? `cc=${e.cc.map(encodeURIComponent).join(",")}` : "", bccli && e.bcc.length ? `bcc=${e.bcc.map(encodeURIComponent).join(",")}` : "", `subject=${encodeURIComponent(e.konu)}`, `body=${encodeURIComponent(duzMetin(e))}`].filter(Boolean).join("&");
 
 /* --- Gelen yanıt --- */
 

@@ -1,13 +1,14 @@
 import { birimAdi } from "../../yapi";
-import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
+import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
+import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, bildir, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { acikCagri, useVeri, type Kisi, type Oneri } from "../../veri";
+import { takipTamamla } from "../../eylemler";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
@@ -203,6 +204,47 @@ function Onerilerim({ ben }: { ben: Kisi }) {
   );
 }
 
+/*
+ * Deneme süreci: geri bildirimle takibe alınan haberler. Uygulaması
+ * e-postayla yürüyor; muhabir bitince "tamamlandı" diyor (Planlama da
+ * diyebiliyor). Açıklar önde, bitenler arkada.
+ */
+function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const { oneriler } = useMuhabirIsleri(ben);
+  const liste = oneriler.filter((o) => o.muhabirId === ben.id && o.takip).sort((a, b) => (a.takip === b.takip ? 0 : a.takip === "acik" ? -1 : 1));
+  return (
+    <Kart baslik={t("takiptekiHaberlerim")} ikon={<MailCheck size={18} />}>
+      {liste.length === 0 ? (
+        <Bos kucuk metin={t("takiptekiHaberYok")} />
+      ) : (
+        <ul className="liste" data-takipteki-haberler>
+          {liste.map((o) => (
+            <li key={o.id} data-takipteki={o.id}>
+              <div className="ad">
+                <a href={`#/oneriler/${o.id}`}>
+                  <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
+                </a>
+                <small>
+                  <Icerik>{o.haberBasligi}</Icerik>
+                  {o.takipBitis && ` · ${tarihYaz(yerelGun(o.takipBitis), dil, "kisa")}`}
+                </small>
+              </div>
+              {o.takip === "acik" ? (
+                <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && bildir(t("gbTamamlandiBildir"))} data-takip-tamamla>
+                  <CheckCircle size={14} /> {t("gbTamamlandiIsaretle")}
+                </button>
+              ) : (
+                <Rozet ton="iyi">{t("gbTamamlandi")}</Rozet>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Kart>
+  );
+}
+
 function Gorevlerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const { gorevler } = useMuhabirIsleri(ben);
@@ -246,6 +288,7 @@ export const MUHABIR_ALANLARI: Alan[] = [
   { id: "muCagri", ad: "alAcikCagrilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Cagrilar },
   { id: "muSayac", ad: "alOzetSayilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Sayaclar },
   { id: "muSiram", ad: "seninSiran", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Siram },
+  { id: "muTakip", ad: "takiptekiHaberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: TakiptekiHaberlerim },
   { id: "muGorev", ad: "gorevlendirmelerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Gorevlerim },
   { id: "muHaberler", ad: "haberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Haberlerim },
   { id: "muBildirim", ad: "bildirimler", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Bildirimlerim },

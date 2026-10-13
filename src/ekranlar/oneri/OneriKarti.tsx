@@ -13,6 +13,7 @@ import { FormAlt } from "../nextday/Formlar";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { useBen } from "../../oturum";
 import { OneriYazismasi } from "./Yazisma";
+import { GeriBildirimBolumu } from "./GeriBildirim";
 
 /*
  * Plan hazırlanırken gelen öneri: müstakil kart, basınca pencerede bütün
@@ -228,6 +229,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
           </p>
         )}
       </div>
+      {ben && <GeriBildirimBolumu ben={ben} oneri={o} />}
       {/* Yazışma ve geçmiş pencerenin içinde: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
       {ben && <OneriYazismasi ben={ben} oneri={o} />}
       {gecmis.length > 0 && (

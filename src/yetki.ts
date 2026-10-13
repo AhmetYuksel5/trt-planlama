@@ -347,6 +347,17 @@ export const epostaDegistirebilir = (ben: Kisi, k: Kisi): boolean => {
   return hesapYetkisi(ben, "davet");
 };
 
+/*
+ * Geri bildirim: kararı verilmiş muhabir önerisinde, Planlama'dan (yetki
+ * "geriDonus"). Şablonları tam yönetici ve Planlama yöneticisi düzenliyor.
+ * Takipteki haberi muhabir kendisi ya da Planlama "tamamlandı" yapıyor.
+ */
+export const geriBildirimGonderebilir = (ben: Kisi | undefined, o: Oneri): boolean =>
+  !!ben && yapabilir(ben, "geriDonus") && !!o.muhabirId && (o.durum === "planaEklendi" || o.durum === "reddedildi" || o.durum === "sonra");
+export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean => !!ben && (!!ben.hesapYoneticisi || (ben.birim === "planlama" && ben.rol === "yonetici"));
+export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>
+  !!ben && o.takip === "acik" && (ben.id === o.muhabirId || yapabilir(ben, "geriDonus"));
+
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
 export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean => !!k && (k.id === kisi.id || yapabilir(k, "profilDuzenle"));
 

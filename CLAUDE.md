@@ -393,6 +393,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
+- Muhabire geri bildirim (`geriBildirim.ts`, `oneri/GeriBildirim.tsx`):
+  toplu "geri dönüş" düğmesi yok; her öneride değerlendirme bölümünden,
+  karar verilmiş muhabir önerisinde. Şablondan e-posta (Outlook taslağı /
+  mailto, CC ve BCC'li); metin, alıcılar ve not pencerede değişir.
+  Şablonlar (onaylandı, reddedildi, sonra; `{muhabir} {header} {strap}
+  {plan} {gerekce} {not}`) Ayarlar › "Muhabire geri bildirim"de
+  (`Durum.geriBildirimSablonlari`, boşsa varsayılanlar; yetki
+  `geriBildirimSablonuDuzenler`). Deneme süreci geçici:
+  `Durum.geriBildirimAyari.epostaIleTakip` açıkken pencerede "takip
+  edilsin mi" sorusu (onaylananda işaretli gelir, her kararda seçilebilir);
+  seçilirse öneri `takip: "acik"`, yazışmaya ayardaki Arapça mesaj düşer,
+  haber muhabirin İşlerim'inde ("Takipteki haberlerim", `muTakip`).
+  "Tamamlandı"yı muhabir ya da Planlama işaretler (`takipTamamla`,
+  `takipTamamlayabilir`). Diğer birimler devreye girince ayar kapanır.
 - Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`, `Durum.takipler`):
   muhabirin izlediği güncel konu (olay, toplantı, etkinlik); iş önerisi
   değil, bilgilendirme. Muhabir menüsünde "Takiplerim" (öneriler menüden

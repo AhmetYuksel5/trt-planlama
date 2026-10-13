@@ -51,9 +51,11 @@ export function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEpost
   const bccli = mailtoUret(eposta).length <= ADRES_SINIRI;
   return (
     <div className="form-alt">
-      <button className="dugme dugme-ikincil" onClick={() => panoya(eposta.bcc.join("; "), t)}>
-        <ClipboardCopy size={16} /> {t("bccKopyala")}
-      </button>
+      {eposta.bcc.length > 0 && (
+        <button className="dugme dugme-ikincil" onClick={() => panoya(eposta.bcc.join("; "), t)}>
+          <ClipboardCopy size={16} /> {t("bccKopyala")}
+        </button>
+      )}
       <a
         className="dugme dugme-ikincil"
         href={mailtoUret(eposta, bccli)}

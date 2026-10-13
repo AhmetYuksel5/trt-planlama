@@ -10,9 +10,7 @@ import {
   anaKonuKaydet,
   anaKonuSil,
   anaKonuTasi,
-  geriDonusBekliyor,
   haftalikDurum,
-  haftalikGeriDonus,
   haftalikKesinlestir,
   kalanlariKabulEt,
   oneriGundemeEkle,
@@ -50,7 +48,6 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const bekleyen = kararBekleyenler(hafta).length;
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
-  const geriDonus = v.oneriler.filter((o) => o.hafta === bas && geriDonusBekliyor(o)).length;
   const durumSirasi = HAFTA_DURUMLARI.indexOf(hafta.durum);
   // Günü geçmiş kalem artık aktarılmaz; yalnız bugün ve sonrası "bekliyor".
   const aktarimBekleyen = gundem.filter((k) => nextDayeGider(k) && !k.aktarim?.planId && k.tarih! >= bugun()).length;
@@ -127,11 +124,6 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           {hafta.durum === "toplantida" && duzenler && (
             <button className="dugme dugme-ikincil" onClick={() => durumDegistir("hazirlik", "bHazirligaAlindi")}>
               <Undo2 size={16} /> {t("hazirligaGeriAl")}
-            </button>
-          )}
-          {hafta.durum === "kesinlesti" && yapabilir(ben, "geriDonus") && geriDonus > 0 && (
-            <button className="dugme dugme-ikincil" onClick={() => bildir(t("bGeriDonus", { n: haftalikGeriDonus(ben, hafta.id) }))}>
-              <Send size={16} className="yon" /> {t("geriDonusGonder", { n: geriDonus })}
             </button>
           )}
         </div>

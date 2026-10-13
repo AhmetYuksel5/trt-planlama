@@ -1638,6 +1638,19 @@ export const ORNEK = (): Durum => {
     }
     if (o.geriDonus) h("pl2", "geriDonus", zaman(gun(-1), "19:05"), { oneriId: o.id, planId: o.planId, veri: { sonuc: o.durum } });
   }
+  /* Deneme süreci: geri bildirimi gitmiş, plana eklenmiş öneriler e-postayla takipte; biri muhabirce tamamlanmış. */
+  oneriler
+    .filter((o) => o.geriDonus && o.durum === "planaEklendi" && o.muhabirId)
+    .slice(0, 3)
+    .forEach((o, i) => {
+      o.geriBildirim = { zaman: zaman(gun(-1), "19:05"), kisiId: "pl2", sablonId: "gb-onay" };
+      o.takip = i === 2 ? "tamamlandi" : "acik";
+      if (i === 2) {
+        o.takipBitis = zaman(gun(0), "10:30");
+        o.takipBitiren = o.muhabirId;
+        h(o.muhabirId, "takipTamamlandi", zaman(gun(0), "10:30"), { oneriId: o.id, veri: { sahip: "planlama" } });
+      }
+    });
 
   /*
    * E-postayla gelen önerinin kaynağı: çağrıya verilen yanıt. Sunucu
@@ -2468,6 +2481,8 @@ export const ORNEK = (): Durum => {
     hareketler: hareketler.sort(sirala),
     mesajlar,
     takipler,
+    // Boş: geri bildirim şablonlarının varsayılanı kodda (geriBildirim.ts), Ayarlar'da değişince kayda giriyor.
+    geriBildirimSablonlari: [],
     yapilar: [],
     okundu: {},
     sayac,

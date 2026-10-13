@@ -3,7 +3,7 @@ import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma"
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Search, Send, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
 import { haftaGunleri, haftaSonu } from "../../haftalik";
@@ -19,6 +19,7 @@ import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
 import { DuzeltmeFormu, GorunumSecici, OneriKarti, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
+import { GeriBildirimBolumu } from "./GeriBildirim";
 
 /**
  * Öneriler: havuz, ayrıntı ve yeni öneri. Çağrı ve gelen e-posta yanıtları Eposta.tsx'te.
@@ -338,11 +339,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                 </NotKutu>
               </div>
             )}
-            {oneri.geriDonus && (
-              <div className="ara-ust-2">
-                <Rozet ton="iyi">{t("geriDonusYapildi")}</Rozet>
-              </div>
-            )}
+            <GeriBildirimBolumu ben={ben} oneri={oneri} />
             {degerlendirir && (
               <div className="ara-ust-2">
                 {ekle ? (

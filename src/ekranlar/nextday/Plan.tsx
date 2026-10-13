@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
 import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
-import { geriDonusBekliyor, geriDonusGonder, oncekiOnayla, planDurum } from "../../eylemler";
+import { oncekiOnayla, planDurum } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
@@ -152,8 +152,6 @@ function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 /* Planın durumu ve akıştaki eylemler: bölümlerin altında. */
 function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t } = useDil();
-  const v = useVeri();
-  const bekleyenGeriDonus = v.oneriler.filter((o) => o.hedefTarih === plan.tarih && geriDonusBekliyor(o)).length;
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
   };
@@ -190,17 +188,6 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         {plan.durum === "onayli" && yapabilir(ben, "planDevral") && (
           <button className="dugme" onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}>
             <UserCheck size={16} /> {t("planiDevral")}
-          </button>
-        )}
-        {yapabilir(ben, "geriDonus") && plan.durum !== "taslak" && bekleyenGeriDonus > 0 && (
-          <button
-            className="dugme dugme-ikincil"
-            onClick={() => {
-              const n = geriDonusGonder(ben, plan.id);
-              if (n) bildir(t("bGeriDonus", { n }));
-            }}
-          >
-            <Send size={16} className="yon" /> {t("geriDonusGonder", { n: bekleyenGeriDonus })}
           </button>
         )}
       </div>
