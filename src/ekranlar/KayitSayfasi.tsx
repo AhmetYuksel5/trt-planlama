@@ -1,4 +1,5 @@
-import { birimAdi, birimListesi, gorevAdi, unvanListesi } from "../yapi";
+import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
+import { birimeUygunUnvan } from "../yapi";
 import { ArrowLeft, Mail, ShieldAlert } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import DilSecici from "../bilesenler/DilSecici";
@@ -31,6 +32,8 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
   const [hata, setHata] = useState<{ anahtar: Anahtar; kod: string } | null>(null);
   const [bekle, setBekle] = useState(false);
   const alan = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
+  // Kurumun yapısında başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
+  const gorev = birimeUygunUnvan(f.birim, f.gorev);
 
   useEffect(() => {
     if (!kurulu) return;
@@ -50,7 +53,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
     const ad = { tr, ar: f.adAr.trim() || tr, en: f.adEn.trim() || tr };
     firebaseYukle()
       .then(async (x) => {
-        const bilgi = { kod, ad, birim: f.birim, gorev: f.gorev };
+        const bilgi = { kod, ad, birim: f.birim, gorev };
         if ((await x.kayitOl(f.eposta, f.sifre, bilgi, dil)) === "gonderildi") return setAdim("gonderildi");
         // Hesap zaten vardı ve şifre onunki: kayıt kurulup doğrudan gerçek kipe geçiliyor.
         const hal = await x.ilkKayit(bilgi);
@@ -104,22 +107,14 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
         </label>
         <label>
           {t("birim")}
-          <select value={f.birim} onChange={(e) => alan("birim", e.target.value)} data-kayit-birim>
-            {birimListesi().map((b) => (
-              <option key={b} value={b}>
-                {birimAdi(b)}
-              </option>
-            ))}
+          <select value={f.birim} onChange={(e) => setF((x) => ({ ...x, birim: e.target.value, gorev: birimeUygunUnvan(e.target.value, x.gorev) }))} data-kayit-birim>
+            <BirimSecenekleri />
           </select>
         </label>
         <label>
           {t("gorev")}
-          <select value={f.gorev} onChange={(e) => alan("gorev", e.target.value)} data-kayit-gorev>
-            {unvanListesi(f.birim, f.gorev).map((g) => (
-              <option key={g} value={g}>
-                {gorevAdi(g)}
-              </option>
-            ))}
+          <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-kayit-gorev>
+            <UnvanSecenekleri birim={f.birim} />
           </select>
         </label>
         <label>
@@ -130,7 +125,7 @@ export default function KayitSayfasi({ kod }: { kod: string }) {
           {t("ggSifreTekrar")}
           <input type="password" autoComplete="new-password" value={f.sifre2} onChange={(e) => alan("sifre2", e.target.value)} required data-kayit-sifre2 />
         </label>
-        <button className="dugme" disabled={bekle} data-kayit-gonder>
+        <button className="dugme" disabled={bekle || !gorev} data-kayit-gonder>
           <Mail size={16} /> {t("kayitOl")}
         </button>
       </form>

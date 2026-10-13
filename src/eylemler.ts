@@ -6,7 +6,7 @@ import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { yaz, type Yazi } from "./dil";
-import { ayniYapi, ekipGorevleri, guncelYapi, unvanListesi, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, ekipGorevleri, guncelYapi, unvanListesi, unvandanRol, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -34,7 +34,6 @@ import {
   type GorevId,
   type Mesaj,
   type PlanAdi,
-  type Rol,
   type BolmeEkseni,
   type CanliYayin,
   type AylikPlan,
@@ -1708,7 +1707,7 @@ export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[
  * girdiklerine yönetici böyle bakıyor; kaydedince "kontrol bekliyor"
  * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
-export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; rol: Rol; ad?: Yazi }) => {
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; ad?: Yazi }) => {
   // Demoda hesap yetkisi yalnız örnek yöneticide; tayini Organizasyon'da o deniyor.
   if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
@@ -1719,7 +1718,7 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
     kisiler: d.kisiler.map((k) => {
       if (k.id !== kisiId) return k;
       const { kontrolBekliyor: _, ...kalan } = k;
-      return { ...kalan, birim: p.birim, gorev: p.gorev, rol: p.rol, ...(p.ad ? { ad: p.ad } : {}) };
+      return { ...kalan, birim: p.birim, gorev: p.gorev, rol: unvandanRol(p.gorev, k), ...(p.ad ? { ad: p.ad } : {}) };
     }),
   };
   // Birim ya da ünvan değiştiyse tayin: geçmişte kalsın, kişiye de bildirim düşsün.

@@ -21,7 +21,7 @@ import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil, type Anahtar } from "../dil";
 import { demoyuAc, girisiAc } from "../kip";
-import { birimAdi, birimListesi, varsayilanYapi } from "../yapi";
+import { birimAdi, kisiBirimleri, varsayilanYapi } from "../yapi";
 
 /**
  * Tanıtım sayfası: plannersflow.net çıplak açılınca (demoda) ya da `#/tanitim`.
@@ -183,7 +183,7 @@ export default function Tanitim() {
           <h2>{t("tnBirimler")}</h2>
           <p className="tanitim-alt">{t("tnBirimlerAlt")}</p>
           <ul className="tanitim-birimler">
-            {birimListesi(undefined, yapi).map((b) => (
+            {kisiBirimleri(yapi).map((b) => (
               <li key={b}>{birimAdi(b, yapi)}</li>
             ))}
           </ul>

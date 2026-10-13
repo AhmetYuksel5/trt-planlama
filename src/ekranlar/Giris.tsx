@@ -1,4 +1,4 @@
-import { birimAdi, birimListesi, gorevAdi } from "../yapi";
+import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
 import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
@@ -82,7 +82,7 @@ export default function Giris() {
               <button className={birim === "hepsi" ? "acik" : ""} onClick={() => setBirim("hepsi")}>
                 {t("hepsi")}
               </button>
-              {birimListesi().map((b) => (
+              {kisiBirimleri().map((b) => (
                 <button key={b} className={birim === b ? "acik" : ""} onClick={() => setBirim(b)}>
                   {birimAdi(b)}
                   <em>{v.kisiler.filter((k) => k.birim === b).length}</em>

@@ -1,7 +1,7 @@
 import type { Asama, UretimAdimi } from "./akis";
 import { metin, yaz, type Anahtar, type Dil, type Metin, type Yazi } from "./dil";
 import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI } from "./etiketler";
-import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru } from "./veri";
+import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol } from "./veri";
 
 /**
  * Kurumun yapısı veri olarak: birimler, ünvanlar ve haber üretim akışları.
@@ -62,6 +62,12 @@ export interface UnvanTanimi {
    * iç muhabir. Boşsa yerleşik "muhabir" ünvanı işaretli sayılıyor.
    */
   muhabir?: boolean;
+  /**
+   * Bu ünvana tayin edilen yönetici rolü alıyor (birim yöneticisi yetkileri).
+   * Rol formda ayrıca seçilmiyor, ünvandan geliyor. Boşsa yerleşik
+   * yönetici ve müdür ünvanları işaretli sayılıyor.
+   */
+  yonetici?: boolean;
 }
 
 /**
@@ -322,9 +328,18 @@ export const birimUnvanlari = (birim: BirimId, y: Yapi = yapi()): GorevId[] => {
  */
 export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi()): GorevId[] => {
   const gorunur = (id: GorevId) => !y.unvanlar.find((u) => u.id === id)?.gizli;
-  const birimde = birim ? birimUnvanlari(birim, y).filter(gorunur) : [];
-  const l = birimde.length ? birimde : y.unvanlar.filter((u) => !u.gizli).map((u) => u.id);
+  // Birim verilince yalnız onun ünvanları: grup düğümünde ya da ünvansız birimde bütün ünvanlara düşmek
+  // kişiyi birimde olmayan görevle ("Input · Planlamacı") kaydettiriyordu.
+  // Grup (iş akışında sorumlu olabiliyor) altındaki birimlerin ünvanlarını topluyor; kişi formlarında grup seçilemiyor.
+  const kaynak = birim ? (grupMu(birim, y) ? y.birimler.filter((b) => altindaMi(b.id, birim, y) && b.id !== birim).flatMap((b) => birimUnvanlari(b.id, y)) : birimUnvanlari(birim, y)) : [];
+  const l = birim ? [...new Set(kaynak)].filter(gorunur) : y.unvanlar.filter((u) => !u.gizli).map((u) => u.id);
   return dahil && !l.includes(dahil) ? [...l, dahil] : l;
+};
+
+/** Seçili görev birimde yoksa birimin ilk ünvanı (ünvansız birimde boş): form birim değişince eski görevle kalmasın. */
+export const birimeUygunUnvan = (birim: BirimId, gorev: GorevId, y: Yapi = yapi()): GorevId => {
+  const l = unvanListesi(birim, undefined, y);
+  return l.includes(gorev) ? gorev : (l[0] ?? "");
 };
 
 /* --- Ağaç --- */
@@ -367,6 +382,22 @@ export const birimAgaci = (y: Yapi = yapi(), gizliDahil = true): AgacSatiri[] =>
   return l;
 };
 
+/** Grup düğümü (Haber merkezi, Input…): altında birim var, kendi ünvanı yok. Kişi gruba değil birime yazılır. */
+export const grupMu = (id: BirimId, y: Yapi = yapi()): boolean => {
+  const b = y.birimler.find((x) => x.id === id);
+  return !!b && !b.unvanlar?.length && y.birimler.some((x) => x.ust === id && x.id !== id);
+};
+
+/** Kişinin yazılabileceği birimler (grup değil). */
+export const kisiBirimleri = (y: Yapi = yapi()): BirimId[] => birimListesi(undefined, y).filter((b) => !grupMu(b, y));
+
+/** Kişi formlarındaki birim seçimi: ağaç sırasıyla, gruplar başlık (seçilemez); `dahil` gizli de olsa listede. */
+export const kisiBirimSecenekleri = (dahil?: BirimId, y: Yapi = yapi()): (AgacSatiri & { grup: boolean })[] => {
+  const l = birimAgaci(y, false).map((s) => ({ ...s, grup: grupMu(s.id, y) }));
+  if (dahil && !l.some((s) => s.id === dahil) && y.birimler.some((b) => b.id === dahil)) l.push({ id: dahil, derinlik: 0, grup: false });
+  return l;
+};
+
 /** Seçimdeki girintili ad: alt birim üstünün altında okunsun. */
 export const agacAdi = (s: AgacSatiri, y: Yapi = yapi()) => `${"\u00a0\u00a0".repeat(s.derinlik)}${s.derinlik ? "› " : ""}${birimAdi(s.id, y)}`;
 
@@ -377,6 +408,21 @@ export const disMuhabirMi = (k: { birim: BirimId }, y: Yapi = yapi()) => izinBir
 
 /** Ünvan muhabir seçimlerinde çıkıyor mu (yönetici işaretler; yerleşik "muhabir" işaretli). */
 export const unvanMuhabirMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.muhabir ?? id === "muhabir";
+
+const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru"];
+
+/** Ünvan yönetici rolü veriyor mu (Organizasyon'da işaretlenir; yerleşik yönetici ve müdürler işaretli). */
+export const unvanYoneticiMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.yonetici ?? YONETICI_UNVANLARI.includes(id);
+
+/**
+ * Rol ünvandan: yönetici ünvanına gelen yönetici, yönetici ünvanından ayrılan
+ * personel olur; öbür tayinlerde rol değişmez (kurucu planlamacı ama yönetici).
+ */
+export const unvandanRol = (gorev: GorevId, eski?: { rol: Rol; gorev: GorevId }, y: Yapi = yapi()): Rol => {
+  if (unvanYoneticiMi(gorev, y)) return "yonetici";
+  if (!eski || unvanYoneticiMi(eski.gorev, y)) return "personel";
+  return eski.rol;
+};
 
 /** Haber merkezinde çalışıp görevlere giden muhabir: dış muhabirlerle birlikte seçilebiliyor. */
 export const icMuhabirMi = (k: { birim: BirimId; gorev: GorevId }, y: Yapi = yapi()) => !disMuhabirMi(k, y) && unvanMuhabirMi(k.gorev, y);

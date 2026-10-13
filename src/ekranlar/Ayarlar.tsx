@@ -1,4 +1,4 @@
-import { birimAdi, birimListesi, gorevAdi } from "../yapi";
+import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
 import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
@@ -91,7 +91,7 @@ function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
   return (
     <Kart baslik={t("muhabireOneriBirimleri")} ikon={<Send size={18} className="yon" />}>
       <div className="yetki-listesi" data-muhabire-oneri-birimleri>
-        {birimListesi().filter((b) => b !== "muhabir").map((b) => (
+        {kisiBirimleri().filter((b) => b !== "muhabir").map((b) => (
           <label key={b} className="secim">
             <input
               type="checkbox"

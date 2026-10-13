@@ -1,4 +1,5 @@
-import { birimAdi, birimListesi, gorevAdi, unvanListesi } from "../yapi";
+import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
+import { birimAdi, birimeUygunUnvan, gorevAdi, unvandanRol } from "../yapi";
 import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -9,7 +10,7 @@ import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { firebaseYukle } from "../kip";
-import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Rol } from "../veri";
+import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi } from "../veri";
 import { hesapYetkisi } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -46,7 +47,6 @@ const BOS_FORM = {
   adEn: "",
   birim: "planlama" as BirimId,
   gorev: "planlamaci" as GorevId,
-  rol: "personel" as Rol,
   hesapYoneticisi: false,
   telefon: "",
 };
@@ -96,6 +96,8 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   const [yetkiVerilen, setYetkiVerilen] = useState<Kisi | null>(null);
   const [aktar, setAktar] = useState(false);
   const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
+  // Kayıtlı yapıda başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
+  const gorev = birimeUygunUnvan(form.birim, form.gorev);
 
   // Yalnız yetkisi olan dinliyor: kurallar öbürüne okutmuyor, boşuna hata vermesin.
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
     const eposta = form.eposta.trim().toLowerCase();
     const adi = adKur(form.adTr, form.adAr, form.adEn, eposta);
     if (tur === "hesapsiz") {
-      if (hesapsizKisiEkle(ben, { ad: adi, birim: form.birim, gorev: form.gorev, eposta, telefon: form.telefon })) {
+      if (hesapsizKisiEkle(ben, { ad: adi, birim: form.birim, gorev, eposta, telefon: form.telefon })) {
         bildir(t("hesapsizEklendi", { ad: adi.tr }));
         setForm(BOS_FORM);
       }
@@ -130,7 +132,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
     setBekle(true);
     firebaseYukle()
       .then((f) =>
-        f.davetEt({ eposta, ad: adi, birim: form.birim, gorev: form.gorev, rol: form.rol, hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil),
+        f.davetEt({ eposta, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil),
       )
       .then(() => {
         bildir(t("davetGonderildi", { eposta }));
@@ -226,33 +228,16 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
             <div className="satir">
               <label>
                 {t("birim")}
-                <select value={form.birim} onChange={(e) => alan("birim", e.target.value)} data-davet-birim>
-                  {birimListesi(form.birim).map((b) => (
-                    <option key={b} value={b}>
-                      {birimAdi(b)}
-                    </option>
-                  ))}
+                <select value={form.birim} onChange={(e) => setForm((f) => ({ ...f, birim: e.target.value, gorev: birimeUygunUnvan(e.target.value, f.gorev) }))} data-davet-birim>
+                  <BirimSecenekleri />
                 </select>
               </label>
               <label>
                 {t("gorev")}
-                <select value={form.gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
-                  {unvanListesi(form.birim, form.gorev).map((g) => (
-                    <option key={g} value={g}>
-                      {gorevAdi(g)}
-                    </option>
-                  ))}
+                <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
+                  <UnvanSecenekleri birim={form.birim} />
                 </select>
               </label>
-              {!hesapsizTur && (
-                <label>
-                  {t("rol")}
-                  <select value={form.rol} onChange={(e) => alan("rol", e.target.value as Rol)}>
-                    <option value="personel">{t("rolPersonel")}</option>
-                    <option value="yonetici">{t("rolYonetici")}</option>
-                  </select>
-                </label>
-              )}
             </div>
             {/* Yöneticilik yalnız tam yöneticiden: davet yetkisi olan yönetici davet edemiyor (kurallar da). */}
             {!hesapsizTur && ben.hesapYoneticisi && (
@@ -263,11 +248,11 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
             )}
             <div className="form-alt">
               {hesapsizTur ? (
-                <button className="dugme" data-hesapsiz-ekle>
+                <button className="dugme" disabled={!gorev} data-hesapsiz-ekle>
                   <UserPlus size={16} /> {t("hesapsizKisiEkle")}
                 </button>
               ) : (
-                <button className="dugme" disabled={bekle} data-davet-gonder>
+                <button className="dugme" disabled={bekle || !gorev} data-davet-gonder>
                   <Mail size={16} /> {t("davetGonder")}
                 </button>
               )}
@@ -646,19 +631,16 @@ function YetkiPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
   );
 }
 
-/* Kişinin adı, birimi, görevi ve rolü; davet formundaki alanların aynısı. Organizasyon'da tayin de bu pencere. */
+/* Kişinin adı, birimi ve görevi (rol ünvandan, yapi.ts → unvandanRol); davet formundaki alanların aynısı. Organizasyon'da tayin de bu pencere. */
 export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
   const { t, ad } = useDil();
   const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
-  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol, ...ilk });
+  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, ...ilk });
   // Ünvan birimde seçilemiyorsa birimin ilk ünvanına geçiyor; kişi birimde olmayan ünvanla kalmasın.
-  const birimSec = (birim: BirimId) => {
-    const l = unvanListesi(birim);
-    setP({ ...p, birim, gorev: l.includes(p.gorev) ? p.gorev : (l[0] ?? p.gorev) });
-  };
+  const birimSec = (birim: BirimId) => setP({ ...p, birim, gorev: birimeUygunUnvan(birim, p.gorev) });
   const kaydet = () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
-    if (kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, rol: p.rol, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) {
+    if (kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) {
       bildir(t("bKaydedildi"));
       kapat();
     }
@@ -681,35 +663,21 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
         <label>
           {t("birim")}
           <select value={p.birim} onChange={(e) => birimSec(e.target.value)} data-pozisyon-birim>
-            {birimListesi(p.birim).map((b) => (
-              <option key={b} value={b}>
-                {birimAdi(b)}
-              </option>
-            ))}
+            <BirimSecenekleri dahil={kisi.birim} />
           </select>
         </label>
         <label>
           {t("gorev")}
           <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value })} data-pozisyon-gorev>
-            {unvanListesi(p.birim, p.gorev).map((g) => (
-              <option key={g} value={g}>
-                {gorevAdi(g)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("rol")}
-          <select value={p.rol} onChange={(e) => setP({ ...p, rol: e.target.value as Rol })} data-pozisyon-rol>
-            <option value="personel">{t("rolPersonel")}</option>
-            <option value="yonetici">{t("rolYonetici")}</option>
+            {/* Kişinin şimdiki ünvanı birimde olmasa da açılışta listede: pencere açılınca kendiliğinden değişmesin. */}
+            <UnvanSecenekleri birim={p.birim} dahil={p.birim === kisi.birim && p.gorev === kisi.gorev ? kisi.gorev : undefined} />
           </select>
         </label>
         <div className="form-alt">
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}
           </button>
-          <button type="button" className="dugme dugme-kucuk" onClick={kaydet} data-pozisyon-kaydet>
+          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev} onClick={kaydet} data-pozisyon-kaydet>
             {t("kaydet")}
           </button>
         </div>

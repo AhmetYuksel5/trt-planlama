@@ -61,6 +61,7 @@ import {
   birimSiraTasi,
   birimTasi,
   unvanMuhabirMi,
+  unvanYoneticiMi,
   birimAdi,
   birimEtkisi,
   birimGuncelle,
@@ -432,6 +433,7 @@ function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: Bi
               <span className="unvan-adi">
                 <b>{gorevAdi(id, taslak)}</b>
                 {unvanMuhabirMi(id, taslak) && <small>{t("orgMuhabirUnvani")}</small>}
+                {unvanYoneticiMi(id, taslak) && <small>{t("orgYoneticiUnvani")}</small>}
               </span>
               <em className="sonuk-yazi" title={t("orgKisi")}>
                 {n}
@@ -576,14 +578,15 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
   const yerlesik = yerlesikGorev(unvan.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(unvan.ad) ? unvan.ad : undefined);
   const [muhabir, setMuhabir] = useState(unvanMuhabirMi(unvan.id));
+  const [yonetici, setYonetici] = useState(unvanYoneticiMi(unvan.id));
   const temiz = adTemizle(ad);
   const hazir = yerlesik || !!temiz;
   const kaydet = () => {
     if (!hazir) return;
     degistir((y) =>
       unvanGuncelle(y, unvan.id, (x) => {
-        const { ad: _, muhabir: __, ...kalan } = x;
-        return { ...kalan, muhabir, ...(temiz ? { ad: temiz } : {}) };
+        const { ad: _, muhabir: __, yonetici: ___, ...kalan } = x;
+        return { ...kalan, muhabir, yonetici, ...(temiz ? { ad: temiz } : {}) };
       }),
     );
     kapat();
@@ -604,6 +607,10 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
         <label className="secim">
           <input type="checkbox" checked={muhabir} onChange={(e) => setMuhabir(e.target.checked)} data-unvan-muhabir />
           {t("orgMuhabirUnvaniSec")}
+        </label>
+        <label className="secim">
+          <input type="checkbox" checked={yonetici} onChange={(e) => setYonetici(e.target.checked)} data-unvan-yonetici />
+          {t("orgYoneticiUnvaniSec")}
         </label>
       </div>
     </Pencere>

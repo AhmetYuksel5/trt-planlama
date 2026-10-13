@@ -227,6 +227,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`UnvanTanimi.muhabir`, `icMuhabirMi`). Plan ve paket muhabir seçicisinde
     (`MuhabirSecici`) dış muhabirlerden ayrı grupta; öneri, e-posta çağrısı
     ve yazışma seçicilerinde yok (`ic={false}`).
+  - Kişi formları (davet, hesapsız, düzenle/tayin, kayıt bağlantısı) birim ve
+    görevi `bilesenler/BirimSecimi.tsx`'ten alır: birim ağaç sırasıyla, grup
+    seçilemez (`grupMu`, `kisiBirimSecenekleri`); görev yalnız birimin
+    ünvanları, birim değişince birimin ilk ünvanına geçer (`birimeUygunUnvan`).
+    Rol seçilmez, ünvandan gelir (`UnvanTanimi.yonetici`, "yönetici ünvanı";
+    yerleşikte yönetici ve müdürler): yönetici ünvanına gelen yönetici,
+    ayrılan personel olur, öbür tayinde rol değişmez (`unvandanRol`).
   - Yerleşik birim ve ünvan silinmez, gizlenir; kişisi ya da durağı bağlı olan
     da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
     yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır
