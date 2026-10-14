@@ -262,7 +262,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
     yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır
     (`BirimTanimi.ornek`, `izinBirimi`: sayfa ve işlem izinleri, ana sayfanın
-    varsayılanı), örneksizse yalnız herkese açık sayfalar (`SAYFA_IZNI` `HERKES`).
+    varsayılanı), örneksizse yalnız herkese açık sayfalar (`SAYFA_IZNI` `HERKES`;
+    ana sayfa da bunlardan, `GenelAna`: yoksa örneksiz birimdeki kişi girince
+    "erişimin yok"ta kalıyordu).
   - Ekranda birim ve ünvan adı `birimAdi`/`gorevAdi`, seçimler
     `birimListesi`/`unvanListesi` (gizli olan yalnız şimdiki değerse görünür).
     `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.

@@ -391,7 +391,8 @@ const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
 const HERKES: readonly BirimId[] = ["*"];
 
 export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
-  ana: BIRIMLER,
+  // Herkesin kendi ana sayfası: örneği seçilmemiş yeni birimdeki kişi (AnaSayfa → GenelAna) de girince kapıda kalmasın.
+  ana: HERKES,
   nextday: MASA,
   haftalik: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
   aylik: ["planlama", "program", "yonetim"],
