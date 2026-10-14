@@ -426,6 +426,13 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
  * Önerinin kendisi (muhabirin yazdığı metin) değişmez; yalnız durumu ve
  * bağlantıları güncellenir.
  */
+/*
+ * Öneri plana girince "YER /" ardından yazılan: önerinin gelişme/açıklama
+ * metni. Önce Header yazılıyordu; producer'lar planda gelişmeyi görüp
+ * kendileri kısaltmak istedi. Açıklaması boşsa Header.
+ */
+export const planMetni = (o: Oneri) => o.gelisme.trim() || o.haberBasligi;
+
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
@@ -460,18 +467,17 @@ export const oneriPlanaEkle = (
   }));
 
   /*
-   * Kurumun düzeni: dosyanın altında "YER / haber" (haber önerinin
-   * Header'ı; yer muhabirin şehri, ekranda ve çıktıda gelişmenin yeri),
-   * paket önerisiyse "PKG" altında "YER / strap / muhabir". Muhabirin
-   * uzun açıklaması paketin açıklamasında ve öneride kalıyor; gelişmeye
-   * yazılınca plan satırı yerine paragraf düşüyordu.
+   * Kurumun düzeni: dosyanın altında "YER / gelişme" (yer muhabirin şehri,
+   * ekranda ve çıktıda gelişmenin yeri), paket önerisiyse "PKG" altında
+   * "YER / strap / muhabir". Gelişme satırına önerinin açıklaması yazılıyor
+   * (planMetni); producer'lar onu planda kısaltıp düzeltiyor.
    */
   const paketli = g.paketOlustur && !!o.paketBasligi;
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
     planBaslikId: pbId,
-    metin: o.haberBasligi || o.gelisme,
+    metin: planMetni(o),
     // Gelişmenin kaynağı önerinin kaynağı: ajanstan girilen öneri planda da ajans olarak görünsün.
     kaynakTuru: o.talimatVeren ? "diger" : (o.kaynakTuru ?? "muhabir"),
     kaynakAdi: o.kaynakAdi ?? "",
@@ -916,10 +922,9 @@ export const oneriGundemeEkle = (
   if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
   const id = kimlik("hk");
   /*
-   * Kurumun düzeni: dosyanın altında "YER / haber" (yer muhabirin şehri,
-   * haber önerinin Header'ı), paket önerisiyse altında "PKG" ve
-   * "YER / strap / muhabir". Önerinin uzun açıklaması öneride kalıyor;
-   * kaleme yazılınca çıktıda header, açıklama ve strap alt alta düşüyordu.
+   * Kurumun düzeni: dosyanın altında "YER / gelişme" (yer muhabirin şehri,
+   * metin önerinin açıklaması, planMetni), paket önerisiyse altında "PKG"
+   * ve "YER / strap / muhabir".
    */
   const muhabir = kisiBul(d, o.muhabirId);
   const kalem: HaftalikKalem = {
@@ -927,7 +932,7 @@ export const oneriGundemeEkle = (
     tarih: g.tarih || undefined,
     baslikId,
     ...(muhabir && { yer: sehirAr(muhabir.sehir) }),
-    metin: o.haberBasligi || o.gelisme,
+    metin: planMetni(o),
     tur: o.tur,
     bicimler: paketBicimi(o.bicim) ? [paketBicimi(o.bicim)!] : [],
     ...(o.paketBasligi && paketBicimi(o.bicim) && { paketBasligi: o.paketBasligi }),
@@ -2046,8 +2051,8 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     sahaGerekli: g.sahaGerekli,
   };
   [d, yeni] = takibiEsle(d, yeni);
-  // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla: haberin kendisi (Header).
-  const metin = (x: Oneri, _paketli: boolean) => x.haberBasligi || x.gelisme;
+  // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla (planMetni).
+  const metin = (x: Oneri, _paketli: boolean) => planMetni(x);
   const paketli = !!o.paketId;
   d = {
     ...d,

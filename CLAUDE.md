@@ -548,13 +548,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Next Day'in ve haftalığın gelen önerilerinde plana ya da gündeme eklenen
     öneri kalır, en sonda, altında "Plana eklendi / Gündeme eklendi · plan,
     gün · başlık" notuyla. Öneri plana kurumun düzeniyle
-    girer: dosyanın (başlığın) altında "YER / haber" (gelişme; haber
-    önerinin Header'ı, yer muhabirin şehri), paket önerisiyse "PKG" altında
-    "YER / strap / muhabir". Önerinin uzun açıklaması gelişmeye yazılmaz,
-    paketin açıklamasında ve öneride kalır; paket işareti kaldırılsa da
-    gelişme Header (`eylemler.ts → oneriPlanaEkle`, `oneriDuzenle`).
+    girer: dosyanın (başlığın) altında "YER / gelişme" (gelişme önerinin
+    açıklaması, boşsa Header; yer muhabirin şehri; `eylemler.ts →
+    planMetni`, producer'lar planda kısaltıyor), paket önerisiyse "PKG"
+    altında "YER / strap / muhabir" (`oneriPlanaEkle`, `oneriDuzenle`).
     Haftalık gündemde de aynısı (`oneriGundemeEkle`): kalem `yer` muhabirin
-    şehri, `metin` Header, strap `HaftalikKalem.paketBasligi`; ekranda ve
+    şehri, `metin` açıklama, strap `HaftalikKalem.paketBasligi`; ekranda ve
     çıktıda paketli kalemde "PKG" ve "YER / strap / muhabir"
     (`bilesenler/Haftalik.tsx → kalemPaketli`), muhabir ve o biçim ayrıca
     yazılmaz. Next Day'e aktarılan paketin başlığı strap; kalem formunda
