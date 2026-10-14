@@ -875,6 +875,9 @@ export interface Is {
   etiketler: string[];
   gorevId?: string;
   kisiler: string[];
+  /** Ekibe verilen iş (yönetici panelinden): birimin bugünkü ve sonradan gelen herkesi işi görüyor. */
+  birimler?: BirimId[];
+  aciklama?: string;
   sonTarih?: string;
   durum: IsDurumu;
   olusturan: string;

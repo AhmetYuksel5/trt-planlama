@@ -1,4 +1,4 @@
-import { gunFarki, haftaBasi } from "./tarih";
+import { gunEkle, gunFarki, haftaBasi } from "./tarih";
 import { TEMEL_GOREVLER, type Durum, type GorevTanimi, type Is, type TemelGorev } from "./veri";
 
 /*
@@ -56,11 +56,32 @@ export const kisininGorevleri = (d: Durum, kisiId: string, tarih: string) =>
     .filter((g) => !g.pasif && sorumlular(d, g, tarih).includes(kisiId))
     .sort((a, b) => (a.tur === b.tur ? 0 : a.tur === "temel" ? -1 : 1));
 
+/** İş kişinin mi: adıyla verilmiş ya da ekibine (birimine) verilmiş. */
+export const isKisinin = (d: Durum, x: Is, kisiId: string) => {
+  if (x.kisiler.includes(kisiId)) return true;
+  const birim = d.kisiler.find((k) => k.id === kisiId)?.birim;
+  return !!birim && !!x.birimler?.includes(birim);
+};
+
 /** Kişinin açık işleri (bitmemiş), son tarihe göre. */
 export const kisininIsleri = (d: Durum, kisiId: string) =>
   isListesi(d)
-    .filter((x) => x.durum !== "bitti" && x.kisiler.includes(kisiId))
+    .filter((x) => x.durum !== "bitti" && isKisinin(d, x, kisiId))
     .sort((a, b) => (a.sonTarih ?? "9").localeCompare(b.sonTarih ?? "9"));
+
+/**
+ * Önümüzdeki dönemlerin sorumluları (görev penceresinde önizleme): sırayla
+ * işleyen görevde sıranın doğru kurulduğu kaydetmeden görülsün. Dönem gün
+ * ya da Cumartesi başlayan hafta.
+ */
+export const donemOnizlemesi = (d: Durum, g: GorevTanimi, tarih: string, n = 4) => {
+  const hafta = g.dagilim.tur === "sirali" && g.dagilim.periyot === "hafta";
+  const ilk = hafta ? haftaBasi(tarih) : tarih;
+  return Array.from({ length: n }, (_, i) => {
+    const bas = gunEkle(ilk, hafta ? i * 7 : i);
+    return { bas, bit: hafta ? gunEkle(bas, 6) : bas, kisiler: sorumlular(d, g, bas) };
+  });
+};
 
 /** Görevlerde ve işlerde geçen bütün etiketler (süzgeç ve öneri için). */
 export const etiketler = (d: Durum) => [...new Set([...gorevListesi(d).flatMap((g) => g.etiketler), ...isListesi(d).flatMap((x) => x.etiketler)])].sort((a, b) => a.localeCompare(b));

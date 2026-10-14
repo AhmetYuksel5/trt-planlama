@@ -48,12 +48,12 @@ export interface Alan {
 export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
   muhabir: ["muCagri", "muSayac", "muSiram", "muTakip", "muHaberler", "muGorev", "muOneriler", "muBildirim"],
-  newsdesk: ["ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
-  newsgathering: ["ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
-  ekonomi: ["ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
-  program: ["prHafta", "prUretim", "prOneri", "prKonuk"],
-  output: ["ouSayac", "ouKontrol", "ouDil", "ouSon"],
-  media: ["meKuyruk", "meYaklasan", "meSon"],
+  newsdesk: ["genIslerim", "ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
+  newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
+  ekonomi: ["genIslerim", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
+  program: ["genIslerim", "prHafta", "prUretim", "prOneri", "prKonuk"],
+  output: ["genIslerim", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
+  media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
   yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],
   panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],
 };
@@ -78,7 +78,7 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
   const bul = (id: string) => uygunlar.find((a) => a.id === id);
   const kayitli = kisisel ? v.anaSayfa?.[duzenAnahtari(ben.id, duzen)] : undefined;
   // Yöneticinin açtığı birim örnek aldığı birimin varsayılanıyla başlıyor (yapi.ts → izinBirimi); örneksiz sıradaki işleriyle.
-  const secili = (kayitli ?? VARSAYILAN[(duzen === "panel" ? duzen : izinBirimi(duzen)) as Birim | "panel"] ?? ["genSiram"]).filter((id) => !!bul(id));
+  const secili = (kayitli ?? VARSAYILAN[(duzen === "panel" ? duzen : izinBirimi(duzen)) as Birim | "panel"] ?? ["genIslerim", "genSiram"]).filter((id) => !!bul(id));
   const kaydet = (ids: string[] | null) => anaSayfaKaydet(ben, duzen, ids);
   const tasi = (i: number, yon: -1 | 1) => {
     const yeni = [...secili];

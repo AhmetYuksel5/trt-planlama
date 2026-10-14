@@ -109,6 +109,8 @@ import {
   gorevleriDuzenler,
   isDegistirebilir,
   isEkleyebilir,
+  isAlabilir,
+  isVerilebilecekBirimler,
   oneriDuzenleyebilir,
 } from "./yetki";
 
@@ -1264,15 +1266,27 @@ export const isKaydet = (ben: Kisi, g: Omit<Is, "olusturan" | "zaman" | "durum">
   let d = getir();
   const eski = isListesi(d).find((x) => x.id === g.id);
   if (!g.baslik.trim() || (eski ? !isDegistirebilir(ben, eski) : !isEkleyebilir(ben))) return false;
+  // Yeni eklenen kişi ve ekip verenin kapsamında olmalı; eskiden kalan dokunulmadan geçer.
+  const yeniKisiler = g.kisiler.filter((k) => !eski?.kisiler.includes(k));
+  const yeniBirimler = (g.birimler ?? []).filter((b) => !eski?.birimler?.includes(b));
+  if (yeniKisiler.some((id) => { const k = d.kisiler.find((x) => x.id === id); return !k || !isAlabilir(ben, k); })) return false;
+  if (yeniBirimler.some((b) => !isVerilebilecekBirimler(ben).includes(b))) return false;
   const is: Is = {
     ...(eski ?? { olusturan: ben.id, zaman: simdi(), durum: "yapilacak" as IsDurumu }),
     ...g,
     baslik: g.baslik.trim(),
     etiketler: [...new Set(g.etiketler.map((x) => x.trim()).filter(Boolean))],
+    aciklama: g.aciklama?.trim(),
     durum: g.durum ?? eski?.durum ?? "yapilacak",
   };
+  // Boş alan kayıtta durmasın: düzenlemede silinen açıklama ya da ekip izi kalmasın.
+  if (!is.aciklama) delete is.aciklama;
+  if (!is.birimler?.length) delete is.birimler;
   d = { ...d, isler: eski ? isListesi(d).map((x) => (x.id === is.id ? is : x)) : [is, ...isListesi(d)] };
-  for (const k of is.kisiler.filter((k) => k !== ben.id && !eski?.kisiler.includes(k))) d = hareketYaz(d, { kisiId: ben.id, tip: "isAtandi", veri: { baslik: is.baslik, kime: k } });
+  // Bildirim yeni alıcılara: adıyla eklenenler ve yeni ekibin bugünkü kişileri, her biri bir kez.
+  const ekip = d.kisiler.filter((k) => !k.pasif && !k.hesapsiz && yeniBirimler.includes(k.birim as BirimId)).map((k) => k.id);
+  const alicilar = [...new Set([...yeniKisiler, ...ekip])].filter((k) => k !== ben.id && !eski?.kisiler.includes(k));
+  for (const k of alicilar) d = hareketYaz(d, { kisiId: ben.id, tip: "isAtandi", veri: { baslik: is.baslik, kime: k } });
   kaydet(d);
   return true;
 };

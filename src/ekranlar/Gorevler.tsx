@@ -1,13 +1,14 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ClipboardList, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
-import { tarihYaz, useDil, type Anahtar } from "../dil";
+import { aralikYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { gorevDonemSorumlusu, gorevKaydet, gorevSil, isDurumu, isKaydet, isSil } from "../eylemler";
 import { IS_DURUM_ADI, TEMEL_GOREV_ADI } from "../etiketler";
-import { donemAnahtari, etiketAyir, etiketler, gorevListesi, isListesi, kisininGorevleri, kisininIsleri, sorumlular } from "../gorevler";
-import { bugun, gunEkle } from "../tarih";
+import { donemAnahtari, donemOnizlemesi, etiketAyir, etiketler, gorevListesi, isListesi, kisininGorevleri, kisininIsleri, sorumlular } from "../gorevler";
+import { bugun, gunEkle, haftaBasi } from "../tarih";
 import { IS_DURUMLARI, TEMEL_GOREVLER, kimlik, useVeri, type Durum, type GorevTanimi, type Is, type IsDurumu, type Kisi, type TemelGorev } from "../veri";
 import { gorevleriDuzenler, isDegistirebilir, isEkleyebilir } from "../yetki";
+import { birimAdi } from "../yapi";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -198,7 +199,7 @@ function EtiketSuzgeci({ etiketler: l, secili, sec }: { etiketler: string[]; sec
 }
 
 function GorevPenceresi({ ben, gorev, kapat }: { ben: Kisi; gorev: GorevTanimi; kapat: () => void }) {
-  const { t, ad } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const adi = useGorevAdi();
   const [g, setG] = useState(gorev);
@@ -267,8 +268,13 @@ function GorevPenceresi({ ben, gorev, kapat }: { ben: Kisi; gorev: GorevTanimi; 
                 </select>
               </label>
               <label>
-                {t("gvSiraBaslangici")}
+                {t("gvIlkSira")}
                 <input type="date" value={g.dagilim.baslangic} onChange={(e) => g.dagilim.tur === "sirali" && setG({ ...g, dagilim: { ...g.dagilim, baslangic: e.target.value || bugun() } })} data-gv-baslangic />
+                {g.dagilim.periyot === "hafta" && (
+                  <small className="sonuk" data-gv-baslangic-hafta>
+                    {aralikYaz(haftaBasi(g.dagilim.baslangic), gunEkle(haftaBasi(g.dagilim.baslangic), 6), dil)}
+                  </small>
+                )}
               </label>
             </>
           )}
@@ -307,6 +313,19 @@ function GorevPenceresi({ ben, gorev, kapat }: { ben: Kisi; gorev: GorevTanimi; 
               ))}
           </select>
         </div>
+        {g.dagilim.tur === "sirali" && kisiler.length > 0 && (
+          <div>
+            <div className="alan-etiket">{t("gvOnumuzdekiDonemler")}</div>
+            <ul className="liste gorev-onizleme" data-gv-onizleme>
+              {donemOnizlemesi(v, g, bugun()).map((x) => (
+                <li key={x.bas} data-gv-onizleme-donem={x.bas} data-gv-onizleme-kisi={x.kisiler.join(",")}>
+                  <span className="sonuk">{x.bas === x.bit ? tarihYaz(x.bas, dil, "kisa") : aralikYaz(x.bas, x.bit, dil)}</span>
+                  <b>{x.kisiler.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <label className="secim">
           <input type="checkbox" checked={!!g.pasif} onChange={(e) => setG({ ...g, pasif: e.target.checked || undefined })} />
           {t("gvPasif")}
@@ -384,7 +403,17 @@ function Isler({ ben }: { ben: Kisi }) {
             <li key={x.id} data-is={x.id} className={x.durum === "bitti" ? "soluk" : ""}>
               <div className="ad">
                 <b dir="auto">{x.baslik}</b>
+                {x.aciklama && (
+                  <div className="sonuk" dir="auto">
+                    {x.aciklama}
+                  </div>
+                )}
                 <div className="cipler ara-ust">
+                  {x.birimler?.map((b) => (
+                    <span key={b} className="cip cip-kucuk cip-vurgu" data-is-ekip={b}>
+                      <Users size={12} /> {birimAdi(b)}
+                    </span>
+                  ))}
                   {g && (
                     <span className="cip cip-kucuk">
                       <bdi>{adi(g)}</bdi>
@@ -438,7 +467,7 @@ function IsFormu({ ben, is, kapat }: { ben: Kisi; is: Is; kapat: () => void }) {
   const [f, setF] = useState(is);
   const [etiketMetni, setEtiketMetni] = useState(is.etiketler.join(", "));
   const kaydet = () => {
-    if (isKaydet(ben, { id: f.id, baslik: f.baslik, etiketler: etiketAyir(etiketMetni), gorevId: f.gorevId || undefined, kisiler: f.kisiler, sonTarih: f.sonTarih || undefined, durum: f.durum })) {
+    if (isKaydet(ben, { id: f.id, baslik: f.baslik, etiketler: etiketAyir(etiketMetni), gorevId: f.gorevId || undefined, kisiler: f.kisiler, birimler: f.birimler, aciklama: f.aciklama, sonTarih: f.sonTarih || undefined, durum: f.durum })) {
       bildir(t("bKaydedildi"));
       kapat();
     }
@@ -448,6 +477,10 @@ function IsFormu({ ben, is, kapat }: { ben: Kisi; is: Is; kapat: () => void }) {
       <label>
         {t("gvIsBasligi")}
         <input dir="auto" value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} data-is-baslik />
+      </label>
+      <label>
+        {t("gvAciklama")}
+        <textarea dir="auto" rows={2} value={f.aciklama ?? ""} onChange={(e) => setF({ ...f, aciklama: e.target.value })} data-is-aciklama />
       </label>
       <div className="satir">
         <label>

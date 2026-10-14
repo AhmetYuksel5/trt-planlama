@@ -360,8 +360,14 @@ export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean => !
 export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri): boolean => !!ben && yapabilir(ben, "oneriDegerlendir") && o.durum !== "teklif";
 /** Planlama görevlerini ve iş taksimini Planlama yöneticisi ve tam yönetici düzenliyor; iş ekleme görevleri gören herkeste. */
 export const gorevleriDuzenler = (ben: Kisi | undefined): boolean => !!ben && (!!ben.hesapYoneticisi || (ben.birim === "planlama" && ben.rol === "yonetici"));
-export const isEkleyebilir = (ben: Kisi | undefined): boolean => !!ben && sayfaGorebilir(ben, "gorevler");
-export const isDegistirebilir = (ben: Kisi | undefined, x: Is): boolean => !!ben && (x.kisiler.includes(ben.id) || x.olusturan === ben.id || gorevleriDuzenler(ben));
+export const isEkleyebilir = (ben: Kisi | undefined): boolean => !!ben && (sayfaGorebilir(ben, "gorevler") || !!kapsam(ben));
+export const isDegistirebilir = (ben: Kisi | undefined, x: Is): boolean =>
+  !!ben && (x.kisiler.includes(ben.id) || !!x.birimler?.includes(ben.birim) || x.olusturan === ben.id || gorevleriDuzenler(ben));
+/** Yöneticinin görev verebileceği ekipler: kapsamındaki birimler (dış muhabir hariç). */
+export const isVerilebilecekBirimler = (ben: Kisi | undefined): BirimId[] => (kapsam(ben)?.birimler ?? []).filter((b) => b !== "muhabir");
+/** İş verilebilecek kişi: Planlama içinde Planlama'yı gören herkes birbirine; yönetici kapsamındaki birimlerin kişilerine. */
+export const isAlabilir = (ben: Kisi | undefined, k: Kisi): boolean =>
+  !!ben && !k.pasif && k.birim !== "muhabir" && ((k.birim === "planlama" && sayfaGorebilir(ben, "gorevler")) || isVerilebilecekBirimler(ben).includes(k.birim as BirimId));
 /** Kayıt temizliği (deneme kayıtlarını izleriyle silmek) yalnız tam yöneticide: geri alınamıyor. */
 export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean => !!ben?.hesapYoneticisi && !ben.pasif;
 export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>

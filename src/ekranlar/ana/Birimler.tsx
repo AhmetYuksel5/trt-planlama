@@ -36,6 +36,7 @@ import { gorusBekleyenler, gundemde } from "../../haftalik";
 import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, yapabilir } from "../../yetki";
+import { BanaVerilenIsler } from "./Islerim";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
 
@@ -552,6 +553,7 @@ function SonYuklenenler() {
  */
 export const BIRIM_ALANLARI: Alan[] = [
   { id: "genSiram", ad: "siradakiIslerim", grup: "genel", sayfa: "paketler", Bilesen: SiradakiIsler },
+  { id: "genIslerim", ad: "gvBanaVerilenler", grup: "genel", sayfa: "ana", Bilesen: BanaVerilenIsler },
   { id: "ndSayac", ad: "alOzetSayilar", genis: true, grup: "newsdesk", sayfa: "uretim", Bilesen: NewsdeskSayaclari },
   { id: "ndPlan", ad: "uygulanacakPlan", grup: "newsdesk", sayfa: "nextday", Bilesen: UygulanacakPlan },
   { id: "ndKontrol", ad: "kontrolBekleyen", grup: "newsdesk", sayfa: "metinkontrol", Bilesen: KontrolBekleyen },

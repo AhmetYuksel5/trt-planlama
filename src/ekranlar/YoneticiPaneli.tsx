@@ -13,7 +13,8 @@ import { gorusBekleyenler, haftaSonu, onIncelemeBekleyenler } from "../haftalik"
 import { rapor } from "../rapor";
 import { bugun, gunEkle, yerelGun } from "../tarih";
 import { ULKELER, kisiBul, muhabirler, paketBul, useVeri, type Birim, type Durum, type Kisi, type Oneri, type Paket, type Ulke } from "../veri";
-import { kapsam, paketKapsamda, talimatVerebilir, type Kapsam } from "../yetki";
+import { isEkleyebilir, kapsam, paketKapsamda, talimatVerebilir, type Kapsam } from "../yetki";
+import { GorevVerFormu, VerdigimGorevler } from "./GorevVer";
 import { EkonomiAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
 import PlanlamaAna, { BugununTakvimi, SayfaBasi } from "./ana/Planlama";
 import { Yetkisiz } from "./Ayarlar";
@@ -307,7 +308,7 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
     }
   };
   return (
-    <div className="form form-kutu talimat-formu">
+    <div className="form" data-talimat-formu>
       <label>
         {t("haberBasligi")}
         <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("talimatBaslikIpucu", "ar")} />
@@ -340,6 +341,31 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
         ))}
       </div>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.haberBasligi.trim()} kaydetMetni={t("talimatGonder")} />
+    </div>
+  );
+}
+
+/*
+ * Panelin tek "Talimat ver" düğmesi: haber talimatı (Planlama'ya
+ * reddedilemeyen öneri) ya da görev (ekibe veya kişilere iş). Planlama
+ * kapsamı olmayan yönetici yalnız görev verir; seçim o zaman görünmez.
+ */
+function TalimatVer({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t } = useDil();
+  const haber = talimatVerebilir(ben);
+  const [tur, setTur] = useState<"haber" | "gorev">(haber ? "haber" : "gorev");
+  return (
+    <div className="form-kutu talimat-formu" data-talimat-ver={tur}>
+      {haber && isEkleyebilir(ben) && (
+        <div className="sekmeler ara-alt-2" role="tablist">
+          {(["haber", "gorev"] as const).map((x) => (
+            <button key={x} type="button" role="tab" aria-selected={tur === x} className={tur === x ? "acik" : ""} onClick={() => setTur(x)} data-talimat-tur={x}>
+              {t(x === "haber" ? "tlHaberTalimati" : "tlGorev")}
+            </button>
+          ))}
+        </div>
+      )}
+      {tur === "haber" ? <TalimatFormu ben={ben} kapat={kapat} /> : <GorevVerFormu ben={ben} kapat={kapat} />}
     </div>
   );
 }
@@ -387,7 +413,7 @@ export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi;
   }
 
   const kapsamAdi = ks.birimler.map((b) => birimAdi(b)).join(", ");
-  const talimatVerir = talimatVerebilir(ben);
+  const talimatVerir = talimatVerebilir(ben) || isEkleyebilir(ben);
 
   return (
     <>
@@ -398,13 +424,13 @@ export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi;
         alt={`${gorevAdi(ben.gorev)} · ${t("ypKapsam", { birimler: kapsamAdi })}`}
         sagUc={
           talimatVerir && !talimat ? (
-            <button className="dugme" onClick={() => setTalimat(true)}>
-              <PenLine size={16} /> {t("talimatVer")}
+            <button className="dugme" onClick={() => setTalimat(true)} data-talimat-ac>
+              <PenLine size={16} /> {t("tlVer")}
             </button>
           ) : undefined
         }
       />
-      {talimat && <TalimatFormu ben={ben} kapat={() => setTalimat(false)} />}
+      {talimat && <TalimatVer ben={ben} kapat={() => setTalimat(false)} />}
       <CalismaAlani ben={ben} duzen="panel" />
     </>
   );
@@ -483,7 +509,12 @@ function PanelDikkat({ ben }: { ben: Kisi }) {
 
 function PanelTalimatlar({ ben }: { ben: Kisi }) {
   const v = useVeri();
-  return talimatVerebilir(ben) ? <Talimatlarim ben={ben} d={v} /> : null;
+  return (
+    <>
+      {talimatVerebilir(ben) && <Talimatlarim ben={ben} d={v} />}
+      <VerdigimGorevler ben={ben} />
+    </>
+  );
 }
 
 function HaftaOzeti({ ben }: { ben: Kisi }) {

@@ -860,6 +860,8 @@ a.cip { color: var(--murekkep); padding: 3px var(--ara-2); }
 .gorev-kisileri .ad { flex: 0 1 180px; display: flex; align-items: center; gap: var(--ara-2); }
 .gorev-kisileri .cipler { flex: 1 1 160px; min-width: 0; }
 .gorev-sorumlu { display: flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; }
+[data-bana-verilenler] .secim small { display: block; }
+.gorev-onizleme li { display: flex; justify-content: space-between; gap: var(--ara-2); flex-wrap: wrap; }
 .gorev-sira > li { padding-block: var(--ara-1); }
 
 /* --- Durum çizgisi (plan) --- */

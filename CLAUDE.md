@@ -306,8 +306,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
   göstermez: sayılar, birim ışıkları (gerekçesi yazılı), dikkat
   gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
-  Müdahale yalnız öncelik, yönetici notu ve haber talimatı. Talimat ayrı
-  akış değil: Planlama'ya reddedilemeyen öneri olarak düşer.
+  Müdahale yalnız öncelik, yönetici notu, haber talimatı ve görev. Tek
+  "Talimat ver" düğmesi, içinde tür seçimi (`TalimatVer`): haber talimatı
+  ayrı akış değil, Planlama'ya reddedilemeyen öneri olarak düşer; görev
+  (`ekranlar/GorevVer.tsx`) iş taksimi kaydına (`Durum.isler`) bir ekibe
+  (birim, `Is.birimler`), bir ya da birkaç kişiye iş olarak girer.
+  Planlama kapsamı olmayan yönetici yalnız görev verir. Ekip ve kişi
+  yöneticinin kapsamından (`isVerilebilecekBirimler`, `isAlabilir`;
+  muhabir yok). Ekibe verilen işi ekibin herkesi görür, sonradan katılan
+  da (`gorevler.ts → isKisinin`); bildirim o anki her alıcıya bir kez.
+  Panelde "Verdiğim görevler". Planlama dışındaki birimlerde iş ana
+  sayfanın ilk alanında, "Bana verilen işler" (`genIslerim`; açık iş
+  yoksa çizilmez), oradan bitirilir.
 - Next Day her gün kesintisiz sürer: yarının planını kullanıcı değil sistem
   açar (`eylemler.ts → yarinPlaniniAc`, `App.tsx`'te açılışta ve arada bir;
   hareket kaydında kişi `SISTEM`). Plan açma düğmesi ve neyin taşınacağını
@@ -443,8 +453,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   planların kendisi (Next Day, Weekly, Aylık, Özel yayın; kayıtta görev
   yoksa sorumlusuz varsayılanlar), yan görevler serbest adlı, etiketli,
   istenirse bir temel göreve bağlı. Sorumlu sabit ya da sıralı (her gün /
-  Cumartesi başlayan her hafta, başlangıç gününden dönem sayısıyla; izinli
-  atlanır); dönemin sorumlusu elle değişir (`degisiklikler`, dönem
+  Cumartesi başlayan her hafta; formda "İlk kişinin sırası": listenin
+  ilki o gün ya da o hafta, sonra dönem sayısıyla; izinli atlanır).
+  Pencerede önümüzdeki dört dönemin sorumluları (`donemOnizlemesi`).
+  Dönemin sorumlusu elle değişir (`degisiklikler`, dönem
   anahtarı `donemAnahtari`). Sorumlu saklanmaz, kayıttan hesaplanır.
   Sayfada seçilen gün için "Kim ne yapıyor", görevler (etiket süzgeci),
   tek seferlik işler (görev, etiket, kişiler, son tarih, durum). Düzenleme
