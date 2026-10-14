@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
-import { useVeri, type Kisi, type Oneri } from "../../veri";
-import { planIcerikDuzenler } from "../../yetki";
+import { kalacakPlan } from "../../planCiftleri";
+import { bugun, gunEkle } from "../../tarih";
+import { useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { haftalikDuzenler, planIcerikDuzenler } from "../../yetki";
+import { GundemeEkle } from "../haftalik/Plan";
 import { MuhabirSecici } from "../nextday/Formlar";
 
 /**
@@ -20,12 +23,40 @@ import { MuhabirSecici } from "../nextday/Formlar";
  * Yönetici talimatında muhabir yok: Planlama burada atıyor. Talimat bir
  * haber siparişi olduğu için paket her zaman doğuyor ve öncelikli.
  */
+/*
+ * Hangi planın seçeneği çıkıyor: plan ekranından açıldıysa yalnız o plan.
+ * Öneriler sayfasından açıldıysa yalnız üzerinde çalışılan planlar (bugün,
+ * yarın ve önerinin günü; gün başına tek plan): bütün geçmiş planlar ve
+ * aynı güne açılmış çift planlar listede karışıklık yapıyordu. Haftalık
+ * öneride Next Day değil haftanın gündemi: gün ve dosya soruluyor.
+ */
 export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  if (!planId && oneri.hafta) {
+    const hafta = v.haftalik.find((h) => h.baslangic === oneri.hafta);
+    if (!hafta || !haftalikDuzenler(ben, hafta)) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
+    return <GundemeEkle ben={ben} hafta={hafta} oneri={oneri} kapat={kapat} />;
+  }
+  const B = bugun();
+  const gunler = planId ? [] : [...new Set([B, gunEkle(B, 1), ...(oneri.hedefTarih && oneri.hedefTarih >= B ? [oneri.hedefTarih] : [])])].sort();
+  const planlar = (
+    planId
+      ? v.planlar.filter((p) => p.id === planId)
+      : gunler.map((g) => {
+          const l = v.planlar.filter((p) => p.tarih === g);
+          return l.length > 1 ? kalacakPlan(v, l) : l[0];
+        })
+  ).filter((p): p is NextDayPlan => !!p && planIcerikDuzenler(ben, p));
+  return <NextDayeEkle ben={ben} oneri={oneri} planlar={planlar} kapat={kapat} />;
+}
+
+function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri; planlar: NextDayPlan[]; kapat: () => void }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const planlar = v.planlar.filter((p) => planIcerikDuzenler(ben, p)).sort((a, b) => a.tarih.localeCompare(b.tarih));
-  const ilkPlan = planlar.find((p) => p.id === planId) ?? planlar.find((p) => p.tarih === oneri.hedefTarih) ?? planlar[0];
+  const ilkPlan = planlar.find((p) => p.tarih === oneri.hedefTarih) ?? planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0];
   const [pId, setPId] = useState(ilkPlan?.id ?? "");
+  const gunAdi = (p: NextDayPlan) => (p.tarih === bugun() ? `${t("bugun")} · ` : p.tarih === gunEkle(bugun(), 1) ? `${t("yarin")} · ` : "");
   const plan = planlar.find((p) => p.id === pId);
 
   const plandakiler = plan?.basliklar.map((b) => b.baslikId) ?? [];
@@ -56,16 +87,28 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
   return (
     <div className="form form-kutu" data-plana-ekle-formu={oneri.id}>
       <div className="satir">
-        <label>
-          {t("plan")}
-          <select value={pId} onChange={(e) => setPId(e.target.value)} data-pe-plan>
-            {planlar.map((p) => (
-              <option key={p.id} value={p.id}>
-                {t("nextday")} · {tarihYaz(p.tarih, dil, "tam")}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Tek plan varsa seçim yok, hangi plana girdiği yazılı. */}
+        {planlar.length > 1 ? (
+          <label>
+            {t("plan")}
+            <select value={pId} onChange={(e) => setPId(e.target.value)} data-pe-plan>
+              {planlar.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {gunAdi(p)}
+                  {t("nextday")} · {tarihYaz(p.tarih, dil, "tam")}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className="alan" data-pe-plan-tek={plan.id}>
+            <small>{t("plan")}</small>
+            <b>
+              {gunAdi(plan)}
+              {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
+            </b>
+          </div>
+        )}
         <label>
           {t("haberBasligi")}
           <select value={baslikId} onChange={(e) => setBaslikId(e.target.value)} data-pe-baslik>

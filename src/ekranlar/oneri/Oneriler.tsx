@@ -436,9 +436,10 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                         {t("haftalikPlandaDegerlendir")}
                       </a>
                     )}
-                    {oneri.durum !== "reddedildi" && !muhabirde && !oneri.hafta && (
-                      <button className="dugme dugme-iyi" onClick={() => setEkle(true)}>
-                        {t("planaEkle")}
+                    {/* Haftalık öneri haftanın gündemine (gün ve dosya seçilerek), Next Day önerisi çalışılan plana. */}
+                    {oneri.durum !== "reddedildi" && !muhabirde && (!oneri.hafta || (!!haftaPlani && !haftaPlani.kalemler.some((k) => k.oneriId === oneri.id))) && (
+                      <button className="dugme dugme-iyi" onClick={() => setEkle(true)} data-oneri-plana-ekle>
+                        {t(oneri.hafta ? "gundemeEkle" : "planaEkle")}
                       </button>
                     )}
                     {oneri.durum === "yeni" && (

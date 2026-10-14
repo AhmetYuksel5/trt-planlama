@@ -965,6 +965,7 @@ const M = {
   hrGeriDonus: m("{kisi} muhabire geri dönüş yaptı: {sonuc}", "أبلغ {kisi} المراسل بالنتيجة: {sonuc}", "{kisi} sent feedback to the reporter: {sonuc}"),
   hrTakipTamamlandi: m("{kisi} haberi tamamlandı olarak işaretledi", "أشّر {kisi} على الخبر بأنه مكتمل", "{kisi} marked the story completed"),
   hrPlanOlusturuldu: m("{kisi}, {tarih} Next Day planını açtı", "أنشأ {kisi} خطة الغد ليوم {tarih}", "{kisi} opened the {tarih} Next Day plan"),
+  hrPlanlarBirlestirildi: m("{kisi}, {tarih} gününe açılmış {sayi} planı tek planda topladı", "جمع {kisi} الخطط المفتوحة ليوم {tarih} ({sayi}) في خطة واحدة", "{kisi} merged the {sayi} plans opened for {tarih} into one"),
   hrPlanKopyalandi: m("{kisi}, {tarih} planını {kaynak} planının şablonuyla açtı", "فتح {kisi} خطة {tarih} على قالب خطة {kaynak}", "{kisi} opened the {tarih} plan from the {kaynak} plan"),
   hrPlanGeriAlindi: m("{kisi}, {tarih} planındaki son düzenlemesini geri aldı", "تراجع {kisi} عن آخر تعديل له في خطة {tarih}", "{kisi} undid their last edit to the {tarih} plan"),
   hrPlanIceAktarildi: m("{kisi}, {tarih} planına {dosya} belgesinden {sayi} kayıt aktardı", "استورد {kisi} {sayi} من السجلات إلى خطة {tarih} من الملف {dosya}", "{kisi} imported {sayi} items into the {tarih} plan from {dosya}"),

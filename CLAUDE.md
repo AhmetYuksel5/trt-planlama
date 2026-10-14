@@ -328,6 +328,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
   Paket önerisi ve hazır paket taşınmaz.
+  - Gün başına tek plan. Sistemin açtığı planın kimliği tarihten
+    (`eylemler.ts → gunPlaniKimligi`, `nd-<tarih>`); içindeki taşınan
+    kayıtların kimliği plandan ve kaynağından (`turet`, özetli). Gün dönünce
+    açık duran her tarayıcı yarının planını yokluyor; rastgele kimlikle her
+    biri ayrı plan açıyordu, şimdi aynı belgeyi yazıyorlar. Haftalıktan
+    aktarılanlar da öyle. Eskiden birikmiş çiftleri açılışta sistem toplar
+    (`planCiftleri.ts`, `planCiftleriniTopla`, hareket
+    `planlarBirlestirildi`): en ilerideki plan kalır, öbürünün başlıkları
+    (aynı başlık birleşir), gelişmeleri (şablondan ikisinde olan bir kez),
+    canlıları, paketleri ve ona bağlı kayıtlar (öneri, hareket, takvim,
+    haftalık aktarım) ona geçer.
+  - "Plana ekle" (`oneri/PlanaEkle.tsx`): plan ekranından açılınca yalnız o
+    plan (seçim yok); öneriler sayfasından yalnız çalışılan planlar (bugün,
+    yarın, önerinin günü; gün başına bir). Haftalık öneride "Gündeme ekle":
+    haftanın günü ve dosya (`haftalik/Plan.tsx → GundemeEkle`).
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
   düğmeler (`PlanAraclari`: gelen öneriler ve takvimden bu güne, sayılarıyla;

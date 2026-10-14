@@ -160,7 +160,7 @@ function TakvimdenBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: Haftal
 
 /* --- Bu haftaya gelen öneriler: gündeme alınıyor ya da reddediliyor --- */
 
-function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void }) {
+export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void }) {
   const { t, dil } = useDil();
   const v = useVeri();
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.

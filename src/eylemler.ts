@@ -12,6 +12,7 @@ import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
+import { planCiftleriniBirlestir } from "./planCiftleri";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
@@ -131,10 +132,28 @@ import {
 
 const EN_COK_HAREKET = 2000;
 
-const hareketYaz = (d: Durum, h: Omit<Hareket, "id" | "zaman">): Durum => ({
+/** `id` verilirse o: aynı işi aynı anda yapan iki tarayıcı (sistemin planı) aynı hareketi yazsın, çift kayıt doğmasın. */
+const hareketYaz = (d: Durum, h: Omit<Hareket, "id" | "zaman">, id?: string): Durum => ({
   ...d,
-  hareketler: [{ id: kimlik("h"), zaman: simdi(), ...h }, ...d.hareketler].slice(0, EN_COK_HAREKET),
+  hareketler: [{ id: id ?? kimlik("h"), zaman: simdi(), ...h }, ...d.hareketler.filter((x) => !id || x.id !== id)].slice(0, EN_COK_HAREKET),
 });
+
+/*
+ * Sistemin açtığı günün planının kimliği tarihten: gün dönünce açık duran
+ * her tarayıcı yarının planını yokluyor ve gerçek kipte öbürünün açtığı
+ * plan ona geç ulaşıyor. Rastgele kimlikle her biri ayrı plan açıyordu
+ * (aynı güne birden çok plan); kimlik aynı olunca aynı belgeyi yazıyorlar.
+ * Planın içindeki kayıtların kimliği de kaynağından türüyor, yoksa aynı
+ * plana iki kopya içerik düşerdi.
+ */
+export const gunPlaniKimligi = (tarih: string) => `nd-${tarih}`;
+
+/** Plandaki kaydın kimliği plandan ve kaynağından; kaynağın kimliği özetleniyor, yoksa kopya kopyası her gün uzardı. */
+const turet = (planId: string, kaynak: string) => {
+  let h = 5381;
+  for (let i = 0; i < kaynak.length; i++) h = ((h << 5) + h + kaynak.charCodeAt(i)) >>> 0;
+  return `${planId}-${h.toString(36)}`;
+};
 
 const planGuncelle = (d: Durum, id: string, f: (p: NextDayPlan) => NextDayPlan): Durum => ({
   ...d,
@@ -915,7 +934,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   let pbId: string | undefined;
   if (k.baslikId) {
     const var_ = plan.basliklar.find((b) => b.baslikId === k.baslikId);
-    const pb = var_ ?? { id: kimlik("pb"), baslikId: k.baslikId, muhabirler: [] };
+    // Kimlikler plandan ve kalemden: aktarım iki tarayıcıda aynı anda olursa aynı kayıtlar yazılsın.
+    const pb = var_ ?? { id: turet(plan.id, k.baslikId), baslikId: k.baslikId, muhabirler: [] };
     pbId = pb.id;
     const yeniPb = { ...pb, muhabirler: [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))] };
     d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: var_ ? p.basliklar.map((b) => (b.id === pb.id ? yeniPb : b)) : [...p.basliklar, yeniPb] }));
@@ -924,7 +944,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   // Kalem bir öneriden geldiyse gelişmenin kaynağı o önerinin kaynağı (muhabir, ajans, resmî duyuru…).
   const oneri = oneriBul(d, k.oneriId);
   const gelisme: Gelisme = {
-    id: kimlik("g"),
+    id: turet(plan.id, k.id),
     planId: plan.id,
     planBaslikId: pbId,
     yer: k.yer,
@@ -943,7 +963,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   if (muhabirId && bicim) {
     let kod: string;
     [kod, d] = yeniKod(d);
-    paketId = kimlik("p");
+    paketId = `p-${turet(plan.id, k.id)}`;
     const paket: Paket = {
       id: paketId,
       kod,
@@ -967,7 +987,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   }
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, paketId: paketId ?? o.paketId } : o)) };
-  return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } });
+  return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } }, `h-${turet(plan.id, k.id)}`);
 };
 
 /* Next Day'e gitmeyen kabul: plansız, onaylı paket; kolun sahibi (stok ekibi, Program) üretime alıyor. */
@@ -1070,15 +1090,30 @@ export const baslikDuzenle = (ben: Kisi, id: string, g: { ad?: string; ulke?: Ul
  * paketler (o günün stok seçimi) taşınmıyor. Taşınan her şey `onceki`
  * işaretli; kaynak plan olduğu gibi kalıyor.
  */
+/*
+ * Aynı güne açılmış çift planları sistem tek plana topluyor (planCiftleri.ts);
+ * açılışta yarının planından önce çalışıyor. Hareketin kimliği birleşimden:
+ * iki tarayıcı aynı anda birleştirirse aynı hareketi yazar.
+ */
+export const planCiftleriniTopla = (): number => {
+  const { yeni, birlesimler } = planCiftleriniBirlestir(getir());
+  if (!birlesimler.length) return 0;
+  let d = yeni;
+  for (const b of birlesimler)
+    d = hareketYaz(d, { kisiId: SISTEM, tip: "planlarBirlestirildi", planId: b.kalan, veri: { tarih: b.tarih, sayi: String(b.gidenler.length + 1) } }, `h-${turet(b.kalan, b.gidenler.join(","))}`);
+  kaydet(d);
+  return birlesimler.length;
+};
+
 export const yarinPlaniniAc = (): string | null => {
   const tarih = gunEkle(bugun(), 1);
   let d = getir();
   if (d.planlar.some((p) => p.tarih === tarih)) return null;
   const kaynak = oncekiPlan(d, tarih);
-  const id = kimlik("nd");
+  const id = gunPlaniKimligi(tarih);
   const pbEsle = new Map<string, string>();
   const basliklar = (kaynak?.basliklar ?? []).map((b) => {
-    const yeniId = kimlik("pb");
+    const yeniId = turet(id, b.id);
     pbEsle.set(b.id, yeniId);
     return { id: yeniId, baslikId: b.baslikId, muhabirler: b.muhabirler.map((m) => ({ ...m, onceki: true as const })) };
   });
@@ -1103,7 +1138,7 @@ export const yarinPlaniniAc = (): string | null => {
   const canlilar: CanliYayin[] = kaynak
     ? d.canliYayinlar
         .filter((c) => c.planId === kaynak.id && c.tarih >= tarih)
-        .map((c) => ({ ...c, id: kimlik("cy"), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true }))
+        .map((c) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true }))
     : [];
   /*
    * Gelişme metniyle taşınıyor; öneri ve haftalık kalem bağı kaynak kayıtta
@@ -1112,15 +1147,19 @@ export const yarinPlaniniAc = (): string | null => {
   const gelismeler: Gelisme[] = kaynak
     ? d.gelismeler
         .filter((g) => g.planId === kaynak.id && (!g.planBaslikId || pbEsle.has(g.planBaslikId)))
-        .map(({ oneriId: _o, haftalikKalemId: _h, ...g }) => ({ ...g, id: kimlik("g"), planId: id, planBaslikId: g.planBaslikId ? pbEsle.get(g.planBaslikId) : undefined, onceki: true }))
+        .map(({ oneriId: _o, haftalikKalemId: _h, ...g }) => ({ ...g, id: turet(id, g.id), planId: id, planBaslikId: g.planBaslikId ? pbEsle.get(g.planBaslikId) : undefined, onceki: true }))
     : [];
   d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar], gelismeler: [...d.gelismeler, ...gelismeler] };
-  d = hareketYaz(d, {
-    kisiId: SISTEM,
-    tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
-    planId: id,
-    veri: { tarih, ...(kaynak ? { kaynak: kaynak.tarih } : {}) },
-  });
+  d = hareketYaz(
+    d,
+    {
+      kisiId: SISTEM,
+      tip: kaynak ? "planKopyalandi" : "planOlusturuldu",
+      planId: id,
+      veri: { tarih, ...(kaynak ? { kaynak: kaynak.tarih } : {}) },
+    },
+    `h-${id}`,
+  );
   // Haftalık toplantıda bu güne kabul edilmiş, henüz aktarılmamış haberler kendiliğinden geliyor.
   for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
     for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
@@ -2806,7 +2845,7 @@ export const gecmisPlanlariYukle = (ben: Kisi, gunler: { tarih: string; satirlar
     let plan = d.planlar.find((p) => p.tarih === g.tarih);
     const vardi = !!plan;
     if (!plan) {
-      plan = { id: kimlik("nd"), tarih: g.tarih, durum: g.tarih < bugun() ? "devralindi" : "taslak", ekip: [], gorevlendirmeler: [], hazirPaketler: [], basliklar: [], olusturan: ben.id, olusturma: simdi() };
+      plan = { id: gunPlaniKimligi(g.tarih), tarih: g.tarih, durum: g.tarih < bugun() ? "devralindi" : "taslak", ekip: [], gorevlendirmeler: [], hazirPaketler: [], basliklar: [], olusturan: ben.id, olusturma: simdi() };
       d = { ...d, planlar: [plan, ...d.planlar] };
       sonuc.yeniPlan++;
     }

@@ -55,7 +55,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { yarinPlaniniAc } from "./eylemler";
+import { planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
 import {
   oneriGorebilir,
   paketGorebilir,
@@ -111,8 +111,12 @@ export default function App() {
   // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın. Gerçek kipte kayıt gelince.
   useEffect(() => {
     if (GOMULU || !kayitHazir) return;
-    yarinPlaniniAc();
-    const z = setInterval(yarinPlaniniAc, GUN_YOKLAMA);
+    const yokla = () => {
+      planCiftleriniTopla();
+      yarinPlaniniAc();
+    };
+    yokla();
+    const z = setInterval(yokla, GUN_YOKLAMA);
     return () => clearInterval(z);
   }, [kayitHazir]);
 
