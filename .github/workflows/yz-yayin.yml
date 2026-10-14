@@ -1,0 +1,66 @@
+# Yapay zeka kapısı (worker/) Cloudflare Workers'a: main'e worker/ değişikliği
+# gelince testler koşuyor, sonra yz.plannersflow.net'e dağıtılıyor
+# (belgeler/yapay-zeka.md).
+#
+# Anahtarlar: depo ayarlarında CLOUDFLARE_API_TOKEN ve CLOUDFLARE_ACCOUNT_ID
+# gizli değerleri. Yoksa dağıtım uyarıyla atlanıyor, kırmızıya dönmüyor.
+# KV deposu yoksa ilk dağıtımda açılıyor; kimliği depoya yazılmıyor.
+name: Yapay zeka yayın
+
+on:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/yz-yayin.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: yz-yayin
+  cancel-in-progress: false
+
+jobs:
+  yayin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Tip denetimi ve testler
+        run: npx tsc -p . && npm test
+
+      - name: Anahtar var mı
+        id: anahtar
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN ya da CLOUDFLARE_ACCOUNT_ID gizli değeri yok; dağıtım atlandı."
+            echo "var=hayir" >> "$GITHUB_OUTPUT"
+          else
+            echo "var=evet" >> "$GITHUB_OUTPUT"
+          fi
+
+      # KV deposu adıyla bulunuyor, yoksa açılıyor; kimlik yalnız bu çalışmanın kopyasına yazılıyor.
+      - name: KV deposu
+        if: steps.anahtar.outputs.var == 'evet'
+        run: |
+          AD="plannersflow-yz"
+          KIMLIK=$(npx wrangler kv namespace list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s.slice(s.indexOf("[")));const x=l.find(n=>n.title===process.argv[1]);process.stdout.write(x?x.id:"")})' "$AD")
+          if [ -z "$KIMLIK" ]; then
+            npx wrangler kv namespace create "$AD" --update-config=false
+            KIMLIK=$(npx wrangler kv namespace list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const l=JSON.parse(s.slice(s.indexOf("[")));const x=l.find(n=>n.title===process.argv[1]);process.stdout.write(x?x.id:"")})' "$AD")
+          fi
+          if [ -z "$KIMLIK" ]; then echo "::error::KV deposu bulunamadı ya da açılamadı."; exit 1; fi
+          sed -i "s/KV_KIMLIGI/$KIMLIK/" wrangler.toml
+
+      - name: Dağıt
+        if: steps.anahtar.outputs.var == 'evet'
+        run: npx wrangler deploy

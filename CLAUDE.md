@@ -206,6 +206,36 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Gerçek kipte prototip etiketi, örnek veri ve "Örnek veriye dön" yok;
     çıkış tanıtıma döner. Firebase yapılandırması boşsa giriş ekranı nedenini
     yazar, demo etkilenmez.
+- Yapay zeka (`belgeler/yapay-zeka.md`): Cloudflare Workers'ta yapay zeka
+  kapısı (`worker/`, `yz.plannersflow.net`); veritabanı Firebase'de kalıyor.
+  - **Kapı (`worker/`):**
+    - Firebase oturum belgesini Google'ın açık anahtarlarıyla doğrular
+      (`dogrula.ts`).
+    - Kişi kaydını Firestore REST'ten kişinin kendi oturumuyla okur
+      (pasif, `hesapYoneticisi`, birim).
+    - Sağlayıcıyı çağırır (`saglayici.ts`): Claude resmî SDK'yla (düşük
+      effort, destekleyen modelde `fallbacks: "default"`), öbürleri OpenAI
+      uyumlu uçla.
+  - **Ayar kapının KV deposunda, Firestore'da değil:** sağlayıcılar,
+    anahtarlar, uç nokta adresleri, özellikler (açık, sağlayıcı, birimler,
+    kişi başına günlük sınır).
+    - Firestore'u her etkin kişi yazabildiği için adres oradan okunsaydı
+      anahtar başka sunucuya yönlendirilebilirdi.
+    - Anahtar yalnız yazılır, ekrana son dört hanesi gelir. Anahtar alanı
+      gönderilmezse eskisi kalır, boş metin siler (`ayar.ts →
+      ayarBirlestir`).
+  - **İstemci (`src/yz.ts`):** `useYz(ozellik)` (açık mı, kalan hak),
+    `yzCalistir`; tam yöneticiye Ayarlar › Yapay zeka (`ekranlar/
+    YapayZeka.tsx`, yalnız gerçek kipte; demoda durum satırı).
+    - Kapıya ulaşılamazsa özellik görünmez.
+    - Demoda kapıya gidilmez, "Kısalt" ilk cümleyi verir.
+  - **İlk özellik "Kısalt":** Gelişme formunda (`bilesenler/YzKisalt.tsx`).
+    Sonuç forma gelir, kişi kaydeder; "Önceki metin" geri alır.
+  - **Dağıtım:** `.github/workflows/yz-yayin.yml`. Gizli değerler
+    `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; yoksa uyarıyla atlanır.
+    KV kimliği dağıtımda yazılır (`wrangler.toml`'da `KV_KIMLIGI` yer
+    tutucu).
+  - **Testler:** `cd worker && npm test`.
 - Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
   menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
   yapısı veri (`yapi.ts`). Varsayılan yapı koddaki sabitlerin birebir karşılığı.

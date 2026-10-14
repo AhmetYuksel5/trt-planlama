@@ -1,0 +1,17 @@
+# Plannersflow yapay zeka kapısı (belgeler/yapay-zeka.md).
+# KV kimliği dağıtım işinde (.github/workflows/yz-yayin.yml) yazılıyor:
+# depoda yer tutucu duruyor, hesap bilgisi depoya girmesin.
+name = "plannersflow-yz"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [{ pattern = "yz.plannersflow.net", custom_domain = true }]
+
+[vars]
+FIREBASE_PROJE = "planners-flow-2026"
+KOKENLER = "https://plannersflow.net,https://www.plannersflow.net,https://planners-flow-2026.web.app,https://planners-flow-2026.firebaseapp.com,https://ahmetyuksel5.github.io,http://localhost:4173,http://localhost:5173"
+
+[[kv_namespaces]]
+binding = "YZ"
+id = "KV_KIMLIGI"

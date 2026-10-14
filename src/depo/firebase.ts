@@ -355,6 +355,8 @@ export const oturumuKapat = () => {
 };
 
 export const oturumdakiEposta = () => auth?.currentUser?.email ?? "";
+/** Yapay zeka kapısına (yz.ts) giden oturum belgesi; Firebase süresi dolanı kendisi yeniliyor. */
+export const oturumBelgesi = async () => (auth?.currentUser ? auth.currentUser.getIdToken() : null);
 
 /** Tarayıcıda saklı oturum okununca: demodan "Giriş"e basan, oturumu açıksa şifre girmeden içeri. */
 export const sakliOturum = async () => {

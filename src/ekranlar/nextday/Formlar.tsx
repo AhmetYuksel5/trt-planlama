@@ -1,3 +1,4 @@
+import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useState } from "react";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
@@ -165,6 +166,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
         {t("gelismeMetni")}
         <textarea {...icerikAlani} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
       </label>
+      <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
       <div className="satir">
         <label>
           {t("tarih")}

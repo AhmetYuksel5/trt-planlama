@@ -2123,3 +2123,9 @@ tr.soluk > td { opacity: .5; }
   .ekip-gorevleri .dugme-ikon { min-width: var(--dokunma); min-height: var(--dokunma); }
   .org-birim, .org-agac > details { margin-inline-start: calc(var(--derinlik, 0) * var(--ara-2)); }
 }
+
+/* Yapay zeka düğmeleri (YzKisalt): yazı alanının hemen altında, sakin. */
+.yz-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin-block-start: calc(-1 * var(--ara-1)); }
+.donen { animation: donen 1s linear infinite; }
+@keyframes donen { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .donen { animation: none; } }

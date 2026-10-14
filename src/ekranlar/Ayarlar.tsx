@@ -11,6 +11,7 @@ import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
 import { KayitTemizligi } from "./KayitTemizligi";
+import { YapayZekaAyari } from "./YapayZeka";
 import { SayfaBasi } from "./ana/Planlama";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
@@ -36,6 +37,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         <WhatsappAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
+        {ben.hesapYoneticisi && <YapayZekaAyari />}
         {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>
