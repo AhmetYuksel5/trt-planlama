@@ -263,10 +263,11 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
                   )
                 }
               >
-                <h3>{ben ? <YerindeMetin acik deger={a.baslik} etiket={t("dosyaBasligi")} kaydet={(x) => x && anaKonuKaydet(ben, hafta.id, { id: a.id, baslik: x, metin: a.metin })} /> : a.baslik}</h3>
+                {/* Başlık havuzdan seçiliyor: yazıyla değil, şeritteki "Düzenle" penceresinden. */}
+                <h3>{a.baslik}</h3>
                 {ben ? (
                   <p>
-                    <YerindeMetin acik cokSatir deger={a.metin} etiket={t("durumOzeti")} kaydet={(x) => anaKonuKaydet(ben, hafta.id, { id: a.id, baslik: a.baslik, metin: x })} />
+                    <YerindeMetin acik cokSatir deger={a.metin} etiket={t("durumOzeti")} kaydet={(x) => anaKonuKaydet(ben, hafta.id, { id: a.id, metin: x })} />
                   </p>
                 ) : (
                   a.metin && <p>{a.metin}</p>

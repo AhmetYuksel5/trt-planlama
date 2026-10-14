@@ -643,7 +643,10 @@ export type Karar = (typeof KARARLAR)[number];
 /** Haftanın ana dosyası (أهم ملفات الأسبوع): başlık ve bir paragraf durum özeti. */
 export interface AnaKonu {
   id: string;
+  /** Başlığın yazısı (çıktı bunu basıyor); havuzdan seçildiyse havuzdaki adı. */
   baslik: string;
+  /** Merkezi başlık havuzundaki dosya: ana dosya da gündemle ve Next Day'le aynı başlığı kullansın. Eski kayıtta boş. */
+  baslikId?: string;
   metin: string;
 }
 

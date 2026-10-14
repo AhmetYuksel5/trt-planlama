@@ -313,21 +313,54 @@ function MuhabirHareketleri({ hafta }: { hafta: HaftalikPlan }) {
 
 /* --- Haftanın ana dosyaları (أهم ملفات الأسبوع) --- */
 
+const YENI_BASLIK = "__yeni";
+
+/*
+ * Ana dosyanın başlığı havuzdaki hazır başlıklardan seçiliyor (önce bu
+ * haftanın gündemindeki dosyalar), yoksa yeni başlık yazılıyor ve havuza
+ * giriyor. Eski kayıttaki havuzda olmayan başlık yazısıyla "yeni"de gelir.
+ */
 export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; hafta: HaftalikPlan; mevcut?: AnaKonu; sonra?: string; kapat: () => void }) {
   const { t } = useDil();
-  const [f, setF] = useState({ baslik: mevcut?.baslik ?? "", metin: mevcut?.metin ?? "" });
-  const kaydet = () => anaKonuKaydet(ben, hafta.id, { id: mevcut?.id, ...f }, sonra) && kapat();
+  const v = useVeri();
+  const ilk = mevcut?.baslikId ?? (mevcut && v.basliklar.find((b) => b.ad === mevcut.baslik)?.id);
+  const [f, setF] = useState({ baslikId: ilk ?? (mevcut ? YENI_BASLIK : ""), yeniBaslik: ilk ? "" : (mevcut?.baslik ?? ""), metin: mevcut?.metin ?? "" });
+  const yeni = f.baslikId === YENI_BASLIK;
+  const secilebilir = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
+  const gundemde = new Set(hafta.kalemler.map((k) => k.baslikId).filter(Boolean));
+  // Bu haftanın ana dosyası olan başlık ikinci kez seçilmesin (kendisi hariç).
+  const kullanilan = new Set(hafta.anaKonular.filter((a) => a.id !== mevcut?.id).map((a) => a.baslikId));
+  const secenek = (b: { id: string; ad: string }) => (
+    <option key={b.id} value={b.id} disabled={kullanilan.has(b.id)}>
+      {b.ad}
+    </option>
+  );
+  const kaydet = () =>
+    anaKonuKaydet(ben, hafta.id, { id: mevcut?.id, ...(yeni ? { yeniBaslik: f.yeniBaslik } : { baslikId: f.baslikId }), metin: f.metin }, sonra) && kapat();
   return (
-    <div className="form form-kutu ara-ust-2">
+    <div className="form form-kutu ara-ust-2" data-ana-konu-formu>
       <label>
         {t("dosyaBasligi")}
-        <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} placeholder={metin("anaDosyaIpucu", "ar")} />
+        <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-ana-konu-baslik>
+          <option value="" disabled>
+            {t("seciniz")}
+          </option>
+          {secilebilir.some((b) => gundemde.has(b.id)) && <optgroup label={t("buHaftaninDosyalari")}>{secilebilir.filter((b) => gundemde.has(b.id)).map(secenek)}</optgroup>}
+          <optgroup label={t("hazirBasliklar")}>{secilebilir.filter((b) => !gundemde.has(b.id)).map(secenek)}</optgroup>
+          {yapabilir(ben, "baslikYonet") && <option value={YENI_BASLIK}>+ {t("yeniBaslik")}</option>}
+        </select>
       </label>
+      {yeni && (
+        <label>
+          {t("yeniBaslik")}
+          <input {...icerikAlani} value={f.yeniBaslik} onChange={(e) => setF({ ...f, yeniBaslik: e.target.value })} placeholder={metin("anaDosyaIpucu", "ar")} data-ana-konu-yeni />
+        </label>
+      )}
       <label>
         {t("durumOzeti")}
         <textarea {...icerikAlani} rows={4} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
       </label>
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.baslik.trim()} />
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={yeni ? !f.yeniBaslik.trim() : !f.baslikId} />
     </div>
   );
 }

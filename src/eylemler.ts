@@ -79,6 +79,7 @@ import {
   type Yanit,
   type YanitDurum,
   paketBicimi,
+  baslikBul,
   TAKIP_BICIMI,
   type OneriBicimi,
   type Takip,
@@ -658,14 +659,47 @@ const haftaIcerik = (ben: Kisi, id: string, f: (h: HaftalikPlan) => HaftalikPlan
   return true;
 };
 
-export const anaKonuKaydet = (ben: Kisi, haftaId: string, g: { id?: string; baslik: string; metin: string }, sonra?: string) =>
-  haftaIcerik(ben, haftaId, (h) => {
-    const temiz = { baslik: g.baslik.trim(), metin: g.metin.trim() };
-    if (!temiz.baslik) return null;
-    if (g.id) return { ...h, anaKonular: h.anaKonular.map((a) => (a.id === g.id ? { ...a, ...temiz } : a)) };
-    const id = kimlik("ak");
-    return { ...h, anaKonular: arkasina([...h.anaKonular, { id, ...temiz }], kimlikOf, id, sonra) };
-  });
+export interface AnaKonuGirdisi {
+  id?: string;
+  /** Havuzdaki başlık. */
+  baslikId?: string;
+  /** Havuzda yoksa açılan yeni başlık (kalemdeki gibi havuza giriyor). */
+  yeniBaslik?: string;
+  metin: string;
+}
+
+/*
+ * Ana dosyanın başlığı havuzdan seçiliyor ya da yeni açılıyor; ikisi de
+ * yoksa (belgede yalnız durum özeti düzeltildi) eski başlık yerinde kalıyor.
+ */
+export const anaKonuKaydet = (ben: Kisi, haftaId: string, g: AnaKonuGirdisi, sonra?: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !haftalikDuzenler(ben, h)) return false;
+  const eski = g.id ? h.anaKonular.find((a) => a.id === g.id) : undefined;
+  if (g.id && !eski) return false;
+  let baslikId = g.baslikId || undefined;
+  if (!baslikId && g.yeniBaslik?.trim()) {
+    if (!yapabilir(ben, "baslikYonet")) return false;
+    // Aynı adla havuzda varsa o: havuz ikiye bölünmesin.
+    baslikId = d.basliklar.find((b) => b.ad === g.yeniBaslik!.trim())?.id;
+    if (!baslikId) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+  }
+  const havuz = baslikId ? baslikBul(d, baslikId) : undefined;
+  if (baslikId && !havuz) return false;
+  const baslik = havuz ? { baslik: havuz.ad, baslikId: havuz.id } : eski ? { baslik: eski.baslik, ...(eski.baslikId && { baslikId: eski.baslikId }) } : undefined;
+  if (!baslik) return false;
+  const alanlar = { ...baslik, metin: g.metin.trim() };
+  if (eski && eski.baslik === alanlar.baslik && eski.baslikId === alanlar.baslikId && eski.metin === alanlar.metin) return true;
+  kaydet(
+    haftaGuncelle(d, haftaId, (x) => {
+      if (eski) return { ...x, anaKonular: x.anaKonular.map((a) => (a.id === eski.id ? { id: a.id, ...alanlar } : a)) };
+      const id = kimlik("ak");
+      return { ...x, anaKonular: arkasina([...x.anaKonular, { id, ...alanlar }], kimlikOf, id, sonra) };
+    }),
+  );
+  return true;
+};
 
 export const anaKonuSil = (ben: Kisi, haftaId: string, id: string) =>
   haftaIcerik(ben, haftaId, (h) => ({ ...h, anaKonular: h.anaKonular.filter((a) => a.id !== id) }));

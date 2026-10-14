@@ -548,6 +548,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
     başlıkla geçer, havuz ikiye bölünmez.
+  - "Haftanın ana dosyaları"nın başlığı da havuzdan (`AnaKonu.baslikId`,
+    `eylemler.ts → anaKonuKaydet`): seçicide önce bu haftanın gündemindeki
+    dosyalar, sonra hazır başlıklar, en sonda "+ Yeni başlık" (havuza girer;
+    aynı adlı varsa o). Haftada zaten ana dosya olan başlık seçilemez. Eski
+    kayıttaki havuzda olmayan başlık "yeni"de yazısıyla gelir. Belgede başlık
+    yazıyla değişmez, "Düzenle" penceresinden; durum özeti yerinde.
   - Haftalık öneri `Oneri.hafta` taşır, `hedefTarih` taşımaz; Next Day
     ekranlarına karışmaz.
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen

@@ -158,6 +158,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
       ...yeni.planlar.flatMap((p) => p.basliklar.map((b) => b.baslikId)),
       ...yeni.oneriler.map((o) => o.baslikId ?? ""),
       ...yeni.haftalik.flatMap((h) => h.kalemler.map((k) => k.baslikId ?? "")),
+      ...yeni.haftalik.flatMap((h) => h.anaKonular.map((a) => a.baslikId ?? "")),
       // Kısayola sabitlenmiş başlık kişinin seçimi; kalıyor.
       ...Object.values(yeni.kisayollar ?? {}).flatMap((l) => l.filter((y) => y.startsWith("basliklar/")).map((y) => y.slice("basliklar/".length))),
     ]);
