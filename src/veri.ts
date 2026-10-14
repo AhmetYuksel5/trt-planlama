@@ -390,8 +390,10 @@ export interface Oneri {
   sahaGerekli: boolean;
   zaman: string;
   kanal: Kanal;
-  /** Next Day önerisinde planın günü; haftalık öneride boş. */
+  /** Önerinin günü (çok günlü etkinlikte ilk gün); eski haftalık öneride boş. */
   hedefTarih?: string;
+  /** Çok günlü etkinlikte son gün; boşsa tek gün. Hangi gün hangi haberin planlanacağı buradan. */
+  bitisTarih?: string;
   /** Haftalık öneride haftanın Cumartesi'si; Next Day planlarına karışmıyor. */
   hafta?: string;
   durum: OneriDurum;

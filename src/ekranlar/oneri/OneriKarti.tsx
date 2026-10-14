@@ -1,11 +1,10 @@
 import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Undo2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
-import { OneriAvatari, OneriDurumRozeti, OneriKaynagi } from "../../bilesenler/Tablolar";
-import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
+import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
+import { gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet } from "../../eylemler";
-import { haftaSonu } from "../../haftalik";
 import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
 import { oneriDuzenleyebilir, oneriDuzeltmeyeGider } from "../../yetki";
@@ -67,6 +66,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
       <div className="ok-ust">
         <TurRozeti tur={o.tur} />
         {o.bicim && <BicimRozeti bicim={o.bicim} />}
+        <OneriPlanEtiketleri oneri={o} d={d} />
         <span className="ok-ulke">
           <MapPin size={13} /> {t(ulkeAdi(o.ulke))}
         </span>
@@ -163,6 +163,7 @@ const SUREC: Partial<Record<Oneri["durum"], number>> = { yeni: 0, degerlendirili
 /** Bütün öneri: içerik, kaynak, hedef, süreç ve ayrıntı bağlantısı; karar formu altta. */
 export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { oneri: Oneri; d: Durum; kapat: () => void; altBilgi?: ReactNode; children?: ReactNode }) {
   const { t, dil } = useDil();
+  const oneriGunu = useOneriGunu();
   const ben = useBen();
   // Planlama plan ekranından da düzeltiyor; plana eklenmiş önerinin gelişmesi ve paketi eylemde güncelleniyor.
   const [duzenle, setDuzenle] = useState(false);
@@ -170,11 +171,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
   const paket = paketBul(d, o.paketId);
   const gecmis = d.hareketler.filter((h) => h.oneriId === o.id);
   const siniflama = [t(TUR_ADI[o.tur]), o.bicim ? t(BICIM_ADI(o.bicim)) : "", t(ulkeAdi(o.ulke))].filter(Boolean).join(" · ");
-  const hedef = o.hafta
-    ? `${t("haftalik")} · ${aralikYaz(o.hafta, haftaSonu(o.hafta), dil)} · ${o.haftaGunu ? tarihYaz(o.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`
-    : o.hedefTarih
-      ? tarihYaz(o.hedefTarih, dil, "tam")
-      : "—";
+  const hedef = oneriGunu(o);
   return (
     <Pencere baslik={<Icerik>{baslikOf(o)}</Icerik>} alt={siniflama} kapat={kapat} altBilgi={altBilgi}>
       {ben && oneriDuzenleyebilir(ben, o) &&

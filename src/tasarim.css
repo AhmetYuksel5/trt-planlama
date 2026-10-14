@@ -625,6 +625,10 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .rozet.tur-haber, .rozet.tur-feature, .rozet.tur-ekonomi, .rozet.tur-program { background: var(--sis); color: var(--renk); }
 /* Haber türü (biçim) kol renginden ayrı: çizgili, sakin; terimi Latin ve soldan sağa. */
 .rozet-bicim { background: var(--yuzey); border: 1px solid var(--cizgi); color: var(--murekkep); direction: ltr; unicode-bidi: isolate; cursor: help; }
+/* Önerinin düştüğü plan: planın kendi rengiyle (renk-nextday, renk-haftalik, renk-ozel). */
+.plan-etiketleri { display: inline-flex; flex-wrap: wrap; gap: var(--ara-1); vertical-align: middle; }
+.rozet-plan { background: var(--sis); color: var(--renk); border: 1px solid var(--renk); }
+.cip-dugme.renk-nextday.secili, .cip-dugme.renk-haftalik.secili, .cip-dugme.renk-ozel.secili { background: var(--renk); border-color: var(--renk); }
 .rozetler { display: flex; flex-wrap: wrap; gap: var(--ara-1); align-items: center; }
 .tablo .rozetler { min-inline-size: 15em; }
 .tablo td .rozet-bicim { white-space: nowrap; }

@@ -3,6 +3,7 @@ import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
 import { kalacakPlan } from "../../planCiftleri";
+import { acikGunPlanlari, oneriGunde, oneriHaftada } from "../../oneriPlanlari";
 import { bugun, gunEkle } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { haftalikDuzenler, planIcerikDuzenler } from "../../yetki";
@@ -25,36 +26,56 @@ import { MuhabirSecici } from "../nextday/Formlar";
  */
 /*
  * Hangi planın seçeneği çıkıyor: plan ekranından açıldıysa yalnız o plan.
- * Öneriler sayfasından açıldıysa yalnız üzerinde çalışılan planlar (bugün,
- * yarın ve önerinin günü; gün başına tek plan): bütün geçmiş planlar ve
- * aynı güne açılmış çift planlar listede karışıklık yapıyordu. Haftalık
- * öneride Next Day değil haftanın gündemi: gün ve dosya soruluyor.
+ * Öneriler sayfasından açıldıysa önerinin günlerine (aralığına) düşen
+ * çalışılan Next Day planları (gün başına bir) ve haftası kesişen haftalık
+ * plan; ikisi de varsa üstte Next Day / Weekly seçimi. Haftalık hedefte
+ * gün ve dosya soruluyor (GundemeEkle). Önerinin günü çalışılan planlara
+ * düşmüyorsa bugünün ve yarının planı.
  */
 export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
-  if (!planId && oneri.hafta) {
-    const hafta = v.haftalik.find((h) => h.baslangic === oneri.hafta);
-    if (!hafta || !haftalikDuzenler(ben, hafta)) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
-    return <GundemeEkle ben={ben} hafta={hafta} oneri={oneri} kapat={kapat} />;
-  }
   const B = bugun();
-  const gunler = planId ? [] : [...new Set([B, gunEkle(B, 1), ...(oneri.hedefTarih && oneri.hedefTarih >= B ? [oneri.hedefTarih] : [])])].sort();
+  const tekGun = (l: NextDayPlan[]) =>
+    [...new Set(l.map((p) => p.tarih))].sort().map((g) => {
+      const ayni = l.filter((p) => p.tarih === g);
+      return ayni.length > 1 ? kalacakPlan(v, ayni) : ayni[0];
+    });
+  // Haftanın gündemi: önerinin günleri bu haftaya düşüyor ve henüz gündemde değil.
+  const hafta = planId ? undefined : v.haftalik.find((h) => oneriHaftada(oneri, h) && haftalikDuzenler(ben, h) && !h.kalemler.some((k) => k.oneriId === oneri.id));
+  const gunlerinde = planId || (oneri.hafta && !oneri.hedefTarih) ? [] : acikGunPlanlari(v).filter((p) => oneriGunde(oneri, p.tarih));
   const planlar = (
     planId
       ? v.planlar.filter((p) => p.id === planId)
-      : gunler.map((g) => {
-          const l = v.planlar.filter((p) => p.tarih === g);
-          return l.length > 1 ? kalacakPlan(v, l) : l[0];
-        })
-  ).filter((p): p is NextDayPlan => !!p && planIcerikDuzenler(ben, p));
-  return <NextDayeEkle ben={ben} oneri={oneri} planlar={planlar} kapat={kapat} />;
+      : oneri.hafta && !oneri.hedefTarih
+        ? []
+        : gunlerinde.length || hafta
+          ? tekGun(gunlerinde)
+          : // Önerinin günü çalışılan planlara düşmüyorsa Planlama yine bugünün ya da yarının planına alabilsin.
+            tekGun(v.planlar.filter((p) => p.tarih === B || p.tarih === gunEkle(B, 1)))
+  ).filter((p) => planIcerikDuzenler(ben, p));
+  const [secim, setSecim] = useState<"nextday" | "haftalik">(planlar.length ? "nextday" : "haftalik");
+  if (!planlar.length && !hafta) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
+  return (
+    <>
+      {planlar.length > 0 && hafta && (
+        <div className="sekmeler ara-alt-2" role="tablist" data-pe-hedef>
+          {(["nextday", "haftalik"] as const).map((x) => (
+            <button key={x} type="button" role="tab" aria-selected={secim === x} className={`${secim === x ? "acik" : ""}`} onClick={() => setSecim(x)} data-pe-hedef-secim={x}>
+              {t(x === "nextday" ? "mNextday" : "mHaftalik")}
+            </button>
+          ))}
+        </div>
+      )}
+      {secim === "haftalik" && hafta ? <GundemeEkle ben={ben} hafta={hafta} oneri={oneri} kapat={kapat} /> : <NextDayeEkle ben={ben} oneri={oneri} planlar={planlar} kapat={kapat} />}
+    </>
+  );
 }
 
 function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri; planlar: NextDayPlan[]; kapat: () => void }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const ilkPlan = planlar.find((p) => p.tarih === oneri.hedefTarih) ?? planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0];
+  const ilkPlan = planlar.find((p) => oneriGunde(oneri, p.tarih)) ?? planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0];
   const [pId, setPId] = useState(ilkPlan?.id ?? "");
   const gunAdi = (p: NextDayPlan) => (p.tarih === bugun() ? `${t("bugun")} · ` : p.tarih === gunEkle(bugun(), 1) ? `${t("yarin")} · ` : "");
   const plan = planlar.find((p) => p.id === pId);

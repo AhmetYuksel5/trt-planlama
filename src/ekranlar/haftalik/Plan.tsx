@@ -1,4 +1,5 @@
 import { useSekmeAdi } from "../../sekmeAdi";
+import { oneriAraligi, oneriHaftada } from "../../oneriPlanlari";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
@@ -166,7 +167,10 @@ export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: Ha
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
   // Önerinin dosyası pasifse listede yok; seçici başka seçeneği gösterip kayıt görünmeyen dosyaya gitmesin.
   const dosya = oneri.baslikId && v.basliklar.some((b) => b.id === oneri.baslikId && b.aktif) ? oneri.baslikId : "";
-  const [f, setF] = useState({ tarih: oneri.haftaGunu ?? "", baslikId: dosya, yeniBaslik: "" });
+  // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
+  const aralik = oneriAraligi(oneri);
+  const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
+  const [f, setF] = useState({ tarih: gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "" });
   const kaydet = () => {
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {
       tarih: f.tarih || undefined,
@@ -227,7 +231,7 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const gundemdekiler = new Set(hafta.kalemler.map((k) => k.oneriId));
   const oneriler = v.oneriler
-    .filter((o) => o.hafta === hafta.baslangic && !gundemdekiler.has(o.id) && o.durum !== "planaEklendi")
+    .filter((o) => oneriHaftada(o, hafta) && !gundemdekiler.has(o.id) && o.durum !== "planaEklendi")
     .sort((a, b) => Number(a.durum === "reddedildi") - Number(b.durum === "reddedildi") || b.zaman.localeCompare(a.zaman));
   const bekleyen = oneriler.filter((o) => o.durum !== "reddedildi").length;
   return (

@@ -1,14 +1,14 @@
 import { birimAdi } from "../../yapi";
+import { ONERI_ETIKETLERI, oneriEtiketleri, type OneriEtiketi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
-import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
-import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
-import { haftaGunleri, haftaSonu } from "../../haftalik";
+import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
+import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { oneriDurum, oneriDuzenle, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
-import { KANAL_ADI, ONERI_DURUM_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
+import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
@@ -39,6 +39,8 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
   const [tur, setTur] = useState<IcerikTuru | "">("");
   const [ulke, setUlke] = useState<Ulke | "">("");
   const [aranan, setAranan] = useState("");
+  // Plan etiketi: günlük ya da haftalık çalışan yalnız kendi planına düşen önerileri görsün.
+  const [planEtiketi, setPlanEtiketi] = useState<OneriEtiketi | "yok" | "">("");
   /* Görünüm plan ekranlarıyla ortak kişisel seçim; kartta karar yok, kararlar ayrıntı sayfasında. */
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [acikId, setAcikId] = useState<string | null>(null);
@@ -47,9 +49,12 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.oneriler.filter((o) => oneriGorebilir(ben, o));
   const q = aranan.trim().toLocaleLowerCase();
+  const etiketler = new Map(gorunen.map((o) => [o.id, oneriEtiketleri(v, o)]));
+  const etiketli = (o: Oneri, e: OneriEtiketi | "yok" | "") => !e || (e === "yok" ? !etiketler.get(o.id)!.length : etiketler.get(o.id)!.includes(e));
   const liste = gorunen
     .filter(
       (o) =>
+        etiketli(o, planEtiketi) &&
         (durum === "hepsi" || o.durum === durum) &&
         (!tur || o.tur === tur) &&
         (!ulke || o.ulke === ulke) &&
@@ -116,6 +121,22 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
           <span className="bosluk-esnek" />
           <GorunumSecici deger={gorunum} degistir={setGorunum} />
         </div>
+        {!muhabir && (
+          <div className="cipler ara-alt-2" data-plan-suzgec>
+            {(["", ...ONERI_ETIKETLERI, "yok"] as const).map((e) => (
+              <button
+                key={e || "hepsi"}
+                type="button"
+                className={`cip cip-dugme${planEtiketi === e ? " secili" : ""}${e && e !== "yok" ? ` renk-${e}` : ""}`}
+                aria-pressed={planEtiketi === e}
+                onClick={() => setPlanEtiketi(e)}
+                data-plan-suzgec-etiketi={e || "hepsi"}
+              >
+                {t(e === "" ? "tumPlanlar" : e === "yok" ? "plansiz" : ONERI_ETIKET_ADI[e])} <em>{gorunen.filter((o) => etiketli(o, e)).length}</em>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="sekmeler suzgec">
           <button className={durum === "hepsi" ? "acik" : ""} onClick={() => setDurum("hepsi")}>
             {t("hepsi")} <em>{gorunen.length}</em>
@@ -181,6 +202,7 @@ function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: On
 export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri: Oneri; pencerede?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
+  const oneriGunu = useOneriGunu();
   const [ekle, setEkle] = useState(false);
   const [ret, setRet] = useState<string | null>(null);
   const [duzelt, setDuzelt] = useState(false);
@@ -305,11 +327,8 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               </div>
               <div className="alan">
                 <small>{t("hedefPlan")}</small>
-                <b>
-                  {oneri.hafta
-                    ? `${t("haftalik")} · ${aralikYaz(oneri.hafta, haftaSonu(oneri.hafta), dil)} · ${oneri.haftaGunu ? tarihYaz(oneri.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`
-                    : oneri.hedefTarih && tarihYaz(oneri.hedefTarih, dil, "tam")}
-                </b>
+                <b data-oneri-gunu>{oneriGunu(oneri)}</b>
+                <OneriPlanEtiketleri oneri={oneri} d={v} />
               </div>
               <div className="alan">
                 <small>{t("tur")}</small>
@@ -437,9 +456,9 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                       </a>
                     )}
                     {/* Haftalık öneri haftanın gündemine (gün ve dosya seçilerek), Next Day önerisi çalışılan plana. */}
-                    {oneri.durum !== "reddedildi" && !muhabirde && (!oneri.hafta || (!!haftaPlani && !haftaPlani.kalemler.some((k) => k.oneriId === oneri.id))) && (
+                    {oneri.durum !== "reddedildi" && !muhabirde && (oneri.hedefTarih || (!!haftaPlani && !haftaPlani.kalemler.some((k) => k.oneriId === oneri.id))) && (
                       <button className="dugme dugme-iyi" onClick={() => setEkle(true)} data-oneri-plana-ekle>
-                        {t(oneri.hafta ? "gundemeEkle" : "planaEkle")}
+                        {t(oneri.hedefTarih ? "planaEkle" : "gundemeEkle")}
                       </button>
                     )}
                     {oneri.durum === "yeni" && (
@@ -497,27 +516,23 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
    * telefonla gelen öneriyi kesinleşmemiş her gelecek haftaya girebiliyor.
    */
   const haftalikCagri = acikCagri(v, "haftalik", B);
-  const haftalar = muhabir
-    ? haftalikCagri
-      ? [haftalikCagri.tarih]
-      : []
-    : v.haftalik.filter((h) => h.durum !== "kesinlesti" && h.baslangic > B).map((h) => h.baslangic).sort();
-  const [hafta, setHafta] = useState(haftalik ? (haftalikCagri?.tarih ?? haftalar[0] ?? "") : "");
-  const [hedefTarih, setHedefTarih] = useState(cagri?.tarih ?? gunEkle(B, 1));
+  /*
+   * Next Day / haftalık ayrımı yok: muhabir günü ve çok günlü etkinlikte
+   * bitişi yazıyor; öneri Planlama'nın çalıştığı hangi planın günlerine
+   * düşüyorsa o planın etiketini alıyor (oneriPlanlari.ts). Haftalık
+   * çağrıdan gelinince gün haftanın ilk günüyle başlıyor.
+   */
+  const [hedefTarih, setHedefTarih] = useState(haftalik && haftalikCagri ? (haftalikCagri.tarih > B ? haftalikCagri.tarih : B) : (cagri?.tarih ?? gunEkle(B, 1)));
+  const [bitisTarih, setBitisTarih] = useState("");
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "eposta"));
-  /* Haftalık öneride muhabir haberi hangi gün yapacağını söylüyor; "stok": zamana bağlı değil. Planlama gündeme eklerken gün hazır geliyor. */
-  const [haftaGunu, setHaftaGunu] = useState("");
-  const gecerli = oneriFormuGecerli(f, muhabir) && (!hafta || !!haftaGunu);
+  const gecerli = oneriFormuGecerli(f, muhabir) && !!hedefTarih && (!bitisTarih || bitisTarih >= hedefTarih);
+  // Formda seçilen günlere göre düşeceği planlar: muhabir göndermeden görsün.
+  const onizleme = { id: "", hedefTarih, ...(bitisTarih > hedefTarih && { bitisTarih }) } as Oneri;
   // Sayfanın başlığı yok, doğrudan form; adı sekmede.
   useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
   const gonder = () => {
     if (!gecerli) return;
-    const id = oneriGonder(ben, {
-      ...oneriFormuGirdisi(f),
-      hedefTarih: hafta ? undefined : hedefTarih,
-      hafta: hafta || undefined,
-      haftaGunu: hafta && haftaGunu !== "stok" ? haftaGunu : undefined,
-    });
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
     if (id) {
       bildir(t(muhabir ? "bOneriGonderildi" : "bOneriKaydedildi"));
       git(`oneriler/${id}`);
@@ -535,62 +550,35 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
       )}
       <Kart>
         <div className="form">
-          {haftalar.length > 0 && (
-            <div className="sekmeler" role="tablist" aria-label={t("hedefPlan")}>
-              <button type="button" role="tab" aria-selected={!hafta} className={!hafta ? "acik" : ""} onClick={() => setHafta("")}>
-                {t("nextday")}
-              </button>
-              <button type="button" role="tab" aria-selected={!!hafta} className={hafta ? "acik" : ""} onClick={() => setHafta(hafta || haftalar[0])}>
-                {t("haftalik")}
-              </button>
-            </div>
-          )}
           <OneriAlanlari
             ben={ben}
             f={f}
             setF={setF}
             hedef={
-              hafta ? (
-                <>
-                  <label>
-                    {t("hedefPlan")}
-                    <select
-                      value={hafta}
-                      onChange={(e) => {
-                        setHafta(e.target.value);
-                        setHaftaGunu("");
-                      }}
-                    >
-                      {haftalar.map((h) => (
-                        <option key={h} value={h}>
-                          {aralikYaz(h, haftaSonu(h), dil)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    {t("gun")}
-                    <select value={haftaGunu} onChange={(e) => setHaftaGunu(e.target.value)} required data-oneri-gun>
-                      <option value="" disabled>
-                        {t("seciniz")}
-                      </option>
-                      {haftaGunleri(hafta).map((g) => (
-                        <option key={g} value={g}>
-                          {gunAdi(g, dil)} · {tarihYaz(g, dil, "kisa")}
-                        </option>
-                      ))}
-                      <option value="stok">{t("zamanaBagliDegil")}</option>
-                    </select>
-                  </label>
-                </>
-              ) : (
+              <>
                 <label>
-                  {t("hedefPlan")}
-                  <input type="date" value={hedefTarih} min={B} onChange={(e) => setHedefTarih(e.target.value)} />
+                  {t("tarih")}
+                  <input
+                    type="date"
+                    value={hedefTarih}
+                    min={B}
+                    onChange={(e) => {
+                      setHedefTarih(e.target.value);
+                      if (bitisTarih && e.target.value > bitisTarih) setBitisTarih("");
+                    }}
+                    data-oneri-tarih
+                  />
                 </label>
-              )
+                <label>
+                  {t("oneriBitis")} <span className="ipucu">{t("varsa")}</span>
+                  <input type="date" value={bitisTarih} min={hedefTarih || B} onChange={(e) => setBitisTarih(e.target.value)} data-oneri-bitis />
+                </label>
+              </>
             }
           />
+          <div className="cipler" data-oneri-plan-onizleme>
+            <OneriPlanEtiketleri oneri={onizleme} d={v} />
+          </div>
           <div className="form-alt">
             <a className="dugme dugme-ikincil" href="#/oneriler">
               {t("iptal")}

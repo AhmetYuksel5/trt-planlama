@@ -1,4 +1,5 @@
 import type { StokDurumu } from "./akis";
+import type { OneriEtiketi } from "./oneriPlanlari";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
   Bicim,
@@ -285,4 +286,6 @@ export const satir = (...parcalar: (string | undefined)[]) => parcalar.filter(Bo
 
 /* Planlama görevleri: temel görevin adı menüdeki planın adı; işin durumu. */
 export const TEMEL_GOREV_ADI: Record<TemelGorev, Anahtar> = { nextday: "mNextday", haftalik: "mHaftalik", aylik: "mAylik", ozel: "mOzel" };
+/** Önerinin düştüğü plan etiketi (oneriPlanlari.ts); planların menü adlarıyla. */
+export const ONERI_ETIKET_ADI: Record<OneriEtiketi, Anahtar> = { nextday: "mNextday", haftalik: "mHaftalik", ozel: "mOzel" };
 export const IS_DURUM_ADI: Record<IsDurumu, Anahtar> = { yapilacak: "gvYapilacak", suruyor: "gvSuruyor", bitti: "gvBitti" };

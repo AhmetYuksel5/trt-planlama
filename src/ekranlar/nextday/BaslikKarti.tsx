@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
+import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -61,7 +62,7 @@ export default function BaslikKarti({
   const paketler = v.paketler.filter((p) => p.planBaslikId === pb.id);
   const canlilar = v.canliYayinlar.filter((c) => c.planBaslikId === pb.id);
   const oneriler = v.oneriler.filter(
-    (o) => o.baslikId === pb.baslikId && o.hedefTarih === plan.tarih && (o.durum === "yeni" || o.durum === "degerlendiriliyor"),
+    (o) => o.baslikId === pb.baslikId && oneriGunde(o, plan.tarih) && (o.durum === "yeni" || o.durum === "degerlendiriliyor"),
   );
   const degerlendirir = yapabilir(ben, "paketDegerlendir");
   const cikabilir = !paketler.some((p) => p.durum !== "iptal");

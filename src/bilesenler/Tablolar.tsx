@@ -2,8 +2,9 @@ import { birimAdi } from "../yapi";
 import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Tv, type LucideIcon } from "lucide-react";
 import { geciktiMi, paketSahibi, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
-import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
+import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
+import { oneriAraligi, oneriEtiketleri } from "../oneriPlanlari";
 import { git } from "../yol";
 import { kisiBul, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
@@ -291,6 +292,7 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
               )}
               <td data-etiket={t("durum")}>
                 <OneriDurumRozeti oneri={o} />
+                <OneriPlanEtiketleri oneri={o} d={d} />
               </td>
               <td className="dar sonuk ok-hucre">
                 <ChevronRight size={16} className="yon" />
@@ -311,3 +313,34 @@ export const useSehir = () => {
     return k ? t(sehirAdi(k.sehir)) : "";
   };
 };
+
+/**
+ * Önerinin düştüğü planların etiketleri (Next Day, Weekly, Özel yayın):
+ * kartta, listede ve ayrıntıda. Renk planın kendi rengi; etiket her an
+ * kayıttan hesaplanıyor (oneriPlanlari.ts).
+ */
+export function OneriPlanEtiketleri({ oneri, d }: { oneri: Oneri; d: Durum }) {
+  const { t } = useDil();
+  const e = oneriEtiketleri(d, oneri);
+  if (!e.length) return null;
+  return (
+    <span className="plan-etiketleri">
+      {e.map((x) => (
+        <span key={x} className={`rozet rozet-plan renk-${x}`} data-oneri-etiketi={x}>
+          {t(ONERI_ETIKET_ADI[x])}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Önerinin günü: tek gün ya da "15 Eki – 17 Eki"; eski haftalık öneride hafta ve gün. */
+export function useOneriGunu() {
+  const { t, dil } = useDil();
+  return (o: Oneri) => {
+    if (o.hafta && !o.hedefTarih) return `${t("haftalik")} · ${o.haftaGunu ? tarihYaz(o.haftaGunu, dil, "tam") : t("zamanaBagliDegil")}`;
+    const a = oneriAraligi(o);
+    if (!a) return "—";
+    return a[0] === a[1] ? tarihYaz(a[0], dil, "tam") : `${tarihYaz(a[0], dil, "tam")} – ${tarihYaz(a[1], dil, "tam")}`;
+  };
+}

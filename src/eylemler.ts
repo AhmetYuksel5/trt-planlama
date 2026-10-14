@@ -13,6 +13,7 @@ import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanD
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
+import { oneriHaftada } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
@@ -219,8 +220,10 @@ export interface OneriGirdisi {
   takipTuru?: TakipTuru;
   sahaGerekli: boolean;
   kanal: Kanal;
-  /** Biri dolu: Next Day önerisinde planın günü, haftalık öneride haftanın Cumartesi'si. */
+  /** Biri dolu: önerinin günü (muhabirin formu, Next Day ekranı) ya da haftalık ekrandan girilende haftanın Cumartesi'si. */
   hedefTarih?: string;
+  /** Çok günlü etkinlikte son gün (hedefTarih'ten sonra); boşsa tek gün. */
+  bitisTarih?: string;
   hafta?: string;
   /** Haftalık öneride muhabirin haberi yapacağı gün (haftanın içinde); boşsa zamana bağlı değil. */
   haftaGunu?: string;
@@ -275,11 +278,15 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   let d = getir();
   if (!muhabir && muhabirId && kisiBul(d, muhabirId)?.birim !== "muhabir") return null;
   // Çağrı muhabirlere gidiyor; ajanstan ya da bakanlıktan gelen öneri ona verilmiş yanıt değil.
+  // Günü (aralığı) olan öneri önce o günün Next Day çağrısına, yoksa haftasının haftalık çağrısına bağlanıyor.
+  const bitis = !g.hafta && g.hedefTarih && g.bitisTarih && g.bitisTarih > g.hedefTarih ? g.bitisTarih : undefined;
+  const son = bitis ?? g.hedefTarih ?? "";
   const cagri = !muhabirId
     ? undefined
     : g.hafta
       ? d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih === g.hafta)
-      : d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih === g.hedefTarih);
+      : (d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih >= g.hedefTarih! && c.tarih <= son) ??
+        d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih <= son && gunEkle(c.tarih, 6) >= g.hedefTarih!));
   const id = kimlik("o");
   let oneri: Oneri = {
     id,
@@ -297,6 +304,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     zaman: simdi(),
     kanal,
     hedefTarih: g.hafta ? undefined : g.hedefTarih,
+    ...(bitis && { bitisTarih: bitis }),
     hafta: g.hafta,
     ...(g.hafta && g.haftaGunu && g.haftaGunu >= g.hafta && g.haftaGunu <= gunEkle(g.hafta, 6) && { haftaGunu: g.haftaGunu }),
     durum: "yeni",
@@ -819,7 +827,8 @@ export const oneriGundemeEkle = (
   let d = getir();
   const h = haftaBul(d, haftaId);
   const o = oneriBul(d, oneriId);
-  if (!h || !o || o.hafta !== h.baslangic || !haftalikDuzenler(ben, h) || !yapabilir(ben, "oneriDegerlendir")) return null;
+  // Haftalık öneri ya da günü (aralığı) bu haftaya düşen öneri.
+  if (!h || !o || !oneriHaftada(o, h) || !haftalikDuzenler(ben, h) || !yapabilir(ben, "oneriDegerlendir")) return null;
   if (h.kalemler.some((k) => k.oneriId === o.id) || o.durum === "reddedildi") return null;
   if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
   let baslikId = g.baslikId || undefined;
@@ -1045,8 +1054,9 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
   d = {
     ...d,
     oneriler: d.oneriler.map((o) => {
-      if (o.hafta !== h.baslangic) return o;
       const k = kalemi.get(o.id);
+      // Günüyle gelen öneri gündemdeyse haftanın kararını alır; gündemde değilse açık kalır, Next Day'e gidebilir.
+      if (o.hafta !== h.baslangic && !k) return o;
       if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.onInceleme?.gerekce ?? o.gerekce } : { ...o, durum: "planaEklendi" };
       // Düzeltmesi beklenen öneri de kapanıyor: hafta kesinleşti, yeniden gönderilecek gündem kalmadı.
       return o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme" ? { ...o, durum: "reddedildi" } : o;

@@ -340,9 +340,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     canlıları, paketleri ve ona bağlı kayıtlar (öneri, hareket, takvim,
     haftalık aktarım) ona geçer.
   - "Plana ekle" (`oneri/PlanaEkle.tsx`): plan ekranından açılınca yalnız o
-    plan (seçim yok); öneriler sayfasından yalnız çalışılan planlar (bugün,
-    yarın, önerinin günü; gün başına bir). Haftalık öneride "Gündeme ekle":
-    haftanın günü ve dosya (`haftalik/Plan.tsx → GundemeEkle`).
+    plan (seçim yok); öneriler sayfasından önerinin günlerine düşen çalışılan
+    Next Day planları (gün başına bir; düşmüyorsa bugün ve yarın) ve haftası
+    kesişen haftalık plan, ikisi de varsa üstte Next Day / Weekly seçimi.
+    Haftalıkta "Gündeme ekle": haftanın günü ve dosya
+    (`haftalik/Plan.tsx → GundemeEkle`).
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
   düğmeler (`PlanAraclari`: gelen öneriler ve takvimden bu güne, sayılarıyla;
@@ -417,9 +419,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Öneri formunda ülke sorulmaz, muhabirin şehrinden gelir; yalnız "Saha
   görevlendirmesi gerekiyor" işaretlenince (ve muhabiri olmayan kaynakta)
   sorulur. Kolun ekrandaki adı "Masa" (`dil.ts → tur`). "Yeni öneri"
-  sayfasının başlığı yok, doğrudan form. Haftalık öneride muhabir günü
-  seçer (`Oneri.haftaGunu`, boşsa zamana bağlı değil); gündeme eklerken
-  gün hazır gelir.
+  sayfasının başlığı yok, doğrudan form. Formda Next Day / haftalık ayrımı
+  yok: önerinin günü (`hedefTarih`) ve çok günlü etkinlikte isteğe bağlı
+  bitişi (`Oneri.bitisTarih`). Öneri, Planlama'nın çalıştığı hangi planın
+  günlerine düşüyorsa o planın etiketini alır (`oneriPlanlari.ts →
+  oneriEtiketleri`; saklanmaz, her an hesaplanır): açık Next Day planı
+  (`acikGunPlanlari`, `oneriGunde`), kesinleşmemiş haftalık plan
+  (`oneriHaftada`), özel yayın günü; plana girmiş öneri girdiği planınkini
+  taşır. Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
+  olarak (`Tablolar.tsx → OneriPlanEtiketleri`, planın rengiyle); öneriler
+  sayfasında süzgeç (Bütün planlar / Next Day / Weekly / Özel yayın /
+  Plana düşmeyen). Next Day planının gelen önerileri günü aralığa düşenler,
+  haftalık planınki haftasıyla kesişenler; gündeme eklerken gün aralığın
+  haftadaki ilk günüyle gelir. Çağrı bağı: önce aralıktaki Next Day
+  çağrısı, yoksa haftasının haftalık çağrısı. Eski haftalık öneri
+  (`Oneri.hafta`, `haftaGunu`; e-posta yanıtından ve haftalık ekrandan
+  girilen) olduğu gibi yalnız haftalık.
 
   Planlama öneriyi her aşamada düzeltir, plana eklendikten sonra da
   (`eylemler.ts → oneriDuzenle`, yetki `oneriDuzenleyebilir`; muhabire
@@ -569,8 +584,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     aynı adlı varsa o). Haftada zaten ana dosya olan başlık seçilemez. Eski
     kayıttaki havuzda olmayan başlık "yeni"de yazısıyla gelir. Belgede başlık
     yazıyla değişmez, "Düzenle" penceresinden; durum özeti yerinde.
-  - Haftalık öneri `Oneri.hafta` taşır, `hedefTarih` taşımaz; Next Day
-    ekranlarına karışmaz.
+  - Haftalık ekrandan ve haftalık çağrı e-postasından gelen öneri `Oneri.hafta`
+    taşır, Next Day ekranlarına karışmaz; günü olan öneri haftasıyla kesişen
+    haftalık plana da düşer (yukarıda, öneri etiketleri).
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
     `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
