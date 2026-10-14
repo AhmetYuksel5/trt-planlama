@@ -17,6 +17,7 @@ const TUR_ADI: Record<TemizlikTuru, Anahtar> = {
   takipler: "ktTakipler",
   faaliyetler: "ktFaaliyetler",
   gorevlendirmeler: "ktGorevlendirmeler",
+  isler: "ktIsler",
   hareketler: "ktHareketler",
   basliklar: "ktBasliklar",
 };

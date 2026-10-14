@@ -10,6 +10,7 @@ import Giris from "./ekranlar/Giris";
 import GercekGiris from "./ekranlar/GercekGiris";
 import Tanitim from "./ekranlar/Tanitim";
 import Takipler from "./ekranlar/Takipler";
+import Gorevler from "./ekranlar/Gorevler";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
@@ -224,6 +225,9 @@ export default function App() {
         break;
       case "takipler":
         icerik = <Takipler ben={ben} />;
+        break;
+      case "gorevler":
+        icerik = <Gorevler ben={ben} />;
         break;
       case "oneriler": {
         if (yol.id === "yeni")

@@ -2,6 +2,8 @@ import type { StokDurumu } from "./akis";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import type {
   Bicim,
+  IsDurumu,
+  TemelGorev,
   Birim,
   Bolge,
   FaaliyetDurum,
@@ -275,3 +277,7 @@ export const planAdiYaz = (tam: string, secim?: PlanAdi) => {
 /** Planın ekip satırındaki ad: kurum yazı uzamasın diye adı ya da soyadı yazıyor (Kisi.planAdi). */
 export const ekipAdi = (k?: { ad: Yazi; planAdi?: PlanAdi }) => (k ? planAdiYaz(yaz(k.ad, "ar"), k.planAdi) : "");
 export const satir = (...parcalar: (string | undefined)[]) => parcalar.filter(Boolean).join(" / ");
+
+/* Planlama görevleri: temel görevin adı menüdeki planın adı; işin durumu. */
+export const TEMEL_GOREV_ADI: Record<TemelGorev, Anahtar> = { nextday: "mNextday", haftalik: "mHaftalik", aylik: "mAylik", ozel: "mOzel" };
+export const IS_DURUM_ADI: Record<IsDurumu, Anahtar> = { yapilacak: "gvYapilacak", suruyor: "gvSuruyor", bitti: "gvBitti" };

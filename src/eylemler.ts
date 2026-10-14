@@ -12,6 +12,7 @@ import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
+import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import {
   ORTAM_DUZENLERI,
@@ -52,6 +53,9 @@ import {
   type GeriBildirimSablonu,
   type Gelisme,
   type Gorevlendirme,
+  type GorevTanimi,
+  type Is,
+  type IsDurumu,
   type Hareket,
   type IcerikTuru,
   type Bicim,
@@ -102,6 +106,9 @@ import {
   yapabilir,
   yapiDuzenleyebilir,
   kayitTemizleyebilir,
+  gorevleriDuzenler,
+  isDegistirebilir,
+  isEkleyebilir,
   oneriDuzenleyebilir,
 } from "./yetki";
 
@@ -1207,6 +1214,84 @@ export const planBaslikCikar = (ben: Kisi, planId: string, pbId: string) => {
     canliYayinlar: d.canliYayinlar.filter((c) => c.planBaslikId !== pbId),
   };
   kaydet(planGuncelle(d, planId, (p) => ({ ...p, basliklar: p.basliklar.filter((b) => b.id !== pbId) })));
+  return true;
+};
+
+/* --- Planlama görevleri ve iş taksimi (gorevler.ts) --- */
+
+/*
+ * Görev tanımı ekleniyor ya da değişiyor. Kayıtta görev yoksa varsayılan
+ * temel görevler ilk yazışta kayda geçiyor (şablonlar gibi). Temel görev
+ * silinmez, pasifleşir; yan görev silinir.
+ */
+export const gorevKaydet = (ben: Kisi, g: GorevTanimi) => {
+  if (!gorevleriDuzenler(ben) || (g.tur === "yan" && !g.ad.trim())) return false;
+  const d = getir();
+  const liste = gorevListesi(d);
+  const temiz: GorevTanimi = { ...g, ad: g.ad.trim(), etiketler: [...new Set(g.etiketler.map((x) => x.trim()).filter(Boolean))] };
+  const yeni = liste.some((x) => x.id === g.id) ? liste.map((x) => (x.id === g.id ? temiz : x)) : [...liste, temiz];
+  kaydet(hareketYaz({ ...d, gorevler: yeni }, { kisiId: ben.id, tip: "gorevKaydedildi", veri: { baslik: temiz.ad } }));
+  return true;
+};
+
+export const gorevSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const g = gorevListesi(d).find((x) => x.id === id);
+  if (!gorevleriDuzenler(ben) || !g || g.tur === "temel") return false;
+  kaydet({
+    ...d,
+    gorevler: gorevListesi(d).filter((x) => x.id !== id),
+    // İşin bağı kopuyor, iş kalıyor.
+    isler: isListesi(d).map((x) => (x.gorevId === id ? { ...x, gorevId: undefined } : x)),
+  });
+  return true;
+};
+
+/** Dönemin sorumlusunu elle değiştirmek (izin, nöbet değişimi); kişi boşsa sıradaki hesaba döner. */
+export const gorevDonemSorumlusu = (ben: Kisi, id: string, tarih: string, kisiId: string | null) => {
+  const d = getir();
+  const g = gorevListesi(d).find((x) => x.id === id);
+  if (!gorevleriDuzenler(ben) || !g) return false;
+  const anahtar = donemAnahtari(g, tarih);
+  const degisiklikler = { ...(g.degisiklikler ?? {}) };
+  if (kisiId) degisiklikler[anahtar] = kisiId;
+  else delete degisiklikler[anahtar];
+  return gorevKaydet(ben, { ...g, degisiklikler });
+};
+
+/** Tek seferlik iş: yeni ya da düzeltme; yeni atanan kişiye bildirim. */
+export const isKaydet = (ben: Kisi, g: Omit<Is, "olusturan" | "zaman" | "durum"> & { durum?: IsDurumu }) => {
+  let d = getir();
+  const eski = isListesi(d).find((x) => x.id === g.id);
+  if (!g.baslik.trim() || (eski ? !isDegistirebilir(ben, eski) : !isEkleyebilir(ben))) return false;
+  const is: Is = {
+    ...(eski ?? { olusturan: ben.id, zaman: simdi(), durum: "yapilacak" as IsDurumu }),
+    ...g,
+    baslik: g.baslik.trim(),
+    etiketler: [...new Set(g.etiketler.map((x) => x.trim()).filter(Boolean))],
+    durum: g.durum ?? eski?.durum ?? "yapilacak",
+  };
+  d = { ...d, isler: eski ? isListesi(d).map((x) => (x.id === is.id ? is : x)) : [is, ...isListesi(d)] };
+  for (const k of is.kisiler.filter((k) => k !== ben.id && !eski?.kisiler.includes(k))) d = hareketYaz(d, { kisiId: ben.id, tip: "isAtandi", veri: { baslik: is.baslik, kime: k } });
+  kaydet(d);
+  return true;
+};
+
+export const isDurumu = (ben: Kisi, id: string, durum: IsDurumu) => {
+  const d = getir();
+  const x = isListesi(d).find((y) => y.id === id);
+  if (!x || !isDegistirebilir(ben, x) || x.durum === durum) return false;
+  const yeni = { ...d, isler: isListesi(d).map((y) => (y.id === id ? { ...y, durum } : y)) };
+  // Bitince işi girene haber; kendisi bitirdiyse gerek yok.
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "isDurumu", veri: { baslik: x.baslik, isDurumu: durum, ...(x.olusturan !== ben.id && durum === "bitti" ? { kime: x.olusturan } : {}) } }));
+  return true;
+};
+
+export const isSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const x = isListesi(d).find((y) => y.id === id);
+  if (!x || !(x.olusturan === ben.id || gorevleriDuzenler(ben))) return false;
+  kaydet({ ...d, isler: isListesi(d).filter((y) => y.id !== id) });
   return true;
 };
 

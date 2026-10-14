@@ -842,6 +842,45 @@ export interface Dosya {
   guncelleme: string;
 }
 
+/* --- Planlama görevleri: iş taksimi (gorevler.ts) --- */
+
+/** Temel görevler planların kendisi; yan görev bunlardan birine bağlanabiliyor. */
+export const TEMEL_GOREVLER = ["nextday", "haftalik", "aylik", "ozel"] as const;
+export type TemelGorev = (typeof TEMEL_GOREVLER)[number];
+
+/** Sabit: hep aynı kişi(ler). Sıralı: kişiler dönem dönem sırayla (gün ya da Cumartesi başlayan hafta). */
+export type GorevDagilimi = { tur: "sabit"; kisiler: string[] } | { tur: "sirali"; kisiler: string[]; periyot: "gun" | "hafta"; baslangic: string };
+
+export interface GorevTanimi {
+  id: string;
+  tur: "temel" | "yan";
+  /** Temel görevde planın kendisi; yan görevde bağlı olduğu temel görev (yoksa bağımsız). */
+  temel?: TemelGorev;
+  /** Yan görevin adı (yazıldığı dilde); temel görevin adı dil tablosundan. */
+  ad: string;
+  etiketler: string[];
+  dagilim: GorevDagilimi;
+  /** Dönemin sorumlusunu elle değiştirmek (izin, nöbet değişimi): dönem anahtarı (gün ya da haftanın Cumartesi'si) → kişi. */
+  degisiklikler?: Record<string, string>;
+  pasif?: boolean;
+}
+
+export const IS_DURUMLARI = ["yapilacak", "suruyor", "bitti"] as const;
+export type IsDurumu = (typeof IS_DURUMLARI)[number];
+
+/** Tek seferlik iş: yan görevlerin altına düşen ya da bağımsız küçük iş. */
+export interface Is {
+  id: string;
+  baslik: string;
+  etiketler: string[];
+  gorevId?: string;
+  kisiler: string[];
+  sonTarih?: string;
+  durum: IsDurumu;
+  olusturan: string;
+  zaman: string;
+}
+
 /* --- Hareket kaydı: metni saklanmaz, dil tablosundaki şablondan üretilir. --- */
 
 export const HAREKET_TIPLERI = [
@@ -861,6 +900,9 @@ export const HAREKET_TIPLERI = [
   "kayitTemizlendi",
   "oneriSilindi",
   "baslikBirlestirildi",
+  "gorevKaydedildi",
+  "isAtandi",
+  "isDurumu",
   "kisiTayinEdildi",
   "yapiYayinlandi",
   "oneriMuhabireGonderildi",
@@ -980,6 +1022,9 @@ export interface Durum {
   mesajlar: Mesaj[];
   takipler: Takip[];
   geriBildirimSablonlari: GeriBildirimSablonu[];
+  /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
+  gorevler?: GorevTanimi[];
+  isler?: Is[];
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
@@ -1094,6 +1139,8 @@ export const bosDurum = (): Durum => ({
   mesajlar: [],
   takipler: [],
   geriBildirimSablonlari: [],
+  gorevler: [],
+  isler: [],
   yapilar: [],
   okundu: {},
   sayac: 0,

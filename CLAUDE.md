@@ -437,6 +437,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sil" (`eylemler.ts → oneriSil`, aynı kural `idler` ile); onayda kaç kayıt
   gideceği yazılı, hareketi `oneriSilindi` (başlık verisinde, öneriye bağlı
   değil; bağlansa iz sayılıp giderdi).
+- Planlama görevleri ve iş taksimi (`ekranlar/Gorevler.tsx`, `#/gorevler`;
+  kurallar `gorevler.ts`, eylemler `gorevKaydet`, `gorevDonemSorumlusu`,
+  `isKaydet`, `isDurumu`; `Durum.gorevler`, `Durum.isler`): temel görevler
+  planların kendisi (Next Day, Weekly, Aylık, Özel yayın; kayıtta görev
+  yoksa sorumlusuz varsayılanlar), yan görevler serbest adlı, etiketli,
+  istenirse bir temel göreve bağlı. Sorumlu sabit ya da sıralı (her gün /
+  Cumartesi başlayan her hafta, başlangıç gününden dönem sayısıyla; izinli
+  atlanır); dönemin sorumlusu elle değişir (`degisiklikler`, dönem
+  anahtarı `donemAnahtari`). Sorumlu saklanmaz, kayıttan hesaplanır.
+  Sayfada seçilen gün için "Kim ne yapıyor", görevler (etiket süzgeci),
+  tek seferlik işler (görev, etiket, kişiler, son tarih, durum). Düzenleme
+  Planlama yöneticisi ve tam yöneticide (`gorevleriDuzenler`), iş ekleme
+  sayfayı gören herkeste (Planlama, Yönetim); atanana bildirim
+  (`isAtandi`), biten işi girene (`isDurumu`). Planlama ana sayfasının ilk
+  alanı "Bugünkü görevlerim" (`plGorevlerim`, iş oradan bitirilir); Next
+  Day başlığında planın sorumlusu, bir önceki günün Next Day görevlisi
+  (planı önceki gün hazırlıyor). Kayıt temizliğinde "Görev işleri" türü.
 - Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`, `Durum.takipler`):
   muhabirin izlediği güncel konu (olay, toplantı, etkinlik); iş önerisi
   değil, bilgilendirme. Muhabir menüsünde "Takiplerim" (öneriler menüden

@@ -14,6 +14,7 @@ import {
   type Gorev,
   type Gorevlendirme,
   type HaftalikKalem,
+  type Is,
   type HaftalikPlan,
   type Hareket,
   type HareketTipi,
@@ -357,6 +358,10 @@ export const geriBildirimGonderebilir = (ben: Kisi | undefined, o: Oneri): boole
 export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean => !!ben && (!!ben.hesapYoneticisi || (ben.birim === "planlama" && ben.rol === "yonetici"));
 /** Planlama öneriyi her aşamada düzeltebiliyor (plana eklendikten sonra da); muhabire gönderilmiş teklif muhabirin. */
 export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri): boolean => !!ben && yapabilir(ben, "oneriDegerlendir") && o.durum !== "teklif";
+/** Planlama görevlerini ve iş taksimini Planlama yöneticisi ve tam yönetici düzenliyor; iş ekleme görevleri gören herkeste. */
+export const gorevleriDuzenler = (ben: Kisi | undefined): boolean => !!ben && (!!ben.hesapYoneticisi || (ben.birim === "planlama" && ben.rol === "yonetici"));
+export const isEkleyebilir = (ben: Kisi | undefined): boolean => !!ben && sayfaGorebilir(ben, "gorevler");
+export const isDegistirebilir = (ben: Kisi | undefined, x: Is): boolean => !!ben && (x.kisiler.includes(ben.id) || x.olusturan === ben.id || gorevleriDuzenler(ben));
 /** Kayıt temizliği (deneme kayıtlarını izleriyle silmek) yalnız tam yöneticide: geri alınamıyor. */
 export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean => !!ben?.hesapYoneticisi && !ben.pasif;
 export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>
@@ -392,6 +397,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   oneriler: ["planlama", "yonetim", "muhabir"],
   // Muhabirin takipleri: muhabir kendisininkini, Planlama ve Yönetim hepsini.
   takipler: ["planlama", "yonetim", "muhabir"],
+  // Planlama görevleri ve iş taksimi: birimin kendi düzeni; Yönetim izliyor.
+  gorevler: ["planlama", "yonetim"],
   basliklar: ["planlama", "newsdesk", "program", "yonetim"],
   paketler: HERKES,
   feature: MASA,

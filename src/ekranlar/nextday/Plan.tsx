@@ -1,6 +1,8 @@
 import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
+import { temelSorumlular } from "../../gorevler";
+import { gunEkle } from "../../tarih";
 import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { oncekiOnayla, planDurum } from "../../eylemler";
@@ -32,13 +34,15 @@ import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBo
 type AracPenceresi = "oneriler" | "takvim" | "aktar" | null;
 
 export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
-  const { t, dil } = useDil();
+  const { t, dil, ad } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const [arac, setArac] = useState<AracPenceresi>(null);
   useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
+  // Bir günün planını önceki gün hazırlıyor: sorumlu, bir önceki günün Next Day görevlisi (iş taksimi, gorevler.ts).
+  const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
 
   return (
     <>
@@ -56,6 +60,12 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
           <p>
             <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>{t(PLAN_DURUM_ADI[plan.durum])}</Rozet>{" "}
             {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}
+            {sorumlu.length > 0 && (
+              <span data-nd-sorumlu={sorumlu.join(",")}>
+                {" · "}
+                {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
+              </span>
+            )}
           </p>
         </div>
         <PlanAraclari ben={ben} plan={plan} ac={setArac} />

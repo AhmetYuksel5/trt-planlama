@@ -18,7 +18,7 @@ import type { Durum, Hareket } from "./veri";
  * nesne kimliğiyle çıkıyor (depo/fark.ts).
  */
 
-export const TEMIZLIK_TURLERI = ["oneriler", "planlar", "paketler", "haftalik", "aylikOzel", "cagrilar", "takipler", "faaliyetler", "gorevlendirmeler", "hareketler", "basliklar"] as const;
+export const TEMIZLIK_TURLERI = ["oneriler", "planlar", "paketler", "haftalik", "aylikOzel", "cagrilar", "takipler", "faaliyetler", "gorevlendirmeler", "isler", "hareketler", "basliklar"] as const;
 export type TemizlikTuru = (typeof TEMIZLIK_TURLERI)[number];
 
 export interface TemizlikSecimi {
@@ -59,6 +59,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
   const takipler = sec(d.takipler, "takipler", (x) => x.zaman);
   const faaliyetler = sec(d.faaliyetler, "faaliyetler", (f) => f.olusturma);
   const gorevler = sec(d.gorevlendirmeler, "gorevlendirmeler", (g) => g.baslangic);
+  const isler = sec(d.isler ?? [], "isler", (x) => x.zaman);
 
   // 2. İzler: doğan ve bağlı kayıtlar
   for (const y of d.yanitlar) if (y.cagriId && cagrilar.has(y.cagriId)) yanitlar.add(y.id);
@@ -143,6 +144,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     takipler: d.takipler.filter((x) => !takipler.has(x.id)),
     faaliyetler: kalanFaaliyetler,
     gorevlendirmeler: d.gorevlendirmeler.filter((g) => !gorevler.has(g.id)),
+    ...(isler.size ? { isler: (d.isler ?? []).filter((x) => !isler.has(x.id)) } : {}),
     gelismeler: kalanGelismeler,
     canliYayinlar: d.canliYayinlar.filter((c) => !canlilar.has(c.id)),
     mesajlar: d.mesajlar.filter((m) => !mesajlar.has(m.id)),
@@ -174,6 +176,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     takipler: takipler.size,
     faaliyetler: faaliyetler.size,
     gorevlendirmeler: gorevler.size,
+    isler: isler.size,
     hareketler: hareketler.size,
     basliklar,
     gelismeler: gelismeler.size + canlilar.size + kalemler.size,

@@ -7,6 +7,7 @@ import {
   CalendarRange,
   CheckCircle,
   CirclePlay,
+  ClipboardList,
   Clock,
   FileSpreadsheet,
   FileText,
@@ -24,7 +25,9 @@ import { HareketAkisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Ilerleme, Kart, Rozet, Sayac, Tumu } from "../../bilesenler/Parcalar";
 import { OneriTablosu } from "../../bilesenler/Tablolar";
 import { gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BIRIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
+import { isDurumu } from "../../eylemler";
+import { kisininGorevleri, kisininIsleri } from "../../gorevler";
+import { BIRIM_ADI, TEMEL_GOREV_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { gundemde, kalemAdi } from "../../haftalik";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
 import { muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
@@ -130,6 +133,7 @@ export const PLANLAMA_ALANLARI: Alan[] = [
   { id: "plTakvim", ad: "bugununTakvimi", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(BugununTakvimi) },
   { id: "plToplanti", ad: "yaklasanToplantilar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(YaklasanToplantilar) },
   { id: "plFaaliyet", ad: "yaklasanFaaliyetler", grup: "planlama", sayfa: "takvim", Bilesen: ({ ben }) => <YaklasanFaaliyetlerAlani ben={ben} /> },
+  { id: "plGorevlerim", ad: "gvBugunkuGorevlerim", grup: "planlama", sayfa: "gorevler", Bilesen: ({ ben }) => <BugunkuGorevlerim ben={ben} /> },
   { id: "plSonOneri", ad: "sonOneriler", genis: true, grup: "planlama", sayfa: "oneriler", Bilesen: () => <SonOneriler /> },
   { id: "plPlanlar", ad: "devamEdenPlanlar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(DevamEdenPlanlar) },
   { id: "plHareket", ad: "sonHareketler", grup: "planlama", sayfa: "nextday", Bilesen: () => <SonHareketler /> },
@@ -137,6 +141,39 @@ export const PLANLAMA_ALANLARI: Alan[] = [
   { id: "plKoordinasyon", ad: "koordinasyon", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(Koordinasyon) },
   { id: "plDosyalar", ad: "onemliDosyalar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(OnemliDosyalar) },
 ];
+
+/* Prodüsörün bugünkü görevleri (iş taksiminden) ve açık işleri; iş buradan bitirilebiliyor. */
+function BugunkuGorevlerim({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const gorevler = kisininGorevleri(v, ben.id, bugun());
+  const isler = kisininIsleri(v, ben.id);
+  return (
+    <Kart baslik={t("gvBugunkuGorevlerim")} ikon={<ClipboardList size={18} />} sagUc={<Tumu href="#/gorevler" />}>
+      <div className="cipler" data-gorevlerim>
+        {gorevler.map((g) => (
+          <a key={g.id} className={`cip${g.tur === "temel" ? " cip-vurgu" : ""}`} href={g.tur === "temel" && g.temel ? `#/${g.temel}` : "#/gorevler"} data-gorevim={g.id}>
+            <bdi>{g.tur === "temel" && g.temel ? t(TEMEL_GOREV_ADI[g.temel]) : g.ad}</bdi>
+          </a>
+        ))}
+        {!gorevler.length && <span className="sonuk">{t("gvGorevYok")}</span>}
+      </div>
+      {isler.length > 0 && (
+        <ul className="liste ara-ust-2">
+          {isler.slice(0, 6).map((x) => (
+            <li key={x.id} data-isim={x.id}>
+              <label className="secim ad">
+                <input type="checkbox" checked={false} onChange={() => isDurumu(ben, x.id, "bitti")} aria-label={t("gvBitti")} />
+                <span dir="auto">{x.baslik}</span>
+              </label>
+              {x.sonTarih && <Rozet ton={x.sonTarih < bugun() ? "kotu" : undefined}>{tarihYaz(x.sonTarih, dil, "kisa")}</Rozet>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Kart>
+  );
+}
 
 function SonOneriler() {
   const { t } = useDil();

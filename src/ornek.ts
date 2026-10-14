@@ -2483,6 +2483,21 @@ export const ORNEK = (): Durum => {
     takipler,
     // Boş: geri bildirim şablonlarının varsayılanı kodda (geriBildirim.ts), Ayarlar'da değişince kayda giriyor.
     geriBildirimSablonlari: [],
+    // Planlama'nın iş taksimi (kurgusal): Next Day her gün sırayla, özel yayın haftalık sırayla, yan görevler etiketli.
+    gorevler: [
+      { id: "gv-nextday", tur: "temel", temel: "nextday", ad: "", etiketler: [], dagilim: { tur: "sirali", kisiler: ["pl2", "pl3", "pl4", "pl8"], periyot: "gun", baslangic: gunEkle(B, -14) } },
+      { id: "gv-haftalik", tur: "temel", temel: "haftalik", ad: "", etiketler: [], dagilim: { tur: "sabit", kisiler: ["pl5"] } },
+      { id: "gv-aylik", tur: "temel", temel: "aylik", ad: "", etiketler: [], dagilim: { tur: "sabit", kisiler: ["pl1"] } },
+      { id: "gv-ozel", tur: "temel", temel: "ozel", ad: "", etiketler: [], dagilim: { tur: "sirali", kisiler: ["pl3", "pl5"], periyot: "hafta", baslangic: gunEkle(B, -21) } },
+      { id: "gv-turkiye", tur: "yan", temel: "nextday", ad: "Türkiye ajandası", etiketler: ["Türkiye"], dagilim: { tur: "sabit", kisiler: ["pl5"] } },
+      { id: "gv-takvim", tur: "yan", temel: "haftalik", ad: "Takvim taraması", etiketler: ["Takvim"], dagilim: { tur: "sirali", kisiler: ["pl6", "pl7"], periyot: "hafta", baslangic: gunEkle(B, -7) } },
+      { id: "gv-muhabir", tur: "yan", ad: "Muhabir takibi", etiketler: ["Muhabir"], dagilim: { tur: "sabit", kisiler: ["pl4"] } },
+    ],
+    isler: [
+      { id: "is-1", baslik: "Seçim takvimini güncelle", etiketler: ["Takvim"], gorevId: "gv-takvim", kisiler: ["pl6"], sonTarih: gunEkle(B, 2), durum: "yapilacak", olusturan: "pl1", zaman: zaman(gunEkle(B, -1), "10:00") },
+      { id: "is-2", baslik: "Ankara muhabirinin görevlendirmesini netleştir", etiketler: ["Türkiye"], gorevId: "gv-turkiye", kisiler: ["pl5"], sonTarih: gunEkle(B, -1), durum: "suruyor", olusturan: "pl1", zaman: zaman(gunEkle(B, -2), "11:30") },
+      { id: "is-3", baslik: "Yeni muhabirlerin iletişim bilgilerini kontrol et", etiketler: ["Muhabir"], gorevId: "gv-muhabir", kisiler: ["pl4"], durum: "bitti", olusturan: "pl1", zaman: zaman(gunEkle(B, -3), "09:00") },
+    ],
     yapilar: [],
     okundu: {},
     sayac,

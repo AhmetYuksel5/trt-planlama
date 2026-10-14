@@ -1,7 +1,8 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { Binoculars, BookOpen, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
+import { kisininIsleri } from "../gorevler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
@@ -76,6 +77,8 @@ export const MENU: Grup[] = [
         ikon: CalendarCheck,
         say: (d, ben) => (yapabilir(ben, "takvimDuzenle") || ben.birim === "muhabir" ? bekleyenHatirlatmalar(gorunenFaaliyetler(d, ben)).length : 0),
       },
+      // Planlama görevleri ve iş taksimi; sayı kişinin açık işleri.
+      { sayfa: "gorevler", ad: "mGorevler", kisa: "kaGorevler", ikon: ClipboardList, say: (d, ben) => kisininIsleri(d, ben.id).length },
     ],
   },
   {

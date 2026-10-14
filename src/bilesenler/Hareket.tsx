@@ -4,8 +4,8 @@ import { ADIM_ADI, ASAMALAR, ASAMA_ADI, adimAdi, type UretimAdimi } from "../aki
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { haftaSonu, kalemAdi } from "../haftalik";
 import { yerelGun } from "../tarih";
-import { ONERI_DURUM_ADI } from "../etiketler";
-import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type OneriDurum, type Paket } from "../veri";
+import { IS_DURUM_ADI, ONERI_DURUM_ADI } from "../etiketler";
+import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type IsDurumu, type OneriDurum, type Paket } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
 
 /**
@@ -33,6 +33,9 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   kayitTemizlendi: "hrKayitTemizlendi",
   oneriSilindi: "hrOneriSilindi",
   baslikBirlestirildi: "hrBaslikBirlestirildi",
+  gorevKaydedildi: "hrGorevKaydedildi",
+  isAtandi: "hrIsAtandi",
+  isDurumu: "hrIsDurumu",
   kisiTayinEdildi: "hrKisiTayinEdildi",
   yapiYayinlandi: "hrYapiYayinlandi",
   oneriMuhabireGonderildi: "hrOneriMuhabireGonderildi",
@@ -124,6 +127,7 @@ export function useHareketMetni() {
       baslik: h.veri?.baslik ?? "",
       katilan: h.veri?.katilan ?? "",
       hedef: h.veri?.hedef ?? "",
+      isDurumu: h.veri?.isDurumu && h.veri.isDurumu in IS_DURUM_ADI ? t(IS_DURUM_ADI[h.veri.isDurumu as IsDurumu]) : "",
       plan: h.veri?.tur && h.veri.tur in PLAN_TURU_ADI ? t(PLAN_TURU_ADI[h.veri.tur as BaglantiTuru]) : "",
     };
     const [once, sonra = ""] = t(sablonSec(h), degisken).split("\u0000");
