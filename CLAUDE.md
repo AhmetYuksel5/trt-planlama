@@ -822,7 +822,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Telefon düzeni (760 piksel ve altı) masaüstünün küçültülmüşü değil, ayrı
   bir düzen. Workspace ve üst çubuk değişikliklerinden önceki haliyle
   duruyor; o değişiklikler telefonda beğenilmedi:
-  - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor
+  - sol menü kalkıyor, alta sekme çubuğu (`AltCubuk`) geliyor; Planlama'da
+    (ve onun "gibi" çalışan birimde) Next Day yerine Görevler, Next Day
+    Menü'de
   - üst çubukta yalnız logo, arama ve zil (çerçeveli, 44 piksel) ve
     avatar; altında prototip şeridi
   - ana sayfanın başında kısayollar renkli plan kutuları (`KisayolKutulari`,
