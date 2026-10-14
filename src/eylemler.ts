@@ -78,6 +78,10 @@ import {
   type Ulke,
   type Yanit,
   type YanitDurum,
+  paketBicimi,
+  TAKIP_BICIMI,
+  type OneriBicimi,
+  type Takip,
 } from "./veri";
 import {
   adimYapabilir,
@@ -190,7 +194,9 @@ export interface OneriGirdisi {
   gelisme: string;
   paketBasligi?: string;
   tur: IcerikTuru;
-  bicim?: Bicim;
+  bicim?: OneriBicimi;
+  /** "Takip" türünde muhabirin takibine giden tür; boşsa "diğer". */
+  takipTuru?: TakipTuru;
   sahaGerekli: boolean;
   kanal: Kanal;
   /** Biri dolu: Next Day önerisinde planın günü, haftalık öneride haftanın Cumartesi'si. */
@@ -200,11 +206,41 @@ export interface OneriGirdisi {
   haftaGunu?: string;
 }
 
+/*
+ * "Takip" türündeki öneri ile muhabirin takibi aynı işin iki yüzü: öneri
+ * takip türünde kaldıkça ve plana girmedikçe başlık (Header ↔ konu) ve
+ * gelişme (↔ açıklama) ikisinde aynı. Bağlı takip yoksa (öneri yeni
+ * gönderildi ya da sonradan takibe çevrildi) muhabire takip açılıyor.
+ * Planlama türü değiştirince (işe çevirince) bağ kalıyor, metinler ayrışıyor.
+ */
+const takibiEsle = (d: Durum, o: Oneri, tur?: TakipTuru): [Durum, Oneri] => {
+  if (o.bicim !== TAKIP_BICIMI || !o.muhabirId || o.durum === "planaEklendi") return [d, o];
+  const t = o.takipId ? d.takipler.find((x) => x.id === o.takipId) : undefined;
+  if (t) {
+    if (t.konu === o.haberBasligi && (t.aciklama ?? "") === o.gelisme) return [d, o];
+    const { aciklama: _, ...kalan } = t;
+    return [{ ...d, takipler: d.takipler.map((x) => (x === t ? { ...kalan, konu: o.haberBasligi, ...(o.gelisme && { aciklama: o.gelisme }) } : x)) }, o];
+  }
+  const tarih = o.hedefTarih ?? o.haftaGunu;
+  const yeni: Takip = {
+    id: kimlik("tk"),
+    muhabirId: o.muhabirId,
+    sehir: kisiBul(d, o.muhabirId)?.sehir ?? "istanbul",
+    zaman: simdi(),
+    konu: o.haberBasligi,
+    ...(o.gelisme && { aciklama: o.gelisme }),
+    tur: tur ?? "diger",
+    ...(tarih && { tarih }),
+  };
+  return [{ ...d, takipler: [yeni, ...d.takipler] }, { ...o, takipId: yeni.id }];
+};
+
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   if (!yapabilir(ben, "oneriGonder") || (!g.hafta && !g.hedefTarih)) return null;
   const muhabir = ben.birim === "muhabir";
-  // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı).
-  if (muhabir && (!g.haberBasligi?.trim() || !g.gelisme?.trim() || !g.paketBasligi?.trim())) return null;
+  const takip = g.bicim === TAKIP_BICIMI;
+  // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı); takipte paket önerilmiyor.
+  if (muhabir && (!g.haberBasligi?.trim() || !g.gelisme?.trim() || (!takip && !g.paketBasligi?.trim()))) return null;
   /*
    * Muhabir yalnız kendi adına gönderir. Planlama sistem dışından geleni
    * elle girer: ya bir muhabir adına (telefon, mesaj) ya da muhabir dışı
@@ -213,6 +249,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   const muhabirId = muhabir ? ben.id : g.muhabirId || undefined;
   const kaynakTuru = muhabir || muhabirId ? undefined : g.kaynakTuru;
   if (!muhabirId && (!kaynakTuru || kaynakTuru === "muhabir")) return null;
+  // Takip muhabirin takiplerine giriyor; muhabiri olmayan kaynakta takip yok.
+  if (takip && !muhabirId) return null;
   const kanal: Kanal = muhabir ? "sistem" : g.kanal;
   let d = getir();
   if (!muhabir && muhabirId && kisiBul(d, muhabirId)?.birim !== "muhabir") return null;
@@ -223,33 +261,29 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
       ? d.cagrilar.find((c) => cagriTuru(c) === "haftalik" && c.tarih === g.hafta)
       : d.cagrilar.find((c) => cagriTuru(c) === "nextday" && c.tarih === g.hedefTarih);
   const id = kimlik("o");
-  d = {
-    ...d,
-    oneriler: [
-      {
-        id,
-        muhabirId,
-        kaynakTuru,
-        kaynakAdi: kaynakTuru ? g.kaynakAdi?.trim() || undefined : undefined,
-        giren: muhabir ? undefined : ben.id,
-        ulke: g.ulke,
-        haberBasligi: g.haberBasligi,
-        gelisme: g.gelisme,
-        paketBasligi: g.paketBasligi || undefined,
-        tur: g.tur,
-        bicim: g.bicim,
-        sahaGerekli: g.sahaGerekli,
-        zaman: simdi(),
-        kanal,
-        hedefTarih: g.hafta ? undefined : g.hedefTarih,
-        hafta: g.hafta,
-        ...(g.hafta && g.haftaGunu && g.haftaGunu >= g.hafta && g.haftaGunu <= gunEkle(g.hafta, 6) && { haftaGunu: g.haftaGunu }),
-        durum: "yeni",
-        cagriId: cagri?.id,
-      },
-      ...d.oneriler,
-    ],
+  let oneri: Oneri = {
+    id,
+    muhabirId,
+    kaynakTuru,
+    kaynakAdi: kaynakTuru ? g.kaynakAdi?.trim() || undefined : undefined,
+    giren: muhabir ? undefined : ben.id,
+    ulke: g.ulke,
+    haberBasligi: g.haberBasligi,
+    gelisme: g.gelisme,
+    paketBasligi: g.paketBasligi || undefined,
+    tur: g.tur,
+    bicim: g.bicim,
+    sahaGerekli: g.sahaGerekli,
+    zaman: simdi(),
+    kanal,
+    hedefTarih: g.hafta ? undefined : g.hedefTarih,
+    hafta: g.hafta,
+    ...(g.hafta && g.haftaGunu && g.haftaGunu >= g.hafta && g.haftaGunu <= gunEkle(g.hafta, 6) && { haftaGunu: g.haftaGunu }),
+    durum: "yeni",
+    cagriId: cagri?.id,
   };
+  [d, oneri] = takibiEsle(d, takip ? { ...oneri, paketBasligi: undefined } : oneri, g.takipTuru);
+  d = { ...d, oneriler: [oneri, ...d.oneriler] };
   // Elle girilende hareketi yapan giren kişi; geçmişte "gönderdi" değil "girdi" okunsun.
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriGeldi", oneriId: id, veri: { sahip: "planlama", ...(muhabir ? {} : { elle: "1" }) } }));
   return id;
@@ -337,10 +371,10 @@ export const oneriDuzeltmeIste = (ben: Kisi, id: string, not: string) => {
 export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) => {
   let d = getir();
   const o = oneriBul(d, id);
-  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || !g.paketBasligi?.trim()) return false;
+  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || (g.bicim !== TAKIP_BICIMI && !g.paketBasligi?.trim())) return false;
   const onceki: Record<string, string> = { haberBasligi: o.haberBasligi, gelisme: o.gelisme };
   if (o.paketBasligi) onceki.paketBasligi = o.paketBasligi;
-  const yeni: Oneri = {
+  let yeni: Oneri = {
     ...o,
     haberBasligi: g.haberBasligi.trim(),
     gelisme: g.gelisme.trim(),
@@ -350,6 +384,7 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
     sahaGerekli: g.sahaGerekli,
     durum: "yeni",
   };
+  [d, yeni] = takibiEsle(d, yeni);
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? yeni : x)) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriYenidenGonderildi", oneriId: id, veri: { sahip: "planlama", ...onceki } }));
   return true;
@@ -431,7 +466,7 @@ export const oneriPlanaEkle = (
       muhabirId,
       aciklama: o.gelisme,
       tur: o.tur,
-      bicim: o.bicim,
+      bicim: paketBicimi(o.bicim),
       durum: "degerlendiriliyor",
       sahaGerekli: o.sahaGerekli,
       oneriId: o.id,
@@ -744,7 +779,7 @@ export const oneriGundemeEkle = (
     baslik: o.haberBasligi,
     metin: o.gelisme,
     tur: o.tur,
-    bicimler: o.bicim ? [o.bicim] : [],
+    bicimler: paketBicimi(o.bicim) ? [paketBicimi(o.bicim)!] : [],
     muhabirler: o.muhabirId ? [o.muhabirId] : [],
     oneriId: o.id,
     karar: "bekliyor",
@@ -1783,7 +1818,7 @@ export interface YanitOneriGirdisi {
   gelisme: string;
   paketBasligi?: string;
   tur: IcerikTuru;
-  bicim?: Bicim;
+  bicim?: OneriBicimi;
   sahaGerekli: boolean;
 }
 
@@ -1822,7 +1857,7 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
   let d = getir();
   const o = oneriBul(d, oneriId);
   if (!o || !oneriDuzenleyebilir(ben, o) || !g.haberBasligi.trim()) return false;
-  const yeni: Oneri = {
+  let yeni: Oneri = {
     ...o,
     ilkHali: o.ilkHali ?? { haberBasligi: o.haberBasligi, gelisme: o.gelisme, ...(o.paketBasligi && { paketBasligi: o.paketBasligi }) },
     haberBasligi: g.haberBasligi.trim(),
@@ -1832,6 +1867,7 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
   };
+  [d, yeni] = takibiEsle(d, yeni);
   // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla: paketliyse haberin kendisi (Header), değilse gelişme.
   const metin = (x: Oneri, paketli: boolean) => (paketli ? x.haberBasligi || x.gelisme : x.gelisme);
   const paketli = !!o.paketId;
@@ -1844,7 +1880,7 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
       const baslik = p.baslik === (o.paketBasligi ?? "") && yeni.paketBasligi ? yeni.paketBasligi : p.baslik;
       const aciklama = p.aciklama === o.gelisme ? yeni.gelisme : p.aciklama;
       const tur = p.tur === o.tur ? yeni.tur : p.tur;
-      const bicim = p.bicim === o.bicim ? yeni.bicim : p.bicim;
+      const bicim = p.bicim === paketBicimi(o.bicim) ? (paketBicimi(yeni.bicim) ?? p.bicim) : p.bicim;
       if (baslik === p.baslik && aciklama === p.aciklama && tur === p.tur && bicim === p.bicim) return p;
       return { ...p, baslik, aciklama, tur, ...(bicim ? { bicim } : {}), guncelleme: simdi() };
     }),
@@ -2885,7 +2921,16 @@ export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
     const eski = d.takipler.find((x) => x.id === g.id);
     if (!eski || eski.muhabirId !== ben.id) return null;
     const { aciklama: _, tarih: __, ...kalan } = eski;
-    kaydet({ ...d, takipler: d.takipler.map((x) => (x === eski ? { ...kalan, ...alanlar } : x)) });
+    d = { ...d, takipler: d.takipler.map((x) => (x === eski ? { ...kalan, ...alanlar } : x)) };
+    // Takip türündeki bağlı öneri de aynı metne geliyor (takibiEsle'nin öbür yönü).
+    const metin = { haberBasligi: alanlar.konu, gelisme: alanlar.aciklama ?? alanlar.konu };
+    d = {
+      ...d,
+      oneriler: d.oneriler.map((o) =>
+        o.takipId === eski.id && o.bicim === TAKIP_BICIMI && o.durum !== "planaEklendi" && (o.haberBasligi !== metin.haberBasligi || o.gelisme !== metin.gelisme) ? { ...o, ...metin } : o,
+      ),
+    };
+    kaydet(d);
     return eski.id;
   }
   const id = kimlik("tk");
@@ -2904,10 +2949,26 @@ export const takipKapat = (ben: Kisi, id: string, kapandi: boolean) => {
   return true;
 };
 
+/*
+ * Takip silinince Planlama'nın henüz dokunmadığı "Takip" önerisi de geri
+ * çekiliyor (aynı işin öbür yüzü, izleriyle); üzerinde karar verilmiş
+ * öneri kalıyor, yalnız takiple bağı kopuyor.
+ */
 export const takipSil = (ben: Kisi, id: string) => {
-  const d = getir();
+  let d = getir();
   const t = d.takipler.find((x) => x.id === id);
   if (!t || t.muhabirId !== ben.id) return false;
-  kaydet({ ...d, takipler: d.takipler.filter((x) => x !== t) });
+  const geriCek = d.oneriler.filter((o) => o.takipId === id && o.bicim === TAKIP_BICIMI && o.durum === "yeni").map((o) => o.id);
+  if (geriCek.length) d = temizle(d, { turler: ["oneriler"], idler: geriCek }).yeni;
+  d = {
+    ...d,
+    takipler: d.takipler.filter((x) => x.id !== id),
+    oneriler: d.oneriler.map((o) => {
+      if (o.takipId !== id) return o;
+      const { takipId: _, ...kalan } = o;
+      return kalan;
+    }),
+  };
+  kaydet(d);
   return true;
 };

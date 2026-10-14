@@ -477,6 +477,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Planlama WhatsApp'tan ulaşır ya da "İşe dönüştür"le muhabire öneri
   penceresini takiple dolu açar; öneri `takipId` taşır ve bilinen
   "muhabire öneri" akışına girer, takip kartı neye dönüştüğünü gösterir.
+  Öbür yön: öneri formunun haber türünde en sonda "Takip"
+  (`veri.ts → TAKIP_BICIMI`, `OneriBicimi`; `BICIMLER`'e girmez, pakete ve
+  haftalık kaleme biçim olarak geçmez, `paketBicimi`). Seçilince Strap
+  sorulmaz, takip türü sorulur; öneri gönderilirken muhabirin takibi de
+  açılır (`eylemler.ts → takibiEsle`, öneride `takipId`). Öneri takip
+  türünde kaldıkça ve plana girmedikçe ikisi aynı işin iki yüzü: Header ↔
+  konu, gelişme ↔ açıklama birlikte değişir (öneri düzenleme, yeniden
+  gönderme, `takipKaydet`). Planlama "Düzenle"de türü PKG vb. yapınca
+  öneri işe dönüşür, metinler ayrışır, takip muhabirde kalır (kartta "İşe
+  dönüştü"). Takip silinince Planlama'nın dokunmadığı ("yeni") takip
+  önerisi izleriyle geri çekilir; karar verilmişse yalnız bağ kopar.
+  Muhabir dışı kaynakta "Takip" yok.
 - Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
   (`oneri/OneriKarti.tsx → OneriListesi`):
   - kartta kol, haber türü, ülke, durum; başlık önerilen paket

@@ -135,6 +135,18 @@ export const ULKELER = [...new Set([...Object.values(SEHIRLER), ...EK_ULKELER])]
 export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem"] as const;
 export type Bicim = (typeof BICIMLER)[number];
 
+/*
+ * Öneride haber türünün yanında "Takip": muhabir konuyu yalnız izlediğini
+ * bildiriyor, paket önermiyor. Öneri aynı anda muhabirin takiplerine de
+ * giriyor (`Oneri.takipId`); Planlama türü değiştirince gerçek haber
+ * önerisine dönüşüyor. Muhabirin profilindeki ve paketteki biçim değil,
+ * bu yüzden BICIMLER'e girmiyor.
+ */
+export const TAKIP_BICIMI = "takip";
+export type OneriBicimi = Bicim | typeof TAKIP_BICIMI;
+/** Paket ve haftalık kalem gerçek biçim taşıyor; takip oraya biçim olarak geçmiyor. */
+export const paketBicimi = (b?: OneriBicimi): Bicim | undefined => (b === TAKIP_BICIMI ? undefined : b);
+
 /* Kurumun muhabir listesindeki ayrım: kadrolu, retainer (aylık sabit), serbest (paket başına). */
 export const CALISMA_BICIMLERI = ["kadrolu", "retainer", "serbest"] as const;
 export type CalismaBicimi = (typeof CALISMA_BICIMLERI)[number];
@@ -374,7 +386,7 @@ export interface Oneri {
   gelisme: string;
   paketBasligi?: string;
   tur: IcerikTuru;
-  bicim?: Bicim;
+  bicim?: OneriBicimi;
   sahaGerekli: boolean;
   zaman: string;
   kanal: Kanal;
@@ -413,7 +425,11 @@ export interface Oneri {
   yon?: "muhabire";
   /** Haftalık öneride muhabirin haberi yapacağı gün; boşsa zamana bağlı değil. Gündeme eklerken gün hazır gelsin. */
   haftaGunu?: string;
-  /** Muhabirin takibinden işe dönüştürülen öneri: takip kartı neye dönüştüğünü gösteriyor. */
+  /**
+   * Bağlı takip: Planlama'nın takipten işe dönüştürdüğü öneri ya da muhabirin
+   * "Takip" türüyle gönderdiği öneri (öneri ile takip aynı işin iki yüzü,
+   * tür takip kaldıkça birlikte değişiyor). Takip kartı neye dönüştüğünü gösteriyor.
+   */
   takipId?: string;
   /** Planlama düzeltmeden önceki hal (ilk düzenlemede bir kez): gönderenin yazdığı kaybolmasın. */
   ilkHali?: { haberBasligi: string; gelisme: string; paketBasligi?: string };

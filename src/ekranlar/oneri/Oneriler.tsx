@@ -238,6 +238,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
           </NotKutu>
           {yenile ? (
             <KisaOneriFormu
+              takip={!!oneri.muhabirId && !oneri.yon}
               ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
               kaydet={(g) => {
                 const ok = oneriYenidenGonder(ben, oneri.id, g);
@@ -272,6 +273,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
             {duzenle && (
               <div className="ara-alt-2" data-oneri-duzenle-formu>
                 <KisaOneriFormu
+                  takip={!!oneri.muhabirId && !oneri.yon}
                   ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
                   kaydet={(g) => {
                     const ok = oneriDuzenle(ben, oneri.id, g);

@@ -31,6 +31,7 @@ import type {
   Ulke,
   Yanit,
 } from "./veri";
+import { paketBicimi } from "./veri";
 
 /**
  * Örnek veri.
@@ -2134,7 +2135,7 @@ export const ORNEK = (): Durum => {
         baslik: o.haberBasligi,
         metin: o.gelisme,
         tur: o.tur,
-        bicimler: o.bicim ? [o.bicim] : [],
+        bicimler: paketBicimi(o.bicim) ? [paketBicimi(o.bicim)!] : [],
         muhabirler: [o.muhabirId],
         oneriId: o.id,
         karar: "bekliyor",
@@ -2358,6 +2359,23 @@ export const ORNEK = (): Durum => {
       durum: "teklif",
     },
   ];
+  // Muhabirin "Takip" türüyle gönderdiği öneri: aynı anda takiplerinde (tk-kahire-etkinlik).
+  muhabireOneriler.push({
+    id: "o-takip-kahire",
+    muhabirId: "mu4",
+    takipId: "tk-kahire-etkinlik",
+    ulke: SEHIR_ULKESI.kahire,
+    haberBasligi: "معرض القاهرة للكتاب: الاستعدادات",
+    gelisme: "المؤتمر الصحفي للهيئة العامة للكتاب.",
+    tur: "haber",
+    bicim: "takip",
+    sahaGerekli: false,
+    zaman: zaman(gun(-2), "12:00"),
+    kanal: "sistem",
+    hedefTarih: gun(1),
+    durum: "yeni",
+  });
+  h("mu4", "oneriGeldi", zaman(gun(-2), "12:00"), { oneriId: "o-takip-kahire", veri: { sahip: "planlama" } });
   h("pl2", "oneriMuhabireGonderildi", zaman(gun(0), "09:15"), { oneriId: "o-teklif-1", veri: { kime: "mu1", muhabir: "mu1" } });
   const mesajlar: Mesaj[] = [
     { id: "ms-1", oneriId: "o-kudus", kisiId: "pl2", metin: "هل يمكن إضافة تصريح من دائرة الأوقاف؟", zaman: zaman(gun(-1), "11:05") },

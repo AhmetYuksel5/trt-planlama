@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ASAMALAR, ASAMA_ADI, adimAdi, asamaBul, geciktiMi, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TUR_ADI } from "../etiketler";
-import type { Bicim, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
+import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
 
@@ -85,7 +85,7 @@ export function TurRozeti({ tur }: { tur: IcerikTuru }) {
 }
 
 /** Haber türü (biçim): adı terim, üzerine gelince tanımı. */
-export function BicimRozeti({ bicim }: { bicim: Bicim }) {
+export function BicimRozeti({ bicim }: { bicim: OneriBicimi }) {
   const { t } = useDil();
   return (
     <span className="rozet rozet-bicim" title={t(BICIM_ACIKLAMA(bicim))}>

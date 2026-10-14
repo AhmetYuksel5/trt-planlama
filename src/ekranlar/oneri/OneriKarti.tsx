@@ -181,6 +181,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
         (duzenle ? (
           <div data-oneri-duzenle-formu>
             <KisaOneriFormu
+              takip={!!o.muhabirId && !o.yon}
               ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
               kaydet={(g) => {
                 const ok = oneriDuzenle(ben, o.id, g);

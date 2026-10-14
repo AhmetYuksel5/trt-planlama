@@ -6,11 +6,11 @@ import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOne
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { ICERIK_TURLERI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type Yanit } from "../../veri";
+import { ICERIK_TURLERI, TAKIP_BICIMI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
-import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
+import { BicimSecici, MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { indir } from "../../bilesenler/indir";
 
 /**
@@ -598,6 +598,7 @@ export function KisaOneriFormu({
   kaydetMetni,
   gelismeGerekli = false,
   strapGerekli = false,
+  takip = false,
 }: {
   ilk: YanitOneriGirdisi;
   kaydet: (g: YanitOneriGirdisi) => boolean;
@@ -607,9 +608,12 @@ export function KisaOneriFormu({
   gelismeGerekli?: boolean;
   /** Muhabirin düzeltip yeniden gönderdiği öneride strap de zorunlu. */
   strapGerekli?: boolean;
+  /** Muhabire bağlı öneride haber türünde "Takip" de seçilebilir; takipte strap yok. */
+  takip?: boolean;
 }) {
   const { t } = useDil();
-  const [f, setF] = useState<YanitOneriGirdisi & { bicim: Bicim }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
+  const [f, setF] = useState<YanitOneriGirdisi & { bicim: OneriBicimi }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
+  const takipte = f.bicim === TAKIP_BICIMI;
   return (
     <div className="form form-kutu ara-ust-2">
       <label>
@@ -620,10 +624,12 @@ export function KisaOneriFormu({
         {t("gelismeAciklama")}
         <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} data-kisa-gelisme />
       </label>
-      <label>
-        {t("onerilenPaketBasligi")} {!strapGerekli && <span className="ipucu">{t("varsa")}</span>}
-        <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kisa-strap />
-      </label>
+      {!takipte && (
+        <label>
+          {t("onerilenPaketBasligi")} {!strapGerekli && <span className="ipucu">{t("varsa")}</span>}
+          <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kisa-strap />
+        </label>
+      )}
       <div className="satir">
         <label>
           {t("tur")}
@@ -637,7 +643,11 @@ export function KisaOneriFormu({
         </label>
         <label>
           {t("haberTuru")}
-          <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
+          {takip || takipte ? (
+            <OneriBicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
+          ) : (
+            <BicimSecici deger={f.bicim as Bicim} degistir={(b) => setF({ ...f, bicim: b })} />
+          )}
         </label>
       </div>
       <label className="secim">
@@ -648,7 +658,7 @@ export function KisaOneriFormu({
         <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim()) || (strapGerekli && !f.paketBasligi?.trim())} onClick={() => kaydet(f) && kapat()} data-kisa-kaydet>
+        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim()) || (strapGerekli && !takipte && !f.paketBasligi?.trim())} onClick={() => kaydet(takipte ? { ...f, paketBasligi: undefined } : f) && kapat()} data-kisa-kaydet>
           {kaydetMetni ?? t("kaydet")}
         </button>
       </div>

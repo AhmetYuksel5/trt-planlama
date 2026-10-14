@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Avatar, Bos, Icerik, Kart, Rozet, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../bilesenler/Tablolar";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
+import { metin, tarihYaz, useDil } from "../dil";
 import { takipKapat, takipKaydet, takipSil } from "../eylemler";
-import { sehirAdi } from "../etiketler";
+import { TAKIP_TUR_ADI, sehirAdi } from "../etiketler";
 import { bugun } from "../tarih";
-import { TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type Takip, type TakipTuru } from "../veri";
+import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type Takip, type TakipTuru } from "../veri";
 import { muhabireOneriGonderebilir, takipEkleyebilir, takipGorebilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabireOneriPenceresi } from "./oneri/Yazisma";
@@ -21,7 +21,7 @@ import { MuhabireOneriPenceresi } from "./oneri/Yazisma";
  * bilinen akışa (muhabirin kabulü, Planlama'nın değerlendirmesi) giriyor.
  */
 
-const TUR_ADI: Record<TakipTuru, Anahtar> = { olay: "mt_olay", toplanti: "mt_toplanti", etkinlik: "mt_etkinlik", diger: "mt_diger" };
+const TUR_ADI = TAKIP_TUR_ADI;
 
 /* Yaklaşan günlü takip önce, süregelenler en son eklenen önce. */
 const sirala = (a: Takip, b: Takip) => (a.tarih ?? "9999").localeCompare(b.tarih ?? "9999") || b.zaman.localeCompare(a.zaman);
@@ -151,7 +151,7 @@ function TakipKarti({ ben, takip: x, duzenle }: { ben: Kisi; takip: Takip; duzen
             <span>{x.tarih ? tarihYaz(x.tarih, dil, "tam") : t("mtSurekli")}</span>
             {isler.map((o) => (
               <a key={o.id} href={`#/oneriler/${o.id}`} data-takip-isi={o.id}>
-                {t("mtDonustu")} · <OneriDurumRozeti oneri={o} />
+                {t(o.bicim === TAKIP_BICIMI ? "mtOneriyle" : "mtDonustu")} · <OneriDurumRozeti oneri={o} />
               </a>
             ))}
           </small>

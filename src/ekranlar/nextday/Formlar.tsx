@@ -7,6 +7,8 @@ import { useBen } from "../../oturum";
 import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
 import {
   BICIMLER,
+  TAKIP_BICIMI,
+  type OneriBicimi,
   HAREKET_TURLERI,
   ICERIK_TURLERI,
   KAYNAK_TURLERI,
@@ -57,6 +59,22 @@ export function BicimSecici({ deger, degistir }: { deger: Bicim; degistir: (b: B
           {t(BICIM_ADI(b))}
         </option>
       ))}
+    </select>
+  );
+}
+
+/** Öneride haber türü: biçimler ve en sonda ayrık "Takip" (paket değil, muhabirin takibine de giriyor). */
+export function OneriBicimSecici({ deger, degistir, takipli = true }: { deger: OneriBicimi; degistir: (b: OneriBicimi) => void; takipli?: boolean }) {
+  const { t } = useDil();
+  return (
+    <select value={deger} onChange={(e) => degistir(e.target.value as OneriBicimi)} data-oneri-bicim>
+      {BICIMLER.map((b) => (
+        <option key={b} value={b}>
+          {t(BICIM_ADI(b))}
+        </option>
+      ))}
+      {takipli && <option disabled>──────</option>}
+      {takipli && <option value={TAKIP_BICIMI}>{t(BICIM_ADI(TAKIP_BICIMI))}</option>}
     </select>
   );
 }

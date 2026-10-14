@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
-import { KANAL_ADI, KAYNAK_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
+import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
-import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, ULKELER, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type Ulke } from "../../veri";
-import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
+import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, TAKIP_BICIMI, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
+import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 
 /*
  * Önerinin alanları tek yerde: öneri sayfası (#/oneriler/yeni) ile plan
@@ -27,7 +27,9 @@ export interface OneriFormDurumu {
   gelisme: string;
   paketBasligi: string;
   tur: IcerikTuru;
-  bicim: Bicim;
+  bicim: OneriBicimi;
+  /** Tür "Takip" seçilince muhabirin takibine giden tür. */
+  takipTuru: TakipTuru;
   sahaGerekli: boolean;
 }
 
@@ -45,13 +47,19 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
     paketBasligi: "",
     tur: "haber",
     bicim: "pkg",
+    takipTuru: "olay",
     sahaGerekli: false,
   };
 };
 
-/* Muhabir kendi önerisinde header, gelişme ve strap'i boş bırakamıyor; Planlama'nın elle girdiğinde strap isteğe bağlı. */
-export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) =>
-  (f.kaynak === "baska" || !!f.muhabirId) && !!f.haberBasligi.trim() && !!f.gelisme.trim() && (!strapGerekli || !!f.paketBasligi.trim());
+/*
+ * Muhabir kendi önerisinde header, gelişme ve strap'i boş bırakamıyor; Planlama'nın elle girdiğinde strap isteğe bağlı.
+ * Takipte paket önerilmiyor, strap sorulmuyor; takip muhabire bağlı olduğundan muhabir dışı kaynakta seçilemiyor.
+ */
+export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) => {
+  const takip = f.bicim === TAKIP_BICIMI;
+  return (f.kaynak === "baska" ? !takip : !!f.muhabirId) && !!f.haberBasligi.trim() && !!f.gelisme.trim() && (!strapGerekli || takip || !!f.paketBasligi.trim());
+};
 
 /** Formdan eyleme: seçilmeyen kaynağın alanları gitmiyor, yoksa muhabir adına girilen öneri ajans gibi de görünürdü. */
 export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedefTarih" | "hafta"> => ({
@@ -62,9 +70,10 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
   ulke: f.ulke,
   haberBasligi: f.haberBasligi.trim(),
   gelisme: f.gelisme.trim(),
-  paketBasligi: f.paketBasligi.trim() || undefined,
+  paketBasligi: f.bicim === TAKIP_BICIMI ? undefined : f.paketBasligi.trim() || undefined,
   tur: f.tur,
   bicim: f.bicim,
+  ...(f.bicim === TAKIP_BICIMI && { takipTuru: f.takipTuru }),
   sahaGerekli: f.sahaGerekli,
 });
 
@@ -105,6 +114,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
     </label>
   );
   const baskaKaynak = !muhabir && f.kaynak === "baska";
+  const takip = f.bicim === TAKIP_BICIMI;
   return (
     <>
       {!muhabir && (
@@ -115,7 +125,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
               <button type="button" role="tab" aria-selected={f.kaynak === "muhabir"} className={f.kaynak === "muhabir" ? "acik" : ""} onClick={() => setF({ ...f, kaynak: "muhabir" })}>
                 {t("kyMuhabir")}
               </button>
-              <button type="button" role="tab" aria-selected={f.kaynak === "baska"} className={f.kaynak === "baska" ? "acik" : ""} onClick={() => setF({ ...f, kaynak: "baska" })}>
+              <button type="button" role="tab" aria-selected={f.kaynak === "baska"} className={f.kaynak === "baska" ? "acik" : ""} onClick={() => setF({ ...f, kaynak: "baska", ...(f.bicim === TAKIP_BICIMI && { bicim: "pkg" }) })}>
                 {t("baskaKaynak")}
               </button>
             </div>
@@ -170,21 +180,35 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         </label>
         <label>
           {t("haberTuru")}
-          <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
+          <OneriBicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} takipli={!baskaKaynak} />
         </label>
+        {takip && (
+          <label>
+            {t("mtTakipTuru")}
+            <select value={f.takipTuru} onChange={(e) => setF({ ...f, takipTuru: e.target.value as TakipTuru })} data-oneri-takip-turu>
+              {TAKIP_TURLERI.map((x) => (
+                <option key={x} value={x}>
+                  {t(TAKIP_TUR_ADI[x])}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
       <label>
         {t("haberBasligi")}
-        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} />
+        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} data-oneri-header />
       </label>
       <label>
         {t("gelismeAciklama")}
-        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} />
+        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} data-oneri-gelisme />
       </label>
-      <label>
-        {t("onerilenPaketBasligi")} {ben.birim !== "muhabir" && <span className="ipucu">{t("varsa")}</span>}
-        <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} required={ben.birim === "muhabir"} data-oneri-strap />
-      </label>
+      {!takip && (
+        <label>
+          {t("onerilenPaketBasligi")} {ben.birim !== "muhabir" && <span className="ipucu">{t("varsa")}</span>}
+          <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} required={ben.birim === "muhabir"} data-oneri-strap />
+        </label>
+      )}
       <label className="secim">
         <input
           type="checkbox"

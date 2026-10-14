@@ -29,6 +29,8 @@ import type {
   Sehir,
   Ulke,
   PlanAdi,
+  OneriBicimi,
+  TakipTuru,
 } from "./veri";
 
 /*
@@ -85,8 +87,11 @@ export const TUR_ADI: Record<IcerikTuru, Anahtar> = {
   program: "turProgram",
 };
 
-export const BICIM_ADI = (b: Bicim): Anahtar => `bc_${b}`;
-export const BICIM_ACIKLAMA = (b: Bicim): Anahtar => `bcA_${b}`;
+/** Muhabirin takibinin türü (takipler sayfası ve öneri formundaki "Takip"). */
+export const TAKIP_TUR_ADI: Record<TakipTuru, Anahtar> = { olay: "mt_olay", toplanti: "mt_toplanti", etkinlik: "mt_etkinlik", diger: "mt_diger" };
+
+export const BICIM_ADI = (b: OneriBicimi): Anahtar => `bc_${b}`;
+export const BICIM_ACIKLAMA = (b: OneriBicimi): Anahtar => `bcA_${b}`;
 
 export const CALISMA_ADI: Record<CalismaBicimi, Anahtar> = {
   kadrolu: "kadrolu",
