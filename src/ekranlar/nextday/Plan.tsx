@@ -1,5 +1,5 @@
 import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
-import { oneriGunde } from "../../oneriPlanlari";
+import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
 import { temelSorumlular } from "../../gorevler";
@@ -8,7 +8,7 @@ import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { oncekiOnayla, planDurum } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
-import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
@@ -244,7 +244,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const oneriler = v.oneriler
     // Plana eklenen de listede kalıyor (en sonda, "Plana eklendi" notuyla): ne geldiği ve ne olduğu bir arada görünsün.
     .filter((o) => oneriGunde(o, plan.tarih))
-    .sort((a, b) => (a.durum === b.durum ? b.zaman.localeCompare(a.zaman) : sira(a) - sira(b)))
+    .sort((a, b) => sira(v, a) - sira(v, b) || b.zaman.localeCompare(a.zaman))
     .sort(talimatOnce);
 
   return (
@@ -284,4 +284,5 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 
 // Düzeltmedeki öneri muhabirde bekliyor; Planlama'nın önündekilerin arkasında.
 const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, teklif: 3, sonra: 4, reddedildi: 5, planaEklendi: 6 };
-const sira = (o: Oneri) => SIRA[o.durum];
+// Haftalık gündeme alınan öneri de karar almış: plana eklenenle birlikte en sonda.
+const sira = (d: Durum, o: Oneri) => (o.durum !== "planaEklendi" && oneriYeri(d, o) ? SIRA.planaEklendi : SIRA[o.durum]);

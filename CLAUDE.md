@@ -425,8 +425,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   günlerine düşüyorsa o planın etiketini alır (`oneriPlanlari.ts →
   oneriEtiketleri`; saklanmaz, her an hesaplanır): açık Next Day planı
   (`acikGunPlanlari`, `oneriGunde`), kesinleşmemiş haftalık plan
-  (`oneriHaftada`), özel yayın günü; plana girmiş öneri girdiği planınkini
-  taşır. Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
+  (`oneriHaftada`), özel yayın günü. Karar verilmiş öneri (Next Day'e ya
+  da haftalık gündeme girmiş, `oneriYeri`) yalnız girdiği planın etiketini
+  taşır; gündemdeki öneri Next Day'e ayrıca eklenmez (kesinleşince
+  aktarılıyor), plandaki de gündeme. Öneri penceresinde ve ayrıntısında
+  "Plandan çıkar" / "Gündemden çıkar" (`eylemler.ts → oneriPlandanCikar`):
+  gelişmesi ve paketi (üretime girmemişse) silinir, onunla gelen muhabir ve
+  boş kalan başlık plandan kalkar, öneri "değerlendiriliyor"a döner. Plandan
+  gelişmesi ya da paketi silinen (gelişme sil, paket sil, başlığı çıkar)
+  öneri de öyle (`oneriBaglariniTazele`). Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
   olarak (`Tablolar.tsx → OneriPlanEtiketleri`, planın rengiyle); öneriler
   sayfasında süzgeç (Bütün planlar / Next Day / Weekly / Özel yayın /
   Plana düşmeyen). Next Day planının gelen önerileri günü aralığa düşenler,
@@ -538,8 +545,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başka seçeneği gösterip kayıt görünmeyen başlığa gitmesin; haftalık
     gündem formunda da aynısı. Öneri penceresi ve ayrıntı sayfası öneriye
     göre yeniden kurulur (`key`), form bir öneriden ötekine iz taşımaz.
-  - Next Day'in gelen önerilerinde plana eklenen öneri kalır, en sonda,
-    altında "Plana eklendi · başlık" notuyla. Öneri plana kurumun düzeniyle
+  - Next Day'in ve haftalığın gelen önerilerinde plana ya da gündeme eklenen
+    öneri kalır, en sonda, altında "Plana eklendi / Gündeme eklendi · plan,
+    gün · başlık" notuyla. Öneri plana kurumun düzeniyle
     girer: dosyanın (başlığın) altında "YER / haber" (gelişme; haber
     önerinin Header'ı, yer muhabirin şehri), paket önerisiyse "PKG" altında
     "YER / strap / muhabir". Önerinin uzun açıklaması gelişmeye yazılmaz,

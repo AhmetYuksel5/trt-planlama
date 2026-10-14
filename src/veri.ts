@@ -914,6 +914,7 @@ export const HAREKET_TIPLERI = [
   "oneriGeldi",
   "oneriDegerlendirmede",
   "oneriPlanaEklendi",
+  "oneriPlandanCikarildi",
   "oneriReddedildi",
   "oneriSonra",
   "geriDonus",

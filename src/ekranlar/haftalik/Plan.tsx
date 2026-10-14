@@ -1,5 +1,5 @@
 import { useSekmeAdi } from "../../sekmeAdi";
-import { oneriAraligi, oneriHaftada } from "../../oneriPlanlari";
+import { oneriAraligi, oneriHaftada, oneriYeri } from "../../oneriPlanlari";
 import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
@@ -229,11 +229,12 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const [elle, setElle] = useState(false);
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [pencere, setPencere] = useState<PencereDurumu>(null);
-  const gundemdekiler = new Set(hafta.kalemler.map((k) => k.oneriId));
+  // Gündeme ya da Next Day'e giren öneri de listede kalıyor (en sonda, notuyla): ne geldiği ve ne olduğu bir arada.
+  const sonda = (o: Oneri) => (oneriYeri(v, o) ? 2 : o.durum === "reddedildi" ? 1 : 0);
   const oneriler = v.oneriler
-    .filter((o) => oneriHaftada(o, hafta) && !gundemdekiler.has(o.id) && o.durum !== "planaEklendi")
-    .sort((a, b) => Number(a.durum === "reddedildi") - Number(b.durum === "reddedildi") || b.zaman.localeCompare(a.zaman));
-  const bekleyen = oneriler.filter((o) => o.durum !== "reddedildi").length;
+    .filter((o) => oneriHaftada(o, hafta) || hafta.kalemler.some((k) => k.oneriId === o.id))
+    .sort((a, b) => sonda(a) - sonda(b) || b.zaman.localeCompare(a.zaman));
+  const bekleyen = oneriler.filter((o) => !sonda(o)).length;
   return (
     <Bolum no="★" baslik={t("buHaftayaGelenOneriler")} ek={t("bekleyenSayisi", { n: bekleyen })}>
       {elle ? (

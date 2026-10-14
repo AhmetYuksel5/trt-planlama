@@ -1,13 +1,14 @@
-import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Undo2 } from "lucide-react";
+import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Undo2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
 import { gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet } from "../../eylemler";
+import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet, oneriPlandanCikar } from "../../eylemler";
+import { oneriYeri } from "../../oneriPlanlari";
 import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
-import { oneriDuzenleyebilir, oneriDuzeltmeyeGider } from "../../yetki";
+import { haftalikDuzenler, oneriDuzenleyebilir, oneriDuzeltmeyeGider, planIcerikDuzenler, yapabilir } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { useBen } from "../../oturum";
@@ -108,14 +109,22 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
   );
 }
 
-/** Plana eklenen öneri listede kalıyor; altında hangi başlığa girdiği. */
+/*
+ * Plana ya da haftalık gündeme eklenen öneri listede kalıyor; altında
+ * girdiği plan ve başlık. İki plana düşen öneride hangisine girdiği
+ * buradan okunuyor.
+ */
 function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
-  const { t } = useDil();
-  if (o.durum !== "planaEklendi") return null;
-  const baslik = o.baslikId ? d.basliklar.find((b) => b.id === o.baslikId)?.ad : undefined;
+  const { t, dil } = useDil();
+  const yer = oneriYeri(d, o);
+  if (!yer) return null;
+  const baslikId = yer.planda ? o.baslikId : (yer.kalem?.baslikId ?? o.baslikId);
+  const baslik = baslikId ? d.basliklar.find((b) => b.id === baslikId)?.ad : undefined;
+  const gun = yer.planda ? yer.plan?.tarih : yer.kalem?.tarih;
   return (
-    <p className="ok-plana-eklendi" data-plana-eklendi>
-      <CircleCheck size={14} /> {t("odPlanaEklendi")}
+    <p className="ok-plana-eklendi" data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
+      <CircleCheck size={14} /> {t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi")} · {t(yer.planda ? "mNextday" : "mHaftalik")}
+      {gun && ` ${tarihYaz(gun, dil, "kisa")}`}
       {baslik && (
         <>
           {" · "}
@@ -123,6 +132,38 @@ function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
         </>
       )}
     </p>
+  );
+}
+
+/** Düğme çizilecek mi: şeritte boş yer kalmasın diye çizimden önce de soruluyor. */
+const plandanCikarabilir = (ben: Kisi, d: Durum, o: Oneri) => {
+  const yer = oneriYeri(d, o);
+  if (!yer || !yapabilir(ben, "oneriDegerlendir")) return null;
+  return (yer.planda ? !!yer.plan && planIcerikDuzenler(ben, yer.plan) : !!yer.hafta && yer.hafta.durum !== "kesinlesti" && haftalikDuzenler(ben, yer.hafta)) ? yer : null;
+};
+
+/** Öneriyi girdiği plandan çıkarma düğmesi; öneri yeniden değerlendirmeye döner. */
+export function PlandanCikarDugmesi({ ben, oneri: o, d, sonra }: { ben: Kisi; oneri: Oneri; d: Durum; sonra?: () => void }) {
+  const { t } = useDil();
+  const yer = plandanCikarabilir(ben, d, o);
+  if (!yer) return null;
+  const ad = t(yer.planda ? "plandanCikar" : "gundemdenCikar");
+  return (
+    <button
+      type="button"
+      className="dugme dugme-ikincil dugme-kucuk"
+      onClick={() => {
+        if (!confirm(t("plandanCikarOnay"))) return;
+        const r = oneriPlandanCikar(ben, o.id);
+        if (r === "tamam") {
+          bildir(t("bPlandanCikti"));
+          sonra?.();
+        } else if (r === "paketIlerledi") bildir(t("bPaketIlerledi"));
+      }}
+      data-plandan-cikar={o.id}
+    >
+      <X size={14} /> {ad}
+    </button>
   );
 }
 
@@ -336,7 +377,8 @@ export function OneriListesi({
     // Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor.
     const talimat = !!o.talimatVeren;
     // Muhabire önerilen haberde sıra muhabirde; kabul edene kadar karar yok.
-    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif";
+    // Gündeme alınmış öneri de karar almış sayılıyor: iki plana düşen öneri ikincisine de eklenmesin.
+    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif" && !oneriYeri(d, o);
     // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
     const muhabirde = o.durum === "duzeltme";
     const ikonlu = (ikon: ReactNode, ad: string, sinif: string, f: () => void) => (
@@ -355,6 +397,7 @@ export function OneriListesi({
       oneriDuzeltmeyeGider(ben, o) && ikonlu(<Undo2 size={14} />, t("duzeltmeyeGonder"), "dugme-ikincil", () => setPencere({ id: o.id, mod: "duzelt" })),
       ertelenebilir && kararAcik && !muhabirde && !talimat && o.durum !== "sonra" && ikonlu(<Lightbulb size={14} />, t("odSonra"), "dugme-ikincil", () => oneriDurum(ben, o.id, "sonra")),
       kararAcik && !talimat && ikonlu(<Ban size={14} />, t("reddet"), "dugme-kotu", () => setPencere({ id: o.id, mod: "ret" })),
+      tam && plandanCikarabilir(ben, d, o) && <PlandanCikarDugmesi key="cikar" ben={ben} oneri={o} d={d} />,
     ].filter(Boolean);
     // Karar kalmadıysa (reddedilmiş ya da plana girmiş) kartta da pencerede de boş şerit çizilmesin.
     return dugmeler.length ? <>{dugmeler}</> : undefined;

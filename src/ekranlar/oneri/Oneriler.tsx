@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, oneriEtiketleri, type OneriEtiketi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, oneriEtiketleri, oneriYeri, type OneriEtiketi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -18,7 +18,7 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
-import { DuzeltmeFormu, GorunumSecici, OneriKarti, useOneriGorunumu } from "./OneriKarti";
+import { DuzeltmeFormu, GorunumSecici, OneriKarti, PlandanCikarDugmesi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 import { GeriBildirimBolumu } from "./GeriBildirim";
 
@@ -214,8 +214,10 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   const plan = planBul(v, oneri.planId);
   const paket = paketBul(v, oneri.paketId);
   const baslik = baslikBul(v, oneri.baslikId);
-  const haftaPlani = oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined;
-  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif";
+  // Girdiği yer (Next Day planı ya da haftalık gündem): karar verilmişse düğmelerin yerinde "Plandan çıkar".
+  const yer = oneriYeri(v, oneri);
+  const haftaPlani = yer?.hafta ?? (oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined);
+  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif" && !yer;
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
@@ -420,6 +422,11 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               </div>
             )}
             <GeriBildirimBolumu ben={ben} oneri={oneri} />
+            {yer && (
+              <div className="ara-ust-2">
+                <PlandanCikarDugmesi ben={ben} oneri={oneri} d={v} />
+              </div>
+            )}
             {degerlendirir && (
               <div className="ara-ust-2">
                 {ekle ? (
