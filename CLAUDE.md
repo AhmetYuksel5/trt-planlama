@@ -539,10 +539,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     gündem formunda da aynısı. Öneri penceresi ve ayrıntı sayfası öneriye
     göre yeniden kurulur (`key`), form bir öneriden ötekine iz taşımaz.
   - Next Day'in gelen önerilerinde plana eklenen öneri kalır, en sonda,
-    altında "Plana eklendi · başlık" notuyla. Paketli öneri plana eklenince
-    başlığın altına haberin kendisi (önerinin haber başlığı) gelişme olarak
-    girer; paketin başlığı beklenen paketlerde ve PKG satırında
-    (`eylemler.ts → oneriPlanaEkle`).
+    altında "Plana eklendi · başlık" notuyla. Öneri plana kurumun düzeniyle
+    girer: dosyanın (başlığın) altında "YER / haber" (gelişme; haber
+    önerinin Header'ı, yer muhabirin şehri), paket önerisiyse "PKG" altında
+    "YER / strap / muhabir". Önerinin uzun açıklaması gelişmeye yazılmaz,
+    paketin açıklamasında ve öneride kalır; paket işareti kaldırılsa da
+    gelişme Header (`eylemler.ts → oneriPlanaEkle`, `oneriDuzenle`).
+    Haftalık gündemde de aynısı (`oneriGundemeEkle`): kalem `yer` muhabirin
+    şehri, `metin` Header, strap `HaftalikKalem.paketBasligi`; ekranda ve
+    çıktıda paketli kalemde "PKG" ve "YER / strap / muhabir"
+    (`bilesenler/Haftalik.tsx → kalemPaketli`), muhabir ve o biçim ayrıca
+    yazılmaz. Next Day'e aktarılan paketin başlığı strap; kalem formunda
+    paketli kalemde Strap alanı.
   - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
     ve muhabir dışı kaynak değil), ne değişmesi gerektiği yazılmadan
     gitmez (`DuzeltmeFormu`, `eylemler.ts → oneriDuzeltmeIste`). Durum

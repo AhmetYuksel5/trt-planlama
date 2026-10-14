@@ -685,6 +685,8 @@ export interface HaftalikKalem {
   tur: IcerikTuru;
   /** Çıktıdaki biçim satırı: PKG + LIVE. */
   bicimler: Bicim[];
+  /** Paket önerisinin başlığı (strap): çıktıda "PKG" altında "YER / strap / muhabir". */
+  paketBasligi?: string;
   muhabirler: string[];
   /** Çıktıda sarı vurgulu not. */
   not?: string;

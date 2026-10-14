@@ -1,10 +1,10 @@
 import { Ban, Check, Eye, Pencil, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { Gorusler, KararRozeti, bicimSatiri } from "../../bilesenler/Haftalik";
+import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Icerik, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BICIM_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
+import { BICIM_ADI, TUR_ADI, kisiAr, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
@@ -59,6 +59,7 @@ export function KalemFormu({
     metin: mevcut?.metin ?? ilk?.metin ?? "",
     tur: mevcut?.tur ?? ilk?.tur ?? ((tarih ? "haber" : "feature") as IcerikTuru),
     bicimler: mevcut?.bicimler ?? (["pkg"] as Bicim[]),
+    paketBasligi: mevcut?.paketBasligi ?? "",
     muhabirler: mevcut?.muhabirler ?? ilk?.muhabirler ?? ([] as string[]),
     not: mevcut?.not ?? "",
   });
@@ -135,6 +136,13 @@ export function KalemFormu({
         {t("metin")}
         <textarea {...icerikAlani} rows={3} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} placeholder={metin("kalemMetniIpucu", "ar")} />
       </label>
+      {/* Strap yalnız paketi olan kalemde: çıktıda "PKG" altında "YER / strap / muhabir". */}
+      {f.bicimler.some((b) => b !== "canli") && (
+        <label>
+          {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
+          <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kalem-strap />
+        </label>
+      )}
       <div>
         <div className="alan-etiket">{t("bicimSatiri")}</div>
         <fieldset className="secim-grubu ara-ust">
@@ -207,7 +215,16 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
             {kalem.yer && <b>{kalem.yer} / </b>}
             {kalem.metin}
           </Icerik>
-          {kalem.muhabirler.length > 0 && (
+          {/* Paket önerisi Next Day'deki gibi: "YER / strap / muhabir". */}
+          {kalemPaketli(kalem) && (
+            <div data-kalem-pkg>
+              <Icerik blok className="kalem-satiri">
+                <b>PKG · </b>
+                {satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, kalem.muhabirler.length ? kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))).join("، ") : metin("atanmadi", "ar"))}
+              </Icerik>
+            </div>
+          )}
+          {!kalemPaketli(kalem) && kalem.muhabirler.length > 0 && (
             <small>
               {kalem.muhabirler.map((id) => {
                 const k = kisiBul(v, id);
@@ -228,7 +245,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
           )}
           <small>
             <TurRozeti tur={kalem.tur} />
-            {kalem.bicimler.length > 0 && <bdi dir="ltr">{bicimSatiri(kalem)}</bdi>}
+            {bicimSatiri(kalem) && <bdi dir="ltr">{bicimSatiri(kalem)}</bdi>}
             <KararRozeti kalem={kalem} />
             {oneri && (
               <a href={`#/oneriler/${oneri.id}`}>

@@ -13,6 +13,7 @@ import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanD
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
+import { sehirAr } from "./etiketler";
 import { oneriHaftada } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
@@ -457,18 +458,18 @@ export const oneriPlanaEkle = (
   }));
 
   /*
-   * Paketli öneride başlığın altına haberin kendisi (önerinin haber
-   * başlığı) giriyor; paketin başlığı beklenen paketlerde ve PKG satırında,
-   * muhabirin açıklaması paketin açıklamasında. Kurumun planında konu
-   * başlığının altında pakete konu olan haber yazılıyor. Paketsizde
-   * gelişme metni.
+   * Kurumun düzeni: dosyanın altında "YER / haber" (haber önerinin
+   * Header'ı; yer muhabirin şehri, ekranda ve çıktıda gelişmenin yeri),
+   * paket önerisiyse "PKG" altında "YER / strap / muhabir". Muhabirin
+   * uzun açıklaması paketin açıklamasında ve öneride kalıyor; gelişmeye
+   * yazılınca plan satırı yerine paragraf düşüyordu.
    */
   const paketli = g.paketOlustur && !!o.paketBasligi;
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
     planBaslikId: pbId,
-    metin: paketli ? o.haberBasligi || o.gelisme : o.gelisme,
+    metin: o.haberBasligi || o.gelisme,
     // Gelişmenin kaynağı önerinin kaynağı: ajanstan girilen öneri planda da ajans olarak görünsün.
     kaynakTuru: o.talimatVeren ? "diger" : (o.kaynakTuru ?? "muhabir"),
     kaynakAdi: o.kaynakAdi ?? "",
@@ -752,6 +753,7 @@ export interface KalemGirdisi {
   metin: string;
   tur: IcerikTuru;
   bicimler: Bicim[];
+  paketBasligi?: string;
   muhabirler: string[];
   not?: string;
 }
@@ -782,6 +784,7 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     metin: g.metin.trim(),
     tur: g.tur,
     bicimler: g.bicimler,
+    paketBasligi: g.bicimler.some((b) => b !== "canli") ? g.paketBasligi?.trim() || undefined : undefined,
     muhabirler: g.muhabirler,
     not: g.not?.trim() || undefined,
   };
@@ -834,14 +837,22 @@ export const oneriGundemeEkle = (
   let baslikId = g.baslikId || undefined;
   if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
   const id = kimlik("hk");
+  /*
+   * Kurumun düzeni: dosyanın altında "YER / haber" (yer muhabirin şehri,
+   * haber önerinin Header'ı), paket önerisiyse altında "PKG" ve
+   * "YER / strap / muhabir". Önerinin uzun açıklaması öneride kalıyor;
+   * kaleme yazılınca çıktıda header, açıklama ve strap alt alta düşüyordu.
+   */
+  const muhabir = kisiBul(d, o.muhabirId);
   const kalem: HaftalikKalem = {
     id,
     tarih: g.tarih || undefined,
     baslikId,
-    baslik: o.haberBasligi,
-    metin: o.gelisme,
+    ...(muhabir && { yer: sehirAr(muhabir.sehir) }),
+    metin: o.haberBasligi || o.gelisme,
     tur: o.tur,
     bicimler: paketBicimi(o.bicim) ? [paketBicimi(o.bicim)!] : [],
+    ...(o.paketBasligi && paketBicimi(o.bicim) && { paketBasligi: o.paketBasligi }),
     muhabirler: o.muhabirId ? [o.muhabirId] : [],
     oneriId: o.id,
     karar: "bekliyor",
@@ -978,7 +989,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       kod,
       planId: plan.id,
       planBaslikId: pbId,
-      baslik: k.baslik || k.metin,
+      baslik: k.paketBasligi || k.baslik || k.metin,
       sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
       muhabirId,
       aciklama: k.metin,
@@ -1008,7 +1019,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
   const paket: Paket = {
     id: paketId,
     kod,
-    baslik: k.baslik || k.metin,
+    baslik: k.paketBasligi || k.baslik || k.metin,
     sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
     muhabirId,
     aciklama: k.metin,
@@ -1951,8 +1962,8 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     sahaGerekli: g.sahaGerekli,
   };
   [d, yeni] = takibiEsle(d, yeni);
-  // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla: paketliyse haberin kendisi (Header), değilse gelişme.
-  const metin = (x: Oneri, paketli: boolean) => (paketli ? x.haberBasligi || x.gelisme : x.gelisme);
+  // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla: haberin kendisi (Header).
+  const metin = (x: Oneri, _paketli: boolean) => x.haberBasligi || x.gelisme;
   const paketli = !!o.paketId;
   d = {
     ...d,

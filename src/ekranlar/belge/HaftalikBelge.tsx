@@ -1,7 +1,7 @@
 import { Ban, Check, Eye, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useRef, useState, type ReactNode, type Ref } from "react";
-import { KararRozeti, bicimSatiri } from "../../bilesenler/Haftalik";
+import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
@@ -69,6 +69,7 @@ const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi 
   metin: k.metin,
   tur: k.tur,
   bicimler: k.bicimler,
+  paketBasligi: k.paketBasligi,
   muhabirler: k.muhabirler,
   not: k.not,
   ...g,
@@ -130,7 +131,16 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             {k.metin}
           </Satir>
         )}
-        {k.muhabirler.length > 0 && (
+        {kalemPaketli(k) ? (
+          <>
+            <p className="alt-baslik">
+              <bdi>PKG</bdi>
+            </p>
+            <p data-kalem-pkg>
+              {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi} / <b>{k.muhabirler.length ? k.muhabirler.map(kisiAdi).join("، ") : c("atanmadi")}</b>
+            </p>
+          </>
+        ) : k.muhabirler.length > 0 && (
           <>
             <p className="alt-baslik">{c(k.muhabirler.length > 1 ? "ciktiMuhabirler" : "ciktiMuhabir")}</p>
             {k.muhabirler.map((id) => (
@@ -140,7 +150,7 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             ))}
           </>
         )}
-        {k.bicimler.length > 0 && (
+        {bicimSatiri(k) && (
           <p>
             <b>
               <bdi>{bicimSatiri(k)}</bdi>

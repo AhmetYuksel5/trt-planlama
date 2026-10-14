@@ -28,7 +28,19 @@ export function KalemGunu({ kalem }: { kalem: HaftalikKalem }) {
   return <>{kalem.tarih ? `${gunAdi(kalem.tarih, dil)} ${tarihYaz(kalem.tarih, dil, "kisa")}` : t("zamanaBagliOlmayan")}</>;
 }
 
-export const bicimSatiri = (k: HaftalikKalem) => k.bicimler.map((b) => BICIM_KODU[b]).join(" + ");
+export const bicimSatiri = (k: HaftalikKalem) => kalanBicimler(k).map((b) => BICIM_KODU[b]).join(" + ");
+
+/*
+ * Paket önerisi olan kalem çıktıda Next Day'deki gibi "PKG" altında
+ * "YER / strap / muhabir" satırıyla yazılıyor; o paketin biçimi biçim
+ * satırında tekrar yazılmıyor, öbürleri (LIVE…) kalıyor.
+ */
+export const kalemPaketli = (k: HaftalikKalem) => !!k.paketBasligi && k.bicimler.some((b) => b !== "canli");
+const kalanBicimler = (k: HaftalikKalem) => {
+  if (!kalemPaketli(k)) return k.bicimler;
+  const i = k.bicimler.findIndex((b) => b !== "canli");
+  return k.bicimler.filter((_, j) => j !== i);
+};
 
 export function KalemListesi({ kalemler }: { kalemler: HaftalikKalem[] }) {
   const { t } = useDil();
