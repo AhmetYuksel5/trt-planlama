@@ -210,6 +210,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     belge (`{s: sıra, j: JSON}`); kişiye bağlı haritalarda anahtar başına
     belge. `kaydet` yalnız farkı yazar (`depo/fark.ts`); eylemler değişmeyen
     öğenin nesnesine dokunmamalı, fark nesne kimliğiyle çıkıyor.
+  - Okuma da fark (`depo/fark.ts → farkAlaniMi`, `depo/firebase.ts`;
+    ücretsiz planın günlük 50.000 okuması her açılışta bütün kaydı okumakla
+    doluyordu): kişiler dışındaki belgede sunucu zamanı `z`; silme belgeyi
+    kaldırmaz, `silindi` işaretiyle yazar. Bir tarayıcıda bir kez tam okunan
+    koleksiyon (`trt-planlama-tam-okunan:<proje>`) açılışta Firestore
+    önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
+    Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
+    yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
   - Kurallar (`firestore.rules`) yalnız "etkin kişi" ve hesap alanlarını
     (`pasif`, `hesapYoneticisi`, `eposta`) denetliyor; birim yetkisi
     programda. Davetler `Durum`'da değil, `davetler` koleksiyonunda.

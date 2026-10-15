@@ -114,6 +114,7 @@ Bu değerler gizli değildir: tarayıcıya giden web uygulaması kimliğidir. Er
 - `Durum`'un her dizi alanı (planlar, paketler, öneriler, kişiler, hareketler…) bir Firestore koleksiyonudur; her öğe bir belgedir. Kişiye bağlı ayarlar (ana sayfa düzeni, kısayollar, workspace'ler…) kişi başına birer belgedir.
 - Program değişikliği kayıt kayıt yazar (`src/depo/fark.ts`). İki kişinin farklı kayıtlardaki işi birbirini ezmez; aynı kayıtta son yazan kazanır.
 - Ekranlar yenilemeden güncellenir; bağlantı koparsa iş tarayıcı önbelleğinde bekler, bağlantı gelince yazılır.
+- **Okuma maliyeti (fark okuma):** Firebase ücretsiz planda günde 50.000 belge okuması veriyor ve tarayıcı 30 dakikadan uzun kapalı kaldıysa açılışta bütün kayıt yeniden okunmuş sayılıyor; bu, her açılışta kaydın tamamı demekti. Şimdi kişiler dışındaki her belgede sunucu zamanı (`z`) var. Bir tarayıcıda bir kez tam okunan koleksiyon (`trt-planlama-tam-okunan:<proje>`) sonraki açılışta Firestore'un tarayıcı önbelleğinden kurulur, sunucudan yalnız `z`'si önbellekteki en son zamandan (5 dakika payla) yeni olanlar istenir. Silinen belge kalkmaz, `silindi` işaretiyle yazılır ki fark sorgusu silindiğini görsün. Önbellek sınırsız: Firestore eskiyi kendiliğinden atmasın. Önbellek boşsa (temizlenmiş tarayıcı, yeni cihaz) tam okunur. Kişiler tam okunur: kuralı yazılacak alanları sayıyor, koleksiyon da küçük.
 - Gerçek kayıt boş başlar, örnek veri yüklenmez. Ayarlar'daki "Örnek veriye dön" gerçek kipte yoktur.
 
 ## Bilinen sınırlar

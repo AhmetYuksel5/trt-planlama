@@ -41,6 +41,16 @@ export const DIZI_ALANLARI = [
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];
 
+/*
+ * Fark okunan koleksiyonlar: belgede sunucu zamanı (`z`) var, silinen belge
+ * kalkmıyor, "silindi" işaretiyle yazılıyor. Bir cihazda bir kez tam
+ * okunduktan sonra açılışta yalnız değişenler okunuyor (depo/firebase.ts);
+ * ücretsiz planda günlük okuma sınırı her açılışta bütün kaydı okumakla
+ * doluyordu. Kişiler hariç: kuralı yazılabilecek alanları tek tek sayıyor
+ * (`z` onu bozardı), hem de küçük.
+ */
+export const farkAlaniMi = (alan: string) => alan !== "kisiler" && (DIZI_ALANLARI as readonly string[]).includes(alan);
+
 export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari"] as const satisfies readonly (keyof Durum)[];
 export type HaritaAlani = (typeof HARITA_ALANLARI)[number];
 

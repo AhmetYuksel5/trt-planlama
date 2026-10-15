@@ -15,18 +15,26 @@ import {
   type User,
 } from "firebase/auth";
 import {
+  CACHE_SIZE_UNLIMITED,
+  Timestamp,
   collection,
   connectFirestoreEmulator,
   doc,
   getDoc,
+  getDocsFromCache,
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
   persistentMultipleTabManager,
+  query,
+  serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
+  type DocumentData,
   type Firestore,
+  type QuerySnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
 import type { Metin, Yazi } from "../dil";
@@ -35,7 +43,7 @@ import { hesabaGecir } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
-import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
+import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkAlaniMi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
  * Gerçek kipin Firebase katmanı: oturum (Auth), davet ve etkinleştirme
@@ -56,7 +64,8 @@ export const baslat = () => {
   const app = initializeApp({ apiKey: a.apiKey, authDomain: a.authDomain || `${a.projectId}.firebaseapp.com`, projectId: a.projectId, appId: a.appId });
   auth = getAuth(app);
   // Bağlantı kopunca iş kaybolmasın; workspace bölmeleri ve sekmeler aynı önbelleği paylaşıyor.
-  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  // Sınırsız: fark okuma önbelleği kaydın tamamı sayıyor, Firestore eskiyi kendiliğinden atarsa kayıt eksik kalırdı.
+  db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager(), cacheSizeBytes: CACHE_SIZE_UNLIMITED }) });
   if (a.emulator) {
     connectAuthEmulator(auth, a.emulator.auth, { disableWarnings: true });
     connectFirestoreEmulator(db, a.emulator.firestoreHost, a.emulator.firestorePort);
@@ -114,6 +123,32 @@ export const hataKodu = (e: unknown) => (e && typeof e === "object" && "code" in
 
 /* --- Kayıt --- */
 
+/*
+ * Bu tarayıcıda sunucudan bir kez tam okunmuş koleksiyonlar (projeye göre).
+ * Önbellek silinirse işaret kalsa da önbellek boş görünür, yine tam okunur.
+ */
+const TAM_OKUNAN = "trt-planlama-tam-okunan";
+/* Sorgunun eşiği önbellekteki en son zamanın biraz gerisinde: saat ve görünürlük farkına karşı birkaç belge fazla okunsun. */
+const FARK_PAYI = 5 * 60 * 1000;
+const tamAnahtari = () => `${TAM_OKUNAN}:${firebaseAyari().projectId}`;
+const tamOkunanlar = (): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(tamAnahtari()) ?? "[]") as string[];
+  } catch {
+    return [];
+  }
+};
+const tamOkundu = (alan: string) => tamOkunanlar().includes(alan);
+const tamOkunduYaz = (alan: string) => {
+  const l = tamOkunanlar();
+  if (l.includes(alan)) return;
+  try {
+    localStorage.setItem(tamAnahtari(), JSON.stringify([...l, alan]));
+  } catch {
+    /* saklanamazsa her açılışta tam okunur, eskisi gibi */
+  }
+};
+
 interface Onbellek {
   s: number;
   j: string;
@@ -163,33 +198,55 @@ const kayitBagla = (hazir: () => void): (() => void) => {
 
   for (const alan of DIZI_ALANLARI) {
     const m = (onbellek[alan] = new Map());
-    iptal.push(
-      onSnapshot(
-        collection(db, alan),
-        (snap) => {
-          let degisti = false;
-          for (const c of snap.docChanges()) {
-            const id = anahtarKimligi(c.doc.id);
-            if (c.type === "removed") {
-              degisti = m.delete(id) || degisti;
-              continue;
-            }
-            const v = c.doc.data() as OgeBelgesi;
-            const eski = m.get(id);
-            if (eski && eski.j === v.j && eski.s === v.s) continue;
-            m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j ? eski.o : JSON.parse(v.j) });
-            degisti = true;
-          }
-          if (degisti || !bagli) {
-            const liste = [...m.entries()].sort((a, b) => a[1].s - b[1].s || (a[0] < b[0] ? -1 : 1));
-            siralar = { ...siralar, [alan]: new Map(liste.map(([id, x]) => [id, x.s])) };
-            d = { ...d, [alan]: liste.map(([, x]) => x.o) };
-          }
-          geldi(alan, degisti);
-        },
-        hata,
-      ),
-    );
+    const fark = farkAlaniMi(alan);
+    const isle = (snap: QuerySnapshot<DocumentData>) => {
+      let degisti = false;
+      for (const c of snap.docChanges()) {
+        const id = anahtarKimligi(c.doc.id);
+        const v = c.doc.data() as OgeBelgesi & { silindi?: boolean };
+        if (c.type === "removed" || v.silindi) {
+          degisti = m.delete(id) || degisti;
+          continue;
+        }
+        const eski = m.get(id);
+        if (eski && eski.j === v.j && eski.s === v.s) continue;
+        m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j ? eski.o : JSON.parse(v.j) });
+        degisti = true;
+      }
+      if (degisti || !bagli) {
+        const liste = [...m.entries()].sort((a, b) => a[1].s - b[1].s || (a[0] < b[0] ? -1 : 1));
+        siralar = { ...siralar, [alan]: new Map(liste.map(([id, x]) => [id, x.s])) };
+        d = { ...d, [alan]: liste.map(([, x]) => x.o) };
+      }
+      // Sunucudan bir kez tam gelen koleksiyon bu cihazda bundan sonra farkla okunur.
+      if (fark && !snap.metadata.fromCache) tamOkunduYaz(alan);
+      geldi(alan, degisti);
+    };
+    const tamDinle = () => {
+      if (durdu) return;
+      // Önbellekle sunucu aynıysa yalnız "fromCache" değişiyor; o görüntü de gelsin ki tam okunduğu yazılsın.
+      iptal.push(onSnapshot(collection(db, alan), { includeMetadataChanges: fark }, isle, hata));
+    };
+    if (!fark || !tamOkundu(alan)) {
+      tamDinle();
+      continue;
+    }
+    getDocsFromCache(collection(db, alan))
+      .then((snap) => {
+        if (durdu) return;
+        // Önbellek boşsa (silinmiş, başka tarayıcı profili) baştan tam okunur.
+        if (snap.empty) return tamDinle();
+        let enSon = 0;
+        for (const b of snap.docs) {
+          const v = b.data() as OgeBelgesi & { silindi?: boolean; z?: Timestamp | null };
+          if (v.z) enSon = Math.max(enSon, v.z.toMillis());
+          if (!v.silindi) m.set(anahtarKimligi(b.id), { s: v.s, j: v.j, o: JSON.parse(v.j) });
+        }
+        // Zamansız belge (fark okumadan önce yazılmış) zaten önbellekte; sorgu yalnız zamanlıları getiriyor.
+        const esik = Timestamp.fromMillis(Math.max(0, enSon - FARK_PAYI));
+        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle, hata));
+      })
+      .catch(tamDinle);
   }
 
   for (const alan of HARITA_ALANLARI) {
@@ -264,7 +321,9 @@ const kayitBagla = (hazir: () => void): (() => void) => {
       const b = writeBatch(db);
       for (const i of sonuc.islemler.slice(k, k + 450)) {
         const ref = doc(db, i.koleksiyon, i.id);
-        if (i.tur === "sil") b.delete(ref);
+        // Fark okunan koleksiyonda silme de yazış: belge "silindi" işaretiyle kalıyor, fark sorgusu onu görsün.
+        if (farkAlaniMi(i.koleksiyon)) b.set(ref, i.tur === "sil" ? { silindi: true, z: serverTimestamp() } : { ...i.veri, z: serverTimestamp() });
+        else if (i.tur === "sil") b.delete(ref);
         else b.set(ref, i.veri);
       }
       b.commit().catch((e) => {
@@ -274,7 +333,11 @@ const kayitBagla = (hazir: () => void): (() => void) => {
     }
   }
 
-  return () => iptal.forEach((f) => f());
+  return () => {
+    // Önbellekten sonra açılan fark dinleyicisi kapanıştan sonra kurulmasın.
+    durdu = true;
+    iptal.forEach((f) => f());
+  };
 };
 
 /* --- Giriş, etkinleştirme, şifre --- */
