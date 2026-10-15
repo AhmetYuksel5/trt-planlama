@@ -129,9 +129,9 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
     const sinir = ayar.ozellikler[ozellik].gunlukSinir;
     if (kullanilan >= sinir) return yanit({ hata: "gunlukSinir", kalan: 0 }, 429);
     const s = await cagir(saglayici, istek, d.fetch);
-    if (!s.tamam) return yanit({ hata: s.hata }, 502);
+    if (!s.tamam) return yanit({ hata: s.hata, ...(s.hata === "arama" ? { ayrinti: s.ayrinti } : {}) }, 502);
     // Alanlı sonuç beklenen biçimde değilse kullanılamaz: hak düşmesin.
-    const sonuc = sonucCoz(ozellik, s.metin);
+    const sonuc = sonucCoz(ozellik, s.metin, s.kaynaklar);
     if (sonuc === null) return yanit({ hata: "bos" }, 502);
     // Sayaç yalnız başarılı çağrıda artıyor; KV anlık tutarlı değil, sınır kaba bir koruma.
     await env.YZ.put(kAnahtar, String(kullanilan + 1), { expirationTtl: IKI_GUN });

@@ -14,7 +14,7 @@ import type { Bicim, YzGenel } from "./veri";
  * "Haber değeri" metinden türeyen sabit bir sonuç; ayar kaydedilmiyor.
  */
 
-export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri"] as const;
+export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri", "takipMetni"] as const;
 export type YzOzellik = (typeof YZ_OZELLIKLERI)[number];
 
 export type SaglayiciTuru = "anthropic" | "openai";
@@ -39,6 +39,8 @@ export interface YzOzellikAyari {
   yonerge?: string;
   /** Haber değeri ölçütleri; boşsa varsayılanlar (dil.ts → yzVarsayilanKriterler). */
   kriterler?: string[];
+  /** İnternet aramasının sınırlandığı siteler (alan adı); boşsa bütün web. */
+  alanlar?: string[];
 }
 export interface YzAyar {
   saglayicilar: YzSaglayici[];
@@ -86,7 +88,7 @@ let soruldu = 0;
 const dinleyiciler = new Set<() => void>();
 const yay = () => dinleyiciler.forEach((f) => f());
 
-const DEMO_DURUM: Durum = { kisalt: { kalan: 50, sinir: 50 }, bicimle: { kalan: 50, sinir: 50 }, haberDegeri: { kalan: 50, sinir: 50 } };
+const DEMO_DURUM: Durum = Object.fromEntries(YZ_OZELLIKLERI.map((o) => [o, { kalan: 50, sinir: 50 }]));
 
 export const yzDurumuTazele = async () => {
   if (!GERCEK) {
@@ -154,14 +156,26 @@ export interface YzDegerSonucu {
   genel: YzGenel;
   ozet: string;
 }
+export interface YzKaynak {
+  url: string;
+  baslik: string;
+}
+export interface YzTakipSonucu {
+  metin: string;
+  /** Sağlayıcının alıntıladığı sayfalar; modelin yazdığı değil. */
+  kaynaklar: YzKaynak[];
+}
 interface Girdiler {
   kisalt: { metin: string };
+  /** `gecmis`: bizim son satırlarımız, model yenisini yazsın; `bugun` İstanbul günü. */
+  takipMetni: { baslik: string; gun: 1 | 3 | 7; bugun: string; gecmis: string[] };
   bicimle: YzBicimGirdisi;
   /** `dil`: gerekçeler isteyenin arayüz dilinde; `kriterler` yalnız demoda (kapı kendi ayarından okuyor). */
   haberDegeri: YzOneriGirdisi & { dil: string; kriterler?: string[] };
 }
 interface Sonuclar {
   kisalt: string;
+  takipMetni: YzTakipSonucu;
   bicimle: YzBicimSonucu;
   haberDegeri: YzDegerSonucu;
 }
@@ -179,6 +193,11 @@ const ozet = (m: string) => [...m].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >
 
 const demo = <O extends YzOzellik>(o: O, g: Girdiler[O]): Sonuclar[O] => {
   if (o === "kisalt") return demoKisalt((g as Girdiler["kisalt"]).metin) as Sonuclar[O];
+  // Demoda internete çıkılmıyor: bizdeki son satır, kaynaksız.
+  if (o === "takipMetni") {
+    const t = g as Girdiler["takipMetni"];
+    return { metin: t.gecmis[0] ?? t.baslik, kaynaklar: [] } as YzTakipSonucu as Sonuclar[O];
+  }
   if (o === "bicimle") {
     const b = g as YzBicimGirdisi;
     const metin = `${b.haberBasligi} ${b.gelisme}`;
@@ -234,5 +253,6 @@ const HATA: Record<string, Anahtar> = {
   yetki: "yzHataYetki",
   adres: "yzHataAdres",
   model: "yzHataModel",
+  arama: "yzHataArama",
 };
 export const yzHataMetni = (t: (k: Anahtar) => string, kod: string) => t(HATA[kod] ?? "yzHataSaglayici");

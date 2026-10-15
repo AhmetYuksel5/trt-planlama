@@ -30,6 +30,8 @@ export interface OzellikAyari {
   yonerge?: string;
   /** Haber değeri ölçütleri; boşsa varsayılan liste (ozellikler.ts). */
   kriterler?: string[];
+  /** İnternet aramalı özellikte aramanın sınırlandığı siteler (alan adı); boşsa bütün web. */
+  alanlar?: string[];
 }
 
 export interface Ayar {
@@ -38,7 +40,7 @@ export interface Ayar {
 }
 
 /* Programın bildiği özellikler; yeni özellik buraya ve ozellikler.ts'e girer. */
-export const OZELLIKLER = ["kisalt", "bicimle", "haberDegeri"] as const;
+export const OZELLIKLER = ["kisalt", "bicimle", "haberDegeri", "takipMetni"] as const;
 export type Ozellik = (typeof OZELLIKLER)[number];
 
 export const VARSAYILAN_SINIR = 50;
@@ -116,6 +118,11 @@ export const ayarBirlestir = (eski: Ayar, gelen: unknown): { ayar: Ayar } | { ha
     if (yonerge) ozellikler[ad].yonerge = yonerge;
     const kriterler = Array.isArray(o.kriterler) ? o.kriterler.map((k) => metin(k, 200)).filter(Boolean).slice(0, 20) : [];
     if (kriterler.length) ozellikler[ad].kriterler = kriterler;
+    // Alan adı yalnız: yönetici adres yapıştırsa da (https://…/yol) site kalsın.
+    const alanlar = Array.isArray(o.alanlar)
+      ? [...new Set(o.alanlar.map((x) => metin(x, 200).toLowerCase().replace(/^[a-z]+:\/\//, "").replace(/^www\./, "").split(/[/?#]/)[0]).filter((x) => /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(x)))].slice(0, 30)
+      : [];
+    if (alanlar.length) ozellikler[ad].alanlar = alanlar;
   }
   return { ayar: { saglayicilar, ozellikler } };
 };

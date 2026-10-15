@@ -15,7 +15,7 @@ import { FormAlt } from "./nextday/Formlar";
  */
 
 
-const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt", bicimle: "yzBicimle", haberDegeri: "yzHaberDegeri" };
+const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt", bicimle: "yzBicimle", haberDegeri: "yzHaberDegeri", takipMetni: "yzTakipMetni" };
 const TUR_ADI: Record<SaglayiciTuru, Anahtar> = { anthropic: "yzTurClaude", openai: "yzTurOpenai" };
 const VARSAYILAN_OZELLIK: YzOzellikAyari = { acik: false, birimler: [], gunlukSinir: 50 };
 
@@ -222,6 +222,19 @@ function OzellikSatiri({
         {t("yzYonerge")}
         <textarea dir="auto" rows={4} value={deger.yonerge ?? ""} onChange={(e) => degistir({ ...deger, yonerge: e.target.value })} data-yz-yonerge />
       </label>
+      {ozellik === "takipMetni" && (
+        <label>
+          {t("yzAlanlar")}
+          <textarea
+            dir="ltr"
+            rows={4}
+            value={(deger.alanlar ?? []).join("\n")}
+            placeholder={"aa.com.tr\nreuters.com"}
+            onChange={(e) => degistir({ ...deger, alanlar: e.target.value.split("\n") })}
+            data-yz-alanlar
+          />
+        </label>
+      )}
       {ozellik === "haberDegeri" && (
         <label>
           {t("yzKriterler")}

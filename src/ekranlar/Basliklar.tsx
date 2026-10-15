@@ -9,6 +9,8 @@ import { KISAYOL_EN_COK, kisininKisayollari } from "../kisayol";
 import { ULKELER, baslikBul, kisiBul, useVeri, type Kisi, type Ulke } from "../veri";
 import { yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
+import { YzSonGelismeler } from "../bilesenler/YzTakip";
+import { useYz } from "../yz";
 
 /**
  * Merkezi haber başlıkları havuzu (promptun 4.4 maddesi).
@@ -204,6 +206,7 @@ export function BaslikSayfasi({ ben, id }: { ben: Kisi; id: string }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const b = baslikBul(v, id);
+  const takipAcik = !!useYz("takipMetni");
   if (!b) return <Bos metin={t("kayitYok")} />;
   const planlar = v.planlar
     .filter((p) => p.basliklar.some((x) => x.baslikId === id))
@@ -234,6 +237,11 @@ export function BaslikSayfasi({ ben, id }: { ben: Kisi; id: string }) {
           <BaslikKisayolu ben={ben} baslikId={id} yazili />
         </div>
       </header>
+      {takipAcik && (
+        <Kart baslik={t("yzTakipMetni")}>
+          <YzSonGelismeler baslik={b.ad} baslikId={b.id} />
+        </Kart>
+      )}
       <Kart baslik={t("nextday")} ek={String(planlar.length)}>
         {planlar.length === 0 ? (
           <Bos kucuk metin={t("kayitYok")} />

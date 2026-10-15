@@ -2132,6 +2132,10 @@ tr.soluk > td { opacity: .5; }
 .yz-oneri-bas { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
 .yz-oneri-alan { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--ara-1) var(--ara-2); padding-block-start: var(--ara-2); border-block-start: 1px solid var(--cizgi); }
 .yz-oneri-alan > small { grid-column: 1 / -1; color: var(--sonuk); }
+.yz-takip { display: grid; gap: var(--ara-2); }
+.yz-takip .yz-satir { margin-block-start: 0; }
+.yz-kaynaklar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); font-size: var(--punto-kucuk); }
+.yz-kaynaklar a { display: inline-flex; align-items: center; gap: var(--ara-1); overflow-wrap: anywhere; }
 .yz-gorus { display: grid; gap: var(--ara-2); justify-items: start; }
 .yz-gorus > .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); }
 .yz-gorus-kutu { display: grid; gap: var(--ara-1); width: 100%; }

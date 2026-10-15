@@ -1,14 +1,16 @@
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, useDil } from "../../dil";
-import { paketDurum, paketSil, planBaslikBirlestir, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketSil, planBaslikBirlestir, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { kisiAr, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
-import { vardiyaYaz } from "../../tarih";
+import { simdi, vardiyaYaz } from "../../tarih";
+import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
+import { useYz } from "../../yz";
 import { baslikBul, kisiBul, useVeri, type NextDayPlan, type PlanBasligi } from "../../veri";
 import { yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
@@ -47,6 +49,8 @@ export default function BaslikKarti({
   const [muhabirEkle, setMuhabirEkle] = useState(false);
   const [oneriAcik, setOneriAcik] = useState("");
   const [katPenceresi, setKatPenceresi] = useState(false);
+  const [takipPenceresi, setTakipPenceresi] = useState(false);
+  const takipAcik = !!useYz("takipMetni");
   const [birakilir, setBirakilir] = useState(false);
   const baslik = baslikBul(v, pb.baslikId);
   const adi = (x: PlanBasligi) => baslikBul(v, x.baslikId)?.ad ?? "";
@@ -118,6 +122,11 @@ export default function BaslikKarti({
               <button type="button" role="menuitem" className="acilir-satir" disabled={toplam < 2} onClick={() => setKatPenceresi(true)} data-baslika-kat>
                 <Combine size={16} /> {t("baslikaKat")}
               </button>
+              {takipAcik && (
+                <button type="button" role="menuitem" className="acilir-satir" onClick={() => setTakipPenceresi(true)} data-yz-takip-ac>
+                  <Search size={16} /> {t("yzTakipMetni")}
+                </button>
+              )}
             </IslemMenusu>
             <IkonDugme ikon={<ArrowUp size={15} />} etiket={t("yukariTasi")} onClick={() => ben && sira > 0 && planBaslikTasi(ben, plan.id, pb.id, -1)} />
             <IkonDugme ikon={<ArrowDown size={15} />} etiket={t("asagiTasi")} onClick={() => ben && sira < toplam - 1 && planBaslikTasi(ben, plan.id, pb.id, 1)} />
@@ -287,6 +296,24 @@ export default function BaslikKarti({
       </div>
     </details>
     {/* Pencere kartın dışında: kapalı <details> içindekini göstermiyor. */}
+    {/* Son gelişmeler gelişme olarak başlığın altına giriyor; kaynak alıntılanan siteler (medya). */}
+    {takipPenceresi && baslik && (
+      <Pencere baslik={t("yzTakipMetni")} alt={<Icerik>{baslik.ad}</Icerik>} kapat={() => setTakipPenceresi(false)}>
+        <YzSonGelismeler
+          baslik={baslik.ad}
+          baslikId={baslik.id}
+          ekleMetni={t("yzGelismeOlarakEkle")}
+          ekle={(s) => {
+            if (!ben) return;
+            const ok = gelismeKaydet(ben, { planId: plan.id, planBaslikId: pb.id, metin: s.metin, kaynakTuru: "medya", kaynakAdi: kaynakAdlari(s), tarih: simdi() });
+            if (ok !== false) {
+              bildir(t("bKaydedildi"));
+              setTakipPenceresi(false);
+            }
+          }}
+        />
+      </Pencere>
+    )}
     {katPenceresi && (
       <Pencere baslik={t("baslikaKat")} alt={<Icerik>{baslik?.ad}</Icerik>} kapat={() => setKatPenceresi(false)}>
         <div className="dugmeler dikey" data-kat-hedefleri>

@@ -252,6 +252,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kararı değiştirmez. Görüş öneriden ayrı kayıtta (`Durum.yzGorusleri`,
     öneri başına bir, `eylemler.ts → yzGorusKaydet`), ekibin hepsi görür,
     muhabir görmez (`yetki.ts → yzGorusuGorur`); öneri silinince izi gider.
+  - **"Son gelişmeler"** (`bilesenler/YzTakip.tsx → YzSonGelismeler`,
+    kapıda `takipMetni`): başlık için internette arayıp kısa Arapça takip
+    paragrafı (son 24 saat / 3 gün / 7 gün). Next Day'de başlığın "+"
+    menüsünden pencere, "Gelişme olarak ekle" (kaynak türü medya, adı
+    alıntılanan siteler); Weekly'de ana dosya formunda "Durum özetine
+    yaz"; başlığın sayfasında yalnız kopyala. Bizdeki son satırlar gider
+    (`baslikGecmisi`), model yenisini yazsın. Kaynak bağlantıları modelin
+    yazdığı değil, sağlayıcının alıntıları; metne sızan bağlantı ayıklanır.
+    Arama: Claude'da `web_search` aracı (`pause_turn` sürdürülür), OpenAI'da
+    Responses API `web_search` (yoksa "arama" hatası); Ayarlar'da site
+    listesi (`alanlar`, alan adına indirgenir; tanımayan uçta süzgeçsiz).
   - Ayarlar'da her özelliğe yöneticinin yönergesi (`yonerge`, varsayılan
     yönergenin arkasına; çelişirse o geçerli) ve haber değerine ölçütler
     (`kriterler`, boşsa `dil.ts → yzVarsayilanKriterler`, kapıdakiyle aynı).

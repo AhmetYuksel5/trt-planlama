@@ -25,6 +25,7 @@ import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
+import { YzSonGelismeler } from "../../bilesenler/YzTakip";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { plandakiFaaliyetler } from "../../takvim";
@@ -367,6 +368,13 @@ export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; 
         <textarea {...icerikAlani} rows={4} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
       </label>
       <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
+      {/* Durum özeti çoğu zaman dosyanın son gelişmeleri: yapay zeka arayıp yazıyor, producer düzeltip kaydediyor. */}
+      <YzSonGelismeler
+        baslik={yeni ? f.yeniBaslik : (v.basliklar.find((b) => b.id === f.baslikId)?.ad ?? "")}
+        baslikId={yeni ? undefined : f.baslikId}
+        ekleMetni={t("yzFormaYaz")}
+        ekle={(s) => setF((x) => ({ ...x, metin: s.metin }))}
+      />
       <FormAlt kapat={kapat} kaydet={kaydet} devre={yeni ? !f.yeniBaslik.trim() : !f.baslikId} />
     </div>
   );

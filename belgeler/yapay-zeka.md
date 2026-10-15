@@ -1,6 +1,6 @@
 # Yapay zeka özellikleri
 
-Plannersflow'un yapay zeka özellikleri ("Kısalt", "Biçimle", "Haber değeri") küçük bir aracı
+Plannersflow'un yapay zeka özellikleri ("Kısalt", "Biçimle", "Haber değeri", "Son gelişmeler") küçük bir aracı
 üzerinden çalışıyor: **yapay zeka kapısı**, Cloudflare Workers'ta,
 `https://yz.plannersflow.net`. Kodu depoda `worker/`.
 
@@ -57,6 +57,25 @@ kaydedilmez.
   orta, düşük). Yalnız tavsiye: karar düğmelerine dokunmaz. Görüş öneriye
   bağlı ayrı kayıtta saklanır, Planlama'nın hepsi görür (hak bir kez yenir),
   muhabir görmez. "Yeniden değerlendir" eskisinin yerine yenisini yazar.
+
+- **Son gelişmeler:** Başlık (haber dosyası) için internette arar ve kısa
+  bir Arapça takip paragrafı yazar; aralık son 24 saat, 3 gün ya da 7 gün.
+  - Next Day'de başlığın "+" menüsünden; sonuç düzeltilip "Gelişme olarak
+    ekle" ile başlığın altına girer (kaynak: alıntılanan siteler).
+  - Weekly'de ana dosya formunda; "Durum özetine yaz" forma yazar.
+  - Başlığın sayfasında; yalnız kopyalanır.
+
+  Bizdeki son satırlar (son Next Day gelişmeleri, haftalık kalemler) de
+  gider: model zaten yazılanı tekrarlamaz, yenisini yazar. Kaynak
+  bağlantıları sağlayıcının alıntılarından gelir, model uyduramaz; plana
+  koymadan önce bakılmalı. Arama sağlayıcıda ek ücretlidir; günlük sınırı
+  ona göre ayarlayın.
+
+  Sağlayıcı: Claude (arama aracıyla) ya da OpenAI (Responses API). Öbür
+  OpenAI uyumlu sağlayıcıların çoğu internette arama yapmaz; "Seçilen
+  sağlayıcı internet aramasını desteklemiyor" hatası verir. Ayarlar'da
+  **aranacak siteler** yazılabilir (her satıra bir alan adı, örneğin
+  `aa.com.tr`); boşsa bütün web.
 
 Her özelliğe Ayarlar'da **yönerge** yazılabilir (kurumun kendi biçimi,
 üslubu, örnekleri). Kapının varsayılan yönergesinin arkasına eklenir;

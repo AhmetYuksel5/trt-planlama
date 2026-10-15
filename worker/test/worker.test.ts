@@ -314,3 +314,89 @@ test("ayar: yönerge ve kriterler saklanır, boşlar düşer", () => {
   assert.equal(r.ayar.ozellikler.haberDegeri.yonerge, "kısa yaz");
   assert.equal(r.ayar.ozellikler.bicimle.yonerge, undefined);
 });
+
+const takipGirdisi = { baslik: "الحرب على غزة", gun: 3, bugun: "2026-10-14", gecmis: ["سطر قديم"] };
+
+test("son gelişmeler (OpenAI): Responses API ve web_search, site süzgeci, kaynaklar alıntılardan, metindeki bağlantılar ayıklanır", async () => {
+  const t = kur();
+  const a = structuredClone(AYAR) as any;
+  a.ozellikler.takipMetni = { acik: true, saglayici: "diger", birimler: [], gunlukSinir: 5, alanlar: ["https://www.aa.com.tr/ar/", "reuters.com", "kötü alan"] };
+  await t.cagir("/ayar", "yon", a, "PUT");
+  assert.deepEqual(JSON.parse(t.depo.get("ayar")!).ozellikler.takipMetni.alanlar, ["aa.com.tr", "reuters.com"], "adres alan adına iner, bozuk düşer");
+  const istekler: any[] = [];
+  t.d.fetch = (async (g: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(g as RequestInfo, init);
+    if (req.url.startsWith("https://firestore.googleapis.com/")) return Response.json({ fields: { j: { stringValue: JSON.stringify({ birim: "planlama" }) } } });
+    const b = await req.json();
+    istekler.push({ url: req.url, b });
+    if (b.tools[0].filters) return Response.json({ error: { message: "Unknown parameter: 'tools[0].filters'." } }, { status: 400 });
+    return Response.json({
+      status: "completed",
+      output: [
+        { type: "web_search_call", id: "ws1" },
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text: "أعلن الطرفان هدنة جديدة ([aa.com.tr](https://aa.com.tr/x)). https://ornek.test/y",
+              annotations: [
+                { type: "url_citation", url: "https://aa.com.tr/x", title: "الأناضول" },
+                { type: "url_citation", url: "https://aa.com.tr/x", title: "tekrar" },
+                { type: "url_citation", url: "javascript:alert(1)", title: "kötü" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  }) as typeof fetch;
+  const r = await t.cagir("/calistir", "pl", { ozellik: "takipMetni", girdi: takipGirdisi });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.deepEqual(j.sonuc, { metin: "أعلن الطرفان هدنة جديدة.", kaynaklar: [{ url: "https://aa.com.tr/x", baslik: "الأناضول" }] });
+  assert.equal(istekler.length, 2, "süzgeç reddedilince süzgeçsiz bir kez daha");
+  assert.equal(istekler[0].url, "https://api.ornek.test/v1/responses");
+  assert.deepEqual(istekler[0].b.tools[0], { type: "web_search", filters: { allowed_domains: ["aa.com.tr", "reuters.com"] } });
+  assert.match(istekler[0].b.instructions, /last 3 days\. Today is 2026-10-14/);
+  assert.deepEqual(JSON.parse(istekler[0].b.input).our_coverage, ["سطر قديم"]);
+  // Responses ucu olmayan uyumlu sağlayıcı
+  t.d.fetch = (async (g: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(g as RequestInfo, init);
+    if (req.url.startsWith("https://firestore.googleapis.com/")) return Response.json({ fields: { j: { stringValue: JSON.stringify({ birim: "planlama" }) } } });
+    return new Response("not found", { status: 404 });
+  }) as typeof fetch;
+  const h = await t.cagir("/calistir", "pl", { ozellik: "takipMetni", girdi: takipGirdisi });
+  assert.equal((await h.json()).hata, "arama");
+  assert.equal((await t.cagir("/calistir", "pl", { ozellik: "takipMetni", girdi: { baslik: "x" } })).status, 400, "tarihsiz girdi");
+});
+
+test("son gelişmeler (Claude): arama aracı ve site listesi gider, pause_turn sürdürülür, kaynaklar alıntılardan", async () => {
+  const t = kur();
+  const a = structuredClone(AYAR) as any;
+  a.ozellikler.takipMetni = { acik: true, saglayici: "claude", birimler: [], gunlukSinir: 5, alanlar: ["aa.com.tr"] };
+  await t.cagir("/ayar", "yon", a, "PUT");
+  const govdeler: any[] = [];
+  const mesaj = (content: unknown[], stop_reason: string) => ({ id: "m", type: "message", role: "assistant", model: "claude-opus-5-5", content, stop_reason, usage: { input_tokens: 1, output_tokens: 1 } });
+  t.d.fetch = (async (g: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(g as RequestInfo, init);
+    if (req.url.startsWith("https://firestore.googleapis.com/")) return Response.json({ fields: { j: { stringValue: JSON.stringify({ birim: "planlama" }) } } });
+    const b = await req.json();
+    govdeler.push(b);
+    if (govdeler.length === 1) return Response.json(mesaj([{ type: "server_tool_use", id: "s1", name: "web_search", input: { query: "غزة" } }], "pause_turn"));
+    return Response.json(
+      mesaj(
+        [
+          { type: "text", text: "تواصلت المفاوضات ", citations: [{ type: "web_search_result_location", url: "https://aa.com.tr/a", title: "AA", cited_text: "…", encrypted_index: "e" }] },
+          { type: "text", text: "في القاهرة.", citations: null },
+        ],
+        "end_turn",
+      ),
+    );
+  }) as typeof fetch;
+  const j = await (await t.cagir("/calistir", "pl", { ozellik: "takipMetni", girdi: takipGirdisi })).json();
+  assert.deepEqual(j.sonuc, { metin: "تواصلت المفاوضات في القاهرة.", kaynaklar: [{ url: "https://aa.com.tr/a", baslik: "AA" }] });
+  assert.equal(govdeler.length, 2, "pause_turn bir kez sürdürüldü");
+  assert.deepEqual(govdeler[0].tools, [{ type: "web_search_20250305", name: "web_search", max_uses: 5, allowed_domains: ["aa.com.tr"] }]);
+  assert.equal(govdeler[1].messages[1].role, "assistant", "yarım dönüş konuşmaya eklendi");
+});

@@ -13,6 +13,13 @@ export interface Istek {
   kullanici: string;
   enCokCikti: number;
   json?: boolean;
+  /** İnternet araması; `alanlar` boşsa bütün web. */
+  arama?: { alanlar: string[] };
+}
+
+export interface Kaynak {
+  url: string;
+  baslik: string;
 }
 
 const EN_UZUN_GIRDI = 4000;
@@ -136,6 +143,39 @@ export const istekKur = (ozellik: Ozellik, girdi: unknown, ayar?: OzellikAyari):
       };
     }
     /*
+     * Başlığın (haber dosyasının) son gelişmeleri: internette arayıp kısa
+     * bir takip paragrafı. Bizdeki son satırlar da gidiyor; model "bunu
+     * zaten yazdık, yeni olan ne" diye yazsın. Bağlantıları model yazmıyor,
+     * sağlayıcının alıntılarından kapı çıkarıyor (sonucCoz): uydurma kaynak
+     * plana girmesin.
+     */
+    case "takipMetni": {
+      if (!girdi || typeof girdi !== "object") return null;
+      const g = girdi as Record<string, unknown>;
+      const baslik = yazi(g.baslik, 200);
+      const gun = [1, 3, 7].includes(Number(g.gun)) ? Number(g.gun) : 1;
+      const bugun = /^\d{4}-\d{2}-\d{2}$/.test(String(g.bugun)) ? String(g.bugun) : "";
+      if (!baslik || !bugun) return null;
+      const gecmis = Array.isArray(g.gecmis) ? g.gecmis.map((x) => yazi(x, 600)).filter(Boolean).slice(0, 15) : [];
+      return {
+        sistem: yonergeli(
+          [
+            "You are a news researcher for the planning desk of an Arabic-language TV news channel based in Istanbul.",
+            `Search the web for the latest developments on the given story during the last ${gun === 1 ? "24 hours" : `${gun} days`}. Today is ${bugun}.`,
+            "Write one short paragraph, 3 to 5 sentences, in Modern Standard Arabic news style: what is new, most important first, with the date of each development.",
+            "Use only what your sources say; no speculation, no opinion. Prefer reliable news agencies and outlets.",
+            "our_coverage lists lines the desk has already written on this story; do not repeat them, focus on what happened since.",
+            "If nothing significant happened in that period, say so in one sentence.",
+            "Reply with the paragraph only: no heading, no list, no links, no source names in brackets.",
+          ],
+          ayar,
+        ),
+        kullanici: JSON.stringify({ story: baslik, period_days: gun, our_coverage: gecmis }),
+        enCokCikti: 8000,
+        arama: { alanlar: ayar?.alanlar ?? [] },
+      };
+    }
+    /*
      * Haber değeri görüşü: ölçüt başına 1–5 puan ve kısa gerekçe, sonunda
      * genel kanaat. Yalnız tavsiye; kararı Planlama veriyor. Gerekçeler
      * isteyenin arayüz dilinde.
@@ -193,9 +233,30 @@ export interface DegerSonucu {
   ozet: string;
 }
 
+export interface TakipSonucu {
+  metin: string;
+  kaynaklar: Kaynak[];
+}
+
+/* Metne sızan bağlantılar ("([site](url))", "[ad](url)", çıplak adres) ayıklanıyor; kaynaklar ayrı listede. */
+const baglantisiz = (m: string) =>
+  m
+    .replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\s*https?:\/\/\S+/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+
 /** Sağlayıcının metninden tarayıcıya gidecek sonuç; beklenen biçimde değilse null ("bos"). */
-export const sonucCoz = (ozellik: Ozellik, metin: string): string | BicimSonucu | DegerSonucu | null => {
+export const sonucCoz = (ozellik: Ozellik, metin: string, kaynaklar: Kaynak[] = []): string | BicimSonucu | DegerSonucu | TakipSonucu | null => {
   if (ozellik === "kisalt") return metin.trim() || null;
+  if (ozellik === "takipMetni") {
+    const m = baglantisiz(metin);
+    if (!m) return null;
+    const goruldu = new Set<string>();
+    const temiz = kaynaklar.filter((k) => /^https?:\/\//.test(k.url) && !goruldu.has(k.url) && goruldu.add(k.url)).slice(0, 10);
+    return { metin: m.slice(0, 3000), kaynaklar: temiz.map((k) => ({ url: k.url.slice(0, 500), baslik: yazi(k.baslik, 200) })) };
+  }
   const j = nesne(metin);
   if (!j) return null;
   if (ozellik === "bicimle") {
