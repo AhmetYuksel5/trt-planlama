@@ -4,7 +4,7 @@ import { Kart, NotKutu, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { birimAdi, kisiBirimleri } from "../yapi";
-import { YZ_OZELLIKLERI, yzAyarOku, yzHataMetni, yzModeller, yzAyarYaz, yzSaglayiciDene, type SaglayiciTuru, type YzAyar, type YzOzellik, type YzOzellikAyari, type YzSaglayici } from "../yz";
+import { YZ_OZELLIKLERI, useYz, yzAyarOku, yzHataMetni, yzModeller, yzAyarYaz, yzSaglayiciDene, type SaglayiciTuru, type YzAyar, type YzOzellik, type YzOzellikAyari, type YzSaglayici } from "../yz";
 import { FormAlt } from "./nextday/Formlar";
 
 /*
@@ -185,6 +185,7 @@ function OzellikSatiri({
         <input type="checkbox" checked={deger.acik} onChange={(e) => degistir({ ...deger, acik: e.target.checked })} data-yz-ozellik-acik />
         <b>{t(OZELLIK_ADI[ozellik])}</b>
         <span className="sonuk">· {t("yzBugunKullanim", { n: kullanim })}</span>
+        <SenIcinDurum ozellik={ozellik} />
       </label>
       <div className="satir">
         <label>
@@ -359,5 +360,16 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
         <FormAlt kapat={kapat} kaydet={tamam} devre={!gecerli && !f.anahtariSil} />
       </div>
     </Pencere>
+  );
+}
+
+/* Özellik kaydedilmiş ayarla bu hesapta açık mı: düğme çıkmıyorsa nedeni buradan görülsün. */
+function SenIcinDurum({ ozellik }: { ozellik: YzOzellik }) {
+  const { t } = useDil();
+  const d = useYz(ozellik);
+  return (
+    <span data-yz-sen-icin={d ? "acik" : "kapali"}>
+      <Rozet ton={d ? "iyi" : undefined}>{d ? t("yzSenIcinAcik", { n: d.kalan }) : t("yzSenIcinKapali")}</Rozet>
+    </span>
   );
 }

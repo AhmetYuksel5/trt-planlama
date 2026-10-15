@@ -776,7 +776,7 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .form input:focus, .form select:focus, .form textarea:focus, .girdi:focus { outline: none; border-color: var(--vurgu); box-shadow: 0 0 0 3px var(--vurgu-sis); }
 .form textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
 .form .satir { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--ara-3); }
-.form .secim { display: flex; align-items: center; gap: var(--ara-2); font-weight: 500; color: var(--murekkep); }
+.form .secim { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); font-weight: 500; color: var(--murekkep); }
 .form .ipucu { font-weight: 400; color: var(--silik); font-size: var(--punto-mini); }
 .form-kutu { background: var(--zemin); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-4); }
 .form-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; flex-wrap: wrap; }

@@ -233,7 +233,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Kapıya ulaşılamazsa özellik görünmez.
     - Demoda kapıya gidilmez, "Kısalt" ilk cümleyi verir.
   - **İlk özellik "Kısalt":** Gelişme formunda (`bilesenler/YzKisalt.tsx`).
-    Sonuç forma gelir, kişi kaydeder; "Önceki metin" geri alır.
+    Sonuç forma gelir, kişi kaydeder; "Önceki metin" geri alır. Belgede
+    gelişme yerinde düzenlendiği için satırın şeridinde ✨ (`YzKisaltSerit`):
+    sonuç hemen kaydedilir, ↶ geri alır. Ayarlar'da özelliğin yanında "senin
+    için açık/kapalı"; kapalı görünen durum sekmeye dönünce yeniden sorulur.
   - **Dağıtım:** `.github/workflows/yz-yayin.yml`. Gizli değerler
     `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; yoksa uyarıyla atlanır.
     KV kimliği dağıtımda yazılır (`wrangler.toml`'da `KV_KIMLIGI` yer

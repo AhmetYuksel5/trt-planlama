@@ -77,6 +77,7 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
 type Durum = Partial<Record<YzOzellik, { kalan: number; sinir: number }>>;
 let durum: Durum | null = null;
 let soruluyor = false;
+let soruldu = 0;
 const dinleyiciler = new Set<() => void>();
 const yay = () => dinleyiciler.forEach((f) => f());
 
@@ -90,6 +91,7 @@ export const yzDurumuTazele = async () => {
   }
   if (soruluyor) return;
   soruluyor = true;
+  soruldu = Date.now();
   const r = await istek<{ ozellikler: Durum }>("/durum");
   soruluyor = false;
   // Kapıya ulaşılamıyorsa (henüz kurulmadı) özellikler görünmüyor.
@@ -97,12 +99,20 @@ export const yzDurumuTazele = async () => {
   yay();
 };
 
+/*
+ * Kapalı görünen durum bir süre sonra yeniden soruluyor: sayfa açıkken
+ * özellik başka sekmede açılınca ya da kapıya o an ulaşılamayınca düğme
+ * sayfa yenilenene kadar hiç çıkmıyordu.
+ */
+const bosVeEski = () => !!durum && !Object.keys(durum).length && Date.now() - soruldu > 15_000;
+if (typeof window !== "undefined") window.addEventListener("focus", () => bosVeEski() && void yzDurumuTazele());
+
 /** Özellik bu kişiye açık mı; açıksa bugün kalan hakkı. */
 export const useYz = (o: YzOzellik) => {
   const d = useSyncExternalStore(
     (f) => {
       dinleyiciler.add(f);
-      if (durum === null) void yzDurumuTazele();
+      if (durum === null || bosVeEski()) void yzDurumuTazele();
       return () => dinleyiciler.delete(f);
     },
     () => durum,

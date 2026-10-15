@@ -58,3 +58,36 @@ export function YzKisalt({ metin, degistir }: { metin: string; degistir: (m: str
     </div>
   );
 }
+
+/*
+ * Belgede gelişme satırı yerinde düzenleniyor, form yok; Kısalt satırın
+ * şeridinde. Belgedeki her düzenleme gibi sonuç hemen kaydediliyor, ↶ Geri al
+ * eski metne döndürüyor.
+ */
+export function YzKisaltSerit({ metin, kaydet }: { metin: string; kaydet: (m: string) => unknown }) {
+  const { t } = useDil();
+  const ozellik = useYz("kisalt");
+  const [bekliyor, setBekliyor] = useState(false);
+  if (!ozellik || !metin.trim()) return null;
+  const bitti = ozellik.kalan <= 0;
+  return (
+    <button
+      type="button"
+      className="dugme dugme-sade dugme-ikon"
+      title={bitti ? t("yzSinirDoldu") : t("yzKisalt")}
+      aria-label={t("yzKisalt")}
+      aria-disabled={bekliyor || bitti}
+      onClick={async () => {
+        if (bekliyor || bitti) return;
+        setBekliyor(true);
+        const r = await yzCalistir("kisalt", metin);
+        setBekliyor(false);
+        if (r.tamam) kaydet(r.veri);
+        else bildir(yzHataMetni(t, r.hata));
+      }}
+      data-yz-kisalt-serit
+    >
+      {bekliyor ? <Loader2 size={15} className="donen" /> : <Sparkles size={15} />}
+    </button>
+  );
+}

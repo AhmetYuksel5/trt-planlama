@@ -1,5 +1,6 @@
 import { ExternalLink, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
+import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
@@ -138,6 +139,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             ekleEtiket={t(planBaslikId ? "gelismeEkle" : "takipEkle")}
             duzenle={() => ac({ tur: "gelisme", planBaslikId, mevcut: g })}
             onceki={g.onceki ? () => ben && oncekiOnayla(ben, plan.id, { gelisme: g.id }) : undefined}
+            ek={<YzKisaltSerit metin={g.metin} kaydet={(m) => ben && gelismeKaydet(ben, { ...g, metin: m })} />}
             cikar={sil(() => ben && gelismeSil(ben, g.id))}
           />
         }
