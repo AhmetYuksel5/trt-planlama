@@ -604,6 +604,9 @@ export interface Paket {
    * değil işaret, çünkü paketin muhabiri akışta görev ve bildirim alıyor.
    */
   muhabirTbc?: true;
+  /** Haftalık toplantının karar notu ve ek talebi (kalemden); muhabir görüyor. */
+  kararNotu?: string;
+  ekTalep?: string;
   aciklama: string;
   tur: IcerikTuru;
   bicim?: Bicim;
@@ -715,6 +718,13 @@ export interface HaftalikKalem {
   muhabirler: string[];
   /** Muhabir henüz belli değil (TBC); Next Day'e geçen pakete de taşınıyor. */
   muhabirTbc?: true;
+  /*
+   * Toplantıda kararla birlikte söylenen: karar notu (neden, nasıl) ve ek
+   * talep (eklenecek röportaj, görüntü…). Çıktıdaki sarı nottan ayrı; kesinleşince
+   * pakete geçiyor, muhabir görüyor. Ret notu öneriye gerekçe olarak gidiyor.
+   */
+  kararNotu?: string;
+  ekTalep?: string;
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;
@@ -1098,6 +1108,12 @@ export interface Durum {
   kisayollar?: Record<string, string[]>;
   /** Muhabire doğrudan haber önerebilen birimler; yönetici seçiyor. Yoksa yalnız Planlama. */
   muhabireOneriBirimleri?: BirimId[];
+  /*
+   * Newsdesk sistemde mi: değilse (şimdilik) iş Planlama'da bitiyor, onaylı
+   * paketi muhabir "Tamamlandı" diye kapatıyor. Açılınca devral ve üretim
+   * akışı. Gerçek kipte genel ayar belgesinde.
+   */
+  newsdeskDevrede?: boolean;
   /** Geri bildirim ve e-postayla takip ayarı (gerçek kipte genel ayar belgesinde). */
   geriBildirimAyari?: GeriBildirimAyari;
   sayac: number;

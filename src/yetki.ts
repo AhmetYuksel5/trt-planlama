@@ -263,6 +263,19 @@ export const oneriYazisabilir = (k: Kisi | undefined, o: Oneri): boolean =>
  */
 export const yzGorusuGorur = (k: Kisi | undefined): boolean => !!k && k.birim !== "muhabir";
 
+/*
+ * Newsdesk sistemde değilken iş Planlama'da bitiyor: onaylı paketi muhabiri
+ * kendisi "Tamamlandı" diye kapatıyor; hesapsız muhabir giremediği için
+ * Planlama da onun adına kapatabiliyor. Newsdesk devreye girince devral ve
+ * üretim akışı geçerli, bu kapanış yok.
+ */
+export const yalnizPlanlama = (d: Durum) => !d.newsdeskDevrede;
+export const paketTamamlayabilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean =>
+  !!k && yalnizPlanlama(d) && p.durum === "onaylandi" && ((k.birim === "muhabir" && p.muhabirId === k.id) || yapabilir(k, "paketDegerlendir"));
+
+/** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
+export const kararNotuYazabilir = (k: Kisi | undefined, h: HaftalikPlan): boolean => !!k && (kararVerebilir(k, h) || haftalikDuzenler(k, h));
+
 /** Düzeltme isteğini yalnız önerinin muhabiri karşılıyor. */
 export const oneriYenidenGonderebilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "duzeltme" && o.muhabirId === k.id;
 
@@ -318,7 +331,7 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriMesaji",
 ];
 /* Muhabirin haberinde sonucu ona dokunan olaylar; sıra ona geçtiğinde ayrıca (sahip "muhabir"). */
-const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "tamamlandi"];
+const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "paketOnaylandi", "tamamlandi"];
 
 /**
  * Muhabir yalnız kendisiyle ilgili bildirimi alıyor. Eskiden gördüğü

@@ -122,6 +122,8 @@ import {
   isVerilebilecekBirimler,
   oneriDuzenleyebilir,
   yzGorusuGorur,
+  kararNotuYazabilir,
+  paketTamamlayabilir,
 } from "./yetki";
 
 /**
@@ -853,6 +855,8 @@ export interface KalemGirdisi {
   paketBasligi?: string;
   muhabirler: string[];
   muhabirTbc?: boolean;
+  kararNotu?: string;
+  ekTalep?: string;
   not?: string;
 }
 
@@ -886,6 +890,8 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     muhabirler: g.muhabirler,
     // TBC yalnız muhabir seçilmemişken: atanınca belirsizlik kalmadı.
     muhabirTbc: g.muhabirTbc && !g.muhabirler.length ? (true as const) : undefined,
+    kararNotu: g.kararNotu?.trim() || undefined,
+    ekTalep: g.ekTalep?.trim() || undefined,
     not: g.not?.trim() || undefined,
   };
   if (g.id) {
@@ -1031,6 +1037,19 @@ export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: K
   return true;
 };
 
+/*
+ * Toplantıda kararla birlikte söylenen not ve ek talep; karardan ayrı
+ * kaydediliyor ki karar düğmesine basmak notu silmesin. Boş metin siler.
+ */
+export const kalemKararNotu = (ben: Kisi, haftaId: string, kalemId: string, g: { kararNotu: string; ekTalep: string }) => {
+  const d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || !kararNotuYazabilir(ben, h)) return false;
+  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, kararNotu: g.kararNotu.trim() || undefined, ekTalep: g.ekTalep.trim() || undefined })));
+  return true;
+};
+
 /** Toplantının sonunda kalan kalemlerin hepsine kabul. */
 export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
   const d = getir();
@@ -1049,6 +1068,9 @@ export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
  * paket biçimi olan kalemde onaylı paket doğuyor. Yalnız canlı bağlantıysa
  * paket yok, muhabir başlığın altında. Dosyası olmayan kalem takiplere.
  */
+/* Toplantının karar notu ve ek talebi pakete geçiyor: muhabir işi neyle yapacağını paketinde görüyor. */
+const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.kararNotu } : {}), ...(k.ekTalep ? { ekTalep: k.ekTalep } : {}) });
+
 const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
   let pbId: string | undefined;
   if (k.baslikId) {
@@ -1095,6 +1117,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
       muhabirId,
       ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
+      ...toplantidan(k),
       aciklama: k.metin,
       tur: k.tur,
       bicim,
@@ -1108,6 +1131,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     };
     d = { ...d, paketler: [paket, ...d.paketler] };
   }
+  // Paket ancak günlük plan açılınca da doğabiliyor (kesinleşmeden sonra); muhabir o an haberdar oluyor. Kimlik plandan: iki tarayıcı tek bildirim.
+  if (paketId && muhabirId) d = hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, paketId: paketId ?? o.paketId } : o)) };
   return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } }, `h-${turet(plan.id, k.id)}`);
@@ -1126,6 +1151,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
     muhabirId,
     ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
+    ...toplantidan(k),
     aciklama: k.metin,
     tur: k.tur,
     bicim: k.bicimler[0],
@@ -1142,7 +1168,8 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
   d = { ...d, paketler: [paket, ...d.paketler] };
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
-  return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: kolSahibi(k.tur) } });
+  // Muhabire de: onaylanan haber sayfasına ve zile düşüyor.
+  return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: kolSahibi(k.tur), ...(muhabirId ? { kime: muhabirId } : {}) } });
 };
 
 /**
@@ -1172,7 +1199,8 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
       const k = kalemi.get(o.id);
       // Günüyle gelen öneri gündemdeyse haftanın kararını alır; gündemde değilse açık kalır, Next Day'e gidebilir.
       if (o.hafta !== h.baslangic && !k) return o;
-      if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.onInceleme?.gerekce ?? o.gerekce } : { ...o, durum: "planaEklendi" };
+      // Toplantının ret notu muhabirin önerisine gerekçe olarak düşüyor.
+      if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.kararNotu || k.onInceleme?.gerekce || o.gerekce } : { ...o, durum: "planaEklendi" };
       // Düzeltmesi beklenen öneri de kapanıyor: hafta kesinleşti, yeniden gönderilecek gündem kalmadı.
       return o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme" ? { ...o, durum: "reddedildi" } : o;
     }),
@@ -1780,6 +1808,30 @@ export const paketSil = (ben: Kisi, id: string) => {
       [p.oneriId],
     ),
   );
+  return true;
+};
+
+/*
+ * Newsdesk sistemde değilken onaylı paketin kapanışı: muhabir haberi
+ * yaptığını işaretliyor (Planlama da onun adına). Muhabirin teslimi
+ * performans ölçümüne giriyor. Bildirim karşı tarafa.
+ */
+export const paketTamamla = (ben: Kisi, id: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !paketTamamlayabilir(ben, p, d)) return false;
+  const z = simdi();
+  const muhabirKendisi = ben.id === p.muhabirId;
+  const yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "tamamlandi", paketId: id, planId: p.planId, veri: muhabirKendisi ? { sahip: "planlama" } : { ...(p.muhabirId ? { kime: p.muhabirId } : {}) } }));
+  return true;
+};
+
+/** Newsdesk'in sisteme katılıp katılmadığı (tam yönetici); yarım paketler kendi yolunda kalıyor. */
+export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
+  if (!ben.hesapYoneticisi) return false;
+  const d = getir();
+  kaydet({ ...d, newsdeskDevrede: devrede || undefined });
   return true;
 };
 

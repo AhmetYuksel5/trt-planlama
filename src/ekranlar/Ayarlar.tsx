@@ -1,12 +1,12 @@
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
-import { Database, Lock, RotateCcw, Send, Settings } from "lucide-react";
+import { Database, Lock, RotateCcw, Send, Settings, Workflow } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
 import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
-import { muhabireOneriBirimleriKaydet } from "../eylemler";
+import { muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
@@ -36,6 +36,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         </Kart>
         <WhatsappAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
+        {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}
@@ -109,6 +110,24 @@ function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
           </label>
         ))}
       </div>
+    </Kart>
+  );
+}
+
+/*
+ * Newsdesk sistemde değilken (şimdilik) onaylı paketi muhabir "Tamamlandı"
+ * diye kapatıyor; açılınca devral ve üretim akışı (Organizasyon › İş
+ * akışları). Yalnız tam yönetici.
+ */
+function IsAkisiAyari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  return (
+    <Kart baslik={t("isAkisiBicimi")} ikon={<Workflow size={18} />}>
+      <label className="secim">
+        <input type="checkbox" checked={!!v.newsdeskDevrede} onChange={(e) => newsdeskDevredeKaydet(ben, e.target.checked) && bildir(t("bKaydedildi"))} data-newsdesk-devrede />
+        {t("newsdeskDevrede")}
+      </label>
     </Kart>
   );
 }

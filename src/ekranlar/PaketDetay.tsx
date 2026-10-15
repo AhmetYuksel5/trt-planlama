@@ -6,11 +6,12 @@ import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, uretimeAl } from "../eylemler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketTamamla, uretimeAl } from "../eylemler";
+import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { adimYapabilir, paketTamamlayabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { MuhabirSecici } from "./nextday/Formlar";
 
 /**
@@ -196,6 +197,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 )}
               </div>
             </div>
+            <KararNotlari kalem={paket} />
             {paket.aciklama && (
               <div className="ara-ust-2">
                 <div className="alan-etiket">{t("kisaAciklama")}</div>
@@ -226,6 +228,24 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const ilerle = (g: Parameters<typeof adimIlerle>[2]) => {
     if (adimIlerle(ben, paket.id, g)) bildir(t("bAdimTamam"));
   };
+
+  // Newsdesk yokken onaylı paketi muhabir (hesapsızsa Planlama onun adına) kapatıyor.
+  if (paketTamamlayabilir(ben, paket, v)) {
+    return (
+      <Kart baslik={t("seninIslemin")}>
+        <div className="dugmeler">
+          <button className="dugme dugme-iyi" onClick={() => paketTamamla(ben, paket.id) && bildir(t("bPaketTamamlandi"))} data-paket-tamamla={paket.id}>
+            <CircleCheck size={15} /> {t("haberTamamlandi")}
+          </button>
+          {uretimeAlabilir(ben, paket) && (
+            <button className="dugme dugme-ikincil" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
+              <CirclePlay size={15} /> {t("uretimeAl")}
+            </button>
+          )}
+        </div>
+      </Kart>
+    );
+  }
 
   if (paket.durum === "onaylandi" && uretimeAlabilir(ben, paket)) {
     return (

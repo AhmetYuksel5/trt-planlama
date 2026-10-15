@@ -2150,3 +2150,7 @@ tr.soluk > td { opacity: .5; }
 .muhabir-eylem { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
 .muhabir-sutunu { display: grid; align-content: start; }
 .form .satir:has(> .muhabir-sutunu) { align-items: start; }
+/* Toplantının karar notu ve ek talebi: kalemin genel notundan (sarı) ayrı, karara bağlı. */
+.karar-notlari { display: grid; gap: 2px; margin-block-start: var(--ara-1); padding-inline-start: var(--ara-2); border-inline-start: 3px solid var(--vurgu); font-size: var(--punto-kucuk); }
+.karar-notlari p { margin: 0; display: block; }
+.karar-notlari p > * { display: inline; }

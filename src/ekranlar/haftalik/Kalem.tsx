@@ -1,11 +1,11 @@
-import { Ban, Check, Eye, Pencil, Send, Trash2, X } from "lucide-react";
+import { Ban, Check, Eye, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
-import { kalemKarar, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
+import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararVerebilir } from "../../yetki";
@@ -63,6 +63,8 @@ export function KalemFormu({
     paketBasligi: mevcut?.paketBasligi ?? "",
     muhabirler: mevcut?.muhabirler ?? ilk?.muhabirler ?? ([] as string[]),
     muhabirTbc: !!mevcut?.muhabirTbc,
+    kararNotu: mevcut?.kararNotu ?? "",
+    ekTalep: mevcut?.ekTalep ?? "",
     not: mevcut?.not ?? "",
   });
   const dosyalar = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
@@ -183,6 +185,19 @@ export function KalemFormu({
         {t("kalemNotu")}
         <input dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} />
       </label>
+      {/* Toplantının söyledikleri: hazırlıkta yok, toplantıda ya da önceden yazılmışsa var. */}
+      {(hafta.durum === "toplantida" || f.kararNotu || f.ekTalep) && (
+        <>
+          <label>
+            {t("kararNotu")}
+            <textarea dir="auto" rows={2} value={f.kararNotu} onChange={(e) => setF({ ...f, kararNotu: e.target.value })} data-karar-notu />
+          </label>
+          <label>
+            {t("ekTalep")}
+            <textarea dir="auto" rows={2} value={f.ekTalep} onChange={(e) => setF({ ...f, ekTalep: e.target.value })} data-ek-talep />
+          </label>
+        </>
+      )}
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim() || (f.baslikId === YENI_DOSYA && !f.yeniBaslik.trim())} />
     </div>
   );
@@ -199,6 +214,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
   const v = useVeri();
   const kaynakMetni = useKaynakMetni();
   const [duzenle, setDuzenle] = useState(false);
+  const [notFormu, setNotFormu] = useState(false);
   const duzenler = haftalikDuzenler(ben, hafta);
   const karar = kararVerebilir(ben, hafta) && gundemde(kalem);
   const plan = planBul(v, kalem.aktarim?.planId);
@@ -269,6 +285,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
               {kalem.not}
             </p>
           )}
+          <KararNotlari kalem={kalem} />
           {(plan || paket) && (
             <small className="iyi-yazi">
               {plan && <a href={`#/nextday/${plan.id}`}>{t("aktarildi", { tarih: tarihYaz(plan.tarih, dil, "kisa") })}</a>}
@@ -311,8 +328,53 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
               <Send size={14} className="yon" /> {t("onIncelemeyeGonder")}
             </button>
           )}
+          {karar && !notFormu && (
+            <button className="dugme dugme-sade dugme-kucuk" onClick={() => setNotFormu(true)} data-karar-notu-ac>
+              <MessageSquarePlus size={14} /> {t("kararNotuEkTalep")}
+            </button>
+          )}
         </div>
       )}
+      {notFormu && <KararNotuFormu ben={ben} hafta={hafta} kalem={kalem} kapat={() => setNotFormu(false)} />}
+    </div>
+  );
+}
+
+/* Toplantının karar notu ve ek talebi; kartta, kalemin altında. */
+export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu" | "ekTalep"> }) {
+  const { t } = useDil();
+  if (!kalem.kararNotu && !kalem.ekTalep) return null;
+  return (
+    <div className="karar-notlari" data-karar-notlari>
+      {kalem.kararNotu && (
+        <p>
+          <b>{t("kararNotu")}:</b> <span dir="auto">{kalem.kararNotu}</span>
+        </p>
+      )}
+      {kalem.ekTalep && (
+        <p>
+          <b>{t("ekTalep")}:</b> <span dir="auto">{kalem.ekTalep}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* Toplantıda karar verilirken hızlı not: kalemin bütün formunu açmadan. */
+function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; kapat: () => void }) {
+  const { t } = useDil();
+  const [f, setF] = useState({ kararNotu: kalem.kararNotu ?? "", ekTalep: kalem.ekTalep ?? "" });
+  return (
+    <div className="form form-kutu ara-ust" data-karar-notu-formu>
+      <label>
+        {t("kararNotu")}
+        <textarea dir="auto" rows={2} value={f.kararNotu} onChange={(e) => setF({ ...f, kararNotu: e.target.value })} data-karar-notu />
+      </label>
+      <label>
+        {t("ekTalep")}
+        <textarea dir="auto" rows={2} value={f.ekTalep} onChange={(e) => setF({ ...f, ekTalep: e.target.value })} data-ek-talep />
+      </label>
+      <FormAlt kapat={kapat} kaydet={() => kalemKararNotu(ben, hafta.id, kalem.id, f) && (bildir(t("bKaydedildi")), kapat())} />
     </div>
   );
 }

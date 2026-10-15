@@ -8,8 +8,9 @@ import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { acikCagri, useVeri, type Kisi, type Oneri } from "../../veri";
-import { takipTamamla } from "../../eylemler";
-import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir } from "../../yetki";
+import { paketTamamla, takipTamamla } from "../../eylemler";
+import { KararNotlari } from "../haftalik/Kalem";
+import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir, paketTamamlayabilir } from "../../yetki";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
 
@@ -52,7 +53,8 @@ function useMuhabirIsleri(ben: Kisi) {
     v,
     paketler,
     oneriler,
-    siram: paketler.filter((p) => adimYapabilir(ben, p)),
+    // Newsdesk yokken onaylı paketi muhabir kapatıyor: o da sırası gelen iş.
+    siram: paketler.filter((p) => adimYapabilir(ben, p) || (p.muhabirId === ben.id && paketTamamlayabilir(ben, p, v))),
     aktif: paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal"),
     gorevler: v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B),
     cagri: acikCagri(v, "nextday", B),
@@ -119,15 +121,22 @@ function Siram({ ben }: { ben: Kisi }) {
                         <Icerik blok>{p.baslik}</Icerik>
                       </a>
                       <small>
-                        {adimAdi(p.adim as UretimAdimi, p)}
+                        {p.durum === "onaylandi" ? t("pdOnaylandi") : adimAdi(p.adim as UretimAdimi, p)}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
                       </small>
+                      <KararNotlari kalem={p} />
                     </div>
                     {p.oncelikli && <OncelikRozeti />}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
-                    <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
-                      {t(adimTuru(p) === "metin" ? "metniGonder" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
-                    </a>
+                    {p.durum === "onaylandi" ? (
+                      <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => paketTamamla(ben, p.id) && bildir(t("bPaketTamamlandi"))} data-paket-tamamla={p.id}>
+                        <CheckCircle size={14} /> {t("haberTamamlandi")}
+                      </button>
+                    ) : (
+                      <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
+                        {t(adimTuru(p) === "metin" ? "metniGonder" : adimTuru(p) === "is" ? "tamamlaVeGec" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

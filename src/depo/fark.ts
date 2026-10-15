@@ -188,12 +188,12 @@ export function farkCikar(eski: Durum, yeni: Durum, siralar: Siralar): { islemle
   }
 
   // Genel belge tek parça yazılıyor (set): değişen alan ötekini silmesin diye ikisi birlikte.
-  if (eski.sayac !== yeni.sayac || eski.muhabireOneriBirimleri !== yeni.muhabireOneriBirimleri || eski.geriBildirimAyari !== yeni.geriBildirimAyari)
+  if (eski.sayac !== yeni.sayac || eski.muhabireOneriBirimleri !== yeni.muhabireOneriBirimleri || eski.geriBildirimAyari !== yeni.geriBildirimAyari || eski.newsdeskDevrede !== yeni.newsdeskDevrede)
     islemler.push({
       tur: "yaz",
       koleksiyon: GENEL.koleksiyon,
       id: GENEL.id,
-      veri: { sayac: yeni.sayac, ...(yeni.muhabireOneriBirimleri && { muhabireOneriBirimleri: yeni.muhabireOneriBirimleri }), ...(yeni.geriBildirimAyari && { geriBildirimAyari: yeni.geriBildirimAyari }) },
+      veri: { sayac: yeni.sayac, ...(yeni.muhabireOneriBirimleri && { muhabireOneriBirimleri: yeni.muhabireOneriBirimleri }), ...(yeni.geriBildirimAyari && { geriBildirimAyari: yeni.geriBildirimAyari }), ...(yeni.newsdeskDevrede && { newsdeskDevrede: true }) },
     });
 
   return { islemler, siralar: yeniSiralar };

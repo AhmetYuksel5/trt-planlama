@@ -226,9 +226,13 @@ const kayitBagla = (hazir: () => void): (() => void) => {
         const sayac = (s.data()?.sayac as number | undefined) ?? 0;
         const birimler = s.data()?.muhabireOneriBirimleri as Birim[] | undefined;
         const geriBildirimAyari = s.data()?.geriBildirimAyari as Durum["geriBildirimAyari"];
+        const newsdeskDevrede = s.data()?.newsdeskDevrede === true || undefined;
         const degisti =
-          sayac !== d.sayac || JSON.stringify(birimler) !== JSON.stringify(d.muhabireOneriBirimleri) || JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari);
-        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari };
+          sayac !== d.sayac ||
+          JSON.stringify(birimler) !== JSON.stringify(d.muhabireOneriBirimleri) ||
+          JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
+          newsdeskDevrede !== d.newsdeskDevrede;
+        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari, newsdeskDevrede };
         geldi(GENEL.koleksiyon, degisti);
       },
       hata,

@@ -677,6 +677,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Haftalık ekrandan ve haftalık çağrı e-postasından gelen öneri `Oneri.hafta`
     taşır, Next Day ekranlarına karışmaz; günü olan öneri haftasıyla kesişen
     haftalık plana da düşer (yukarıda, öneri etiketleri).
+  - Toplantıda karar düğmelerinin yanında "Not / ek talep" (`Kalem.tsx →
+    KararNotuFormu`, `eylemler.ts → kalemKararNotu`, yetki `kararNotuYazabilir`;
+    kalem formunda da, belgede "Düzenle" penceresinden): `HaftalikKalem.kararNotu`
+    ve `ekTalep`, çıktıdaki sarı nottan ayrı, kurumun çıktısına girmez (belgede
+    yalnız düzenlerken). Kesinleşince pakete geçer (`toplantidan`), muhabire
+    "paketOnaylandi" bildirimi gider (paket doğduğu an: kesinleşmede ya da
+    günlük plan açılınca). Ret notu öneriye gerekçe olur.
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
     `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
@@ -728,6 +735,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `ADIM_ADI`'yı doğrudan pakete yazma.
   - Next Day'in "Hazır paketler" bölümü (`hazirPaketler`) stoktan seçer;
     plan devredilince seçili paket `yayinlandi` alır.
+- Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş
+  akışı, tam yönetici, gerçek kipte genel ayar belgesinde) iş Planlama'da
+  biter: onaylı paketi (haftalıktan da, Next Day'de onaylanan PKG de)
+  muhabir "Senin sıran"da "Tamamlandı" diye kapatır (`eylemler.ts →
+  paketTamamla`, yetki `paketTamamlayabilir`; `muhabirTeslimi` ölçüme
+  girer, Planlama'ya bildirim). Hesapsız muhabir için Planlama paket
+  ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,
+  devral ve üretim akışı geçerli; yarım paketler kendi yolunda.
 - Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
   feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
   (`yetki.ts → KOL_BIRIMLERI`).

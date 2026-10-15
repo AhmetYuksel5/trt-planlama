@@ -13,6 +13,7 @@ import { KalemFormu } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
+import { KararNotlari } from "../haftalik/Kalem";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
@@ -73,6 +74,8 @@ const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi 
   paketBasligi: k.paketBasligi,
   muhabirler: k.muhabirler,
   muhabirTbc: k.muhabirTbc,
+  kararNotu: k.kararNotu,
+  ekTalep: k.ekTalep,
   not: k.not,
   ...g,
 });
@@ -180,6 +183,8 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             </p>
           )
         )}
+        {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız düzenlerken ekranda. */}
+        {duzen && <KararNotlari kalem={k} />}
       </div>
     </BelgeSatiri>
   );
