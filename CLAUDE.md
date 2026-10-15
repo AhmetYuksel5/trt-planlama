@@ -221,6 +221,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kişi başına günlük sınır).
     - Firestore'u her etkin kişi yazabildiği için adres oradan okunsaydı
       anahtar başka sunucuya yönlendirilebilirdi.
+    - Model sağlayıcının listesinden seçilir (`/modeller`, "Modelleri getir";
+      formdaki yeni anahtar yalnız o istekte kullanılır). Hata metinleri
+      sağlayıcının kendi iletisiyle (`ayrinti`).
     - Anahtar yalnız yazılır, ekrana son dört hanesi gelir. Anahtar alanı
       gönderilmezse eskisi kalır, boş metin siler (`ayar.ts →
       ayarBirlestir`).

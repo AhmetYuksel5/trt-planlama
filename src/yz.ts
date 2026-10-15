@@ -136,6 +136,8 @@ export const yzAyarYaz = async (a: YzAyar) => {
   if (r.tamam) void yzDurumuTazele();
   return r;
 };
+/** Sağlayıcının model listesi (tam yönetici); `anahtar` yalnız bu istekte kullanılıyor, saklanmıyor. */
+export const yzModeller = (g: { saglayici?: string; tur: SaglayiciTuru; adres?: string; anahtar?: string }) => istek<{ modeller: string[] }>("/modeller", "POST", g);
 export const yzSaglayiciDene = (id: string) => istek<{ tamam: true }>("/dene", "POST", { saglayici: id });
 
 /* Kapının hata kodları ekranda kişinin dilinde. */

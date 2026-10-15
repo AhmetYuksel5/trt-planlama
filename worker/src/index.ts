@@ -1,7 +1,7 @@
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur } from "./ozellikler.ts";
-import { cagir } from "./saglayici.ts";
+import { cagir, modelleriGetir } from "./saglayici.ts";
 
 /*
  * Plannersflow yapay zeka kapısı. Veritabanı Firebase'de kalıyor; bu Worker
@@ -138,7 +138,7 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
   }
 
   // Ayar yalnız tam yöneticide.
-  if (yol === "/ayar" || yol === "/dene") {
+  if (yol === "/ayar" || yol === "/dene" || yol === "/modeller") {
     if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
     if (req.method === "GET" && yol === "/ayar") {
       const kullanim: Record<string, number> = {};
@@ -150,6 +150,25 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
       if ("hata" in r) return yanit({ hata: r.hata }, 400);
       await env.YZ.put(AYAR_ANAHTARI, JSON.stringify(r.ayar));
       return yanit(gorunur(r.ayar));
+    }
+    /*
+     * Model listesi. Anahtar ya formda yeni yazılmış (henüz kaydedilmemiş,
+     * yalnız bu istekte kullanılıyor, saklanmıyor) ya da kayıtlı sağlayıcınınki.
+     */
+    if (req.method === "POST" && yol === "/modeller") {
+      const g = (await req.json().catch(() => null)) as { saglayici?: string; tur?: string; adres?: string; anahtar?: string } | null;
+      const kayitli = ayar.saglayicilar.find((x) => x.id === g?.saglayici);
+      const tur = (g?.tur ?? kayitli?.tur) as "anthropic" | "openai" | undefined;
+      const anahtar = (typeof g?.anahtar === "string" && g.anahtar.trim()) || kayitli?.anahtar;
+      if ((tur !== "anthropic" && tur !== "openai") || !anahtar) return yanit({ hata: "anahtar" }, 400);
+      let adres: string | undefined;
+      if (tur === "openai") {
+        adres = String(g?.adres ?? kayitli?.adres ?? "").trim().replace(/\/+$/, "");
+        // Anahtar düz metin bağlantıda ya da yanlış biçimli adrese gitmesin.
+        if (!/^https:\/\/[^\s/]+/.test(adres)) return yanit({ hata: "adres" }, 400);
+      }
+      const r = await modelleriGetir(tur, adres, anahtar, d.fetch);
+      return r.tamam ? yanit({ modeller: r.modeller }) : yanit({ hata: r.hata, ayrinti: r.ayrinti }, 502);
     }
     if (req.method === "POST" && yol === "/dene") {
       const g = (await req.json().catch(() => null)) as { saglayici?: string } | null;

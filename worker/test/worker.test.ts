@@ -61,6 +61,9 @@ const kur = () => {
       return "max_tokens" in govde
         ? Response.json({ error: { message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead." } }, { status: 400 })
         : Response.json({ choices: [{ message: { content: "سطر من نموذج جديد" } }] });
+    if (url === "https://api.ornek.test/v1/models") return Response.json({ data: [{ id: "ornek-mini" }, { id: "text-embedding-3" }, { id: "ornek-buyuk" }, { id: "tts-1" }] });
+    if (url.startsWith("https://api.anthropic.com/v1/models"))
+      return Response.json({ data: [{ id: "claude-opus-5-5", type: "model", display_name: "Opus", created_at: "2026-01-01T00:00:00Z" }], has_more: false, first_id: "claude-opus-5-5", last_id: "claude-opus-5-5" });
     if (url === "https://api.yok.test/v1/chat/completions") return Response.json({ error: { message: "The model `yok-model` does not exist" } }, { status: 404 });
     return new Response("yok", { status: 404 });
   }) as typeof fetch;
@@ -229,4 +232,22 @@ test("OpenAI yeni model: max_tokens reddedilince max_completion_tokens; Dene sa�
   const h = await (await t.cagir("/dene", "yon", { saglayici: "yok" })).json();
   assert.equal(h.hata, "saglayici");
   assert.match(h.ayrinti, /404 The model `yok-model` does not exist/);
+});
+
+test("model listesi: yalnız tam yönetici, yeni yazılan ya da kayıtlı anahtarla; sohbet dışı modeller ayıklanır", async () => {
+  const t = kur();
+  await t.cagir("/ayar", "yon", AYAR, "PUT");
+  assert.equal((await t.cagir("/modeller", "pl", { tur: "openai", adres: "https://api.ornek.test/v1", anahtar: "x" })).status, 403);
+  const yeni = await (await t.cagir("/modeller", "yon", { tur: "openai", adres: "https://api.ornek.test/v1/", anahtar: "sk-yeni" })).json();
+  assert.deepEqual(yeni.modeller, ["ornek-buyuk", "ornek-mini"]);
+  assert.equal(t.istekler.at(-1)!.basliklar.authorization, "Bearer sk-yeni");
+  const kayitli = await (await t.cagir("/modeller", "yon", { saglayici: "diger" })).json();
+  assert.deepEqual(kayitli.modeller, ["ornek-buyuk", "ornek-mini"]);
+  assert.equal(t.istekler.at(-1)!.basliklar.authorization, "Bearer sk-diger-5678");
+  const claude = await (await t.cagir("/modeller", "yon", { saglayici: "claude" })).json();
+  assert.deepEqual(claude.modeller, ["claude-opus-5-5"]);
+  assert.equal((await t.cagir("/modeller", "yon", { tur: "openai", adres: "http://kotu.test/v1", anahtar: "x" })).status, 400);
+  assert.equal((await t.cagir("/modeller", "yon", { tur: "openai", adres: "https://api.ornek.test/v1" })).status, 400, "anahtarsız");
+  // Yeni yazılan anahtar saklanmadı
+  assert.ok(!t.depo.get("ayar")!.includes("sk-yeni"));
 });

@@ -98,3 +98,37 @@ const openaiUyumlu = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): 
 };
 
 export const cagir = (s: Saglayici, istek: Istek, fetchFn: typeof fetch) => (s.tur === "anthropic" ? claude(s, istek, fetchFn) : openaiUyumlu(s, istek, fetchFn));
+
+/*
+ * Sağlayıcının model listesi: yönetici model adını ezbere yazmasın.
+ * OpenAI uyumlu uçta /models sohbet dışı modelleri de veriyor (ses,
+ * görsel, embedding…); onlar ayıklanıyor. Claude'da SDK'nın listesi.
+ */
+const SOHBET_DISI = /embed|whisper|tts|dall-e|image|audio|realtime|moderation|transcribe|search|computer-use|babbage|davinci/i;
+
+export type ModelSonucu = { tamam: true; modeller: string[] } | { tamam: false; hata: "anahtar" | "sinir" | "saglayici"; ayrinti?: string };
+
+export const modelleriGetir = async (tur: Saglayici["tur"], adres: string | undefined, anahtar: string, fetchFn: typeof fetch): Promise<ModelSonucu> => {
+  if (tur === "anthropic") {
+    const client = new Anthropic({ apiKey: anahtar, fetch: fetchFn, maxRetries: 1, timeout: 30_000 });
+    try {
+      const l: string[] = [];
+      for await (const m of client.models.list()) l.push(m.id);
+      return { tamam: true, modeller: l };
+    } catch (e) {
+      if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return { tamam: false, hata: "anahtar" };
+      if (e instanceof Anthropic.APIError) return { ...durumHatasi(e.status ?? 500), ayrinti: `${e.status ?? ""} ${e.message}`.trim().slice(0, 300) } as ModelSonucu;
+      return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };
+    }
+  }
+  let r: Response;
+  try {
+    r = await fetchFn(`${adres}/models`, { headers: { authorization: `Bearer ${anahtar}` } });
+  } catch {
+    return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };
+  }
+  if (!r.ok) return { ...durumHatasi(r.status), ayrinti: `${r.status} ${await hataMetni(r)}`.trim() } as ModelSonucu;
+  const j = (await r.json().catch(() => null)) as { data?: { id?: unknown }[] } | null;
+  const l = (j?.data ?? []).map((m) => m.id).filter((id): id is string => typeof id === "string" && !SOHBET_DISI.test(id));
+  return { tamam: true, modeller: [...new Set(l)].sort() };
+};

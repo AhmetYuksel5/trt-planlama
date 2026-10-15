@@ -1,10 +1,10 @@
-import { KeyRound, Pencil, Plus, Sparkles, Trash2, Zap } from "lucide-react";
+import { KeyRound, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Kart, NotKutu, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { birimAdi, kisiBirimleri } from "../yapi";
-import { YZ_OZELLIKLERI, yzAyarOku, yzHataMetni, yzAyarYaz, yzSaglayiciDene, type SaglayiciTuru, type YzAyar, type YzOzellik, type YzOzellikAyari, type YzSaglayici } from "../yz";
+import { YZ_OZELLIKLERI, yzAyarOku, yzHataMetni, yzModeller, yzAyarYaz, yzSaglayiciDene, type SaglayiciTuru, type YzAyar, type YzOzellik, type YzOzellikAyari, type YzSaglayici } from "../yz";
 import { FormAlt } from "./nextday/Formlar";
 
 /*
@@ -231,7 +231,32 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
     anahtariSil: false,
     aktif: mevcut?.aktif ?? true,
   });
-  const gecerli = !!f.model.trim() && (f.tur !== "openai" || /^https:\/\//.test(f.adres.trim())) && (!!mevcut?.anahtarSonu || !!f.anahtar.trim());
+  const adresGecerli = f.tur !== "openai" || /^https:\/\//.test(f.adres.trim());
+  const anahtarVar = !f.anahtariSil && (!!mevcut?.anahtarSonu || !!f.anahtar.trim());
+  const gecerli = !!f.model.trim() && adresGecerli && anahtarVar;
+  /*
+   * Model listesi sağlayıcıdan: yönetici model adını ezbere yazmasın. Yeni
+   * yazılan anahtar yalnız bu istekte kullanılıyor, kaydedilmiyor; yazılmadıysa
+   * kapı kayıtlı anahtarı kullanıyor. Tür ya da adres değişince liste eskiyor.
+   */
+  const [modeller, setModeller] = useState<string[] | null>(null);
+  const [modelDurumu, setModelDurumu] = useState<"" | "yukleniyor" | string>("");
+  const modelleriGetir = async () => {
+    if (!adresGecerli || !anahtarVar) return;
+    setModelDurumu("yukleniyor");
+    const r = await yzModeller({ saglayici: mevcut?.id, tur: f.tur, ...(f.tur === "openai" ? { adres: f.adres.trim() } : {}), ...(f.anahtar.trim() ? { anahtar: f.anahtar.trim() } : {}) });
+    if (r.tamam) {
+      setModeller(r.veri.modeller);
+      setModelDurumu("");
+    } else {
+      setModeller(null);
+      setModelDurumu(`${yzHataMetni(t, r.hata)}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    }
+  };
+  // Kayıtlı anahtarı olan sağlayıcı açılınca liste kendiliğinden gelsin.
+  useEffect(() => {
+    if (mevcut?.anahtarSonu) void modelleriGetir();
+  }, []);
   const tamam = () =>
     kaydet({
       id: mevcut?.id ?? `s-${Date.now().toString(36)}`,
@@ -253,7 +278,14 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
           </label>
           <label>
             {t("yzTur")}
-            <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as SaglayiciTuru })} data-yz-tur>
+            <select
+              value={f.tur}
+              onChange={(e) => {
+                setF({ ...f, tur: e.target.value as SaglayiciTuru });
+                setModeller(null);
+              }}
+              data-yz-tur
+            >
               <option value="anthropic">{t("yzTurClaude")}</option>
               <option value="openai">{t("yzTurOpenai")}</option>
             </select>
@@ -262,13 +294,18 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
         {f.tur === "openai" && (
           <label>
             {t("yzAdres")}
-            <input dir="ltr" inputMode="url" value={f.adres} onChange={(e) => setF({ ...f, adres: e.target.value })} data-yz-adres />
+            <input
+              dir="ltr"
+              inputMode="url"
+              value={f.adres}
+              onChange={(e) => {
+                setF({ ...f, adres: e.target.value });
+                setModeller(null);
+              }}
+              data-yz-adres
+            />
           </label>
         )}
-        <label>
-          {t("yzModel")}
-          <input dir="ltr" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder={f.tur === "anthropic" ? "claude-opus-5-5" : ""} data-yz-model />
-        </label>
         <label>
           {t("yzAnahtar")}
           <input
@@ -282,6 +319,33 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
             data-yz-anahtar
           />
         </label>
+        <div>
+          <label>
+            {t("yzModel")}
+            {modeller?.length ? (
+              <select dir="ltr" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} data-yz-model-sec>
+                {!modeller.includes(f.model) && <option value={f.model}>{f.model || t("seciniz")}</option>}
+                {modeller.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input dir="ltr" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder={f.tur === "anthropic" ? "claude-opus-5-5" : ""} data-yz-model />
+            )}
+          </label>
+          <div className="yz-satir ara-ust">
+            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={modelleriGetir} aria-disabled={!adresGecerli || !anahtarVar || modelDurumu === "yukleniyor"} data-yz-modelleri-getir>
+              {modelDurumu === "yukleniyor" ? <Loader2 size={14} className="donen" /> : <RefreshCw size={14} />} {t("yzModelleriGetir")}
+            </button>
+            {modelDurumu && modelDurumu !== "yukleniyor" && (
+              <small className="kotu-yazi" data-yz-model-hata>
+                {modelDurumu}
+              </small>
+            )}
+          </div>
+        </div>
         {mevcut?.anahtarSonu && (
           <label className="secim">
             <input type="checkbox" checked={f.anahtariSil} onChange={(e) => setF({ ...f, anahtariSil: e.target.checked, anahtar: "" })} />

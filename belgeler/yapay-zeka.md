@@ -50,7 +50,11 @@ Ayarlar › Yapay zeka (yalnız tam yönetici, yalnız gerçek kipte):
   her sağlayıcı. Uç nokta adresi `https://` ile başlamalı (örneğin
   `https://api.openai.com/v1`).
 
-"Dene" (⚡) sağlayıcıya kısa bir deneme isteği gönderir. Anahtar alanı boş
+Model adı ezberden yazılmaz: anahtar yazılınca "Modelleri getir" sağlayıcının
+listesini çeker (anahtar bu istekte kullanılır, kaydedilmez; kayıtlı
+sağlayıcıyı düzenlerken liste kendiliğinden gelir). OpenAI'da sohbet dışı
+modeller (ses, görsel, embedding…) listelenmez. "Dene" (⚡) sağlayıcıya kısa bir deneme isteği gönderir; hata verirse sağlayıcının
+kendi hata metni de görünür. Anahtar alanı boş
 bırakılırsa kayıtlı anahtar korunur; "Kayıtlı anahtarı sil" onu siler.
 
 Her özellik için ayarlanabilenler:

@@ -1972,6 +1972,7 @@ const M = {
   yzTurOpenai: m("OpenAI uyumlu", "متوافق مع OpenAI", "OpenAI-compatible"),
   yzAdres: m("Uç nokta adresi", "عنوان نقطة الاتصال", "Endpoint URL"),
   yzModel: m("Model", "النموذج", "Model"),
+  yzModelleriGetir: m("Modelleri getir", "جلب النماذج", "Load models"),
   yzAnahtar: m("API anahtarı", "مفتاح API", "API key"),
   yzAnahtariSil: m("Kayıtlı anahtarı sil", "حذف المفتاح المحفوظ", "Delete the saved key"),
   yzEtkin: m("Etkin", "مفعّل", "Active"),
