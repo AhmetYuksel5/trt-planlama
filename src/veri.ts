@@ -500,6 +500,24 @@ export interface Mesaj {
 }
 
 /*
+ * Yapay zekanın önerinin haber değeri hakkındaki görüşü (src/yz.ts); yalnız
+ * tavsiye, kararı Planlama veriyor. Öneri belgesinden ayrı kayıt (mesaj gibi):
+ * görüş alınırken öneri başkasınca değiştirilirse ezilmesin. Öneri başına
+ * bir görüş (kimlik öneriden); yenisi eskisinin yerine geçiyor. Bir kez
+ * alınınca ekibin hepsi görüyor, hak iki kez yenmiyor.
+ */
+export type YzGenel = "yuksek" | "orta" | "dusuk";
+export interface YzGorus {
+  id: string;
+  oneriId: string;
+  kisiId: string;
+  zaman: string;
+  genel: YzGenel;
+  ozet: string;
+  kriterler: { ad: string; puan: number; gerekce: string }[];
+}
+
+/*
  * Öneri çağrısı kurumun bugünkü e-postası gibi: Kime planlama grubu (bütün
  * planlama yazışmayı görsün), muhabirler BCC'de (her muhabirin yazışması
  * müstakil kalsın). Konudaki etiket yanıtları doğru çağrıya bağlıyor.
@@ -1050,6 +1068,8 @@ export interface Durum {
   mesajlar: Mesaj[];
   takipler: Takip[];
   geriBildirimSablonlari: GeriBildirimSablonu[];
+  /** Yapay zekanın haber değeri görüşleri; eski kayıtta yok. */
+  yzGorusleri?: YzGorus[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
   gorevler?: GorevTanimi[];
   isler?: Is[];
@@ -1167,6 +1187,7 @@ export const bosDurum = (): Durum => ({
   mesajlar: [],
   takipler: [],
   geriBildirimSablonlari: [],
+  yzGorusleri: [],
   gorevler: [],
   isler: [],
   yapilar: [],

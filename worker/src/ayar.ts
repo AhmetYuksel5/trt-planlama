@@ -26,6 +26,10 @@ export interface OzellikAyari {
   /** Boşsa bütün birimler. */
   birimler: string[];
   gunlukSinir: number;
+  /** Yöneticinin kendi yönergesi (biçim, üslup); varsayılan yönergenin arkasına ekleniyor. */
+  yonerge?: string;
+  /** Haber değeri ölçütleri; boşsa varsayılan liste (ozellikler.ts). */
+  kriterler?: string[];
 }
 
 export interface Ayar {
@@ -34,10 +38,11 @@ export interface Ayar {
 }
 
 /* Programın bildiği özellikler; yeni özellik buraya ve ozellikler.ts'e girer. */
-export const OZELLIKLER = ["kisalt"] as const;
+export const OZELLIKLER = ["kisalt", "bicimle", "haberDegeri"] as const;
 export type Ozellik = (typeof OZELLIKLER)[number];
 
 export const VARSAYILAN_SINIR = 50;
+export const EN_UZUN_YONERGE = 6000;
 export const bosAyar = (): Ayar => ({ saglayicilar: [], ozellikler: {} });
 
 /** Tarayıcıya giden hal: anahtarın yalnız var olduğu ve son dört hanesi. */
@@ -107,6 +112,10 @@ export const ayarBirlestir = (eski: Ayar, gelen: unknown): { ayar: Ayar } | { ha
       birimler: Array.isArray(o.birimler) ? [...new Set(o.birimler.filter((b): b is string => typeof b === "string").map((b) => b.slice(0, 60)))].slice(0, 50) : [],
       gunlukSinir: Number.isFinite(sinir) && sinir >= 0 ? Math.min(sinir, 10000) : VARSAYILAN_SINIR,
     };
+    const yonerge = metin(o.yonerge, EN_UZUN_YONERGE);
+    if (yonerge) ozellikler[ad].yonerge = yonerge;
+    const kriterler = Array.isArray(o.kriterler) ? o.kriterler.map((k) => metin(k, 200)).filter(Boolean).slice(0, 20) : [];
+    if (kriterler.length) ozellikler[ad].kriterler = kriterler;
   }
   return { ayar: { saglayicilar, ozellikler } };
 };

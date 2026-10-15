@@ -39,6 +39,7 @@ import {
   type BirimId,
   type GorevId,
   type Mesaj,
+  type YzGorus,
   type PlanAdi,
   type BolmeEkseni,
   type CanliYayin,
@@ -120,6 +121,7 @@ import {
   isAlabilir,
   isVerilebilecekBirimler,
   oneriDuzenleyebilir,
+  yzGorusuGorur,
 } from "./yetki";
 
 /**
@@ -634,6 +636,17 @@ export const oneriSil = (ben: Kisi, id: string): number | null => {
   const { yeni, toplam } = temizle(d, { turler: ["oneriler"], idler: [id] });
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "oneriSilindi", veri: { baslik: o.haberBasligi, sayi: String(toplam) } }));
   return toplam;
+};
+
+/** Yapay zekanın haber değeri görüşü öneriye bağlı ayrı kayıtta; öneri başına bir tane, yenisi eskisinin yerine. */
+export const yzGorusKaydet = (ben: Kisi, oneriId: string, g: Pick<YzGorus, "genel" | "ozet" | "kriterler">) => {
+  const d = getir();
+  if (!oneriBul(d, oneriId) || !yzGorusuGorur(ben)) return false;
+  const id = `yzg-${oneriId}`;
+  const yeni: YzGorus = { id, oneriId, kisiId: ben.id, zaman: simdi(), ...g };
+  const eski = d.yzGorusleri ?? [];
+  kaydet({ ...d, yzGorusleri: eski.some((x) => x.id === id) ? eski.map((x) => (x.id === id ? yeni : x)) : [...eski, yeni] });
+  return true;
 };
 
 /**

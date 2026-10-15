@@ -5,6 +5,7 @@ import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../et
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
 import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, TAKIP_BICIMI, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
+import { YzBicimle } from "../../bilesenler/YzOneri";
 
 /*
  * Önerinin alanları tek yerde: öneri sayfası (#/oneriler/yeni) ile plan
@@ -209,6 +210,12 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
           <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} required={ben.birim === "muhabir"} data-oneri-strap />
         </label>
       )}
+      <YzBicimle
+        deger={f}
+        muhabirId={muhabir ? ben.id : f.kaynak === "muhabir" ? f.muhabirId : undefined}
+        strapli={!takip}
+        uygula={(p) => setF({ ...f, ...p, paketBasligi: p.paketBasligi ?? f.paketBasligi, bicim: p.bicim ?? f.bicim })}
+      />
       <label className="secim">
         <input
           type="checkbox"

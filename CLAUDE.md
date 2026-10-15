@@ -239,6 +239,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     düzenlendiği için satırın şeridinde ✨ (`YzKisaltSerit`):
     sonuç hemen kaydedilir, ↶ geri alır. Ayarlar'da özelliğin yanında "senin
     için açık/kapalı"; kapalı görünen durum sekmeye dönünce yeniden sorulur.
+  - **"Biçimle"** (`bilesenler/YzOneri.tsx → YzBicimle`): öneri formlarında
+    (yeni öneri `OneriAlanlari`, düzenle ve yeniden gönder `KisaOneriFormu`)
+    Header, Strap, gelişme ve haber türü önerir; alan alan "Uygula" ya da
+    "Hepsini uygula", "Önceki metin" geri alır, kişi kaydeder. Kapıya başlık
+    havuzu (uyan dosya aynı adla gelsin) ve Planlama'nın son düzeltmeleri
+    gider (`ilkHali` → havuzdaki başlık, plandaki gelişme): kurumun biçimi
+    örnekten, eğitimsiz.
+  - **"Haber değeri"** (`YzHaberDegeri`): öneri penceresinde ve ayrıntının
+    değerlendirme kartında ölçüt başına 1–5 puan, gerekçe (isteyenin arayüz
+    dilinde) ve genel kanaat; kartta rozet (`YzGorusRozeti`). Yalnız tavsiye,
+    kararı değiştirmez. Görüş öneriden ayrı kayıtta (`Durum.yzGorusleri`,
+    öneri başına bir, `eylemler.ts → yzGorusKaydet`), ekibin hepsi görür,
+    muhabir görmez (`yetki.ts → yzGorusuGorur`); öneri silinince izi gider.
+  - Ayarlar'da her özelliğe yöneticinin yönergesi (`yonerge`, varsayılan
+    yönergenin arkasına; çelişirse o geçerli) ve haber değerine ölçütler
+    (`kriterler`, boşsa `dil.ts → yzVarsayilanKriterler`, kapıdakiyle aynı).
+    Alanlı sonuçlar JSON; kapı ayıklar (`ozellikler.ts → sonucCoz`), biçimi
+    bozuk yanıt hak yemez. OpenAI'da JSON kipi, tanımayan uçta onsuz.
   - **Dağıtım:** `.github/workflows/yz-yayin.yml`. Gizli değerler
     `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; yoksa uyarıyla atlanır.
     KV kimliği dağıtımda yazılır (`wrangler.toml`'da `KV_KIMLIGI` yer

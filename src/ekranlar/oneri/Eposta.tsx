@@ -12,6 +12,7 @@ import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { indir } from "../../bilesenler/indir";
+import { YzBicimle } from "../../bilesenler/YzOneri";
 
 /**
  * Öneri çağrısı ve gelen yanıtlar.
@@ -599,6 +600,7 @@ export function KisaOneriFormu({
   gelismeGerekli = false,
   strapGerekli = false,
   takip = false,
+  muhabirId,
 }: {
   ilk: YanitOneriGirdisi;
   kaydet: (g: YanitOneriGirdisi) => boolean;
@@ -610,6 +612,8 @@ export function KisaOneriFormu({
   strapGerekli?: boolean;
   /** Muhabire bağlı öneride haber türünde "Takip" de seçilebilir; takipte strap yok. */
   takip?: boolean;
+  /** Biçimlemede plan satırının yeri muhabirin şehrinden. */
+  muhabirId?: string;
 }) {
   const { t } = useDil();
   const [f, setF] = useState<YanitOneriGirdisi & { bicim: OneriBicimi }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
@@ -630,6 +634,7 @@ export function KisaOneriFormu({
           <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kisa-strap />
         </label>
       )}
+      <YzBicimle deger={f} muhabirId={muhabirId} strapli={!takipte} uygula={(p) => setF({ ...f, ...p, bicim: p.bicim ?? f.bicim })} />
       <div className="satir">
         <label>
           {t("tur")}

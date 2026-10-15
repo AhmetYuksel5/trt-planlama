@@ -251,3 +251,66 @@ test("model listesi: yalnız tam yönetici, yeni yazılan ya da kayıtlı anahta
   // Yeni yazılan anahtar saklanmadı
   assert.ok(!t.depo.get("ayar")!.includes("sk-yeni"));
 });
+
+test("biçimle: OpenAI'da JSON kipi, tanımayan uçta onsuz; yönerge, başlık havuzu ve örnekler gider; alanlar ayıklanır", async () => {
+  const t = kur();
+  const a = structuredClone(AYAR) as any;
+  a.ozellikler.bicimle = { acik: true, saglayici: "diger", birimler: [], gunlukSinir: 5, yonerge: "اكتب العنوان بلا أفعال" };
+  await t.cagir("/ayar", "yon", a, "PUT");
+  t.saglayiciYaniti({ durum: 200, govde: { choices: [{ message: { content: '```json\n{"header":"الحرب على غزة","strap":"خيام النازحين","gelisme":"آلاف النازحين","bicim":"pkg","fazla":"x"}\n```' } }] } });
+  const girdi = { haberBasligi: "غزة", gelisme: "نص", basliklar: ["الحرب على غزة"], ornekler: [{ once: { haberBasligi: "أ" }, sonra: { haberBasligi: "ب" } }] };
+  const r = await t.cagir("/calistir", "pl", { ozellik: "bicimle", girdi });
+  assert.equal(r.status, 200);
+  assert.deepEqual((await r.json()).sonuc, { haberBasligi: "الحرب على غزة", paketBasligi: "خيام النازحين", gelisme: "آلاف النازحين", bicim: "pkg" });
+  const istek = t.istekler.at(-1)!;
+  assert.deepEqual(istek.govde.response_format, { type: "json_object" });
+  assert.match(istek.govde.messages[0].content, /اكتب العنوان بلا أفعال/, "yöneticinin yönergesi sistemde");
+  const k = JSON.parse(istek.govde.messages[1].content);
+  assert.deepEqual(k.existing_headers, ["الحرب على غزة"]);
+  assert.equal(k.examples[0].planning_final.header, "ب");
+  // response_format'ı tanımayan uç: bir kez daha, onsuz
+  let sayi = 0;
+  t.d.fetch = (async (g: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(g as RequestInfo, init);
+    if (req.url.startsWith("https://firestore.googleapis.com/")) return Response.json({ fields: { j: { stringValue: JSON.stringify({ birim: "planlama" }) } } });
+    const b = await req.json();
+    sayi++;
+    return b.response_format
+      ? Response.json({ error: { message: "response_format is not supported" } }, { status: 400 })
+      : Response.json({ choices: [{ message: { content: '{"header":"ح","strap":"","gelisme":"ج","bicim":"yok"}' } }] });
+  }) as typeof fetch;
+  const r2 = await (await t.cagir("/calistir", "pl", { ozellik: "bicimle", girdi })).json();
+  assert.equal(sayi, 2);
+  assert.deepEqual(r2.sonuc, { haberBasligi: "ح", paketBasligi: "", gelisme: "ج" }, "bilinmeyen biçim düşer");
+});
+
+test("haber değeri: kriterler ve dil gider, puanlar denetlenir; bozuk yanıt hak yemez", async () => {
+  const t = kur();
+  const a = structuredClone(AYAR) as any;
+  a.ozellikler.haberDegeri = { acik: true, saglayici: "claude", birimler: [], gunlukSinir: 3, kriterler: ["Güncellik", "Etki"] };
+  await t.cagir("/ayar", "yon", a, "PUT");
+  const yanit = (text: string) => ({ id: "m", type: "message", role: "assistant", model: "claude-opus-5-5", content: [{ type: "text", text }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } });
+  t.saglayiciYaniti({ durum: 200, govde: yanit('Görüş: {"kriterler":[{"ad":"Güncellik","puan":4,"gerekce":"Bugün"},{"ad":"Etki","puan":9,"gerekce":"x"}],"genel":"orta","ozet":"Fena değil."}') });
+  const r = await (await t.cagir("/calistir", "pl", { ozellik: "haberDegeri", girdi: { haberBasligi: "غزة", gelisme: "نص", dil: "tr" } })).json();
+  assert.deepEqual(r.sonuc, { kriterler: [{ ad: "Güncellik", puan: 4, gerekce: "Bugün" }], genel: "orta", ozet: "Fena değil." }, "aralık dışı puan düşer");
+  const istek = t.istekler.at(-1)!;
+  assert.deepEqual(JSON.parse(istek.govde.messages[0].content).criteria, ["Güncellik", "Etki"]);
+  assert.match(istek.govde.system, /Write "gerekce" and "ozet" in Turkish/);
+  t.saglayiciYaniti({ durum: 200, govde: yanit("Bu öneri iyi.") });
+  const bozuk = await t.cagir("/calistir", "pl", { ozellik: "haberDegeri", girdi: { haberBasligi: "غزة" } });
+  assert.equal(bozuk.status, 502);
+  assert.equal((await bozuk.json()).hata, "bos");
+  const durum = await (await t.cagir("/durum", "pl")).json();
+  assert.equal(durum.ozellikler.haberDegeri.kalan, 2);
+  assert.equal((await t.cagir("/calistir", "pl", { ozellik: "haberDegeri", girdi: {} })).status, 400, "boş öneri");
+});
+
+test("ayar: yönerge ve kriterler saklanır, boşlar düşer", () => {
+  const r = ayarBirlestir(bosAyar(), {
+    saglayicilar: [{ id: "a", tur: "anthropic", model: "m" }],
+    ozellikler: { haberDegeri: { acik: true, kriterler: [" Güncellik ", "", 5], yonerge: "  kısa yaz " }, bicimle: { acik: true, yonerge: "" } },
+  }) as { ayar: Ayar };
+  assert.deepEqual(r.ayar.ozellikler.haberDegeri.kriterler, ["Güncellik"]);
+  assert.equal(r.ayar.ozellikler.haberDegeri.yonerge, "kısa yaz");
+  assert.equal(r.ayar.ozellikler.bicimle.yonerge, undefined);
+});

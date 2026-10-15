@@ -21,6 +21,7 @@ import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdis
 import { DuzeltmeFormu, GorunumSecici, OneriKarti, PlandanCikarDugmesi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 import { GeriBildirimBolumu } from "./GeriBildirim";
+import { YzHaberDegeri } from "../../bilesenler/YzOneri";
 
 /**
  * Öneriler: havuz, ayrıntı ve yeni öneri. Çağrı ve gelen e-posta yanıtları Eposta.tsx'te.
@@ -263,6 +264,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
           {yenile ? (
             <KisaOneriFormu
               takip={!!oneri.muhabirId && !oneri.yon}
+              muhabirId={oneri.muhabirId}
               ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
               kaydet={(g) => {
                 const ok = oneriYenidenGonder(ben, oneri.id, g);
@@ -298,6 +300,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               <div className="ara-alt-2" data-oneri-duzenle-formu>
                 <KisaOneriFormu
                   takip={!!oneri.muhabirId && !oneri.yon}
+              muhabirId={oneri.muhabirId}
                   ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
                   kaydet={(g) => {
                     const ok = oneriDuzenle(ben, oneri.id, g);
@@ -401,6 +404,9 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                 <small>{t("paketOnerisi")}</small>
                 {paket ? <a href={`#/paketler/${paket.id}`}>{paket.kod}</a> : <b>—</b>}
               </div>
+            </div>
+            <div className="ara-ust-2">
+              <YzHaberDegeri ben={ben} oneri={oneri} ulkeAdi={t(ulkeAdi(oneri.ulke))} />
             </div>
             {oneri.gerekce && (
               <div className="ara-ust-2">

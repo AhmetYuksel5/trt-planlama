@@ -15,6 +15,7 @@ import { useBen } from "../../oturum";
 import { OneriYazismasi } from "./Yazisma";
 import { GeriBildirimBolumu } from "./GeriBildirim";
 import { KisaOneriFormu } from "./Eposta";
+import { YzGorusRozeti, YzHaberDegeri } from "../../bilesenler/YzOneri";
 
 /*
  * Plan hazırlanırken gelen öneri: müstakil kart, basınca pencerede bütün
@@ -72,6 +73,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
           <MapPin size={13} /> {t(ulkeAdi(o.ulke))}
         </span>
         <span className="bosluk-esnek" />
+        <YzGorusRozeti oneri={o} d={d} />
         <OneriDurumRozeti oneri={o} />
       </div>
       <button type="button" className="ok-baslik" onClick={ac} aria-label={`${t("oneriyiAc")}: ${baslikOf(o)}`}>
@@ -220,6 +222,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
           <div data-oneri-duzenle-formu>
             <KisaOneriFormu
               takip={!!o.muhabirId && !o.yon}
+              muhabirId={o.muhabirId}
               ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
               kaydet={(g) => {
                 const ok = oneriDuzenle(ben, o.id, g);
@@ -291,6 +294,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
           </p>
         )}
       </div>
+      {ben && <YzHaberDegeri ben={ben} oneri={o} ulkeAdi={t(ulkeAdi(o.ulke))} />}
       {ben && <GeriBildirimBolumu ben={ben} oneri={o} />}
       {/* Yazışma ve geçmiş pencerenin içinde: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
       {ben && <OneriYazismasi ben={ben} oneri={o} />}

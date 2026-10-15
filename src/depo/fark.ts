@@ -34,6 +34,7 @@ export const DIZI_ALANLARI = [
   "mesajlar",
   "takipler",
   "geriBildirimSablonlari",
+  "yzGorusleri",
   "gorevler",
   "isler",
   "yapilar",

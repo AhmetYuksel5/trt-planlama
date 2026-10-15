@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { Anahtar } from "./dil";
 import { GERCEK, firebaseYukle } from "./kip";
+import type { Bicim, YzGenel } from "./veri";
 
 /*
  * Yapay zeka kapısının istemcisi (worker/, belgeler/yapay-zeka.md).
@@ -9,11 +10,11 @@ import { GERCEK, firebaseYukle } from "./kip";
  * koyuyor, yetkiyi ve günlük sınırı kapı denetliyor.
  *
  * Demoda kapıya gidilmiyor: örnek kayıtla gerçek bir sağlayıcı
- * çağrılmasın. "Kısalt" demoda metnin ilk cümlesini veriyor, ayar
- * kaydedilmiyor.
+ * çağrılmasın. "Kısalt" demoda metnin ilk cümlesini veriyor, "Biçimle" ve
+ * "Haber değeri" metinden türeyen sabit bir sonuç; ayar kaydedilmiyor.
  */
 
-export const YZ_OZELLIKLERI = ["kisalt"] as const;
+export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri"] as const;
 export type YzOzellik = (typeof YZ_OZELLIKLERI)[number];
 
 export type SaglayiciTuru = "anthropic" | "openai";
@@ -34,6 +35,10 @@ export interface YzOzellikAyari {
   saglayici?: string;
   birimler: string[];
   gunlukSinir: number;
+  /** Yöneticinin kendi yönergesi; kapıdaki varsayılan yönergenin arkasına ekleniyor. */
+  yonerge?: string;
+  /** Haber değeri ölçütleri; boşsa varsayılanlar (dil.ts → yzVarsayilanKriterler). */
+  kriterler?: string[];
 }
 export interface YzAyar {
   saglayicilar: YzSaglayici[];
@@ -81,7 +86,7 @@ let soruldu = 0;
 const dinleyiciler = new Set<() => void>();
 const yay = () => dinleyiciler.forEach((f) => f());
 
-const DEMO_DURUM: Durum = { kisalt: { kalan: 50, sinir: 50 } };
+const DEMO_DURUM: Durum = { kisalt: { kalan: 50, sinir: 50 }, bicimle: { kalan: 50, sinir: 50 }, haberDegeri: { kalan: 50, sinir: 50 } };
 
 export const yzDurumuTazele = async () => {
   if (!GERCEK) {
@@ -120,22 +125,85 @@ export const useYz = (o: YzOzellik) => {
   return d?.[o] ?? null;
 };
 
+/* Önerinin kapıya giden alanları; kapı her birini ayrıca sınırlıyor (worker/src/ozellikler.ts). */
+export interface YzOneriGirdisi {
+  haberBasligi: string;
+  paketBasligi?: string;
+  gelisme: string;
+  /** Muhabirin şehri, Arapça; plan satırının "YER"i. */
+  yer?: string;
+  ulke?: string;
+  bicim?: string;
+  kaynak?: string;
+  tarih?: string;
+}
+export interface YzBicimGirdisi extends YzOneriGirdisi {
+  /** Başlık havuzu: uyan dosya varsa Header aynı adla gelsin. */
+  basliklar: string[];
+  /** Planlama'nın önceki düzeltmeleri: muhabirin yazdığı → son hal. */
+  ornekler: { once: Pick<YzOneriGirdisi, "haberBasligi" | "paketBasligi" | "gelisme">; sonra: Pick<YzOneriGirdisi, "haberBasligi" | "paketBasligi" | "gelisme"> }[];
+}
+export interface YzBicimSonucu {
+  haberBasligi: string;
+  paketBasligi: string;
+  gelisme: string;
+  bicim?: Bicim;
+}
+export interface YzDegerSonucu {
+  kriterler: { ad: string; puan: number; gerekce: string }[];
+  genel: YzGenel;
+  ozet: string;
+}
+interface Girdiler {
+  kisalt: { metin: string };
+  bicimle: YzBicimGirdisi;
+  /** `dil`: gerekçeler isteyenin arayüz dilinde; `kriterler` yalnız demoda (kapı kendi ayarından okuyor). */
+  haberDegeri: YzOneriGirdisi & { dil: string; kriterler?: string[] };
+}
+interface Sonuclar {
+  kisalt: string;
+  bicimle: YzBicimSonucu;
+  haberDegeri: YzDegerSonucu;
+}
+
 /* Demoda kısaltma: ilk cümle, en çok yirmi sözcük. */
 const demoKisalt = (metin: string) => {
   const cumle = metin.trim().split(/(?<=[.!؟?])\s+/)[0] ?? metin;
   const s = cumle.split(/\s+/);
   return s.length > 20 ? `${s.slice(0, 20).join(" ")}…` : cumle;
 };
+const ilkSozcukler = (m: string, n: number) => m.trim().split(/\s+/).slice(0, n).join(" ");
 
-export const yzCalistir = async (o: YzOzellik, metin: string): Promise<YzSonuc<string>> => {
-  if (!GERCEK) return { tamam: true, veri: demoKisalt(metin) };
-  const r = await istek<{ sonuc: string; kalan: number }>("/calistir", "POST", { ozellik: o, girdi: { metin } });
+/* Demoda puan metinden türüyor: aynı öneri her seferinde aynı görüşü alsın. */
+const ozet = (m: string) => [...m].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+
+const demo = <O extends YzOzellik>(o: O, g: Girdiler[O]): Sonuclar[O] => {
+  if (o === "kisalt") return demoKisalt((g as Girdiler["kisalt"]).metin) as Sonuclar[O];
+  if (o === "bicimle") {
+    const b = g as YzBicimGirdisi;
+    const metin = `${b.haberBasligi} ${b.gelisme}`;
+    const header = b.basliklar.find((x) => metin.includes(x)) ?? ilkSozcukler(b.haberBasligi, 5);
+    return { haberBasligi: header, paketBasligi: b.paketBasligi?.trim() || ilkSozcukler(b.gelisme, 8), gelisme: demoKisalt(b.gelisme) } as Sonuclar[O];
+  }
+  const h = g as Girdiler["haberDegeri"];
+  const tohum = ozet(`${h.haberBasligi}${h.gelisme}`);
+  const kriterler = (h.kriterler ?? []).map((ad, i) => ({ ad, puan: 2 + ((tohum >> (i * 3)) % 4), gerekce: "—" }));
+  const ort = kriterler.reduce((a, k) => a + k.puan, 0) / (kriterler.length || 1);
+  return { kriterler, genel: ort >= 4 ? "yuksek" : ort >= 3 ? "orta" : "dusuk", ozet: "" } as Sonuclar[O];
+};
+
+/** Özelliği çalıştırır; sonuç kısaltmada metin, öbürlerinde alanlı nesne. */
+export const yzIste = async <O extends YzOzellik>(o: O, girdi: Girdiler[O]): Promise<YzSonuc<Sonuclar[O]>> => {
+  if (!GERCEK) return { tamam: true, veri: demo(o, girdi) };
+  const r = await istek<{ sonuc: Sonuclar[O]; kalan: number }>("/calistir", "POST", { ozellik: o, girdi });
   if (r.tamam && durum?.[o]) {
     durum = { ...durum, [o]: { ...durum[o]!, kalan: r.veri.kalan } };
     yay();
   }
   return r.tamam ? { tamam: true, veri: r.veri.sonuc } : r;
 };
+
+export const yzCalistir = (o: "kisalt", metin: string) => yzIste(o, { metin });
 
 /* --- Yönetici ayarı (yalnız gerçek kipte; tam yönetici) --- */
 

@@ -256,6 +256,13 @@ export const teklifYanitlayabilir = (k: Kisi | undefined, o: Oneri): boolean => 
 export const oneriYazisabilir = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && !!o.muhabirId && (k.id === o.muhabirId || k.id === o.giren || k.id === o.talimatVeren || yapabilir(k, "oneriDegerlendir"));
 
+/*
+ * Yapay zekanın haber değeri görüşü Planlama'nın iç tavsiyesi: muhabir kendi
+ * önerisinin puanını görmüyor. Görüşü kimin alabileceğini (özelliğin açık
+ * olduğu birimler) kapı denetliyor.
+ */
+export const yzGorusuGorur = (k: Kisi | undefined): boolean => !!k && k.birim !== "muhabir";
+
 /** Düzeltme isteğini yalnız önerinin muhabiri karşılıyor. */
 export const oneriYenidenGonderebilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "duzeltme" && o.muhabirId === k.id;
 

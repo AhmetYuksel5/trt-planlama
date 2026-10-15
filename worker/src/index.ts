@@ -1,13 +1,13 @@
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
-import { istekKur } from "./ozellikler.ts";
+import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 
 /*
  * Plannersflow yapay zeka kapısı. Veritabanı Firebase'de kalıyor; bu Worker
  * yalnız sağlayıcı anahtarını saklıyor ve isteği iletiyor:
  *   GET  /durum      kişinin kullanabildiği özellikler ve bugün kalan hakkı
- *   POST /calistir   {ozellik, girdi} → {sonuc, kalan}
+ *   POST /calistir   {ozellik, girdi} → {sonuc, kalan}; sonuç kısaltmada metin, öbürlerinde alanlı nesne
  *   GET  /ayar       (tam yönetici) ayar, anahtarsız; bugünkü kullanım
  *   PUT  /ayar       (tam yönetici) ayarı yaz
  *   POST /dene       (tam yönetici) {saglayici} kısa deneme çağrısı
@@ -122,7 +122,7 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
     if (!OZELLIKLER.includes(ozellik)) return yanit({ hata: "ozellik" }, 400);
     const saglayici = ozellikSaglayicisi(ayar, ozellik, kisi.birim, kisi.yonetici);
     if (!saglayici) return yanit({ hata: "kapali" }, 403);
-    const istek = istekKur(ozellik, g?.girdi);
+    const istek = istekKur(ozellik, g?.girdi, ayar.ozellikler[ozellik]);
     if (!istek) return yanit({ hata: "girdi" }, 400);
     const kAnahtar = kullanimAnahtari(bugun, kisi.kimlik.uid, ozellik);
     const kullanilan = await sayiOku(env, kAnahtar);
@@ -130,11 +130,14 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
     if (kullanilan >= sinir) return yanit({ hata: "gunlukSinir", kalan: 0 }, 429);
     const s = await cagir(saglayici, istek, d.fetch);
     if (!s.tamam) return yanit({ hata: s.hata }, 502);
+    // Alanlı sonuç beklenen biçimde değilse kullanılamaz: hak düşmesin.
+    const sonuc = sonucCoz(ozellik, s.metin);
+    if (sonuc === null) return yanit({ hata: "bos" }, 502);
     // Sayaç yalnız başarılı çağrıda artıyor; KV anlık tutarlı değil, sınır kaba bir koruma.
     await env.YZ.put(kAnahtar, String(kullanilan + 1), { expirationTtl: IKI_GUN });
     const tAnahtar = toplamAnahtari(bugun, ozellik);
     await env.YZ.put(tAnahtar, String((await sayiOku(env, tAnahtar)) + 1), { expirationTtl: 30 * 86400 });
-    return yanit({ sonuc: s.metin, kalan: Math.max(0, sinir - kullanilan - 1) });
+    return yanit({ sonuc, kalan: Math.max(0, sinir - kullanilan - 1) });
   }
 
   // Ayar yalnız tam yöneticide.

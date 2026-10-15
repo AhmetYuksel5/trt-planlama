@@ -2126,6 +2126,18 @@ tr.soluk > td { opacity: .5; }
 
 /* Yapay zeka düğmeleri (YzKisalt): yazı alanının hemen altında, sakin. */
 .yz-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin-block-start: calc(-1 * var(--ara-1)); }
+/* Biçimleme önerisi: alan alan, uygulanınca forma geçiyor; ayrı kutu, formun alanlarıyla karışmasın. */
+.yz-bicimle { display: grid; gap: var(--ara-2); }
+.yz-oneri-kutu { display: grid; gap: var(--ara-2); padding: var(--ara-3); border: 1px dashed var(--vurgu); border-radius: var(--yaricap); background: var(--vurgu-sis); }
+.yz-oneri-bas { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
+.yz-oneri-alan { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--ara-1) var(--ara-2); padding-block-start: var(--ara-2); border-block-start: 1px solid var(--cizgi); }
+.yz-oneri-alan > small { grid-column: 1 / -1; color: var(--sonuk); }
+.yz-gorus { display: grid; gap: var(--ara-2); justify-items: start; }
+.yz-gorus > .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); }
+.yz-gorus-kutu { display: grid; gap: var(--ara-1); width: 100%; }
+.yz-gorus-kutu p { margin: 0; }
+.yz-kriterler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); font-size: var(--punto-kucuk); }
+.yz-puan { display: inline-block; min-width: 5.5em; color: var(--vurgu); letter-spacing: 1px; direction: ltr; unicode-bidi: isolate; }
 .donen { animation: donen 1s linear infinite; }
 @keyframes donen { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .donen { animation: none; } }

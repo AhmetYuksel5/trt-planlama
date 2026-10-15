@@ -64,15 +64,20 @@ const openaiUyumlu = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): 
   /*
    * OpenAI'ın yeni (akıl yürüten) modelleri max_tokens'ı reddedip
    * max_completion_tokens istiyor; öbür uyumlu sağlayıcıların çoğu yalnız
-   * max_tokens'ı tanıyor. Önce eskisi, reddedilirse yenisiyle bir kez daha.
+   * max_tokens'ı tanıyor. JSON kipini (response_format) de her uyumlu uç
+   * tanımıyor; yönerge zaten JSON istediği için tanımayan uçta onsuz
+   * gidiliyor. Reddedilen parametre bırakılıp en çok iki kez yeniden.
    */
-  const gonder = (sinirAdi: "max_tokens" | "max_completion_tokens") =>
+  let sinirAdi: "max_tokens" | "max_completion_tokens" = "max_tokens";
+  let jsonKipi = !!istek.json;
+  const gonder = () =>
     fetchFn(`${s.adres}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${s.anahtar}` },
       body: JSON.stringify({
         model: s.model,
         [sinirAdi]: istek.enCokCikti,
+        ...(jsonKipi ? { response_format: { type: "json_object" } } : {}),
         messages: [
           { role: "system", content: istek.sistem },
           { role: "user", content: istek.kullanici },
@@ -81,10 +86,13 @@ const openaiUyumlu = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): 
     });
   let r: Response;
   try {
-    r = await gonder("max_tokens");
-    if (r.status === 400) {
+    r = await gonder();
+    for (let i = 0; i < 2 && r.status === 400; i++) {
       const m = await hataMetni(r.clone());
-      if (/max_completion_tokens|max_tokens/.test(m)) r = await gonder("max_completion_tokens");
+      if (sinirAdi === "max_tokens" && /max_completion_tokens|max_tokens/.test(m)) sinirAdi = "max_completion_tokens";
+      else if (jsonKipi && /response_format|json/i.test(m)) jsonKipi = false;
+      else break;
+      r = await gonder();
     }
   } catch {
     return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };

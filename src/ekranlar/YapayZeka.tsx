@@ -15,7 +15,7 @@ import { FormAlt } from "./nextday/Formlar";
  */
 
 
-const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt" };
+const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt", bicimle: "yzBicimle", haberDegeri: "yzHaberDegeri" };
 const TUR_ADI: Record<SaglayiciTuru, Anahtar> = { anthropic: "yzTurClaude", openai: "yzTurOpenai" };
 const VARSAYILAN_OZELLIK: YzOzellikAyari = { acik: false, birimler: [], gunlukSinir: 50 };
 
@@ -217,6 +217,24 @@ function OzellikSatiri({
           ))}
         </div>
       </div>
+      {/* Kurumun kendi biçimi ve ölçütleri; kapıdaki varsayılan yönergenin arkasına ekleniyor, çelişirse bunlar geçerli. */}
+      <label>
+        {t("yzYonerge")}
+        <textarea dir="auto" rows={4} value={deger.yonerge ?? ""} onChange={(e) => degistir({ ...deger, yonerge: e.target.value })} data-yz-yonerge />
+      </label>
+      {ozellik === "haberDegeri" && (
+        <label>
+          {t("yzKriterler")}
+          <textarea
+            dir="auto"
+            rows={6}
+            value={(deger.kriterler ?? []).join("\n")}
+            placeholder={t("yzVarsayilanKriterler")}
+            onChange={(e) => degistir({ ...deger, kriterler: e.target.value.split("\n") })}
+            data-yz-kriterler
+          />
+        </label>
+      )}
     </div>
   );
 }

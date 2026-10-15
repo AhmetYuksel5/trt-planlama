@@ -1,6 +1,6 @@
 # Yapay zeka özellikleri
 
-Plannersflow'un yapay zeka özellikleri (şimdilik "Kısalt") küçük bir aracı
+Plannersflow'un yapay zeka özellikleri ("Kısalt", "Biçimle", "Haber değeri") küçük bir aracı
 üzerinden çalışıyor: **yapay zeka kapısı**, Cloudflare Workers'ta,
 `https://yz.plannersflow.net`. Kodu depoda `worker/`.
 
@@ -38,6 +38,31 @@ Plannersflow'un yapay zeka özellikleri (şimdilik "Kısalt") küçük bir arac�
 
 Demoda kapıya gidilmez: "Kısalt" metnin ilk cümlesini verir, ayar
 kaydedilmez.
+
+## Özellikler
+
+- **Kısalt:** Next Day gelişmesi, haftalık kalem ve ana dosya metnini plan
+  satırına sığacak tek satıra indirir.
+- **Biçimle:** Öneri formlarında (yeni öneri, Düzenle, muhabirin "Düzelt ve
+  yeniden gönder"i) önerinin Header'ını, Strap'ini, plan satırındaki
+  gelişmesini ve haber türünü kurumun biçimine çevirir. Sonuç alan alan
+  gösterilir; "Uygula" ya da "Hepsini uygula" forma yazar, kişi kaydeder.
+  Kapıya şunlar da gider:
+  - başlık havuzundaki dosya adları: öneri var olan bir dosyaya uyuyorsa
+    Header aynı adla gelir, havuz bölünmez;
+  - Planlama'nın son beş düzeltmesi (muhabirin yazdığı → son hal): model
+    kurumun elinden geçmiş biçimi örnekten görür.
+- **Haber değeri:** Önerinin değerlendirme bölümünde "Haber değeri görüşü
+  al". Her ölçüte 1–5 puan ve kısa gerekçe, sonunda genel kanaat (yüksek,
+  orta, düşük). Yalnız tavsiye: karar düğmelerine dokunmaz. Görüş öneriye
+  bağlı ayrı kayıtta saklanır, Planlama'nın hepsi görür (hak bir kez yenir),
+  muhabir görmez. "Yeniden değerlendir" eskisinin yerine yenisini yazar.
+
+Her özelliğe Ayarlar'da **yönerge** yazılabilir (kurumun kendi biçimi,
+üslubu, örnekleri). Kapının varsayılan yönergesinin arkasına eklenir;
+çelişirse yöneticininki geçerlidir. Haber değerinde **ölçütler** her satıra
+bir tane yazılır; boşsa varsayılanlar: güncellik, Arap izleyiciye yakınlık,
+etki ve önem, özgünlük, Türkiye bağlantısı, görüntü ve uygulanabilirlik.
 
 ## Sağlayıcılar
 
@@ -108,8 +133,10 @@ Gizli değerler yoksa iş testleri koşar, dağıtımı uyarıyla atlar.
 
 1. `worker/src/ayar.ts → OZELLIKLER` listesine adını ekle.
 2. `worker/src/ozellikler.ts → istekKur` içine yönergesini yaz.
-3. `src/yz.ts → YZ_OZELLIKLERI` listesine ekle, ekrandaki düğmesini yaz
-   (örnek `bilesenler/YzKisalt.tsx`).
+   Alanlı sonuç istiyorsa `json: true` ve `sonucCoz`'a ayıklaması.
+3. `src/yz.ts → YZ_OZELLIKLERI` listesine ekle (girdi ve sonuç tipi, demodaki
+   sahte sonucu), ekrandaki düğmesini yaz (örnek `bilesenler/YzKisalt.tsx`,
+   `bilesenler/YzOneri.tsx`).
 4. `ekranlar/YapayZeka.tsx → OZELLIK_ADI` içine adını, `dil.ts`'e metnini
    ekle.
 
