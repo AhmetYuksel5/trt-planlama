@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { Anahtar } from "./dil";
+import { izlemede } from "./izleme";
 import { GERCEK, firebaseYukle } from "./kip";
 import type { Bicim, YzGenel } from "./veri";
 
@@ -124,6 +125,8 @@ export const useYz = (o: YzOzellik) => {
     },
     () => durum,
   );
+  // İzlemede kapı yöneticinin oturumuyla çalışırdı; izlenen kişinin hakkı ölçülemez, sonuç da kaydedilemez.
+  if (izlemede()) return null;
   return d?.[o] ?? null;
 };
 

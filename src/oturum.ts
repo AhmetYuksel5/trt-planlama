@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { izlemeAboneOl, izlemeBitir, izlenenKisi } from "./izleme";
 import { GERCEK, tanitimaDon, firebaseYukle } from "./kip";
 import { kisiBul, useVeri, type Kisi } from "./veri";
 
@@ -38,6 +39,8 @@ if (!GERCEK)
   });
 
 const ayarla = (id: string | null) => {
+  // Kişi değişince izleme biter: başkası bu sekmede yöneticinin izlemesiyle açılmasın.
+  if (id !== kisiId) izlemeBitir();
   kisiId = id;
   if (!GERCEK)
     try {
@@ -69,8 +72,8 @@ export const oturumdanCik = () => {
     .then(tanitimaDon);
 };
 
-/** Oturumdaki kişi; örnek veri sıfırlanıp kişi silinmişse oturum yok sayılıyor. */
-export function useBen(): Kisi | undefined {
+/** Oturumu açan kişinin kendisi; izlemede de (şerit, izlemenin sahibi). */
+export function useGercekBen(): Kisi | undefined {
   const id = useSyncExternalStore(
     (d) => {
       dinleyiciler.add(d);
@@ -80,4 +83,22 @@ export function useBen(): Kisi | undefined {
   );
   const v = useVeri();
   return id ? kisiBul(v, id) : undefined;
+}
+
+/**
+ * Oturumdaki kişi; örnek veri sıfırlanıp kişi silinmişse oturum yok sayılıyor.
+ * İzlemede izlenen kişi: menü, ana sayfa ve yetkiler onunki, yazış kapalı
+ * (veri.ts → kaydet). İzleme yalnız tam yöneticinin; başkasında kalmış iz
+ * silinir.
+ */
+export function useBen(): Kisi | undefined {
+  const gercek = useGercekBen();
+  const iz = useSyncExternalStore(izlemeAboneOl, izlenenKisi);
+  const v = useVeri();
+  const izlenen = iz && gercek?.hesapYoneticisi && iz !== gercek.id ? kisiBul(v, iz) : undefined;
+  const gecersiz = !!iz && !!gercek && !izlenen;
+  useEffect(() => {
+    if (gecersiz) izlemeBitir();
+  }, [gecersiz]);
+  return izlenen ?? gercek;
 }

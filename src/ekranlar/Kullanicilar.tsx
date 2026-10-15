@@ -1,6 +1,6 @@
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
 import { birimAdi, birimeUygunUnvan, gorevAdi, unvandanRol } from "../yapi";
-import { Copy, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
+import { Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -9,9 +9,11 @@ import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
 import { hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
+import { izlemeBaslat } from "../izleme";
 import { GERCEK, firebaseYukle } from "../kip";
 import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi } from "../veri";
 import { epostaDegistirebilir, hesapYetkisi } from "../yetki";
+import { git } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 
 /**
@@ -399,6 +401,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                   )}
                 </td>
                 <td className="islem-hucre">
+                  <IzleDugmesi ben={ben} kisi={k} />
                   {hesapYetkisi(ben, "kisiDuzenle") && (
                     <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenlenen(k)} data-pozisyon-duzenle>
                       {t("duzenle")}
@@ -443,6 +446,31 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
       {yetkiVerilen && <YetkiPenceresi ben={ben} kisi={yetkiVerilen} kapat={() => setYetkiVerilen(null)} />}
       {aktar && <AktarPenceresi ben={ben} kapat={() => setAktar(false)} />}
     </>
+  );
+}
+
+/**
+ * Kişinin ekranını onun gözüyle, yalnız bakarak açar (izleme.ts). Yalnız tam
+ * yönetici; kendini izlemek anlamsız.
+ */
+export function IzleDugmesi({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
+  const { t, ad } = useDil();
+  if (!ben.hesapYoneticisi || kisi.id === ben.id) return null;
+  const etiket = t("kisininEkraniniIzle", { ad: ad(kisi) });
+  return (
+    <button
+      type="button"
+      className="dugme dugme-sade dugme-ikon"
+      onClick={() => {
+        izlemeBaslat(kisi.id);
+        git("ana");
+      }}
+      title={etiket}
+      aria-label={etiket}
+      data-izle={kisi.id}
+    >
+      <Eye size={16} />
+    </button>
   );
 }
 

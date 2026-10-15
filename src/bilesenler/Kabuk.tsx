@@ -1,7 +1,10 @@
-import { FlaskConical } from "lucide-react";
+import { Eye, FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useDil } from "../dil";
+import { izlemeBitir } from "../izleme";
 import { GERCEK } from "../kip";
+import { useGercekBen } from "../oturum";
+import { git } from "../yol";
 import type { Kisi } from "../veri";
 import AltCubuk from "./AltCubuk";
 import MobilMenu from "./MobilMenu";
@@ -56,7 +59,9 @@ function useMasaustu() {
   );
 }
 export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben: Kisi; sayfa: string; ortamAcik?: boolean; children: ReactNode }) {
-  const { t } = useDil();
+  const { t, ad } = useDil();
+  const gercekBen = useGercekBen();
+  const izleme = !!gercekBen && gercekBen.id !== ben.id;
   const [menuAcik, setMenuAcik] = useState(false);
   const [menuGizli, setMenuGizli] = useState(gizliMi);
   const masaustu = useMasaustu();
@@ -82,6 +87,23 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
         {!GERCEK && (
           <p className="demo-serit yalniz-telefon" data-demo-serit>
             <FlaskConical size={14} aria-hidden="true" /> {t("demoSerit")}
+          </p>
+        )}
+        {/* İzleme şeridi her sayfada: yönetici gördüğünün başkasının ekranı olduğunu unutmasın. */}
+        {izleme && (
+          <p className="izleme-serit" role="status" data-izleme-serit>
+            <Eye size={15} aria-hidden="true" /> <span>{t("izlemeSerit", { ad: ad(ben) })}</span>
+            <button
+              type="button"
+              className="dugme dugme-kucuk"
+              onClick={() => {
+                izlemeBitir();
+                git("organizasyon/hesaplar");
+              }}
+              data-izleme-bitir
+            >
+              {t("izlemedenCik")}
+            </button>
           </p>
         )}
         <main className="sayfa">{children}</main>

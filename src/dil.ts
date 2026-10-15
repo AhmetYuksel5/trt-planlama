@@ -41,6 +41,10 @@ const M = {
     "نموذج أولي · السجلات تجريبية وتُحفظ في هذا المتصفح فقط ولا يراها المستخدمون الآخرون.",
     "Prototype · Records are samples, stored only in this browser and not visible to other users.",
   ),
+  izlemeSerit: m("{ad} olarak izliyorsun · değişiklik kaydedilmez", "تشاهد بصفة {ad} · لا تُحفظ أي تغييرات", "Viewing as {ad} · changes are not saved"),
+  izlemedenCik: m("Çık", "خروج", "Exit"),
+  izlemeYazilmadi: m("İzlemedesin; değişiklik kaydedilmedi.", "أنت في وضع المشاهدة؛ لم يُحفظ التغيير.", "You are viewing only; the change was not saved."),
+  kisininEkraniniIzle: m("{ad} ekranını izle", "مشاهدة شاشة {ad}", "View {ad}'s screen"),
   ornekVeriKisa: m("Örnek veriyle çalışan prototip", "نموذج أولي ببيانات تجريبية", "Prototype with sample data"),
 
   /* Genel */

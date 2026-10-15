@@ -89,7 +89,7 @@ import {
 import { hesapYetkisi, yapiDuzenleyebilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
 import { EkipSekmesi } from "./EkipSekmesi";
-import Kullanicilar, { PozisyonPenceresi } from "../Kullanicilar";
+import Kullanicilar, { IzleDugmesi, PozisyonPenceresi } from "../Kullanicilar";
 import { AkislarSekmesi } from "./Akislar";
 import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
 
@@ -718,6 +718,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
                               {k.hesapsiz && <Rozet>{t("hesapYok")}</Rozet>}
                             </small>
                           </div>
+                          <IzleDugmesi ben={ben} kisi={k} />
                           {tayinEder && (
                             <button
                               type="button"

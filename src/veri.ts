@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
+import { izlemede } from "./izleme";
 import { GERCEK } from "./kip";
 import { ORNEK } from "./ornek";
 import { bugun, gunEkle } from "./tarih";
@@ -1324,6 +1325,11 @@ export const getir = () => {
 export const yazisDinleyicileri = new Set<(eski: Durum, yeni: Durum) => void>();
 
 export const kaydet = (yeni: Durum) => {
+  // İzlemede yönetici başkasının gözüyle bakıyor: hiçbir şey yazılmıyor, sistemin yazışları da.
+  if (izlemede()) {
+    window.dispatchEvent(new Event("trt-izleme-yazilmadi"));
+    return;
+  }
   const eski = simdi();
   durum = yeni;
   for (const f of yazisDinleyicileri) f(eski, yeni);

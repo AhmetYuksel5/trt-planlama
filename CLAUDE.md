@@ -102,6 +102,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kendi haberinde sıranın ona geçtiği adım ve sonucu (öncelik, iptal,
   yayın); ara işler (kontrol, Media, not) zile düşmez.
   Yetki hem düğmede hem eylemde soruluyor.
+- İzleme (`izleme.ts`): tam yönetici Organizasyon › Kişiler'de ve Hesaplar'da
+  kişinin yanındaki 👁 (`Kullanicilar.tsx → IzleDugmesi`) ile sitenin o kişiye
+  göründüğü halini açar: `useBen()` izleneni döndürür (menü, ana sayfa, yetki
+  onun), oturum yöneticide kalır (`useGercekBen`). Yazış kapalı: `veri.ts →
+  kaydet` izlemede hiçbir şey yazmaz, "değişiklik kaydedilmedi" bildirir;
+  sistemin yazışları (yarının planı) da durur, yapay zeka düğmeleri görünmez
+  (kapı yöneticinin oturumuyla çalışırdı). Sekmeye bağlı (`sessionStorage`,
+  `trt-planlama-izleme`; bölmeler de izler), sekme kapanınca ya da şeritteki
+  "Çık"la biter; kişi değişince ya da tam yönetici olmayanda iz silinir.
+  Kabukta "X olarak izliyorsun" şeridi.
 - Tanıtım sayfası (`ekranlar/Tanitim.tsx`): adres çıplak açılınca (hash
   yok) demoda tanıtım gelir; `#/tanitim` her kipte açar. Üstte Demo
   (demo kişi seçimi) ve Giriş (`#/gercek-giris`). Gerçek kipte kalmış

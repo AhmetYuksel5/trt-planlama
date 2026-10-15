@@ -56,6 +56,7 @@ import {
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
+import { izlemede } from "./izleme";
 import {
   oneriGorebilir,
   paketGorebilir,
@@ -107,11 +108,19 @@ export default function App() {
     window.addEventListener("trt-kayit-hatasi", f);
     return () => window.removeEventListener("trt-kayit-hatasi", f);
   }, [t]);
+  // İzlemede eylem yazmadı; eylemin kendi "kaydedildi" bildirimi ardından gelmesin diye bir tur sonra.
+  useEffect(() => {
+    const f = () => setTimeout(() => bildir(t("izlemeYazilmadi")));
+    window.addEventListener("trt-izleme-yazilmadi", f);
+    return () => window.removeEventListener("trt-izleme-yazilmadi", f);
+  }, [t]);
   // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
   // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın. Gerçek kipte kayıt gelince.
   useEffect(() => {
     if (GOMULU || !kayitHazir) return;
     const yokla = () => {
+      // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
+      if (izlemede()) return;
       planCiftleriniTopla();
       yarinPlaniniAc();
     };
