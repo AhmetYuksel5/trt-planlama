@@ -1,10 +1,10 @@
 import { Ban, Check, Eye, Pencil, Send, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
-import { Icerik, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BICIM_ADI, TUR_ADI, kisiAr, satir, sehirAdi, sehirAr } from "../../etiketler";
+import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
@@ -62,6 +62,7 @@ export function KalemFormu({
     bicimler: mevcut?.bicimler ?? (["pkg"] as Bicim[]),
     paketBasligi: mevcut?.paketBasligi ?? "",
     muhabirler: mevcut?.muhabirler ?? ilk?.muhabirler ?? ([] as string[]),
+    muhabirTbc: !!mevcut?.muhabirTbc,
     not: mevcut?.not ?? "",
   });
   const dosyalar = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
@@ -174,7 +175,8 @@ export function KalemFormu({
           </div>
         )}
         <div className="ara-ust">
-          <MuhabirSecici deger="" degistir={(id) => id && !f.muhabirler.includes(id) && setF({ ...f, muhabirler: [...f.muhabirler, id] })} bosEtiket={t("muhabirEkle")} />
+          <MuhabirSecici deger="" degistir={(id) => id && !f.muhabirler.includes(id) && setF({ ...f, muhabirler: [...f.muhabirler, id], muhabirTbc: false })} bosEtiket={t("muhabirEkle")} />
+          {!f.muhabirler.length && <TbcKutusu secili={f.muhabirTbc} degistir={(x) => setF({ ...f, muhabirTbc: x })} />}
         </div>
       </div>
       <label>
@@ -222,9 +224,16 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
             <div data-kalem-pkg>
               <Icerik blok className="kalem-satiri">
                 <b>PKG · </b>
-                {satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, kalem.muhabirler.length ? kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))).join("، ") : metin("atanmadi", "ar"))}
+                {satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}
               </Icerik>
             </div>
+          )}
+          {!kalemPaketli(kalem) && !kalem.muhabirler.length && kalem.muhabirTbc && (
+            <small>
+              <Rozet ton="uyari" title={t("tbcAdi")}>
+                {TBC}
+              </Rozet>
+            </small>
           )}
           {!kalemPaketli(kalem) && kalem.muhabirler.length > 0 && (
             <small>

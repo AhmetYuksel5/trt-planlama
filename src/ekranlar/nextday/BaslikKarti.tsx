@@ -1,12 +1,12 @@
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
-import { metin, saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketSil, planBaslikBirlestir, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
-import { kisiAr, satir, sehirAr } from "../../etiketler";
+import { saatYaz, useDil } from "../../dil";
+import { gelismeKaydet, paketDurum, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { TBC, kisiAr, muhabirYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
@@ -183,7 +183,14 @@ export default function BaslikKarti({
               );
             })}
           </div>
-          {pb.muhabirler.length === 0 && <p className="bos-kucuk">{t("muhabirAtanmadi")}</p>}
+          {pb.muhabirler.length === 0 &&
+            (pb.muhabirTbc ? (
+              <Rozet ton="uyari" title={t("tbcAdi")}>
+                {TBC}
+              </Rozet>
+            ) : (
+              <p className="bos-kucuk">{t("muhabirAtanmadi")}</p>
+            ))}
           {icerik &&
             (muhabirEkle ? (
               <div className="form ara-ust-2">
@@ -196,8 +203,9 @@ export default function BaslikKarti({
                 />
               </div>
             ) : (
-              <div className="ara-ust-2">
+              <div className="ara-ust-2 muhabir-eylem">
                 <EkleDugmesi metin={t("muhabirAta")} onClick={() => setMuhabirEkle(true)} />
+                {pb.muhabirler.length === 0 && <TbcKutusu secili={!!pb.muhabirTbc} degistir={(x) => ben && planMuhabirTbc(ben, plan.id, pb.id, x)} />}
               </div>
             ))}
         </section>
@@ -215,7 +223,7 @@ export default function BaslikKarti({
                 <div className="kayit-bas">
                   <div>
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
-                      <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : metin("atanmadi", "ar"))}</Icerik>
+                      <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}</Icerik>
                     </a>
                     <small>
                       {p.oncelikli && <OncelikRozeti />}

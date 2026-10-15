@@ -2,9 +2,9 @@ import { ExternalLink, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
-import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, adParcalari, ekipAdi, kisiAr, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -29,6 +29,7 @@ import {
   planMuhabir,
   planMuhabirGuncelle,
   planMuhabirTasi,
+  planMuhabirTbc,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
@@ -98,6 +99,7 @@ const paketGirdisi = (p: Paket, baslik: string) => ({
   yayin: p.yayin,
   sahaGerekli: p.sahaGerekli,
   slug: p.slug,
+  muhabirTbc: p.muhabirTbc,
 });
 
 export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; duzen?: NdDuzen; belgeRef?: Ref<HTMLElement> }) {
@@ -320,7 +322,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           <h2 className="yesil">{c("ciktiBeklenen")}</h2>
           {paketler.map((p) => (
             <Satir key={p.id} yer={sehirAr(p.sehir)}>
-              {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+              {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
             </Satir>
           ))}
         </section>
@@ -333,7 +335,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
             const pkg = paketler.filter((p) => p.planBaslikId === pb.id);
             // Çıktıda boş başlık görünmüyor; belgede görünüyor ki içine eklenebilsin.
-            if (!d && !gelismeler.length && !pb.muhabirler.length && !pkg.length) return null;
+            if (!d && !gelismeler.length && !pb.muhabirler.length && !pb.muhabirTbc && !pkg.length) return null;
             const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
             const cikabilir = !pkg.length;
             return (
@@ -393,6 +395,25 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                     ))}
                   </>
                 )}
+                {!pb.muhabirler.length && pb.muhabirTbc && (
+                  <>
+                    <p className="alt-baslik">{c("ciktiMuhabir")}</p>
+                    <BelgeSatiri
+                      duzen={ic}
+                      serit={
+                        <SatirSeridi
+                          ekle={() => ac({ tur: "muhabirEkle", pbId: pb.id })}
+                          ekleEtiket={t("muhabirAta")}
+                          cikar={() => ben && planMuhabirTbc(ben, plan.id, pb.id, false)}
+                        />
+                      }
+                    >
+                      <Satir>
+                        <span data-tbc-satir>{TBC}</span>
+                      </Satir>
+                    </BelgeSatiri>
+                  </>
+                )}
                 {pkg.length > 0 && (
                   <>
                     <p className="alt-baslik">
@@ -423,7 +444,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                             ) : (
                               p.baslik
                             )}{" "}
-                            / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+                            / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
                           </Satir>
                         </BelgeSatiri>
                       );
@@ -455,7 +476,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {dosyasizPaketler.map((p) => (
             <BelgeSatiri key={p.id} duzen={ic} serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}>
               <Satir yer={sehirAr(p.sehir)}>
-                {p.baslik} / <b>{p.muhabirId ? kisiAdi(p.muhabirId) : c("atanmadi")}</b>
+                {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
               </Satir>
             </BelgeSatiri>
           ))}
@@ -591,6 +612,9 @@ function NdPencereIcerik({ ben, plan, p, kapat }: { ben: Kisi; plan: NextDayPlan
         t("muhabirAta"),
         <div className="form">
           <MuhabirSecici deger="" degistir={(id) => id && planMuhabir(ben, plan.id, p.pbId, id, true, p.sonra) && kapat()} />
+          {!plan.basliklar.find((b) => b.id === p.pbId)?.muhabirler.length && (
+            <TbcKutusu secili={!!plan.basliklar.find((b) => b.id === p.pbId)?.muhabirTbc} degistir={(x) => planMuhabirTbc(ben, plan.id, p.pbId, x) && kapat()} />
+          )}
         </div>,
       );
     case "muhabir":

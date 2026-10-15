@@ -289,3 +289,8 @@ export const TEMEL_GOREV_ADI: Record<TemelGorev, Anahtar> = { nextday: "mNextday
 /** Önerinin düştüğü plan etiketi (oneriPlanlari.ts); planların menü adlarıyla. */
 export const ONERI_ETIKET_ADI: Record<OneriEtiketi, Anahtar> = { nextday: "mNextday", haftalik: "mHaftalik", ozel: "mOzel" };
 export const IS_DURUM_ADI: Record<IsDurumu, Anahtar> = { yapilacak: "gvYapilacak", suruyor: "gvSuruyor", bitti: "gvBitti" };
+
+/* Muhabir henüz belli değil: kurumun planında adın yerine "TBC" (to be confirmed); her dilde aynı. */
+export const TBC = "TBC";
+/** Planın muhabir yeri: adlar; yoksa TBC işaretliyse TBC, değilse "atanmadı". */
+export const muhabirYeri = (adlar: string[], tbc?: boolean) => adlar.filter(Boolean).join("، ") || (tbc ? TBC : metin("atanmadi", "ar"));

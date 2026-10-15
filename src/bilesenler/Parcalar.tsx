@@ -2,7 +2,7 @@ import { ArrowRight, CalendarRange, Check, Construction, Flag, Inbox, Info, Lock
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ASAMALAR, ASAMA_ADI, adimAdi, asamaBul, geciktiMi, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
-import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TUR_ADI } from "../etiketler";
+import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
 import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
@@ -474,5 +474,19 @@ export function Bildiri() {
         </button>
       )}
     </div>
+  );
+}
+
+/*
+ * Muhabir henüz belli değilken plana "TBC" yazdıran kutucuk; muhabir
+ * seçiminin yanında. Muhabir atanınca eylem işareti kaldırıyor.
+ */
+export function TbcKutusu({ secili, degistir }: { secili: boolean; degistir: (x: boolean) => void }) {
+  const { t } = useDil();
+  return (
+    <label className="secim tbc-kutusu" title={t("tbcAdi")}>
+      <input type="checkbox" checked={secili} onChange={(e) => degistir(e.target.checked)} aria-label={t("tbcAdi")} data-tbc />
+      {TBC}
+    </label>
   );
 }

@@ -2145,3 +2145,8 @@ tr.soluk > td { opacity: .5; }
 .donen { animation: donen 1s linear infinite; }
 @keyframes donen { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .donen { animation: none; } }
+/* TBC: muhabir seçiminin yanında; satırdaki düğmeyle aynı hizada. */
+.tbc-kutusu { display: inline-flex; align-items: center; gap: var(--ara-1); white-space: nowrap; min-block-size: 44px; }
+.muhabir-eylem { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
+.muhabir-sutunu { display: grid; align-content: start; }
+.form .satir:has(> .muhabir-sutunu) { align-items: start; }

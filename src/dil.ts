@@ -900,6 +900,7 @@ const M = {
   gdBitti: m("Bitti", "انتهى", "Finished"),
   yeniBaslik: m("Yeni başlık", "عنوان جديد", "New heading"),
   baslikAdi: m("Başlık adı", "اسم العنوان", "Heading name"),
+  tbcAdi: m("Muhabir henüz belli değil (TBC)", "المراسل غير محدد بعد (TBC)", "Reporter to be confirmed (TBC)"),
   havuzaEkle: m("Havuza ekle", "إضافة إلى المجموعة", "Add to pool"),
   kullanim: m("Kullanım", "الاستخدام", "Usage"),
   sonKullanim: m("Son kullanım", "آخر استخدام", "Last used"),

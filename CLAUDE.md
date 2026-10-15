@@ -458,6 +458,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlık, gelişme ve canlı çoğalmaz. Muhabir yalnız kayıttakiyle eşleşir:
     önce muhabir listesi (Excel), sonra planlar. Gerçek adlar depoya ve
     demoya girmez; dosya gerçek sitede yüklenir.
+  - Muhabir henüz belli değilse "TBC" (`TbcKutusu`, muhabir seçiminin
+    yanında): Next Day'de başlığın muhabirleri (`PlanBasligi.muhabirTbc`,
+    `eylemler.ts → planMuhabirTbc`; belgede muhabir ata penceresinde de) ve
+    PKG formu (`Paket.muhabirTbc`), Weekly'de kalem formu
+    (`HaftalikKalem.muhabirTbc`). Çıktıda adın yerinde "TBC"
+    (`etiketler.ts → muhabirYeri`); muhabir atanınca kalkar. Sahte kişi
+    değil işaret: paketin muhabiri akışta görev ve bildirim alıyor.
+    Weekly'den Next Day'e geçen kalemde TBC başlığa ve pakete taşınır.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

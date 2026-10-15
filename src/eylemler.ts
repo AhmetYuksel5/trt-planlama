@@ -852,6 +852,7 @@ export interface KalemGirdisi {
   bicimler: Bicim[];
   paketBasligi?: string;
   muhabirler: string[];
+  muhabirTbc?: boolean;
   not?: string;
 }
 
@@ -883,6 +884,8 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     bicimler: g.bicimler,
     paketBasligi: g.bicimler.some((b) => b !== "canli") ? g.paketBasligi?.trim() || undefined : undefined,
     muhabirler: g.muhabirler,
+    // TBC yalnız muhabir seçilmemişken: atanınca belirsizlik kalmadı.
+    muhabirTbc: g.muhabirTbc && !g.muhabirler.length ? (true as const) : undefined,
     not: g.not?.trim() || undefined,
   };
   if (g.id) {
@@ -1053,7 +1056,9 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     // Kimlikler plandan ve kalemden: aktarım iki tarayıcıda aynı anda olursa aynı kayıtlar yazılsın.
     const pb = var_ ?? { id: turet(plan.id, k.baslikId), baslikId: k.baslikId, muhabirler: [] };
     pbId = pb.id;
-    const yeniPb = { ...pb, muhabirler: [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))] };
+    const muhabirler = [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))];
+    // Kalemin TBC'si muhabirsiz başlığa geçiyor; başlıkta muhabir varsa belirsizlik yok.
+    const yeniPb = { ...pb, muhabirler, ...(k.muhabirTbc && !muhabirler.length ? { muhabirTbc: true as const } : {}) };
     d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: var_ ? p.basliklar.map((b) => (b.id === pb.id ? yeniPb : b)) : [...p.basliklar, yeniPb] }));
   }
   const muhabirId = k.muhabirler[0];
@@ -1076,7 +1081,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
 
   let paketId: string | undefined;
   const bicim = k.bicimler.length ? k.bicimler.find((b) => b !== "canli") : "pkg";
-  if (muhabirId && bicim) {
+  // Muhabiri TBC olan kalemin paketi de girer: "YER / strap / TBC", muhabir sonra atanır.
+  if ((muhabirId || k.muhabirTbc) && bicim) {
     let kod: string;
     [kod, d] = yeniKod(d);
     paketId = `p-${turet(plan.id, k.id)}`;
@@ -1088,6 +1094,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       baslik: k.paketBasligi || k.baslik || k.metin,
       sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
       muhabirId,
+      ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
       aciklama: k.metin,
       tur: k.tur,
       bicim,
@@ -1118,6 +1125,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     baslik: k.paketBasligi || k.baslik || k.metin,
     sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
     muhabirId,
+    ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
     aciklama: k.metin,
     tur: k.tur,
     bicim: k.bicimler[0],
@@ -1593,15 +1601,25 @@ const pbGuncelle = (p: NextDayPlan, pbId: string, f: (m: PlanMuhabiri[]) => Plan
 });
 
 export const planMuhabir = (ben: Kisi, planId: string, pbId: string, kisiId: string, var_: boolean, sonra?: string) =>
-  planIcerik(ben, planId, (p) =>
-    pbGuncelle(p, pbId, (m) =>
+  planIcerik(ben, planId, (p) => {
+    const yeni = pbGuncelle(p, pbId, (m) =>
       var_
         ? m.some((x) => x.kisiId === kisiId)
           ? m
           : arkasina([...m, { kisiId }], (x) => x.kisiId, kisiId, sonra)
         : m.filter((x) => x.kisiId !== kisiId),
-    ),
-  );
+    );
+    // Muhabir atanınca TBC kalkıyor: belirsizlik kalmadı.
+    return var_ ? { ...yeni, basliklar: yeni.basliklar.map((b) => (b.id === pbId && b.muhabirTbc ? { ...b, muhabirTbc: undefined } : b)) } : yeni;
+  });
+
+/** Başlığın muhabiri henüz belli değil (TBC); yalnız muhabirsiz başlıkta işaretlenir. */
+export const planMuhabirTbc = (ben: Kisi, planId: string, pbId: string, tbc: boolean) =>
+  planIcerik(ben, planId, (p) => {
+    const pb = p.basliklar.find((b) => b.id === pbId);
+    if (!pb || (tbc && pb.muhabirler.length) || !!pb.muhabirTbc === tbc) return p;
+    return { ...p, basliklar: p.basliklar.map((b) => (b.id === pbId ? { ...b, muhabirTbc: tbc ? (true as const) : undefined } : b)) };
+  });
 
 export const planMuhabirTasi = (ben: Kisi, planId: string, pbId: string, kisiId: string, yon: -1 | 1) =>
   planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => komsuylaDegis(m, (x) => x.kisiId === kisiId, () => true, yon) ?? m));
@@ -1711,6 +1729,7 @@ export interface PaketGirdisi {
   yayin?: string;
   sahaGerekli: boolean;
   slug?: string;
+  muhabirTbc?: boolean;
 }
 
 /* Yeni paket listelerde önde (en yeni üstte); belgede "altına ekle" denince o satırın arkasına giriyor. */
@@ -1718,15 +1737,16 @@ export const paketKaydet = (ben: Kisi, g: PaketGirdisi, sonra?: string): string 
   let d = getir();
   const plan = planBul(d, g.planId);
   if (!plan || !planIcerikDuzenler(ben, plan)) return null;
+  g = { ...g, muhabirTbc: g.muhabirTbc && !g.muhabirId ? true : undefined };
   if (g.id) {
     const id = g.id;
-    kaydet(paketGuncelle(d, id, (p) => ({ ...p, ...g, id })));
+    kaydet(paketGuncelle(d, id, (p) => ({ ...p, ...g, muhabirTbc: g.muhabirTbc || undefined, id })));
     return id;
   }
   let kod: string;
   [kod, d] = yeniKod(d);
   const id = kimlik("p");
-  const paket: Paket = { ...g, id, kod, durum: "taslak", notlar: [], olusturma: simdi(), guncelleme: simdi() };
+  const paket: Paket = { ...g, muhabirTbc: g.muhabirTbc || undefined, id, kod, durum: "taslak", notlar: [], olusturma: simdi(), guncelleme: simdi() };
   d = { ...d, paketler: arkasina([paket, ...d.paketler], kimlikOf, id, sonra) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketOlusturuldu", paketId: id, planId: plan.id }));
   return id;

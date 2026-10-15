@@ -268,6 +268,8 @@ export interface PlanBasligi {
   id: string;
   baslikId: string;
   muhabirler: PlanMuhabiri[];
+  /** Muhabir henüz belli değil: çıktıda adın yerinde "TBC". Muhabir atanınca kalkıyor. */
+  muhabirTbc?: true;
 }
 
 export interface NextDayPlan {
@@ -597,6 +599,11 @@ export interface Paket {
   baslik: string;
   sehir: Sehir;
   muhabirId?: string;
+  /*
+   * Muhabir henüz belli değil: "YER / strap / TBC". Sahte kişi kimliği
+   * değil işaret, çünkü paketin muhabiri akışta görev ve bildirim alıyor.
+   */
+  muhabirTbc?: true;
   aciklama: string;
   tur: IcerikTuru;
   bicim?: Bicim;
@@ -706,6 +713,8 @@ export interface HaftalikKalem {
   /** Paket önerisinin başlığı (strap): çıktıda "PKG" altında "YER / strap / muhabir". */
   paketBasligi?: string;
   muhabirler: string[];
+  /** Muhabir henüz belli değil (TBC); Next Day'e geçen pakete de taşınıyor. */
+  muhabirTbc?: true;
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;

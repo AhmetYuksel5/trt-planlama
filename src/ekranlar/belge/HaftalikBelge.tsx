@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, kisiAr, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, haftaSonu } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
@@ -72,6 +72,7 @@ const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi 
   bicimler: k.bicimler,
   paketBasligi: k.paketBasligi,
   muhabirler: k.muhabirler,
+  muhabirTbc: k.muhabirTbc,
   not: k.not,
   ...g,
 });
@@ -139,8 +140,13 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
               <bdi>PKG</bdi>
             </p>
             <p data-kalem-pkg>
-              {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi} / <b>{k.muhabirler.length ? k.muhabirler.map(kisiAdi).join("، ") : c("atanmadi")}</b>
+              {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi} / <b>{muhabirYeri(k.muhabirler.map(kisiAdi), k.muhabirTbc)}</b>
             </p>
+          </>
+        ) : !k.muhabirler.length && k.muhabirTbc ? (
+          <>
+            <p className="alt-baslik">{c("ciktiMuhabir")}</p>
+            <p data-tbc-satir>{TBC}</p>
           </>
         ) : k.muhabirler.length > 0 && (
           <>

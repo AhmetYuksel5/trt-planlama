@@ -1,6 +1,6 @@
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useState } from "react";
-import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, paketKaydet } from "../../eylemler";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
@@ -253,11 +253,12 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
     yayin: mevcut?.yayin ? yerelGirdi(mevcut.yayin).slice(11) : "",
     sahaGerekli: mevcut?.sahaGerekli ?? false,
     slug: mevcut?.slug ?? "",
+    muhabirTbc: !!mevcut?.muhabirTbc,
   });
-  /* Muhabir seçilince şehir onun şehrine geliyor; çıktıdaki "ŞEHİR /" çoğu zaman muhabirin yeri. */
+  /* Muhabir seçilince şehir onun şehrine geliyor; çıktıdaki "ŞEHİR /" çoğu zaman muhabirin yeri. TBC kalkıyor. */
   const muhabirSec = (id: string) => {
     const k = v.kisiler.find((x) => x.id === id);
-    setF({ ...f, muhabirId: id, sehir: k?.sehir ?? f.sehir });
+    setF({ ...f, muhabirId: id, sehir: k?.sehir ?? f.sehir, muhabirTbc: id ? false : f.muhabirTbc });
   };
   const kaydet = () => {
     if (!ben || !f.baslik.trim()) return;
@@ -275,6 +276,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
       yayin: f.yayin ? zaman(plan.tarih, f.yayin) : undefined,
       sahaGerekli: f.sahaGerekli,
       slug: f.slug.trim() || undefined,
+      muhabirTbc: f.muhabirTbc,
     }, sonra);
     if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
     kapat();
@@ -286,10 +288,14 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
         <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} />
       </label>
       <div className="satir">
-        <label>
-          {t("muhabir")}
-          <MuhabirSecici deger={f.muhabirId} degistir={muhabirSec} bosEtiket={t("atanmadi")} />
-        </label>
+        {/* TBC muhabir sütununda, seçimin altında: satırın öbür alanlarını kaydırmasın. */}
+        <div className="muhabir-sutunu">
+          <label>
+            {t("muhabir")}
+            <MuhabirSecici deger={f.muhabirId} degistir={muhabirSec} bosEtiket={t("atanmadi")} />
+          </label>
+          {!f.muhabirId && <TbcKutusu secili={f.muhabirTbc} degistir={(x) => setF({ ...f, muhabirTbc: x })} />}
+        </div>
         <label>
           {t("sehirUlke")}
           <select value={f.sehir} onChange={(e) => setF({ ...f, sehir: e.target.value as Sehir })}>
