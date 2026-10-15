@@ -32,7 +32,7 @@ export function YapayZekaAyari() {
       if (r.tamam) {
         setAyar(r.veri);
         setOzellikler(r.veri.ozellikler);
-      } else setHata(r.hata);
+      } else setHata(`${yzHataMetni(t, r.hata)}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
     });
   }, []);
 
@@ -61,7 +61,9 @@ export function YapayZekaAyari() {
     <Kart baslik={t("yzBaslik")} ikon={<Sparkles size={18} />}>
       <div data-yz-ayar>
         {hata ? (
-          <NotKutu ton="uyari">{yzHataMetni(t, hata)}</NotKutu>
+          <NotKutu ton="uyari">
+            <span data-yz-hata>{hata}</span>
+          </NotKutu>
         ) : !ayar ? (
           <p className="sonuk">{t("yukleniyor")}</p>
         ) : (

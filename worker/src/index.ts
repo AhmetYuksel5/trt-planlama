@@ -56,15 +56,25 @@ const toplamAnahtari = (g: string, o: string) => `toplam:${g}:${o}`;
 const sayiOku = async (env: Env, k: string) => Number((await env.YZ.get(k)) ?? 0) || 0;
 const IKI_GUN = 2 * 86400;
 
-const kisiOku = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): Promise<Kisi | null> => {
+/* Okunamazsa nedeni metin olarak döner (Firestore'un durumu ve iletisi): kişi neden tanınmadığını görsün. */
+const kisiOku = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): Promise<Kisi | string> => {
   const kok = d.firestoreKoku ?? "https://firestore.googleapis.com";
   const r = await d.fetch(`${kok}/v1/projects/${env.FIREBASE_PROJE}/databases/(default)/documents/kisiler/${encodeURIComponent(kimlik.uid)}`, {
     headers: { authorization: `Bearer ${belge}` },
   });
-  if (!r.ok) return null;
+  if (!r.ok) {
+    const ham = await r.text().catch(() => "");
+    let ileti = ham;
+    try {
+      ileti = String((JSON.parse(ham) as { error?: { message?: unknown } }).error?.message ?? ham);
+    } catch {
+      /* JSON değil */
+    }
+    return `firestore ${r.status} ${ileti}`.slice(0, 300);
+  }
   const j = (await r.json()) as { fields?: Record<string, { booleanValue?: boolean; stringValue?: string }> };
   const f = j.fields ?? {};
-  if (f.pasif?.booleanValue) return null;
+  if (f.pasif?.booleanValue) return "pasif";
   let birim = "";
   try {
     birim = String((JSON.parse(f.j?.stringValue ?? "{}") as { birim?: unknown }).birim ?? "");
@@ -89,8 +99,8 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
   const belge = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   const kimlik = belge ? await oturumuDogrula(belge, env.FIREBASE_PROJE, d.anahtarBul, d.simdi()).catch(() => null) : null;
   if (!kimlik) return yanit({ hata: "oturum" }, 401);
-  const kisi = await kisiOku(belge, kimlik, env, d).catch(() => null);
-  if (!kisi) return yanit({ hata: "kisi" }, 403);
+  const kisi = await kisiOku(belge, kimlik, env, d).catch((e: unknown) => `istisna ${String(e)}`.slice(0, 300));
+  if (typeof kisi === "string") return yanit({ hata: "kisi", ayrinti: kisi }, 403);
 
   const yol = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
   const bugun = gun(d.simdi());
