@@ -24,6 +24,7 @@ import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type Hafta
 import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
+import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { plandakiFaaliyetler } from "../../takvim";
@@ -365,6 +366,7 @@ export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; 
         {t("durumOzeti")}
         <textarea {...icerikAlani} rows={4} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
       </label>
+      <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
       <FormAlt kapat={kapat} kaydet={kaydet} devre={yeni ? !f.yeniBaslik.trim() : !f.baslikId} />
     </div>
   );

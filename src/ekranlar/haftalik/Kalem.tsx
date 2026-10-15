@@ -11,6 +11,7 @@ import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planB
 import { haftalikDuzenler, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
+import { YzKisalt } from "../../bilesenler/YzKisalt";
 
 /*
  * Haftalık gündemin kalemi: kurumun çıktısındaki satır ("ad - YER /
@@ -136,6 +137,7 @@ export function KalemFormu({
         {t("metin")}
         <textarea {...icerikAlani} rows={3} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} placeholder={metin("kalemMetniIpucu", "ar")} />
       </label>
+      <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
       {/* Strap yalnız paketi olan kalemde: çıktıda "PKG" altında "YER / strap / muhabir". */}
       {f.bicimler.some((b) => b !== "canli") && (
         <label>

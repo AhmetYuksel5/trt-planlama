@@ -12,6 +12,7 @@ import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { KalemFormu } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
+import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
@@ -106,6 +107,7 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             duzenle={() => duzen.ac({ tur: "kalem", mevcut: k })}
             ek={
               <>
+                <YzKisaltSerit metin={k.metin} kaydet={(m) => yaz({ metin: m })} />
                 <KararRozeti kalem={k} />
                 {duzen.karar &&
                   KARARLAR.map((x) => (
@@ -268,6 +270,7 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
                       ekle={() => duzen.ac({ tur: "anaKonu", sonra: a.id })}
                       ekleEtiket={t("anaDosyaEkle")}
                       duzenle={() => duzen.ac({ tur: "anaKonu", mevcut: a })}
+                      ek={<YzKisaltSerit metin={a.metin} kaydet={(m) => anaKonuKaydet(ben, hafta.id, { id: a.id, metin: m })} />}
                       cikar={onayla(t("silinsinMi"), () => anaKonuSil(ben, hafta.id, a.id))}
                     />
                   )

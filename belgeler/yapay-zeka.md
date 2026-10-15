@@ -20,7 +20,8 @@ Plannersflow'un yapay zeka özellikleri (şimdilik "Kısalt") küçük bir arac�
 
 ## Bir istek nasıl işliyor
 
-1. Kişi gelişme formunda "Kısalt"a basar.
+1. Kişi Next Day gelişme formunda ya da haftalık kalem / ana dosya
+   formunda "Kısalt"a basar.
 2. Tarayıcı kapıya metni ve kişinin Firebase oturum belgesini gönderir
    (`src/yz.ts`).
 3. Kapı:
@@ -32,7 +33,8 @@ Plannersflow'un yapay zeka özellikleri (şimdilik "Kısalt") küçük bir arac�
      bakar;
    - sağlayıcıyı çağırır (`worker/src/saglayici.ts`).
 4. Sonuç forma gelir. Kayda yazılmaz: kişi bakıp kendisi kaydeder.
-   "Önceki metin" eski metni geri getirir.
+   "Önceki metin" eski metni geri getirir. Belge görünümünde (Next Day ve
+   haftalık) satırın şeridindeki ✨ sonucu hemen kaydeder; ↶ geri alır.
 
 Demoda kapıya gidilmez: "Kısalt" metnin ilk cümlesini verir, ayar
 kaydedilmez.

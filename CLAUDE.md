@@ -232,9 +232,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     YapayZeka.tsx`, yalnız gerçek kipte; demoda durum satırı).
     - Kapıya ulaşılamazsa özellik görünmez.
     - Demoda kapıya gidilmez, "Kısalt" ilk cümleyi verir.
-  - **İlk özellik "Kısalt":** Gelişme formunda (`bilesenler/YzKisalt.tsx`).
+  - **İlk özellik "Kısalt":** Next Day gelişme formunda, haftalık kalem ve
+    ana dosya formunda (`bilesenler/YzKisalt.tsx`).
     Sonuç forma gelir, kişi kaydeder; "Önceki metin" geri alır. Belgede
-    gelişme yerinde düzenlendiği için satırın şeridinde ✨ (`YzKisaltSerit`):
+    (Next Day gelişmesi, haftalık kalem ve ana dosya) satır yerinde
+    düzenlendiği için satırın şeridinde ✨ (`YzKisaltSerit`):
     sonuç hemen kaydedilir, ↶ geri alır. Ayarlar'da özelliğin yanında "senin
     için açık/kapalı"; kapalı görünen durum sekmeye dönünce yeniden sorulur.
   - **Dağıtım:** `.github/workflows/yz-yayin.yml`. Gizli değerler
