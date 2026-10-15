@@ -41,7 +41,7 @@ export interface YzAyar {
   kullanim?: Partial<Record<YzOzellik, number>>;
 }
 
-export type YzSonuc<T> = { tamam: true; veri: T } | { tamam: false; hata: string };
+export type YzSonuc<T> = { tamam: true; veri: T } | { tamam: false; hata: string; ayrinti?: string };
 
 /* Kapının adresi; deneme için bu tarayıcıda değiştirilebiliyor (firebase-ayar.ts'teki gibi). */
 const DENEME = "trt-planlama-yz";
@@ -67,8 +67,8 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
   } catch {
     return { tamam: false, hata: "baglanti" };
   }
-  const j = (await r.json().catch(() => null)) as (T & { hata?: string }) | null;
-  if (!r.ok || !j) return { tamam: false, hata: j?.hata ?? "baglanti" };
+  const j = (await r.json().catch(() => null)) as (T & { hata?: string; ayrinti?: string }) | null;
+  if (!r.ok || !j) return { tamam: false, hata: j?.hata ?? "baglanti", ...(j?.ayrinti ? { ayrinti: j.ayrinti } : {}) };
   return { tamam: true, veri: j };
 };
 
@@ -141,6 +141,7 @@ export const yzSaglayiciDene = (id: string) => istek<{ tamam: true }>("/dene", "
 /* Kapının hata kodları ekranda kişinin dilinde. */
 const HATA: Record<string, Anahtar> = {
   oturum: "yzHataOturum",
+  kisi: "yzHataKisi",
   baglanti: "yzHataBaglanti",
   kapali: "yzHataKapali",
   gunlukSinir: "yzSinirDoldu",

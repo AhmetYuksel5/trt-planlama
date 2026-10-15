@@ -32,7 +32,8 @@ export const istekKur = (ozellik: Ozellik, girdi: unknown): Istek | null => {
           "Reply with the line only: no quotes, no labels, no explanation.",
         ].join(" "),
         kullanici: metin,
-        enCokCikti: 1000,
+        // Akıl yürüten modellerde düşünme de bu paydan yiyor; küçük kalınca yanıt boş dönüyordu.
+        enCokCikti: 4000,
       };
   }
 };

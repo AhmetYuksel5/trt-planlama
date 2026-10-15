@@ -145,8 +145,8 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
       const g = (await req.json().catch(() => null)) as { saglayici?: string } | null;
       const s = ayar.saglayicilar.find((x) => x.id === g?.saglayici);
       if (!s?.anahtar) return yanit({ hata: "anahtar" }, 400);
-      const r = await cagir(s, { sistem: "Reply with the single word: OK", kullanici: "ping", enCokCikti: 1000 }, d.fetch);
-      return r.tamam ? yanit({ tamam: true }) : yanit({ hata: r.hata }, 502);
+      const r = await cagir(s, { sistem: "Reply with the single word: OK", kullanici: "ping", enCokCikti: 2000 }, d.fetch);
+      return r.tamam ? yanit({ tamam: true }) : yanit({ hata: r.hata, ayrinti: r.ayrinti }, 502);
     }
   }
   return yanit({ hata: "yol" }, 404);

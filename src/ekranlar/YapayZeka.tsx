@@ -93,7 +93,8 @@ export function YapayZekaAyari() {
                         aria-label={t("yzDene")}
                         onClick={async () => {
                           const r = await yzSaglayiciDene(s.id);
-                          bildir(r.tamam ? t("yzDenemeTamam") : yzHataMetni(t, r.hata));
+                          // Sağlayıcının kendi hata metni de yazılıyor: anahtar mı, model adı mı, kota mı, görülsün.
+                          bildir(r.tamam ? t("yzDenemeTamam") : `${yzHataMetni(t, r.hata)}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
                         }}
                         data-yz-dene
                       >

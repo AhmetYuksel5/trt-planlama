@@ -9,7 +9,8 @@ import type { Istek } from "./ozellikler.ts";
  * değişmeden ikinciyle ekleniyor.
  */
 
-export type Sonuc = { tamam: true; metin: string } | { tamam: false; hata: "anahtar" | "sinir" | "red" | "saglayici" | "bos" };
+/* `ayrinti`: sağlayıcının kendi hata metni; yalnız yöneticinin "Dene"sinde gösteriliyor, nedeni tahmin edilmesin. */
+export type Sonuc = { tamam: true; metin: string } | { tamam: false; hata: "anahtar" | "sinir" | "red" | "saglayici" | "bos"; ayrinti?: string };
 
 /* Sunucu tarafı yedek (red olursa aynı çağrıda başka modelle sürdürme) yalnız bu modellerde var. */
 const YEDEKLI = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
@@ -41,33 +42,59 @@ const claude = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): Promis
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return { tamam: false, hata: "anahtar" };
     if (e instanceof Anthropic.RateLimitError) return { tamam: false, hata: "sinir" };
-    if (e instanceof Anthropic.APIError) return durumHatasi(e.status ?? 500);
-    return { tamam: false, hata: "saglayici" };
+    if (e instanceof Anthropic.APIError) return { ...durumHatasi(e.status ?? 500), ayrinti: `${e.status ?? ""} ${e.message}`.trim().slice(0, 300) } as Sonuc;
+    return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };
   }
 };
 
-const openaiUyumlu = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): Promise<Sonuc> => {
-  let r: Response;
+/* Sağlayıcının hata gövdesinden okunur metin (OpenAI biçimi {error: {message}}; değilse ham metnin başı). */
+const hataMetni = async (r: Response) => {
+  const ham = await r.text().catch(() => "");
   try {
-    r = await fetchFn(`${s.adres}/chat/completions`, {
+    const j = JSON.parse(ham) as { error?: { message?: unknown } | string; message?: unknown };
+    const m = typeof j.error === "string" ? j.error : (j.error?.message ?? j.message);
+    if (typeof m === "string") return m.slice(0, 300);
+  } catch {
+    /* JSON değil */
+  }
+  return ham.slice(0, 300);
+};
+
+const openaiUyumlu = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): Promise<Sonuc> => {
+  /*
+   * OpenAI'ın yeni (akıl yürüten) modelleri max_tokens'ı reddedip
+   * max_completion_tokens istiyor; öbür uyumlu sağlayıcıların çoğu yalnız
+   * max_tokens'ı tanıyor. Önce eskisi, reddedilirse yenisiyle bir kez daha.
+   */
+  const gonder = (sinirAdi: "max_tokens" | "max_completion_tokens") =>
+    fetchFn(`${s.adres}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${s.anahtar}` },
       body: JSON.stringify({
         model: s.model,
-        max_tokens: istek.enCokCikti,
+        [sinirAdi]: istek.enCokCikti,
         messages: [
           { role: "system", content: istek.sistem },
           { role: "user", content: istek.kullanici },
         ],
       }),
     });
+  let r: Response;
+  try {
+    r = await gonder("max_tokens");
+    if (r.status === 400) {
+      const m = await hataMetni(r.clone());
+      if (/max_completion_tokens|max_tokens/.test(m)) r = await gonder("max_completion_tokens");
+    }
   } catch {
-    return { tamam: false, hata: "saglayici" };
+    return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };
   }
-  if (!r.ok) return durumHatasi(r.status);
-  const j = (await r.json().catch(() => null)) as { choices?: { message?: { content?: unknown } }[] } | null;
+  if (!r.ok) return { ...durumHatasi(r.status), ayrinti: `${r.status} ${await hataMetni(r)}`.trim() } as Sonuc;
+  const j = (await r.json().catch(() => null)) as { choices?: { message?: { content?: unknown }; finish_reason?: string }[] } | null;
   const metin = j?.choices?.[0]?.message?.content;
-  return typeof metin === "string" && metin.trim() ? { tamam: true, metin: metin.trim() } : { tamam: false, hata: "bos" };
+  return typeof metin === "string" && metin.trim()
+    ? { tamam: true, metin: metin.trim() }
+    : { tamam: false, hata: "bos", ayrinti: j?.choices?.[0]?.finish_reason ?? "" };
 };
 
 export const cagir = (s: Saglayici, istek: Istek, fetchFn: typeof fetch) => (s.tur === "anthropic" ? claude(s, istek, fetchFn) : openaiUyumlu(s, istek, fetchFn));

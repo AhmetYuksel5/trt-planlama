@@ -1979,6 +1979,7 @@ const M = {
   yzOncekiMetin: m("Önceki metin", "النص السابق", "Previous text"),
   yzHataOturum: m("Oturum doğrulanamadı; yeniden giriş yap.", "تعذّر التحقق من الجلسة؛ سجّل الدخول من جديد.", "Session could not be verified; sign in again."),
   yzHataBaglanti: m("Yapay zeka hizmetine ulaşılamadı.", "تعذّر الوصول إلى خدمة الذكاء الاصطناعي.", "The AI service could not be reached."),
+  yzHataKisi: m("Kişi kaydın okunamadı; çıkış yapıp yeniden gir.", "تعذّرت قراءة سجلك؛ سجّل الخروج ثم ادخل من جديد.", "Your record could not be read; sign out and sign in again."),
   yzHataKapali: m("Bu özellik sana açık değil.", "هذه الميزة غير متاحة لك.", "This feature is not available to you."),
   yzHataAnahtar: m("Sağlayıcı anahtarı reddetti.", "رفض المزوّد المفتاح.", "The provider rejected the key."),
   yzHataSinir: m("Sağlayıcının hız sınırı doldu; biraz sonra dene.", "بلغ المزوّد حدّ الطلبات؛ حاول بعد قليل.", "The provider's rate limit was reached; try again shortly."),

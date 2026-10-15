@@ -56,6 +56,12 @@ const kur = () => {
     if (url === "https://api.anthropic.com/v1/messages?beta=true" || url === "https://api.anthropic.com/v1/messages")
       return Response.json({ id: "m1", type: "message", role: "assistant", model: govde.model, content: [{ type: "text", text: "  سطر قصير  " }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } });
     if (url === "https://api.ornek.test/v1/chat/completions") return Response.json({ choices: [{ message: { content: "سطر من مزود آخر" } }] });
+    // OpenAI'ın yeni modelleri gibi: max_tokens reddediliyor, max_completion_tokens isteniyor
+    if (url === "https://api.yeni.test/v1/chat/completions")
+      return "max_tokens" in govde
+        ? Response.json({ error: { message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead." } }, { status: 400 })
+        : Response.json({ choices: [{ message: { content: "سطر من نموذج جديد" } }] });
+    if (url === "https://api.yok.test/v1/chat/completions") return Response.json({ error: { message: "The model `yok-model` does not exist" } }, { status: 404 });
     return new Response("yok", { status: 404 });
   }) as typeof fetch;
   const d: Bagimlilik = { fetch: sahteFetch, simdi: () => SIMDI, anahtarBul: async (kid) => (kid === "k1" ? acik : undefined) };
@@ -202,4 +208,25 @@ test("girdi denetimi ve kapalı özellik", async () => {
   kapali.saglayicilar[0].aktif = false;
   await t.cagir("/ayar", "yon", kapali, "PUT");
   assert.equal((await t.cagir("/calistir", "pl", { ozellik: "kisalt", girdi: { metin: "نص" } })).status, 403, "sağlayıcı kapalıyken");
+});
+
+test("OpenAI yeni model: max_tokens reddedilince max_completion_tokens; Dene sağlayıcının hata metnini döndürür", async () => {
+  const t = kur();
+  const a = {
+    saglayicilar: [
+      { id: "yeni", ad: "Yeni", tur: "openai", adres: "https://api.yeni.test/v1", model: "yeni-mini", anahtar: "sk-1" },
+      { id: "yok", ad: "Yok", tur: "openai", adres: "https://api.yok.test/v1", model: "yok-model", anahtar: "sk-2" },
+    ],
+    ozellikler: { kisalt: { acik: true, saglayici: "yeni", birimler: [], gunlukSinir: 5 } },
+  };
+  await t.cagir("/ayar", "yon", a, "PUT");
+  const r = await (await t.cagir("/calistir", "pl", { ozellik: "kisalt", girdi: { metin: "نص" } })).json();
+  assert.equal(r.sonuc, "سطر من نموذج جديد");
+  const son = t.istekler.filter((x) => x.url.includes("api.yeni.test"));
+  assert.equal(son.length, 2, "bir kez max_tokens, bir kez max_completion_tokens");
+  assert.ok("max_completion_tokens" in son[1].govde && !("max_tokens" in son[1].govde));
+  assert.equal((await (await t.cagir("/dene", "yon", { saglayici: "yeni" })).json()).tamam, true);
+  const h = await (await t.cagir("/dene", "yon", { saglayici: "yok" })).json();
+  assert.equal(h.hata, "saglayici");
+  assert.match(h.ayrinti, /404 The model `yok-model` does not exist/);
 });
