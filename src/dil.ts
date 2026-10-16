@@ -2359,6 +2359,111 @@ const M = {
   kisayoluKaldir: m("Kısayolu kaldır", "إزالة الاختصار", "Remove shortcut"),
   kisayolSiniri: m("En çok {n} kısayol eklenebilir.", "يمكن إضافة {n} اختصارات على الأكثر.", "You can add at most {n} shortcuts."),
   kisayolYok: m("Henüz kısayol yok; aşağıdan ekle.", "لا اختصارات بعد؛ أضفها من الأسفل.", "No shortcuts yet; add some below."),
+  /* Muhabir kılavuzu (İşlerim'in üstünde, PDF olarak da): kullanıcının isteğiyle ekrandaki tek kullanım anlatımı. */
+  klBaslik: m("Muhabir kılavuzu", "دليل المراسل", "Reporter guide"),
+  klPdf: m("PDF indir", "تنزيل PDF", "Download PDF"),
+  klGiris: m(
+    "Plannersflow'da yalnız kendi işini görürsün: önerilerin, takiplerin, haberlerin ve görevlendirmelerin.",
+    "ترى في Plannersflow عملك فقط: مقترحاتك ومتابعاتك وأخبارك وتكليفاتك.",
+    "In Plannersflow you see only your own work: your proposals, follow-ups, stories and assignments.",
+  ),
+  kl1: m("Haber önerisi gönder", "أرسل مقترح خبر", "Send a story proposal"),
+  kl1a: m("İşlerim'in üstündeki \u201cYeni öneri gönder\u201d düğmesine bas.", "اضغط زر «إرسال مقترح جديد» أعلى صفحة أعمالي.", "Press \u201cSend a new proposal\u201d at the top of My work."),
+  kl1b: m(
+    "Üç alan zorunlu: Header (haberin konusu), Gelişme (ne oldu, ne bekleniyor) ve Strap (önerdiğin paketin başlığı). Metinler Arapça yazılır.",
+    "ثلاث خانات إلزامية: العنوان الإخباري (موضوع الخبر)، والتطور (ماذا حدث وما المتوقع)، وعنوان التقرير المقترح. تُكتب النصوص بالعربية.",
+    "Three fields are required: Header (the story's subject), Development (what happened, what is expected) and Strap (the title of the package you propose). Write them in Arabic.",
+  ),
+  kl1c: m(
+    "Haber türünü (PKG, Live…) ve haberin gününü seç; olay birkaç gün sürecekse bitiş gününü de gir.",
+    "اختر نوع التقرير (PKG، Live…) ويوم الخبر؛ وإن امتد الحدث أياما فأدخل يوم الانتهاء أيضا.",
+    "Choose the format (PKG, Live…) and the story's day; if the event lasts several days, add the end day too.",
+  ),
+  kl1d: m(
+    "Başka bir yere gitmen gerekiyorsa \u201cSaha görevlendirmesi gerekiyor\u201du işaretle; ülke o zaman sorulur.",
+    "إن احتجت إلى السفر فضع علامة على «يحتاج إلى تكليف ميداني»؛ عندها يُسأل عن البلد.",
+    "If you need to travel, tick \u201cNeeds a field assignment\u201d; you are then asked for the country.",
+  ),
+  kl1e: m(
+    "Öneri çağrısı açıkken İşlerim'in üstünde görünür; son saatten önce gönder.",
+    "حين يكون طلب المقترحات مفتوحا يظهر أعلى صفحة أعمالي؛ أرسل قبل آخر موعد.",
+    "When a call for proposals is open it shows at the top of My work; send before the deadline.",
+  ),
+  kl2: m("Yalnız gelişme mi bildiriyorsun? Takip", "تبلغ عن تطور فقط؟ المتابعة", "Only reporting a development? Follow-up"),
+  kl2a: m(
+    "Paket önermiyor, yalnız bir olayı haber veriyorsan haber türünde en sondaki \u201cTakip\u201di seç. Strap sorulmaz.",
+    "إن كنت لا تقترح تقريرا وتبلغ عن حدث فقط فاختر «متابعة» آخر قائمة نوع التقرير. لا يُطلب عنوان التقرير.",
+    "If you are not proposing a package and only reporting an event, choose \u201cFollow-up\u201d at the end of the format list. No Strap is asked.",
+  ),
+  kl2b: m(
+    "Takiplerin Takiplerim'de durur: oradan yenisini ekler, düzeltir, bitirir ya da silersin. Planlama takibini görür, gerekirse haber önerisine çevirir.",
+    "تبقى متابعاتك في متابعاتي: منها تضيف متابعة جديدة أو تعدّلها أو تنهيها أو تحذفها. يرى التخطيط متابعتك ويحوّلها إلى مقترح خبر عند الحاجة.",
+    "Your follow-ups stay in My follow-ups: add, edit, stop or delete them there. Planning sees them and may turn one into a story proposal.",
+  ),
+  kl3: m("Önerinin durumu", "حالة المقترح", "Proposal status"),
+  kl3Yeni: m("Planlama henüz bakmadı.", "لم يطّلع عليه التخطيط بعد.", "Planning has not looked at it yet."),
+  kl3Degerlendiriliyor: m("Planlama inceliyor.", "يدرسه التخطيط.", "Planning is reviewing it."),
+  kl3Plana: m("Plana girdi; haber artık senin işin.", "دخل الخطة؛ الخبر الآن من عملك.", "It is in the plan; the story is now your job."),
+  kl3Duzeltme: m("Planlama bir değişiklik istedi (aşağıda).", "طلب التخطيط تعديلا (انظر أدناه).", "Planning asked for a change (see below)."),
+  kl3Sonra: m("Şimdi değil; Planlama sonra yeniden bakacak.", "ليس الآن؛ سيعود إليه التخطيط لاحقا.", "Not now; Planning will look again later."),
+  kl3Red: m("Kabul edilmedi; gerekçesi önerinin sayfasında yazılı.", "لم يُقبل؛ السبب مكتوب في صفحة المقترح.", "Not accepted; the reason is on the proposal's page."),
+  kl3Tamam: m("Haber bitti.", "اكتمل الخبر.", "The story is finished."),
+  kl4: m("Düzeltme istenirse", "إذا طُلب التعديل", "If a revision is requested"),
+  kl4a: m(
+    "Önerinin sayfasını aç, Planlama'nın notunu oku, \u201cDüzelt ve yeniden gönder\u201de bas. Öneri Planlama'ya yeniden gider; önceki hali kayıtta kalır.",
+    "افتح صفحة المقترح، واقرأ ملاحظة التخطيط، ثم اضغط «تعديل وإعادة الإرسال». يعود المقترح إلى التخطيط وتبقى صيغته السابقة محفوظة.",
+    "Open the proposal's page, read Planning's note and press \u201cRevise and resend\u201d. It goes back to Planning; the previous version is kept.",
+  ),
+  kl5: m("Planlama sana haber önerirse", "إذا اقترح عليك التخطيط خبرا", "If Planning proposes a story to you"),
+  kl5a: m(
+    "Öneri Önerilerim'de \u201cMuhabirin yanıtı bekleniyor\u201d diye görünür. \u201cKabul et\u201d ya da gerekçesini yazıp \u201cGeri çevir\u201d.",
+    "يظهر المقترح في مقترحاتي بحالة «بانتظار رد المراسل». اضغط «قبول» أو اكتب السبب واضغط «اعتذار».",
+    "It appears in My proposals as \u201cAwaiting reporter\u201d. Press \u201cAccept\u201d, or write a reason and press \u201cDecline\u201d.",
+  ),
+  kl6: m("Yazışma", "المراسلة", "Messages"),
+  kl6a: m(
+    "Her önerinin sayfasında Planlama'yla yazışma alanı var. Soru, ek bilgi ve değişiklik orada konuşulur; yanıt gelince zile düşer.",
+    "في صفحة كل مقترح خانة للمراسلة مع التخطيط. تُطرح فيها الأسئلة والمعلومات الإضافية والتعديلات، ويصلك تنبيه عند الرد.",
+    "Each proposal's page has a message thread with Planning. Questions, extra details and changes go there; replies show up in the bell.",
+  ),
+  kl7: m("Haber plana girince", "حين يدخل الخبر الخطة", "When the story is in the plan"),
+  kl7a: m(
+    "Haber Haberlerim'de ve İşlerim'deki \u201cSenin sıran\u201dda görünür. Adımlar: Plana eklendi → Muhabirde → Tamamlandı.",
+    "يظهر الخبر في أخباري وفي «دورك» بصفحة أعمالي. الخطوات: أُضيف إلى الخطة ← لدى المراسل ← اكتمل.",
+    "The story shows in My stories and under \u201cYour turn\u201d on My work. Steps: Added to plan → With the reporter → Completed.",
+  ),
+  kl7b: m(
+    "Haberi teslim edince \u201cSenin sıran\u201ddaki \u201cTamamlandı\u201dya bas; Planlama'ya haber gider.",
+    "حين تسلّم الخبر اضغط «تم الإنجاز» في «دورك»؛ يصل التنبيه إلى التخطيط.",
+    "When you deliver the story, press \u201cMark completed\u201d under \u201cYour turn\u201d; Planning is notified.",
+  ),
+  kl7bNewsdesk: m(
+    "Sıra sana geldiğinde (metin, video) iş \u201cSenin sıran\u201dda görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
+    "حين يحين دورك (النص، الفيديو) يظهر العمل في «دورك»؛ وبعد إنجازه انقله إلى الخطوة التالية بالزر هناك.",
+    "When it is your turn (script, video) the job shows under \u201cYour turn\u201d; when done, move it on with the button there.",
+  ),
+  kl8: m("Görevlendirmeler ve takvim", "التكليفات والتقويم", "Assignments and calendar"),
+  kl8a: m(
+    "Saha görevlendirmelerin tarih ve yeriyle Görevlendirmelerim'de, sorumlu olduğun faaliyetler Takvimim'de.",
+    "تكليفاتك الميدانية بتواريخها وأماكنها في تكليفاتي، والفعاليات التي أنت مسؤول عنها في تقويمي.",
+    "Your field assignments, with dates and places, are in My assignments; events you are responsible for are in My calendar.",
+  ),
+  kl9: m("Bildirimler ve gizlilik", "التنبيهات والخصوصية", "Notifications and privacy"),
+  kl9a: m(
+    "Zil yalnız seninle ilgili olanı gösterir: önerine dönen karar ve yanıt, sıranın sana geçmesi, haberin yayını.",
+    "يعرض الجرس ما يخصك فقط: القرار والرد على مقترحك، ووصول الدور إليك، وبث خبرك.",
+    "The bell shows only what concerns you: decisions and replies on your proposals, your turn coming up, your story airing.",
+  ),
+  kl9b: m(
+    "Başka muhabirlerin kayıtlarını görmezsin; onlar da seninkileri görmez.",
+    "لا ترى سجلات المراسلين الآخرين، ولا يرون سجلاتك.",
+    "You do not see other reporters' records, and they do not see yours.",
+  ),
+  kl9c: m(
+    "Arayüz dilini üst çubuktaki dil düğmesinden (telefonda Menü'den) değiştirebilirsin; haber metinleri her dilde Arapça kalır.",
+    "يمكنك تغيير لغة الواجهة من زر اللغة في الشريط العلوي (وفي الهاتف من القائمة)؛ وتبقى نصوص الأخبار بالعربية في كل لغة.",
+    "You can change the interface language from the language button in the top bar (on a phone, from Menu); story texts stay in Arabic.",
+  ),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;

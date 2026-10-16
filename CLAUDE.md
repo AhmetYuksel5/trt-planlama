@@ -843,7 +843,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kendisi ekletir. Kalan kısa satırlar durum bildirir (onay bekleniyor,
   sınır doldu, adım başka birimde). Simge düğmesinin adı `title` ve
   `aria-label`'da kalır. Kullanım anlatımı birim birim kılavuzda (PDF).
-  Tek istisna tanıtım sayfası: işi sistemi anlatmak.
+  İki istisna: tanıtım sayfası (işi sistemi anlatmak) ve muhabir kılavuzu
+  (kullanıcının isteği; `ekranlar/ana/MuhabirKilavuzu.tsx`): İşlerim'in
+  üstünde katlanır kart, ilk girişte açık, kapalılığı tarayıcıda
+  (`trt-planlama-kilavuz`); metinler `dil.ts → kl*`. "PDF indir"
+  kılavuzun temiz kopyasını `body`'ye koyup yazdırmayı açar
+  (`html.kilavuz-baskisi`, baskıda yalnız o; belge adı PDF'in adı). Paket
+  kapanışı anlatımı Newsdesk anahtarına göre (`kl7b`/`kl7bNewsdesk`);
+  muhabirin akışı değişince kılavuz da güncellenir.
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
   arada açtığı çalışma ortamı. Kod adı `ortam`, bölme `Bolme`; `Pano` iş
   akışı panosunun adı.

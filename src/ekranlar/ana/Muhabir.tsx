@@ -12,6 +12,7 @@ import { paketTamamla, takipTamamla } from "../../eylemler";
 import { KararNotlari } from "../haftalik/Kalem";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir, paketTamamlayabilir } from "../../yetki";
 import { CalismaAlani, type Alan } from "./Calisma";
+import { MuhabirKilavuzu } from "./MuhabirKilavuzu";
 import { SayfaBasi } from "./Planlama";
 
 /**
@@ -38,6 +39,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
           </a>
         }
       />
+      <MuhabirKilavuzu />
       <CalismaAlani ben={ben} duzen="muhabir" />
     </>
   );

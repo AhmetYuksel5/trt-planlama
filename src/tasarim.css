@@ -2159,3 +2159,33 @@ tr.soluk > td { opacity: .5; }
 .karar-notlari { display: grid; gap: 2px; margin-block-start: var(--ara-1); padding-inline-start: var(--ara-2); border-inline-start: 3px solid var(--vurgu); font-size: var(--punto-kucuk); }
 .karar-notlari p { margin: 0; display: block; }
 .karar-notlari p > * { display: inline; }
+
+/* --- Muhabir kılavuzu: İşlerim'in üstünde katlanır kart; PDF baskısında yalnız temiz kopyası --- */
+.kilavuz { margin-block-end: var(--ara-4); }
+.kilavuz > summary { display: flex; align-items: center; gap: var(--ara-2); cursor: pointer; font-weight: 700; min-height: var(--dokunma); list-style: none; }
+.kilavuz > summary::-webkit-details-marker { display: none; }
+.kilavuz > summary .kilavuz-ad { flex: 1; min-width: 0; }
+.kilavuz[open] > summary { margin-block-end: var(--ara-3); }
+.kilavuz-giris { color: var(--sonuk); margin-block-end: var(--ara-3); }
+.kilavuz-bolumler { display: grid; gap: var(--ara-4); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); list-style: none; padding: 0; margin: 0; counter-reset: kilavuz; }
+.kilavuz-bolumler > li { min-width: 0; counter-increment: kilavuz; }
+.kilavuz-bolumler h3 { font-size: var(--punto-orta); margin-block-end: var(--ara-2); }
+.kilavuz-bolumler h3::before { content: counter(kilavuz) ". "; color: var(--vurgu); }
+.kilavuz-bolumler ul { display: grid; gap: var(--ara-1); padding-inline-start: var(--ara-4); margin: 0; }
+.kilavuz-durumlar { display: grid; gap: var(--ara-1); margin: 0; }
+/* Ad ve açıklama aynı satırda aksın: uzun durum adında açıklama alta kopmasın. */
+.kilavuz-durumlar dt, .kilavuz-durumlar dd { display: inline; margin: 0; }
+.kilavuz-durumlar dt { font-weight: 700; }
+.kilavuz-durumlar dt::after { content: ": "; }
+.kilavuz-baski { display: none; }
+.kilavuz-baski-ust { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-4); border-block-end: 1px solid var(--cizgi); padding-block-end: var(--ara-3); margin-block-end: var(--ara-4); }
+.kilavuz-baski-ust .logo { height: var(--logo-belge); }
+@media (max-width: 760px) {
+  .kilavuz-bolumler { grid-template-columns: 1fr; }
+}
+@media print {
+  html.kilavuz-baskisi body > :not(.kilavuz-baski) { display: none !important; }
+  html.kilavuz-baskisi .kilavuz-baski { display: block; padding: 0; color: #000; }
+  .kilavuz-baski .kilavuz-bolumler { grid-template-columns: 1fr 1fr; }
+  .kilavuz-baski .kilavuz-bolumler > li { break-inside: avoid; }
+}
