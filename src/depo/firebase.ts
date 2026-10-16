@@ -237,9 +237,19 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   const diziDinle = (alan: string, mod: "tam" | "fark" | "suz") => {
     onbellek[alan] ??= new Map();
     const fark = mod === "fark";
-    const isle = (anahtar: string) => (snap: QuerySnapshot<DocumentData>) => {
+    /*
+     * Zaman sorgusunda "removed" silme değil: silme işaretle yazılıyor ve yeni
+     * z'siyle sorguda kalıyor. Belge bu sorgudan yalnız kendi yazışımız
+     * sunucuya varana dek çıkıyor (z bekleyen sunucu zamanı, ">" ile
+     * karşılaştırılmıyor); silinmiş sayılsaydı kayıt o an ekrandan kalkıyor,
+     * sayfa boşalıp başa dönüyordu (haftalık toplantıda her kararda).
+     */
+    const isle = (anahtar: string, zamanSorgusu = false) => (snap: QuerySnapshot<DocumentData>) => {
       let degisti = false;
-      for (const c of snap.docChanges()) degisti = belgeIsle(alan, anahtarKimligi(c.doc.id), c.type === "removed" ? undefined : (c.doc.data() as OgeBelgesi)) || degisti;
+      for (const c of snap.docChanges()) {
+        if (c.type === "removed" && zamanSorgusu) continue;
+        degisti = belgeIsle(alan, anahtarKimligi(c.doc.id), c.type === "removed" ? undefined : (c.doc.data() as OgeBelgesi)) || degisti;
+      }
       if (degisti || !bagli) diziKur(alan);
       // Sunucudan bir kez tam gelen koleksiyon bu cihazda bundan sonra farkla okunur.
       if (fark && !snap.metadata.fromCache) tamOkunduYaz(alan);
@@ -271,7 +281,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         }
         // Zamansız belge (fark okumadan önce yazılmış) zaten önbellekte; sorgu yalnız zamanlıları getiriyor.
         const esik = Timestamp.fromMillis(Math.max(0, enSon - FARK_PAYI));
-        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle(alan), hata));
+        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle(alan, true), hata));
       })
       .catch(tamDinle);
   };

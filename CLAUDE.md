@@ -218,6 +218,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
     Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
     yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
+    Zaman sorgusunda `removed` silme sayılmaz (`diziDinle → isle(alan,
+    true)`): kendi yazışımız sunucuya varana dek `z` bekleyen sunucu zamanı,
+    belge sorgudan bir an çıkıyor; silinmiş sayılınca kayıt ekrandan kalkıp
+    sayfa başa dönüyordu (haftalık toplantıda her kararda).
   - Kurallar (`firestore.rules`) "etkin kişi"yi, hesap alanlarını
     (`pasif`, `hesapYoneticisi`, `eposta`) ve kısıtlı kişiyi denetliyor;
     öbür birim yetkisi programda. Davetler `Durum`'da değil, `davetler`
