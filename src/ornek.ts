@@ -2546,7 +2546,7 @@ export const ORNEK = (): Durum => {
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -6), "11:00"), olay: "eklendi" },
               { kisiId: "pl1", zaman: zaman(gunEkle(B, -6), "10:30"), olay: "durum", durum: "onayli" },
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "15:20"), olay: "durum", durum: "teyitli", not: "سامي الخطيب" },
-              { kisiId: "pl2", zaman: zaman(gunEkle(B, -4), "12:10"), olay: "not", asama: "rezervasyon", not: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor." },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -4), "12:10"), olay: "not", asama: "rezervasyon", not: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor. @زينب آيدن yarın arayabilir misin?" },
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "16:00"), olay: "durum", durum: "rezervasyon" },
               { kisiId: "pl1", zaman: zaman(gunEkle(B, -2), "10:05"), olay: "not", not: "Konuk koordinatörü ikinci konuk için yarın dönecek." },
             ],
@@ -2659,6 +2659,17 @@ export const ORNEK = (): Durum => {
       { id: "gv-turkiye", tur: "yan", temel: "nextday", ad: "Türkiye ajandası", etiketler: ["Türkiye"], dagilim: { tur: "sabit", kisiler: ["pl5"] } },
       { id: "gv-takvim", tur: "yan", temel: "haftalik", ad: "Takvim taraması", etiketler: ["Takvim"], dagilim: { tur: "sirali", kisiler: ["pl6", "pl7"], periyot: "hafta", baslangic: gunEkle(B, -7) } },
       { id: "gv-muhabir", tur: "yan", ad: "Muhabir takibi", etiketler: ["Muhabir"], dagilim: { tur: "sabit", kisiler: ["pl4"] } },
+    ],
+    bahsetmeler: [
+      {
+        id: "bh-ornek",
+        kisiId: "pl1",
+        yazanId: "pl2",
+        zaman: zaman(gunEkle(B, -4), "12:10"),
+        metin: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor. @زينب آيدن yarın arayabilir misin?",
+        yol: "#/ozel/oz-abd",
+        baslik: "الانتخابات النصفية الأمريكية",
+      },
     ],
     isler: [
       { id: "is-1", baslik: "Seçim takvimini güncelle", etiketler: ["Takvim"], gorevId: "gv-takvim", kisiler: ["pl6"], sonTarih: gunEkle(B, 2), durum: "yapilacak", olusturan: "pl1", zaman: zaman(gunEkle(B, -1), "10:00") },

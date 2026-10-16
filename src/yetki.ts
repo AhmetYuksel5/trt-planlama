@@ -229,7 +229,7 @@ export const paketGorebilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean
   if (!k) return false;
   if (k.birim !== "muhabir") return true;
   // Özel yayının planlamadaki paketi muhabire onayla birlikte görev olarak düşüyor; öncesinde plan değişebilir.
-  if (p.ozelId && p.durum === "taslak") return false;
+  if (p.ozelId && (p.durum === "taslak" || p.ozelGorevBekliyor)) return false;
   return p.muhabirId === k.id || oneriBul(d, p.oneriId)?.muhabirId === k.id;
 };
 
@@ -526,7 +526,7 @@ export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
 
 /** Teslimi işi yapan (dış muhabir, Output'un görevlendirdiği kişi) ya da Planlama işliyor. Newsdesk henüz bu akışta yok. */
 export const ozelPaketTeslimEdebilir = (k: Kisi | undefined, p: Paket): boolean =>
-  !!k && !!p.ozelId && p.durum === "onaylandi" && (p.muhabirId === k.id || p.hazirlayanId === k.id || ozelDuzenler(k));
+  !!k && !!p.ozelId && p.durum === "onaylandi" && !p.ozelGorevBekliyor && (p.muhabirId === k.id || p.hazirlayanId === k.id || ozelDuzenler(k));
 
 /* --- Takipler --- */
 

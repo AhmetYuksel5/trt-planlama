@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ClipboardList, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { AnildigimNotlar } from "../bilesenler/Anma";
 import { useState } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { aralikYaz, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -33,6 +34,7 @@ export default function Gorevler({ ben }: { ben: Kisi }) {
   return (
     <>
       <SayfaBasi ikon={<ClipboardList size={26} />} baslik={t("mGorevler")} />
+      <AnildigimNotlar ben={ben} />
       <div className="gorev-gun" data-gv-gun={tarih}>
         <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setTarih(gunEkle(tarih, -1))} title={t("oncekiGun")} aria-label={t("oncekiGun")}>
           <ChevronLeft size={18} className="yon" />

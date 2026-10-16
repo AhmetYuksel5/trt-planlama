@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v22`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v23`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v22-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v23-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -860,8 +860,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önerilere karışmaz; yazılınca paket doğmaz. Onayla (tek başına
     `ozelPaketOnerisiOnayla` ya da planın onayıyla) `Paket` açılır
     (`ozelId`, `ozelKaynak`, `sonTarih` zorunlu, `ozelAd`: muhabir özel
-    yayının kaydını okuyamıyor) ve görev o an gider (`ozelPaketOnaylandi`,
-    veride yayının adı). Aşamaları (`ozelPaketAsamasi`): öneri → onaylandı →
+    yayının kaydını okuyamıyor). Onay görevlendirme sayılmaz: dış muhabirin
+    paketi `ozelGorevBekliyor` ile onaylıda bekler, muhabir onu görmez
+    (`paketGorebilir`, `ozelPaketTeslimEdebilir`); Planlama "Görevlendirildi"yi
+    ayrıca işaretler (`ozelPaketGorevVer`, `ozelGorevVerebilir`; başlamadan
+    geri alınır), görev ve bildirim muhabire o an, yayının adıyla
+    (`ozelPaketAtandi`). In-house'ta görevlendirme Output müdürünün seçimi.
+    Aşamaları (`ozelPaketAsamasi`): öneri → onaylandı →
     görevlendirildi (muhabir ya da hazırlayan) → hazırlanıyor (`ozelBasladi`,
     işi yapan ya da Planlama) → hazır (`tamamlandi`); ilerleyiş önerinin
     izine de düşer (`paketOnerisiIzi`), notlar öneride. Öneri kaydından önce
@@ -888,6 +893,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Eski hazırlık maddeleri (`hazirlik`, takvimden aktarılan da) yerinde.
     Kayıt temizliğinde özel yayınla paketleri ve görevlendirmeleri de
     gider. Hareketin özel yayına bağı `Hareket.ozelId`.
+- Notta kişi anma (`@`; `bahsetme.ts`, `bilesenler/Anma.tsx`): bütün not
+  alanları `AnmaGirdisi` (özel yayın notları, paket notu, durak notu,
+  yönetici notu, haftalık kalemin notu, karar notu ve ek talep, öneri
+  yazışması). "@" yazınca kişi listesi açılır (ok, Enter, Esc), seçilen
+  kişinin Arapça adı nota yazılır; not düz metin kalır. Kimin anıldığını
+  eylem metinden çıkarır (`anilanlar`: Arapça ve Latin ad, uzun ad önce,
+  sözcük sınırında); her not eylemi `eylemler.ts → bahset` çağırır,
+  düzenlenen notta yalnız yeni anılanlar (`yeniAnilanlar`), kendini anma
+  sayılmaz. Anılana kayıt (`Durum.bahsetmeler`: notun metni, yazdığı sayfa
+  `yol`, kaydın adı) ve bildirim (`bahsedildi`, `kime`; konusu `veri.yol`).
+  Kayıt kişinin ana sayfasının başında, düzenden bağımsız, ve Görevler
+  sayfasında "Senden bahsedilen notlar" (`AnildigimNotlar`): tıklayınca
+  görüldü sayılıp sayfa açılır, "Gördüm" listeden kaldırır
+  (`bahsetmeGoruldu`, yalnız kendi kaydı). Gerçek kipte `bahsetmeler`
+  koleksiyonu kısıtlı okurlarda: erişim listesi anılan ve yazan; muhabir
+  yazışmada Planlama'yı anabilir. Yeni not alanı da `AnmaGirdisi` alır ve
+  eyleminde `bahset` çağırır.
 - Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
   feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
   (`yetki.ts → KOL_BIRIMLERI`).

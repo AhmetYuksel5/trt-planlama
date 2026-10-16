@@ -91,6 +91,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   ozelOnayaGonderildi: "hrOzelOnayaGonderildi",
   ozelOnaylandi: "hrOzelOnaylandi",
   ozelAsama: "hrOzelUygulandi",
+  bahsedildi: "hrBahsedildi",
   ozelHazirliga: "hrOzelHazirliga",
   ozelPaketTalebi: "hrOzelPaketTalebi",
   ozelPaketAtandi: "hrOzelPaketAtandi",
@@ -140,6 +141,12 @@ export function useHareketMetni() {
       sayi: h.veri?.sayi ?? "",
       // Başlık adları (birleştirme, öneri silme) içerik: Arapça, olduğu gibi.
       baslik: h.veri?.baslik ?? "",
+      not: h.veri?.not ?? "",
+      anilan: (h.veri?.kime ?? "")
+        .split(",")
+        .filter(Boolean)
+        .map((id) => ad(kisiBul(d, id)))
+        .join("، "),
       katilan: h.veri?.katilan ?? "",
       hedef: h.veri?.hedef ?? "",
       isDurumu: h.veri?.isDurumu && h.veri.isDurumu in IS_DURUM_ADI ? t(IS_DURUM_ADI[h.veri.isDurumu as IsDurumu]) : "",
@@ -165,6 +172,8 @@ export interface Konu {
 export function useHareketKonusu() {
   const { t, dil } = useDil();
   return (h: Hareket, d: Durum): Konu | null => {
+    // Notta anma: konu notun yazıldığı sayfa (özel yayın, paket, öneri, haftalık plan).
+    if (h.tip === "bahsedildi" && h.veri?.yol) return { href: h.veri.yol, ...(h.veri.baslik ? { baslik: h.veri.baslik } : { metin: "" }) };
     /* Takvim hareketinde konu faaliyetin kendisi; plana alındıysa da plan değil, faaliyet. */
     const f = faaliyetBul(d, h.veri?.faaliyetId);
     if (f) return { baslik: f.baslik, href: `#/takvim/faaliyet/${f.id}` };

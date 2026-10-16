@@ -1,4 +1,5 @@
 import { birimAdi } from "../yapi";
+import { AnmaGirdisi } from "../bilesenler/Anma";
 import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
@@ -372,7 +373,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "is" && (
           <>
-            <textarea dir="auto" rows={3} value={not} onChange={(e) => setNot(e.target.value)} aria-label={t("not")} data-durak-notu />
+            <AnmaGirdisi cokSatir rows={3} deger={not} degistir={setNot} aria-label={t("not")} data-durak-notu />
             <div className="form-alt">
               {geriGonderebilir && gerekce === null && (
                 <button className="dugme dugme-kotu" onClick={() => setGerekce("")} data-durak-geri>
@@ -508,7 +509,7 @@ function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
         })}
       </ul>
       <div className="form ara-ust-2">
-        <textarea dir="auto" value={yeni} onChange={(e) => setYeni(e.target.value)} placeholder={t("notIpucu")} rows={2} />
+        <AnmaGirdisi cokSatir deger={yeni} degistir={setYeni} placeholder={t("notIpucu")} rows={2} data-paket-notu />
         <div className="form-alt">
           <button className="dugme dugme-kucuk" onClick={gonder} disabled={!yeni.trim()}>
             {t("notEkle")}

@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { AnmaGirdisi } from "../bilesenler/Anma";
 import { Avatar, Bos, Icerik, Ilerleme, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { aralikYaz, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, TUR_ADI } from "../etiketler";
@@ -22,6 +23,8 @@ import {
   ozelOlustur,
   ozelPaketAta,
   ozelPaketBasladi,
+  ozelPaketGorevVer,
+  ozelGorevVerebilir,
   ozelPaketOnayla,
   ozelPaketOnaylanabilir,
   ozelPaketOnerisiKaydet,
@@ -352,7 +355,7 @@ function NotSatiri({ ekle, veri = "" }: { ekle: (metin: string) => boolean; veri
   const [not, setNot] = useState("");
   return (
     <div className="ozel-not-satiri" data-not-satiri={veri}>
-      <input value={not} onChange={(e) => setNot(e.target.value)} placeholder={t("oyNotYaz")} dir="auto" aria-label={t("oyNotEkle")} data-ozel-not />
+      <AnmaGirdisi deger={not} degistir={setNot} placeholder={t("oyNotYaz")} aria-label={t("oyNotEkle")} data-ozel-not />
       <button type="button" className="dugme dugme-ikincil dugme-kucuk" disabled={!not.trim()} onClick={() => ekle(not) && setNot("")} data-ozel-not-ekle>
         {t("oyNotEkle")}
       </button>
@@ -936,6 +939,8 @@ function PaketKalemi({ ben, o, s, duzenle }: { ben: Kisi; o: OzelYayin; s: OzelP
       if (s.oneri && ozelPaketOnerisiOnaylanabilir(ben, s.oneri)) return () => ozelPaketOnerisiOnayla(ben, o.id, s.oneri!.id) && bildir(t("bKaydedildi"));
       if (!s.oneri && p && ozelPaketOnaylanabilir(ben, p)) return () => ozelPaketOnayla(ben, p.id);
     }
+    // Dış muhabirde görevlendirme ayrı işaret (in-house'ta Output müdürünün seçimi); başlamadan geri alınıyor.
+    if (adim === "gorevli" && p && ozelGorevVerebilir(ben, p, s.asama === "onayli")) return () => ozelPaketGorevVer(ben, p.id, s.asama === "onayli") && bildir(t("bKaydedildi"));
     if (adim === "hazirlaniyor" && s.asama === "gorevli" && p && ozelPaketTeslimEdebilir(ben, p)) return () => ozelPaketBasladi(ben, p.id);
     if (adim === "hazir" && (s.asama === "gorevli" || s.asama === "hazirlaniyor") && p && paketTamamlayabilir(ben, p, v)) return () => paketTamamla(ben, p.id);
     return undefined;

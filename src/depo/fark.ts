@@ -37,6 +37,7 @@ export const DIZI_ALANLARI = [
   "yzGorusleri",
   "gorevler",
   "isler",
+  "bahsetmeler",
   "yapilar",
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];
@@ -65,9 +66,9 @@ const KISITLI_DESENLERI = [/"birim":"muhabir"[,}]/, /"kontrolBekliyor":true[,}]/
 export const kisitliJson = (j: string) => KISITLI_DESENLERI.some((d) => d.test(j));
 
 /** Kısıtlı kişinin okuyabildiği koleksiyonlar (kendi belgeleri; kişiler ve yapı ayrıca). */
-export const KISITLI_OKUR = ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler"] as const;
+export const KISITLI_OKUR = ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler", "bahsetmeler"] as const;
 
-type Kayit = { id: string; muhabirId?: string; kisiId?: string; oneriId?: string; paketId?: string; bcc?: string[]; veri?: Record<string, string>; tur?: string; tarih?: string };
+type Kayit = { id: string; muhabirId?: string; kisiId?: string; yazanId?: string; oneriId?: string; paketId?: string; bcc?: string[]; veri?: Record<string, string>; tur?: string; tarih?: string };
 const bul = (d: Durum, alan: keyof Durum, id?: string) => (id ? ((d[alan] ?? []) as unknown as Kayit[]).find((x) => x.id === id) : undefined);
 
 /**
@@ -86,6 +87,8 @@ export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
   if (alan === "oneriler" || alan === "takipler" || alan === "faaliyetler") l = [o.muhabirId];
   else if (alan === "paketler") l = [o.muhabirId, oneriMuhabiri(o.oneriId)];
   else if (alan === "gorevlendirmeler" || alan === "yanitlar") l = [o.kisiId];
+  // Notta anma: anılan ve yazan (muhabir planlamacıyı da anabiliyor).
+  else if (alan === "bahsetmeler") l = [o.kisiId, o.yazanId];
   else if (alan === "mesajlar") l = [oneriMuhabiri(o.oneriId)];
   else if (alan === "cagrilar") l = [...(o.bcc ?? [])];
   else if (alan === "hareketler") {

@@ -1,4 +1,5 @@
 import { Flag, Gauge, X } from "lucide-react";
+import { AnmaGirdisi } from "./Anma";
 import { useState } from "react";
 import { useDil } from "../dil";
 import { oncelikDegistir, yoneticiNotu } from "../eylemler";
@@ -47,7 +48,7 @@ export function YoneticiKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
       <div className="form ara-ust-2">
         <label>
           {t("yoneticiNotu")}
-          <textarea dir="auto" value={not} onChange={(e) => setNot(e.target.value)} placeholder={t("yoneticiNotuIpucu")} rows={2} />
+          <AnmaGirdisi cokSatir deger={not} degistir={setNot} placeholder={t("yoneticiNotuIpucu")} rows={2} />
         </label>
         <div className="form-alt">
           <button className="dugme dugme-kucuk" onClick={gonder} disabled={!not.trim()}>

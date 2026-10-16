@@ -612,6 +612,12 @@ export interface Paket {
   hazirlayanId?: string;
   /** İşi yapan hazırlamaya başladığını işaretledi (görevlendirildi → hazırlanıyor). */
   ozelBasladi?: string;
+  /**
+   * Özel yayının dış muhabir paketi onaylandı ama görev henüz verilmedi:
+   * onay görevlendirme sayılmıyor, Planlama ayrıca işaretliyor. O ana dek
+   * muhabir paketi görmüyor. Eski kayıtta yok: muhabirliyse görevli sayılır.
+   */
+  ozelGorevBekliyor?: true;
   /** Özel yayının adı (Arapça): muhabir özel yayın kaydını okuyamıyor, işinin hangi yayın için olduğunu buradan görüyor. */
   ozelAd?: string;
   /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
@@ -896,6 +902,27 @@ export interface OzelYayin {
   iz?: OzelIz[];
 }
 
+/*
+ * Notta anılan kişi (@ad): bütün notlarda (özel yayın, paket, yönetici
+ * notu, haftalık karar notu ve ek talep, öneri yazışması). Anılana
+ * bildirim gidiyor; not işler listesinde de duruyor, tıklayınca ilgili
+ * sayfa açılıyor. Ayrı kayıt: "gördüm" anılanın kendi işareti, hareket
+ * kaydı sınırlı ve paylaşılan.
+ */
+export interface Bahsetme {
+  id: string;
+  /** Anılan. */
+  kisiId: string;
+  yazanId: string;
+  zaman: string;
+  metin: string;
+  /** Notun yazıldığı sayfa (#/…). */
+  yol: string;
+  /** Kaydın adı (içerik, Arapça): özel yayın, paket, öneri başlığı… */
+  baslik?: string;
+  goruldu?: string;
+}
+
 /* --- Planlama takvimi: ileride haber olabilecek faaliyetler --- */
 
 /*
@@ -1110,6 +1137,7 @@ export const HAREKET_TIPLERI = [
   "ozelOnayaGonderildi",
   "ozelOnaylandi",
   "ozelAsama",
+  "bahsedildi",
   "ozelHazirliga",
   "ozelPaketTalebi",
   "ozelPaketAtandi",
@@ -1230,6 +1258,7 @@ export interface Durum {
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
   gorevler?: GorevTanimi[];
   isler?: Is[];
+  bahsetmeler?: Bahsetme[];
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
@@ -1274,9 +1303,10 @@ export interface Durum {
  * v20: özel yayının nafizeleri, talepleri, paket talepleri ve izi;
  * v21: özel yayının aşamaları, nafizede Satdesk rezervasyonu, paketin
  * plan/onay/hazırlanıyor adımları; v22: aşamalar kontrol listesi, aşama
- * notları, özel yayının paket önerileri).
+ * notları, özel yayının paket önerileri; v23: notta anılanlar, özel yayın
+ * paketinde ayrı görevlendirme).
  */
-const SAKLA = "trt-planlama-v22";
+const SAKLA = "trt-planlama-v23";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
@@ -1357,6 +1387,7 @@ export const bosDurum = (): Durum => ({
   yzGorusleri: [],
   gorevler: [],
   isler: [],
+  bahsetmeler: [],
   yapilar: [],
   okundu: {},
   sayac: 0,

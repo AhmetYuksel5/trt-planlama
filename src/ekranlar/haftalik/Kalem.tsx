@@ -1,4 +1,5 @@
 import { Ban, Check, Eye, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
+import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -183,18 +184,18 @@ export function KalemFormu({
       </div>
       <label>
         {t("kalemNotu")}
-        <input dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} />
+        <AnmaGirdisi deger={f.not} degistir={(x) => setF({ ...f, not: x })} />
       </label>
       {/* Toplantının söyledikleri: hazırlıkta yok, toplantıda ya da önceden yazılmışsa var. */}
       {(hafta.durum === "toplantida" || f.kararNotu || f.ekTalep) && (
         <>
           <label>
             {t("kararNotu")}
-            <textarea dir="auto" rows={2} value={f.kararNotu} onChange={(e) => setF({ ...f, kararNotu: e.target.value })} data-karar-notu />
+            <AnmaGirdisi cokSatir rows={2} deger={f.kararNotu} degistir={(x) => setF({ ...f, kararNotu: x })} data-karar-notu />
           </label>
           <label>
             {t("ekTalep")}
-            <textarea dir="auto" rows={2} value={f.ekTalep} onChange={(e) => setF({ ...f, ekTalep: e.target.value })} data-ek-talep />
+            <AnmaGirdisi cokSatir rows={2} deger={f.ekTalep} degistir={(x) => setF({ ...f, ekTalep: x })} data-ek-talep />
           </label>
         </>
       )}
@@ -368,11 +369,11 @@ function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: Haftal
     <div className="form form-kutu ara-ust" data-karar-notu-formu>
       <label>
         {t("kararNotu")}
-        <textarea dir="auto" rows={2} value={f.kararNotu} onChange={(e) => setF({ ...f, kararNotu: e.target.value })} data-karar-notu />
+        <AnmaGirdisi cokSatir rows={2} deger={f.kararNotu} degistir={(x) => setF({ ...f, kararNotu: x })} data-karar-notu />
       </label>
       <label>
         {t("ekTalep")}
-        <textarea dir="auto" rows={2} value={f.ekTalep} onChange={(e) => setF({ ...f, ekTalep: e.target.value })} data-ek-talep />
+        <AnmaGirdisi cokSatir rows={2} deger={f.ekTalep} degistir={(x) => setF({ ...f, ekTalep: x })} data-ek-talep />
       </label>
       <FormAlt kapat={kapat} kaydet={() => kalemKararNotu(ben, hafta.id, kalem.id, f) && (bildir(t("bKaydedildi")), kapat())} />
     </div>

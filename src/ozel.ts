@@ -50,7 +50,7 @@ export const nafizeBasligi = (n: Pick<Nafize, "tarih" | "yer" | "saat">) => {
 export const OZEL_PAKET_ASAMALARI = ["plan", "onayli", "gorevli", "hazirlaniyor", "hazir"] as const;
 export type OzelPaketAsamasi = (typeof OZEL_PAKET_ASAMALARI)[number];
 export const ozelPaketAsamasi = (p: Paket): OzelPaketAsamasi =>
-  p.durum === "tamamlandi" ? "hazir" : p.durum === "taslak" ? "plan" : !(p.muhabirId ?? p.hazirlayanId) ? "onayli" : p.ozelBasladi ? "hazirlaniyor" : "gorevli";
+  p.durum === "tamamlandi" ? "hazir" : p.durum === "taslak" ? "plan" : !(p.muhabirId ?? p.hazirlayanId) || p.ozelGorevBekliyor ? "onayli" : p.ozelBasladi ? "hazirlaniyor" : "gorevli";
 
 /*
  * Özel yayının paket satırları: öneriler (onaylanınca paketiyle) ve

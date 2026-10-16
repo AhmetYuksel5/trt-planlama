@@ -1,4 +1,5 @@
 import { Check, Lightbulb, MessageSquare, Send, X } from "lucide-react";
+import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
 import { Avatar, Bos, Icerik, Kart, NotKutu, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
@@ -49,12 +50,12 @@ export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: 
       )}
       {yazabilir && (
         <div className="mesaj-yaz">
-          <textarea
-            dir="auto"
+          <AnmaGirdisi
+            cokSatir
             rows={2}
-            value={yazi}
+            deger={yazi}
             aria-label={t("mesaj")}
-            onChange={(e) => setYazi(e.target.value)}
+            degistir={setYazi}
             onKeyDown={(e) => {
               // Ctrl/⌘+Enter gönderir; düz Enter satır açar (Arapça uzun yazışma).
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) gonder();

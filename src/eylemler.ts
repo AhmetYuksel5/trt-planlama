@@ -1,6 +1,6 @@
 import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
@@ -13,11 +13,12 @@ import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanD
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
-import { sehirAr } from "./etiketler";
+import { satir, sehirAr } from "./etiketler";
 import { oneriHaftada, oneriYeri } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
+import { yeniAnilanlar } from "./bahsetme";
 import {
   ORTAM_DUZENLERI,
   SEHIRLER,
@@ -86,6 +87,7 @@ import {
   type Konuk,
   type OzelTalep,
   type OzelPaketOnerisi,
+  type Bahsetme,
   type TalepDurum,
   type PlanDurum,
   type PlanMuhabiri,
@@ -944,14 +946,18 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     ekTalep: g.ekTalep?.trim() || undefined,
     not: g.not?.trim() || undefined,
   };
+  // Kalemin notları (sarı not, karar notu, ek talep) tek metin gibi: anılan yeni kişiye bildirim.
+  const notlar = (k: { not?: string; kararNotu?: string; ekTalep?: string }) => [k.not, k.kararNotu, k.ekTalep].filter(Boolean).join("\n");
+  const anma = (yd: Durum, eski = "") => bahset(yd, ben, notlar(alanlar), { yol: `#/haftalik/${haftaId}`, baslik: alanlar.baslik || satir(alanlar.yer, alanlar.metin) }, eski);
   if (g.id) {
     const id = g.id;
-    if (!h.kalemler.some((k) => k.id === id)) return null;
-    kaydet(kalemGuncelle(d, haftaId, id, (k) => ({ ...k, ...alanlar })));
+    const eski = h.kalemler.find((k) => k.id === id);
+    if (!eski) return null;
+    kaydet(anma(kalemGuncelle(d, haftaId, id, (k) => ({ ...k, ...alanlar })), notlar(eski)));
     return id;
   }
   const id = kimlik("hk");
-  kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: arkasina([...x.kalemler, { id, ...alanlar, karar: "bekliyor" as const }], kimlikOf, id, sonra) })));
+  kaydet(anma(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: arkasina([...x.kalemler, { id, ...alanlar, karar: "bekliyor" as const }], kimlikOf, id, sonra) }))));
   return id;
 };
 
@@ -1096,7 +1102,8 @@ export const kalemKararNotu = (ben: Kisi, haftaId: string, kalemId: string, g: {
   const h = haftaBul(d, haftaId);
   const k = h?.kalemler.find((x) => x.id === kalemId);
   if (!h || !k || !kararNotuYazabilir(ben, h)) return false;
-  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, kararNotu: g.kararNotu.trim() || undefined, ekTalep: g.ekTalep.trim() || undefined })));
+  const yd = kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, kararNotu: g.kararNotu.trim() || undefined, ekTalep: g.ekTalep.trim() || undefined }));
+  kaydet(bahset(yd, ben, `${g.kararNotu}\n${g.ekTalep}`, { yol: `#/haftalik/${haftaId}`, baslik: kalemAdi(k) }, `${k.kararNotu ?? ""}\n${k.ekTalep ?? ""}`));
   return true;
 };
 
@@ -1995,6 +2002,7 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
     ...(sonraki === "tamam" ? { durum: "tamamlandi", adim: undefined } : { adim: sonraki }),
   };
   d = paketGuncelle(d, paketId, () => yeni);
+  if (g.not?.trim()) d = bahset(d, ben, g.not, { yol: `#/paketler/${paketId}`, baslik: p.baslik });
   const veri: Record<string, string> = { adim: sonraki, sahip: paketSahibi(yeni) ?? "" };
   // Stok paketi son adımda yayına değil stoğa giriyor; hareket cümlesi ona göre.
   if (sonraki === "tamam" && p.stok) veri.stok = "1";
@@ -2028,11 +2036,35 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
   return true;
 };
 
+/*
+ * Notta anılanlar (bahsetme.ts): her not eylemi kaydederken bunu çağırıyor.
+ * Anılana kayıt (işler listesinde) ve bildirim; düzenlenen notta yalnız
+ * yeni anılanlar. Kendini anan ve pasif kişi düşüyor.
+ */
+export const bahset = (d: Durum, ben: Kisi, metin: string, baglam: { yol: string; baslik?: string }, eski = ""): Durum => {
+  const ids = yeniAnilanlar(metin, eski, d.kisiler).filter((id) => id !== ben.id);
+  if (!ids.length) return d;
+  const z = simdi();
+  const yeni: Bahsetme[] = ids.map((kisiId) => ({ id: kimlik("bh"), kisiId, yazanId: ben.id, zaman: z, metin: metin.trim(), yol: baglam.yol, ...(baglam.baslik ? { baslik: baglam.baslik } : {}) }));
+  d = { ...d, bahsetmeler: [...yeni, ...(d.bahsetmeler ?? [])] };
+  return hareketYaz(d, { kisiId: ben.id, tip: "bahsedildi", veri: { kime: ids.join(","), not: metin.trim().slice(0, 160), yol: baglam.yol, ...(baglam.baslik ? { baslik: baglam.baslik } : {}) } });
+};
+
+/** Anılan notu gördü: işler listesinden kalkıyor. Yalnız kendi kaydı. */
+export const bahsetmeGoruldu = (ben: Kisi, id: string) => {
+  const d = getir();
+  const b = d.bahsetmeler?.find((x) => x.id === id);
+  if (!b || b.kisiId !== ben.id || b.goruldu) return false;
+  kaydet({ ...d, bahsetmeler: d.bahsetmeler!.map((x) => (x.id === id ? { ...x, goruldu: simdi() } : x)) });
+  return true;
+};
+
 export const notEkle = (ben: Kisi, paketId: string, metin: string) => {
   let d = getir();
   const p = paketBul(d, paketId);
   if (!p || !metin.trim() || !paketGorebilir(ben, p, d)) return false;
   d = paketGuncelle(d, paketId, (x) => ({ ...x, notlar: [...x.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: metin.trim() }] }));
+  d = bahset(d, ben, metin, { yol: `#/paketler/${paketId}`, baslik: p.baslik });
   const sahip = paketSahibi(p);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "notEklendi", paketId, planId: p.planId, veri: { sahip: sahip ?? "" } }));
   return true;
@@ -2058,6 +2090,7 @@ export const yoneticiNotu = (ben: Kisi, paketId: string, metin: string) => {
     ...x,
     notlar: [...x.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: metin.trim(), yonetici: true }],
   }));
+  d = bahset(d, ben, metin, { yol: `#/paketler/${paketId}`, baslik: p.baslik });
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "yoneticiNotu", paketId, planId: p.planId, veri: { sahip: paketSahibi(p) ?? "" } }));
   return true;
 };
@@ -3264,6 +3297,7 @@ export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => 
   if (!o || !oneriYazisabilir(ben, o) || !metin.trim()) return false;
   const mesaj: Mesaj = { id: kimlik("ms"), oneriId, kisiId: ben.id, metin: metin.trim(), zaman: simdi() };
   d = { ...d, mesajlar: [...d.mesajlar, mesaj] };
+  d = bahset(d, ben, metin, { yol: `#/oneriler/${oneriId}`, baslik: o.paketBasligi || o.haberBasligi });
   const muhabirYazdi = ben.id === o.muhabirId;
   const disaridan = o.giren && kisiBul(d, o.giren)?.birim !== "planlama" ? o.giren : "";
   const veri: Record<string, string> = muhabirYazdi ? { sahip: "planlama", ...(disaridan && { kime: disaridan }) } : { kime: o.muhabirId! };
@@ -3467,11 +3501,13 @@ const ozelPaketGorevi = (d: Durum, ben: Kisi, p: Paket): Durum =>
     tip: "ozelPaketOnaylandi",
     paketId: p.id,
     ozelId: p.ozelId,
-    veri: { ...(p.sonTarih ? { tarih: p.sonTarih } : {}), ...(p.ozelAd ? { ad: p.ozelAd } : {}), ...(p.muhabirId ? { kime: p.muhabirId } : { sahip: "output" }) },
+    // Dış muhabire görev onayla değil, Planlama görevlendirmeyi işaretleyince gidiyor (ozelPaketGorevVer).
+    veri: { ...(p.sonTarih ? { tarih: p.sonTarih } : {}), ...(p.ozelAd ? { ad: p.ozelAd } : {}), ...(p.muhabirId ? {} : { sahip: "output" }) },
   });
 
 /* Öneri kaydından önce doğrudan açılmış taslak paket: onayla görev gidiyor. */
-const ozelPaketiOnayla = (d: Durum, ben: Kisi, p: Paket): Durum => ozelPaketGorevi(paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi", guncelleme: simdi() })), ben, p);
+const ozelPaketiOnayla = (d: Durum, ben: Kisi, p: Paket): Durum =>
+  ozelPaketGorevi(paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi", ...(x.muhabirId ? { ozelGorevBekliyor: true as const } : {}), guncelleme: simdi() })), ben, p);
 
 /* Paket önerisinin onayı: paket o an doğuyor, öneri paketine bağlanıyor. */
 const paketOnerisiniOnayla = (d: Durum, ben: Kisi, o: OzelYayin, x: OzelPaketOnerisi): Durum => {
@@ -3484,7 +3520,7 @@ const paketOnerisiniOnayla = (d: Durum, ben: Kisi, o: OzelYayin, x: OzelPaketOne
     kod,
     baslik: x.baslik,
     sehir: muhabir?.sehir ?? "istanbul",
-    ...(muhabir ? { muhabirId: muhabir.id } : {}),
+    ...(muhabir ? { muhabirId: muhabir.id, ozelGorevBekliyor: true as const } : {}),
     aciklama: x.aciklama,
     tur: x.tur,
     bicim: x.bicim,
@@ -3499,7 +3535,7 @@ const paketOnerisiniOnayla = (d: Durum, ben: Kisi, o: OzelYayin, x: OzelPaketOne
     guncelleme: simdi(),
   };
   d = { ...d, paketler: [paket, ...d.paketler] };
-  d = ozelGuncelle(d, o.id, (y) => ({ ...y, paketOnerileri: (y.paketOnerileri ?? []).map((z) => (z.id === x.id ? { ...z, durum: "onaylandi" as const, paketId: id, iz: [...z.iz, izYaz(ben, "durum", { durum: "onayli" }), ...(muhabir ? [izYaz(ben, "durum", { durum: "gorevli" })] : [])] } : z)) }));
+  d = ozelGuncelle(d, o.id, (y) => ({ ...y, paketOnerileri: (y.paketOnerileri ?? []).map((z) => (z.id === x.id ? { ...z, durum: "onaylandi" as const, paketId: id, iz: [...z.iz, izYaz(ben, "durum", { durum: "onayli" })] } : z)) }));
   return ozelPaketGorevi(d, ben, paket);
 };
 
@@ -3524,8 +3560,9 @@ export const ozelAsamaIsaretle = (ben: Kisi, id: string, adim: Exclude<OzelDurum
 export const ozelAsamaNotu = (ben: Kisi, id: string, asama: string, metin: string) => {
   const d = getir();
   const n = metin.trim();
-  if (!n || !ozelBul(d, id) || !(ozelDuzenler(ben) || planAdimiYapabilir(ben, "ozOnay"))) return false;
-  kaydet(ozelGuncelle(d, id, (o) => ({ ...o, iz: [...(o.iz ?? []), izYaz(ben, "not", { not: n, asama })] })));
+  const o = ozelBul(d, id);
+  if (!n || !o || !(ozelDuzenler(ben) || planAdimiYapabilir(ben, "ozOnay"))) return false;
+  kaydet(bahset(ozelGuncelle(d, id, (x) => ({ ...x, iz: [...(x.iz ?? []), izYaz(ben, "not", { not: n, asama })] })), ben, n, { yol: `#/ozel/${id}`, baslik: o.ad }));
   return true;
 };
 
@@ -3621,7 +3658,15 @@ export const ozelTalepDurumu = (ben: Kisi, ozelId: string, id: string, durum: Ta
 /** Kalemin notu; aşama verilirse kontrol listesinin o satırına düşüyor. */
 export const ozelKalemNotu = (ben: Kisi, ozelId: string, tur: KalemTuru, id: string, metin: string, asama?: string) =>
   !!metin.trim() &&
-  kalemDegistir(ben, ozelId, tur, id, (x) => ({ ...x, iz: [...x.iz, izYaz(ben, "not", { not: metin.trim(), ...(asama ? { asama } : {}) })] }), undefined, ozelDuzenler(ben) || planAdimiYapabilir(ben, "ozOnay"));
+  kalemDegistir(
+    ben,
+    ozelId,
+    tur,
+    id,
+    (x) => ({ ...x, iz: [...x.iz, izYaz(ben, "not", { not: metin.trim(), ...(asama ? { asama } : {}) })] }),
+    (d) => bahset(d, ben, metin, { yol: `#/ozel/${ozelId}`, baslik: ozelBul(d, ozelId)?.ad }),
+    ozelDuzenler(ben) || planAdimiYapabilir(ben, "ozOnay"),
+  );
 
 /** Silinen kalem planda iz bırakıyor: ne silindi, kim sildi. */
 export const ozelKalemSil = (ben: Kisi, ozelId: string, tur: KalemTuru, id: string) => {
@@ -3713,6 +3758,29 @@ export const ozelPaketBasladi = (ben: Kisi, paketId: string) => {
   const yapan = p.muhabirId ?? p.hazirlayanId;
   const yd = paketOnerisiIzi(paketGuncelle(d, paketId, (x) => ({ ...x, ozelBasladi: simdi(), guncelleme: simdi() })), ben, p, "hazirlaniyor");
   kaydet(hareketYaz(yd, { kisiId: ben.id, tip: "ozelPaketBasladi", paketId, ozelId: p.ozelId, veri: ben.id === yapan ? { sahip: "planlama" } : { kime: yapan! } }));
+  return true;
+};
+
+/*
+ * Dış muhabire görev: onaydan ayrı, Planlama işaretliyor; görev ve
+ * bildirim muhabire o an gidiyor. Muhabir başlamadan geri alınabiliyor.
+ */
+export const ozelGorevVerebilir = (ben: Kisi | undefined, p: Paket, ver: boolean) =>
+  !!ben && !!p.ozelId && !!p.muhabirId && p.durum === "onaylandi" && ozelDuzenler(ben) && (ver ? !!p.ozelGorevBekliyor : !p.ozelGorevBekliyor && !p.ozelBasladi);
+
+export const ozelPaketGorevVer = (ben: Kisi, paketId: string, ver: boolean) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !ozelGorevVerebilir(ben, p, ver)) return false;
+  d = paketGuncelle(d, paketId, (x) => {
+    const { ozelGorevBekliyor: _, ...kalan } = x;
+    return ver ? { ...kalan, guncelleme: simdi() } : { ...kalan, ozelGorevBekliyor: true as const, guncelleme: simdi() };
+  });
+  const o = ozelBul(d, p.ozelId!);
+  if (o?.paketOnerileri?.some((x) => x.paketId === p.id))
+    d = ozelGuncelle(d, o.id, (y) => ({ ...y, paketOnerileri: y.paketOnerileri!.map((x) => (x.paketId === p.id ? { ...x, iz: [...x.iz, izYaz(ben, "durum", ver ? { durum: "gorevli" } : { durum: "onayli", asama: "gorevli", not: "↶" })] } : x)) }));
+  if (ver) d = hareketYaz(d, { kisiId: ben.id, tip: "ozelPaketAtandi", paketId, ozelId: p.ozelId, veri: { kime: p.muhabirId!, ...(p.ozelAd ? { ad: p.ozelAd } : {}), ...(p.sonTarih ? { tarih: p.sonTarih } : {}) } });
+  kaydet(d);
   return true;
 };
 

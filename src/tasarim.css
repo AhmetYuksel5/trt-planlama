@@ -1040,6 +1040,7 @@ a.cip { color: var(--murekkep); padding: 3px var(--ara-2); }
 .mesajlar p { margin: var(--ara-1) 0 0; white-space: pre-wrap; }
 .mesaj-yaz { display: flex; gap: var(--ara-2); align-items: flex-end; }
 .mesaj-yaz textarea { flex: 1; min-height: 44px; }
+.mesaj-yaz > .anma-girdisi { flex: 1; min-width: 0; }
 .bag-dugme { background: none; border: 0; padding: 0; font: inherit; color: var(--vurgu); cursor: pointer; text-align: start; }
 .aktar-ozet { display: grid; gap: var(--ara-3); margin-top: var(--ara-4); }
 .aktar-ozet ul { margin: 0; padding-inline-start: var(--ara-5); display: grid; gap: var(--ara-1); }
@@ -2255,7 +2256,7 @@ tr.soluk > td { opacity: .5; }
 .ozel-konuklar li { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
 .ozel-konuklar li > .icerik { flex: 1; min-width: 10ch; }
 .ozel-not-satiri { display: flex; gap: var(--ara-2); flex-wrap: wrap; align-items: center; }
-.ozel-not-satiri > input { flex: 1 1 14ch; min-width: 0; }
+.ozel-not-satiri > input, .ozel-not-satiri > .anma-girdisi { flex: 1 1 14ch; min-width: 0; }
 .ozel-gecmis > summary { cursor: pointer; display: inline-flex; align-items: center; gap: var(--ara-1); color: var(--sonuk); font-size: var(--punto-kucuk); min-height: var(--dokunma); }
 .ozel-gecmis[open] > summary { margin-block-end: var(--ara-2); }
 .ozel-iz { list-style: none; padding: 0; margin: var(--ara-2) 0 0; display: grid; gap: var(--ara-2); }
@@ -2276,3 +2277,15 @@ tr.soluk > td { opacity: .5; }
 }
 /* Paket satırının alt bilgisi (kod, son tarih, kim) kesilmesin: tarih ve kişi takibin ta kendisi. */
 .liste > li[data-ozel-paket] .ad small { white-space: normal; }
+
+/* --- Notta kişi anma (@): girdinin altında kişi listesi --- */
+.anma-girdisi { position: relative; display: block; min-width: 0; }
+.anma-girdisi > input, .anma-girdisi > textarea { width: 100%; }
+.anma-listesi { position: absolute; inset-inline: 0; top: 100%; z-index: 30; list-style: none; margin: 4px 0 0; padding: var(--ara-1); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); box-shadow: var(--golge-acilir); max-height: 260px; overflow-y: auto; }
+.anma-listesi button { display: flex; align-items: center; gap: var(--ara-2); width: 100%; min-height: var(--dokunma); padding: var(--ara-1) var(--ara-2); border: 0; background: none; border-radius: var(--yaricap); text-align: start; cursor: pointer; color: inherit; font: inherit; }
+.anma-listesi button > span { display: grid; min-width: 0; }
+.anma-listesi button.secili, .anma-listesi button:hover { background: var(--vurgu-sis); }
+.anma-notlari > li { align-items: flex-start; }
+.anma-notlari .ad { display: grid; gap: 2px; color: inherit; text-decoration: none; min-width: 0; }
+.anma-notlari .ad small { white-space: normal; }
+.anma-metni { white-space: pre-line; overflow-wrap: anywhere; }

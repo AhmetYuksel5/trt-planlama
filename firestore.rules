@@ -157,11 +157,11 @@ service cloud.firestore {
     match /{alan}/{belge} {
       allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli();
       allow read: if etkin() && kisitli()
-        && ((alan in ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler"] && erisir(resource.data))
+        && ((alan in ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler", "bahsetmeler"] && erisir(resource.data))
             || kendiAyari(alan, belge)
             || (alan == "ayar" && belge == "genel"));
       allow create, update: if etkin() && kisitli()
-        && ((alan in ["oneriler", "paketler", "takipler", "mesajlar", "hareketler"]
+        && ((alan in ["oneriler", "paketler", "takipler", "mesajlar", "hareketler", "bahsetmeler"]
              && erisir(request.resource.data) && (resource == null || erisir(resource.data)))
             || kendiAyari(alan, belge));
       allow delete: if etkin() && kisitli() && kendiAyari(alan, belge);
