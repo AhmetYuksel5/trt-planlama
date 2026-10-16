@@ -88,10 +88,13 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   faaliyetEklendi: "hrFaaliyetEklendi",
   faaliyetPlanaAlindi: "hrFaaliyetPlanaAlindi",
   ozelOlusturuldu: "hrOzelOlusturuldu",
+  ozelOnayaGonderildi: "hrOzelOnayaGonderildi",
   ozelOnaylandi: "hrOzelOnaylandi",
   ozelHazirliga: "hrOzelHazirliga",
   ozelPaketTalebi: "hrOzelPaketTalebi",
   ozelPaketAtandi: "hrOzelPaketAtandi",
+  ozelPaketOnaylandi: "hrOzelPaketOnaylandi",
+  ozelPaketBasladi: "hrOzelPaketBasladi",
   ozelPaketTeslim: "hrOzelPaketTeslim",
   ozelTalep: "hrOzelTalep",
 };

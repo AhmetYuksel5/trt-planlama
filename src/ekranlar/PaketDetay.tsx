@@ -288,7 +288,8 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   }
 
   if (paket.durum !== "uretimde") {
-    if (!yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal", "onaylandi"].includes(paket.durum)) return null;
+    // Özel yayın paketinin onayı planın onayıyla, özel yayın sayfasında (ozOnay).
+    if (paket.ozelId || !yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal", "onaylandi"].includes(paket.durum)) return null;
     return (
       <Kart baslik={t("seninIslemin")}>
         <div className="dugmeler">

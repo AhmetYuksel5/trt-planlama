@@ -1090,13 +1090,18 @@ const GELISMELER: Record<"dun" | "bugun" | "yarin", GelismeTanimi[]> = {
 
 /* --- Muhabir hareketleri --- */
 
-/* Özel yayının paket talepleri: biri Output'ta dağıtım bekliyor, biri görevlendirilmiş, biri dış muhabirde. */
+/*
+ * Özel yayının paketleri, her aşamadan biri: Output'ta dağıtım bekleyen,
+ * hazırlanan (in-house), görevlendirilmiş dış muhabir ve onaylanmış plana
+ * sonradan eklenip onay bekleyen.
+ */
 const ozelPaketler = (yil: string, B: string): Paket[] =>
   (
     [
       ["p-oz-1", "دليل الناخب الأمريكي في دقيقتين", "inhouse", undefined, undefined, `${yil}-10-29`],
       ["p-oz-2", "خمسون عاما من الانتخابات النصفية", "inhouse", undefined, "ou5", `${yil}-10-31`],
       ["p-oz-3", "العرب الأمريكيون: الصوت المرجّح؟", "dis", "mu5", undefined, `${yil}-11-01`],
+      ["p-oz-4", "ماذا تعني النتائج للشرق الأوسط؟", "inhouse", undefined, undefined, `${yil}-11-02`],
     ] as const
   ).map(([id, baslik, kaynak, muhabirId, hazirlayanId, sonTarih], i) => ({
     id,
@@ -1108,11 +1113,12 @@ const ozelPaketler = (yil: string, B: string): Paket[] =>
     aciklama: "",
     tur: "haber",
     bicim: "pkg",
-    durum: "onaylandi",
+    durum: id === "p-oz-4" ? ("taslak" as const) : ("onaylandi" as const),
     sahaGerekli: false,
     ozelId: "oz-abd",
     ozelKaynak: kaynak,
     sonTarih,
+    ...(id === "p-oz-2" ? { ozelBasladi: zaman(gunEkle(B, -2), "10:00") } : {}),
     notlar: [],
     olusturma: zaman(gunEkle(B, -6), "12:00"),
     guncelleme: zaman(gunEkle(B, -6), "12:00"),
@@ -2522,7 +2528,7 @@ export const ORNEK = (): Durum => {
         bitis: `${yil}-11-04`,
         aciklama:
           "بث خاص مفتوح ليلة الانتخابات يبدأ قبل إغلاق مراكز الاقتراع بساعتين ويستمر حتى إعلان النتائج الأولية. يتضمن نوافذ مباشرة من واشنطن ونيويورك وميشيغان، وتقارير عن الناخبين العرب الأمريكيين، وتحليلا لانعكاسات النتائج على الشرق الأوسط مع ضيوف في الاستوديو.",
-        durum: "hazirlik",
+        durum: "onayli",
         nafizeler: [
           {
             id: "nf-abd-1",
@@ -2535,10 +2541,12 @@ export const ORNEK = (): Durum => {
               { id: "kn1", ad: "سامي الخطيب", unvan: "باحث في الشؤون الأمريكية", durum: "teyitli" },
               { id: "kn2", ad: "ليلى حداد", unvan: "صحفية", durum: "davetEdildi" },
             ],
-            durum: "hazir",
+            durum: "rezervasyon",
             iz: [
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -6), "11:00"), olay: "eklendi" },
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "15:20"), olay: "durum", durum: "teyitli", not: "سامي الخطيب" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "16:00"), olay: "durum", durum: "rezervasyon" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "16:05"), olay: "not", not: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor." },
               { kisiId: "pl1", zaman: zaman(gunEkle(B, -2), "10:05"), olay: "not", not: "Konuk koordinatörü ikinci konuk için yarın dönecek." },
             ],
           },
@@ -2575,7 +2583,11 @@ export const ORNEK = (): Durum => {
             iz: [{ kisiId: "pl1", zaman: zaman(gunEkle(B, -7), "14:00"), olay: "eklendi" }],
           },
         ],
-        iz: [{ kisiId: "pl2", zaman: zaman(gunEkle(B, -9), "11:20"), olay: "eklendi" }],
+        iz: [
+          { kisiId: "pl2", zaman: zaman(gunEkle(B, -9), "11:20"), olay: "eklendi" },
+          { kisiId: "pl2", zaman: zaman(gunEkle(B, -7), "17:00"), olay: "durum", durum: "onayda" },
+          { kisiId: "pl1", zaman: zaman(gunEkle(B, -6), "10:30"), olay: "durum", durum: "onayli" },
+        ],
         hazirlik: [
           { id: "ab1", metin: "مهمة واشنطن", tamam: true },
           { id: "ab2", metin: "خطة بث ليلة الانتخابات", tamam: true },

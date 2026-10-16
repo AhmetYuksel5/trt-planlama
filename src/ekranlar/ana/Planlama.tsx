@@ -108,7 +108,7 @@ function PlanlamaSayaclari() {
         ikon={<Clock size={22} />}
         ton="uyari"
         etiket={t("sOnayBekleyen")}
-        deger={v.paketler.filter((p) => p.durum === "taslak" || p.durum === "degerlendiriliyor").length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor").length}
+        deger={v.paketler.filter((p) => !p.ozelId && (p.durum === "taslak" || p.durum === "degerlendiriliyor")).length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor").length}
         alt={t("sAksamToplantisi")}
       />
       <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={v.paketler.filter((p) => p.durum === "uretimde").length} alt={t("sUretimde")} />

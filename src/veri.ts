@@ -610,6 +610,8 @@ export interface Paket {
   ozelKaynak?: "inhouse" | "dis";
   sonTarih?: string;
   hazirlayanId?: string;
+  /** İşi yapan hazırlamaya başladığını işaretledi (görevlendirildi → hazırlanıyor). */
+  ozelBasladi?: string;
   /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
   yer?: string;
   muhabirId?: string;
@@ -794,7 +796,14 @@ export interface OzelIz {
   not?: string;
 }
 
-export const NAFIZE_DURUMLARI = ["planlandi", "hazir", "yapildi", "iptal"] as const;
+/*
+ * Nafizenin aşamaları: plan onaylanana dek planlama; onaydan sonra
+ * Satdesk'le yayın rezervasyonu (yazışma ve işlemler notta), yer hazır
+ * olunca hazır. Konuklar bundan bağımsız, sırasız ayarlanıyor.
+ */
+export const NAFIZE_DURUMLARI = ["planlandi", "rezervasyon", "hazir", "yapildi", "iptal"] as const;
+/** Plan onaylanmadan nafize bu durumların dışına geçmiyor: rezervasyon onay sonrası iş. */
+export const NAFIZE_ONAYSIZ: readonly NafizeDurum[] = ["planlandi", "iptal"];
 export type NafizeDurum = (typeof NAFIZE_DURUMLARI)[number];
 export const KONUK_DURUMLARI = ["aday", "davetEdildi", "teyitli", "iptal"] as const;
 export type KonukDurum = (typeof KONUK_DURUMLARI)[number];
@@ -835,7 +844,11 @@ export interface OzelTalep {
   iz: OzelIz[];
 }
 
-export type OzelDurum = "hazirlik" | "onayli";
+/*
+ * Saklanan durum: hazirlik (planlama), onayda (onaya gönderildi), onayli
+ * (uygulama). "Hazır" saklanmıyor, kalemlerden çıkıyor (ozel.ts → ozelAsamasi).
+ */
+export type OzelDurum = "hazirlik" | "onayda" | "onayli";
 
 export interface OzelYayin {
   id: string;
@@ -1065,10 +1078,13 @@ export const HAREKET_TIPLERI = [
   "planDevralindi",
   "paketOlusturuldu",
   "ozelOlusturuldu",
+  "ozelOnayaGonderildi",
   "ozelOnaylandi",
   "ozelHazirliga",
   "ozelPaketTalebi",
   "ozelPaketAtandi",
+  "ozelPaketOnaylandi",
+  "ozelPaketBasladi",
   "ozelPaketTeslim",
   "ozelTalep",
   "paketDegerlendirmede",
@@ -1225,9 +1241,11 @@ export interface Durum {
  * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
  * gönderilebiliyor, v17: öneri yazışması, muhabire öneri, v18: kurum yapısı (birim, ünvan, akış),
  * v19: muhabirin takipleri, haftalık öneride gün;
- * v20: özel yayının nafizeleri, talepleri, paket talepleri ve izi).
+ * v20: özel yayının nafizeleri, talepleri, paket talepleri ve izi;
+ * v21: özel yayının aşamaları, nafizede Satdesk rezervasyonu, paketin
+ * plan/onay/hazırlanıyor adımları).
  */
-const SAKLA = "trt-planlama-v20";
+const SAKLA = "trt-planlama-v21";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı

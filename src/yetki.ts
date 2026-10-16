@@ -228,6 +228,8 @@ export const uretimeAlabilir = (k: Kisi | undefined, p: Paket): boolean =>
 export const paketGorebilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean => {
   if (!k) return false;
   if (k.birim !== "muhabir") return true;
+  // Özel yayının planlamadaki paketi muhabire onayla birlikte görev olarak düşüyor; öncesinde plan değişebilir.
+  if (p.ozelId && p.durum === "taslak") return false;
   return p.muhabirId === k.id || oneriBul(d, p.oneriId)?.muhabirId === k.id;
 };
 

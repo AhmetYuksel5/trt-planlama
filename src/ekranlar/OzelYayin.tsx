@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, CheckCircle, Circle, ClipboardList, History, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Undo2, Users } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle, Circle, ClipboardList, History, Mic, Package, Pencil, Plane, Plus, Send, Trash2, Tv, Undo2, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Ilerleme, Kart, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { aralikYaz, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -9,6 +9,7 @@ import {
   nafizeDurumu,
   nafizeKaydet,
   ozelDurumu,
+  ozelDurumuDegisebilir,
   ozelGorevlendirme,
   ozelHazirlikEkle,
   ozelHazirlikIsaretle,
@@ -17,19 +18,40 @@ import {
   ozelKunyeKaydet,
   ozelOlustur,
   ozelPaketAta,
+  ozelPaketBasladi,
+  ozelPaketOnayla,
+  ozelPaketOnaylanabilir,
   ozelPaketTalebi,
   ozelTalepDurumu,
   ozelTalepKaydet,
   paketTamamla,
   type OzelKunye,
 } from "../eylemler";
-import { gecikti, ozelGecti, ozelGorevlendirmeleri, ozelOzeti, ozelPaketleri, yapilacaklar, OZEL_KALEM_TURLERI, type OzelKalemTuru } from "../ozel";
+import {
+  gecikti,
+  gorevHazir,
+  ozelAsamasi,
+  ozelGecti,
+  ozelGorevlendirmeleri,
+  ozelOzeti,
+  ozelPaketAsamasi,
+  ozelPaketleri,
+  yapilacaklar,
+  OZEL_ASAMALARI,
+  OZEL_ASAMA_ADI,
+  OZEL_KALEM_TURLERI,
+  OZEL_PAKET_ASAMALARI,
+  type OzelAsama,
+  type OzelKalemTuru,
+  type OzelPaketAsamasi,
+} from "../ozel";
 import { bugun } from "../tarih";
 import {
   HAREKET_TURLERI,
   ICERIK_TURLERI,
   KONUK_DURUMLARI,
   NAFIZE_DURUMLARI,
+  NAFIZE_ONAYSIZ,
   TALEP_DURUMLARI,
   kisiBul,
   useVeri,
@@ -42,6 +64,7 @@ import {
   type KonukDurum,
   type Nafize,
   type NafizeDurum,
+  type OzelDurum,
   type OzelIz,
   type OzelTalep,
   type OzelYayin,
@@ -49,7 +72,7 @@ import {
   type TalepDurum,
 } from "../veri";
 import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
-import { ozelDuzenler, ozelPaketDagitabilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
+import { ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { BicimSecici, FormAlt, MuhabirSecici } from "./nextday/Formlar";
 import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
@@ -64,9 +87,16 @@ import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
  * onayıyla) ve hazırlık maddeleri. Her kalemin durumu ve izi (kim, ne
  * zaman, not) yerinde; üstteki özet yapılanı ve yapılacağı sayıyor, yayın
  * günlere yayılsa da iş unutulmasın. Newsdesk şimdilik bu akışta yok.
+ *
+ * Aşamalar (ozel.ts): plan planlama → onay → uygulama → hazır; nafize
+ * onaydan sonra Satdesk rezervasyonu ve yer hazır; paket planda →
+ * onaylandı → görevlendirildi → hazırlanıyor → hazır; görevlendirme
+ * planlama → hazır. Konuklar sırasız, aşamaya bağlı değil.
  */
 
-const NAFIZE_DURUM_ADI: Record<NafizeDurum, Anahtar> = { planlandi: "oyNfPlanlandi", hazir: "oyNfHazir", yapildi: "oyNfYapildi", iptal: "oyNfIptal" };
+const NAFIZE_DURUM_ADI: Record<NafizeDurum, Anahtar> = { planlandi: "oyNfPlanlandi", rezervasyon: "oyNfRezervasyon", hazir: "oyNfHazir", yapildi: "oyNfYapildi", iptal: "oyNfIptal" };
+const ASAMA_TONU: Record<OzelAsama, string> = { planlama: "", onay: "uyari", uygulama: "vurgu", hazir: "iyi" };
+const PAKET_ASAMA_ADI: Record<OzelPaketAsamasi, Anahtar> = { plan: "oyPkPlan", onayli: "oyPkOnayli", gorevli: "oyPkGorevli", hazirlaniyor: "oyHazirlaniyor", hazir: "oyPkHazir" };
 const KONUK_DURUM_ADI: Record<KonukDurum, Anahtar> = { aday: "oyKnAday", davetEdildi: "oyKnDavet", teyitli: "oyKnTeyit", iptal: "oyKnIptal" };
 const TALEP_DURUM_ADI: Record<TalepDurum, Anahtar> = { acik: "oyTlAcik", suruyor: "oyTlSuruyor", tamam: "oyTlTamam", iptal: "oyTlIptal" };
 const KALEM_TURU_ADI: Record<OzelKalemTuru, Anahtar> = { nafize: "oyNafizeler", paket: "oyPaketler", talep: "oyTalepler", gorev: "oyGorevler", hazirlik: "oyHazirlik" };
@@ -77,7 +107,7 @@ const KALEM_IKONU: Record<OzelKalemTuru, ReactNode> = {
   gorev: <Plane size={15} />,
   hazirlik: <CheckCircle size={15} />,
 };
-const DURUM_TONU: Record<string, string> = { yapildi: "iyi", tamam: "iyi", teyitli: "iyi", hazir: "vurgu", suruyor: "vurgu", davetEdildi: "vurgu", iptal: "kotu" };
+const DURUM_TONU: Record<string, string> = { yapildi: "iyi", tamam: "iyi", teyitli: "iyi", hazir: "iyi", rezervasyon: "vurgu", suruyor: "vurgu", davetEdildi: "vurgu", iptal: "kotu" };
 
 /* İzdeki durum adı: kalemin türüne göre hangi listeden. */
 const durumAdi = (d?: string): Anahtar | undefined =>
@@ -91,9 +121,31 @@ const durumAdi = (d?: string): Anahtar | undefined =>
           ? TALEP_DURUM_ADI[d as TalepDurum]
           : d === "onayli"
             ? "oyDurumOnayli"
-            : d === "hazirlik"
-              ? "oyDurumHazirlik"
-              : undefined;
+            : d === "onayda"
+              ? "oyDurumOnayda"
+              : d === "hazirlik"
+                ? "oyDurumHazirlik"
+                : undefined;
+
+/*
+ * Aşama çizgisi: geçilen adımlar işaretli, şimdiki vurgulu. Plan, nafize
+ * ve paket aynı çizgiyi kullanıyor; değişiklik ayrı seçimden ya da düğmeden.
+ */
+function AsamaCizgisi<T extends string>({ adimlar, adlar, simdi, kucuk }: { adimlar: readonly T[]; adlar: Record<T, Anahtar>; simdi: T; kucuk?: boolean }) {
+  const { t } = useDil();
+  const sira = adimlar.indexOf(simdi);
+  return (
+    <div className={`durum-cizgisi${kucuk ? " kucuk" : ""}`} aria-label={t("durum")} data-asama={simdi}>
+      {adimlar.map((a, i) => (
+        <span key={a} className={i < sira || (i === sira && i === adimlar.length - 1) ? "gecti" : i === sira ? "simdi" : ""}>
+          {i > 0 && <span className="ayrac" aria-hidden="true" />}
+          <i>{i < sira || (i === sira && i === adimlar.length - 1) ? <Check size={11} /> : i + 1}</i>
+          {t(adlar[a])}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 const yayinAraligi = (o: OzelYayin, dil: ReturnType<typeof useDil>["dil"]) => (o.bitis ? aralikYaz(o.tarih, o.bitis, dil) : tarihYaz(o.tarih, dil, "uzun"));
 
@@ -149,7 +201,7 @@ function OzelKarti({ o, d }: { o: OzelYayin; d: Durum }) {
         <b>
           <Icerik>{o.ad}</Icerik>
         </b>
-        <OzelDurumRozeti o={o} />
+        <OzelDurumRozeti o={o} d={d} />
       </div>
       <small className="sonuk-yazi">{yayinAraligi(o, dil)}</small>
       <Ilerleme oran={oz.biten / Math.max(1, oz.toplam)} />
@@ -166,9 +218,14 @@ function OzelKarti({ o, d }: { o: OzelYayin; d: Durum }) {
   );
 }
 
-const OzelDurumRozeti = ({ o }: { o: OzelYayin }) => {
+const OzelDurumRozeti = ({ o, d }: { o: OzelYayin; d: Durum }) => {
   const { t } = useDil();
-  return o.durum === "onayli" ? <Rozet ton="iyi">{t("oyDurumOnayli")}</Rozet> : <Rozet ton="uyari">{t("oyDurumHazirlik")}</Rozet>;
+  const a = ozelAsamasi(o, d);
+  return (
+    <span data-ozel-asama={a}>
+      <Rozet ton={ASAMA_TONU[a]}>{t(a === "onay" ? "oyOnayBekliyor" : OZEL_ASAMA_ADI[a])}</Rozet>
+    </span>
+  );
 };
 
 function KunyePenceresi({ ben, o, kapat }: { ben: Kisi; o?: OzelYayin; kapat: () => void }) {
@@ -227,7 +284,7 @@ export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
           <h2>
             <Icerik>{o.ad}</Icerik>
           </h2>
-          <OzelDurumRozeti o={o} />
+          <OzelDurumRozeti o={o} d={v} />
           {duzen && (
             <button className="dugme dugme-sade dugme-ikon" onClick={() => setKunye(true)} title={t("duzenle")} aria-label={t("duzenle")} data-ozel-kunye-duzenle>
               <Pencil size={15} />
@@ -409,13 +466,15 @@ function NafizeKarti({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafiz
   const duzen = ozelDuzenler(ben);
   const [konuk, setKonuk] = useState({ ad: "", unvan: "" });
   const muhabir = kisiBul(v, n.muhabirId);
+  // Rezervasyon ve sonrası onaydan sonra; eski kayıttaki durum seçimde kalıyor.
+  const secenekler = o.durum === "onayli" ? NAFIZE_DURUMLARI : NAFIZE_DURUMLARI.filter((x) => NAFIZE_ONAYSIZ.includes(x) || x === n.durum);
   return (
     <article className={`ozel-kalem${n.durum === "iptal" ? " soluk" : ""}`} data-nafize={n.id}>
       <header>
         <Icerik blok className="ozel-kalem-ad">
           {n.konu}
         </Icerik>
-        <DurumSecimi deger={n.durum} liste={NAFIZE_DURUMLARI} adlar={NAFIZE_DURUM_ADI} degistir={(x) => nafizeDurumu(ben, o.id, n.id, x)} devre={!duzen} etiket={t("durum")} />
+        <DurumSecimi deger={n.durum} liste={secenekler} adlar={NAFIZE_DURUM_ADI} degistir={(x) => nafizeDurumu(ben, o.id, n.id, x)} devre={!duzen} etiket={t("durum")} />
         {duzen && (
           <span className="unvan-islem">
             <button className="dugme dugme-sade dugme-ikon" onClick={duzenle} title={t("duzenle")} aria-label={t("duzenle")}>
@@ -439,6 +498,7 @@ function NafizeKarti({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafiz
         {" · "}
         {muhabir ? ad(muhabir) : n.muhabirTbc ? "TBC" : t("atanmadi")}
       </small>
+      {n.durum !== "iptal" && <AsamaCizgisi adimlar={NAFIZE_DURUMLARI.filter((x) => x !== "iptal")} adlar={NAFIZE_DURUM_ADI} simdi={n.durum} kucuk />}
       <div className="ozel-konuklar">
         <span className="alan-etiket">
           <Users size={14} /> {t("oyKonuklar")} ({n.konuklar.filter((k) => k.durum !== "iptal").length})
@@ -522,8 +582,6 @@ function NafizePenceresi({ ben, o, n, kapat }: { ben: Kisi; o: OzelYayin; n?: Na
 
 /* --- Paketler: in-house (Output) ve dış muhabir --- */
 
-const paketDurumAdi = (p: Paket): Anahtar => (p.durum === "tamamlandi" ? "oyTeslimEdildi" : p.ozelKaynak === "inhouse" && !p.hazirlayanId ? "oyTalepEdildi" : "oyHazirlaniyor");
-
 function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const { t } = useDil();
   const v = useVeri();
@@ -573,6 +631,7 @@ function OzelPaketSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
   const v = useVeri();
   const yapan = kisiBul(v, p.muhabirId ?? p.hazirlayanId);
   const gec = p.durum !== "tamamlandi" && !!p.sonTarih && p.sonTarih < bugun();
+  const asama = ozelPaketAsamasi(p);
   return (
     <li className={gec ? "gecikti" : ""} data-ozel-paket={p.id}>
       <div className="ad">
@@ -582,11 +641,16 @@ function OzelPaketSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
         <small>
           {p.kod}
           {p.sonTarih ? ` · ${t("oySonTarih")}: ${tarihYaz(p.sonTarih, dil, "kisa")}` : ""}
-          {" · "}
-          {yapan ? ad(yapan) : t("oyOutputMudurunde")}
+          {yapan ? ` · ${ad(yapan)}` : asama === "plan" ? "" : ` · ${t("oyOutputMudurunde")}`}
         </small>
+        <AsamaCizgisi adimlar={OZEL_PAKET_ASAMALARI} adlar={PAKET_ASAMA_ADI} simdi={asama} kucuk />
       </div>
-      <Rozet ton={p.durum === "tamamlandi" ? "iyi" : gec ? "kotu" : "vurgu"}>{t(paketDurumAdi(p))}</Rozet>
+      {gec && <Rozet ton="kotu">{t("oyGecikti")}</Rozet>}
+      {ozelPaketOnaylanabilir(ben, p, v) && (
+        <button className="dugme dugme-iyi dugme-kucuk" onClick={() => ozelPaketOnayla(ben, p.id) && bildir(t("bKaydedildi"))} data-ozel-paket-onayla>
+          <Check size={14} /> {t("onayla")}
+        </button>
+      )}
       {ozelPaketDagitabilir(ben, p) && (
         <select aria-label={t("oyAta")} value={p.hazirlayanId ?? ""} onChange={(e) => e.target.value && ozelPaketAta(ben, p.id, e.target.value) && bildir(t("bKaydedildi"))} data-ozel-ata>
           <option value="">{t("oyAta")}</option>
@@ -597,7 +661,12 @@ function OzelPaketSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
           ))}
         </select>
       )}
-      {paketTamamlayabilir(ben, p, v) && (
+      {asama === "gorevli" && ozelPaketTeslimEdebilir(ben, p) && (
+        <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ozelPaketBasladi(ben, p.id) && bildir(t("bKaydedildi"))} data-ozel-basladi>
+          {t("oyBasladi")}
+        </button>
+      )}
+      {asama !== "onayli" && paketTamamlayabilir(ben, p, v) && (
         <button className="dugme dugme-iyi dugme-kucuk" onClick={() => paketTamamla(ben, p.id) && bildir(t("bKaydedildi"))} data-ozel-teslim>
           <Check size={14} /> {t("oyTeslimEdildi")}
         </button>
@@ -786,10 +855,12 @@ function Gorevlendirmeler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
             <div className="ad">
               <b>{ad(kisiBul(v, g.kisiId))}</b>
               <small>
-                {t(HAREKET_TURU_ADI[g.tur])} · <Icerik>{g.yer}</Icerik> · {aralikYaz(g.baslangic, g.bitis, dil)}
+                {t(HAREKET_TURU_ADI[g.tur])} · <Icerik>{g.yer}</Icerik> · {aralikYaz(g.baslangic, g.bitis, dil)} · {t(GOREVLENDIRME_DURUM_ADI[g.durum])}
               </small>
             </div>
-            <Rozet ton={g.durum === "talep" ? "uyari" : "vurgu"}>{t(GOREVLENDIRME_DURUM_ADI[g.durum])}</Rozet>
+            <span data-gorev-asama={gorevHazir(g) ? "hazir" : "planlama"}>
+              <Rozet ton={gorevHazir(g) ? "iyi" : ""}>{t(gorevHazir(g) ? "oyPkHazir" : "oyAsamaPlanlama")}</Rozet>
+            </span>
           </li>
         ))}
       </ul>
@@ -890,38 +961,50 @@ function Hazirlik({ ben, o }: { ben: Kisi; o: OzelYayin }) {
 
 function DurumKarti({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const { t } = useDil();
-  const onayli = o.durum === "onayli";
+  const v = useVeri();
+  const [not, setNot] = useState("");
+  const asama = ozelAsamasi(o, v);
+  const durum = o.durum ?? "hazirlik";
   const yetkili = planAdimiYapabilir(ben, "ozOnay");
+  const degis = (yeni: OzelDurum, mesaj: Anahtar) => {
+    if (ozelDurumu(ben, o.id, yeni, not)) {
+      setNot("");
+      bildir(t(mesaj));
+    }
+  };
+  const dugmeler: ReactNode[] = [];
+  if (durum === "hazirlik" && !yetkili && ozelDurumuDegisebilir(ben, o, "onayda"))
+    dugmeler.push(
+      <button key="gonder" className="dugme" onClick={() => degis("onayda", "bKaydedildi")} data-ozel-onaya>
+        <Send size={16} /> {t("oyOnayaGonder")}
+      </button>,
+    );
+  if (durum !== "onayli" && yetkili)
+    dugmeler.push(
+      <button key="onayla" className="dugme dugme-iyi" onClick={() => degis("onayli", "bPlanOnaylandi")} data-ozel-onayla>
+        <Check size={16} /> {t("oyOnayla")}
+      </button>,
+    );
+  if (durum !== "hazirlik" && ozelDurumuDegisebilir(ben, o, "hazirlik"))
+    dugmeler.push(
+      <button key="geri" className="dugme dugme-ikincil" onClick={() => degis("hazirlik", "bKaydedildi")} data-ozel-hazirliga>
+        <Undo2 size={16} /> {t(durum === "onayli" ? "oyHazirligaAl" : yetkili ? "oyGeriGonder" : "oyGeriCek")}
+      </button>,
+    );
   return (
-    <section className="kart plan-durum-karti" data-ozel-durum={o.durum ?? "hazirlik"}>
-      <div className="durum-cizgisi" aria-label={t("planDurumu")}>
-        <span className={onayli ? "gecti" : "simdi"}>
-          <i>{onayli ? <Check size={11} /> : 1}</i>
-          {t("oyDurumHazirlik")}
-        </span>
-        <span className={onayli ? "simdi" : ""}>
-          <span className="ayrac" aria-hidden="true" />
-          <i>2</i>
-          {t("oyDurumOnayli")}
-        </span>
-      </div>
-      <div className="dugmeler ara-ust-2">
-        {!onayli && yetkili && (
-          <button className="dugme dugme-iyi" onClick={() => ozelDurumu(ben, o.id, "onayli") && bildir(t("bPlanOnaylandi"))} data-ozel-onayla>
-            <Check size={16} /> {t("oyOnayla")}
-          </button>
-        )}
-        {onayli && yetkili && (
-          <button className="dugme dugme-ikincil" onClick={() => ozelDurumu(ben, o.id, "hazirlik") && bildir(t("bKaydedildi"))} data-ozel-hazirliga>
-            <Undo2 size={16} /> {t("oyHazirligaAl")}
-          </button>
-        )}
-        {!yetkili && !onayli && (
-          <p className="bos-kucuk">
-            {t("oyOnaylayan")} <AdimYetkilileri adim="ozOnay" />
-          </p>
-        )}
-      </div>
+    <section className="kart plan-durum-karti" data-ozel-durum={durum}>
+      <AsamaCizgisi adimlar={OZEL_ASAMALARI} adlar={OZEL_ASAMA_ADI} simdi={asama} />
+      {dugmeler.length > 0 && (
+        <div className="ozel-not-satiri ara-ust-2">
+          <input value={not} onChange={(e) => setNot(e.target.value)} placeholder={t("oyNotYaz")} dir="auto" aria-label={t("oyNotEkle")} data-ozel-durum-not />
+          {dugmeler}
+        </div>
+      )}
+      {!yetkili && durum !== "onayli" && (
+        <p className="bos-kucuk ara-ust-2">
+          {t("oyOnaylayan")} <AdimYetkilileri adim="ozOnay" />
+        </p>
+      )}
       {(o.iz?.length ?? 0) > 0 && (
         <details className="ozel-gecmis ara-ust-2">
           <summary>

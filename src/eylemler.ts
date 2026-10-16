@@ -30,6 +30,7 @@ import {
   kisiBul,
   yeniKisi,
   SISTEM,
+  NAFIZE_ONAYSIZ,
   oncekiPlan,
   oneriBul,
   paketBul,
@@ -135,6 +136,7 @@ import {
   planAdimiYapabilir,
   ozelDuzenler,
   ozelPaketDagitabilir,
+  ozelPaketTeslimEdebilir,
 } from "./yetki";
 
 /**
@@ -3441,13 +3443,38 @@ export const ozelKunyeKaydet = (ben: Kisi, id: string, g: OzelKunye) => {
   return true;
 };
 
-/** Onay ve hazırlığa geri alma: kuralı Plan yetkileri'nde (ozOnay). */
-export const ozelDurumu = (ben: Kisi, id: string, yeni: OzelDurum) => {
-  const d = getir();
+/*
+ * Planın aşamaları: Planlama hazırlayıp onaya gönderiyor, onaylayan
+ * (Plan yetkileri › ozOnay) onaylıyor ya da geri gönderiyor; onaylanan
+ * plan uygulamada. Onayla birlikte planlamadaki paketler de onaylanıyor
+ * ve işi yapana görev o an gidiyor (öncesinde plan değişebilirdi).
+ * Onaylayan planı onaya göndermeden de onaylayabiliyor. Onaya gönderen
+ * planı geri çekebiliyor.
+ */
+export const ozelDurumuDegisebilir = (ben: Kisi, o: OzelYayin, yeni: OzelDurum) => {
+  const simdiki = o.durum ?? "hazirlik";
+  if (simdiki === yeni) return false;
+  const onaylayan = planAdimiYapabilir(ben, "ozOnay");
+  if (yeni === "onayda") return simdiki === "hazirlik" && ozelDuzenler(ben);
+  if (yeni === "onayli") return onaylayan;
+  return onaylayan || (simdiki === "onayda" && ozelDuzenler(ben));
+};
+
+/* Onaylanan paketin görevi: dış muhabire kişisel, in-house Output'a (müdürü dağıtıyor). */
+const ozelPaketGorevi = (d: Durum, ben: Kisi, p: Paket): Durum =>
+  hareketYaz(d, { kisiId: ben.id, tip: "ozelPaketOnaylandi", paketId: p.id, ozelId: p.ozelId, veri: { ...(p.sonTarih ? { tarih: p.sonTarih } : {}), ...(p.muhabirId ? { kime: p.muhabirId } : { sahip: "output" }) } });
+
+const ozelPaketiOnayla = (d: Durum, ben: Kisi, p: Paket): Durum => ozelPaketGorevi(paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi", guncelleme: simdi() })), ben, p);
+
+export const ozelDurumu = (ben: Kisi, id: string, yeni: OzelDurum, not?: string) => {
+  let d = getir();
   const o = ozelBul(d, id);
-  if (!o || (o.durum ?? "hazirlik") === yeni || !planAdimiYapabilir(ben, "ozOnay")) return false;
-  const yd = ozelGuncelle(d, id, (x) => ({ ...x, durum: yeni, iz: [...(x.iz ?? []), izYaz(ben, "durum", { durum: yeni })] }));
-  kaydet(hareketYaz(yd, { kisiId: ben.id, tip: yeni === "onayli" ? "ozelOnaylandi" : "ozelHazirliga", ozelId: id, veri: { tarih: o.tarih, sahip: yeni === "onayli" ? "planlama" : "" } }));
+  if (!o || !ozelDurumuDegisebilir(ben, o, yeni)) return false;
+  const n = not?.trim();
+  d = ozelGuncelle(d, id, (x) => ({ ...x, durum: yeni, iz: [...(x.iz ?? []), izYaz(ben, "durum", { durum: yeni, ...(n ? { not: n } : {}) })] }));
+  if (yeni === "onayli") for (const p of d.paketler.filter((x) => x.ozelId === id && x.durum === "taslak")) d = ozelPaketiOnayla(d, ben, p);
+  const tip = yeni === "onayli" ? "ozelOnaylandi" : yeni === "onayda" ? "ozelOnayaGonderildi" : "ozelHazirliga";
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip, ozelId: id, veri: { tarih: o.tarih, sahip: "planlama", ...(n ? { not: n } : {}) } }));
   return true;
 };
 
@@ -3480,7 +3507,9 @@ export const nafizeKaydet = (ben: Kisi, ozelId: string, g: NafizeGirdisi): strin
   return id;
 };
 
+/** Rezervasyon ve sonrası onaydan sonra: plan değişebilirken Satdesk'e gidilmiyor. */
 export const nafizeDurumu = (ben: Kisi, ozelId: string, id: string, durum: NafizeDurum) =>
+  (ozelBul(getir(), ozelId)?.durum === "onayli" || NAFIZE_ONAYSIZ.includes(durum)) &&
   kalemDegistir(ben, ozelId, "nafizeler", id, (n) => (n.durum === durum ? n : { ...n, durum, iz: [...n.iz, izYaz(ben, "durum", { durum })] }));
 
 export const konukKaydet = (ben: Kisi, ozelId: string, nafizeId: string, g: Omit<Konuk, "id"> & { id?: string }) => {
@@ -3562,7 +3591,8 @@ export const ozelPaketTalebi = (ben: Kisi, ozelId: string, g: OzelPaketGirdisi):
     aciklama: g.aciklama.trim(),
     tur: g.tur,
     bicim: g.bicim ?? "pkg",
-    durum: "onaylandi",
+    // Plan aşaması: görev onaydan sonra gidiyor (ozelPaketOnayla, planın onayı).
+    durum: "taslak",
     sahaGerekli: false,
     ozelId,
     ozelKaynak: g.kaynak,
@@ -3572,10 +3602,31 @@ export const ozelPaketTalebi = (ben: Kisi, ozelId: string, g: OzelPaketGirdisi):
     guncelleme: simdi(),
   };
   d = { ...d, paketler: [paket, ...d.paketler] };
-  // Dış muhabire kişisel talep; in-house talep Output'a (müdürü dağıtıyor).
-  const veri: Record<string, string> = { ...(g.sonTarih ? { tarih: g.sonTarih } : {}), ...(muhabir ? { kime: muhabir.id } : { sahip: "output" }) };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "ozelPaketTalebi", paketId: id, ozelId, veri }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "ozelPaketTalebi", paketId: id, ozelId, veri: g.sonTarih ? { tarih: g.sonTarih } : {} }));
   return id;
+};
+
+/** Onaylanmış plana sonradan eklenen paket tek başına onaylanıyor; kural planınki (ozOnay). */
+export const ozelPaketOnaylanabilir = (ben: Kisi | undefined, p: Paket, d: Durum) =>
+  !!ben && !!p.ozelId && p.durum === "taslak" && ozelBul(d, p.ozelId)?.durum === "onayli" && planAdimiYapabilir(ben, "ozOnay");
+
+export const ozelPaketOnayla = (ben: Kisi, paketId: string) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !ozelPaketOnaylanabilir(ben, p, d)) return false;
+  kaydet(ozelPaketiOnayla(d, ben, p));
+  return true;
+};
+
+/** İşi yapan hazırlamaya başladı: görevlendirildi → hazırlanıyor. Planlama da onun adına işaretleyebiliyor. */
+export const ozelPaketBasladi = (ben: Kisi, paketId: string) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || p.ozelBasladi || !(p.muhabirId ?? p.hazirlayanId) || !ozelPaketTeslimEdebilir(ben, p)) return false;
+  const yapan = p.muhabirId ?? p.hazirlayanId;
+  const yd = paketGuncelle(d, paketId, (x) => ({ ...x, ozelBasladi: simdi(), guncelleme: simdi() }));
+  kaydet(hareketYaz(yd, { kisiId: ben.id, tip: "ozelPaketBasladi", paketId, ozelId: p.ozelId, veri: ben.id === yapan ? { sahip: "planlama" } : { kime: yapan! } }));
+  return true;
 };
 
 /** Output müdürü in-house paketi ekibinden birine veriyor; değiştirebiliyor da. */

@@ -878,6 +878,10 @@ a.cip { color: var(--murekkep); padding: 3px var(--ara-2); }
 .durum-cizgisi span.simdi { color: var(--vurgu); }
 .durum-cizgisi span.simdi i { border-color: var(--vurgu); background: var(--vurgu); color: #fff; }
 .durum-cizgisi .ayrac { width: 24px; height: 2px; background: var(--cizgi); }
+/* Kalemin içindeki küçük çizgi (nafize, paket): adımlar sıkışık, satırı kaplamasın. */
+.durum-cizgisi.kucuk span { padding: 2px 6px; font-size: var(--punto-mini); gap: 4px; }
+.durum-cizgisi.kucuk span i { width: 16px; height: 16px; font-size: 9px; }
+.durum-cizgisi.kucuk .ayrac { width: 12px; }
 
 /* --- Uyarı kutuları --- */
 

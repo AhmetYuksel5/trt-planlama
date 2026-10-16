@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v20`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v21`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v20-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v21-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -835,17 +835,32 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Planlama'nın denetiminde hazırlanır, onayı Plan yetkileri'nde (`ozOnay`,
   varsayılan Planlama yöneticisi). Künye: başlık, gün (ya da `bitis`),
   genel planın Arapça paragrafı (`aciklama`).
+  - Aşamalar (`ozel.ts → ozelAsamasi`, ekranda `AsamaCizgisi`): Planlama →
+    Onay → Uygulama → Uygulamaya hazır. Saklanan `OzelDurum` hazirlik /
+    onayda / onayli; "hazır" saklanmaz, onaylı planda bütün kalemler hazırsa.
+    Planlamacı "Onaya gönder"ir, onaya gönderdiğini geri çeker; onaylayan
+    onaylar (göndermeden de) ya da planlamaya geri gönderir, isteğe bağlı
+    notla (`ozelDurumu`, kural `ozelDurumuDegisebilir`).
   - Nafize (konuklu canlı yayın, `OzelYayin.nafizeler`): konu, gün ve
     saat, yer, muhabir (ya da TBC), konuklar (konuk koordinatörüyle: aday,
-    davet edildi, teyitli, iptal). Diğer talepler (grafik…, `talepler`):
+    davet edildi, teyitli, iptal; sırasız, aşamaya bağlı değil). Aşaması
+    planlama → Satdesk rezervasyonu → yer hazır → yayınlandı (ya da iptal);
+    rezervasyon ve sonrası plan onaylanınca (`NAFIZE_ONAYSIZ`), yazışma ve
+    işlemler notta. Yeri hazır nafize hazır sayılır. Diğer talepler (grafik…, `talepler`):
     metin, istenirse birim (o birime bildirim) ve son tarih.
   - Her kalemin durumu ve izi (`OzelIz`: kim, ne zaman, ekledi /
     düzenledi / durum / not): "Geçmiş ve notlar". Planın kendi izi de
     (açılış, onay). Plan bitince takip unutuluyordu: üstteki özet bölüm
     bölüm yapılanı sayar, "Yapılacaklar" son tarihe göre, geciken kırmızı
     (`ozelOzeti`, `yapilacaklar`; saklanmaz).
-  - Paket talebi gerçek `Paket` (`ozelId`, `ozelKaynak`, `sonTarih`;
-    planı yok, durumu onaylı): in-house talep Output'a düşer, Output'tan
+  - Paket gerçek `Paket` (`ozelId`, `ozelKaynak`, `sonTarih`; planı yok).
+    Aşaması (`ozelPaketAsamasi`): planda (`taslak`) → onaylandı → görevlendirildi
+    (muhabir ya da hazırlayan) → hazırlanıyor (`ozelBasladi`, işi yapan ya da
+    Planlama işaretler, `ozelPaketBasladi`) → hazır (`tamamlandi`). Planın
+    onayı plandaki paketleri de onaylar, görev bildirimi o an gider
+    (`ozelPaketOnaylandi`); onaylı plana sonradan eklenen paketi onaylayan
+    ayrıca onaylar (`ozelPaketOnayla`). Planlamadaki paketi muhabir görmez
+    (`paketGorebilir`), genel paket değerlendirmesi ona dokunmaz. In-house talep Output'a düşer, Output'tan
     sorumlu yönetici (`ozelPaketDagitabilir`) ekibinden birine verir
     (`hazirlayanId`, `ozelPaketAta`; Output ana sayfasında "Özel yayın paket
     talepleri", `ouOzel`); dış muhabir talebi muhabirin kendi işi (kısıt ve
@@ -854,7 +869,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     bu akışta yok). Plansız onaylı paket kuralları (üretime alma, kolun
     sahibi) bu pakete uygulanmaz (`paketSahibi`, `uretimeAlabilir`).
   - Dış görevlendirme genel kayıtta (`Gorevlendirme.ozelId`), "talep":
-    News Gathering'in görevlendirmeleriyle aynı yerden onaylanır.
+    News Gathering'in görevlendirmeleriyle aynı yerden onaylanır. Planın
+    önünde ya da arkasında açılabilir; özel yayında iki aşama gösterilir:
+    talepteyken planlama, onaylanınca hazır (`gorevHazir`).
   - Eski hazırlık maddeleri (`hazirlik`, takvimden aktarılan da) yerinde.
     Kayıt temizliğinde özel yayınla paketleri ve görevlendirmeleri de
     gider. Hareketin özel yayına bağı `Hareket.ozelId`.
