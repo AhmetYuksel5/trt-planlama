@@ -52,7 +52,7 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   ekonomi: ["genIslerim", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
   program: ["genIslerim", "prHafta", "prUretim", "prOneri", "prKonuk"],
-  output: ["genIslerim", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
+  output: ["genIslerim", "ouOzel", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
   yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],
   panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],

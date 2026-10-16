@@ -125,6 +125,7 @@ function Siram({ ben }: { ben: Kisi }) {
                       <small>
                         {p.durum === "onaylandi" ? t("pdOnaylandi") : adimAdi(p.adim as UretimAdimi, p)}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
+                        {p.ozelId && ` · ${t("ozel")}${p.sonTarih ? ` · ${t("oySonTarih")}: ${tarihYaz(p.sonTarih, dil, "kisa")}` : ""}`}
                       </small>
                       <KararNotlari kalem={p} />
                     </div>

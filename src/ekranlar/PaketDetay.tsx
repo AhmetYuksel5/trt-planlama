@@ -9,7 +9,7 @@ import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil"
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketTamamla, uretimeAl } from "../eylemler";
 import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
-import { girdidenIso, yerelGirdi, yerelGun } from "../tarih";
+import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
 import { adimYapabilir, paketTamamlayabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { MuhabirSecici } from "./nextday/Formlar";
@@ -125,6 +125,33 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 <small>{t("sehirUlke")}</small>
                 <b>{paket.yer ? <Icerik>{paket.yer}</Icerik> : t(sehirAdi(paket.sehir))}</b>
               </div>
+              {paket.ozelId && (
+                <>
+                  {/* Muhabir özel yayının kendisini okuyamıyor (gerçek kipte kural): adı yoksa yalnız "Özel yayın". */}
+                  <div className="alan">
+                    <small>{t("ozel")}</small>
+                    {v.ozel.some((o) => o.id === paket.ozelId) ? (
+                      <a href={`#/ozel/${paket.ozelId}`}>
+                        <Icerik>{v.ozel.find((o) => o.id === paket.ozelId)!.ad}</Icerik>
+                      </a>
+                    ) : (
+                      <b>{t(paket.ozelKaynak === "inhouse" ? "oyInhouse" : "oyDis")}</b>
+                    )}
+                  </div>
+                  {paket.sonTarih && (
+                    <div className="alan">
+                      <small>{t("oySonTarih")}</small>
+                      <b className={paket.durum !== "tamamlandi" && paket.sonTarih < bugun() ? "kotu-yazi" : ""}>{tarihYaz(paket.sonTarih, dil, "kisa")}</b>
+                    </div>
+                  )}
+                  {paket.hazirlayanId && (
+                    <div className="alan">
+                      <small>{t("oyHazirlayan")}</small>
+                      <b>{ad(kisiBul(v, paket.hazirlayanId))}</b>
+                    </div>
+                  )}
+                </>
+              )}
               <div className="alan">
                 <small>{t("plan")}</small>
                 {plan ? (

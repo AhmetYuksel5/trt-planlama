@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v19`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v20`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v19-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v20-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -830,6 +830,34 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     takibi kapatmak onaylı paketi de (`paketTamamla`, `takipTamamla`);
     paketli haber "Takipteki haberlerim"de ikinci kez durmaz. Haberi biten
     önerinin rozeti "Tamamlandı" (`OneriDurumRozeti`).
+- Özel yayın (`ekranlar/OzelYayin.tsx`, `#/ozel`, `#/ozel/:id`; kurallar
+  `ozel.ts`, eylemler `eylemler.ts → ozel*`, `nafize*`, `konuk*`):
+  Planlama'nın denetiminde hazırlanır, onayı Plan yetkileri'nde (`ozOnay`,
+  varsayılan Planlama yöneticisi). Künye: başlık, gün (ya da `bitis`),
+  genel planın Arapça paragrafı (`aciklama`).
+  - Nafize (konuklu canlı yayın, `OzelYayin.nafizeler`): konu, gün ve
+    saat, yer, muhabir (ya da TBC), konuklar (konuk koordinatörüyle: aday,
+    davet edildi, teyitli, iptal). Diğer talepler (grafik…, `talepler`):
+    metin, istenirse birim (o birime bildirim) ve son tarih.
+  - Her kalemin durumu ve izi (`OzelIz`: kim, ne zaman, ekledi /
+    düzenledi / durum / not): "Geçmiş ve notlar". Planın kendi izi de
+    (açılış, onay). Plan bitince takip unutuluyordu: üstteki özet bölüm
+    bölüm yapılanı sayar, "Yapılacaklar" son tarihe göre, geciken kırmızı
+    (`ozelOzeti`, `yapilacaklar`; saklanmaz).
+  - Paket talebi gerçek `Paket` (`ozelId`, `ozelKaynak`, `sonTarih`;
+    planı yok, durumu onaylı): in-house talep Output'a düşer, Output'tan
+    sorumlu yönetici (`ozelPaketDagitabilir`) ekibinden birine verir
+    (`hazirlayanId`, `ozelPaketAta`; Output ana sayfasında "Özel yayın paket
+    talepleri", `ouOzel`); dış muhabir talebi muhabirin kendi işi (kısıt ve
+    "Senin sıran" paketten). Teslimi işi yapan ya da Planlama
+    `paketTamamla` ile işler (`ozelPaketTeslimEdebilir`; Newsdesk şimdilik
+    bu akışta yok). Plansız onaylı paket kuralları (üretime alma, kolun
+    sahibi) bu pakete uygulanmaz (`paketSahibi`, `uretimeAlabilir`).
+  - Dış görevlendirme genel kayıtta (`Gorevlendirme.ozelId`), "talep":
+    News Gathering'in görevlendirmeleriyle aynı yerden onaylanır.
+  - Eski hazırlık maddeleri (`hazirlik`, takvimden aktarılan da) yerinde.
+    Kayıt temizliğinde özel yayınla paketleri ve görevlendirmeleri de
+    gider. Hareketin özel yayına bağı `Hareket.ozelId`.
 - Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
   feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
   (`yetki.ts → KOL_BIRIMLERI`).

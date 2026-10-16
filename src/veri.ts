@@ -345,6 +345,8 @@ export interface Gorevlendirme {
   bitis: string;
   aciklama: string;
   durum: GorevlendirmeDurum;
+  /** Özel yayın için: genel görevlendirme kaydında, özel yayına bağlı. */
+  ozelId?: string;
 }
 
 /*
@@ -599,6 +601,15 @@ export interface Paket {
   planBaslikId?: string;
   baslik: string;
   sehir: Sehir;
+  /*
+   * Özel yayının paket talebi: in-house (Output müdürü dağıtıyor,
+   * hazirlayanId) ya da dış muhabirden (muhabirId), son tarihli. Newsdesk
+   * henüz yok: teslim edildiğinde "tamamlandi".
+   */
+  ozelId?: string;
+  ozelKaynak?: "inhouse" | "dis";
+  sonTarih?: string;
+  hazirlayanId?: string;
   /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
   yer?: string;
   muhabirId?: string;
@@ -766,11 +777,81 @@ export interface AylikPlan {
   kalemler: PlanKalemi[];
 }
 
+/*
+ * Özel yayın: başlık, gün (ya da aralık), genel planın paragrafı; altında
+ * nafizeler (konuklu canlı yayın), paket talepleri (Paket, ozelId), diğer
+ * talepler (grafik…), dış görevlendirmeler (Gorevlendirme, ozelId) ve
+ * hazırlık maddeleri. Süreç günlerce sürüyor ve plan bitince takip
+ * unutuluyordu: her kalemin kendi durumu ve izi var (kim, ne zaman, ne
+ * yaptı, not), özet yapılanı ve yapılacağı ondan sayıyor.
+ */
+export interface OzelIz {
+  kisiId: string;
+  zaman: string;
+  olay: "eklendi" | "duzenlendi" | "durum" | "not";
+  /** Olay "durum"sa yeni durum (kalemin kendi durum listesinden). */
+  durum?: string;
+  not?: string;
+}
+
+export const NAFIZE_DURUMLARI = ["planlandi", "hazir", "yapildi", "iptal"] as const;
+export type NafizeDurum = (typeof NAFIZE_DURUMLARI)[number];
+export const KONUK_DURUMLARI = ["aday", "davetEdildi", "teyitli", "iptal"] as const;
+export type KonukDurum = (typeof KONUK_DURUMLARI)[number];
+
+/** Konuk koordinatörüyle belirlenen konuk; ad ve unvan Arapça. */
+export interface Konuk {
+  id: string;
+  ad: string;
+  unvan?: string;
+  yer?: string;
+  durum: KonukDurum;
+}
+
+/** Nafize (نافذة): özel yayın içindeki konuklu canlı yayın; muhabir sahada ya da dış muhabir. */
+export interface Nafize {
+  id: string;
+  konu: string;
+  tarih: string;
+  saat?: string;
+  yer?: string;
+  muhabirId?: string;
+  muhabirTbc?: true;
+  konuklar: Konuk[];
+  durum: NafizeDurum;
+  iz: OzelIz[];
+}
+
+export const TALEP_DURUMLARI = ["acik", "suruyor", "tamam", "iptal"] as const;
+export type TalepDurum = (typeof TALEP_DURUMLARI)[number];
+
+/** Grafik ve öbür talepler: elle; istenirse bir birime (bildirim ona) ve son tarihle. */
+export interface OzelTalep {
+  id: string;
+  metin: string;
+  birim?: BirimId;
+  sonTarih?: string;
+  durum: TalepDurum;
+  iz: OzelIz[];
+}
+
+export type OzelDurum = "hazirlik" | "onayli";
+
 export interface OzelYayin {
   id: string;
   ad: string;
   tarih: string;
+  /** Çok günlü yayında son gün. */
+  bitis?: string;
+  /** Genel olarak nasıl bir yayın planlandığı (Arapça paragraf). */
+  aciklama?: string;
+  /** Yoksa hazırlık (eski kayıt). */
+  durum?: OzelDurum;
   hazirlik: { id: string; metin: string; tamam: boolean }[];
+  nafizeler?: Nafize[];
+  talepler?: OzelTalep[];
+  /** Planın kendi izi: açılış, düzenleme, onay. */
+  iz?: OzelIz[];
 }
 
 /* --- Planlama takvimi: ileride haber olabilecek faaliyetler --- */
@@ -983,6 +1064,13 @@ export const HAREKET_TIPLERI = [
   "planOnaylandi",
   "planDevralindi",
   "paketOlusturuldu",
+  "ozelOlusturuldu",
+  "ozelOnaylandi",
+  "ozelHazirliga",
+  "ozelPaketTalebi",
+  "ozelPaketAtandi",
+  "ozelPaketTeslim",
+  "ozelTalep",
   "paketDegerlendirmede",
   "paketOnaylandi",
   "paketIptal",
@@ -1032,6 +1120,7 @@ export interface Hareket {
   oneriId?: string;
   planId?: string;
   haftaId?: string;
+  ozelId?: string;
   veri?: Record<string, string>;
 }
 
@@ -1135,9 +1224,10 @@ export interface Durum {
  * özel ana sayfa düzeni, v12: kişinin öneri görünümü, v13: planlama
  * takvimi, faaliyetler, v14: workspace, v15: üst şeritte kişinin kısayolları, v16: öneri düzeltmeye
  * gönderilebiliyor, v17: öneri yazışması, muhabire öneri, v18: kurum yapısı (birim, ünvan, akış),
- * v19: muhabirin takipleri, haftalık öneride gün).
+ * v19: muhabirin takipleri, haftalık öneride gün;
+ * v20: özel yayının nafizeleri, talepleri, paket talepleri ve izi).
  */
-const SAKLA = "trt-planlama-v19";
+const SAKLA = "trt-planlama-v20";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı

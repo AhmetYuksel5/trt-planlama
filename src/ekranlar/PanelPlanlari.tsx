@@ -1,4 +1,5 @@
-import { CalendarDays, CalendarRange, CheckCircle, ChevronRight, Circle, ClipboardList, MapPinned, Printer, Tv } from "lucide-react";
+import { gecikti, ozelOzeti, yapilacaklar } from "../ozel";
+import { CalendarDays, CalendarRange, ChevronRight, Circle, ClipboardList, MapPinned, Printer, Tv } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { geciktiMi } from "../akis";
 import { Bos, DurumCizgisi, Icerik, Ilerleme, Kart, Pencere, Rozet } from "../bilesenler/Parcalar";
@@ -187,9 +188,12 @@ function HaftalikPencere({ hafta, kapat }: { hafta: HaftalikPlan; kapat: () => v
   );
 }
 
+/* Özel yayın: panelde yalnız özet ve bekleyenler; ayrıntı planın kendi sayfasında. */
 function OzelPencere({ ozel, kapat }: { ozel: OzelYayin; kapat: () => void }) {
   const { t, dil } = useDil();
-  const tamam = ozel.hazirlik.filter((h) => h.tamam).length;
+  const v = useVeri();
+  const oz = ozelOzeti(ozel, v);
+  const bekleyen = yapilacaklar(ozel, v);
   const kalan = Math.round((new Date(ozel.tarih + "T12:00:00").getTime() - new Date(bugun() + "T12:00:00").getTime()) / 86_400_000);
   return (
     <Pencere
@@ -197,21 +201,23 @@ function OzelPencere({ ozel, kapat }: { ozel: OzelYayin; kapat: () => void }) {
       alt={`${tarihYaz(ozel.tarih, dil, "uzun")} · ${kalan > 0 ? t("kalanGun", { n: kalan }) : kalan === 0 ? t("bugun") : t("yayinlandi")}`}
       kapat={kapat}
       altBilgi={
-        <a className="dugme" href="#/ozel">
+        <a className="dugme" href={`#/ozel/${ozel.id}`}>
           {t("planiAc")}
         </a>
       }
     >
       <div className="alan-etiket">
-        {t("hazirlikAsamalari")} · {t("hazirlikOrani", { tamam, toplam: ozel.hazirlik.length })}
+        {t("oyYapilan", { b: oz.biten, n: oz.toplam })}
+        {oz.geciken > 0 && <span className="kotu-yazi">{` · ${t("oyGeciken", { n: oz.geciken })}`}</span>}
       </div>
-      <Ilerleme oran={tamam / Math.max(1, ozel.hazirlik.length)} />
+      <Ilerleme oran={oz.biten / Math.max(1, oz.toplam)} />
       <ul className="liste asama-listesi ara-ust-2">
-        {ozel.hazirlik.map((h) => (
-          <li key={h.id} className={h.tamam ? "tamam" : ""}>
-            {h.tamam ? <CheckCircle size={16} className="iyi-yazi" /> : <Circle size={16} className="sonuk-yazi" />}
+        {bekleyen.slice(0, 10).map((k) => (
+          <li key={`${k.tur}-${k.id}`} className={gecikti(k) ? "gecikti" : ""}>
+            <Circle size={16} className="sonuk-yazi" />
             <span className="ad">
-              <Icerik>{h.metin}</Icerik>
+              <Icerik>{k.ad}</Icerik>
+              {k.sonTarih && <small>{tarihYaz(k.sonTarih, dil, "kisa")}</small>}
             </span>
           </li>
         ))}
@@ -292,14 +298,14 @@ export default function PanelPlanlari() {
     });
   else if (sekme === "ozel")
     liste = ozel.map((o) => {
-      const tamam = o.hazirlik.filter((h) => h.tamam).length;
+      const oz = ozelOzeti(o, v);
       return (
         <Satir
           key={o.id}
           ad={<Icerik>{o.ad}</Icerik>}
           alt={tarihYaz(o.tarih, dil, "uzun")}
-          oran={tamam / Math.max(1, o.hazirlik.length)}
-          rozet={<Rozet ton={tamam === o.hazirlik.length ? "iyi" : ""}>{t("hazirlikOrani", { tamam, toplam: o.hazirlik.length })}</Rozet>}
+          oran={oz.biten / Math.max(1, oz.toplam)}
+          rozet={<Rozet ton={oz.geciken ? "kotu" : oz.biten === oz.toplam ? "iyi" : ""}>{oz.geciken ? t("oyGeciken", { n: oz.geciken }) : t("oyYapilan", { b: oz.biten, n: oz.toplam })}</Rozet>}
           ac={() => setSecim({ tur: "ozel", ozel: o })}
         />
       );

@@ -220,7 +220,7 @@ export const adimYapabilir = (k: Kisi | undefined, p: Paket): boolean => {
 
 /** Plansız onaylı paketi (haftalık toplantının kabulü) kolun sahibi üretime alıyor; Planlama'da stok ekibi. */
 export const uretimeAlabilir = (k: Kisi | undefined, p: Paket): boolean =>
-  !!k && p.durum === "onaylandi" && !p.planId && paketSahibi(p) === k.birim && ekipte(k);
+  !!k && p.durum === "onaylandi" && !p.planId && !p.ozelId && paketSahibi(p) === k.birim && ekipte(k);
 
 /* --- Görünürlük --- */
 
@@ -274,7 +274,9 @@ export const yzGorusuGorur = (k: Kisi | undefined): boolean => !!k && k.birim !=
  */
 export const yalnizPlanlama = (d: Durum) => !d.newsdeskDevrede;
 export const paketTamamlayabilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean =>
-  !!k && yalnizPlanlama(d) && p.durum === "onaylandi" && ((k.birim === "muhabir" && p.muhabirId === k.id) || yapabilir(k, "paketDegerlendir"));
+  p.ozelId
+    ? ozelPaketTeslimEdebilir(k, p)
+    : !!k && yalnizPlanlama(d) && p.durum === "onaylandi" && ((k.birim === "muhabir" && p.muhabirId === k.id) || yapabilir(k, "paketDegerlendir"));
 
 /** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
 export const kararNotuYazabilir = (k: Kisi | undefined, h: HaftalikPlan): boolean => !!k && (kararVerebilir(k, h) || haftalikDuzenler(k, h));
@@ -419,7 +421,7 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   nextday: MASA,
   haftalik: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
   aylik: ["planlama", "program", "yonetim"],
-  ozel: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
+  ozel: ["planlama", "newsdesk", "newsgathering", "program", "output", "yonetim"],
   muhabirler: MASA,
   editorler: MASA,
   personel: MASA,
@@ -494,11 +496,35 @@ export const yetkiMatrisi = (): MatrisSatiri[] => [
 
 /** Paketin şimdiki sahibi kişiye düşüyor mu ("Senin sıran" kutusu); plansız onaylı pakette üretime alacak olana. */
 export const siramMi = (k: Kisi, p: Paket) =>
-  p.durum === "uretimde"
+  p.ozelId
+    ? ozelPaketTeslimEdebilir(k, p) && (p.muhabirId === k.id || p.hazirlayanId === k.id) || (!p.hazirlayanId && ozelPaketDagitabilir(k, p))
+    : p.durum === "uretimde"
     ? adimYapabilir(k, p)
     : p.durum === "onaylandi" && !p.planId
       ? uretimeAlabilir(k, p)
       : paketSahibi(p) === k.birim && k.birim === "planlama";
+
+/* --- Özel yayın --- */
+
+/*
+ * Özel yayını Planlama hazırlıyor (planDuzenle); onayı yapıdaki kural
+ * (Plan yetkileri › ozOnay). Onaydan sonra da kalemlerin durumu ve notu
+ * işleniyor: süreç yayına kadar sürüyor.
+ */
+export const ozelDuzenler = (k: Kisi | undefined): boolean => yapabilir(k, "planDuzenle");
+
+/** In-house paketi Output'tan sorumlu yönetici dağıtıyor: Output yöneticisi ya da kapsamında Output olan müdür. */
+export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k &&
+  !!p.ozelId &&
+  p.ozelKaynak === "inhouse" &&
+  p.durum === "onaylandi" &&
+  k.rol === "yonetici" &&
+  (izinBirimi(k.birim) === "output" || (k.birim === "yonetim" && !!kapsam(k)?.birimler.includes("output")));
+
+/** Teslimi işi yapan (dış muhabir, Output'un görevlendirdiği kişi) ya da Planlama işliyor. Newsdesk henüz bu akışta yok. */
+export const ozelPaketTeslimEdebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && !!p.ozelId && p.durum === "onaylandi" && (p.muhabirId === k.id || p.hazirlayanId === k.id || ozelDuzenler(k));
 
 /* --- Takipler --- */
 

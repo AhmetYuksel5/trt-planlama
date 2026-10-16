@@ -2189,3 +2189,50 @@ tr.soluk > td { opacity: .5; }
   .kilavuz-baski .kilavuz-bolumler { grid-template-columns: 1fr 1fr; }
   .kilavuz-baski .kilavuz-bolumler > li { break-inside: avoid; }
 }
+
+/* --- Özel yayın: liste kartı, künye, özet, kalemler (nafize, talep), iz --- */
+.ozel-karti { display: grid; gap: var(--ara-2); color: inherit; text-decoration: none; }
+.ozel-karti:hover { border-color: var(--vurgu); }
+.ozel-karti-ust { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.ozel-karti-ust > b, .ozel-karti-ust > h2 { flex: 1; min-width: 0; }
+.ozel-sayfa { display: grid; gap: var(--ara-4); }
+.ozel-sayfa > .kart { margin: 0; }
+.ozel-kunye h2 { font-size: var(--punto-buyuk); }
+.ozel-aciklama { margin-block-start: var(--ara-3); line-height: 1.7; white-space: pre-line; }
+.ozel-ozet { display: flex; flex-wrap: wrap; gap: var(--ara-2) var(--ara-4); list-style: none; padding: 0; margin: 0; }
+.ozel-ozet li { display: inline-flex; align-items: center; gap: var(--ara-1); color: var(--sonuk); }
+.ozel-ozet b { color: var(--murekkep); font-variant-numeric: tabular-nums; }
+.liste > li.gecikti .ad > small, .liste > li.gecikti small { color: var(--kotu); }
+.ozel-kalemler { display: grid; gap: var(--ara-3); }
+.ozel-kalem { display: grid; gap: var(--ara-2); padding: var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); min-width: 0; }
+.ozel-kalem.gecikti { border-color: var(--kotu); }
+.ozel-kalem > header { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.ozel-kalem-ad { flex: 1; min-width: 12ch; font-weight: 600; }
+.durum-secimi { width: auto; min-height: 32px; padding-block: 0; font-size: var(--punto-kucuk); font-weight: 600; }
+.durum-secimi.ton-iyi { color: var(--iyi); border-color: var(--iyi); }
+.durum-secimi.ton-vurgu { color: var(--vurgu); border-color: var(--vurgu); }
+.durum-secimi.ton-kotu { color: var(--kotu); border-color: var(--kotu); }
+.ozel-konuklar { display: grid; gap: var(--ara-2); }
+.ozel-konuklar .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); }
+.ozel-konuklar ul { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--ara-1); }
+.ozel-konuklar li { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.ozel-konuklar li > .icerik { flex: 1; min-width: 10ch; }
+.ozel-not-satiri { display: flex; gap: var(--ara-2); flex-wrap: wrap; align-items: center; }
+.ozel-not-satiri > input { flex: 1 1 14ch; min-width: 0; }
+.ozel-gecmis > summary { cursor: pointer; display: inline-flex; align-items: center; gap: var(--ara-1); color: var(--sonuk); font-size: var(--punto-kucuk); min-height: var(--dokunma); }
+.ozel-gecmis[open] > summary { margin-block-end: var(--ara-2); }
+.ozel-iz { list-style: none; padding: 0; margin: var(--ara-2) 0 0; display: grid; gap: var(--ara-2); }
+.ozel-iz li { display: flex; gap: var(--ara-2); align-items: flex-start; }
+.ozel-iz li > div { display: grid; gap: 2px; min-width: 0; }
+.ozel-iz small { color: var(--sonuk); }
+.ozel-iz-not { background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-1) var(--ara-2); white-space: pre-line; overflow-wrap: anywhere; }
+/* Kart başlığındaki ekleme düğmesi uzun ("Görevlendirme talebi"): telefonda başlığın altına iniyor. */
+.ozel-sayfa .kart-bas { flex-wrap: wrap; }
+@media (max-width: 760px) {
+  /* Konu kendi satırında; durum ve düğmeler altında. Yan yana konu dar bir sütuna sıkışıyordu. */
+  .ozel-kalem-ad { flex-basis: 100%; }
+  .liste > li[data-ozel-paket] { flex-wrap: wrap; }
+  .liste > li[data-ozel-paket] > .ad { flex-basis: 100%; }
+}
+/* Paket satırının alt bilgisi (kod, son tarih, kim) kesilmesin: tarih ve kişi takibin ta kendisi. */
+.liste > li[data-ozel-paket] .ad small { white-space: normal; }

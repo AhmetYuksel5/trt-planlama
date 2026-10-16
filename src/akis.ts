@@ -209,6 +209,8 @@ export const asamaBul = (p: Paket): number | null => {
  */
 export const paketSahibi = (p: Paket): BirimId | null => {
   if (p.durum === "uretimde" && p.adim) return durakSahibi(p, p.adim);
+  // Özel yayın talebi: dış muhabirdeyse muhabirde, in-house ise Output'ta (müdürü dağıtıyor).
+  if (p.ozelId && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "output";
   if (p.durum === "onaylandi" && !p.planId) return kolSahibi(p.tur);
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
   return null;
@@ -226,7 +228,7 @@ export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTa
 export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
-export const gorunenSahip = (p: Paket): BirimId | null => (sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
+export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
 
 /* --- Stok haberleri --- */
 

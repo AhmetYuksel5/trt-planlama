@@ -31,7 +31,8 @@ import {
   KisiDetay,
   PersonelListe,
 } from "./ekranlar/Personel";
-import { Aylik, Ozel } from "./ekranlar/Planlar";
+import { Aylik } from "./ekranlar/Planlar";
+import { OzelListe, OzelSayfa } from "./ekranlar/OzelYayin";
 import HaftalikCagri from "./ekranlar/haftalik/Cagri";
 import HaftalikCikti from "./ekranlar/haftalik/Cikti";
 import HaftalikListe from "./ekranlar/haftalik/Liste";
@@ -239,7 +240,7 @@ export default function App() {
         icerik = <Takvim ben={ben} yol={yol} />;
         break;
       case "ozel":
-        icerik = <Ozel />;
+        icerik = yol.id ? <OzelSayfa ben={ben} id={yol.id} /> : <OzelListe ben={ben} />;
         break;
       case "takipler":
         icerik = <Takipler ben={ben} />;

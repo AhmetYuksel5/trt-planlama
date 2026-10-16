@@ -87,6 +87,13 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   stokYayinlandi: "hrStokYayinlandi",
   faaliyetEklendi: "hrFaaliyetEklendi",
   faaliyetPlanaAlindi: "hrFaaliyetPlanaAlindi",
+  ozelOlusturuldu: "hrOzelOlusturuldu",
+  ozelOnaylandi: "hrOzelOnaylandi",
+  ozelHazirliga: "hrOzelHazirliga",
+  ozelPaketTalebi: "hrOzelPaketTalebi",
+  ozelPaketAtandi: "hrOzelPaketAtandi",
+  ozelPaketTeslim: "hrOzelPaketTeslim",
+  ozelTalep: "hrOzelTalep",
 };
 
 /* Faaliyetin girdiği plan: menüdeki adlarıyla. */
@@ -165,6 +172,8 @@ export function useHareketKonusu() {
     const hafta = haftaBul(d, h.haftaId);
     const kalem = hafta?.kalemler.find((k) => k.id === h.veri?.kalem);
     if (hafta && kalem) return { baslik: kalemAdi(kalem), href: `#/haftalik/${hafta.id}` };
+    const oz = d.ozel.find((x) => x.id === h.ozelId);
+    if (oz) return { baslik: oz.ad, href: `#/ozel/${oz.id}` };
     const plan = planBul(d, h.planId);
     if (plan) return { metin: `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")}`, href: `#/nextday/${plan.id}` };
     if (hafta) return { metin: `${t("haftalik")} · ${aralikYaz(hafta.baslangic, haftaSonu(hafta.baslangic), dil)}`, href: `#/haftalik/${hafta.id}` };

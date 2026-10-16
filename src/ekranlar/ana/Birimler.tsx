@@ -1,3 +1,4 @@
+import { OzelTalepAlani } from "../OzelYayin";
 import {
   AlertTriangle,
   Building,
@@ -574,6 +575,7 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "prUretim", ad: "programUretimDurumu", grup: "program", sayfa: "programlar", Bilesen: ProgramUretim },
   { id: "prOneri", ad: "programOnerileri", grup: "program", sayfa: "programlar", Bilesen: ProgramOnerileri },
   { id: "prKonuk", ad: "konukOrganizasyonu", grup: "program", sayfa: "programlar", Bilesen: KonukOrganizasyonu },
+  { id: "ouOzel", ad: "ozelPaketTalepleri", grup: "output", sayfa: "ozel", Bilesen: OzelTalepAlani },
   { id: "ouSayac", ad: "alOzetSayilar", genis: true, grup: "output", sayfa: "metinkontrol", Bilesen: OutputSayaclari },
   { id: "ouKontrol", ad: "metinKontrolKuyrugu", grup: "output", sayfa: "metinkontrol", Bilesen: KontrolKuyrugu },
   { id: "ouDil", ad: "dilKuyrugu", grup: "output", sayfa: "metinkontrol", Bilesen: DilKuyrugu },

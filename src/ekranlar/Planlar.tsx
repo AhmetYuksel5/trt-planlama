@@ -1,4 +1,4 @@
-import { Calendar, CalendarCheck, CheckCircle, ChevronLeft, ChevronRight, Circle, Tv } from "lucide-react";
+import { Calendar, CalendarCheck, CheckCircle, ChevronLeft, ChevronRight, Circle } from "lucide-react";
 import { useState } from "react";
 import { Bos, Icerik, Ilerleme, Kart, Rozet, TaslakEtiketi, TurRozeti } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../dil";
@@ -63,35 +63,6 @@ export function Aylik({ ben, planId }: { ben: Kisi; planId?: string }) {
       <Kart baslik={t("takvimdenAy")} ikon={<CalendarCheck size={18} />} className="ara-ust-2">
         <TakvimdenListe ben={ben} bas={bas} bit={aySonu(bas)} tur="aylik" planId={plan?.id} ekleyebilir={yapabilir(ben, "planDuzenle")} eklemeMetni={t("planaEkle")} />
       </Kart>
-    </>
-  );
-}
-
-export function Ozel() {
-  const { t, dil } = useDil();
-  const v = useVeri();
-  return (
-    <>
-      <SayfaBasi ikon={<Tv size={26} />} baslik={t("ozel")} sagUc={<TaslakEtiketi />} />
-      <div className="iz iz-2">
-        {v.ozel.map((o) => (
-          <Kart key={o.id} baslik={<Icerik>{o.ad}</Icerik>} ek={tarihYaz(o.tarih, dil, "uzun")}>
-            <Ilerleme oran={o.hazirlik.filter((h) => h.tamam).length / Math.max(1, o.hazirlik.length)} />
-            <ul className="liste ara-ust-2">
-              {o.hazirlik.map((h) => (
-                <li key={h.id}>
-                  {h.tamam ? <CheckCircle size={16} className="iyi-yazi" /> : <Circle size={16} className="sonuk-yazi" />}
-                  <div className="ad">
-                    <b>
-                      <Icerik blok>{h.metin}</Icerik>
-                    </b>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Kart>
-        ))}
-      </div>
     </>
   );
 }

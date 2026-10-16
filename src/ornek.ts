@@ -1090,6 +1090,34 @@ const GELISMELER: Record<"dun" | "bugun" | "yarin", GelismeTanimi[]> = {
 
 /* --- Muhabir hareketleri --- */
 
+/* Özel yayının paket talepleri: biri Output'ta dağıtım bekliyor, biri görevlendirilmiş, biri dış muhabirde. */
+const ozelPaketler = (yil: string, B: string): Paket[] =>
+  (
+    [
+      ["p-oz-1", "دليل الناخب الأمريكي في دقيقتين", "inhouse", undefined, undefined, `${yil}-10-29`],
+      ["p-oz-2", "خمسون عاما من الانتخابات النصفية", "inhouse", undefined, "ou5", `${yil}-10-31`],
+      ["p-oz-3", "العرب الأمريكيون: الصوت المرجّح؟", "dis", "mu5", undefined, `${yil}-11-01`],
+    ] as const
+  ).map(([id, baslik, kaynak, muhabirId, hazirlayanId, sonTarih], i) => ({
+    id,
+    kod: `TRT-AR-${yil}-${String(9001 + i)}`,
+    baslik,
+    sehir: muhabirId ? "washington" : "istanbul",
+    ...(muhabirId ? { muhabirId } : {}),
+    ...(hazirlayanId ? { hazirlayanId } : {}),
+    aciklama: "",
+    tur: "haber",
+    bicim: "pkg",
+    durum: "onaylandi",
+    sahaGerekli: false,
+    ozelId: "oz-abd",
+    ozelKaynak: kaynak,
+    sonTarih,
+    notlar: [],
+    olusturma: zaman(gunEkle(B, -6), "12:00"),
+    guncelleme: zaman(gunEkle(B, -6), "12:00"),
+  }));
+
 const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
   {
     id: "gr-washington",
@@ -2418,6 +2446,18 @@ export const ORNEK = (): Durum => {
           durum: "onayli",
         }),
       ),
+      // Özel yayının dış görevlendirmesi: genel kayıtta, News Gathering'in onayını bekliyor.
+      {
+        id: "gr-oz-abd",
+        kisiId: "mu5",
+        tur: "gorevlendirme",
+        yer: "نيويورك",
+        baslangic: `${yil}-11-01`,
+        bitis: `${yil}-11-05`,
+        aciklama: "تغطية ليلة الانتخابات من مقر حملة انتخابية.",
+        durum: "talep",
+        ozelId: "oz-abd",
+      },
     ],
     oneriler: [...muhabireOneriler, ...talimatlar, ...elleOneriler, ...haftalikOneriler, ...oneriler],
     cagrilar: (
@@ -2451,7 +2491,7 @@ export const ORNEK = (): Durum => {
         etiket: etiketUret(haftaBas, "haftalik"),
       }),
     yanitlar,
-    paketler: [...paketler, ...arsiv],
+    paketler: [...paketler, ...arsiv, ...ozelPaketler(yil, B)],
     haftalik,
     aylik: [
       {
@@ -2479,6 +2519,63 @@ export const ORNEK = (): Durum => {
         id: "oz-abd",
         ad: "الانتخابات النصفية الأمريكية",
         tarih: `${yil}-11-03`,
+        bitis: `${yil}-11-04`,
+        aciklama:
+          "بث خاص مفتوح ليلة الانتخابات يبدأ قبل إغلاق مراكز الاقتراع بساعتين ويستمر حتى إعلان النتائج الأولية. يتضمن نوافذ مباشرة من واشنطن ونيويورك وميشيغان، وتقارير عن الناخبين العرب الأمريكيين، وتحليلا لانعكاسات النتائج على الشرق الأوسط مع ضيوف في الاستوديو.",
+        durum: "hazirlik",
+        nafizeler: [
+          {
+            id: "nf-abd-1",
+            konu: "واشنطن: أجواء ليلة الانتخابات أمام الكونغرس",
+            tarih: `${yil}-11-03`,
+            saat: "23:00",
+            yer: "واشنطن",
+            muhabirId: "mu5",
+            konuklar: [
+              { id: "kn1", ad: "سامي الخطيب", unvan: "باحث في الشؤون الأمريكية", durum: "teyitli" },
+              { id: "kn2", ad: "ليلى حداد", unvan: "صحفية", durum: "davetEdildi" },
+            ],
+            durum: "hazir",
+            iz: [
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -6), "11:00"), olay: "eklendi" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "15:20"), olay: "durum", durum: "teyitli", not: "سامي الخطيب" },
+              { kisiId: "pl1", zaman: zaman(gunEkle(B, -2), "10:05"), olay: "not", not: "Konuk koordinatörü ikinci konuk için yarın dönecek." },
+            ],
+          },
+          {
+            id: "nf-abd-2",
+            konu: "ميشيغان: صوت الناخبين العرب الأمريكيين",
+            tarih: `${yil}-11-04`,
+            saat: "01:30",
+            yer: "ديربورن",
+            muhabirTbc: true,
+            konuklar: [{ id: "kn3", ad: "مازن العلي", unvan: "ناشط مجتمعي", durum: "aday" }],
+            durum: "planlandi",
+            iz: [{ kisiId: "pl2", zaman: zaman(gunEkle(B, -5), "12:30"), olay: "eklendi" }],
+          },
+        ],
+        talepler: [
+          {
+            id: "ot-abd-1",
+            metin: "خرائط تفاعلية لنتائج الولايات",
+            birim: "media",
+            sonTarih: `${yil}-10-30`,
+            durum: "suruyor",
+            iz: [
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -6), "11:30"), olay: "eklendi" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -1), "09:40"), olay: "durum", durum: "suruyor" },
+            ],
+          },
+          {
+            id: "ot-abd-2",
+            metin: "Stüdyo dekoru ve ekran düzeni",
+            birim: "program",
+            sonTarih: gunEkle(B, -1),
+            durum: "acik",
+            iz: [{ kisiId: "pl1", zaman: zaman(gunEkle(B, -7), "14:00"), olay: "eklendi" }],
+          },
+        ],
+        iz: [{ kisiId: "pl2", zaman: zaman(gunEkle(B, -9), "11:20"), olay: "eklendi" }],
         hazirlik: [
           { id: "ab1", metin: "مهمة واشنطن", tamam: true },
           { id: "ab2", metin: "خطة بث ليلة الانتخابات", tamam: true },

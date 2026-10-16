@@ -1,4 +1,4 @@
-import { CalendarDays, CalendarRange, Pencil, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { CalendarDays, CalendarRange, Pencil, Plus, RotateCcw, Trash2, Tv, X } from "lucide-react";
 import { useState } from "react";
 import { Kart, Pencere } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -36,11 +36,13 @@ export const PLAN_ADIMI_ADI: Record<PlanAdimi, Anahtar> = {
   hfToplanti: "pyHfToplanti",
   hfKarar: "pyHfKarar",
   hfKesinlestir: "pyHfKesinlestir",
+  ozOnay: "pyOzOnay",
 };
 
 const GRUPLAR: { ad: Anahtar; ikon: React.ReactNode; adimlar: PlanAdimi[] }[] = [
   { ad: "pyNextDay", ikon: <CalendarDays size={18} />, adimlar: ["ndToplanti", "ndOnay", "ndDevral"] },
   { ad: "pyWeekly", ikon: <CalendarRange size={18} />, adimlar: ["hfToplanti", "hfKarar", "hfKesinlestir"] },
+  { ad: "ozel", ikon: <Tv size={18} />, adimlar: ["ozOnay"] },
 ];
 
 type T = ReturnType<typeof useDil>["t"];

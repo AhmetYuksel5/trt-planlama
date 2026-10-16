@@ -63,7 +63,9 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
 
   // 2. İzler: doğan ve bağlı kayıtlar
   for (const y of d.yanitlar) if (y.cagriId && cagrilar.has(y.cagriId)) yanitlar.add(y.id);
-  for (const p of d.paketler) if ((p.oneriId && oneriler.has(p.oneriId)) || (p.planId && planlar.has(p.planId))) paketler.add(p.id);
+  for (const p of d.paketler) if ((p.oneriId && oneriler.has(p.oneriId)) || (p.planId && planlar.has(p.planId)) || (p.ozelId && ozel.has(p.ozelId))) paketler.add(p.id);
+  // Özel yayının dış görevlendirmesi genel kayıtta; yayın gidince o da gidiyor.
+  for (const g of d.gorevlendirmeler) if (g.ozelId && ozel.has(g.ozelId)) gorevler.add(g.id);
   const gelismeler = new Set(d.gelismeler.filter((g) => planlar.has(g.planId) || (g.oneriId && oneriler.has(g.oneriId))).map((g) => g.id));
   const canlilar = new Set(d.canliYayinlar.filter((c) => planlar.has(c.planId)).map((c) => c.id));
   const mesajlar = new Set(d.mesajlar.filter((m) => oneriler.has(m.oneriId)).map((m) => m.id));
@@ -72,7 +74,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
   const silinen = new Set([...oneriler, ...planlar, ...paketler, ...haftalik, ...aylik, ...ozel, ...cagrilar, ...yanitlar, ...takipler, ...faaliyetler, ...gorevler, ...gelismeler, ...canlilar, ...mesajlar, ...kalemler]);
   // Hareket silinen kayda değiyorsa (doğrudan ya da verisindeki kimlikle) iz sayılıyor.
   const deger = (h: Hareket) =>
-    [h.oneriId, h.paketId, h.planId, h.haftaId, ...Object.values(h.veri ?? {})].some((x) => x && silinen.has(x)) || (tur.has("hareketler") && (idler ? idler.has(h.id) : aralikta(h.zaman)));
+    [h.oneriId, h.paketId, h.planId, h.haftaId, h.ozelId, ...Object.values(h.veri ?? {})].some((x) => x && silinen.has(x)) || (tur.has("hareketler") && (idler ? idler.has(h.id) : aralikta(h.zaman)));
   const hareketler = new Set(d.hareketler.filter(deger).map((h) => h.id));
 
   // 3. Kalan kayıtlarda kopan bağlantılar; değişmeyen nesne aynı kalıyor
