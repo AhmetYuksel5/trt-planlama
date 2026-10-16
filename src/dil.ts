@@ -2498,7 +2498,18 @@ const M = {
   oyAsamaPlanlama: m("Planlama", "التخطيط", "Planning"),
   oyAsamaOnay: m("Onay", "الاعتماد", "Approval"),
   oyAsamaUygulama: m("Uygulama", "التنفيذ", "Implementation"),
-  oyAsamaHazir: m("Uygulamaya hazır", "جاهزة للتنفيذ", "Ready to go"),
+  oyAsamaHazir: m("Son kontrol", "المراجعة الأخيرة", "Final check"),
+  oyAsamaTamam: m("Yayına hazır", "جاهزة للبث", "Ready to air"),
+  oyAdimPlanlama: m("Planlama tamamlandı", "اكتمل التخطيط", "Planning done"),
+  oyAdimOnay: m("Onaylandı", "اعتُمدت", "Approved"),
+  oyAdimUygulama: m("Uygulama tamamlandı", "اكتمل التنفيذ", "Implementation done"),
+  oyAdimHazir: m("Yayına hazır", "جاهزة للبث", "Ready to air"),
+  oyAsamalar: m("Aşamalar", "المراحل", "Stages"),
+  oyNfOnayli: m("Onaylandı", "معتمدة", "Approved"),
+  oyIptalEt: m("İptal et", "إلغاء", "Cancel"),
+  oyIptaliKaldir: m("İptali kaldır", "التراجع عن الإلغاء", "Restore"),
+  oyCiktiBaslik: m("Özel yayın planı", "خطة البث الخاص", "Special broadcast plan"),
+  oyBekleyenIs: m("{n} iş bekliyor", "{n} مهام متبقية", "{n} items pending"),
   oyOnayBekliyor: m("Onay bekliyor", "بانتظار الاعتماد", "Awaiting approval"),
   oyOnayaGonder: m("Onaya gönder", "إرسال للاعتماد", "Send for approval"),
   oyGeriCek: m("Onaydan geri çek", "سحب من الاعتماد", "Withdraw from approval"),
@@ -2518,8 +2529,8 @@ const M = {
   oyKonu: m("Konu", "الموضوع", "Topic"),
   oySaat: m("Saat (GMT)", "الساعة (غرينتش)", "Time (GMT)"),
   oyYer: m("Yer", "المكان", "Place"),
-  oyNfPlanlandi: m("Planlama", "التخطيط", "Planning"),
-  oyNfRezervasyon: m("Satdesk rezervasyonu", "حجز Satdesk", "Satdesk booking"),
+  oyNfPlanlandi: m("Onay bekliyor", "بانتظار الاعتماد", "Awaiting approval"),
+  oyNfRezervasyon: m("Satdesk rezervasyonu yapıldı", "تم الحجز مع Satdesk", "Satdesk booking done"),
   oyNfHazir: m("Yer hazır", "الموقع جاهز", "Location ready"),
   oyNfYapildi: m("Yayınlandı", "بُثّت", "Aired"),
   oyNfIptal: m("İptal", "ملغاة", "Cancelled"),
@@ -2532,7 +2543,7 @@ const M = {
   oyKnTeyit: m("Teyitli", "مؤكد", "Confirmed"),
   oyKnIptal: m("İptal", "ملغى", "Cancelled"),
   oyPaketler: m("Paketler", "التقارير", "Packages"),
-  oyPaketTalebi: m("Paket talebi", "طلب تقرير", "Package request"),
+  oyPaketTalebi: m("Paket önerisi", "اقتراح تقرير", "Package proposal"),
   oyKaynak: m("Kim hazırlayacak", "من سيعدّه", "Who prepares it"),
   oyInhouse: m("In-house (Output)", "داخلي (Output)", "In-house (Output)"),
   oyDis: m("Dış muhabir", "مراسل خارجي", "External reporter"),
@@ -2540,8 +2551,8 @@ const M = {
   oyHazirlayan: m("Hazırlayan", "المُعِدّ", "Prepared by"),
   oyOutputMudurunde: m("Output müdüründe, dağıtım bekliyor", "لدى مدير Output بانتظار التوزيع", "With the Output manager, awaiting assignment"),
   oyAta: m("Görevlendir…", "تكليف…", "Assign…"),
-  oyPkPlan: m("Planda", "في الخطة", "In the plan"),
-  oyPkOnayli: m("Onaylandı, görev bekliyor", "معتمد بانتظار التكليف", "Approved, awaiting assignment"),
+  oyPkPlan: m("Öneri", "مقترح", "Proposed"),
+  oyPkOnayli: m("Onaylandı", "معتمد", "Approved"),
   oyPkGorevli: m("Görevlendirildi", "تم التكليف", "Assigned"),
   oyHazirlaniyor: m("Hazırlanıyor", "قيد الإعداد", "In preparation"),
   oyPkHazir: m("Hazır", "جاهز", "Ready"),
@@ -2570,13 +2581,15 @@ const M = {
   oyTalepYok: m("Bekleyen talep yok.", "لا طلبات معلقة.", "No pending requests."),
   pyOzOnay: m("Özel yayın planını onaylama", "اعتماد خطة البث الخاص", "Approve the special broadcast plan"),
   hrOzelOlusturuldu: m("{kisi} özel yayın planını açtı", "فتح {kisi} خطة البث الخاص", "{kisi} opened the special broadcast plan"),
-  hrOzelOnayaGonderildi: m("{kisi} özel yayın planını onaya gönderdi", "أرسل {kisi} خطة البث الخاص للاعتماد", "{kisi} sent the special broadcast plan for approval"),
-  hrOzelPaketOnaylandi: m("{kisi} özel yayın paketini onayladı · son tarih {tarih}", "اعتمد {kisi} تقرير البث الخاص · الموعد النهائي {tarih}", "{kisi} approved the special broadcast package · deadline {tarih}"),
+  hrOzelOnayaGonderildi: m("{kisi} «{ad}» özel yayın planını onaya gönderdi", "أرسل {kisi} خطة البث الخاص «{ad}» للاعتماد", "{kisi} sent the special broadcast plan «{ad}» for approval"),
+  hrOzelPaketOnaylandi: m("{kisi} «{ad}» özel yayını için paket görevi verdi · son tarih {tarih}", "كلّف {kisi} بتقرير للبث الخاص «{ad}» · الموعد النهائي {tarih}", "{kisi} assigned a package for the special broadcast «{ad}» · deadline {tarih}"),
   hrOzelPaketBasladi: m("{kisi} özel yayın paketinin hazırlığına başladı", "بدأ {kisi} إعداد تقرير البث الخاص", "{kisi} started preparing the special broadcast package"),
-  hrOzelOnaylandi: m("{kisi} özel yayın planını onayladı", "اعتمد {kisi} خطة البث الخاص", "{kisi} approved the special broadcast plan"),
-  hrOzelHazirliga: m("{kisi} özel yayın planını planlamaya geri aldı", "أعاد {kisi} خطة البث الخاص إلى التخطيط", "{kisi} took the special broadcast plan back to planning"),
-  hrOzelPaketTalebi: m("{kisi} özel yayın planına paket ekledi", "أضاف {kisi} تقريرا إلى خطة البث الخاص", "{kisi} added a package to the special broadcast plan"),
-  hrOzelPaketAtandi: m("{kisi} özel yayın paketini görevlendirdi · son tarih {tarih}", "كلّف {kisi} بتقرير البث الخاص · الموعد النهائي {tarih}", "{kisi} assigned the special broadcast package · deadline {tarih}"),
+  hrOzelUygulandi: m("{kisi} «{ad}» özel yayınında uygulamayı tamamladı", "أكمل {kisi} تنفيذ البث الخاص «{ad}»", "{kisi} completed implementation of the special broadcast «{ad}»"),
+  hrOzelHazir: m("{kisi} «{ad}» özel yayınını yayına hazır işaretledi", "أشّر {kisi} على جاهزية البث الخاص «{ad}»", "{kisi} marked the special broadcast «{ad}» ready to air"),
+  hrOzelOnaylandi: m("{kisi} «{ad}» özel yayın planını onayladı", "اعتمد {kisi} خطة البث الخاص «{ad}»", "{kisi} approved the special broadcast plan «{ad}»"),
+  hrOzelHazirliga: m("{kisi} «{ad}» özel yayın planında bir aşamayı geri aldı", "تراجع {kisi} عن مرحلة في خطة البث الخاص «{ad}»", "{kisi} undid a stage in the special broadcast plan «{ad}»"),
+  hrOzelPaketTalebi: m("{kisi} «{ad}» özel yayınına paket önerisi ekledi", "أضاف {kisi} اقتراح تقرير إلى البث الخاص «{ad}»", "{kisi} added a package proposal to the special broadcast «{ad}»"),
+  hrOzelPaketAtandi: m("{kisi} «{ad}» özel yayınının paketini görevlendirdi · son tarih {tarih}", "كلّف {kisi} بتقرير البث الخاص «{ad}» · الموعد النهائي {tarih}", "{kisi} assigned the «{ad}» special broadcast package · deadline {tarih}"),
   hrOzelPaketTeslim: m("{kisi} özel yayın paketini teslim etti", "سلّم {kisi} تقرير البث الخاص", "{kisi} delivered the special broadcast package"),
   hrOzelTalep: m("{kisi} özel yayın için talep girdi", "أدخل {kisi} طلبا للبث الخاص", "{kisi} logged a request for the special broadcast"),
 } satisfies Record<string, Metin>;
@@ -2690,6 +2703,12 @@ export const ciktiTarihi = (iso: string, d: Dil = dil) => {
   const t = gunTarihi(iso);
   const ay = new Intl.DateTimeFormat(YEREL[d], { month: "long" }).format(t);
   return `${gunAdi(iso, d)} ${String(t.getDate()).padStart(2, "0")} ${ay}`;
+};
+
+/** Nafize başlığındaki gün: "25 أكتوبر" (sıfırsız gün, ay). */
+export const gunAy = (iso: string, d: Dil = dil) => {
+  const t = gunTarihi(iso);
+  return `${t.getDate()} ${new Intl.DateTimeFormat(YEREL[d], { month: "long" }).format(t)}`;
 };
 
 /** Haftalık çıktıdaki gün satırı: "03 أكتوبر السبت" (gün, ay, gün adı). */

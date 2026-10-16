@@ -1091,9 +1091,9 @@ const GELISMELER: Record<"dun" | "bugun" | "yarin", GelismeTanimi[]> = {
 /* --- Muhabir hareketleri --- */
 
 /*
- * Özel yayının paketleri, her aşamadan biri: Output'ta dağıtım bekleyen,
- * hazırlanan (in-house), görevlendirilmiş dış muhabir ve onaylanmış plana
- * sonradan eklenip onay bekleyen.
+ * Özel yayının onaylanmış paketleri, her aşamadan biri: Output'ta dağıtım
+ * bekleyen, hazırlanan (in-house), görevlendirilmiş dış muhabir. Önerileri
+ * (onay bekleyen dördüncüsüyle) özel yayının kaydında.
  */
 const ozelPaketler = (yil: string, B: string): Paket[] =>
   (
@@ -1101,7 +1101,6 @@ const ozelPaketler = (yil: string, B: string): Paket[] =>
       ["p-oz-1", "دليل الناخب الأمريكي في دقيقتين", "inhouse", undefined, undefined, `${yil}-10-29`],
       ["p-oz-2", "خمسون عاما من الانتخابات النصفية", "inhouse", undefined, "ou5", `${yil}-10-31`],
       ["p-oz-3", "العرب الأمريكيون: الصوت المرجّح؟", "dis", "mu5", undefined, `${yil}-11-01`],
-      ["p-oz-4", "ماذا تعني النتائج للشرق الأوسط؟", "inhouse", undefined, undefined, `${yil}-11-02`],
     ] as const
   ).map(([id, baslik, kaynak, muhabirId, hazirlayanId, sonTarih], i) => ({
     id,
@@ -1113,9 +1112,10 @@ const ozelPaketler = (yil: string, B: string): Paket[] =>
     aciklama: "",
     tur: "haber",
     bicim: "pkg",
-    durum: id === "p-oz-4" ? ("taslak" as const) : ("onaylandi" as const),
+    durum: "onaylandi" as const,
     sahaGerekli: false,
     ozelId: "oz-abd",
+    ozelAd: "الانتخابات النصفية الأمريكية",
     ozelKaynak: kaynak,
     sonTarih,
     ...(id === "p-oz-2" ? { ozelBasladi: zaman(gunEkle(B, -2), "10:00") } : {}),
@@ -2544,9 +2544,10 @@ export const ORNEK = (): Durum => {
             durum: "rezervasyon",
             iz: [
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -6), "11:00"), olay: "eklendi" },
+              { kisiId: "pl1", zaman: zaman(gunEkle(B, -6), "10:30"), olay: "durum", durum: "onayli" },
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "15:20"), olay: "durum", durum: "teyitli", not: "سامي الخطيب" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -4), "12:10"), olay: "not", asama: "rezervasyon", not: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor." },
               { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "16:00"), olay: "durum", durum: "rezervasyon" },
-              { kisiId: "pl2", zaman: zaman(gunEkle(B, -3), "16:05"), olay: "not", not: "Satdesk'e uydu hattı talebi gönderildi; Kongre önündeki nokta için teyit bekleniyor." },
               { kisiId: "pl1", zaman: zaman(gunEkle(B, -2), "10:05"), olay: "not", not: "Konuk koordinatörü ikinci konuk için yarın dönecek." },
             ],
           },
@@ -2560,6 +2561,45 @@ export const ORNEK = (): Durum => {
             konuklar: [{ id: "kn3", ad: "مازن العلي", unvan: "ناشط مجتمعي", durum: "aday" }],
             durum: "planlandi",
             iz: [{ kisiId: "pl2", zaman: zaman(gunEkle(B, -5), "12:30"), olay: "eklendi" }],
+          },
+        ],
+        paketOnerileri: [
+          ...(
+            [
+              ["po-1", "p-oz-1", "دليل الناخب الأمريكي في دقيقتين", "inhouse", undefined, `${yil}-10-29`, []],
+              ["po-2", "p-oz-2", "خمسون عاما من الانتخابات النصفية", "inhouse", undefined, `${yil}-10-31`, ["gorevli", "hazirlaniyor"]],
+              ["po-3", "p-oz-3", "العرب الأمريكيون: الصوت المرجّح؟", "dis", "mu5", `${yil}-11-01`, ["gorevli"]],
+            ] as const
+          ).map(([id, paketId, baslik, kaynak, muhabirId, sonTarih, sonra]) => ({
+            id,
+            paketId,
+            baslik,
+            aciklama: "",
+            kaynak,
+            ...(muhabirId ? { muhabirId } : {}),
+            sonTarih,
+            tur: "haber" as const,
+            bicim: "pkg" as const,
+            durum: "onaylandi" as const,
+            iz: [
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -8), "12:00"), olay: "eklendi" as const },
+              { kisiId: "pl1", zaman: zaman(gunEkle(B, -6), "10:30"), olay: "durum" as const, durum: "onayli" },
+              ...sonra.map((durum, i) => ({ kisiId: durum === "gorevli" && kaynak === "inhouse" ? "ou1" : "ou5", zaman: zaman(gunEkle(B, -5 + i * 3), "10:00"), olay: "durum" as const, durum })),
+            ],
+          })),
+          {
+            id: "po-4",
+            baslik: "ماذا تعني النتائج للشرق الأوسط؟",
+            aciklama: "تحليل مع خبراء حول انعكاسات النتائج على المنطقة.",
+            kaynak: "inhouse",
+            sonTarih: `${yil}-11-02`,
+            tur: "haber",
+            bicim: "pkg",
+            durum: "oneri",
+            iz: [
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -1), "14:00"), olay: "eklendi" },
+              { kisiId: "pl2", zaman: zaman(gunEkle(B, -1), "14:05"), olay: "not", asama: "onayli", not: "Stüdyo konuğuyla birlikte düşünüldü; onay bekliyor." },
+            ],
           },
         ],
         talepler: [

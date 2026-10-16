@@ -134,6 +134,10 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                       <a href={`#/ozel/${paket.ozelId}`}>
                         <Icerik>{v.ozel.find((o) => o.id === paket.ozelId)!.ad}</Icerik>
                       </a>
+                    ) : paket.ozelAd ? (
+                      <b>
+                        <Icerik>{paket.ozelAd}</Icerik>
+                      </b>
                     ) : (
                       <b>{t(paket.ozelKaynak === "inhouse" ? "oyInhouse" : "oyDis")}</b>
                     )}

@@ -2208,10 +2208,43 @@ tr.soluk > td { opacity: .5; }
 .ozel-ozet b { color: var(--murekkep); font-variant-numeric: tabular-nums; }
 .liste > li.gecikti .ad > small, .liste > li.gecikti small { color: var(--kotu); }
 .ozel-kalemler { display: grid; gap: var(--ara-3); }
-.ozel-kalem { display: grid; gap: var(--ara-2); padding: var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); min-width: 0; }
+/* Kapalı kalem: yalnız başlık satırı; açılınca gövde. */
+.ozel-kalem { border: 1px solid var(--cizgi); border-radius: var(--yaricap); min-width: 0; }
 .ozel-kalem.gecikti { border-color: var(--kotu); }
-.ozel-kalem > header { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.ozel-kalem > summary { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; padding: var(--ara-2) var(--ara-3); min-height: var(--dokunma); cursor: pointer; list-style: none; }
+.ozel-kalem > summary::-webkit-details-marker { display: none; }
+.ozel-kalem > summary::before { content: "▸"; color: var(--sonuk); font-size: 12px; transition: transform .15s; }
+.ozel-kalem[open] > summary::before { transform: rotate(90deg); }
+[dir="rtl"] .ozel-kalem > summary::before { transform: scaleX(-1); }
+[dir="rtl"] .ozel-kalem[open] > summary::before { transform: rotate(90deg); }
+.ozel-kalem[open] > summary { border-bottom: 1px solid var(--cizgi); }
+.ozel-kalem-govde { display: grid; gap: var(--ara-3); padding: var(--ara-3); min-width: 0; }
 .ozel-kalem-ad { flex: 1; min-width: 12ch; font-weight: 600; }
+.ozel-nafize-konu { font-weight: 600; }
+/* Katlanır bölüm: kartın başlığı özet satırı, kapalı gelir. */
+.ozel-bolum > summary { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; cursor: pointer; list-style: none; min-height: var(--dokunma); }
+.ozel-bolum > summary::-webkit-details-marker { display: none; }
+.ozel-bolum > summary > svg { color: var(--lacivert); }
+.ozel-bolum > summary h2 { font-size: var(--punto-orta); font-weight: 700; margin: 0; }
+.ozel-bolum > summary .ek { color: var(--sonuk); font-weight: 500; font-size: var(--punto-kucuk); }
+.ozel-bolum > summary .dugme { margin-inline-start: auto; }
+.ozel-bolum > summary::after { content: "▾"; color: var(--sonuk); margin-inline-start: var(--ara-1); transition: transform .15s; }
+.ozel-bolum:not([open]) > summary::after { transform: rotate(-90deg); }
+[dir="rtl"] .ozel-bolum:not([open]) > summary::after { transform: rotate(90deg); }
+.ozel-bolum > summary:not(:has(.dugme))::after { margin-inline-start: auto; }
+.ozel-bolum-govde { margin-block-start: var(--ara-3); }
+/* Kontrol listesi: aşama, işaretleyen, notlar. */
+.kontrol-listesi { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.kontrol-listesi > li { border-radius: var(--yaricap); }
+.kontrol-satiri { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; min-height: var(--dokunma); }
+.kontrol-kutu { display: inline-flex; align-items: center; gap: var(--ara-2); font-weight: 600; cursor: pointer; }
+.kontrol-kutu input { width: 20px; height: 20px; min-height: 0; accent-color: var(--iyi); margin: 0; }
+.kontrol-kutu input:disabled { cursor: default; }
+.kontrol-kutu input:disabled + span { color: var(--sonuk); }
+.kontrol-listesi > li.tamam .kontrol-kutu span { color: var(--iyi); }
+.kontrol-satiri .kontrol-not { margin-inline-start: auto; color: var(--sonuk); }
+.kontrol-satiri .kontrol-not.var { color: var(--vurgu); }
+.kontrol-notlari { padding: 0 0 var(--ara-2); padding-inline-start: 28px; display: grid; gap: var(--ara-2); }
 .durum-secimi { width: auto; min-height: 32px; padding-block: 0; font-size: var(--punto-kucuk); font-weight: 600; }
 .durum-secimi.ton-iyi { color: var(--iyi); border-color: var(--iyi); }
 .durum-secimi.ton-vurgu { color: var(--vurgu); border-color: var(--vurgu); }
@@ -2233,8 +2266,11 @@ tr.soluk > td { opacity: .5; }
 /* Kart başlığındaki ekleme düğmesi uzun ("Görevlendirme talebi"): telefonda başlığın altına iniyor. */
 .ozel-sayfa .kart-bas { flex-wrap: wrap; }
 @media (max-width: 760px) {
+  /* Yayının adı kendi satırında: rozet ve düğmelerle yan yana harf harf kırılıyordu. */
+  .ozel-kunye .ozel-karti-ust > h2 { flex-basis: 100%; }
+  /* Bölüm oku dar ekranda tek başına alt satıra düşüyordu; açık/kapalı içerikten belli. */
+  .ozel-bolum > summary::after { display: none; }
   /* Konu kendi satırında; durum ve düğmeler altında. Yan yana konu dar bir sütuna sıkışıyordu. */
-  .ozel-kalem-ad { flex-basis: 100%; }
   .liste > li[data-ozel-paket] { flex-wrap: wrap; }
   .liste > li[data-ozel-paket] > .ad { flex-basis: 100%; }
 }

@@ -207,7 +207,7 @@ function OzelPencere({ ozel, kapat }: { ozel: OzelYayin; kapat: () => void }) {
       }
     >
       <div className="alan-etiket">
-        {t(OZEL_ASAMA_ADI[ozelAsamasi(ozel, v)])}
+        {t(OZEL_ASAMA_ADI[ozelAsamasi(ozel)])}
         {" · "}
         {t("oyYapilan", { b: oz.biten, n: oz.toplam })}
         {oz.geciken > 0 && <span className="kotu-yazi">{` · ${t("oyGeciken", { n: oz.geciken })}`}</span>}
@@ -305,7 +305,7 @@ export default function PanelPlanlari() {
         <Satir
           key={o.id}
           ad={<Icerik>{o.ad}</Icerik>}
-          alt={`${tarihYaz(o.tarih, dil, "uzun")} · ${t(OZEL_ASAMA_ADI[ozelAsamasi(o, v)])}`}
+          alt={`${tarihYaz(o.tarih, dil, "uzun")} · ${t(OZEL_ASAMA_ADI[ozelAsamasi(o)])}`}
           oran={oz.biten / Math.max(1, oz.toplam)}
           rozet={<Rozet ton={oz.geciken ? "kotu" : oz.biten === oz.toplam ? "iyi" : ""}>{oz.geciken ? t("oyGeciken", { n: oz.geciken }) : t("oyYapilan", { b: oz.biten, n: oz.toplam })}</Rozet>}
           ac={() => setSecim({ tur: "ozel", ozel: o })}

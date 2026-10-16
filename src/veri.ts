@@ -612,6 +612,8 @@ export interface Paket {
   hazirlayanId?: string;
   /** İşi yapan hazırlamaya başladığını işaretledi (görevlendirildi → hazırlanıyor). */
   ozelBasladi?: string;
+  /** Özel yayının adı (Arapça): muhabir özel yayın kaydını okuyamıyor, işinin hangi yayın için olduğunu buradan görüyor. */
+  ozelAd?: string;
   /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
   yer?: string;
   muhabirId?: string;
@@ -793,18 +795,21 @@ export interface OzelIz {
   olay: "eklendi" | "duzenlendi" | "durum" | "not";
   /** Olay "durum"sa yeni durum (kalemin kendi durum listesinden). */
   durum?: string;
+  /** Notun düştüğü aşama (kontrol listesinin satırı); yoksa kalemin genel notu. */
+  asama?: string;
   not?: string;
 }
 
 /*
- * Nafizenin aşamaları: plan onaylanana dek planlama; onaydan sonra
- * Satdesk'le yayın rezervasyonu (yazışma ve işlemler notta), yer hazır
- * olunca hazır. Konuklar bundan bağımsız, sırasız ayarlanıyor.
+ * Nafizenin aşamaları sırayla işaretleniyor (kontrol listesi): onay (tek
+ * başına ya da planın onayıyla), Satdesk rezervasyonu (yazışma ve işlemler
+ * aşamanın notunda), yer hazır, yayınlandı. Durum son işaretlenen aşama.
+ * Konuklar bundan bağımsız, sırasız ayarlanıyor.
  */
-export const NAFIZE_DURUMLARI = ["planlandi", "rezervasyon", "hazir", "yapildi", "iptal"] as const;
-/** Plan onaylanmadan nafize bu durumların dışına geçmiyor: rezervasyon onay sonrası iş. */
-export const NAFIZE_ONAYSIZ: readonly NafizeDurum[] = ["planlandi", "iptal"];
+export const NAFIZE_DURUMLARI = ["planlandi", "onayli", "rezervasyon", "hazir", "yapildi", "iptal"] as const;
 export type NafizeDurum = (typeof NAFIZE_DURUMLARI)[number];
+/** Kontrol listesinin sırası: başta işaretsiz durum, sonra aşamalar. */
+export const NAFIZE_SIRASI: readonly NafizeDurum[] = ["planlandi", "onayli", "rezervasyon", "hazir", "yapildi"];
 export const KONUK_DURUMLARI = ["aday", "davetEdildi", "teyitli", "iptal"] as const;
 export type KonukDurum = (typeof KONUK_DURUMLARI)[number];
 
@@ -833,6 +838,27 @@ export interface Nafize {
 
 export const TALEP_DURUMLARI = ["acik", "suruyor", "tamam", "iptal"] as const;
 export type TalepDurum = (typeof TALEP_DURUMLARI)[number];
+export const TALEP_SIRASI: readonly TalepDurum[] = ["acik", "suruyor", "tamam"];
+
+/*
+ * Paket önerisi: özel yayının içinde, genel önerilerden ayrı. Yazılınca
+ * paket doğmuyor; onaylanınca (tek başına ya da planın onayıyla) Paket
+ * açılıyor ve görev muhabire ya da Output'a o an gidiyor. Aşama notları
+ * burada (paketin ilerleyişi de izine düşüyor).
+ */
+export interface OzelPaketOnerisi {
+  id: string;
+  baslik: string;
+  aciklama: string;
+  kaynak: "inhouse" | "dis";
+  muhabirId?: string;
+  sonTarih?: string;
+  tur: IcerikTuru;
+  bicim: Bicim;
+  durum: "oneri" | "onaylandi";
+  paketId?: string;
+  iz: OzelIz[];
+}
 
 /** Grafik ve öbür talepler: elle; istenirse bir birime (bildirim ona) ve son tarihle. */
 export interface OzelTalep {
@@ -845,10 +871,12 @@ export interface OzelTalep {
 }
 
 /*
- * Saklanan durum: hazirlik (planlama), onayda (onaya gönderildi), onayli
- * (uygulama). "Hazır" saklanmıyor, kalemlerden çıkıyor (ozel.ts → ozelAsamasi).
+ * Planın aşamaları kontrol listesi: planlama tamam (onayda), onaylandı,
+ * uygulama tamam, yayına hazır. Durum son işaretlenen aşama; her biri ayrı
+ * işaretleniyor, kim ve ne zaman planın izinde.
  */
-export type OzelDurum = "hazirlik" | "onayda" | "onayli";
+export const OZEL_SIRASI = ["hazirlik", "onayda", "onayli", "uygulandi", "hazir"] as const;
+export type OzelDurum = (typeof OZEL_SIRASI)[number];
 
 export interface OzelYayin {
   id: string;
@@ -863,6 +891,7 @@ export interface OzelYayin {
   hazirlik: { id: string; metin: string; tamam: boolean }[];
   nafizeler?: Nafize[];
   talepler?: OzelTalep[];
+  paketOnerileri?: OzelPaketOnerisi[];
   /** Planın kendi izi: açılış, düzenleme, onay. */
   iz?: OzelIz[];
 }
@@ -1080,6 +1109,7 @@ export const HAREKET_TIPLERI = [
   "ozelOlusturuldu",
   "ozelOnayaGonderildi",
   "ozelOnaylandi",
+  "ozelAsama",
   "ozelHazirliga",
   "ozelPaketTalebi",
   "ozelPaketAtandi",
@@ -1243,9 +1273,10 @@ export interface Durum {
  * v19: muhabirin takipleri, haftalık öneride gün;
  * v20: özel yayının nafizeleri, talepleri, paket talepleri ve izi;
  * v21: özel yayının aşamaları, nafizede Satdesk rezervasyonu, paketin
- * plan/onay/hazırlanıyor adımları).
+ * plan/onay/hazırlanıyor adımları; v22: aşamalar kontrol listesi, aşama
+ * notları, özel yayının paket önerileri).
  */
-const SAKLA = "trt-planlama-v21";
+const SAKLA = "trt-planlama-v22";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı
