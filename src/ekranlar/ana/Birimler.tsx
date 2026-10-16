@@ -35,7 +35,7 @@ import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_T
 import { gorusBekleyenler, gundemde } from "../../haftalik";
 import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
-import { adimYapabilir, yapabilir } from "../../yetki";
+import { adimYapabilir, planAdimiYapabilir } from "../../yetki";
 import { BanaVerilenIsler } from "./Islerim";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
@@ -109,7 +109,7 @@ function UygulanacakPlan({ ben }: { ben: Kisi }) {
           </li>
         ))}
       </ul>
-      {yarinPlan?.durum === "onayli" && yapabilir(ben, "planDevral") && (
+      {yarinPlan?.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral") && (
         <div className="ara-ust-2">
           <button className="dugme" onClick={devral}>
             {t("planiDevral")}

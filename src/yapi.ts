@@ -137,9 +137,54 @@ export interface Yapi {
   kolSahibi: Record<IcerikTuru, BirimId>;
   /** Plandaki ekip görevleri sırasıyla; eski yayında yok, okurken ünvanların ekip görevinden tamamlanıyor. */
   ekipGorevleri?: EkipGorevTanimi[];
+  /** Planların akış adımlarını kimin yaptığı; yoksa ya da adım eksikse varsayılan (bugünkü davranış). */
+  planYetkileri?: Partial<Record<PlanAdimi, AdimYetkisi>>;
   /** Yayınlayanın kısa notu: ne değişti. */
   not?: string;
 }
+
+/*
+ * Planların akış adımları ve yetkilileri: toplantıya kim götürür, kim
+ * onaylar, kim kesinleştirir. Koddaki sabit tablodan (yetki.ts → IZINLER)
+ * çıkıp yapıya girdi ki tam yönetici kurumdaki değişikliği programcıya
+ * gitmeden işlesin. Kural satırlardan biri ya da adıyla yazılan kişi:
+ * satırda birim (alt birimleriyle), istenirse ünvan ve "yalnız
+ * yöneticiler"; birimi ve ünvanı boş satır haber merkezinin tamamı.
+ */
+export const PLAN_ADIMLARI = ["ndToplanti", "ndOnay", "ndDevral", "hfToplanti", "hfKarar", "hfKesinlestir"] as const;
+export type PlanAdimi = (typeof PLAN_ADIMLARI)[number];
+
+export interface YetkiSatiri {
+  birim?: BirimId;
+  unvan?: GorevId;
+  yonetici?: boolean;
+}
+
+export interface AdimYetkisi {
+  satirlar: YetkiSatiri[];
+  kisiler: string[];
+}
+
+/* Bugünkü davranışın birebir karşılığı: yayınlanmamış yapıda hiçbir şey değişmesin. */
+export const VARSAYILAN_PLAN_YETKILERI: Record<PlanAdimi, AdimYetkisi> = {
+  ndToplanti: { satirlar: [{ birim: "planlama" }], kisiler: [] },
+  ndOnay: { satirlar: [{ birim: "planlama", yonetici: true }, { birim: "yonetim" }], kisiler: [] },
+  ndDevral: { satirlar: [{ birim: "newsdesk" }], kisiler: [] },
+  hfToplanti: { satirlar: [{ birim: "planlama" }], kisiler: [] },
+  hfKarar: { satirlar: [{ birim: "planlama" }, { birim: "yonetim" }], kisiler: [] },
+  hfKesinlestir: { satirlar: [{ birim: "planlama", yonetici: true }, { birim: "yonetim" }], kisiler: [] },
+};
+
+export const planYetkisi = (adim: PlanAdimi, y: Yapi = yapi()): AdimYetkisi => y.planYetkileri?.[adim] ?? VARSAYILAN_PLAN_YETKILERI[adim];
+
+/* Yeni birim örnek aldığı yerleşik birim "gibi" sayılıyor (izinBirimi), ağaçta altında olan da. */
+export const yetkiSatirinaUyar = (k: { birim: BirimId; gorev: GorevId; rol: string }, s: YetkiSatiri, y: Yapi = yapi()) =>
+  (s.birim ? izinBirimi(k.birim, y) === s.birim || altindaMi(k.birim, s.birim, y) : !disMuhabirMi(k, y)) &&
+  (!s.unvan || k.gorev === s.unvan) &&
+  (!s.yonetici || k.rol === "yonetici");
+
+export const adimYetkilisi = (k: { id: string; birim: BirimId; gorev: GorevId; rol: string }, a: AdimYetkisi, y: Yapi = yapi()) =>
+  a.kisiler.includes(k.id) || a.satirlar.some((s) => yetkiSatirinaUyar(k, s, y));
 
 /* --- Varsayılan: bugünkü sabitler (rapor bölüm 2 ve 4, notlardaki beş aşama) --- */
 
@@ -595,15 +640,18 @@ export const ekipGorevTasi = (y: Yapi, id: EkipGoreviId, yon: -1 | 1): Yapi =>
 /** İki yapı aynı mı (yayınlanacak bir şey var mı); sürüm bilgileri sayılmıyor. */
 export const ayniYapi = (a: Yapi, b: Yapi) => {
   const govde = (y: Yapi) => {
-    const { birimler, unvanlar, akislar, kolSahibi, ekipGorevleri } = tamamla(y);
-    return JSON.stringify({ birimler, unvanlar, akislar, kolSahibi, ekipGorevleri });
+    const t = tamamla(y);
+    const { birimler, unvanlar, akislar, kolSahibi, ekipGorevleri } = t;
+    // Plan yetkileri adım adım: kayıtta olmayan adımla varsayılanın aynısı yazılmış adım eşit.
+    const planYetkileri = PLAN_ADIMLARI.map((a) => planYetkisi(a, t));
+    return JSON.stringify({ birimler, unvanlar, akislar, kolSahibi, ekipGorevleri, planYetkileri });
   };
   return govde(a) === govde(b);
 };
 
 /** Taslak ile yayındaki arasındaki değişiklikler: yayınlamadan önce yöneticiye liste olarak gösteriliyor. */
 export interface Degisiklik {
-  tur: "birim" | "unvan" | "akis" | "ekip";
+  tur: "birim" | "unvan" | "akis" | "ekip" | "plan";
   id: string;
   islem: "eklendi" | "degisti" | "silindi";
 }
@@ -625,5 +673,7 @@ export const yapiFarki = (eski: Yapi, yeni: Yapi): Degisiklik[] => {
     ...karsilastir("unvan", yayindaki.unvanlar, taslak.unvanlar),
     ...karsilastir("akis", yayindaki.akislar, taslak.akislar),
     ...karsilastir("ekip", yayindaki.ekipGorevleri ?? [], taslak.ekipGorevleri ?? []),
+    // Adım yoksa varsayılanı geçerli: varsayılanın aynısını yazmak değişiklik sayılmıyor.
+    ...PLAN_ADIMLARI.filter((a) => JSON.stringify(planYetkisi(a, yayindaki)) !== JSON.stringify(planYetkisi(a, taslak))).map((id) => ({ tur: "plan" as const, id, islem: "degisti" as const })),
   ];
 };

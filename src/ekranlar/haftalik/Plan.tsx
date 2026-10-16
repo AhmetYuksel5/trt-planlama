@@ -22,7 +22,8 @@ import { etiketUret } from "../../eposta";
 import { gundemde, haftaGunleri, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
-import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
+import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, yapabilir } from "../../yetki";
+import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
@@ -117,7 +118,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           ))}
         </div>
         <div className="dugmeler ara-ust-2">
-          {hafta.durum === "hazirlik" && duzenler && (
+          {hafta.durum === "hazirlik" && planAdimiYapabilir(ben, "hfToplanti") && (
             <button className="dugme" onClick={() => durumDegistir("toplantida", "bHaftalikToplantida")}>
               <Send size={16} className="yon" /> {t("haftalikToplantiyaGotur")}
             </button>
@@ -127,19 +128,19 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               <CheckCheck size={16} /> {t("kalanlariKabulEt", { n: bekleyen })}
             </button>
           )}
-          {hafta.durum === "toplantida" && yapabilir(ben, "haftalikKesinlestir") && (
+          {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfKesinlestir") && (
             <button className="dugme dugme-iyi" disabled={bekleyen > 0} onClick={() => haftalikKesinlestir(ben, hafta.id) && bildir(t("bHaftalikKesinlesti"))}>
               <Check size={16} /> {t("kesinlestir")}
             </button>
           )}
-          {hafta.durum === "toplantida" && duzenler && (
+          {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfToplanti") && (
             <button className="dugme dugme-ikincil" onClick={() => durumDegistir("hazirlik", "bHazirligaAlindi")}>
               <Undo2 size={16} /> {t("hazirligaGeriAl")}
             </button>
           )}
         </div>
         {hafta.durum === "toplantida" && bekleyen > 0 && <p className="bos-kucuk ara-ust">{t("kesinlestirmeIcinKarar", { n: bekleyen })}</p>}
-        {hafta.durum === "toplantida" && duzenler && !yapabilir(ben, "haftalikKesinlestir") && <p className="bos-kucuk ara-ust">{t("kesinlestirmeYoneticide")}</p>}
+        {hafta.durum === "toplantida" && duzenler && !planAdimiYapabilir(ben, "hfKesinlestir") && <p className="bos-kucuk ara-ust">{t("kesinlestirmeYoneticide")} <AdimYetkilileri adim="hfKesinlestir" /></p>}
         {hafta.durum === "kesinlesti" && aktarimBekleyen > 0 && <p className="bos-kucuk ara-ust">{t("aktarimBekliyor", { n: aktarimBekleyen })}</p>}
       </section>
 

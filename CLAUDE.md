@@ -384,6 +384,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Ekranda birim ve ünvan adı `birimAdi`/`gorevAdi`, seçimler
     `birimListesi`/`unvanListesi` (gizli olan yalnız şimdiki değerse görünür).
     `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.
+  - Plan yetkileri (`organizasyon/PlanYetkileri.tsx`, `#/organizasyon/planlar`;
+    Ayarlar › İş akışı kartından da): Next Day'i toplantıya götürme/taslağa
+    alma, onay, devir; Weekly'yi toplantıya götürme/hazırlığa alma,
+    toplantıda karar, kesinleştirme. Kural yapıda (`Yapi.planYetkileri`,
+    taslak ve "Yayınla"; yoksa `VARSAYILAN_PLAN_YETKILERI`, bugünkü
+    davranış): satırlar (birim alt birimleriyle ve örnek aldığı yerleşik
+    birim "gibi", istenirse ünvan, "yalnız yöneticiler"; birimsiz satır
+    bütün haber merkezi) ya da adıyla kişiler (`adimYetkilisi`). Kimseyi
+    kapsamayan kural kaydedilmez, adım kilitlenirdi. Düğme de eylem de
+    `yetki.ts → planAdimiYapabilir` sorar; `planOnayla`, `planDevral`,
+    `haftalikKesinlestir` artık `IZINLER`'de yok (proje planının matrisi
+    varsayılan kuraldan). Yetkisi olmayan planlamacı Weekly'de kimin
+    kesinleştirdiğini görür (`AdimYetkilileri`). Plan içeriğini düzenleme
+    (`planDuzenle`, `haftalikDuzenle`) ayrı, değişmedi.
   - Kişiler: birim ağacı → ünvan (sayılar alt birimleri de toplar), "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
   - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir

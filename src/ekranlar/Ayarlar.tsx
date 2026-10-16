@@ -1,5 +1,5 @@
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
-import { Database, Lock, RotateCcw, Send, Settings, Workflow } from "lucide-react";
+import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Workflow } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
@@ -128,6 +128,15 @@ function IsAkisiAyari({ ben }: { ben: Kisi }) {
         <input type="checkbox" checked={!!v.newsdeskDevrede} onChange={(e) => newsdeskDevredeKaydet(ben, e.target.checked) && bildir(t("bKaydedildi"))} data-newsdesk-devrede />
         {t("newsdeskDevrede")}
       </label>
+      <div className="dugmeler ara-ust-2">
+        {/* Planların onay ve kesinleştirme yetkileri kurum yapısında: taslak, yayın ve sürümleriyle. */}
+        <a className="dugme dugme-ikincil dugme-kucuk" href="#/organizasyon/planlar" data-plan-yetkileri-bag>
+          <ShieldCheck size={14} /> {t("orgPlanYetkileri")}
+        </a>
+        <a className="dugme dugme-ikincil dugme-kucuk" href="#/organizasyon/akislar">
+          <Workflow size={14} /> {t("orgAkislar")}
+        </a>
+      </div>
     </Kart>
   );
 }

@@ -1544,11 +1544,7 @@ const M = {
     "يجب البت في {n} بنود أخرى قبل الاعتماد.",
     "{n} more items need a decision before finalising.",
   ),
-  kesinlestirmeYoneticide: m(
-    "Planı Planlama yöneticisi ya da yönetim kesinleştirir.",
-    "يعتمد الخطةَ مديرُ التخطيط أو الإدارة.",
-    "The Planning manager or management finalises the plan.",
-  ),
+  kesinlestirmeYoneticide: m("Planı kesinleştirir:", "يعتمد الخطة:", "Finalised by:"),
   aktarimBekliyor: m(
     "{n} haber, gününün Next Day planı açılınca oraya kendiliğinden geçecek.",
     "ستنتقل {n} أخبار تلقائيا إلى خطة الغد عند فتح خطة يومها.",
@@ -2464,6 +2460,27 @@ const M = {
     "يمكنك تغيير لغة الواجهة من زر اللغة في الشريط العلوي (وفي الهاتف من القائمة)؛ وتبقى نصوص الأخبار بالعربية في كل لغة.",
     "You can change the interface language from the language button in the top bar (on a phone, from Menu); story texts stay in Arabic.",
   ),
+  /* Plan yetkileri (Organizasyon): planların akış adımlarını kim yapar. */
+  orgPlanYetkileri: m("Plan yetkileri", "صلاحيات الخطط", "Plan permissions"),
+  orgPlanYetkisi: m("Plan yetkisi", "صلاحية الخطة", "Plan permission"),
+  pyNextDay: m("Next Day", "Next Day", "Next Day"),
+  pyWeekly: m("Weekly", "Weekly", "Weekly"),
+  pyNdToplanti: m("Toplantıya götürme ve taslağa geri alma", "العرض على الاجتماع والإعادة إلى المسودة", "Take to meeting / back to draft"),
+  pyNdOnay: m("Planı onaylama", "اعتماد الخطة", "Approve the plan"),
+  pyNdDevral: m("Planı devralma (Newsdesk)", "تسلّم الخطة (Newsdesk)", "Take over the plan (Newsdesk)"),
+  pyHfToplanti: m("Toplantıya götürme ve hazırlığa geri alma", "العرض على الاجتماع والإعادة إلى التحضير", "Take to meeting / back to preparation"),
+  pyHfKarar: m("Toplantıda karar verme (kabul, bilgi, ret)", "اتخاذ القرار في الاجتماع (قبول، للعلم، رفض)", "Decide in the meeting (accept, info, reject)"),
+  pyHfKesinlestir: m("Planı kesinleştirme", "اعتماد الخطة نهائيا", "Finalise the plan"),
+  pyTumMerkez: m("Bütün haber merkezi", "مركز الأخبار كله", "Whole newsroom"),
+  pyYoneticiler: m("yöneticiler", "المديرون", "managers"),
+  pyYalnizYoneticiler: m("Yalnız yöneticiler", "المديرون فقط", "Managers only"),
+  pyBirimVeUnvan: m("Birim ve ünvan", "الوحدة والمسمى", "Unit and title"),
+  pySatirEkle: m("Satır ekle", "إضافة سطر", "Add a row"),
+  pyKisiler: m("Belirli kişiler", "أشخاص محددون", "Specific people"),
+  pyKisiEkle: m("Kişi ekle…", "إضافة شخص…", "Add a person…"),
+  pyKimseYok: m("Bu kurala uyan kimse yok; adım yapılamaz.", "لا أحد يطابق هذه القاعدة؛ لا يمكن تنفيذ الخطوة.", "Nobody matches this rule; the step could not be done."),
+  pyVarsayilan: m("varsayılan", "الافتراضي", "default"),
+  pyVarsayilanaDon: m("Varsayılana dön", "العودة إلى الافتراضي", "Back to default"),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;

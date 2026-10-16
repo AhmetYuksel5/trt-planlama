@@ -84,6 +84,7 @@ import {
   type BirimTanimi,
   type Degisiklik,
   type UnvanTanimi,
+  type PlanAdimi,
   type Yapi,
 } from "../../yapi";
 import { hesapYetkisi, yapiDuzenleyebilir } from "../../yetki";
@@ -91,6 +92,7 @@ import { SayfaBasi } from "../ana/Planlama";
 import { EkipSekmesi } from "./EkipSekmesi";
 import Kullanicilar, { IzleDugmesi, PozisyonPenceresi } from "../Kullanicilar";
 import { AkislarSekmesi } from "./Akislar";
+import { PLAN_ADIMI_ADI, PlanYetkileriSekmesi } from "./PlanYetkileri";
 import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
 
 /**
@@ -106,6 +108,8 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
  * - Plan ekibi (EkipSekmesi.tsx): plandaki ekip görevleri, adları, sırası
  *   ve kime yazılabileceği (birim ve ünvan kuralı).
  * - İş akışları (Akislar.tsx): durakların sırası, sorumlusu, koşulu.
+ * - Plan yetkileri (PlanYetkileri.tsx): planları kim toplantıya götürür,
+ *   kim onaylar, kim kesinleştirir.
  * - Sürümler: yayınlanan her düzen; eskisi taslağa alınıp geri getirilebiliyor.
  * - Hesaplar (gerçek kip): davet, kayıt bağlantısı, hesap yetkileri.
  */
@@ -115,6 +119,7 @@ type Sekme =
   | "birimler"
   | "ekip"
   | "akislar"
+  | "planlar"
   | "surumler"
   | "hesaplar";
 
@@ -123,18 +128,19 @@ const SEKME_ADI: Record<Sekme, Anahtar> = {
   birimler: "orgBirimler",
   ekip: "orgPlanEkibi",
   akislar: "orgAkislar",
+  planlar: "orgPlanYetkileri",
   surumler: "orgSurumler",
   hesaplar: "orgHesaplar",
 };
 
 /* Taslak üzerinde çalışan sekmeler: üstlerinde yayın çubuğu. */
-const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "akislar"];
+const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "akislar", "planlar"];
 
 export const orgSekmeleri = (ben: Kisi): Sekme[] => {
   const yapi = yapiDuzenleyebilir(ben);
   return [
     ...(yapi || hesapYetkisi(ben, "kisiDuzenle") ? (["kisiler"] as const) : []),
-    ...(yapi ? (["birimler", "ekip", "akislar", "surumler"] as const) : []),
+    ...(yapi ? (["birimler", "ekip", "akislar", "planlar", "surumler"] as const) : []),
     ...(GERCEK && (ben.hesapYoneticisi || ben.yetkiler?.length)
       ? (["hesaplar"] as const)
       : []),
@@ -179,6 +185,7 @@ export default function Organizasyon({
       {acik === "birimler" && <BirimlerSekmesi ben={ben} />}
       {acik === "ekip" && <EkipSekmesi ben={ben} />}
       {acik === "akislar" && <AkislarSekmesi ben={ben} />}
+      {acik === "planlar" && <PlanYetkileriSekmesi ben={ben} />}
       {acik === "surumler" && <SurumlerSekmesi ben={ben} />}
       {acik === "hesaplar" && <Kullanicilar ben={ben} gomulu />}
     </>
@@ -219,12 +226,15 @@ function DegisiklikAdi({
         ? gorevAdi(d.id, y)
         : d.tur === "ekip"
           ? ekipGorevAdi(d.id, "ar", y)
-          : yaz(y.akislar.find((a) => a.id === d.id)?.ad) || d.id;
+          : d.tur === "plan"
+            ? t(PLAN_ADIMI_ADI[d.id as PlanAdimi])
+            : yaz(y.akislar.find((a) => a.id === d.id)?.ad) || d.id;
   const tur: Record<Degisiklik["tur"], Anahtar> = {
     birim: "birim",
     unvan: "orgUnvan",
     akis: "orgAkis",
     ekip: "orgEkipGorevi",
+    plan: "orgPlanYetkisi",
   };
   const islem: Record<Degisiklik["islem"], Anahtar> = {
     eklendi: "orgEklendi",

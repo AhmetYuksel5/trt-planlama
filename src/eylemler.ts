@@ -124,6 +124,7 @@ import {
   yzGorusuGorur,
   kararNotuYazabilir,
   paketTamamlayabilir,
+  planAdimiYapabilir,
 } from "./yetki";
 
 /**
@@ -776,7 +777,7 @@ export const haftalikOlustur = (ben: Kisi, gun: string): { id: string; vardi: bo
 export const haftalikDurum = (ben: Kisi, id: string, yeni: "hazirlik" | "toplantida") => {
   let d = getir();
   const h = haftaBul(d, id);
-  if (!h || !haftalikDuzenler(ben, h) || h.durum === yeni) return false;
+  if (!h || h.durum === "kesinlesti" || !planAdimiYapabilir(ben, "hfToplanti") || h.durum === yeni) return false;
   d = haftaGuncelle(d, id, (x) => ({ ...x, durum: yeni }));
   const tip = yeni === "toplantida" ? "haftalikToplantida" : "haftalikHazirliga";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, haftaId: id, veri: { tarih: h.baslangic, sahip: yeni === "toplantida" ? "yonetim" : "" } }));
@@ -1215,7 +1216,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
 export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
   let d = getir();
   const h = haftaBul(d, haftaId);
-  if (!h || h.durum !== "toplantida" || !yapabilir(ben, "haftalikKesinlestir") || kararBekleyenler(h).length) return false;
+  if (!h || h.durum !== "toplantida" || !planAdimiYapabilir(ben, "hfKesinlestir") || kararBekleyenler(h).length) return false;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti" }));
   for (const k of h.kalemler.filter((x) => gundemde(x) && x.karar === "kabul")) {
     if (k.tur === "haber" && k.tarih) {
@@ -1368,10 +1369,10 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
   const plan = planBul(d, planId);
   if (!plan) return false;
   const gecerli =
-    (yeni === "toplantida" && plan.durum === "taslak" && yapabilir(ben, "planDuzenle")) ||
-    (yeni === "taslak" && plan.durum === "toplantida" && yapabilir(ben, "planDuzenle")) ||
-    (yeni === "onayli" && plan.durum === "toplantida" && yapabilir(ben, "planOnayla")) ||
-    (yeni === "devralindi" && plan.durum === "onayli" && yapabilir(ben, "planDevral"));
+    (yeni === "toplantida" && plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti")) ||
+    (yeni === "taslak" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndToplanti")) ||
+    (yeni === "onayli" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay")) ||
+    (yeni === "devralindi" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral"));
   if (!gecerli) return false;
 
   d = planGuncelle(d, planId, (p) => ({ ...p, durum: yeni }));

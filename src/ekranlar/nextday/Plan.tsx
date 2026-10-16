@@ -10,7 +10,7 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { oncekiOnayla, planDurum } from "../../eylemler";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
-import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
@@ -189,22 +189,22 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         })}
       </div>
       <div className="dugmeler ara-ust-2">
-        {plan.durum === "taslak" && yapabilir(ben, "planDuzenle") && (
+        {plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti") && (
           <button className="dugme" onClick={() => durumDegistir("toplantida", "bToplantiya")}>
             <Send size={16} className="yon" /> {t("toplantiyaGotur")}
           </button>
         )}
-        {plan.durum === "toplantida" && yapabilir(ben, "planOnayla") && (
+        {plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay") && (
           <button className="dugme dugme-iyi" onClick={() => durumDegistir("onayli", "bPlanOnaylandi")}>
             <Check size={16} /> {t("planiOnayla")}
           </button>
         )}
-        {plan.durum === "toplantida" && yapabilir(ben, "planDuzenle") && (
+        {plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndToplanti") && (
           <button className="dugme dugme-ikincil" onClick={() => durumDegistir("taslak", "bTaslaga")}>
             <Undo2 size={16} /> {t("taslagaGeriAl")}
           </button>
         )}
-        {plan.durum === "onayli" && yapabilir(ben, "planDevral") && (
+        {plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral") && (
           <button className="dugme" onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}>
             <UserCheck size={16} /> {t("planiDevral")}
           </button>

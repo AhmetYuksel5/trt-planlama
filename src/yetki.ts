@@ -1,5 +1,5 @@
 import { ADIM_ADI, durakBul, kolSahibi, paketSahibi, sorumluBirimi } from "./akis";
-import { izinBirimi, varsayilanYapi, type Sorumlu } from "./yapi";
+import { VARSAYILAN_PLAN_YETKILERI, adimYetkilisi, izinBirimi, planYetkisi, varsayilanYapi, type PlanAdimi, type Sorumlu } from "./yapi";
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
 import {
@@ -57,9 +57,7 @@ export const IZINLER = {
   oneriDegerlendir: { ad: "yOneriDegerlendir", birimler: ["planlama"] },
   baslikYonet: { ad: "yBaslikYonet", birimler: ["planlama"] },
   planDuzenle: { ad: "yPlanDuzenle", birimler: ["planlama"] },
-  planOnayla: { ad: "yPlanOnayla", birimler: ["planlama", "yonetim"], yalnizYonetici: ["planlama"] },
   geriDonus: { ad: "yGeriDonus", birimler: ["planlama"] },
-  planDevral: { ad: "yPlanDevral", birimler: ["newsdesk"] },
   operasyon: { ad: "yOperasyon", birimler: ["newsdesk"] },
   paketDegerlendir: { ad: "yPaketDegerlendir", birimler: ["planlama"] },
   ucretGor: { ad: "yUcretGor", birimler: ["newsdesk", "yonetim"] },
@@ -72,9 +70,8 @@ export const IZINLER = {
     birimler: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "yonetim"],
     yalnizYonetici: ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media"],
   },
-  /* Haftalık planı Planlama hazırlıyor; Perşembe toplantısının kararını Planlama yöneticisi ya da yönetim kesinleştiriyor. */
+  /* Haftalık planı Planlama hazırlıyor; toplantıya götürme, karar ve kesinleştirme yapıda (planAdimiYapabilir). */
   haftalikDuzenle: { ad: "yHaftalikDuzenle", birimler: ["planlama"] },
-  haftalikKesinlestir: { ad: "yHaftalikKesinlestir", birimler: ["planlama", "yonetim"], yalnizYonetici: ["planlama"] },
   /* Ayrıca kol soruluyor (onIncelemeci): müdür kendi kolunun, Ekonomi ekonomi kolunun önerisine bakıyor. */
   onInceleme: { ad: "yOnInceleme", birimler: ["yonetim", "ekonomi"] },
   /*
@@ -172,9 +169,15 @@ export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
 /** Kesinleşen plan kilitli; o haftanın kararı artık Next Day'lere ve kollara dağıldı. */
 export const haftalikDuzenler = (k: Kisi | undefined, h: HaftalikPlan) => yapabilir(k, "haftalikDuzenle") && h.durum !== "kesinlesti";
 
-/** Toplantının kararı: planlamacı kaydediyor, toplantıyı yöneten yönetici de verebiliyor. */
-export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) =>
-  h.durum === "toplantida" && (yapabilir(k, "haftalikDuzenle") || yapabilir(k, "haftalikKesinlestir"));
+/*
+ * Planların akış adımları (toplantıya götürme, onay, devir, karar,
+ * kesinleştirme): kim yapacağı sabit tabloda değil, yapıda; tam yönetici
+ * Organizasyon › Plan yetkileri'nde değiştiriyor (yapi.ts → planYetkisi).
+ */
+export const planAdimiYapabilir = (k: Kisi | undefined, adim: PlanAdimi): boolean => !!k && !k.pasif && adimYetkilisi(k, planYetkisi(adim));
+
+/** Toplantının kararı: varsayılanda planlamacı kaydediyor, toplantıyı yöneten yönetici de verebiliyor. */
+export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) => h.durum === "toplantida" && planAdimiYapabilir(k, "hfKarar");
 
 /** Ön incelemeyi kim yapar: kolu kapsamında olan müdür; ekonomi kaleminde Ekonomi birimi de. */
 export const onIncelemeci = (k: Kisi | undefined, kalem: Pick<HaftalikKalem, "tur">): boolean => {
@@ -474,6 +477,15 @@ export interface MatrisSatiri {
 
 export const yetkiMatrisi = (): MatrisSatiri[] => [
   ...Object.values(IZINLER).map((iz: Izin) => ({ ad: iz.ad, birimler: iz.birimler, yonetici: iz.yalnizYonetici ?? [] })),
+  // Plan adımları yapıda; proje planı varsayılan kuralı anlatıyor (birim satırları, kişiye özel kural yok).
+  ...([
+    ["yPlanOnayla", "ndOnay"],
+    ["yPlanDevral", "ndDevral"],
+    ["yHaftalikKesinlestir", "hfKesinlestir"],
+  ] as const).map(([ad, adim]) => {
+    const satirlar = VARSAYILAN_PLAN_YETKILERI[adim].satirlar.filter((x) => x.birim);
+    return { ad, birimler: satirlar.map((x) => x.birim!), yonetici: satirlar.filter((x) => x.yonetici).map((x) => x.birim!) };
+  }),
   // Proje planı raporun akışını anlatıyor: koddaki varsayılan akıştan, yöneticinin düzeninden değil.
   ...varsayilanYapi().akislar[0].duraklar.flatMap((d) =>
     d.tur === "is" ? [] : [{ ad: ADIM_ADI[d.tur], birimler: [...new Set([sorumluBirimi(d.sorumlu, "haber", varsayilanYapi()), ...(d.yardimci ?? [])])], yonetici: [] }],
