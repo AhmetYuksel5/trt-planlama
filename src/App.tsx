@@ -55,7 +55,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { planCiftleriniTopla, takipOnerileriniAyikla, yarinPlaniniAc } from "./eylemler";
+import { haftalikPaketBasliklariniDuzelt, planCiftleriniTopla, takipOnerileriniAyikla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
 import {
   kisitliKisi,
@@ -126,6 +126,7 @@ export default function App() {
       if (izlemede()) return;
       planCiftleriniTopla();
       takipOnerileriniAyikla();
+      haftalikPaketBasliklariniDuzelt();
       yarinPlaniniAc();
     };
     yokla();

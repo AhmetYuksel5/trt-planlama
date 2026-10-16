@@ -2481,6 +2481,10 @@ const M = {
   pyKimseYok: m("Bu kurala uyan kimse yok; adım yapılamaz.", "لا أحد يطابق هذه القاعدة؛ لا يمكن تنفيذ الخطوة.", "Nobody matches this rule; the step could not be done."),
   pyVarsayilan: m("varsayılan", "الافتراضي", "default"),
   pyVarsayilanaDon: m("Varsayılana dön", "العودة إلى الافتراضي", "Back to default"),
+  /* Weekly paketinin muhabirine günün planı onaylanınca hatırlatma. */
+  hrPaketHatirlatma: m("{kisi} hatırlatıyor: haberin {tarih} Next Day planında onaylandı", "تذكير من {kisi}: اعتُمد تقريرك في خطة الغد ليوم {tarih}", "Reminder from {kisi}: your story is approved in the {tarih} Next Day plan"),
+  sehirDiger: m("Diğer…", "أخرى…", "Other…"),
+  sehirDigerAdi: m("Yer (elle)", "المكان (يدويا)", "Place (typed)"),
 } satisfies Record<string, Metin>;
 
 export type Anahtar = keyof typeof M;

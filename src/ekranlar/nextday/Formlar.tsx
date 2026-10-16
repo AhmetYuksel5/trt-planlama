@@ -238,6 +238,9 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
   );
 }
 
+/* Şehir listesinde "Diğer": Sehir değerlerinden biri olamayacak bir değer. */
+const DIGER = "__diger";
+
 export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; sonra?: string; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
@@ -245,6 +248,9 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
   const [f, setF] = useState({
     baslik: mevcut?.baslik ?? "",
     sehir: (mevcut?.sehir ?? "istanbul") as Sehir,
+    // "Diğer": listede olmayan yer elle; şehir alanı muhabirinki kalıyor (ülke ve süzgeçler ondan).
+    diger: !!mevcut?.yer,
+    yer: mevcut?.yer ?? "",
     muhabirId: mevcut?.muhabirId ?? "",
     aciklama: mevcut?.aciklama ?? "",
     tur: (mevcut?.tur ?? "haber") as IcerikTuru,
@@ -260,14 +266,16 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
     const k = v.kisiler.find((x) => x.id === id);
     setF({ ...f, muhabirId: id, sehir: k?.sehir ?? f.sehir, muhabirTbc: id ? false : f.muhabirTbc });
   };
+  const yer = f.diger ? f.yer.trim() : "";
   const kaydet = () => {
-    if (!ben || !f.baslik.trim()) return;
+    if (!ben || !f.baslik.trim() || (f.diger && !yer)) return;
     const id = paketKaydet(ben, {
       id: mevcut?.id,
       planId: plan.id,
       planBaslikId,
       baslik: f.baslik.trim(),
       sehir: f.sehir,
+      yer: yer || undefined,
       muhabirId: f.muhabirId || undefined,
       aciklama: f.aciklama.trim(),
       tur: f.tur,
@@ -298,14 +306,21 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
         </div>
         <label>
           {t("sehirUlke")}
-          <select value={f.sehir} onChange={(e) => setF({ ...f, sehir: e.target.value as Sehir })}>
+          <select value={f.diger ? DIGER : f.sehir} onChange={(e) => setF(e.target.value === DIGER ? { ...f, diger: true } : { ...f, diger: false, sehir: e.target.value as Sehir })} data-paket-sehir>
             {(Object.keys(SEHIRLER) as Sehir[]).map((s) => (
               <option key={s} value={s}>
                 {t(sehirAdi(s))}
               </option>
             ))}
+            <option value={DIGER}>{t("sehirDiger")}</option>
           </select>
         </label>
+        {f.diger && (
+          <label>
+            {t("sehirDigerAdi")}
+            <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder="الدوحة" autoFocus data-paket-yer />
+          </label>
+        )}
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
@@ -343,7 +358,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
         <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
         {t("sahaGerekli")}
       </label>
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.baslik.trim()} />
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.baslik.trim() || (f.diger && !yer)} />
     </div>
   );
 }

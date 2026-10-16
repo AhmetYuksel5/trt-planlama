@@ -6,7 +6,7 @@ import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
 import { gelismeKaydet, paketDurum, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
-import { TBC, kisiAr, muhabirYeri, satir, sehirAr } from "../../etiketler";
+import { TBC, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
@@ -223,7 +223,7 @@ export default function BaslikKarti({
                 <div className="kayit-bas">
                   <div>
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
-                      <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}</Icerik>
+                      <Icerik blok>{satir(paketYeri(p), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}</Icerik>
                     </a>
                     <small>
                       {p.oncelikli && <OncelikRozeti />}

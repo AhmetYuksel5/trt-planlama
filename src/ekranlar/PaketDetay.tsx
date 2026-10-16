@@ -123,7 +123,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
               </div>
               <div className="alan">
                 <small>{t("sehirUlke")}</small>
-                <b>{t(sehirAdi(paket.sehir))}</b>
+                <b>{paket.yer ? <Icerik>{paket.yer}</Icerik> : t(sehirAdi(paket.sehir))}</b>
               </div>
               <div className="alan">
                 <small>{t("plan")}</small>

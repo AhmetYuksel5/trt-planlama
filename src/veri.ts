@@ -599,6 +599,8 @@ export interface Paket {
   planBaslikId?: string;
   baslik: string;
   sehir: Sehir;
+  /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
+  yer?: string;
   muhabirId?: string;
   /*
    * Muhabir henüz belli değil: "YER / strap / TBC". Sahte kişi kimliği

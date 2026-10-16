@@ -64,7 +64,7 @@ export function PaketTablosu({
                       <Icerik blok>{p.baslik}</Icerik>
                     </a>
                     <small className="sonuk">
-                      {p.oncelikli && <OncelikRozeti />} {p.haftalikKalemId && <HaftalikRozeti />} {t(sehirAdi(p.sehir))}
+                      {p.oncelikli && <OncelikRozeti />} {p.haftalikKalemId && <HaftalikRozeti />} {p.yer ? <Icerik>{p.yer}</Icerik> : t(sehirAdi(p.sehir))}
                       {p.bicim && ` · ${t(BICIM_ADI(p.bicim))}`}
                     </small>
                   </td>

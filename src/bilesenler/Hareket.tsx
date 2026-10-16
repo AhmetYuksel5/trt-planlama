@@ -95,6 +95,7 @@ const PLAN_TURU_ADI: Record<BaglantiTuru, Anahtar> = { nextday: "nextday", hafta
 /* Aynı tip pakette ve planda farklı cümle istiyor: plan devri bir kez, paketin üretime girişi her pakette. */
 const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "planDevralindi" && h.paketId) return "hrPaketDevralindi";
+  if (h.tip === "paketOnaylandi" && h.veri?.hatirlatma) return "hrPaketHatirlatma";
   if (h.tip === "paketOnaylandi" && h.veri?.toplanti) return "hrPaketToplantidaOnay";
   if (h.tip === "paketOnaylandi" && h.veri?.hafta) return "hrPaketHaftalikOnay";
   if (h.tip === "cagriHazirlandi" && h.veri?.hafta) return "hrHaftalikCagri";

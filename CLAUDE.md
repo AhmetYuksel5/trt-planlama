@@ -756,7 +756,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
   - Kesinleşince kabul edilen haber Next Day'e onaylı paket olarak geçer
     (`haftalikKalemId`, "Haftalık plandan" rozeti); feature, ekonomi ve
-    program plansız onaylı paket olur. Aktarım tek yerde
+    program plansız onaylı paket olur. Paketin başlığı strap
+    (`eylemler.ts → kalemStrapi`: kalemin, yoksa önerinin strap'i, yoksa
+    dosyanın adı, sonra olay adı); kalemin metni açıklama, başlığa yazılınca
+    PKG satırında gelişmenin aynısı çıkıyordu. Kalemde elle yazılan yer
+    muhabirin şehri değilse `Paket.yer`'e geçer. Eskiden metinle aktarılmış
+    paketi sistemin açılış işi düzeltir (`haftalikPaketBasliklariniDuzelt`;
+    başlık hâlâ açıklamanın aynısıysa). Günün Next Day planı onaylanınca
+    planındaki Weekly paketinin muhabirine hatırlatma (`paketOnaylandi`,
+    `veri.hatirlatma`, `kime`; "hrPaketHatirlatma"). Aktarım tek yerde
     (`eylemler.ts → haftaliktanAktar`); hem kesinleştirmede hem
     `planOlustur`'da çağrılır.
   - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
@@ -800,6 +808,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ve Planlama yöneticisi yapar (`yetki.ts → adimYapabilir`).
   - Adımın ekrandaki adı koldan: `akis.ts → adimAdi(adim, paket)`;
     `ADIM_ADI`'yı doğrudan pakete yazma.
+  - Paketin yeri (`etiketler.ts → paketYeri`): listede olmayan yer
+    formdaki şehir seçiminin "Diğer…"iyle elle, Arapça (`Paket.yer`); "YER /"
+    da, paket listesinde ve ayrıntıda şehrin yerine o. Şehir alanı kalır
+    (muhabirinki; ülke ve süzgeçler ondan).
   - Next Day'in "Hazır paketler" bölümü (`hazirPaketler`) stoktan seçer;
     plan devredilince seçili paket `yayinlandi` alır.
 - Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş

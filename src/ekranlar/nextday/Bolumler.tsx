@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, satir, sehirAr } from "../../etiketler";
+import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, paketYeri, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
@@ -402,7 +402,7 @@ function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
   return (
     <>
       <a href={`#/paketler/${p.id}`} className="kalin-bag">
-        <Icerik blok>{satir(sehirAr(p.sehir), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}</Icerik>
+        <Icerik blok>{satir(paketYeri(p), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}</Icerik>
       </a>
       <Icerik blok className="kayit-metin">
         {p.aciklama}

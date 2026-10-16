@@ -1104,6 +1104,19 @@ export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
  * paket yok, muhabir başlığın altında. Dosyası olmayan kalem takiplere.
  */
 /* Toplantının karar notu ve ek talebi pakete geçiyor: muhabir işi neyle yapacağını paketinde görüyor. */
+/*
+ * Pakete giden başlık strap: kalemde yoksa önerisininki, o da yoksa dosyanın
+ * (başlık havuzundaki) adı, sonra olayın adı. Kalemin metni açıklama; o
+ * başlığa yazılınca Next Day'de gelişmenin aynısı PKG satırında da
+ * görünüyordu. Metin yalnız başka hiçbir şey yoksa.
+ */
+const kalemStrapi = (d: Durum, k: HaftalikKalem) =>
+  k.paketBasligi || oneriBul(d, k.oneriId)?.paketBasligi || (k.baslikId ? d.basliklar.find((b) => b.id === k.baslikId)?.ad : undefined) || k.baslik || undefined;
+const kalemPaketBasligi = (d: Durum, k: HaftalikKalem) => kalemStrapi(d, k) || k.metin;
+
+/* Kalemde elle yazılan yer muhabirin şehri değilse pakete taşınıyor (muhabir başka yerden yapıyor). */
+const kalemPaketYeri = (k: HaftalikKalem, sehir: Sehir) => (k.yer?.trim() && k.yer.trim() !== sehirAr(sehir) ? { yer: k.yer.trim() } : {});
+
 const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.kararNotu } : {}), ...(k.ekTalep ? { ekTalep: k.ekTalep } : {}) });
 
 const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
@@ -1148,8 +1161,9 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       kod,
       planId: plan.id,
       planBaslikId: pbId,
-      baslik: k.paketBasligi || k.baslik || k.metin,
+      baslik: kalemPaketBasligi(d, k),
       sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+      ...kalemPaketYeri(k, kisiBul(d, muhabirId)?.sehir ?? "istanbul"),
       muhabirId,
       ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
       ...toplantidan(k),
@@ -1182,8 +1196,9 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
   const paket: Paket = {
     id: paketId,
     kod,
-    baslik: k.paketBasligi || k.baslik || k.metin,
+    baslik: kalemPaketBasligi(d, k),
     sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+    ...kalemPaketYeri(k, kisiBul(d, muhabirId)?.sehir ?? "istanbul"),
     muhabirId,
     ...(!muhabirId && k.muhabirTbc ? { muhabirTbc: true as const } : {}),
     ...toplantidan(k),
@@ -1387,6 +1402,13 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
       d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi" }));
       d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { toplanti: "1" } });
     }
+    /*
+     * Haftalıktan gelen paket aktarılırken zaten onaylı; muhabir onayı
+     * günler önce almış olabiliyor. Günün planı onaylanınca hatırlatma:
+     * haberin o günün planında, iş artık yarın.
+     */
+    for (const p of paketler.filter((x) => x.haftalikKalemId && x.muhabirId && x.durum === "onaylandi"))
+      d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { hatirlatma: "1", tarih: plan.tarih, kime: p.muhabirId! } });
   }
   if (yeni === "devralindi") {
     for (const p of paketler.filter((x) => x.durum === "onaylandi")) {
@@ -1784,6 +1806,7 @@ export interface PaketGirdisi {
   planBaslikId: string;
   baslik: string;
   sehir: Sehir;
+  yer?: string;
   muhabirId?: string;
   aciklama: string;
   tur: IcerikTuru;
@@ -3281,6 +3304,28 @@ export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
  * ve takibi duran kopya öneri, izleriyle kaldırılıyor (takip kalıyor);
  * Planlama'nın işlediği öneri yerinde. Sistemin açılış işi (App.tsx).
  */
+/*
+ * Strap kuralından önce Weekly'den aktarılan paketin başlığı kalemin metni
+ * (açıklamanın aynısı) olabiliyordu. Sistemin açılış işi: başlığı hâlâ
+ * açıklamasıyla aynı olan Weekly paketine strap'i (yoksa dosyanın adını)
+ * yazıyor; elle değiştirilmiş başlığa dokunmuyor.
+ */
+export const haftalikPaketBasliklariniDuzelt = (): number => {
+  let d = getir();
+  const kalemler = new Map(d.haftalik.flatMap((h) => h.kalemler.map((k) => [k.id, k] as const)));
+  let n = 0;
+  for (const p of d.paketler) {
+    const k = p.haftalikKalemId ? kalemler.get(p.haftalikKalemId) : undefined;
+    if (!k || p.baslik !== p.aciklama || p.baslik !== k.metin) continue;
+    const yeni = kalemStrapi(d, k);
+    if (!yeni || yeni === p.baslik) continue;
+    d = paketGuncelle(d, p.id, (x) => ({ ...x, baslik: yeni }));
+    n++;
+  }
+  if (n) kaydet(d);
+  return n;
+};
+
 export const takipOnerileriniAyikla = (): number => {
   const d = getir();
   const idler = d.oneriler.filter((o) => o.bicim === TAKIP_BICIMI && o.durum === "yeni" && !!o.takipId && d.takipler.some((x) => x.id === o.takipId)).map((o) => o.id);

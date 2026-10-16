@@ -263,6 +263,8 @@ export const ulkeAdi = (u: Ulke): Anahtar => `u_${u}`;
  * görünürdü. Çıktı ve düzenleme ekranı satırı buradan kuruyor.
  */
 export const sehirAr = (s?: Sehir) => (s ? metin(sehirAdi(s), "ar") : "");
+/* Paketin "YER /"u: elle yazılan yer varsa o, yoksa şehrin Arapçası. */
+export const paketYeri = (p: { sehir: Sehir; yer?: string }) => p.yer || sehirAr(p.sehir);
 export const kisiAr = (k?: { ad: Yazi }) => (k ? yaz(k.ad, "ar") : "");
 /* Arapça adın parçaları: "عبد المنعم", "أبو بكر" gibi bileşik ad tek parça sayılıyor, yoksa "عبد" tek başına yazılırdı. */
 const BILESIK = new Set(["عبد", "أبو", "ابو", "أبي", "بن", "ابن", "بنت"]);

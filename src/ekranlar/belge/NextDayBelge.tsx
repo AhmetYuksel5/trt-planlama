@@ -4,7 +4,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -91,6 +91,7 @@ const paketGirdisi = (p: Paket, baslik: string) => ({
   planBaslikId: p.planBaslikId ?? "",
   baslik,
   sehir: p.sehir,
+  yer: p.yer,
   muhabirId: p.muhabirId,
   aciklama: p.aciklama,
   tur: p.tur,
@@ -297,7 +298,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
               }
             >
               <div className="cikti-paket">
-                <Satir yer={sehirAr(h.sehir)}>
+                <Satir yer={paketYeri(h)}>
                   {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
                 </Satir>
                 <p className="cikti-aciklama">{h.aciklama}</p>
@@ -321,7 +322,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
         <section>
           <h2 className="yesil">{c("ciktiBeklenen")}</h2>
           {paketler.map((p) => (
-            <Satir key={p.id} yer={sehirAr(p.sehir)}>
+            <Satir key={p.id} yer={paketYeri(p)}>
               {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
             </Satir>
           ))}
@@ -438,7 +439,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                             />
                           }
                         >
-                          <Satir yer={sehirAr(p.sehir)}>
+                          <Satir yer={paketYeri(p)}>
                             {ic && acikPaket ? (
                               <YerindeMetin acik deger={p.baslik} etiket={t("paketBasligi")} kaydet={(x) => x && ben && paketKaydet(ben, paketGirdisi(p, x))} />
                             ) : (
@@ -475,7 +476,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
           {dosyasizPaketler.map((p) => (
             <BelgeSatiri key={p.id} duzen={ic} serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}>
-              <Satir yer={sehirAr(p.sehir)}>
+              <Satir yer={paketYeri(p)}>
                 {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
               </Satir>
             </BelgeSatiri>
