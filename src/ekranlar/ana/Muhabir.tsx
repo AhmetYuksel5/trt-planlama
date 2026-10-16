@@ -1,6 +1,6 @@
 import { birimAdi } from "../../yapi";
 import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
-import { adimAdi, adimTuru, geciktiMi, paketSahibi, sonrakiAdim, type UretimAdimi } from "../../akis";
+import { adimAdi, adimTuru, geciktiMi, gorunenSahip, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, bildir, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
@@ -155,7 +155,7 @@ function Haberlerim({ ben }: { ben: Kisi }) {
             ) : (
               <ul className="liste">
                 {paketler.slice(0, 8).map((p) => {
-                  const sahip = paketSahibi(p);
+                  const sahip = gorunenSahip(p);
                   const sonraki = p.durum === "uretimde" ? sonrakiAdim(p) : null;
                   return (
                     <li key={p.id}>
@@ -220,8 +220,9 @@ function Onerilerim({ ben }: { ben: Kisi }) {
  */
 function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
-  const { oneriler } = useMuhabirIsleri(ben);
-  const liste = oneriler.filter((o) => o.muhabirId === ben.id && o.takip).sort((a, b) => (a.takip === b.takip ? 0 : a.takip === "acik" ? -1 : 1));
+  const { oneriler, paketler } = useMuhabirIsleri(ben);
+  // Paketi olan haber "Senin sıran"da ve Haberlerim'de; burada ikinci kez "tamamlandı" düğmesiyle durmasın.
+  const liste = oneriler.filter((o) => o.muhabirId === ben.id && o.takip && !paketler.some((p) => p.oneriId === o.id)).sort((a, b) => (a.takip === b.takip ? 0 : a.takip === "acik" ? -1 : 1));
   return (
     <Kart baslik={t("takiptekiHaberlerim")} ikon={<MailCheck size={18} />}>
       {liste.length === 0 ? (

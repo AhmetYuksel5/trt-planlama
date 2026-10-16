@@ -7,7 +7,7 @@ import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { oneriDurum, oneriDuzenle, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriDurum, oneriDuzenle, oneriGonder, oneriSil, oneriYenidenGonder, takipKimligiMi } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
@@ -546,7 +546,11 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   const gonder = () => {
     if (!gecerli) return;
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
-    if (id) {
+    if (id && takipKimligiMi(id)) {
+      // Takip türü öneri değil, takip açıyor: takiplere gidiliyor.
+      bildir(t("bTakipKaydedildi"));
+      git("takipler");
+    } else if (id) {
       bildir(t(muhabir ? "bOneriGonderildi" : "bOneriKaydedildi"));
       git(`oneriler/${id}`);
     }

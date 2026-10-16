@@ -1,10 +1,11 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { oneriAraligi, oneriHaftada, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { PlanTakipleri, acikTakipler } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI } from "../../etiketler";
 import {
@@ -45,6 +46,7 @@ import { KalemFormu, KalemKarti } from "./Kalem";
 export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const { t, dil } = useDil();
   const v = useVeri();
+  const [takipler, setTakipler] = useState(false);
   const bas = hafta.baslangic;
   useSekmeAdi(`${t("haftalik")} · ${aralikYaz(bas, haftaSonu(bas), dil)}`);
   const duzenler = haftalikDuzenler(ben, hafta);
@@ -85,6 +87,12 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
             <a className="dugme dugme-ikincil" href={`#/oneriler/yanitlar/${cagri.id}`}>
               <Inbox size={16} /> {t("gelenYanitlar")}
             </a>
+          )}
+          {duzenler && (
+            <button type="button" className="dugme dugme-ikincil" onClick={() => setTakipler(true)} data-arac="takipler">
+              <Binoculars size={16} /> {t("mtAcikTakipler")}
+              {acikTakipler(ben, v).length > 0 && <em className="dugme-sayi">{acikTakipler(ben, v).length}</em>}
+            </button>
           )}
           <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
             <Printer size={16} /> {t("ciktiOnizleme")}
@@ -135,6 +143,12 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         {hafta.durum === "kesinlesti" && aktarimBekleyen > 0 && <p className="bos-kucuk ara-ust">{t("aktarimBekliyor", { n: aktarimBekleyen })}</p>}
       </section>
 
+      {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
+      {takipler && (
+        <Pencere genis baslik={t("mtAcikTakipler")} alt={aralikYaz(bas, haftaSonu(bas), dil)} kapat={() => setTakipler(false)}>
+          <PlanTakipleri ben={ben} tarih={hafta.baslangic} />
+        </Pencere>
+      )}
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
       <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />

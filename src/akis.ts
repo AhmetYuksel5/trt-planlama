@@ -214,6 +214,20 @@ export const paketSahibi = (p: Paket): BirimId | null => {
   return null;
 };
 
+/*
+ * Newsdesk sistemde değilken (Durum.newsdeskDevrede yok) iş Planlama'da
+ * bitiyor: onaylı paketi muhabir "Tamamlandı" diye kapatıyor. Ekran bu
+ * pakete beş aşamayı ve üretim adımlarını göstermesin; hiç gelmeyecek
+ * birimler "sırada", iş muhabirdeyken "şimdi Planlama" görünüyordu. Üç
+ * adım yeter: plana eklendi, muhabirde, tamamlandı. Üretime girmiş paket
+ * kendi yolunu gösteriyor.
+ */
+export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTamam"];
+export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
+export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
+/** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
+export const gorunenSahip = (p: Paket): BirimId | null => (sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
+
 /* --- Stok haberleri --- */
 
 /*

@@ -1,4 +1,5 @@
-import { ArrowLeft, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { PlanTakipleri, acikTakipler } from "../Takipler";
 import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
 import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
@@ -32,7 +33,7 @@ import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBo
  * başlıyor. Öneriler ve takvim pencerede açılıyor. Dünden gelenleri bugüne
  * alma planın başlangıç işi: başlığın hemen altında.
  */
-type AracPenceresi = "oneriler" | "takvim" | "aktar" | null;
+type AracPenceresi = "oneriler" | "takipler" | "takvim" | "aktar" | null;
 
 export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t, dil, ad } = useDil();
@@ -88,6 +89,12 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
           <GelenOneriler ben={ben} plan={plan} />
         </Pencere>
       )}
+      {/* Muhabir takipleri gelen önerilerden ayrı: yalnız gelişme bildiren takip öneri listesini kalabalıklaştırmasın. */}
+      {arac === "takipler" && (
+        <Pencere genis baslik={t("mtAcikTakipler")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
+          <PlanTakipleri ben={ben} tarih={plan.tarih} />
+        </Pencere>
+      )}
       {arac === "takvim" && (
         <Pencere genis baslik={t("takvimdenGun")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
           <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={operasyon} eklemeMetni={t("planaEkle")} />
@@ -126,6 +133,7 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
   return (
     <nav className="sag-uc plan-araclari" aria-label={t("planAraclari")}>
       {icerik && arac("oneriler", <Lightbulb size={16} />, "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
+      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), acikTakipler(ben, v).length)}
       {arac("takvim", <CalendarSearch size={16} />, "takvimdenGun", () => ac("takvim"), faaliyet)}
       {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
       {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}

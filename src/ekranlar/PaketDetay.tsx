@@ -1,7 +1,7 @@
 import { birimAdi } from "../yapi";
 import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
+import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
@@ -31,7 +31,8 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
   const stok = stokDurumu(paket);
   const yayinPlani = planBul(v, paket.yayinlandi?.planId);
   const oneri = oneriBul(v, paket.oneriId);
-  const sahip = paketSahibi(paket);
+  // Newsdesk yokken onaylı paket muhabirde görünüyor (akis.ts → sadeAkis).
+  const sahip = gorunenSahip(paket);
   const sonraki = paket.durum === "uretimde" ? sonrakiAdim(paket) : null;
   const hareketler = v.hareketler.filter((h) => h.paketId === paket.id || (oneri && h.oneriId === oneri.id));
 

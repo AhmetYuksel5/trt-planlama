@@ -1,6 +1,6 @@
 import { ArrowRight, CalendarRange, Check, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ASAMALAR, ASAMA_ADI, adimAdi, asamaBul, geciktiMi, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
+import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, sadeAkis, sadeSira, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
 import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
@@ -353,8 +353,22 @@ export function PaketDurumRozeti({ paket }: { paket: Paket }) {
   return <Rozet ton={PAKET_DURUM_TONU[paket.durum]}>{t(PAKET_DURUM_ADI[paket.durum])}</Rozet>;
 }
 
+/* Sade akış (Newsdesk yokken): üç adımın hangisi geçti, hangisi şimdi. */
+const sadeDurum = (paket: Paket, i: number) => {
+  const sira = sadeSira(paket);
+  return i < sira || sira === 2 ? "gecti" : i === sira ? "simdi" : "";
+};
+
 export function AsamaCubugu({ paket }: { paket: Paket }) {
   const { t } = useDil();
+  if (sadeAkis(paket))
+    return (
+      <span className="asama" title={t(SADE_ASAMA_ADI[sadeSira(paket)])} data-sade-asama={sadeSira(paket)}>
+        {SADE_ASAMA_ADI.map((a, i) => (
+          <i key={a} className={sadeDurum(paket, i)} />
+        ))}
+      </span>
+    );
   const simdi = asamaBul(paket);
   const gecikti = geciktiMi(paket);
   return (
@@ -377,6 +391,21 @@ export function AsamaCubugu({ paket }: { paket: Paket }) {
 /** Detay ekranındaki büyük gösterim: beş aşama kutusu ve altında üretim adımları. */
 export function AsamaBuyuk({ paket }: { paket: Paket }) {
   const { t } = useDil();
+  if (sadeAkis(paket))
+    return (
+      <div className="asama-buyuk" data-sade-asama={sadeSira(paket)}>
+        {SADE_ASAMA_ADI.map((a, i) => {
+          const durum = sadeDurum(paket, i);
+          return (
+            <div key={a} className={durum}>
+              <span className="no">{i + 1}</span>
+              <b>{t(a)}</b>
+              <small>{t(durum === "gecti" ? "asamaGecti" : durum === "simdi" ? "asamaSimdi" : "asamaBekliyor")}</small>
+            </div>
+          );
+        })}
+      </div>
+    );
   const simdi = asamaBul(paket);
   const gecikti = geciktiMi(paket);
   const yol = uretimYolu(paket);

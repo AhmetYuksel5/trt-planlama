@@ -221,16 +221,20 @@ export function YzHaberDegeri({ ben, oneri: o, ulkeAdi }: { ben: Kisi; oneri: On
           </p>
           {gorus.ozet && <p dir="auto">{gorus.ozet}</p>}
           <ul className="yz-kriterler">
-            {gorus.kriterler.map((k) => (
-              <li key={k.ad}>
-                <span className="yz-puan" aria-label={t("yzPuan", { n: k.puan })}>
-                  {"●".repeat(k.puan)}
-                  <span className="sonuk">{"○".repeat(5 - k.puan)}</span>
-                </span>
-                <b dir="auto">{k.ad}</b>
-                {k.gerekce && k.gerekce !== "—" && <span dir="auto"> · {k.gerekce}</span>}
-              </li>
-            ))}
+            {gorus.kriterler.map((k) => {
+              // Kayıttaki puan aralık dışıysa (eski ya da bozuk görüş) çizim çökmesin.
+              const puan = Math.min(5, Math.max(0, Math.round(k.puan) || 0));
+              return (
+                <li key={k.ad}>
+                  <span className="yz-puan" aria-label={t("yzPuan", { n: puan })}>
+                    {"●".repeat(puan)}
+                    <span className="sonuk">{"○".repeat(5 - puan)}</span>
+                  </span>
+                  <b dir="auto">{k.ad}</b>
+                  {k.gerekce && k.gerekce !== "—" && <span dir="auto"> · {k.gerekce}</span>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

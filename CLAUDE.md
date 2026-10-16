@@ -459,7 +459,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`haftalik/Plan.tsx → GundemeEkle`).
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
-  düğmeler (`PlanAraclari`: gelen öneriler ve takvimden bu güne, sayılarıyla;
+  düğmeler (`PlanAraclari`: gelen öneriler, muhabir takipleri ve takvimden bu güne, sayılarıyla;
   çağrı, çıktı, belge); öneriler ve takvim geniş `Pencere`de açılır. Simgeli
   kare satır denendi, beğenilmedi. "Hepsini bugüne al" günün başlangıç işi:
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
@@ -633,21 +633,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Muhabir ekler, düzeltir, bitirir, siler (`takipKaydet`, `takipKapat`,
   `takipSil`; yalnız kendisininki, `yetki.ts → takipEkleyebilir`,
   `takipGorebilir`); yeni takip Planlama'ya bildirim (`takipEklendi`).
-  Planlama WhatsApp'tan ulaşır ya da "İşe dönüştür"le muhabire öneri
-  penceresini takiple dolu açar; öneri `takipId` taşır ve bilinen
-  "muhabire öneri" akışına girer, takip kartı neye dönüştüğünü gösterir.
-  Öbür yön: öneri formunun haber türünde en sonda "Takip"
-  (`veri.ts → TAKIP_BICIMI`, `OneriBicimi`; `BICIMLER`'e girmez, pakete ve
-  haftalık kaleme biçim olarak geçmez, `paketBicimi`). Seçilince Strap
-  sorulmaz, takip türü sorulur; öneri gönderilirken muhabirin takibi de
-  açılır (`eylemler.ts → takibiEsle`, öneride `takipId`). Öneri takip
-  türünde kaldıkça ve plana girmedikçe ikisi aynı işin iki yüzü: Header ↔
-  konu, gelişme ↔ açıklama birlikte değişir (öneri düzenleme, yeniden
-  gönderme, `takipKaydet`). Planlama "Düzenle"de türü PKG vb. yapınca
-  öneri işe dönüşür, metinler ayrışır, takip muhabirde kalır (kartta "İşe
-  dönüştü"). Takip silinince Planlama'nın dokunmadığı ("yeni") takip
-  önerisi izleriyle geri çekilir; karar verilmişse yalnız bağ kopar.
-  Muhabir dışı kaynakta "Takip" yok.
+  Planlama WhatsApp'tan ulaşır, "Öneriye çevir"le takibi kendisi haber
+  önerisine çevirir (elle öneri formu takibin konusu, açıklaması ve
+  muhabiriyle dolu, `ElleOneriFormu baslangic/takipId`; öneri `takipId`
+  taşır, plan ekranından açılınca o planın gününe düşer) ya da "Muhabire
+  öner"le muhabire teklif gönderir (bilinen "muhabire öneri" akışı);
+  takip kartı neye dönüştüğünü gösterir.
+  Yalnız gelişme bildiren gönderi öneri değil takip: öneri formunun haber
+  türünde en sonda "Takip" (`veri.ts → TAKIP_BICIMI`, `OneriBicimi`;
+  `BICIMLER`'e girmez). Seçilince Strap sorulmaz, takip türü sorulur;
+  `oneriGonder` yalnız takip açar (dönen kimlik takibin, `takipKimligiMi`;
+  muhabir Takiplerim'e geçer, Planlama'ya `takipEklendi`). Öneri
+  listelerine ve plan ekranının gelen önerilerine karışmaz: Next Day ve
+  Weekly'de ayrı "Muhabir takipleri" düğmesi, sayısıyla, penceresinde
+  açık takipler (`Takipler.tsx → PlanTakipleri`, `acikTakipler`). Eskiden
+  takip türünde açılmış ve Planlama'nın dokunmadığı ("yeni") kopya öneri
+  sistemin açılış işinde ayıklanır (`takipOnerileriniAyikla`; takip kalır,
+  işlenmiş öneri yerinde). Takip silinince ona bağlı "yeni" takip önerisi
+  izleriyle geri çekilir; karar verilmişse yalnız bağ kopar. Muhabir dışı
+  kaynakta "Takip" yok.
 - Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
   (`oneri/OneriKarti.tsx → OneriListesi`):
   - kartta kol, haber türü, ülke, durum; başlık önerilen paket
@@ -788,6 +792,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   girer, Planlama'ya bildirim). Hesapsız muhabir için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,
   devral ve üretim akışı geçerli; yarım paketler kendi yolunda.
+  - Ekran bu pakete üç adım gösterir (`akis.ts → sadeAkis`, `SADE_ASAMA_ADI`):
+    plana eklendi, muhabirde, tamamlandı; "şimdi kimde" onaydan sonra
+    muhabir (`gorunenSahip`; iş akışının sahibi `paketSahibi` değişmez).
+    Beş aşama ve üretim adımları yalnız üretime girmiş pakette.
+  - Tek "Tamamlandı": paketi kapatmak önerinin e-posta takibini de kapatır,
+    takibi kapatmak onaylı paketi de (`paketTamamla`, `takipTamamla`);
+    paketli haber "Takipteki haberlerim"de ikinci kez durmaz. Haberi biten
+    önerinin rozeti "Tamamlandı" (`OneriDurumRozeti`).
 - Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
   feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
   (`yetki.ts → KOL_BIRIMLERI`).

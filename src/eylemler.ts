@@ -232,7 +232,12 @@ export interface OneriGirdisi {
   hafta?: string;
   /** Haftalık öneride muhabirin haberi yapacağı gün (haftanın içinde); boşsa zamana bağlı değil. */
   haftaGunu?: string;
+  /** Planlama takibi öneriye çeviriyor: öneri takibe bağlanıyor (takip kartında "İşe dönüştü"). */
+  takipId?: string;
 }
+
+/** Gönderilen "Takip" türü öneri olmuyor, takip açıyor (oneriGonder); dönen kimlik takibin. */
+export const takipKimligiMi = (id: string) => id.startsWith("tk");
 
 /*
  * "Takip" türündeki öneri ile muhabirin takibi aynı işin iki yüzü: öneri
@@ -282,6 +287,29 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   const kanal: Kanal = muhabir ? "sistem" : g.kanal;
   let d = getir();
   if (!muhabir && muhabirId && kisiBul(d, muhabirId)?.birim !== "muhabir") return null;
+  /*
+   * Yalnız gelişme bildiren gönderi öneri değil, takip: Planlama'nın öneri
+   * listelerine ve plan ekranının gelen önerilerine karışmıyor, muhabirin
+   * ve Planlama'nın takiplerine düşüyor. Planlama isterse takibi öneriye
+   * çeviriyor (takipten öneri, aşağıda takipId).
+   */
+  if (takip && muhabirId) {
+    const tk: Takip = {
+      id: kimlik("tk"),
+      muhabirId,
+      sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+      zaman: simdi(),
+      konu: g.haberBasligi.trim(),
+      ...(g.gelisme.trim() && { aciklama: g.gelisme.trim() }),
+      tur: g.takipTuru ?? "diger",
+      ...((g.hedefTarih ?? g.haftaGunu) && { tarih: g.hedefTarih ?? g.haftaGunu }),
+    };
+    d = { ...d, takipler: [tk, ...d.takipler] };
+    kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", veri: { takipId: tk.id, ...(muhabir ? { sahip: "planlama" } : { kime: muhabirId }) } }));
+    return tk.id;
+  }
+  // Takipten çevrilen öneri o takibe bağlanıyor; takip aynı muhabirin olmalı.
+  const kaynakTakip = g.takipId ? d.takipler.find((x) => x.id === g.takipId && x.muhabirId === muhabirId) : undefined;
   // Çağrı muhabirlere gidiyor; ajanstan ya da bakanlıktan gelen öneri ona verilmiş yanıt değil.
   // Günü (aralığı) olan öneri önce o günün Next Day çağrısına, yoksa haftasının haftalık çağrısına bağlanıyor.
   const bitis = !g.hafta && g.hedefTarih && g.bitisTarih && g.bitisTarih > g.hedefTarih ? g.bitisTarih : undefined;
@@ -314,6 +342,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     ...(g.hafta && g.haftaGunu && g.haftaGunu >= g.hafta && g.haftaGunu <= gunEkle(g.hafta, 6) && { haftaGunu: g.haftaGunu }),
     durum: "yeni",
     cagriId: cagri?.id,
+    ...(kaynakTakip && { takipId: kaynakTakip.id }),
   };
   [d, oneri] = takibiEsle(d, takip ? { ...oneri, paketBasligi: undefined } : oneri, g.takipTuru);
   d = { ...d, oneriler: [oneri, ...d.oneriler] };
@@ -685,8 +714,13 @@ export const takipTamamla = (ben: Kisi, oneriId: string) => {
   const o = oneriBul(d, oneriId);
   if (!o || !takipTamamlayabilir(ben, o)) return false;
   const muhabir = ben.id === o.muhabirId;
-  const yeni: Durum = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, takip: "tamamlandi", takipBitis: simdi(), takipBitiren: ben.id } : x)) };
-  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
+  const z = simdi();
+  let yeni: Durum = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, takip: "tamamlandi", takipBitis: z, takipBitiren: ben.id } : x)) };
+  // Haberin paketi de aynı iş: Newsdesk yokken onaylı paket de kapanıyor, iki ayrı "tamamlandı" kalmıyor.
+  const p = d.paketler.find((x) => x.oneriId === o.id && x.durum === "onaylandi");
+  if (p && !d.newsdeskDevrede)
+    yeni = paketGuncelle(yeni, p.id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabir && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, ...(p && { paketId: p.id }), veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
   return true;
 };
 
@@ -1822,7 +1856,9 @@ export const paketTamamla = (ben: Kisi, id: string) => {
   if (!p || !paketTamamlayabilir(ben, p, d)) return false;
   const z = simdi();
   const muhabirKendisi = ben.id === p.muhabirId;
-  const yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
+  let yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
+  // Önerisi e-postayla takipteyse takip de bitiyor: aynı haber için iki ayrı "tamamlandı" yok.
+  if (p.oneriId) yeni = { ...yeni, oneriler: yeni.oneriler.map((o) => (o.id === p.oneriId && o.takip === "acik" ? { ...o, takip: "tamamlandi", takipBitis: z, takipBitiren: ben.id } : o)) };
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "tamamlandi", paketId: id, planId: p.planId, veri: muhabirKendisi ? { sahip: "planlama" } : { ...(p.muhabirId ? { kime: p.muhabirId } : {}) } }));
   return true;
 };
@@ -3236,6 +3272,20 @@ export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
   d = { ...d, takipler: [{ id, muhabirId: ben.id, sehir: ben.sehir, zaman: simdi(), ...alanlar }, ...d.takipler] };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", veri: { takipId: id, sahip: "planlama" } }));
   return id;
+};
+
+/*
+ * Eskiden "Takip" türünde gönderilen öneri hem öneri hem takip olarak
+ * kaydediliyordu; şimdi yalnız takip. Planlama'nın dokunmadığı ("yeni")
+ * ve takibi duran kopya öneri, izleriyle kaldırılıyor (takip kalıyor);
+ * Planlama'nın işlediği öneri yerinde. Sistemin açılış işi (App.tsx).
+ */
+export const takipOnerileriniAyikla = (): number => {
+  const d = getir();
+  const idler = d.oneriler.filter((o) => o.bicim === TAKIP_BICIMI && o.durum === "yeni" && !!o.takipId && d.takipler.some((x) => x.id === o.takipId)).map((o) => o.id);
+  if (!idler.length) return 0;
+  kaydet(temizle(d, { turler: ["oneriler"], idler }).yeni);
+  return idler.length;
 };
 
 /** Takip bitti (ya da yeniden açıldı); kayıt geçmişte kalıyor. */

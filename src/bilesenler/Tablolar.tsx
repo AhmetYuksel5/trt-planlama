@@ -1,12 +1,12 @@
 import { birimAdi } from "../yapi";
 import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Tv, type LucideIcon } from "lucide-react";
-import { geciktiMi, paketSahibi, stokDurumu } from "../akis";
+import { geciktiMi, gorunenSahip, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
 import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
 import { oneriAraligi, oneriEtiketleri } from "../oneriPlanlari";
 import { git } from "../yol";
-import { kisiBul, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
+import { kisiBul, useVeri, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
 
 /*
@@ -48,7 +48,7 @@ export function PaketTablosu({
         </thead>
         <tbody>
           {[...paketler].sort(oncelikliOnce).map((p) => {
-            const sahip = paketSahibi(p);
+            const sahip = gorunenSahip(p);
             const muhabir = kisiBul(d, p.muhabirId);
             const plan = d.planlar.find((x) => x.id === p.planId);
             return (
@@ -150,6 +150,14 @@ function StokYeri({ p, d }: { p: Paket; d: Durum }) {
 
 export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
   const { t } = useDil();
+  const v = useVeri();
+  // Plana giren önerinin haberi bitince öneri de "tamamlandı" görünsün; "plana eklendi"de kalıyordu.
+  if (oneri.durum === "planaEklendi" && v.paketler.some((p) => p.oneriId === oneri.id && p.durum === "tamamlandi"))
+    return (
+      <span data-oneri-tamamlandi>
+        <Rozet ton="iyi">{t("pdTamamlandi")}</Rozet>
+      </span>
+    );
   return <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>;
 }
 

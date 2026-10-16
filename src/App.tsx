@@ -55,7 +55,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
+import { planCiftleriniTopla, takipOnerileriniAyikla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
 import {
   kisitliKisi,
@@ -125,6 +125,7 @@ export default function App() {
       // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
       if (izlemede()) return;
       planCiftleriniTopla();
+      takipOnerileriniAyikla();
       yarinPlaniniAc();
     };
     yokla();

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
+import { oneriGonder, takipKimligiMi, ulkesi, type OneriGirdisi } from "../../eylemler";
 import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, TAKIP_BICIMI, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { YzBicimle } from "../../bilesenler/YzOneri";
@@ -247,20 +247,28 @@ export function ElleOneriFormu({
   hemenMetni,
   kaydet,
   kapat,
+  baslangic,
+  takipId,
 }: {
   ben: Kisi;
   hedefTarih?: string;
   hafta?: string;
-  hemenMetni: string;
+  hemenMetni?: string;
   kaydet: (id: string, hemen: boolean) => void;
   kapat: () => void;
+  /** Takipten öneriye çevirmede form takibin konusu, açıklaması ve muhabiriyle dolu açılıyor. */
+  baslangic?: Partial<OneriFormDurumu>;
+  takipId?: string;
 }) {
   const { t } = useDil();
-  const [f, setF] = useState(() => oneriFormuBaslangic(ben, "telefon"));
+  const [f, setF] = useState(() => ({ ...oneriFormuBaslangic(ben, "telefon"), ...baslangic }));
   const gecerli = oneriFormuGecerli(f);
   const gonder = (hemen: boolean) => {
-    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta });
-    if (id) {
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta, ...(takipId && { takipId }) });
+    if (id && takipKimligiMi(id)) {
+      bildir(t("bTakipKaydedildi"));
+      kapat();
+    } else if (id) {
       bildir(t("bOneriKaydedildi"));
       kaydet(id, hemen);
     }
@@ -275,9 +283,11 @@ export function ElleOneriFormu({
         <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => gonder(false)} disabled={!gecerli}>
           {t("kaydet")}
         </button>
-        <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => gonder(true)} disabled={!gecerli}>
-          {hemenMetni}
-        </button>
+        {hemenMetni && (
+          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => gonder(true)} disabled={!gecerli}>
+            {hemenMetni}
+          </button>
+        )}
       </div>
     </div>
   );

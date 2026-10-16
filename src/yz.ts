@@ -209,7 +209,7 @@ const demo = <O extends YzOzellik>(o: O, g: Girdiler[O]): Sonuclar[O] => {
   }
   const h = g as Girdiler["haberDegeri"];
   const tohum = ozet(`${h.haberBasligi}${h.gelisme}`);
-  const kriterler = (h.kriterler ?? []).map((ad, i) => ({ ad, puan: 2 + ((tohum >> (i * 3)) % 4), gerekce: "—" }));
+  const kriterler = (h.kriterler ?? []).map((ad, i) => ({ ad, puan: 2 + ((tohum >>> (i * 3)) % 4), gerekce: "—" }));
   const ort = kriterler.reduce((a, k) => a + k.puan, 0) / (kriterler.length || 1);
   return { kriterler, genel: ort >= 4 ? "yuksek" : ort >= 3 ? "orta" : "dusuk", ozet: "" } as Sonuclar[O];
 };

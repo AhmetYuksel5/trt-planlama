@@ -1,15 +1,16 @@
-import { Binoculars, BriefcaseBusiness, CircleUser, Pencil, Plus, RotateCcw, Square, Trash2 } from "lucide-react";
+import { Binoculars, BriefcaseBusiness, CircleUser, Lightbulb, Pencil, Plus, RotateCcw, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Avatar, Bos, Icerik, Kart, Rozet, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../bilesenler/Tablolar";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { metin, tarihYaz, useDil } from "../dil";
-import { takipKapat, takipKaydet, takipSil } from "../eylemler";
+import { takipKapat, takipKaydet, takipSil, ulkesi } from "../eylemler";
 import { TAKIP_TUR_ADI, sehirAdi } from "../etiketler";
-import { bugun } from "../tarih";
+import { bugun, gunEkle } from "../tarih";
 import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type Takip, type TakipTuru } from "../veri";
-import { muhabireOneriGonderebilir, takipEkleyebilir, takipGorebilir } from "../yetki";
+import { muhabireOneriGonderebilir, takipEkleyebilir, takipGorebilir, yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
+import { ElleOneriFormu } from "./oneri/OneriFormu";
 import { MuhabireOneriPenceresi } from "./oneri/Yazisma";
 
 /**
@@ -121,10 +122,11 @@ function TakipFormu({ ben, mevcut, kapat }: { ben: Kisi; mevcut?: Takip; kapat: 
   );
 }
 
-function TakipKarti({ ben, takip: x, duzenle }: { ben: Kisi; takip: Takip; duzenle?: () => void }) {
+function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: Takip; duzenle?: () => void; hedefTarih?: string }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [donustur, setDonustur] = useState(false);
+  const [cevir, setCevir] = useState(false);
   const muhabir = kisiBul(v, x.muhabirId);
   const kendi = ben.id === x.muhabirId;
   const isler = v.oneriler.filter((o) => o.takipId === x.id);
@@ -166,8 +168,14 @@ function TakipKarti({ ben, takip: x, duzenle }: { ben: Kisi; takip: Takip; duzen
         </div>
       </div>
       <div className="dugmeler ara-ust">
+        {/* Planlama takibi kendisi haber önerisine çeviriyor: öneri listesine ve plana bilinen yoldan giriyor. */}
+        {!kendi && !x.kapandi && yapabilir(ben, "oneriGonder") && (
+          <button type="button" className="dugme dugme-kucuk" onClick={() => setCevir(true)} data-takip-oneriye>
+            <Lightbulb size={14} /> {t("mtOneriyeCevir")}
+          </button>
+        )}
         {!kendi && !x.kapandi && muhabireOneriGonderebilir(ben, v) && (
-          <button type="button" className="dugme dugme-kucuk" onClick={() => setDonustur(true)} data-takip-donustur>
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setDonustur(true)} data-takip-donustur>
             <BriefcaseBusiness size={14} /> {t("mtIseDonustur")}
           </button>
         )}
@@ -188,7 +196,42 @@ function TakipKarti({ ben, takip: x, duzenle }: { ben: Kisi; takip: Takip; duzen
         )}
       </div>
       {donustur && <MuhabireOneriPenceresi ben={ben} takip={x} kapat={() => setDonustur(false)} />}
+      {cevir && (
+        <Pencere baslik={t("mtOneriyeCevirBaslik")} alt={<Icerik>{x.konu}</Icerik>} kapat={() => setCevir(false)}>
+          <ElleOneriFormu
+            ben={ben}
+            hedefTarih={hedefTarih ?? (x.tarih && x.tarih >= bugun() ? x.tarih : gunEkle(bugun(), 1))}
+            takipId={x.id}
+            baslangic={{ kaynak: "muhabir", muhabirId: x.muhabirId, haberBasligi: x.konu, gelisme: x.aciklama ?? x.konu, ulke: ulkesi(x.sehir) }}
+            kaydet={() => setCevir(false)}
+            kapat={() => setCevir(false)}
+          />
+        </Pencere>
+      )}
     </article>
+  );
+}
+
+/** Açık takipler (Planlama'nın gördükleri); plan ekranındaki "Takipler" penceresi ve sayısı. */
+export const acikTakipler = (ben: Kisi, d: { takipler: Takip[] }) => d.takipler.filter((x) => !x.kapandi && takipGorebilir(ben, x)).sort(sirala);
+
+/*
+ * Plan ekranında takipler gelen önerilerden ayrı pencerede: yalnız gelişme
+ * bildiren takip öneri listesini kalabalıklaştırmasın. Öneriye çevrilen
+ * takip o planın gününe öneri olarak düşüyor.
+ */
+export function PlanTakipleri({ ben, tarih }: { ben: Kisi; tarih: string }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const liste = acikTakipler(ben, v);
+  return liste.length ? (
+    <div className="takip-listesi" data-plan-takipleri>
+      {liste.map((x) => (
+        <TakipKarti key={x.id} ben={ben} takip={x} hedefTarih={tarih} />
+      ))}
+    </div>
+  ) : (
+    <Bos metin={t("mtYok")} />
   );
 }
 
