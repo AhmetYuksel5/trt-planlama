@@ -218,9 +218,36 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
     Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
     yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
-  - Kurallar (`firestore.rules`) yalnız "etkin kişi" ve hesap alanlarını
-    (`pasif`, `hesapYoneticisi`, `eposta`) denetliyor; birim yetkisi
-    programda. Davetler `Durum`'da değil, `davetler` koleksiyonunda.
+  - Kurallar (`firestore.rules`) "etkin kişi"yi, hesap alanlarını
+    (`pasif`, `hesapYoneticisi`, `eposta`) ve kısıtlı kişiyi denetliyor;
+    öbür birim yetkisi programda. Davetler `Durum`'da değil, `davetler`
+    koleksiyonunda.
+  - Muhabir yalnız kendi işini görür, kural düzeyinde (`depo/fark.ts →
+    kisitliJson`, `KISITLI_OKUR`, `erisimListesi`; `yetki.ts → kisitliKisi`).
+    Kısıtlı kişi: dış muhabir (`birim === "muhabir"`) ve kayıt bağlantısıyla
+    gelip yönetici onayı bekleyen (`kontrolBekliyor`; kabukta "onay
+    bekliyor" satırı). Kural onu kişi kaydının metninden aynı desenle tanır.
+    - Kısıtlı kişinin okuduğu koleksiyonlarda (öneri, paket, takip,
+      görevlendirme, faaliyet, mesaj, yanıt, çağrı, hareket) her belgede
+      erişim listesi `m`: muhabirin kendi işi ve ona bağlı olanlar
+      (önerisinin mesajı, paketinin hareketi, alıcısı olduğu çağrı). Liste
+      yazışta kayıttan hesaplanır, "silindi" işaretinde de kalır.
+    - Tarayıcısı yalnız `m`'sinde kendisi (ya da hesaba bağlanmadan önceki
+      kaydı) olanları, kısıtsız kişileri (`kisiler.kisitli == false`) ve
+      kendi kaydını, yapıyı, genel ayarı ve kendi ayar belgelerini dinler
+      (`depo/firebase.ts → kayitBagla`). Planları, başlıkları, öbür
+      muhabirleri hiç almaz.
+    - Yazış: yalnız öneri, paket, takip, mesaj, hareket (listesinde adı
+      kalan) ve kendi ayarları; kendi kişi kaydında kısıtı değiştiremez
+      (birim, onay işareti yalnız kişi düzenleme yetkisiyle).
+    - Sistemin yazışları (yarının planı, plan çiftleri) kısıtlı kişide
+      çalışmaz (`App.tsx`): planı göremeyen boş plan yazardı.
+    - Hesaba bağlanan muhabir yalnız gördüğünü taşır (`kendiKayitlariniTasi`);
+      gerisini ve eski kaydın silinmesini tam yöneticinin tarayıcısı yapar
+      (`bekleyenGecisleriTamamla`, açılışta ve kişi listesi değişince).
+    - Tam yönetici açılışta erişim listelerini ve kişilerin `kisitli`
+      işaretini kayıtla eşitler (`erisimiTazele`): listeden önce yazılmış
+      belgeler ve öneriye sonradan bağlanan kayıt muhabire böyle görünür.
   - Gerçek kipte prototip etiketi, örnek veri ve "Örnek veriye dön" yok;
     çıkış tanıtıma döner. Firebase yapılandırması boşsa giriş ekranı nedenini
     yazar, demo etkilenmez.

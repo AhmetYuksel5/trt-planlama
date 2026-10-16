@@ -41,6 +41,7 @@ const M = {
     "نموذج أولي · السجلات تجريبية وتُحفظ في هذا المتصفح فقط ولا يراها المستخدمون الآخرون.",
     "Prototype · Records are samples, stored only in this browser and not visible to other users.",
   ),
+  onayBekleniyorSerit: m("Hesabın yönetici onayını bekliyor; onaylanınca kayıtlar görünür.", "حسابك بانتظار موافقة المدير؛ تظهر السجلات بعد الموافقة.", "Your account is awaiting admin approval; records appear once approved."),
   izlemeSerit: m("{ad} olarak izliyorsun · değişiklik kaydedilmez", "تشاهد بصفة {ad} · لا تُحفظ أي تغييرات", "Viewing as {ad} · changes are not saved"),
   izlemedenCik: m("Çık", "خروج", "Exit"),
   izlemeYazilmadi: m("İzlemedesin; değişiklik kaydedilmedi.", "أنت في وضع المشاهدة؛ لم يُحفظ التغيير.", "You are viewing only; the change was not saved."),

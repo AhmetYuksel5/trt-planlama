@@ -2533,6 +2533,35 @@ const kimlikDegistir = <T>(x: T, eski: string, yeni: string): T => {
  * `oncekiKimlik`'i onu gösteren kişiye sildiriyor. Bir kez çalışır: eski
  * kayıt kalmayınca yapacak iş yok.
  */
+/* Eski kimliği kişiler dışındaki bütün kayıtlarda ve kişiye bağlı haritaların anahtarlarında yenisiyle değiştirir. */
+const kimligiTasi = (d: Durum, eski: string, yeniId: string): Durum => {
+  const yeni: Durum = { ...d };
+  for (const [alan, deger] of Object.entries(d) as [keyof Durum, unknown][]) {
+    if (alan === "kisiler") continue;
+    if (Array.isArray(deger)) {
+      let degisti = false;
+      const liste = deger.map((o) => {
+        const n = kimlikDegistir(o, eski, yeniId);
+        if (n !== o) degisti = true;
+        return n;
+      });
+      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = liste;
+    } else if (deger && typeof deger === "object") {
+      // Kişiye bağlı haritalar: anahtar kişi ya da "kişi:…".
+      const m: Record<string, unknown> = {};
+      let degisti = false;
+      for (const [k, v] of Object.entries(deger)) {
+        const yk = k === eski ? yeniId : k.startsWith(`${eski}:`) ? yeniId + k.slice(eski.length) : k;
+        const yv = kimlikDegistir(v, eski, yeniId);
+        if (yk !== k || yv !== v) degisti = true;
+        m[yk] = yv;
+      }
+      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = m;
+    }
+  }
+  return yeni;
+};
+
 export const hesabaGecir = (benId: string) => {
   if (!GERCEK) return false;
   const d = getir();
@@ -2544,33 +2573,35 @@ export const hesabaGecir = (benId: string) => {
   const { hesapsiz: _, kontrolBekliyor: __, yeniEposta: ___, pasif: ____, ...profil } = eskiKisi;
   // Profil (şehir, telefon, diller, kısaltma…) eski kayıttan; hesap alanları yeni hesaptan.
   const birlesik: Kisi = { ...profil, id: ben.id, ad: ben.ad, birim: ben.birim, gorev: ben.gorev, rol: ben.rol, eposta: ben.eposta, oncekiKimlik: eski, ...(ben.hesapYoneticisi ? { hesapYoneticisi: true } : {}), ...(ben.yetkiler ? { yetkiler: ben.yetkiler } : {}) };
-  const yeni: Durum = { ...d };
-  for (const [alan, deger] of Object.entries(d) as [keyof Durum, unknown][]) {
-    if (alan === "kisiler") continue;
-    if (Array.isArray(deger)) {
-      let degisti = false;
-      const liste = deger.map((o) => {
-        const n = kimlikDegistir(o, eski, ben.id);
-        if (n !== o) degisti = true;
-        return n;
-      });
-      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = liste;
-    } else if (deger && typeof deger === "object") {
-      // Kişiye bağlı haritalar: anahtar kişi ya da "kişi:…".
-      const m: Record<string, unknown> = {};
-      let degisti = false;
-      for (const [k, v] of Object.entries(deger)) {
-        const yk = k === eski ? ben.id : k.startsWith(`${eski}:`) ? ben.id + k.slice(eski.length) : k;
-        const yv = kimlikDegistir(v, eski, ben.id);
-        if (yk !== k || yv !== v) degisti = true;
-        m[yk] = yv;
-      }
-      if (degisti) (yeni as unknown as Record<string, unknown>)[alan] = m;
-    }
-  }
+  const yeni = kimligiTasi(d, eski, ben.id);
   yeni.kisiler = d.kisiler.filter((k) => k.id !== eski).map((k) => (k.id === ben.id ? birlesik : kimlikDegistir(k, eski, ben.id)));
   kaydet(yeni);
   return true;
+};
+
+/*
+ * Kısıtlı kişi (muhabir) hesaba bağlanınca yalnız gördüğü kayıtları, yani
+ * kendi işini, yeni kimliğe taşıyor: eski kaydını ve başkalarının
+ * kayıtlarını göremiyor. Gerisini ve eski kişi kaydının silinmesini tam
+ * yöneticinin açılışı tamamlıyor (bekleyenGecisleriTamamla).
+ */
+export const kendiKayitlariniTasi = (benId: string) => {
+  if (!GERCEK) return false;
+  const d = getir();
+  const eski = d.kisiler.find((k) => k.id === benId)?.oncekiKimlik;
+  if (!eski) return false;
+  const yeni = kimligiTasi(d, eski, benId);
+  if ((Object.keys(d) as (keyof Durum)[]).every((k) => yeni[k] === d[k])) return false;
+  kaydet(yeni);
+  return true;
+};
+
+/** Tam yönetici: hesaba bağlanmış ama eski kaydı duran kişilerin geçişini tamamlıyor (muhabir kendisi yapamıyor). */
+export const bekleyenGecisleriTamamla = () => {
+  if (!GERCEK) return 0;
+  let n = 0;
+  for (const k of getir().kisiler) if (k.oncekiKimlik && getir().kisiler.some((x) => x.id === k.oncekiKimlik) && hesabaGecir(k.id)) n++;
+  return n;
 };
 
 /* --- Workspace --- */

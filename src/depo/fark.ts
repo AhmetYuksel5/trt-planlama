@@ -51,6 +51,60 @@ export type DiziAlani = (typeof DIZI_ALANLARI)[number];
  */
 export const farkAlaniMi = (alan: string) => alan !== "kisiler" && (DIZI_ALANLARI as readonly string[]).includes(alan);
 
+/*
+ * Kısıtlı kişi (dış muhabir; yönetici onayı bekleyen kayıt): Firestore
+ * kuralları ona yalnız erişim listesinde (`m`) adı geçen belgeyi veriyor,
+ * tarayıcısı da yalnız onları istiyor (depo/firebase.ts). Muhabir yalnız
+ * kendi işini görsün diye; ekrandaki süzme tek başına yetmiyordu, kayıt
+ * tarayıcıya bütünüyle iniyordu.
+ *
+ * Kural kişiyi kayıt metninden (j) tanıyor, aynı desenle: JSON'da başka
+ * yerde aynı dizi geçemez (metin içindeki tırnak kaçışlı yazılıyor).
+ */
+const KISITLI_DESENLERI = [/"birim":"muhabir"[,}]/, /"kontrolBekliyor":true[,}]/];
+export const kisitliJson = (j: string) => KISITLI_DESENLERI.some((d) => d.test(j));
+
+/** Kısıtlı kişinin okuyabildiği koleksiyonlar (kendi belgeleri; kişiler ve yapı ayrıca). */
+export const KISITLI_OKUR = ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler"] as const;
+
+type Kayit = { id: string; muhabirId?: string; kisiId?: string; oneriId?: string; paketId?: string; bcc?: string[]; veri?: Record<string, string>; tur?: string; tarih?: string };
+const bul = (d: Durum, alan: keyof Durum, id?: string) => (id ? ((d[alan] ?? []) as unknown as Kayit[]).find((x) => x.id === id) : undefined);
+
+/**
+ * Belgeyi görebilecek kişiler: muhabirin kendi işi ve ona bağlı olanlar
+ * (önerisinin mesajı, paketinin hareketi, alıcısı olduğu çağrı). Listede
+ * personel de olabilir; kural listeye yalnız kısıtlı kişide bakıyor.
+ */
+export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
+  const o = oge as Kayit;
+  const oneriMuhabiri = (id?: string) => bul(d, "oneriler", id)?.muhabirId;
+  const paketMuhabirleri = (id?: string) => {
+    const p = bul(d, "paketler", id);
+    return p ? [p.muhabirId, oneriMuhabiri(p.oneriId)] : [];
+  };
+  let l: (string | undefined)[] = [];
+  if (alan === "oneriler" || alan === "takipler" || alan === "faaliyetler") l = [o.muhabirId];
+  else if (alan === "paketler") l = [o.muhabirId, oneriMuhabiri(o.oneriId)];
+  else if (alan === "gorevlendirmeler" || alan === "yanitlar") l = [o.kisiId];
+  else if (alan === "mesajlar") l = [oneriMuhabiri(o.oneriId)];
+  else if (alan === "cagrilar") l = [...(o.bcc ?? [])];
+  else if (alan === "hareketler") {
+    const v = o.veri ?? {};
+    // Çağrı hareketi çağrıyı tarih ve türle buluyor (yetki.ts → muhabirBildirimi).
+    const cagri = (oge as { tip?: string }).tip === "cagriHazirlandi" ? ((d.cagrilar ?? []) as unknown as Kayit[]).find((c) => c.tarih === v.tarih && (c.tur === "haftalik") === !!v.hafta) : undefined;
+    l = [
+      o.kisiId,
+      ...(v.kime ? v.kime.split(",") : []),
+      oneriMuhabiri(o.oneriId),
+      ...paketMuhabirleri(o.paketId),
+      bul(d, "takipler", v.takipId)?.muhabirId,
+      bul(d, "faaliyetler", v.faaliyetId)?.muhabirId,
+      ...(cagri?.bcc ?? []),
+    ];
+  }
+  return [...new Set(l.filter((x): x is string => !!x))].sort();
+};
+
 export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari"] as const satisfies readonly (keyof Durum)[];
 export type HaritaAlani = (typeof HARITA_ALANLARI)[number];
 
@@ -70,11 +124,16 @@ export interface OgeBelgesi {
   oncekiKimlik?: string;
   yetkiler?: string[];
   yeniEposta?: string;
+  /** Kişide: kural ona yalnız kendi belgelerini veriyor; kısıtlı kişi öbür kısıtlıları göremiyor. */
+  kisitli?: boolean;
+  /** Erişim listesi: kısıtlı kişilerden bu belgeyi görebilenler. */
+  m?: string[];
 }
 
 export type Islem =
   | { tur: "yaz"; koleksiyon: string; id: string; veri: Record<string, unknown> }
-  | { tur: "sil"; koleksiyon: string; id: string };
+  // Silinen belgenin erişim listesi "silindi" işaretinde kalıyor: kısıtlı kişi de silindiğini görsün.
+  | { tur: "sil"; koleksiyon: string; id: string; m?: string[] };
 
 /** Alan → öğe kimliği → sıra. Dizideki sıra ekrandaki sıra; belgelere sıra alanıyla taşınıyor. */
 export type Siralar = Record<string, Map<string, number>>;
@@ -136,10 +195,12 @@ export function sirala(eski: Map<string, number>, idler: string[]): Map<string, 
 
 type Oge = { id: string };
 
-/** Kişi kaydına kuralların okuduğu düz alanlar eklenir. */
-export const ogeBelgesi = (alan: string, oge: Oge, s: number): OgeBelgesi => {
+/** Kişi kaydına kuralların okuduğu düz alanlar, kısıtlı kişinin okuduğu koleksiyonda erişim listesi eklenir. */
+export const ogeBelgesi = (alan: string, oge: Oge, s: number, d?: Durum): OgeBelgesi => {
   const b: OgeBelgesi = { s, j: JSON.stringify(oge) };
+  if (d && (KISITLI_OKUR as readonly string[]).includes(alan)) b.m = erisimListesi(alan, oge, d);
   if (alan === "kisiler") {
+    b.kisitli = kisitliJson(b.j);
     const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string; hesapsiz?: boolean; oncekiKimlik?: string; yetkiler?: string[]; yeniEposta?: string };
     b.eposta = (k.eposta ?? "").toLowerCase();
     b.pasif = !!k.pasif;
@@ -183,10 +244,11 @@ export function farkCikar(eski: Durum, yeni: Durum, siralar: Siralar): { islemle
     for (const o of b) {
       const s = sira.get(o.id) as number;
       if (eskiOge.get(o.id) === o && eskiSira.get(o.id) === s) continue;
-      islemler.push({ tur: "yaz", koleksiyon: alan, id: belgeKimligi(o.id), veri: { ...ogeBelgesi(alan, o, s) } });
+      islemler.push({ tur: "yaz", koleksiyon: alan, id: belgeKimligi(o.id), veri: { ...ogeBelgesi(alan, o, s, yeni) } });
     }
     const kalan = new Set(idler);
-    for (const o of a) if (!kalan.has(o.id)) islemler.push({ tur: "sil", koleksiyon: alan, id: belgeKimligi(o.id) });
+    const erisimli = (KISITLI_OKUR as readonly string[]).includes(alan);
+    for (const o of a) if (!kalan.has(o.id)) islemler.push({ tur: "sil", koleksiyon: alan, id: belgeKimligi(o.id), ...(erisimli ? { m: erisimListesi(alan, o, eski) } : {}) });
   }
 
   for (const alan of HARITA_ALANLARI) {

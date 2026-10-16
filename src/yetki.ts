@@ -491,6 +491,12 @@ export const siramMi = (k: Kisi, p: Paket) =>
 /* --- Takipler --- */
 
 /** Takibi muhabir kendisi girer: izlediği konu onun sahası. */
+/*
+ * Gerçek kipte kayıttan yalnız kendi parçasını gören kişi: dış muhabir ve
+ * yönetici onayı bekleyen kayıt. Firestore kuralı aynı ölçüyü kişi
+ * kaydının metninden okuyor (depo/fark.ts → kisitliJson).
+ */
+export const kisitliKisi = (k: Kisi): boolean => k.birim === "muhabir" || !!k.kontrolBekliyor;
 export const takipEkleyebilir = (k: Kisi | undefined): boolean => !!k && k.birim === "muhabir" && !k.hesapsiz;
 
 /** Muhabir yalnız kendi takibini görür; sayfayı gören masa (Planlama, Yönetim) hepsini. */

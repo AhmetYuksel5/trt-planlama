@@ -1906,6 +1906,8 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
   .yalniz-telefon { display: block; }
   .demo-serit.yalniz-telefon { display: flex; }
 }
+/* Onay bekleyen kayıt: telefondaki prototip şeridi gibi, her genişlikte. */
+.onay-serit { display: flex; margin: 0; padding: var(--ara-2) var(--ara-4); }
 /* İzleme şeridi: yönetici başkasının ekranında; vurgulu ki unutulmasın. */
 .izleme-serit { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0; padding: var(--ara-2) var(--ara-4); background: var(--lacivert); color: var(--vurgu-yazi); font-size: var(--punto-kucuk); font-weight: 600; }
 .izleme-serit span { flex: 1 1 12rem; min-width: 0; }

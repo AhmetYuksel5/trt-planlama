@@ -89,6 +89,12 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
             <FlaskConical size={14} aria-hidden="true" /> {t("demoSerit")}
           </p>
         )}
+        {/* Kayıt bağlantısıyla gelen, yönetici onaylayana kadar yalnız kendi kayıtlarını görüyor (firestore.rules). */}
+        {GERCEK && ben.kontrolBekliyor && ben.birim !== "muhabir" && (
+          <p className="demo-serit onay-serit" role="status" data-onay-serit>
+            {t("onayBekleniyorSerit")}
+          </p>
+        )}
         {/* İzleme şeridi her sayfada: yönetici gördüğünün başkasının ekranı olduğunu unutmasın. */}
         {izleme && (
           <p className="izleme-serit" role="status" data-izleme-serit>

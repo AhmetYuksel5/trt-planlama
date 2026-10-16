@@ -58,6 +58,7 @@ import {
 import { planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
 import {
+  kisitliKisi,
   oneriGorebilir,
   paketGorebilir,
   sayfaGorebilir,
@@ -116,8 +117,10 @@ export default function App() {
   }, [t]);
   // Next Day her gün sürüyor: yarının planı yoksa sistem önceki planın şablonuyla açıyor.
   // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın. Gerçek kipte kayıt gelince.
+  // Gerçek kipte kısıtlı kişi (muhabir) kaydın yalnız kendi parçasını görüyor: planı yok sanıp gerçeğinin üstüne boş plan yazardı.
+  const sistemYazar = !GERCEK || (!!ben && !kisitliKisi(ben));
   useEffect(() => {
-    if (GOMULU || !kayitHazir) return;
+    if (GOMULU || !kayitHazir || !sistemYazar) return;
     const yokla = () => {
       // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
       if (izlemede()) return;
@@ -127,7 +130,7 @@ export default function App() {
     yokla();
     const z = setInterval(yokla, GUN_YOKLAMA);
     return () => clearInterval(z);
-  }, [kayitHazir]);
+  }, [kayitHazir, sistemYazar]);
 
   // Tanıtım: adres çıplak açılınca (demoda; gerçek kipte kalmış kişi doğrudan sisteme) ya da `#/tanitim`.
   if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;

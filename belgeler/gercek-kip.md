@@ -117,9 +117,16 @@ Bu değerler gizli değildir: tarayıcıya giden web uygulaması kimliğidir. Er
 - **Okuma maliyeti (fark okuma):** Firebase ücretsiz planda günde 50.000 belge okuması veriyor ve tarayıcı 30 dakikadan uzun kapalı kaldıysa açılışta bütün kayıt yeniden okunmuş sayılıyor; bu, her açılışta kaydın tamamı demekti. Şimdi kişiler dışındaki her belgede sunucu zamanı (`z`) var. Bir tarayıcıda bir kez tam okunan koleksiyon (`trt-planlama-tam-okunan:<proje>`) sonraki açılışta Firestore'un tarayıcı önbelleğinden kurulur, sunucudan yalnız `z`'si önbellekteki en son zamandan (5 dakika payla) yeni olanlar istenir. Silinen belge kalkmaz, `silindi` işaretiyle yazılır ki fark sorgusu silindiğini görsün. Önbellek sınırsız: Firestore eskiyi kendiliğinden atmasın. Önbellek boşsa (temizlenmiş tarayıcı, yeni cihaz) tam okunur. Kişiler tam okunur: kuralı yazılacak alanları sayıyor, koleksiyon da küçük.
 - Gerçek kayıt boş başlar, örnek veri yüklenmez. Ayarlar'daki "Örnek veriye dön" gerçek kipte yoktur.
 
+## Muhabirin erişimi
+
+- Muhabirin tarayıcısına yalnız kendi işi iner: kendi önerileri ve yazışmaları, paketleri, takipleri, görevlendirmeleri, takvimdeki faaliyetleri, alıcısı olduğu çağrılar ve onu ilgilendiren hareketler. Planlar, başlık havuzu, başka muhabirlerin işi ve kişi kayıtları inmez; personelin adı ve iletişimi iner.
+- Bunu Firestore kuralları sağlıyor, ekrandaki süzme değil: muhabir başka bir kaydı doğrudan istese de sunucu vermez. Her belgede "erişim listesi" (`m`) var; kural muhabire yalnız listesinde adı geçeni verir.
+- Muhabir kendi birimini değiştiremez (birim değişikliği kişi düzenleme yetkisiyle). Kayıt bağlantısıyla gelen kişi, yönetici "Düzenle"de onaylayana kadar aynı kısıtla açılır; kendini Planlama diye kaydetse de onaya kadar hiçbir kaydı görmez.
+- **Yayından sonra bir kez:** tam yönetici siteye bir kez girmeli. Açılışı eski belgelere erişim listesini ve kişilere kısıt işaretini yazar; o zamana kadar muhabir kendi eski kayıtlarını ve personelin adlarını göremez.
+
 ## Bilinen sınırlar
 
-- **Yetkiler:** kurallar yalnız "kurumdan, etkin kişi" diyor. Birim ve görev yetkisi (kim neyi düzenler) bugün programda (`src/yetki.ts`) soruluyor; teknik bilgisi olan etkin bir kişi bunu atlatabilir. İnce yetkinin kurallara taşınması sonraki adımdır.
+- **Yetkiler:** muhabir (ve kayıt bağlantısıyla gelip onay bekleyen) kural düzeyinde kısıtlı: yalnız kendi işini okur ve yazar (aşağıda "Muhabirin erişimi"). Personel arasındaki birim ve görev yetkisi (kim neyi düzenler) bugün programda (`src/yetki.ts`) soruluyor; teknik bilgisi olan etkin bir personel bunu atlatabilir. Personel içi ince yetkinin kurallara taşınması sonraki adımdır.
 - **Paket kodu sayacı:** paket kodundaki sıra numarası tek sayaçtan geliyor. İki kişi aynı anda paket açarsa aynı numarayı alabilir; sunucu tarafında sayaç sonraki adımdır.
 - **Fotoğraflar:** profil fotoğrafları kayıtta küçük resim olarak duruyor; dosya deposuna taşınması sonraki adımdır.
 - **KVKK:** gerçek kişi verisi Google bulutunda (Firebase) duracak. Kullanıma açmadan önce kurumun bilgi güvenliği ve hukuk birimiyle konuşulmalı. Kurumun kendi sunucusuna geçişte yalnız `src/depo/firebase.ts` değişir.

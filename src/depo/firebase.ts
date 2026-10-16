@@ -39,11 +39,11 @@ import {
 } from "firebase/firestore";
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
-import { hesabaGecir } from "../eylemler";
+import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
-import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, anahtarKimligi, farkAlaniMi, farkCikar, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
+import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
  * Gerçek kipin Firebase katmanı: oturum (Auth), davet ve etkinleştirme
@@ -102,15 +102,19 @@ export const gercekKipiBaslat = () => {
       return;
     }
     try {
-      const hal = await kisiHali(u);
-      if (hal !== "etkin") {
-        gercekDurumuYaz({ tur: hal === "pasif" ? "pasif" : "giris" });
+      const ks = await getDoc(doc(db, "kisiler", u.uid));
+      const kendi = ks.exists() ? (ks.data() as OgeBelgesi) : undefined;
+      if (!kendi || kendi.pasif) {
+        gercekDurumuYaz({ tur: kendi ? "pasif" : "giris" });
         return;
       }
-      kopar = kayitBagla(() => {
+      kopar = kayitBagla(kendi, (kisitli) => {
         girisYap(u.uid);
-        // Hesapsız kaydı bu hesaba bağlandıysa geçmiş bir kez taşınıyor.
-        hesabaGecir(u.uid);
+        // Hesapsız kaydı bu hesaba bağlandıysa geçmiş bir kez taşınıyor. Kısıtlı kişi yalnız gördüğünü
+        // taşıyabiliyor; gerisini ve eski kaydı tam yöneticinin açılışı tamamlıyor.
+        if (kisitli) kendiKayitlariniTasi(u.uid);
+        else hesabaGecir(u.uid);
+        if (!kisitli && kendi.hesapYoneticisi) bekleyenGecisleriTamamla();
         gercekDurumuYaz({ tur: "hazir" });
       });
     } catch (e) {
@@ -153,6 +157,8 @@ interface Onbellek {
   s: number;
   j: string;
   o: unknown;
+  /** Belgedeki erişim listesi (kişide kısıt işareti), metin olarak; tazelenecek olanı bulmak için. */
+  e?: string;
 }
 
 /**
@@ -161,22 +167,31 @@ interface Onbellek {
  * yalnız değişen öğelerle yeniden çiziliyor: değişmeyen öğenin nesnesi
  * aynı kalıyor, fark da nesne kimliğiyle çıktığı için.
  */
-const kayitBagla = (hazir: () => void): (() => void) => {
+const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() => void) => {
+  const uid = auth.currentUser?.uid ?? "";
+  // Kısıtlı kişi (muhabir, onay bekleyen kayıt) yalnız erişim listesinde adı geçen belgeleri istiyor; kural da yalnız onları veriyor.
+  const kisitli = kisitliJson(kendi.j);
+  const kimlikler = [uid, ...(kendi.oncekiKimlik ? [kendi.oncekiKimlik] : [])];
   const onbellek: Record<string, Map<string, Onbellek>> = {};
   let siralar: Siralar = {};
   let d: Durum = bosDurum();
-  const bekleyen = new Set<string>([...DIZI_ALANLARI, ...HARITA_ALANLARI, GENEL.koleksiyon]);
+  const bekleyen = new Set<string>();
   let bagli = false;
   const iptal: Unsubscribe[] = [];
 
-  const geldi = (alan: string, degisti: boolean) => {
+  const geldi = (anahtar: string, degisti: boolean) => {
     if (!bagli) {
-      bekleyen.delete(alan);
+      bekleyen.delete(anahtar);
       if (bekleyen.size) return;
       bagli = true;
       uzakDepoyuTak({ yaz }, d);
-      hazir();
-    } else if (degisti) disaridanGeldi(d);
+      hazir(kisitli);
+      if (!kisitli && kendi.hesapYoneticisi) erisimiTazele();
+    } else if (degisti) {
+      disaridanGeldi(d);
+      // Muhabir hesaba bağlanınca eski kaydını kendisi taşıyamıyor; açık duran tam yönetici hemen tamamlıyor.
+      if (anahtar === "kisiler" && !kisitli && kendi.hesapYoneticisi) setTimeout(bekleyenGecisleriTamamla);
+    }
   };
 
   /*
@@ -196,41 +211,53 @@ const kayitBagla = (hazir: () => void): (() => void) => {
     gercekDurumuYaz(hal === "pasif" ? { tur: "pasif" } : { tur: "hata", kod });
   };
 
-  for (const alan of DIZI_ALANLARI) {
-    const m = (onbellek[alan] = new Map());
-    const fark = farkAlaniMi(alan);
-    const isle = (snap: QuerySnapshot<DocumentData>) => {
+  // Kişinin kısıtı değişirse (tayin, onay) okuduğu kayıt da değişiyor: sayfa yeniden açılır.
+  const kendimDegisti = (id: string, v: OgeBelgesi) => {
+    if (id === uid && kisitliJson(v.j) !== kisitli) location.reload();
+  };
+
+  const diziKur = (alan: string) => {
+    const m = onbellek[alan];
+    const liste = [...m.entries()].sort((a, b) => a[1].s - b[1].s || (a[0] < b[0] ? -1 : 1));
+    siralar = { ...siralar, [alan]: new Map(liste.map(([id, x]) => [id, x.s])) };
+    d = { ...d, [alan]: liste.map(([, x]) => x.o) };
+  };
+  /* Belgenin düz alanından tazelenecek olan: erişim listesi, kişide kısıt işareti (erisimiTazele). */
+  const ek = (alan: string, v: OgeBelgesi) => (alan === "kisiler" ? String(v.kisitli) : JSON.stringify(v.m ?? []));
+  const belgeIsle = (alan: string, id: string, v: (OgeBelgesi & { silindi?: boolean }) | undefined): boolean => {
+    const m = onbellek[alan];
+    if (!v || v.silindi) return m.delete(id);
+    if (alan === "kisiler") kendimDegisti(id, v);
+    const eski = m.get(id);
+    if (eski && eski.j === v.j && eski.s === v.s && eski.e === ek(alan, v)) return false;
+    m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j ? eski.o : JSON.parse(v.j), e: ek(alan, v) });
+    return !eski || eski.j !== v.j || eski.s !== v.s;
+  };
+
+  const diziDinle = (alan: string, mod: "tam" | "fark" | "suz") => {
+    onbellek[alan] ??= new Map();
+    const fark = mod === "fark";
+    const isle = (anahtar: string) => (snap: QuerySnapshot<DocumentData>) => {
       let degisti = false;
-      for (const c of snap.docChanges()) {
-        const id = anahtarKimligi(c.doc.id);
-        const v = c.doc.data() as OgeBelgesi & { silindi?: boolean };
-        if (c.type === "removed" || v.silindi) {
-          degisti = m.delete(id) || degisti;
-          continue;
-        }
-        const eski = m.get(id);
-        if (eski && eski.j === v.j && eski.s === v.s) continue;
-        m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j ? eski.o : JSON.parse(v.j) });
-        degisti = true;
-      }
-      if (degisti || !bagli) {
-        const liste = [...m.entries()].sort((a, b) => a[1].s - b[1].s || (a[0] < b[0] ? -1 : 1));
-        siralar = { ...siralar, [alan]: new Map(liste.map(([id, x]) => [id, x.s])) };
-        d = { ...d, [alan]: liste.map(([, x]) => x.o) };
-      }
+      for (const c of snap.docChanges()) degisti = belgeIsle(alan, anahtarKimligi(c.doc.id), c.type === "removed" ? undefined : (c.doc.data() as OgeBelgesi)) || degisti;
+      if (degisti || !bagli) diziKur(alan);
       // Sunucudan bir kez tam gelen koleksiyon bu cihazda bundan sonra farkla okunur.
       if (fark && !snap.metadata.fromCache) tamOkunduYaz(alan);
-      geldi(alan, degisti);
+      geldi(anahtar, degisti);
     };
+    bekleyen.add(alan);
+    if (mod === "suz") {
+      // Kısıtlı kişi: erişim listesinde kendisi (ya da hesaba bağlanmadan önceki kaydı) olan belgeler.
+      const kosul = kimlikler.length > 1 ? where("m", "array-contains-any", kimlikler) : where("m", "array-contains", uid);
+      iptal.push(onSnapshot(query(collection(db, alan), kosul), isle(alan), hata));
+      return;
+    }
     const tamDinle = () => {
       if (durdu) return;
       // Önbellekle sunucu aynıysa yalnız "fromCache" değişiyor; o görüntü de gelsin ki tam okunduğu yazılsın.
-      iptal.push(onSnapshot(collection(db, alan), { includeMetadataChanges: fark }, isle, hata));
+      iptal.push(onSnapshot(collection(db, alan), { includeMetadataChanges: fark }, isle(alan), hata));
     };
-    if (!fark || !tamOkundu(alan)) {
-      tamDinle();
-      continue;
-    }
+    if (!fark || !tamOkundu(alan)) return tamDinle();
     getDocsFromCache(collection(db, alan))
       .then((snap) => {
         if (durdu) return;
@@ -240,17 +267,38 @@ const kayitBagla = (hazir: () => void): (() => void) => {
         for (const b of snap.docs) {
           const v = b.data() as OgeBelgesi & { silindi?: boolean; z?: Timestamp | null };
           if (v.z) enSon = Math.max(enSon, v.z.toMillis());
-          if (!v.silindi) m.set(anahtarKimligi(b.id), { s: v.s, j: v.j, o: JSON.parse(v.j) });
+          belgeIsle(alan, anahtarKimligi(b.id), v);
         }
         // Zamansız belge (fark okumadan önce yazılmış) zaten önbellekte; sorgu yalnız zamanlıları getiriyor.
         const esik = Timestamp.fromMillis(Math.max(0, enSon - FARK_PAYI));
-        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle, hata));
+        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle(alan), hata));
       })
       .catch(tamDinle);
-  }
+  };
 
-  for (const alan of HARITA_ALANLARI) {
-    const m = (onbellek[alan] = new Map());
+  /* Tek belgeyi dinler (kısıtlı kişinin kendi kaydı ve kendi ayarları). */
+  const belgeDinle = (alan: string, anahtar: string, sonra: () => void) => {
+    const k = `${alan}/${anahtar}`;
+    bekleyen.add(k);
+    iptal.push(
+      onSnapshot(
+        doc(db, alan, belgeKimligi(anahtar)),
+        (s) => {
+          const degisti = belgeIsle(alan, anahtar, s.exists() ? (s.data() as OgeBelgesi) : undefined);
+          if (degisti || !bagli) sonra();
+          geldi(k, degisti);
+        },
+        hata,
+      ),
+    );
+  };
+
+  const haritaKur = (alan: string) => {
+    d = { ...d, [alan]: Object.fromEntries([...onbellek[alan].entries()].map(([k, x]) => [k, x.o])) };
+  };
+  const haritaDinle = (alan: string) => {
+    onbellek[alan] ??= new Map();
+    bekleyen.add(alan);
     iptal.push(
       onSnapshot(
         collection(db, alan),
@@ -258,24 +306,55 @@ const kayitBagla = (hazir: () => void): (() => void) => {
           let degisti = false;
           for (const c of snap.docChanges()) {
             const id = anahtarKimligi(c.doc.id);
-            if (c.type === "removed") {
-              degisti = m.delete(id) || degisti;
-              continue;
-            }
-            const j = (c.doc.data() as { j: string }).j;
-            const eski = m.get(id);
-            if (eski && eski.j === j) continue;
-            m.set(id, { s: 0, j, o: JSON.parse(j) });
-            degisti = true;
+            const v = c.type === "removed" ? undefined : { s: 0, ...(c.doc.data() as { j: string }) };
+            degisti = belgeIsle(alan, id, v) || degisti;
           }
-          if (degisti || !bagli) d = { ...d, [alan]: Object.fromEntries([...m.entries()].map(([k, x]) => [k, x.o])) };
+          if (degisti || !bagli) haritaKur(alan);
           geldi(alan, degisti);
         },
         hata,
       ),
     );
+  };
+
+  if (!kisitli) {
+    for (const alan of DIZI_ALANLARI) diziDinle(alan, farkAlaniMi(alan) ? "fark" : "tam");
+    for (const alan of HARITA_ALANLARI) haritaDinle(alan);
+  } else {
+    for (const alan of KISITLI_OKUR) diziDinle(alan, "suz");
+    // Yapı (birim ve ünvan adları, akış) herkese açık.
+    diziDinle("yapilar", "fark");
+    // Kişiler: personel ve kendisi; öbür muhabirler yok.
+    onbellek.kisiler = new Map();
+    bekleyen.add("kisiler");
+    iptal.push(
+      onSnapshot(
+        query(collection(db, "kisiler"), where("kisitli", "==", false)),
+        (snap) => {
+          let degisti = false;
+          for (const c of snap.docChanges()) {
+            const id = anahtarKimligi(c.doc.id);
+            if (id === uid) continue;
+            degisti = belgeIsle("kisiler", id, c.type === "removed" ? undefined : (c.doc.data() as OgeBelgesi)) || degisti;
+          }
+          if (degisti || !bagli) diziKur("kisiler");
+          geldi("kisiler", degisti);
+        },
+        hata,
+      ),
+    );
+    belgeDinle("kisiler", uid, () => diziKur("kisiler"));
+    // Kişiye bağlı ayarlar: yalnız kendi belgesi; ana sayfa düzeni birimin adıyla anahtarlı.
+    for (const alan of ["okundu", "oneriGorunumu", "ortamlar", "kisayollar"]) {
+      onbellek[alan] = new Map();
+      belgeDinle(alan, uid, () => haritaKur(alan));
+    }
+    onbellek.anaSayfa = new Map();
+    const birim = (JSON.parse(kendi.j) as { birim?: string }).birim ?? "muhabir";
+    for (const anahtar of new Set([`${uid}:muhabir`, `${uid}:${birim}`])) belgeDinle("anaSayfa", anahtar, () => haritaKur("anaSayfa"));
   }
 
+  bekleyen.add(GENEL.koleksiyon);
   iptal.push(
     onSnapshot(
       doc(db, GENEL.koleksiyon, GENEL.id),
@@ -297,6 +376,30 @@ const kayitBagla = (hazir: () => void): (() => void) => {
   );
 
   /*
+   * Tam yönetici açılışta erişim listelerini ve kişilerin kısıt işaretini
+   * kayıtla eşitliyor: listeden önce yazılmış belgeler muhabire görünsün,
+   * önerinin muhabiri değişince mesajı ve hareketi de ona geçsin. Yalnız
+   * farklı olan belge yazılıyor.
+   */
+  function erisimiTazele() {
+    const islemler: { alan: string; id: string; veri: Record<string, unknown> }[] = [];
+    for (const alan of KISITLI_OKUR)
+      for (const o of d[alan] as { id: string }[]) {
+        const m = erisimListesi(alan, o, d);
+        if (onbellek[alan]?.get(o.id)?.e !== JSON.stringify(m)) islemler.push({ alan, id: o.id, veri: { m } });
+      }
+    for (const [id, x] of onbellek.kisiler ?? []) {
+      const k = kisitliJson(x.j);
+      if (x.e !== String(k)) islemler.push({ alan: "kisiler", id, veri: { kisitli: k } });
+    }
+    for (let i = 0; i < islemler.length; i += 450) {
+      const b = writeBatch(db);
+      for (const x of islemler.slice(i, i + 450)) b.update(doc(db, x.alan, belgeKimligi(x.id)), x.veri);
+      b.commit().catch((e) => console.error(e));
+    }
+  }
+
+  /*
    * Yerel yazış: önce önbellek yeni duruma eşitleniyor; Firestore'un aynı
    * yazıyı geri yankılaması bir şey değiştirmiyor, ekran sıçramıyor.
    */
@@ -314,7 +417,7 @@ const kayitBagla = (hazir: () => void): (() => void) => {
       if (!m) continue;
       const id = anahtarKimligi(i.id);
       if (i.tur === "sil") m.delete(id);
-      else m.set(id, { s: (i.veri.s as number) ?? 0, j: i.veri.j as string, o: nesne(i.koleksiyon, id) });
+      else m.set(id, { s: (i.veri.s as number) ?? 0, j: i.veri.j as string, o: nesne(i.koleksiyon, id), e: ek(i.koleksiyon, i.veri as unknown as OgeBelgesi) });
     }
     // Bir toplu yazış en çok 500 işlem alıyor.
     for (let k = 0; k < sonuc.islemler.length; k += 450) {
@@ -322,7 +425,8 @@ const kayitBagla = (hazir: () => void): (() => void) => {
       for (const i of sonuc.islemler.slice(k, k + 450)) {
         const ref = doc(db, i.koleksiyon, i.id);
         // Fark okunan koleksiyonda silme de yazış: belge "silindi" işaretiyle kalıyor, fark sorgusu onu görsün.
-        if (farkAlaniMi(i.koleksiyon)) b.set(ref, i.tur === "sil" ? { silindi: true, z: serverTimestamp() } : { ...i.veri, z: serverTimestamp() });
+        // Erişim listesi işarette kalıyor: kısıtlı kişi de silindiğini görsün, kural da ona yazdırsın.
+        if (farkAlaniMi(i.koleksiyon)) b.set(ref, i.tur === "sil" ? { silindi: true, z: serverTimestamp(), ...(i.m ? { m: i.m } : {}) } : { ...i.veri, z: serverTimestamp() });
         else if (i.tur === "sil") b.delete(ref);
         else b.set(ref, i.veri);
       }
