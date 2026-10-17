@@ -913,6 +913,8 @@ const M = {
   ekTalep: m("Ek talep", "طلب إضافي", "Additional request"),
   kararNotuEkTalep: m("Not / ek talep", "ملاحظة / طلب إضافي", "Note / request"),
   haberTeslimEdildi: m("Teslim edildi", "سُلّم", "Delivered"),
+  muPlanda: m("Plana eklendi · Next Day {tarih}", "أُضيف إلى الخطة · Next Day {tarih}", "Added to the plan · Next Day {tarih}"),
+  muPkgOnayBekliyor: m("PKG onay bekliyor", "التقرير بانتظار الاعتماد", "PKG awaiting approval"),
   muOnayliBekleniyor: m("Onaylandı · hazırlaman bekleniyor", "معتمد · بانتظار إعدادك", "Approved · waiting for you to prepare it"),
   haberTamamlandi: m("Teslim ettim", "سلّمتُ التقرير", "I've delivered it"),
   bPaketTamamlandi: m("Haber teslim edildi; Planlama'ya bildirildi.", "سُلّم الخبر وأُبلغ التخطيط.", "The story was delivered; Planning has been notified."),
@@ -2443,9 +2445,9 @@ const M = {
   ),
   kl8: m("Görevlendirmeler ve takvim", "التكليفات والتقويم", "Assignments and calendar"),
   kl8a: m(
-    "Saha görevlendirmelerin tarih ve yeriyle Görevlendirmelerim'de, sorumlu olduğun faaliyetler Takvimim'de.",
-    "تكليفاتك الميدانية بتواريخها وأماكنها في تكليفاتي، والفعاليات التي أنت مسؤول عنها في تقويمي.",
-    "Your field assignments, with dates and places, are in My assignments; events you are responsible for are in My calendar.",
+    "Saha görevlendirmelerin tarih ve yeriyle, özel yayın görevlerin yayının adı ve son tarihiyle Görevlendirmelerim'de; sorumlu olduğun faaliyetler Takvimim'de.",
+    "تكليفاتك الميدانية بتواريخها وأماكنها، ومهامّ البث الخاص باسم البث وموعدها النهائي، في تكليفاتي؛ والفعاليات التي أنت مسؤول عنها في تقويمي.",
+    "Your field assignments, with dates and places, and your special broadcast tasks, with the broadcast's name and deadline, are in My assignments; events you are responsible for are in My calendar.",
   ),
   kl9: m("Bildirimler ve gizlilik", "التنبيهات والخصوصية", "Notifications and privacy"),
   kl9a: m(

@@ -569,7 +569,7 @@ export const oneriPlanaEkle = (
 
   d = {
     ...d,
-    oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "planaEklendi", baslikId, planId: plan.id, paketId } : x)),
+    oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "planaEklendi", baslikId, planId: plan.id, planTarihi: plan.tarih, paketId } : x)),
   };
   kaydet(
     hareketYaz(d, {
@@ -592,7 +592,7 @@ export const oneriPlanaEkle = (
  * kayıtta gelişmesi zaten olmayan öneri her silişte geri dönmesin.
  */
 const plandanDonmus = (o: Oneri): Oneri => {
-  const { planId: _p, paketId: _k, ...x } = o;
+  const { planId: _p, planTarihi: _t, paketId: _k, ...x } = o;
   return { ...x, durum: "degerlendiriliyor" };
 };
 const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Durum => {
@@ -1206,7 +1206,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   // Paket ancak günlük plan açılınca da doğabiliyor (kesinleşmeden sonra); muhabir o an haberdar oluyor. Kimlik plandan: iki tarayıcı tek bildirim.
   if (paketId && muhabirId) d = hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
-  if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, paketId: paketId ?? o.paketId } : o)) };
+  if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, planTarihi: plan.tarih, paketId: paketId ?? o.paketId } : o)) };
   return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } }, `h-${turet(plan.id, k.id)}`);
 };
 

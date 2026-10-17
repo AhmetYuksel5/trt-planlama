@@ -7,7 +7,9 @@ import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { acikCagri, useVeri, type Kisi, type Oneri } from "../../veri";
+import { acikCagri, planBul, useVeri, type Kisi, type Oneri } from "../../veri";
+import { ozelGorevleri } from "../../ozel";
+import { OzelGorevSatirlari } from "../../bilesenler/OzelGorevler";
 import { paketTamamla, takipTamamla } from "../../eylemler";
 import { KararNotlari } from "../haftalik/Kalem";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir, paketTamamlayabilir } from "../../yetki";
@@ -51,6 +53,24 @@ function useMuhabirIsleri(ben: Kisi) {
   const B = bugun();
   const paketler = v.paketler.filter((p) => paketGorebilir(ben, p, v)).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   const oneriler = v.oneriler.filter((o) => oneriGorebilir(ben, o)).sort((a, b) => b.zaman.localeCompare(a.zaman));
+  /*
+   * Plana giren haber, onaylı paketi doğmadan da muhabirin işi. Planlama'nın
+   * muhabir adına strap'siz girdiği öneri plana yalnız gelişme olarak giriyor,
+   * paketi hiç olmuyor; PKG'li olanın paketi plan onaylanana dek
+   * "değerlendiriliyor"da. "Senin sıran" yalnız paketlerden kurulunca muhabire
+   * "plana eklendi" bildirimi gidiyor, işlerinde hiçbir şey çıkmıyordu.
+   * Planın günü geçince ya da paketi onaylanınca (o zaman paket satırı) düşüyor;
+   * takipteki haber kendi kartında. Kısıtlı muhabir planı okuyamıyor: gün öneride.
+   */
+  const planGunu = (o: Oneri) => planBul(v, o.planId)?.tarih ?? o.planTarihi ?? yerelGun(o.zaman);
+  const plandaki = oneriler.filter(
+    (o) =>
+      o.muhabirId === ben.id &&
+      o.durum === "planaEklendi" &&
+      !o.takip &&
+      planGunu(o) >= B &&
+      !paketler.some((p) => (p.id === o.paketId || p.oneriId === o.id) && p.durum !== "taslak" && p.durum !== "degerlendiriliyor"),
+  );
   return {
     v,
     paketler,
@@ -58,7 +78,10 @@ function useMuhabirIsleri(ben: Kisi) {
     // Newsdesk yokken onaylı paketi muhabir kapatıyor: o da sırası gelen iş.
     siram: paketler.filter((p) => adimYapabilir(ben, p) || (p.muhabirId === ben.id && paketTamamlayabilir(ben, p, v))),
     aktif: paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal"),
+    plandaki,
+    planGunu,
     gorevler: v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B),
+    ozelGorevler: ozelGorevleri(v, ben.id),
     cagri: acikCagri(v, "nextday", B),
     haftalikCagri: acikCagri(v, "haftalik", B),
     bildirimler: v.hareketler.filter((h) => bildirimMi(ben, h, v)).slice(0, 6),
@@ -96,23 +119,23 @@ function Cagrilar({ ben }: { ben: Kisi }) {
 
 function Sayaclar({ ben }: { ben: Kisi }) {
   const { t } = useDil();
-  const { oneriler, aktif, siram } = useMuhabirIsleri(ben);
+  const { oneriler, aktif, siram, plandaki } = useMuhabirIsleri(ben);
   return (
     <div className="sayaclar ince">
         <Sayac href="#/oneriler" ikon={<Lightbulb size={22} />} renk="renk-nextday" etiket={t("sOnerilerim")} deger={oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length} alt={t("sDegerlendirmede")} />
         <Sayac href="#/oneriler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sPlanaGiren")} deger={oneriler.filter((o) => o.durum === "planaEklendi").length} alt={t("sToplam")} />
         <Sayac href="#/paketler" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={aktif.length} alt={t("sPaket")} />
-        <Sayac href="#/paketler" ikon={<Clock size={22} />} ton={siram.length ? "uyari" : ""} etiket={t("seninSiran")} deger={siram.length} alt={t("sBekleyenIs")} />
+        <Sayac href="#/paketler" ikon={<Clock size={22} />} ton={siram.length + plandaki.length ? "uyari" : ""} etiket={t("seninSiran")} deger={siram.length + plandaki.length} alt={t("sBekleyenIs")} />
       </div>
   );
 }
 
 function Siram({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
-  const { siram } = useMuhabirIsleri(ben);
+  const { siram, plandaki, paketler, planGunu } = useMuhabirIsleri(ben);
   return (
     <Kart baslik={t("seninSiran")} ikon={<Clock size={18} />}>
-            {siram.length === 0 ? (
+            {siram.length + plandaki.length === 0 ? (
               <Bos kucuk metin={t("siraBos")} />
             ) : (
               <ul className="liste">
@@ -140,6 +163,22 @@ function Siram({ ben }: { ben: Kisi }) {
                         {t(adimTuru(p) === "metin" ? "metniGonder" : adimTuru(p) === "is" ? "tamamlaVeGec" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
                       </a>
                     )}
+                  </li>
+                ))}
+                {plandaki.map((o) => (
+                  <li key={o.id} data-plandaki={o.id}>
+                    <div className="ad">
+                      <a href={`#/oneriler/${o.id}`}>
+                        <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
+                      </a>
+                      <small>
+                        {t("muPlanda", { tarih: tarihYaz(planGunu(o), dil, "kisa") })}
+                        {paketler.some((p) => p.id === o.paketId || p.oneriId === o.id) && ` · ${t("muPkgOnayBekliyor")}`}
+                      </small>
+                    </div>
+                    <a className="dugme dugme-kucuk dugme-ikincil" href={`#/oneriler/${o.id}`}>
+                      {t("ayrinti")} <ArrowRight size={14} className="yon" />
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -260,13 +299,14 @@ function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
 
 function Gorevlerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
-  const { gorevler } = useMuhabirIsleri(ben);
+  const { gorevler, ozelGorevler } = useMuhabirIsleri(ben);
   return (
-    <Kart baslik={t("gorevlendirmelerim")} ikon={<Plane size={18} />}>
-            {gorevler.length === 0 ? (
+    <Kart baslik={t("gorevlendirmelerim")} ikon={<Plane size={18} />} sagUc={<Tumu href="#/saha" />}>
+            {gorevler.length + ozelGorevler.length === 0 ? (
               <Bos kucuk metin={t("gorevlendirmeYok")} />
             ) : (
-              <ul className="liste">
+              <ul className="liste" data-gorevlerim>
+                <OzelGorevSatirlari paketler={ozelGorevler} />
                 {gorevler.map((g) => (
                   <li key={g.id}>
                     <div className="ad">

@@ -883,7 +883,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Output'tan sorumlu yönetici (`ozelPaketDagitabilir`) ekibinden birine
     verir (`hazirlayanId`, `ozelPaketAta`; Output ana sayfasında "Özel yayın
     paket talepleri", `ouOzel`, yayının adıyla); dış muhabir görevi
-    muhabirin kendi işi ("Senin sıran"da yayının adıyla). Teslimi işi yapan
+    muhabirin kendi işi ("Senin sıran"da yayının adıyla; Görevlendirmelerim
+    kartında ve `#/saha`'da da, `ozel.ts → ozelGorevleri`,
+    `bilesenler/OzelGorevler.tsx`: bildirimi "görevlendirdi" diyor, muhabir
+    orada arıyordu). Teslimi işi yapan
     ya da Planlama `paketTamamla` ile işler (`ozelPaketTeslimEdebilir`;
     Newsdesk şimdilik bu akışta yok). Plansız onaylı paket kuralları
     (üretime alma, kolun sahibi) bu pakete uygulanmaz.
@@ -1087,7 +1090,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Haberlerim, Görevlendirmelerim, Takvimim; Ayarlar altta ayrık), kutuda
     kendi adı ve ünvanı. Üst çubukta workspace sekmeleri, "+" ve kısayollar
     yok, yalnız sayfanın adı. İşlerim tek sütun: başlıkta "Yeni öneri gönder",
-    çağrılar tek kartta, sayaçlar ince satır (`.sayaclar.ince`). Telefon
+    çağrılar tek kartta, sayaçlar ince satır (`.sayaclar.ince`). "Senin sıran"da
+    paketlerden başka plana girmiş öneri de (`Muhabir.tsx → plandaki`): onaylı
+    paketi yoksa (Planlama'nın strap'siz girdiği yalnız gelişme olur; PKG
+    önerisi plan onayına dek değerlendirmede), planın günü geçmemişse, takipte
+    değilse. Kısıtlı muhabir planı okuyamıyor; gün öneride (`Oneri.planTarihi`,
+    `oneriPlanaEkle` ve haftalık aktarım yazar, plandan çıkınca silinir). Telefon
     düzeni (alt çubuk, Menü paneli) ayrı ve öbürleriyle aynı kalıyor.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık

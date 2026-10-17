@@ -411,6 +411,11 @@ export interface Oneri {
   cagriId?: string;
   baslikId?: string;
   planId?: string;
+  /*
+   * Girdiği Next Day planının günü. Kısıtlı muhabir planı okuyamıyor; işleri
+   * ("Senin sıran") haberin hangi günün planında olduğunu buradan biliyor.
+   */
+  planTarihi?: string;
   paketId?: string;
   gerekce?: string;
   /*

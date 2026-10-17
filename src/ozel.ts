@@ -53,6 +53,17 @@ export const ozelPaketAsamasi = (p: Paket): OzelPaketAsamasi =>
   p.durum === "tamamlandi" ? "hazir" : p.durum === "taslak" ? "plan" : !(p.muhabirId ?? p.hazirlayanId) || p.ozelGorevBekliyor ? "onayli" : p.ozelBasladi ? "hazirlaniyor" : "gorevli";
 
 /*
+ * Muhabirin özel yayın görevleri: Planlama "Görevlendirildi"yi işaretlemiş
+ * dış paketler. Görev bildirimi "görevlendirdi" diyor; muhabir onu
+ * Görevlendirmelerim'de arıyordu, orada yalnız saha görevlendirmeleri vardı.
+ * Biten görev yalnız sayfada (geçmiş), İşlerim'deki kartta değil.
+ */
+export const ozelGorevleri = (d: Pick<Durum, "paketler">, kisiId: string, bitenler = false): Paket[] =>
+  d.paketler
+    .filter((p) => !!p.ozelId && p.muhabirId === kisiId && !p.ozelGorevBekliyor && (p.durum === "onaylandi" || (bitenler && p.durum === "tamamlandi")))
+    .sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
+
+/*
  * Özel yayının paket satırları: öneriler (onaylanınca paketiyle) ve
  * önerisiz paketler (öneri kaydından önce doğrudan açılmış olanlar).
  */

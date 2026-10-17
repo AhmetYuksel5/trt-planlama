@@ -1,5 +1,7 @@
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
+import { OzelGorevSatirlari } from "../bilesenler/OzelGorevler";
+import { ozelGorevleri } from "../ozel";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
@@ -673,10 +675,25 @@ export function Gorevlendirmeler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const liste = v.gorevlendirmeler
     .filter((g) => gorevlendirmeGorebilir(ben, g) && (muhabir || ayar.suz(g, B)))
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
+  // Muhabirin sayfasında özel yayın görevleri de: bildirimi "görevlendirdi" diyor, muhabir burada arıyor.
+  const ozelGorevler = muhabir ? ozelGorevleri(v, ben.id, true) : [];
   return (
     <>
       <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir ? "mGorevlerim" : ayar.baslik)} sagUc={muhabir ? undefined : <TaslakEtiketi />} />
-      <Kart>{liste.length === 0 ? <Bos metin={t("gorevlendirmeYok")} /> : <GorevListesi gorevler={liste} />}</Kart>
+      <Kart>
+        {liste.length + ozelGorevler.length === 0 ? (
+          <Bos metin={t("gorevlendirmeYok")} />
+        ) : (
+          <>
+            {ozelGorevler.length > 0 && (
+              <ul className="liste" data-ozel-gorevlerim>
+                <OzelGorevSatirlari paketler={ozelGorevler} />
+              </ul>
+            )}
+            {liste.length > 0 && <GorevListesi gorevler={liste} />}
+          </>
+        )}
+      </Kart>
     </>
   );
 }

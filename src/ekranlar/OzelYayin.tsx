@@ -89,6 +89,7 @@ import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
 import { ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { BicimSecici, FormAlt, MuhabirSecici } from "./nextday/Formlar";
+import { PAKET_ASAMA_ADI } from "../bilesenler/OzelGorevler";
 import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
 
 /**
@@ -130,13 +131,6 @@ const PLAN_ADIM_ADI: Record<OzelDurum, Anahtar> = {
   onayli: "oyAdimOnay",
   uygulandi: "oyAdimUygulama",
   hazir: "oyAdimHazir",
-};
-const PAKET_ASAMA_ADI: Record<OzelPaketAsamasi, Anahtar> = {
-  plan: "oyPkPlan",
-  onayli: "oyPkOnayli",
-  gorevli: "oyPkGorevli",
-  hazirlaniyor: "oyHazirlaniyor",
-  hazir: "oyPkHazir",
 };
 const KALEM_TURU_ADI: Record<OzelKalemTuru, Anahtar> = {
   nafize: "oyNafizeler",
