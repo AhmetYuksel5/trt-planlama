@@ -1348,14 +1348,14 @@ export const yarinPlaniniAc = (): string | null => {
   const kullanildi = (b: PlanBasligi) =>
     !!kaynak &&
     (!b.devir ||
-      b.muhabirler.some((m) => !m.devir) ||
+      (b.muhabirler ?? []).some((m) => !m.devir) ||
       d.gelismeler.some((g) => g.planId === kaynak.id && g.planBaslikId === b.id && !g.devir) ||
       d.canliYayinlar.some((c) => c.planId === kaynak.id && c.planBaslikId === b.id && !c.devir) ||
       d.paketler.some((p) => p.planId === kaynak.id && p.planBaslikId === b.id && p.durum !== "iptal"));
   const basliklar = (kaynak?.basliklar ?? []).filter(kullanildi).map((b) => {
     const yeniId = turet(id, b.id);
     pbEsle.set(b.id, yeniId);
-    return { id: yeniId, baslikId: b.baslikId, muhabirler: b.muhabirler.map((m) => ({ ...m, onceki: true as const, devir: true as const })), devir: true as const };
+    return { id: yeniId, baslikId: b.baslikId, muhabirler: (b.muhabirler ?? []).map((m) => ({ ...m, onceki: true as const, devir: true as const })), devir: true as const };
   });
   // Bitmiş hareket taşınmıyor; plan gününde süren hareket taşınıyor.
   const hareketler = (kaynak?.gorevlendirmeler ?? []).filter((gid) => {

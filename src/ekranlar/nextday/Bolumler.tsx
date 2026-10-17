@@ -9,7 +9,7 @@ import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
-import { CanliFormu, GelismeFormu, GorevlendirmeFormu } from "./Formlar";
+import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
 
 /**
  * Next Day planının bölümleri, promptun 4.3 maddesindeki ve kurumun
@@ -581,8 +581,9 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
       )}
       {duzenler && form === "yeni" && <GelismeFormu plan={plan} planBaslikId={planBaslikId} kapat={() => setForm("")} />}
       {duzenler && !form && (
-        <div className="ara-ust-2">
+        <div className="ara-ust-2 ekle-satiri">
           <EkleDugmesi metin={t("gelismeEkle")} onClick={() => setForm("yeni")} />
+          {planBaslikId && <OneridenAl plan={plan} planBaslikId={planBaslikId} />}
         </div>
       )}
     </>

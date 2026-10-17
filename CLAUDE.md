@@ -489,13 +489,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
-  - Başlığa gelişme eklerken muhabir önerisi de seçilir (`Formlar.tsx →
-    GelismeFormu`, "Muhabir önerisinden"; adaylar `oneriPlanlari.ts →
-    gelismeOneriAdaylari`: karar bekleyen muhabir önerileri, önce bu planın
-    gününe düşenler, sonra öbür günlerinkiler; talimat ve gündemdeki yok).
-    Seçilen öneri "Plana ekle" ile aynı eylemle o başlığa girer
-    (`oneriPlanaEkle`: öneri plana eklendi, muhabire bildirim, strap'i varsa
-    PKG önerisi, istenirse kapatılır). Elle yazma yolu aynen duruyor.
+  - Başlığa gelişme muhabir önerisinden de eklenir: "Gelişme ekle"nin
+    sağında ve gelişme formunun sağ üstünde "Önerilerden al" (sayısıyla;
+    `Formlar.tsx → OneridenAl`), `Pencere`de öneri kartları, her birinde
+    "Ekle". Adaylar `oneriPlanlari.ts → gelismeOneriAdaylari`: karar bekleyen
+    muhabir önerileri, önce bu planın gününe düşenler, sonra öbür
+    günlerinkiler; talimat ve gündemdeki yok. "Ekle" "Plana ekle" ile aynı
+    eylem (`oneriPlanaEkle`: öneri plana eklendi, başlığa bağlı, muhabir
+    başlıkta, muhabire bildirim, strap'i varsa PKG önerisi). Formun içinde
+    seçim kutusu denendi, beğenilmedi; form yalnız elle yazma.
   - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
     başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden) ya da
     başlığı sürükleyip öbürünün üstüne bırakmak; onay sorulur, ↶ geri alır.
@@ -1136,6 +1138,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Telefonda üst çubuğun açılır panelleri (bildirimler, kullanıcı menüsü)
   düğmeye değil çubuğa göre, iki yanda 16 piksel boşlukla açılır: zilin
   sağında avatar olduğu için panel ekranın solundan taşıyordu.
+- Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
+  hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
+  dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede
+  açık kalan sayfa: tarayıcıda kalan kayıt bozuk bir yola giriyordu). Açılışta
+  sistemin işleri (`App.tsx → yokla`) tek tek korumada; biri hata verirse
+  atlanır, konsola yazılır.
+- Özel yayında konuk listesi: ad kalın, unvan altında sönük, durum rozet gibi
+  hap seçici (`.durum-secimi`), ekleme satırı `girdi` alanlarıyla
+  (`.konuk-ekle`, telefonda alt alta).
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
   yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Gerçek kip Firebase
   emülatörüyle denenir (`belgeler/gercek-kip.md`).

@@ -126,10 +126,19 @@ export default function App() {
     const yokla = () => {
       // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
       if (izlemede()) return;
-      planCiftleriniTopla();
-      takipOnerileriniAyikla();
-      haftalikPaketBasliklariniDuzelt();
-      yarinPlaniniAc();
+      /*
+       * Her iş ayrı korumada: biri kayıttaki beklenmedik bir öğede hata
+       * fırlatınca bütün uygulama beyaz kalıyordu (gizli pencerede, yani
+       * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
+       * sayfa çalışıyor; hata konsolda.
+       */
+      for (const is of [planCiftleriniTopla, takipOnerileriniAyikla, haftalikPaketBasliklariniDuzelt, yarinPlaniniAc]) {
+        try {
+          is();
+        } catch (hata) {
+          console.error(is.name, hata);
+        }
+      }
     };
     yokla();
     const z = setInterval(yokla, GUN_YOKLAMA);

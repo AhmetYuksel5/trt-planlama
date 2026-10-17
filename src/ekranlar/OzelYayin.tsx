@@ -713,13 +713,17 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
         <span className="alan-etiket">
           <Users size={14} /> {t("oyKonuklar")} ({n.konuklar.filter((k) => k.durum !== "iptal").length})
         </span>
-        <ul>
+        <ul className="konuk-listesi">
           {n.konuklar.map((k) => (
             <li key={k.id} className={k.durum === "iptal" ? "soluk" : ""} data-konuk={k.id}>
-              <Icerik>
-                {k.ad}
-                {k.unvan ? ` (${k.unvan})` : ""}
-              </Icerik>
+              <span className="konuk-adi">
+                <Icerik blok>{k.ad}</Icerik>
+                {k.unvan && (
+                  <small>
+                    <Icerik blok>{k.unvan}</Icerik>
+                  </small>
+                )}
+              </span>
               {duzen ? (
                 <select
                   className={`durum-secimi ton-${DURUM_TONU[k.durum] ?? "yok"}`}
@@ -751,9 +755,9 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
           ))}
         </ul>
         {duzen && (
-          <div className="ozel-not-satiri">
-            <input {...icerikAlani} value={konuk.ad} onChange={(e) => setKonuk({ ...konuk, ad: e.target.value })} placeholder={t("oyKonukAdi")} aria-label={t("oyKonukAdi")} data-konuk-ad />
-            <input {...icerikAlani} value={konuk.unvan} onChange={(e) => setKonuk({ ...konuk, unvan: e.target.value })} placeholder={t("oyUnvan")} aria-label={t("oyUnvan")} />
+          <div className="konuk-ekle">
+            <input {...icerikAlani} className="girdi" value={konuk.ad} onChange={(e) => setKonuk({ ...konuk, ad: e.target.value })} placeholder={t("oyKonukAdi")} aria-label={t("oyKonukAdi")} data-konuk-ad />
+            <input {...icerikAlani} className="girdi" value={konuk.unvan} onChange={(e) => setKonuk({ ...konuk, unvan: e.target.value })} placeholder={t("oyUnvan")} aria-label={t("oyUnvan")} />
             <button
               className="dugme dugme-ikincil dugme-kucuk"
               disabled={!konuk.ad.trim()}

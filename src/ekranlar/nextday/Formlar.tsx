@@ -1,6 +1,7 @@
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useState } from "react";
-import { Icerik, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPlanaEkle, paketKaydet } from "../../eylemler";
 import { gelismeOneriAdaylari } from "../../oneriPlanlari";
@@ -118,25 +119,8 @@ export function MuhabirSecici({ deger, degistir, bosEtiket, ic = true }: { deger
 
 /* `sonra`: belgede "altına ekle" denen satır; yeni kayıt onun arkasına giriyor. */
 export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; sonra?: string; kapat: () => void }) {
-  const { t, ad, dil } = useDil();
+  const { t } = useDil();
   const ben = useBen();
-  const v = useVeri();
-  /*
-   * Başlığa gelişme eklerken muhabirin önerisi de seçilebiliyor: öneri
-   * "Plana ekle" ile aynı eylemle bu başlığa giriyor (öneri plana eklendi,
-   * muhabire bildirim, strap'i varsa PKG önerisi). Elle yazılan gelişme
-   * önerisiz kalıyordu; öneri listede bekliyor, muhabire haber gitmiyordu.
-   */
-  const baslikId = plan.basliklar.find((b) => b.id === planBaslikId)?.baslikId;
-  const adaylar = !mevcut && baslikId && ben && yapabilir(ben, "oneriDegerlendir") ? gelismeOneriAdaylari(v, plan) : { buGun: [], digerleri: [] };
-  const [oneriId, setOneriId] = useState("");
-  const secili = [...adaylar.buGun, ...adaylar.digerleri].find((o) => o.id === oneriId);
-  const [paket, setPaket] = useState(true);
-  const secenek = (o: Oneri, gunlu: boolean) => (
-    <option key={o.id} value={o.id}>
-      {[ad(kisiBul(v, o.muhabirId)), o.paketBasligi || o.haberBasligi, gunlu && o.hedefTarih ? tarihYaz(o.hedefTarih, dil, "kisa") : ""].filter(Boolean).join(" · ")}
-    </option>
-  );
   const [f, setF] = useState({
     yer: mevcut?.yer ?? "",
     metin: mevcut?.metin ?? "",
@@ -146,13 +130,6 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
   });
   const kaydet = () => {
-    if (ben && secili && baslikId) {
-      if (oneriPlanaEkle(ben, secili.id, { planId: plan.id, baslikId, paketOlustur: paket && !!secili.paketBasligi })) {
-        bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
-        kapat();
-      }
-      return;
-    }
     if (!ben || !f.metin.trim()) return;
     gelismeKaydet(ben, {
       id: mevcut?.id,
@@ -168,41 +145,13 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     }, sonra);
     kapat();
   };
-  const oneriSecimi = adaylar.buGun.length + adaylar.digerleri.length > 0 && (
-    <label>
-      {t("muhabirOnerisinden")}
-      <select value={oneriId} onChange={(e) => setOneriId(e.target.value)} data-gelisme-oneri>
-        <option value="">{t("elleYaz")}</option>
-        {adaylar.buGun.length > 0 && <optgroup label={t("buPlanaGelenOneriler")}>{adaylar.buGun.map((o) => secenek(o, false))}</optgroup>}
-        {adaylar.digerleri.length > 0 && <optgroup label={t("digerGunlerinOnerileri")}>{adaylar.digerleri.map((o) => secenek(o, true))}</optgroup>}
-      </select>
-    </label>
-  );
-  if (secili)
-    return (
-      <div className="form form-kutu" data-gelisme-oneri-secili={secili.id}>
-        {oneriSecimi}
-        <div className="alan">
-          <small>{ad(kisiBul(v, secili.muhabirId))}</small>
-          <b>
-            <Icerik blok>{secili.haberBasligi}</Icerik>
-          </b>
-          {secili.gelisme && <Icerik blok>{secili.gelisme}</Icerik>}
-        </div>
-        {secili.paketBasligi && (
-          <label className="secim">
-            <input type="checkbox" checked={paket} onChange={(e) => setPaket(e.target.checked)} data-gelisme-oneri-paket />
-            {t("paketOnerisiOlustur")}: <b>
-              <Icerik>{secili.paketBasligi}</Icerik>
-            </b>
-          </label>
-        )}
-        <FormAlt kapat={kapat} kaydet={kaydet} kaydetMetni={t("planaEkle")} />
-      </div>
-    );
   return (
     <div className="form form-kutu">
-      {oneriSecimi}
+      {!mevcut && planBaslikId && (
+        <div className="form-ust-uc">
+          <OneridenAl plan={plan} planBaslikId={planBaslikId} eklendi={kapat} />
+        </div>
+      )}
       <div className="satir">
         <label>
           {t("yer")}
@@ -240,6 +189,77 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       </div>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
     </div>
+  );
+}
+
+/*
+ * "Önerilerden al": başlığa gelişmeyi muhabirin önerisinden eklemek. Öneri
+ * "Plana ekle" ile aynı eylemle bu başlığa giriyor (öneri plana eklendi,
+ * muhabir başlığa, muhabire bildirim, strap'i varsa PKG önerisi). Önceden
+ * gelişme yalnız elle yazılıyordu; aynı haber elle girilince öneri listede
+ * bağsız kalıyor, muhabire haber gitmiyordu. Formun içinde seçim kutusu
+ * denendi; ayrı pencere istendi.
+ */
+export function OneridenAl({ plan, planBaslikId, eklendi }: { plan: NextDayPlan; planBaslikId: string; eklendi?: () => void }) {
+  const { t, ad, dil } = useDil();
+  const ben = useBen();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const baslikId = plan.basliklar.find((b) => b.id === planBaslikId)?.baslikId;
+  if (!ben || !baslikId || !yapabilir(ben, "oneriDegerlendir")) return null;
+  const { buGun, digerleri } = gelismeOneriAdaylari(v, plan);
+  const sayi = buGun.length + digerleri.length;
+  const ekle = (o: Oneri) => {
+    if (!oneriPlanaEkle(ben, o.id, { planId: plan.id, baslikId, paketOlustur: !!o.paketBasligi })) return;
+    bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
+    setAcik(false);
+    eklendi?.();
+  };
+  const kart = (o: Oneri, gunlu: boolean) => (
+    <li key={o.id} className="oneriden-al-satir" data-oneriden-al={o.id}>
+      <div className="ad">
+        <small>
+          {ad(kisiBul(v, o.muhabirId))}
+          {gunlu && o.hedefTarih && ` · ${tarihYaz(o.hedefTarih, dil, "kisa")}`}
+        </small>
+        <b>
+          <Icerik blok>{o.haberBasligi}</Icerik>
+        </b>
+        {o.gelisme && <Icerik blok>{o.gelisme}</Icerik>}
+        {o.paketBasligi && (
+          <small>
+            PKG · <Icerik>{o.paketBasligi}</Icerik>
+          </small>
+        )}
+      </div>
+      <button type="button" className="dugme dugme-kucuk" onClick={() => ekle(o)} data-oneriden-ekle={o.id}>
+        <Plus size={14} /> {t("ekle")}
+      </button>
+    </li>
+  );
+  return (
+    <>
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} disabled={!sayi} data-oneriden-al-ac>
+        <Lightbulb size={14} /> {t("onerilerdenAl")}
+        {sayi > 0 && <em className="dugme-sayi">{sayi}</em>}
+      </button>
+      {acik && (
+        <Pencere baslik={t("onerilerdenAl")} kapat={() => setAcik(false)}>
+          {buGun.length > 0 && (
+            <>
+              <h3 className="pencere-ara-baslik">{t("buPlanaGelenOneriler")}</h3>
+              <ul className="liste oneriden-al">{buGun.map((o) => kart(o, false))}</ul>
+            </>
+          )}
+          {digerleri.length > 0 && (
+            <>
+              <h3 className="pencere-ara-baslik">{t("digerGunlerinOnerileri")}</h3>
+              <ul className="liste oneriden-al">{digerleri.map((o) => kart(o, true))}</ul>
+            </>
+          )}
+        </Pencere>
+      )}
+    </>
   );
 }
 
