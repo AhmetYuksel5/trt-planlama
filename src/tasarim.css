@@ -1330,20 +1330,6 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .isik-uyari { color: var(--uyari); } .isik-uyari i { background: var(--uyari); }
 .isik-iyi { color: var(--iyi); } .isik-iyi i { background: var(--iyi); }
 
-.liste.dikkat > li { align-items: stretch; }
-.dikkat-isaret { width: 4px; border-radius: var(--yaricap-hap); flex: none; background: var(--cizgi); }
-.ton-kotu .dikkat-isaret { background: var(--kotu); }
-.ton-uyari .dikkat-isaret { background: var(--uyari); }
-.ton-vurgu .dikkat-isaret { background: var(--marka); }
-.liste.dikkat .dugme { align-self: center; }
-/* Dikkat satırında başlık kırpılmasın: yönetici neyin geciktiğini okuyabilsin. */
-.liste.dikkat .ad > a { white-space: normal; }
-@media (max-width: 760px) {
-  /* Telefonda düğme başlığın altına iniyor; başlık satırın tamamını alıyor. */
-  .liste.dikkat > li { flex-wrap: wrap; }
-  .liste.dikkat .ad { flex-basis: calc(100% - var(--ara-4)); }
-  .liste.dikkat .dugme { margin-inline-start: var(--ara-4); }
-}
 
 .talimat-zinciri { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-top: var(--ara-1); }
 .talimat-zinciri li { font-size: var(--punto-mini); font-weight: 600; color: var(--silik); background: var(--yuzey-2); border-radius: var(--yaricap-hap); padding: 2px var(--ara-2); }

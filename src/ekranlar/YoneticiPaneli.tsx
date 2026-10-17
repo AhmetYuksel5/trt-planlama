@@ -1,20 +1,18 @@
 import { birimAdi, gorevAdi } from "../yapi";
 import { AlertTriangle, ArrowLeft, CheckCircle, CirclePlay, ClipboardCheck, ClipboardList, Eye, Flag, Gauge, PenLine } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { ADIM_ADI, adimAdi, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
+import { ADIM_ADI, geciktiMi, paketSahibi, type UretimAdimi } from "../akis";
 import { Bos, Icerik, Kart, Rozet, Sayac, Tumu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OnIncelemeKarti } from "../bilesenler/Haftalik";
-import { OncelikDugmesi } from "../bilesenler/Yonetici";
-import { metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
+import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
 import { KISI_DURUM_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, ulkeAdi } from "../etiketler";
 import { talimatVer } from "../eylemler";
-import { aralikYaz } from "../dil";
-import { gorusBekleyenler, haftaSonu, onIncelemeBekleyenler } from "../haftalik";
+import { gorusBekleyenler, onIncelemeBekleyenler } from "../haftalik";
 import { rapor } from "../rapor";
 import { bugun, gunEkle, yerelGun } from "../tarih";
 import { oneriArsivde } from "../oneriPlanlari";
-import { ULKELER, kisiBul, muhabirler, paketBul, useVeri, type Birim, type Durum, type Kisi, type Oneri, type Paket, type Ulke } from "../veri";
-import { isEkleyebilir, kapsam, paketKapsamda, talimatVerebilir, type Kapsam } from "../yetki";
+import { ULKELER, muhabirler, paketBul, useVeri, type Birim, type Durum, type Kisi, type Oneri, type Paket, type Ulke } from "../veri";
+import { isEkleyebilir, kapsam, paketKapsamda, talimatVerebilir } from "../yetki";
 import { GorevVerFormu, VerdigimGorevler } from "./GorevVer";
 import { EkonomiAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
 import PlanlamaAna, { BugununTakvimi, SayfaBasi } from "./ana/Planlama";
@@ -163,82 +161,6 @@ function BirimKarti({ durum, ayrinti }: { durum: BirimDurumu; ayrinti: string })
       </dl>
       <Tumu href={ayrinti} metin={t("ayrinti")} />
     </section>
-  );
-}
-
-/* --- Dikkat gerektirenler: yalnız yolunda gitmeyenler --- */
-
-interface DikkatSatiri {
-  anahtar: string;
-  ton: "kotu" | "uyari" | "vurgu";
-  baslik: string;
-  icerik: boolean;
-  alt: string;
-  href: string;
-  paket?: Paket;
-}
-
-const sureYaz = (dk: number, t: (k: Anahtar, p?: Record<string, string | number>) => string) =>
-  dk >= 60 ? t("saatKisa", { n: Math.round(dk / 60) }) : t("dakikaKisa", { n: dk });
-
-function DikkatListesi({ ben, d, paketler, ks }: { ben: Kisi; d: Durum; paketler: Paket[]; ks: Kapsam }) {
-  const { t, dil, ad } = useDil();
-  const an = Date.now();
-  const kimde = (p: Paket) => {
-    const b = paketSahibi(p);
-    return b ? birimAdi(b) : "";
-  };
-  const satirlar: DikkatSatiri[] = [];
-  for (const p of paketler.filter((x) => geciktiMi(x))) {
-    const dk = Math.round((an - new Date(p.teslim!).getTime()) / 60_000);
-    satirlar.push({ anahtar: `g-${p.id}`, ton: "kotu", baslik: p.baslik, icerik: true, alt: t("dkGecikti", { sure: sureYaz(dk, t), birim: kimde(p) }), href: `#/paketler/${p.id}`, paket: p });
-  }
-  for (const p of paketler.filter((x) => x.oncelikli && aktifMi(x) && !geciktiMi(x))) {
-    const asama = p.durum === "uretimde" && p.adim ? adimAdi(p.adim as UretimAdimi, p) : kimde(p);
-    const teslim = p.teslim ? ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}` : "";
-    satirlar.push({ anahtar: `o-${p.id}`, ton: "vurgu", baslik: p.baslik, icerik: true, alt: `${t("oncelikli")} · ${asama}${teslim}`, href: `#/paketler/${p.id}`, paket: p });
-  }
-  if (ks.birimler.includes("planlama") || ks.birimler.includes("newsdesk")) {
-    for (const pl of d.planlar.filter((x) => x.durum === "toplantida" || x.durum === "onayli")) {
-      const anahtar = pl.durum === "toplantida" ? "dkPlanOnay" : "dkPlanDevir";
-      if (pl.durum === "onayli" && !ks.birimler.includes("newsdesk")) continue;
-      satirlar.push({ anahtar: `p-${pl.id}`, ton: "uyari", baslik: t(anahtar, { tarih: tarihYaz(pl.tarih, dil, "kisa") }), icerik: false, alt: t(PLAN_DURUM_ADI[pl.durum]), href: `#/nextday/${pl.id}` });
-    }
-  }
-  if (ks.birimler.includes("planlama")) {
-    for (const h of d.haftalik.filter((x) => x.durum === "toplantida")) {
-      satirlar.push({ anahtar: `h-${h.id}`, ton: "uyari", baslik: t("dkHaftalikKesinlesme", { aralik: aralikYaz(h.baslangic, haftaSonu(h.baslangic), dil) }), icerik: false, alt: t("hdToplantida"), href: `#/haftalik/${h.id}` });
-    }
-  }
-  if (ks.birimler.includes("newsgathering")) {
-    for (const g of d.gorevlendirmeler.filter((x) => x.durum === "talep")) {
-      satirlar.push({ anahtar: `s-${g.id}`, ton: "uyari", baslik: g.yer, icerik: true, alt: `${t("dkSahaTalebi")} · ${ad(kisiBul(d, g.kisiId))}`, href: "#/talepler" });
-    }
-  }
-  if (ks.birimler.includes("planlama")) {
-    for (const o of d.oneriler.filter((x) => x.talimatVeren && (x.durum === "yeni" || x.durum === "degerlendiriliyor") && !oneriArsivde(x))) {
-      satirlar.push({ anahtar: `t-${o.id}`, ton: "uyari", baslik: o.haberBasligi, icerik: true, alt: t("dkTalimat"), href: `#/oneriler/${o.id}` });
-    }
-  }
-  return (
-    <Kart baslik={t("dikkatGerektirenler")} ikon={<AlertTriangle size={18} />} className="dikkat-karti">
-      {satirlar.length === 0 ? (
-        <Bos kucuk metin={t("dikkatYok")} />
-      ) : (
-        <ul className="liste dikkat">
-          {satirlar.map((s) => (
-            <li key={s.anahtar} className={`ton-${s.ton}`}>
-              <i className="dikkat-isaret" aria-hidden="true" />
-              <div className="ad">
-                <a href={s.href}>{s.icerik ? <Icerik blok>{s.baslik}</Icerik> : s.baslik}</a>
-                <small>{s.alt}</small>
-              </div>
-              {s.paket && <OncelikDugmesi ben={ben} paket={s.paket} kucuk />}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Kart>
   );
 }
 
@@ -503,11 +425,6 @@ function BirimKartlari({ ben }: { ben: Kisi }) {
   );
 }
 
-function PanelDikkat({ ben }: { ben: Kisi }) {
-  const { v, ks, izlenen } = usePanel(ben);
-  return <DikkatListesi ben={ben} d={v} paketler={izlenen} ks={ks} />;
-}
-
 function PanelTalimatlar({ ben }: { ben: Kisi }) {
   const v = useVeri();
   return (
@@ -553,7 +470,6 @@ export const PANEL_ALANLARI: Alan[] = [
   { id: "ypOnInceleme", ad: "onIncelemeBekleyen", genis: true, grup: "panel", sayfa: "panel", Bilesen: PanelOnInceleme },
   { id: "ypBirimler", ad: "birimler", genis: true, grup: "panel", sayfa: "panel", Bilesen: BirimKartlari },
   { id: "ypPlanlar", ad: "ypPlanlar", genis: true, grup: "panel", sayfa: "panel", Bilesen: () => <PanelPlanlari /> },
-  { id: "ypDikkat", ad: "dikkatGerektirenler", grup: "panel", sayfa: "panel", Bilesen: PanelDikkat },
   { id: "ypTalimat", ad: "talimatlarim", grup: "panel", sayfa: "panel", Bilesen: PanelTalimatlar },
   { id: "ypTakvim", ad: "bugununTakvimi", grup: "panel", sayfa: "panel", Bilesen: () => <BugununTakvimi d={useVeri()} /> },
   { id: "ypHafta", ad: "haftaOzeti", grup: "panel", sayfa: "panel", Bilesen: HaftaOzeti },

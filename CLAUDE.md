@@ -436,8 +436,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
   için açılışta okunursa döngüde tanımsız kalır.
 - Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
-  göstermez: sayılar, birim ışıkları (gerekçesi yazılı), dikkat
-  gerektirenler, talimatlar; ayrıntı için birimin kendi ekranına iner.
+  göstermez: sayılar, birim ışıkları (gerekçesi yazılı), planlar,
+  talimatlar; ayrıntı için birimin kendi ekranına iner. "Dikkat
+  gerektirenler" kartı kalktı: geciken paket, onay bekleyen plan, saha
+  talebi gibi operasyonel satırlar yönetici için fazla ayrıntıydı.
   Müdahale yalnız öncelik, yönetici notu, haber talimatı ve görev. Tek
   "Talimat ver" düğmesi, içinde tür seçimi (`TalimatVer`): haber talimatı
   ayrı akış değil, Planlama'ya reddedilemeyen öneri olarak düşer; görev

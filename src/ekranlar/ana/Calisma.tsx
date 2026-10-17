@@ -55,8 +55,8 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   program: ["genIslerim", "prHafta", "prUretim", "prOneri", "prKonuk"],
   output: ["genIslerim", "ouOzel", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
-  yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],
-  panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypDikkat", "ypTalimat", "ypTakvim", "ypHafta"],
+  yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
+  panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
 };
 
 /* Katalog çizim sırasında kuruluyor: alan dosyaları bu dosyayı da içe aktarıyor, açılışta okunursa döngüde henüz tanımsız olurlar. */
