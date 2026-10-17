@@ -1,8 +1,9 @@
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useState } from "react";
-import { TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { metin, useDil } from "../../dil";
-import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, paketKaydet } from "../../eylemler";
+import { Icerik, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { metin, tarihYaz, useDil } from "../../dil";
+import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPlanaEkle, paketKaydet } from "../../eylemler";
+import { gelismeOneriAdaylari } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
@@ -14,6 +15,7 @@ import {
   ICERIK_TURLERI,
   KAYNAK_TURLERI,
   SEHIRLER,
+  kisiBul,
   muhabirler,
   useVeri,
   type Bicim,
@@ -24,10 +26,12 @@ import {
   type KaynakTuru,
   type Kisi,
   type NextDayPlan,
+  type Oneri,
   type Paket,
   type Sehir,
 } from "../../veri";
 import { icMuhabirMi } from "../../yapi";
+import { yapabilir } from "../../yetki";
 
 /*
  * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
@@ -114,8 +118,25 @@ export function MuhabirSecici({ deger, degistir, bosEtiket, ic = true }: { deger
 
 /* `sonra`: belgede "altına ekle" denen satır; yeni kayıt onun arkasına giriyor. */
 export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; sonra?: string; kapat: () => void }) {
-  const { t } = useDil();
+  const { t, ad, dil } = useDil();
   const ben = useBen();
+  const v = useVeri();
+  /*
+   * Başlığa gelişme eklerken muhabirin önerisi de seçilebiliyor: öneri
+   * "Plana ekle" ile aynı eylemle bu başlığa giriyor (öneri plana eklendi,
+   * muhabire bildirim, strap'i varsa PKG önerisi). Elle yazılan gelişme
+   * önerisiz kalıyordu; öneri listede bekliyor, muhabire haber gitmiyordu.
+   */
+  const baslikId = plan.basliklar.find((b) => b.id === planBaslikId)?.baslikId;
+  const adaylar = !mevcut && baslikId && ben && yapabilir(ben, "oneriDegerlendir") ? gelismeOneriAdaylari(v, plan) : { buGun: [], digerleri: [] };
+  const [oneriId, setOneriId] = useState("");
+  const secili = [...adaylar.buGun, ...adaylar.digerleri].find((o) => o.id === oneriId);
+  const [paket, setPaket] = useState(true);
+  const secenek = (o: Oneri, gunlu: boolean) => (
+    <option key={o.id} value={o.id}>
+      {[ad(kisiBul(v, o.muhabirId)), o.paketBasligi || o.haberBasligi, gunlu && o.hedefTarih ? tarihYaz(o.hedefTarih, dil, "kisa") : ""].filter(Boolean).join(" · ")}
+    </option>
+  );
   const [f, setF] = useState({
     yer: mevcut?.yer ?? "",
     metin: mevcut?.metin ?? "",
@@ -125,6 +146,13 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
   });
   const kaydet = () => {
+    if (ben && secili && baslikId) {
+      if (oneriPlanaEkle(ben, secili.id, { planId: plan.id, baslikId, paketOlustur: paket && !!secili.paketBasligi })) {
+        bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
+        kapat();
+      }
+      return;
+    }
     if (!ben || !f.metin.trim()) return;
     gelismeKaydet(ben, {
       id: mevcut?.id,
@@ -140,8 +168,41 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     }, sonra);
     kapat();
   };
+  const oneriSecimi = adaylar.buGun.length + adaylar.digerleri.length > 0 && (
+    <label>
+      {t("muhabirOnerisinden")}
+      <select value={oneriId} onChange={(e) => setOneriId(e.target.value)} data-gelisme-oneri>
+        <option value="">{t("elleYaz")}</option>
+        {adaylar.buGun.length > 0 && <optgroup label={t("buPlanaGelenOneriler")}>{adaylar.buGun.map((o) => secenek(o, false))}</optgroup>}
+        {adaylar.digerleri.length > 0 && <optgroup label={t("digerGunlerinOnerileri")}>{adaylar.digerleri.map((o) => secenek(o, true))}</optgroup>}
+      </select>
+    </label>
+  );
+  if (secili)
+    return (
+      <div className="form form-kutu" data-gelisme-oneri-secili={secili.id}>
+        {oneriSecimi}
+        <div className="alan">
+          <small>{ad(kisiBul(v, secili.muhabirId))}</small>
+          <b>
+            <Icerik blok>{secili.haberBasligi}</Icerik>
+          </b>
+          {secili.gelisme && <Icerik blok>{secili.gelisme}</Icerik>}
+        </div>
+        {secili.paketBasligi && (
+          <label className="secim">
+            <input type="checkbox" checked={paket} onChange={(e) => setPaket(e.target.checked)} data-gelisme-oneri-paket />
+            {t("paketOnerisiOlustur")}: <b>
+              <Icerik>{secili.paketBasligi}</Icerik>
+            </b>
+          </label>
+        )}
+        <FormAlt kapat={kapat} kaydet={kaydet} kaydetMetni={t("planaEkle")} />
+      </div>
+    );
   return (
     <div className="form form-kutu">
+      {oneriSecimi}
       <div className="satir">
         <label>
           {t("yer")}

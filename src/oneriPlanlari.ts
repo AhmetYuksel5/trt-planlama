@@ -28,6 +28,21 @@ export const oneriAraligi = (o: Oneri): [string, string] | null => {
 /** Next Day'in o gününe düşüyor mu: yalnız günü olan öneri (eski haftalık öneri Next Day'e karışmıyor). */
 export const oneriGunde = (o: Oneri, tarih: string) => !!o.hedefTarih && o.hedefTarih <= tarih && tarih <= (oneriAraligi(o)?.[1] ?? o.hedefTarih);
 
+/*
+ * Başlığa gelişme eklerken seçilebilecek muhabir önerileri: karar bekleyen
+ * (yeni, değerlendiriliyor, sonra), haftalık gündemde olmayan, yalnız
+ * haftalık eski öneri olmayan. Önce bu planın gününe düşenler, sonra öbür
+ * günlerinkiler (muhabir başka güne önermiş olabilir). Talimatta muhabir
+ * yok, plana ekleme penceresinde atanıyor; burada yok.
+ */
+export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik">, plan: Pick<NextDayPlan, "tarih">): { buGun: Oneri[]; digerleri: Oneri[] } => {
+  const gundemde = new Set(d.haftalik.flatMap((h) => h.kalemler.map((k) => k.oneriId)));
+  const adaylar = d.oneriler
+    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id))
+    .sort((a, b) => b.zaman.localeCompare(a.zaman));
+  return { buGun: adaylar.filter((o) => oneriGunde(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriGunde(o, plan.tarih)) };
+};
+
 /** Haftalık planın haftasına düşüyor mu (eski haftalık öneride haftası). */
 export const oneriHaftada = (o: Oneri, h: HaftalikPlan) => {
   if (o.hafta) return o.hafta === h.baslangic;

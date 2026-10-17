@@ -624,6 +624,9 @@ const M = {
   plandakiBasliklar: m("Plandaki başlıklar", "العناوين في الخطة", "Headings in this plan"),
   yeniBaslikOlustur: m("Yeni başlık oluştur", "إنشاء عنوان جديد", "Create a new heading"),
   yeniBaslikAdi: m("Yeni başlığın adı", "اسم العنوان الجديد", "New heading name"),
+  muhabirOnerisinden: m("Muhabir önerisinden", "من مقترحات المراسلين", "From a reporter's proposal"),
+  elleYaz: m("Elle yaz", "كتابة يدوية", "Write it manually"),
+  digerGunlerinOnerileri: m("Öbür günlerin önerileri", "مقترحات الأيام الأخرى", "Proposals for other days"),
   paketOnerisiOlustur: m("Paket önerisi de oluştur", "إنشاء مقترح تقرير أيضا", "Also create a package proposal"),
   duzenlenebilirPlanYok: m("Düzenlenebilir (taslak ya da toplantıdaki) plan yok; önce plan aç.", "لا توجد خطة قابلة للتعديل (مسودة أو في الاجتماع)؛ أنشئ خطة أولا.", "No editable plan (draft or at the meeting); create one first."),
 

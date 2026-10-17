@@ -489,6 +489,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
+  - Başlığa gelişme eklerken muhabir önerisi de seçilir (`Formlar.tsx →
+    GelismeFormu`, "Muhabir önerisinden"; adaylar `oneriPlanlari.ts →
+    gelismeOneriAdaylari`: karar bekleyen muhabir önerileri, önce bu planın
+    gününe düşenler, sonra öbür günlerinkiler; talimat ve gündemdeki yok).
+    Seçilen öneri "Plana ekle" ile aynı eylemle o başlığa girer
+    (`oneriPlanaEkle`: öneri plana eklendi, muhabire bildirim, strap'i varsa
+    PKG önerisi, istenirse kapatılır). Elle yazma yolu aynen duruyor.
   - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
     başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden) ya da
     başlığı sürükleyip öbürünün üstüne bırakmak; onay sorulur, ↶ geri alır.
