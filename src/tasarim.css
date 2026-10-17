@@ -1168,7 +1168,14 @@ dialog.pencere::backdrop { background: rgba(15, 31, 58, .45); }
 .pencere > header > div { flex: 1; min-width: 0; }
 .pencere > header h2 { font-size: var(--punto-orta); }
 .pencere > header small { display: block; color: var(--sonuk); font-size: var(--punto-kucuk); margin-top: 2px; }
-.pencere-govde { padding: var(--ara-4) var(--ara-5); overflow: auto; display: grid; gap: var(--ara-3); }
+/*
+ * Gövdenin tek sütunu pencereden geniş açılamaz: ızgara sütunu içeriğin en
+ * küçük genişliğine göre açılıyordu; liste görünümündeki tek satırlık
+ * (nowrap) gelişme cümlenin boyunu en küçük genişlik yapınca telefonda
+ * pencere sağdan taşıyor, sağa yaslı başlık görünmüyordu.
+ */
+.pencere-govde { padding: var(--ara-4) var(--ara-5); overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-3); }
+.pencere-govde > * { min-width: 0; }
 .pencere > footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--ara-2); padding: var(--ara-3) var(--ara-5); border-top: 1px solid var(--cizgi); background: var(--zemin); }
 
 /* --- Haftalık plan --- */
@@ -1282,6 +1289,13 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .ok-eylem { display: flex; gap: var(--ara-1); flex-wrap: wrap; padding-top: var(--ara-2); border-top: 1px solid var(--cizgi); }
 .oneri-satiri .ok-baslik { font-size: var(--punto-kucuk); text-align: inherit; }
 .oneri-satiri .satir-tek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Liste satırının alt satırı dar ekranda kırılsın: rozetler ve uzun Latin ad (giren) taşmasın. */
+.oneri-satiri small > *, .oneri-satiri small .rozet { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+.ok-plana-eklendi { flex-wrap: wrap; overflow-wrap: anywhere; }
+/* Karar düğmeleri dar yerde yazının altına iniyor; yanında kalınca yazıyı harf harf sıkıştırıyordu. */
+.oneri-satiri .kayit-bas { flex-wrap: wrap; }
+.oneri-satiri .kayit-bas > div:not(.islemler) { flex: 1 1 220px; }
+.oneri-satiri .kayit-bas > .islemler { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-inline-start: auto; }
 .pencere .op-arka { font-weight: 600; }
 /* Kaynak dar sütunda: uzun talimat rozeti sığmazsa satır kırsın, yandaki alanın üstüne binmesin. */
 .pencere .alan, .pencere .kisi-hucre > span { min-width: 0; }

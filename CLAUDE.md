@@ -1138,6 +1138,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Telefonda üst çubuğun açılır panelleri (bildirimler, kullanıcı menüsü)
   düğmeye değil çubuğa göre, iki yanda 16 piksel boşlukla açılır: zilin
   sağında avatar olduğu için panel ekranın solundan taşıyordu.
+- Pencerenin gövdesi tek sütunlu ızgara, sütunu `minmax(0, 1fr)`: içerik
+  pencereyi genişletemez (liste görünümündeki tek satırlık gelişme telefonda
+  pencereyi açıp başlığı ekran dışına itiyordu). Öneri liste satırında alt
+  satır kırılır, karar düğmeleri dar yerde yazının altına iner. Telefon
+  denetimi kart ve liste görünümünün ikisinde de yapılır (`oneriGorunumu`).
 - Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
   hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
   dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede
