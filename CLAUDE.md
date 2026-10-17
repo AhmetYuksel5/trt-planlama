@@ -453,7 +453,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Next Day her gün kesintisiz sürer: yarının planını kullanıcı değil sistem
   açar (`eylemler.ts → yarinPlaniniAc`, `App.tsx`'te açılışta ve arada bir;
   hareket kaydında kişi `SISTEM`). Plan açma düğmesi ve neyin taşınacağını
-  seçtiren form yok; plan önceki planın şablonuyla gelir. Taşınan kayıt `onceki` işaretli
+  seçtiren form yok; plan önceki planın şablonuyla gelir. Yalnız önceki gün
+  kullanılan başlık taşınır (`yarinPlaniniAc → kullanildi`): o gün eklenen,
+  ya da gelişmesi, muhabiri, canlısı eklenen/düzenlenen/"bugün de geçerli"
+  denen, paketi olan. Dokunulmadan devreden başlık düşer; yoksa eski
+  başlıklar her gün birikiyordu. Bunun için taşınan kayıtta ayrıca `devir`
+  (başlık, muhabir, gelişme, canlı): onay silmez (`onceki`yi siler),
+  düzenleme ve "bugün de geçerli" siler. Taşınan kayıt `onceki` işaretli
   (hareket bağlantısında `NextDayPlan.oncekiHareketler`) ve ekranda
   `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
@@ -817,7 +823,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş
   akışı, tam yönetici, gerçek kipte genel ayar belgesinde) iş Planlama'da
   biter: onaylı paketi (haftalıktan da, Next Day'de onaylanan PKG de)
-  muhabir "Senin sıran"da "Tamamlandı" diye kapatır (`eylemler.ts →
+  muhabir "Senin sıran"da "Teslim ettim" diye kapatır (satırda "Onaylandı ·
+  hazırlaman bekleniyor"; "Tamamlandı" durum gibi okunuyordu; Planlama onun
+  adına işaretlerken "Teslim edildi") (`eylemler.ts →
   paketTamamla`, yetki `paketTamamlayabilir`; `muhabirTeslimi` ölçüme
   girer, Planlama'ya bildirim). Hesapsız muhabir için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,

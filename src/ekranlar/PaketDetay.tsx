@@ -268,7 +268,8 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
       <Kart baslik={t("seninIslemin")}>
         <div className="dugmeler">
           <button className="dugme dugme-iyi" onClick={() => paketTamamla(ben, paket.id) && bildir(t("bPaketTamamlandi"))} data-paket-tamamla={paket.id}>
-            <CircleCheck size={15} /> {t("haberTamamlandi")}
+            {/* Muhabir kendi işini söylüyor; Planlama onun adına işaretliyor. */}
+            <CircleCheck size={15} /> {t(ben.id === paket.muhabirId ? "haberTamamlandi" : "haberTeslimEdildi")}
           </button>
           {uretimeAlabilir(ben, paket) && (
             <button className="dugme dugme-ikincil" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>

@@ -912,8 +912,10 @@ const M = {
   kararNotu: m("Karar notu", "ملاحظة القرار", "Decision note"),
   ekTalep: m("Ek talep", "طلب إضافي", "Additional request"),
   kararNotuEkTalep: m("Not / ek talep", "ملاحظة / طلب إضافي", "Note / request"),
-  haberTamamlandi: m("Tamamlandı", "أُنجز", "Done"),
-  bPaketTamamlandi: m("Haber tamamlandı olarak işaretlendi.", "عُلّم الخبر كمُنجز.", "The story was marked as done."),
+  haberTeslimEdildi: m("Teslim edildi", "سُلّم", "Delivered"),
+  muOnayliBekleniyor: m("Onaylandı · hazırlaman bekleniyor", "معتمد · بانتظار إعدادك", "Approved · waiting for you to prepare it"),
+  haberTamamlandi: m("Teslim ettim", "سلّمتُ التقرير", "I've delivered it"),
+  bPaketTamamlandi: m("Haber teslim edildi; Planlama'ya bildirildi.", "سُلّم الخبر وأُبلغ التخطيط.", "The story was delivered; Planning has been notified."),
   newsdeskDevrede: m("Newsdesk devrede", "النيوزديسك مفعّل", "Newsdesk in the system"),
   isAkisiBicimi: m("İş akışı", "سير العمل", "Workflow"),
   tbcAdi: m("Muhabir henüz belli değil (TBC)", "المراسل غير محدد بعد (TBC)", "Reporter to be confirmed (TBC)"),
@@ -2429,10 +2431,11 @@ const M = {
     "The story shows in My stories and under \u201cYour turn\u201d on My work. Steps: Added to plan → With the reporter → Completed.",
   ),
   kl7b: m(
-    "Haberi teslim edince \u201cSenin sıran\u201ddaki \u201cTamamlandı\u201dya bas; Planlama'ya haber gider.",
-    "حين تسلّم الخبر اضغط «تم الإنجاز» في «دورك»؛ يصل التنبيه إلى التخطيط.",
-    "When you deliver the story, press \u201cMark completed\u201d under \u201cYour turn\u201d; Planning is notified.",
+    "Haberi hazırlayıp teslim edince \u201cSenin sıran\u201ddaki \u201cTeslim ettim\u201de bas; Planlama'ya haber gider.",
+    "حين تُعدّ الخبر وتسلّمه اضغط «سلّمتُ التقرير» في «دورك»؛ يصل التنبيه إلى التخطيط.",
+    "When you have prepared and delivered the story, press \u201cI've delivered it\u201d under \u201cYour turn\u201d; Planning is notified.",
   ),
+
   kl7bNewsdesk: m(
     "Sıra sana geldiğinde (metin, video) iş \u201cSenin sıran\u201dda görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
     "حين يحين دورك (النص، الفيديو) يظهر العمل في «دورك»؛ وبعد إنجازه انقله إلى الخطوة التالية بالزر هناك.",

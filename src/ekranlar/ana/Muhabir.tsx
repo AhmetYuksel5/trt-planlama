@@ -123,7 +123,7 @@ function Siram({ ben }: { ben: Kisi }) {
                         <Icerik blok>{p.baslik}</Icerik>
                       </a>
                       <small>
-                        {p.durum === "onaylandi" ? t("pdOnaylandi") : adimAdi(p.adim as UretimAdimi, p)}
+                        {p.durum === "onaylandi" ? t("muOnayliBekleniyor") : adimAdi(p.adim as UretimAdimi, p)}
                         {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
                         {p.ozelId && ` · ${t("ozel")}${p.ozelAd ? `: ${p.ozelAd}` : ""}${p.sonTarih ? ` · ${t("oySonTarih")}: ${tarihYaz(p.sonTarih, dil, "kisa")}` : ""}`}
                       </small>

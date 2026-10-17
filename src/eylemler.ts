@@ -87,6 +87,7 @@ import {
   type Konuk,
   type OzelTalep,
   type OzelPaketOnerisi,
+  type PlanBasligi,
   type Bahsetme,
   type TalepDurum,
   type PlanDurum,
@@ -1337,10 +1338,24 @@ export const yarinPlaniniAc = (): string | null => {
   const kaynak = oncekiPlan(d, tarih);
   const id = gunPlaniKimligi(tarih);
   const pbEsle = new Map<string, string>();
-  const basliklar = (kaynak?.basliklar ?? []).map((b) => {
+  /*
+   * Yalnız önceki gün kullanılan başlık taşınıyor: o gün eklenen, ya da
+   * gelişmesi, muhabiri, canlısı eklenen/düzenlenen/"bugün de geçerli"
+   * denen, paketi olan. Dokunulmadan devreden başlık düşüyor; yoksa her gün
+   * bir öncekinin hepsi geçiyor, eski başlıklar birikiyordu. "Devir" işareti
+   * onayla silinmiyor (onay `onceki`yi siliyor), bu yüzden ayrı.
+   */
+  const kullanildi = (b: PlanBasligi) =>
+    !!kaynak &&
+    (!b.devir ||
+      b.muhabirler.some((m) => !m.devir) ||
+      d.gelismeler.some((g) => g.planId === kaynak.id && g.planBaslikId === b.id && !g.devir) ||
+      d.canliYayinlar.some((c) => c.planId === kaynak.id && c.planBaslikId === b.id && !c.devir) ||
+      d.paketler.some((p) => p.planId === kaynak.id && p.planBaslikId === b.id && p.durum !== "iptal"));
+  const basliklar = (kaynak?.basliklar ?? []).filter(kullanildi).map((b) => {
     const yeniId = turet(id, b.id);
     pbEsle.set(b.id, yeniId);
-    return { id: yeniId, baslikId: b.baslikId, muhabirler: b.muhabirler.map((m) => ({ ...m, onceki: true as const })) };
+    return { id: yeniId, baslikId: b.baslikId, muhabirler: b.muhabirler.map((m) => ({ ...m, onceki: true as const, devir: true as const })), devir: true as const };
   });
   // Bitmiş hareket taşınmıyor; plan gününde süren hareket taşınıyor.
   const hareketler = (kaynak?.gorevlendirmeler ?? []).filter((gid) => {
@@ -1363,7 +1378,8 @@ export const yarinPlaniniAc = (): string | null => {
   const canlilar: CanliYayin[] = kaynak
     ? d.canliYayinlar
         .filter((c) => c.planId === kaynak.id && c.tarih >= tarih)
-        .map((c) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true }))
+        .filter((c) => !c.planBaslikId || pbEsle.has(c.planBaslikId))
+        .map((c) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true, devir: true }))
     : [];
   /*
    * Gelişme metniyle taşınıyor; öneri ve haftalık kalem bağı kaynak kayıtta
@@ -1372,7 +1388,7 @@ export const yarinPlaniniAc = (): string | null => {
   const gelismeler: Gelisme[] = kaynak
     ? d.gelismeler
         .filter((g) => g.planId === kaynak.id && (!g.planBaslikId || pbEsle.has(g.planBaslikId)))
-        .map(({ oneriId: _o, haftalikKalemId: _h, ...g }) => ({ ...g, id: turet(id, g.id), planId: id, planBaslikId: g.planBaslikId ? pbEsle.get(g.planBaslikId) : undefined, onceki: true }))
+        .map(({ oneriId: _o, haftalikKalemId: _h, ...g }) => ({ ...g, id: turet(id, g.id), planId: id, planBaslikId: g.planBaslikId ? pbEsle.get(g.planBaslikId) : undefined, onceki: true, devir: true }))
     : [];
   d = { ...d, planlar: [plan, ...d.planlar], canliYayinlar: [...d.canliYayinlar, ...canlilar], gelismeler: [...d.gelismeler, ...gelismeler] };
   d = hareketYaz(
@@ -1732,7 +1748,7 @@ export const planMuhabirTasi = (ben: Kisi, planId: string, pbId: string, kisiId:
   planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => komsuylaDegis(m, (x) => x.kisiId === kisiId, () => true, yon) ?? m));
 
 export const planMuhabirGuncelle = (ben: Kisi, planId: string, pbId: string, kisiId: string, g: { yer?: string; saat?: string }) =>
-  planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => m.map((x) => (x.kisiId === kisiId ? { ...x, ...g, onceki: undefined } : x))));
+  planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => m.map((x) => (x.kisiId === kisiId ? { ...x, ...g, onceki: undefined, devir: undefined } : x))));
 
 export type OncekiHedef = { ekip: string } | { hareket: string } | { muhabir: [string, string] } | { gelisme: string } | { canli: string };
 
@@ -1752,12 +1768,12 @@ export const oncekiOnayla = (ben: Kisi, planId: string, hedef?: OncekiHedef) => 
     ...p,
     ekip: p.ekip.map((e) => (secili("ekip", e.kisiId) ? { ...e, onceki: undefined } : e)),
     oncekiHareketler: bosIse((p.oncekiHareketler ?? []).filter((id) => !secili("hareket", id))),
-    basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map((m) => (muhabirSecili(b.id, m.kisiId) ? { ...m, onceki: undefined } : m)) })),
+    basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map((m) => (muhabirSecili(b.id, m.kisiId) ? { ...m, onceki: undefined, devir: undefined } : m)) })),
   }));
   d = {
     ...d,
-    gelismeler: d.gelismeler.map((g) => (g.planId === planId && secili("gelisme", g.id) ? { ...g, onceki: undefined } : g)),
-    canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId && secili("canli", c.id) ? { ...c, onceki: undefined } : c)),
+    gelismeler: d.gelismeler.map((g) => (g.planId === planId && secili("gelisme", g.id) ? { ...g, onceki: undefined, devir: undefined } : g)),
+    canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId && secili("canli", c.id) ? { ...c, onceki: undefined, devir: undefined } : c)),
   };
   kaydet(d);
   return true;
@@ -1770,7 +1786,7 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
   const plan = planBul(d, g.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (g.id) {
-    kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id, onceki: undefined } : x)) });
+    kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {
     const id = kimlik("g");
     kaydet({ ...d, gelismeler: arkasina([...d.gelismeler, { ...g, id }], kimlikOf, id, sonra) });
@@ -1804,7 +1820,7 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   const plan = planBul(d, c.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (c.id) {
-    kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined } : x)) });
+    kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy") }] });
   }

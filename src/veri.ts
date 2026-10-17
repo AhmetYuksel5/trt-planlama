@@ -262,6 +262,8 @@ export interface PlanMuhabiri {
   yer?: string;
   saat?: string;
   onceki?: true;
+  /** Önceki plandan dokunulmadan geldi; onay silmiyor, düzenleme siliyor (yarinPlaniniAc). */
+  devir?: true;
 }
 
 /** Bir başlığın o günkü plandaki yeri: sıra listedeki yerinden, muhabirler o güne ait. */
@@ -271,6 +273,8 @@ export interface PlanBasligi {
   muhabirler: PlanMuhabiri[];
   /** Muhabir henüz belli değil: çıktıda adın yerinde "TBC". Muhabir atanınca kalkıyor. */
   muhabirTbc?: true;
+  /** Önceki plandan taşındı; o gün yeni eklenen başlıkta yok. */
+  devir?: true;
 }
 
 export interface NextDayPlan {
@@ -313,6 +317,7 @@ export interface Gelisme {
   /** Haftalık plandan aktarıldıysa kaynağı olan kalem. */
   haftalikKalemId?: string;
   onceki?: true;
+  devir?: true;
 }
 
 export interface CanliYayin {
@@ -328,6 +333,7 @@ export interface CanliYayin {
   muhabirId?: string;
   notlar: string;
   onceki?: true;
+  devir?: true;
 }
 
 /* --- Muhabir hareketleri: görevlendirme, seyahat, izin. Planlar bunlara bağlantı tutar. --- */
