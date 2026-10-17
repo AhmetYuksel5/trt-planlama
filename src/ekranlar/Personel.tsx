@@ -4,17 +4,18 @@ import { OzelGorevSatirlari } from "../bilesenler/OzelGorevler";
 import { ozelGorevleri } from "../ozel";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
 import { profilGuncelle, type ProfilGirdisi, type YeniSehir } from "../eylemler";
-import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, sehirListesi, sehirUlkesi, ulkeAdi } from "../etiketler";
+import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, sehirUlkesi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, CALISMA_BICIMLERI, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
 import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { ProfilTakipleri } from "./Takipler";
+import { SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -323,8 +324,6 @@ function PerformansKarti({ kisi }: { kisi: Kisi }) {
   );
 }
 
-const YENI_SEHIR = "__yeni";
-
 function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState<Required<Omit<ProfilGirdisi, "foto">>>({
@@ -374,19 +373,14 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
               value={yeni ? YENI_SEHIR : f.sehir}
               data-profil-sehir
               onChange={(e) => {
-                if (e.target.value === YENI_SEHIR) setYeni({ ar: "", tr: "", en: "", ulke: sehirUlkesi(f.sehir) });
+                if (e.target.value === YENI_SEHIR) setYeni(bosYeniSehir(f.sehir));
                 else {
                   setYeni(null);
                   setF({ ...f, sehir: e.target.value as Sehir });
                 }
               }}
             >
-              {sehirListesi().map((s) => (
-                <option key={s} value={s}>
-                  {sehirAdi(s)} · {t(ulkeAdi(sehirUlkesi(s)))}
-                </option>
-              ))}
-              <option value={YENI_SEHIR}>{t("yeniSehir")}</option>
+              <SehirSecenekleri />
             </select>
           </label>
           <label>
@@ -400,32 +394,7 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
             </select>
           </label>
         </div>
-        {yeni && (
-          <div className="satir" data-yeni-sehir>
-            <label>
-              {t("sehirAdiAr")}
-              <input {...icerikAlani} value={yeni.ar} onChange={(e) => setYeni({ ...yeni, ar: e.target.value })} placeholder="الدوحة" autoFocus data-yeni-sehir-ar />
-            </label>
-            <label>
-              {t("sehirAdiTr")}
-              <input value={yeni.tr} onChange={(e) => setYeni({ ...yeni, tr: e.target.value })} data-yeni-sehir-tr />
-            </label>
-            <label>
-              {t("sehirAdiEn")}
-              <input dir="ltr" value={yeni.en} onChange={(e) => setYeni({ ...yeni, en: e.target.value })} data-yeni-sehir-en />
-            </label>
-            <label>
-              {t("ulke")}
-              <select value={yeni.ulke} onChange={(e) => setYeni({ ...yeni, ulke: e.target.value as Ulke })} data-yeni-sehir-ulke>
-                {ULKELER.map((u) => (
-                  <option key={u} value={u}>
-                    {t(ulkeAdi(u))}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
+        {yeni && <YeniSehirAlanlari yeni={yeni} degistir={setYeni} />}
         <fieldset className="secim-grubu">
           <legend>{t("digerUlkeler")}</legend>
           {ULKELER.filter((u) => u !== anaUlke).map((u) => (

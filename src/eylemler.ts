@@ -2146,6 +2146,32 @@ const sehirKur = (d: Durum, y: YeniSehir): { d: Durum; id: Sehir } => {
   return { d: { ...d, sehirler: [...(d.sehirler ?? []), { id, ad, ulke: y.ulke }] }, id };
 };
 
+/*
+ * Kişinin şehri tek başına (Hesaplar'daki satır, kişi düzenleme penceresi).
+ * Profili düzenleyebilen ya da kişi düzenleme yetkisi olan değiştirir.
+ */
+export const kisiSehri = (ben: Kisi, kisiId: string, sehir: Sehir | YeniSehir): boolean => {
+  let d = getir();
+  const kisi = kisiBul(d, kisiId);
+  if (!kisi || !(profilDuzenler(ben, kisi) || hesapYetkisi(ben, "kisiDuzenle"))) return false;
+  let id: Sehir;
+  let eklendi = false;
+  if (typeof sehir === "string") {
+    if (!sehirListesi(d).includes(sehir)) return false;
+    id = sehir;
+  } else {
+    if (!sehir.ar.trim()) return false;
+    const k = sehirKur(d, sehir);
+    eklendi = k.d !== d;
+    d = k.d;
+    id = k.id;
+  }
+  if (id === kisi.sehir && !eklendi) return true;
+  d = { ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? { ...k, sehir: id } : k)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "profilGuncellendi", veri: { muhabir: kisiId, sehir: id } }));
+  return true;
+};
+
 export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi, yeniSehir?: YeniSehir) => {
   let d = getir();
   const kisi = kisiBul(d, kisiId);

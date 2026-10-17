@@ -7,12 +7,14 @@ import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
-import { hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { izlemeBaslat } from "../izleme";
 import { GERCEK, firebaseYukle } from "../kip";
-import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi } from "../veri";
-import { epostaDegistirebilir, hesapYetkisi } from "../yetki";
+import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
+import { epostaDegistirebilir, hesapYetkisi, profilDuzenler } from "../yetki";
+import { SatirSehirSecimi, SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
+import type { YeniSehir } from "../eylemler";
 import { git } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -169,6 +171,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   const acikBaglantilar = (baglantilar ?? []).filter((b) => b.acik && Date.now() < b.bitis);
 
   const kisiler = [...v.kisiler].sort((a, b) => Number(!!a.pasif) - Number(!!b.pasif) || Number(!!a.hesapsiz) - Number(!!b.hesapsiz) || ad(a).localeCompare(ad(b)));
+  const sehirDegisebilir = (k: Kisi) => profilDuzenler(ben, k) || hesapYetkisi(ben, "kisiDuzenle");
   const silebilir = (k: Kisi) => k.id !== ben.id && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi));
   const kapatabilir = (k: Kisi) => k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
   const ekleyebilir = davetYetkisi || hesapsizYetkisi;
@@ -355,6 +358,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
               <th>{t("ad")}</th>
               <th>{t("eposta")}</th>
               <th>{t("birim")}</th>
+              <th>{t("sehir")}</th>
               <th>{t("durum")}</th>
               <th />
             </tr>
@@ -372,6 +376,22 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                 </td>
                 <td data-etiket={t("birim")}>
                   {birimAdi(k.birim)} · {gorevAdi(k.gorev)}
+                </td>
+                {/* Şehir satırda değişir: muhabirler yer değiştirdikçe tek tek profile girmek gerekmesin. */}
+                <td data-etiket={t("sehir")} data-hesap-sehir>
+                  {sehirDegisebilir(k) ? (
+                    <SatirSehirSecimi
+                      deger={k.sehir}
+                      etiket={`${ad(k)} · ${t("sehir")}`}
+                      kaydet={(x) => {
+                        const tamam = kisiSehri(ben, k.id, x);
+                        if (tamam) bildir(t("bKaydedildi"));
+                        return tamam;
+                      }}
+                    />
+                  ) : (
+                    sehirAdi(k.sehir)
+                  )}
                 </td>
                 <td data-etiket={t("durum")}>
                   {k.hesapsiz ? (
@@ -670,6 +690,8 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
   const v = useVeri();
   const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, ...ilk });
+  const [sehir, setSehir] = useState<Sehir>(kisi.sehir);
+  const [yeniSehir, setYeniSehir] = useState<YeniSehir | null>(null);
   const [eposta, setEposta] = useState(kisi.yeniEposta ?? kisi.eposta ?? "");
   const [bekle, setBekle] = useState(false);
   const epostaAcik = epostaDegistirebilir(ben, kisi);
@@ -706,6 +728,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const kaydet = async () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
     if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
+    if ((yeniSehir || sehir !== kisi.sehir) && !kisiSehri(ben, kisi.id, yeniSehir ?? sehir)) return;
     setBekle(true);
     try {
       if (await epostaKaydet()) {
@@ -763,11 +786,28 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
             <UnvanSecenekleri birim={p.birim} dahil={p.birim === kisi.birim && p.gorev === kisi.gorev ? kisi.gorev : undefined} />
           </select>
         </label>
+        <label>
+          {t("sehir")}
+          <select
+            value={yeniSehir ? YENI_SEHIR : sehir}
+            data-pozisyon-sehir
+            onChange={(e) => {
+              if (e.target.value === YENI_SEHIR) setYeniSehir(bosYeniSehir(sehir));
+              else {
+                setYeniSehir(null);
+                setSehir(e.target.value);
+              }
+            }}
+          >
+            <SehirSecenekleri />
+          </select>
+        </label>
+        {yeniSehir && <YeniSehirAlanlari yeni={yeniSehir} degistir={setYeniSehir} />}
         <div className="form-alt">
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}
           </button>
-          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev || bekle} onClick={kaydet} data-pozisyon-kaydet>
+          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev || bekle || (!!yeniSehir && !yeniSehir.ar.trim())} onClick={kaydet} data-pozisyon-kaydet>
             {t("kaydet")}
           </button>
         </div>

@@ -180,6 +180,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şehirde boş kalır). Gerçek kipte `sehirler` koleksiyonunu herkes okur,
     kısıtlı muhabir yalnız yeni şehir ekler (kural), var olanı değiştiremez.
     Excel aktarımı eklenen şehrin adlarını da tanır.
+    Hesaplar'da her satırda şehir seçimi (`bilesenler/SehirSecimi.tsx →
+    SatirSehirSecimi`): seçilen hemen kaydedilir (`eylemler.ts → kisiSehri`;
+    profili düzenleyebilen ya da `kisiDuzenle` yetkili), "+ Yeni şehir…"
+    küçük pencerede; "Düzenle" penceresinde de şehir. Seçenekler ve yeni şehir
+    alanları her yerde aynı bileşenden (`SehirSecenekleri`, `YeniSehirAlanlari`).
   - Muhabir listesinde ve profilde WhatsApp düğmesi (`bilesenler/
     WhatsApp.tsx`): telefonda `wa.me`; numara uluslararası biçime çevrilir
     ("00…", başta tek sıfır Türkiye). Bilgisayarda önce masaüstü uygulaması

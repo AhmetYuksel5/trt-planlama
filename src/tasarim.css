@@ -785,6 +785,8 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
   background: var(--yuzey); color: var(--murekkep); font-weight: 400; font-size: var(--punto);
 }
 .form input:focus, .form select:focus, .form textarea:focus, .girdi:focus { outline: none; border-color: var(--vurgu); box-shadow: 0 0 0 3px var(--vurgu-sis); }
+/* Tablo satırında yerinde seçim (Hesaplar'da şehir): hücreyi doldurmasın, dar yerde taşmasın. */
+.satir-secim { inline-size: auto; max-inline-size: 100%; }
 .form textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
 .form .satir { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--ara-3); }
 .form .secim { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); font-weight: 500; color: var(--murekkep); }
