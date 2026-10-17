@@ -13,7 +13,7 @@ import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanD
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
-import { satir, sehirAr } from "./etiketler";
+import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { oneriHaftada, oneriYeri } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
@@ -21,7 +21,6 @@ import { oncesi, siradaki } from "./ozel";
 import { yeniAnilanlar } from "./bahsetme";
 import {
   ORTAM_DUZENLERI,
-  SEHIRLER,
   ULKE_BOLGESI,
   cagriTuru,
   faaliyetBul,
@@ -2125,10 +2124,38 @@ export type ProfilGirdisi = Partial<
   Pick<Kisi, "telefon" | "eposta" | "kisiselEposta" | "irtibat" | "kisaltma" | "sehir" | "digerUlkeler" | "bicimler" | "calisma" | "foto">
 >;
 
-export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi) => {
+/* Profil formunda listede olmayan şehir: Arapça adı zorunlu, ülkesi seçilir. */
+export interface YeniSehir {
+  ar: string;
+  tr?: string;
+  en?: string;
+  ulke: Ulke;
+}
+
+/*
+ * Aynı Arapça adlı şehir varsa (yerleşik ya da eklenmiş) o kullanılır:
+ * iki kişi aynı şehri ayrı ayrı yazınca liste çoğalmasın.
+ */
+const sehirKur = (d: Durum, y: YeniSehir): { d: Durum; id: Sehir } => {
+  const ar = y.ar.trim();
+  const sade = (x: string) => x.trim().replace(/\s+/g, " ");
+  const var_ = sehirListesi(d).find((s) => sade(sehirAdi(s, "ar", d)) === sade(ar));
+  if (var_) return { d, id: var_ };
+  const id = kimlik("s-");
+  const ad = { ar, ...(y.tr?.trim() && { tr: y.tr.trim() }), ...(y.en?.trim() && { en: y.en.trim() }) };
+  return { d: { ...d, sehirler: [...(d.sehirler ?? []), { id, ad, ulke: y.ulke }] }, id };
+};
+
+export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi, yeniSehir?: YeniSehir) => {
   let d = getir();
   const kisi = kisiBul(d, kisiId);
   if (!kisi || !profilDuzenler(ben, kisi)) return false;
+  if (yeniSehir) {
+    if (!yeniSehir.ar.trim()) return false;
+    const k = sehirKur(d, yeniSehir);
+    d = k.d;
+    g = { ...g, sehir: k.id };
+  }
   /* Kişi kendi çalışma biçimini değiştiremez: sözleşme Planlama ve Yönetim'in kaydı. */
   const izinli = ben.id === kisiId && !yapabilir(ben, "profilDuzenle") ? { ...g, calisma: undefined } : g;
   const temiz = Object.fromEntries(Object.entries(izinli).filter(([, x]) => x !== undefined)) as ProfilGirdisi;
@@ -2294,7 +2321,7 @@ export const bildirimleriOku = (ben: Kisi) => {
 };
 
 /** Muhabirin şehrinden ülkesi; öneri formunda varsayılan. */
-export const ulkesi = (s: Sehir): Ulke => SEHIRLER[s];
+export const ulkesi = (s: Sehir): Ulke => sehirUlkesi(s, getir());
 
 /* --- Ana sayfa düzeni --- */
 

@@ -35,7 +35,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
         sekme={false}
         ikon={<Newspaper size={26} />}
         baslik={t("merhaba", { ad: ad(ben).split(" ")[0] })}
-        alt={`${t("biMuhabir")} · ${t(sehirAdi(ben.sehir))}`}
+        alt={`${t("biMuhabir")} · ${sehirAdi(ben.sehir)}`}
         sagUc={
           <a className="dugme" href="#/oneriler/yeni" data-yeni-oneri>
             <Send size={16} className="yon" /> {t("yeniOneriGonder")}

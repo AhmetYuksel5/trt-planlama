@@ -5,7 +5,7 @@ import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPlanaEkle, paketKaydet } from "../../eylemler";
 import { gelismeOneriAdaylari } from "../../oneriPlanlari";
-import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi } from "../../etiketler";
+import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
 import {
@@ -15,7 +15,6 @@ import {
   HAREKET_TURLERI,
   ICERIK_TURLERI,
   KAYNAK_TURLERI,
-  SEHIRLER,
   kisiBul,
   muhabirler,
   useVeri,
@@ -99,7 +98,7 @@ export function MuhabirSecici({ deger, degistir, bosEtiket, ic = true }: { deger
   const icler = ic ? sirali(v.kisiler.filter((k) => !k.pasif && icMuhabirMi(k))) : [];
   const secenek = (k: Kisi) => (
     <option key={k.id} value={k.id}>
-      {ad(k)} · {t(sehirAdi(k.sehir))}
+      {ad(k)} · {sehirAdi(k.sehir)}
     </option>
   );
   return (
@@ -388,9 +387,9 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
         <label>
           {t("sehirUlke")}
           <select value={f.diger ? DIGER : f.sehir} onChange={(e) => setF(e.target.value === DIGER ? { ...f, diger: true } : { ...f, diger: false, sehir: e.target.value as Sehir })} data-paket-sehir>
-            {(Object.keys(SEHIRLER) as Sehir[]).map((s) => (
+            {sehirListesi().map((s) => (
               <option key={s} value={s}>
-                {t(sehirAdi(s))}
+                {sehirAdi(s)}
               </option>
             ))}
             <option value={DIGER}>{t("sehirDiger")}</option>

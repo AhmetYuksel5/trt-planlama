@@ -4,14 +4,14 @@ import { OzelGorevSatirlari } from "../bilesenler/OzelGorevler";
 import { ozelGorevleri } from "../ozel";
 import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
-import { profilGuncelle, type ProfilGirdisi } from "../eylemler";
-import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, ulkeAdi } from "../etiketler";
+import { profilGuncelle, type ProfilGirdisi, type YeniSehir } from "../eylemler";
+import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, sehirListesi, sehirUlkesi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
-import { BICIMLER, CALISMA_BICIMLERI, SEHIRLER, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
+import { BICIMLER, CALISMA_BICIMLERI, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
 import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { ProfilTakipleri } from "./Takipler";
@@ -39,7 +39,7 @@ const yuzde = (x: number | null) => (x === null ? "—" : `%${Math.round(x * 100
 const ondalik = (x: number | null, dil: string) => (x === null ? "—" : x.toLocaleString(dil === "ar" ? "ar-u-nu-latn" : dil, { maximumFractionDigits: 1 }));
 
 /** Kişinin ana görev ülkesi ve çalışabildiği diğer ülkeler: "Lübnan'da kim çalışabilir?" sorusu için. */
-const ulkeleri = (k: Kisi): Ulke[] => [SEHIRLER[k.sehir], ...k.digerUlkeler];
+const ulkeleri = (k: Kisi): Ulke[] => [sehirUlkesi(k.sehir), ...k.digerUlkeler];
 
 export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const { t, ad } = useDil();
@@ -60,7 +60,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
         (!unvan || k.gorev === unvan) &&
         (!ulke || ulkeleri(k).includes(ulke)) &&
         (!bicim || k.bicimler.includes(bicim)) &&
-        (!q || `${ad(k)} ${yaz(k.ad, "ar")} ${k.kisaltma} ${t(sehirAdi(k.sehir))}`.toLocaleLowerCase().includes(q)),
+        (!q || `${ad(k)} ${yaz(k.ad, "ar")} ${k.kisaltma} ${sehirAdi(k.sehir)}`.toLocaleLowerCase().includes(q)),
     )
     .sort((a, b) => ad(a).localeCompare(ad(b)));
   const perfGorur = muhabirSayfasi && tum.some((k) => performansGorebilir(ben, k) && k.id !== ben.id);
@@ -159,7 +159,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                         </span>
                       </td>
                       <td data-etiket={t("anaGorevBolgesi")}>
-                        {t(sehirAdi(k.sehir))} <small className="sonuk">· {t(ulkeAdi(SEHIRLER[k.sehir]))}</small>
+                        {sehirAdi(k.sehir)} <small className="sonuk">· {t(ulkeAdi(sehirUlkesi(k.sehir)))}</small>
                       </td>
                       {pf && (
                         <td data-etiket={t("verilenTamamlanan")}>
@@ -205,7 +205,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                         </>
                       )}
                     </td>
-                    <td data-etiket={t("konum")}>{t(sehirAdi(k.sehir))}</td>
+                    <td data-etiket={t("konum")}>{sehirAdi(k.sehir)}</td>
                     <td data-etiket={t("durum")}>
                       <Rozet ton={k.durum === "sahada" ? "vurgu" : k.durum === "izinli" ? "" : k.durum === "yolda" ? "uyari" : "iyi"}>{t(KISI_DURUM_ADI[k.durum])}</Rozet>
                     </td>
@@ -323,6 +323,8 @@ function PerformansKarti({ kisi }: { kisi: Kisi }) {
   );
 }
 
+const YENI_SEHIR = "__yeni";
+
 function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState<Required<Omit<ProfilGirdisi, "foto">>>({
@@ -336,8 +338,10 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
     digerUlkeler: kisi.digerUlkeler,
     bicimler: kisi.bicimler,
   });
+  /* Listede olmayan şehir: kaydedilince şehirler listesine girer, öbür muhabirlerde de seçilir. */
+  const [yeni, setYeni] = useState<YeniSehir | null>(null);
   const sec = <T,>(liste: T[], x: T) => (liste.includes(x) ? liste.filter((y) => y !== x) : [...liste, x]);
-  const anaUlke = SEHIRLER[f.sehir];
+  const anaUlke = yeni ? yeni.ulke : sehirUlkesi(f.sehir);
   return (
     <Kart baslik={t("profiliDuzenle")}>
       <div className="form">
@@ -366,12 +370,23 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
         <div className="satir">
           <label>
             {t("anaGorevBolgesi")}
-            <select value={f.sehir} onChange={(e) => setF({ ...f, sehir: e.target.value as Sehir })}>
-              {(Object.keys(SEHIRLER) as Sehir[]).map((s) => (
+            <select
+              value={yeni ? YENI_SEHIR : f.sehir}
+              data-profil-sehir
+              onChange={(e) => {
+                if (e.target.value === YENI_SEHIR) setYeni({ ar: "", tr: "", en: "", ulke: sehirUlkesi(f.sehir) });
+                else {
+                  setYeni(null);
+                  setF({ ...f, sehir: e.target.value as Sehir });
+                }
+              }}
+            >
+              {sehirListesi().map((s) => (
                 <option key={s} value={s}>
-                  {t(sehirAdi(s))} · {t(ulkeAdi(SEHIRLER[s]))}
+                  {sehirAdi(s)} · {t(ulkeAdi(sehirUlkesi(s)))}
                 </option>
               ))}
+              <option value={YENI_SEHIR}>{t("yeniSehir")}</option>
             </select>
           </label>
           <label>
@@ -385,6 +400,32 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
             </select>
           </label>
         </div>
+        {yeni && (
+          <div className="satir" data-yeni-sehir>
+            <label>
+              {t("sehirAdiAr")}
+              <input {...icerikAlani} value={yeni.ar} onChange={(e) => setYeni({ ...yeni, ar: e.target.value })} placeholder="الدوحة" autoFocus data-yeni-sehir-ar />
+            </label>
+            <label>
+              {t("sehirAdiTr")}
+              <input value={yeni.tr} onChange={(e) => setYeni({ ...yeni, tr: e.target.value })} data-yeni-sehir-tr />
+            </label>
+            <label>
+              {t("sehirAdiEn")}
+              <input dir="ltr" value={yeni.en} onChange={(e) => setYeni({ ...yeni, en: e.target.value })} data-yeni-sehir-en />
+            </label>
+            <label>
+              {t("ulke")}
+              <select value={yeni.ulke} onChange={(e) => setYeni({ ...yeni, ulke: e.target.value as Ulke })} data-yeni-sehir-ulke>
+                {ULKELER.map((u) => (
+                  <option key={u} value={u}>
+                    {t(ulkeAdi(u))}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <fieldset className="secim-grubu">
           <legend>{t("digerUlkeler")}</legend>
           {ULKELER.filter((u) => u !== anaUlke).map((u) => (
@@ -409,15 +450,15 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
           </button>
           <button
             className="dugme"
-            disabled={!f.telefon.trim() || f.kisaltma.trim().length < 2}
+            disabled={!f.telefon.trim() || f.kisaltma.trim().length < 2 || (!!yeni && !yeni.ar.trim())}
             onClick={() => {
               const g: ProfilGirdisi = {
                 ...f,
                 kisiselEposta: f.kisiselEposta.trim() || undefined,
                 irtibat: f.irtibat.trim() || undefined,
-                digerUlkeler: f.digerUlkeler.filter((u) => u !== SEHIRLER[f.sehir]),
+                digerUlkeler: f.digerUlkeler.filter((u) => u !== anaUlke),
               };
-              if (profilGuncelle(ben, kisi.id, g)) {
+              if (profilGuncelle(ben, kisi.id, g, yeni ?? undefined)) {
                 bildir(t("bProfilKaydedildi"));
                 kapat();
               }
@@ -458,7 +499,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
           <h1>{ad(kisi)}</h1>
           {obur !== ad(kisi) && <p className="obur-ad">{obur}</p>}
           <p>
-            {birimAdi(kisi.birim)} · {gorevAdi(kisi.gorev)} · {t(sehirAdi(kisi.sehir))}
+            {birimAdi(kisi.birim)} · {gorevAdi(kisi.gorev)} · {sehirAdi(kisi.sehir)}
           </p>
           <p className="rozetler">
             <Rozet ton={kisi.durum === "sahada" ? "vurgu" : kisi.durum === "yolda" ? "uyari" : kisi.durum === "izinli" ? "" : "iyi"}>{t(KISI_DURUM_ADI[kisi.durum])}</Rozet>
@@ -543,7 +584,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
           {muhabir && (
             <Kart baslik={t("anaGorevBolgesi")} ikon={<MapPin size={18} />}>
               <p className="kalin">
-                {t(sehirAdi(kisi.sehir))} · {t(ulkeAdi(SEHIRLER[kisi.sehir]))}
+                {sehirAdi(kisi.sehir)} · {t(ulkeAdi(sehirUlkesi(kisi.sehir)))}
               </p>
               <div className="alan-etiket ara-ust-2">{t("digerUlkeler")}</div>
               {kisi.digerUlkeler.length ? (

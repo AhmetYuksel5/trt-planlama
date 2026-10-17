@@ -1,7 +1,7 @@
 import type { Asama, UretimAdimi } from "./akis";
 import { metin, yaz, type Anahtar, type Dil, type Metin, type Yazi } from "./dil";
-import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, sehirAdi, ulkeAdi } from "./etiketler";
-import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol, type Sehir, type Ulke, SEHIRLER } from "./veri";
+import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, sehirAdi, sehirUlkesi, ulkeAdi } from "./etiketler";
+import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol, type Sehir, type Ulke } from "./veri";
 
 /**
  * Kurumun yapısı veri olarak: birimler, ünvanlar ve haber üretim akışları.
@@ -467,11 +467,12 @@ export const unvanMuhabirMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find
 export const ulkeMuhabirUnvaniId = (ulke: Ulke): GorevId => `muhabir-${ulke}`;
 export const sehirMuhabirUnvaniId = (sehir: Sehir): GorevId => `muhabir-s-${sehir}`;
 
-const yerUnvani = (id: GorevId, yer: Anahtar): UnvanTanimi => ({
+/* Yerin adı dile göre: eklenen şehrin adı dil tablosunda değil kayıtta. */
+const yerUnvani = (id: GorevId, yer: (d: Dil) => string): UnvanTanimi => ({
   id,
   birimler: [],
   muhabir: true,
-  ad: { tr: metin("yerMuhabiri", "tr", { yer: metin(yer, "tr") }), ar: metin("yerMuhabiri", "ar", { yer: metin(yer, "ar") }), en: metin("yerMuhabiri", "en", { yer: metin(yer, "en") }) },
+  ad: { tr: metin("yerMuhabiri", "tr", { yer: yer("tr") }), ar: metin("yerMuhabiri", "ar", { yer: yer("ar") }), en: metin("yerMuhabiri", "en", { yer: yer("en") }) },
 });
 
 /** Sistemin verdiği muhabir ünvanı (genel ya da yere göre): kurulum bunları yeniden hesaplıyor, elle verilene dokunmuyor. */
@@ -479,9 +480,9 @@ export const otomatikMuhabirUnvaniMi = (id: GorevId) => id === "muhabir" || id.s
 
 /** Kişinin olması gereken yer ünvanı; `kisiler` aynı ülkedeki dış muhabirleri saymak için (kendisi dahil). */
 export const muhabirYerUnvani = (k: { sehir: Sehir }, kisiler: { birim: BirimId; sehir: Sehir; pasif?: boolean }[], y: Yapi = yapi()): UnvanTanimi => {
-  const ulke = SEHIRLER[k.sehir];
-  const ayniUlke = kisiler.filter((x) => !x.pasif && disMuhabirMi(x, y) && SEHIRLER[x.sehir] === ulke).length;
-  return ayniUlke > 1 ? yerUnvani(sehirMuhabirUnvaniId(k.sehir), sehirAdi(k.sehir)) : yerUnvani(ulkeMuhabirUnvaniId(ulke), ulkeAdi(ulke));
+  const ulke = sehirUlkesi(k.sehir);
+  const ayniUlke = kisiler.filter((x) => !x.pasif && disMuhabirMi(x, y) && sehirUlkesi(x.sehir) === ulke).length;
+  return ayniUlke > 1 ? yerUnvani(sehirMuhabirUnvaniId(k.sehir), (d) => sehirAdi(k.sehir, d)) : yerUnvani(ulkeMuhabirUnvaniId(ulke), (d) => metin(ulkeAdi(ulke), d));
 };
 
 const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru"];

@@ -1,4 +1,4 @@
-import { CALISMA_BICIMLERI, SEHIRLER, type CalismaBicimi, type Sehir } from "./veri";
+import { CALISMA_BICIMLERI, SEHIRLER, anlik, type CalismaBicimi, type Sehir } from "./veri";
 
 /**
  * Kurumun muhabir listesini (Excel) gerçek kipe hesapsız kişi olarak almak.
@@ -136,7 +136,9 @@ const sade = (s: string) =>
 export const konumBul = (s: string): Sehir | null => {
   const k = sade(s);
   if (k in SEHIRLER) return k as Sehir;
-  return KONUM[k] ?? null;
+  if (KONUM[k]) return KONUM[k];
+  // Sonradan eklenen şehir de tanınsın: liste ikinci kez yüklenince İstanbul'a düşmesin.
+  return anlik()?.sehirler?.find((x) => [x.ad.ar, x.ad.tr, x.ad.en].some((a) => a && sade(a) === k))?.id ?? null;
 };
 
 /* "AHMAD AL ALI" → "Ahmad Al Ali"; listede adlar büyük harfle. */

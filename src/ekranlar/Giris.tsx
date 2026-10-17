@@ -40,7 +40,7 @@ export default function Giris() {
       <div>
         <b>{ad(k)}</b>
         <small>
-          {gorevAdi(k.gorev)} · {t(sehirAdi(k.sehir))}
+          {gorevAdi(k.gorev)} · {sehirAdi(k.sehir)}
         </small>
         <Rozet ton={k.rol === "yonetici" ? "koyu" : ""}>{birimAdi(k.birim)}</Rozet>
       </div>

@@ -137,7 +137,7 @@ function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: 
         <div>
           {!kendi && muhabir && (
             <small>
-              <a href={`#/muhabirler/${muhabir.id}`}>{ad(muhabir)}</a> · {t(sehirAdi(x.sehir))}
+              <a href={`#/muhabirler/${muhabir.id}`}>{ad(muhabir)}</a> · {sehirAdi(x.sehir)}
             </small>
           )}
           <Icerik blok>

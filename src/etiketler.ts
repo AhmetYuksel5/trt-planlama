@@ -1,6 +1,7 @@
 import type { StokDurumu } from "./akis";
 import type { OneriEtiketi } from "./oneriPlanlari";
-import { metin, yaz, type Anahtar, type Yazi } from "./dil";
+import { dilSimdi, metin, yaz, type Anahtar, type Dil, type Yazi } from "./dil";
+import { SEHIRLER, anlik, type Durum, type SehirTanimi, type YerlesikSehir } from "./veri";
 import type {
   Bicim,
   IsDurumu,
@@ -237,7 +238,21 @@ export const KISI_DURUM_ADI: Record<KisiDurum, Anahtar> = {
   izinli: "kdIzinli",
 };
 
-export const sehirAdi = (s: Sehir): Anahtar => `s_${s}`;
+/*
+ * Şehir yerleşik listede (adı dil tablosunda) ya da kayıtta (`Durum.sehirler`).
+ * Ad ve ülke buradan sorulur; `SEHIRLER[...]`a doğrudan bakılırsa eklenen
+ * şehrin ülkesi boş kalır.
+ */
+export const yerlesikSehirMi = (s: string): s is YerlesikSehir => Object.prototype.hasOwnProperty.call(SEHIRLER, s);
+export const sehirTanimi = (s: Sehir, d: Durum | null = anlik()): SehirTanimi | undefined => d?.sehirler?.find((x) => x.id === s);
+export const sehirAdi = (s: Sehir, d: Dil = dilSimdi(), v: Durum | null = anlik()): string => {
+  if (yerlesikSehirMi(s)) return metin(`s_${s}`, d);
+  const t = sehirTanimi(s, v);
+  return t ? t.ad[d]?.trim() || t.ad.ar : s;
+};
+export const sehirUlkesi = (s: Sehir, v: Durum | null = anlik()): Ulke => (yerlesikSehirMi(s) ? SEHIRLER[s] : (sehirTanimi(s, v)?.ulke ?? "turkiye"));
+/** Seçimlerdeki şehirler: yerleşikler, sonra eklenenler. */
+export const sehirListesi = (v: Durum | null = anlik()): Sehir[] => [...(Object.keys(SEHIRLER) as Sehir[]), ...(v?.sehirler ?? []).map((x) => x.id)];
 
 /* Planlama takvimi */
 export const faaliyetTuruAdi = (t: FaaliyetTuru): Anahtar => `ft_${t}`;
@@ -262,7 +277,7 @@ export const ulkeAdi = (u: Ulke): Anahtar => `u_${u}`;
  * parça akıyor; araya arayüz dilinde bir ad girse sıra okuyana ters
  * görünürdü. Çıktı ve düzenleme ekranı satırı buradan kuruyor.
  */
-export const sehirAr = (s?: Sehir) => (s ? metin(sehirAdi(s), "ar") : "");
+export const sehirAr = (s?: Sehir) => (s ? sehirAdi(s, "ar") : "");
 /* Paketin "YER /"u: elle yazılan yer varsa o, yoksa şehrin Arapçası. */
 export const paketYeri = (p: { sehir: Sehir; yer?: string }) => p.yer || sehirAr(p.sehir);
 export const kisiAr = (k?: { ad: Yazi }) => (k ? yaz(k.ad, "ar") : "");

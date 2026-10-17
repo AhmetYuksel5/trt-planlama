@@ -2496,6 +2496,10 @@ const M = {
   hrPaketHatirlatma: m("{kisi} hatırlatıyor: haberin {tarih} Next Day planında onaylandı", "تذكير من {kisi}: اعتُمد تقريرك في خطة الغد ليوم {tarih}", "Reminder from {kisi}: your story is approved in the {tarih} Next Day plan"),
   sehirDiger: m("Diğer…", "أخرى…", "Other…"),
   sehirDigerAdi: m("Yer (elle)", "المكان (يدويا)", "Place (typed)"),
+  yeniSehir: m("+ Yeni şehir…", "+ مدينة جديدة…", "+ New city…"),
+  sehirAdiAr: m("Şehrin Arapça adı", "اسم المدينة بالعربية", "City name in Arabic"),
+  sehirAdiTr: m("Türkçe adı", "الاسم بالتركية", "Name in Turkish"),
+  sehirAdiEn: m("İngilizce adı", "الاسم بالإنجليزية", "Name in English"),
   /* Özel yayın planı */
   oyYeni: m("Yeni özel yayın", "بث خاص جديد", "New special broadcast"),
   oyYok: m("Özel yayın yok.", "لا يوجد بث خاص.", "No special broadcasts."),
@@ -2664,6 +2668,9 @@ export const metin = (k: Anahtar, d: Dil = dil, p?: Degisken): string => {
   const ham = M[k][d];
   return p ? ham.replace(/\{(\w+)\}/g, (_, x: string) => (x in p ? String(p[x]) : `{${x}}`)) : ham;
 };
+
+/** Seçili arayüz dili; bileşen dışındaki ad çözücüler (etiketler.ts → sehirAdi) için. */
+export const dilSimdi = (): Dil => dil;
 
 /** Düz metinse olduğu gibi, üç dilliyse seçili dil. */
 export const yaz = (x: Yazi | undefined, d: Dil = dil): string => (x === undefined ? "" : typeof x === "string" ? x : x[d] || x.tr);

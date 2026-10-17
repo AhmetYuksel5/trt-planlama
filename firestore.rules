@@ -159,11 +159,15 @@ service cloud.firestore {
       allow read: if etkin() && kisitli()
         && ((alan in ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler", "bahsetmeler"] && erisir(resource.data))
             || kendiAyari(alan, belge)
-            || (alan == "ayar" && belge == "genel"));
+            || (alan == "ayar" && belge == "genel")
+            // Eklenen şehirler herkese açık: muhabirin ve paketin yeri adlansın.
+            || alan == "sehirler");
       allow create, update: if etkin() && kisitli()
         && ((alan in ["oneriler", "paketler", "takipler", "mesajlar", "hareketler", "bahsetmeler"]
              && erisir(request.resource.data) && (resource == null || erisir(resource.data)))
-            || kendiAyari(alan, belge));
+            || kendiAyari(alan, belge)
+            // Muhabir profilinde listede olmayan şehrini ekleyebilir; var olanı değiştiremez.
+            || (alan == "sehirler" && resource == null));
       allow delete: if etkin() && kisitli() && kendiAyari(alan, belge);
     }
   }

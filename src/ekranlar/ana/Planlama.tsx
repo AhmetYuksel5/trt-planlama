@@ -406,7 +406,7 @@ function MuhabirDurumu({ d }: { d: Durum }) {
           <a key={k.id} href={`#/muhabirler/${k.id}`} title={ad(k)}>
             <Avatar kisi={k} boy="buyuk" durum />
             <b>{ad(k).split(" ")[0]}</b>
-            <small>{t(sehirAdi(k.sehir))}</small>
+            <small>{sehirAdi(k.sehir)}</small>
           </a>
         ))}
         {liste.length > gosterilen.length && (

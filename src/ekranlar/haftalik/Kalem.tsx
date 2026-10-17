@@ -168,7 +168,7 @@ export function KalemFormu({
               const k = kisiBul(v, id);
               return (
                 <span key={id} className="cip">
-                  {ad(k)} · {k && t(sehirAdi(k.sehir))}
+                  {ad(k)} · {k && sehirAdi(k.sehir)}
                   <button type="button" onClick={() => setF({ ...f, muhabirler: f.muhabirler.filter((x) => x !== id) })} aria-label={t("cikar")} title={t("cikar")}>
                     <X size={13} />
                   </button>
@@ -258,7 +258,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
                 const k = kisiBul(v, id);
                 return (
                   <span key={id}>
-                    {ad(k)} · {k && t(sehirAdi(k.sehir))}
+                    {ad(k)} · {k && sehirAdi(k.sehir)}
                   </span>
                 );
               })}

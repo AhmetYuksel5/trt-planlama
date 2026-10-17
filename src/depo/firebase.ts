@@ -334,6 +334,8 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     for (const alan of KISITLI_OKUR) diziDinle(alan, "suz");
     // Yapı (birim ve ünvan adları, akış) herkese açık.
     diziDinle("yapilar", "fark");
+    // Eklenen şehirler: muhabirin ve paketlerin yeri adlansın diye herkese açık.
+    diziDinle("sehirler", "fark");
     // Kişiler: personel ve kendisi; öbür muhabirler yok.
     onbellek.kisiler = new Map();
     bekleyen.add("kisiler");

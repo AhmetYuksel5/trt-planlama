@@ -123,9 +123,21 @@ export const SEHIRLER = {
  */
 const EK_ULKELER = ["kuveyt", "bae", "bahreyn", "umman", "cezayir", "fransa", "almanya", "rusya", "brezilya", "azerbaycan"] as const;
 
-export type Sehir = keyof typeof SEHIRLER;
-export type Ulke = (typeof SEHIRLER)[Sehir] | (typeof EK_ULKELER)[number];
+export type YerlesikSehir = keyof typeof SEHIRLER;
+/* Yerleşik şehir ya da kayda eklenen (`Durum.sehirler`): muhabirin yeri listede yoksa profilinden eklenebiliyor. */
+export type Sehir = YerlesikSehir | (string & {});
+export type Ulke = (typeof SEHIRLER)[YerlesikSehir] | (typeof EK_ULKELER)[number];
 export const ULKELER = [...new Set([...Object.values(SEHIRLER), ...EK_ULKELER])] as Ulke[];
+
+/*
+ * Kayda eklenen şehir. Adın Arapçası zorunlu (plan satırı ve çıktı Arapça);
+ * Türkçesi ve İngilizcesi yoksa ekranda Arapçası görünüyor.
+ */
+export interface SehirTanimi {
+  id: string;
+  ad: { ar: string; tr?: string; en?: string };
+  ulke: Ulke;
+}
 
 /*
  * Muhabirin üretebildiği haber türleri (biçim). Rapordaki üç kol
@@ -158,7 +170,7 @@ export interface Kisi {
   birim: BirimId;
   rol: Rol;
   gorev: GorevId;
-  /** Ana görev yeri; ülkesi `SEHIRLER`'den. */
+  /** Ana görev yeri; ülkesi `SEHIRLER`'den ya da kayda eklenen şehirden (etiketler.ts → sehirUlkesi). */
   sehir: Sehir;
   diller: string[];
   telefon: string;
@@ -1266,6 +1278,8 @@ export interface Durum {
   geriBildirimSablonlari: GeriBildirimSablonu[];
   /** Yapay zekanın haber değeri görüşleri; eski kayıtta yok. */
   yzGorusleri?: YzGorus[];
+  /** Yerleşik listede olmayan, sonradan eklenen şehirler. */
+  sehirler?: SehirTanimi[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
   gorevler?: GorevTanimi[];
   isler?: Is[];
@@ -1396,6 +1410,7 @@ export const bosDurum = (): Durum => ({
   takipler: [],
   geriBildirimSablonlari: [],
   yzGorusleri: [],
+  sehirler: [],
   gorevler: [],
   isler: [],
   bahsetmeler: [],

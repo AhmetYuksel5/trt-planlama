@@ -1,6 +1,7 @@
 import { aralikYaz, gunAdi, metin } from "./dil";
 import { gunEkle } from "./tarih";
-import { SEHIRLER, type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
+import { sehirUlkesi } from "./etiketler";
+import { type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
 
 /**
  * Öneri çağrısının e-posta tarafı.
@@ -210,7 +211,7 @@ export const yanittanOneriTaslagi = (y: Yanit, kisi: Kisi, cagri: Cagri, id: str
   return {
     id,
     muhabirId: kisi.id,
-    ulke: SEHIRLER[kisi.sehir],
+    ulke: sehirUlkesi(kisi.sehir),
     haberBasligi: ilk.trim().slice(0, 140),
     gelisme: y.metin,
     tur: "haber",

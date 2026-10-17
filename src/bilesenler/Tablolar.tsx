@@ -64,7 +64,7 @@ export function PaketTablosu({
                       <Icerik blok>{p.baslik}</Icerik>
                     </a>
                     <small className="sonuk">
-                      {p.oncelikli && <OncelikRozeti />} {p.haftalikKalemId && <HaftalikRozeti />} {p.yer ? <Icerik>{p.yer}</Icerik> : t(sehirAdi(p.sehir))}
+                      {p.oncelikli && <OncelikRozeti />} {p.haftalikKalemId && <HaftalikRozeti />} {p.yer ? <Icerik>{p.yer}</Icerik> : sehirAdi(p.sehir)}
                       {p.bicim && ` · ${t(BICIM_ADI(p.bicim))}`}
                     </small>
                   </td>
@@ -315,10 +315,10 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
 
 /** Muhabirin şehri: çıktıda "ŞEHİR / ad" satırının ilk yarısı. */
 export const useSehir = () => {
-  const { t } = useDil();
+  const { dil } = useDil();
   return (d: Durum, kisiId?: string) => {
     const k = kisiBul(d, kisiId);
-    return k ? t(sehirAdi(k.sehir)) : "";
+    return k ? sehirAdi(k.sehir, dil, d) : "";
   };
 };
 

@@ -552,7 +552,7 @@ function AktarPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
                         </small>
                       </td>
                       <td data-etiket={t("konum")}>
-                        {t(sehirAdi(m.sehir))}
+                        {sehirAdi(m.sehir)}
                         {m.taninmadi && <small className="sonuk"> · {m.konum}</small>}
                       </td>
                       <td data-etiket={t("telefon")}>

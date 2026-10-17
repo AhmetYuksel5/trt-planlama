@@ -271,7 +271,7 @@ function SahadakiMuhabirler() {
             <Avatar kisi={k} durum />
             <div className="ad">
               <a href={`#/muhabirler/${k.id}`}>{ad(k)}</a>
-              <small>{t(sehirAdi(k.sehir))}</small>
+              <small>{sehirAdi(k.sehir)}</small>
             </div>
           </li>
         ))}

@@ -1,5 +1,4 @@
 import { KOL_SAHIBI, adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
-import { metin } from "./dil";
 import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_ADRESI } from "./eposta";
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
@@ -1900,7 +1899,7 @@ export const ORNEK = (): Durum => {
       const n = 4 + Math.floor(r() * 7);
       const hiz = 2.5 + r() * 4;
       const titiz = r();
-      const sehirAr = metin(sehirAdi(m.sehir), "ar");
+      const sehirAr = sehirAdi(m.sehir, "ar");
       return Array.from({ length: n }, (_, j) => {
         const tarih = gun(-(3 + Math.floor(((j + r()) * 56) / n)));
         const gorev = new Date(zaman(tarih, `${String(8 + Math.floor(r() * 3)).padStart(2, "0")}:${r() < 0.5 ? "00" : "30"}`)).getTime();

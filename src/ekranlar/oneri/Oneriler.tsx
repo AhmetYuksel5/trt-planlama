@@ -522,7 +522,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                 <div>
                   <b>{ad(muhabir)}</b>
                   <small>
-                    {birimAdi(muhabir.birim)} · {t(sehirAdi(muhabir.sehir))}
+                    {birimAdi(muhabir.birim)} · {sehirAdi(muhabir.sehir)}
                   </small>
                 </div>
               </div>

@@ -169,6 +169,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Aynı e-posta ya da Arapça ad kayıtlıysa atlanır; liste ikinci kez
     yüklenince çoğalmaz. Listedeki konum yazımları `KONUM` tablosuyla
     şehre bağlanır; tanınmayan İstanbul'a yazılır ve önizlemede uyarılır.
+  - Muhabirin görev yaptığı şehir profil formunda ("Profili düzenle"; kişinin
+    kendisi ve `profilDuzenle` yetkisi): listede yoksa "+ Yeni şehir…" ile
+    Arapça adı (zorunlu), Türkçe ve İngilizce adı, ülkesi girilir. Yerleşik
+    şehirler `veri.ts → SEHIRLER`, eklenenler kayıtta (`Durum.sehirler`,
+    `profilGuncelle(…, yeniSehir)`); aynı Arapça adlı şehir varsa (yerleşik
+    de) o kullanılır, liste çoğalmaz. Ad, ülke ve seçim listesi
+    `etiketler.ts → sehirAdi`, `sehirUlkesi`, `sehirListesi`'nden;
+    `SEHIRLER[...]`'a ve `s_<şehir>` anahtarına doğrudan bakılmaz (eklenen
+    şehirde boş kalır). Gerçek kipte `sehirler` koleksiyonunu herkes okur,
+    kısıtlı muhabir yalnız yeni şehir ekler (kural), var olanı değiştiremez.
+    Excel aktarımı eklenen şehrin adlarını da tanır.
   - Muhabir listesinde ve profilde WhatsApp düğmesi (`bilesenler/
     WhatsApp.tsx`): telefonda `wa.me`; numara uluslararası biçime çevrilir
     ("00…", başta tek sıfır Türkiye). Bilgisayarda önce masaüstü uygulaması
