@@ -1123,7 +1123,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.
 - Dokunma hedefi en az 44 piksel. Telefonda yazı alanları 16 piksel; daha
-  küçüğünde iPhone sayfayı yakınlaştırıyor.
+  küçüğünde iPhone sayfayı yakınlaştırıyor, sayfa genişleyip yana kayıyor.
+  Kural bilerek ağır seçicili (`html body :is(...)`): özgül kurallar (ekip
+  çipindeki görev seçici, süzgeç) onu eziyordu.
+- Telefonda üst çubuğun açılır panelleri (bildirimler, kullanıcı menüsü)
+  düğmeye değil çubuğa göre, iki yanda 16 piksel boşlukla açılır: zilin
+  sağında avatar olduğu için panel ekranın solundan taşıyordu.
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
   yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Gerçek kip Firebase
   emülatörüyle denenir (`belgeler/gercek-kip.md`).

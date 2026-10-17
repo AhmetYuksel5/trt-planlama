@@ -1549,7 +1549,20 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .liste > li > .ad { flex: 1 1 60%; }
   /* Düzenlenebilir ekip çipi (vardiya, görev) telefonda kendi içinde alta kayıyor. */
   .cip { flex-wrap: wrap; max-width: 100%; }
-  .cip .gorev-secici { max-width: 100%; }
+  .cip .gorev-secici { max-width: 100%; height: auto; min-height: var(--dokunma); }
+  /*
+   * Daha özgül kurallar (ekip çipindeki görev seçici, süzgeç seçicisi)
+   * yukarıdaki 16 pikseli eziyordu; iPhone dokununca sayfayı büyütüp yana
+   * kaydırıyordu (Next Day'de, öneriler sayfasında). Seçici bilerek ağır.
+   */
+  html body :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px; }
+  /*
+   * Üst çubuktaki açılır paneller (bildirimler, kullanıcı menüsü) düğmeye
+   * yaslı açılınca zilin sağındaki avatar kadar ekranın solundan taşıyordu;
+   * telefonda çubuğa göre, iki yanda boşlukla.
+   */
+  .ust .acilir-kap { position: static; }
+  .ust .acilir-kap > .acilir { inset-inline: var(--ara-4); width: auto; }
   /* E-posta tablosunun önizlemesi telefonda sütun adlarının listesi; boş satırlar yalnız e-postada. */
   .eposta-tablosu tbody { display: none; }
   .eposta-tablosu thead tr { display: flex; flex-wrap: wrap; gap: var(--ara-1); }
