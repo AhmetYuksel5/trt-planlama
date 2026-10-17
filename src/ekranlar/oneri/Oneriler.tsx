@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, oneriEtiketleri, oneriYeri, type OneriEtiketi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, oneriArsivde, oneriEtiketleri, oneriYeri, type OneriEtiketi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
 import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -32,7 +32,12 @@ import { YzHaberDegeri } from "../../bilesenler/YzOneri";
  * önerilerini görüyor.
  */
 
-export function OnerilerListe({ ben }: { ben: Kisi }) {
+/*
+ * `arsiv`: günü geçmiş öneriler (oneriPlanlari.ts → oneriArsivde). Güncel
+ * listeden kalkıyorlar, Planlama'nın listesinde eski öneri birikmesin;
+ * muhabirde "Geçmiş önerilerim".
+ */
+export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
   const kaynakMetni = useKaynakMetni();
@@ -48,7 +53,10 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
   const [muhabireOner, setMuhabireOner] = useState(false);
   const acik = acikId ? v.oneriler.find((o) => o.id === acikId) : undefined;
   const muhabir = ben.birim === "muhabir";
-  const gorunen = v.oneriler.filter((o) => oneriGorebilir(ben, o));
+  const B = bugun();
+  const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o));
+  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B));
+  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B));
   const q = aranan.trim().toLocaleLowerCase();
   const etiketler = new Map(gorunen.map((o) => [o.id, oneriEtiketleri(v, o)]));
   const etiketli = (o: Oneri, e: OneriEtiketi | "yok" | "") => !e || (e === "yok" ? !etiketler.get(o.id)!.length : etiketler.get(o.id)!.includes(e));
@@ -69,7 +77,7 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
     <>
       <SayfaBasi
         ikon={<Lightbulb size={26} />}
-        baslik={t(muhabir ? "mOnerilerim" : "mOneriler")}
+        baslik={t(arsiv ? (muhabir ? "gecmisOnerilerim" : "oneriArsivi") : muhabir ? "mOnerilerim" : "mOneriler")}
        
         sagUc={
           <>
@@ -98,6 +106,14 @@ export function OnerilerListe({ ben }: { ben: Kisi }) {
       />
       {muhabireOner && <MuhabireOneriPenceresi ben={ben} kapat={() => setMuhabireOner(false)} />}
       <Kart>
+        <div className="sekmeler ara-alt-2" role="tablist" data-oneri-arsiv-sekmesi>
+          <a href="#/oneriler" role="tab" aria-selected={!arsiv} className={arsiv ? "" : "acik"} data-oneri-guncel>
+            {t("guncelOneriler")} <em>{kendi.length - arsivdekiler.length}</em>
+          </a>
+          <a href="#/oneriler/arsiv" role="tab" aria-selected={arsiv} className={arsiv ? "acik" : ""} data-oneri-arsiv>
+            {t(muhabir ? "gecmisOnerilerim" : "oneriArsivi")} <em>{arsivdekiler.length}</em>
+          </a>
+        </div>
         <div className="suzgec">
           <label className="arama arama-kutu">
             <Search size={16} />

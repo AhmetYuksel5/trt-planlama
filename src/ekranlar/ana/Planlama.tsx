@@ -30,6 +30,7 @@ import { kisininGorevleri, kisininIsleri } from "../../gorevler";
 import { BIRIM_ADI, TEMEL_GOREV_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { gundemde, kalemAdi } from "../../haftalik";
 import { bugun, gunEkle, planlananHafta, yerelGun } from "../../tarih";
+import { oneriArsivde } from "../../oneriPlanlari";
 import { muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
 import { YaklasanFaaliyetlerAlani } from "../takvim/Planlarda";
 import { CalismaAlani, type Alan } from "./Calisma";
@@ -99,7 +100,7 @@ function PlanlamaSayaclari() {
         ikon={<Lightbulb size={22} />}
         renk="renk-nextday"
         etiket={t("sYeniOneri")}
-        deger={v.oneriler.filter((o) => o.durum === "yeni").length}
+        deger={v.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o)).length}
         alt={t("sBugunGelen", { n: v.oneriler.filter((o) => yerelGun(o.zaman) === B).length })}
       />
       <Sayac href="#/paketler" ikon={<Package size={22} />} renk="renk-haftalik" etiket={t("sPlanlanan")} deger={planliPaketler.length} alt={t("sBugunYarin")} />
@@ -108,7 +109,7 @@ function PlanlamaSayaclari() {
         ikon={<Clock size={22} />}
         ton="uyari"
         etiket={t("sOnayBekleyen")}
-        deger={v.paketler.filter((p) => !p.ozelId && (p.durum === "taslak" || p.durum === "degerlendiriliyor")).length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor").length}
+        deger={v.paketler.filter((p) => !p.ozelId && (p.durum === "taslak" || p.durum === "degerlendiriliyor")).length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor" && !oneriArsivde(o)).length}
         alt={t("sAksamToplantisi")}
       />
       <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={v.paketler.filter((p) => p.durum === "uretimde").length} alt={t("sUretimde")} />
@@ -180,7 +181,7 @@ function SonOneriler() {
   const v = useVeri();
   return (
     <Kart baslik={t("sonOneriler")} ikon={<ListChecks size={18} />} sagUc={<Tumu href="#/oneriler" />}>
-      <OneriTablosu oneriler={[...v.oneriler].sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
+      <OneriTablosu oneriler={v.oneriler.filter((o) => !oneriArsivde(o)).sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
     </Kart>
   );
 }

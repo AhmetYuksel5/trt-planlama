@@ -12,6 +12,7 @@ import { aralikYaz } from "../dil";
 import { gorusBekleyenler, haftaSonu, onIncelemeBekleyenler } from "../haftalik";
 import { rapor } from "../rapor";
 import { bugun, gunEkle, yerelGun } from "../tarih";
+import { oneriArsivde } from "../oneriPlanlari";
 import { ULKELER, kisiBul, muhabirler, paketBul, useVeri, type Birim, type Durum, type Kisi, type Oneri, type Paket, type Ulke } from "../veri";
 import { isEkleyebilir, kapsam, paketKapsamda, talimatVerebilir, type Kapsam } from "../yetki";
 import { GorevVerFormu, VerdigimGorevler } from "./GorevVer";
@@ -63,10 +64,10 @@ const birimDurumu = (d: Durum, b: Birim, paketler: Paket[], t: (k: Anahtar) => s
         bekleyen:
           d.planlar.filter((p) => p.durum === "toplantida").length +
           d.haftalik.filter((h) => h.durum === "toplantida").length +
-          d.oneriler.filter((o) => o.talimatVeren && (o.durum === "yeni" || o.durum === "degerlendiriliyor")).length,
+          d.oneriler.filter((o) => o.talimatVeren && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o)).length,
         sayilar: [
           ["sYarinPlan", yarinPlan ? <Rozet ton={PLAN_DURUM_TONU[yarinPlan.durum]}>{t(PLAN_DURUM_ADI[yarinPlan.durum])}</Rozet> : "—"],
-          ["bkBekleyenOneri", d.oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length],
+          ["bkBekleyenOneri", d.oneriler.filter((o) => (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o)).length],
           ["bkDegerlendirmede", paketler.filter((p) => p.durum === "degerlendiriliyor").length],
         ],
       };
@@ -215,7 +216,7 @@ function DikkatListesi({ ben, d, paketler, ks }: { ben: Kisi; d: Durum; paketler
     }
   }
   if (ks.birimler.includes("planlama")) {
-    for (const o of d.oneriler.filter((x) => x.talimatVeren && (x.durum === "yeni" || x.durum === "degerlendiriliyor"))) {
+    for (const o of d.oneriler.filter((x) => x.talimatVeren && (x.durum === "yeni" || x.durum === "degerlendiriliyor") && !oneriArsivde(x))) {
       satirlar.push({ anahtar: `t-${o.id}`, ton: "uyari", baslik: o.haberBasligi, icerik: true, alt: t("dkTalimat"), href: `#/oneriler/${o.id}` });
     }
   }

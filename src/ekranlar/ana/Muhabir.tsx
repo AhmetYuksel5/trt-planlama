@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ArrowRight, Bell, CheckCircle, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
+import { ArrowRight, Bell, CheckCircle, History, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, gorunenSahip, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, bildir, oncelikliOnce } from "../../bilesenler/Parcalar";
@@ -9,6 +9,7 @@ import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etike
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { acikCagri, planBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { ozelGorevleri } from "../../ozel";
+import { oneriArsivde } from "../../oneriPlanlari";
 import { OzelGorevSatirlari } from "../../bilesenler/OzelGorevler";
 import { paketTamamla, takipTamamla } from "../../eylemler";
 import { KararNotlari } from "../haftalik/Kalem";
@@ -80,6 +81,8 @@ function useMuhabirIsleri(ben: Kisi) {
     aktif: paketler.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal"),
     plandaki,
     planGunu,
+    // Günü geçmiş öneri İşlerim'de değil, "Geçmiş önerilerim"de.
+    guncelOneriler: oneriler.filter((o) => !oneriArsivde(o, B)),
     gorevler: v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B),
     ozelGorevler: ozelGorevleri(v, ben.id),
     cagri: acikCagri(v, "nextday", B),
@@ -119,10 +122,10 @@ function Cagrilar({ ben }: { ben: Kisi }) {
 
 function Sayaclar({ ben }: { ben: Kisi }) {
   const { t } = useDil();
-  const { oneriler, aktif, siram, plandaki } = useMuhabirIsleri(ben);
+  const { oneriler, guncelOneriler, aktif, siram, plandaki } = useMuhabirIsleri(ben);
   return (
     <div className="sayaclar ince">
-        <Sayac href="#/oneriler" ikon={<Lightbulb size={22} />} renk="renk-nextday" etiket={t("sOnerilerim")} deger={oneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length} alt={t("sDegerlendirmede")} />
+        <Sayac href="#/oneriler" ikon={<Lightbulb size={22} />} renk="renk-nextday" etiket={t("sOnerilerim")} deger={guncelOneriler.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length} alt={t("sDegerlendirmede")} />
         <Sayac href="#/oneriler" ikon={<CheckCircle size={22} />} ton="iyi" etiket={t("sPlanaGiren")} deger={oneriler.filter((o) => o.durum === "planaEklendi").length} alt={t("sToplam")} />
         <Sayac href="#/paketler" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={aktif.length} alt={t("sPaket")} />
         <Sayac href="#/paketler" ikon={<Clock size={22} />} ton={siram.length + plandaki.length ? "uyari" : ""} etiket={t("seninSiran")} deger={siram.length + plandaki.length} alt={t("sBekleyenIs")} />
@@ -224,13 +227,24 @@ function Haberlerim({ ben }: { ben: Kisi }) {
 
 function Onerilerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
-  const { oneriler: hepsi } = useMuhabirIsleri(ben);
+  const { guncelOneriler: hepsi } = useMuhabirIsleri(ben);
   // Düzeltme istenen öneri muhabirin önündeki iş: listenin başında.
   // Sırası muhabirde olanlar (düzeltme, Planlama'nın önerdiği) başta.
   const bende = (o: Oneri) => o.durum === "duzeltme" || o.durum === "teklif";
   const oneriler = [...hepsi.filter(bende), ...hepsi.filter((o) => !bende(o))];
   return (
-    <Kart baslik={t("onerilerim")} ikon={<Lightbulb size={18} />} sagUc={<Tumu href="#/oneriler" />}>
+    <Kart
+      baslik={t("onerilerim")}
+      ikon={<Lightbulb size={18} />}
+      sagUc={
+        <>
+          <a className="dugme dugme-sade dugme-kucuk" href="#/oneriler/arsiv" title={t("gecmisOnerilerim")} aria-label={t("gecmisOnerilerim")} data-gecmis-onerilerim>
+            <History size={14} /> <span className="telefonda-gizli">{t("gecmisOnerilerim")}</span>
+          </a>
+          <Tumu href="#/oneriler" />
+        </>
+      }
+    >
             {oneriler.length === 0 ? (
               <Bos metin={t("oneriYok")} />
             ) : (

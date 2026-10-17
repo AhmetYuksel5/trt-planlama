@@ -628,6 +628,9 @@ const M = {
   hsYenile: m("Yeniden yükle", "إعادة التحميل", "Reload"),
   hsAnaSayfa: m("Ana sayfaya dön", "العودة إلى الرئيسية", "Back to home"),
   hsKopyala: m("Hatayı kopyala", "نسخ الخطأ", "Copy the error"),
+  guncelOneriler: m("Güncel", "الحالية", "Current"),
+  oneriArsivi: m("Arşiv", "الأرشيف", "Archive"),
+  gecmisOnerilerim: m("Geçmiş önerilerim", "اقتراحاتي السابقة", "My past proposals"),
   onerilerdenAl: m("Önerilerden al", "اختيار من المقترحات", "Pick from proposals"),
   digerGunlerinOnerileri: m("Öbür günlerin önerileri", "مقترحات الأيام الأخرى", "Proposals for other days"),
   paketOnerisiOlustur: m("Paket önerisi de oluştur", "إنشاء مقترح تقرير أيضا", "Also create a package proposal"),
@@ -2419,6 +2422,12 @@ const M = {
     "Önerinin sayfasını aç, Planlama'nın notunu oku, \u201cDüzelt ve yeniden gönder\u201de bas. Öneri Planlama'ya yeniden gider; önceki hali kayıtta kalır.",
     "افتح صفحة المقترح، واقرأ ملاحظة التخطيط، ثم اضغط «تعديل وإعادة الإرسال». يعود المقترح إلى التخطيط وتبقى صيغته السابقة محفوظة.",
     "Open the proposal's page, read Planning's note and press \u201cRevise and resend\u201d. It goes back to Planning; the previous version is kept.",
+  ),
+  kl4g: m("Geçmiş önerilerin", "مقترحاتك السابقة", "Your past proposals"),
+  kl4ga: m(
+    "Günü geçen öneri İşlerim'den ve Önerilerim'den kalkar, Önerilerim'deki \u201cGeçmiş önerilerim\u201d sekmesinde durur.",
+    "حين يمضي يوم المقترح يخرج من أعمالي ومن مقترحاتي، ويبقى في تبويب «اقتراحاتي السابقة» في مقترحاتي.",
+    "Once its day has passed, a proposal leaves My work and My proposals and stays in the \u201cMy past proposals\u201d tab of My proposals.",
   ),
   kl5: m("Planlama sana haber önerirse", "إذا اقترح عليك التخطيط خبرا", "If Planning proposes a story to you"),
   kl5a: m(

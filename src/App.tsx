@@ -261,6 +261,7 @@ export default function App() {
       case "oneriler": {
         if (yol.id === "yeni")
           icerik = <YeniOneri ben={ben} haftalik={yol.alt === "haftalik"} />;
+        else if (yol.id === "arsiv") icerik = <OnerilerListe ben={ben} arsiv />;
         else if (yol.id === "cagri")
           icerik = yapabilir(ben, "cagriHazirla") ? (
             <Cagri ben={ben} tarih={yol.alt} />

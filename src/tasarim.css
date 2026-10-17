@@ -1945,6 +1945,8 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 
 /* --- Telefonun workspace öncesi düzeni: prototip şeridi ve renkli plan kutuları (yalnız 760 piksel ve altı) --- */
 .yalniz-telefon { display: none; }
+/* Kart başındaki ikinci bağlantı telefonda yalnız simge: yazısıyla kart başı sığmıyordu. */
+@media (max-width: 760px) { .telefonda-gizli { display: none; } }
 @media (max-width: 760px) {
   .yalniz-telefon { display: block; }
   .demo-serit.yalniz-telefon { display: flex; }

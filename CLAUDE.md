@@ -596,6 +596,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`Oneri.hafta`, `haftaGunu`; e-posta yanıtından ve haftalık ekrandan
   girilen) olduğu gibi yalnız haftalık.
 
+  Özel yayın etiketi yok: günü özel yayın gününe denk gelen öneri de
+  etiketlenmiyordu, özel yayının önerileri yayının içinde
+  (`ONERI_ETIKETLERI` yalnız Next Day ve Weekly).
+
+  Arşiv: uygulama günü geçmiş öneri güncel listelerden kalkar
+  (`oneriPlanlari.ts → oneriArsivde`, `oneriSonGunu`: aralığın sonu, plana
+  girdiyse planın günü, günü yoksa geldiği gün; e-posta takibi açıksa
+  düşmez; saklanmaz). Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
+  (`#/oneriler/arsiv`, muhabirde "Geçmiş önerilerim"; İşlerim'deki
+  Önerilerim kartında da bağlantısı, kılavuzda `kl4g`). Planlama ana sayfası,
+  menü ve yönetici paneli sayıları, "Önerilerden al" arşivi saymaz.
+
   Planlama öneriyi her aşamada düzeltir, plana eklendikten sonra da
   (`eylemler.ts → oneriDuzenle`, yetki `oneriDuzenleyebilir`; muhabire
   gönderilmiş teklif hariç): ayrıntıda ve plan ekranının öneri penceresinde

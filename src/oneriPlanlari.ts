@@ -1,5 +1,5 @@
 import { haftaSonu } from "./haftalik";
-import { bugun } from "./tarih";
+import { bugun, yerelGun } from "./tarih";
 import type { Durum, HaftalikKalem, HaftalikPlan, NextDayPlan, Oneri } from "./veri";
 
 /*
@@ -15,7 +15,12 @@ import type { Durum, HaftalikKalem, HaftalikPlan, NextDayPlan, Oneri } from "./v
  * etiketi de kalıyor, girdiği yer okunmuyordu.
  */
 
-export const ONERI_ETIKETLERI = ["nextday", "haftalik", "ozel"] as const;
+/*
+ * Özel yayın etiketi yok: günü özel yayın gününe denk gelen her öneri o
+ * etiketi alıyordu. Özel yayının kendi önerileri (paket önerileri) yayının
+ * içinde, genel öneri listesine girmiyor.
+ */
+export const ONERI_ETIKETLERI = ["nextday", "haftalik"] as const;
 export type OneriEtiketi = (typeof ONERI_ETIKETLERI)[number];
 
 /** Önerinin gün aralığı (ilk ve son gün); günü yoksa null. */
@@ -38,7 +43,7 @@ export const oneriGunde = (o: Oneri, tarih: string) => !!o.hedefTarih && o.hedef
 export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik">, plan: Pick<NextDayPlan, "tarih">): { buGun: Oneri[]; digerleri: Oneri[] } => {
   const gundemde = new Set(d.haftalik.flatMap((h) => h.kalemler.map((k) => k.oneriId)));
   const adaylar = d.oneriler
-    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id))
+    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o))
     .sort((a, b) => b.zaman.localeCompare(a.zaman));
   return { buGun: adaylar.filter((o) => oneriGunde(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriGunde(o, plan.tarih)) };
 };
@@ -79,9 +84,20 @@ export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
   const e: OneriEtiketi[] = [];
   const nd = acikGunPlanlari(d).some((p) => oneriGunde(o, p.tarih));
   const hf = !!o.hafta || d.haftalik.some((h) => h.durum !== "kesinlesti" && oneriHaftada(o, h));
-  const oz = d.ozel.some((x) => x.tarih >= bugun() && oneriGunde(o, x.tarih));
   if (nd) e.push("nextday");
   if (hf) e.push("haftalik");
-  if (oz) e.push("ozel");
   return e;
 };
+
+/*
+ * Arşiv: uygulama günü geçmiş öneri Planlama'nın listelerinden kalkıyor,
+ * eski öneriler birikmesin. Saklanmıyor, her an kayıttan: önerinin son
+ * günü (çok günlüde bitişi, eski haftalık öneride haftanın sonu), plana
+ * girdiyse planın günü, günü yoksa geldiği gün. E-posta takibi açık olan
+ * öneri işi sürdüğü için arşive düşmüyor. Muhabirde "Geçmiş önerilerim".
+ */
+export const oneriSonGunu = (o: Oneri): string => {
+  const g = oneriAraligi(o)?.[1] ?? yerelGun(o.zaman);
+  return o.planTarihi && o.planTarihi > g ? o.planTarihi : g;
+};
+export const oneriArsivde = (o: Oneri, b: string = bugun()): boolean => o.takip !== "acik" && oneriSonGunu(o) < b;
