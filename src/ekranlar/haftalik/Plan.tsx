@@ -19,7 +19,7 @@ import {
   onIncelemeyeGonder,
 } from "../../eylemler";
 import { etiketUret } from "../../eposta";
-import { gundemde, haftaGunleri, haftaSonu, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "../../haftalik";
+import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, yapabilir } from "../../yetki";
@@ -184,6 +184,8 @@ export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: Ha
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
   // Önerinin dosyası pasifse listede yok; seçici başka seçeneği gösterip kayıt görünmeyen dosyaya gitmesin.
   const dosya = oneri.baslikId && v.basliklar.some((b) => b.id === oneri.baslikId && b.aktif) ? oneri.baslikId : "";
+  // Haftanın dosyaları ve önerinin kendi dosyası; havuzun bütün eski başlıkları değil.
+  const haftanin = new Set([...haftaninDosyalari(hafta), dosya]);
   // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
   const aralik = oneriAraligi(oneri);
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
@@ -218,7 +220,7 @@ export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: Ha
           <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-ge-dosya>
             <option value="">{t("dosyasiz")}</option>
             {v.basliklar
-              .filter((b) => b.aktif)
+              .filter((b) => haftanin.has(b.id))
               .map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.ad}
@@ -348,8 +350,9 @@ export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; 
   const ilk = mevcut?.baslikId ?? (mevcut && v.basliklar.find((b) => b.ad === mevcut.baslik)?.id);
   const [f, setF] = useState({ baslikId: ilk ?? (mevcut ? YENI_BASLIK : ""), yeniBaslik: ilk ? "" : (mevcut?.baslik ?? ""), metin: mevcut?.metin ?? "" });
   const yeni = f.baslikId === YENI_BASLIK;
-  const secilebilir = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
-  const gundemde = new Set(hafta.kalemler.map((k) => k.baslikId).filter(Boolean));
+  // Yalnız bu haftanın dosyaları (haftaya eklenenler, gündemdekiler); hafta boş başlıyor.
+  const haftanin = new Set([...haftaninDosyalari(hafta), f.baslikId]);
+  const secilebilir = v.basliklar.filter((b) => haftanin.has(b.id));
   // Bu haftanın ana dosyası olan başlık ikinci kez seçilmesin (kendisi hariç).
   const kullanilan = new Set(hafta.anaKonular.filter((a) => a.id !== mevcut?.id).map((a) => a.baslikId));
   const secenek = (b: { id: string; ad: string }) => (
@@ -367,8 +370,7 @@ export function AnaKonuFormu({ ben, hafta, mevcut, sonra, kapat }: { ben: Kisi; 
           <option value="" disabled>
             {t("seciniz")}
           </option>
-          {secilebilir.some((b) => gundemde.has(b.id)) && <optgroup label={t("buHaftaninDosyalari")}>{secilebilir.filter((b) => gundemde.has(b.id)).map(secenek)}</optgroup>}
-          <optgroup label={t("hazirBasliklar")}>{secilebilir.filter((b) => !gundemde.has(b.id)).map(secenek)}</optgroup>
+          {secilebilir.length > 0 && <optgroup label={t("buHaftaninDosyalari")}>{secilebilir.map(secenek)}</optgroup>}
           {yapabilir(ben, "baslikYonet") && <option value={YENI_BASLIK}>+ {t("yeniBaslik")}</option>}
         </select>
       </label>

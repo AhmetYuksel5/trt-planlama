@@ -7,7 +7,7 @@ import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
-import { gundemde, haftaGunleri, onIncelemeyeGidebilir } from "../../haftalik";
+import { gundemde, haftaGunleri, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
@@ -68,7 +68,9 @@ export function KalemFormu({
     ekTalep: mevcut?.ekTalep ?? "",
     not: mevcut?.not ?? "",
   });
-  const dosyalar = v.basliklar.filter((b) => b.aktif || b.id === f.baslikId);
+  // Yalnız bu haftanın dosyaları: her hafta boş başlıyor, eski haftaların dosyaları önüne gelmiyor.
+  const haftanin = new Set([...haftaninDosyalari(hafta), f.baslikId]);
+  const dosyalar = v.basliklar.filter((b) => haftanin.has(b.id));
   const kaydet = () => {
     const id = kalemKaydet(ben, hafta.id, {
       ...f,
@@ -100,7 +102,7 @@ export function KalemFormu({
         </label>
         <label>
           {t("dosya")}
-          <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })}>
+          <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-kalem-dosya>
             <option value="">{t("dosyasiz")}</option>
             {dosyalar.map((b) => (
               <option key={b.id} value={b.id}>
@@ -124,7 +126,7 @@ export function KalemFormu({
       {f.baslikId === YENI_DOSYA && (
         <label>
           {t("yeniDosya")}
-          <input {...icerikAlani} value={f.yeniBaslik} onChange={(e) => setF({ ...f, yeniBaslik: e.target.value })} placeholder={metin("dosyaIpucu", "ar")} />
+          <input {...icerikAlani} value={f.yeniBaslik} onChange={(e) => setF({ ...f, yeniBaslik: e.target.value })} placeholder={metin("dosyaIpucu", "ar")} data-kalem-yeni-dosya />
         </label>
       )}
       <div className="satir">

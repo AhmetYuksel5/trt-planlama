@@ -785,12 +785,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
     başlıkla geçer, havuz ikiye bölünmez.
+  - Dosya seçimleri (kalem formu, "Gündeme ekle", ana dosya) her hafta boş
+    başlar: yalnız o haftanın dosyaları (`haftalik.ts → haftaninDosyalari`:
+    `HaftalikPlan.dosyalar`, kalemlerin ve ana dosyaların başlıkları) ve
+    "+ Yeni dosya". Haftada eklenen ya da seçilen dosya o haftanın kaydına
+    girer (`eylemler.ts → haftayaDosya`), kalemi silinse de o hafta kalır;
+    bir sonraki haftaya geçmez. Önce bütün başlık havuzu geliyordu, eski
+    haftaların dosyaları birikiyordu. Havuz yine tek: yeni dosyanın adı
+    havuzda varsa o başlık kullanılır (`dosyaAc`, pasifse yeniden etkin),
+    Next Day'e aynı başlıkla geçer. "Gündeme ekle"de önerinin kendi dosyası
+    da seçilebilir.
   - "Haftanın ana dosyaları"nın başlığı da havuzdan (`AnaKonu.baslikId`,
-    `eylemler.ts → anaKonuKaydet`): seçicide önce bu haftanın gündemindeki
-    dosyalar, sonra hazır başlıklar, en sonda "+ Yeni başlık" (havuza girer;
-    aynı adlı varsa o). Haftada zaten ana dosya olan başlık seçilemez. Eski
-    kayıttaki havuzda olmayan başlık "yeni"de yazısıyla gelir. Belgede başlık
-    yazıyla değişmez, "Düzenle" penceresinden; durum özeti yerinde.
+    `eylemler.ts → anaKonuKaydet`): seçicide bu haftanın dosyaları, en sonda
+    "+ Yeni başlık" (havuza girer; aynı adlı varsa o). Haftada zaten ana
+    dosya olan başlık seçilemez. Eski kayıttaki havuzda olmayan başlık
+    "yeni"de yazısıyla gelir. Belgede başlık yazıyla değişmez, "Düzenle"
+    penceresinden; durum özeti yerinde.
   - Haftalık ekrandan ve haftalık çağrı e-postasından gelen öneri `Oneri.hafta`
     taşır, Next Day ekranlarına karışmaz; günü olan öneri haftasıyla kesişen
     haftalık plana da düşer (yukarıda, öneri etiketleri).

@@ -788,6 +788,12 @@ export interface HaftalikPlan {
   durum: HaftaDurum;
   anaKonular: AnaKonu[];
   kalemler: HaftalikKalem[];
+  /**
+   * Bu haftada eklenen ya da seçilen dosyalar (havuzdaki başlıklar). Haftanın
+   * dosya seçimleri yalnız bunları gösteriyor: her hafta boş başlıyor, eski
+   * haftaların dosyaları önüne gelmiyor (haftalik.ts → haftaninDosyalari).
+   */
+  dosyalar?: string[];
   olusturan: string;
   olusturma: string;
 }

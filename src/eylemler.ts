@@ -905,9 +905,8 @@ export const anaKonuKaydet = (ben: Kisi, haftaId: string, g: AnaKonuGirdisi, son
   let baslikId = g.baslikId || undefined;
   if (!baslikId && g.yeniBaslik?.trim()) {
     if (!yapabilir(ben, "baslikYonet")) return false;
-    // Aynı adla havuzda varsa o: havuz ikiye bölünmesin.
-    baslikId = d.basliklar.find((b) => b.ad === g.yeniBaslik!.trim())?.id;
-    if (!baslikId) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+    // Aynı adla havuzda varsa o (dosyaAc): havuz ikiye bölünmesin.
+    [baslikId, d] = dosyaAc(d, g.yeniBaslik);
   }
   const havuz = baslikId ? baslikBul(d, baslikId) : undefined;
   if (baslikId && !havuz) return false;
@@ -915,6 +914,7 @@ export const anaKonuKaydet = (ben: Kisi, haftaId: string, g: AnaKonuGirdisi, son
   if (!baslik) return false;
   const alanlar = { ...baslik, metin: g.metin.trim() };
   if (eski && eski.baslik === alanlar.baslik && eski.baslikId === alanlar.baslikId && eski.metin === alanlar.metin) return true;
+  d = haftayaDosya(d, haftaId, baslikId);
   kaydet(
     haftaGuncelle(d, haftaId, (x) => {
       if (eski) return { ...x, anaKonular: x.anaKonular.map((a) => (a.id === eski.id ? { id: a.id, ...alanlar } : a)) };
@@ -957,11 +957,25 @@ export interface KalemGirdisi {
   not?: string;
 }
 
-/* Yeni dosya havuza giriyor: Next Day'de de aynı başlık kullanılacak. */
+/*
+ * Yeni dosya havuza giriyor: Next Day'de de aynı başlık kullanılacak. Haftanın
+ * dosya listesi her hafta boş başladığı için eski başlık yeniden yazılıyor;
+ * aynı adlı başlık havuzda varsa o (pasifse yeniden etkin), havuz ikiye bölünmesin.
+ */
 const dosyaAc = (d: Durum, ad?: string): [string | undefined, Durum] => {
-  if (!ad?.trim()) return [undefined, d];
+  const temiz = ad?.trim();
+  if (!temiz) return [undefined, d];
+  const var_ = d.basliklar.find((b) => b.ad.trim() === temiz);
+  if (var_) return [var_.id, var_.aktif ? d : { ...d, basliklar: d.basliklar.map((b) => (b.id === var_.id ? { ...b, aktif: true } : b)) }];
   const id = kimlik("b");
-  return [id, { ...d, basliklar: [...d.basliklar, { id, ad: ad.trim(), aktif: true }] }];
+  return [id, { ...d, basliklar: [...d.basliklar, { id, ad: temiz, aktif: true }] }];
+};
+
+/** Dosya bu haftanın listesine giriyor; kalemi silinse de o hafta seçilebilir kalıyor. */
+const haftayaDosya = (d: Durum, haftaId: string, baslikId?: string): Durum => {
+  const h = baslikId ? haftaBul(d, haftaId) : undefined;
+  if (!h || !baslikId || h.dosyalar?.includes(baslikId)) return d;
+  return haftaGuncelle(d, haftaId, (x) => ({ ...x, dosyalar: [...(x.dosyalar ?? []), baslikId] }));
 };
 
 /** Kalemi ekler ya da düzeltir; karar, ön inceleme ve öneri bağı düzeltmede korunuyor. */
@@ -975,6 +989,7 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     if (!yapabilir(ben, "baslikYonet")) return null;
     [baslikId, d] = dosyaAc(d, g.yeniBaslik);
   }
+  d = haftayaDosya(d, haftaId, baslikId);
   const alanlar = {
     tarih: g.tarih || undefined,
     baslikId,
@@ -1043,6 +1058,7 @@ export const oneriGundemeEkle = (
   if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
   let baslikId = g.baslikId || undefined;
   if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+  d = haftayaDosya(d, haftaId, baslikId);
   const id = kimlik("hk");
   /*
    * Kurumun düzeni: dosyanın altında "YER / gelişme" (yer muhabirin şehri,

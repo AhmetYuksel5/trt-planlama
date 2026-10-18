@@ -1570,7 +1570,6 @@ const M = {
   anaDosyaIpucu: m("Örn. İsrail'in Filistin'deki ihlalleri", "مثال: الانتهاكات الإسرائيلية في فلسطين", "e.g. Israeli violations in Palestine"),
   dosyaBasligi: m("Dosya başlığı", "عنوان الملف", "File title"),
   buHaftaninDosyalari: m("Bu haftanın dosyaları", "ملفات هذا الأسبوع", "This week's files"),
-  hazirBasliklar: m("Hazır başlıklar", "العناوين الجاهزة", "Existing headings"),
   durumOzeti: m("Durum özeti", "ملخص الوضع", "Summary"),
   yukari: m("Yukarı taşı", "نقل للأعلى", "Move up"),
   asagi: m("Aşağı taşı", "نقل للأسفل", "Move down"),

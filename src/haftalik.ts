@@ -17,6 +17,11 @@ import { onIncelemeci } from "./yetki";
 export const haftaGunleri = (bas: string) => Array.from({ length: 7 }, (_, i) => gunEkle(bas, i));
 export const haftaSonu = (bas: string) => gunEkle(bas, 6);
 
+/** Haftanın dosya seçimlerinde çıkan başlıklar: bu haftaya eklenenler, kalemlerin ve ana dosyaların başlıkları. */
+export const haftaninDosyalari = (h: HaftalikPlan): string[] => [
+  ...new Set([...(h.dosyalar ?? []), ...h.kalemler.map((k) => k.baslikId), ...h.anaKonular.map((a) => a.baslikId)].filter((x): x is string => !!x)),
+];
+
 /** Listede kalemin adı: olayın adı, yoksa "YER / metin". */
 export const kalemAdi = (k: HaftalikKalem) => k.baslik?.trim() || satir(k.yer, k.metin);
 
