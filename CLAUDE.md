@@ -858,7 +858,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şeride girer; eylemi plan ekranınınki.
   - Sıra dizinin sırası: taşıma aynı grubun komşusuyla yer değiştirir
     (`komsuylaDegis`), "altına ekle" `sonra` ile satırın arkasına koyar
-    (`arkasina`). Canlı yayın saatle sıralı, taşınmaz; haftalık hareketler
+    (`arkasina`). Canlı yayın saatle sıralı, taşınmaz; ekip de (sunucular
+    dahil) görevin içinde vardiya saatiyle (`nextday/Bolumler.tsx →
+    gorevEkibi`; plan ekranı, belge, çıktı; saatsiz sonda), saat değişince
+    yerine geçer; haftalık hareketler
     saha görevlendirmelerinden türer, belgede salt.
   - Yetki plan ekranıyla aynı (`planIcerikDuzenler`/`planOperasyonDuzenler`,
     `haftalikDuzenler`, toplantıda `kararVerebilir`). Haftalıkta belgede

@@ -178,6 +178,15 @@ export const ekipSirasi = (plan: NextDayPlan): EkipGoreviId[] => {
   return [...l, ...new Set(plan.ekip.map((e) => e.gorev).filter((g) => !l.includes(g)))];
 };
 
+/*
+ * Görevin ekibi vardiya saatiyle sıralı: kurumun çıktısında sunucular ve
+ * ekip saat sırasıyla yazılıyor. Sıra saklanmıyor, her çizimde saatten
+ * çıkıyor; saat değişince kişi kendiliğinden yerine geçiyor. Saatsiz olan
+ * sonda, aynı saattekiler eklenme sırasıyla.
+ */
+export const gorevEkibi = (plan: NextDayPlan, g: EkipGoreviId) =>
+  plan.ekip.filter((e) => e.gorev === g).sort((a, b) => (a.vardiya || "99:99").localeCompare(b.vardiya || "99:99"));
+
 export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: boolean }) {
   const { t } = useDil();
   const v = useVeri();
@@ -188,7 +197,7 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
     <Bolum ar no={1} baslik={metin("calismaEkibi", "ar")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
       {plan.ekip.length === 0 && <Bos kucuk metin={t("ekipBos")} />}
       {ekipSirasi(plan).map((g) => {
-        const uyeler = plan.ekip.filter((e) => e.gorev === g);
+        const uyeler = gorevEkibi(plan, g);
         if (!uyeler.length) return null;
         return (
           <div key={g} className="ara-ust-2">

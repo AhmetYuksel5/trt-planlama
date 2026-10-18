@@ -11,7 +11,6 @@ import {
   canliSil,
   ekipCikar,
   ekipGuncelle,
-  ekipTasi,
   gelismeKaydet,
   gelismeSil,
   gelismeTasi,
@@ -34,7 +33,7 @@ import {
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
-import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi } from "../nextday/Bolumler";
+import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
 import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
@@ -172,7 +171,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
         <section>
           <h2 className="yesil">{c("calismaEkibi")}</h2>
           {ekipSirasi(plan).map((g) => {
-            const uyeler = plan.ekip.filter((e) => e.gorev === g);
+            const uyeler = gorevEkibi(plan, g);
             if (!uyeler.length) return null;
             return (
               <BelgeSatiri key={g} duzen={ic} serit={<SatirSeridi ekle={() => ac({ tur: "ekipEkle", gorev: g })} ekleEtiket={t("ekibeEkle")} />}>
@@ -509,8 +508,6 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
   const e = plan.ekip.find((x) => x.kisiId === kisiId);
   const kisi = kisiBul(v, kisiId);
   if (!e) return null;
-  const grup = plan.ekip.filter((x) => x.gorev === e.gorev);
-  const sira = grup.findIndex((x) => x.kisiId === kisiId);
   return (
     <div className="form">
       <div className="satir">
@@ -536,8 +533,6 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
         )}
       </div>
       <SatirSeridi
-        yukari={sira > 0 ? () => ekipTasi(ben, plan.id, kisiId, -1) : undefined}
-        asagi={sira < grup.length - 1 ? () => ekipTasi(ben, plan.id, kisiId, 1) : undefined}
         onceki={e.onceki ? () => oncekiOnayla(ben, plan.id, { ekip: kisiId }) : undefined}
         cikar={onayla(t("silinsinMi"), () => ekipCikar(ben, plan.id, kisiId) && kapat())}
       />

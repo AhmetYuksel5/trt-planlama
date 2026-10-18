@@ -1561,14 +1561,6 @@ export const ekipGuncelle = (ben: Kisi, planId: string, kisiId: string, g: Parti
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.map((e) => (e.kisiId === kisiId ? { ...e, ...g, onceki: undefined } : e)) }));
 export const ekipCikar = (ben: Kisi, planId: string, kisiId: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.filter((e) => e.kisiId !== kisiId) }));
-/** Çıktıda aynı görevin satırında sıra. */
-export const ekipTasi = (ben: Kisi, planId: string, kisiId: string, yon: -1 | 1) =>
-  planIcerik(ben, planId, (p) => {
-    const gorev = p.ekip.find((e) => e.kisiId === kisiId)?.gorev;
-    const yeni = komsuylaDegis(p.ekip, (e) => e.kisiId === kisiId, (e) => e.gorev === gorev, yon);
-    return yeni ? { ...p, ekip: yeni } : p;
-  });
-
 export const planGorevlendirmeCikar = (ben: Kisi, planId: string, id: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, gorevlendirmeler: cikar(p.gorevlendirmeler, id), oncekiHareketler: bosIse(cikar(p.oncekiHareketler ?? [], id)) }));
 export const planGorevlendirmeEkle = (ben: Kisi, planId: string, id: string) =>
