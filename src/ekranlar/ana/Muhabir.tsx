@@ -296,6 +296,11 @@ function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
                   <Icerik>{o.haberBasligi}</Icerik>
                   {o.takipBitis && ` · ${tarihYaz(yerelGun(o.takipBitis), dil, "kisa")}`}
                 </small>
+                {o.yalnizTakip && o.takip === "acik" && (
+                  <small className="sonuk" data-yalniz-takip>
+                    {t("yalnizTakipPaketYok")}
+                  </small>
+                )}
               </div>
               {o.takip === "acik" ? (
                 <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && tamamlandiBildir(ben, t("gbTamamlandiBildir"), { oneriId: o.id })} data-takip-tamamla>

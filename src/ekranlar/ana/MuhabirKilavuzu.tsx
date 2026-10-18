@@ -52,7 +52,7 @@ function useBolumler(): Bolum[] {
     { baslik: "kl5", maddeler: ["kl5a"] },
     { baslik: "kl6", maddeler: ["kl6a"] },
     // Newsdesk devredeyken muhabir paketi kapatmıyor, sırası gelen adımı yapıyor.
-    { baslik: "kl7", maddeler: ["kl7a", v.newsdeskDevrede ? "kl7bNewsdesk" : "kl7b"] },
+    { baslik: "kl7", maddeler: ["kl7a", v.newsdeskDevrede ? "kl7bNewsdesk" : "kl7b", "kl7c"] },
     { baslik: "kl8", maddeler: ["kl8a"] },
     { baslik: "kl9", maddeler: ["kl9a", "kl9b", "kl9c"] },
   ];

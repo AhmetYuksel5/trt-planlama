@@ -87,6 +87,8 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const talimat = !!oneri.talimatVeren;
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
+  // Paket istenmeyen haber: muhabir izliyor, işlerinde "yalnız takip" olarak kalıyor. Paketle birlikte seçilmiyor.
+  const [takip, setTakip] = useState(false);
   const [muhabirId, setMuhabirId] = useState("");
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
@@ -96,7 +98,8 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
       planId: plan.id,
       baslikId: baslikId === "yeni" ? undefined : baslikId,
       yeniBaslik: baslikId === "yeni" ? yeniBaslik : undefined,
-      paketOlustur: talimat || paket,
+      paketOlustur: !takip && (talimat || paket),
+      yalnizTakip: takip,
       muhabirId: oneri.muhabirId ? undefined : muhabirId,
     });
     if (tamam) {
@@ -165,14 +168,38 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
           <MuhabirSecici deger={muhabirId} degistir={setMuhabirId} bosEtiket={t("atanmadi")} />
         </label>
       )}
-      {oneri.paketBasligi && !talimat && (
-        <label className="secim">
-          <input type="checkbox" checked={paket} onChange={(e) => setPaket(e.target.checked)} />
-          {t("paketOnerisiOlustur")}: <b>
-            <Icerik>{oneri.paketBasligi}</Icerik>
-          </b>
-        </label>
-      )}
+      <div className="secim-satiri">
+        {oneri.paketBasligi && !talimat && (
+          <label className="secim">
+            <input
+              type="checkbox"
+              checked={paket && !takip}
+              onChange={(e) => {
+                setPaket(e.target.checked);
+                if (e.target.checked) setTakip(false);
+              }}
+              data-pe-paket
+            />
+            {t("paketOnerisiOlustur")}: <b>
+              <Icerik>{oneri.paketBasligi}</Icerik>
+            </b>
+          </label>
+        )}
+        {(oneri.muhabirId || muhabirId) && (
+          <label className="secim">
+            <input
+              type="checkbox"
+              checked={takip}
+              onChange={(e) => {
+                setTakip(e.target.checked);
+                if (e.target.checked) setPaket(false);
+              }}
+              data-pe-yalniz-takip
+            />
+            {t("yalnizTakip")}
+          </label>
+        )}
+      </div>
       <div className="form-alt">
         <button className="dugme dugme-ikincil" onClick={kapat}>
           {t("iptal")}

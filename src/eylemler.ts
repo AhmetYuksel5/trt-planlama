@@ -489,7 +489,7 @@ export const planMetni = (o: Oneri) => o.gelisme.trim() || o.haberBasligi;
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
-  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string },
+  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; yalnizTakip?: boolean; muhabirId?: string },
 ): boolean => {
   let d = getir();
   const o = oneriBul(d, oneriId);
@@ -525,7 +525,9 @@ export const oneriPlanaEkle = (
    * "YER / strap / muhabir". Gelişme satırına önerinin açıklaması yazılıyor
    * (planMetni); producer'lar onu planda kısaltıp düzeltiyor.
    */
-  const paketli = g.paketOlustur && !!o.paketBasligi;
+  // Yalnız takip paketi dışlıyor: paket istenmedi, muhabir konuyu izliyor.
+  const yalnizTakip = !!g.yalnizTakip && !!muhabirId;
+  const paketli = g.paketOlustur && !!o.paketBasligi && !yalnizTakip;
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
@@ -570,7 +572,9 @@ export const oneriPlanaEkle = (
 
   d = {
     ...d,
-    oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "planaEklendi", baslikId, planId: plan.id, planTarihi: plan.tarih, paketId } : x)),
+    oneriler: d.oneriler.map((x) =>
+      x.id === o.id ? { ...x, durum: "planaEklendi", baslikId, planId: plan.id, planTarihi: plan.tarih, paketId, ...(yalnizTakip && { yalnizTakip: true, takip: "acik" as const }) } : x,
+    ),
   };
   kaydet(
     hareketYaz(d, {
@@ -580,7 +584,7 @@ export const oneriPlanaEkle = (
       paketId,
       planId: plan.id,
       // Talimat plana girince talimatı veren yönetici haberdar oluyor.
-      veri: o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih },
+      veri: { ...(o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih }), ...(yalnizTakip && { takip: "1" }) },
     }),
   );
   return true;
@@ -594,6 +598,11 @@ export const oneriPlanaEkle = (
  */
 const plandanDonmus = (o: Oneri): Oneri => {
   const { planId: _p, planTarihi: _t, paketId: _k, ...x } = o;
+  // Yalnız takip plan kararıydı: plandan çıkınca takip de kalkıyor.
+  if (x.yalnizTakip) {
+    const { yalnizTakip: _y, takip: _tk, takipBitis: _tb, takipBitiren: _tr, ...y } = x;
+    return { ...y, durum: "degerlendiriliyor" };
+  }
   return { ...x, durum: "degerlendiriliyor" };
 };
 const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Durum => {

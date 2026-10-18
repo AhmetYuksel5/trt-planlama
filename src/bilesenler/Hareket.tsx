@@ -114,6 +114,7 @@ const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "cagriHazirlandi" && h.veri?.hafta) return "hrHaftalikCagri";
   if (h.tip === "tamamlandi" && h.veri?.stok) return "hrStoga";
   if (h.tip === "oneriGeldi" && h.veri?.elle) return "hrOneriGirildi";
+  if (h.tip === "oneriPlanaEklendi" && h.veri?.takip) return "hrOneriTakibeAlindi";
   if (h.tip === "ozelAsama" && h.veri?.asama === "hazir") return "hrOzelHazir";
   return SABLON[h.tip];
 };

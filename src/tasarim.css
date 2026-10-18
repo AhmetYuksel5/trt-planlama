@@ -790,6 +790,8 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .form textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
 .form .satir { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--ara-3); }
 .form .secim { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); font-weight: 500; color: var(--murekkep); }
+/* Plana eklerken "paket" ve "yalnız takip" yan yana; dar yerde alt alta iner. */
+.secim-satiri { display: flex; flex-wrap: wrap; gap: var(--ara-2) var(--ara-4); }
 .form .ipucu { font-weight: 400; color: var(--silik); font-size: var(--punto-mini); }
 .form-kutu { background: var(--zemin); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-4); }
 .form-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; flex-wrap: wrap; }

@@ -750,6 +750,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`bilesenler/Haftalik.tsx → kalemPaketli`), muhabir ve o biçim ayrıca
     yazılmaz. Next Day'e aktarılan paketin başlığı strap; kalem formunda
     paketli kalemde Strap alanı.
+  - "Plana ekle" formunda (Next Day) PKG işaretinin yanında "Yalnız takip"
+    (`PlanaEkle.tsx`, ikisi birbirini kaldırır; muhabiri olan öneride):
+    gelişme plana girer, paket önerisi doğmaz, öneri `yalnizTakip` ve
+    `takip: "acik"` (`oneriPlanaEkle`). Muhabir "Takipteki haberlerim"de
+    "paket beklenmiyor" diye görür, bildirimi de öyle yazar
+    (`hrOneriTakibeAlindi`, hareketin `veri.takip`'i); "Senin sıran"a ve
+    arşive düşmez, "Tamamlandı" ile kapanır. Rozet "Yalnız takip"
+    (`OneriDurumRozeti`). Plandan çıkınca işaret ve takip kalkar
+    (`plandanDonmus`). Kılavuzda `kl7c`.
   - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
     ve muhabir dışı kaynak değil), ne değişmesi gerektiği yazılmadan
     gitmez (`DuzeltmeFormu`, `eylemler.ts → oneriDuzeltmeIste`). Durum

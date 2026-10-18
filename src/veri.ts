@@ -449,6 +449,12 @@ export interface Oneri {
   takip?: "acik" | "tamamlandi";
   takipBitis?: string;
   takipBitiren?: string;
+  /**
+   * Plana gelişme olarak girdi, paket istenmedi: muhabir konuyu izliyor
+   * ("yalnız takip"). Takip açık açılıyor, gün geçince işlerden düşmüyor,
+   * "Tamamlandı"ya kadar kalıyor.
+   */
+  yalnizTakip?: boolean;
   /** E-postayla geldiyse kaynağı olan yanıt; orijinal metin orada değişmeden duruyor. */
   yanitId?: string;
   /** Planlama'dan muhabire giden öneri (gönderen `giren`); yoksa muhabirden ya da kaynaktan gelen. */

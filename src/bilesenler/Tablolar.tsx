@@ -158,6 +158,13 @@ export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
         <Rozet ton="iyi">{t("pdTamamlandi")}</Rozet>
       </span>
     );
+  // Paketsiz, yalnız takip: muhabir de Planlama da öyle görsün; takip bitince "tamamlandı".
+  if (oneri.durum === "planaEklendi" && oneri.yalnizTakip)
+    return (
+      <span data-oneri-yalniz-takip>
+        <Rozet ton={oneri.takip === "tamamlandi" ? "iyi" : "vurgu"}>{t(oneri.takip === "tamamlandi" ? "pdTamamlandi" : "yalnizTakip")}</Rozet>
+      </span>
+    );
   return <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>;
 }
 

@@ -634,6 +634,9 @@ const M = {
   onerilerdenAl: m("Önerilerden al", "اختيار من المقترحات", "Pick from proposals"),
   digerGunlerinOnerileri: m("Öbür günlerin önerileri", "مقترحات الأيام الأخرى", "Proposals for other days"),
   paketOnerisiOlustur: m("Paket önerisi de oluştur", "إنشاء مقترح تقرير أيضا", "Also create a package proposal"),
+  yalnizTakip: m("Yalnız takip", "متابعة فقط", "Follow-up only"),
+  yalnizTakipPaketYok: m("Yalnız takip · paket beklenmiyor", "متابعة فقط · لا يُنتظر تقرير", "Follow-up only · no package expected"),
+  hrOneriTakibeAlindi: m("{kisi} öneriyi {tarih} Next Day planına yalnız takip olarak ekledi; paket beklenmiyor", "أضاف {kisi} المقترح إلى خطة الغد ليوم {tarih} للمتابعة فقط؛ لا يُنتظر تقرير", "{kisi} added the proposal to the {tarih} Next Day plan as follow-up only; no package expected"),
   duzenlenebilirPlanYok: m("Düzenlenebilir (taslak ya da toplantıdaki) plan yok; önce plan aç.", "لا توجد خطة قابلة للتعديل (مسودة أو في الاجتماع)؛ أنشئ خطة أولا.", "No editable plan (draft or at the meeting); create one first."),
 
   /* Çıktı */
@@ -2444,6 +2447,11 @@ const M = {
     "Haberi hazırlayıp teslim edince \u201cSenin sıran\u201ddaki \u201cTeslim ettim\u201de bas; Planlama'ya haber gider. Yanlışlıkla bastıysan bildirimdeki \u201cGeri al\u201dı ya da haberin sayfasındaki \u201cTamamlamayı geri al\u201dı kullan.",
     "حين تُعدّ الخبر وتسلّمه اضغط «سلّمتُ التقرير» في «دورك»؛ يصل التنبيه إلى التخطيط. إن ضغطت خطأً فاستخدم «تراجع» في التنبيه أو «التراجع عن الإكمال» في صفحة الخبر.",
     "When you have prepared and delivered the story, press \u201cI've delivered it\u201d under \u201cYour turn\u201d; Planning is notified. Pressed by mistake? Use \u201cUndo\u201d in the notice, or \u201cUndo completion\u201d on the story's page.",
+  ),
+  kl7c: m(
+    "Planlama haberi \u201cYalnız takip\u201d olarak eklediyse paket beklenmez: haber İşlerim'deki \u201cTakipteki haberlerim\u201dde \u201cYalnız takip · paket beklenmiyor\u201d diye durur. Konuyu izle, bitince \u201cTamamlandı\u201dya bas.",
+    "إذا أضاف التخطيط الخبر «للمتابعة فقط» فلا يُنتظر تقرير: يبقى الخبر في «أخباري قيد المتابعة» بصفحة أعمالي مع عبارة «متابعة فقط · لا يُنتظر تقرير». تابع الموضوع، وحين ينتهي اضغط «تم الإنجاز».",
+    "If Planning added the story as \u201cFollow-up only\u201d, no package is expected: it stays under \u201cStories I'm following up\u201d on My work, marked \u201cFollow-up only · no package expected\u201d. Keep following the topic and press \u201cMark completed\u201d when it is over.",
   ),
 
   kl7bNewsdesk: m(
