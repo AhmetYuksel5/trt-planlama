@@ -92,7 +92,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
       {/* Muhabir takipleri gelen önerilerden ayrı: yalnız gelişme bildiren takip öneri listesini kalabalıklaştırmasın. */}
       {arac === "takipler" && (
         <Pencere genis baslik={t("mtAcikTakipler")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
-          <PlanTakipleri ben={ben} tarih={plan.tarih} />
+          <PlanTakipleri ben={ben} tarih={plan.tarih} plan={plan} />
         </Pencere>
       )}
       {arac === "takvim" && (

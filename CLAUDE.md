@@ -512,8 +512,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
   Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
   dönüş) en altta `PlanDurumKarti`.
-  - Başlığa gelişme muhabir önerisinden de eklenir: "Gelişme ekle"nin
-    sağında ve gelişme formunun sağ üstünde "Önerilerden al" (sayısıyla;
+  - Başlığa gelişme muhabir önerisinden ve takibinden de eklenir: "Gelişme ekle"nin
+    sağında ve gelişme formunun sağ üstünde "Öneri ve takiplerden al" (sayısıyla;
     `Formlar.tsx → OneridenAl`), `Pencere`de öneri kartları, her birinde
     "Ekle". Adaylar `oneriPlanlari.ts → gelismeOneriAdaylari`: karar bekleyen
     muhabir önerileri, önce bu planın gününe düşenler, sonra öbür
@@ -707,6 +707,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   taşır, plan ekranından açılınca o planın gününe düşer) ya da "Muhabire
   öner"le muhabire teklif gönderir (bilinen "muhabire öneri" akışı);
   takip kartı neye dönüştüğünü gösterir.
+  Takip öneriye çevrilmeden plana gelişme olarak da girer (`eylemler.ts →
+  takipGelismeEkle`): Next Day gelişme formundaki "Öneri ve takiplerden al"
+  penceresinde "Muhabir takipleri" bölümü (o başlığa) ve Next Day'in "Muhabir
+  takipleri" penceresinde kartta "Gelişme olarak ekle" (başlık seçilir ya da
+  takibin konusuyla yeni başlık). Gelişme "YER / metin" (metin açıklama, yoksa
+  konu; `onerenId` muhabir, kaynak muhabir), `Gelisme.takipId`; aynı takip
+  aynı plana bir kez (`takipPlanda`). Muhabir başlığa yazılmaz (kaynak, haberi
+  yapan değil), takip açık kalır; hareket `takipPlanaEklendi`, muhabire
+  bildirim (`kime`). Kartta "Next Day'de · gün" bağı (Planlama'ya; muhabir
+  planı okuyamıyor). Kılavuzda `kl2b`.
   Yalnız gelişme bildiren gönderi öneri değil takip: öneri formunun haber
   türünde en sonda "Takip" (`veri.ts → TAKIP_BICIMI`, `OneriBicimi`;
   `BICIMLER`'e girmez). Seçilince Strap sorulmaz, takip türü sorulur;

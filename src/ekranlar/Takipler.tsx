@@ -4,11 +4,11 @@ import { Avatar, Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "
 import { OneriDurumRozeti } from "../bilesenler/Tablolar";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { metin, tarihYaz, useDil } from "../dil";
-import { takipKapat, takipKaydet, takipSil, ulkesi } from "../eylemler";
+import { takipGelismeEkle, takipKapat, takipKaydet, takipPlanda, takipSil, ulkesi } from "../eylemler";
 import { TAKIP_TUR_ADI, sehirAdi } from "../etiketler";
 import { bugun, gunEkle } from "../tarih";
-import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type Takip, type TakipTuru } from "../veri";
-import { muhabireOneriGonderebilir, takipEkleyebilir, takipGorebilir, yapabilir } from "../yetki";
+import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type NextDayPlan, type Takip, type TakipTuru } from "../veri";
+import { muhabireOneriGonderebilir, planOperasyonDuzenler, takipEkleyebilir, takipGorebilir, yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { ElleOneriFormu } from "./oneri/OneriFormu";
 import { MuhabireOneriPenceresi } from "./oneri/Yazisma";
@@ -122,13 +122,17 @@ function TakipFormu({ ben, mevcut, kapat }: { ben: Kisi; mevcut?: Takip; kapat: 
   );
 }
 
-function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: Takip; duzenle?: () => void; hedefTarih?: string }) {
+function TakipKarti({ ben, takip: x, duzenle, hedefTarih, plan }: { ben: Kisi; takip: Takip; duzenle?: () => void; hedefTarih?: string; plan?: NextDayPlan }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [donustur, setDonustur] = useState(false);
   const [cevir, setCevir] = useState(false);
+  const [gelisme, setGelisme] = useState(false);
   const muhabir = kisiBul(v, x.muhabirId);
   const kendi = ben.id === x.muhabirId;
+  // Takibin girdiği Next Day planları; muhabir planı okuyamadığı için ona bildirimle gidiyor.
+  const planlari = kendi ? [] : [...new Set(v.gelismeler.filter((g) => g.takipId === x.id).map((g) => g.planId))].flatMap((id) => v.planlar.filter((p) => p.id === id));
+  const gelismeEklenir = !!plan && !kendi && !x.kapandi && planOperasyonDuzenler(ben, plan) && !takipPlanda(v, x.id, plan.id);
   const isler = v.oneriler.filter((o) => o.takipId === x.id);
   return (
     <article className={`kayit takip${x.kapandi ? " soluk" : ""}`} data-takip={x.id}>
@@ -151,6 +155,11 @@ function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: 
           <small>
             <Rozet>{t(TUR_ADI[x.tur])}</Rozet>
             <span>{x.tarih ? tarihYaz(x.tarih, dil, "tam") : t("mtSurekli")}</span>
+            {planlari.map((p) => (
+              <a key={p.id} href={`#/nextday/${p.id}`} data-takip-planda={p.id}>
+                {t("mtPlanda", { tarih: tarihYaz(p.tarih, dil, "kisa") })}
+              </a>
+            ))}
             {isler.map((o) => (
               <a key={o.id} href={`#/oneriler/${o.id}`} data-takip-isi={o.id}>
                 {t(o.bicim === TAKIP_BICIMI ? "mtOneriyle" : "mtDonustu")} · <OneriDurumRozeti oneri={o} />
@@ -168,6 +177,11 @@ function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: 
         </div>
       </div>
       <div className="dugmeler ara-ust">
+        {gelismeEklenir && (
+          <button type="button" className="dugme dugme-kucuk" onClick={() => setGelisme(true)} data-takip-gelisme>
+            <Plus size={14} /> {t("mtGelismeEkle")}
+          </button>
+        )}
         {/* Planlama takibi kendisi haber önerisine çeviriyor: öneri listesine ve plana bilinen yoldan giriyor. */}
         {!kendi && !x.kapandi && yapabilir(ben, "oneriGonder") && (
           <button type="button" className="dugme dugme-kucuk" onClick={() => setCevir(true)} data-takip-oneriye>
@@ -195,6 +209,11 @@ function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: 
           </button>
         )}
       </div>
+      {gelisme && plan && (
+        <Pencere baslik={t("mtGelismeEkle")} alt={<Icerik>{x.konu}</Icerik>} kapat={() => setGelisme(false)}>
+          <TakipGelismeFormu ben={ben} takip={x} plan={plan} kapat={() => setGelisme(false)} />
+        </Pencere>
+      )}
       {donustur && <MuhabireOneriPenceresi ben={ben} takip={x} kapat={() => setDonustur(false)} />}
       {cevir && (
         <Pencere baslik={t("mtOneriyeCevirBaslik")} alt={<Icerik>{x.konu}</Icerik>} kapat={() => setCevir(false)}>
@@ -212,6 +231,51 @@ function TakipKarti({ ben, takip: x, duzenle, hedefTarih }: { ben: Kisi; takip: 
   );
 }
 
+/*
+ * Takibi plandaki başlığın altına gelişme olarak eklemek: plandaki başlıklar
+ * ya da yeni başlık (takibin konusuyla açılır; havuzda aynı adlı varsa o).
+ */
+function TakipGelismeFormu({ ben, takip: x, plan, kapat }: { ben: Kisi; takip: Takip; plan: NextDayPlan; kapat: () => void }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const [baslikId, setBaslikId] = useState(plan.basliklar[0]?.baslikId ?? "yeni");
+  const [yeniBaslik, setYeniBaslik] = useState(x.konu);
+  const ekle = () => {
+    if (!takipGelismeEkle(ben, x.id, baslikId === "yeni" ? { planId: plan.id, yeniBaslik } : { planId: plan.id, baslikId })) return;
+    bildir(t("bTakipPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
+    kapat();
+  };
+  return (
+    <div className="form" data-takip-gelisme-formu={x.id}>
+      <label>
+        {t("haberBasligi")}
+        <select value={baslikId} onChange={(e) => setBaslikId(e.target.value)} data-tg-baslik>
+          {plan.basliklar.map((b) => (
+            <option key={b.baslikId} value={b.baslikId}>
+              {v.basliklar.find((y) => y.id === b.baslikId)?.ad}
+            </option>
+          ))}
+          <option value="yeni">+ {t("yeniBaslikOlustur")}</option>
+        </select>
+      </label>
+      {baslikId === "yeni" && (
+        <label>
+          {t("yeniBaslikAdi")}
+          <input {...icerikAlani} value={yeniBaslik} onChange={(e) => setYeniBaslik(e.target.value)} data-tg-yeni />
+        </label>
+      )}
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button type="button" className="dugme dugme-iyi" onClick={ekle} disabled={baslikId === "yeni" && !yeniBaslik.trim()} data-tg-ekle>
+          {t("ekle")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Açık takipler (Planlama'nın gördükleri); plan ekranındaki "Takipler" penceresi ve sayısı. */
 export const acikTakipler = (ben: Kisi, d: { takipler: Takip[] }) => d.takipler.filter((x) => !x.kapandi && takipGorebilir(ben, x)).sort(sirala);
 
@@ -220,14 +284,14 @@ export const acikTakipler = (ben: Kisi, d: { takipler: Takip[] }) => d.takipler.
  * bildiren takip öneri listesini kalabalıklaştırmasın. Öneriye çevrilen
  * takip o planın gününe öneri olarak düşüyor.
  */
-export function PlanTakipleri({ ben, tarih }: { ben: Kisi; tarih: string }) {
+export function PlanTakipleri({ ben, tarih, plan }: { ben: Kisi; tarih: string; plan?: NextDayPlan }) {
   const { t } = useDil();
   const v = useVeri();
   const liste = acikTakipler(ben, v);
   return liste.length ? (
     <div className="takip-listesi" data-plan-takipleri>
       {liste.map((x) => (
-        <TakipKarti key={x.id} ben={ben} takip={x} hedefTarih={tarih} />
+        <TakipKarti key={x.id} ben={ben} takip={x} hedefTarih={tarih} plan={plan} />
       ))}
     </div>
   ) : (

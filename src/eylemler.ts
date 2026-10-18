@@ -126,6 +126,7 @@ import {
   profilDuzenler,
   sayfaGorebilir,
   takipEkleyebilir,
+  takipGorebilir,
   talimatVerebilir,
   uretimeAlabilir,
   yapabilir,
@@ -587,6 +588,57 @@ export const oneriPlanaEkle = (
       veri: { ...(o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih }), ...(yalnizTakip && { takip: "1" }) },
     }),
   );
+  return true;
+};
+
+/** Takibin bu plandaki gelişmesi (varsa): takip aynı plana iki kez girmiyor. */
+export const takipPlanda = (d: Pick<Durum, "gelismeler">, takipId: string, planId: string) => d.gelismeler.find((g) => g.takipId === takipId && g.planId === planId);
+
+/*
+ * Muhabirin takibi (متابعة) plandaki başlığın altına gelişme olarak giriyor:
+ * takip iş önerisi değil bilgi, ama bildirdiği gelişme planın satırı olabilir.
+ * Öneriye çevirmeden doğrudan; kurumun düzeniyle "YER / metin" (yer muhabirin
+ * şehri, onerenId'den), metin takibin açıklaması, yoksa konusu. Muhabir başlığa
+ * yazılmıyor: kaynak o, haberi yapan değil. Takip açık kalıyor, muhabire bildirim.
+ */
+export const takipGelismeEkle = (ben: Kisi, takipId: string, g: { planId: string; baslikId?: string; yeniBaslik?: string }): boolean => {
+  let d = getir();
+  const tk = d.takipler.find((x) => x.id === takipId);
+  const plan = planBul(d, g.planId);
+  if (!tk || tk.kapandi || !plan || !takipGorebilir(ben, tk) || !planOperasyonDuzenler(ben, plan) || takipPlanda(d, tk.id, plan.id)) return false;
+  let baslikId = g.baslikId;
+  if (!baslikId && g.yeniBaslik?.trim()) {
+    const ad = g.yeniBaslik.trim();
+    // Havuzda aynı adlı başlık varsa o: havuz ikiye bölünmesin.
+    const var_ = d.basliklar.find((b) => b.ad.trim() === ad);
+    if (var_) {
+      baslikId = var_.id;
+      if (!var_.aktif) d = { ...d, basliklar: d.basliklar.map((b) => (b.id === var_.id ? { ...b, aktif: true } : b)) };
+    } else {
+      baslikId = kimlik("b");
+      d = { ...d, basliklar: [...d.basliklar, { id: baslikId, ad, ulke: ulkesi(tk.sehir), aktif: true }] };
+    }
+  }
+  if (!baslikId) return false;
+  let pb = plan.basliklar.find((b) => b.baslikId === baslikId);
+  if (!pb) {
+    pb = { id: kimlik("pb"), baslikId, muhabirler: [] };
+    const yeniPb = pb;
+    d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: [...p.basliklar, yeniPb] }));
+  }
+  const gelisme: Gelisme = {
+    id: kimlik("g"),
+    planId: plan.id,
+    planBaslikId: pb.id,
+    metin: tk.aciklama?.trim() || tk.konu,
+    kaynakTuru: "muhabir",
+    kaynakAdi: "",
+    tarih: simdi(),
+    onerenId: tk.muhabirId,
+    takipId: tk.id,
+  };
+  d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipPlanaEklendi", planId: plan.id, veri: { takipId: tk.id, tarih: plan.tarih, kime: tk.muhabirId } }));
   return true;
 };
 

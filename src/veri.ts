@@ -328,6 +328,8 @@ export interface Gelisme {
   oneriId?: string;
   /** Haftalık plandan aktarıldıysa kaynağı olan kalem. */
   haftalikKalemId?: string;
+  /** Muhabirin takibinden (متابعة) eklendiyse o takip; aynı takip aynı plana iki kez girmesin. */
+  takipId?: string;
   onceki?: true;
   devir?: true;
 }
@@ -1164,6 +1166,7 @@ export const HAREKET_TIPLERI = [
   "teklifReddedildi",
   "oneriMesaji",
   "takipEklendi",
+  "takipPlanaEklendi",
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",
