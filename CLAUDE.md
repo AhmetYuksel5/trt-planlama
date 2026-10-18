@@ -380,16 +380,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Rol seçilmez, ünvandan gelir (`UnvanTanimi.yonetici`, "yönetici ünvanı";
     yerleşikte yönetici ve müdürler): yönetici ünvanına gelen yönetici,
     ayrılan personel olur, öbür tayinde rol değişmez (`unvandanRol`).
-  - Dış muhabirin ünvanı yerinden (`yapi.ts → muhabirYerUnvani`): ülkede tek
-    muhabir varsa ülke ("Lübnan muhabiri", `muhabir-<ülke>`), birden fazla
-    varsa o ülkedekilerin hepsi şehir ("Gazze muhabiri", `muhabir-s-<şehir>`).
-    Kişiler sekmesindeki "Muhabirlere yer ünvanı ver" (`eylemler.ts →
-    muhabirlereUlkeUnvaniVer`, tam yönetici) eksik ünvanları birime ekleyip
-    yeni sürüm yayınlar, ünvanı sistemin verdiği (genel ya da eski yer ünvanı)
-    ve olması gerekenden farklı olanları geçirir, kimsede kalmayan yer ünvanını
-    çıkarır; elle verilmiş ünvana dokunmaz. Excel'den gelen yer ünvanı
-    yayındaysa onu alır. Yer birim değil ünvan: yetki ve ekranlar birimin
-    "muhabir" olmasına bakıyor.
+  - Dış muhabirin ünvanı şehrinden, kendiliğinden: "<Şehir> muhabiri"
+    (`muhabir-s-<şehir>`, `yapi.ts → sehirMuhabirUnvaniId`). Adı `gorevAdi`
+    şehirden türetir, yapıda kaydı gerekmez; şehir sonradan eklense ya da adı
+    değişse de doğru çıkar. Kişi düzenleme penceresinde dış muhabire görev
+    sorulmaz, şehir seçilir (altında çıkacak ünvan yazılı); öbür personelde
+    şehir sorulmaz. Şehir nerede değişirse (profil, Hesaplar satırı,
+    düzenleme) ünvan da değişir (`yapi.ts → yerUnvaniUygula`; sistemin verdiği
+    ünvan, yani genel "Muhabir" ya da `muhabir-…`; elle verilene dokunmaz).
+    Eski kayıtları açılışta sistemin işi eşitler (`eylemler.ts →
+    muhabirUnvanlariniEsitle`), gerçek kipte kişi listesi değişince tam
+    yöneticinin tarayıcısı da. Önce ülkede tek muhabir varsa ülke adı
+    veriliyordu; kurum şehri istedi. Excel aktarımı şehrin ünvanıyla açar.
+    Kişiler sekmesindeki "Muhabirlere yer ünvanı ver" (`muhabirlereUlkeUnvaniVer`)
+    yapıdaki eski yer ünvanlarını toplar. Yer birim değil ünvan: yetki ve
+    ekranlar birimin "muhabir" olmasına bakıyor.
   - Yerleşik birim ve ünvan silinmez, gizlenir; kişisi ya da durağı bağlı olan
     da (`birimEtkisi`, `unvanEtkisi`). Birime özel davranış (Planlama planı
     yapar…) yerleşikte kalır; yeni birim seçilen yerleşik birim "gibi" çalışır

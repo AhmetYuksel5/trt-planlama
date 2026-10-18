@@ -1,5 +1,5 @@
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
-import { birimAdi, birimeUygunUnvan, gorevAdi, unvandanRol } from "../yapi";
+import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
 import { Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -695,6 +695,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const [eposta, setEposta] = useState(kisi.yeniEposta ?? kisi.eposta ?? "");
   const [bekle, setBekle] = useState(false);
   const epostaAcik = epostaDegistirebilir(ben, kisi);
+  const disMuhabir = disMuhabirMi({ birim: p.birim });
   // Ünvan birimde seçilemiyorsa birimin ilk ünvanına geçiyor; kişi birimde olmayan ünvanla kalmasın.
   const birimSec = (birim: BirimId) => setP({ ...p, birim, gorev: birimeUygunUnvan(birim, p.gorev) });
 
@@ -728,7 +729,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const kaydet = async () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
     if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
-    if ((yeniSehir || sehir !== kisi.sehir) && !kisiSehri(ben, kisi.id, yeniSehir ?? sehir)) return;
+    if (disMuhabir && (yeniSehir || sehir !== kisi.sehir) && !kisiSehri(ben, kisi.id, yeniSehir ?? sehir)) return;
     setBekle(true);
     try {
       if (await epostaKaydet()) {
@@ -779,35 +780,41 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
             <BirimSecenekleri dahil={kisi.birim} />
           </select>
         </label>
-        <label>
-          {t("gorev")}
-          <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value })} data-pozisyon-gorev>
-            {/* Kişinin şimdiki ünvanı birimde olmasa da açılışta listede: pencere açılınca kendiliğinden değişmesin. */}
-            <UnvanSecenekleri birim={p.birim} dahil={p.birim === kisi.birim && p.gorev === kisi.gorev ? kisi.gorev : undefined} />
-          </select>
-        </label>
-        <label>
-          {t("sehir")}
-          <select
-            value={yeniSehir ? YENI_SEHIR : sehir}
-            data-pozisyon-sehir
-            onChange={(e) => {
-              if (e.target.value === YENI_SEHIR) setYeniSehir(bosYeniSehir(sehir));
-              else {
-                setYeniSehir(null);
-                setSehir(e.target.value);
-              }
-            }}
-          >
-            <SehirSecenekleri />
-          </select>
-        </label>
-        {yeniSehir && <YeniSehirAlanlari yeni={yeniSehir} degistir={setYeniSehir} />}
+        {/* Dış muhabirin ünvanı seçilmiyor, şehrinden adlanıyor ("<Şehir> muhabiri"); öbür personelde şehir sorulmuyor. */}
+        {!disMuhabir && (
+          <label>
+            {t("gorev")}
+            <select value={p.gorev} onChange={(e) => setP({ ...p, gorev: e.target.value })} data-pozisyon-gorev>
+              {/* Kişinin şimdiki ünvanı birimde olmasa da açılışta listede: pencere açılınca kendiliğinden değişmesin. */}
+              <UnvanSecenekleri birim={p.birim} dahil={p.birim === kisi.birim && p.gorev === kisi.gorev ? kisi.gorev : undefined} />
+            </select>
+          </label>
+        )}
+        {disMuhabir && (
+          <label>
+            {t("sehir")}
+            <select
+              value={yeniSehir ? YENI_SEHIR : sehir}
+              data-pozisyon-sehir
+              onChange={(e) => {
+                if (e.target.value === YENI_SEHIR) setYeniSehir(bosYeniSehir(sehir));
+                else {
+                  setYeniSehir(null);
+                  setSehir(e.target.value);
+                }
+              }}
+            >
+              <SehirSecenekleri />
+            </select>
+            {!yeniSehir && otomatikMuhabirUnvaniMi(p.gorev) && <small data-pozisyon-unvan>{gorevAdi(sehirMuhabirUnvaniId(sehir))}</small>}
+          </label>
+        )}
+        {disMuhabir && yeniSehir && <YeniSehirAlanlari yeni={yeniSehir} degistir={setYeniSehir} />}
         <div className="form-alt">
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}
           </button>
-          <button type="button" className="dugme dugme-kucuk" disabled={!p.gorev || bekle || (!!yeniSehir && !yeniSehir.ar.trim())} onClick={kaydet} data-pozisyon-kaydet>
+          <button type="button" className="dugme dugme-kucuk" disabled={(!disMuhabir && !p.gorev) || bekle || (disMuhabir && !!yeniSehir && !yeniSehir.ar.trim())} onClick={kaydet} data-pozisyon-kaydet>
             {t("kaydet")}
           </button>
         </div>

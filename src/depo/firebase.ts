@@ -39,7 +39,7 @@ import {
 } from "firebase/firestore";
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
-import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi } from "../eylemler";
+import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
 import { gercekDurumuYaz } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
@@ -190,7 +190,11 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     } else if (degisti) {
       disaridanGeldi(d);
       // Muhabir hesaba bağlanınca eski kaydını kendisi taşıyamıyor; açık duran tam yönetici hemen tamamlıyor.
-      if (anahtar === "kisiler" && !kisitli && kendi.hesapYoneticisi) setTimeout(bekleyenGecisleriTamamla);
+      if (anahtar === "kisiler" && !kisitli && kendi.hesapYoneticisi) {
+        setTimeout(bekleyenGecisleriTamamla);
+        // Davetle ya da kayıt bağlantısıyla gelen dış muhabir genel ünvanla kalmasın: ünvanı hemen şehrinden.
+        setTimeout(muhabirUnvanlariniEsitle);
+      }
     }
   };
 

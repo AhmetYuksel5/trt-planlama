@@ -57,7 +57,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { haftalikPaketBasliklariniDuzelt, planCiftleriniTopla, takipOnerileriniAyikla, yarinPlaniniAc } from "./eylemler";
+import { haftalikPaketBasliklariniDuzelt, muhabirUnvanlariniEsitle, planCiftleriniTopla, takipOnerileriniAyikla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
 import {
   kisitliKisi,
@@ -132,7 +132,7 @@ export default function App() {
        * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
        * sayfa çalışıyor; hata konsolda.
        */
-      for (const is of [planCiftleriniTopla, takipOnerileriniAyikla, haftalikPaketBasliklariniDuzelt, yarinPlaniniAc]) {
+      for (const is of [planCiftleriniTopla, takipOnerileriniAyikla, haftalikPaketBasliklariniDuzelt, yarinPlaniniAc, muhabirUnvanlariniEsitle]) {
         try {
           is();
         } catch (hata) {

@@ -1,6 +1,6 @@
 import type { Asama, UretimAdimi } from "./akis";
 import { metin, yaz, type Anahtar, type Dil, type Metin, type Yazi } from "./dil";
-import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, sehirAdi, sehirUlkesi, ulkeAdi } from "./etiketler";
+import { BIRIM_ADI, EKIP_GOREV_ADI, GOREV_ADI, sehirAdi } from "./etiketler";
 import { BIRIMLER, EKIP_GOREVLERI, GOREVLER, anlik, type Birim, type BirimId, type Durum, type EkipGorevi, type EkipGoreviId, type Gorev, type GorevId, type IcerikTuru, type Rol, type Sehir, type Ulke } from "./veri";
 
 /**
@@ -353,6 +353,8 @@ export const birimAdi = (id: BirimId | undefined, y: Yapi = yapi()): string => {
 
 export const gorevAdi = (id: GorevId | undefined, y: Yapi = yapi()): string => {
   if (!id) return "";
+  // Şehir ünvanının adı her an şehirden: şehir sonradan eklense ya da adı değişse de yapı yayınlamak gerekmesin.
+  if (id.startsWith(SEHIR_UNVANI)) return metin("yerMuhabiri", undefined, { yer: sehirAdi(id.slice(SEHIR_UNVANI.length)) });
   const t = y.unvanlar.find((u) => u.id === id);
   if (t?.ad) return yaz(t.ad);
   return yerlesikGorev(id) ? metin(GOREV_ADI[id as Gorev]) : id;
@@ -457,15 +459,14 @@ export const disMuhabirMi = (k: { birim: BirimId }, y: Yapi = yapi()) => izinBir
 export const unvanMuhabirMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.muhabir ?? id === "muhabir";
 
 /*
- * Dış muhabirin yerine göre ünvanı: ülkede tek muhabir varsa ülkeden
- * ("Lübnan muhabiri", "مراسل لبنان"), aynı ülkede birden fazla varsa o
- * ülkedekilerin hepsi şehirden ("Gazze muhabiri", "Kudüs muhabiri").
- * Kimlik yerden (`muhabir-<ülke>`, `muhabir-s-<şehir>`; şehirle ülke aynı
- * adı taşıyabildiği için ayrı ön ek), kurulum tekrar çalışınca çoğalmasın.
- * Muhabir seçimlerinde çıkıyor (genel "Muhabir" ünvanı gibi).
+ * Dış muhabirin ünvanı şehrinden: "Gazze muhabiri", "مراسل غزة" (kurumun
+ * isteği; önce ülkede tek muhabir varsa ülke adı veriliyordu). Kimlik
+ * şehirden (`muhabir-s-<şehir>`), adı `gorevAdi`'nda şehirden türüyor.
+ * Eski ülke ünvanı (`muhabir-<ülke>`) okunur, yenisi verilmez.
  */
+const SEHIR_UNVANI = "muhabir-s-";
 export const ulkeMuhabirUnvaniId = (ulke: Ulke): GorevId => `muhabir-${ulke}`;
-export const sehirMuhabirUnvaniId = (sehir: Sehir): GorevId => `muhabir-s-${sehir}`;
+export const sehirMuhabirUnvaniId = (sehir: Sehir): GorevId => `${SEHIR_UNVANI}${sehir}`;
 
 /* Yerin adı dile göre: eklenen şehrin adı dil tablosunda değil kayıtta. */
 const yerUnvani = (id: GorevId, yer: (d: Dil) => string): UnvanTanimi => ({
@@ -478,12 +479,12 @@ const yerUnvani = (id: GorevId, yer: (d: Dil) => string): UnvanTanimi => ({
 /** Sistemin verdiği muhabir ünvanı (genel ya da yere göre): kurulum bunları yeniden hesaplıyor, elle verilene dokunmuyor. */
 export const otomatikMuhabirUnvaniMi = (id: GorevId) => id === "muhabir" || id.startsWith("muhabir-");
 
-/** Kişinin olması gereken yer ünvanı; `kisiler` aynı ülkedeki dış muhabirleri saymak için (kendisi dahil). */
-export const muhabirYerUnvani = (k: { sehir: Sehir }, kisiler: { birim: BirimId; sehir: Sehir; pasif?: boolean }[], y: Yapi = yapi()): UnvanTanimi => {
-  const ulke = sehirUlkesi(k.sehir);
-  const ayniUlke = kisiler.filter((x) => !x.pasif && disMuhabirMi(x, y) && sehirUlkesi(x.sehir) === ulke).length;
-  return ayniUlke > 1 ? yerUnvani(sehirMuhabirUnvaniId(k.sehir), (d) => sehirAdi(k.sehir, d)) : yerUnvani(ulkeMuhabirUnvaniId(ulke), (d) => metin(ulkeAdi(ulke), d));
-};
+/** Kişinin olması gereken yer ünvanı (şehrinden). */
+export const muhabirYerUnvani = (k: { sehir: Sehir }): UnvanTanimi => yerUnvani(sehirMuhabirUnvaniId(k.sehir), (d) => sehirAdi(k.sehir, d));
+
+/** Kişinin olması gereken ünvanı: dış muhabirde sistemin verdiği ünvan şehirden; elle verilene ve öbür birimlere dokunulmaz. */
+export const yerUnvaniUygula = <K extends { birim: BirimId; gorev: GorevId; sehir: Sehir }>(k: K, y: Yapi = yapi()): K =>
+  disMuhabirMi(k, y) && otomatikMuhabirUnvaniMi(k.gorev) && k.gorev !== sehirMuhabirUnvaniId(k.sehir) ? { ...k, gorev: sehirMuhabirUnvaniId(k.sehir) } : k;
 
 const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru"];
 
