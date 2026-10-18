@@ -12,7 +12,8 @@ import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, paketTamamlayabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { adimYapabilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 
 /**
@@ -262,12 +263,23 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     if (adimIlerle(ben, paket.id, g)) bildir(t("bAdimTamam"));
   };
 
+  // Yanlışlıkla kapatılan haber buradan yeniden açılıyor.
+  if (tamamlamaGeriAlabilir(ben, v, undefined, paket)) {
+    return (
+      <Kart baslik={t("seninIslemin")}>
+        <div className="dugmeler">
+          <TamamlamaGeriAlDugmesi ben={ben} paket={paket} />
+        </div>
+      </Kart>
+    );
+  }
+
   // Newsdesk yokken onaylı paketi muhabir (hesapsızsa Planlama onun adına) kapatıyor.
   if (paketTamamlayabilir(ben, paket, v)) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <div className="dugmeler">
-          <button className="dugme dugme-iyi" onClick={() => paketTamamla(ben, paket.id) && bildir(t("bPaketTamamlandi"))} data-paket-tamamla={paket.id}>
+          <button className="dugme dugme-iyi" onClick={() => paketTamamla(ben, paket.id) && tamamlandiBildir(ben, t("bPaketTamamlandi"), { paketId: paket.id })} data-paket-tamamla={paket.id}>
             {/* Muhabir kendi işini söylüyor; Planlama onun adına işaretliyor. */}
             <CircleCheck size={15} /> {t(ben.id === paket.muhabirId ? "haberTamamlandi" : "haberTeslimEdildi")}
           </button>

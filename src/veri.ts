@@ -1132,6 +1132,7 @@ export const HAREKET_TIPLERI = [
   "oneriSonra",
   "geriDonus",
   "takipTamamlandi",
+  "tamamlamaGeriAlindi",
   "planOlusturuldu",
   "planKopyalandi",
   "planGeriAlindi",

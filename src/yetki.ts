@@ -336,9 +336,10 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriDuzenlendi",
   "oneriMuhabireGonderildi",
   "oneriMesaji",
+  "tamamlamaGeriAlindi",
 ];
 /* Muhabirin haberinde sonucu ona dokunan olaylar; sıra ona geçtiğinde ayrıca (sahip "muhabir"). */
-const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "paketOnaylandi", "tamamlandi"];
+const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "paketOnaylandi", "tamamlandi", "tamamlamaGeriAlindi"];
 
 /**
  * Muhabir yalnız kendisiyle ilgili bildirimi alıyor. Eskiden gördüğü
@@ -399,6 +400,20 @@ export const isAlabilir = (ben: Kisi | undefined, k: Kisi): boolean =>
 export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean => !!ben?.hesapYoneticisi && !ben.pasif;
 export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>
   !!ben && o.takip === "acik" && (ben.id === o.muhabirId || yapabilir(ben, "geriDonus"));
+
+/*
+ * Yanlışlıkla "Tamamlandı" denen haber geri açılır: muhabiri ya da Planlama
+ * (geri dönüş ya da paket değerlendirme yetkisi), kapatabilenler. Özel yayın
+ * paketi kendi aşama listesinde geri alınıyor; Newsdesk devredeyken paket
+ * üretimde kapanıyor, o yol değil.
+ */
+export const tamamlamaGeriAlabilir = (ben: Kisi | undefined, d: Durum, o?: Oneri, p?: Paket): boolean => {
+  if (!ben) return false;
+  const oneriKapali = o?.takip === "tamamlandi";
+  const paketKapali = !!p && p.durum === "tamamlandi" && !p.ozelId && yalnizPlanlama(d);
+  if (!oneriKapali && !paketKapali) return false;
+  return ben.id === (o?.muhabirId ?? p?.muhabirId) || yapabilir(ben, "geriDonus") || yapabilir(ben, "paketDegerlendir");
+};
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
 export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean => !!k && (k.id === kisi.id || yapabilir(k, "profilDuzenle"));

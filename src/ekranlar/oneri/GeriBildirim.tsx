@@ -8,6 +8,7 @@ import { yerelGun } from "../../tarih";
 import { kisiBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { geriBildirimGonderebilir, takipTamamlayabilir } from "../../yetki";
 import { GonderDugmeleri } from "./Eposta";
+import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
 
 /*
  * Önerinin değerlendirmesindeki geri bildirim: Planlama kararı verdikten
@@ -46,6 +47,7 @@ export function GeriBildirimBolumu({ ben, oneri: o }: { ben: Kisi; oneri: Oneri 
             </Rozet>
           </span>
         )}
+        {o.takip === "tamamlandi" && <TamamlamaGeriAlDugmesi ben={ben} oneri={o} />}
         <span className="bosluk-esnek" />
         {gonderir && (
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAc(true)} data-geri-bildirim-ac>
@@ -53,7 +55,7 @@ export function GeriBildirimBolumu({ ben, oneri: o }: { ben: Kisi; oneri: Oneri 
           </button>
         )}
         {takipTamamlayabilir(ben, o) && (
-          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && bildir(t("gbTamamlandiBildir"))} data-takip-tamamla>
+          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && tamamlandiBildir(ben, t("gbTamamlandiBildir"), { oneriId: o.id })} data-takip-tamamla>
             <CircleCheck size={14} /> {t("gbTamamlandiIsaretle")}
           </button>
         )}

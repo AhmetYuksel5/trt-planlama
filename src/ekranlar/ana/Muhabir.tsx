@@ -2,7 +2,7 @@ import { birimAdi } from "../../yapi";
 import { ArrowRight, Bell, CheckCircle, History, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, gorunenSahip, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, bildir, oncelikliOnce } from "../../bilesenler/Parcalar";
+import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, sehirAdi } from "../../etiketler";
@@ -17,6 +17,7 @@ import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, pake
 import { CalismaAlani, type Alan } from "./Calisma";
 import { MuhabirKilavuzu } from "./MuhabirKilavuzu";
 import { SayfaBasi } from "./Planlama";
+import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
 
 /**
  * Muhabirin masası.
@@ -158,7 +159,7 @@ function Siram({ ben }: { ben: Kisi }) {
                     {p.oncelikli && <OncelikRozeti />}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
                     {p.durum === "onaylandi" ? (
-                      <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => paketTamamla(ben, p.id) && bildir(t("bPaketTamamlandi"))} data-paket-tamamla={p.id}>
+                      <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => paketTamamla(ben, p.id) && tamamlandiBildir(ben, t("bPaketTamamlandi"), { paketId: p.id })} data-paket-tamamla={p.id}>
                         <CheckCircle size={14} /> {t("haberTamamlandi")}
                       </button>
                     ) : (
@@ -297,11 +298,14 @@ function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
                 </small>
               </div>
               {o.takip === "acik" ? (
-                <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && bildir(t("gbTamamlandiBildir"))} data-takip-tamamla>
+                <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && tamamlandiBildir(ben, t("gbTamamlandiBildir"), { oneriId: o.id })} data-takip-tamamla>
                   <CheckCircle size={14} /> {t("gbTamamlandiIsaretle")}
                 </button>
               ) : (
-                <Rozet ton="iyi">{t("gbTamamlandi")}</Rozet>
+                <>
+                  <Rozet ton="iyi">{t("gbTamamlandi")}</Rozet>
+                  <TamamlamaGeriAlDugmesi ben={ben} oneri={o} />
+                </>
               )}
             </li>
           ))}

@@ -882,6 +882,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     takibi kapatmak onaylı paketi de (`paketTamamla`, `takipTamamla`);
     paketli haber "Takipteki haberlerim"de ikinci kez durmaz. Haberi biten
     önerinin rozeti "Tamamlandı" (`OneriDurumRozeti`).
+  - "Tamamlandı" geri alınır (yanlışlıkla basılınca; `eylemler.ts →
+    tamamlamaGeriAl`, yetki `tamamlamaGeriAlabilir`: haberin muhabiri ya da
+    Planlama): basınca çıkan bildirimde "Geri al", sonradan öneri
+    ayrıntısında ve paket sayfasında "Tamamlamayı geri al"
+    (`bilesenler/TamamlamaGeriAl.tsx`). Birlikte kapandıkları için öneri ile
+    paket birlikte açılır (takip "açık", paket onaylı); muhabirin teslim
+    zamanı yalnız o kapanışta yazıldıysa silinir. Hareketi
+    `tamamlamaGeriAlindi`, öbür tarafa bildirim. Özel yayın paketi kendi
+    aşama listesinde geri alınır.
 - Özel yayın (`ekranlar/OzelYayin.tsx`, `#/ozel`, `#/ozel/:id`,
   `#/ozel/:id/cikti`; kurallar `ozel.ts`, eylemler `eylemler.ts → ozel*`,
   `nafize*`, `konuk*`): Planlama'nın denetiminde hazırlanır, onayı Plan

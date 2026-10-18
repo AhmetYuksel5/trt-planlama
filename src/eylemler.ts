@@ -110,6 +110,8 @@ import {
   geriBildirimGonderebilir,
   geriBildirimSablonuDuzenler,
   takipTamamlayabilir,
+  tamamlamaGeriAlabilir,
+  yalnizPlanlama,
   kararVerebilir,
   mudahaleEdebilir,
   muhabireOneriGonderebilir,
@@ -739,6 +741,49 @@ export const takipTamamla = (ben: Kisi, oneriId: string) => {
   if (p && !d.newsdeskDevrede)
     yeni = paketGuncelle(yeni, p.id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabir && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, ...(p && { paketId: p.id }), veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
+  return true;
+};
+
+/*
+ * "Tamamlandı" geri alınıyor (yanlışlıkla basılmış): önerinin takibi yeniden
+ * açık, onunla kapanan onaylı paket yeniden onaylı; paketten başlanırsa
+ * önerisi de. İkisi birlikte kapandığı için birlikte açılıyor, yoksa haber
+ * yarım açık kalırdı. Muhabirin teslim zamanı yalnız bu kapanışta yazıldıysa
+ * siliniyor (ölçüme yanlış teslim girmesin).
+ */
+export const tamamlamaGeriAl = (ben: Kisi, hedef: { oneriId?: string; paketId?: string }) => {
+  const d = getir();
+  const p0 = paketBul(d, hedef.paketId);
+  const o = oneriBul(d, hedef.oneriId ?? p0?.oneriId);
+  const p = p0 ?? (o ? d.paketler.find((x) => x.oneriId === o.id && x.durum === "tamamlandi" && !x.ozelId) : undefined);
+  if (!tamamlamaGeriAlabilir(ben, d, o, p)) return false;
+  const z = simdi();
+  let yeni: Durum = d;
+  if (o?.takip === "tamamlandi")
+    yeni = {
+      ...yeni,
+      oneriler: yeni.oneriler.map((x) => {
+        if (x.id !== o.id) return x;
+        const { takipBitis: _b, takipBitiren: _k, ...kalan } = x;
+        return { ...kalan, takip: "acik" };
+      }),
+    };
+  if (p && p.durum === "tamamlandi" && !p.ozelId && yalnizPlanlama(d))
+    yeni = paketGuncelle(yeni, p.id, (x) => {
+      const { muhabirTeslimi, ...kalan } = x;
+      return { ...kalan, durum: "onaylandi", guncelleme: z, ...(muhabirTeslimi && muhabirTeslimi !== x.guncelleme ? { muhabirTeslimi } : {}) };
+    });
+  const muhabirId = o?.muhabirId ?? p?.muhabirId;
+  kaydet(
+    hareketYaz(yeni, {
+      kisiId: ben.id,
+      tip: "tamamlamaGeriAlindi",
+      ...(o && { oneriId: o.id }),
+      ...(p && { paketId: p.id }),
+      ...((p?.planId ?? o?.planId) && { planId: p?.planId ?? o?.planId }),
+      veri: ben.id === muhabirId ? { sahip: "planlama" } : { kime: muhabirId ?? "" },
+    }),
+  );
   return true;
 };
 

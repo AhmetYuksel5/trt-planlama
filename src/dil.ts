@@ -1003,6 +1003,9 @@ const M = {
   hrOneriSonra: m("{kisi} öneriyi daha sonra değerlendirmeye bıraktı", "أرجأ {kisi} تقييم المقترح", "{kisi} deferred the proposal"),
   hrGeriDonus: m("{kisi} muhabire geri dönüş yaptı: {sonuc}", "أبلغ {kisi} المراسل بالنتيجة: {sonuc}", "{kisi} sent feedback to the reporter: {sonuc}"),
   hrTakipTamamlandi: m("{kisi} haberi tamamlandı olarak işaretledi", "أشّر {kisi} على الخبر بأنه مكتمل", "{kisi} marked the story completed"),
+  hrTamamlamaGeriAlindi: m("{kisi} \u201cTamamlandı\u201d işaretini geri aldı; haber yeniden açık", "تراجع {kisi} عن «مكتمل»؛ الخبر مفتوح من جديد", "{kisi} undid \u201cCompleted\u201d; the story is open again"),
+  tamamlamayiGeriAl: m("Tamamlamayı geri al", "التراجع عن الإكمال", "Undo completion"),
+  bTamamlamaGeriAlindi: m("Haber yeniden açıldı", "أُعيد فتح الخبر", "The story was reopened"),
   hrPlanOlusturuldu: m("{kisi}, {tarih} Next Day planını açtı", "أنشأ {kisi} خطة الغد ليوم {tarih}", "{kisi} opened the {tarih} Next Day plan"),
   hrPlanlarBirlestirildi: m("{kisi}, {tarih} gününe açılmış {sayi} planı tek planda topladı", "جمع {kisi} الخطط المفتوحة ليوم {tarih} ({sayi}) في خطة واحدة", "{kisi} merged the {sayi} plans opened for {tarih} into one"),
   hrPlanKopyalandi: m("{kisi}, {tarih} planını {kaynak} planının şablonuyla açtı", "فتح {kisi} خطة {tarih} على قالب خطة {kaynak}", "{kisi} opened the {tarih} plan from the {kaynak} plan"),
@@ -2439,9 +2442,9 @@ const M = {
     "The story shows in My stories and under \u201cYour turn\u201d on My work. Steps: Added to plan → With the reporter → Completed.",
   ),
   kl7b: m(
-    "Haberi hazırlayıp teslim edince \u201cSenin sıran\u201ddaki \u201cTeslim ettim\u201de bas; Planlama'ya haber gider.",
-    "حين تُعدّ الخبر وتسلّمه اضغط «سلّمتُ التقرير» في «دورك»؛ يصل التنبيه إلى التخطيط.",
-    "When you have prepared and delivered the story, press \u201cI've delivered it\u201d under \u201cYour turn\u201d; Planning is notified.",
+    "Haberi hazırlayıp teslim edince \u201cSenin sıran\u201ddaki \u201cTeslim ettim\u201de bas; Planlama'ya haber gider. Yanlışlıkla bastıysan bildirimdeki \u201cGeri al\u201dı ya da haberin sayfasındaki \u201cTamamlamayı geri al\u201dı kullan.",
+    "حين تُعدّ الخبر وتسلّمه اضغط «سلّمتُ التقرير» في «دورك»؛ يصل التنبيه إلى التخطيط. إن ضغطت خطأً فاستخدم «تراجع» في التنبيه أو «التراجع عن الإكمال» في صفحة الخبر.",
+    "When you have prepared and delivered the story, press \u201cI've delivered it\u201d under \u201cYour turn\u201d; Planning is notified. Pressed by mistake? Use \u201cUndo\u201d in the notice, or \u201cUndo completion\u201d on the story's page.",
   ),
 
   kl7bNewsdesk: m(
