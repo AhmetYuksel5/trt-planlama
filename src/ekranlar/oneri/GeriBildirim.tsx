@@ -4,6 +4,7 @@ import { Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { geriBildirimKaydet, takipTamamla } from "../../eylemler";
 import { geriBildirimAyari, geriBildirimEpostasi, kararSablonu, sablonDoldur, sablonlar } from "../../geriBildirim";
+import { oneriPlanaGore } from "../../oneriPlanlari";
 import { yerelGun } from "../../tarih";
 import { kisiBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { geriBildirimGonderebilir, takipTamamlayabilir } from "../../yetki";
@@ -16,9 +17,11 @@ import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../../bilesenler/Tamam
  * uygulaması). Deneme sürecinde "takip edilsin" denen haber muhabirin
  * işlerinde takipte; muhabir ya da Planlama bitince "tamamlandı" diyor.
  */
-export function GeriBildirimBolumu({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
+export function GeriBildirimBolumu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
+  // "Plana eklendi" plandaki kayda göre: öneride kalan kopya kaymış olsa da onay gönderilebilsin.
+  const o = oneriPlanaGore(v, oneri);
   const [ac, setAc] = useState(false);
   const gonderir = geriBildirimGonderebilir(ben, o);
   if (!gonderir && !o.geriBildirim && !o.takip && !o.geriDonus) return null;

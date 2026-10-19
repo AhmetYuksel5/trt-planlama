@@ -11,6 +11,7 @@ import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
 import { KayitTemizligi } from "./KayitTemizligi";
+import { KayitYedegi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -39,6 +40,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
+        {kayitTemizleyebilir(ben) && <KayitYedegi />}
         {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}
         {!GERCEK && (
           <Kart baslik={t("ornekVeri")} ikon={<Database size={18} />}>

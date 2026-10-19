@@ -66,13 +66,14 @@ export interface OneriYeri {
   kalem?: HaftalikKalem;
 }
 
+// Next Day'deki yer önerinin kopyasından değil plandaki kayıttan (`oneriPlanKaydi`).
 export const oneriYeri = (d: Durum, o: Oneri): OneriYeri | null => {
-  const planda = o.durum === "planaEklendi" && !!o.planId;
+  const kayit = o.durum === "teklif" ? null : oneriPlanKaydi(d, o);
   const hafta = d.haftalik.find((h) => h.kalemler.some((k) => k.oneriId === o.id));
-  if (!planda && !hafta) return null;
+  if (!kayit && !hafta) return null;
   return {
-    planda,
-    plan: planda ? d.planlar.find((p) => p.id === o.planId) : undefined,
+    planda: !!kayit,
+    plan: kayit?.plan,
     hafta,
     kalem: hafta?.kalemler.find((k) => k.oneriId === o.id),
   };
@@ -113,4 +114,69 @@ export const oneriPaketBasligi = (o: Oneri): string | undefined => {
   if (o.bicim === "canli" || o.bicim === "takip") return undefined;
   if (o.paketBasligi?.trim()) return o.paketBasligi.trim();
   return o.muhabirId && !o.giren && !o.talimatVeren ? o.haberBasligi.trim() || undefined : undefined;
+};
+
+/*
+ * Önerinin plandaki kaydı: "plana eklendi" bilgisinin tek doğru kaynağı.
+ * Önerideki durum, plan ve gün bu kayıttan türeyen kopya; ekleme, çıkarma,
+ * geri alma ve bayat yazışlar onu ayrı ayrı düzeltmek zorunda kalınca
+ * planda duran öneri "değerlendiriliyor" görünebiliyordu (geri bildirim
+ * gönderilemiyordu). Kayıt: önerinin gelişmesi, canlı yayını ya da iptal
+ * edilmemiş paketi, var olan bir Next Day planında. Birden çok plandaysa
+ * önerinin kendi planı, yoksa en geç günlü plan.
+ */
+export interface OneriPlanKaydi {
+  plan: NextDayPlan;
+  paketId?: string;
+}
+
+export const oneriPlanKaydi = (d: Pick<Durum, "planlar" | "gelismeler" | "paketler" | "canliYayinlar">, o: Oneri): OneriPlanKaydi | null => {
+  const idler = new Set<string>();
+  for (const x of d.gelismeler) if (x.oneriId === o.id && x.planId) idler.add(x.planId);
+  for (const x of d.canliYayinlar) if (x.oneriId === o.id && x.planId) idler.add(x.planId);
+  for (const x of d.paketler) if (x.oneriId === o.id && x.planId && x.durum !== "iptal") idler.add(x.planId);
+  const planlar = d.planlar.filter((p) => idler.has(p.id));
+  if (!planlar.length) return null;
+  const plan = planlar.find((p) => p.id === o.planId) ?? planlar.reduce((a, b) => (b.tarih > a.tarih ? b : a));
+  return { plan, paketId: d.paketler.find((x) => x.oneriId === o.id && x.planId === plan.id && x.durum !== "iptal")?.id };
+};
+
+/*
+ * Next Day kaydı olmadan da plana girmiş sayılan öneri: kesinleşmiş haftada
+ * kabul (ya da bilgi) kalemi, ya da plansız onaylı paketi (feature, ekonomi).
+ * Bunlar Next Day'e hiç geçmeyebiliyor; "plana eklendi" kalmalı.
+ */
+export const oneriPlansizKabul = (d: Pick<Durum, "haftalik" | "paketler">, o: Oneri): boolean =>
+  d.haftalik.some((h) => h.durum === "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id && k.karar !== "ret")) ||
+  d.paketler.some((x) => x.oneriId === o.id && !x.planId && x.durum !== "iptal");
+
+/*
+ * Plandan çıkan öneri yeniden öneri olur: plan bağı silinir, durum
+ * "değerlendiriliyor". Yalnız takip plan kararıydı, o da kalkar.
+ */
+export const plandanDonmus = (o: Oneri): Oneri => {
+  const { planId: _p, planTarihi: _t, paketId: _k, ...x } = o;
+  if (x.yalnizTakip) {
+    const { yalnizTakip: _y, takip: _tk, takipBitis: _tb, takipBitiren: _tr, ...y } = x;
+    return { ...y, durum: "degerlendiriliyor" };
+  }
+  return { ...x, durum: "degerlendiriliyor" };
+};
+
+/*
+ * Önerinin plandaki kayda göre hali: planda kaydı olan "plana eklendi"
+ * (planı, günü, paketi kayıttan); kaydı kalmamış ve plansız da kabul
+ * edilmemiş "plana eklendi" değerlendirmeye döner. Değişmiyorsa aynı nesne
+ * (fark nesne kimliğiyle çıkıyor). Teklif muhabirin kararında, dokunulmuyor.
+ * Sistemin eşitleme işi ve "plana eklendi"ye bakan kararlar (geri bildirim)
+ * bunu kullanıyor: kopya kaysa da karar kayda göre.
+ */
+export const oneriPlanaGore = (d: Pick<Durum, "planlar" | "gelismeler" | "paketler" | "canliYayinlar" | "haftalik">, o: Oneri): Oneri => {
+  if (o.durum === "teklif") return o;
+  const k = oneriPlanKaydi(d, o);
+  if (k) {
+    if (o.durum === "planaEklendi" && o.planId === k.plan.id && o.planTarihi === k.plan.tarih && (!k.paketId || o.paketId === k.paketId)) return o;
+    return { ...o, durum: "planaEklendi", planId: k.plan.id, planTarihi: k.plan.tarih, ...(k.paketId && { paketId: k.paketId }) };
+  }
+  return o.durum !== "planaEklendi" || oneriPlansizKabul(d, o) ? o : plandanDonmus(o);
 };

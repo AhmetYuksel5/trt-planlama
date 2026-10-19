@@ -16,7 +16,7 @@ import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
-import { oneriHaftada, oneriPaketBasligi, oneriYeri } from "./oneriPlanlari";
+import { oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriYeri, plandanDonmus } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -661,15 +661,6 @@ export const takipGelismeEkle = (ben: Kisi, takipId: string, g: { planId: string
  * açılmıyordu. Yalnız az önce silinen kayda bağlı öneriler bakılıyor: eski
  * kayıtta gelişmesi zaten olmayan öneri her silişte geri dönmesin.
  */
-const plandanDonmus = (o: Oneri): Oneri => {
-  const { planId: _p, planTarihi: _t, paketId: _k, ...x } = o;
-  // Yalnız takip plan kararıydı: plandan çıkınca takip de kalkıyor.
-  if (x.yalnizTakip) {
-    const { yalnizTakip: _y, takip: _tk, takipBitis: _tb, takipBitiren: _tr, ...y } = x;
-    return { ...y, durum: "degerlendiriliyor" };
-  }
-  return { ...x, durum: "degerlendiriliyor" };
-};
 const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Durum => {
   const ids = new Set(
     oneriIdleri.filter((id): id is string => {
@@ -792,7 +783,9 @@ export const yzGorusKaydet = (ben: Kisi, oneriId: string, g: Pick<YzGorus, "gene
  */
 export const geriBildirimKaydet = (ben: Kisi, oneriId: string, g: { sablonId?: string; takip: boolean }) => {
   let d = getir();
-  const o = oneriBul(d, oneriId);
+  const o0 = oneriBul(d, oneriId);
+  // Karar plandaki kayda göre; kaymış kopya da bu yazışla düzeliyor.
+  const o = o0 && oneriPlanaGore(d, o0);
   if (!o || !geriBildirimGonderebilir(ben, o)) return false;
   const ayar = geriBildirimAyari(d);
   const takipEt = g.takip && ayar.epostaIleTakip && o.takip !== "tamamlandi";
@@ -800,7 +793,7 @@ export const geriBildirimKaydet = (ben: Kisi, oneriId: string, g: { sablonId?: s
   d = {
     ...d,
     oneriler: d.oneriler.map((x) =>
-      x.id === o.id ? { ...x, geriDonus: true, geriBildirim: { zaman: z, kisiId: ben.id, ...(g.sablonId ? { sablonId: g.sablonId } : {}) }, ...(takipEt ? { takip: "acik" as const } : {}) } : x,
+      x.id === o.id ? { ...o, geriDonus: true, geriBildirim: { zaman: z, kisiId: ben.id, ...(g.sablonId ? { sablonId: g.sablonId } : {}) }, ...(takipEt ? { takip: "acik" as const } : {}) } : x,
     ),
   };
   if (takipEt && o.takip !== "acik" && ayar.takipMesaji.trim()) {
@@ -3739,6 +3732,26 @@ export const takipOnerileriniAyikla = (): number => {
   if (!idler.length) return 0;
   kaydet(temizle(d, { turler: ["oneriler"], idler }).yeni);
   return idler.length;
+};
+
+/*
+ * Önerideki "plana eklendi" (durum, plan, gün, paket) plandaki kayıttan
+ * türeyen kopya; sistemin açılış işi onu kayıtla eşitliyor. Kopya ayrı
+ * yazıldığı için kayabiliyordu: plana birkaç kez girip çıkan öneri planda
+ * durduğu halde "değerlendiriliyor" kalıyor, muhabire onay gönderilemiyordu.
+ * Kopyanın kalması muhabir yüzünden: kısıtlı muhabir planı okuyamıyor,
+ * kendi ekranı öneriden okuyor. Kural `oneriPlanaGore`'de.
+ */
+export const onerileriPlanlaEsitle = (): number => {
+  const d = getir();
+  let n = 0;
+  const oneriler = d.oneriler.map((o) => {
+    const x = oneriPlanaGore(d, o);
+    if (x !== o) n++;
+    return x;
+  });
+  if (n) kaydet({ ...d, oneriler });
+  return n;
 };
 
 /** Takip bitti (ya da yeniden açıldı); kayıt geçmişte kalıyor. */

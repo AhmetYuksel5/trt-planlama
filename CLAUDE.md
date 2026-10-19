@@ -700,6 +700,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   haber muhabirin İşlerim'inde ("Takipteki haberlerim", `muTakip`).
   "Tamamlandı"yı muhabir ya da Planlama işaretler (`takipTamamla`,
   `takipTamamlayabilir`). Diğer birimler devreye girince ayar kapanır.
+- "Plana eklendi"nin tek doğru kaynağı plandaki kayıt
+  (`oneriPlanlari.ts → oneriPlanKaydi`): önerinin gelişmesi, canlısı ya da
+  iptal edilmemiş paketi, var olan Next Day planında. Önerideki durum,
+  `planId`, `planTarihi`, `paketId` kopya (kısıtlı muhabir planı okuyamıyor,
+  ekranı öneriden okuyor); `oneriPlanaGore` kopyayı kayda göre kurar,
+  sistemin açılış işi `onerileriPlanlaEsitle` kaymış kopyaları yazar
+  (plana girip çıkan öneri planda dururken "değerlendiriliyor" kalıyor,
+  muhabire onay gönderilemiyordu). Kaydı kalmamış "plana eklendi"
+  değerlendirmeye döner, kesinleşmiş haftada kabul ya da plansız paket
+  hariç (`oneriPlansizKabul`); teklife dokunulmaz. `oneriYeri` ve geri
+  bildirim kayda bakar. Yeni öneri akışının (tasarım belgesi, dört aşama)
+  ilk adımı.
+- Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
+  bütün `Durum` tek JSON (`tur: "plannersflow-yedek"`); gerçek kipte sunucuyla
+  eşitlenmeden düğme pasif. Davetler ve kayıt başvuruları `Durum`'da değil,
+  yedekte yok.
 - Kayıt temizliği (Ayarlar, yalnız tam yönetici; `temizlik.ts`,
   `eylemler.ts → kayitlariTemizle`, `ekranlar/KayitTemizligi.tsx`):
   deneme sürecinde girilenler tarih aralığı ve türle (öneri, Next Day,
