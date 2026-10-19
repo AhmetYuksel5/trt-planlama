@@ -570,6 +570,7 @@ const M = {
   canliYayinlar: m("Canlı yayınlar ve önemli etkinlikler", "البث المباشر والأحداث المهمة", "Live slots and key events"),
   canliEkle: m("Canlı yayın / etkinlik ekle", "إضافة بث مباشر / حدث", "Add live slot / event"),
   etkinlikAdi: m("Etkinlik / konu", "الحدث / الموضوع", "Event / subject"),
+  saatYerTutucu: m("14:30", "14:30", "14:30"),
   saatGmt: m("Saat (GMT)", "الساعة (غرينتش)", "Time (GMT)"),
   yayinNotlari: m("Yayın notları", "ملاحظات البث", "Broadcast notes"),
   hazirPaketler: m("Hazır paketler", "التقارير الجاهزة", "Ready packages"),

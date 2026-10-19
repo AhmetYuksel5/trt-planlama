@@ -46,6 +46,26 @@ export const planlananHafta = (tarih: string) => gunEkle(haftaBasi(tarih), 7);
  * Vardiya saati kurumun çıktısındaki gibi: "04:00" → "04G", "11:45" → "1145G".
  * G, saatin GMT olduğunu söylüyor.
  */
+/**
+ * Elle yazılan saat "SS:DD"ye: "14", "9", "14:30", "14.30", "1430", "14G",
+ * "1430G", Arapça rakamla da. Boş "" (TBC), okunamayan null. Tarayıcının saat
+ * kutusu yalnız saat yazılınca ("14") boş değer veriyordu, canlı yayın
+ * kaydedildiği halde TBC kalıyordu.
+ */
+export const saatCoz = (s: string): string | null => {
+  const t = s
+    .trim()
+    .replace(/[٠-٩]/g, (r) => String(r.charCodeAt(0) - 0x660))
+    .replace(/\s*(G|GMT)$/i, "");
+  if (!t) return "";
+  const m = t.match(/^(\d{1,2})(?:[:.]?(\d{2}))?$/);
+  if (!m) return null;
+  const sa = Number(m[1]);
+  const dk = Number(m[2] ?? "0");
+  if (sa > 23 || dk > 59) return null;
+  return `${String(sa).padStart(2, "0")}:${String(dk).padStart(2, "0")}`;
+};
+
 export const vardiyaYaz = (saat: string) => {
   if (!saat) return "";
   const [s, d = "00"] = saat.split(":");

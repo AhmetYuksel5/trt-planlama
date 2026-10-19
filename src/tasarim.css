@@ -2343,3 +2343,9 @@ tr.soluk > td { opacity: .5; }
   .konuk-listesi li { flex-wrap: wrap; }
   .konuk-adi { flex-basis: 100%; }
 }
+
+/* Okunamayan elle yazılmış değer (canlı yayının saati): Kaydet pasif, nedeni alanın kendisinde görünsün. */
+input[aria-invalid="true"] {
+  border-color: var(--kotu);
+  background: var(--kotu-sis);
+}

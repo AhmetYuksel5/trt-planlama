@@ -8,7 +8,7 @@ import { acikTakipler } from "../Takipler";
 import { gelismeOneriAdaylari } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
-import { girdidenIso, simdi, yerelGirdi, zaman } from "../../tarih";
+import { girdidenIso, saatCoz, simdi, yerelGirdi, zaman } from "../../tarih";
 import {
   BICIMLER,
   TAKIP_BICIMI,
@@ -308,9 +308,10 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
     muhabirId: mevcut?.muhabirId ?? "",
     notlar: mevcut?.notlar ?? "",
   });
+  const saat = saatCoz(f.saatGmt);
   const kaydet = () => {
-    if (!ben || !f.konu.trim()) return;
-    canliKaydet(ben, { id: mevcut?.id, planId: plan.id, planBaslikId, ...f, muhabirId: f.muhabirId || undefined });
+    if (!ben || !f.konu.trim() || saat === null) return;
+    canliKaydet(ben, { id: mevcut?.id, planId: plan.id, planBaslikId, ...f, saatGmt: saat, muhabirId: f.muhabirId || undefined });
     kapat();
   };
   return (
@@ -332,7 +333,15 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
         </label>
         <label>
           {t("saatGmt")}
-          <input type="time" value={f.saatGmt} onChange={(e) => setF({ ...f, saatGmt: e.target.value })} />
+          {/* Düz yazı: kurum "14G", "1430" diye yazıyor; saat kutusu dakikasız saati boş sayıyordu. */}
+          <input
+            value={f.saatGmt}
+            onChange={(e) => setF({ ...f, saatGmt: e.target.value })}
+            onBlur={() => saat && setF({ ...f, saatGmt: saat })}
+            placeholder={metin("saatYerTutucu", "tr")}
+            aria-invalid={saat === null || undefined}
+            data-canli-saat
+          />
         </label>
         <label>
           {t("muhabir")}
@@ -347,7 +356,7 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
         {t("yayinNotlari")}
         <input {...icerikAlani} value={f.notlar} onChange={(e) => setF({ ...f, notlar: e.target.value })} />
       </label>
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.konu.trim()} />
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.konu.trim() || saat === null} />
     </div>
   );
 }
