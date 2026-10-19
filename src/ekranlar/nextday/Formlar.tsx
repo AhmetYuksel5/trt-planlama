@@ -219,7 +219,8 @@ export function OneridenAl({ plan, planBaslikId, eklendi }: { plan: NextDayPlan;
     eklendi?.();
   };
   const ekle = (o: Oneri) => {
-    if (!oneriPlanaEkle(ben, o.id, { planId: plan.id, baslikId, paketOlustur: !!o.paketBasligi })) return;
+    // Paketin doğup doğmayacağına eylem bakıyor (strap, muhabirin önerisi, Live); burada hep isteniyor.
+    if (!oneriPlanaEkle(ben, o.id, { planId: plan.id, baslikId, paketOlustur: true })) return;
     bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
     setAcik(false);
     eklendi?.();

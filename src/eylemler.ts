@@ -15,7 +15,7 @@ import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
-import { oneriHaftada, oneriYeri } from "./oneriPlanlari";
+import { oneriHaftada, oneriPaketBasligi, oneriYeri } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -531,7 +531,8 @@ export const oneriPlanaEkle = (
   const yalnizTakip = !!g.yalnizTakip && !!muhabirId;
   // "Live" haber paket değil, planın canlı yayını: çıktıda "مباشر" bölümünde; paket önerisi doğsaydı orada hiç görünmüyordu.
   const canliMi = o.bicim === "canli";
-  const paketli = g.paketOlustur && !!o.paketBasligi && !yalnizTakip && !canliMi;
+  const strap = oneriPaketBasligi(o);
+  const paketli = g.paketOlustur && !!strap && !yalnizTakip && !canliMi;
   const canliAc = g.paketOlustur && canliMi && !yalnizTakip;
   const gelisme: Gelisme = {
     id: kimlik("g"),
@@ -558,7 +559,7 @@ export const oneriPlanaEkle = (
       kod,
       planId: plan.id,
       planBaslikId: pbId,
-      baslik: o.paketBasligi ?? "",
+      baslik: strap ?? "",
       sehir: muhabir?.sehir ?? "istanbul",
       muhabirId,
       aciklama: o.gelisme,
@@ -2540,7 +2541,8 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     gelismeler: d.gelismeler.map((x) => (x.oneriId === oneriId && x.metin === metin(o, paketli) && metin(o, paketli) !== metin(yeni, paketli) ? { ...x, metin: metin(yeni, paketli) } : x)),
     paketler: d.paketler.map((p) => {
       if (p.oneriId !== oneriId) return p;
-      const baslik = p.baslik === (o.paketBasligi ?? "") && yeni.paketBasligi ? yeni.paketBasligi : p.baslik;
+      const yeniStrap = oneriPaketBasligi(yeni);
+      const baslik = p.baslik === (oneriPaketBasligi(o) ?? "") && yeniStrap ? yeniStrap : p.baslik;
       const aciklama = p.aciklama === o.gelisme ? yeni.gelisme : p.aciklama;
       const tur = p.tur === o.tur ? yeni.tur : p.tur;
       const bicim = p.bicim === paketBicimi(o.bicim) ? (paketBicimi(yeni.bicim) ?? p.bicim) : p.bicim;

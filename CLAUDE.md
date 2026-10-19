@@ -529,7 +529,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     muhabir önerileri, önce bu planın gününe düşenler, sonra öbür
     günlerinkiler; talimat ve gündemdeki yok. "Ekle" "Plana ekle" ile aynı
     eylem (`oneriPlanaEkle`: öneri plana eklendi, başlığa bağlı, muhabir
-    başlıkta, muhabire bildirim, strap'i varsa PKG önerisi). Formun içinde
+    başlıkta, muhabire bildirim, PKG önerisi). PKG'nin adı
+    `oneriPlanlari.ts → oneriPaketBasligi`: strap, yoksa muhabirin kendi
+    önerisinde (uygulama, e-posta yanıtı) Header; e-posta yanıtında strap
+    yok, paket hiç açılmıyordu. Planlama'nın elle girdiği strap'siz öneri
+    yalnız gelişme; Live canlı yayın, takip paket değil. "Plana ekle"
+    formundaki PKG işareti de aynı kuraldan. Formun içinde
     seçim kutusu denendi, beğenilmedi; form yalnız elle yazma.
   - Gelişme başka başlığa ya da başlıksız متابعات'e taşınır
     (`eylemler.ts → gelismeBasligaTasi`, `Bolumler.tsx →

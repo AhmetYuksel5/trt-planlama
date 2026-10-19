@@ -4,7 +4,7 @@ import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
 import { kalacakPlan } from "../../planCiftleri";
 import { adiylaBaslik, ndBaslikSecenekleri } from "../../baslikSecimi";
-import { acikGunPlanlari, oneriGunde, oneriHaftada } from "../../oneriPlanlari";
+import { acikGunPlanlari, oneriGunde, oneriHaftada, oneriPaketBasligi } from "../../oneriPlanlari";
 import { bugun, gunEkle } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { haftalikDuzenler, planIcerikDuzenler } from "../../yetki";
@@ -105,7 +105,8 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const talimat = !!oneri.talimatVeren;
   // "Live" öneri plana paket değil canlı yayın olarak giriyor; strap'i yoksa Header'ıyla.
   const canli = oneri.bicim === "canli";
-  const [paket, setPaket] = useState(!!oneri.paketBasligi || canli);
+  const strap = oneriPaketBasligi(oneri);
+  const [paket, setPaket] = useState(!!strap || canli);
   // Paket istenmeyen haber: muhabir izliyor, işlerinde "yalnız takip" olarak kalıyor. Paketle birlikte seçilmiyor.
   const [takip, setTakip] = useState(false);
   const [muhabirId, setMuhabirId] = useState("");
@@ -203,7 +204,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
         </label>
       )}
       <div className="secim-satiri">
-        {(oneri.paketBasligi || canli) && !talimat && (
+        {(strap || canli) && !talimat && (
           <label className="secim">
             <input
               type="checkbox"
@@ -215,7 +216,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
               data-pe-paket
             />
             {t(canli ? "canliOlarakEkle" : "paketOnerisiOlustur")}: <b>
-              <Icerik>{oneri.paketBasligi || oneri.haberBasligi}</Icerik>
+              <Icerik>{strap || oneri.haberBasligi}</Icerik>
             </b>
           </label>
         )}

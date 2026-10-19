@@ -101,3 +101,16 @@ export const oneriSonGunu = (o: Oneri): string => {
   return o.planTarihi && o.planTarihi > g ? o.planTarihi : g;
 };
 export const oneriArsivde = (o: Oneri, b: string = bugun()): boolean => o.takip !== "acik" && oneriSonGunu(o) < b;
+
+/*
+ * Plana eklenince doğacak PKG önerisinin başlığı: strap, yoksa muhabirin
+ * kendi önerisinde Header. E-posta yanıtından düşen öneride strap yok;
+ * paket hiç açılmıyordu, Planlama her birini elle ekliyordu. Planlama'nın
+ * elle girdiği strap'siz öneri yalnız gelişme kalıyor. Live canlı yayın,
+ * takip paket değil.
+ */
+export const oneriPaketBasligi = (o: Oneri): string | undefined => {
+  if (o.bicim === "canli" || o.bicim === "takip") return undefined;
+  if (o.paketBasligi?.trim()) return o.paketBasligi.trim();
+  return o.muhabirId && !o.giren && !o.talimatVeren ? o.haberBasligi.trim() || undefined : undefined;
+};
