@@ -2013,6 +2013,8 @@ const M = {
   yzGelismeOlarakEkle: m("Gelişme olarak ekle", "إضافة كتطور", "Add as development"),
   yzFormaYaz: m("Durum özetine yaz", "كتابة في ملخص الوضع", "Write to status summary"),
   yzAlanlar: m("Aranacak siteler (her satıra bir; boşsa bütün web)", "المواقع المعتمدة للبحث (موقع في كل سطر؛ فارغ = كل الويب)", "Sites to search (one per line; empty = whole web)"),
+  yzHataBicim: m("Kapı ayarı geçersiz buldu.", "رفضت البوابة الإعدادات لأنها غير صالحة.", "The gateway found the settings invalid."),
+  yzHataKapi: m("Kapıda beklenmeyen bir hata oldu.", "حدث خطأ غير متوقع في البوابة.", "Unexpected error in the gateway."),
   yzHataArama: m("Seçilen sağlayıcı internet aramasını desteklemiyor.", "المزوّد المختار لا يدعم البحث على الإنترنت.", "The selected provider does not support web search."),
   yzBugunKullanim: m("bugün {n} kullanım", "{n} استخدام اليوم", "{n} uses today"),
   yzSaglayici: m("Sağlayıcı", "المزوّد", "Provider"),

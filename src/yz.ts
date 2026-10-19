@@ -76,7 +76,8 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
     return { tamam: false, hata: "baglanti" };
   }
   const j = (await r.json().catch(() => null)) as (T & { hata?: string; ayrinti?: string }) | null;
-  if (!r.ok || !j) return { tamam: false, hata: j?.hata ?? "baglanti", ...(j?.ayrinti ? { ayrinti: j.ayrinti } : {}) };
+  // JSON olmayan yanıtta (Cloudflare'in kendi hata sayfası) HTTP durumu ayrıntıda: neden en azından kodla görünsün.
+  if (!r.ok || !j) return { tamam: false, hata: j?.hata ?? "baglanti", ...(j?.ayrinti ? { ayrinti: j.ayrinti } : !j ? { ayrinti: `HTTP ${r.status}` } : {}) };
   return { tamam: true, veri: j };
 };
 
@@ -257,5 +258,9 @@ const HATA: Record<string, Anahtar> = {
   adres: "yzHataAdres",
   model: "yzHataModel",
   arama: "yzHataArama",
+  bicim: "yzHataBicim",
+  kimlik: "yzHataBicim",
+  tur: "yzHataBicim",
+  kapi: "yzHataKapi",
 };
 export const yzHataMetni = (t: (k: Anahtar) => string, kod: string) => t(HATA[kod] ?? "yzHataSaglayici");

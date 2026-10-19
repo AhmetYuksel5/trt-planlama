@@ -39,7 +39,8 @@ export function YapayZekaAyari() {
   const yaz = async (yeni: YzAyar) => {
     const r = await yzAyarYaz(yeni);
     if (!r.tamam) {
-      bildir(yzHataMetni(t, r.hata));
+      // Kod ve kapının ayrıntısı birlikte: genel metin nedeni saklıyordu.
+      bildir(`${yzHataMetni(t, r.hata)} [${r.hata}]${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
       return false;
     }
     setAyar({ ...r.veri, kullanim: ayar?.kullanim });

@@ -289,6 +289,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Model sağlayıcının listesinden seçilir (`/modeller`, "Modelleri getir";
       formdaki yeni anahtar yalnız o istekte kullanılır). Hata metinleri
       sağlayıcının kendi iletisiyle (`ayrinti`).
+    - Beklenmeyen hata (KV yazışı reddedildi…) de izin başlığıyla `kapi` ve
+      nedeniyle döner (`index.ts → isle`): Cloudflare'in kendi 500'ünü
+      tarayıcı okuyamıyor, ekran "kapıya ulaşılamadı" diyordu. Ayar
+      kaydetmede ekran kodu ve ayrıntıyı olduğu gibi yazar.
     - Anahtar yalnız yazılır, ekrana son dört hanesi gelir. Anahtar alanı
       gönderilmezse eskisi kalır, boş metin siler (`ayar.ts →
       ayarBirlestir`).

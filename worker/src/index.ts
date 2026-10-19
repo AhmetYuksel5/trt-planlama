@@ -95,6 +95,19 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
     : {};
   if (req.method === "OPTIONS") return new Response(null, { status: izinli.includes(koken) ? 204 : 403, headers: cors });
   const yanit = (g: unknown, s = 200) => json(g, s, cors);
+  /*
+   * Beklenmeyen hata (KV yazışı reddedildi, kayıt bozuk…) da izin başlığıyla
+   * ve nedeniyle dönüyor: Cloudflare'in kendi 500'ünde başlık yok, tarayıcı
+   * yanıtı okuyamıyor, ekran yalnız "kapıya ulaşılamadı" diyordu.
+   */
+  try {
+    return await isleIc(req, env, d, yanit);
+  } catch (e) {
+    return yanit({ hata: "kapi", ayrinti: String(e instanceof Error ? e.message : e).slice(0, 300) }, 500);
+  }
+};
+
+const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown, s?: number) => Response): Promise<Response> => {
 
   const belge = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   const kimlik = belge ? await oturumuDogrula(belge, env.FIREBASE_PROJE, d.anahtarBul, d.simdi()).catch(() => null) : null;

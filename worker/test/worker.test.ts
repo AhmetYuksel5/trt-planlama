@@ -400,3 +400,16 @@ test("son gelişmeler (Claude): arama aracı ve site listesi gider, pause_turn s
   assert.deepEqual(govdeler[0].tools, [{ type: "web_search_20250305", name: "web_search", max_uses: 5, allowed_domains: ["aa.com.tr"] }]);
   assert.equal(govdeler[1].messages[1].role, "assistant", "yarım dönüş konuşmaya eklendi");
 });
+
+test("beklenmeyen hata (KV yazışı reddedildi) izin başlığıyla ve nedeniyle döner", async () => {
+  const t = kur();
+  t.env.YZ.put = async () => {
+    throw new Error("KV put() limit exceeded for the day.");
+  };
+  const r = await t.cagir("/ayar", "yon", AYAR, "PUT");
+  assert.equal(r.status, 500);
+  assert.equal(r.headers.get("access-control-allow-origin"), KOKEN);
+  const j = (await r.json()) as { hata: string; ayrinti: string };
+  assert.equal(j.hata, "kapi");
+  assert.match(j.ayrinti, /limit exceeded/);
+});
