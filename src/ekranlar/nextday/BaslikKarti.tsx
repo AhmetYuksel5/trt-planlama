@@ -12,7 +12,7 @@ import { simdi, vardiyaYaz } from "../../tarih";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
 import { useYz } from "../../yz";
 import { baslikBul, kisiBul, useVeri, type NextDayPlan, type PlanBasligi } from "../../veri";
-import { yapabilir } from "../../yetki";
+import { paketPlandanSilinir, yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
@@ -247,7 +247,7 @@ export default function BaslikKarti({
                     {degerlendirir && !["tamamlandi", "iptal"].includes(p.durum) && (
                       <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
                     )}
-                    {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                    {icerik && paketPlandanSilinir(p) && (
                       <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
                     )}
                   </div>

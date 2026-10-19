@@ -874,8 +874,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlık hâlâ açıklamanın aynısıysa). Günün Next Day planı onaylanınca
     planındaki Weekly paketinin muhabirine hatırlatma (`paketOnaylandi`,
     `veri.hatirlatma`, `kime`; "hrPaketHatirlatma"). Aktarım tek yerde
-    (`eylemler.ts → haftaliktanAktar`); hem kesinleştirmede hem
-    `planOlustur`'da çağrılır.
+    (`eylemler.ts → haftaliktanAktar`); kesinleştirmede, yarının planı
+    açılınca ve sistemin açılış işinde (`haftalikAktarimlariniTamamla`:
+    ikisini de kaçıran, aktarımı olmayan haber günün planına geçer) çağrılır.
+    Hedef plan taslak, toplantıda ya da onaylı (`planAktarimaAcik`; onaylı
+    plana önce girmiyordu, haber kayboluyordu), devredilmiş değil.
+    Dosyasız kalem önerinin başlığına, yoksa Header'ıyla açılan başlığa girer
+    (önce "متابعات"e düşüyordu). Next Day'de çıkarılır: Weekly'den gelen onaylı
+    PKG üretime girmeden silinir, gelişme kalır (`yetki.ts →
+    paketPlandanSilinir`, muhabire `paketIptal`, `kime`); öneri "Plandan
+    çıkar"la bütünüyle çıkar, kesinleşmiş haftanın kalemi kayıt olarak kalır
+    (`aktarim` durur, yeniden aktarılmaz), öneri yeniden Next Day'e eklenebilir.
   - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
     (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
     Kesinleşen planın çıktısında yalnız kabul ve bilgi; kesinleşmeden

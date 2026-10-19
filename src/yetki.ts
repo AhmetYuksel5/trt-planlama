@@ -275,6 +275,13 @@ export const yzGorusuGorur = (k: Kisi | undefined): boolean => !!k && k.birim !=
  * üretim akışı geçerli, bu kapanış yok.
  */
 export const yalnizPlanlama = (d: Durum) => !d.newsdeskDevrede;
+/*
+ * Plandan silinebilen paket: henüz karar verilmemiş paket önerisi, bir de
+ * Weekly'den onaylı gelen ama üretime girmemiş paket. Weekly'nin kabulü
+ * Next Day'de geri alınamıyordu; gelişme kalıp PKG çıkabilsin.
+ */
+export const paketPlandanSilinir = (p: Paket) => p.durum === "taslak" || p.durum === "degerlendiriliyor" || (!!p.haftalikKalemId && p.durum === "onaylandi");
+
 export const paketTamamlayabilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean =>
   p.ozelId
     ? ozelPaketTeslimEdebilir(k, p)

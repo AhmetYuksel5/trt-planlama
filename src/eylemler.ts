@@ -123,6 +123,7 @@ import {
   onIncelemeci,
   paketGorebilir,
   planIcerikDuzenler,
+  paketPlandanSilinir,
   planOperasyonDuzenler,
   profilDuzenler,
   sayfaGorebilir,
@@ -498,7 +499,8 @@ export const oneriPlanaEkle = (
   const plan = planBul(d, g.planId);
   if (!o || !plan || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
   // Haftalık gündemdeki öneri Next Day'e ayrıca girmez: kesinleşince haftalıktan aktarılıyor, iki kez düşerdi.
-  if (o.durum === "planaEklendi" || d.haftalik.some((h) => h.kalemler.some((k) => k.oneriId === o.id))) return false;
+  // Kesinleşmiş haftanın kalemi yalnız kayıt: Next Day'den çıkarılan öneri yeniden eklenebiliyor.
+  if (o.durum === "planaEklendi" || d.haftalik.some((h) => h.durum !== "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id))) return false;
   // Talimatın ve muhabir dışı kaynağın muhabiri yok; Planlama burada atıyor. Önerinin kendisi değişmiyor.
   const muhabirId = o.muhabirId ?? (g.muhabirId || undefined);
 
@@ -694,12 +696,14 @@ export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkis
   const o = oneriBul(d, oneriId);
   const yer = o ? oneriYeri(d, o) : null;
   if (!o || !yer || !yapabilir(ben, "oneriDegerlendir")) return "yetkisiz";
-  if (yer.hafta && (yer.hafta.durum === "kesinlesti" || !haftalikDuzenler(ben, yer.hafta))) return "yetkisiz";
+  // Kesinleşmiş haftadan Next Day'e geçmiş öneri planından çıkıyor; haftanın kalemi kayıt olarak kalıyor.
+  const haftadan = !!yer.hafta && yer.hafta.durum === "kesinlesti" && yer.planda;
+  if (yer.hafta && !haftadan && (yer.hafta.durum === "kesinlesti" || !haftalikDuzenler(ben, yer.hafta))) return "yetkisiz";
   if (yer.planda && (!yer.plan || !planIcerikDuzenler(ben, yer.plan))) return "yetkisiz";
   if (yer.planda && yer.plan) {
     const plan = yer.plan;
     const paketler = d.paketler.filter((p) => p.oneriId === o.id && p.planId === plan.id);
-    if (paketler.some((p) => !["taslak", "degerlendiriliyor", "iptal"].includes(p.durum))) return "paketIlerledi";
+    if (paketler.some((p) => p.durum !== "iptal" && !paketPlandanSilinir(p))) return "paketIlerledi";
     const gidenG = new Set(d.gelismeler.filter((g) => g.oneriId === o.id && g.planId === plan.id).map((g) => g.id));
     const gidenP = new Set(paketler.map((p) => p.id));
     d = {
@@ -722,7 +726,7 @@ export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkis
           .filter((b) => !pbIdler.has(b.id) || b.muhabirler.length > 0 || isVar(b.id)),
       }));
   }
-  if (yer.hafta && yer.kalem) {
+  if (yer.hafta && yer.kalem && !haftadan) {
     const kalemId = yer.kalem.id;
     d = haftaGuncelle(d, yer.hafta.id, (x) => ({ ...x, kalemler: x.kalemler.filter((k) => k.id !== kalemId) }));
   }
@@ -1278,12 +1282,42 @@ const kalemPaketYeri = (k: HaftalikKalem, sehir: Sehir) => (k.yer?.trim() && k.y
 
 const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.kararNotu } : {}), ...(k.ekTalep ? { ekTalep: k.ekTalep } : {}) });
 
+const planAktarimaAcik = (p: NextDayPlan) => p.durum === "taslak" || p.durum === "toplantida" || p.durum === "onayli";
+
+/*
+ * Sistemin açılış işi: kesinleşmiş haftanın kabul edilen, günü olan haberi
+ * o günün açık planına henüz geçmemişse geçiriyor. Aktarım iki anda
+ * yapılıyordu (kesinleşme, planın açılışı); ikisini de kaçıran (plan o an
+ * devredilemeyecek durumdaydı, plan başka yoldan açıldı) haber hiç gelmiyordu.
+ */
+export const haftalikAktarimlariniTamamla = (): boolean => {
+  let d = getir();
+  const once = d;
+  for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
+    for (const k of h.kalemler.filter((x) => nextDayeGider(x) && !x.aktarim?.planId)) {
+      const plan = d.planlar.find((p) => p.tarih === k.tarih);
+      if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, SISTEM, h.id, k, plan);
+    }
+  }
+  if (d === once) return false;
+  kaydet(d);
+  return true;
+};
+
 const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: HaftalikKalem, plan: NextDayPlan): Durum => {
   let pbId: string | undefined;
-  if (k.baslikId) {
-    const var_ = plan.basliklar.find((b) => b.baslikId === k.baslikId);
+  /*
+   * Dosyasız kalem (gündeme dosya seçilmeden eklenen öneri) önerinin
+   * başlığına, yoksa Header'ıyla açılan başlığa giriyor: başlıksız gidince
+   * gelişme ve PKG "متابعات"e düşüyordu, haberin dosyası görünmüyordu.
+   */
+  const kaynakOneri = oneriBul(d, k.oneriId);
+  let baslikId = k.baslikId ?? kaynakOneri?.baslikId;
+  if (!baslikId && kaynakOneri?.haberBasligi.trim()) [baslikId, d] = dosyaAc(d, kaynakOneri.haberBasligi, kaynakOneri.ulke);
+  if (baslikId) {
+    const var_ = plan.basliklar.find((b) => b.baslikId === baslikId);
     // Kimlikler plandan ve kalemden: aktarım iki tarayıcıda aynı anda olursa aynı kayıtlar yazılsın.
-    const pb = var_ ?? { id: turet(plan.id, k.baslikId), baslikId: k.baslikId, muhabirler: [] };
+    const pb = var_ ?? { id: turet(plan.id, baslikId), baslikId, muhabirler: [] };
     pbId = pb.id;
     const muhabirler = [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))];
     // Kalemin TBC'si muhabirsiz başlığa geçiyor; başlıkta muhabir varsa belirsizlik yok.
@@ -1413,8 +1447,8 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
   for (const k of h.kalemler.filter((x) => gundemde(x) && x.karar === "kabul")) {
     if (k.tur === "haber" && k.tarih) {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
-      // Plan henüz yoksa sistem açınca çekiyor (yarinPlaniniAc); onaylanmış ya da devredilmişse elle eklenir.
-      if (plan && (plan.durum === "taslak" || plan.durum === "toplantida")) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
+      // Plan henüz yoksa sistem açınca çekiyor (yarinPlaniniAc). Onaylı plana da giriyor (önce kayboluyordu); devredilmiş gün geçmişte kaldı.
+      if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
     } else {
       d = haftaliktanPaket(d, ben, haftaId, k);
     }
@@ -2067,17 +2101,18 @@ export const paketSil = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);
   const plan = planBul(d, p?.planId);
-  if (!p || !plan || !planIcerikDuzenler(ben, plan) || !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
-  kaydet(
-    oneriBaglariniTazele(
-      {
-        ...d,
-        paketler: d.paketler.filter((x) => x.id !== id),
-        oneriler: d.oneriler.map((o) => (o.paketId === id ? { ...o, paketId: undefined } : o)),
-      },
-      [p.oneriId],
-    ),
+  if (!p || !plan || !planIcerikDuzenler(ben, plan) || !paketPlandanSilinir(p)) return false;
+  let yeni = oneriBaglariniTazele(
+    {
+      ...d,
+      paketler: d.paketler.filter((x) => x.id !== id),
+      oneriler: d.oneriler.map((o) => (o.paketId === id ? { ...o, paketId: undefined } : o)),
+    },
+    [p.oneriId],
   );
+  // Onaylı paketin muhabiri onayı duymuştu; paket gidince o da duysun (paket kaydı kalmadığı için kime ile).
+  if (p.durum === "onaylandi" && p.muhabirId) yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketIptal", planId: plan.id, oneriId: p.oneriId, veri: { kime: p.muhabirId } });
+  kaydet(yeni);
   return true;
 };
 

@@ -32,7 +32,7 @@ import {
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
-import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
 import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
@@ -442,7 +442,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                               ekleEtiket={t("paketOnerisiEkle")}
                               duzenle={acikPaket ? () => ac({ tur: "paket", pbId: pb.id, mevcut: p }) : undefined}
                               ek={<PaketBaglantisi id={p.id} />}
-                              cikar={acikPaket ? sil(() => ben && paketSil(ben, p.id)) : undefined}
+                              cikar={paketPlandanSilinir(p) ? sil(() => ben && paketSil(ben, p.id)) : undefined}
                             />
                           }
                         >
