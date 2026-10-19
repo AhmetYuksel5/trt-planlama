@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
 import { izlemede } from "./izleme";
-import { GERCEK } from "./kip";
+import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { ORNEK } from "./ornek";
 import { bugun, gunEkle } from "./tarih";
 import type { Yapi } from "./yapi";
@@ -1548,6 +1548,11 @@ export const kaydet = (yeni: Durum) => {
   // İzlemede yönetici başkasının gözüyle bakıyor: hiçbir şey yazılmıyor, sistemin yazışları da.
   if (izlemede()) {
     window.dispatchEvent(new Event("trt-izleme-yazilmadi"));
+    return;
+  }
+  // Gerçek kipte kayıt sunucuyla eşitlenmeden yazış yok: önbellekten kurulan eski görüntüye dayanan yazış sunucudaki yeni hali eziyordu.
+  if (GERCEK && !sunucuyaEsitMi()) {
+    window.dispatchEvent(new Event("trt-esitlenmedi"));
     return;
   }
   const eski = simdi();

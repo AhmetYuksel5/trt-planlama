@@ -114,6 +114,12 @@ export default function App() {
     window.addEventListener("trt-kayit-hatasi", f);
     return () => window.removeEventListener("trt-kayit-hatasi", f);
   }, [t]);
+  // Kayıt henüz sunucuyla eşitlenmedi (açılışın ilk saniyeleri): eylem yazılmadı, kişi bilsin.
+  useEffect(() => {
+    const f = () => setTimeout(() => bildir(t("esitlenmediYazilmadi")));
+    window.addEventListener("trt-esitlenmedi", f);
+    return () => window.removeEventListener("trt-esitlenmedi", f);
+  }, [t]);
   // İzlemede eylem yazmadı; eylemin kendi "kaydedildi" bildirimi ardından gelmesin diye bir tur sonra.
   useEffect(() => {
     const f = () => setTimeout(() => bildir(t("izlemeYazilmadi")));

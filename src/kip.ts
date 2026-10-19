@@ -99,11 +99,16 @@ export const useGercekDurum = () =>
  * aynı kimlikle şablondan yeniden yazılıyor, silinenler geri geliyordu.
  */
 let esit = false;
+const esitBekleyen: (() => void)[] = [];
 export const sunucuyaEsitlendi = () => {
   if (esit) return;
   esit = true;
   dinleyiciler.forEach((f) => f());
+  esitBekleyen.splice(0).forEach((f) => f());
 };
+export const sunucuyaEsitMi = () => esit;
+/* Eşitlenince bir kez çalışacak iş (hesap geçişleri); eşitse hemen. */
+export const sunucuyaEsitOlunca = (f: () => void) => (esit ? f() : void esitBekleyen.push(f));
 export const useSunucuyaEsit = () =>
   useSyncExternalStore(
     (f) => {

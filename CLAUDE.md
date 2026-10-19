@@ -241,7 +241,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `includeMetadataChanges`). İlk görüntü önbellekten geliyor: bayat
     önbellekli tarayıcı başka cihazda açılmış planı "yok" sanıp aynı
     kimlikle şablondan yeniden yazıyor, gün içindeki düzenleme ve silmeler
-    gidiyordu. `yarinPlaniniAc` ayrıca planın izi (açılış hareketi, ona bağlı
+    gidiyordu. Kişinin kendi yazışı da öyle: eşitlenmeden `veri.ts → kaydet`
+    yazmaz, "eşitleniyor, kaydedilmedi" bildirir (`trt-esitlenmedi`); eşitlik
+    bütün dinlenenlerden (kısıtlı kişinin tek belgeleri, genel ayar dahil)
+    sunucu teyidiyle, bir kez olunca bağlantı kopsa da sürer. Hesap
+    geçişleri de eşitlenince (`kip.ts → sunucuyaEsitOlunca`).
+    `yarinPlaniniAc` ayrıca planın izi (açılış hareketi, ona bağlı
     gelişme, canlı, paket) varken de açmaz. O ezilmede düşen başlıkların
     gelişme, PKG ve canlıları ayrı belgelerde kaldı: Next Day ekranında
     "Başlığı kaybolmuş N kayıt" şeridi (`nextday/Plan.tsx → KayipSeridi`,

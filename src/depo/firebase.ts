@@ -40,7 +40,7 @@ import {
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
 import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
-import { gercekDurumuYaz, sunucuyaEsitlendi } from "../kip";
+import { gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
@@ -111,13 +111,17 @@ export const gercekKipiBaslat = () => {
       kopar = kayitBagla(kendi, (kisitli) => {
         girisYap(u.uid);
         // Hesapsız kaydı bu hesaba bağlandıysa geçmiş bir kez taşınıyor. Kısıtlı kişi yalnız gördüğünü
-        // taşıyabiliyor; gerisini ve eski kaydı tam yöneticinin açılışı tamamlıyor.
-        if (kisitli) kendiKayitlariniTasi(u.uid);
-        else hesabaGecir(u.uid);
-        if (!kisitli && kendi.hesapYoneticisi) bekleyenGecisleriTamamla();
+        // taşıyabiliyor; gerisini ve eski kaydı tam yöneticinin açılışı tamamlıyor. Taşıma yazış: kayıt sunucuyla eşitlenince.
+        sunucuyaEsitOlunca(() => {
+          if (kisitli) kendiKayitlariniTasi(u.uid);
+          else hesabaGecir(u.uid);
+          if (!kisitli && kendi.hesapYoneticisi) bekleyenGecisleriTamamla();
+        });
         gercekDurumuYaz({ tur: "hazir" });
       });
     } catch (e) {
+      // Kodsuz hata ("bilinmeyen") ekranda nedenini söylemiyor; konsolda dursun.
+      console.error(e);
       gercekDurumuYaz({ tur: "hata", kod: hataKodu(e) });
     }
   });
@@ -176,12 +180,22 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   let siralar: Siralar = {};
   let d: Durum = bosDurum();
   const bekleyen = new Set<string>();
-  // Sunucudan en az bir kez teyit edilen koleksiyonlar; hepsi gelince sistemin yazışları açılıyor (kip.ts → sunucuyaEsitlendi).
+  /*
+   * Dinlenen her şey (koleksiyon, kısıtlı kişinin tek belgeleri, genel ayar)
+   * sunucudan en az bir kez teyit edilince kayıt "eşit" (kip.ts →
+   * sunucuyaEsitlendi): yazışlar ve sistemin işleri ancak ondan sonra.
+   * Önbellekten kurulan ilk görüntüye dayanan yazış sunucudaki yeni hali eziyordu.
+   */
+  const dinlenen = new Set<string>();
   const sunucudan = new Set<string>();
-  const sunucuGeldi = (alan: string, snap: { metadata: { fromCache: boolean } }) => {
-    if (snap.metadata.fromCache || sunucudan.has(alan)) return;
-    sunucudan.add(alan);
-    if (!kisitli && [...DIZI_ALANLARI, ...HARITA_ALANLARI].every((a) => sunucudan.has(a))) sunucuyaEsitlendi();
+  const bekle = (k: string) => {
+    bekleyen.add(k);
+    dinlenen.add(k);
+  };
+  const sunucuGeldi = (k: string, snap: { metadata: { fromCache: boolean } }) => {
+    if (snap.metadata.fromCache || sunucudan.has(k)) return;
+    sunucudan.add(k);
+    if ([...dinlenen].every((x) => sunucudan.has(x))) sunucuyaEsitlendi();
   };
   let bagli = false;
   const iptal: Unsubscribe[] = [];
@@ -198,9 +212,9 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       disaridanGeldi(d);
       // Muhabir hesaba bağlanınca eski kaydını kendisi taşıyamıyor; açık duran tam yönetici hemen tamamlıyor.
       if (anahtar === "kisiler" && !kisitli && kendi.hesapYoneticisi) {
-        setTimeout(bekleyenGecisleriTamamla);
+        setTimeout(() => sunucuyaEsitOlunca(bekleyenGecisleriTamamla));
         // Davetle ya da kayıt bağlantısıyla gelen dış muhabir genel ünvanla kalmasın: ünvanı hemen şehrinden.
-        setTimeout(muhabirUnvanlariniEsitle);
+        setTimeout(() => sunucuyaEsitOlunca(muhabirUnvanlariniEsitle));
       }
     }
   };
@@ -267,11 +281,11 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       sunucuGeldi(alan, snap);
       geldi(anahtar, degisti);
     };
-    bekleyen.add(alan);
+    bekle(alan);
     if (mod === "suz") {
       // Kısıtlı kişi: erişim listesinde kendisi (ya da hesaba bağlanmadan önceki kaydı) olan belgeler.
       const kosul = kimlikler.length > 1 ? where("m", "array-contains-any", kimlikler) : where("m", "array-contains", uid);
-      iptal.push(onSnapshot(query(collection(db, alan), kosul), isle(alan), hata));
+      iptal.push(onSnapshot(query(collection(db, alan), kosul), { includeMetadataChanges: true }, isle(alan), hata));
       return;
     }
     const tamDinle = () => {
@@ -302,13 +316,15 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   /* Tek belgeyi dinler (kısıtlı kişinin kendi kaydı ve kendi ayarları). */
   const belgeDinle = (alan: string, anahtar: string, sonra: () => void) => {
     const k = `${alan}/${anahtar}`;
-    bekleyen.add(k);
+    bekle(k);
     iptal.push(
       onSnapshot(
         doc(db, alan, belgeKimligi(anahtar)),
+        { includeMetadataChanges: true },
         (s) => {
           const degisti = belgeIsle(alan, anahtar, s.exists() ? (s.data() as OgeBelgesi) : undefined);
           if (degisti || !bagli) sonra();
+          sunucuGeldi(k, s);
           geldi(k, degisti);
         },
         hata,
@@ -321,7 +337,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   };
   const haritaDinle = (alan: string) => {
     onbellek[alan] ??= new Map();
-    bekleyen.add(alan);
+    bekle(alan);
     iptal.push(
       onSnapshot(
         collection(db, alan),
@@ -353,10 +369,11 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     diziDinle("sehirler", "fark");
     // Kişiler: personel ve kendisi; öbür muhabirler yok.
     onbellek.kisiler = new Map();
-    bekleyen.add("kisiler");
+    bekle("kisiler");
     iptal.push(
       onSnapshot(
         query(collection(db, "kisiler"), where("kisitli", "==", false)),
+        { includeMetadataChanges: true },
         (snap) => {
           let degisti = false;
           for (const c of snap.docChanges()) {
@@ -365,6 +382,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
             degisti = belgeIsle("kisiler", id, c.type === "removed" ? undefined : (c.doc.data() as OgeBelgesi)) || degisti;
           }
           if (degisti || !bagli) diziKur("kisiler");
+          sunucuGeldi("kisiler", snap);
           geldi("kisiler", degisti);
         },
         hata,
@@ -381,10 +399,11 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     for (const anahtar of new Set([`${uid}:muhabir`, `${uid}:${birim}`])) belgeDinle("anaSayfa", anahtar, () => haritaKur("anaSayfa"));
   }
 
-  bekleyen.add(GENEL.koleksiyon);
+  bekle(GENEL.koleksiyon);
   iptal.push(
     onSnapshot(
       doc(db, GENEL.koleksiyon, GENEL.id),
+      { includeMetadataChanges: true },
       (s) => {
         const sayac = (s.data()?.sayac as number | undefined) ?? 0;
         const birimler = s.data()?.muhabireOneriBirimleri as Birim[] | undefined;
@@ -396,6 +415,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
           JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
           newsdeskDevrede !== d.newsdeskDevrede;
         if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari, newsdeskDevrede };
+        sunucuGeldi(GENEL.koleksiyon, s);
         geldi(GENEL.koleksiyon, degisti);
       },
       hata,
