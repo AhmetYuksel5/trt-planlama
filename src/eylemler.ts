@@ -1,4 +1,5 @@
 import { adiylaBaslik } from "./baslikSecimi";
+import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
@@ -1755,6 +1756,45 @@ export const planBaslikEkle = (ben: Kisi, planId: string, baslikId: string, sonr
   });
 
 /** Başlık plandan çıkınca o günkü gelişmeleri ve canlı yayınları da gidiyor; paketi olan başlık çıkmıyor. */
+/*
+ * Başlığı kaybolmuş kayıtları (kayipKayitlar.ts) seçilen başlığa geri
+ * bağlıyor. Başlık planda yoksa kayıtların hâlâ gösterdiği kimlikle geri
+ * konuyor, kayıtlara dokunulmuyor; planda varsa kayıtlar o başlığa geçiyor.
+ */
+export const kayipBaslikGeriGetir = (ben: Kisi, planId: string, pbId: string, g: { baslikId?: string; yeniBaslik?: string }) => {
+  let d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan)) return false;
+  const grup = kayipBasliklar(d, plan).find((x) => x.pbId === pbId);
+  if (!grup) return false;
+  let baslikId = g.baslikId;
+  if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik);
+  if (!baslikId) return false;
+  const muhabirler = kayipMuhabirleri(grup);
+  const hedef = plan.basliklar.find((b) => b.baslikId === baslikId);
+  const muhabirEkle = (b: PlanBasligi) => {
+    const yeni = muhabirler.filter((m) => !b.muhabirler.some((x) => x.kisiId === m));
+    return yeni.length ? { ...b, muhabirler: [...b.muhabirler, ...yeni.map((kisiId) => ({ kisiId }))] } : b;
+  };
+  if (hedef) {
+    const tasi = <T extends { planId?: string; planBaslikId?: string }>(x: T): T => (x.planId === planId && x.planBaslikId === pbId ? { ...x, planBaslikId: hedef.id } : x);
+    d = {
+      ...d,
+      gelismeler: d.gelismeler.map(tasi),
+      paketler: d.paketler.map(tasi),
+      canliYayinlar: d.canliYayinlar.map(tasi),
+    };
+    d = planGuncelle(d, planId, (p) => ({ ...p, basliklar: p.basliklar.map((b) => (b.id === hedef.id ? muhabirEkle(b) : b)) }));
+  } else {
+    d = planGuncelle(d, planId, (p) => ({ ...p, basliklar: [...p.basliklar, muhabirEkle({ id: pbId, baslikId: baslikId!, muhabirler: [] })] }));
+  }
+  // Öneriden gelen kayıt önerinin dosyasıyla bağlı kalsın: başka başlık seçildiyse öneri de oraya.
+  const oneriler = new Set([...grup.gelismeler, ...grup.paketler, ...grup.canlilar].map((x) => x.oneriId).filter(Boolean));
+  if (oneriler.size) d = { ...d, oneriler: d.oneriler.map((o) => (oneriler.has(o.id) && o.planId === planId && o.baslikId !== baslikId ? { ...o, baslikId } : o)) };
+  kaydet(d);
+  return true;
+};
+
 export const planBaslikCikar = (ben: Kisi, planId: string, pbId: string) => {
   let d = getir();
   const plan = planBul(d, planId);

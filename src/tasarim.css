@@ -2349,3 +2349,6 @@ input[aria-invalid="true"] {
   border-color: var(--kotu);
   background: var(--kotu-sis);
 }
+
+/* Başlığı kaybolmuş kayıtların listesi: kayıtlar içerik, her biri kendi satırında. */
+.kayip-liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--ara-2); }

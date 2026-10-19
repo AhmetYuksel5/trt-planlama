@@ -2,12 +2,14 @@ import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, Fi
 import { PlanTakipleri, acikTakipler } from "../Takipler";
 import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
-import { Bos, Pencere, Rozet, bildir, talimatOnce } from "../../bilesenler/Parcalar";
+import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
 import { temelSorumlular } from "../../gorevler";
 import { gunEkle } from "../../tarih";
 import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
-import { oncekiOnayla, planDurum } from "../../eylemler";
+import { kayipBaslikGeriGetir, oncekiOnayla, planDurum } from "../../eylemler";
+import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
+import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
@@ -74,6 +76,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
       </header>
 
       <OncekiSeridi ben={ben} plan={plan} />
+      <KayipSeridi ben={ben} plan={plan} />
 
       <EkipBolumu plan={plan} duzenler={icerik} />
       <HareketBolumu plan={plan} duzenler={icerik} />
@@ -165,6 +168,113 @@ function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         <span className="onceki-ornek" aria-hidden="true" /> {t(sablon ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
       </span>
     </div>
+  );
+}
+
+/*
+ * Başlığı kaybolmuş kayıtlar (kayipKayitlar.ts): plan şablondan yeniden
+ * yazıldığında o gün eklenen başlıklar düştü, altındakiler görünmez kaldı.
+ * Planlamacı her grubu doğru başlığa geri koyuyor.
+ */
+function KayipSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const gruplar = kayipBasliklar(v, plan);
+  if (!planIcerikDuzenler(ben, plan) || (!gruplar.length && !acik)) return null;
+  const sayi = gruplar.reduce((n, g) => n + g.gelismeler.length + g.paketler.length + g.canlilar.length, 0);
+  return (
+    <>
+      {gruplar.length > 0 && (
+        <div className="onceki-seridi" data-kayip-seridi>
+          <span className="onceki-sayi">{t("kayipKayitlar", { n: sayi })}</span>
+          <button className="dugme" onClick={() => setAcik(true)} data-kayip-ac>
+            <Undo2 size={16} /> {t("geriGetir")}
+          </button>
+        </div>
+      )}
+      {acik && (
+        <Pencere genis baslik={t("kayipKayitlarBaslik")} kapat={() => setAcik(false)}>
+          {gruplar.length === 0 ? <Bos kucuk metin={t("kayitYok")} /> : gruplar.map((g) => <KayipGrupSatiri key={g.pbId} ben={ben} plan={plan} grup={g} />)}
+        </Pencere>
+      )}
+    </>
+  );
+}
+
+function KayipGrupSatiri({ ben, plan, grup }: { ben: Kisi; plan: NextDayPlan; grup: KayipGrup }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const { plandaki, onceki } = ndBaslikSecenekleri(v, plan);
+  const onerilen = grup.onerilen ? v.basliklar.find((b) => b.id === grup.onerilen) : undefined;
+  const ekBaslik = onerilen && ![...plandaki, ...onceki].some((b) => b.id === onerilen.id) ? onerilen : undefined;
+  const [secim, setSecim] = useState(onerilen?.id ?? "yeni");
+  const [yeni, setYeni] = useState("");
+  const geriKoy = () => {
+    if (kayipBaslikGeriGetir(ben, plan.id, grup.pbId, secim === "yeni" ? { yeniBaslik: yeni } : { baslikId: secim })) bildir(t("bKaydedildi"));
+  };
+  return (
+    <section className="kart form" data-kayip-grup={grup.pbId}>
+      <ul className="kayip-liste">
+        {grup.gelismeler.map((x) => (
+          <li key={x.id}>
+            <Icerik blok>{x.yer ? `${x.yer} / ${x.metin}` : x.metin}</Icerik>
+          </li>
+        ))}
+        {grup.paketler.map((x) => (
+          <li key={x.id}>
+            <Icerik blok>{`PKG · ${x.baslik}`}</Icerik>
+          </li>
+        ))}
+        {grup.canlilar.map((x) => (
+          <li key={x.id}>
+            <Icerik blok>{`LIVE · ${x.konu}`}</Icerik>
+          </li>
+        ))}
+      </ul>
+      <div className="satir">
+        <label>
+          {t("baslik")}
+          <select value={secim} onChange={(e) => setSecim(e.target.value)} data-kayip-baslik>
+            {plandaki.length > 0 && (
+              <optgroup label={t("plandakiBasliklar")}>
+                {plandaki.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.ad}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {onceki.length > 0 && (
+              <optgroup label={t("oncekiGununBasliklari")}>
+                {onceki.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.ad}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {ekBaslik && (
+              <optgroup label={t("onerininBasligi")}>
+                <option value={ekBaslik.id}>{ekBaslik.ad}</option>
+              </optgroup>
+            )}
+            <option value="yeni">+ {t("yeniBaslikOlustur")}</option>
+          </select>
+        </label>
+        {secim === "yeni" && (
+          <label>
+            {t("yeniBaslik")}
+            <input {...icerikAlani} value={yeni} onChange={(e) => setYeni(e.target.value)} data-kayip-yeni />
+          </label>
+        )}
+      </div>
+      <div className="form-alt">
+        <button className="dugme" onClick={geriKoy} disabled={secim === "yeni" && !yeni.trim()} data-kayip-koy>
+          {t("basligaGeriKoy")}
+        </button>
+      </div>
+    </section>
   );
 }
 

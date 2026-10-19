@@ -242,7 +242,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbellekli tarayıcı başka cihazda açılmış planı "yok" sanıp aynı
     kimlikle şablondan yeniden yazıyor, gün içindeki düzenleme ve silmeler
     gidiyordu. `yarinPlaniniAc` ayrıca planın izi (açılış hareketi, ona bağlı
-    gelişme, canlı, paket) varken de açmaz.
+    gelişme, canlı, paket) varken de açmaz. O ezilmede düşen başlıkların
+    gelişme, PKG ve canlıları ayrı belgelerde kaldı: Next Day ekranında
+    "Başlığı kaybolmuş N kayıt" şeridi (`nextday/Plan.tsx → KayipSeridi`,
+    kural `kayipKayitlar.ts`, eylem `kayipBaslikGeriGetir`; plan içeriğini
+    düzenleyen), grup grup başlık seçilip geri konur: başlık planda yoksa
+    kayıtların gösterdiği kimlikle eklenir, varsa kayıtlar ona geçer;
+    önerinin ya da Weekly kaleminin dosyası önerilir. Başlık çıkarma
+    altındakileri sildiği için şerit olağan akışta çıkmaz.
     Zaman sorgusunda `removed` silme sayılmaz (`diziDinle → isle(alan,
     true)`): kendi yazışımız sunucuya varana dek `z` bekleyen sunucu zamanı,
     belge sorgudan bir an çıkıyor; silinmiş sayılınca kayıt ekrandan kalkıp
