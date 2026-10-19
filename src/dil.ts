@@ -638,6 +638,7 @@ const M = {
   gecmisOnerilerim: m("Geçmiş önerilerim", "اقتراحاتي السابقة", "My past proposals"),
   onerilerdenAl: m("Öneri ve takiplerden al", "اختيار من المقترحات والمتابعات", "Pick from proposals and follow-ups"),
   digerGunlerinOnerileri: m("Öbür günlerin önerileri", "مقترحات الأيام الأخرى", "Proposals for other days"),
+  canliOlarakEkle: m("Canlı yayın olarak ekle", "إضافة كبث مباشر", "Add as live slot"),
   paketOnerisiOlustur: m("Paket önerisi de oluştur", "إنشاء مقترح تقرير أيضا", "Also create a package proposal"),
   yalnizTakip: m("Yalnız takip", "متابعة فقط", "Follow-up only"),
   yalnizTakipPaketYok: m("Yalnız takip · paket beklenmiyor", "متابعة فقط · لا يُنتظر تقرير", "Follow-up only · no package expected"),

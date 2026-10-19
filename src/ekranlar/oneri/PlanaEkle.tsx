@@ -103,7 +103,9 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const [baslikId, setBaslikId] = useState(() => varsayilan(plan));
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const talimat = !!oneri.talimatVeren;
-  const [paket, setPaket] = useState(!!oneri.paketBasligi);
+  // "Live" öneri plana paket değil canlı yayın olarak giriyor; strap'i yoksa Header'ıyla.
+  const canli = oneri.bicim === "canli";
+  const [paket, setPaket] = useState(!!oneri.paketBasligi || canli);
   // Paket istenmeyen haber: muhabir izliyor, işlerinde "yalnız takip" olarak kalıyor. Paketle birlikte seçilmiyor.
   const [takip, setTakip] = useState(false);
   const [muhabirId, setMuhabirId] = useState("");
@@ -201,7 +203,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
         </label>
       )}
       <div className="secim-satiri">
-        {oneri.paketBasligi && !talimat && (
+        {(oneri.paketBasligi || canli) && !talimat && (
           <label className="secim">
             <input
               type="checkbox"
@@ -212,8 +214,8 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
               }}
               data-pe-paket
             />
-            {t("paketOnerisiOlustur")}: <b>
-              <Icerik>{oneri.paketBasligi}</Icerik>
+            {t(canli ? "canliOlarakEkle" : "paketOnerisiOlustur")}: <b>
+              <Icerik>{oneri.paketBasligi || oneri.haberBasligi}</Icerik>
             </b>
           </label>
         )}

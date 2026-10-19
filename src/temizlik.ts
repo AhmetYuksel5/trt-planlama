@@ -67,7 +67,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
   // Özel yayının dış görevlendirmesi genel kayıtta; yayın gidince o da gidiyor.
   for (const g of d.gorevlendirmeler) if (g.ozelId && ozel.has(g.ozelId)) gorevler.add(g.id);
   const gelismeler = new Set(d.gelismeler.filter((g) => planlar.has(g.planId) || (g.oneriId && oneriler.has(g.oneriId))).map((g) => g.id));
-  const canlilar = new Set(d.canliYayinlar.filter((c) => planlar.has(c.planId)).map((c) => c.id));
+  const canlilar = new Set(d.canliYayinlar.filter((c) => planlar.has(c.planId) || (c.oneriId && oneriler.has(c.oneriId))).map((c) => c.id));
   const mesajlar = new Set(d.mesajlar.filter((m) => oneriler.has(m.oneriId)).map((m) => m.id));
   const kalemler = new Set(d.haftalik.flatMap((h) => h.kalemler.filter((k) => haftalik.has(h.id) || (k.oneriId && oneriler.has(k.oneriId))).map((k) => k.id)));
 

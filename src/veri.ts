@@ -348,6 +348,12 @@ export interface CanliYayin {
   notlar: string;
   onceki?: true;
   devir?: true;
+  /*
+   * Haber türü "Live" olan öneri ya da haftalık kalem plana canlı yayın olarak
+   * giriyor; bağ, öneri plandan çıkınca ya da silinince canlının da gitmesi için.
+   */
+  oneriId?: string;
+  haftalikKalemId?: string;
 }
 
 /* --- Muhabir hareketleri: görevlendirme, seyahat, izin. Planlar bunlara bağlantı tutar. --- */

@@ -527,7 +527,10 @@ export const oneriPlanaEkle = (
    */
   // Yalnız takip paketi dışlıyor: paket istenmedi, muhabir konuyu izliyor.
   const yalnizTakip = !!g.yalnizTakip && !!muhabirId;
-  const paketli = g.paketOlustur && !!o.paketBasligi && !yalnizTakip;
+  // "Live" haber paket değil, planın canlı yayını: çıktıda "مباشر" bölümünde; paket önerisi doğsaydı orada hiç görünmüyordu.
+  const canliMi = o.bicim === "canli";
+  const paketli = g.paketOlustur && !!o.paketBasligi && !yalnizTakip && !canliMi;
+  const canliAc = g.paketOlustur && canliMi && !yalnizTakip;
   const gelisme: Gelisme = {
     id: kimlik("g"),
     planId: plan.id,
@@ -568,6 +571,23 @@ export const oneriPlanaEkle = (
       guncelleme: simdi(),
     };
     d = { ...d, paketler: [paket, ...d.paketler] };
+  }
+  if (canliAc) {
+    const canli: CanliYayin = {
+      id: kimlik("cy"),
+      planId: plan.id,
+      planBaslikId: pbId,
+      konu: o.paketBasligi?.trim() || o.haberBasligi,
+      aciklama: "",
+      tarih: plan.tarih,
+      // Saat öneride yok; çıktıda "TBC", Planlama sonra yazıyor.
+      saatGmt: "",
+      yer: sehirAr(kisiBul(d, muhabirId)?.sehir),
+      muhabirId,
+      notlar: "",
+      oneriId: o.id,
+    };
+    d = { ...d, canliYayinlar: [...d.canliYayinlar, canli] };
   }
 
   d = {
@@ -654,7 +674,8 @@ const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Du
         !!o &&
         o.durum === "planaEklendi" &&
         !d.gelismeler.some((g) => g.oneriId === o.id && g.planId === o.planId) &&
-        !d.paketler.some((p) => p.oneriId === o.id && p.planId === o.planId && p.durum !== "iptal")
+        !d.paketler.some((p) => p.oneriId === o.id && p.planId === o.planId && p.durum !== "iptal") &&
+        !d.canliYayinlar.some((c) => c.oneriId === o.id && c.planId === o.planId)
       );
     }),
   );
@@ -681,7 +702,12 @@ export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkis
     if (paketler.some((p) => !["taslak", "degerlendiriliyor", "iptal"].includes(p.durum))) return "paketIlerledi";
     const gidenG = new Set(d.gelismeler.filter((g) => g.oneriId === o.id && g.planId === plan.id).map((g) => g.id));
     const gidenP = new Set(paketler.map((p) => p.id));
-    d = { ...d, gelismeler: d.gelismeler.filter((g) => !gidenG.has(g.id)), paketler: d.paketler.filter((p) => !gidenP.has(p.id)) };
+    d = {
+      ...d,
+      gelismeler: d.gelismeler.filter((g) => !gidenG.has(g.id)),
+      paketler: d.paketler.filter((p) => !gidenP.has(p.id)),
+      canliYayinlar: d.canliYayinlar.filter((c) => !(c.oneriId === o.id && c.planId === plan.id)),
+    };
     const muhabirId = o.muhabirId;
     const pbIdler = new Set(plan.basliklar.filter((b) => b.baslikId === o.baslikId).map((b) => b.id));
     const isVar = (pbId: string, kisiId?: string) =>
@@ -1281,6 +1307,24 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     haftalikKalemId: k.id,
   };
   d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
+  // "LIVE" işaretli kalem Next Day'de başlığın canlı yayını; yalnız biçimdeydi, çıktının "مباشر" bölümüne girmiyordu.
+  if (k.bicimler.includes("canli")) {
+    const canli: CanliYayin = {
+      id: `cy-${turet(plan.id, k.id)}`,
+      planId: plan.id,
+      planBaslikId: pbId,
+      konu: k.baslik?.trim() || k.paketBasligi?.trim() || baslikBul(d, k.baslikId)?.ad || k.metin,
+      aciklama: "",
+      tarih: plan.tarih,
+      saatGmt: "",
+      yer: k.yer?.trim() || sehirAr(kisiBul(d, muhabirId)?.sehir),
+      muhabirId,
+      notlar: "",
+      oneriId: k.oneriId,
+      haftalikKalemId: k.id,
+    };
+    if (!d.canliYayinlar.some((c) => c.id === canli.id)) d = { ...d, canliYayinlar: [...d.canliYayinlar, canli] };
+  }
 
   let paketId: string | undefined;
   const bicim = k.bicimler.length ? k.bicimler.find((b) => b !== "canli") : "pkg";
@@ -1962,7 +2006,7 @@ export const canliSil = (ben: Kisi, id: string) => {
   const c = d.canliYayinlar.find((x) => x.id === id);
   const plan = planBul(d, c?.planId);
   if (!c || !plan || !planOperasyonDuzenler(ben, plan)) return false;
-  kaydet({ ...d, canliYayinlar: d.canliYayinlar.filter((x) => x.id !== id) });
+  kaydet(oneriBaglariniTazele({ ...d, canliYayinlar: d.canliYayinlar.filter((x) => x.id !== id) }, [c.oneriId]));
   return true;
 };
 
@@ -2467,6 +2511,11 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
       const bicim = p.bicim === paketBicimi(o.bicim) ? (paketBicimi(yeni.bicim) ?? p.bicim) : p.bicim;
       if (baslik === p.baslik && aciklama === p.aciklama && tur === p.tur && bicim === p.bicim) return p;
       return { ...p, baslik, aciklama, tur, ...(bicim ? { bicim } : {}), guncelleme: simdi() };
+    }),
+    canliYayinlar: d.canliYayinlar.map((c) => {
+      const eski = o.paketBasligi?.trim() || o.haberBasligi;
+      const yeniKonu = yeni.paketBasligi?.trim() || yeni.haberBasligi;
+      return c.oneriId === oneriId && c.konu === eski && eski !== yeniKonu ? { ...c, konu: yeniKonu } : c;
     }),
   };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDuzenlendi", oneriId, veri: { onceki: o.haberBasligi } }));

@@ -790,6 +790,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     arşive düşmez, "Tamamlandı" ile kapanır. Rozet "Yalnız takip"
     (`OneriDurumRozeti`). Plandan çıkınca işaret ve takip kalkar
     (`plandanDonmus`). Kılavuzda `kl7c`.
+  - Haber türü "Live" olan öneri plana paket değil canlı yayın olarak girer
+    (formda PKG yerine "Canlı yayın olarak ekle"; `oneriPlanaEkle → canliAc`):
+    başlığın altında `CanliYayin` (konu strap, yoksa Header; yer muhabirin
+    şehri; saat boş, çıktıda "TBC"), `CanliYayin.oneriId`. Paket önerisi
+    doğsaydı çıktının "مباشر" bölümünde görünmüyordu. Plandan çıkınca,
+    öneri silinince (temizlik) canlı da gider; canlıyı silmek öneriyi
+    `oneriBaglariniTazele`'den geçirir. Weekly'de LIVE işaretli kalem de
+    Next Day'e geçerken başlığın canlısı olur (`haftaliktanAktar`,
+    `haftalikKalemId`, kimlik `cy-<turet>`); yalnız LIVE kalemden paket doğmaz.
   - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
     ve muhabir dışı kaynak değil), ne değişmesi gerektiği yazılmadan
     gitmez (`DuzeltmeFormu`, `eylemler.ts → oneriDuzeltmeIste`). Durum
