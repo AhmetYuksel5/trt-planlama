@@ -25,6 +25,8 @@ export interface YzSaglayici {
   tur: SaglayiciTuru;
   adres?: string;
   model: string;
+  /** Claude: anahtar bir çalışma alanına bağlı değilse o alanın kimliği (kapı `anthropic-workspace-id` başlığında gönderiyor). */
+  calismaAlani?: string;
   aktif: boolean;
   /** Kayıtlı anahtarın son dört hanesi; anahtarın kendisi tarayıcıya hiç gelmiyor. */
   anahtarSonu?: string;
@@ -238,7 +240,7 @@ export const yzAyarYaz = async (a: YzAyar) => {
   return r;
 };
 /** Sağlayıcının model listesi (tam yönetici); `anahtar` yalnız bu istekte kullanılıyor, saklanmıyor. */
-export const yzModeller = (g: { saglayici?: string; tur: SaglayiciTuru; adres?: string; anahtar?: string }) => istek<{ modeller: string[] }>("/modeller", "POST", g);
+export const yzModeller = (g: { saglayici?: string; tur: SaglayiciTuru; adres?: string; anahtar?: string; calismaAlani?: string }) => istek<{ modeller: string[] }>("/modeller", "POST", g);
 export const yzSaglayiciDene = (id: string) => istek<{ tamam: true }>("/dene", "POST", { saglayici: id });
 
 /* Kapının hata kodları ekranda kişinin dilinde. */
@@ -262,5 +264,6 @@ const HATA: Record<string, Anahtar> = {
   kimlik: "yzHataBicim",
   tur: "yzHataBicim",
   kapi: "yzHataKapi",
+  calismaAlani: "yzHataCalismaAlani",
 };
 export const yzHataMetni = (t: (k: Anahtar) => string, kod: string) => t(HATA[kod] ?? "yzHataSaglayici");

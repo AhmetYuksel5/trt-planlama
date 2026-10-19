@@ -172,7 +172,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
      * yalnız bu istekte kullanılıyor, saklanmıyor) ya da kayıtlı sağlayıcınınki.
      */
     if (req.method === "POST" && yol === "/modeller") {
-      const g = (await req.json().catch(() => null)) as { saglayici?: string; tur?: string; adres?: string; anahtar?: string } | null;
+      const g = (await req.json().catch(() => null)) as { saglayici?: string; tur?: string; adres?: string; anahtar?: string; calismaAlani?: string } | null;
       const kayitli = ayar.saglayicilar.find((x) => x.id === g?.saglayici);
       const tur = (g?.tur ?? kayitli?.tur) as "anthropic" | "openai" | undefined;
       const anahtar = (typeof g?.anahtar === "string" && g.anahtar.trim()) || kayitli?.anahtar;
@@ -183,7 +183,10 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
         // Anahtar düz metin bağlantıda ya da yanlış biçimli adrese gitmesin.
         if (!/^https:\/\/[^\s/]+/.test(adres)) return yanit({ hata: "adres" }, 400);
       }
-      const r = await modelleriGetir(tur, adres, anahtar, d.fetch);
+      // Formdaki çalışma alanı henüz kaydedilmemiş olabilir; yoksa kayıtlıdaki.
+      const calismaAlani = String(g?.calismaAlani ?? kayitli?.calismaAlani ?? "").trim();
+      if (calismaAlani && !/^[A-Za-z0-9_-]{1,100}$/.test(calismaAlani)) return yanit({ hata: "calismaAlani" }, 400);
+      const r = await modelleriGetir(tur, adres, anahtar, d.fetch, calismaAlani || undefined);
       return r.tamam ? yanit({ modeller: r.modeller }) : yanit({ hata: r.hata, ayrinti: r.ayrinti }, 502);
     }
     if (req.method === "POST" && yol === "/dene") {

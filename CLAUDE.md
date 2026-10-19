@@ -289,6 +289,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Model sağlayıcının listesinden seçilir (`/modeller`, "Modelleri getir";
       formdaki yeni anahtar yalnız o istekte kullanılır). Hata metinleri
       sağlayıcının kendi iletisiyle (`ayrinti`).
+    - Claude sağlayıcısında isteğe bağlı "Çalışma alanı kimliği"
+      (`Saglayici.calismaAlani`): anahtar Console'da bir çalışma alanına bağlı
+      değilse Anthropic `anthropic-workspace-id` başlığını istiyor (400);
+      kapı onu sohbete ve model listesine ekler (`saglayici.ts →
+      claudeIstemcisi`, SDK `defaultHeaders`). Gizli değil; yalnız harf,
+      rakam, `-`, `_` (başlığa başka şey sızmasın).
     - Beklenmeyen hata (KV yazışı reddedildi…) de izin başlığıyla `kapi` ve
       nedeniyle döner (`index.ts → isle`): Cloudflare'in kendi 500'ünü
       tarayıcı okuyamıyor, ekran "kapıya ulaşılamadı" diyordu. Ayar
@@ -525,6 +531,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     eylem (`oneriPlanaEkle`: öneri plana eklendi, başlığa bağlı, muhabir
     başlıkta, muhabire bildirim, strap'i varsa PKG önerisi). Formun içinde
     seçim kutusu denendi, beğenilmedi; form yalnız elle yazma.
+  - Gelişme başka başlığa ya da başlıksız متابعات'e taşınır
+    (`eylemler.ts → gelismeBasligaTasi`, `Bolumler.tsx →
+    BaslikaTasiPenceresi`; plan ekranında gelişmenin yanında, belgede
+    şeritte): hedefin sonuna; öneriden geldiyse önerinin başlığı ve bu
+    plandaki PKG'si (eski başlıktaysa) de gider.
   - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
     başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden) ya da
     başlığı sürükleyip öbürünün üstüne bırakmak; onay sorulur, ↶ geri alır.
@@ -743,8 +754,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     süreç, yazışma ve hareket geçmişi (ayrıntı sayfasına gitmek gerekmiyor).
     Plana/gündeme ekleme ve ret pencerede açılır, ızgarada form açılmaz;
     değerlendirmeye alma ve erteleme kartta.
+  - Next Day'de başlık seçenekleri bütün havuz değil (`baslikSecimi.ts →
+    ndBaslikSecenekleri`): planın kendi başlıkları ve bir önceki günün
+    planlarındakiler ("Plana ekle" formu, plandaki "Başlık ekle"; Plana
+    ekle'de önerinin kendi dosyası da). Yeni yazılan ad havuzda varsa o
+    başlık kullanılır (`dosyaAc`, `baslikEkle`, `adiylaBaslik`); havuz tek.
   - Plana ekleme formu (`oneri/PlanaEkle.tsx`) önerinin bağlı olduğu
-    başlıkla, yoksa önerinin kendi Header'ıyla yeni başlıkla açılır. Aynı
+    başlıkla, yoksa plandaki aynı adlı başlıkla, o da yoksa önerinin kendi
+    Header'ıyla yeni başlıkla açılır. Aynı
     ülkenin plandaki başlığı varsayılan değil: başka muhabirin haberi
     olabilir, fark edilmeden eklenen öneri onun başlığına giriyordu.
     Önerinin başlığı pasifse (listede yoksa) yine yeni başlık: seçici

@@ -23,9 +23,13 @@ const durumHatasi = (s: number): Sonuc => ({ tamam: false, hata: s === 401 || s 
 /* Uzun aramada sunucu dönüşü yarıda bırakabiliyor (pause_turn); aynı konuşmayla sürdürülüyor. */
 const EN_COK_SURDURME = 3;
 
+/* Alana bağlı olmayan anahtarda Anthropic çalışma alanını başlıkta istiyor (ayar.ts → Saglayici.calismaAlani). */
+const claudeIstemcisi = (anahtar: string, calismaAlani: string | undefined, fetchFn: typeof fetch, timeout: number) =>
+  new Anthropic({ apiKey: anahtar, fetch: fetchFn, maxRetries: 1, timeout, ...(calismaAlani ? { defaultHeaders: { "anthropic-workspace-id": calismaAlani } } : {}) });
+
 const claude = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): Promise<Sonuc> => {
   // Arama çağrısı uzun sürebiliyor; kısa işlerde bir dakika yetiyor.
-  const client = new Anthropic({ apiKey: s.anahtar, fetch: fetchFn, maxRetries: 1, timeout: istek.arama ? 180_000 : 60_000 });
+  const client = claudeIstemcisi(s.anahtar!, s.calismaAlani, fetchFn, istek.arama ? 180_000 : 60_000);
   try {
     const yedek = YEDEKLI.has(s.model);
     const araclar = istek.arama
@@ -181,9 +185,9 @@ const SOHBET_DISI = /embed|whisper|tts|dall-e|image|audio|realtime|moderation|tr
 
 export type ModelSonucu = { tamam: true; modeller: string[] } | { tamam: false; hata: "anahtar" | "sinir" | "saglayici"; ayrinti?: string };
 
-export const modelleriGetir = async (tur: Saglayici["tur"], adres: string | undefined, anahtar: string, fetchFn: typeof fetch): Promise<ModelSonucu> => {
+export const modelleriGetir = async (tur: Saglayici["tur"], adres: string | undefined, anahtar: string, fetchFn: typeof fetch, calismaAlani?: string): Promise<ModelSonucu> => {
   if (tur === "anthropic") {
-    const client = new Anthropic({ apiKey: anahtar, fetch: fetchFn, maxRetries: 1, timeout: 30_000 });
+    const client = claudeIstemcisi(anahtar, calismaAlani, fetchFn, 30_000);
     try {
       const l: string[] = [];
       for await (const m of client.models.list()) l.push(m.id);

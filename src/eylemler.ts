@@ -1,3 +1,4 @@
+import { adiylaBaslik } from "./baslikSecimi";
 import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
@@ -502,10 +503,8 @@ export const oneriPlanaEkle = (
   const muhabirId = o.muhabirId ?? (g.muhabirId || undefined);
 
   let baslikId = g.baslikId;
-  if (!baslikId && g.yeniBaslik?.trim()) {
-    baslikId = kimlik("b");
-    d = { ...d, basliklar: [...d.basliklar, { id: baslikId, ad: g.yeniBaslik.trim(), ulke: o.ulke, aktif: true }] };
-  }
+  // Yeni yazılan ad havuzda varsa o başlık: aynı dosya ikinci kez açılmasın, plandaki başlığa girsin.
+  if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik, o.ulke);
   if (!baslikId) return false;
 
   let pb = plan.basliklar.find((b) => b.baslikId === baslikId);
@@ -607,18 +606,8 @@ export const takipGelismeEkle = (ben: Kisi, takipId: string, g: { planId: string
   const plan = planBul(d, g.planId);
   if (!tk || tk.kapandi || !plan || !takipGorebilir(ben, tk) || !planOperasyonDuzenler(ben, plan) || takipPlanda(d, tk.id, plan.id)) return false;
   let baslikId = g.baslikId;
-  if (!baslikId && g.yeniBaslik?.trim()) {
-    const ad = g.yeniBaslik.trim();
-    // Havuzda aynı adlı başlık varsa o: havuz ikiye bölünmesin.
-    const var_ = d.basliklar.find((b) => b.ad.trim() === ad);
-    if (var_) {
-      baslikId = var_.id;
-      if (!var_.aktif) d = { ...d, basliklar: d.basliklar.map((b) => (b.id === var_.id ? { ...b, aktif: true } : b)) };
-    } else {
-      baslikId = kimlik("b");
-      d = { ...d, basliklar: [...d.basliklar, { id: baslikId, ad, ulke: ulkesi(tk.sehir), aktif: true }] };
-    }
-  }
+  // Havuzda aynı adlı başlık varsa o: havuz ikiye bölünmesin.
+  if (!baslikId && g.yeniBaslik?.trim()) [baslikId, d] = dosyaAc(d, g.yeniBaslik, ulkesi(tk.sehir));
   if (!baslikId) return false;
   let pb = plan.basliklar.find((b) => b.baslikId === baslikId);
   if (!pb) {
@@ -1023,13 +1012,13 @@ export interface KalemGirdisi {
  * dosya listesi her hafta boş başladığı için eski başlık yeniden yazılıyor;
  * aynı adlı başlık havuzda varsa o (pasifse yeniden etkin), havuz ikiye bölünmesin.
  */
-const dosyaAc = (d: Durum, ad?: string): [string | undefined, Durum] => {
+const dosyaAc = (d: Durum, ad?: string, ulke?: Ulke): [string | undefined, Durum] => {
   const temiz = ad?.trim();
   if (!temiz) return [undefined, d];
-  const var_ = d.basliklar.find((b) => b.ad.trim() === temiz);
+  const var_ = adiylaBaslik(d, temiz);
   if (var_) return [var_.id, var_.aktif ? d : { ...d, basliklar: d.basliklar.map((b) => (b.id === var_.id ? { ...b, aktif: true } : b)) }];
   const id = kimlik("b");
-  return [id, { ...d, basliklar: [...d.basliklar, { id, ad: temiz, aktif: true }] }];
+  return [id, { ...d, basliklar: [...d.basliklar, { id, ad: temiz, ...(ulke && { ulke }), aktif: true }] }];
 };
 
 /** Dosya bu haftanın listesine giriyor; kalemi silinse de o hafta seçilebilir kalıyor. */
@@ -1405,11 +1394,12 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
 
 /* --- Merkezi başlık havuzu --- */
 
+/** Havuzda aynı adlı başlık varsa onu döndürür (pasifse etkinleştirir): plan ekranında seçenek kısaldı, aynı ad yeniden yazılabiliyor. */
 export const baslikEkle = (ben: Kisi, ad: string, ulke?: Ulke): string | null => {
   if (!yapabilir(ben, "baslikYonet") || !ad.trim()) return null;
-  const id = kimlik("b");
-  const d = getir();
-  kaydet({ ...d, basliklar: [...d.basliklar, { id, ad: ad.trim(), ulke, aktif: true }] });
+  const [id, d] = dosyaAc(getir(), ad, ulke);
+  if (!id) return null;
+  kaydet(d);
   return id;
 };
 
@@ -1904,6 +1894,33 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
     const id = kimlik("g");
     kaydet({ ...d, gelismeler: arkasina([...d.gelismeler, { ...g, id }], kimlikOf, id, sonra) });
   }
+  return true;
+};
+
+/*
+ * Gelişme başka başlığa (ya da başlıksız takiplere) geçiyor, hedefin sonuna.
+ * Öneriden geldiyse önerinin başlığı da değişiyor; önerinin bu plandaki
+ * paketi eski başlıktaysa onunla birlikte gidiyor: paket eski başlıkta kalıp
+ * gelişmeden ayrışmasın. Dokunulan kayıt bugünün kaydı ("önceki" işareti kalkıyor).
+ */
+export const gelismeBasligaTasi = (ben: Kisi, id: string, hedefPbId?: string) => {
+  let d = getir();
+  const g = d.gelismeler.find((x) => x.id === id);
+  const plan = planBul(d, g?.planId);
+  if (!g || !plan || !planOperasyonDuzenler(ben, plan) || g.planBaslikId === hedefPbId) return false;
+  const hedef = hedefPbId ? plan.basliklar.find((b) => b.id === hedefPbId) : undefined;
+  if (hedefPbId && !hedef) return false;
+  const yeni: Gelisme = { ...g, planBaslikId: hedefPbId, onceki: undefined, devir: undefined };
+  d = { ...d, gelismeler: [...d.gelismeler.filter((x) => x.id !== id), yeni] };
+  if (g.oneriId && hedef) {
+    const eskiPb = g.planBaslikId;
+    d = {
+      ...d,
+      oneriler: d.oneriler.map((o) => (o.id === g.oneriId && o.baslikId !== hedef.baslikId ? { ...o, baslikId: hedef.baslikId } : o)),
+      paketler: d.paketler.map((p) => (p.oneriId === g.oneriId && p.planId === plan.id && p.planBaslikId === eskiPb && p.durum !== "iptal" ? { ...p, planBaslikId: hedef.id } : p)),
+    };
+  }
+  kaydet(d);
   return true;
 };
 

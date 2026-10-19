@@ -17,6 +17,12 @@ export interface Saglayici {
   adres?: string;
   model: string;
   anahtar?: string;
+  /*
+   * Claude'da anahtar bir çalışma alanına bağlı değilse Anthropic hangi
+   * alanın kullanılacağını `anthropic-workspace-id` başlığında istiyor;
+   * alana bağlı anahtarda boş kalır. Gizli değil, ekranda görünür.
+   */
+  calismaAlani?: string;
   aktif: boolean;
 }
 
@@ -88,6 +94,9 @@ export const ayarBirlestir = (eski: Ayar, gelen: unknown): { ayar: Ayar } | { ha
       // Anahtar düz metin bağlantıda gitmesin.
       if (u.protocol !== "https:") return { hata: "adres" };
     }
+    const calismaAlani = tur === "anthropic" ? metin(s.calismaAlani, 100) : "";
+    // Başlığa gidecek değer: başka bir başlık ya da satır sonu sızmasın.
+    if (calismaAlani && !/^[A-Za-z0-9_-]+$/.test(calismaAlani)) return { hata: "calismaAlani" };
     const onceki = eski.saglayicilar.find((x) => x.id === id);
     const anahtar = typeof s.anahtar === "string" ? s.anahtar.trim() : onceki?.anahtar;
     saglayicilar.push({
@@ -97,6 +106,7 @@ export const ayarBirlestir = (eski: Ayar, gelen: unknown): { ayar: Ayar } | { ha
       ...(adres ? { adres } : {}),
       model,
       ...(anahtar ? { anahtar } : {}),
+      ...(calismaAlani ? { calismaAlani } : {}),
       aktif: s.aktif !== false,
     });
   }

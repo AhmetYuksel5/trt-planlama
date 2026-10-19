@@ -260,13 +260,16 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
     tur: mevcut?.tur ?? ("anthropic" as SaglayiciTuru),
     adres: mevcut?.adres ?? "https://api.openai.com/v1",
     model: mevcut?.model ?? "",
+    calismaAlani: mevcut?.calismaAlani ?? "",
     anahtar: "",
     anahtariSil: false,
     aktif: mevcut?.aktif ?? true,
   });
   const adresGecerli = f.tur !== "openai" || /^https:\/\//.test(f.adres.trim());
+  const calismaAlani = f.tur === "anthropic" ? f.calismaAlani.trim() : "";
+  const alanGecerli = !calismaAlani || /^[A-Za-z0-9_-]+$/.test(calismaAlani);
   const anahtarVar = !f.anahtariSil && (!!mevcut?.anahtarSonu || !!f.anahtar.trim());
-  const gecerli = !!f.model.trim() && adresGecerli && anahtarVar;
+  const gecerli = !!f.model.trim() && adresGecerli && alanGecerli && anahtarVar;
   /*
    * Model listesi sağlayıcıdan: yönetici model adını ezbere yazmasın. Yeni
    * yazılan anahtar yalnız bu istekte kullanılıyor, kaydedilmiyor; yazılmadıysa
@@ -275,9 +278,9 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
   const [modeller, setModeller] = useState<string[] | null>(null);
   const [modelDurumu, setModelDurumu] = useState<"" | "yukleniyor" | string>("");
   const modelleriGetir = async () => {
-    if (!adresGecerli || !anahtarVar) return;
+    if (!adresGecerli || !alanGecerli || !anahtarVar) return;
     setModelDurumu("yukleniyor");
-    const r = await yzModeller({ saglayici: mevcut?.id, tur: f.tur, ...(f.tur === "openai" ? { adres: f.adres.trim() } : {}), ...(f.anahtar.trim() ? { anahtar: f.anahtar.trim() } : {}) });
+    const r = await yzModeller({ saglayici: mevcut?.id, tur: f.tur, ...(f.tur === "openai" ? { adres: f.adres.trim() } : { calismaAlani }), ...(f.anahtar.trim() ? { anahtar: f.anahtar.trim() } : {}) });
     if (r.tamam) {
       setModeller(r.veri.modeller);
       setModelDurumu("");
@@ -295,7 +298,7 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
       id: mevcut?.id ?? `s-${Date.now().toString(36)}`,
       ad: f.ad.trim() || t(TUR_ADI[f.tur]),
       tur: f.tur,
-      ...(f.tur === "openai" ? { adres: f.adres.trim() } : {}),
+      ...(f.tur === "openai" ? { adres: f.adres.trim() } : calismaAlani ? { calismaAlani } : {}),
       model: f.model.trim(),
       aktif: f.aktif,
       // Yeni anahtar yazılmadıysa alan gönderilmiyor: kayıtlı anahtar korunuyor.
@@ -336,6 +339,22 @@ function SaglayiciPenceresi({ mevcut, kapat, kaydet }: { mevcut?: YzSaglayici; k
                 setModeller(null);
               }}
               data-yz-adres
+            />
+          </label>
+        )}
+        {f.tur === "anthropic" && (
+          <label>
+            {t("yzCalismaAlani")}
+            <input
+              dir="ltr"
+              value={f.calismaAlani}
+              onChange={(e) => {
+                setF({ ...f, calismaAlani: e.target.value });
+                setModeller(null);
+              }}
+              aria-invalid={!alanGecerli}
+              placeholder="wrkspc_…"
+              data-yz-calisma-alani
             />
           </label>
         )}

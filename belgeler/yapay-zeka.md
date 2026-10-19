@@ -91,6 +91,11 @@ Ayarlar › Yapay zeka (yalnız tam yönetici, yalnız gerçek kipte):
   `claude-opus-5-5` yazılır. Kısa iş olduğu için düşük çaba (effort)
   kullanılır. Destekleyen modellerde sunucu tarafı yedek açıktır: model bir
   isteği reddederse aynı çağrıda başka bir modelle sürer.
+  Anahtar Console'da bir çalışma alanının (workspace) içinden açılmamışsa
+  Anthropic "This API key is not scoped to a workspace…" diye 400 verir.
+  İki çözüm: çalışma alanının içinden yeni anahtar açmak, ya da sağlayıcı
+  penceresindeki "Çalışma alanı kimliği"ne o alanın kimliğini yazmak (kapı
+  `anthropic-workspace-id` başlığında gönderir).
 - **OpenAI uyumlu:** OpenAI, Mistral, Groq, OpenRouter, DeepSeek,
   Gemini'nin uyumlu ucu gibi `…/v1/chat/completions` biçimini kabul eden
   her sağlayıcı. Uç nokta adresi `https://` ile başlamalı (örneğin

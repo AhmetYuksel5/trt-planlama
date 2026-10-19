@@ -1,4 +1,4 @@
-import { ExternalLink, Printer } from "lucide-react";
+import { ArrowRightLeft, ExternalLink, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
@@ -33,7 +33,7 @@ import {
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
-import { BaslikEkleFormu, EkipEkleFormu, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
+import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
 import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
@@ -60,6 +60,7 @@ export type NdPencere =
   | { tur: "hazirSec" }
   | { tur: "baslikEkle"; sonra?: string }
   | { tur: "gelisme"; planBaslikId?: string; mevcut?: Gelisme; sonra?: string }
+  | { tur: "gelismeTasi"; gelisme: Gelisme }
   | { tur: "muhabirEkle"; pbId: string; sonra?: string }
   | { tur: "muhabir"; pbId: string; kisiId: string }
   | { tur: "paket"; pbId: string; mevcut?: Paket; sonra?: string };
@@ -141,7 +142,14 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             ekleEtiket={t(planBaslikId ? "gelismeEkle" : "takipEkle")}
             duzenle={() => ac({ tur: "gelisme", planBaslikId, mevcut: g })}
             onceki={g.onceki ? () => ben && oncekiOnayla(ben, plan.id, { gelisme: g.id }) : undefined}
-            ek={<YzKisaltSerit metin={g.metin} kaydet={(m) => ben && gelismeKaydet(ben, { ...g, metin: m })} />}
+            ek={
+              <>
+                {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !planBaslikId)) && (
+                  <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => ac({ tur: "gelismeTasi", gelisme: g })} />
+                )}
+                <YzKisaltSerit metin={g.metin} kaydet={(m) => ben && gelismeKaydet(ben, { ...g, metin: m })} />
+              </>
+            }
             cikar={sil(() => ben && gelismeSil(ben, g.id))}
           />
         }
@@ -589,6 +597,9 @@ function NdPencereIcerik({ ben, plan, p, kapat }: { ben: Kisi; plan: NextDayPlan
     </Pencere>
   );
   switch (p.tur) {
+    case "gelismeTasi":
+      // Kendi penceresi var (plan ekranıyla ortak).
+      return <BaslikaTasiPenceresi plan={plan} gelisme={p.gelisme} kapat={kapat} />;
     case "ekipEkle":
       return pencere(t("ekibeEkle"), <EkipEkleFormu plan={plan} gorev={p.gorev} kapat={kapat} />);
     case "ekipUye":

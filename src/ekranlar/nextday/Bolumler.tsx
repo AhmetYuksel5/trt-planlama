@@ -1,9 +1,10 @@
+import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
-import { Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowRightLeft, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Avatar, Bos, Icerik, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, paketYeri, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -500,8 +501,8 @@ export function BaslikEkleFormu({ plan, sonra, kapat }: { plan: NextDayPlan; son
   const v = useVeri();
   const ben = useBen();
   const [yeni, setYeni] = useState("");
-  const plandakiler = new Set(plan.basliklar.map((b) => b.baslikId));
-  const havuz = v.basliklar.filter((b) => b.aktif && !plandakiler.has(b.id));
+  // Bütün havuz değil, dünün başlıkları (baslikSecimi.ts); başka ad yazılınca havuzdaki aynı adlı başlık kullanılıyor.
+  const havuz = ndBaslikSecenekleri(v, plan).onceki;
 
   const yeniEkle = () => {
     if (!ben || !yeni.trim()) return;
@@ -513,7 +514,7 @@ export function BaslikEkleFormu({ plan, sonra, kapat }: { plan: NextDayPlan; son
 
   return (
     <div className="form form-kutu ara-ust-2">
-      <div className="alan-etiket">{t("baslikHavuzu")}</div>
+      {havuz.length > 0 && <div className="alan-etiket">{t("oncekiGununBasliklari")}</div>}
       <div className="cipler">
         {havuz.map((b) => (
           <button
@@ -554,8 +555,10 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState("");
+  const [tasinan, setTasinan] = useState<Gelisme | null>(null);
   return (
     <>
+      {tasinan && <BaslikaTasiPenceresi plan={plan} gelisme={tasinan} kapat={() => setTasinan(null)} />}
       {gelismeler.length === 0 && form !== "yeni" && <Bos kucuk metin={t("gelismeYok")} />}
       {gelismeler.map((g) =>
         form === g.id ? (
@@ -581,6 +584,9 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                 <div className="islemler">
                   {g.onceki && <OncekiDugmesi planId={plan.id} hedef={{ gelisme: g.id }} />}
                   <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(g.id)} />
+                  {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !g.planBaslikId)) && (
+                    <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => setTasinan(g)} />
+                  )}
                   <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />
                 </div>
               )}
@@ -596,6 +602,47 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
         </div>
       )}
     </>
+  );
+}
+
+/*
+ * Gelişmeyi başka başlığa (ya da başlıksız متابعات'e) taşıma penceresi; plan
+ * ekranı da belge de bunu açıyor. Pencere kartın dışında çizilmeli (kapalı
+ * <details> içini göstermiyor): çağıran listenin en üstünde.
+ */
+export function BaslikaTasiPenceresi({ plan, gelisme: g, kapat }: { plan: NextDayPlan; gelisme: Gelisme; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const hedefler = plan.basliklar.filter((b) => b.id !== g.planBaslikId);
+  const [hedef, setHedef] = useState(hedefler[0]?.id ?? "");
+  const tasi = () => {
+    if (ben && gelismeBasligaTasi(ben, g.id, hedef || undefined)) kapat();
+  };
+  return (
+    <Pencere baslik={t("baskaBasligaTasi")} alt={<Icerik>{g.metin}</Icerik>} kapat={kapat}>
+      <div className="form" data-baslika-tasi={g.id}>
+        <label>
+          {t("hedefBaslik")}
+          <select value={hedef} onChange={(e) => setHedef(e.target.value)} data-tasi-hedef>
+            {hedefler.map((b) => (
+              <option key={b.id} value={b.id}>
+                {v.basliklar.find((x) => x.id === b.baslikId)?.ad}
+              </option>
+            ))}
+            {g.planBaslikId && <option value="">{metin("takipler", "ar")}</option>}
+          </select>
+        </label>
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+            {t("iptal")}
+          </button>
+          <button type="button" className="dugme" onClick={tasi} disabled={!hedef && !g.planBaslikId} data-tasi-tamam>
+            {t("tasi")}
+          </button>
+        </div>
+      </div>
+    </Pencere>
   );
 }
 

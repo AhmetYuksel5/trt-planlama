@@ -3,6 +3,7 @@ import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { oneriPlanaEkle } from "../../eylemler";
 import { kalacakPlan } from "../../planCiftleri";
+import { adiylaBaslik, ndBaslikSecenekleri } from "../../baslikSecimi";
 import { acikGunPlanlari, oneriGunde, oneriHaftada } from "../../oneriPlanlari";
 import { bugun, gunEkle } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
@@ -80,10 +81,26 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const gunAdi = (p: NextDayPlan) => (p.tarih === bugun() ? `${t("bugun")} · ` : p.tarih === gunEkle(bugun(), 1) ? `${t("yarin")} · ` : "");
   const plan = planlar.find((p) => p.id === pId);
 
-  const plandakiler = plan?.basliklar.map((b) => b.baslikId) ?? [];
-  // Önerinin başlığı listede yoksa (pasif) seçici ilk seçeneği gösterir ama kayıt görünmeyen başlığa giderdi; ekranla kayıt ayrışmasın.
-  const secilebilir = (id?: string) => !!id && v.basliklar.some((b) => b.id === id && (b.aktif || plandakiler.includes(id)));
-  const [baslikId, setBaslikId] = useState(secilebilir(oneri.baslikId) ? oneri.baslikId! : "yeni");
+  // Seçenekler planın başlıkları ve dünün başlıkları (baslikSecimi.ts); önerinin kendi dosyası onların dışındaysa ayrıca.
+  const secenek = (p?: NextDayPlan) => {
+    const { plandaki, onceki } = p ? ndBaslikSecenekleri(v, p) : { plandaki: [], onceki: [] };
+    const kendi = v.basliklar.find((b) => b.id === oneri.baslikId && b.aktif && ![...plandaki, ...onceki].some((x) => x.id === b.id));
+    return { plandaki, onceki, kendi };
+  };
+  /*
+   * Varsayılan: önerinin dosyası, yoksa plandaki aynı adlı başlık, yoksa yeni başlık.
+   * Aynı ülkenin başlığı varsayılan değil (başka muhabirin haberi olabilir). Önerinin
+   * başlığı seçeneklerde yoksa (pasif) yine yeni: seçici başka seçeneği gösterip kayıt
+   * görünmeyen başlığa gitmesin.
+   */
+  const varsayilan = (p?: NextDayPlan) => {
+    const { plandaki, onceki, kendi } = secenek(p);
+    const hepsi = [...plandaki, ...onceki, ...(kendi ? [kendi] : [])];
+    if (oneri.baslikId && hepsi.some((b) => b.id === oneri.baslikId)) return oneri.baslikId;
+    const ayni = adiylaBaslik({ basliklar: plandaki }, oneri.haberBasligi);
+    return ayni?.id ?? "yeni";
+  };
+  const [baslikId, setBaslikId] = useState(() => varsayilan(plan));
   const [yeniBaslik, setYeniBaslik] = useState(oneri.haberBasligi);
   const talimat = !!oneri.talimatVeren;
   const [paket, setPaket] = useState(!!oneri.paketBasligi);
@@ -92,6 +109,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const [muhabirId, setMuhabirId] = useState("");
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
+  const secenekler = secenek(plan);
 
   const ekle = () => {
     const tamam = oneriPlanaEkle(ben, oneri.id, {
@@ -115,7 +133,14 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
         {planlar.length > 1 ? (
           <label>
             {t("plan")}
-            <select value={pId} onChange={(e) => setPId(e.target.value)} data-pe-plan>
+            <select
+              value={pId}
+              onChange={(e) => {
+                setPId(e.target.value);
+                setBaslikId(varsayilan(planlar.find((p) => p.id === e.target.value)));
+              }}
+              data-pe-plan
+            >
               {planlar.map((p) => (
                 <option key={p.id} value={p.id}>
                   {gunAdi(p)}
@@ -136,22 +161,29 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
         <label>
           {t("haberBasligi")}
           <select value={baslikId} onChange={(e) => setBaslikId(e.target.value)} data-pe-baslik>
-            <optgroup label={t("plandakiBasliklar")}>
-              {plan.basliklar.map((b) => (
-                <option key={b.baslikId} value={b.baslikId}>
-                  {v.basliklar.find((x) => x.id === b.baslikId)?.ad}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label={t("baslikHavuzu")}>
-              {v.basliklar
-                .filter((b) => b.aktif && !plandakiler.includes(b.id))
-                .map((b) => (
+            {secenekler.plandaki.length > 0 && (
+              <optgroup label={t("plandakiBasliklar")}>
+                {secenekler.plandaki.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.ad}
                   </option>
                 ))}
-            </optgroup>
+              </optgroup>
+            )}
+            {secenekler.onceki.length > 0 && (
+              <optgroup label={t("oncekiGununBasliklari")}>
+                {secenekler.onceki.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.ad}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {secenekler.kendi && (
+              <optgroup label={t("onerininBasligi")}>
+                <option value={secenekler.kendi.id}>{secenekler.kendi.ad}</option>
+              </optgroup>
+            )}
             <option value="yeni">+ {t("yeniBaslikOlustur")}</option>
           </select>
         </label>

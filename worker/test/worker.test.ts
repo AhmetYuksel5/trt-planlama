@@ -413,3 +413,25 @@ test("beklenmeyen hata (KV yazışı reddedildi) izin başlığıyla ve nedeniyl
   assert.equal(j.hata, "kapi");
   assert.match(j.ayrinti, /limit exceeded/);
 });
+
+test("çalışma alanı: Claude isteğine ve model listesine anthropic-workspace-id başlığı", async () => {
+  const t = kur();
+  const ayar = { ...AYAR, saglayicilar: [{ ...AYAR.saglayicilar[0], calismaAlani: "wrkspc_01abc" }, AYAR.saglayicilar[1]] };
+  assert.equal((await t.cagir("/ayar", "yon", ayar, "PUT")).status, 200);
+  await t.cagir("/calistir", "pl", { ozellik: "kisalt", girdi: { metin: "نص طويل يحتاج إلى اختصار." } });
+  const istek = t.istekler.find((x) => x.url.startsWith("https://api.anthropic.com/v1/messages"));
+  assert.equal(istek?.basliklar["anthropic-workspace-id"], "wrkspc_01abc");
+  await t.cagir("/modeller", "yon", { saglayici: "claude" });
+  const liste = t.istekler.find((x) => x.url.startsWith("https://api.anthropic.com/v1/models"));
+  assert.equal(liste?.basliklar["anthropic-workspace-id"], "wrkspc_01abc");
+  // Görünür (gizli değil), başlığa sızabilecek değer reddediliyor
+  const okunan = (await (await t.cagir("/ayar", "yon")).json()) as { saglayicilar: { calismaAlani?: string }[] };
+  assert.equal(okunan.saglayicilar[0].calismaAlani, "wrkspc_01abc");
+  const kotu = { ...AYAR, saglayicilar: [{ ...AYAR.saglayicilar[0], calismaAlani: "a\r\nx-baska: 1" }] };
+  assert.equal((await t.cagir("/ayar", "yon", kotu, "PUT")).status, 400);
+  // Alansız sağlayıcıda başlık yok
+  const t2 = kur();
+  await t2.cagir("/ayar", "yon", AYAR, "PUT");
+  await t2.cagir("/calistir", "pl", { ozellik: "kisalt", girdi: { metin: "نص طويل يحتاج إلى اختصار." } });
+  assert.equal(t2.istekler.find((x) => x.url.startsWith("https://api.anthropic.com/v1/messages"))?.basliklar["anthropic-workspace-id"], undefined);
+});
