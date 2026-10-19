@@ -40,7 +40,7 @@ import {
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
 import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
-import { gercekDurumuYaz } from "../kip";
+import { gercekDurumuYaz, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
@@ -176,6 +176,13 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   let siralar: Siralar = {};
   let d: Durum = bosDurum();
   const bekleyen = new Set<string>();
+  // Sunucudan en az bir kez teyit edilen koleksiyonlar; hepsi gelince sistemin yazışları açılıyor (kip.ts → sunucuyaEsitlendi).
+  const sunucudan = new Set<string>();
+  const sunucuGeldi = (alan: string, snap: { metadata: { fromCache: boolean } }) => {
+    if (snap.metadata.fromCache || sunucudan.has(alan)) return;
+    sunucudan.add(alan);
+    if (!kisitli && [...DIZI_ALANLARI, ...HARITA_ALANLARI].every((a) => sunucudan.has(a))) sunucuyaEsitlendi();
+  };
   let bagli = false;
   const iptal: Unsubscribe[] = [];
 
@@ -257,6 +264,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       if (degisti || !bagli) diziKur(alan);
       // Sunucudan bir kez tam gelen koleksiyon bu cihazda bundan sonra farkla okunur.
       if (fark && !snap.metadata.fromCache) tamOkunduYaz(alan);
+      sunucuGeldi(alan, snap);
       geldi(anahtar, degisti);
     };
     bekleyen.add(alan);
@@ -269,7 +277,8 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     const tamDinle = () => {
       if (durdu) return;
       // Önbellekle sunucu aynıysa yalnız "fromCache" değişiyor; o görüntü de gelsin ki tam okunduğu yazılsın.
-      iptal.push(onSnapshot(collection(db, alan), { includeMetadataChanges: fark }, isle(alan), hata));
+      // Önbellek görüntüsünden sonra sunucunun teyidi de gelsin (değişiklik olmasa da): sistemin yazışları onu bekliyor.
+      iptal.push(onSnapshot(collection(db, alan), { includeMetadataChanges: true }, isle(alan), hata));
     };
     if (!fark || !tamOkundu(alan)) return tamDinle();
     getDocsFromCache(collection(db, alan))
@@ -285,7 +294,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         }
         // Zamansız belge (fark okumadan önce yazılmış) zaten önbellekte; sorgu yalnız zamanlıları getiriyor.
         const esik = Timestamp.fromMillis(Math.max(0, enSon - FARK_PAYI));
-        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), isle(alan, true), hata));
+        iptal.push(onSnapshot(query(collection(db, alan), where("z", ">", esik)), { includeMetadataChanges: true }, isle(alan, true), hata));
       })
       .catch(tamDinle);
   };
@@ -316,6 +325,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     iptal.push(
       onSnapshot(
         collection(db, alan),
+        { includeMetadataChanges: true },
         (snap) => {
           let degisti = false;
           for (const c of snap.docChanges()) {
@@ -324,6 +334,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
             degisti = belgeIsle(alan, id, v) || degisti;
           }
           if (degisti || !bagli) haritaKur(alan);
+          sunucuGeldi(alan, snap);
           geldi(alan, degisti);
         },
         hata,

@@ -234,6 +234,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
     Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
     yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
+    Sistemin yazışları (`App.tsx → yokla`: yarının planı, aktarımlar, çift
+    plan toplama) "hazır"da değil, bütün koleksiyonlar sunucudan bir kez
+    teyit edilince başlar (`depo/firebase.ts → sunucuGeldi`, `kip.ts →
+    sunucuyaEsitlendi`, `useSunucuyaEsit`; dinleyiciler
+    `includeMetadataChanges`). İlk görüntü önbellekten geliyor: bayat
+    önbellekli tarayıcı başka cihazda açılmış planı "yok" sanıp aynı
+    kimlikle şablondan yeniden yazıyor, gün içindeki düzenleme ve silmeler
+    gidiyordu. `yarinPlaniniAc` ayrıca planın izi (açılış hareketi, ona bağlı
+    gelişme, canlı, paket) varken de açmaz.
     Zaman sorgusunda `removed` silme sayılmaz (`diziDinle → isle(alan,
     true)`): kendi yazışımız sunucuya varana dek `z` bekleyen sunucu zamanı,
     belge sorgudan bir an çıkıyor; silinmiş sayılınca kayıt ekrandan kalkıp

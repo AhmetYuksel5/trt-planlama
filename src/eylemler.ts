@@ -1525,8 +1525,20 @@ export const yarinPlaniniAc = (): string | null => {
   const tarih = gunEkle(bugun(), 1);
   let d = getir();
   if (d.planlar.some((p) => p.tarih === tarih)) return null;
-  const kaynak = oncekiPlan(d, tarih);
   const id = gunPlaniKimligi(tarih);
+  /*
+   * Kimlik tarihten: plan bir kez açıldıysa yeniden açmak var olan planı ve
+   * ona taşınmış kayıtları şablonla ezer, silinenler geri gelir. Planın kendisi
+   * görünmese de izi (açılış hareketi, ona bağlı kayıt) varsa açılmıyor.
+   */
+  if (
+    d.hareketler.some((h) => h.id === `h-${id}` || h.planId === id) ||
+    d.gelismeler.some((g) => g.planId === id) ||
+    d.canliYayinlar.some((c) => c.planId === id) ||
+    d.paketler.some((p) => p.planId === id)
+  )
+    return null;
+  const kaynak = oncekiPlan(d, tarih);
   const pbEsle = new Map<string, string>();
   /*
    * Yalnız önceki gün kullanılan başlık taşınıyor: o gün eklenen, ya da

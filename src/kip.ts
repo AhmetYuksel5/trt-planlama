@@ -90,3 +90,25 @@ export const useGercekDurum = () =>
     },
     () => durum,
   );
+
+/*
+ * Kayıt sunucuyla eşitlendi mi: açılışta kayıt önce tarayıcının önbelleğinden
+ * kuruluyor, sunucudaki yeni hali sonra geliyor. Sistemin yazışları (yarının
+ * planı, aktarımlar, çift plan toplama) bundan önce çalışırsa bayat görüntüye
+ * göre yazıyordu: başka cihazda açılıp üzerinde çalışılan plan "yok" sanılıp
+ * aynı kimlikle şablondan yeniden yazılıyor, silinenler geri geliyordu.
+ */
+let esit = false;
+export const sunucuyaEsitlendi = () => {
+  if (esit) return;
+  esit = true;
+  dinleyiciler.forEach((f) => f());
+};
+export const useSunucuyaEsit = () =>
+  useSyncExternalStore(
+    (f) => {
+      dinleyiciler.add(f);
+      return () => dinleyiciler.delete(f);
+    },
+    () => esit,
+  );

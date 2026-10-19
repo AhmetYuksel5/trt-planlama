@@ -45,7 +45,7 @@ import Takvim from "./ekranlar/takvim/Takvim";
 import { Bos, bildir } from "./bilesenler/Parcalar";
 import { useDil } from "./dil";
 import { gercekKipKurulu } from "./firebase-ayar";
-import { GERCEK, firebaseYukle, useGercekDurum } from "./kip";
+import { GERCEK, firebaseYukle, useGercekDurum, useSunucuyaEsit } from "./kip";
 import { useBen } from "./oturum";
 import {
   haftaBul,
@@ -99,6 +99,9 @@ export default function App() {
   const v = useVeri();
   const gd = useGercekDurum();
   const kayitHazir = !GERCEK || gd.tur === "hazir";
+  // Sistemin yazışları önbellekten kurulan ilk görüntüyle değil, sunucuyla eşitlenmiş kayıtla (kip.ts → sunucuyaEsitlendi).
+  const esit = useSunucuyaEsit();
+  const sistemHazir = kayitHazir && (!GERCEK || esit);
 
   // Gerçek kipte Firebase sonradan yükleniyor; oturum ve kayıt gelince ekran açılıyor.
   useEffect(() => {
@@ -122,7 +125,7 @@ export default function App() {
   // Gerçek kipte kısıtlı kişi (muhabir) kaydın yalnız kendi parçasını görüyor: planı yok sanıp gerçeğinin üstüne boş plan yazardı.
   const sistemYazar = !GERCEK || (!!ben && !kisitliKisi(ben));
   useEffect(() => {
-    if (GOMULU || !kayitHazir || !sistemYazar) return;
+    if (GOMULU || !sistemHazir || !sistemYazar) return;
     const yokla = () => {
       // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
       if (izlemede()) return;
@@ -143,7 +146,7 @@ export default function App() {
     yokla();
     const z = setInterval(yokla, GUN_YOKLAMA);
     return () => clearInterval(z);
-  }, [kayitHazir, sistemYazar]);
+  }, [sistemHazir, sistemYazar]);
 
   // Tanıtım: adres çıplak açılınca (demoda; gerçek kipte kalmış kişi doğrudan sisteme) ya da `#/tanitim`.
   if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;
