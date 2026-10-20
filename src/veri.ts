@@ -389,10 +389,14 @@ export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
  * bekliyor. Muhabir düzeltip yeniden gönderince öneri "yeni"ye döner.
  */
 /*
- * "teklif": Planlama'nın muhabire önerdiği haber, muhabirin yanıtını
- * bekliyor; kabul edince Planlama'nın değerlendirmesine giriyor.
+ * "teklif": Planlama'nın muhabire önerdiği haber. Muhabir reddedemez,
+ * yazışmada konuşur; kararı (değerlendirmeye alma, geri çekme) gönderen verir.
  */
-export const ONERI_DURUMLARI = ["teklif", "yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra"] as const;
+/*
+ * "geriCekildi": muhabir Planlama dokunmadan önerisini ya da planlamacı
+ * muhabire gönderdiği teklifi geri çekti; öneri arşive gider.
+ */
+export const ONERI_DURUMLARI = ["teklif", "yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra", "geriCekildi"] as const;
 export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
 export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
@@ -438,6 +442,13 @@ export interface Oneri {
   planTarihi?: string;
   paketId?: string;
   gerekce?: string;
+  /** Planlamacının elle arşive gönderdiği an; günü beklemeden arşivde. */
+  arsiv?: { zaman: string; kisiId: string };
+  /*
+   * Arşivden çıkarıldığı an: günü geçmiş ya da reddedilmiş öneri yeniden
+   * açılınca hemen arşive geri düşmesin; arşiv günü bu andan sayılır.
+   */
+  arsivdenCikti?: string;
   /*
    * Planlama'nın düzeltme isteği; ret gerekçesinden ayrı, çünkü düzeltilip
    * yeniden gönderilen öneri sonra reddedilirse ikisi de okunmalı. Muhabir
@@ -1170,6 +1181,9 @@ export const HAREKET_TIPLERI = [
   "oneriMuhabireGonderildi",
   "teklifKabulEdildi",
   "teklifReddedildi",
+  "oneriGeriCekildi",
+  "oneriArsiveGonderildi",
+  "oneriArsivdenCikarildi",
   "oneriMesaji",
   "takipEklendi",
   "takipPlanaEklendi",

@@ -83,7 +83,7 @@ function useMuhabirIsleri(ben: Kisi) {
     plandaki,
     planGunu,
     // Günü geçmiş öneri İşlerim'de değil, "Geçmiş önerilerim"de.
-    guncelOneriler: oneriler.filter((o) => !oneriArsivde(o, B)),
+    guncelOneriler: oneriler.filter((o) => !oneriArsivde(o, B, v)),
     gorevler: v.gorevlendirmeler.filter((g) => gorevlendirmeGorebilir(ben, g) && g.bitis >= B),
     ozelGorevler: ozelGorevleri(v, ben.id),
     cagri: acikCagri(v, "nextday", B),

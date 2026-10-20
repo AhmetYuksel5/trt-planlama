@@ -1,5 +1,5 @@
 import { haftaSonu } from "./haftalik";
-import { bugun, yerelGun } from "./tarih";
+import { bugun, gunEkle, yerelGun } from "./tarih";
 import type { Durum, HaftalikKalem, HaftalikPlan, NextDayPlan, Oneri } from "./veri";
 
 /*
@@ -40,10 +40,10 @@ export const oneriGunde = (o: Oneri, tarih: string) => !!o.hedefTarih && o.hedef
  * günlerinkiler (muhabir başka güne önermiş olabilir). Talimatta muhabir
  * yok, plana ekleme penceresinde atanıyor; burada yok.
  */
-export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik">, plan: Pick<NextDayPlan, "tarih">): { buGun: Oneri[]; digerleri: Oneri[] } => {
+export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik" | "paketler">, plan: Pick<NextDayPlan, "tarih">): { buGun: Oneri[]; digerleri: Oneri[] } => {
   const gundemde = new Set(d.haftalik.flatMap((h) => h.kalemler.map((k) => k.oneriId)));
   const adaylar = d.oneriler
-    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o))
+    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o, bugun(), d))
     .sort((a, b) => b.zaman.localeCompare(a.zaman));
   return { buGun: adaylar.filter((o) => oneriGunde(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriGunde(o, plan.tarih)) };
 };
@@ -91,17 +91,36 @@ export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
 };
 
 /*
- * Arşiv: uygulama günü geçmiş öneri Planlama'nın listelerinden kalkıyor,
- * eski öneriler birikmesin. Saklanmıyor, her an kayıttan: önerinin son
- * günü (çok günlüde bitişi, eski haftalık öneride haftanın sonu), plana
- * girdiyse planın günü, günü yoksa geldiği gün. E-posta takibi açık olan
- * öneri işi sürdüğü için arşive düşmüyor. Muhabirde "Geçmiş önerilerim".
+ * Arşiv: tek kural. Günü 2 gün geçmiş ve açık işi kalmamış öneri arşive
+ * düşer (günü 20'yse 22'sinde de güncel, 23'ünde arşivde); eskiden ertesi
+ * gün düşüyordu, Planlama dünkü haberin geri bildirimini arıyordu. Gün:
+ * plana girdiyse planın günü, girmediyse önerinin günü (çok günlüde
+ * bitişi), günü yoksa geldiği gün. Reddedilen ve geri çekilen öneri günü
+ * beklemez; planlamacının elle gönderdiği de. Açık iş: e-postayla takip
+ * açık, ya da paketi henüz bitmemiş (toplantıda, onaylı, üretimde).
+ * Arşivden çıkarılan öneri o andan yeniden sayılır. Saklanmıyor, her an
+ * kayıttan; muhabirde "Geçmiş önerilerim".
  */
+export const ARSIV_GUNU = 2;
+const ACIK_PAKET = new Set(["taslak", "degerlendiriliyor", "onaylandi", "uretimde"]);
+
 export const oneriSonGunu = (o: Oneri): string => {
   const g = oneriAraligi(o)?.[1] ?? yerelGun(o.zaman);
-  return o.planTarihi && o.planTarihi > g ? o.planTarihi : g;
+  const p = o.planTarihi && o.planTarihi > g ? o.planTarihi : g;
+  const c = o.arsivdenCikti && yerelGun(o.arsivdenCikti);
+  return c && c > p ? c : p;
 };
-export const oneriArsivde = (o: Oneri, b: string = bugun()): boolean => o.takip !== "acik" && oneriSonGunu(o) < b;
+
+/** Önerinin bitmemiş işi var mı: varsa günü geçse de arşive düşmüyor. */
+export const oneriAcikIsi = (o: Oneri, d?: Pick<Durum, "paketler">): boolean =>
+  o.takip === "acik" || !!d?.paketler.some((p) => p.oneriId === o.id && ACIK_PAKET.has(p.durum));
+
+export const oneriArsivde = (o: Oneri, b: string = bugun(), d?: Pick<Durum, "paketler">): boolean => {
+  if (o.arsiv) return true;
+  if (oneriAcikIsi(o, d)) return false;
+  if (!o.arsivdenCikti && (o.durum === "reddedildi" || o.durum === "geriCekildi")) return true;
+  return gunEkle(oneriSonGunu(o), ARSIV_GUNU) < b;
+};
 
 /*
  * Plana eklenince doğacak PKG önerisinin başlığı: strap, yoksa muhabirin

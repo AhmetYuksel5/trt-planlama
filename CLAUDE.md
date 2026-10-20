@@ -664,10 +664,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   etiketlenmiyordu, özel yayının önerileri yayının içinde
   (`ONERI_ETIKETLERI` yalnız Next Day ve Weekly).
 
-  Arşiv: uygulama günü geçmiş öneri güncel listelerden kalkar
-  (`oneriPlanlari.ts → oneriArsivde`, `oneriSonGunu`: aralığın sonu, plana
-  girdiyse planın günü, günü yoksa geldiği gün; e-posta takibi açıksa
-  düşmez; saklanmaz). Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
+  Arşiv tek kural (`oneriPlanlari.ts → oneriArsivde`, `oneriSonGunu`;
+  saklanmaz): günü 2 gün geçmiş (`ARSIV_GUNU`; günü 20'yse 23'ünde) ve açık
+  işi kalmamış öneri güncel listelerden kalkar. Gün aralığın sonu, plana
+  girdiyse planın günü, günü yoksa geldiği gün. Açık iş (`oneriAcikIsi`):
+  e-posta takibi açık ya da paketi bitmemiş (toplantıda, onaylı, üretimde;
+  bunun için `d` verilir). Reddedilen ve geri çekilen günü beklemez.
+  Planlamacı elle arşive gönderir (`oneriArsiveGonder`, `Oneri.arsiv`);
+  arşivden çıkarma (`oneriArsivdenCikar`, `arsivdenCikarabilir`: şimdilik
+  tam yönetici ve Planlama yöneticisi) günü o andan saydırır
+  (`arsivdenCikti`), reddedilen/geri çekileni değerlendirmeye açar.
+  Düğmeler öneri ayrıntısında (`Oneriler.tsx → OneriKapiDugmeleri`), onay
+  sorularak; ret, plana ve gündeme ekleme de onaylı. Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
   (`#/oneriler/arsiv`, muhabirde "Geçmiş önerilerim"; İşlerim'deki
   Önerilerim kartında da bağlantısı, kılavuzda `kl4g`). Planlama ana sayfası,
   menü ve yönetici paneli sayıları, "Önerilerden al" arşivi saymaz.
@@ -859,9 +867,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yöneticinin Ayarlar'da seçtiği birimler, `Durum.muhabireOneriBirimleri`,
     yoksa Planlama; gerçek kipte genel ayar belgesinde) öneriler sayfasından
     ya da muhabirin profilinden öneri gönderir. Öneri `yon: "muhabire"`,
-    durum `teklif` ("muhabirin yanıtı bekleniyor"); sıra muhabirde, karar
-    düğmesi yok. Muhabir kabul edince `degerlendiriliyor`, gerekçeyle geri
-    çevirince `reddedildi` (`teklifYanitla`). Öneriler sayfasını görmeyen
+    durum `teklif` ("Muhabire teklif"). Muhabir reddedemez, yazışmada konuşur
+    (ekranında yalnız `TeklifNotu`); kararı gönderen ya da Planlama verir
+    (`yetki.ts → teklifKarariVerebilir`): değerlendirmeye alır (`oneriDurum`)
+    ya da geri çeker (`oneriGeriCek`, durum `geriCekildi`, arşive). Muhabir
+    de önerisini Planlama dokunmadıysa geri çeker (`oneriGeriCekebilir`:
+    "yeni", elle girilmemiş, düzeltme istenmemiş). Öneriler sayfasını görmeyen
     gönderen önerisini ve yazışmasını muhabirin profilinde izler
     (`MuhabireOnerilenler`).
   - Kart ya da liste kişinin seçimi, ana sayfa düzeni gibi kayıtta

@@ -1,14 +1,14 @@
-import { Check, Lightbulb, MessageSquare, Send, X } from "lucide-react";
+import { Lightbulb, MessageSquare, Send } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
 import { Avatar, Bos, Icerik, Kart, NotKutu, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { muhabireOneriGonder, oneriMesajiGonder, teklifYanitla, ulkesi } from "../../eylemler";
+import { muhabireOneriGonder, oneriMesajiGonder, ulkesi } from "../../eylemler";
 import { ICERIK_TURLERI, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri, type Takip } from "../../veri";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { oneriYazisabilir, teklifYanitlayabilir } from "../../yetki";
+import { oneriYazisabilir } from "../../yetki";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 
 /**
@@ -78,48 +78,19 @@ export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: 
   );
 }
 
-/** Muhabirin önerilen habere yanıtı: kabul ya da gerekçeyle geri çevirme. */
-export function TeklifYaniti({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+/*
+ * Muhabire gelen teklif: muhabir reddedemez, kararı planlamacı yazışmadan
+ * sonra veriyor. Muhabire yalnız kimin önerdiği görünüyor.
+ */
+export function TeklifNotu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [ret, setRet] = useState<string | null>(null);
-  if (!teklifYanitlayabilir(ben, oneri)) return null;
-  const oneren = kisiBul(v, oneri.giren);
+  if (oneri.durum !== "teklif" || oneri.muhabirId !== ben.id) return null;
   return (
     <div className="duzeltme-istegi" data-teklif>
       <NotKutu ton="uyari" ikon={<Lightbulb size={16} />}>
-        <b>{t("teklifGeldi", { kisi: ad(oneren) })}</b>
+        <b>{t("teklifGeldi", { kisi: ad(kisiBul(v, oneri.giren)) })}</b>
       </NotKutu>
-      {ret === null ? (
-        <div className="dugmeler">
-          <button
-            type="button"
-            className="dugme dugme-iyi"
-            onClick={() => teklifYanitla(ben, oneri.id, true) && bildir(t("teklifKabulEdildi"))}
-            data-teklif-kabul
-          >
-            <Check size={15} /> {t("kabulEt")}
-          </button>
-          <button type="button" className="dugme dugme-ikincil" onClick={() => setRet("")} data-teklif-ret>
-            <X size={15} /> {t("geriCevir")}
-          </button>
-        </div>
-      ) : (
-        <div className="form form-kutu">
-          <label>
-            {t("gerekce")}
-            <input dir="auto" value={ret} onChange={(e) => setRet(e.target.value)} autoFocus data-teklif-gerekce />
-          </label>
-          <div className="form-alt">
-            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => setRet(null)}>
-              {t("iptal")}
-            </button>
-            <button className="dugme dugme-kotu dugme-kucuk" disabled={!ret.trim()} onClick={() => teklifYanitla(ben, oneri.id, false, ret) && setRet(null)} data-teklif-ret-gonder>
-              {t("geriCevir")}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

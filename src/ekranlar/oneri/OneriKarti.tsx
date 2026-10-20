@@ -60,7 +60,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
   const arka = arkaPlan(o);
   return (
     <article
-      className={`oneri-karti tur-${o.tur} ${o.talimatVeren ? "talimat" : ""} ${o.durum === "reddedildi" ? "sonuk-kart" : ""}`}
+      className={`oneri-karti tur-${o.tur} ${o.talimatVeren ? "talimat" : ""} ${o.durum === "reddedildi" || o.durum === "geriCekildi" ? "sonuk-kart" : ""}`}
       data-oneri={o.id}
       // Kartın boş yerine basmak da açıyor; düğme ve bağlantılar kendi işini yapsın.
       onClick={(e) => !(e.target as HTMLElement).closest("button, a") && ac()}
@@ -275,7 +275,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
       </div>
       <div>
         <div className="alan-etiket">{t("surec")}</div>
-        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" || o.durum === "teklif" ? (
+        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" || o.durum === "teklif" || o.durum === "geriCekildi" ? (
           <NotKutu ton="uyari">
             <OneriDurumRozeti oneri={o} />{" "}
             {(o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce) && <span dir="auto">{o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce}</span>}
@@ -318,7 +318,7 @@ function RetFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () =>
         {t("retGerekcesi")}
         <input dir="auto" value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus />
       </label>
-      <FormAlt kapat={kapat} kaydet={() => oneriDurum(ben, oneri.id, "reddedildi", gerekce) && kapat()} kaydetMetni={t("reddet")} />
+      <FormAlt kapat={kapat} kaydet={() => confirm(t("retOnay")) && oneriDurum(ben, oneri.id, "reddedildi", gerekce) && kapat()} kaydetMetni={t("reddet")} />
     </div>
   );
 }
@@ -382,7 +382,7 @@ export function OneriListesi({
     const talimat = !!o.talimatVeren;
     // Muhabire önerilen haberde sıra muhabirde; kabul edene kadar karar yok.
     // Gündeme alınmış öneri de karar almış sayılıyor: iki plana düşen öneri ikincisine de eklenmesin.
-    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif" && !oneriYeri(d, o);
+    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif" && o.durum !== "geriCekildi" && !oneriYeri(d, o);
     // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
     const muhabirde = o.durum === "duzeltme";
     const ikonlu = (ikon: ReactNode, ad: string, sinif: string, f: () => void) => (

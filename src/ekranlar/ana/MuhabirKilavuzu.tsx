@@ -44,11 +44,13 @@ function useBolumler(): Bolum[] {
         ["odDuzeltme", "kl3Duzeltme"],
         ["odSonra", "kl3Sonra"],
         ["odReddedildi", "kl3Red"],
+        ["odGeriCekildi", "kl3GeriCekildi"],
         ["sadeTamam", "kl3Tamam"],
       ],
     },
     { baslik: "kl4", maddeler: ["kl4a"] },
     { baslik: "kl4g", maddeler: ["kl4ga"] },
+    { baslik: "kl4c", maddeler: ["kl4ca"] },
     { baslik: "kl5", maddeler: ["kl5a"] },
     { baslik: "kl6", maddeler: ["kl6a"] },
     // Newsdesk devredeyken muhabir paketi kapatmıyor, sırası gelen adımı yapıyor.

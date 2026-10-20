@@ -100,7 +100,7 @@ function PlanlamaSayaclari() {
         ikon={<Lightbulb size={22} />}
         renk="renk-nextday"
         etiket={t("sYeniOneri")}
-        deger={v.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o)).length}
+        deger={v.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o, undefined, v)).length}
         alt={t("sBugunGelen", { n: v.oneriler.filter((o) => yerelGun(o.zaman) === B).length })}
       />
       <Sayac href="#/paketler" ikon={<Package size={22} />} renk="renk-haftalik" etiket={t("sPlanlanan")} deger={planliPaketler.length} alt={t("sBugunYarin")} />
@@ -109,7 +109,7 @@ function PlanlamaSayaclari() {
         ikon={<Clock size={22} />}
         ton="uyari"
         etiket={t("sOnayBekleyen")}
-        deger={v.paketler.filter((p) => !p.ozelId && (p.durum === "taslak" || p.durum === "degerlendiriliyor")).length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor" && !oneriArsivde(o)).length}
+        deger={v.paketler.filter((p) => !p.ozelId && (p.durum === "taslak" || p.durum === "degerlendiriliyor")).length + v.oneriler.filter((o) => o.durum === "degerlendiriliyor" && !oneriArsivde(o, undefined, v)).length}
         alt={t("sAksamToplantisi")}
       />
       <Sayac href="#/uretim" ikon={<CirclePlay size={22} />} renk="renk-nextday" etiket={t("sDevamEden")} deger={v.paketler.filter((p) => p.durum === "uretimde").length} alt={t("sUretimde")} />
@@ -181,7 +181,7 @@ function SonOneriler() {
   const v = useVeri();
   return (
     <Kart baslik={t("sonOneriler")} ikon={<ListChecks size={18} />} sagUc={<Tumu href="#/oneriler" />}>
-      <OneriTablosu oneriler={v.oneriler.filter((o) => !oneriArsivde(o)).sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
+      <OneriTablosu oneriler={v.oneriler.filter((o) => !oneriArsivde(o, undefined, v)).sort((a, b) => b.zaman.localeCompare(a.zaman)).slice(0, 6)} d={v} kisa />
     </Kart>
   );
 }

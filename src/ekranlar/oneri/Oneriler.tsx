@@ -1,18 +1,18 @@
 import { birimAdi } from "../../yapi";
 import { ONERI_ETIKETLERI, oneriArsivde, oneriEtiketleri, oneriYeri, type OneriEtiketi } from "../../oneriPlanlari";
-import { MuhabireOneriPenceresi, OneriYazismasi, TeklifYaniti } from "./Yazisma";
-import { ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
+import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
+import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
-import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { oneriDurum, oneriDuzenle, oneriGonder, oneriSil, oneriYenidenGonder, takipKimligiMi } from "../../eylemler";
+import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriDurum, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder, takipKimligiMi } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { kayitTemizleyebilir, muhabireOneriGonderebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { arsivdenCikarabilir, kayitTemizleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -55,8 +55,8 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const muhabir = ben.birim === "muhabir";
   const B = bugun();
   const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o));
-  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B));
-  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B));
+  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B, v));
+  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B, v));
   const q = aranan.trim().toLocaleLowerCase();
   const etiketler = new Map(gorunen.map((o) => [o.id, oneriEtiketleri(v, o)]));
   const etiketli = (o: Oneri, e: OneriEtiketi | "yok" | "") => !e || (e === "yok" ? !etiketler.get(o.id)!.length : etiketler.get(o.id)!.includes(e));
@@ -216,6 +216,48 @@ function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: On
   );
 }
 
+/*
+ * Önerinin aşama dışı geçişleri: teklifte planlamacının kararı, geri çekme,
+ * elle arşiv ve arşivden çıkarma. Kritik olanlarda onay soruluyor.
+ */
+function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const arsivde = oneriArsivde(o, bugun(), v);
+  const onayla = (soru: Anahtar, f: () => boolean, bitti: Anahtar) => {
+    if (confirm(t(soru)) && f()) bildir(t(bitti));
+  };
+  const dugmeler = [
+    teklifKarariVerebilir(ben, o) && (
+      <button key="deg" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "degerlendiriliyor")} data-teklif-degerlendir>
+        <Clock size={14} /> {t("degerlendirmeyeAl")}
+      </button>
+    ),
+    oneriGeriCekebilir(ben, o) && (
+      <button key="cek" type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => onayla("geriCekOnay", () => oneriGeriCek(ben, o.id), "bGeriCekildi")} data-oneri-geri-cek>
+        <Undo2 size={14} /> {t("geriCek")}
+      </button>
+    ),
+    !arsivde && yapabilir(ben, "oneriDegerlendir") && (
+      <button key="ars" type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => onayla("arsiveGonderOnay", () => oneriArsiveGonder(ben, o.id), "bArsiveGonderildi")} data-oneri-arsive>
+        <Archive size={14} /> {t("arsiveGonder")}
+      </button>
+    ),
+    arsivde && arsivdenCikarabilir(ben) && (
+      <button key="cik" type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => onayla("arsivdenCikarOnay", () => oneriArsivdenCikar(ben, o.id), "bArsivdenCikti")} data-oneri-arsivden>
+        <ArchiveRestore size={14} /> {t("arsivdenCikar")}
+      </button>
+    ),
+  ].filter(Boolean);
+  if (!dugmeler.length && !arsivde) return null;
+  return (
+    <div className="dugmeler ara-ust-2" data-oneri-kapi>
+      {arsivde && <Rozet>{t("arsivde")}</Rozet>}
+      {dugmeler}
+    </div>
+  );
+}
+
 export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri: Oneri; pencerede?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
@@ -234,7 +276,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   // Girdiği yer (Next Day planı ya da haftalık gündem): karar verilmişse düğmelerin yerinde "Plandan çıkar".
   const yer = oneriYeri(v, oneri);
   const haftaPlani = yer?.hafta ?? (oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined);
-  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif" && !yer;
+  const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif" && oneri.durum !== "geriCekildi" && !yer;
   const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
@@ -270,7 +312,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   return (
     <>
       {ust}
-      <TeklifYaniti ben={ben} oneri={oneri} />
+      <TeklifNotu ben={ben} oneri={oneri} />
       {oneriYenidenGonderebilir(ben, oneri) && (
         <div className="duzeltme-istegi" data-duzeltme-istegi>
           <NotKutu ton="uyari" ikon={<Undo2 size={16} />}>
@@ -444,6 +486,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               </div>
             )}
             <GeriBildirimBolumu ben={ben} oneri={oneri} />
+            <OneriKapiDugmeleri ben={ben} oneri={oneri} />
             {yer && (
               <div className="ara-ust-2">
                 <PlandanCikarDugmesi ben={ben} oneri={oneri} d={v} />
@@ -468,6 +511,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                       <button
                         className="dugme dugme-kotu dugme-kucuk"
                         onClick={() => {
+                          if (!confirm(t("retOnay"))) return;
                           oneriDurum(ben, oneri.id, "reddedildi", ret);
                           setRet(null);
                         }}

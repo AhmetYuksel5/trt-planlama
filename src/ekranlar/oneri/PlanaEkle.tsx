@@ -115,6 +115,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const secenekler = secenek(plan);
 
   const ekle = () => {
+    if (!confirm(t("planaEkleOnay"))) return;
     const tamam = oneriPlanaEkle(ben, oneri.id, {
       planId: plan.id,
       baslikId: baslikId === "yeni" ? undefined : baslikId,

@@ -250,8 +250,24 @@ export const muhabireOneriBirimleri = (d: Durum) => d.muhabireOneriBirimleri ?? 
 export const muhabireOneriGonderebilir = (k: Kisi | undefined, d: Durum): boolean =>
   !!k && k.birim !== "muhabir" && (!!k.hesapYoneticisi || muhabireOneriBirimleri(d).includes(k.birim));
 
-/** Önerilen haberi yalnız muhabiri kabul ya da geri çeviriyor. */
-export const teklifYanitlayabilir = (k: Kisi | undefined, o: Oneri): boolean => !!k && o.durum === "teklif" && o.muhabirId === k.id;
+/*
+ * Muhabire gönderilen teklifte karar planlamacıda: muhabir reddedemez,
+ * yazışmada konuşur; planlamacı değerlendirmeye alır ya da geri çeker.
+ * Gönderen Planlama dışından olabilir (yöneticinin izin verdiği birim).
+ */
+export const teklifKarariVerebilir = (k: Kisi | undefined, o: Oneri): boolean =>
+  !!k && o.durum === "teklif" && k.id !== o.muhabirId && (yapabilir(k, "oneriDegerlendir") || k.id === o.giren);
+
+/*
+ * Muhabir önerisini yalnız Planlama henüz dokunmadıysa geri çeker: durum
+ * "yeni", düzeltme istenmemiş, Planlama onun adına girmemiş. Teklifi
+ * planlamacı geri çeker.
+ */
+export const oneriGeriCekebilir = (k: Kisi | undefined, o: Oneri): boolean =>
+  !!k && (o.durum === "teklif" ? teklifKarariVerebilir(k, o) : o.durum === "yeni" && o.muhabirId === k.id && !o.giren && !o.duzeltmeSayisi);
+
+/* Arşivden geri çıkarma yetkiyle (4. aşamada dağıtılabilir yetki olacak): şimdilik tam yönetici ve Planlama yöneticisi. */
+export const arsivdenCikarabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && (!!k.hesapYoneticisi || (k.birim === "planlama" && k.rol === "yonetici"));
 
 /*
  * Önerinin yazışması iki taraf arasında: muhabiri, öneriyi gönderen ya da
@@ -342,6 +358,8 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriDuzeltmeIstendi",
   "oneriDuzenlendi",
   "oneriMuhabireGonderildi",
+  "oneriGeriCekildi",
+  "oneriArsivdenCikarildi",
   "oneriMesaji",
   "tamamlamaGeriAlindi",
 ];

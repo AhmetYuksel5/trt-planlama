@@ -102,7 +102,7 @@ export const MENU: Grup[] = [
         ikon: Lightbulb,
         // Muhabirin önerileri menüde değil, İşlerim'de "Yeni öneri gönder"in yanında; menüde yerine takipleri.
         goster: (ben) => ben.birim !== "muhabir",
-        say: (d) => d.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o)).length,
+        say: (d) => d.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o, undefined, d)).length,
       },
       {
         sayfa: "takipler",
@@ -159,7 +159,7 @@ const MUHABIR_ALT = ["ayarlar"];
 const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
   sayfalar.map((s) => MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === s)).filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa));
 /* Muhabirde Önerilerim'in sayısı önündeki iş: düzeltme istenen ve Planlama'nın ona önerdiği. */
-const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif") && !oneriArsivde(o)).length;
+const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif") && !oneriArsivde(o, undefined, d)).length;
 
 /** Maddenin kişiye göre adı: muhabirin menüsü kendi işine daralıyor ("İşlerim", "Önerilerim"). */
 export const maddeAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad);

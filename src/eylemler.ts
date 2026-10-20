@@ -119,7 +119,9 @@ import {
   muhabireOneriGonderebilir,
   oneriDuzeltmeyeGider,
   oneriYazisabilir,
-  teklifYanitlayabilir,
+  arsivdenCikarabilir,
+  oneriGeriCekebilir,
+  teklifKarariVerebilir,
   oneriYenidenGonderebilir,
   onIncelemeci,
   paketGorebilir,
@@ -417,10 +419,11 @@ export const talimatVer = (ben: Kisi, g: TalimatGirdisi): string | null => {
 };
 
 export const oneriDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "sonra" | "reddedildi", gerekce = "") => {
-  if (!yapabilir(ben, "oneriDegerlendir")) return false;
   let d = getir();
   const o = oneriBul(d, id);
-  if (!o || o.durum === "planaEklendi") return false;
+  if (!o || o.durum === "planaEklendi" || o.durum === "geriCekildi") return false;
+  // Teklifte karar gönderende (Planlama dışından da olabilir); reddedilmez, değerlendirmeye alınır ya da geri çekilir.
+  if (o.durum === "teklif" ? !teklifKarariVerebilir(ben, o) || yeni !== "degerlendiriliyor" : !yapabilir(ben, "oneriDegerlendir")) return false;
   // Talimat reddedilmez ve ertelenmez; yalnız değerlendirmeye alınıp plana eklenir.
   if (o.talimatVeren && yeni !== "degerlendiriliyor") return false;
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: yeni, gerekce: gerekce || x.gerekce } : x)) };
@@ -3612,20 +3615,53 @@ export const muhabireOneriGonder = (ben: Kisi, g: MuhabireOneriGirdisi): string 
   return id;
 };
 
-/** Muhabirin yanıtı: kabulde öneri Planlama'nın önüne "değerlendiriliyor" olarak gider; retde gerekçe zorunlu. */
-export const teklifYanitla = (ben: Kisi, id: string, kabul: boolean, gerekce = "") => {
+/*
+ * Geri çekme: muhabir Planlama dokunmadan önerisini, planlamacı muhabire
+ * gönderdiği teklifi. Öneri silinmez, arşive gider; karşı taraf haberdar.
+ */
+export const oneriGeriCek = (ben: Kisi, id: string) => {
   const d = getir();
   const o = oneriBul(d, id);
-  if (!o || !teklifYanitlayabilir(ben, o)) return false;
-  if (!kabul && !gerekce.trim()) return false;
-  const yeni: Oneri = kabul ? { ...o, durum: "degerlendiriliyor" } : { ...o, durum: "reddedildi", gerekce: gerekce.trim() };
-  // Gönderen Planlama dışından olabilir; o da haberdar olsun.
-  const kime = o.giren && kisiBul(d, o.giren)?.birim !== "planlama" ? o.giren : "";
+  if (!o || !oneriGeriCekebilir(ben, o)) return false;
+  const muhabir = ben.id === o.muhabirId;
   kaydet(
     hareketYaz(
-      { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? yeni : x)) },
-      { kisiId: ben.id, tip: kabul ? "teklifKabulEdildi" : "teklifReddedildi", oneriId: id, veri: { sahip: "planlama", ...(kime && { kime }), ...(!kabul && { gerekce: gerekce.trim() }) } },
+      { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: "geriCekildi" as const } : x)) },
+      { kisiId: ben.id, tip: "oneriGeriCekildi", oneriId: id, veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } },
     ),
+  );
+  return true;
+};
+
+/* Planlamacı öneriyi günü beklemeden arşive gönderir; kayıt yerinde, yalnız güncel listelerden kalkar. */
+export const oneriArsiveGonder = (ben: Kisi, id: string) => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !yapabilir(ben, "oneriDegerlendir") || o.arsiv) return false;
+  const { arsivdenCikti: _, ...x } = o;
+  kaydet(
+    hareketYaz(
+      { ...d, oneriler: d.oneriler.map((y) => (y.id === id ? { ...x, arsiv: { zaman: simdi(), kisiId: ben.id } } : y)) },
+      { kisiId: ben.id, tip: "oneriArsiveGonderildi", oneriId: id },
+    ),
+  );
+  return true;
+};
+
+/*
+ * Arşivden çıkarma: elle arşiv kalkar, arşiv günü bu andan sayılır.
+ * Reddedilmiş ya da geri çekilmiş öneri yeniden değerlendirmeye açılır;
+ * öbürü olduğu aşamada kalır.
+ */
+export const oneriArsivdenCikar = (ben: Kisi, id: string) => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !arsivdenCikarabilir(ben)) return false;
+  const { arsiv: _, ...x } = o;
+  const kapali = o.durum === "reddedildi" || o.durum === "geriCekildi";
+  const yeni: Oneri = { ...x, arsivdenCikti: simdi(), ...(kapali && { durum: "degerlendiriliyor" as const }) };
+  kaydet(
+    hareketYaz({ ...d, oneriler: d.oneriler.map((y) => (y.id === id ? yeni : y)) }, { kisiId: ben.id, tip: "oneriArsivdenCikarildi", oneriId: id, veri: o.muhabirId ? { kime: o.muhabirId } : undefined }),
   );
   return true;
 };

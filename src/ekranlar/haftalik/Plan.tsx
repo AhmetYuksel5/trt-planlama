@@ -191,6 +191,7 @@ export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: Ha
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
   const [f, setF] = useState({ tarih: gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "" });
   const kaydet = () => {
+    if (!confirm(t("gundemeEkleOnay"))) return;
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {
       tarih: f.tarih || undefined,
       baslikId: f.baslikId === "yeni" ? undefined : f.baslikId,
