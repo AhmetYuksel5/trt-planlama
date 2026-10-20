@@ -449,6 +449,8 @@ export interface Oneri {
   planTarihi?: string;
   paketId?: string;
   gerekce?: string;
+  /** İkinci plana girmek için kopyalandıysa asıl önerinin kimliği; ikisi birbirine bağlı görünüyor. */
+  kopyaKaynagi?: string;
   /** Planlamacının elle arşive gönderdiği an; günü beklemeden arşivde. */
   arsiv?: { zaman: string; kisiId: string };
   /*
@@ -1195,6 +1197,8 @@ export const HAREKET_TIPLERI = [
   "oneriGeriCekildi",
   "oneriTakibeAlindi",
   "takipSatiriEklendi",
+  "oneriAsamayaDondu",
+  "oneriKopyalandi",
   "oneriArsiveGonderildi",
   "oneriArsivdenCikarildi",
   "oneriMesaji",

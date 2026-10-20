@@ -202,3 +202,20 @@ export const oneriPlanaGore = (d: Pick<Durum, "planlar" | "gelismeler" | "paketl
   }
   return o.durum !== "planaEklendi" || oneriPlansizKabul(d, o) ? o : plandanDonmus(o);
 };
+
+/*
+ * Geri almada dönülebilecek aşamalar: yalnız geçerli önceki aşamalar.
+ * Plandaki (ya da gündemdeki), reddedilen ve eski "sonra" öneri
+ * değerlendirmeye ya da takibe; takipteki ve düzeltmedeki değerlendirmeye.
+ * Takip muhabirsiz ve talimatta yok. Henüz karar verilmemiş öneride
+ * (yeni, değerlendiriliyor, teklif) geri alınacak bir şey yok.
+ */
+export const ONERI_GERI_HEDEFLERI = ["degerlendiriliyor", "takip"] as const;
+export type OneriGeriHedefi = (typeof ONERI_GERI_HEDEFLERI)[number];
+
+export const oneriGeriHedefleri = (d: Durum, o: Oneri): OneriGeriHedefi[] => {
+  const takipOlur = !!o.muhabirId && !o.talimatVeren;
+  if (oneriYeri(d, o) || o.durum === "planaEklendi" || o.durum === "reddedildi" || o.durum === "sonra") return takipOlur ? ["degerlendiriliyor", "takip"] : ["degerlendiriliyor"];
+  if (o.durum === "takip" || o.durum === "duzeltme") return ["degerlendiriliyor"];
+  return [];
+};

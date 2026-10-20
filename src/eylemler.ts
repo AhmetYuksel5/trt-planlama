@@ -16,7 +16,7 @@ import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
-import { oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriYeri, plandanDonmus } from "./oneriPlanlari";
+import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriYeri, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -659,11 +659,18 @@ const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Du
  * haftalıkta gündemdeki kalemi (hafta kesinleşmemişse). Paketi üretime
  * girmişse "paketIlerledi": geçmişi kalsın, paket ekranından iptal edilir.
  */
-export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkisiz" | "paketIlerledi" => {
-  let d = getir();
-  const o = oneriBul(d, oneriId);
-  const yer = o ? oneriYeri(d, o) : null;
-  if (!o || !yer || !yapabilir(ben, "oneriDegerlendir")) return "yetkisiz";
+/*
+ * Önerinin plandaki ve gündemdeki izini kaldırır (kaydetmez): plandan
+ * çıkarma ve aşamaya geri alma aynı kuralla çalışsın. Yazılacak hareketin
+ * plan ya da hafta bağı da döner.
+ */
+const plandanCikarilmis = (
+  d: Durum,
+  ben: Kisi,
+  o: Oneri,
+): { d: Durum; bag: Pick<Hareket, "planId" | "haftaId" | "veri"> | null } | "yetkisiz" | "paketIlerledi" => {
+  const yer = oneriYeri(d, o);
+  if (!yer) return { d, bag: null };
   // Kesinleşmiş haftadan Next Day'e geçmiş öneri planından çıkıyor; haftanın kalemi kayıt olarak kalıyor.
   const haftadan = !!yer.hafta && yer.hafta.durum === "kesinlesti" && yer.planda;
   if (yer.hafta && !haftadan && (yer.hafta.durum === "kesinlesti" || !haftalikDuzenler(ben, yer.hafta))) return "yetkisiz";
@@ -699,15 +706,86 @@ export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkis
     d = haftaGuncelle(d, yer.hafta.id, (x) => ({ ...x, kalemler: x.kalemler.filter((k) => k.id !== kalemId) }));
   }
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? plandanDonmus(x) : x)) };
+  const bag = yer.planda && yer.plan ? { planId: yer.plan.id, veri: { tarih: yer.plan.tarih } } : { haftaId: yer.hafta?.id, veri: { tarih: yer.hafta?.baslangic ?? "" } };
+  return { d, bag };
+};
+
+export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkisiz" | "paketIlerledi" => {
+  const d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !oneriYeri(d, o) || !yapabilir(ben, "oneriDegerlendir")) return "yetkisiz";
+  const r = plandanCikarilmis(d, ben, o);
+  if (typeof r === "string") return r;
+  kaydet(hareketYaz(r.d, { kisiId: ben.id, tip: "oneriPlandanCikarildi", oneriId: o.id, ...r.bag }));
+  return "tamam";
+};
+
+/*
+ * Geri alma: planlamacı bir kararı geri alınca önerinin hangi aşamaya
+ * döneceğini seçer; yalnız geçerli önceki aşamalar sunulur
+ * (oneriPlanlari.ts → oneriGeriHedefleri). Plandaysa plandaki kayıtları
+ * plandan çıkarmayla aynı kuralla kalkar; hepsi tek hareket, muhabire
+ * bildirim. Ret gerekçesi kalkar (hareket geçmişinde duruyor).
+ */
+export const oneriAsamayaDon = (ben: Kisi, oneriId: string, hedef: OneriGeriHedefi): "tamam" | "yetkisiz" | "paketIlerledi" => {
+  const d0 = getir();
+  const o = oneriBul(d0, oneriId);
+  if (!o || !yapabilir(ben, "oneriDegerlendir") || !oneriGeriHedefleri(d0, o).includes(hedef)) return "yetkisiz";
+  const r = plandanCikarilmis(d0, ben, o);
+  if (typeof r === "string") return r;
+  let d = r.d;
+  d = {
+    ...d,
+    oneriler: d.oneriler.map((x) => {
+      if (x.id !== o.id) return x;
+      const { gerekce: _, ...y } = x;
+      return { ...y, durum: hedef };
+    }),
+  };
   kaydet(
     hareketYaz(d, {
       kisiId: ben.id,
-      tip: "oneriPlandanCikarildi",
+      tip: "oneriAsamayaDondu",
       oneriId: o.id,
-      ...(yer.planda && yer.plan ? { planId: yer.plan.id, veri: { tarih: yer.plan.tarih } } : { haftaId: yer.hafta?.id, veri: { tarih: yer.hafta?.baslangic ?? "" } }),
+      ...(r.bag && { planId: r.bag.planId, haftaId: r.bag.haftaId }),
+      veri: { sonuc: hedef, onceki: o.durum, ...(o.muhabirId && { kime: o.muhabirId }) },
     }),
   );
   return "tamam";
+};
+
+/*
+ * Öneri ikinci bir plana girecekse çoğaltılır: kopya baştan,
+ * değerlendirmeden başlar; asıl öneri ilk planında kalır. İkisi birbirine
+ * bağlı görünür (kopyaKaynagi). Takip, satırlar, arşiv ve geri bildirim
+ * kopyaya geçmez: o ayrı bir haber.
+ */
+export const oneriKopyala = (ben: Kisi, oneriId: string): string | null => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !yapabilir(ben, "oneriDegerlendir") || !oneriYeri(d, o)) return null;
+  const id = kimlik("o");
+  const {
+    planId: _p,
+    planTarihi: _t,
+    paketId: _k,
+    baslikId: _b,
+    gerekce: _g,
+    arsiv: _a,
+    arsivdenCikti: _ac,
+    takip: _tk,
+    takipBitis: _tb,
+    takipBitiren: _tr,
+    yalnizTakip: _y,
+    geriBildirim: _gb,
+    geriDonus: _gd,
+    satirlar: _s,
+    ...ic
+  } = o;
+  const kopya: Oneri = { ...ic, id, zaman: simdi(), durum: "degerlendiriliyor", kopyaKaynagi: o.id };
+  d = { ...d, oneriler: [kopya, ...d.oneriler] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriKopyalandi", oneriId: id, veri: { asil: o.id } }));
+  return id;
 };
 
 /**

@@ -1,13 +1,13 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, oneriArsivde, oneriEtiketleri, oneriYeri, type OneriEtiketi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
-import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { oneriArsiveGonder, oneriArsivdenCikar, oneriDurum, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
@@ -223,7 +223,26 @@ function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: On
 function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const { t } = useDil();
   const v = useVeri();
+  const [geriAl, setGeriAl] = useState<OneriGeriHedefi | null>(null);
   const arsivde = oneriArsivde(o, bugun(), v);
+  const degerlendirir = yapabilir(ben, "oneriDegerlendir");
+  const hedefler = degerlendirir ? oneriGeriHedefleri(v, o) : [];
+  const geriAlYap = (h: OneriGeriHedefi) => {
+    if (!confirm(t("geriAlOnay", { asama: t(ONERI_DURUM_ADI[h]) }))) return;
+    const r = oneriAsamayaDon(ben, o.id, h);
+    if (r === "tamam") {
+      bildir(t("bGeriAlindi"));
+      setGeriAl(null);
+    } else if (r === "paketIlerledi") bildir(t("bPaketIlerledi"));
+  };
+  const kopyala = () => {
+    if (!confirm(t("kopyaOnay"))) return;
+    const id = oneriKopyala(ben, o.id);
+    if (id) {
+      bildir(t("bKopyaAcildi"));
+      git(`oneriler/${id}`);
+    }
+  };
   const onayla = (soru: Anahtar, f: () => boolean, bitti: Anahtar) => {
     if (confirm(t(soru)) && f()) bildir(t(bitti));
   };
@@ -248,6 +267,16 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
         <Archive size={14} /> {t("arsiveGonder")}
       </button>
     ),
+    hedefler.length > 0 && (
+      <button key="geri" type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setGeriAl(geriAl ? null : hedefler[0])} aria-expanded={!!geriAl} data-oneri-geri-al>
+        <Undo2 size={14} /> {t("geriAlAsama")}
+      </button>
+    ),
+    degerlendirir && !!oneriYeri(v, o) && (
+      <button key="kopya" type="button" className="dugme dugme-sade dugme-kucuk" onClick={kopyala} data-oneri-kopyala>
+        <Copy size={14} /> {t("baskaPlanaEkle")}
+      </button>
+    ),
     arsivde && arsivdenCikarabilir(ben) && (
       <button key="cik" type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => onayla("arsivdenCikarOnay", () => oneriArsivdenCikar(ben, o.id), "bArsivdenCikti")} data-oneri-arsivden>
         <ArchiveRestore size={14} /> {t("arsivdenCikar")}
@@ -256,9 +285,57 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   ].filter(Boolean);
   if (!dugmeler.length && !arsivde) return null;
   return (
-    <div className="dugmeler ara-ust-2" data-oneri-kapi>
-      {arsivde && <Rozet>{t("arsivde")}</Rozet>}
-      {dugmeler}
+    <>
+      <div className="dugmeler ara-ust-2" data-oneri-kapi>
+        {arsivde && <Rozet>{t("arsivde")}</Rozet>}
+        {dugmeler}
+      </div>
+      {geriAl && (
+        <div className="form form-kutu ara-ust-2" data-geri-al-formu>
+          <fieldset className="secim-satiri">
+            <legend>{t("geriAlHedef")}</legend>
+            {hedefler.map((h) => (
+              <label key={h} className="secim">
+                <input type="radio" name={`geri-${o.id}`} checked={geriAl === h} onChange={() => setGeriAl(h)} data-geri-hedef={h} />
+                {t(ONERI_DURUM_ADI[h])}
+              </label>
+            ))}
+          </fieldset>
+          <div className="form-alt">
+            <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setGeriAl(null)}>
+              {t("iptal")}
+            </button>
+            <button type="button" className="dugme dugme-kucuk" onClick={() => geriAlYap(geriAl)} data-geri-al-onay>
+              {t("geriAlAsama")}
+            </button>
+          </div>
+        </div>
+      )}
+      <BagliOneriler oneri={o} />
+    </>
+  );
+}
+
+/* İkinci plana kopyalanan öneri ile asıl öneri birbirine bağlı görünür. */
+function BagliOneriler({ oneri: o }: { oneri: Oneri }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const asil = o.kopyaKaynagi ? v.oneriler.find((x) => x.id === o.kopyaKaynagi) : undefined;
+  const kopyalar = v.oneriler.filter((x) => x.kopyaKaynagi === o.id);
+  if (!asil && !kopyalar.length) return null;
+  return (
+    <div className="ara-ust-2" data-bagli-oneriler>
+      <div className="alan-etiket">{t("bagliOneriler")}</div>
+      <ul className="liste">
+        {[...(asil ? [[asil, "kopyaAsil"] as const] : []), ...kopyalar.map((x) => [x, "kopyaKopya"] as const)].map(([x, ad]) => (
+          <li key={x.id}>
+            <small className="soluk">{t(ad)}</small> <a href={`#/oneriler/${x.id}`}>
+              <Icerik>{x.haberBasligi}</Icerik>
+            </a>{" "}
+            <OneriDurumRozeti oneri={x} />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

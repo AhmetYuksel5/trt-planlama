@@ -720,6 +720,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   hariç (`oneriPlansizKabul`); teklife dokunulmaz. `oneriYeri` ve geri
   bildirim kayda bakar. Yeni öneri akışının (tasarım belgesi, dört aşama)
   ilk adımı.
+- Geri almada aşama seçimi ve ikinci plana kopya (tasarım 2c; öneri
+  ayrıntısındaki `OneriKapiDugmeleri`, onaylı):
+  - "Geri al": dönülebilecek geçerli önceki aşamalar sorulur
+    (`oneriPlanlari.ts → oneriGeriHedefleri`: plandaki/gündemdeki,
+    reddedilen ve eski "sonra" değerlendirmeye ya da takibe; takipteki ve
+    düzeltmedeki değerlendirmeye; takip muhabirsiz ve talimatta yok).
+    `eylemler.ts → oneriAsamayaDon` plandaki kayıtları plandan çıkarmayla
+    aynı kuralla kaldırır (`plandanCikarilmis`, `oneriPlandanCikar` da onu
+    kullanıyor; üretime girmiş paket varsa durur), ret gerekçesini siler;
+    tek hareket `oneriAsamayaDondu` (`veri.sonuc` hedef), muhabire bildirim.
+  - "Başka plana da ekle": öneri ikinci plana girecekse çoğaltılır
+    (`oneriKopyala`): kopya değerlendirmeden başlar, `kopyaKaynagi` asılı
+    gösterir; plan bağı, takip, satırlar, arşiv, geri bildirim geçmez.
+    İkisi ayrıntıda "Bağlı öneriler"de (`BagliOneriler`).
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
   bütün `Durum` tek JSON (`tur: "plannersflow-yedek"`); gerçek kipte sunucuyla
   eşitlenmeden düğme pasif. Davetler ve kayıt başvuruları `Durum`'da değil,

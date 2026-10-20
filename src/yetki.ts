@@ -365,6 +365,7 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriMuhabireGonderildi",
   "oneriGeriCekildi",
   "oneriTakibeAlindi",
+  "oneriAsamayaDondu",
   "oneriArsivdenCikarildi",
   "oneriMesaji",
   "tamamlamaGeriAlindi",
