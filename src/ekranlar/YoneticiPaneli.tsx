@@ -62,10 +62,10 @@ const birimDurumu = (d: Durum, b: Birim, paketler: Paket[], t: (k: Anahtar) => s
         bekleyen:
           d.planlar.filter((p) => p.durum === "toplantida").length +
           d.haftalik.filter((h) => h.durum === "toplantida").length +
-          d.oneriler.filter((o) => o.talimatVeren && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o, undefined, d)).length,
+          d.oneriler.filter((o) => o.talimatVeren && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o)).length,
         sayilar: [
           ["sYarinPlan", yarinPlan ? <Rozet ton={PLAN_DURUM_TONU[yarinPlan.durum]}>{t(PLAN_DURUM_ADI[yarinPlan.durum])}</Rozet> : "—"],
-          ["bkBekleyenOneri", d.oneriler.filter((o) => (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o, undefined, d)).length],
+          ["bkBekleyenOneri", d.oneriler.filter((o) => (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriArsivde(o)).length],
           ["bkDegerlendirmede", paketler.filter((p) => p.durum === "degerlendiriliyor").length],
         ],
       };

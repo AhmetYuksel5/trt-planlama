@@ -288,7 +288,7 @@ function TakipGelismeFormu({ ben, takip: x, plan, kapat }: { ben: Kisi; takip: T
  * Arşive düşen (son satırdan 2 gün sonra) listede yok.
  */
 export const takipOnerileri = (ben: Kisi, d: Durum) =>
-  d.oneriler.filter((o) => o.durum === "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, bugun(), d)).sort((a, b) => oneriSonGunu(b).localeCompare(oneriSonGunu(a)) || b.zaman.localeCompare(a.zaman));
+  d.oneriler.filter((o) => o.durum === "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, bugun())).sort((a, b) => oneriSonGunu(b).localeCompare(oneriSonGunu(a)) || b.zaman.localeCompare(a.zaman));
 
 /** Takip önerilerinin kartları; plan verilince planlamacı takibi oradan plana alır. */
 function TakipOnerileri({ ben, liste, plan }: { ben: Kisi; liste: Oneri[]; plan?: NextDayPlan }) {

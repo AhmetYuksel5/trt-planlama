@@ -423,7 +423,7 @@ function ProgramOnerileri() {
   const v = useVeri();
   return (
     <Kart baslik={t("programOnerileri")} ikon={<Lightbulb size={18} />}>
-      <OneriTablosu oneriler={v.oneriler.filter((o) => o.tur === "program" && !oneriArsivde(o, undefined, v))} d={v} kisa />
+      <OneriTablosu oneriler={v.oneriler.filter((o) => o.tur === "program" && !oneriArsivde(o))} d={v} kisa />
     </Kart>
   );
 }

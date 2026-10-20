@@ -670,11 +670,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`ONERI_ETIKETLERI` yalnız Next Day ve Weekly).
 
   Arşiv tek kural (`oneriPlanlari.ts → oneriArsivde`, `oneriSonGunu`;
-  saklanmaz): günü 2 gün geçmiş (`ARSIV_GUNU`; günü 20'yse 23'ünde) ve açık
-  işi kalmamış öneri güncel listelerden kalkar. Gün aralığın sonu, plana
-  girdiyse planın günü, günü yoksa geldiği gün. Açık iş (`oneriAcikIsi`):
-  e-posta takibi açık ya da paketi bitmemiş (toplantıda, onaylı, üretimde;
-  bunun için `d` verilir). Reddedilen ve geri çekilen günü beklemez.
+  saklanmaz): günü 2 gün geçmiş (`ARSIV_GUNU`; günü 20'yse 23'ünde)
+  öneri güncel listelerden kalkar. Gün aralığın sonu, plana
+  girdiyse planın günü, günü yoksa geldiği gün. Açık paket öneriyi tutmaz
+  (kimsenin kapatmadığı eski onaylı paketler önerileri haftalarca güncelde
+  bırakıyordu); paketin takibi Paketler sayfasında, onay kuyruğunda ve
+  muhabirin "Senin sıran"ında. Reddedilen ve geri çekilen günü beklemez.
   Planlamacı elle arşive gönderir (`oneriArsiveGonder`, `Oneri.arsiv`);
   arşivden çıkarma (`oneriArsivdenCikar`, `arsivdenCikarabilir`: hesap
   yetkisi `arsivdenCikarma`) günü o andan saydırır
@@ -703,7 +704,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   görev ve "yapıldı" akışı aldı. `geriBildirimAyari` ayarı her zaman kapalı
   okur; pencerede "takip edilsin mi", Ayarlar'daki anahtar ve "Plana ekle"deki
   "Yalnız takip" yok (paketsiz eklemek zaten takip olarak). Eski açık takip
-  işaretleri bilgi olarak kalır, arşivi tutmaz (`oneriAcikIsi`). Aşağıdaki
+  işaretleri bilgi olarak kalır, arşivi tutmaz. Aşağıdaki
   anlatım eski kayıtlar için.
 - Yeni öneri düzenine geçiş (Ayarlar, yalnız tam yönetici;
   `KayitYedegi.tsx → YeniDuzenGecisi`, kurallar `gecis.ts`, eylem

@@ -55,8 +55,8 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const muhabir = ben.birim === "muhabir";
   const B = bugun();
   const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o));
-  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B, v));
-  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B, v));
+  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B));
+  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B));
   const q = aranan.trim().toLocaleLowerCase();
   const etiketler = new Map(gorunen.map((o) => [o.id, oneriEtiketleri(v, o)]));
   const etiketli = (o: Oneri, e: OneriEtiketi | "yok" | "") => !e || (e === "yok" ? !etiketler.get(o.id)!.length : etiketler.get(o.id)!.includes(e));
@@ -224,7 +224,7 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const { t } = useDil();
   const v = useVeri();
   const [geriAl, setGeriAl] = useState<OneriGeriHedefi | null>(null);
-  const arsivde = oneriArsivde(o, bugun(), v);
+  const arsivde = oneriArsivde(o, bugun());
   const degerlendirir = yapabilir(ben, "oneriDegerlendir");
   const hedefler = geriAlabilir(ben) ? oneriGeriHedefleri(v, o) : [];
   const geriAlYap = (h: OneriGeriHedefi) => {
