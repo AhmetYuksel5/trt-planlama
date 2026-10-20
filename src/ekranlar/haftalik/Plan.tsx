@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { oneriAraligi, oneriHaftada, oneriYeri } from "../../oneriPlanlari";
 import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
-import { PlanTakipleri, acikTakipler } from "../Takipler";
+import { PlanTakipleri, acikTakipler, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
@@ -92,7 +92,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           {duzenler && (
             <button type="button" className="dugme dugme-ikincil" onClick={() => setTakipler(true)} data-arac="takipler">
               <Binoculars size={16} /> {t("mtAcikTakipler")}
-              {acikTakipler(ben, v).length > 0 && <em className="dugme-sayi">{acikTakipler(ben, v).length}</em>}
+              {acikTakipler(ben, v).length + takipOnerileri(ben, v).length > 0 && <em className="dugme-sayi">{acikTakipler(ben, v).length + takipOnerileri(ben, v).length}</em>}
             </button>
           )}
           <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
@@ -252,7 +252,7 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   // Gündeme ya da Next Day'e giren öneri de listede kalıyor (en sonda, notuyla): ne geldiği ve ne olduğu bir arada.
   const sonda = (o: Oneri) => (oneriYeri(v, o) ? 2 : o.durum === "reddedildi" ? 1 : 0);
   const oneriler = v.oneriler
-    .filter((o) => oneriHaftada(o, hafta) || hafta.kalemler.some((k) => k.oneriId === o.id))
+    .filter((o) => (oneriHaftada(o, hafta) && o.durum !== "takip") || hafta.kalemler.some((k) => k.oneriId === o.id))
     .sort((a, b) => sonda(a) - sonda(b) || b.zaman.localeCompare(a.zaman));
   const bekleyen = oneriler.filter((o) => !sonda(o)).length;
   return (

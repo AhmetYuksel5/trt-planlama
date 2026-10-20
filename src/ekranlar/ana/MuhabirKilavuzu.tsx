@@ -42,6 +42,7 @@ function useBolumler(): Bolum[] {
         ["odDegerlendiriliyor", "kl3Degerlendiriliyor"],
         ["odPlanaEklendi", "kl3Plana"],
         ["odDuzeltme", "kl3Duzeltme"],
+        ["odTakip", "kl3Takip"],
         ["odSonra", "kl3Sonra"],
         ["odReddedildi", "kl3Red"],
         ["odGeriCekildi", "kl3GeriCekildi"],

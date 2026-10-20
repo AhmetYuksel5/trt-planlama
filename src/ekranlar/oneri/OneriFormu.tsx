@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, useDil } from "../../dil";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriGonder, takipKimligiMi, ulkesi, type OneriGirdisi } from "../../eylemler";
+import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
 import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, TAKIP_BICIMI, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { YzBicimle } from "../../bilesenler/YzOneri";
@@ -265,7 +265,7 @@ export function ElleOneriFormu({
   const gecerli = oneriFormuGecerli(f);
   const gonder = (hemen: boolean) => {
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta, ...(takipId && { takipId }) });
-    if (id && takipKimligiMi(id)) {
+    if (id && f.bicim === TAKIP_BICIMI) {
       bildir(t("bTakipKaydedildi"));
       kapat();
     } else if (id) {

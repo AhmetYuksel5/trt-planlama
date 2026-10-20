@@ -393,10 +393,17 @@ export const sahaGorevi = (g: Gorevlendirme) => g.tur !== "izin";
  * yazışmada konuşur; kararı (değerlendirmeye alma, geri çekme) gönderen verir.
  */
 /*
+ * "takip": güncel haber, muhabirin bölgesinde süren gelişme. Muhabir
+ * Takiplerim'den ya da öneri formunda "Takip" türüyle açar, Planlama
+ * öneriyi "takip olarak kalsın" diye buraya alır. Muhabir metni
+ * değiştirmez, altına tarihli gelişme satırı ekler (`satirlar`); son
+ * satırdan 2 gün sonra arşive düşer. Planlamacı istediği an plana ekler.
+ */
+/*
  * "geriCekildi": muhabir Planlama dokunmadan önerisini ya da planlamacı
  * muhabire gönderdiği teklifi geri çekti; öneri arşive gider.
  */
-export const ONERI_DURUMLARI = ["teklif", "yeni", "degerlendiriliyor", "duzeltme", "planaEklendi", "reddedildi", "sonra", "geriCekildi"] as const;
+export const ONERI_DURUMLARI = ["teklif", "yeni", "degerlendiriliyor", "duzeltme", "takip", "planaEklendi", "reddedildi", "sonra", "geriCekildi"] as const;
 export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
 export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
@@ -455,6 +462,10 @@ export interface Oneri {
    * yeniden gönderince silinmiyor: neye göre düzeltildiği görünsün.
    */
   duzeltmeNotu?: string;
+  /** Takipte muhabirin eklediği tarihli gelişmeler; önceki satırlar kalır, Planlama neyin yeni olduğunu görür. İçerik: Arapça. */
+  satirlar?: { zaman: string; metin: string }[];
+  /** Takibin türü (olay, toplantı, etkinlik); takip aşamasındaki öneride. */
+  takipTuru?: TakipTuru;
   /** Kaç kez düzeltmeye gönderildi. */
   duzeltmeSayisi?: number;
   geriDonus?: boolean;
@@ -1182,6 +1193,8 @@ export const HAREKET_TIPLERI = [
   "teklifKabulEdildi",
   "teklifReddedildi",
   "oneriGeriCekildi",
+  "oneriTakibeAlindi",
+  "takipSatiriEklendi",
   "oneriArsiveGonderildi",
   "oneriArsivdenCikarildi",
   "oneriMesaji",

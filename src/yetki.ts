@@ -5,6 +5,7 @@ import { GERCEK } from "./kip";
 import {
   BIRIMLER,
   ICERIK_TURLERI,
+  TAKIP_BICIMI,
   oneriBul,
   paketBul,
   type Birim,
@@ -266,6 +267,10 @@ export const teklifKarariVerebilir = (k: Kisi | undefined, o: Oneri): boolean =>
 export const oneriGeriCekebilir = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && (o.durum === "teklif" ? teklifKarariVerebilir(k, o) : o.durum === "yeni" && o.muhabirId === k.id && !o.giren && !o.duzeltmeSayisi);
 
+/* Takibe gelişme satırını yalnız muhabiri ekler; takip aşamasında ya da takip plana paketsiz girdikten sonra da. */
+export const takipSatiriEkleyebilir = (k: Kisi | undefined, o: Oneri): boolean =>
+  !!k && !!o.muhabirId && o.muhabirId === k.id && (o.durum === "takip" || (o.durum === "planaEklendi" && o.bicim === TAKIP_BICIMI));
+
 /* Arşivden geri çıkarma yetkiyle (4. aşamada dağıtılabilir yetki olacak): şimdilik tam yönetici ve Planlama yöneticisi. */
 export const arsivdenCikarabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && (!!k.hesapYoneticisi || (k.birim === "planlama" && k.rol === "yonetici"));
 
@@ -359,6 +364,7 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriDuzenlendi",
   "oneriMuhabireGonderildi",
   "oneriGeriCekildi",
+  "oneriTakibeAlindi",
   "oneriArsivdenCikarildi",
   "oneriMesaji",
   "tamamlamaGeriAlindi",

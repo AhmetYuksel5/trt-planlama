@@ -35,7 +35,7 @@ export const oneriGunde = (o: Oneri, tarih: string) => !!o.hedefTarih && o.hedef
 
 /*
  * Başlığa gelişme eklerken seçilebilecek muhabir önerileri: karar bekleyen
- * (yeni, değerlendiriliyor, sonra), haftalık gündemde olmayan, yalnız
+ * (yeni, değerlendiriliyor, sonra, takip), haftalık gündemde olmayan, yalnız
  * haftalık eski öneri olmayan. Önce bu planın gününe düşenler, sonra öbür
  * günlerinkiler (muhabir başka güne önermiş olabilir). Talimatta muhabir
  * yok, plana ekleme penceresinde atanıyor; burada yok.
@@ -43,7 +43,7 @@ export const oneriGunde = (o: Oneri, tarih: string) => !!o.hedefTarih && o.hedef
 export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik" | "paketler">, plan: Pick<NextDayPlan, "tarih">): { buGun: Oneri[]; digerleri: Oneri[] } => {
   const gundemde = new Set(d.haftalik.flatMap((h) => h.kalemler.map((k) => k.oneriId)));
   const adaylar = d.oneriler
-    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o, bugun(), d))
+    .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra", "takip"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o, bugun(), d))
     .sort((a, b) => b.zaman.localeCompare(a.zaman));
   return { buGun: adaylar.filter((o) => oneriGunde(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriGunde(o, plan.tarih)) };
 };
@@ -106,7 +106,10 @@ const ACIK_PAKET = new Set(["taslak", "degerlendiriliyor", "onaylandi", "uretimd
 
 export const oneriSonGunu = (o: Oneri): string => {
   const g = oneriAraligi(o)?.[1] ?? yerelGun(o.zaman);
-  const p = o.planTarihi && o.planTarihi > g ? o.planTarihi : g;
+  // Takipte gün son gelişme satırının günü: muhabir yeni satır ekledikçe takip canlı kalıyor.
+  const s = o.satirlar?.length ? yerelGun(o.satirlar[o.satirlar.length - 1].zaman) : "";
+  const gs = s > g ? s : g;
+  const p = o.planTarihi && o.planTarihi > gs ? o.planTarihi : gs;
   const c = o.arsivdenCikti && yerelGun(o.arsivdenCikti);
   return c && c > p ? c : p;
 };

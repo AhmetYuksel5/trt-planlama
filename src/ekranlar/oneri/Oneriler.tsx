@@ -4,15 +4,15 @@ import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { oneriArsiveGonder, oneriArsivdenCikar, oneriDurum, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder, takipKimligiMi } from "../../eylemler";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriDurum, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { ICERIK_TURLERI, ONERI_DURUMLARI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
+import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { arsivdenCikarabilir, kayitTemizleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { arsivdenCikarabilir, takipSatiriEkleyebilir, kayitTemizleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -229,6 +229,11 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   };
   const dugmeler = [
     teklifKarariVerebilir(ben, o) && (
+      <button key="tkp" type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi"))} data-teklif-takip>
+        <Lightbulb size={14} /> {t("takibeAl")}
+      </button>
+    ),
+    teklifKarariVerebilir(ben, o) && (
       <button key="deg" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => oneriDurum(ben, o.id, "degerlendiriliyor")} data-teklif-degerlendir>
         <Clock size={14} /> {t("degerlendirmeyeAl")}
       </button>
@@ -255,6 +260,52 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
       {arsivde && <Rozet>{t("arsivde")}</Rozet>}
       {dugmeler}
     </div>
+  );
+}
+
+/*
+ * Takibin gelişme satırları: muhabir metni değiştirmez, altına tarihli satır
+ * ekler; önceki satırlar kalır. En yenisi üstte, Planlama neyin yeni
+ * olduğunu ilk bakışta görsün.
+ */
+function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
+  const { t, dil } = useDil();
+  const [metin, setMetin] = useState("");
+  const ekler = takipSatiriEkleyebilir(ben, o);
+  const satirlar = [...(o.satirlar ?? [])].reverse();
+  if (!ekler && !satirlar.length && o.durum !== "takip") return null;
+  const ekle = () => {
+    if (!takipSatiriEkle(ben, o.id, metin)) return;
+    setMetin("");
+    bildir(t("tsEklendi"));
+  };
+  return (
+    <Kart baslik={t("tsGelismeler")} ikon={<Lightbulb size={18} />}>
+      {ekler && (
+        <div className="form ara-alt-2" data-takip-satiri-formu>
+          <textarea {...icerikAlani} rows={2} value={metin} onChange={(e) => setMetin(e.target.value)} data-takip-satiri />
+          <div className="form-alt">
+            <button type="button" className="dugme dugme-kucuk" disabled={!metin.trim()} onClick={ekle} data-takip-satiri-ekle>
+              {t("tsEkle")}
+            </button>
+          </div>
+        </div>
+      )}
+      {satirlar.length ? (
+        <ul className="liste takip-satirlari" data-takip-satirlari>
+          {satirlar.map((x) => (
+            <li key={x.zaman}>
+              <small className="soluk">
+                {tarihYaz(yerelGun(x.zaman), dil, "kisa")} {saatYaz(x.zaman, dil)}
+              </small>
+              <Icerik blok>{x.metin}</Icerik>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Bos kucuk metin={t("kayitYok")} />
+      )}
+    </Kart>
   );
 }
 
@@ -431,6 +482,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               </details>
             )}
           </Kart>
+          <TakipSatirlari ben={ben} oneri={oneri} />
           <OneriYazismasi ben={ben} oneri={oneri} />
           {yanit && <EpostaKaynagi ben={ben} oneri={oneri} yanit={yanit} />}
           <Kart baslik={t("hareketGecmisi")}>
@@ -544,9 +596,10 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                         <Undo2 size={15} /> {t("duzeltmeyeGonder")}
                       </button>
                     )}
-                    {!veren && !muhabirde && oneri.durum !== "sonra" && oneri.durum !== "reddedildi" && (
-                      <button className="dugme dugme-ikincil" onClick={() => oneriDurum(ben, oneri.id, "sonra")}>
-                        {t("odSonra")}
+                    {/* "Sonra değerlendirilecek" takibe katıldı. */}
+                    {!veren && !muhabirde && !!oneri.muhabirId && oneri.durum !== "takip" && oneri.durum !== "reddedildi" && (
+                      <button className="dugme dugme-ikincil" onClick={() => oneriDurum(ben, oneri.id, "takip") && bildir(t("bTakibeAlindi"))} data-takip-olarak-kalsin>
+                        <Lightbulb size={15} /> {t("takipOlarakKalsin")}
                       </button>
                     )}
                     {!veren && oneri.durum !== "reddedildi" && (
@@ -606,8 +659,8 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   const gonder = () => {
     if (!gecerli) return;
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
-    if (id && takipKimligiMi(id)) {
-      // Takip türü öneri değil, takip açıyor: takiplere gidiliyor.
+    if (id && f.bicim === TAKIP_BICIMI) {
+      // Takip Takip aşamasında öneri; muhabir onu Takiplerim'de izliyor.
       bildir(t("bTakipKaydedildi"));
       git("takipler");
     } else if (id) {

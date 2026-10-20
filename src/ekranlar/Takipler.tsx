@@ -7,8 +7,12 @@ import { metin, tarihYaz, useDil } from "../dil";
 import { takipGelismeEkle, takipKapat, takipKaydet, takipPlanda, takipSil, ulkesi } from "../eylemler";
 import { TAKIP_TUR_ADI, sehirAdi } from "../etiketler";
 import { bugun, gunEkle } from "../tarih";
-import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Kisi, type NextDayPlan, type Takip, type TakipTuru } from "../veri";
-import { muhabireOneriGonderebilir, planOperasyonDuzenler, takipEkleyebilir, takipGorebilir, yapabilir } from "../yetki";
+import { TAKIP_BICIMI, TAKIP_TURLERI, kisiBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri, type Takip, type TakipTuru } from "../veri";
+import { oneriArsivde, oneriSonGunu } from "../oneriPlanlari";
+import { git } from "../yol";
+import { OneriKarti } from "./oneri/OneriKarti";
+import PlanaEkle from "./oneri/PlanaEkle";
+import { muhabireOneriGonderebilir, oneriGorebilir, planIcerikDuzenler, planOperasyonDuzenler, takipEkleyebilir, takipGorebilir, yapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { ElleOneriFormu } from "./oneri/OneriFormu";
 import { MuhabireOneriPenceresi } from "./oneri/Yazisma";
@@ -35,6 +39,7 @@ export default function Takipler({ ben }: { ben: Kisi }) {
   const liste = v.takipler.filter((x) => takipGorebilir(ben, x)).sort(sirala);
   const acik = liste.filter((x) => !x.kapandi);
   const biten = liste.filter((x) => x.kapandi);
+  const oneriler = takipOnerileri(ben, v);
   return (
     <>
       <SayfaBasi
@@ -49,7 +54,8 @@ export default function Takipler({ ben }: { ben: Kisi }) {
         }
       />
       {form && <TakipFormu ben={ben} mevcut={form === "yeni" ? undefined : form} kapat={() => setForm(null)} />}
-      <Kart baslik={t(muhabir ? "mTakiplerim" : "mMuhabirTakipleri")} ek={String(acik.length)}>
+      <Kart baslik={t(muhabir ? "mTakiplerim" : "mMuhabirTakipleri")} ek={String(acik.length + oneriler.length)}>
+        {oneriler.length > 0 && <TakipOnerileri ben={ben} liste={oneriler} />}
         {acik.length ? (
           <div className="takip-listesi" data-takipler>
             {acik.map((x) => (
@@ -57,7 +63,7 @@ export default function Takipler({ ben }: { ben: Kisi }) {
             ))}
           </div>
         ) : (
-          <Bos metin={t("mtYok")} />
+          !oneriler.length && <Bos metin={t("mtYok")} />
         )}
       </Kart>
       {biten.length > 0 && (
@@ -276,6 +282,43 @@ function TakipGelismeFormu({ ben, takip: x, plan, kapat }: { ben: Kisi; takip: T
   );
 }
 
+/*
+ * Takip aşamasındaki öneriler: yeni düzende takip önerinin aşaması. Eski
+ * düzenden kalan ayrı takip kayıtları geçişe (4. aşama) dek yanlarında.
+ * Arşive düşen (son satırdan 2 gün sonra) listede yok.
+ */
+export const takipOnerileri = (ben: Kisi, d: Durum) =>
+  d.oneriler.filter((o) => o.durum === "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, bugun(), d)).sort((a, b) => oneriSonGunu(b).localeCompare(oneriSonGunu(a)) || b.zaman.localeCompare(a.zaman));
+
+/** Takip önerilerinin kartları; plan verilince planlamacı takibi oradan plana alır. */
+function TakipOnerileri({ ben, liste, plan }: { ben: Kisi; liste: Oneri[]; plan?: NextDayPlan }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [ekle, setEkle] = useState<string | null>(null);
+  const ekler = !!plan && yapabilir(ben, "oneriDegerlendir") && planIcerikDuzenler(ben, plan);
+  return (
+    <div className="oneri-kartlari" data-takip-onerileri>
+      {liste.map((o) => (
+        <div key={o.id}>
+          <OneriKarti
+            oneri={o}
+            d={v}
+            ac={() => git(`oneriler/${o.id}`)}
+            eylemler={
+              ekler && (
+                <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setEkle(ekle === o.id ? null : o.id)} data-takip-plana-ekle={o.id}>
+                  {t("planaEkle")}
+                </button>
+              )
+            }
+          />
+          {ekle === o.id && plan && <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={() => setEkle(null)} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Açık takipler (Planlama'nın gördükleri); plan ekranındaki "Takipler" penceresi ve sayısı. */
 export const acikTakipler = (ben: Kisi, d: { takipler: Takip[] }) => d.takipler.filter((x) => !x.kapandi && takipGorebilir(ben, x)).sort(sirala);
 
@@ -288,12 +331,18 @@ export function PlanTakipleri({ ben, tarih, plan }: { ben: Kisi; tarih: string; 
   const { t } = useDil();
   const v = useVeri();
   const liste = acikTakipler(ben, v);
-  return liste.length ? (
-    <div className="takip-listesi" data-plan-takipleri>
-      {liste.map((x) => (
-        <TakipKarti key={x.id} ben={ben} takip={x} hedefTarih={tarih} plan={plan} />
-      ))}
-    </div>
+  const oneriler = takipOnerileri(ben, v);
+  return liste.length || oneriler.length ? (
+    <>
+      {oneriler.length > 0 && <TakipOnerileri ben={ben} liste={oneriler} plan={plan} />}
+      {liste.length > 0 && (
+        <div className="takip-listesi" data-plan-takipleri>
+          {liste.map((x) => (
+            <TakipKarti key={x.id} ben={ben} takip={x} hedefTarih={tarih} plan={plan} />
+          ))}
+        </div>
+      )}
+    </>
   ) : (
     <Bos metin={t("mtYok")} />
   );

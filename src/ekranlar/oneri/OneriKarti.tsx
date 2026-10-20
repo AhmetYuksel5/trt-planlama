@@ -399,7 +399,9 @@ export function OneriListesi({
       ),
       ertelenebilir && o.durum === "yeni" && ikonlu(<Clock size={14} />, t("degerlendirmeyeAl"), "dugme-ikincil", () => oneriDurum(ben, o.id, "degerlendiriliyor")),
       oneriDuzeltmeyeGider(ben, o) && ikonlu(<Undo2 size={14} />, t("duzeltmeyeGonder"), "dugme-ikincil", () => setPencere({ id: o.id, mod: "duzelt" })),
-      ertelenebilir && kararAcik && !muhabirde && !talimat && o.durum !== "sonra" && ikonlu(<Lightbulb size={14} />, t("odSonra"), "dugme-ikincil", () => oneriDurum(ben, o.id, "sonra")),
+      // "Sonra değerlendirilecek" kalktı, takibe katıldı: muhabirin süren haberi olarak izlenir, planlamacı istediğinde plana alır.
+      ertelenebilir && kararAcik && !muhabirde && !talimat && !!o.muhabirId && o.durum !== "takip" &&
+        ikonlu(<Lightbulb size={14} />, t("takipOlarakKalsin"), "dugme-ikincil", () => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi"))),
       kararAcik && !talimat && ikonlu(<Ban size={14} />, t("reddet"), "dugme-kotu", () => setPencere({ id: o.id, mod: "ret" })),
       tam && plandanCikarabilir(ben, d, o) && <PlandanCikarDugmesi key="cikar" ben={ben} oneri={o} d={d} />,
     ].filter(Boolean);

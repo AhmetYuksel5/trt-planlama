@@ -782,19 +782,34 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yapan değil), takip açık kalır; hareket `takipPlanaEklendi`, muhabire
   bildirim (`kime`). Kartta "Next Day'de · gün" bağı (Planlama'ya; muhabir
   planı okuyamıyor). Kılavuzda `kl2b`.
-  Yalnız gelişme bildiren gönderi öneri değil takip: öneri formunun haber
-  türünde en sonda "Takip" (`veri.ts → TAKIP_BICIMI`, `OneriBicimi`;
-  `BICIMLER`'e girmez). Seçilince Strap sorulmaz, takip türü sorulur;
-  `oneriGonder` yalnız takip açar (dönen kimlik takibin, `takipKimligiMi`;
-  muhabir Takiplerim'e geçer, Planlama'ya `takipEklendi`). Öneri
-  listelerine ve plan ekranının gelen önerilerine karışmaz: Next Day ve
-  Weekly'de ayrı "Muhabir takipleri" düğmesi, sayısıyla, penceresinde
-  açık takipler (`Takipler.tsx → PlanTakipleri`, `acikTakipler`). Eskiden
-  takip türünde açılmış ve Planlama'nın dokunmadığı ("yeni") kopya öneri
-  sistemin açılış işinde ayıklanır (`takipOnerileriniAyikla`; takip kalır,
-  işlenmiş öneri yerinde). Takip silinince ona bağlı "yeni" takip önerisi
-  izleriyle geri çekilir; karar verilmişse yalnız bağ kopar. Muhabir dışı
-  kaynakta "Takip" yok.
+  Takip önerinin aşaması (durum `takip`; tasarım belgesi, 2b): yeni takip
+  ayrı kayıt değil öneri. Muhabir Takiplerim'deki "Yeni takip"ten
+  (`takipKaydet`) ya da öneri formunda haber türü "Takip"le (`veri.ts →
+  TAKIP_BICIMI`, `BICIMLER`'e girmez; Strap sorulmaz, takip türü
+  `Oneri.takipTuru`) açar; `oneriGonder` doğrudan `takip` durumunda açar,
+  çağrıya bağlamaz, hareket `takipEklendi`. Planlama değerlendirmedeki
+  muhabir önerisini "Takip olarak kalsın"la, teklifi "Takibe al"la buraya
+  alır (`oneriDurum(…, "takip")`, hareket `oneriTakibeAlindi`, muhabire);
+  "Sonra değerlendirilecek" düğmesi bunun yerinde kalktı (eski "sonra"
+  kayıtlar rozetle duruyor). Muhabir metni değiştirmez, öneri ayrıntısında
+  altına tarihli gelişme satırı ekler (`Oneri.satirlar`, `takipSatiriEkle`,
+  `yetki.ts → takipSatiriEkleyebilir`: takipte ya da takip türü plana
+  girdikten sonra; `Oneriler.tsx → TakipSatirlari`, yenisi üstte;
+  Planlama'ya `takipSatiriEklendi`). Arşiv günü son satırın günü
+  (`oneriSonGunu`): son satırdan 2 gün sonra düşer. Takiplerim ve plan
+  ekranlarının "Muhabir takipleri" penceresi takip önerilerini
+  (`Takipler.tsx → takipOnerileri`, `TakipOnerileri`) eski takip
+  kayıtlarının yanında gösterir; sayılar ikisini toplar. Pencerede kartta
+  "Plana ekle" (`PlanaEkle`, o planla): takip paketsiz gelir, istenirse PKG
+  işaretlenir (adı strap, yoksa takibin konusu; `oneriPlanaEkle`).
+  "Öneri ve takiplerden al" adaylarında da (`gelismeOneriAdaylari`).
+  Plana paketsiz (canlısız) giren her muhabir haberinde hareket
+  `veri.takip` (`eylemler.ts → oneriPaketsizGirer`): muhabire "takip olarak
+  plana eklendi; paket beklenmiyor"; "Plana ekle" ve "Önerilerden al" onay
+  sorusunda bunu söyler (`takipPaketsizOnay`). Eski düzenden kalan takip
+  kayıtları (`Durum.takipler`) ve yan yolları (öneriye çevir, takipten
+  gelişme, `takibiEsle` yalnız var olan bağı eşitler) geçişe (4. aşama)
+  dek yerinde. Muhabir dışı kaynakta "Takip" yok.
 - Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
   (`oneri/OneriKarti.tsx → OneriListesi`):
   - kartta kol, haber türü, ülke, durum; başlık önerilen paket

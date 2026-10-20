@@ -119,6 +119,7 @@ export const ONERI_DURUM_ADI: Record<OneriDurum, Anahtar> = {
   reddedildi: "odReddedildi",
   sonra: "odSonra",
   geriCekildi: "odGeriCekildi",
+  takip: "odTakip",
 };
 
 export const ONERI_DURUM_TONU: Record<OneriDurum, string> = {
@@ -130,6 +131,7 @@ export const ONERI_DURUM_TONU: Record<OneriDurum, string> = {
   reddedildi: "kotu",
   sonra: "",
   geriCekildi: "",
+  takip: "vurgu",
 };
 
 export const PLAN_DURUM_ADI: Record<PlanDurum, Anahtar> = {

@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPlanaEkle, paketKaydet, takipGelismeEkle, takipPlanda } from "../../eylemler";
+import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet, takipGelismeEkle, takipPlanda } from "../../eylemler";
 import { acikTakipler } from "../Takipler";
-import { gelismeOneriAdaylari } from "../../oneriPlanlari";
+import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { girdidenIso, saatCoz, simdi, yerelGirdi, zaman } from "../../tarih";
@@ -220,8 +220,11 @@ export function OneridenAl({ plan, planBaslikId, eklendi }: { plan: NextDayPlan;
   };
   const ekle = (o: Oneri) => {
     // Paketin doğup doğmayacağına eylem bakıyor (strap, muhabirin önerisi, Live); burada hep isteniyor.
-    if (!confirm(t("planaEkleOnay"))) return;
-    if (!oneriPlanaEkle(ben, o.id, { planId: plan.id, baslikId, paketOlustur: true })) return;
+    // Takip paketsiz giriyor; öbürlerinde paket ya da canlı eylemin kuralından (strap, muhabirin önerisi, Live).
+    const paketOlustur = o.bicim !== TAKIP_BICIMI && o.durum !== "takip";
+    const paketsiz = oneriPaketsizGirer(o, { paketli: paketOlustur && !!oneriPaketBasligi(o) && o.bicim !== "canli", canli: paketOlustur && o.bicim === "canli", muhabirId: o.muhabirId });
+    if (!confirm(t(paketsiz ? "takipPaketsizOnay" : "planaEkleOnay"))) return;
+    if (!oneriPlanaEkle(ben, o.id, { planId: plan.id, baslikId, paketOlustur })) return;
     bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
     setAcik(false);
     eklendi?.();

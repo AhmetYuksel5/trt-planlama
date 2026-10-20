@@ -1,5 +1,5 @@
 import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
-import { PlanTakipleri, acikTakipler } from "../Takipler";
+import { PlanTakipleri, acikTakipler, takipOnerileri } from "../Takipler";
 import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
@@ -136,7 +136,7 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
   return (
     <nav className="sag-uc plan-araclari" aria-label={t("planAraclari")}>
       {icerik && arac("oneriler", <Lightbulb size={16} />, "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
-      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), acikTakipler(ben, v).length)}
+      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), acikTakipler(ben, v).length + takipOnerileri(ben, v).length)}
       {arac("takvim", <CalendarSearch size={16} />, "takvimdenGun", () => ac("takvim"), faaliyet)}
       {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
       {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}
@@ -361,7 +361,8 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const oneriler = v.oneriler
     // Plana eklenen de listede kalıyor (en sonda, "Plana eklendi" notuyla): ne geldiği ve ne olduğu bir arada görünsün.
-    .filter((o) => oneriGunde(o, plan.tarih))
+    // Takipteki öneri "Muhabir takipleri" penceresinde; gelen öneriler listesini kalabalıklaştırmasın.
+    .filter((o) => oneriGunde(o, plan.tarih) && o.durum !== "takip")
     .sort((a, b) => sira(v, a) - sira(v, b) || b.zaman.localeCompare(a.zaman))
     .sort(talimatOnce);
 
@@ -401,6 +402,6 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 }
 
 // Düzeltmedeki öneri muhabirde bekliyor; Planlama'nın önündekilerin arkasında.
-const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, teklif: 3, sonra: 4, reddedildi: 5, geriCekildi: 5, planaEklendi: 6 };
+const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, takip: 2, teklif: 3, sonra: 4, reddedildi: 5, geriCekildi: 5, planaEklendi: 6 };
 // Haftalık gündeme alınan öneri de karar almış: plana eklenenle birlikte en sonda.
 const sira = (d: Durum, o: Oneri) => (o.durum !== "planaEklendi" && oneriYeri(d, o) ? SIRA.planaEklendi : SIRA[o.durum]);

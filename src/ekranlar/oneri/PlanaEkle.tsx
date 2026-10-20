@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
-import { oneriPlanaEkle } from "../../eylemler";
+import { oneriPaketsizGirer, oneriPlanaEkle } from "../../eylemler";
 import { kalacakPlan } from "../../planCiftleri";
 import { adiylaBaslik, ndBaslikSecenekleri } from "../../baslikSecimi";
 import { acikGunPlanlari, oneriGunde, oneriHaftada, oneriPaketBasligi } from "../../oneriPlanlari";
 import { bugun, gunEkle } from "../../tarih";
-import { useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { TAKIP_BICIMI, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { haftalikDuzenler, planIcerikDuzenler } from "../../yetki";
 import { GundemeEkle } from "../haftalik/Plan";
 import { MuhabirSecici } from "../nextday/Formlar";
@@ -105,8 +105,10 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const talimat = !!oneri.talimatVeren;
   // "Live" öneri plana paket değil canlı yayın olarak giriyor; strap'i yoksa Header'ıyla.
   const canli = oneri.bicim === "canli";
-  const strap = oneriPaketBasligi(oneri);
-  const [paket, setPaket] = useState(!!strap || canli);
+  // Takip (türü ya da aşaması) paketsiz girer; istenirse paket önerisiyle, başlığı strap'i yoksa takibin konusu.
+  const takipOneri = oneri.bicim === TAKIP_BICIMI || oneri.durum === "takip";
+  const strap = oneriPaketBasligi(oneri) ?? (takipOneri ? oneri.haberBasligi : undefined);
+  const [paket, setPaket] = useState((!!strap && !takipOneri) || canli);
   // Paket istenmeyen haber: muhabir izliyor, işlerinde "yalnız takip" olarak kalıyor. Paketle birlikte seçilmiyor.
   const [takip, setTakip] = useState(false);
   const [muhabirId, setMuhabirId] = useState("");
@@ -115,7 +117,10 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const secenekler = secenek(plan);
 
   const ekle = () => {
-    if (!confirm(t("planaEkleOnay"))) return;
+    const istenen = !takip && (talimat || paket);
+    // Paketsiz giren muhabir haberinde muhabire "takip olarak plana eklendi" gidiyor; planlamacı bunu bilerek onaylasın.
+    const paketsiz = oneriPaketsizGirer(oneri, { paketli: istenen && !!strap && !canli, canli: istenen && canli, muhabirId: oneri.muhabirId ?? (muhabirId || undefined) });
+    if (!confirm(t(paketsiz ? "takipPaketsizOnay" : "planaEkleOnay"))) return;
     const tamam = oneriPlanaEkle(ben, oneri.id, {
       planId: plan.id,
       baslikId: baslikId === "yeni" ? undefined : baslikId,
