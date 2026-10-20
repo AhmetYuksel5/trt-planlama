@@ -271,8 +271,13 @@ export const oneriGeriCekebilir = (k: Kisi | undefined, o: Oneri): boolean =>
 export const takipSatiriEkleyebilir = (k: Kisi | undefined, o: Oneri): boolean =>
   !!k && !!o.muhabirId && o.muhabirId === k.id && (o.durum === "takip" || (o.durum === "planaEklendi" && o.bicim === TAKIP_BICIMI));
 
-/* Arşivden geri çıkarma yetkiyle (4. aşamada dağıtılabilir yetki olacak): şimdilik tam yönetici ve Planlama yöneticisi. */
-export const arsivdenCikarabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && (!!k.hesapYoneticisi || (k.birim === "planlama" && k.rol === "yonetici"));
+/* Arşivden geri çıkarma yetkiyle: tam yönetici ya da yetki verdiği kişi. */
+export const arsivdenCikarabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && hesapYetkisi(k, "arsivdenCikarma");
+/* Aşamayı geri alma ve öneriyi izleriyle silme de dağıtılan yetki (tasarım 7. bölüm). */
+export const geriAlabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && hesapYetkisi(k, "geriAlma");
+export const oneriSilebilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && hesapYetkisi(k, "oneriSilme");
+export const baskaMuhabireVerebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && !k.pasif && hesapYetkisi(k, "baskaMuhabire") && !p.ozelId && !!p.muhabirId && p.durum === "onaylandi" && !p.isaret;
 
 /*
  * Önerinin yazışması iki taraf arasında: muhabiri, öneriyi gönderen ya da
@@ -315,8 +320,8 @@ export const paketTamamlayabilir = (k: Kisi | undefined, p: Paket, d: Durum): bo
  * akışında (paketTamamla).
  */
 export const paketIsaretleyebilir = (k: Kisi | undefined, p: Paket, d: Durum): boolean => !p.ozelId && !p.isaret && paketTamamlayabilir(k, p, d);
-/* İşaretin onayı yetkiyle (4. aşamada dağıtılabilir yetki olacak): şimdilik tam yönetici ve Planlama yöneticisi. */
-export const paketIsaretOnaylayabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && (!!k.hesapYoneticisi || (k.birim === "planlama" && k.rol === "yonetici"));
+/* İşaretin onayı yetkiyle: tam yönetici ya da ona "paket onayı" verdiği kişi. */
+export const paketIsaretOnaylayabilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && hesapYetkisi(k, "paketOnayi");
 
 /** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
 export const kararNotuYazabilir = (k: Kisi | undefined, h: HaftalikPlan): boolean => !!k && (kararVerebilir(k, h) || haftalikDuzenler(k, h));
@@ -381,7 +386,7 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "tamamlamaGeriAlindi",
 ];
 /* Muhabirin haberinde sonucu ona dokunan olaylar; sıra ona geçtiğinde ayrıca (sahip "muhabir"). */
-const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "paketReddedildi", "paketIsaretOnaylandi", "paketIsaretGeriCevrildi", "paketOnaylandi", "tamamlandi", "tamamlamaGeriAlindi"];
+const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = ["paketOncelikli", "paketIptal", "paketReddedildi", "paketBaskaMuhabire", "paketIsaretOnaylandi", "paketIsaretGeriCevrildi", "paketOnaylandi", "tamamlandi", "tamamlamaGeriAlindi"];
 
 /**
  * Muhabir yalnız kendisiyle ilgili bildirimi alıyor. Eskiden gördüğü
@@ -597,4 +602,5 @@ export const kisitliKisi = (k: Kisi): boolean => k.birim === "muhabir" || !!k.ko
 export const takipEkleyebilir = (k: Kisi | undefined): boolean => !!k && k.birim === "muhabir" && !k.hesapsiz;
 
 /** Muhabir yalnız kendi takibini görür; sayfayı gören masa (Planlama, Yönetim) hepsini. */
-export const takipGorebilir = (k: Kisi | undefined, t: Takip): boolean => !!k && (k.birim === "muhabir" ? t.muhabirId === k.id : sayfaGorebilir(k, "takipler"));
+// Yeni düzene taşınmış eski takip kaydı görünmüyor; yerine takip aşamasındaki öneri var.
+export const takipGorebilir = (k: Kisi | undefined, t: Takip): boolean => !!k && !t.gecti && (k.birim === "muhabir" ? t.muhabirId === k.id : sayfaGorebilir(k, "takipler"));

@@ -109,15 +109,13 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const takipOneri = oneri.bicim === TAKIP_BICIMI || oneri.durum === "takip";
   const strap = oneriPaketBasligi(oneri) ?? (takipOneri ? oneri.haberBasligi : undefined);
   const [paket, setPaket] = useState((!!strap && !takipOneri) || canli);
-  // Paket istenmeyen haber: muhabir izliyor, işlerinde "yalnız takip" olarak kalıyor. Paketle birlikte seçilmiyor.
-  const [takip, setTakip] = useState(false);
   const [muhabirId, setMuhabirId] = useState("");
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
   const secenekler = secenek(plan);
 
   const ekle = () => {
-    const istenen = !takip && (talimat || paket);
+    const istenen = talimat || paket;
     // Paketsiz giren muhabir haberinde muhabire "takip olarak plana eklendi" gidiyor; planlamacı bunu bilerek onaylasın.
     const paketsiz = oneriPaketsizGirer(oneri, { paketli: istenen && !!strap && !canli, canli: istenen && canli, muhabirId: oneri.muhabirId ?? (muhabirId || undefined) });
     if (!confirm(t(paketsiz ? "takipPaketsizOnay" : "planaEkleOnay"))) return;
@@ -125,8 +123,7 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
       planId: plan.id,
       baslikId: baslikId === "yeni" ? undefined : baslikId,
       yeniBaslik: baslikId === "yeni" ? yeniBaslik : undefined,
-      paketOlustur: !takip && (talimat || paket),
-      yalnizTakip: takip,
+      paketOlustur: talimat || paket,
       muhabirId: oneri.muhabirId ? undefined : muhabirId,
     });
     if (tamam) {
@@ -214,30 +211,15 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
           <label className="secim">
             <input
               type="checkbox"
-              checked={paket && !takip}
+              checked={paket}
               onChange={(e) => {
                 setPaket(e.target.checked);
-                if (e.target.checked) setTakip(false);
               }}
               data-pe-paket
             />
             {t(canli ? "canliOlarakEkle" : "paketOnerisiOlustur")}: <b>
               <Icerik>{strap || oneri.haberBasligi}</Icerik>
             </b>
-          </label>
-        )}
-        {(oneri.muhabirId || muhabirId) && (
-          <label className="secim">
-            <input
-              type="checkbox"
-              checked={takip}
-              onChange={(e) => {
-                setTakip(e.target.checked);
-                if (e.target.checked) setPaket(false);
-              }}
-              data-pe-yalniz-takip
-            />
-            {t("yalnizTakip")}
           </label>
         )}
       </div>

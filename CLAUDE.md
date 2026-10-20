@@ -196,7 +196,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kişinin kendi açtığı WhatsApp Web sekmesine site ulaşamaz.
   - Seçmeli hesap yetkileri (`veri.ts → HESAP_YETKILERI`, `Kisi.yetkiler`):
     davet, kayıt bağlantısı, kişi düzenleme, hesap kapatma/açma, hesapsız
-    kişi ekleme. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki
+    kişi ekleme; öneri akışının yetkileri (tasarım 7. bölüm): paket işaretinin
+    onayı (`paketOnayi`), aşamayı geri alma (`geriAlma`), başka muhabire verme
+    (`baskaMuhabire`), arşivden çıkarma (`arsivdenCikarma`), öneriyi izleriyle
+    silme (`oneriSilme`); `yetki.ts → paketIsaretOnaylayabilir`, `geriAlabilir`,
+    `baskaMuhabireVerebilir`, `arsivdenCikarabilir`, `oneriSilebilir`. Bunlar
+    programda, kuralda değil. Tam yönetici (`hesapYoneticisi`) hepsine sahip; yetki
     vermek ve tam yönetici yapmak yalnız onda ("Yetkiler" penceresi,
     `kisiYetkileri`); kişi silme de bu listede. Programda `yetki.ts → hesapYetkisi`, kuralda
     `yetkiVar`; davet yetkisiyle yönetici davet edilemez, tam yöneticinin
@@ -671,8 +676,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   e-posta takibi açık ya da paketi bitmemiş (toplantıda, onaylı, üretimde;
   bunun için `d` verilir). Reddedilen ve geri çekilen günü beklemez.
   Planlamacı elle arşive gönderir (`oneriArsiveGonder`, `Oneri.arsiv`);
-  arşivden çıkarma (`oneriArsivdenCikar`, `arsivdenCikarabilir`: şimdilik
-  tam yönetici ve Planlama yöneticisi) günü o andan saydırır
+  arşivden çıkarma (`oneriArsivdenCikar`, `arsivdenCikarabilir`: hesap
+  yetkisi `arsivdenCikarma`) günü o andan saydırır
   (`arsivdenCikti`), reddedilen/geri çekileni değerlendirmeye açar.
   Düğmeler öneri ayrıntısında (`Oneriler.tsx → OneriKapiDugmeleri`), onay
   sorularak; ret, plana ve gündeme ekleme de onaylı. Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
@@ -694,6 +699,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
+- Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
+  görev ve "yapıldı" akışı aldı. `geriBildirimAyari` ayarı her zaman kapalı
+  okur; pencerede "takip edilsin mi", Ayarlar'daki anahtar ve "Plana ekle"deki
+  "Yalnız takip" yok (paketsiz eklemek zaten takip olarak). Eski açık takip
+  işaretleri bilgi olarak kalır, arşivi tutmaz (`oneriAcikIsi`). Aşağıdaki
+  anlatım eski kayıtlar için.
+- Yeni öneri düzenine geçiş (Ayarlar, yalnız tam yönetici;
+  `KayitYedegi.tsx → YeniDuzenGecisi`, kurallar `gecis.ts`, eylem
+  `yeniDuzeneGecir`): önizleme (kaç kayıt neye) ve onayla. "Sonra"
+  değerlendirilecek öneri takibe (muhabirsizse değerlendirmeye); eski takip
+  kaydı takipteki öneriye (`o-<takip>`, `takipId`; bitmiş takip arşivde,
+  planda gelişmesi olan gelişmenin `oneriId` bağıyla "plana eklendi"),
+  takip kaydı `gecti` işaretiyle bilgi olarak kalır, listelerde görünmez
+  (`takipGorebilir`). İkinci kez çalışınca değişiklik yok; eski alanlar ve
+  hareketler yerinde; tek hareket `gecisUygulandi`. Gerçek kipte eşitlenmeden
+  pasif; önce yedek kartı.
 - Muhabire geri bildirim (`geriBildirim.ts`, `oneri/GeriBildirim.tsx`):
   toplu "geri dönüş" düğmesi yok; her öneride değerlendirme bölümünden,
   karar verilmiş muhabir önerisinde. Şablondan e-posta (Outlook taslağı /
@@ -722,7 +743,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   ilk adımı.
 - Geri almada aşama seçimi ve ikinci plana kopya (tasarım 2c; öneri
   ayrıntısındaki `OneriKapiDugmeleri`, onaylı):
-  - "Geri al": dönülebilecek geçerli önceki aşamalar sorulur
+  - "Geri al" (hesap yetkisi `geriAlma`): dönülebilecek geçerli önceki aşamalar sorulur
     (`oneriPlanlari.ts → oneriGeriHedefleri`: plandaki/gündemdeki,
     reddedilen ve eski "sonra" değerlendirmeye ya da takibe; takipteki ve
     düzeltmedeki değerlendirmeye; takip muhabirsiz ve talimatta yok).
@@ -750,7 +771,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   temizliğin kendisi tek hareket (`kayitTemizlendi`). Kişiler, kurum
   yapısı ve ayarlar girmez. Geri alınamaz, onay sorulur. Tek tek silme
   öneri sayfasında: tam yöneticiye ayrıntıda (sayfa ve pencere) "İzleriyle
-  sil" (`eylemler.ts → oneriSil`, aynı kural `idler` ile); onayda kaç kayıt
+  sil" (`eylemler.ts → oneriSil`, hesap yetkisi `oneriSilme`, aynı kural `idler` ile); onayda kaç kayıt
   gideceği yazılı, hareketi `oneriSilindi` (başlık verisinde, öneriye bağlı
   değil; bağlansa iz sayılıp giderdi).
 - Planlama görevleri ve iş taksimi (`ekranlar/Gorevler.tsx`, `#/gorevler`;
@@ -1030,8 +1051,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sebebiyle "Yapılmadı" (`paketIsaretle`, `Paket.isaret`, yetki
     `paketIsaretleyebilir`; Planlama'ya `paketIsaretlendi`). İşaret yetkili
     onaylayana dek "Onay bekliyor"; onay ya da geri çevirme
-    `paketIsaretKarar` (yetki `paketIsaretOnaylayabilir`: şimdilik tam
-    yönetici ve Planlama yöneticisi, 4. aşamada dağıtılabilir). Onaylanan
+    `paketIsaretKarar` (yetki `paketIsaretOnaylayabilir`, hesap yetkisi
+    `paketOnayi`). Bildirim onaylayabilenlere (`kime`), onay kuyruğu
+    yetkilinin ana sayfasının başında (`PaketSonucu.tsx → OnayKuyrugu`,
+    `Calisma.tsx`, düzenden bağımsız). Onaylanan
     yapıldı paketi kapatır (`tamamlandi`, `muhabirTeslimi` işaretin anı,
     önerinin e-posta takibi de), yapılmadı iptal eder (`Paket.yapilmadi`
     sebebiyle); geri çevrilen işaret silinir. Yetkilinin kendi işareti onay
@@ -1039,6 +1062,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Sonuç saklanmaz (`paketSonucu.ts`): onay bekleyen, yapılan, yapılmayan,
     reddedilen; Paketler sayfasının sekmeleri (muhabirde Haberlerim,
     Planlama ve haber merkezi aynı sayfa), rozet `PaketDurumRozeti`.
+  - "Başka muhabire ver" (paket sayfası, `PaketSonucu.tsx → BaskaMuhabireVer`,
+    `eylemler.ts → paketBaskaMuhabireVer`, hesap yetkisi `baskaMuhabire`):
+    onaylı paket yeni muhabire teklif olarak gider (`Oneri.kaynakPaketId`,
+    teklif akışı); eski paket iptal, `Paket.devredildi` iziyle eski muhabirin
+    geçmişinde; iki muhabire bildirim.
   - Özel yayın paketi kendi teslimiyle (`paketTamamla`). Hesapsız muhabir
     için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,

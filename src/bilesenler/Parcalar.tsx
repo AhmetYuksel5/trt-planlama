@@ -349,6 +349,7 @@ export function PaketDurumRozeti({ paket }: { paket: Paket }) {
     return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{adimAdi(paket.adim as UretimAdimi, paket)}</Rozet>;
   }
   if (paket.durum === "iptal" && paket.reddedildi) return <Rozet ton="kotu">{t("pdReddedildi")}</Rozet>;
+  if (paket.durum === "iptal" && paket.devredildi) return <Rozet>{t("pdDevredildi")}</Rozet>;
   if (paket.durum === "iptal" && paket.yapilmadi) return <Rozet ton="kotu">{t("yapilmadi")}</Rozet>;
   if (paket.isaret) return <Rozet ton="uyari">{t("isaretOnayBekliyor")}</Rozet>;
   const stok = stokDurumu(paket);

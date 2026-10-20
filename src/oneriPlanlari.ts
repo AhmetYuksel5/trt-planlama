@@ -115,8 +115,8 @@ export const oneriSonGunu = (o: Oneri): string => {
 };
 
 /** Önerinin bitmemiş işi var mı: varsa günü geçse de arşive düşmüyor. */
-export const oneriAcikIsi = (o: Oneri, d?: Pick<Durum, "paketler">): boolean =>
-  o.takip === "acik" || !!d?.paketler.some((p) => p.oneriId === o.id && ACIK_PAKET.has(p.durum));
+// E-postayla takip kalktı; eski "açık" takip işareti bilgi olarak kalıyor, arşivi tutmuyor.
+export const oneriAcikIsi = (o: Oneri, d?: Pick<Durum, "paketler">): boolean => !!d?.paketler.some((p) => p.oneriId === o.id && ACIK_PAKET.has(p.durum));
 
 export const oneriArsivde = (o: Oneri, b: string = bugun(), d?: Pick<Durum, "paketler">): boolean => {
   if (o.arsiv) return true;

@@ -222,7 +222,13 @@ export interface Kisi {
 /* Planın ekip satırında adın yazılan parçası; yoksa tam ad. Yazı uzamasın diye kurum adı ya da soyadı yazıyor. */
 export type PlanAdi = "ad" | "soyad";
 
-export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil"] as const;
+/*
+ * Öneri akışının yetkileri (tasarım belgesi, 7. bölüm) de burada: paket
+ * işaretinin onayı, geri alma, başka muhabire verme, arşivden çıkarma,
+ * öneri silme. Bütün yetki tam yöneticide; o kişi kişi dağıtır. Planlama'nın
+ * günlük kararları (ret, takip, plana ekleme…) yetki değil, birim işi.
+ */
+export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil", "paketOnayi", "geriAlma", "baskaMuhabire", "arsivdenCikarma", "oneriSilme"] as const;
 export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
@@ -449,6 +455,8 @@ export interface Oneri {
   planTarihi?: string;
   paketId?: string;
   gerekce?: string;
+  /** Başka muhabire verilen paketten doğan teklifse o paket; teklif akışına giriyor. */
+  kaynakPaketId?: string;
   /** İkinci plana girmek için kopyalandıysa asıl önerinin kimliği; ikisi birbirine bağlı görünüyor. */
   kopyaKaynagi?: string;
   /** Planlamacının elle arşive gönderdiği an; günü beklemeden arşivde. */
@@ -525,6 +533,8 @@ export interface Takip {
   zaman: string;
   /** Muhabir takibi bitirince kapanıyor; geçmişte kalıyor. */
   kapandi?: boolean;
+  /** Yeni düzene geçişte takip aşamasındaki öneriye taşındı (gecis.ts); kayıt bilgi olarak kalıyor, listelerde yok. */
+  gecti?: string;
 }
 
 /**
@@ -735,6 +745,11 @@ export interface Paket {
    * yapılmadı iptal eder ve `yapilmadi`'ya geçer; geri çevrilince silinir.
    */
   isaret?: { tur: "yapildi" | "yapilmadi"; zaman: string; kisiId: string; sebep?: string };
+  /*
+   * Başka muhabire verildi: paket iptal, yerine yeni muhabire teklif açıldı
+   * (`oneriId`). Eski muhabirin geçmişinde iz olarak kalıyor.
+   */
+  devredildi?: { muhabirId: string; oneriId: string; zaman: string; kisiId: string };
   /** Onaylanmış "yapılmadı": Yapılmayan paketler listesinde sebebiyle. */
   yapilmadi?: { sebep: string; zaman: string; kisiId: string; onaylayan: string };
   /** Haftalık toplantıda kabul edilen kalemden doğduysa: "Haftalık plandan" rozeti. */
@@ -1213,6 +1228,8 @@ export const HAREKET_TIPLERI = [
   "takipSatiriEklendi",
   "oneriAsamayaDondu",
   "paketReddedildi",
+  "paketBaskaMuhabire",
+  "gecisUygulandi",
   "paketIsaretlendi",
   "paketIsaretOnaylandi",
   "paketIsaretGeriCevrildi",

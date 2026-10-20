@@ -5,7 +5,7 @@ import { useState } from "react";
 import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
-import { PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
+import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
@@ -98,6 +98,8 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
       <div className="iz iz-ana-yan">
         <div className="iz">
           <EylemKarti ben={ben} paket={paket} />
+          {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
+          <BaskaMuhabireVer ben={ben} paket={paket} />
           <YoneticiKarti ben={ben} paket={paket} />
           {paket.metin && (
             <Kart baslik={t("metin")}>

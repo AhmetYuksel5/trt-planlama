@@ -3,23 +3,21 @@ import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
 import { ONERI_DURUM_ADI } from "../etiketler";
-import { geriBildirimAyariKaydet, geriBildirimSablonuKaydet, geriBildirimSablonuSil } from "../eylemler";
-import { geriBildirimAyari, sablonlar } from "../geriBildirim";
+import { geriBildirimSablonuKaydet, geriBildirimSablonuSil } from "../eylemler";
+import { sablonlar } from "../geriBildirim";
 import { GERI_BILDIRIM_KARARLARI, kimlik, useVeri, type GeriBildirimKarari, type GeriBildirimSablonu, type Kisi } from "../veri";
 
 /*
- * Ayarlar › Geri bildirim: muhabire giden e-postanın şablonları ve deneme
- * sürecinin e-postayla takip ayarı. Tam yönetici ve Planlama yöneticisi
- * düzenliyor (yetki.ts → geriBildirimSablonuDuzenler). Diğer birimler
- * devreye girince takip kapatılıyor; şablonlar yerinde kalıyor.
+ * Ayarlar › Geri bildirim: muhabire giden e-postanın şablonları. Tam
+ * yönetici ve Planlama yöneticisi düzenliyor (yetki.ts →
+ * geriBildirimSablonuDuzenler). Deneme sürecinin e-postayla takip ayarı
+ * kalktı: yerini görev ve "yapıldı" akışı aldı.
  */
 export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const liste = sablonlar(v);
-  const ayar = geriBildirimAyari(v);
   const [duzenlenen, setDuzenlenen] = useState<GeriBildirimSablonu | null>(null);
-  const [mesaj, setMesaj] = useState(ayar.takipMesaji);
   return (
     <Kart baslik={t("gbAyarBaslik")} ikon={<MailCheck size={18} />}>
       <ul className="liste" data-gb-sablonlari>
@@ -53,18 +51,6 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
       >
         <Plus size={14} /> {t("gbSablonEkle")}
       </button>
-      <div className="form ara-ust-2">
-        <label className="secim">
-          <input type="checkbox" checked={ayar.epostaIleTakip} onChange={(e) => geriBildirimAyariKaydet(ben, { ...ayar, epostaIleTakip: e.target.checked })} data-gb-eposta-takip />
-          {t("gbEpostaIleTakip")}
-        </label>
-        {ayar.epostaIleTakip && (
-          <label>
-            {t("gbTakipMesaji")}
-            <textarea {...icerikAlani} rows={2} value={mesaj} onChange={(e) => setMesaj(e.target.value)} onBlur={() => mesaj !== ayar.takipMesaji && geriBildirimAyariKaydet(ben, { ...ayar, takipMesaji: mesaj })} data-gb-takip-mesaji />
-          </label>
-        )}
-      </div>
       {duzenlenen && <SablonPenceresi ben={ben} sablon={duzenlenen} kapat={() => setDuzenlenen(null)} />}
     </Kart>
   );

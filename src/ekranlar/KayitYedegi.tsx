@@ -1,10 +1,12 @@
-import { DatabaseBackup } from "lucide-react";
-import { Kart, bildir } from "../bilesenler/Parcalar";
+import { ArrowRightLeft, DatabaseBackup } from "lucide-react";
+import { Kart, Rozet, bildir } from "../bilesenler/Parcalar";
 import { indir } from "../bilesenler/indir";
-import { useDil } from "../dil";
+import { useDil, type Anahtar } from "../dil";
+import { yeniDuzeneGecir } from "../eylemler";
+import { gecisOnizlemesi } from "../gecis";
 import { GERCEK, useSunucuyaEsit } from "../kip";
 import { simdi } from "../tarih";
-import { getir } from "../veri";
+import { getir, useVeri, type Kisi } from "../veri";
 
 /*
  * Ayarlar › Kaydın yedeği (yalnız tam yönetici): bütün kayıt tek JSON
@@ -39,6 +41,54 @@ export function KayitYedegi() {
           <DatabaseBackup size={16} /> {t("ydIndir")}
         </button>
       </div>
+    </Kart>
+  );
+}
+
+/*
+ * Ayarlar › Yeni öneri düzenine geçiş (yalnız tam yönetici): kaç kaydın
+ * neye taşınacağı önce görünür, onaylanınca uygulanır (gecis.ts). Gerçek
+ * kipte eşitlenmeden pasif; yedek kartı hemen üstte, önce o alınsın.
+ */
+export function YeniDuzenGecisi({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const esit = useSunucuyaEsit();
+  const hazir = !GERCEK || esit;
+  const o = gecisOnizlemesi(v);
+  const satirlar: [Anahtar, number][] = [
+    ["gcSonra", o.sonra],
+    ["gcTakip", o.takip],
+    ["gcPlanda", o.planda],
+    ["gcKapali", o.kapali],
+  ];
+  const uygula = () => {
+    if (!confirm(t("gcOnay", { n: o.toplam }))) return;
+    const n = yeniDuzeneGecir(ben);
+    if (n !== null) bildir(t("bGecis", { n }));
+  };
+  return (
+    <Kart baslik={t("gcBaslik")} ikon={<ArrowRightLeft size={18} />}>
+      {o.toplam === 0 ? (
+        <p data-gecis-tamam>
+          <Rozet ton="iyi">{t("gcTamam")}</Rozet>
+        </p>
+      ) : (
+        <>
+          <ul className="liste" data-gecis-onizleme>
+            {satirlar.map(([a, n]) => (
+              <li key={a}>
+                <span>{t(a)}</span> <b data-gecis-sayi={a}>{n}</b>
+              </li>
+            ))}
+          </ul>
+          <div className="dugmeler ara-ust-2">
+            <button type="button" className="dugme" aria-disabled={!hazir || undefined} title={hazir ? undefined : t("ydEsitleniyor")} onClick={() => hazir && uygula()} data-gecis-uygula>
+              {t("gcUygula")}
+            </button>
+          </div>
+        </>
+      )}
     </Kart>
   );
 }

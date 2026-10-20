@@ -16,6 +16,7 @@ import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
+import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriYeri, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
@@ -120,6 +121,9 @@ import {
   oneriYazisabilir,
   arsivdenCikarabilir,
   takipSatiriEkleyebilir,
+  geriAlabilir,
+  oneriSilebilir,
+  baskaMuhabireVerebilir,
   paketIsaretleyebilir,
   paketIsaretOnaylayabilir,
   oneriGeriCekebilir,
@@ -666,17 +670,19 @@ const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Du
  * çıkarma ve aşamaya geri alma aynı kuralla çalışsın. Yazılacak hareketin
  * plan ya da hafta bağı da döner.
  */
+// `geriAlmaYetkisi`: aşamayı geri alma yetkisi olan (tam yönetici ya da yetki verdiği) planı düzenleyemese de geri alır.
 const plandanCikarilmis = (
   d: Durum,
   ben: Kisi,
   o: Oneri,
+  geriAlmaYetkisi = false,
 ): { d: Durum; bag: Pick<Hareket, "planId" | "haftaId" | "veri"> | null } | "yetkisiz" | "paketIlerledi" => {
   const yer = oneriYeri(d, o);
   if (!yer) return { d, bag: null };
   // Kesinleşmiş haftadan Next Day'e geçmiş öneri planından çıkıyor; haftanın kalemi kayıt olarak kalıyor.
   const haftadan = !!yer.hafta && yer.hafta.durum === "kesinlesti" && yer.planda;
-  if (yer.hafta && !haftadan && (yer.hafta.durum === "kesinlesti" || !haftalikDuzenler(ben, yer.hafta))) return "yetkisiz";
-  if (yer.planda && (!yer.plan || !planIcerikDuzenler(ben, yer.plan))) return "yetkisiz";
+  if (yer.hafta && !haftadan && (yer.hafta.durum === "kesinlesti" || (!geriAlmaYetkisi && !haftalikDuzenler(ben, yer.hafta)))) return "yetkisiz";
+  if (yer.planda && (!yer.plan || (!geriAlmaYetkisi && !planIcerikDuzenler(ben, yer.plan)))) return "yetkisiz";
   if (yer.planda && yer.plan) {
     const plan = yer.plan;
     const paketler = d.paketler.filter((p) => p.oneriId === o.id && p.planId === plan.id);
@@ -732,8 +738,8 @@ export const oneriPlandanCikar = (ben: Kisi, oneriId: string): "tamam" | "yetkis
 export const oneriAsamayaDon = (ben: Kisi, oneriId: string, hedef: OneriGeriHedefi): "tamam" | "yetkisiz" | "paketIlerledi" => {
   const d0 = getir();
   const o = oneriBul(d0, oneriId);
-  if (!o || !yapabilir(ben, "oneriDegerlendir") || !oneriGeriHedefleri(d0, o).includes(hedef)) return "yetkisiz";
-  const r = plandanCikarilmis(d0, ben, o);
+  if (!o || !geriAlabilir(ben) || !oneriGeriHedefleri(d0, o).includes(hedef)) return "yetkisiz";
+  const r = plandanCikarilmis(d0, ben, o, true);
   if (typeof r === "string") return r;
   let d = r.d;
   d = {
@@ -811,7 +817,7 @@ export const kayitlariTemizle = (ben: Kisi, secim: TemizlikSecimi): number | nul
 export const oneriSil = (ben: Kisi, id: string): number | null => {
   const d = getir();
   const o = oneriBul(d, id);
-  if (!o || !kayitTemizleyebilir(ben)) return null;
+  if (!o || !oneriSilebilir(ben)) return null;
   const { yeni, toplam } = temizle(d, { turler: ["oneriler"], idler: [id] });
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "oneriSilindi", veri: { baslik: o.haberBasligi, sayi: String(toplam) } }));
   return toplam;
@@ -2273,7 +2279,9 @@ export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi
   if (!p || !paketIsaretleyebilir(ben, p, d) || (tur === "yapilmadi" && !sebep.trim())) return false;
   const isaret = { tur, zaman: simdi(), kisiId: ben.id, ...(tur === "yapilmadi" && { sebep: sebep.trim() }) };
   let yeni = paketGuncelle(d, id, (x) => ({ ...x, isaret, guncelleme: simdi() }));
-  yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketIsaretlendi", paketId: id, planId: p.planId, veri: { tur, sahip: "planlama" } });
+  // Onay bekleyen işaret onaylayabilecek kişilere gidiyor: yetki Planlama dışından birine de verilmiş olabilir.
+  const onaylayanlar = d.kisiler.filter((k) => k.id !== ben.id && paketIsaretOnaylayabilir(k)).map((k) => k.id);
+  yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketIsaretlendi", paketId: id, planId: p.planId, veri: { tur, ...(onaylayanlar.length ? { kime: onaylayanlar.join(",") } : { sahip: "planlama" }) } });
   if (paketIsaretOnaylayabilir(ben)) yeni = isaretUygula(yeni, ben, paketBul(yeni, id)!, true);
   kaydet(yeni);
   return true;
@@ -2285,6 +2293,57 @@ export const paketIsaretKarar = (ben: Kisi, id: string, kabul: boolean) => {
   if (!p?.isaret || !paketIsaretOnaylayabilir(ben)) return false;
   kaydet(isaretUygula(d, ben, p, kabul));
   return true;
+};
+
+/*
+ * Onaylı paketi başka muhabire verme (yetki "baskaMuhabire"): paket yeni
+ * muhabire planlamacının teklifi olarak gider ve teklif akışına girer;
+ * eski paket iptal, `devredildi` iziyle eski muhabirin geçmişinde kalır.
+ * Haber planda (önerinin gelişmesi) yerinde.
+ */
+export const paketBaskaMuhabireVer = (ben: Kisi, paketId: string, muhabirId: string): string | null => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const m = kisiBul(d, muhabirId);
+  if (!p || !baskaMuhabireVerebilir(ben, p) || !m || m.pasif || m.id === p.muhabirId || m.birim !== "muhabir") return null;
+  const asil = oneriBul(d, p.oneriId);
+  const plan = planBul(d, p.planId);
+  const z = simdi();
+  const id = kimlik("o");
+  const teklif: Oneri = {
+    id,
+    muhabirId: m.id,
+    giren: ben.id,
+    yon: "muhabire",
+    ulke: sehirUlkesi(m.sehir, d),
+    haberBasligi: asil?.haberBasligi ?? p.baslik,
+    gelisme: p.aciklama || asil?.gelisme || p.baslik,
+    paketBasligi: p.baslik,
+    tur: p.tur,
+    ...(p.bicim && { bicim: p.bicim }),
+    sahaGerekli: p.sahaGerekli,
+    zaman: z,
+    kanal: "sistem",
+    ...((plan?.tarih ?? asil?.hedefTarih) && { hedefTarih: plan?.tarih ?? asil?.hedefTarih }),
+    durum: "teklif",
+    kaynakPaketId: p.id,
+  };
+  d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "iptal", adim: undefined, devredildi: { muhabirId: m.id, oneriId: id, zaman: z, kisiId: ben.id }, guncelleme: z }));
+  d = { ...d, oneriler: [teklif, ...d.oneriler] };
+  d = hareketYaz(d, { kisiId: ben.id, tip: "paketBaskaMuhabire", paketId: p.id, planId: p.planId, veri: { kime: p.muhabirId! } });
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMuhabireGonderildi", oneriId: id, veri: { kime: m.id, muhabir: m.id } }));
+  return id;
+};
+
+/* Yeni öneri düzenine geçiş (gecis.ts): yalnız tam yönetici, önizlemeden sonra; tek hareket. "Plana eklendi" eşitlemesi sonra kendiliğinden. */
+export const yeniDuzeneGecir = (ben: Kisi): number | null => {
+  if (!ben.hesapYoneticisi) return null;
+  const d = getir();
+  const n = gecisOnizlemesi(d).toplam;
+  if (!n) return 0;
+  const yeni = gecisUygula(d, ben.id, simdi());
+  kaydet(hareketYaz({ ...yeni, oneriler: yeni.oneriler.map((o) => oneriPlanaGore(yeni, o)) }, { kisiId: ben.id, tip: "gecisUygulandi", veri: { sayi: String(n) } }));
+  return n;
 };
 
 /** Newsdesk'in sisteme katılıp katılmadığı (tam yönetici); yarım paketler kendi yolunda kalıyor. */

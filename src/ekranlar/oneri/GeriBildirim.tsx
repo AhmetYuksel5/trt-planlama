@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { geriBildirimKaydet, takipTamamla } from "../../eylemler";
-import { geriBildirimAyari, geriBildirimEpostasi, kararSablonu, sablonDoldur, sablonlar } from "../../geriBildirim";
+import { geriBildirimEpostasi, kararSablonu, sablonDoldur, sablonlar } from "../../geriBildirim";
 import { oneriPlanaGore } from "../../oneriPlanlari";
 import { yerelGun } from "../../tarih";
 import { kisiBul, useVeri, type Kisi, type Oneri } from "../../veri";
@@ -72,13 +72,10 @@ function GeriBildirimPenceresi({ ben, oneri: o, kapat }: { ben: Kisi; oneri: One
   const { t } = useDil();
   const v = useVeri();
   const liste = sablonlar(v);
-  const ayar = geriBildirimAyari(v);
   const ilk = kararSablonu(v, o);
   const [sablonId, setSablonId] = useState(ilk?.id ?? "");
   const sablon = liste.find((s) => s.id === sablonId) ?? ilk;
   const [not, setNot] = useState("");
-  // Takip karardan bağımsız seçenek: onaylananda işaretli gelir, öbüründe istenirse.
-  const [takip, setTakip] = useState(o.durum === "planaEklendi" && o.takip !== "tamamlandi");
   const [duzen, setDuzen] = useState<{ konu: string; govde: string; cc: string; bcc: string } | null>(null);
   if (!sablon) return null;
   // Şablon seçildikçe metin şablondan; kişi elle değiştirirse o kalıyor (not alanı yine altta ekleniyor).
@@ -90,7 +87,7 @@ function GeriBildirimPenceresi({ ben, oneri: o, kapat }: { ben: Kisi; oneri: One
   const muhabir = kisiBul(v, o.muhabirId);
   const degistir = (k: "konu" | "govde" | "cc" | "bcc", x: string) => setDuzen({ konu, govde, cc, bcc, [k]: x });
   const kaydet = () => {
-    if (geriBildirimKaydet(ben, o.id, { sablonId: sablon.id, takip })) {
+    if (geriBildirimKaydet(ben, o.id, { sablonId: sablon.id, takip: false })) {
       bildir(t("gbKaydedildi"));
       kapat();
     }
@@ -137,12 +134,6 @@ function GeriBildirimPenceresi({ ben, oneri: o, kapat }: { ben: Kisi; oneri: One
           <label>
             {t("gbNot")}
             <textarea dir="auto" rows={2} value={not} onChange={(e) => setNot(e.target.value)} data-gb-not />
-          </label>
-        )}
-        {ayar.epostaIleTakip && o.takip !== "tamamlandi" && (
-          <label className="secim">
-            <input type="checkbox" checked={takip} onChange={(e) => setTakip(e.target.checked)} data-gb-takip />
-            {t("gbTakipSorusu")}
           </label>
         )}
         <GonderDugmeleri eposta={eposta} dosyaAdi={`geri-bildirim-${o.id}.eml`} once={kaydet} />

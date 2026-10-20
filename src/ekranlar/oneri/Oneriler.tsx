@@ -12,7 +12,7 @@ import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAd
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { arsivdenCikarabilir, takipSatiriEkleyebilir, kayitTemizleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { arsivdenCikarabilir, geriAlabilir, oneriSilebilir, takipSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -200,7 +200,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
 function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: Oneri; sayfada?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
-  if (!kayitTemizleyebilir(ben)) return null;
+  if (!oneriSilebilir(ben)) return null;
   const sil = () => {
     const n = temizle(v, { turler: ["oneriler"], idler: [oneri.id] }).toplam;
     if (!confirm(t("oneriSilOnay", { n }))) return;
@@ -226,7 +226,7 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const [geriAl, setGeriAl] = useState<OneriGeriHedefi | null>(null);
   const arsivde = oneriArsivde(o, bugun(), v);
   const degerlendirir = yapabilir(ben, "oneriDegerlendir");
-  const hedefler = degerlendirir ? oneriGeriHedefleri(v, o) : [];
+  const hedefler = geriAlabilir(ben) ? oneriGeriHedefleri(v, o) : [];
   const geriAlYap = (h: OneriGeriHedefi) => {
     if (!confirm(t("geriAlOnay", { asama: t(ONERI_DURUM_ADI[h]) }))) return;
     const r = oneriAsamayaDon(ben, o.id, h);

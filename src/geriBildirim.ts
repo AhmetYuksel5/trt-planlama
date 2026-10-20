@@ -48,7 +48,12 @@ export const VARSAYILAN_AYAR: GeriBildirimAyari = {
 
 /** Kayıtta şablon yoksa (yeni kurulum, eski kayıt) varsayılanlar; hepsi silinirse de varsayılana dönülüyor. */
 export const sablonlar = (d: Durum): GeriBildirimSablonu[] => (d.geriBildirimSablonlari?.length ? d.geriBildirimSablonlari : VARSAYILAN_SABLONLAR);
-export const geriBildirimAyari = (d: Durum): GeriBildirimAyari => d.geriBildirimAyari ?? VARSAYILAN_AYAR;
+/*
+ * Deneme sürecinin e-postayla takibi kalktı (tasarım belgesi, 9. bölüm):
+ * yerini görev ve "yapıldı" akışı aldı. Kayıtta ayar açık kalmış olsa da
+ * kapalı okunuyor; eski takip işaretleri bilgi olarak duruyor.
+ */
+export const geriBildirimAyari = (d: Durum): GeriBildirimAyari => ({ ...(d.geriBildirimAyari ?? VARSAYILAN_AYAR), epostaIleTakip: false });
 
 /** Geri bildirim kararı verilmiş öneride ve muhabiri varsa (talimat, ajans önerisinde dönülecek muhabir yok). */
 export const geriBildirimKarari = (o: Oneri): GeriBildirimKarari | undefined =>
