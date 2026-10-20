@@ -1,6 +1,6 @@
 import { birimAdi } from "../../yapi";
 import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
-import { ArrowRight, Bell, CheckCircle, History, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
+import { ArrowRight, Bell, CheckCircle, History, CirclePlay, Clock, Lightbulb, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, gorunenSahip, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { AsamaCubugu, Bos, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, Sayac, Tumu, oncelikliOnce } from "../../bilesenler/Parcalar";
@@ -12,13 +12,13 @@ import { acikCagri, planBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { ozelGorevleri } from "../../ozel";
 import { oneriArsivde } from "../../oneriPlanlari";
 import { OzelGorevSatirlari } from "../../bilesenler/OzelGorevler";
-import { paketTamamla, takipTamamla } from "../../eylemler";
+import { paketTamamla } from "../../eylemler";
 import { KararNotlari } from "../haftalik/Kalem";
 import { adimYapabilir, bildirimMi, gorevlendirmeGorebilir, oneriGorebilir, paketGorebilir, paketTamamlayabilir } from "../../yetki";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { MuhabirKilavuzu } from "./MuhabirKilavuzu";
 import { SayfaBasi } from "./Planlama";
-import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
+import { tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
 
 /**
  * Muhabirin masası.
@@ -62,15 +62,14 @@ function useMuhabirIsleri(ben: Kisi) {
    * paketi hiç olmuyor; PKG'li olanın paketi plan onaylanana dek
    * "değerlendiriliyor"da. "Senin sıran" yalnız paketlerden kurulunca muhabire
    * "plana eklendi" bildirimi gidiyor, işlerinde hiçbir şey çıkmıyordu.
-   * Planın günü geçince ya da paketi onaylanınca (o zaman paket satırı) düşüyor;
-   * takipteki haber kendi kartında. Kısıtlı muhabir planı okuyamıyor: gün öneride.
+   * Planın günü geçince ya da paketi onaylanınca (o zaman paket satırı) düşüyor.
+   * Kısıtlı muhabir planı okuyamıyor: gün öneride.
    */
   const planGunu = (o: Oneri) => planBul(v, o.planId)?.tarih ?? o.planTarihi ?? yerelGun(o.zaman);
   const plandaki = oneriler.filter(
     (o) =>
       o.muhabirId === ben.id &&
       o.durum === "planaEklendi" &&
-      !o.takip &&
       planGunu(o) >= B &&
       !paketler.some((p) => (p.id === o.paketId || p.oneriId === o.id) && p.durum !== "taslak" && p.durum !== "degerlendiriliyor"),
   );
@@ -274,56 +273,6 @@ function Onerilerim({ ben }: { ben: Kisi }) {
   );
 }
 
-/*
- * Deneme süreci: geri bildirimle takibe alınan haberler. Uygulaması
- * e-postayla yürüyor; muhabir bitince "tamamlandı" diyor (Planlama da
- * diyebiliyor). Açıklar önde, bitenler arkada.
- */
-function TakiptekiHaberlerim({ ben }: { ben: Kisi }) {
-  const { t, dil } = useDil();
-  const { oneriler, paketler } = useMuhabirIsleri(ben);
-  // Paketi olan haber "Senin sıran"da ve Haberlerim'de; burada ikinci kez "tamamlandı" düğmesiyle durmasın.
-  const liste = oneriler.filter((o) => o.muhabirId === ben.id && o.takip && !paketler.some((p) => p.oneriId === o.id)).sort((a, b) => (a.takip === b.takip ? 0 : a.takip === "acik" ? -1 : 1));
-  return (
-    <Kart baslik={t("takiptekiHaberlerim")} ikon={<MailCheck size={18} />}>
-      {liste.length === 0 ? (
-        <Bos kucuk metin={t("takiptekiHaberYok")} />
-      ) : (
-        <ul className="liste" data-takipteki-haberler>
-          {liste.map((o) => (
-            <li key={o.id} data-takipteki={o.id}>
-              <div className="ad">
-                <a href={`#/oneriler/${o.id}`}>
-                  <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
-                </a>
-                <small>
-                  <Icerik>{o.haberBasligi}</Icerik>
-                  {o.takipBitis && ` · ${tarihYaz(yerelGun(o.takipBitis), dil, "kisa")}`}
-                </small>
-                {o.yalnizTakip && o.takip === "acik" && (
-                  <small className="sonuk" data-yalniz-takip>
-                    {t("yalnizTakipPaketYok")}
-                  </small>
-                )}
-              </div>
-              {o.takip === "acik" ? (
-                <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && tamamlandiBildir(ben, t("gbTamamlandiBildir"), { oneriId: o.id })} data-takip-tamamla>
-                  <CheckCircle size={14} /> {t("gbTamamlandiIsaretle")}
-                </button>
-              ) : (
-                <>
-                  <Rozet ton="iyi">{t("gbTamamlandi")}</Rozet>
-                  <TamamlamaGeriAlDugmesi ben={ben} oneri={o} />
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Kart>
-  );
-}
-
 function Gorevlerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const { gorevler, ozelGorevler } = useMuhabirIsleri(ben);
@@ -368,7 +317,6 @@ export const MUHABIR_ALANLARI: Alan[] = [
   { id: "muCagri", ad: "alAcikCagrilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Cagrilar },
   { id: "muSayac", ad: "alOzetSayilar", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Sayaclar },
   { id: "muSiram", ad: "seninSiran", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Siram },
-  { id: "muTakip", ad: "takiptekiHaberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: TakiptekiHaberlerim },
   { id: "muGorev", ad: "gorevlendirmelerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Gorevlerim },
   { id: "muHaberler", ad: "haberlerim", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Haberlerim },
   { id: "muBildirim", ad: "bildirimler", genis: true, grup: "muhabir", sayfa: "muhabir", Bilesen: Bildirimlerim },

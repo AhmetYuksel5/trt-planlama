@@ -1,30 +1,28 @@
-import { CircleCheck, Mail, MailCheck } from "lucide-react";
+import { Mail, MailCheck } from "lucide-react";
 import { useState } from "react";
 import { Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { geriBildirimKaydet, takipTamamla } from "../../eylemler";
+import { geriBildirimKaydet } from "../../eylemler";
 import { geriBildirimEpostasi, kararSablonu, sablonDoldur, sablonlar } from "../../geriBildirim";
 import { oneriPlanaGore } from "../../oneriPlanlari";
 import { yerelGun } from "../../tarih";
 import { kisiBul, useVeri, type Kisi, type Oneri } from "../../veri";
-import { geriBildirimGonderebilir, takipTamamlayabilir } from "../../yetki";
+import { geriBildirimGonderebilir } from "../../yetki";
 import { GonderDugmeleri } from "./Eposta";
-import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
 
 /*
  * Önerinin değerlendirmesindeki geri bildirim: Planlama kararı verdikten
  * sonra muhabire şablondan e-posta (Outlook taslağı ya da telefonda posta
- * uygulaması). Deneme sürecinde "takip edilsin" denen haber muhabirin
- * işlerinde takipte; muhabir ya da Planlama bitince "tamamlandı" diyor.
+ * uygulaması).
  */
 export function GeriBildirimBolumu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
-  const { t, dil, ad } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   // "Plana eklendi" plandaki kayda göre: öneride kalan kopya kaymış olsa da onay gönderilebilsin.
   const o = oneriPlanaGore(v, oneri);
   const [ac, setAc] = useState(false);
   const gonderir = geriBildirimGonderebilir(ben, o);
-  if (!gonderir && !o.geriBildirim && !o.takip && !o.geriDonus) return null;
+  if (!gonderir && !o.geriBildirim && !o.geriDonus) return null;
   const zaman = (z: string) => `${tarihYaz(yerelGun(z), dil, "kisa")} ${saatYaz(z, dil)}`;
   return (
     <div className="geri-bildirim ara-ust-2" data-geri-bildirim>
@@ -36,30 +34,10 @@ export function GeriBildirimBolumu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) 
         ) : (
           o.geriDonus && <Rozet ton="iyi">{t("geriDonusYapildi")}</Rozet>
         )}
-        {o.takip === "acik" && (
-          <span data-takip-durumu="acik">
-            <Rozet ton="vurgu">{t("gbTakipte")}</Rozet>
-          </span>
-        )}
-        {o.takip === "tamamlandi" && (
-          <span data-takip-durumu="tamamlandi">
-            <Rozet ton="iyi">
-              <CircleCheck size={13} /> {t("gbTamamlandi")}
-              {o.takipBitis && ` · ${zaman(o.takipBitis)}`}
-              {o.takipBitiren && ` · ${ad(kisiBul(v, o.takipBitiren))}`}
-            </Rozet>
-          </span>
-        )}
-        {o.takip === "tamamlandi" && <TamamlamaGeriAlDugmesi ben={ben} oneri={o} />}
         <span className="bosluk-esnek" />
         {gonderir && (
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAc(true)} data-geri-bildirim-ac>
             <Mail size={14} /> {t(o.geriBildirim ? "gbYenidenGonder" : "gbGonder")}
-          </button>
-        )}
-        {takipTamamlayabilir(ben, o) && (
-          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => takipTamamla(ben, o.id) && tamamlandiBildir(ben, t("gbTamamlandiBildir"), { oneriId: o.id })} data-takip-tamamla>
-            <CircleCheck size={14} /> {t("gbTamamlandiIsaretle")}
           </button>
         )}
       </div>
@@ -87,7 +65,7 @@ function GeriBildirimPenceresi({ ben, oneri: o, kapat }: { ben: Kisi; oneri: One
   const muhabir = kisiBul(v, o.muhabirId);
   const degistir = (k: "konu" | "govde" | "cc" | "bcc", x: string) => setDuzen({ konu, govde, cc, bcc, [k]: x });
   const kaydet = () => {
-    if (geriBildirimKaydet(ben, o.id, { sablonId: sablon.id, takip: false })) {
+    if (geriBildirimKaydet(ben, o.id, { sablonId: sablon.id })) {
       bildir(t("gbKaydedildi"));
       kapat();
     }

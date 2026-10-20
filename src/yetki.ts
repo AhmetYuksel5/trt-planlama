@@ -24,7 +24,6 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oneri,
-  type Takip,
   type Paket,
 } from "./veri";
 
@@ -445,24 +444,14 @@ export const isAlabilir = (ben: Kisi | undefined, k: Kisi): boolean =>
   !!ben && !k.pasif && k.birim !== "muhabir" && ((k.birim === "planlama" && sayfaGorebilir(ben, "gorevler")) || isVerilebilecekBirimler(ben).includes(k.birim as BirimId));
 /** Kayıt temizliği (deneme kayıtlarını izleriyle silmek) yalnız tam yöneticide: geri alınamıyor. */
 export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean => !!ben?.hesapYoneticisi && !ben.pasif;
-export const takipTamamlayabilir = (ben: Kisi | undefined, o: Oneri): boolean =>
-  !!ben && o.takip === "acik" && (ben.id === o.muhabirId || yapabilir(ben, "geriDonus"));
-
 /*
- * Yanlışlıkla "Tamamlandı" denen haber geri açılır: muhabiri ya da Planlama
- * (geri dönüş ya da paket değerlendirme yetkisi), kapatabilenler. Özel yayın
+ * Yanlışlıkla onaylanmış "Yapıldı" geri açılır. Paket onayla kapandığı için
+ * yalnız onay yetkilisi açar, muhabir onaylanmış sonucu bozamaz. Özel yayın
  * paketi kendi aşama listesinde geri alınıyor; Newsdesk devredeyken paket
  * üretimde kapanıyor, o yol değil.
  */
-export const tamamlamaGeriAlabilir = (ben: Kisi | undefined, d: Durum, o?: Oneri, p?: Paket): boolean => {
-  if (!ben) return false;
-  const oneriKapali = o?.takip === "tamamlandi";
-  const paketKapali = !!p && p.durum === "tamamlandi" && !p.ozelId && yalnizPlanlama(d);
-  // Paket onayla kapandı: onu yalnız onay yetkilisi açar, muhabir onaylanmış sonucu bozamaz.
-  if (paketKapali) return paketIsaretOnaylayabilir(ben);
-  if (!oneriKapali) return false;
-  return ben.id === o?.muhabirId || yapabilir(ben, "geriDonus") || yapabilir(ben, "paketDegerlendir");
-};
+export const tamamlamaGeriAlabilir = (ben: Kisi | undefined, d: Durum, p: Paket): boolean =>
+  !!ben && p.durum === "tamamlandi" && !p.ozelId && yalnizPlanlama(d) && paketIsaretOnaylayabilir(ben);
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
 export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean => !!k && (k.id === kisi.id || yapabilir(k, "profilDuzenle"));
@@ -603,6 +592,3 @@ export const ozelPaketTeslimEdebilir = (k: Kisi | undefined, p: Paket): boolean 
 export const kisitliKisi = (k: Kisi): boolean => k.birim === "muhabir" || !!k.kontrolBekliyor;
 export const takipEkleyebilir = (k: Kisi | undefined): boolean => !!k && k.birim === "muhabir" && !k.hesapsiz;
 
-/** Muhabir yalnız kendi takibini görür; sayfayı gören masa (Planlama, Yönetim) hepsini. */
-// Yeni düzene taşınmış eski takip kaydı görünmüyor; yerine takip aşamasındaki öneri var.
-export const takipGorebilir = (k: Kisi | undefined, t: Takip): boolean => !!k && !t.gecti && (k.birim === "muhabir" ? t.muhabirId === k.id : sayfaGorebilir(k, "takipler"));

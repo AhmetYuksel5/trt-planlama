@@ -267,7 +267,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   };
 
   // Yanlışlıkla kapatılan haber buradan yeniden açılıyor.
-  if (tamamlamaGeriAlabilir(ben, v, undefined, paket)) {
+  if (tamamlamaGeriAlabilir(ben, v, paket)) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <div className="dugmeler">

@@ -247,8 +247,6 @@ export function ElleOneriFormu({
   hemenMetni,
   kaydet,
   kapat,
-  baslangic,
-  takipId,
 }: {
   ben: Kisi;
   hedefTarih?: string;
@@ -256,15 +254,12 @@ export function ElleOneriFormu({
   hemenMetni?: string;
   kaydet: (id: string, hemen: boolean) => void;
   kapat: () => void;
-  /** Takipten öneriye çevirmede form takibin konusu, açıklaması ve muhabiriyle dolu açılıyor. */
-  baslangic?: Partial<OneriFormDurumu>;
-  takipId?: string;
 }) {
   const { t } = useDil();
-  const [f, setF] = useState(() => ({ ...oneriFormuBaslangic(ben, "telefon"), ...baslangic }));
+  const [f, setF] = useState(() => oneriFormuBaslangic(ben, "telefon"));
   const gecerli = oneriFormuGecerli(f);
   const gonder = (hemen: boolean) => {
-    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta, ...(takipId && { takipId }) });
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta });
     if (id && f.bicim === TAKIP_BICIMI) {
       bildir(t("bTakipKaydedildi"));
       kapat();

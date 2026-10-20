@@ -1,7 +1,7 @@
 import { ciktiTarihi } from "./dil";
 import type { GidenEposta } from "./eposta";
 import { kisiAr } from "./etiketler";
-import { kisiBul, planBul, type Durum, type GeriBildirimAyari, type GeriBildirimKarari, type GeriBildirimSablonu, type Oneri } from "./veri";
+import { kisiBul, planBul, type Durum, type GeriBildirimKarari, type GeriBildirimSablonu, type Oneri } from "./veri";
 
 /*
  * Muhabire geri bildirim e-postası ve deneme sürecindeki e-postayla takip.
@@ -41,20 +41,8 @@ export const VARSAYILAN_SABLONLAR: GeriBildirimSablonu[] = [
   },
 ];
 
-export const VARSAYILAN_AYAR: GeriBildirimAyari = {
-  epostaIleTakip: true,
-  takipMesaji: "سيتم من الآن متابعة مرحلة تنفيذ هذا المقترح عبر البريد الإلكتروني، لأننا في مرحلة تجريبية.",
-};
-
 /** Kayıtta şablon yoksa (yeni kurulum, eski kayıt) varsayılanlar; hepsi silinirse de varsayılana dönülüyor. */
 export const sablonlar = (d: Durum): GeriBildirimSablonu[] => (d.geriBildirimSablonlari?.length ? d.geriBildirimSablonlari : VARSAYILAN_SABLONLAR);
-/*
- * Deneme sürecinin e-postayla takibi kalktı (tasarım belgesi, 9. bölüm):
- * yerini görev ve "yapıldı" akışı aldı. Kayıtta ayar açık kalmış olsa da
- * kapalı okunuyor; eski takip işaretleri bilgi olarak duruyor.
- */
-export const geriBildirimAyari = (d: Durum): GeriBildirimAyari => ({ ...(d.geriBildirimAyari ?? VARSAYILAN_AYAR), epostaIleTakip: false });
-
 /** Geri bildirim kararı verilmiş öneride ve muhabiri varsa (talimat, ajans önerisinde dönülecek muhabir yok). */
 export const geriBildirimKarari = (o: Oneri): GeriBildirimKarari | undefined =>
   o.muhabirId && (o.durum === "planaEklendi" || o.durum === "reddedildi" || o.durum === "sonra") ? o.durum : undefined;

@@ -1,5 +1,5 @@
 import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
-import { PlanTakipleri, acikTakipler, takipOnerileri } from "../Takipler";
+import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
@@ -95,7 +95,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
       {/* Muhabir takipleri gelen önerilerden ayrı: yalnız gelişme bildiren takip öneri listesini kalabalıklaştırmasın. */}
       {arac === "takipler" && (
         <Pencere genis baslik={t("mtAcikTakipler")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
-          <PlanTakipleri ben={ben} tarih={plan.tarih} plan={plan} />
+          <PlanTakipleri ben={ben} plan={plan} />
         </Pencere>
       )}
       {arac === "takvim" && (
@@ -136,7 +136,7 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
   return (
     <nav className="sag-uc plan-araclari" aria-label={t("planAraclari")}>
       {icerik && arac("oneriler", <Lightbulb size={16} />, "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
-      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), acikTakipler(ben, v).length + takipOnerileri(ben, v).length)}
+      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), takipOnerileri(ben, v).length)}
       {arac("takvim", <CalendarSearch size={16} />, "takvimdenGun", () => ac("takvim"), faaliyet)}
       {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
       {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}

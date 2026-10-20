@@ -1,4 +1,5 @@
 import { sehirUlkesi } from "./etiketler";
+import { temizle } from "./temizlik";
 import { TAKIP_BICIMI, type Durum, type Oneri } from "./veri";
 
 /*
@@ -14,6 +15,7 @@ import { TAKIP_BICIMI, type Durum, type Oneri } from "./veri";
 export interface GecisOnizlemesi {
   sonra: number;
   eposta: number;
+  kopya: number;
   takip: number;
   planda: number;
   kapali: number;
@@ -28,18 +30,28 @@ const takipOneriKimligi = (takipId: string) => `o-${takipId}`;
  * paket "Yapıldı" ve onayla kapanır. Açık kalan işaret eski "Tamamlandı"
  * düğmesini, kapanmışı da onu yeniden açan yolu canlı tutuyordu.
  */
+/*
+ * Eski düzende "Takip" türündeki öneri muhabirin ayrı takip kaydının ikinci
+ * yüzüydü; Planlama dokunmadıysa ("yeni") aynı iş iki kez görünüyordu. Takip
+ * kaydı takip önerisine çevrilince bu kopya izleriyle siliniyor.
+ */
+const kopyaTakipOnerisi = (d: Durum, o: Oneri) => o.bicim === TAKIP_BICIMI && o.durum === "yeni" && !!o.takipId && d.takipler.some((x) => x.id === o.takipId);
+
 const epostaTakibiVar = (o: Oneri) => o.takip !== undefined || !!o.yalnizTakip || !!o.takipBitis || !!o.takipBitiren;
 
 export const gecisOnizlemesi = (d: Durum): GecisOnizlemesi => {
   const sonra = d.oneriler.filter((o) => o.durum === "sonra").length;
   const eposta = d.oneriler.filter(epostaTakibiVar).length;
+  const kopya = d.oneriler.filter((o) => kopyaTakipOnerisi(d, o)).length;
   const bekleyen = d.takipler.filter((t) => !t.gecti);
   const planda = bekleyen.filter((t) => d.gelismeler.some((g) => g.takipId === t.id)).length;
   const kapali = bekleyen.filter((t) => t.kapandi).length;
-  return { sonra, eposta, takip: bekleyen.length, planda, kapali, toplam: sonra + eposta + bekleyen.length };
+  return { sonra, eposta, kopya, takip: bekleyen.length, planda, kapali, toplam: sonra + eposta + kopya + bekleyen.length };
 };
 
-export const gecisUygula = (d: Durum, kisiId: string, zaman: string): Durum => {
+export const gecisUygula = (d0: Durum, kisiId: string, zaman: string): Durum => {
+  const kopyalar = d0.oneriler.filter((o) => kopyaTakipOnerisi(d0, o)).map((o) => o.id);
+  const d = kopyalar.length ? temizle(d0, { turler: ["oneriler"], idler: kopyalar }).yeni : d0;
   // "Sonra değerlendirilecek" takibe katıldı; muhabirsiz öneride takip yok, değerlendirmeye döner.
   let oneriler: Oneri[] = d.oneriler.map((o) => {
     if (o.durum !== "sonra" && !epostaTakibiVar(o)) return o;

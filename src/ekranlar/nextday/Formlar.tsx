@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet, takipGelismeEkle, takipPlanda } from "../../eylemler";
-import { acikTakipler } from "../Takipler";
+import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet } from "../../eylemler";
 import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
@@ -30,10 +29,9 @@ import {
   type Oneri,
   type Paket,
   type Sehir,
-  type Takip,
 } from "../../veri";
 import { icMuhabirMi } from "../../yapi";
-import { planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { yapabilir } from "../../yetki";
 
 /*
  * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
@@ -209,15 +207,8 @@ export function OneridenAl({ plan, planBaslikId, eklendi }: { plan: NextDayPlan;
   const baslikId = plan.basliklar.find((b) => b.id === planBaslikId)?.baslikId;
   if (!ben || !baslikId || !yapabilir(ben, "oneriDegerlendir")) return null;
   const { buGun, digerleri } = gelismeOneriAdaylari(v, plan);
-  // Muhabirin takipleri de gelişme olur; bu plana girmiş olan yeniden çıkmıyor.
-  const takipler = planOperasyonDuzenler(ben, plan) ? acikTakipler(ben, v).filter((x) => !takipPlanda(v, x.id, plan.id)) : [];
-  const sayi = buGun.length + digerleri.length + takipler.length;
-  const takipEkle = (x: Takip) => {
-    if (!takipGelismeEkle(ben, x.id, { planId: plan.id, baslikId })) return;
-    bildir(t("bTakipPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
-    setAcik(false);
-    eklendi?.();
-  };
+  // Takip önerileri de adaylarda (gelismeOneriAdaylari).
+  const sayi = buGun.length + digerleri.length;
   const ekle = (o: Oneri) => {
     // Paketin doğup doğmayacağına eylem bakıyor (strap, muhabirin önerisi, Live); burada hep isteniyor.
     // Takip paketsiz giriyor; öbürlerinde paket ya da canlı eylemin kuralından (strap, muhabirin önerisi, Live).
@@ -269,30 +260,6 @@ export function OneridenAl({ plan, planBaslikId, eklendi }: { plan: NextDayPlan;
             <>
               <h3 className="pencere-ara-baslik">{t("digerGunlerinOnerileri")}</h3>
               <ul className="liste oneriden-al">{digerleri.map((o) => kart(o, true))}</ul>
-            </>
-          )}
-          {takipler.length > 0 && (
-            <>
-              <h3 className="pencere-ara-baslik">{t("mMuhabirTakipleri")}</h3>
-              <ul className="liste oneriden-al">
-                {takipler.map((x) => (
-                  <li key={x.id} className="oneriden-al-satir" data-takipten-al={x.id}>
-                    <div className="ad">
-                      <small>
-                        {ad(kisiBul(v, x.muhabirId))}
-                        {x.tarih && ` · ${tarihYaz(x.tarih, dil, "kisa")}`}
-                      </small>
-                      <b>
-                        <Icerik blok>{x.konu}</Icerik>
-                      </b>
-                      {x.aciklama && <Icerik blok>{x.aciklama}</Icerik>}
-                    </div>
-                    <button type="button" className="dugme dugme-kucuk" onClick={() => takipEkle(x)} data-takipten-ekle={x.id}>
-                      <Plus size={14} /> {t("ekle")}
-                    </button>
-                  </li>
-                ))}
-              </ul>
             </>
           )}
         </Pencere>

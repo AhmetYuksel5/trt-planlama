@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { oneriAraligi, oneriHaftada, oneriYeri } from "../../oneriPlanlari";
 import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
-import { PlanTakipleri, acikTakipler, takipOnerileri } from "../Takipler";
+import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
@@ -92,7 +92,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           {duzenler && (
             <button type="button" className="dugme dugme-ikincil" onClick={() => setTakipler(true)} data-arac="takipler">
               <Binoculars size={16} /> {t("mtAcikTakipler")}
-              {acikTakipler(ben, v).length + takipOnerileri(ben, v).length > 0 && <em className="dugme-sayi">{acikTakipler(ben, v).length + takipOnerileri(ben, v).length}</em>}
+              {takipOnerileri(ben, v).length > 0 && <em className="dugme-sayi">{takipOnerileri(ben, v).length}</em>}
             </button>
           )}
           <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
@@ -147,7 +147,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (
         <Pencere genis baslik={t("mtAcikTakipler")} alt={aralikYaz(bas, haftaSonu(bas), dil)} kapat={() => setTakipler(false)}>
-          <PlanTakipleri ben={ben} tarih={hafta.baslangic} />
+          <PlanTakipleri ben={ben} />
         </Pencere>
       )}
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}

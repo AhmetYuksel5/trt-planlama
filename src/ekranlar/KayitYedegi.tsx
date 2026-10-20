@@ -59,6 +59,7 @@ export function YeniDuzenGecisi({ ben }: { ben: Kisi }) {
   const satirlar: [Anahtar, number][] = [
     ["gcSonra", o.sonra],
     ["gcEposta", o.eposta],
+    ["gcKopya", o.kopya],
     ["gcTakip", o.takip],
     ["gcPlanda", o.planda],
     ["gcKapali", o.kapali],

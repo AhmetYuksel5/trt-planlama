@@ -167,16 +167,9 @@ export const oneriPlansizKabul = (d: Pick<Durum, "haftalik" | "paketler">, o: On
   d.haftalik.some((h) => h.durum === "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id && k.karar !== "ret")) ||
   d.paketler.some((x) => x.oneriId === o.id && !x.planId && x.durum !== "iptal");
 
-/*
- * Plandan çıkan öneri yeniden öneri olur: plan bağı silinir, durum
- * "değerlendiriliyor". Yalnız takip plan kararıydı, o da kalkar.
- */
+/* Plandan çıkan öneri yeniden öneri olur: plan bağı silinir, durum "değerlendiriliyor". */
 export const plandanDonmus = (o: Oneri): Oneri => {
   const { planId: _p, planTarihi: _t, paketId: _k, ...x } = o;
-  if (x.yalnizTakip) {
-    const { yalnizTakip: _y, takip: _tk, takipBitis: _tb, takipBitiren: _tr, ...y } = x;
-    return { ...y, durum: "degerlendiriliyor" };
-  }
   return { ...x, durum: "degerlendiriliyor" };
 };
 
