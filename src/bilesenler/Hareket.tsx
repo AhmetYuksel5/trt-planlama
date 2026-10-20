@@ -48,6 +48,10 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   oneriTakibeAlindi: "hrOneriTakipteKaldi",
   takipSatiriEklendi: "hrTakipSatiriEklendi",
   oneriAsamayaDondu: "hrOneriAsamayaDondu",
+  paketReddedildi: "hrPaketReddedildi",
+  paketIsaretlendi: "hrPaketYapildiDedi",
+  paketIsaretOnaylandi: "hrPaketYapildiOnay",
+  paketIsaretGeriCevrildi: "hrPaketIsaretGeriCevrildi",
   oneriKopyalandi: "hrOneriKopyalandi",
   oneriArsiveGonderildi: "hrOneriArsiveGonderildi",
   oneriArsivdenCikarildi: "hrOneriArsivdenCikarildi",
@@ -123,6 +127,8 @@ const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "tamamlandi" && h.veri?.stok) return "hrStoga";
   if (h.tip === "oneriGeldi" && h.veri?.elle) return "hrOneriGirildi";
   if (h.tip === "oneriPlanaEklendi" && h.veri?.takip) return "hrOneriTakibeAlindi";
+  if (h.tip === "paketIsaretlendi" && h.veri?.tur === "yapilmadi") return "hrPaketYapilmadiDedi";
+  if (h.tip === "paketIsaretOnaylandi" && h.veri?.tur === "yapilmadi") return "hrPaketYapilmadiOnay";
   if (h.tip === "ozelAsama" && h.veri?.asama === "hazir") return "hrOzelHazir";
   return SABLON[h.tip];
 };

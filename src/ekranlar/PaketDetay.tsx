@@ -5,14 +5,15 @@ import { useState } from "react";
 import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketTamamla, uretimeAl } from "../eylemler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
 import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { adimYapabilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 
@@ -274,7 +275,21 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     );
   }
 
-  // Newsdesk yokken onaylı paketi muhabir (hesapsızsa Planlama onun adına) kapatıyor.
+  // Newsdesk yokken onaylı paketin sonucu muhabirden (hesapsızsa Planlama onun adına): yapıldı ya da yapılmadı, yetkili onaylıyor.
+  if (!paket.ozelId && (paket.isaret || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben))) {
+    return (
+      <Kart baslik={t("seninIslemin")}>
+        <PaketSonucDugmeleri ben={ben} paket={paket} />
+        {uretimeAlabilir(ben, paket) && !paket.isaret && (
+          <div className="dugmeler ara-ust-2">
+            <button className="dugme dugme-ikincil" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
+              <CirclePlay size={15} /> {t("uretimeAl")}
+            </button>
+          </div>
+        )}
+      </Kart>
+    );
+  }
   if (paketTamamlayabilir(ben, paket, v)) {
     return (
       <Kart baslik={t("seninIslemin")}>
@@ -316,11 +331,11 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
               <Hourglass size={15} /> {t("degerlendirmeyeAl")}
             </button>
           )}
-          <button className="dugme dugme-iyi" onClick={() => paketDurum(ben, paket.id, "onaylandi")}>
-            <CircleCheck size={15} /> {t("onayla")}
+          <button className="dugme dugme-iyi" onClick={() => confirm(t("paketKabulOnay")) && paketDurum(ben, paket.id, "onaylandi")} data-paket-kabul>
+            <CircleCheck size={15} /> {t("kabulEt")}
           </button>
-          <button className="dugme dugme-kotu" onClick={() => confirm(t("iptalEdilsinMi")) && paketDurum(ben, paket.id, "iptal")}>
-            <Ban size={15} /> {t("iptalEt")}
+          <button className="dugme dugme-kotu" onClick={() => confirm(t("paketRetOnay")) && paketReddet(ben, paket.id)} data-paket-reddet>
+            <Ban size={15} /> {t("reddet")}
           </button>
         </div>
       </Kart>

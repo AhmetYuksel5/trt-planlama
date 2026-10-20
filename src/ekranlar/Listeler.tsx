@@ -1,4 +1,5 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
+import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
 import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
@@ -24,11 +25,13 @@ const ICERIK_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: Reac
   programlar: { baslik: "mProgramlar", alt: "programlarAlt", ikon: <Clapperboard size={26} />, turler: ["program"] },
 };
 
+const SONUC_ADI: Record<PaketSonucu, Anahtar> = { onayBekliyor: "psOnayBekleyen", yapildi: "psYapilan", yapilmadi: "psYapilmayan", reddedildi: "psReddedilen" };
+
 export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ayar = ICERIK_SAYFASI[sayfa] ?? ICERIK_SAYFASI.paketler;
-  const [durum, setDurum] = useState<PaketDurum | "hepsi" | "aktif">("aktif");
+  const [durum, setDurum] = useState<PaketDurum | "hepsi" | "aktif" | PaketSonucu>("aktif");
   const [tur, setTur] = useState<IcerikTuru | "">("");
   const [aranan, setAranan] = useState("");
   const muhabir = ben.birim === "muhabir";
@@ -37,7 +40,8 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const liste = gorunen
     .filter(
       (p) =>
-        (durum === "hepsi" || (durum === "aktif" ? p.durum !== "tamamlandi" && p.durum !== "iptal" : p.durum === durum)) &&
+        (durum === "hepsi" ||
+          (durum === "aktif" ? p.durum !== "tamamlandi" && p.durum !== "iptal" : (PAKET_SONUCLARI as readonly string[]).includes(durum) ? paketSonucu(p) === durum : p.durum === durum)) &&
         (!tur || p.tur === tur) &&
         (!q || `${p.kod} ${p.baslik} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q)),
     )
@@ -66,6 +70,12 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
           <button className={durum === "aktif" ? "acik" : ""} onClick={() => setDurum("aktif")}>
             {t("aktif")} <em>{gorunen.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal").length}</em>
           </button>
+          {/* Paketin sonucu: muhabirin, Planlama'nın ve haber merkezinin ortak listeleri (onay bekleyen, yapılan, yapılmayan, reddedilen). */}
+          {PAKET_SONUCLARI.map((x) => (
+            <button key={x} className={durum === x ? "acik" : ""} onClick={() => setDurum(x)} data-paket-sonucu={x}>
+              {t(SONUC_ADI[x])} <em>{gorunen.filter((p) => paketSonucu(p) === x).length}</em>
+            </button>
+          ))}
           {PAKET_DURUMLARI.map((d) => (
             <button key={d} className={durum === d ? "acik" : ""} onClick={() => setDurum(d)}>
               {t(PAKET_DURUM_ADI[d])} <em>{gorunen.filter((p) => p.durum === d).length}</em>

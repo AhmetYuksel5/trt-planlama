@@ -5,7 +5,7 @@ import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencer
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
@@ -241,10 +241,14 @@ export default function BaslikKarti({
                     {degerlendirir && p.durum === "taslak" && (
                       <IkonDugme ikon={<Hourglass size={15} />} etiket={t("degerlendirmeyeAl")} onClick={() => ben && paketDurum(ben, p.id, "degerlendiriliyor")} />
                     )}
+                    {/* Toplantıda paket başına karar: kabul muhabire görev, ret paketi iz olarak bırakır. */}
                     {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("onayla")} onClick={() => ben && paketDurum(ben, p.id, "onaylandi")} />
+                      <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("kabulEt")} onClick={() => ben && confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} />
                     )}
-                    {degerlendirir && !["tamamlandi", "iptal"].includes(p.durum) && (
+                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<Ban size={15} />} etiket={t("reddet")} onClick={() => ben && confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} />
+                    )}
+                    {degerlendirir && !["tamamlandi", "iptal", "taslak", "degerlendiriliyor"].includes(p.durum) && (
                       <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
                     )}
                     {icerik && paketPlandanSilinir(p) && (

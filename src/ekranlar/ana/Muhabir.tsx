@@ -1,4 +1,5 @@
 import { birimAdi } from "../../yapi";
+import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
 import { ArrowRight, Bell, CheckCircle, History, CirclePlay, Clock, Lightbulb, MailCheck, Megaphone, Newspaper, Plane, Send } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, gorunenSahip, sonrakiAdim, type UretimAdimi } from "../../akis";
 import { HareketAkisi } from "../../bilesenler/Hareket";
@@ -158,7 +159,10 @@ function Siram({ ben }: { ben: Kisi }) {
                     </div>
                     {p.oncelikli && <OncelikRozeti />}
                     {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
-                    {p.durum === "onaylandi" ? (
+                    {/* Onaylı paketin sonucu muhabirden: yapıldı ya da sebebiyle yapılmadı, yetkili onaylıyor. Özel yayın paketi kendi teslimiyle. */}
+                    {p.durum === "onaylandi" && !p.ozelId ? (
+                      <PaketSonucDugmeleri ben={ben} paket={p} kucuk />
+                    ) : p.durum === "onaylandi" ? (
                       <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => paketTamamla(ben, p.id) && tamamlandiBildir(ben, t("bPaketTamamlandi"), { paketId: p.id })} data-paket-tamamla={p.id}>
                         <CheckCircle size={14} /> {t("haberTamamlandi")}
                       </button>

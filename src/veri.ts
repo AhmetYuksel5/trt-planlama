@@ -723,6 +723,20 @@ export interface Paket {
   duzeltmeSayisi?: number;
   /** Yöneticinin müdahalesi: her listede rozetli ve başta. */
   oncelikli?: boolean;
+  /*
+   * Toplantıda reddedildi: paket iptal, ama kayıt silinmiyor; "Reddedilen
+   * paketler" listesinde ve muhabirin sayfasında duruyor. Haber planda
+   * paketsiz kalıyor.
+   */
+  reddedildi?: { zaman: string; kisiId: string };
+  /*
+   * Muhabirin "yapıldı" ya da sebebiyle "yapılmadı" işareti, yetkilinin
+   * onayını bekliyor. Onaylanınca yapıldı paketi kapatır (tamamlandı),
+   * yapılmadı iptal eder ve `yapilmadi`'ya geçer; geri çevrilince silinir.
+   */
+  isaret?: { tur: "yapildi" | "yapilmadi"; zaman: string; kisiId: string; sebep?: string };
+  /** Onaylanmış "yapılmadı": Yapılmayan paketler listesinde sebebiyle. */
+  yapilmadi?: { sebep: string; zaman: string; kisiId: string; onaylayan: string };
   /** Haftalık toplantıda kabul edilen kalemden doğduysa: "Haftalık plandan" rozeti. */
   haftalikKalemId?: string;
   /*
@@ -1198,6 +1212,10 @@ export const HAREKET_TIPLERI = [
   "oneriTakibeAlindi",
   "takipSatiriEklendi",
   "oneriAsamayaDondu",
+  "paketReddedildi",
+  "paketIsaretlendi",
+  "paketIsaretOnaylandi",
+  "paketIsaretGeriCevrildi",
   "oneriKopyalandi",
   "oneriArsiveGonderildi",
   "oneriArsivdenCikarildi",

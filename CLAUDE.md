@@ -1019,12 +1019,28 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     plan devredilince seçili paket `yayinlandi` alır.
 - Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş
   akışı, tam yönetici, gerçek kipte genel ayar belgesinde) iş Planlama'da
-  biter: onaylı paketi (haftalıktan da, Next Day'de onaylanan PKG de)
-  muhabir "Senin sıran"da "Teslim ettim" diye kapatır (satırda "Onaylandı ·
-  hazırlaman bekleniyor"; "Tamamlandı" durum gibi okunuyordu; Planlama onun
-  adına işaretlerken "Teslim edildi") (`eylemler.ts →
-  paketTamamla`, yetki `paketTamamlayabilir`; `muhabirTeslimi` ölçüme
-  girer, Planlama'ya bildirim). Hesapsız muhabir için Planlama paket
+  biter (tasarım belgesi 3. aşama, paketin aşamaları):
+  - Toplantıda paket başına karar: plan ekranında ve paket sayfasında
+    "Kabul et" (`paketDurum(…, "onaylandi")`, muhabire görev) ve "Reddet"
+    (`eylemler.ts → paketReddet`: paket iptal, `Paket.reddedildi` izi, haber
+    planda paketsiz, muhabire `paketReddedildi`); ikisi onaylı. Plan
+    onaylanınca kararsız paketler kabul sayılır (`planDurum`).
+  - Onaylı paketin sonucu muhabirden ("Senin sıran", paket sayfası;
+    `bilesenler/PaketSonucu.tsx → PaketSonucDugmeleri`): "Yapıldı" ya da
+    sebebiyle "Yapılmadı" (`paketIsaretle`, `Paket.isaret`, yetki
+    `paketIsaretleyebilir`; Planlama'ya `paketIsaretlendi`). İşaret yetkili
+    onaylayana dek "Onay bekliyor"; onay ya da geri çevirme
+    `paketIsaretKarar` (yetki `paketIsaretOnaylayabilir`: şimdilik tam
+    yönetici ve Planlama yöneticisi, 4. aşamada dağıtılabilir). Onaylanan
+    yapıldı paketi kapatır (`tamamlandi`, `muhabirTeslimi` işaretin anı,
+    önerinin e-posta takibi de), yapılmadı iptal eder (`Paket.yapilmadi`
+    sebebiyle); geri çevrilen işaret silinir. Yetkilinin kendi işareti onay
+    beklemez. Muhabire `paketIsaretOnaylandi` / `paketIsaretGeriCevrildi`.
+  - Sonuç saklanmaz (`paketSonucu.ts`): onay bekleyen, yapılan, yapılmayan,
+    reddedilen; Paketler sayfasının sekmeleri (muhabirde Haberlerim,
+    Planlama ve haber merkezi aynı sayfa), rozet `PaketDurumRozeti`.
+  - Özel yayın paketi kendi teslimiyle (`paketTamamla`). Hesapsız muhabir
+    için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,
   devral ve üretim akışı geçerli; yarım paketler kendi yolunda.
   - Ekran bu pakete üç adım gösterir (`akis.ts → sadeAkis`, `SADE_ASAMA_ADI`):
