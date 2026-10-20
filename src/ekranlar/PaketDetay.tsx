@@ -278,7 +278,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   }
 
   // Newsdesk yokken onaylı paketin sonucu muhabirden (hesapsızsa Planlama onun adına): yapıldı ya da yapılmadı, yetkili onaylıyor.
-  if (!paket.ozelId && (paket.isaret || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben))) {
+  if (!paket.ozelId && ((paket.isaret && paket.durum === "onaylandi") || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben))) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <PaketSonucDugmeleri ben={ben} paket={paket} />

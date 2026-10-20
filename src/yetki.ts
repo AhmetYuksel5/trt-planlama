@@ -458,8 +458,10 @@ export const tamamlamaGeriAlabilir = (ben: Kisi | undefined, d: Durum, o?: Oneri
   if (!ben) return false;
   const oneriKapali = o?.takip === "tamamlandi";
   const paketKapali = !!p && p.durum === "tamamlandi" && !p.ozelId && yalnizPlanlama(d);
-  if (!oneriKapali && !paketKapali) return false;
-  return ben.id === (o?.muhabirId ?? p?.muhabirId) || yapabilir(ben, "geriDonus") || yapabilir(ben, "paketDegerlendir");
+  // Paket onayla kapandı: onu yalnız onay yetkilisi açar, muhabir onaylanmış sonucu bozamaz.
+  if (paketKapali) return paketIsaretOnaylayabilir(ben);
+  if (!oneriKapali) return false;
+  return ben.id === o?.muhabirId || yapabilir(ben, "geriDonus") || yapabilir(ben, "paketDegerlendir");
 };
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */

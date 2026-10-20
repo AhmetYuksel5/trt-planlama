@@ -706,15 +706,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   "Yalnız takip" yok (paketsiz eklemek zaten takip olarak). Eski açık takip
   işaretleri bilgi olarak kalır, arşivi tutmaz. Aşağıdaki
   anlatım eski kayıtlar için.
-- Yeni öneri düzenine geçiş (Ayarlar, yalnız tam yönetici;
-  `KayitYedegi.tsx → YeniDuzenGecisi`, kurallar `gecis.ts`, eylem
-  `yeniDuzeneGecir`): önizleme (kaç kayıt neye) ve onayla. "Sonra"
+- Yeni öneri düzenine geçiş. Kural: eski düzende öneri kalmaz. Sistemin
+  açılış işi (`eylemler.ts → eskiOnerileriCevir`, `App.tsx → yokla`) eski
+  biçimde ne kaldıysa kendiliğinden çevirir (örnek veri de ilk açılışta);
+  Ayarlar'daki kart (yalnız tam yönetici; `KayitYedegi.tsx →
+  YeniDuzenGecisi`, eylem `yeniDuzeneGecir`) aynısını önizlemeyle elle yapar.
+  Kurallar `gecis.ts`. Öneri üzerindeki e-postayla takip izleri (`takip`,
+  `yalnizTakip`, `takipBitis`, `takipBitiren`) silinir: plana paketsiz giren
+  haber zaten takip olarak plandadır, paket "Yapıldı" ve onayla kapanır;
+  eski "Tamamlandı" ve onu geri açan yol bu izlerle canlı kalıyordu. "Sonra"
   değerlendirilecek öneri takibe (muhabirsizse değerlendirmeye); eski takip
   kaydı takipteki öneriye (`o-<takip>`, `takipId`; bitmiş takip arşivde,
   planda gelişmesi olan gelişmenin `oneriId` bağıyla "plana eklendi"),
   takip kaydı `gecti` işaretiyle bilgi olarak kalır, listelerde görünmez
   (`takipGorebilir`). İkinci kez çalışınca değişiklik yok; eski alanlar ve
-  hareketler yerinde; tek hareket `gecisUygulandi`. Gerçek kipte eşitlenmeden
+  hareketler yerinde; tek hareket `gecisUygulandi` (açılışta kişisi `SISTEM`).
+  Eski takip kayıtlarının yan yolları (öneriye çevir, takipten gelişme) ve
+  e-posta takibinin ekranları ("Takipteki haberlerim", "Tamamlandı") kodda
+  duruyor ama çevrilmiş kayıtta görünmez. Gerçek kipte eşitlenmeden
   pasif; önce yedek kartı.
 - Muhabire geri bildirim (`geriBildirim.ts`, `oneri/GeriBildirim.tsx`):
   toplu "geri dönüş" düğmesi yok; her öneride değerlendirme bölümünden,
@@ -897,7 +906,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şehri; saat boş, çıktıda "TBC"), `CanliYayin.oneriId`. Paket önerisi
     doğsaydı çıktının "مباشر" bölümünde görünmüyordu. Plandan çıkınca,
     öneri silinince (temizlik) canlı da gider; canlıyı silmek öneriyi
-    `oneriBaglariniTazele`'den geçirir. Weekly'de LIVE işaretli kalem de
+    `oneriBaglariniTazele`'den geçirir. Ertesi güne taşınan canlıda öneri ve
+    Weekly kalemi bağı kaynakta kalır, gelişmedeki gibi (`yarinPlaniniAc`;
+    taşınan kopya öneriyi her gün "bugünün planında" tutuyordu). Weekly'de LIVE işaretli kalem de
     Next Day'e geçerken başlığın canlısı olur (`haftaliktanAktar`,
     `haftalikKalemId`, kimlik `cy-<turet>`); yalnız LIVE kalemden paket doğmaz.
   - Üçüncü karar "Düzeltmeye gönder": yalnız muhabirin önerisinde (talimat
@@ -1076,16 +1087,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     plana eklendi, muhabirde, tamamlandı; "şimdi kimde" onaydan sonra
     muhabir (`gorunenSahip`; iş akışının sahibi `paketSahibi` değişmez).
     Beş aşama ve üretim adımları yalnız üretime girmiş pakette.
-  - Tek "Tamamlandı": paketi kapatmak önerinin e-posta takibini de kapatır,
-    takibi kapatmak onaylı paketi de (`paketTamamla`, `takipTamamla`);
-    paketli haber "Takipteki haberlerim"de ikinci kez durmaz. Haberi biten
-    önerinin rozeti "Tamamlandı" (`OneriDurumRozeti`).
+  - Paket yalnız işaret ve onayla kapanır (özel yayın dışında `paketTamamla`
+    eylemi de reddeder); onaylanan "Yapıldı" önerinin eski e-posta takibini de
+    kapatır. Eski takibin "Tamamlandı"sı (`takipTamamla`) yalnız takibi kapatır,
+    paketi değil: onaysız ikinci kapanış yoluydu. Haberi biten önerinin rozeti
+    "Tamamlandı" (`OneriDurumRozeti`).
+  - Paket iptal edilince (`paketDurum`) bekleyen işaret silinir; onay yalnız
+    onaylı pakete uygulanır, kuyruk ve "onay bekliyor" yalnız onaylı paketi
+    gösterir (iptal paketi "tamamlandı"ya dönüyordu).
   - "Tamamlandı" geri alınır (yanlışlıkla basılınca; `eylemler.ts →
-    tamamlamaGeriAl`, yetki `tamamlamaGeriAlabilir`: haberin muhabiri ya da
-    Planlama): basınca çıkan bildirimde "Geri al", sonradan öneri
+    tamamlamaGeriAl`, yetki `tamamlamaGeriAlabilir`: önerinin takibini haberin
+    muhabiri ya da Planlama, onayla kapanmış paketi yalnız onay yetkilisi
+    `paketOnayi`; muhabir onaylanmış sonucu bozamaz): basınca çıkan bildirimde "Geri al", sonradan öneri
     ayrıntısında ve paket sayfasında "Tamamlamayı geri al"
     (`bilesenler/TamamlamaGeriAl.tsx`). Birlikte kapandıkları için öneri ile
-    paket birlikte açılır (takip "açık", paket onaylı); muhabirin teslim
+    paket paketten başlanınca birlikte açılır (takip "açık", paket onaylı),
+    öneriden başlanınca yalnız takip; muhabirin teslim
     zamanı yalnız o kapanışta yazıldıysa silinir. Hareketi
     `tamamlamaGeriAlindi`, öbür tarafa bildirim. Özel yayın paketi kendi
     aşama listesinde geri alınır.

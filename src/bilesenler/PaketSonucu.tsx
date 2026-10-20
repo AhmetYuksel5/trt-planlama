@@ -88,7 +88,7 @@ export function OnayKuyrugu({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   if (!paketIsaretOnaylayabilir(ben)) return null;
-  const liste = v.paketler.filter((p) => p.isaret).sort((a, b) => a.isaret!.zaman.localeCompare(b.isaret!.zaman));
+  const liste = v.paketler.filter((p) => p.isaret && p.durum === "onaylandi").sort((a, b) => a.isaret!.zaman.localeCompare(b.isaret!.zaman));
   if (!liste.length) return null;
   return (
     <Kart baslik={t("psOnayBekleyen")} ikon={<CheckCircle size={18} />} ek={String(liste.length)}>

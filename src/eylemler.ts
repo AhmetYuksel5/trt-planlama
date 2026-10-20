@@ -871,27 +871,24 @@ export const takipTamamla = (ben: Kisi, oneriId: string) => {
   if (!o || !takipTamamlayabilir(ben, o)) return false;
   const muhabir = ben.id === o.muhabirId;
   const z = simdi();
-  let yeni: Durum = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, takip: "tamamlandi", takipBitis: z, takipBitiren: ben.id } : x)) };
-  // Haberin paketi de aynı iş: Newsdesk yokken onaylı paket de kapanıyor, iki ayrı "tamamlandı" kalmıyor.
-  const p = d.paketler.find((x) => x.oneriId === o.id && x.durum === "onaylandi");
-  if (p && !d.newsdeskDevrede)
-    yeni = paketGuncelle(yeni, p.id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabir && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
-  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, ...(p && { paketId: p.id }), veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
+  // Yalnız eski e-posta takibi kapanıyor; paket onaysız kapanmasın diye "Yapıldı" ve onay yolunda kalıyor.
+  const yeni: Durum = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, takip: "tamamlandi", takipBitis: z, takipBitiren: ben.id } : x)) };
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takipTamamlandi", oneriId: o.id, planId: o.planId, veri: muhabir ? { sahip: "planlama" } : { kime: o.muhabirId ?? "" } }));
   return true;
 };
 
 /*
  * "Tamamlandı" geri alınıyor (yanlışlıkla basılmış): önerinin takibi yeniden
- * açık, onunla kapanan onaylı paket yeniden onaylı; paketten başlanırsa
- * önerisi de. İkisi birlikte kapandığı için birlikte açılıyor, yoksa haber
- * yarım açık kalırdı. Muhabirin teslim zamanı yalnız bu kapanışta yazıldıysa
+ * açık; paketten başlanırsa paket yeniden onaylı ve onunla kapanan takip de.
+ * Öneriden başlanınca paket açılmıyor: paket yalnız onayla kapanıyor, onu
+ * yalnız onay yetkilisi geri alıyor (muhabir onaylanmış sonucu bozamasın). Muhabirin teslim zamanı yalnız bu kapanışta yazıldıysa
  * siliniyor (ölçüme yanlış teslim girmesin).
  */
 export const tamamlamaGeriAl = (ben: Kisi, hedef: { oneriId?: string; paketId?: string }) => {
   const d = getir();
   const p0 = paketBul(d, hedef.paketId);
   const o = oneriBul(d, hedef.oneriId ?? p0?.oneriId);
-  const p = p0 ?? (o ? d.paketler.find((x) => x.oneriId === o.id && x.durum === "tamamlandi" && !x.ozelId) : undefined);
+  const p = p0;
   if (!tamamlamaGeriAlabilir(ben, d, o, p)) return false;
   const z = simdi();
   let yeni: Durum = d;
@@ -1638,7 +1635,8 @@ export const yarinPlaniniAc = (): string | null => {
     ? d.canliYayinlar
         .filter((c) => c.planId === kaynak.id && c.tarih >= tarih)
         .filter((c) => !c.planBaslikId || pbEsle.has(c.planBaslikId))
-        .map((c) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true, devir: true }))
+        // Gelişmedeki gibi öneri ve Weekly bağı kaynakta kalıyor: taşınan canlı öneriyi her gün "bugünün planında" tutuyordu.
+        .map(({ oneriId: _o, haftalikKalemId: _h, ...c }) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true, devir: true }))
     : [];
   /*
    * Gelişme metniyle taşınıyor; öneri ve haftalık kalem bağı kaynak kayıtta
@@ -2233,7 +2231,8 @@ export const paketSil = (ben: Kisi, id: string) => {
 export const paketTamamla = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);
-  if (!p || !paketTamamlayabilir(ben, p, d)) return false;
+  // Özel yayın dışındaki paket yalnız "Yapıldı" ve onayla kapanıyor; eylem de o yolu atlatmasın.
+  if (!p || !p.ozelId || !paketTamamlayabilir(ben, p, d)) return false;
   const z = simdi();
   const muhabirKendisi = ben.id === p.muhabirId;
   let yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
@@ -2260,7 +2259,7 @@ export const paketTamamla = (ben: Kisi, id: string) => {
  */
 const isaretUygula = (d: Durum, ben: Kisi, p: Paket, kabul: boolean): Durum => {
   const i = p.isaret;
-  if (!i) return d;
+  if (!i || p.durum !== "onaylandi") return d;
   const z = simdi();
   let yeni = paketGuncelle(d, p.id, (x) => {
     const { isaret: _, ...y } = x;
@@ -2290,7 +2289,7 @@ export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi
 export const paketIsaretKarar = (ben: Kisi, id: string, kabul: boolean) => {
   const d = getir();
   const p = paketBul(d, id);
-  if (!p?.isaret || !paketIsaretOnaylayabilir(ben)) return false;
+  if (!p?.isaret || p.durum !== "onaylandi" || !paketIsaretOnaylayabilir(ben)) return false;
   kaydet(isaretUygula(d, ben, p, kabul));
   return true;
 };
@@ -2346,6 +2345,19 @@ export const yeniDuzeneGecir = (ben: Kisi): number | null => {
   return n;
 };
 
+/*
+ * Sistemin açılış işi: eski düzende öneri kalmasın. Ayarlar'daki geçişle
+ * aynı kural; eski biçimde bir şey yoksa hiçbir şey yazmaz.
+ */
+export const eskiOnerileriCevir = (): number => {
+  const d = getir();
+  const n = gecisOnizlemesi(d).toplam;
+  if (!n) return 0;
+  const yeni = gecisUygula(d, SISTEM, simdi());
+  kaydet(hareketYaz({ ...yeni, oneriler: yeni.oneriler.map((o) => oneriPlanaGore(yeni, o)) }, { kisiId: SISTEM, tip: "gecisUygulandi", veri: { sayi: String(n) } }));
+  return n;
+};
+
 /** Newsdesk'in sisteme katılıp katılmadığı (tam yönetici); yarım paketler kendi yolunda kalıyor. */
 export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
   if (!ben.hesapYoneticisi) return false;
@@ -2359,7 +2371,11 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
   const p = paketBul(d, id);
   if (!p || !yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal"].includes(p.durum)) return false;
   if (yeni !== "iptal" && !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
-  d = paketGuncelle(d, id, (x) => ({ ...x, durum: yeni, adim: yeni === "iptal" ? undefined : x.adim }));
+  // İptalde bekleyen işaret de gidiyor: kuyrukta kalıp onaylanınca iptal paketi "tamamlandı"ya çeviriyordu.
+  d = paketGuncelle(d, id, (x) => {
+    const { isaret: _i, ...kalan } = x;
+    return yeni === "iptal" ? { ...kalan, durum: yeni, adim: undefined } : { ...x, durum: yeni };
+  });
   const tip = yeni === "degerlendiriliyor" ? "paketDegerlendirmede" : yeni === "onaylandi" ? "paketOnaylandi" : "paketIptal";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, paketId: id, planId: p.planId }));
   return true;

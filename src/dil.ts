@@ -2287,6 +2287,7 @@ const M = {
   gcSonra: m("\u201cSonra değerlendirilecek\u201d öneri → Takip", "مقترح «يُقيَّم لاحقا» ← متابعة", "\u201cTo review later\u201d proposal → Follow-up"),
   gcTakip: m("Eski takip kaydı → takipteki öneri", "سجل متابعة قديم ← مقترح قيد المتابعة", "Old follow-up record → follow-up proposal"),
   gcPlanda: m("Planda gelişmesi olan takip (bağıyla)", "متابعة لها تطور في الخطة (مع ارتباطه)", "Follow-up with a development in a plan (linked)"),
+  gcEposta: m("E-postayla takip izi → temizlenir", "أثر المتابعة بالبريد ← يُحذف", "Email follow-up flags → cleared"),
   gcKapali: m("Bitmiş takip → arşiv", "متابعة منتهية ← الأرشيف", "Finished follow-up → archive"),
   gcUygula: m("Geçişi uygula", "طبّق الانتقال", "Apply"),
   gcOnay: m("{n} kayıt yeni düzene taşınacak. Eski bilgiler yerinde kalır. Önce yedek almanı öneririz. Emin misin?", "سيُنقل {n} سجل إلى النظام الجديد، وتبقى البيانات القديمة. ننصح بأخذ نسخة احتياطية أولًا. هل أنت متأكد؟", "{n} records will move to the new flow; old data stays. We suggest a backup first. Are you sure?"),

@@ -3,8 +3,9 @@ import { TAKIP_BICIMI, type Durum, type Oneri } from "./veri";
 
 /*
  * Eski kayıtların yeni öneri düzenine geçişi (tasarım belgesi, 10. bölüm;
- * saf). Kendiliğinden çalışmaz: tam yönetici önizlemeyi görür, onaylarsa
- * uygulanır. İkinci kez çalışsa bir şeyi iki kez değiştirmez: "sonra"
+ * saf). Kural: eski düzende öneri kalmaz. Sistemin açılış işi
+ * (`eskiOnerileriCevir`) kalanı kendiliğinden çevirir; Ayarlar'daki kart
+ * aynısını önizlemeyle elle de yapar. İkinci kez çalışsa bir şeyi iki kez değiştirmez: "sonra"
  * kalmaz, taşınan takip kaydı `gecti` işaretini taşır ve önerisinin kimliği
  * kayıttan türer. Eski alanlar silinmez, hareket geçmişi olduğu gibi kalır.
  * "Plana eklendi", arşiv, paket sonuçları kayıttan hesaplandığı için
@@ -12,6 +13,7 @@ import { TAKIP_BICIMI, type Durum, type Oneri } from "./veri";
  */
 export interface GecisOnizlemesi {
   sonra: number;
+  eposta: number;
   takip: number;
   planda: number;
   kapali: number;
@@ -20,17 +22,30 @@ export interface GecisOnizlemesi {
 
 const takipOneriKimligi = (takipId: string) => `o-${takipId}`;
 
+/*
+ * Deneme sürecinin e-postayla takibinden kalan alanlar. Yeni düzende
+ * karşılığı yok: plana paketsiz giren haber zaten takip olarak plandadır,
+ * paket "Yapıldı" ve onayla kapanır. Açık kalan işaret eski "Tamamlandı"
+ * düğmesini, kapanmışı da onu yeniden açan yolu canlı tutuyordu.
+ */
+const epostaTakibiVar = (o: Oneri) => o.takip !== undefined || !!o.yalnizTakip || !!o.takipBitis || !!o.takipBitiren;
+
 export const gecisOnizlemesi = (d: Durum): GecisOnizlemesi => {
   const sonra = d.oneriler.filter((o) => o.durum === "sonra").length;
+  const eposta = d.oneriler.filter(epostaTakibiVar).length;
   const bekleyen = d.takipler.filter((t) => !t.gecti);
   const planda = bekleyen.filter((t) => d.gelismeler.some((g) => g.takipId === t.id)).length;
   const kapali = bekleyen.filter((t) => t.kapandi).length;
-  return { sonra, takip: bekleyen.length, planda, kapali, toplam: sonra + bekleyen.length };
+  return { sonra, eposta, takip: bekleyen.length, planda, kapali, toplam: sonra + eposta + bekleyen.length };
 };
 
 export const gecisUygula = (d: Durum, kisiId: string, zaman: string): Durum => {
   // "Sonra değerlendirilecek" takibe katıldı; muhabirsiz öneride takip yok, değerlendirmeye döner.
-  let oneriler: Oneri[] = d.oneriler.map((o) => (o.durum === "sonra" ? { ...o, durum: o.muhabirId && !o.talimatVeren ? "takip" : "degerlendiriliyor" } : o));
+  let oneriler: Oneri[] = d.oneriler.map((o) => {
+    if (o.durum !== "sonra" && !epostaTakibiVar(o)) return o;
+    const { takip: _t, yalnizTakip: _y, takipBitis: _b, takipBitiren: _k, ...x } = o;
+    return o.durum === "sonra" ? { ...x, durum: x.muhabirId && !x.talimatVeren ? "takip" : "degerlendiriliyor" } : x;
+  });
   let gelismeler = d.gelismeler;
   const takipler = d.takipler.map((t) => {
     if (t.gecti) return t;

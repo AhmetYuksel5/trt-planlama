@@ -352,14 +352,21 @@ export function PlanTakipleri({ ben, tarih, plan }: { ben: Kisi; tarih: string; 
 export function ProfilTakipleri({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
+  // Eski takip kayıtları yeni düzende takip önerisine çevrildi; kart ikisini birlikte gösteriyor.
+  const oneriler = takipOnerileri(ben, v).filter((o) => o.muhabirId === kisi.id);
   const liste = v.takipler.filter((x) => x.muhabirId === kisi.id && !x.kapandi && takipGorebilir(ben, x)).sort(sirala);
-  if (!liste.length || ben.id === kisi.id) return null;
+  if ((!liste.length && !oneriler.length) || ben.id === kisi.id) return null;
   return (
-    <Kart baslik={t("mMuhabirTakipleri")} ek={String(liste.length)}>
-      <div className="takip-listesi" data-profil-takipleri>
-        {liste.map((x) => (
-          <TakipKarti key={x.id} ben={ben} takip={x} />
-        ))}
+    <Kart baslik={t("mMuhabirTakipleri")} ek={String(liste.length + oneriler.length)}>
+      <div data-profil-takipleri>
+        {oneriler.length > 0 && <TakipOnerileri ben={ben} liste={oneriler} />}
+        {liste.length > 0 && (
+          <div className="takip-listesi">
+            {liste.map((x) => (
+              <TakipKarti key={x.id} ben={ben} takip={x} />
+            ))}
+          </div>
+        )}
       </div>
     </Kart>
   );

@@ -9,7 +9,8 @@ export const PAKET_SONUCLARI = ["onayBekliyor", "yapildi", "yapilmadi", "reddedi
 export type PaketSonucu = (typeof PAKET_SONUCLARI)[number];
 
 export const paketSonucu = (p: Paket): PaketSonucu | undefined => {
-  if (p.isaret) return "onayBekliyor";
+  // Eski kayıtta iptal olmuş paketin artık işareti kalmış olabilir; onay yalnız onaylı pakette bekliyor.
+  if (p.isaret && p.durum === "onaylandi") return "onayBekliyor";
   if (p.durum === "tamamlandi") return "yapildi";
   if (p.durum === "iptal" && p.yapilmadi) return "yapilmadi";
   if (p.durum === "iptal" && p.reddedildi) return "reddedildi";
