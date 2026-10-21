@@ -11,6 +11,7 @@ import {
   canliSil,
   ekipCikar,
   ekipGuncelle,
+  ekipKisiDegistir,
   gelismeKaydet,
   gelismeSil,
   gelismeTasi,
@@ -34,7 +35,7 @@ import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
-import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
+import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
@@ -516,9 +517,29 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
   const e = plan.ekip.find((x) => x.kisiId === kisiId);
   const kisi = kisiBul(v, kisiId);
   if (!e) return null;
+  // Seçenekler görevin kuralına uyanlar (Organizasyon › Plan ekibi); ekipte başka satırda olan çıkmaz, şimdiki kişi hep listede.
+  const adaylar = v.kisiler
+    .filter((k) => k.id === kisiId || (!k.pasif && !plan.ekip.some((x) => x.kisiId === k.id) && ekipAdayi(k, e.gorev)))
+    .sort((a, b) => kisiAr(a).localeCompare(kisiAr(b), "ar"));
   return (
     <div className="form">
       <div className="satir">
+        <label>
+          {t("ad")}
+          <select
+            value={kisiId}
+            onChange={(x) => {
+              if (ekipKisiDegistir(ben, plan.id, kisiId, x.target.value)) kapat();
+            }}
+            data-ekip-kisi
+          >
+            {adaylar.map((k) => (
+              <option key={k.id} value={k.id} lang="ar">
+                {kisiAr(k)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           {t("gorev")}
           <select value={e.gorev} onChange={(x) => ekipGuncelle(ben, plan.id, kisiId, { gorev: x.target.value })}>

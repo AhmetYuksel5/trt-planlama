@@ -7,6 +7,7 @@ import {
   Icerik,
   Kart,
   OncelikRozeti,
+  PaketDurumRozeti,
   Rozet,
   oncelikliOnce,
 } from "../../bilesenler/Parcalar";
@@ -109,6 +110,9 @@ export function MuhabirOnerilerim({
           ? oneriSonGunu(y).localeCompare(oneriSonGunu(x))
           : oneriSonGunu(x).localeCompare(oneriSonGunu(y)),
       );
+  const onerisizPaketler = paketler
+    .filter((p) => !p.oneriId && !p.ozelId && p.muhabirId === ben.id && (p.durum === "tamamlandi" || p.durum === "iptal"))
+    .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   const bolumler: MuhabirBolumu[] = arsiv
     ? ["kabulEdilmeyen", "tamamlanan"]
     : ["yakinda", "ileride"];
@@ -167,10 +171,12 @@ export function MuhabirOnerilerim({
       )}
       {bolumler.map((b) => {
         const l = liste(b);
+        // Önerisiz paket (plana doğrudan girmiş) arşivde öneri gibi: kapanınca muhabirin hiçbir listesinde kalmıyordu.
+        const pk = arsiv ? onerisizPaketler.filter((p) => (b === "tamamlanan" ? p.durum === "tamamlandi" : p.durum === "iptal")) : [];
         return (
           <div key={b} data-muhabir-bolumu={b}>
-            <Kart baslik={t(BOLUM_ADI[b])} ek={String(l.length)}>
-              {l.length === 0 ? (
+            <Kart baslik={t(BOLUM_ADI[b])} ek={String(l.length + pk.length)}>
+              {l.length + pk.length === 0 ? (
                 <Bos kucuk metin={t("oneriYok")} />
               ) : (
                 <ul className="liste">
@@ -180,6 +186,20 @@ export function MuhabirOnerilerim({
                       o={o}
                       not={b === "kabulEdilmeyen" ? o.gerekce : undefined}
                     />
+                  ))}
+                  {pk.map((p) => (
+                    <li key={p.id} data-onerisiz-paket={p.id}>
+                      <div className="ad">
+                        <a href={`#/paketler/${p.id}`}>
+                          <Icerik blok>{p.baslik}</Icerik>
+                        </a>
+                        <small>
+                          {tarihYaz(p.guncelleme.slice(0, 10), dil, "kisa")}
+                          {p.yapilmadi && <> · <span dir="auto">{p.yapilmadi.sebep}</span></>}
+                        </small>
+                      </div>
+                      <PaketDurumRozeti paket={p} />
+                    </li>
                   ))}
                 </ul>
               )}

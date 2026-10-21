@@ -1689,6 +1689,12 @@ export const ekipEkle = (ben: Kisi, planId: string, uye: EkipUyesi) =>
 // Dokunulan kayıt artık bugünün kaydı: "önceki günden" işareti kalkıyor.
 export const ekipGuncelle = (ben: Kisi, planId: string, kisiId: string, g: Partial<Omit<EkipUyesi, "kisiId" | "onceki">>) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.map((e) => (e.kisiId === kisiId ? { ...e, ...g, onceki: undefined } : e)) }));
+// Belgede ekipteki kişi değişiyor; görev ve vardiya yerinde kalıyor. Zaten ekipte olan kişiye geçilmez, satır çoğalırdı.
+export const ekipKisiDegistir = (ben: Kisi, planId: string, eskiId: string, yeniId: string) =>
+  eskiId !== yeniId &&
+  planIcerik(ben, planId, (p) =>
+    p.ekip.some((e) => e.kisiId === yeniId) ? p : { ...p, ekip: p.ekip.map((e) => (e.kisiId === eskiId ? { ...e, kisiId: yeniId, onceki: undefined } : e)) },
+  );
 export const ekipCikar = (ben: Kisi, planId: string, kisiId: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.filter((e) => e.kisiId !== kisiId) }));
 export const planGorevlendirmeCikar = (ben: Kisi, planId: string, id: string) =>

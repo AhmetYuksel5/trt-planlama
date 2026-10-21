@@ -403,7 +403,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     zorunlu; kural birim + ünvan seçimi (boşsa hepsi; birim seçimi altını da
     kapsar), pencerede kurala uyan kişi sayısı. Ekibe ekleme formu ve belge
     penceresi adayı `ekipAdayi(kisi, gorev)` ile süzer; sıra ve ad
-    `ekipGorevListesi`/`ekipGorevAdi`. Geçmiş plan yüklemesinde açılan kişi
+    `ekipGorevListesi`/`ekipGorevAdi`. Belgede ekip üyesinin penceresinde
+    kişi de değişir (`eylemler.ts → ekipKisiDegistir`; seçenekler görevin
+    kuralına uyan, ekipte olmayanlar; görev ve vardiya kalır). Geçmiş plan yüklemesinde açılan kişi
     görevin kuralındaki ilk birim/ünvanla (`eylemler.ts → ekipKisisi`).
   - İç muhabir: haber merkezindeki birimde "muhabir ünvanı" işaretli ünvan
     (`UnvanTanimi.muhabir`, `icMuhabirMi`). Plan ve paket muhabir seçicisinde
@@ -1339,7 +1341,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       başta, Yakında (günü iki gün
       içinde) ve İleride; Arşiv'de Kabul edilmeyenler ve Tamamlananlar
       (`oneriPlanlari.ts → muhabirBolumu`; "yapılmadı" onaylı paket kabul
-      edilmeyende). Takip burada değil, Takiplerim'de.
+      edilmeyende). Önerisiz paket (plana doğrudan girmiş) de arşivde: iptal
+      olan kabul edilmeyenlerde, tamamlanan tamamlananlarda (paketin
+      sayfasına gider). Takip burada değil, Takiplerim'de.
     - Haberlerim (`#/paketler`, `MuhabirHaberlerim`): tamamlanan paketlerin
       yalnız başlıkları, önerinin (yoksa paketin) sayfasına gider; paketsiz
       plana giren haber tamamlanmış sayılır ama burada yok.
