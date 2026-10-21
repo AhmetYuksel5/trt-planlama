@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -54,7 +54,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const acik = acikId ? v.oneriler.find((o) => o.id === acikId) : undefined;
   const muhabir = ben.birim === "muhabir";
   const B = bugun();
-  const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o));
+  const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o) && !takibinOnerisi(v, o));
   const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B));
   const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B));
   const q = aranan.trim().toLocaleLowerCase();

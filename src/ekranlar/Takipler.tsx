@@ -6,7 +6,7 @@ import { takipKaydet, takipOneriyeCevir } from "../eylemler";
 import { BICIM_ADI, TAKIP_TUR_ADI } from "../etiketler";
 import { bugun, gunEkle } from "../tarih";
 import { BICIMLER, TAKIP_TURLERI, useVeri, type Bicim, type Durum, type Kisi, type NextDayPlan, type Oneri, type TakipTuru } from "../veri";
-import { oneriArsivde, oneriSonGunu } from "../oneriPlanlari";
+import { oneriArsivde, oneriSonGunu, takibinOnerisi } from "../oneriPlanlari";
 import { git } from "../yol";
 import { OneriKarti } from "./oneri/OneriKarti";
 import PlanaEkle from "./oneri/PlanaEkle";
@@ -99,9 +99,9 @@ function TakipFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   );
 }
 
-/* Takip aşamasındaki öneriler; arşive düşen (son satırdan 2 gün sonra) listede yok. */
+/* Takip aşamasındaki öneriler; öneriye dönüşmüş takip (ikinci kart olurdu) listede yok. */
 export const takipOnerileri = (ben: Kisi, d: Durum) =>
-  d.oneriler.filter((o) => o.durum === "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, bugun())).sort((a, b) => oneriSonGunu(b).localeCompare(oneriSonGunu(a)) || b.zaman.localeCompare(a.zaman));
+  d.oneriler.filter((o) => o.durum === "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, bugun()) && !takibinOnerisi(d, o)).sort((a, b) => oneriSonGunu(b).localeCompare(oneriSonGunu(a)) || b.zaman.localeCompare(a.zaman));
 
 /** Takip önerilerinin kartları; plan verilince planlamacı takibi oradan plana alır. */
 function TakipOnerileri({ ben, liste, plan }: { ben: Kisi; liste: Oneri[]; plan?: NextDayPlan }) {

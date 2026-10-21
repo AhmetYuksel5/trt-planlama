@@ -17,7 +17,7 @@ import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
-import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -2243,9 +2243,22 @@ export const yeniDuzeneGecir = (ben: Kisi): number | null => {
 export const eskiTakipleriSil = (): number => {
   const d = getir();
   const b = bugun();
-  const idler = d.oneriler.filter((o) => o.durum === "takip" && !o.arsiv && gunEkle(oneriSonGunu(o), TAKIP_SILME_GUNU) < b).map((o) => o.id);
+  const eski = d.oneriler.filter((o) => o.durum === "takip" && !o.arsiv && gunEkle(oneriSonGunu(o), TAKIP_SILME_GUNU) < b).map((o) => o.id);
+  // Öneriye dönüşmüş takip: gelişme satırları öneriye geçer, takip izleriyle gider.
+  const cevrilen = new Map<string, Oneri>();
+  for (const o of d.oneriler) {
+    const hedef = takibinOnerisi(d, o);
+    if (hedef && !eski.includes(o.id)) cevrilen.set(o.id, hedef);
+  }
+  const idler = [...eski, ...cevrilen.keys()];
   if (!idler.length) return 0;
-  kaydet(temizle(d, { turler: ["oneriler"], idler }).yeni);
+  const satirlar = new Map<string, NonNullable<Oneri["satirlar"]>>();
+  for (const [tid, h] of cevrilen) {
+    const t = d.oneriler.find((o) => o.id === tid);
+    if (t?.satirlar?.length) satirlar.set(h.id, [...(satirlar.get(h.id) ?? h.satirlar ?? []), ...t.satirlar].sort((x, y) => x.zaman.localeCompare(y.zaman)));
+  }
+  const katilmis = satirlar.size ? { ...d, oneriler: d.oneriler.map((o) => (satirlar.has(o.id) ? { ...o, satirlar: satirlar.get(o.id) } : o)) } : d;
+  kaydet(temizle(katilmis, { turler: ["oneriler"], idler }).yeni);
   return idler.length;
 };
 

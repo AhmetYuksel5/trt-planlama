@@ -45,7 +45,7 @@ export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik" | "p
   const adaylar = d.oneriler
     .filter((o) => !!o.muhabirId && !o.talimatVeren && ["yeni", "degerlendiriliyor", "sonra", "takip"].includes(o.durum) && !(o.hafta && !o.hedefTarih) && !gundemde.has(o.id) && !oneriArsivde(o, bugun()))
     .sort((a, b) => b.zaman.localeCompare(a.zaman));
-  return { buGun: adaylar.filter((o) => oneriGunde(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriGunde(o, plan.tarih)) };
+  return { buGun: adaylar.filter((o) => oneriBuGunun(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriBuGunun(o, plan.tarih)) };
 };
 
 /** Haftalık planın haftasına düşüyor mu (eski haftalık öneride haftası). */
@@ -79,11 +79,31 @@ export const oneriYeri = (d: Durum, o: Oneri): OneriYeri | null => {
   };
 };
 
+/*
+ * Next Day'in gelen önerileri: yalnız o güne gönderilen. Gün aralığına bakınca
+ * çok günlü öneri ve başka günün planına girmiş öneri her günün listesinde
+ * çıkıyordu. Plana girdiyse planın günü, girmediyse önerinin (ilk) günü.
+ */
+export const oneriPlanGunu = (o: Oneri): string | undefined => o.planTarihi ?? o.hedefTarih;
+export const oneriBuGunun = (o: Oneri, tarih: string) => oneriPlanGunu(o) === tarih;
+
+/*
+ * Takip öneriye dönüşmüşse (aynı muhabirin aynı Header'lı, takipten sonra
+ * açılmış takip olmayan önerisi; Planlama onun adına elle girince ayrı kayıt
+ * doğuyor) takip listelerde ikinci kart olarak kalmasın. Sistemin açılış işi
+ * onu öneriye katıp siler (eylemler.ts → eskiTakipleriSil).
+ */
+const adNormal = (s: string) => s.replace(/\s+/g, " ").trim();
+export const takibinOnerisi = (d: Durum, t: Oneri): Oneri | undefined =>
+  t.durum !== "takip" || !t.muhabirId
+    ? undefined
+    : d.oneriler.find((o) => o.id !== t.id && o.durum !== "takip" && o.durum !== "reddedildi" && o.durum !== "geriCekildi" && !o.arsiv && !o.takipId && o.muhabirId === t.muhabirId && o.zaman >= t.zaman && adNormal(o.haberBasligi) === adNormal(t.haberBasligi));
+
 export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
   const yer = oneriYeri(d, o);
   if (yer) return [...(yer.planda ? (["nextday"] as const) : []), ...(yer.hafta ? (["haftalik"] as const) : [])];
   const e: OneriEtiketi[] = [];
-  const nd = acikGunPlanlari(d).some((p) => oneriGunde(o, p.tarih));
+  const nd = acikGunPlanlari(d).some((p) => oneriBuGunun(o, p.tarih));
   const hf = !!o.hafta || d.haftalik.some((h) => h.durum !== "kesinlesti" && oneriHaftada(o, h));
   if (nd) e.push("nextday");
   if (hf) e.push("haftalik");

@@ -1,6 +1,6 @@
 import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
-import { oneriGunde, oneriYeri } from "../../oneriPlanlari";
+import { oneriBuGunun, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
 import { temelSorumlular } from "../../gorevler";
@@ -113,7 +113,7 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
-  const bekleyen = v.oneriler.filter((o) => oneriGunde(o, plan.tarih) && (o.durum === "yeni" || o.durum === "degerlendiriliyor")).length;
+  const bekleyen = v.oneriler.filter((o) => oneriBuGunun(o, plan.tarih) && (o.durum === "yeni" || o.durum === "degerlendiriliyor")).length;
   const faaliyet = plandakiFaaliyetler(v, ben, plan.tarih, plan.tarih).length;
   const arac = (anahtar: string, ikon: ReactNode, ad: Anahtar, hedef: string | (() => void), sayi = 0) => {
     const ic = (
@@ -362,7 +362,7 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const oneriler = v.oneriler
     // Plana eklenen de listede kalıyor (en sonda, "Plana eklendi" notuyla): ne geldiği ve ne olduğu bir arada görünsün.
     // Takipteki öneri "Muhabir takipleri" penceresinde; gelen öneriler listesini kalabalıklaştırmasın.
-    .filter((o) => oneriGunde(o, plan.tarih) && o.durum !== "takip")
+    .filter((o) => oneriBuGunun(o, plan.tarih) && o.durum !== "takip")
     .sort((a, b) => sira(v, a) - sira(v, b) || b.zaman.localeCompare(a.zaman))
     .sort(talimatOnce);
 

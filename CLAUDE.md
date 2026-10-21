@@ -658,7 +658,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   öneri de öyle (`oneriBaglariniTazele`). Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
   olarak (`Tablolar.tsx → OneriPlanEtiketleri`, planın rengiyle); öneriler
   sayfasında süzgeç (Bütün planlar / Next Day / Weekly / Özel yayın /
-  Plana düşmeyen). Next Day planının gelen önerileri günü aralığa düşenler,
+  Plana düşmeyen). Next Day planının gelen önerileri yalnız o güne gönderilenler
+  (`oneriBuGunun`: plana girdiyse planın günü, yoksa önerinin ilk günü;
+  aralığa bakınca başka günlerin önerisi de çıkıyordu; Next Day etiketi ve
+  "Önerilerden al"ın "bu gün" ayrımı da bu kuraldan),
   haftalık planınki haftasıyla kesişenler; gündeme eklerken gün aralığın
   haftadaki ilk günüyle gelir. Çağrı bağı: önce aralıktaki Next Day
   çağrısı, yoksa haftasının haftalık çağrısı. Eski haftalık öneri
@@ -1339,6 +1342,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       takipOneriyeCevir`: strap, haber türü, gün; satırlar gelişmeye eklenir,
       öneri "yeni"). Çevrilmeyen takip son satırından 2 gün sonra izleriyle
       silinir (`eskiTakipleriSil`, sistemin açılış işi; `TAKIP_SILME_GUNU`).
+      Öneriye dönüşmüş takip (aynı muhabirin aynı Header'lı, sonradan açılmış
+      önerisi; Planlama onun adına elle girince ayrı kayıt doğuyor,
+      `oneriPlanlari.ts → takibinOnerisi`) listelerde ikinci kart olmaz,
+      açılış işi satırlarını öneriye katıp takibi siler.
     - Görevlendirmelerim'de yalnız saha görevlendirmeleri; özel yayın görevi
       Önerilerim'in "Senin sıran"ında.
     - Ayarlar'da kişisel bilgiler (profile bağlantı), çalışma günleri
