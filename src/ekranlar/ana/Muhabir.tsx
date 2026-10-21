@@ -1,3 +1,4 @@
+import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
 import { ArrowRight, CheckCircle, Lightbulb, Newspaper } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, type UretimAdimi } from "../../akis";
@@ -11,8 +12,8 @@ import {
 } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { bugun } from "../../tarih";
-import { useVeri, type Kisi, type Oneri } from "../../veri";
+import { bugun, yerelGun } from "../../tarih";
+import { planBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { ozelGorevleri } from "../../ozel";
 import {
   muhabirBolumu,
@@ -62,7 +63,7 @@ export function MuhabirOnerilerim({
   ben: Kisi;
   arsiv?: boolean;
 }) {
-  const { t } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const B = bugun();
   const oneriler = v.oneriler.filter(
@@ -86,6 +87,17 @@ export function MuhabirOnerilerim({
     siram.flatMap((p) => (p.oneriId ? [p.oneriId] : [])),
   );
   const ozel = ozelGorevleri(v, ben.id);
+  /*
+   * Plana giren haber, onaylı paketi doğmadan da muhabirin işi: strap'siz
+   * öneri plana yalnız gelişme olarak giriyor, PKG'linin paketi plan onayına
+   * dek değerlendirmede. Yalnız paketlerden kurulunca muhabire "plana eklendi"
+   * bildirimi gidiyor, sırasında hiçbir şey çıkmıyordu. Kısıtlı muhabir planı
+   * okuyamıyor: gün öneride.
+   */
+  const planGunu = (o: Oneri) => planBul(v, o.planId)?.tarih ?? o.planTarihi ?? yerelGun(o.zaman);
+  const plandaki = oneriler.filter(
+    (o) => o.durum === "planaEklendi" && planGunu(o) >= B && !paketler.some((p) => (p.id === o.paketId || p.oneriId === o.id) && p.durum !== "taslak" && p.durum !== "degerlendiriliyor"),
+  );
   const liste = (b: MuhabirBolumu) =>
     oneriler
       .filter(
@@ -120,7 +132,8 @@ export function MuhabirOnerilerim({
           {t("mbArsiv")}
         </a>
       </nav>
-      {!arsiv && bende.length + siram.length + ozel.length > 0 && (
+      {!arsiv && <AnildigimNotlar ben={ben} />}
+      {!arsiv && bende.length + siram.length + plandaki.length + ozel.length > 0 && (
         <div data-senin-siran>
           <Kart baslik={t("seninSiran")}>
             <ul className="liste">
@@ -133,6 +146,19 @@ export function MuhabirOnerilerim({
               ))}
               {siram.map((p) => (
                 <PaketSatiri key={p.id} ben={ben} paketId={p.id} />
+              ))}
+              {plandaki.map((o) => (
+                <li key={o.id} data-plandaki={o.id}>
+                  <div className="ad">
+                    <a href={`#/oneriler/${o.id}`}>
+                      <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
+                    </a>
+                    <small>
+                      {t("muPlanda", { tarih: tarihYaz(planGunu(o), dil, "kisa") })}
+                      {paketler.some((p) => p.id === o.paketId || p.oneriId === o.id) && ` · ${t("muPkgOnayBekliyor")}`}
+                    </small>
+                  </div>
+                </li>
               ))}
               <OzelGorevSatirlari paketler={ozel} />
             </ul>

@@ -1325,7 +1325,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`MuhabirOnerilerim`), sayaç, çağrı ve bildirim kartı yok (çağrı bildirim
     olarak gelir).
     - Önerilerim: Güncel sekmesinde "Senin sıran" (teklif, düzeltme isteği,
-      sonucu bildirilecek paket, özel yayın görevi), Yakında (günü iki gün
+      sonucu bildirilecek paket, özel yayın görevi; plana girmiş öneri de,
+      onaylı paketi yoksa ve planın günü geçmemişse: gün öneride,
+      `Oneri.planTarihi`, kısıtlı muhabir planı okuyamıyor), anıldığı notlar
+      başta, Yakında (günü iki gün
       içinde) ve İleride; Arşiv'de Kabul edilmeyenler ve Tamamlananlar
       (`oneriPlanlari.ts → muhabirBolumu`; "yapılmadı" onaylı paket kabul
       edilmeyende). Takip burada değil, Takiplerim'de.
