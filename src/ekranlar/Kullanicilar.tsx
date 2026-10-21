@@ -129,6 +129,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
 
   const ekle = (e: FormEvent) => {
     e.preventDefault();
+    if (!confirm(t("eminMisin"))) return;
     const eposta = form.eposta.trim().toLowerCase();
     const adi = adKur(form.adTr, form.adAr, form.adEn, eposta);
     if (tur === "hesapsiz") {
@@ -614,6 +615,7 @@ function BaglaPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
   const [bekle, setBekle] = useState(false);
   const gonder = (e: FormEvent) => {
     e.preventDefault();
+    if (!confirm(t("eminMisin"))) return;
     const adres = eposta.trim().toLowerCase();
     setBekle(true);
     const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;

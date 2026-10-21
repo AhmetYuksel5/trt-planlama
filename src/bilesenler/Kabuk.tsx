@@ -1,6 +1,7 @@
 import { Eye, FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useDil } from "../dil";
+import { gorevAdi } from "../yapi";
 import { izlemeBitir } from "../izleme";
 import { GERCEK } from "../kip";
 import { useGercekBen } from "../oturum";
@@ -110,6 +111,12 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
             >
               {t("izlemedenCik")}
             </button>
+          </p>
+        )}
+        {/* Muhabirin adı yalnız burada, ince tek satır: çalışma alanını kaplamasın. */}
+        {ben.birim === "muhabir" && (
+          <p className="muhabir-adi" data-muhabir-adi>
+            {ad(ben)} · {gorevAdi(ben.gorev)}
           </p>
         )}
         <main className="sayfa">{children}</main>

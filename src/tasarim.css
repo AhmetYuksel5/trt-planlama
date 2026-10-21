@@ -1946,6 +1946,7 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 /* İzleme şeridi: yönetici başkasının ekranında; vurgulu ki unutulmasın. */
 .izleme-serit { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0; padding: var(--ara-2) var(--ara-4); background: var(--lacivert); color: var(--vurgu-yazi); font-size: var(--punto-kucuk); font-weight: 600; }
 .izleme-serit span { flex: 1 1 12rem; min-width: 0; }
+.muhabir-adi { margin: 0; padding-block: var(--ara-1); padding-inline: var(--ara-4); font-size: var(--punto-mini); color: var(--sonuk); border-block-end: 1px solid var(--cizgi); background: var(--yuzey); }
 .demo-serit { align-items: center; gap: var(--ara-2); background: var(--uyari-sis); color: var(--uyari); font-size: var(--punto-mini); font-weight: 600; }
 .demo-serit svg { flex: none; }
 .kisayollar { display: grid; gap: var(--ara-3); }

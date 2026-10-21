@@ -216,6 +216,8 @@ export interface Kisi {
   yetkiler?: HesapYetkisi[];
   /** Planın ekip satırında yazılan ad parçası (PlanAdi); yoksa tam ad. */
   planAdi?: PlanAdi;
+  /** Muhabirin çalıştığı haftanın günleri (0 Pazar … 6 Cumartesi); yoksa belirtilmemiş. */
+  calismaGunleri?: number[];
 }
 
 /* Kullanıcılar sayfasının parça parça verilebilen işleri; yetki vermek ve tam yönetici yapmak bunların dışında, yalnız tam yöneticide. */

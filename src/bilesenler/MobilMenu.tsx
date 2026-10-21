@@ -8,7 +8,7 @@ import { oturumdanCik } from "../oturum";
 import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
-import { MENU, maddeAdi, maddeGorunur } from "./AnaMenu";
+import { MENU, MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, maddeGorunur, muhabirMaddeleri } from "./AnaMenu";
 
 /**
  * Telefonda "Menü"nün açtığı panel: kişi, kısayollar (renkli plan
@@ -27,6 +27,7 @@ export default function MobilMenu({
   onKapat: () => void;
 }) {
   const { t, ad } = useDil();
+  const muhabir = ben.birim === "muhabir";
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
@@ -87,10 +88,27 @@ export default function MobilMenu({
         </button>
       </div>
 
-      <h3>{t("kisayollarim")}</h3>
-      <KisayolKutulari ben={ben} sec={onKapat} />
+      {/* Muhabirde menünün aynı altı maddesi; kısayol ve öbür sayfalar yok. */}
+      {muhabir ? (
+        <nav className="mobil-kayitlar" data-mobil-muhabir>
+          {muhabirMaddeleri(ben, [...MUHABIR_MENUSU, ...MUHABIR_ALT]).map((m) => {
+            const Ikon = m.ikon;
+            return (
+              <a key={m.sayfa} href={`#/${m.sayfa}`} onClick={onKapat}>
+                <Ikon size={18} />
+                {t(maddeAdi(ben, m))}
+              </a>
+            );
+          })}
+        </nav>
+      ) : (
+        <>
+          <h3>{t("kisayollarim")}</h3>
+          <KisayolKutulari ben={ben} sec={onKapat} />
+        </>
+      )}
 
-      {MENU.map((g, i) => {
+      {!muhabir && MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         return (
@@ -120,9 +138,11 @@ export default function MobilMenu({
         <span>{t("dilSec")}</span>
         <DilSecici />
       </div>
-      <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/plan">
-        <BookOpen size={16} /> {t("mProjePlani")}
-      </a>
+      {!muhabir && (
+        <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/plan">
+          <BookOpen size={16} /> {t("mProjePlani")}
+        </a>
+      )}
       <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/tanitim" onClick={onKapat}>
         <Info size={16} /> {t("tanitimSayfasi")}
       </a>

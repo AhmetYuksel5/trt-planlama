@@ -1,6 +1,6 @@
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, BookOpen, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { kisininIsleri } from "../gorevler";
@@ -154,10 +154,18 @@ export const MENU: Grup[] = [
  * başlıksız tek liste, kendi işlerinin sırasıyla. Ayarlar altta ayrık.
  * Telefondaki panel ve alt çubuk eski haliyle (orada beğenildi).
  */
-const MUHABIR_MENUSU = ["ana", "oneriler", "takipler", "paketler", "saha", "takvim"];
-const MUHABIR_ALT = ["ayarlar"];
-const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
-  sayfalar.map((s) => MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === s)).filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa));
+/*
+ * Muhabirin menüsü (kurum kararı, en sade hali): Öneri gönder, Önerilerim,
+ * Takiplerim, Haberlerim, Görevlendirmelerim; Ayarlar altta. Ana sayfa
+ * Önerilerim'in kendisi, ayrı madde değil; takvim muhabirde yok.
+ */
+const ONERI_GONDER: Madde = { sayfa: "oneriler/yeni", ad: "mOneriGonder", kisa: "kaOneriGonder", ikon: Send };
+export const MUHABIR_MENUSU = ["oneriler/yeni", "oneriler", "takipler", "paketler", "saha"];
+export const MUHABIR_ALT = ["ayarlar"];
+export const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
+  sayfalar
+    .map((s) => (s === ONERI_GONDER.sayfa ? ONERI_GONDER : MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === s)))
+    .filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa.split("/")[0]));
 /* Muhabirde Önerilerim'in sayısı önündeki iş: düzeltme istenen ve Planlama'nın ona önerdiği. */
 const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif") && !oneriArsivde(o)).length;
 
@@ -208,8 +216,11 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const v = useVeri();
   const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : (m.say?.(v, ben) ?? 0);
   const Ikon = m.ikon;
+  // "Öneri gönder" Önerilerim'in alt adresi: ikisi aynı anda vurgulanmasın.
+  const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
+  const etkin = m.sayfa === ONERI_GONDER.sayfa ? yeni : acik === m.sayfa && !(m.sayfa === "oneriler" && yeni);
   return (
-    <a href={`#/${m.sayfa}`} className={acik === m.sayfa ? "acik" : ""} aria-current={acik === m.sayfa ? "page" : undefined}>
+    <a href={`#/${m.sayfa}`} className={etkin ? "acik" : ""} aria-current={etkin ? "page" : undefined}>
       <Ikon size={18} />
       {t(maddeAdi(ben, m))}
       {sayi > 0 ? <span className="say">{sayi}</span> : m.taslak ? <span className="taslak-nokta" title={t("taslakAkis")} /> : null}
@@ -247,14 +258,14 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
         <Logo koyu />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
-      {/* Muhabirde birim de ünvan da "Muhabir" yazıyordu; kendi adı ve yeriyle ünvanı ("Beyrut muhabiri"). */}
-      <div className="birim-kutusu">
+      {/* Muhabirin adı sayfanın üstünde tek satırda (Kabuk); menüde ayrıca kutu yok. */}
+      {!muhabir && <div className="birim-kutusu">
         <Building size={20} />
         <div>
           {muhabir ? ad(ben) : birimAdi(ben.birim)}
           <small>{gorevAdi(ben.gorev)}</small>
         </div>
-      </div>
+      </div>}
       {muhabir && (
         <>
           <div className="menu-grup" data-muhabir-menusu>

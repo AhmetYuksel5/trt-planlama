@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
+import { MuhabirHaberlerim, MuhabirOnerilerim } from "./ekranlar/ana/Muhabir";
 import AnaSayfa from "./ekranlar/AnaSayfa";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
 import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
@@ -57,7 +58,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { eskiOnerileriCevir, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
+import { eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
 import {
   kisitliKisi,
@@ -141,7 +142,7 @@ export default function App() {
        * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
        * sayfa çalışıyor; hata konsolda.
        */
-      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle]) {
+      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle]) {
         try {
           is();
         } catch (hata) {
@@ -270,7 +271,7 @@ export default function App() {
       case "oneriler": {
         if (yol.id === "yeni")
           icerik = <YeniOneri ben={ben} haftalik={yol.alt === "haftalik"} />;
-        else if (yol.id === "arsiv") icerik = <OnerilerListe ben={ben} arsiv />;
+        else if (yol.id === "arsiv") icerik = ben.birim === "muhabir" ? <MuhabirOnerilerim ben={ben} arsiv /> : <OnerilerListe ben={ben} arsiv />;
         else if (yol.id === "cagri")
           icerik = yapabilir(ben, "cagriHazirla") ? (
             <Cagri ben={ben} tarih={yol.alt} />
@@ -292,7 +293,7 @@ export default function App() {
             ) : (
               <Yetkisiz />
             );
-        } else icerik = <OnerilerListe ben={ben} />;
+        } else icerik = ben.birim === "muhabir" ? <MuhabirOnerilerim ben={ben} /> : <OnerilerListe ben={ben} />;
         break;
       }
       case "basliklar":
@@ -307,7 +308,7 @@ export default function App() {
             ) : (
               <Yetkisiz />
             );
-        } else icerik = <Paketler ben={ben} sayfa="paketler" />;
+        } else icerik = ben.birim === "muhabir" ? <MuhabirHaberlerim ben={ben} /> : <Paketler ben={ben} sayfa="paketler" />;
         break;
       case "feature":
       case "programlar":

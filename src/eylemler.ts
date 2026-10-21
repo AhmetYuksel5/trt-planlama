@@ -17,7 +17,7 @@ import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
-import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriYeri, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -2237,6 +2237,19 @@ export const yeniDuzeneGecir = (ben: Kisi): number | null => {
 };
 
 /*
+ * Sistemin açılış işi: öneriye çevrilmeyen takip son gelişmesinden iki gün
+ * sonra izleriyle siliniyor (kurum kararı; arşive düşmüyor).
+ */
+export const eskiTakipleriSil = (): number => {
+  const d = getir();
+  const b = bugun();
+  const idler = d.oneriler.filter((o) => o.durum === "takip" && !o.arsiv && gunEkle(oneriSonGunu(o), TAKIP_SILME_GUNU) < b).map((o) => o.id);
+  if (!idler.length) return 0;
+  kaydet(temizle(d, { turler: ["oneriler"], idler }).yeni);
+  return idler.length;
+};
+
+/*
  * Sistemin açılış işi: eski düzende öneri kalmasın. Ayarlar'daki geçişle
  * aynı kural; eski biçimde bir şey yoksa hiçbir şey yazmaz.
  */
@@ -3641,6 +3654,23 @@ export const kisiPlanAdi = (ben: Kisi, kisiId: string, secim: PlanAdi | undefine
   return true;
 };
 
+/** Kişinin çalışma günleri: kişi kendisi ya da profili düzenleyebilen yazar; Planlama kimin hangi gün çalıştığını görsün. */
+export const kisiCalismaGunleri = (ben: Kisi, kisiId: string, gunler: number[]) => {
+  const d = getir();
+  const kisi = d.kisiler.find((k) => k.id === kisiId);
+  if (!kisi || !profilDuzenler(ben, kisi)) return false;
+  const temiz = [...new Set(gunler.filter((g) => Number.isInteger(g) && g >= 0 && g <= 6))].sort();
+  kaydet({
+    ...d,
+    kisiler: d.kisiler.map((k) => {
+      if (k.id !== kisiId) return k;
+      const { calismaGunleri: _, ...kalan } = k;
+      return temiz.length ? { ...kalan, calismaGunleri: temiz } : kalan;
+    }),
+  });
+  return true;
+};
+
 /* --- Muhabire haber önerisi ve önerinin yazışması --- */
 
 export interface MuhabireOneriGirdisi {
@@ -3804,6 +3834,23 @@ export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
   d = { ...d, oneriler: [oneri, ...d.oneriler] };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", oneriId: id, veri: { sahip: "planlama" } }));
   return id;
+};
+
+/*
+ * Muhabir kendi takibini öneriye çeviriyor (kurum kararı): takip Planlama'ya
+ * "yeni" öneri olarak düşüyor; muhabirin önerisinde strap ve gün zorunlu
+ * (oneriGonder'in kuralı). Gelişme satırları önerinin gelişmesine eklenir,
+ * kaybolmasın. Çevrilen takip artık silinmeye gitmiyor.
+ */
+export const takipOneriyeCevir = (ben: Kisi, oneriId: string, g: { paketBasligi: string; bicim: Bicim; hedefTarih: string }) => {
+  const d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || o.durum !== "takip" || o.muhabirId !== ben.id || !g.paketBasligi.trim() || !g.hedefTarih) return false;
+  const satirlar = (o.satirlar ?? []).map((x) => x.metin).join("\n");
+  const { takipTuru: _t, ...kalan } = o;
+  const yeni: Oneri = { ...kalan, durum: "yeni", bicim: g.bicim, paketBasligi: g.paketBasligi.trim(), hedefTarih: g.hedefTarih, gelisme: satirlar ? `${o.gelisme}\n${satirlar}` : o.gelisme };
+  kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "oneriGeldi", oneriId, veri: { sahip: "planlama" } }));
+  return true;
 };
 
 /*

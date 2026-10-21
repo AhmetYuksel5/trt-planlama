@@ -331,7 +331,7 @@ export function DuzeltmeFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; 
   const { t } = useDil();
   const [not, setNot] = useState("");
   const gonder = () => {
-    if (!oneriDuzeltmeIste(ben, oneri.id, not)) return;
+    if (!confirm(t("eminMisin")) || !oneriDuzeltmeIste(ben, oneri.id, not)) return;
     bildir(t("bDuzeltmeyeGonderildi"));
     kapat();
   };

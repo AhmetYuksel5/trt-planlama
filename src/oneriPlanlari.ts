@@ -91,18 +91,17 @@ export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
 };
 
 /*
- * Arşiv: tek kural. Günü 2 gün geçmiş ve açık işi kalmamış öneri arşive
- * düşer (günü 20'yse 22'sinde de güncel, 23'ünde arşivde); eskiden ertesi
- * gün düşüyordu, Planlama dünkü haberin geri bildirimini arıyordu. Gün:
- * plana girdiyse planın günü, girmediyse önerinin günü (çok günlüde
- * bitişi), günü yoksa geldiği gün. Reddedilen ve geri çekilen öneri günü
- * beklemez; planlamacının elle gönderdiği de. Açık paket (onaylı, muhabir
- * işaretlemedi) öneriyi tutmuyor: kimsenin kapatmadığı eski paketler önerileri
- * haftalarca güncelde bırakıyordu; paketin takibi Paketler sayfasında, onay
- * kuyruğunda ve muhabirin "Senin sıran"ında. Arşivden çıkarılan öneri o andan yeniden sayılır. Saklanmıyor, her an
- * kayıttan; muhabirde "Geçmiş önerilerim".
+ * Arşiv: tek kural, bütün sistemde. Günü geçen öneri ertesi gün arşivde
+ * (günü 21'se 22'sinde). Gün: plana girdiyse planın günü, girmediyse
+ * önerinin günü (çok günlüde bitişi), günü yoksa geldiği gün. Reddedilen ve
+ * geri çekilen öneri günü beklemez; planlamacının elle gönderdiği de. Açık
+ * paket öneriyi tutmuyor: kimsenin kapatmadığı eski paketler önerileri
+ * haftalarca güncelde bırakıyordu. Takip arşive düşmez, son gelişmesinden
+ * TAKIP_SILME_GUNU sonra silinir (eylemler.ts → eskiTakipleriSil).
+ * Arşivden çıkarılan öneri o andan yeniden sayılır. Saklanmıyor, her an kayıttan.
  */
-export const ARSIV_GUNU = 2;
+export const ARSIV_GUNU = 0;
+export const TAKIP_SILME_GUNU = 2;
 
 export const oneriSonGunu = (o: Oneri): string => {
   const g = oneriAraligi(o)?.[1] ?? yerelGun(o.zaman);
@@ -116,8 +115,31 @@ export const oneriSonGunu = (o: Oneri): string => {
 
 export const oneriArsivde = (o: Oneri, b: string = bugun()): boolean => {
   if (o.arsiv) return true;
+  if (o.durum === "takip") return false;
   if (!o.arsivdenCikti && (o.durum === "reddedildi" || o.durum === "geriCekildi")) return true;
   return gunEkle(oneriSonGunu(o), ARSIV_GUNU) < b;
+};
+
+/*
+ * Muhabirin Önerilerim'indeki bölüm (saf; kısıtlı muhabir planı okuyamadığı
+ * için yalnız önerisinden ve paketlerinden). Güncel: günü (son günü) 2 gün
+ * içindeyse "yakında", daha uzaksa "ileride". Arşiv: plana girmiş olan
+ * "tamamlanan" (paketsiz girse de), öbürü "kabul edilmeyen". Paketi açık
+ * (onaylı, sonucu henüz onaylanmamış) haber arşive düşmez, "yakında"da
+ * kalır: "Yapıldı / Yapılmadı" orada; düşseydi muhabir sonucu bildiremezdi.
+ * Sonucu "yapılmadı" onaylanan paket kabul edilmeyenlerde.
+ */
+export const MUHABIR_BOLUMLERI = ["yakinda", "ileride", "kabulEdilmeyen", "tamamlanan"] as const;
+export type MuhabirBolumu = (typeof MUHABIR_BOLUMLERI)[number];
+export const YAKIN_GUN = 2;
+const ACIK_PAKET = new Set(["taslak", "degerlendiriliyor", "onaylandi", "uretimde"]);
+
+export const muhabirBolumu = (d: Pick<Durum, "paketler">, o: Oneri, b: string = bugun()): MuhabirBolumu => {
+  const paketler = d.paketler.filter((p) => p.oneriId === o.id);
+  const acikPaket = o.durum === "planaEklendi" && paketler.some((p) => p.durum !== "taslak" && p.durum !== "degerlendiriliyor" && ACIK_PAKET.has(p.durum));
+  if (!oneriArsivde(o, b) || acikPaket) return oneriSonGunu(o) <= gunEkle(b, YAKIN_GUN) ? "yakinda" : "ileride";
+  const yapilmadi = paketler.some((p) => p.durum === "iptal" && !!p.yapilmadi);
+  return o.durum === "planaEklendi" && !yapilmadi ? "tamamlanan" : "kabulEdilmeyen";
 };
 
 /*

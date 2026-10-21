@@ -4,9 +4,9 @@ import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
 import { Kart, bildir } from "../bilesenler/Parcalar";
-import { useDil, type Anahtar } from "../dil";
+import { gunAdi, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
-import { muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
+import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
@@ -14,6 +14,8 @@ import { KayitTemizligi } from "./KayitTemizligi";
 import { KayitYedegi, YeniDuzenGecisi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
 import { SayfaBasi } from "./ana/Planlama";
+import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
+import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
 export function Ayarlar({ ben }: { ben: Kisi }) {
@@ -35,7 +37,9 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
             {gorevAdi(ben.gorev)}
           </p>
         </Kart>
+        {ben.birim === "muhabir" && <KisiselAyar ben={ben} />}
         <WhatsappAyari />
+        <SesAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
@@ -59,7 +63,65 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
           </Kart>
         )}
       </div>
+      {ben.birim === "muhabir" && <MuhabirKilavuzu />}
     </>
+  );
+}
+
+/* Muhabirin kişisel bilgileri profilinde; çalışma günleri burada, kişinin kaydında. Hafta Cumartesi başlıyor. */
+const HAFTA = [6, 0, 1, 2, 3, 4, 5];
+const GUN_ORNEGI = (g: number) => `2026-10-${String(18 + g).padStart(2, "0")}`; // 18 Ekim 2026 Pazar
+
+function KisiselAyar({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const kisi = v.kisiler.find((k) => k.id === ben.id) ?? ben;
+  const secili = kisi.calismaGunleri ?? [];
+  return (
+    <Kart baslik={t("kisiselBilgiler")}>
+      <p>
+        <a className="dugme dugme-ikincil" href="#/profil" data-profil-bagi>
+          {t("profiliAc")}
+        </a>
+      </p>
+      <p><b>{t("calismaGunleri")}</b></p>
+      <div className="yetki-listesi" data-calisma-gunleri>
+        {HAFTA.map((g) => (
+          <label key={g} className="satir-kutu">
+            <input
+              type="checkbox"
+              checked={secili.includes(g)}
+              onChange={(e) => kisiCalismaGunleri(ben, ben.id, e.target.checked ? [...secili, g] : secili.filter((x) => x !== g))}
+              data-calisma-gunu={g}
+            />{" "}
+            {gunAdi(GUN_ORNEGI(g), dil)}
+          </label>
+        ))}
+      </div>
+    </Kart>
+  );
+}
+
+/* Yeni bildirimde ses; bu tarayıcıda saklanıyor (Ses.ts). */
+function SesAyari() {
+  const { t } = useDil();
+  const [acik, setAcik] = useState(sesAcik);
+  return (
+    <Kart baslik={t("sesUyari")}>
+      <label className="satir-kutu">
+        <input
+          type="checkbox"
+          checked={acik}
+          onChange={(e) => {
+            sesKaydet(e.target.checked);
+            setAcik(e.target.checked);
+            if (e.target.checked) bipCal();
+          }}
+          data-ses-ayari
+        />{" "}
+        {t("sesUyariAcik")}
+      </label>
+    </Kart>
   );
 }
 

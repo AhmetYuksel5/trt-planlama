@@ -453,7 +453,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               muhabirId={oneri.muhabirId}
               ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
               kaydet={(g) => {
-                const ok = oneriYenidenGonder(ben, oneri.id, g);
+                const ok = confirm(t("eminMisin")) && oneriYenidenGonder(ben, oneri.id, g);
                 if (ok) bildir(t("bYenidenGonderildi"));
                 return ok;
               }}
@@ -734,7 +734,7 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   // Sayfanın başlığı yok, doğrudan form; adı sekmede.
   useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
   const gonder = () => {
-    if (!gecerli) return;
+    if (!gecerli || !confirm(t("eminMisin"))) return;
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
     if (id && f.bicim === TAKIP_BICIMI) {
       // Takip Takip aşamasında öneri; muhabir onu Takiplerim'de izliyor.

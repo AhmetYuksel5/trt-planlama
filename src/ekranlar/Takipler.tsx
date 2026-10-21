@@ -2,10 +2,10 @@ import { Binoculars, Plus } from "lucide-react";
 import { useState } from "react";
 import { Bos, Kart, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
-import { takipKaydet } from "../eylemler";
-import { TAKIP_TUR_ADI } from "../etiketler";
-import { bugun } from "../tarih";
-import { TAKIP_TURLERI, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri, type TakipTuru } from "../veri";
+import { takipKaydet, takipOneriyeCevir } from "../eylemler";
+import { BICIM_ADI, TAKIP_TUR_ADI } from "../etiketler";
+import { bugun, gunEkle } from "../tarih";
+import { BICIMLER, TAKIP_TURLERI, useVeri, type Bicim, type Durum, type Kisi, type NextDayPlan, type Oneri, type TakipTuru } from "../veri";
 import { oneriArsivde, oneriSonGunu } from "../oneriPlanlari";
 import { git } from "../yol";
 import { OneriKarti } from "./oneri/OneriKarti";
@@ -54,7 +54,7 @@ function TakipFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ konu: "", aciklama: "", tur: "olay" as TakipTuru, tarih: "" });
   const kaydet = () => {
-    if (takipKaydet(ben, f)) {
+    if (confirm(t("eminMisin")) && takipKaydet(ben, f)) {
       bildir(t("mtKaydedildi"));
       kapat();
     }
@@ -109,6 +109,7 @@ function TakipOnerileri({ ben, liste, plan }: { ben: Kisi; liste: Oneri[]; plan?
   const v = useVeri();
   const [ekle, setEkle] = useState<string | null>(null);
   const ekler = !!plan && yapabilir(ben, "oneriDegerlendir") && planIcerikDuzenler(ben, plan);
+  const [cevir, setCevir] = useState<string | null>(null);
   return (
     <div className="oneri-kartlari" data-takip-onerileri>
       {liste.map((o) => (
@@ -118,14 +119,21 @@ function TakipOnerileri({ ben, liste, plan }: { ben: Kisi; liste: Oneri[]; plan?
             d={v}
             ac={() => git(`oneriler/${o.id}`)}
             eylemler={
-              ekler && (
+              ekler ? (
                 <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setEkle(ekle === o.id ? null : o.id)} data-takip-plana-ekle={o.id}>
                   {t("planaEkle")}
                 </button>
+              ) : (
+                o.muhabirId === ben.id && (
+                  <button type="button" className="dugme dugme-kucuk" onClick={() => setCevir(cevir === o.id ? null : o.id)} data-takip-oneriye={o.id}>
+                    {t("mtOneriyeCevir")}
+                  </button>
+                )
               )
             }
           />
           {ekle === o.id && plan && <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={() => setEkle(null)} />}
+          {cevir === o.id && <OneriyeCevirFormu ben={ben} oneri={o} kapat={() => setCevir(null)} />}
         </div>
       ))}
     </div>
@@ -155,5 +163,50 @@ export function ProfilTakipleri({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
         <TakipOnerileri ben={ben} liste={oneriler} />
       </div>
     </Kart>
+  );
+}
+
+/* Muhabir takibini öneriye çeviriyor: muhabirin önerisinde strap, haber türü ve gün zorunlu. */
+function OneriyeCevirFormu({ ben, oneri: o, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
+  const { t } = useDil();
+  const [f, setF] = useState({ paketBasligi: "", bicim: "pkg" as Bicim, hedefTarih: o.hedefTarih && o.hedefTarih >= bugun() ? o.hedefTarih : gunEkle(bugun(), 1) });
+  const gonder = () => {
+    if (!confirm(t("eminMisin"))) return;
+    if (takipOneriyeCevir(ben, o.id, f)) {
+      bildir(t("bOneriGonderildi"));
+      kapat();
+    }
+  };
+  return (
+    <div className="form form-kutu" data-oneriye-cevir={o.id}>
+      <label>
+        {t("onerilenPaketBasligi")}
+        <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} placeholder={metin("mtKonuIpucu", "ar")} data-cevir-strap />
+      </label>
+      <div className="satir">
+        <label>
+          {t("haberTuru")}
+          <select value={f.bicim} onChange={(e) => setF({ ...f, bicim: e.target.value as Bicim })} data-cevir-bicim>
+            {BICIMLER.map((b) => (
+              <option key={b} value={b}>
+                {t(BICIM_ADI(b))}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("gun")}
+          <input type="date" value={f.hedefTarih} min={bugun()} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} data-cevir-gun />
+        </label>
+      </div>
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button type="button" className="dugme" disabled={!f.paketBasligi.trim() || !f.hedefTarih} onClick={gonder} data-cevir-gonder>
+          {t("oneriGonder")}
+        </button>
+      </div>
+    </div>
   );
 }

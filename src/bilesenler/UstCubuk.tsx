@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useBildirimSesi } from "./Ses";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
 import { GERCEK, demoyuAc, girisiAc } from "../kip";
@@ -114,6 +115,7 @@ export default function UstCubuk({
     .filter((h) => bildirimMi(ben, h, v))
     .slice(0, 25);
   const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length;
+  useBildirimSesi(okunmamis);
 
   const ac = (n: typeof acik) => {
     setAcik(acik === n ? "" : n);

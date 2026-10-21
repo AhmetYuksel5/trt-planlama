@@ -1,4 +1,4 @@
-import { Binoculars, CalendarDays, ClipboardList, House, Lightbulb, MapPinned, Menu, Package, Users, type LucideIcon } from "lucide-react";
+import { Binoculars, CalendarDays, ClipboardList, House, Lightbulb, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import type { Kisi } from "../veri";
 import { izinBirimi } from "../yapi";
@@ -26,23 +26,33 @@ const ADAYLAR: { yol: string; ad: Anahtar; adMuhabir?: Anahtar; ikon: LucideIcon
   { yol: "saha", ad: "abGorevlerim", ikon: MapPinned },
 ];
 
+/* Muhabirin dört sekmesi; Görevlendirmeler ve Ayarlar "Menü"de. */
+const MUHABIR_SEKMELERI: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = [
+  { yol: "oneriler/yeni", ad: "kaOneriGonder", ikon: Send },
+  { yol: "oneriler", ad: "kaOnerilerim", ikon: Lightbulb },
+  { yol: "takipler", ad: "abTakiplerim", ikon: Binoculars },
+  { yol: "paketler", ad: "abPaketlerim", ikon: Package },
+];
+
 export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; acik: string; menuAcik: boolean; onMenu: () => void }) {
   const { t } = useDil();
   const muhabir = ben.birim === "muhabir";
   const planlama = izinBirimi(ben.birim) === "planlama";
-  const sekmeler = ADAYLAR.filter(
-    (s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama),
-  ).slice(0, 4);
+  const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
+  const sekmeler: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = muhabir
+    ? MUHABIR_SEKMELERI
+    : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);
+  const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : acik === y && !(y === "oneriler" && yeni));
   return (
     <nav className="alt-cubuk" aria-label={t("abMenu")}>
       {sekmeler.map((s) => {
         const Ikon = s.ikon;
         return (
-          <a key={s.yol} href={s.yol === "ana" ? "#/" : `#/${s.yol}`} className={!menuAcik && acik === s.yol ? "acik" : ""}>
+          <a key={s.yol} href={s.yol === "ana" ? "#/" : `#/${s.yol}`} className={!menuAcik && etkin(s.yol) ? "acik" : ""}>
             <span className="hap">
               <Ikon size={21} />
             </span>
-            {t(muhabir && s.adMuhabir ? s.adMuhabir : s.ad)}
+            {t(s.ad)}
           </a>
         );
       })}

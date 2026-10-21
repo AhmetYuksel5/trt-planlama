@@ -116,7 +116,7 @@ export function MuhabireOneriPenceresi({ ben, muhabirId, kapat }: { ben: Kisi; m
   const muhabir = kisiBul(v, f.muhabirId);
   const hazir = !!muhabir && !!f.haberBasligi.trim() && !!f.gelisme.trim();
   const gonder = () => {
-    if (!muhabir) return;
+    if (!muhabir || !confirm(t("eminMisin"))) return;
     const id = muhabireOneriGonder(ben, { ...f, ulke: ulkesi(muhabir.sehir) });
     if (id) {
       bildir(t("muhabireOnerildi"));

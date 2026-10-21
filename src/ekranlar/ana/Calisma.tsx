@@ -12,7 +12,6 @@ import { IkonDugme } from "../nextday/Bolumler";
 import { KisayolKutulari } from "../ortam/Kisayollar";
 import { PANEL_ALANLARI } from "../YoneticiPaneli";
 import { BIRIM_ALANLARI } from "./Birimler";
-import { MUHABIR_ALANLARI } from "./Muhabir";
 import { PLANLAMA_ALANLARI } from "./Planlama";
 
 /*
@@ -49,7 +48,8 @@ export interface Alan {
  */
 export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
-  muhabir: ["muCagri", "muSayac", "muSiram", "muHaberler", "muGorev", "muOneriler", "muBildirim"],
+  // Muhabirin ana sayfası çalışma alanı değil, Önerilerim (ana/Muhabir.tsx).
+  muhabir: [],
   newsdesk: ["genIslerim", "ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   ekonomi: ["genIslerim", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
@@ -61,7 +61,7 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
 };
 
 /* Katalog çizim sırasında kuruluyor: alan dosyaları bu dosyayı da içe aktarıyor, açılışta okunursa döngüde henüz tanımsız olurlar. */
-const katalog = (): Alan[] => [...PLANLAMA_ALANLARI, ...MUHABIR_ALANLARI, ...BIRIM_ALANLARI, ...PANEL_ALANLARI];
+const katalog = (): Alan[] => [...PLANLAMA_ALANLARI, ...BIRIM_ALANLARI, ...PANEL_ALANLARI];
 
 export const alanUygun = (ben: Kisi, a: Alan) =>
   a.sayfa === "muhabir" ? ben.birim === "muhabir" : a.sayfa === "panel" ? !!kapsam(ben) : ben.birim !== "muhabir" && sayfaGorebilir(ben, a.sayfa);

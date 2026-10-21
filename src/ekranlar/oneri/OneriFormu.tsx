@@ -259,6 +259,7 @@ export function ElleOneriFormu({
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "telefon"));
   const gecerli = oneriFormuGecerli(f);
   const gonder = (hemen: boolean) => {
+    if (!confirm(t("eminMisin"))) return;
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta });
     if (id && f.bicim === TAKIP_BICIMI) {
       bildir(t("bTakipKaydedildi"));

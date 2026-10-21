@@ -670,8 +670,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`ONERI_ETIKETLERI` yalnız Next Day ve Weekly).
 
   Arşiv tek kural (`oneriPlanlari.ts → oneriArsivde`, `oneriSonGunu`;
-  saklanmaz): günü 2 gün geçmiş (`ARSIV_GUNU`; günü 20'yse 23'ünde)
-  öneri güncel listelerden kalkar. Gün aralığın sonu, plana
+  saklanmaz, bütün sistemde aynı): günü geçen öneri ertesi gün güncel
+  listelerden kalkar (`ARSIV_GUNU` 0; günü 21'se 22'sinde). Takip arşive
+  düşmez: öneriye çevrilmeyen takip son gelişmesinden 2 gün sonra
+  (`TAKIP_SILME_GUNU`) sistemin açılış işiyle izleriyle silinir
+  (`eylemler.ts → eskiTakipleriSil`). Gün aralığın sonu, plana
   girdiyse planın günü, günü yoksa geldiği gün. Açık paket öneriyi tutmaz
   (kimsenin kapatmadığı eski onaylı paketler önerileri haftalarca güncelde
   bırakıyordu); paketin takibi Paketler sayfasında, onay kuyruğunda ve
@@ -682,8 +685,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`arsivdenCikti`), reddedilen/geri çekileni değerlendirmeye açar.
   Düğmeler öneri ayrıntısında (`Oneriler.tsx → OneriKapiDugmeleri`), onay
   sorularak; ret, plana ve gündeme ekleme de onaylı. Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
-  (`#/oneriler/arsiv`, muhabirde "Geçmiş önerilerim"; İşlerim'deki
-  Önerilerim kartında da bağlantısı, kılavuzda `kl4g`). Planlama ana sayfası,
+  (`#/oneriler/arsiv`; muhabirde kendi ekranı, aşağıda; kılavuzda `kl4g`). Planlama ana sayfası,
   menü ve yönetici paneli sayıları, "Önerilerden al" arşivi saymaz.
 
   Planlama öneriyi her aşamada düzeltir, plana eklendikten sonra da
@@ -801,8 +803,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (planı önceki gün hazırlıyor). Kayıt temizliğinde "Görev işleri" türü.
 - Muhabirin takipleri (`ekranlar/Takipler.tsx`, `#/takipler`): muhabirin
   izlediği güncel konu (olay, toplantı, etkinlik). Muhabir menüsünde
-  "Takiplerim" (öneriler menüden kalktı, İşlerim'de "Yeni öneri gönder"in
-  yanında "Önerilerim" düğmesi); Planlama ve Yönetim'de "Muhabir takipleri",
+  "Takiplerim"; Planlama ve Yönetim'de "Muhabir takipleri",
   muhabirin profilinde de (`ProfilTakipleri`). Kılavuzda `kl2b`.
   Takip önerinin aşaması (durum `takip`; tasarım belgesi, 2b): yeni takip
   ayrı kayıt değil öneri. Muhabir Takiplerim'deki "Yeni takip"ten
@@ -818,7 +819,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `yetki.ts → takipSatiriEkleyebilir`: takipte ya da takip türü plana
   girdikten sonra; `Oneriler.tsx → TakipSatirlari`, yenisi üstte;
   Planlama'ya `takipSatiriEklendi`). Arşiv günü son satırın günü
-  (`oneriSonGunu`): son satırdan 2 gün sonra düşer. Takiplerim ve plan
+  (`oneriSonGunu`): son satırdan 2 gün sonra silinir. Takiplerim ve plan
   ekranlarının "Muhabir takipleri" penceresi takip önerilerini
   (`Takipler.tsx → takipOnerileri`, `TakipOnerileri`) eski takip
   kayıtlarının yanında gösterir; sayılar ikisini toplar. Pencerede kartta
@@ -1194,8 +1195,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sınır doldu, adım başka birimde). Simge düğmesinin adı `title` ve
   `aria-label`'da kalır. Kullanım anlatımı birim birim kılavuzda (PDF).
   İki istisna: tanıtım sayfası (işi sistemi anlatmak) ve muhabir kılavuzu
-  (kullanıcının isteği; `ekranlar/ana/MuhabirKilavuzu.tsx`): İşlerim'in
-  üstünde katlanır kart, ilk girişte açık, kapalılığı tarayıcıda
+  (kullanıcının isteği; `ekranlar/ana/MuhabirKilavuzu.tsx`): muhabirin
+  Ayarlar sayfasının altında katlanır kart, ilk girişte açık, kapalılığı tarayıcıda
   (`trt-planlama-kilavuz`); metinler `dil.ts → kl*`. "PDF indir"
   kılavuzun temiz kopyasını `body`'ye koyup yazdırmayı açar
   (`html.kilavuz-baskisi`, baskıda yalnız o; belge adı PDF'in adı). Paket
@@ -1314,18 +1315,38 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   personeli" (`#/personel`, dış muhabir olmayan herkes; birim ağacı ve ünvan
   süzgeci) ve "Dış muhabirler" (`#/muhabirler`, `KOK_DIS` altındakiler);
   Editörler ve Diğer personel kalktı.
-  - Muhabirin masaüstü düzeni sade (işi az): sol menü başlıksız tek liste
-    (`AnaMenu.tsx → MUHABIR_MENUSU`: İşlerim, Önerilerim, Takiplerim,
-    Haberlerim, Görevlendirmelerim, Takvimim; Ayarlar altta ayrık), kutuda
-    kendi adı ve ünvanı. Üst çubukta workspace sekmeleri, "+" ve kısayollar
-    yok, yalnız sayfanın adı. İşlerim tek sütun: başlıkta "Yeni öneri gönder",
-    çağrılar tek kartta, sayaçlar ince satır (`.sayaclar.ince`). "Senin sıran"da
-    paketlerden başka plana girmiş öneri de (`Muhabir.tsx → plandaki`): onaylı
-    paketi yoksa (Planlama'nın strap'siz girdiği yalnız gelişme olur; PKG
-    önerisi plan onayına dek değerlendirmede), planın günü geçmemişse, takipte
-    değilse. Kısıtlı muhabir planı okuyamıyor; gün öneride (`Oneri.planTarihi`,
-    `oneriPlanaEkle` ve haftalık aktarım yazar, plandan çıkınca silinir). Telefon
-    düzeni (alt çubuk, Menü paneli) ayrı ve öbürleriyle aynı kalıyor.
+  - Muhabirin ekranı en sade hali (kurum kararı; `ekranlar/ana/Muhabir.tsx`):
+    menü `AnaMenu.tsx → MUHABIR_MENUSU` (Öneri gönder, Önerilerim, Takiplerim,
+    Haberlerim, Görevlendirmelerim; Ayarlar altta ayrık), birim kutusu yok;
+    adı ve ünvanı sayfanın üstünde ince satırda (`Kabuk → .muhabir-adi`).
+    Üst çubukta sekme, "+" ve kısayol yok; zil kalır, yeni bildirimde ses
+    (`bilesenler/Ses.ts`, Ayarlar'da açılıp kapanır, tarayıcıda
+    `trt-planlama-ses`). Ana sayfa yok: `#/` ve `#/oneriler` Önerilerim
+    (`MuhabirOnerilerim`), sayaç, çağrı ve bildirim kartı yok (çağrı bildirim
+    olarak gelir).
+    - Önerilerim: Güncel sekmesinde "Senin sıran" (teklif, düzeltme isteği,
+      sonucu bildirilecek paket, özel yayın görevi), Yakında (günü iki gün
+      içinde) ve İleride; Arşiv'de Kabul edilmeyenler ve Tamamlananlar
+      (`oneriPlanlari.ts → muhabirBolumu`; "yapılmadı" onaylı paket kabul
+      edilmeyende). Takip burada değil, Takiplerim'de.
+    - Haberlerim (`#/paketler`, `MuhabirHaberlerim`): tamamlanan paketlerin
+      yalnız başlıkları, önerinin (yoksa paketin) sayfasına gider; paketsiz
+      plana giren haber tamamlanmış sayılır ama burada yok.
+    - Takiplerim'de kendi takibine "Öneriye çevir" (`eylemler.ts →
+      takipOneriyeCevir`: strap, haber türü, gün; satırlar gelişmeye eklenir,
+      öneri "yeni"). Çevrilmeyen takip son satırından 2 gün sonra izleriyle
+      silinir (`eskiTakipleriSil`, sistemin açılış işi; `TAKIP_SILME_GUNU`).
+    - Görevlendirmelerim'de yalnız saha görevlendirmeleri; özel yayın görevi
+      Önerilerim'in "Senin sıran"ında.
+    - Ayarlar'da kişisel bilgiler (profile bağlantı), çalışma günleri
+      (`Kisi.calismaGunleri`, `eylemler.ts → kisiCalismaGunleri`), ses ve
+      kılavuz. İstatistik sonra.
+    - Telefonda alt çubuk Öneri gönder, Önerilerim, Takiplerim, Haberlerim,
+      Menü (`AltCubuk.tsx → MUHABIR_SEKMELERI`); Menü paneli muhabirin
+      menüsünü gösterir (`data-mobil-muhabir`).
+    - Temel, geri dönülemeyen ya da yöneticinin düzeltmesini gerektiren
+      adımda (öneri ve takip gönderme, düzeltip yeniden gönderme, öneriye
+      çevirme, teslim, davet) "Emin misin?" sorulur (`eminMisin`).
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
     sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)
