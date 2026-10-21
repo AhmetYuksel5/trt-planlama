@@ -18,7 +18,7 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
-import { DuzeltmeFormu, GorunumSecici, OneriKarti, PlandanCikarDugmesi, useOneriGorunumu } from "./OneriKarti";
+import { DuzeltmeFormu, GorunumSecici, OneriKarti, PaketEkleDugmesi, PlandanCikarDugmesi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 import { GeriBildirimBolumu } from "./GeriBildirim";
 import { YzHaberDegeri } from "../../bilesenler/YzOneri";
@@ -618,7 +618,8 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
             <OneriKapiDugmeleri ben={ben} oneri={oneri} />
             {yer && (
               <div className="ara-ust-2">
-                <PlandanCikarDugmesi ben={ben} oneri={oneri} d={v} />
+                <PlandanCikarDugmesi ben={ben} oneri={oneri} d={v} />{" "}
+                <PaketEkleDugmesi ben={ben} oneri={oneri} d={v} />
               </div>
             )}
             {degerlendirir && (

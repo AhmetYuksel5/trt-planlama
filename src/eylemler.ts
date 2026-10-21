@@ -568,6 +568,53 @@ export const oneriPlanaEkle = (
   return true;
 };
 
+/*
+ * Plana paketsiz girmiş öneriye sonradan PKG: haber gelişince planlamacı
+ * paket istemeye karar verebiliyor. Paket önerinin gelişmesinin başlığına,
+ * "Plana ekle"deki PKG'nin aynısı (değerlendirmede, muhabire görev plan
+ * onayında); öneri paketine bağlanır, "Plandan çıkar" onu da kaldırır.
+ */
+export const oneriyePaketEklenebilir = (ben: Kisi, d: Durum, o: Oneri): boolean => {
+  const plan = o.durum === "planaEklendi" ? planBul(d, o.planId) : undefined;
+  if (!plan || o.bicim === "canli" || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
+  if (!d.gelismeler.some((g) => g.planId === plan.id && g.oneriId === o.id)) return false;
+  return !d.paketler.some((p) => p.oneriId === o.id && p.planId === plan.id && p.durum !== "iptal");
+};
+
+export const oneriyePaketEkle = (ben: Kisi, oneriId: string, strap: string): boolean => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !strap.trim() || !oneriyePaketEklenebilir(ben, d, o)) return false;
+  const plan = planBul(d, o.planId)!;
+  const g = d.gelismeler.find((x) => x.planId === plan.id && x.oneriId === o.id)!;
+  const muhabirId = o.muhabirId ?? g.onerenId;
+  let kod: string;
+  [kod, d] = yeniKod(d);
+  const paketId = kimlik("p");
+  const paket: Paket = {
+    id: paketId,
+    kod,
+    planId: plan.id,
+    planBaslikId: g.planBaslikId,
+    baslik: strap.trim(),
+    sehir: kisiBul(d, muhabirId)?.sehir ?? "istanbul",
+    muhabirId,
+    aciklama: o.gelisme,
+    tur: o.tur,
+    bicim: paketBicimi(o.bicim === TAKIP_BICIMI ? "pkg" : o.bicim),
+    durum: "degerlendiriliyor",
+    sahaGerekli: o.sahaGerekli,
+    oneriId: o.id,
+    oncelikli: o.talimatVeren ? true : undefined,
+    notlar: [],
+    olusturma: simdi(),
+    guncelleme: simdi(),
+  };
+  d = { ...d, paketler: [paket, ...d.paketler], oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, paketId } : x)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketOlusturuldu", paketId, planId: plan.id, oneriId: o.id }));
+  return true;
+};
+
 /** Plana paketsiz (canlısız) giren muhabir haberi: bildirim ve onay sorusu "takip olarak" diyor. */
 export const oneriPaketsizGirer = (o: Oneri, g: { paketli: boolean; canli: boolean; muhabirId?: string }) => !g.paketli && !g.canli && !!g.muhabirId && !o.talimatVeren;
 

@@ -1,10 +1,10 @@
-import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Undo2, X } from "lucide-react";
+import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Plus, Undo2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir } from "../../bilesenler/Parcalar";
+import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
 import { gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet, oneriPlandanCikar } from "../../eylemler";
+import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet, oneriPlandanCikar, oneriyePaketEkle, oneriyePaketEklenebilir } from "../../eylemler";
 import { oneriYeri } from "../../oneriPlanlari";
 import { yerelGun } from "../../tarih";
 import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
@@ -166,6 +166,48 @@ export function PlandanCikarDugmesi({ ben, oneri: o, d, sonra }: { ben: Kisi; on
     >
       <X size={14} /> {ad}
     </button>
+  );
+}
+
+/* Plana paketsiz girmiş öneriye sonradan PKG; strap önerinin strap'i, yoksa Header. */
+export function PaketEkleDugmesi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri; d: Durum }) {
+  const { t } = useDil();
+  const [acik, setAcik] = useState(false);
+  const [strap, setStrap] = useState(o.paketBasligi || o.haberBasligi);
+  if (!oneriyePaketEklenebilir(ben, d, o)) return null;
+  if (!acik)
+    return (
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} data-oneriye-paket={o.id}>
+        <Plus size={14} /> {t("paketOnerisiEkle")}
+      </button>
+    );
+  return (
+    <div className="form form-kutu" data-oneriye-paket-formu={o.id}>
+      <label>
+        {t("onerilenPaketBasligi")}
+        <input {...icerikAlani} value={strap} onChange={(e) => setStrap(e.target.value)} data-oneriye-paket-strap />
+      </label>
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={() => setAcik(false)}>
+          {t("iptal")}
+        </button>
+        <button
+          type="button"
+          className="dugme"
+          disabled={!strap.trim()}
+          onClick={() => {
+            if (!confirm(t("eminMisin"))) return;
+            if (oneriyePaketEkle(ben, o.id, strap)) {
+              bildir(t("bPaketEklendi"));
+              setAcik(false);
+            }
+          }}
+          data-oneriye-paket-kaydet
+        >
+          {t("kaydet")}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -404,6 +446,7 @@ export function OneriListesi({
         ikonlu(<Lightbulb size={14} />, t("takipOlarakKalsin"), "dugme-ikincil", () => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi"))),
       kararAcik && !talimat && ikonlu(<Ban size={14} />, t("reddet"), "dugme-kotu", () => setPencere({ id: o.id, mod: "ret" })),
       tam && plandanCikarabilir(ben, d, o) && <PlandanCikarDugmesi key="cikar" ben={ben} oneri={o} d={d} />,
+      tam && oneriyePaketEklenebilir(ben, d, o) && <PaketEkleDugmesi key="pkg" ben={ben} oneri={o} d={d} />,
     ].filter(Boolean);
     // Karar kalmadıysa (reddedilmiş ya da plana girmiş) kartta da pencerede de boş şerit çizilmesin.
     return dugmeler.length ? <>{dugmeler}</> : undefined;

@@ -655,7 +655,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gelişmesi ve paketi (üretime girmemişse) silinir, onunla gelen muhabir ve
   boş kalan başlık plandan kalkar, öneri "değerlendiriliyor"a döner. Plandan
   gelişmesi ya da paketi silinen (gelişme sil, paket sil, başlığı çıkar)
-  öneri de öyle (`oneriBaglariniTazele`). Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
+  öneri de öyle (`oneriBaglariniTazele`). Plana paketsiz girmiş öneriye
+  sonradan PKG eklenir (öneri ayrıntısında ve penceresinde "Paket önerisi
+  ekle", `eylemler.ts → oneriyePaketEkle`, `oneriyePaketEklenebilir`; Live
+  değil, paketi yokken): strap sorulur, paket gelişmenin başlığına
+  "değerlendiriliyor"da açılır, önerinin paketi olur, plandan çıkarınca o da
+  gider. Etiketler kartta, listede, ayrıntıda ve formun altında önizleme
   olarak (`Tablolar.tsx → OneriPlanEtiketleri`, planın rengiyle); öneriler
   sayfasında süzgeç (Bütün planlar / Next Day / Weekly / Özel yayın /
   Plana düşmeyen). Next Day planının gelen önerileri yalnız o güne gönderilenler
