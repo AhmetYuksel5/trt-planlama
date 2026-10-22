@@ -8,7 +8,7 @@ import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kil
 import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
 import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
@@ -16,6 +16,7 @@ import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket }
 import { adimYapabilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
+import { PaketMetniFormu } from "./nextday/BaslikKarti";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -100,6 +101,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <EylemKarti ben={ben} paket={paket} />
           {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
           <BaskaMuhabireVer ben={ben} paket={paket} />
+          <PaketMetniKarti ben={ben} paket={paket} />
           <YoneticiKarti ben={ben} paket={paket} />
           {paket.metin && (
             <Kart baslik={t("metin")}>
@@ -572,5 +574,24 @@ function NitelikPuani({ ben, paket }: { ben: Kisi; paket: Paket }) {
         ),
       )}
     </span>
+  );
+}
+
+/* Onaylı paketin metni sonradan düzeltilir (plansız Weekly paketi plan ekranında görünmüyor). */
+function PaketMetniKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  if (!paketMetniDuzenlenebilir(ben, v, paket)) return null;
+  return (
+    <Kart baslik={t("onerilenPaketBasligi")}>
+      {acik ? (
+        <PaketMetniFormu ben={ben} paket={paket} kapat={() => setAcik(false)} />
+      ) : (
+        <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} data-paket-metni-ac>
+          {t("duzenle")}
+        </button>
+      )}
+    </Kart>
   );
 }

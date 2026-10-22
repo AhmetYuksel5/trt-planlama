@@ -1067,6 +1067,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Paket yalnız işaret ve onayla kapanır (özel yayın dışında `paketTamamla`
     eylemi de reddeder). Haberi biten önerinin rozeti "Tamamlandı"
     (`OneriDurumRozeti`, paketinden).
+  - Onaylı paketin (Weekly'den gelen de) yalnız metni sonradan düzeltilir:
+    Strap ve açıklama (`eylemler.ts → paketMetniDuzenle`,
+    `paketMetniDuzenlenebilir`: plan düzenleyen, onaylı, özel yayın değil,
+    planı devralınmamış; plan ekranında paketin kalemi, paket sayfasında
+    kart). Durum, muhabir, akış ve onay değişmez; paket formu yalnız
+    taslakta açık kalır.
   - Paket iptal edilince (`paketDurum`) bekleyen işaret silinir; onay yalnız
     onaylı pakete uygulanır, kuyruk ve "onay bekliyor" yalnız onaylı paketi
     gösterir (iptal paketi "tamamlandı"ya dönüyordu).

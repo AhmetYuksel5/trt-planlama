@@ -1,17 +1,17 @@
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
 import { useYz } from "../../yz";
-import { baslikBul, kisiBul, useVeri, type NextDayPlan, type PlanBasligi } from "../../veri";
+import { baslikBul, kisiBul, useVeri, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
 import { paketPlandanSilinir, yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
@@ -216,7 +216,9 @@ export default function BaslikKarti({
           </h4>
           {paketler.length === 0 && paketForm !== "yeni" && <p className="bos-kucuk">{t("paketOnerisiYok")}</p>}
           {[...paketler].sort(oncelikliOnce).map((p) =>
-            paketForm === p.id ? (
+            paketForm === p.id && p.durum === "onaylandi" ? (
+              <PaketMetniFormu key={p.id} ben={ben!} paket={p} kapat={() => setPaketForm("")} />
+            ) : paketForm === p.id ? (
               <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
             ) : (
               <div key={p.id} className="kayit">
@@ -236,6 +238,9 @@ export default function BaslikKarti({
                   </div>
                   <div className="islemler">
                     {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
+                    )}
+                    {paketMetniDuzenlenebilir(ben, v, p) && (
                       <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
                     )}
                     {degerlendirir && p.durum === "taslak" && (
@@ -349,5 +354,31 @@ export default function BaslikKarti({
       </Pencere>
     )}
     </>
+  );
+}
+
+/* Onaylı paketin yalnız metni (Strap, açıklama); geri kalanı kilitli. */
+export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Paket; kapat: () => void }) {
+  const { t } = useDil();
+  const [f, setF] = useState({ baslik: p.baslik, aciklama: p.aciklama ?? "" });
+  return (
+    <div className="form form-kutu" data-paket-metni={p.id}>
+      <label>
+        {t("onerilenPaketBasligi")}
+        <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} data-paket-metni-strap />
+      </label>
+      <label>
+        {t("aciklama")}
+        <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} data-paket-metni-aciklama />
+      </label>
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button type="button" className="dugme" disabled={!f.baslik.trim()} onClick={() => paketMetniDuzenle(ben, p.id, f) && kapat()} data-paket-metni-kaydet>
+          {t("kaydet")}
+        </button>
+      </div>
+    </div>
   );
 }

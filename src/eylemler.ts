@@ -2336,6 +2336,26 @@ export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
   return true;
 };
 
+/*
+ * Onaylanmış (ya da Weekly'den onaylı gelmiş) paketin yalnız metni: Strap ve
+ * açıklama. Durum, muhabir, akış ve onay olduğu gibi kalır; paket formu
+ * yalnız taslakta açılıyor, onaydan sonra yazım düzeltilemiyordu.
+ */
+export const paketMetniDuzenlenebilir = (ben: Kisi | undefined, d: Durum, p: Paket): boolean => {
+  if (!ben || p.ozelId || p.durum !== "onaylandi" || !yapabilir(ben, "planDuzenle")) return false;
+  const plan = p.planId ? planBul(d, p.planId) : undefined;
+  return !plan || plan.durum !== "devralindi";
+};
+
+export const paketMetniDuzenle = (ben: Kisi, id: string, g: { baslik: string; aciklama: string }): boolean => {
+  const d = getir();
+  const p = d.paketler.find((x) => x.id === id);
+  if (!p || !g.baslik.trim() || !paketMetniDuzenlenebilir(ben, d, p)) return false;
+  if (p.baslik === g.baslik.trim() && (p.aciklama ?? "") === g.aciklama) return true;
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, baslik: g.baslik.trim(), aciklama: g.aciklama, guncelleme: simdi() })));
+  return true;
+};
+
 export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "onaylandi" | "iptal") => {
   let d = getir();
   const p = paketBul(d, id);
