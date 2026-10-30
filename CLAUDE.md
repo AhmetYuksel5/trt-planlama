@@ -1089,7 +1089,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `nafize*`, `konuk*`): Planlama'nın denetiminde hazırlanır, onayı Plan
   yetkileri'nde (`ozOnay`, varsayılan Planlama yöneticisi). Künye: başlık,
   gün (ya da `bitis`), genel planın Arapça paragrafı (`aciklama`).
-  - Sayfa sade: bölümler (yapılacaklar, nafizeler, paketler, talepler,
+  - Künyede sayı kutuları (gün, nafize, paket, talep) ve ilerleme
+    (`ozelOzeti`); altında sekmeler (`OZEL_SEKMELERI`): Genel bakış (aşamalar,
+    yapılacaklar), Günlük program, Nafizeler, İçerik (paketler, talepler),
+    Görevlendirmeler, Hazırlık. Günlük program (`GunlukProgram`): solda
+    yayının günleri (`yayinGunleri`: künyedeki aralık ve nafizelerin günleri),
+    ortada seçili günün nafizeleri saat sırasıyla (basınca pencerede kalemi,
+    "Nafize ekle" o günle), sağda gün özeti (konuklar, son tarihi o gün olan
+    paketler ve talepler); saklanmaz, nafizelerden okunur. Telefonda günler
+    yatay şerit, sütunlar alt alta.
+  - Sekmelerde bölümler (yapılacaklar, nafizeler, paketler, talepler,
     görevlendirmeler, hazırlık) ve içlerindeki her kalem kapalı gelir
     (`Bolum`, `Kalem`; `<details>`); kapalıyken başlık, sayı, aşama. Pencere
     bölümün dışında çizilir (kapalı `<details>` içini göstermiyor).
