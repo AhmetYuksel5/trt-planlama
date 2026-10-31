@@ -156,16 +156,20 @@ function useGundemHaberleri() {
       const k = kaynaklar.find((x) => x.adres === a.adres);
       if (!k) continue;
       if (a.hata) h[k.id] = a.hata;
-      // Tarihsiz haber okunduğu an sayılıyor: akışın sırası zaten yeniden eskiye.
+      /*
+       * Tarihi okunamayan haber alınmıyor: önce okunduğu an sayılıyordu, akışta
+       * duran eski haber bugünün haberi gibi görünüyordu. Yaş sınırı haberleriSakla'da.
+       */
       for (const o of a.ogeler ?? [])
-        yeni.push({
-          baslik: o.baslik,
-          baglanti: o.baglanti,
-          zaman: o.zaman ?? new Date().toISOString(),
-          ozet: o.ozet,
-          kaynakId: k.id,
-          kaynak: k.ad,
-        });
+        if (o.zaman)
+          yeni.push({
+            baslik: o.baslik,
+            baglanti: o.baglanti,
+            zaman: o.zaman,
+            ozet: o.ozet,
+            kaynakId: k.id,
+            kaynak: k.ad,
+          });
     }
     setHatalar(h);
     setHaberler(haberleriSakla(yeni, Date.now()));
@@ -377,7 +381,12 @@ function OlaySatiri({
       <div className="gundem-olay-alt">
         <span>
           {saatYaz(z.toISOString(), dil)} ·{" "}
-          {tarihYaz(z.toISOString().slice(0, 10), dil)}
+          {/* Bu yılın değilse yıl da yazılıyor: eski haber bugünkü sanılmasın. */}
+          {tarihYaz(
+            z.toISOString().slice(0, 10),
+            dil,
+            z.getFullYear() === new Date().getFullYear() ? "kisa" : "uzun",
+          )}
         </span>
         <button
           className="dugme-metin"

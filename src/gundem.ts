@@ -1560,7 +1560,13 @@ export const haberleriSakla = (yeni: Haber[], simdi: number): Haber[] => {
   const birlesik = new Map<string, Haber>();
   for (const h of [...sakliHaberler(), ...yeni]) birlesik.set(h.baglanti, h);
   const liste = [...birlesik.values()]
-    .filter((h) => Date.parse(h.zaman) >= simdi - 7 * 24 * SAAT)
+    // Tarihi geçersiz, bir haftadan eski ya da ileri tarihli (saat dilimi payı bir saat) haber gündeme girmez.
+    .filter((h) => {
+      const t = Date.parse(h.zaman);
+      return (
+        Number.isFinite(t) && t >= simdi - 7 * 24 * SAAT && t <= simdi + SAAT
+      );
+    })
     .sort((a, b) => b.zaman.localeCompare(a.zaman))
     .slice(0, 3000);
   try {
