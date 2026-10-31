@@ -70,6 +70,8 @@ const kur = () => {
         <item><title><![CDATA[اشتباكات في <b>الفاشر</b>]]></title><link>https://haber.test/1</link><pubDate>Wed, 14 Oct 2026 08:00:00 GMT</pubDate><description>&lt;p&gt;قتلى &amp;amp; جرحى&lt;/p&gt;</description></item>
         <item><title>Kötü bağlantı</title><link>javascript:alert(1)</link></item>
       </channel></rss>`);
+    if (url === "https://haber.test/toplayici")
+      return new Response(`<rss><channel><item><title>Talks on Sudan resume in Jeddah - Reuters</title><link>https://news.google.com/rss/articles/abc</link><pubDate>Wed, 14 Oct 2026 06:00:00 GMT</pubDate><description>&lt;a href="https://x"&gt;Talks&lt;/a&gt;</description><source url="https://www.reuters.com">Reuters</source></item></channel></rss>`);
     if (url === "https://haber.test/atom")
       return new Response(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Tigray talks</title><link rel="alternate" href="https://haber.test/a"/><updated>2026-10-14T07:00:00Z</updated><summary>TPLF and federal government</summary></entry></feed>`);
     return new Response("yok", { status: 404 });
@@ -462,4 +464,9 @@ test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevril
   await t.cagir("/rss", "yon", { adresler: ["https://haber.test/rss"] });
   assert.equal(t.istekler.length, once, "ikinci okuma önbellekten");
   assert.equal((await t.cagir("/rss", "yon", { adresler: [] })).status, 400);
+  // Toplayıcı: asıl yayıncı kaynakta, başlıktaki " - Reuters" eki atılıyor
+  const tj = (await (await t.cagir("/rss", "yon", { adresler: ["https://haber.test/toplayici"] })).json()) as { akislar: { ogeler: { baslik: string; kaynak?: string }[] }[] };
+  assert.equal(tj.akislar[0].ogeler[0].baslik, "Talks on Sudan resume in Jeddah");
+  assert.equal(tj.akislar[0].ogeler[0].kaynak, "Reuters");
+  assert.equal(rss.ogeler![0].kaynak, undefined);
 });

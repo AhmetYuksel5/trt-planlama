@@ -1351,10 +1351,12 @@ export const firsatlar = (
 /* --- Kaynaklar --- */
 
 /*
- * Kurulu liste. Reuters ve AP açık RSS vermiyor; yerlerine aynı haberleri
- * aktaran yayıncılar. Adresi değişen akış Ayarlar'daki listede hatasıyla görünür.
+ * Kurulu liste (canlı denenip seçildi). Reuters ve AP açık RSS vermiyor;
+ * Times of Israel, Arab News, Al Arabiya, Politico bot korumasıyla, NATO, ICC,
+ * Kyiv Independent adres değiştirdiği için yok. Okunamayan akış ⚙
+ * penceresinde hatasıyla görünür.
  */
-export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
+const SITELER: GundemKaynagi[] = [
   {
     id: "gk-ajarabic",
     ad: "Al Jazeera",
@@ -1371,30 +1373,58 @@ export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
     tur: "yayin",
   },
   {
-    id: "gk-bbcar",
-    ad: "BBC Arabic",
-    adres: "https://feeds.bbci.co.uk/arabic/rss.xml",
+    id: "gk-aawsat",
+    ad: "الشرق الأوسط",
+    adres: "https://aawsat.com/feed",
     dil: "ar",
     tur: "yayin",
   },
   {
-    id: "gk-bbcme",
-    ad: "BBC Middle East",
-    adres: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
-    dil: "en",
+    id: "gk-skyar",
+    ad: "سكاي نيوز عربية",
+    adres: "https://www.skynewsarabia.com/rss",
+    dil: "ar",
     tur: "yayin",
   },
   {
-    id: "gk-bbcaf",
-    ad: "BBC Africa",
-    adres: "https://feeds.bbci.co.uk/news/world/africa/rss.xml",
-    dil: "en",
+    id: "gk-araby",
+    ad: "العربي الجديد",
+    adres: "https://www.alaraby.co.uk/rss",
+    dil: "ar",
+    tur: "yayin",
+  },
+  {
+    id: "gk-quds",
+    ad: "القدس العربي",
+    adres: "https://www.alquds.co.uk/feed/",
+    dil: "ar",
+    tur: "yayin",
+  },
+  {
+    id: "gk-arabi21",
+    ad: "عربي21",
+    adres: "https://arabi21.com/feed",
+    dil: "ar",
+    tur: "yayin",
+  },
+  {
+    id: "gk-rtar",
+    ad: "RT عربي",
+    adres: "https://arabic.rt.com/rss/",
+    dil: "ar",
     tur: "yayin",
   },
   {
     id: "gk-f24ar",
     ad: "France 24 عربي",
     adres: "https://www.france24.com/ar/rss",
+    dil: "ar",
+    tur: "yayin",
+  },
+  {
+    id: "gk-bbcar",
+    ad: "BBC Arabic",
+    adres: "https://feeds.bbci.co.uk/arabic/rss.xml",
     dil: "ar",
     tur: "yayin",
   },
@@ -1420,6 +1450,98 @@ export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
     tur: "ajans",
   },
   {
+    id: "gk-newarab",
+    ad: "The New Arab",
+    adres: "https://www.newarab.com/rss",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-mee",
+    ad: "Middle East Eye",
+    adres: "https://www.middleeasteye.net/rss",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-memo",
+    ad: "Middle East Monitor",
+    adres: "https://www.middleeastmonitor.com/feed/",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-almonitor",
+    ad: "Al-Monitor",
+    adres: "https://www.al-monitor.com/rss",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-national",
+    ad: "The National",
+    adres:
+      "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-haaretz",
+    ad: "Haaretz",
+    adres: "https://www.haaretz.com/srv/haaretz-latest-headlines",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-iranintl",
+    ad: "Iran International",
+    adres: "https://www.iranintl.com/en/feed",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-libyaherald",
+    ad: "Libya Herald",
+    adres: "https://libyaherald.com/feed/",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-tamazuj",
+    ad: "Radio Tamazuj",
+    adres: "https://www.radiotamazuj.org/en/rss",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-dabanga",
+    ad: "Dabanga",
+    adres: "https://www.dabangasudan.org/en/feed",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-dailysabah",
+    ad: "Daily Sabah",
+    adres: "https://www.dailysabah.com/rss/politics",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-meduza",
+    ad: "Meduza",
+    adres: "https://meduza.io/rss/en/all",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
+    id: "gk-thehill",
+    ad: "The Hill",
+    adres: "https://thehill.com/feed/",
+    dil: "en",
+    tur: "bolge",
+  },
+  {
     id: "gk-unar",
     ad: "أخبار الأمم المتحدة",
     adres: "https://news.un.org/feed/subscribe/ar/news/all/rss.xml",
@@ -1430,6 +1552,13 @@ export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
     id: "gk-unen",
     ad: "UN News",
     adres: "https://news.un.org/feed/subscribe/en/news/all/rss.xml",
+    dil: "en",
+    tur: "kurum",
+  },
+  {
+    id: "gk-unpress",
+    ad: "UN Press",
+    adres: "https://press.un.org/en/rss.xml",
     dil: "en",
     tur: "kurum",
   },
@@ -1445,33 +1574,114 @@ export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
     ad: "Crisis Group",
     adres: "https://www.crisisgroup.org/rss.xml",
     dil: "en",
-    tur: "kurum",
+    tur: "derin",
   },
   {
-    id: "gk-mee",
-    ad: "Middle East Eye",
-    adres: "https://www.middleeasteye.net/rss",
+    id: "gk-ethinsight",
+    ad: "Ethiopia Insight",
+    adres: "https://www.ethiopia-insight.com/feed/",
     dil: "en",
-    tur: "bolge",
+    tur: "derin",
   },
   {
-    id: "gk-sudantribune",
-    ad: "Sudan Tribune",
-    adres: "https://sudantribune.com/feed/",
+    id: "gk-madamasr",
+    ad: "Mada Masr",
+    adres: "https://www.madamasr.com/en/feed/",
     dil: "en",
-    tur: "bolge",
+    tur: "derin",
   },
   {
-    id: "gk-addis",
-    ad: "Addis Standard",
-    adres: "https://addisstandard.com/feed/",
+    id: "gk-lwj",
+    ad: "Long War Journal",
+    adres: "https://www.longwarjournal.org/feed",
     dil: "en",
-    tur: "bolge",
+    tur: "derin",
   },
+  {
+    id: "gk-wotr",
+    ad: "War on the Rocks",
+    adres: "https://warontherocks.com/feed/",
+    dil: "en",
+    tur: "derin",
+  },
+];
+
+/**
+ * Google Haberler konu araması: anahtarsız, ücretsiz RSS. "when:1d" yalnız son
+ * 24 saat; her haber asıl yayıncısıyla gelir (kapı `<source>`'u okuyor).
+ */
+export const aramaAdresi = (sorgu: string, dil: "ar" | "en") =>
+  `https://news.google.com/rss/search?q=${encodeURIComponent(`${sorgu} when:1d`)}&${dil === "ar" ? "hl=ar&gl=EG&ceid=EG:ar" : "hl=en-US&gl=US&ceid=US:en"}`;
+
+/* Konu başına Arapça ve İngilizce arama: klasör yalnız genel akışlara kalmasın, derinleşsin. */
+const ARAMALAR: [string, "ar" | "en", string][] = [
+  ["filistin", "ar", "غزة OR الضفة الغربية OR الاحتلال الإسرائيلي"],
+  ["filistin", "en", 'Gaza OR "West Bank" OR Netanyahu'],
+  ["suriye", "ar", "سوريا دمشق OR حلب OR السويداء OR قسد"],
+  ["suriye", "en", "Syria Damascus OR Aleppo OR SDF OR Sharaa"],
+  ["irak", "ar", "العراق بغداد OR أربيل OR الحشد الشعبي"],
+  ["irak", "en", "Iraq Baghdad OR Erbil OR Kurdistan"],
+  ["lubnan", "ar", "لبنان حزب الله OR بيروت OR الجنوب اللبناني"],
+  ["lubnan", "en", "Lebanon Hezbollah OR Beirut"],
+  ["yemen", "ar", "اليمن الحوثي OR البحر الأحمر OR عدن"],
+  ["yemen", "en", 'Yemen Houthi OR "Red Sea"'],
+  ["iran", "ar", "إيران طهران OR النووي OR الحرس الثوري"],
+  ["iran", "en", "Iran Tehran OR nuclear OR IRGC"],
+  ["sudan", "ar", "السودان الدعم السريع OR الفاشر OR كردفان"],
+  ["sudan", "en", 'Sudan RSF OR "El Fasher" OR Darfur OR Kordofan'],
+  ["libya", "ar", "ليبيا طرابلس OR حفتر OR الدبيبة"],
+  ["libya", "en", "Libya Tripoli OR Haftar OR Dbeibah"],
+  ["misir", "en", "Egypt Sisi OR Cairo diplomacy OR Suez"],
+  ["korfez", "en", "Saudi OR UAE OR Qatar OR Oman OR Jordan diplomacy"],
+  ["etiyopya", "en", "Tigray OR Fano OR Amhara OR Oromia OR TPLF"],
+  ["etiyopya2", "en", "Ethiopia Eritrea OR Assab OR GERD OR Somalia"],
+  ["etiyopya", "ar", "إثيوبيا OR تيغراي OR سد النهضة OR إريتريا"],
+  ["somali", "en", "Somalia OR Somaliland OR al-Shabaab OR Puntland"],
+  ["guneySudan", "en", '"South Sudan" Juba OR Machar OR Kiir'],
+  [
+    "turkiye",
+    "en",
+    "Turkey foreign policy OR Fidan OR Erdogan NATO OR Ankara diplomacy",
+  ],
+  ["turkiye", "ar", "تركيا أردوغان OR فيدان OR أنقرة"],
+  [
+    "rusyaUkrayna",
+    "en",
+    'Ukraine Russia war OR Zelensky OR Kremlin OR "Black Sea"',
+  ],
+  [
+    "abd",
+    "en",
+    '"White House" OR Congress OR Senate "Middle East" OR Iran OR Israel OR Ukraine',
+  ],
+  [
+    "kuruluslar",
+    "en",
+    '"Security Council" OR ICJ OR ICC OR "Arab League" OR "African Union" OR OIC',
+  ],
+];
+
+export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
+  ...SITELER,
+  ...ARAMALAR.map(
+    ([konu, dil, sorgu]): GundemKaynagi => ({
+      id: `gk-ara-${konu}-${dil}`,
+      ad: `🔎 ${sorgu}`,
+      adres: aramaAdresi(sorgu, dil),
+      dil,
+      tur: "arama",
+    }),
+  ),
 ];
 
 export const gundemKaynaklari = (d: Durum) =>
   d.gundemKaynaklari?.length ? d.gundemKaynaklari : VARSAYILAN_KAYNAKLAR;
+
+/** Kayıtlı listede olmayan kurulu kaynaklar: liste önceden kaydedildiyse yenileri kendiliğinden girmiyor. */
+export const eksikVarsayilanlar = (liste: GundemKaynagi[]) =>
+  VARSAYILAN_KAYNAKLAR.filter(
+    (v) => !liste.some((k) => k.id === v.id || k.adres === v.adres),
+  );
 
 /* --- Demo: kapıya gidilmiyor, kurgusal örnek akış --- */
 

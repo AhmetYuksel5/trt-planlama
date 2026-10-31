@@ -272,7 +272,7 @@ export const yzHataMetni = (t: (k: Anahtar) => string, kod: string) => t(HATA[ko
 
 export interface AkisSonucu {
   adres: string;
-  ogeler?: { baslik: string; baglanti: string; zaman?: string; ozet?: string }[];
+  ogeler?: { baslik: string; baglanti: string; zaman?: string; ozet?: string; kaynak?: string }[];
   hata?: string;
 }
 export const gundemAkislari = (adresler: string[]) => istek<{ akislar: AkisSonucu[] }>("/rss", "POST", { adresler });

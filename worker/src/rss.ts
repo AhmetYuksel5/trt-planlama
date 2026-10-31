@@ -10,6 +10,11 @@ export interface AkisOgesi {
   baglanti: string;
   zaman?: string;
   ozet?: string;
+  /**
+   * Haberin asıl yayıncısı (`<source>`): toplayıcı akışlarda (Google Haberler)
+   * her haber başka siteden; gündem takibi farklı kaynak sayısıyla ağırlık veriyor.
+   */
+  kaynak?: string;
 }
 
 const VARLIK: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
@@ -61,12 +66,15 @@ export const akisCoz = (xml: string, enCok = 40): AkisOgesi[] => {
   const bloklar = [...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map((m) => ({ b: m[0], atom: false }));
   if (!bloklar.length) bloklar.push(...[...xml.matchAll(/<entry\b[\s\S]*?<\/entry>/gi)].map((m) => ({ b: m[0], atom: true })));
   for (const { b, atom } of bloklar.slice(0, enCok)) {
-    const baslik = etiket(b, "title");
+    const kaynak = etiket(b, "source").slice(0, 100);
+    let baslik = etiket(b, "title");
+    // Toplayıcı başlığın sonuna yayıncıyı ekliyor ("… - Reuters"); başlık her akışta aynı kalsın, olaylar birleşsin.
+    if (kaynak && baslik.endsWith(` - ${kaynak}`)) baslik = baslik.slice(0, -(kaynak.length + 3)).trim();
     const baglanti = guvenliBaglanti(atom ? atomBaglanti(b) : etiket(b, "link") || etiket(b, "guid"));
     if (!baslik || !baglanti) continue;
     const zaman = tarih(etiket(b, "pubDate") || etiket(b, "published") || etiket(b, "updated") || etiket(b, "dc:date"));
     const ozet = (etiket(b, "description") || etiket(b, "summary") || etiket(b, "content")).slice(0, 400);
-    ogeler.push({ baslik: baslik.slice(0, 300), baglanti, ...(zaman ? { zaman } : {}), ...(ozet ? { ozet } : {}) });
+    ogeler.push({ baslik: baslik.slice(0, 300), baglanti, ...(zaman ? { zaman } : {}), ...(ozet ? { ozet } : {}), ...(kaynak ? { kaynak } : {}) });
   }
   return ogeler;
 };

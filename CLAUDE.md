@@ -382,8 +382,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     doğrudan okuyamıyor. Demoda kapıya gidilmez, kurgusal örnek akış
     (`demoHaberleri`).
   - Kaynaklar kayıtta (`Durum.gundemKaynaklari`, boşsa
-    `VARSAYILAN_KAYNAKLAR`; Reuters ve AP açık RSS vermiyor), ⚙ penceresinde
-    eklenir, kapatılır, okunamayan hatasıyla. Okunan haberler ve günlük skor
+    `VARSAYILAN_KAYNAKLAR`: canlı denenip seçilmiş siteler ve konu başına
+    Arapça/İngilizce Google Haberler araması, `aramaAdresi`, "when:1d";
+    Reuters, AP ve bot korumalı siteler yok), ⚙ penceresinde eklenir,
+    kapatılır, okunamayan hatasıyla; kullanıcı kendi aramasını ekler,
+    kayıtlı listede olmayan kurulu kaynaklar "eksik"ten eklenir
+    (`eksikVarsayilanlar`). Toplayıcıda haberin kaynağı asıl yayıncı (kapı
+    `<source>`'u okuyor, başlıktaki " - Yayıncı" atılıyor): ağırlık farklı
+    kaynak sayısından. Tarama 30'luk paketler (Cloudflare ücretsizde istek
+    başına 50 dış çağrı). Tarihsiz, bir haftadan eski ve ileri tarihli haber
+    alınmaz; bu yıldan değilse tarih yılıyla yazılır. Okunan haberler ve günlük skor
     geçmişi tarayıcıda (`trt-planlama-gundem`, `-skor`; bir hafta), kayıtta değil.
   - Konular `KONULAR` (Arapça ve İngilizce anahtar sözcük; Arapça
     normalleştirilmiş, Latin sözcük başında): Orta Doğu ve çatışma coğrafyası
@@ -1461,7 +1469,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   hap seçici (`.durum-secimi`), ekleme satırı `girdi` alanlarıyla
   (`.konuk-ekle`, telefonda alt alta).
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
-  yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Gerçek kip Firebase
+  yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Uçtan uca testler
+  depoda (`testler/`, `testler/calistir.sh`; önizleme açıkken): geçici
+  klasördeki eski takım ortam yenilenince silindi, test depoda tutulur.
+  `sayfalar.cjs` her birimden bir kişiyle menüdeki her sayfayı açar (hata,
+  hata sınırı, 390 pikselde taşma; Türkçe ve Arapça). Gerçek kip Firebase
   emülatörüyle denenir (`belgeler/gercek-kip.md`).
 - Örnek veri kurgusal; kurumun belgelerindeki adlar dahil gerçek personel
   adı yazılmaz.

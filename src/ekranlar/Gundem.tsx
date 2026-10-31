@@ -38,6 +38,8 @@ import {
   demoHaberleri,
   egilim,
   firsatlar,
+  aramaAdresi,
+  eksikVarsayilanlar,
   gundemKaynaklari,
   haberleriSakla,
   ileriOlaylar,
@@ -144,15 +146,24 @@ function useGundemHaberleri() {
       return;
     }
     setTaraniyor(true);
-    const r = await gundemAkislari(kaynaklar.map((k) => k.adres));
+    /*
+     * Paket paket: Cloudflare'in ücretsiz planı tek istekte en çok 50 dış
+     * çağrıya izin veriyor; kapı da istek başına 40 akış okuyor.
+     */
+    const adresler = kaynaklar.map((k) => k.adres);
+    const paketler: string[][] = [];
+    for (let i = 0; i < adresler.length; i += 30)
+      paketler.push(adresler.slice(i, i + 30));
+    const sonuclar = await Promise.all(paketler.map((p) => gundemAkislari(p)));
     setTaraniyor(false);
-    if (!r.tamam) {
-      bildir(r.hata);
+    const basarisiz = sonuclar.find((r) => !r.tamam);
+    if (basarisiz && !basarisiz.tamam && sonuclar.every((r) => !r.tamam)) {
+      bildir(basarisiz.hata);
       return;
     }
     const yeni: Haber[] = [];
     const h: Record<string, string> = {};
-    for (const a of r.veri.akislar) {
+    for (const a of sonuclar.flatMap((r) => (r.tamam ? r.veri.akislar : []))) {
       const k = kaynaklar.find((x) => x.adres === a.adres);
       if (!k) continue;
       if (a.hata) h[k.id] = a.hata;
@@ -168,7 +179,8 @@ function useGundemHaberleri() {
             zaman: o.zaman,
             ozet: o.ozet,
             kaynakId: k.id,
-            kaynak: k.ad,
+            // Konu aramasında haberin asıl yayıncısı: "kaç farklı kaynak" Google sayılmasın.
+            kaynak: o.kaynak ?? k.ad,
           });
     }
     setHatalar(h);
@@ -1044,6 +1056,26 @@ function KaynakPenceresi({
     gundemKaynaklari(v),
   );
   const [yeni, setYeni] = useState({ ad: "", adres: "" });
+  const [arama, setArama] = useState<{ sorgu: string; dil: "ar" | "en" }>({
+    sorgu: "",
+    dil: "ar",
+  });
+  const eksik = eksikVarsayilanlar(liste);
+  const aramaEkle = () => {
+    const sorgu = arama.sorgu.trim();
+    if (!sorgu) return;
+    setListe([
+      ...liste,
+      {
+        id: `gk-ara-${Date.now().toString(36)}`,
+        ad: `🔎 ${sorgu}`,
+        adres: aramaAdresi(sorgu, arama.dil),
+        dil: arama.dil,
+        tur: "arama",
+      },
+    ]);
+    setArama({ ...arama, sorgu: "" });
+  };
   const degis = (id: string, d: Partial<GundemKaynagi>) =>
     setListe(liste.map((k) => (k.id === id ? { ...k, ...d } : k)));
   const ekle = () => {
@@ -1130,6 +1162,44 @@ function KaynakPenceresi({
           {t("ekle")}
         </button>
       </div>
+      <div className="satir gundem-kaynak-ekle">
+        <input
+          value={arama.sorgu}
+          onChange={(e) => setArama({ ...arama, sorgu: e.target.value })}
+          dir="auto"
+          placeholder={t("gdAramaYerTutucu")}
+          aria-label={t("gdAramaEkle")}
+          data-arama-sorgu
+        />
+        <select
+          value={arama.dil}
+          onChange={(e) =>
+            setArama({ ...arama, dil: e.target.value as "ar" | "en" })
+          }
+          aria-label={t("gdAramaDili")}
+          data-arama-dil
+        >
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+        <button
+          className="dugme dugme-ikincil"
+          onClick={aramaEkle}
+          disabled={!arama.sorgu.trim()}
+          data-arama-ekle
+        >
+          {t("gdAramaEkle")}
+        </button>
+      </div>
+      {eksik.length > 0 && (
+        <button
+          className="dugme dugme-sade"
+          onClick={() => setListe([...liste, ...eksik])}
+          data-varsayilan-ekle
+        >
+          {t("gdVarsayilanEkle").replace("{n}", String(eksik.length))}
+        </button>
+      )}
     </Pencere>
   );
 }
