@@ -2393,3 +2393,54 @@ input[aria-invalid="true"] {
   .ozel-gun { flex: 0 0 auto; min-width: 110px; }
 }
 @media (max-width: 760px) { .ozel-sayi-ilerleme { grid-column: 1 / -1; } }
+
+/* --- Gündem takibi (ekranlar/Gundem.tsx) --- */
+.gundem-araclar { display: flex; gap: var(--ara-2); align-items: center; }
+.gundem-sekmeler { margin-block: var(--ara-3); }
+.gundem-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--ara-3); align-items: start; }
+.gundem-konu { display: grid; gap: var(--ara-2); min-width: 0; }
+/* Öncelik yerden: yüksek konu iki sütun kaplar ve kenarı kırmızı; sakin konu soluk, izleme sürüyor. */
+.gundem-konu.sev-yuksek { grid-column: span 2; border-inline-start: 4px solid var(--kotu); }
+.gundem-konu.sev-orta { border-inline-start: 4px solid var(--uyari); }
+.gundem-konu.sev-sakin { opacity: .75; }
+.gundem-konu-ust { display: flex; gap: var(--ara-2); align-items: center; }
+.gundem-konu-ust h3 { margin: 0; font-size: var(--punto-orta); flex: 1; min-width: 0; }
+.gundem-altlar { display: flex; flex-wrap: wrap; gap: var(--ara-1); }
+.gundem-altlar em { font-style: normal; color: var(--sonuk); font-size: var(--punto-mini); }
+.gundem-olaylar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); }
+.gundem-olay { border-block-end: 1px solid var(--cizgi); padding-block-end: var(--ara-2); min-width: 0; }
+.gundem-olay:last-child { border-block-end: 0; }
+.gundem-olay-ust { display: flex; gap: var(--ara-2); align-items: start; }
+.gundem-olay-baslik { flex: 1; min-width: 0; color: var(--murekkep); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.gundem-olay-baslik:hover { text-decoration: underline; }
+.gundem-olay-alt { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; font-size: var(--punto-kucuk); color: var(--sonuk); margin-top: 2px; }
+.gundem-olay-alt .dugme-metin { border: 0; background: none; padding: 0; color: var(--vurgu); cursor: pointer; font: inherit; }
+.gundem-kaynak-listesi { list-style: none; margin: var(--ara-1) 0 0; padding: 0; display: grid; gap: 4px; font-size: var(--punto-kucuk); }
+.gundem-kaynak-listesi a { color: var(--murekkep); overflow-wrap: anywhere; }
+.gundem-brifing { display: grid; gap: var(--ara-3); }
+.gundem-brifing h3 { margin: 0 0 var(--ara-2); }
+.gundem-brifing-konu { border-block-start: 1px solid var(--cizgi); padding-block: var(--ara-2); }
+.gundem-brifing-konu h4 { margin: 0 0 var(--ara-1); display: flex; gap: var(--ara-2); align-items: center; }
+.gundem-brifing-konu.sev-sakin h4 { color: var(--sonuk); }
+.gundem-brifing-sutunlar { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--ara-3); }
+.gundem-brifing-sutunlar h5 { margin: 0 0 var(--ara-1); font-size: var(--punto-mini); color: var(--sonuk); text-transform: uppercase; letter-spacing: .03em; }
+.gundem-izlenecek { margin: 0; padding-inline-start: var(--ara-4); display: grid; gap: 4px; font-size: var(--punto-kucuk); }
+.gundem-firsatlar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); }
+.gundem-firsatlar li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ara-2); align-items: start; }
+.gundem-firsatlar li > svg { color: var(--uyari); margin-top: 3px; }
+.gundem-not { margin: var(--ara-1) 0 0; white-space: pre-wrap; }
+.gundem-kaynaklar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
+.gundem-kaynaklar li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: var(--ara-2); align-items: center; }
+.gundem-kaynaklar li.soluk { opacity: .55; }
+.gundem-adres { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; font-size: var(--punto-mini); }
+.gundem-kaynak-ekle { margin-top: var(--ara-3); }
+.donuyor { animation: donen 1s linear infinite; }
+@media (max-width: 760px) {
+  .gundem-izgara { grid-template-columns: minmax(0, 1fr); }
+  .gundem-konu.sev-yuksek { grid-column: auto; }
+  .gundem-brifing-sutunlar { grid-template-columns: minmax(0, 1fr); }
+  .gundem-kaynaklar li { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .gundem-kaynaklar .gundem-adres { grid-column: 1 / -1; grid-row: 2; }
+  .gundem-firsatlar li { grid-template-columns: auto minmax(0, 1fr); }
+  .gundem-firsatlar li > button { grid-column: 2; justify-self: start; }
+}

@@ -65,6 +65,13 @@ const kur = () => {
     if (url.startsWith("https://api.anthropic.com/v1/models"))
       return Response.json({ data: [{ id: "claude-opus-5-5", type: "model", display_name: "Opus", created_at: "2026-01-01T00:00:00Z" }], has_more: false, first_id: "claude-opus-5-5", last_id: "claude-opus-5-5" });
     if (url === "https://api.yok.test/v1/chat/completions") return Response.json({ error: { message: "The model `yok-model` does not exist" } }, { status: 404 });
+    if (url === "https://haber.test/rss")
+      return new Response(`<?xml version="1.0"?><rss><channel><title>Akış</title>
+        <item><title><![CDATA[اشتباكات في <b>الفاشر</b>]]></title><link>https://haber.test/1</link><pubDate>Wed, 14 Oct 2026 08:00:00 GMT</pubDate><description>&lt;p&gt;قتلى &amp;amp; جرحى&lt;/p&gt;</description></item>
+        <item><title>Kötü bağlantı</title><link>javascript:alert(1)</link></item>
+      </channel></rss>`);
+    if (url === "https://haber.test/atom")
+      return new Response(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Tigray talks</title><link rel="alternate" href="https://haber.test/a"/><updated>2026-10-14T07:00:00Z</updated><summary>TPLF and federal government</summary></entry></feed>`);
     return new Response("yok", { status: 404 });
   }) as typeof fetch;
   const d: Bagimlilik = { fetch: sahteFetch, simdi: () => SIMDI, anahtarBul: async (kid) => (kid === "k1" ? acik : undefined) };
@@ -434,4 +441,25 @@ test("çalışma alanı: Claude isteğine ve model listesine anthropic-workspace
   await t2.cagir("/ayar", "yon", AYAR, "PUT");
   await t2.cagir("/calistir", "pl", { ozellik: "kisalt", girdi: { metin: "نص طويل يحتاج إلى اختصار." } });
   assert.equal(t2.istekler.find((x) => x.url.startsWith("https://api.anthropic.com/v1/messages"))?.basliklar["anthropic-workspace-id"], undefined);
+});
+
+test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevrilir, kötü bağlantı ve geçersiz adres düşer, önbellek", async () => {
+  const t = kur();
+  const adresler = ["https://haber.test/rss", "https://haber.test/atom", "https://haber.test/yok", "http://haber.test/rss", "https://localhost/x"];
+  assert.equal((await t.cagir("/rss", "pl", { adresler })).status, 403);
+  const r = await t.cagir("/rss", "yon", { adresler });
+  assert.equal(r.status, 200);
+  const j = (await r.json()) as { akislar: { adres: string; ogeler?: { baslik: string; baglanti: string; zaman?: string; ozet?: string }[]; hata?: string }[] };
+  assert.deepEqual(j.akislar.map((a) => a.adres), ["https://haber.test/rss", "https://haber.test/atom", "https://haber.test/yok"]);
+  const [rss, atom, yok] = j.akislar;
+  assert.equal(rss.ogeler!.length, 1);
+  assert.equal(rss.ogeler![0].baslik, "اشتباكات في الفاشر");
+  assert.equal(rss.ogeler![0].ozet, "قتلى & جرحى");
+  assert.equal(rss.ogeler![0].zaman, "2026-10-14T08:00:00.000Z");
+  assert.equal(atom.ogeler![0].baglanti, "https://haber.test/a");
+  assert.equal(yok.hata, "http 404");
+  const once = t.istekler.length;
+  await t.cagir("/rss", "yon", { adresler: ["https://haber.test/rss"] });
+  assert.equal(t.istekler.length, once, "ikinci okuma önbellekten");
+  assert.equal((await t.cagir("/rss", "yon", { adresler: [] })).status, 400);
 });

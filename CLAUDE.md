@@ -374,6 +374,39 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     KV kimliği dağıtımda yazılır (`wrangler.toml`'da `KV_KIMLIGI` yer
     tutucu).
   - **Testler:** `cd worker && npm test`.
+- Gündem takibi (`ekranlar/Gundem.tsx`, `#/gundem/<sekme>`, kurallar `gundem.ts`;
+  yalnız tam yönetici, `yetki.ts → sayfaGorebilir`): haber akışlarından (RSS,
+  Atom) jeopolitik izleme. Yapay zeka yok, her tarama ücretsiz.
+  - Akışı kapı okur (`worker/src/rss.ts`, `POST /rss`, yalnız tam yönetici,
+    yalnız https, 10 dakika KV önbelleği): tarayıcı haber sitelerini
+    doğrudan okuyamıyor. Demoda kapıya gidilmez, kurgusal örnek akış
+    (`demoHaberleri`).
+  - Kaynaklar kayıtta (`Durum.gundemKaynaklari`, boşsa
+    `VARSAYILAN_KAYNAKLAR`; Reuters ve AP açık RSS vermiyor), ⚙ penceresinde
+    eklenir, kapatılır, okunamayan hatasıyla. Okunan haberler ve günlük skor
+    geçmişi tarayıcıda (`trt-planlama-gundem`, `-skor`; bir hafta), kayıtta değil.
+  - Konular `KONULAR` (Arapça ve İngilizce anahtar sözcük; Arapça
+    normalleştirilmiş, Latin sözcük başında): Orta Doğu ve çatışma coğrafyası
+    ana bölge; Etiyopya dosyası alt başlıklarıyla (Tigray, Amhara/Fano,
+    Oromia/OLA, Afar, federal, Eritre, Somali, Sudan sınırı, GERD, Mısır,
+    Kızıldeniz/Assab); Türkiye ve ABD'de `sart` (dış politika, bölge) iç
+    gündemi dışarıda tutar. Bölgeler arası bağlar `BAGLAR`: olay ikisine
+    düşerse iki klasörde de aynı kayıt, "Bölgeler arası"nda da.
+  - Aynı olayı veren haberler başlık sözcükleri örtüşünce (36 saat) tek olay
+    (`olaylariKur`). Öncelik haber sayısından değil: olayın ağırlığı farklı
+    kaynak sayısı, ağır sözcükler (`AGIR`), ana bölge ve bağ; konunun skoru
+    son 24 saatin en ağır üç olayı (`konuSkoru`, `seviye`). Yüksek konu
+    ızgarada iki sütun, sakin konu soluk ve sonda, izleme sürer; eğilim
+    önceki günlerin skoruyla (`egilim`).
+  - Sekmeler kullanıcının 12 başlığı (`GUNDEM_BOLUMLERI`). Sabah brifingi
+    A–D: her konu için son 24 saat ve önümüzdeki 24–72 saat (ileriye bakan
+    olaylar `ILERI`, takvimin önümüzdeki 3 günü); değişiklik yoksa açıkça
+    yazar. Editoryal fırsatlar kurallardan (`firsatlar`: paket, saha
+    muhabiri [o ülkedeki muhabir], röportaj, açıklayıcı, özel yayın);
+    "Öneriye çevir" muhabir dışı kaynak (medya) önerisi açar (tam yönetici
+    her birimde girebilir, `oneriGonder`). Haberi araştırma arşivine not
+    düşerek ekler (`Durum.gundemArsivi`, `gundemNotuKaydet`; aynı haber
+    çoğalmaz, kişinin kendi notları).
 - Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
   menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
   yapısı veri (`yapi.ts`). Varsayılan yapı koddaki sabitlerin birebir karşılığı.

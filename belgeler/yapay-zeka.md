@@ -83,6 +83,15 @@ Her özelliğe Ayarlar'da **yönerge** yazılabilir (kurumun kendi biçimi,
 bir tane yazılır; boşsa varsayılanlar: güncellik, Arap izleyiciye yakınlık,
 etki ve önem, özgünlük, Türkiye bağlantısı, görüntü ve uygulanabilirlik.
 
+## Gündem takibinin haber akışları
+
+Kapı yapay zeka dışında bir iş daha yapıyor: `POST /rss` gündem takibinin
+RSS/Atom akışlarını okuyup düz listeye çeviriyor (`src/rss.ts`). Tarayıcı
+haber sitelerinin akışını doğrudan okuyamıyor (siteler başka kökene izin
+vermiyor). Yalnız tam yönetici çağırır, yalnız https adres, en çok 40 akış;
+her akış 10 dakika KV'de, aynı siteye tekrar tekrar gidilmiyor. Sağlayıcı
+çağrılmadığı için ücreti ve günlük hakkı yok.
+
 ## Sağlayıcılar
 
 Ayarlar › Yapay zeka (yalnız tam yönetici, yalnız gerçek kipte):

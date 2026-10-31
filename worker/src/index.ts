@@ -1,6 +1,7 @@
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur, sonucCoz } from "./ozellikler.ts";
+import { akisAdresiGecerli, akisCoz, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 
 /*
@@ -11,6 +12,7 @@ import { cagir, modelleriGetir } from "./saglayici.ts";
  *   GET  /ayar       (tam yönetici) ayar, anahtarsız; bugünkü kullanım
  *   PUT  /ayar       (tam yönetici) ayarı yaz
  *   POST /dene       (tam yönetici) {saglayici} kısa deneme çağrısı
+ *   POST /rss        (tam yönetici) {adresler} → {akislar: [{adres, ogeler|hata}]}; gündem takibinin akışları
  * Kişinin kim olduğu Firebase oturum belgesinden, yetkisi kişi kaydından
  * (Firestore, kişinin kendi oturumuyla okunuyor; tam yöneticilik alanını
  * kurallar koruyor).
@@ -151,6 +153,36 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const tAnahtar = toplamAnahtari(bugun, ozellik);
     await env.YZ.put(tAnahtar, String((await sayiOku(env, tAnahtar)) + 1), { expirationTtl: 30 * 86400 });
     return yanit({ sonuc, kalan: Math.max(0, sinir - kullanilan - 1) });
+  }
+
+  /*
+   * Gündem takibi yalnız tam yöneticinin; adresleri o yazıyor. Akış 10 dakika
+   * KV'de: birkaç sekme ya da yenileme aynı siteye tekrar tekrar gitmesin.
+   */
+  if (req.method === "POST" && yol === "/rss") {
+    if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
+    const g = (await req.json().catch(() => null)) as { adresler?: unknown } | null;
+    const adresler = Array.isArray(g?.adresler) ? [...new Set(g.adresler.filter(akisAdresiGecerli))].slice(0, 40) : [];
+    if (!adresler.length) return yanit({ hata: "girdi" }, 400);
+    const akislar = await Promise.all(
+      adresler.map(async (adres): Promise<{ adres: string; ogeler?: AkisOgesi[]; hata?: string }> => {
+        const kAnahtar = `rss:${adres}`;
+        const onbellek = await env.YZ.get(kAnahtar);
+        if (onbellek) return { adres, ogeler: JSON.parse(onbellek) as AkisOgesi[] };
+        try {
+          const r = await d.fetch(adres, { headers: { accept: "application/rss+xml, application/atom+xml, application/xml, text/xml", "user-agent": "Plannersflow/1.0 (+https://plannersflow.net)" }, signal: AbortSignal.timeout(8000) });
+          if (!r.ok) return { adres, hata: `http ${r.status}` };
+          const metin = (await r.text()).slice(0, 2_000_000);
+          const ogeler = akisCoz(metin);
+          if (!ogeler.length) return { adres, hata: "bos" };
+          await env.YZ.put(kAnahtar, JSON.stringify(ogeler), { expirationTtl: 600 });
+          return { adres, ogeler };
+        } catch (e) {
+          return { adres, hata: String(e instanceof Error ? e.message : e).slice(0, 120) };
+        }
+      }),
+    );
+    return yanit({ akislar });
   }
 
   // Ayar yalnız tam yöneticide.

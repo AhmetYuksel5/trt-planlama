@@ -102,6 +102,8 @@ import {
   baslikBul,
   TAKIP_BICIMI,
   type OneriBicimi,
+  type GundemKaynagi,
+  type GundemNotu,
 } from "./veri";
 import {
   adimYapabilir,
@@ -265,7 +267,8 @@ export interface OneriGirdisi {
 
 
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
-  if (!yapabilir(ben, "oneriGonder") || (!g.hafta && !g.hedefTarih)) return null;
+  // Tam yönetici hangi birimde olursa olsun muhabir dışı kaynaktan öneri girer: gündem takibindeki fırsat öneriye çevriliyor.
+  if (!(yapabilir(ben, "oneriGonder") || (ben.hesapYoneticisi && !g.muhabirId && g.kaynakTuru && g.kaynakTuru !== "muhabir")) || (!g.hafta && !g.hedefTarih)) return null;
   const muhabir = ben.birim === "muhabir";
   const takip = g.bicim === TAKIP_BICIMI;
   // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı); takipte paket önerilmiyor.
@@ -2506,6 +2509,38 @@ export const bahsetmeGoruldu = (ben: Kisi, id: string) => {
   const b = d.bahsetmeler?.find((x) => x.id === id);
   if (!b || b.kisiId !== ben.id || b.goruldu) return false;
   kaydet({ ...d, bahsetmeler: d.bahsetmeler!.map((x) => (x.id === id ? { ...x, goruldu: simdi() } : x)) });
+  return true;
+};
+
+/* --- Gündem takibi (gundem.ts): yalnız tam yönetici; arşiv kişinin kendi notları --- */
+
+export const gundemNotuKaydet = (ben: Kisi, n: Omit<GundemNotu, "id" | "kisiId" | "zaman"> & { id?: string }) => {
+  if (!ben.hesapYoneticisi || !n.baglanti) return null;
+  const d = getir();
+  const eski = d.gundemArsivi ?? [];
+  const var_ = eski.find((x) => x.kisiId === ben.id && (x.id === n.id || x.baglanti === n.baglanti));
+  // Aynı haber ikinci kez işaretlenince yeni kayıt değil, notu güncellenir.
+  const yeni: GundemNotu = { ...var_, ...n, id: var_?.id ?? kimlik("gn"), kisiId: ben.id, zaman: var_?.zaman ?? simdi(), not: n.not.trim() };
+  kaydet({ ...d, gundemArsivi: var_ ? eski.map((x) => (x === var_ ? yeni : x)) : [...eski, yeni] });
+  return yeni.id;
+};
+
+export const gundemNotuSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const n = d.gundemArsivi?.find((x) => x.id === id);
+  if (!n || n.kisiId !== ben.id) return false;
+  kaydet({ ...d, gundemArsivi: d.gundemArsivi!.filter((x) => x !== n) });
+  return true;
+};
+
+export const gundemKaynaklariKaydet = (ben: Kisi, liste: GundemKaynagi[]) => {
+  if (!ben.hesapYoneticisi) return false;
+  const temiz = liste.filter((k) => k.ad.trim() && /^https:\/\//.test(k.adres.trim())).map((k) => ({ ...k, ad: k.ad.trim(), adres: k.adres.trim() }));
+  if (!temiz.length) return false;
+  const d = getir();
+  // Değişmeyen kaynağın nesnesi aynı kalsın: gerçek kipte yalnız değişen belge yazılır.
+  const eski = new Map((d.gundemKaynaklari ?? []).map((k) => [k.id, k]));
+  kaydet({ ...d, gundemKaynaklari: temiz.map((k) => { const e = eski.get(k.id); return e && JSON.stringify(e) === JSON.stringify(k) ? e : k; }) });
   return true;
 };
 

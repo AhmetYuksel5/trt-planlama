@@ -1,6 +1,6 @@
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, BookOpen, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { kisininIsleri } from "../gorevler";
@@ -80,6 +80,8 @@ export const MENU: Grup[] = [
       },
       // Planlama görevleri ve iş taksimi; sayı kişinin açık işleri.
       { sayfa: "gorevler", ad: "mGorevler", kisa: "kaGorevler", ikon: ClipboardList, say: (d, ben) => kisininIsleri(d, ben.id).length },
+      // Gündem takibi yalnız tam yöneticinin (yetki.ts → sayfaGorebilir).
+      { sayfa: "gundem", ad: "mGundem", kisa: "kaGundem", ikon: Globe },
     ],
   },
   {

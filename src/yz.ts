@@ -267,3 +267,12 @@ const HATA: Record<string, Anahtar> = {
   calismaAlani: "yzHataCalismaAlani",
 };
 export const yzHataMetni = (t: (k: Anahtar) => string, kod: string) => t(HATA[kod] ?? "yzHataSaglayici");
+
+/* --- Gündem takibi: haber akışları kapıdan (tarayıcı siteleri doğrudan okuyamıyor); yapay zeka değil, hak yemez --- */
+
+export interface AkisSonucu {
+  adres: string;
+  ogeler?: { baslik: string; baglanti: string; zaman?: string; ozet?: string }[];
+  hata?: string;
+}
+export const gundemAkislari = (adresler: string[]) => istek<{ akislar: AkisSonucu[] }>("/rss", "POST", { adresler });

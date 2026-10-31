@@ -14,6 +14,7 @@ import Takipler from "./ekranlar/Takipler";
 import Gorevler from "./ekranlar/Gorevler";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
+import Gundem from "./ekranlar/Gundem";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
 import NextDayBelge from "./ekranlar/belge/NextDayBelge";
@@ -347,6 +348,9 @@ export default function App() {
         break;
       case "ayarlar":
         icerik = <Ayarlar ben={ben} />;
+        break;
+      case "gundem":
+        icerik = <Gundem ben={ben} sekme={yol.id} />;
         break;
       case "organizasyon":
         icerik = <Organizasyon ben={ben} sekme={yol.id} />;

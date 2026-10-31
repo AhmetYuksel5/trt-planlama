@@ -585,6 +585,34 @@ export interface Mesaj {
  * alınınca ekibin hepsi görüyor, hak iki kez yenmiyor.
  */
 export type YzGenel = "yuksek" | "orta" | "dusuk";
+
+/*
+ * Gündem takibi (gundem.ts): tam yöneticinin izlediği haber akışları ve
+ * kişisel araştırma arşivi. Haberlerin kendisi saklanmıyor, akıştan okunuyor.
+ */
+export const GUNDEM_KAYNAK_TURLERI = ["ajans", "yayin", "kurum", "bolge"] as const;
+export type GundemKaynakTuru = (typeof GUNDEM_KAYNAK_TURLERI)[number];
+export interface GundemKaynagi {
+  id: string;
+  ad: string;
+  /** RSS ya da Atom adresi; kapı yalnız https okur. */
+  adres: string;
+  dil: "ar" | "en" | "tr";
+  tur: GundemKaynakTuru;
+  kapali?: boolean;
+}
+export interface GundemNotu {
+  id: string;
+  kisiId: string;
+  baslik: string;
+  baglanti: string;
+  kaynak: string;
+  /** Haberin düştüğü konu klasörleri (gundem.ts → KONULAR). */
+  konular: string[];
+  not: string;
+  zaman: string;
+  haberZamani?: string;
+}
 export interface YzGorus {
   id: string;
   oneriId: string;
@@ -1374,6 +1402,9 @@ export interface Durum {
   gorevler?: GorevTanimi[];
   isler?: Is[];
   bahsetmeler?: Bahsetme[];
+  /** Gündem takibinin kaynakları (boşsa gundem.ts → VARSAYILAN_KAYNAKLAR) ve araştırma arşivi. */
+  gundemKaynaklari?: GundemKaynagi[];
+  gundemArsivi?: GundemNotu[];
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */
@@ -1504,6 +1535,8 @@ export const bosDurum = (): Durum => ({
   gorevler: [],
   isler: [],
   bahsetmeler: [],
+  gundemKaynaklari: [],
+  gundemArsivi: [],
   yapilar: [],
   okundu: {},
   sayac: 0,
