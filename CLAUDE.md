@@ -693,6 +693,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`kisiPozisyonu`); Excel'in cinsiyet sütunu yine okunmuyor. İlk sürümde
     kayıt düz kimlikti, okuma `veri.ts → gelismeMuhabirleri`'nden. Başlığın
     genel muhabirleri (`PlanBasligi.muhabirler`) ayrı kalır.
+  - Haber türü PKG değilse Next Day'de haberin satırının sonunda kodu
+    (`etiketler.ts → bicimEki`, `BICIM_KODU`: "… / ad VideoWall"): paket
+    satırında paketin türü; paketsiz plana giren önerinin gelişmesinde
+    önerinin türü (`gelismeBicimEki`; paketi varsa yalnız pakette). PKG
+    yazılmaz, bölümün adı zaten o.
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
     gelişme muhabirinde formda; boşsa muhabirin şehri.

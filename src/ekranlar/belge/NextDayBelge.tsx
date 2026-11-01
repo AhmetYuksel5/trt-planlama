@@ -4,7 +4,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -166,6 +166,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           }
         >
           {op ? <YerindeMetin acik cokSatir deger={g.metin} etiket={t("gelismeMetni")} kaydet={(x) => x && ben && gelismeKaydet(ben, { ...g, metin: x })} /> : g.metin}
+          {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
         </Satir>
         {/* Başlığın içindeki konuyu özel takip eden muhabir paragrafın hemen altında; başlığın genel muhabirleri ayrı. */}
         {gelismeMuhabirleri(g).length > 0 && (
@@ -346,6 +347,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {paketler.map((p) => (
             <Satir key={p.id} yer={paketYeri(p)}>
               {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
             </Satir>
           ))}
         </section>
@@ -493,6 +495,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                               p.baslik
                             )}{" "}
                             / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
                           </Satir>
                         </BelgeSatiri>
                       );
@@ -525,6 +528,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             <BelgeSatiri key={p.id} duzen={ic} serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}>
               <Satir yer={paketYeri(p)}>
                 {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
               </Satir>
             </BelgeSatiri>
           ))}

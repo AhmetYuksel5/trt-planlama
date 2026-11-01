@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
+import { bicimEki, gelismeBicimEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
@@ -412,7 +412,7 @@ function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
   return (
     <>
       <a href={`#/paketler/${p.id}`} className="kalin-bag">
-        <Icerik blok>{satir(paketYeri(p), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}</Icerik>
+        <Icerik blok>{satir(paketYeri(p), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}</Icerik>
       </a>
       <Icerik blok className="kayit-metin">
         {p.aciklama}
@@ -570,6 +570,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                 <Icerik blok className="kayit-metin">
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}
+                  {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
                 </Icerik>
                 <GelismeMuhabirSatirlari g={g} v={v} />
                 <small>

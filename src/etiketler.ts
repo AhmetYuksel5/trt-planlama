@@ -323,3 +323,13 @@ export const muhabirUnvani = (kisiler: (KisiT | undefined)[]) => {
   if (kisiler.length > 1) return kadinlar ? "المراسلات" : "المراسلون";
   return kadinlar ? "المراسلة" : "المراسل";
 };
+
+/* Haber türü PKG değilse planda haberin sonuna kodu yazılıyor (kurumun çıktısı: "… / ad VideoWall"); PKG zaten bölümün adı. */
+export const bicimEki = (b?: string) => (b && b !== "pkg" && b in BICIM_KODU ? BICIM_KODU[b as Bicim] : "");
+
+/* Paketsiz plana giren önerinin türü gelişmenin sonunda; paketi varsa tür paketin satırında, iki kez yazılmasın. */
+export const gelismeBicimEki = (d: Durum, g: { oneriId?: string }) => {
+  const o = g.oneriId ? d.oneriler.find((x) => x.id === g.oneriId) : undefined;
+  if (!o || (o.paketId && d.paketler.some((p) => p.id === o.paketId && p.durum !== "iptal"))) return "";
+  return bicimEki(o.bicim);
+};
