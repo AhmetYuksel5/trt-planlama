@@ -145,7 +145,7 @@ export interface SehirTanimi {
  * biçim ise ekrana nasıl çıktığını: aynı kolda PKG de canlı bağlantı da
  * olabilir. Bu yüzden ayrı alan.
  */
-export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem"] as const;
+export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem", "videowall"] as const;
 export type Bicim = (typeof BICIMLER)[number];
 
 /*

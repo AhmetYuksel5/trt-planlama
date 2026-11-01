@@ -188,6 +188,7 @@ export const BICIM_KODU: Record<Bicim, string> = {
   derinlemesine: "In-depth",
   ozelRoportaj: "Interview",
   hikayem: "My Story",
+  videowall: "VideoWall",
 };
 
 export const STOK_DURUM_ADI: Record<StokDurumu, Anahtar> = {

@@ -27,9 +27,9 @@ const EN_UZUN_GIRDI = 4000;
 const EN_UZUN_JSON_GIRDI = 16000;
 
 /* Programın haber türleri (src/veri.ts → BICIMLER); model bunlardan birini seçiyor. */
-export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem"] as const;
+export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem", "videowall"] as const;
 const BICIM_TARIFI =
-  "pkg = edited news package/report; canli = live report or live link; voxpop = street interviews; walktalk = reporter walk-and-talk; feature = soft feature story; derinlemesine = in-depth report; ozelRoportaj = exclusive interview; hikayem = first-person human story";
+  "pkg = edited news package/report; canli = live report or live link; voxpop = street interviews; walktalk = reporter walk-and-talk; feature = soft feature story; derinlemesine = in-depth report; ozelRoportaj = exclusive interview; hikayem = first-person human story; videowall = story presented by an anchor or reporter on the studio video wall";
 
 export const DILLER = ["tr", "ar", "en"] as const;
 type Dil = (typeof DILLER)[number];

@@ -1551,6 +1551,7 @@ const BICIM_SLUG: Record<Bicim, string> = {
   derinlemesine: "DEEP",
   ozelRoportaj: "INT",
   hikayem: "STORY",
+  videowall: "VW",
 };
 
 /* mulberry32: ardışık tohumlar da birbirinden bağımsız dizi versin (basit doğrusal üreteçte ilk değerler neredeyse aynıydı). */
