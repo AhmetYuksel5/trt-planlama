@@ -2921,7 +2921,7 @@ export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[
  * girdiklerine yönetici böyle bakıyor; kaydedince "kontrol bekliyor"
  * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
-export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; ad?: Yazi }) => {
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; ad?: Yazi; kadin?: boolean }) => {
   // Demoda hesap yetkisi yalnız örnek yöneticide; tayini Organizasyon'da o deniyor.
   if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
@@ -2931,9 +2931,10 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
     ...d,
     kisiler: d.kisiler.map((k) => {
       if (k.id !== kisiId) return k;
-      const { kontrolBekliyor: _, ...kalan } = k;
+      const { kontrolBekliyor: _, kadin: eskiKadin, ...kalan } = k;
+      const kadin = p.kadin === undefined ? eskiKadin : p.kadin || undefined;
       // Dış muhabirde ünvan seçilmiyor, şehirden geliyor.
-      const yeniK = yerUnvaniUygula({ ...kalan, birim: p.birim, gorev: p.gorev, ...(p.ad ? { ad: p.ad } : {}) });
+      const yeniK = yerUnvaniUygula({ ...kalan, ...(kadin ? { kadin: true as const } : {}), birim: p.birim, gorev: p.gorev, ...(p.ad ? { ad: p.ad } : {}) });
       return { ...yeniK, rol: unvandanRol(yeniK.gorev, k) };
     }),
   };

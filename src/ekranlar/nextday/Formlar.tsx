@@ -5,7 +5,7 @@ import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
 import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet } from "../../eylemler";
 import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
-import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirListesi } from "../../etiketler";
+import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirAr, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { girdidenIso, saatCoz, simdi, yerelGirdi, zaman } from "../../tarih";
 import {
@@ -29,6 +29,7 @@ import {
   type Oneri,
   type Paket,
   type Sehir,
+  gelismeMuhabirleri,
 } from "../../veri";
 import { icMuhabirMi } from "../../yapi";
 import { yapabilir } from "../../yetki";
@@ -128,7 +129,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     kaynakAdi: mevcut?.kaynakAdi ?? "",
     onerenId: mevcut?.onerenId ?? "",
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
-    muhabirler: mevcut?.muhabirler ?? [],
+    muhabirler: mevcut ? gelismeMuhabirleri(mevcut) : [],
   });
   const kaydet = () => {
     if (!ben || !f.metin.trim()) return;
@@ -143,7 +144,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       tarih: girdidenIso(f.tarih) ?? simdi(),
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
-      muhabirler: f.muhabirler.length ? f.muhabirler : undefined,
+      muhabirler: f.muhabirler.length ? f.muhabirler.map((m) => (m.yer?.trim() ? { kisiId: m.kisiId, yer: m.yer.trim() } : { kisiId: m.kisiId })) : undefined,
     }, sonra);
     kapat();
   };
@@ -192,15 +193,26 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       <div className="form">
         <span>{t("gelismeMuhabirleri")}</span>
         {f.muhabirler.length > 0 && (
-          <div className="satir" data-gelisme-muhabirleri>
-            {f.muhabirler.map((id) => (
-              <button key={id} type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((x) => ({ ...x, muhabirler: x.muhabirler.filter((m) => m !== id) }))} title={t("cikar")} aria-label={t("cikar")}>
-                {ad(kisiBul(v, id))} ×
-              </button>
+          <div className="form" data-gelisme-muhabirleri>
+            {f.muhabirler.map((m) => (
+              <div key={m.kisiId} className="satir">
+                <span>{ad(kisiBul(v, m.kisiId))}</span>
+                {/* Muhabirin o günkü yeri: şehrinden başka yerdeyse burada yazılıyor. */}
+                <input
+                  {...icerikAlani}
+                  value={m.yer ?? ""}
+                  placeholder={sehirAr(kisiBul(v, m.kisiId)?.sehir)}
+                  aria-label={t("yer")}
+                  onChange={(e) => setF((x) => ({ ...x, muhabirler: x.muhabirler.map((y) => (y.kisiId === m.kisiId ? { ...y, yer: e.target.value } : y)) }))}
+                />
+                <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((x) => ({ ...x, muhabirler: x.muhabirler.filter((y) => y.kisiId !== m.kisiId) }))} title={t("cikar")} aria-label={t("cikar")}>
+                  ×
+                </button>
+              </div>
             ))}
           </div>
         )}
-        <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.includes(id) ? x : { ...x, muhabirler: [...x.muhabirler, id] }))} bosEtiket={t("muhabirAta")} />
+        <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.some((y) => y.kisiId === id) ? x : { ...x, muhabirler: [...x.muhabirler, { kisiId: id }] }))} bosEtiket={t("muhabirAta")} />
       </div>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
     </div>

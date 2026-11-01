@@ -857,6 +857,7 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .kayit-bas .icerik b { display: inline; }
 .alt-alan-genis { grid-column: 1 / -1; }
 .cip .vardiya-girdi { width: 112px; min-height: 26px; height: 26px; padding: 0 6px; font-size: var(--punto-mini); }
+.cip .muhabir-yer-girdi { inline-size: 9em; min-height: 26px; height: 26px; padding: 0 6px; font-size: var(--punto-mini); }
 .cip .gorev-secici { width: auto; min-height: 26px; height: 26px; padding: 0 6px; font-size: var(--punto-mini); }
 .bosluk-esnek { flex: 1; }
 .kayit .islemler { display: flex; gap: 2px; flex: none; }

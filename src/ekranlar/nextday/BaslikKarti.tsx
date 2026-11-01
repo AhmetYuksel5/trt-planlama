@@ -162,6 +162,20 @@ export default function BaslikKarti({
                 <span key={m.kisiId} className={oncekiSinif(m.onceki, "cip")} title={m.onceki ? t("oncekiGunden") : undefined}>
                   <Avatar kisi={k} boy="kucuk" />
                   <Icerik>{satir(m.yer || sehirAr(k?.sehir), kisiAr(k) || "?")}</Icerik>
+                  {icerik && (
+                    // Muhabir o gün şehrinden başka yerdeyse plandaki yeri burada değişiyor; çıkınca yazılıyor, her harfte değil.
+                    <input
+                      key={m.yer ?? ""}
+                      className="girdi muhabir-yer-girdi"
+                      {...icerikAlani}
+                      defaultValue={m.yer ?? ""}
+                      placeholder={sehirAr(k?.sehir)}
+                      title={t("yer")}
+                      aria-label={t("yer")}
+                      data-muhabir-yer
+                      onBlur={(e) => ben && (e.target.value.trim() || undefined) !== m.yer && planMuhabirGuncelle(ben, plan.id, pb.id, m.kisiId, { yer: e.target.value.trim() || undefined })}
+                    />
+                  )}
                   {icerik ? (
                     <input
                       className="girdi vardiya-girdi"

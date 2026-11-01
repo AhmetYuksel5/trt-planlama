@@ -5,11 +5,11 @@ import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, paketYeri, satir, sehirAr } from "../../etiketler";
+import { adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
+import { gelismeMuhabirleri, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
 
 /**
@@ -571,11 +571,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}
                 </Icerik>
-                {!!g.muhabirler?.length && (
-                  <Icerik blok>
-                    <b data-gelisme-muhabir>{g.muhabirler.map((id) => kisiAr(kisiBul(v, id))).join(" - ")}</b>
-                  </Icerik>
-                )}
+                <GelismeMuhabirSatirlari g={g} v={v} />
                 <small>
                   <Rozet>{t(KAYNAK_ADI[g.kaynakTuru])}</Rozet>
                   {g.kaynakAdi && <Icerik>{g.kaynakAdi}</Icerik>}
@@ -659,5 +655,24 @@ export function TakipBolumu({ plan, duzenler, d, no }: { plan: NextDayPlan; duze
     <Bolum ar no={no} baslik={metin("takipler", "ar")} ek={String(takipler.length)}>
       <GelismeListesi plan={plan} gelismeler={takipler} duzenler={duzenler} />
     </Bolum>
+  );
+}
+
+/* Gelişmeyi özel takip eden muhabir, çıktıdaki gibi: önce unvan (المراسل / المراسلة), altında "YER / ad". */
+export function GelismeMuhabirSatirlari({ g, v, satirla }: { g: Gelisme; v: Durum; satirla?: (yer: string, ad: string, i: number) => ReactNode }) {
+  const ml = gelismeMuhabirleri(g);
+  if (!ml.length) return null;
+  const kisiler = ml.map((m) => kisiBul(v, m.kisiId));
+  return (
+    <>
+      <Icerik blok>
+        <b data-gelisme-muhabir>{muhabirUnvani(kisiler)}</b>
+      </Icerik>
+      {ml.map((m, i) => {
+        const yer = m.yer || sehirAr(kisiler[i]?.sehir);
+        const ad = kisiAr(kisiler[i]) || "?";
+        return satirla ? satirla(yer, ad, i) : <Icerik key={m.kisiId} blok>{satir(yer, ad)}</Icerik>;
+      })}
+    </>
   );
 }

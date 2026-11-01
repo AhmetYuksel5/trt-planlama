@@ -685,9 +685,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     üstteki "مباشر" bölümünde ve başlığın altında "LIVE" alt başlığıyla, iki
     yerde de.
   - Gelişmeye özel muhabir (`Gelisme.muhabirler`, gelişme formunda "Bu gelişmeyi
-    takip eden muhabirler"): başlığın içindeki ayrı konuyu takip eden muhabir
-    plan ekranında, belgede ve çıktıda o paragrafın hemen altında; başlığın
+    takip eden muhabirler", her muhabire o günkü yer): başlığın içindeki ayrı
+    konuyu takip eden muhabir plan ekranında, belgede ve çıktıda o paragrafın
+    hemen altında, kurumun biçimiyle: unvan satırı "المراسل" (kişide `kadin`
+    işaretliyse "المراسلة", birden çoksa çoğul; `etiketler.ts →
+    muhabirUnvani`), altında "YER / ad". `kadin` kişi Düzenle penceresinde
+    (`kisiPozisyonu`); Excel'in cinsiyet sütunu yine okunmuyor. İlk sürümde
+    kayıt düz kimlikti, okuma `veri.ts → gelismeMuhabirleri`'nden. Başlığın
     genel muhabirleri (`PlanBasligi.muhabirler`) ayrı kalır.
+  - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
+    alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
+    gelişme muhabirinde formda; boşsa muhabirin şehri.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

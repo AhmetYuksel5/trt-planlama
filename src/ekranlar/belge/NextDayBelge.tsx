@@ -4,7 +4,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -33,7 +33,7 @@ import {
   planBaslikLive,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
-import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
+import { baslikBul, gelismeMuhabirleri, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
@@ -168,10 +168,17 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {op ? <YerindeMetin acik cokSatir deger={g.metin} etiket={t("gelismeMetni")} kaydet={(x) => x && ben && gelismeKaydet(ben, { ...g, metin: x })} /> : g.metin}
         </Satir>
         {/* Başlığın içindeki konuyu özel takip eden muhabir paragrafın hemen altında; başlığın genel muhabirleri ayrı. */}
-        {!!g.muhabirler?.length && (
-          <Satir>
-            <b data-gelisme-muhabir>{g.muhabirler.map((id) => kisiAdi(id)).join(" - ")}</b>
-          </Satir>
+        {gelismeMuhabirleri(g).length > 0 && (
+          <>
+            <Satir>
+              <b data-gelisme-muhabir>{muhabirUnvani(gelismeMuhabirleri(g).map((m) => kisiBul(v, m.kisiId)))}</b>
+            </Satir>
+            {gelismeMuhabirleri(g).map((m) => (
+              <Satir key={m.kisiId} yer={m.yer || sehirAr(kisiBul(v, m.kisiId)?.sehir)}>
+                {kisiAdi(m.kisiId)}
+              </Satir>
+            ))}
+          </>
         )}
       </BelgeSatiri>
     );

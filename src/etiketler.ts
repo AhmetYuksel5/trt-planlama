@@ -1,7 +1,7 @@
 import type { StokDurumu } from "./akis";
 import type { OneriEtiketi } from "./oneriPlanlari";
 import { dilSimdi, metin, yaz, type Anahtar, type Dil, type Yazi } from "./dil";
-import { SEHIRLER, anlik, type Durum, type SehirTanimi, type YerlesikSehir } from "./veri";
+import { SEHIRLER, anlik, type Durum, type Kisi as KisiT, type SehirTanimi, type YerlesikSehir } from "./veri";
 import type {
   Bicim,
   IsDurumu,
@@ -315,3 +315,10 @@ export const IS_DURUM_ADI: Record<IsDurumu, Anahtar> = { yapilacak: "gvYapilacak
 export const TBC = "TBC";
 /** Planın muhabir yeri: adlar; yoksa TBC işaretliyse TBC, değilse "atanmadı". */
 export const muhabirYeri = (adlar: string[], tbc?: boolean) => adlar.filter(Boolean).join("، ") || (tbc ? TBC : metin("atanmadi", "ar"));
+
+/* Gelişmenin altındaki muhabir satırının unvanı, çıktıdaki gibi Arapça: kadınsa المراسلة, birden çoksa çoğul. */
+export const muhabirUnvani = (kisiler: (KisiT | undefined)[]) => {
+  const kadinlar = kisiler.every((k) => k?.kadin);
+  if (kisiler.length > 1) return kadinlar ? "المراسلات" : "المراسلون";
+  return kadinlar ? "المراسلة" : "المراسل";
+};

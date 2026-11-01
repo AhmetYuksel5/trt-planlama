@@ -696,7 +696,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const { t, ad, dil } = useDil();
   const ilk = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
   const v = useVeri();
-  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, ...ilk });
+  const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, kadin: !!kisi.kadin, ...ilk });
   const [sehir, setSehir] = useState<Sehir>(kisi.sehir);
   const [yeniSehir, setYeniSehir] = useState<YeniSehir | null>(null);
   const [eposta, setEposta] = useState(kisi.yeniEposta ?? kisi.eposta ?? "");
@@ -735,7 +735,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
 
   const kaydet = async () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
-    if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
+    if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, kadin: p.kadin, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
     if (disMuhabir && (yeniSehir || sehir !== kisi.sehir) && !kisiSehri(ben, kisi.id, yeniSehir ?? sehir)) return;
     setBekle(true);
     try {
@@ -763,6 +763,10 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
         <label>
           {t("adIngilizce")}
           <input dir="ltr" value={p.en} onChange={(e) => setP({ ...p, en: e.target.value })} />
+        </label>
+        <label className="secim">
+          <input type="checkbox" checked={p.kadin} onChange={(e) => setP({ ...p, kadin: e.target.checked })} data-kadin />
+          {t("kisiKadin")}
         </label>
         <label>
           {t("eposta")}

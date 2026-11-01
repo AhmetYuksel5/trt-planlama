@@ -167,6 +167,8 @@ export type CalismaBicimi = (typeof CALISMA_BICIMLERI)[number];
 export interface Kisi {
   id: string;
   ad: Yazi;
+  /** Planda unvan "المراسلة" yazılsın; kişi Düzenle penceresinde işaretleniyor (Excel'in cinsiyet sütunu okunmuyor). */
+  kadin?: true;
   birim: BirimId;
   rol: Rol;
   gorev: GorevId;
@@ -340,8 +342,8 @@ export interface Gelisme {
   haftalikKalemId?: string;
   /** Muhabirin takibinden (متابعة) eklendiyse o takip; aynı takip aynı plana iki kez girmesin. */
   takipId?: string;
-  /** Başlığın içindeki bu konuyu özel takip eden muhabirler; başlığın genel muhabirlerinden ayrı, paragrafın altında yazılır. */
-  muhabirler?: string[];
+  /** Başlığın içindeki bu konuyu özel takip eden muhabirler ve o günkü yerleri; başlığın genel muhabirlerinden ayrı, paragrafın altında yazılır. Eski kayıtta düz kimlik (gelismeMuhabirleri). */
+  muhabirler?: (string | { kisiId: string; yer?: string })[];
   onceki?: true;
   devir?: true;
 }
@@ -1728,3 +1730,7 @@ export const cagriTuru = (c: { tur?: CagriTuru }): CagriTuru => c.tur ?? "nextda
 /** Açık çağrı: günü (haftalıkta haftası) henüz gelmemiş, en son hazırlanan. */
 export const acikCagri = (d: Durum, tur: CagriTuru, bugun: string) =>
   d.cagrilar.filter((c) => cagriTuru(c) === tur && c.tarih > bugun).sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
+
+/* Gelişme muhabiri ilk sürümde düz kimlikti; yer eklenince nesneye döndü. */
+export const gelismeMuhabirleri = (g: Pick<Gelisme, "muhabirler">): { kisiId: string; yer?: string }[] =>
+  (g.muhabirler ?? []).map((m) => (typeof m === "string" ? { kisiId: m } : m));
