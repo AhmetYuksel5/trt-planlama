@@ -72,6 +72,12 @@ const kur = () => {
       </channel></rss>`);
     if (url === "https://haber.test/toplayici")
       return new Response(`<rss><channel><item><title>Egypt hosts Gaza talks - Foreign Affairs - Egypt</title><link>https://news.google.com/rss/articles/def</link><pubDate>Wed, 14 Oct 2026 06:00:00 GMT</pubDate><source url="https://english.ahram.org.eg">Ahram Online</source></item><item><title>Talks on Sudan resume in Jeddah - Reuters</title><link>https://news.google.com/rss/articles/abc</link><pubDate>Wed, 14 Oct 2026 06:00:00 GMT</pubDate><description>&lt;a href="https://x"&gt;Talks&lt;/a&gt;</description><source url="https://www.reuters.com">Reuters</source></item></channel></rss>`);
+    if (url === "https://t.me/s/ornekkanal")
+      return new Response(`<html><head><meta property="og:title" content="قناة الجزيرة"></head><body>
+        <div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="ornekkanal/10"><div class="tgme_widget_message_text js-message_text" dir="auto">🔴 عاجل | مصدر بالجيش السوداني: مسيرة قصفت محطة الكهرباء<br/>تفاصيل أخرى عن الهجوم https://hdth.tv/abc<br/>@ornekkanal</div><time datetime="2026-10-14T07:00:00+00:00"></time></div></div>
+        <div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="ornekkanal/11"><time datetime="2026-10-14T08:00:00+00:00"></time></div></div>
+        <div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message" data-post="ornekkanal/12"><div class="tgme_widget_message_text js-message_text" dir="auto">&rlm;ترمب: لن أناقش ذلك</div><time datetime="2026-10-14T09:00:00+00:00"></time></div></div>
+      </body></html>`);
     if (url === "https://haber.test/atom")
       return new Response(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Tigray talks</title><link rel="alternate" href="https://haber.test/a"/><updated>2026-10-14T07:00:00Z</updated><summary>TPLF and federal government</summary></entry></feed>`);
     return new Response("yok", { status: 404 });
@@ -489,4 +495,14 @@ test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevril
   assert.equal(tj.akislar[0].ogeler[1].baslik, "Talks on Sudan resume in Jeddah");
   assert.equal(tj.akislar[0].ogeler[1].kaynak, "Reuters");
   assert.equal(rss.ogeler![0].kaynak, undefined);
+  // Telegram açık kanalı: metinsiz mesaj atılır, en yeni üstte, işaret/bağlantı/imza temizlenir, kaynak kanalın adı
+  const tg = (await (await t.cagir("/rss", "yon", { adresler: ["https://t.me/s/ornekkanal"] })).json()) as { akislar: { ogeler: { baslik: string; baglanti: string; zaman: string; ozet?: string; kaynak: string }[] }[] };
+  const [son, ilk] = tg.akislar[0].ogeler;
+  assert.equal(tg.akislar[0].ogeler.length, 2);
+  assert.equal(son.baslik, "ترمب: لن أناقش ذلك");
+  assert.equal(ilk.baslik, "مصدر بالجيش السوداني: مسيرة قصفت محطة الكهرباء");
+  assert.equal(ilk.ozet, "تفاصيل أخرى عن الهجوم");
+  assert.equal(ilk.baglanti, "https://t.me/ornekkanal/10");
+  assert.equal(ilk.kaynak, "قناة الجزيرة");
+  assert.equal(ilk.zaman, "2026-10-14T07:00:00.000Z");
 });

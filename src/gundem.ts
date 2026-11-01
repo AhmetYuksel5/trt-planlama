@@ -1119,8 +1119,13 @@ const YAYINCI_ESLERI: [RegExp, string][] = [
   [/^(aa|aa\.com\.tr)$/, "anadolu"],
   [/^un news/, "un news"],
   [/^الامم المتحده|^اخبار الامم المتحده/, "un news"],
-  [/^al jazeera|^الجزيره/, "al jazeera"],
+  [/^al jazeera|^(قناه )?الجزيره/, "al jazeera"],
   [/^france ?24|^فرانس ?24/, "france24"],
+  // Telegram kanalının adı sitenin adından farklı: aynı kurum tek kaynak.
+  [/^(وكاله )?الاناضول/, "anadolu"],
+  [/^trt/, "trt"],
+  [/^عربي ?21/, "arabi21"],
+  [/^asharq news|^الشرق للاخبار/, "asharq"],
   [/^bbc/, "bbc"],
 ];
 export const yayinciAnahtari = (ad: string) => {
@@ -1800,8 +1805,35 @@ const ARAMALAR: [string, "ar" | "en", string][] = [
   ],
 ];
 
+/**
+ * Telegram açık kanalı: "@kanal", "t.me/kanal" ya da "https://t.me/s/kanal" →
+ * web görünümünün adresi; tanınmazsa null. Kapalı grup ve özel kanal okunamaz.
+ */
+export const telegramAdresi = (girdi: string) => {
+  const m = girdi.trim().match(/^(?:@|(?:https?:\/\/)?t\.me\/(?:s\/)?)?([A-Za-z0-9_]{4,64})\/?$/);
+  return m ? `https://t.me/s/${m[1]}` : null;
+};
+
+/*
+ * Telegram'ın açık haber kanalları (canlı denenip seçildi): anlık flaşlar
+ * sitelerin RSS'ine çoğu zaman hiç girmiyor. Web görünümünü kapatan ve
+ * aylardır güncellenmeyen kanallar (Sky News Arabia, RT, BBC Arabic) yok.
+ */
+const TELEGRAM: [string, string][] = [
+  ["ajanews", "الجزيرة (تلغرام)"],
+  ["alarabiya", "العربية (تلغرام)"],
+  ["alhadath", "الحدث (تلغرام)"],
+  ["Alhadath_Brk", "الحدث عاجل (تلغرام)"],
+  ["asharqnews", "الشرق للأخبار (تلغرام)"],
+  ["aa_arabic", "الأناضول (تلغرام)"],
+  ["trtarabi", "TRT عربي (تلغرام)"],
+  ["france24_ar", "فرانس 24 (تلغرام)"],
+  ["arabi21news", "عربي21 (تلغرام)"],
+];
+
 export const VARSAYILAN_KAYNAKLAR: GundemKaynagi[] = [
   ...SITELER,
+  ...TELEGRAM.map(([k, ad]): GundemKaynagi => ({ id: `gk-tg-${k.toLowerCase()}`, ad, adres: `https://t.me/s/${k}`, dil: "ar", tur: "telegram" })),
   ...ARAMALAR.map(
     ([konu, dil, sorgu]): GundemKaynagi => ({
       id: `gk-ara-${konu}-${dil}`,

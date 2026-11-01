@@ -1,7 +1,7 @@
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur, sonucCoz } from "./ozellikler.ts";
-import { akisAdresiGecerli, akisCoz, type AkisOgesi } from "./rss.ts";
+import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 
 /*
@@ -196,7 +196,8 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
           const r = await d.fetch(adres, { headers: { accept: "application/rss+xml, application/atom+xml, application/xml, text/xml", "user-agent": "Plannersflow/1.0 (+https://plannersflow.net)" }, signal: AbortSignal.timeout(8000) });
           if (!r.ok) return { adres, hata: `http ${r.status}` };
           const metin = (await r.text()).slice(0, 2_000_000);
-          const ogeler = akisCoz(metin);
+          const kanal = telegramKanali(adres);
+          const ogeler = kanal ? telegramCoz(metin, kanal) : akisCoz(metin);
           if (!ogeler.length) return { adres, hata: "bos" };
           // Önbelleğe yazılamasa da haberler döner: önce yazış reddedilince akışın haberleri de düşüyordu.
           await d.onbellek?.put(kAnahtar, JSON.stringify(ogeler), 600).catch(() => {});

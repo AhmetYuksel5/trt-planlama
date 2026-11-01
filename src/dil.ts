@@ -2702,6 +2702,7 @@ const M = {
   gdOneriyeCevir: m("Öneriye çevir", "تحويل إلى مقترح", "Turn into proposal"),
   gdOneriOldu: m("Öneri olarak eklendi", "أضيف كمقترح", "Added as a proposal"),
   gdOneriOlmadi: m("Öneri eklenemedi", "تعذرت إضافة المقترح", "Could not add the proposal"),
+  gdTelegramEkle: m("Telegram kanalı ekle", "إضافة قناة تلغرام", "Add Telegram channel"),
   gdAramaDili: m("Arama dili", "لغة البحث", "Search language"),
   gdAramaEkle: m("Arama ekle", "إضافة بحث", "Add search"),
   gdAramaYerTutucu: m("Konu araması: Tigray OR Fano", "بحث: تيغراي OR فانو", "Search: Tigray OR Fano"),

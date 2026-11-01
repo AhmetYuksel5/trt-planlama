@@ -17,7 +17,8 @@ export interface AkisOgesi {
   kaynak?: string;
 }
 
-const VARLIK: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+// Yön işaretleri (&rlm; …) görünmez: Telegram mesajlarında başlığa yazı olarak giriyordu.
+const VARLIK: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rlm: "", lrm: "", zwnj: "", zwj: "" };
 
 const varliklar = (s: string) =>
   s
@@ -34,6 +35,7 @@ const varliklar = (s: string) =>
  */
 export const duzMetin = (s: string) =>
   varliklar(varliklar(s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, " ")).replace(/<[^>]*>/g, " "))
+    .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -90,4 +92,59 @@ export const akisAdresiGecerli = (a: unknown): a is string => {
   } catch {
     return false;
   }
+};
+
+/*
+ * Telegram'ın açık kanalları: `t.me/s/<kanal>` web görünümü (API, hesap ya da
+ * anahtar gerekmiyor). Kapalı grup ve özel kanal burada görünmez. Mesajın ilk
+ * cümlesi başlık, kalanı özet; "عاجل |", 🔴 gibi işaretler ve kanal imzası
+ * atılır: aynı flaş siteden ve öbür kanallardan gelenle aynı olaya düşsün.
+ */
+export const telegramKanali = (adres: string) => {
+  try {
+    const u = new URL(adres);
+    const m = u.hostname === "t.me" && u.pathname.match(/^\/s\/([A-Za-z0-9_]{4,64})\/?$/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+};
+
+const ISARETLER = /^(?:[\s\u{1F300}-\u{1FAFF}☀-➿️#|:،\-–—]|عاجل|خاص|بالفيديو|بالصور|فيديو)+/u;
+
+const ilkCumle = (satir: string) => {
+  if (satir.length <= 200) return satir;
+  const m = satir.slice(0, 200).match(/^(.{40,}?[.!؟?؛])\s/);
+  return m ? m[1] : `${satir.slice(0, 197)}…`;
+};
+
+export const telegramCoz = (html: string, kanal: string, enCok = 40): AkisOgesi[] => {
+  const ad = duzMetin(html.match(/<meta property="og:title" content="([^"]*)"/)?.[1] ?? "") || kanal;
+  const ogeler: AkisOgesi[] = [];
+  const parcalar = html.split(/(?=<div class="tgme_widget_message_wrap)/).slice(1);
+  for (const p of parcalar) {
+    const post = p.match(/data-post="([A-Za-z0-9_]+\/\d+)"/)?.[1];
+    const ham = p.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    const zaman = p.match(/<time datetime="([^"]+)"/)?.[1];
+    if (!post || !ham) continue;
+    const satirlar = ham
+      .split(/<br\s*\/?>/i)
+      // Bağlantı haber değil: kanallar mesajın sonuna kendi kısa adreslerini ekliyor.
+      .map((s) => duzMetin(s).replace(/https?:\/\/\S+/g, "").replace(ISARETLER, "").trim())
+      // Kanal imzası ve bağlantı satırları ("@alhadath", "t.me/…", "تابعونا…") haber değil.
+      .filter((s) => s && !/^@\w+$/.test(s) && !/t\.me\/|^تابع|^للاشتراك|^لمتابعة/.test(s));
+    if (!satirlar.length) continue;
+    const baslik = ilkCumle(satirlar[0]);
+    const kalan = [satirlar[0].slice(baslik.replace(/…$/, "").length), ...satirlar.slice(1)].join(" ").trim();
+    const z = zaman ? Date.parse(zaman) : NaN;
+    ogeler.push({
+      baslik: baslik.slice(0, 300),
+      baglanti: `https://t.me/${post}`,
+      ...(Number.isFinite(z) ? { zaman: new Date(z).toISOString() } : {}),
+      ...(kalan ? { ozet: kalan.slice(0, 400) } : {}),
+      kaynak: ad.slice(0, 100),
+    });
+  }
+  // Sayfa eskiden yeniye diziyor; en yenileri kalsın.
+  return ogeler.reverse().slice(0, enCok);
 };

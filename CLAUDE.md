@@ -386,7 +386,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Kaynaklar kayıtta (`Durum.gundemKaynaklari`, boşsa
     `VARSAYILAN_KAYNAKLAR`: canlı denenip seçilmiş siteler ve konu başına
     Arapça/İngilizce Google Haberler araması, `aramaAdresi`, "when:1d";
-    Reuters, AP ve bot korumalı siteler yok), ⚙ penceresinde eklenir,
+    Reuters, AP ve bot korumalı siteler yok; Telegram'ın açık haber
+    kanalları, `t.me/s/<kanal>` web görünümü, kapıda `telegramCoz`: ilk
+    cümle başlık, "عاجل", işaret, bağlantı ve imza atılır; kapalı grup ve
+    özel kanal okunamaz), ⚙ penceresinde eklenir (`@kanal` ya da
+    `t.me/kanal`, `telegramAdresi`),
     kapatılır, okunamayan hatasıyla; kullanıcı kendi aramasını ekler,
     kayıtlı listede olmayan kurulu kaynaklar "eksik"ten eklenir
     (`eksikVarsayilanlar`). Toplayıcıda haberin kaynağı asıl yayıncı (kapı

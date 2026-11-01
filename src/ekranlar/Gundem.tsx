@@ -35,6 +35,7 @@ import {
   demoHaberleri,
   firsatlar,
   aramaAdresi,
+  telegramAdresi,
   eksikVarsayilanlar,
   gundemKaynaklari,
   haberleriSakla,
@@ -998,6 +999,14 @@ function KaynakPenceresi({
     dil: "ar",
   });
   const eksik = eksikVarsayilanlar(liste);
+  const [kanal, setKanal] = useState("");
+  const kanalAdresi = telegramAdresi(kanal);
+  const kanalEkle = () => {
+    if (!kanalAdresi || liste.some((k) => k.adres.toLowerCase() === kanalAdresi.toLowerCase())) return setKanal("");
+    const ad = kanalAdresi.split("/").pop()!;
+    setListe([...liste, { id: `gk-tg-${ad.toLowerCase()}-${Date.now().toString(36)}`, ad: `@${ad}`, adres: kanalAdresi, dil: "ar", tur: "telegram" }]);
+    setKanal("");
+  };
   const aramaEkle = () => {
     const sorgu = arama.sorgu.trim();
     if (!sorgu) return;
@@ -1126,6 +1135,12 @@ function KaynakPenceresi({
           data-arama-ekle
         >
           {t("gdAramaEkle")}
+        </button>
+      </div>
+      <div className="satir gundem-kaynak-ekle">
+        <input value={kanal} onChange={(e) => setKanal(e.target.value)} dir="ltr" placeholder="@kanal / t.me/kanal" aria-label={t("gdTelegramEkle")} data-telegram-kanal />
+        <button className="dugme dugme-ikincil" onClick={kanalEkle} disabled={!kanalAdresi} data-telegram-ekle>
+          {t("gdTelegramEkle")}
         </button>
       </div>
       {eksik.length > 0 && (

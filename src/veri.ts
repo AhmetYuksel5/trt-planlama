@@ -590,8 +590,8 @@ export type YzGenel = "yuksek" | "orta" | "dusuk";
  * Gündem takibi (gundem.ts): tam yöneticinin izlediği haber akışları ve
  * kişisel araştırma arşivi. Haberlerin kendisi saklanmıyor, akıştan okunuyor.
  */
-/* "arama": Google Haberler konu araması; her haberin asıl yayıncısı ayrı kaynak sayılıyor. */
-export const GUNDEM_KAYNAK_TURLERI = ["ajans", "yayin", "kurum", "bolge", "derin", "arama"] as const;
+/* "arama": Google Haberler konu araması (her haberin asıl yayıncısı ayrı kaynak sayılıyor); "telegram": açık kanalın web görünümü. */
+export const GUNDEM_KAYNAK_TURLERI = ["ajans", "yayin", "kurum", "bolge", "derin", "arama", "telegram"] as const;
 export type GundemKaynakTuru = (typeof GUNDEM_KAYNAK_TURLERI)[number];
 export interface GundemKaynagi {
   id: string;

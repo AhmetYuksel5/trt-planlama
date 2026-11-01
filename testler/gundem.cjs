@@ -109,12 +109,22 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-kaynak-adres]").fill("https://ornek.test/rss");
   await p.locator("[data-kaynak-ekle]").click();
   ok((await p.locator('[data-kaynak^="gk-ara-"]').count()) >= 20, "konu aramaları kurulu listede");
+  ok((await p.locator('[data-kaynak^="gk-tg-"]').count()) >= 8, "Telegram kanalları kurulu listede");
+  await p.locator("[data-telegram-kanal]").fill("t.me/OrnekKanal");
+  await p.locator("[data-telegram-ekle]").click();
+  await p.locator("[data-telegram-kanal]").fill("@OrnekKanal");
+  ok(!(await p.locator("[data-telegram-ekle]").isDisabled()), "@kanal biçimi tanınıyor");
+  await p.locator("[data-telegram-ekle]").click();
+  await p.locator("[data-telegram-kanal]").fill("geçersiz kanal!");
+  ok(await p.locator("[data-telegram-ekle]").isDisabled(), "geçersiz kanal adı eklenmez");
+  await p.locator("[data-telegram-kanal]").fill("");
   await p.locator("[data-arama-sorgu]").fill("Assab OR عصب");
   await p.locator("[data-arama-ekle]").click();
   await p.locator("[data-kaynak-kaydet]").click();
   await p.waitForTimeout(300);
   const kk = (await veri()).gundemKaynaklari;
   ok(kk.some((k) => k.adres === "https://ornek.test/rss"), "kaynak eklendi, kayda yazıldı");
+  ok(kk.filter((k) => k.adres.toLowerCase() === "https://t.me/s/ornekkanal" && k.tur === "telegram").length === 1, "Telegram kanalı bir kez eklendi");
   ok(kk.some((k) => k.tur === "arama" && k.adres.startsWith("https://news.google.com/rss/search?q=") && decodeURIComponent(k.adres).includes("Assab OR عصب when:1d")), "konu araması son 24 saatle eklendi");
   // Kayıtlı listeden çıkan kurulu kaynak "eksik"te geri gelir
   await p.locator("[data-gundem-kaynaklar]").click();
