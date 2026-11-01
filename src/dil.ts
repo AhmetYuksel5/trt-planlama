@@ -615,6 +615,7 @@ const M = {
   kyDiger: m("Diğer", "أخرى", "Other"),
   takipEdenMuhabirler: m("Takip edecek muhabirler", "المراسلون المتابعون", "Reporters following"),
   muhabirAtanmadi: m("Muhabir atanmadı. Paket önerisi olmadan da muhabir atanabilir.", "لم يُكلَّف مراسل. يمكن التكليف دون مقترح تقرير.", "No reporter assigned. Reporters can be assigned without a package."),
+  gelismeMuhabirleri: m("Bu gelişmeyi takip eden muhabirler", "المراسلون المتابعون لهذا التطور", "Reporters following this development"),
   muhabirAta: m("Muhabir ata", "تكليف مراسل", "Assign reporter"),
   canliSaati: m("Canlı saati (GMT)", "موعد المداخلة (غرينتش)", "Live time (GMT)"),
   paketOnerisiYok: m("Paket önerisi yok.", "لا توجد مقترحات تقارير.", "No package proposals."),

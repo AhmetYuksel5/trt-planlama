@@ -340,6 +340,8 @@ export interface Gelisme {
   haftalikKalemId?: string;
   /** Muhabirin takibinden (متابعة) eklendiyse o takip; aynı takip aynı plana iki kez girmesin. */
   takipId?: string;
+  /** Başlığın içindeki bu konuyu özel takip eden muhabirler; başlığın genel muhabirlerinden ayrı, paragrafın altında yazılır. */
+  muhabirler?: string[];
   onceki?: true;
   devir?: true;
 }

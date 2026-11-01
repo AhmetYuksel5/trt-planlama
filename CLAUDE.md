@@ -684,6 +684,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Başlığa bağlı canlı yayın (`CanliYayin.planBaslikId`) belgede ve çıktıda
     üstteki "مباشر" bölümünde ve başlığın altında "LIVE" alt başlığıyla, iki
     yerde de.
+  - Gelişmeye özel muhabir (`Gelisme.muhabirler`, gelişme formunda "Bu gelişmeyi
+    takip eden muhabirler"): başlığın içindeki ayrı konuyu takip eden muhabir
+    plan ekranında, belgede ve çıktıda o paragrafın hemen altında; başlığın
+    genel muhabirleri (`PlanBasligi.muhabirler`) ayrı kalır.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

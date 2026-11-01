@@ -118,7 +118,8 @@ export function MuhabirSecici({ deger, degistir, bosEtiket, ic = true }: { deger
 
 /* `sonra`: belgede "altına ekle" denen satır; yeni kayıt onun arkasına giriyor. */
 export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId?: string; mevcut?: Gelisme; sonra?: string; kapat: () => void }) {
-  const { t } = useDil();
+  const { t, ad } = useDil();
+  const v = useVeri();
   const ben = useBen();
   const [f, setF] = useState({
     yer: mevcut?.yer ?? "",
@@ -127,6 +128,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     kaynakAdi: mevcut?.kaynakAdi ?? "",
     onerenId: mevcut?.onerenId ?? "",
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
+    muhabirler: mevcut?.muhabirler ?? [],
   });
   const kaydet = () => {
     if (!ben || !f.metin.trim()) return;
@@ -141,6 +143,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       tarih: girdidenIso(f.tarih) ?? simdi(),
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
+      muhabirler: f.muhabirler.length ? f.muhabirler : undefined,
     }, sonra);
     kapat();
   };
@@ -185,6 +188,19 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
           {t("onerenMuhabir")}
           <MuhabirSecici deger={f.onerenId} degistir={(id) => setF({ ...f, onerenId: id })} bosEtiket={t("yok")} ic={false} />
         </label>
+      </div>
+      <div className="form">
+        <span>{t("gelismeMuhabirleri")}</span>
+        {f.muhabirler.length > 0 && (
+          <div className="satir" data-gelisme-muhabirleri>
+            {f.muhabirler.map((id) => (
+              <button key={id} type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((x) => ({ ...x, muhabirler: x.muhabirler.filter((m) => m !== id) }))} title={t("cikar")} aria-label={t("cikar")}>
+                {ad(kisiBul(v, id))} ×
+              </button>
+            ))}
+          </div>
+        )}
+        <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.includes(id) ? x : { ...x, muhabirler: [...x.muhabirler, id] }))} bosEtiket={t("muhabirAta")} />
       </div>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
     </div>

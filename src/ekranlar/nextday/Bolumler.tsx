@@ -564,13 +564,18 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
         form === g.id ? (
           <GelismeFormu key={g.id} plan={plan} planBaslikId={planBaslikId} mevcut={g} kapat={() => setForm("")} />
         ) : (
-          <div key={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
+          <div key={g.id} data-gelisme className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
                 <Icerik blok className="kayit-metin">
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}
                 </Icerik>
+                {!!g.muhabirler?.length && (
+                  <Icerik blok>
+                    <b data-gelisme-muhabir>{g.muhabirler.map((id) => kisiAr(kisiBul(v, id))).join(" - ")}</b>
+                  </Icerik>
+                )}
                 <small>
                   <Rozet>{t(KAYNAK_ADI[g.kaynakTuru])}</Rozet>
                   {g.kaynakAdi && <Icerik>{g.kaynakAdi}</Icerik>}

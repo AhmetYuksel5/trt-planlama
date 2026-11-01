@@ -167,6 +167,12 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
         >
           {op ? <YerindeMetin acik cokSatir deger={g.metin} etiket={t("gelismeMetni")} kaydet={(x) => x && ben && gelismeKaydet(ben, { ...g, metin: x })} /> : g.metin}
         </Satir>
+        {/* Başlığın içindeki konuyu özel takip eden muhabir paragrafın hemen altında; başlığın genel muhabirleri ayrı. */}
+        {!!g.muhabirler?.length && (
+          <Satir>
+            <b data-gelisme-muhabir>{g.muhabirler.map((id) => kisiAdi(id)).join(" - ")}</b>
+          </Satir>
+        )}
       </BelgeSatiri>
     );
   };
