@@ -681,6 +681,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yayın alınabilir. Belgede ve çıktıda muhabirlerin altında "LIVE" satırı.
     Saatli canlı yayın (`CanliYayin`, "مباشر" bölümü) ayrı; işaret ertesi güne
     taşınmaz.
+  - Başlığa bağlı canlı yayın (`CanliYayin.planBaslikId`) belgede ve çıktıda
+    üstteki "مباشر" bölümünde ve başlığın altında "LIVE" alt başlığıyla, iki
+    yerde de.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

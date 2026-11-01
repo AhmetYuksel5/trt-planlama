@@ -344,8 +344,10 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {plan.basliklar.map((pb, i) => {
             const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
             const pkg = paketler.filter((p) => p.planBaslikId === pb.id);
+            // Başlığa bağlı canlı yayın üstteki "مباشر"da ve başlığın altında da; okuyan haberle birlikte görsün.
+            const pbCanli = canlilar.filter((x) => x.planBaslikId === pb.id);
             // Çıktıda boş başlık görünmüyor; belgede görünüyor ki içine eklenebilsin.
-            if (!d && !gelismeler.length && !pb.muhabirler.length && !pb.muhabirTbc && !pb.live && !pkg.length) return null;
+            if (!d && !gelismeler.length && !pb.muhabirler.length && !pb.muhabirTbc && !pb.live && !pbCanli.length && !pkg.length) return null;
             const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
             const cikabilir = !pkg.length;
             return (
@@ -422,6 +424,22 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                         <span data-tbc-satir>{TBC}</span>
                       </Satir>
                     </BelgeSatiri>
+                  </>
+                )}
+                {pbCanli.length > 0 && (
+                  <>
+                    <p className="alt-baslik">
+                      <bdi>LIVE</bdi>
+                    </p>
+                    {pbCanli.map((x) => (
+                      <BelgeSatiri key={x.id} duzen={op} onceki={x.onceki} serit={<SatirSeridi duzenle={() => ac({ tur: "canli", mevcut: x })} cikar={sil(() => ben && canliSil(ben, x.id))} />}>
+                        <Satir yer={x.yer}>
+                          <span data-baslik-canli>{x.konu}</span>
+                          {x.aciklama ? ` · ${x.aciklama}` : ""} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
+                          {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
+                        </Satir>
+                      </BelgeSatiri>
+                    ))}
                   </>
                 )}
                 {pb.live && (
