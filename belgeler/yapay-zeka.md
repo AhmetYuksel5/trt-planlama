@@ -89,7 +89,7 @@ Kapı yapay zeka dışında bir iş daha yapıyor: `POST /rss` gündem takibinin
 RSS/Atom akışlarını okuyup düz listeye çeviriyor (`src/rss.ts`). Tarayıcı
 haber sitelerinin akışını doğrudan okuyamıyor (siteler başka kökene izin
 vermiyor). Yalnız tam yönetici çağırır, yalnız https adres, en çok 40 akış;
-her akış 10 dakika KV'de, aynı siteye tekrar tekrar gidilmiyor. Sağlayıcı
+her akış 10 dakika Cloudflare'in önbelleğinde (Cache API), aynı siteye tekrar tekrar gidilmiyor. KV'de değil: ücretsiz planda KV'ye günde 1000 yazma var, her tarama 60'ı aşkın akış yazıp sınırı doldurur, yapay zekanın hak sayaçlarını da yazamaz hale getirirdi. Sağlayıcı
 çağrılmadığı için ücreti ve günlük hakkı yok.
 
 ## Sağlayıcılar

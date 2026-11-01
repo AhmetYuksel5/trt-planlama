@@ -36,7 +36,30 @@ export interface Bagimlilik {
   anahtarBul: AnahtarBul;
   /** Deneme: emülatördeki Firestore'un kökü. */
   firestoreKoku?: string;
+  /** Akış önbelleği (gündem takibi); yoksa önbelleksiz okunur. */
+  onbellek?: Onbellek;
 }
+
+export interface Onbellek {
+  get(k: string): Promise<string | null>;
+  put(k: string, v: string, saniye: number): Promise<void>;
+}
+
+/*
+ * Akışlar KV'de değil Cloudflare'in önbelleğinde (Cache API): ücretsiz planda
+ * KV'ye günde 1000 yazma var, her taramada 60'ı aşkın akış yazılıyordu; gün
+ * boyu açık sayfa öğlene doğru sınırı dolduruyor, yapay zeka sayaçları da
+ * yazamıyordu. Önbellek sınırsız ve bölgesel; kaçırırsa akış yeniden okunur.
+ */
+const cacheOnbellegi = (): Onbellek | undefined => {
+  const c = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  if (!c) return undefined;
+  const anahtar = (k: string) => new Request(`https://onbellek.plannersflow.net/${encodeURIComponent(k)}`);
+  return {
+    get: async (k) => (await c.match(anahtar(k)))?.text() ?? null,
+    put: (k, v, saniye) => c.put(anahtar(k), new Response(v, { headers: { "cache-control": `max-age=${saniye}`, "content-type": "application/json" } })),
+  };
+};
 
 interface Kisi {
   kimlik: Kimlik;
@@ -167,7 +190,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const akislar = await Promise.all(
       adresler.map(async (adres): Promise<{ adres: string; ogeler?: AkisOgesi[]; hata?: string }> => {
         const kAnahtar = `rss:${adres}`;
-        const onbellek = await env.YZ.get(kAnahtar);
+        const onbellek = await d.onbellek?.get(kAnahtar).catch(() => null);
         if (onbellek) return { adres, ogeler: JSON.parse(onbellek) as AkisOgesi[] };
         try {
           const r = await d.fetch(adres, { headers: { accept: "application/rss+xml, application/atom+xml, application/xml, text/xml", "user-agent": "Plannersflow/1.0 (+https://plannersflow.net)" }, signal: AbortSignal.timeout(8000) });
@@ -175,7 +198,8 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
           const metin = (await r.text()).slice(0, 2_000_000);
           const ogeler = akisCoz(metin);
           if (!ogeler.length) return { adres, hata: "bos" };
-          await env.YZ.put(kAnahtar, JSON.stringify(ogeler), { expirationTtl: 600 });
+          // Önbelleğe yazılamasa da haberler döner: önce yazış reddedilince akışın haberleri de düşüyordu.
+          await d.onbellek?.put(kAnahtar, JSON.stringify(ogeler), 600).catch(() => {});
           return { adres, ogeler };
         } catch (e) {
           return { adres, hata: String(e instanceof Error ? e.message : e).slice(0, 120) };
@@ -233,5 +257,5 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 };
 
 export default {
-  fetch: (req: Request, env: Env) => isle(req, env, { fetch: (...a) => fetch(...a), simdi: Date.now, anahtarBul: googleAnahtarlari((...a) => fetch(...a), Date.now) }),
+  fetch: (req: Request, env: Env) => isle(req, env, { fetch: (...a) => fetch(...a), simdi: Date.now, anahtarBul: googleAnahtarlari((...a) => fetch(...a), Date.now), onbellek: cacheOnbellegi() }),
 };

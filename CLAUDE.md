@@ -378,8 +378,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yalnız tam yönetici, `yetki.ts → sayfaGorebilir`): haber akışlarından (RSS,
   Atom) jeopolitik izleme. Yapay zeka yok, her tarama ücretsiz.
   - Akışı kapı okur (`worker/src/rss.ts`, `POST /rss`, yalnız tam yönetici,
-    yalnız https, 10 dakika KV önbelleği): tarayıcı haber sitelerini
-    doğrudan okuyamıyor. Demoda kapıya gidilmez, kurgusal örnek akış
+    yalnız https, 10 dakika Cloudflare önbelleği, Cache API; KV değil:
+    ücretsiz planda KV'ye günde 1000 yazma, her tarama 60'ı aşkın akış
+    yazıyordu; önbelleğe yazılamasa da haber döner): tarayıcı haber
+    sitelerini doğrudan okuyamıyor. Demoda kapıya gidilmez, kurgusal örnek akış
     (`demoHaberleri`).
   - Kaynaklar kayıtta (`Durum.gundemKaynaklari`, boşsa
     `VARSAYILAN_KAYNAKLAR`: canlı denenip seçilmiş siteler ve konu başına

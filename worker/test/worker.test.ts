@@ -76,7 +76,20 @@ const kur = () => {
       return new Response(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Tigray talks</title><link rel="alternate" href="https://haber.test/a"/><updated>2026-10-14T07:00:00Z</updated><summary>TPLF and federal government</summary></entry></feed>`);
     return new Response("yok", { status: 404 });
   }) as typeof fetch;
-  const d: Bagimlilik = { fetch: sahteFetch, simdi: () => SIMDI, anahtarBul: async (kid) => (kid === "k1" ? acik : undefined) };
+  const onbellekDeposu = new Map<string, string>();
+  let onbellekBozuk = false;
+  const d: Bagimlilik = {
+    fetch: sahteFetch,
+    simdi: () => SIMDI,
+    anahtarBul: async (kid) => (kid === "k1" ? acik : undefined),
+    onbellek: {
+      get: async (k) => onbellekDeposu.get(k) ?? null,
+      put: async (k, v) => {
+        if (onbellekBozuk) throw new Error("önbellek yazılamadı");
+        onbellekDeposu.set(k, v);
+      },
+    },
+  };
   const cagir = async (yol: string, uid: string | null, govde?: unknown, method = govde === undefined ? "GET" : "POST", b?: string) =>
     isle(
       new Request(`https://yz.plannersflow.net${yol}`, {
@@ -87,7 +100,7 @@ const kur = () => {
       env,
       d,
     );
-  return { depo, env, d, cagir, istekler, saglayiciYaniti: (y: typeof saglayiciYaniti) => (saglayiciYaniti = y) };
+  return { depo, env, d, cagir, istekler, onbellekDeposu, onbellegiBoz: () => (onbellekBozuk = true), saglayiciYaniti: (y: typeof saglayiciYaniti) => (saglayiciYaniti = y) };
 };
 
 const AYAR = {
@@ -463,6 +476,12 @@ test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevril
   const once = t.istekler.length;
   await t.cagir("/rss", "yon", { adresler: ["https://haber.test/rss"] });
   assert.equal(t.istekler.length, once, "ikinci okuma önbellekten");
+  assert.ok(![...t.depo.keys()].some((k) => k.startsWith("rss:")), "akışlar KV'ye yazılmıyor (günde 1000 yazma sınırı)");
+  // Önbelleğe yazılamasa da haberler döner
+  t.onbellekDeposu.clear();
+  t.onbellegiBoz();
+  const bozuk = (await (await t.cagir("/rss", "yon", { adresler: ["https://haber.test/rss"] })).json()) as { akislar: { ogeler?: unknown[]; hata?: string }[] };
+  assert.equal(bozuk.akislar[0].ogeler?.length, 1);
   assert.equal((await t.cagir("/rss", "yon", { adresler: [] })).status, 400);
   // Toplayıcı: asıl yayıncı kaynakta, başlıktaki " - Reuters" eki atılıyor
   const tj = (await (await t.cagir("/rss", "yon", { adresler: ["https://haber.test/toplayici"] })).json()) as { akislar: { ogeler: { baslik: string; kaynak?: string }[] }[] };
