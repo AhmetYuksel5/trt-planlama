@@ -293,6 +293,8 @@ export interface PlanBasligi {
   muhabirler: PlanMuhabiri[];
   /** Muhabir henüz belli değil: çıktıda adın yerinde "TBC". Muhabir atanınca kalkıyor. */
   muhabirTbc?: true;
+  /** Canlı yayın alınabilir: planda muhabirlerin altında "LIVE". Saati belli canlı yayın (CanliYayin) ayrı. */
+  live?: true;
   /** Önceki plandan taşındı; o gün yeni eklenen başlıkta yok. */
   devir?: true;
 }

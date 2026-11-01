@@ -79,7 +79,10 @@ export default function Tanitim() {
   const ozellikler = useRef<HTMLElement>(null);
   const birimler = useRef<HTMLElement>(null);
   // Uygulamanın içinden (#/tanitim) gelince sayfa başından açılsın.
-  useEffect(() => scrollTo(0, 0), []);
+  // Süslü parantez: yeni tarayıcılarda scrollTo Promise döndürüyor, React onu temizleyici sanıp çıkışta çöküyordu.
+  useEffect(() => {
+    scrollTo(0, 0);
+  }, []);
   const kay = (r: RefObject<HTMLElement | null>) => r.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   // Kurumun kendi açtığı birimler değil, yerleşik yapı: sayfa girişsiz okunuyor.
   const yapi = varsayilanYapi();

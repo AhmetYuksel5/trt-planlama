@@ -676,6 +676,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`etiketler.ts → muhabirYeri`); muhabir atanınca kalkar. Sahte kişi
     değil işaret: paketin muhabiri akışta görev ve bildirim alıyor.
     Weekly'den Next Day'e geçen kalemde TBC başlığa ve pakete taşınır.
+  - Başlıkta "LIVE" kutusu (`LiveKutusu`, muhabirlerin altında, muhabir olsa
+    da; `PlanBasligi.live`, `eylemler.ts → planBaslikLive`): o haberden canlı
+    yayın alınabilir. Belgede ve çıktıda muhabirlerin altında "LIVE" satırı.
+    Saatli canlı yayın (`CanliYayin`, "مباشر" bölümü) ayrı; işaret ertesi güne
+    taşınmaz.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

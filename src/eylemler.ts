@@ -1983,6 +1983,14 @@ export const planMuhabirTbc = (ben: Kisi, planId: string, pbId: string, tbc: boo
     return { ...p, basliklar: p.basliklar.map((b) => (b.id === pbId ? { ...b, muhabirTbc: tbc ? (true as const) : undefined } : b)) };
   });
 
+/** Başlıkta canlı yayın alınabilir ("LIVE"); muhabirden bağımsız. */
+export const planBaslikLive = (ben: Kisi, planId: string, pbId: string, acik: boolean) =>
+  planIcerik(ben, planId, (p) => {
+    const pb = p.basliklar.find((b) => b.id === pbId);
+    if (!pb || !!pb.live === acik) return p;
+    return { ...p, basliklar: p.basliklar.map((b) => (b.id === pbId ? { ...b, live: acik ? (true as const) : undefined, devir: undefined } : b)) };
+  });
+
 export const planMuhabirTasi = (ben: Kisi, planId: string, pbId: string, kisiId: string, yon: -1 | 1) =>
   planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => komsuylaDegis(m, (x) => x.kisiId === kisiId, () => true, yon) ?? m));
 

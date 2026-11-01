@@ -2,7 +2,7 @@ import { ArrowRightLeft, ExternalLink, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
-import { Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
 import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
@@ -30,6 +30,7 @@ import {
   planMuhabirGuncelle,
   planMuhabirTasi,
   planMuhabirTbc,
+  planBaslikLive,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
@@ -344,7 +345,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
             const pkg = paketler.filter((p) => p.planBaslikId === pb.id);
             // Çıktıda boş başlık görünmüyor; belgede görünüyor ki içine eklenebilsin.
-            if (!d && !gelismeler.length && !pb.muhabirler.length && !pb.muhabirTbc && !pkg.length) return null;
+            if (!d && !gelismeler.length && !pb.muhabirler.length && !pb.muhabirTbc && !pb.live && !pkg.length) return null;
             const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
             const cikabilir = !pkg.length;
             return (
@@ -422,6 +423,13 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                       </Satir>
                     </BelgeSatiri>
                   </>
+                )}
+                {pb.live && (
+                  <BelgeSatiri duzen={ic} serit={<SatirSeridi cikar={() => ben && planBaslikLive(ben, plan.id, pb.id, false)} />}>
+                    <Satir>
+                      <b data-live-satir>LIVE</b>
+                    </Satir>
+                  </BelgeSatiri>
                 )}
                 {pkg.length > 0 && (
                   <>
@@ -643,6 +651,7 @@ function NdPencereIcerik({ ben, plan, p, kapat }: { ben: Kisi; plan: NextDayPlan
           {!plan.basliklar.find((b) => b.id === p.pbId)?.muhabirler.length && (
             <TbcKutusu secili={!!plan.basliklar.find((b) => b.id === p.pbId)?.muhabirTbc} degistir={(x) => planMuhabirTbc(ben, plan.id, p.pbId, x) && kapat()} />
           )}
+          <LiveKutusu secili={!!plan.basliklar.find((b) => b.id === p.pbId)?.live} degistir={(x) => planBaslikLive(ben, plan.id, p.pbId, x) && kapat()} />
         </div>,
       );
     case "muhabir":

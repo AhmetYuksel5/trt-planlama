@@ -953,6 +953,7 @@ const M = {
   bPaketTamamlandi: m("Haber teslim edildi; Planlama'ya bildirildi.", "سُلّم الخبر وأُبلغ التخطيط.", "The story was delivered; Planning has been notified."),
   newsdeskDevrede: m("Newsdesk devrede", "النيوزديسك مفعّل", "Newsdesk in the system"),
   isAkisiBicimi: m("İş akışı", "سير العمل", "Workflow"),
+  liveAdi: m("Canlı yayın alınabilir (LIVE)", "يمكن أخذ بث مباشر (LIVE)", "Live broadcast available (LIVE)"),
   tbcAdi: m("Muhabir henüz belli değil (TBC)", "المراسل غير محدد بعد (TBC)", "Reporter to be confirmed (TBC)"),
   havuzaEkle: m("Havuza ekle", "إضافة إلى المجموعة", "Add to pool"),
   kullanim: m("Kullanım", "الاستخدام", "Usage"),

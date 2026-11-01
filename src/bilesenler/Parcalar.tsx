@@ -510,6 +510,17 @@ export function Bildiri() {
   );
 }
 
+/* Başlıkta canlı yayın alınabileceğini plana "LIVE" olarak yazdıran kutucuk. */
+export function LiveKutusu({ secili, degistir }: { secili: boolean; degistir: (x: boolean) => void }) {
+  const { t } = useDil();
+  return (
+    <label className="secim tbc-kutusu" title={t("liveAdi")}>
+      <input type="checkbox" checked={secili} onChange={(e) => degistir(e.target.checked)} aria-label={t("liveAdi")} data-live />
+      LIVE
+    </label>
+  );
+}
+
 /*
  * Muhabir henüz belli değilken plana "TBC" yazdıran kutucuk; muhabir
  * seçiminin yanında. Muhabir atanınca eylem işareti kaldırıyor.

@@ -1,11 +1,11 @@
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
@@ -191,6 +191,11 @@ export default function BaslikKarti({
             ) : (
               <p className="bos-kucuk">{t("muhabirAtanmadi")}</p>
             ))}
+          {pb.live && !icerik && (
+            <Rozet ton="vurgu" title={t("liveAdi")}>
+              LIVE
+            </Rozet>
+          )}
           {icerik &&
             (muhabirEkle ? (
               <div className="form ara-ust-2">
@@ -206,6 +211,7 @@ export default function BaslikKarti({
               <div className="ara-ust-2 muhabir-eylem">
                 <EkleDugmesi metin={t("muhabirAta")} onClick={() => setMuhabirEkle(true)} />
                 {pb.muhabirler.length === 0 && <TbcKutusu secili={!!pb.muhabirTbc} degistir={(x) => ben && planMuhabirTbc(ben, plan.id, pb.id, x)} />}
+                <LiveKutusu secili={!!pb.live} degistir={(x) => ben && planBaslikLive(ben, plan.id, pb.id, x)} />
               </div>
             ))}
         </section>
