@@ -401,12 +401,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     gündemi dışarıda tutar. Bölgeler arası bağlar `BAGLAR`: olay ikisine
     düşerse iki klasörde de aynı kayıt, "Bölgeler arası"nda da.
   - Aynı olayı veren haberler başlık sözcükleri örtüşünce (36 saat) tek olay
-    (`olaylariKur`). Öncelik haber sayısından değil: olayın ağırlığı farklı
+    (`olaylariKur`). Konu klasörleri kalktı (kullanıcı: klasöre bölünme iyi
+    işlemiyor): "Haber akışı" tek liste, en yenisi üstte, her haber
+    etiketleriyle (`olayEtiketleri`: konu, alt başlık `konu:alt`, bağ
+    `bag:…`; ad `etiketAdi`). Çubuktan ya da haberin etiketinden süzülür,
+    birden çok etiket birine uyanı gösterir (`akisOlaylari`); alt başlık
+    yalnız kendisini. Yıldızla takip edilen etiketler tarayıcıda
+    (`trt-planlama-gundem-etiket`, `takipEtiketleri`), "Takip ettiğim
+    etiketler" açıkken bütün akış onlarla süzülür. Çubukta yalnız son 24
+    saatte geçen, takip edilen ya da seçili etiketler, sayılarıyla. Öncelik
+    (brifing ve fırsatlarda) haber sayısından değil: olayın ağırlığı farklı
     kaynak sayısı, ağır sözcükler (`AGIR`), ana bölge ve bağ; konunun skoru
-    son 24 saatin en ağır üç olayı (`konuSkoru`, `seviye`). Yüksek konu
-    ızgarada iki sütun, sakin konu soluk ve sonda, izleme sürer; eğilim
-    önceki günlerin skoruyla (`egilim`).
-  - Sekmeler kullanıcının 12 başlığı (`GUNDEM_BOLUMLERI`). Sabah brifingi
+    son 24 saatin en ağır üç olayı (`konuSkoru`, `seviye`).
+  - Sekmeler: sabah brifingi, haber akışı, yaklaşan etkinlikler, editoryal
+    fırsatlar, araştırma arşivi (`GUNDEM_BOLUMLERI`). Sabah brifingi
     A–D: her konu için son 24 saat ve önümüzdeki 24–72 saat (ileriye bakan
     olaylar `ILERI`, takvimin önümüzdeki 3 günü); değişiklik yoksa açıkça
     yazar. Editoryal fırsatlar kurallardan (`firsatlar`: paket, saha

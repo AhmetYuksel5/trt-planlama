@@ -2444,3 +2444,25 @@ input[aria-invalid="true"] {
   .gundem-firsatlar li { grid-template-columns: auto minmax(0, 1fr); }
   .gundem-firsatlar li > button { grid-column: 2; justify-self: start; }
 }
+/* Gündem akışı: etiket çubuğu. Etiket iki parça: adı süzer, yıldız takibe alır. */
+.gundem-akis { display: grid; gap: var(--ara-3); }
+.gundem-etiketler { display: grid; gap: var(--ara-2); }
+.gundem-etiket-ust { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; justify-content: space-between; }
+.gundem-etiket { display: inline-flex; align-items: stretch; border: 1px solid var(--cizgi); border-radius: var(--yaricap-hap); background: var(--yuzey); overflow: hidden; }
+.gundem-etiket.alt { border-style: dashed; }
+.gundem-etiket.bag { border-color: var(--vurgu); }
+.gundem-etiket.secili { background: var(--lacivert); border-color: var(--lacivert); }
+.gundem-etiket button { border: 0; background: none; cursor: pointer; font: inherit; font-size: var(--punto-kucuk); color: var(--murekkep); min-height: 32px; display: inline-flex; align-items: center; gap: 4px; }
+.gundem-etiket.secili button { color: #fff; }
+.gundem-etiket-ad { padding: 0 var(--ara-1) 0 var(--ara-2); }
+.gundem-etiket-ad em { font-style: normal; font-size: var(--punto-mini); opacity: .7; }
+.gundem-etiket-takip { padding: 0 var(--ara-2) 0 var(--ara-1); color: var(--sonuk); }
+.gundem-etiket-takip[aria-pressed="true"] { color: var(--uyari); }
+.gundem-etiket.secili .gundem-etiket-takip[aria-pressed="true"] { color: #ffd27a; }
+@media (max-width: 760px) {
+  /* Dokunma hedefi 44 piksel: etiket adı, yıldız ve haberdeki etiket. */
+  .gundem-etiket button { min-height: 44px; }
+  .gundem-etiket-takip { min-width: 44px; justify-content: center; }
+  .gundem-olay-alt .cip-dugme { min-height: 44px; }
+  .gundem-etiket-ust .kontrol-kutu { min-height: 44px; }
+}

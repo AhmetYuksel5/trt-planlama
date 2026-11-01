@@ -1,6 +1,5 @@
 import type { Anahtar } from "./dil";
 import { sehirUlkesi } from "./etiketler";
-import { gunEkle } from "./tarih";
 import { yaklasanlar } from "./takvim";
 import type { Durum, GundemKaynagi, Kisi, Ulke } from "./veri";
 
@@ -19,21 +18,16 @@ import type { Durum, GundemKaynagi, Kisi, Ulke } from "./veri";
 
 /* --- Sekmeler ve konular --- */
 
-export const GUNDEM_BOLUMLERI = [
-  "brifing",
-  "ortadogu",
-  "boynuz",
-  "turkiye",
-  "rusya",
-  "abd",
-  "kuruluslar",
-  "capraz",
-  "yeni",
-  "etkinlikler",
-  "firsatlar",
-  "arsiv",
-] as const;
+/*
+ * Sekmeler. Konu klasörleri (Orta Doğu, Boynuz…) kullanıcı denedi, haber
+ * klasöre bölünmesi iyi işlemedi: yerine tek akış, en yenisi üstte,
+ * etiketle süzülüyor ("Haber akışı").
+ */
+export const GUNDEM_BOLUMLERI = ["brifing", "akis", "etkinlikler", "firsatlar", "arsiv"] as const;
 export type GundemBolumu = (typeof GUNDEM_BOLUMLERI)[number];
+/** Etiket çubuğunda konunun grubu (eski klasörler). */
+export const KONU_GRUPLARI = ["ortadogu", "boynuz", "turkiye", "rusya", "abd", "kuruluslar"] as const;
+export type KonuGrubu = (typeof KONU_GRUPLARI)[number];
 
 export interface AltKonu {
   id: string;
@@ -43,7 +37,7 @@ export interface AltKonu {
 
 export interface Konu {
   id: string;
-  bolum: GundemBolumu;
+  bolum: KonuGrubu;
   ad: Anahtar;
   /** Muhabir eşlemesi ve öneriye çevirmede ülke. */
   ulkeler: Ulke[];
@@ -55,6 +49,8 @@ export interface Konu {
    * dış politikası ve bölgeye etkisi olan haber; iç gündem klasörü doldurmasın.
    */
   sart?: string[];
+  /** Eşleşmeden önce metinden çıkan ifadeler: "South Sudan" Sudan sayılmasın. */
+  haric?: string[];
   alt?: AltKonu[];
 }
 
@@ -207,6 +203,7 @@ export const KONULAR: Konu[] = [
     ad: "gkSudan",
     ulkeler: ["sudan"],
     ana: true,
+    haric: ["south sudan", "جنوب السودان"],
     sozcukler: [
       "sudan",
       "khartoum",
@@ -288,7 +285,6 @@ export const KONULAR: Konu[] = [
       "amman",
       "gcc",
       "السعودية",
-      "الرياض",
       "الامارات",
       "ابوظبي",
       "قطر",
@@ -331,7 +327,7 @@ export const KONULAR: Konu[] = [
       "اوروميا",
       "عفار",
       "سد النهضة",
-      "عصب",
+      "ميناء عصب",
     ],
     alt: [
       {
@@ -443,7 +439,7 @@ export const KONULAR: Konu[] = [
           "sea access",
           "port of",
           "البحر الاحمر",
-          "عصب",
+          "ميناء عصب",
           "منفذ بحري",
         ],
       },
@@ -492,6 +488,12 @@ export const KONULAR: Konu[] = [
     ulkeler: [],
     ana: true,
     sozcukler: [
+      "رياك مشار",
+      "spla-io",
+      "sspdf",
+      "jonglei",
+      "upper nile state",
+      "جونقلي",
       "south sudan",
       "juba",
       "kiir",
@@ -499,7 +501,6 @@ export const KONULAR: Konu[] = [
       "جنوب السودان",
       "جوبا",
       "سلفاكير",
-      "مشار",
     ],
   },
   {
@@ -523,6 +524,19 @@ export const KONULAR: Konu[] = [
       "فيدان",
     ],
     sart: [
+      "zelensky",
+      "talks",
+      "un ",
+      "secretary-general",
+      "black sea",
+      "mediat",
+      "greece",
+      "cyprus",
+      "azerbaijan",
+      "armenia",
+      "البحر الاسود",
+      "اليونان",
+      "قبرص",
       "foreign",
       "nato",
       "syria",
@@ -577,6 +591,13 @@ export const KONULAR: Konu[] = [
     ad: "gkRusyaUkrayna",
     ulkeler: ["ukrayna", "rusya"],
     sozcukler: [
+      "moscow",
+      "موسكو",
+      "oleshky",
+      "kharkiv",
+      "zaporizhzhia",
+      "خاركيف",
+      "زابوريجيا",
       "ukraine",
       "ukrainian",
       "kyiv",
@@ -587,7 +608,6 @@ export const KONULAR: Konu[] = [
       "donbas",
       "crimea",
       "black sea",
-      "sanction",
       "اوكرانيا",
       "كييف",
       "زيلينسكي",
@@ -595,7 +615,6 @@ export const KONULAR: Konu[] = [
       "بوتين",
       "القرم",
       "البحر الاسود",
-      "العقوبات",
     ],
   },
   {
@@ -604,12 +623,13 @@ export const KONULAR: Konu[] = [
     ad: "gkAbd",
     ulkeler: ["abd"],
     sozcukler: [
+      "democrats",
+      "democratic party",
       "white house",
       "congress",
       "senate",
       "midterm",
       "republican",
-      "democrat",
       "pentagon",
       "state department",
       "trump",
@@ -669,8 +689,10 @@ export const KONULAR: Konu[] = [
     ad: "gkKuruluslar",
     ulkeler: [],
     sozcukler: [
+      "un security council",
+      "u.n. security council",
+      "مجلس الامن الدولي",
       "united nations",
-      "security council",
       "general assembly",
       "guterres",
       "nato",
@@ -685,7 +707,6 @@ export const KONULAR: Konu[] = [
       "icc",
       "international criminal court",
       "الامم المتحدة",
-      "مجلس الامن",
       "الجمعية العامة",
       "غوتيريش",
       "حلف الناتو",
@@ -982,9 +1003,27 @@ const sozNormal = (s: string) => {
  * Latin sözcük sözcük başında eşleşmeli ("iran" "tirana"yı yakalamasın; ekler
  * serbest: "syrian"); Arapça önek alıyor (و، ب، ال), içinde aranıyor.
  */
+/*
+ * Arapça sözcük de sınırıyla aranır: önek (و ف ب ل ك ve ال) ve nisbe eki (ي،
+ * ية، يون، يين، ون) serbest, gerisi değil; "ه" eki yok: ة "ه"ye çevrildiği
+ * için "حلبة" Halep, "الجنينة" Cenin sayılırdı. Önce metnin içinde aranıyordu: "مشار"
+ * "مشاركة"yı, "الرياض" "الرياضة"yı, "عصب" "عصبية"yi yakalıyordu.
+ */
+const AR_HARF = "\u0621-\u064A";
+const arDesenleri = new Map<string, RegExp>();
+const arDeseni = (s: string) => {
+  let d = arDesenleri.get(s);
+  if (!d) {
+    const kok = s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    d = new RegExp(`(?:^|[^${AR_HARF}])(?:[وفبلك]{0,2}(?:ال)?)${kok}(?:يه|يين|يون|ين|ي|ون)?(?=$|[^${AR_HARF}])`);
+    arDesenleri.set(s, d);
+  }
+  return d;
+};
+
 export const icerir = (metin: string, soz: string) => {
   const s = sozNormal(soz);
-  if (!LATIN.test(s)) return metin.includes(s);
+  if (!LATIN.test(s)) return arDeseni(s).test(metin);
   let i = metin.indexOf(s);
   while (i >= 0) {
     if (i === 0 || !/[a-z0-9]/.test(metin[i - 1])) return true;
@@ -1022,6 +1061,18 @@ export interface Olay {
 }
 
 const DURAK = new Set([
+  // Ön ekler ve sayı sözcükleri: "Daily Brief", "four killed" ayrı olayları birleştiriyordu.
+  "daily",
+  "brief",
+  "four",
+  "three",
+  "two",
+  "five",
+  "kills",
+  "killed",
+  "strike",
+  "strikes",
+  "news",
   "the",
   "and",
   "for",
@@ -1058,10 +1109,29 @@ const DURAK = new Set([
   "لا",
 ]);
 
+/**
+ * Yayıncının sayım anahtarı: parantez ve " - " sonrası atılır, küçük harf;
+ * bilinen eş adlar tek ad. "Anadolu Ajansı (عربي)" ile "Anadolu Agency" iki
+ * kaynak sayılıyordu, olayın ağırlığı şişiyordu.
+ */
+const YAYINCI_ESLERI: [RegExp, string][] = [
+  [/^anadolu/, "anadolu"],
+  [/^(aa|aa\.com\.tr)$/, "anadolu"],
+  [/^un news/, "un news"],
+  [/^الامم المتحده|^اخبار الامم المتحده/, "un news"],
+  [/^al jazeera|^الجزيره/, "al jazeera"],
+  [/^france ?24|^فرانس ?24/, "france24"],
+  [/^bbc/, "bbc"],
+];
+export const yayinciAnahtari = (ad: string) => {
+  const y = normal(ad.replace(/\(.*?\)/g, "").split(" - ")[0].replace(/^©\s*/, "")).trim();
+  return YAYINCI_ESLERI.find(([d]) => d.test(y))?.[1] ?? y;
+};
+
 /* Benzerlik için başlığın sözcükleri: kısa ve sık sözcükler çıkıyor, Arapçada "ال" atılıyor. */
 export const imza = (baslik: string) =>
   new Set(
-    normal(baslik)
+    normal(baslik.replace(/^#[^:\s]+:\s*/, ""))
       .split(/[^a-z0-9؀-ۿ]+/)
       .map((w) => (/^ال/.test(w) && w.length > 4 ? w.slice(2) : w))
       .filter((w) => w.length >= 3 && !DURAK.has(w)),
@@ -1079,11 +1149,12 @@ export const siniflandir = (metin: string) => {
   const konular: string[] = [];
   const altlar: Record<string, string[]> = {};
   for (const k of KONULAR) {
-    if (!herhangi(m, k.sozcukler)) continue;
-    if (k.sart && !herhangi(m, k.sart)) continue;
+    const mk = k.haric ? k.haric.reduce((x, h) => x.split(sozNormal(h)).join(" "), m) : m;
+    if (!herhangi(mk, k.sozcukler)) continue;
+    if (k.sart && !herhangi(mk, k.sart)) continue;
     konular.push(k.id);
     const a = (k.alt ?? [])
-      .filter((x) => herhangi(m, x.sozcukler))
+      .filter((x) => herhangi(mk, x.sozcukler))
       .map((x) => x.id);
     if (a.length) altlar[k.id] = a;
   }
@@ -1106,28 +1177,53 @@ const OLAY_PENCERESI = 36 * SAAT;
  */
 export const olaylariKur = (haberler: Haber[]): Olay[] => {
   const sirali = [...haberler].sort((a, b) => b.zaman.localeCompare(a.zaman));
-  const gruplar: { imza: Set<string>; haberler: Haber[] }[] = [];
+  const gruplar: { imza: Set<string>; t: number; haberler: Haber[] }[] = [];
+  // Sözcük dizini: aday yalnız ortak sözcüğü olan gruplar; her haberi bütün gruplarla karşılaştırmak 3000 haberde bir saniyeyi buluyordu.
+  const dizin = new Map<string, number[]>();
   const gorulen = new Set<string>();
   for (const h of sirali) {
     if (gorulen.has(h.baglanti)) continue;
     gorulen.add(h.baglanti);
     const i = imza(h.baslik);
     const t = Date.parse(h.zaman);
-    const g = gruplar.find(
-      (x) =>
-        benzer(x.imza, i) &&
-        Math.abs(Date.parse(x.haberler[0].zaman) - t) <= OLAY_PENCERESI,
-    );
-    if (g) {
-      g.haberler.push(h);
-      for (const w of i) g.imza.add(w);
-    } else gruplar.push({ imza: i, haberler: [h] });
+    const adaylar = new Set<number>();
+    for (const w of i) for (const n of dizin.get(w) ?? []) adaylar.add(n);
+    // İlk eklenen grup önce: eskiden de ilk uyan seçiliyordu.
+    const n = [...adaylar].sort((a, b) => a - b).find((k) => Math.abs(gruplar[k].t - t) <= OLAY_PENCERESI && benzer(gruplar[k].imza, i));
+    // İmza büyütülmez, grubun ilk haberiyle karşılaştırılır: büyüyünce grup kartopu gibi alakasız haberleri çekiyordu.
+    if (n !== undefined) gruplar[n].haberler.push(h);
+    else {
+      gruplar.push({ imza: i, t, haberler: [h] });
+      for (const w of i) {
+        const l = dizin.get(w);
+        if (l) l.push(gruplar.length - 1);
+        else dizin.set(w, [gruplar.length - 1]);
+      }
+    }
   }
   return gruplar.map(({ haberler: hs }) => {
     const metin = hs.map((h) => `${h.baslik} ${h.ozet ?? ""}`).join(" ");
-    const { konular, altlar } = siniflandir(metin);
+    /*
+     * Etiket olayın haberlerinin en az %30'unda geçiyorsa olaya verilir:
+     * yanlış birleşen tek haber olaya ek etiketler taşıyordu.
+     */
+    const tek = hs.map((h) => siniflandir(`${h.baslik} ${h.ozet ?? ""}`));
+    const esik = Math.max(1, Math.ceil(hs.length * 0.3));
+    const sayKonu = new Map<string, number>();
+    const sayAlt = new Map<string, number>();
+    for (const x of tek) {
+      for (const k of x.konular) sayKonu.set(k, (sayKonu.get(k) ?? 0) + 1);
+      for (const [k, l] of Object.entries(x.altlar)) for (const a of l) sayAlt.set(`${k}:${a}`, (sayAlt.get(`${k}:${a}`) ?? 0) + 1);
+    }
+    const konular = KONULAR.map((k) => k.id).filter((k) => (sayKonu.get(k) ?? 0) >= esik);
+    const altlar: Record<string, string[]> = {};
+    for (const [e, n] of sayAlt) {
+      const [k, a] = e.split(":");
+      if (n >= esik && konular.includes(k)) (altlar[k] ??= []).push(a);
+    }
     const m = normal(metin);
-    const kaynaklar = [...new Set(hs.map((h) => h.kaynak))];
+    // Aynı yayıncının yazımları (Anadolu Ajansı / Anadolu Agency) bir kaynak sayılır.
+    const kaynaklar = [...new Map(hs.map((h) => [yayinciAnahtari(h.kaynak), h.kaynak])).values()];
     const ana = konular.some((k) => konuBul(k)?.ana);
     const baglar = BAGLAR.filter(
       (b) => b.konular.filter((k) => konular.includes(k)).length >= 2,
@@ -1173,46 +1269,89 @@ export const konuSkoru = (olaylar: Olay[], konuId: string, simdi: number) =>
 export const seviye = (skor: number): Seviye =>
   skor >= 24 ? "yuksek" : skor >= 12 ? "orta" : skor > 0 ? "dusuk" : "sakin";
 
-/** Yön: bugünkü skor önceki günlerin ortalamasına göre (tarayıcıda tutulan geçmişten). */
-export const egilim = (
-  skor: number,
-  gecmis: number[],
-): "artis" | "dusus" | "ayni" => {
-  if (!gecmis.length) return "ayni";
-  const ort = gecmis.reduce((a, b) => a + b, 0) / gecmis.length;
-  return skor >= ort * 1.5 + 4
-    ? "artis"
-    : skor <= ort * 0.5 - 4
-      ? "dusus"
-      : "ayni";
-};
-
 export const konuOlaylari = (olaylar: Olay[], konuId: string) =>
   olaylar
     .filter((o) => o.konular.includes(konuId))
     .sort((a, b) => b.agirlik - a.agirlik || b.son.localeCompare(a.son));
 
-/** Bölümün konuları önceliğe göre: sakin konu sona iner ama listeden çıkmaz. */
-export const bolumKonulari = (
-  olaylar: Olay[],
-  bolum: GundemBolumu,
-  simdi: number,
-) =>
-  KONULAR.filter((k) => k.bolum === bolum)
-    .map((k) => ({ konu: k, skor: konuSkoru(olaylar, k.id, simdi) }))
-    .sort((a, b) => b.skor - a.skor);
+/* --- Etiketler: konu, alt başlık ("etiyopya:tigray") ve bölgeler arası bağ ("bag:…") --- */
+
+export const olayEtiketleri = (o: Olay): string[] => [
+  ...o.konular,
+  ...Object.entries(o.altlar).flatMap(([k, l]) => l.map((a) => `${k}:${a}`)),
+  ...o.baglar.map((b) => `bag:${b}`),
+];
+
+/** Etiketin dil anahtarı; tanınmayan (eski kayıttan kalmış) etiket için null. */
+export const etiketAdi = (e: string): Anahtar | null => {
+  if (e.startsWith("bag:")) return BAGLAR.find((b) => b.id === e.slice(4))?.ad ?? null;
+  const [k, a] = e.split(":");
+  const konu = konuBul(k);
+  if (!konu) return null;
+  return a ? (konu.alt?.find((x) => x.id === a)?.ad ?? null) : konu.ad;
+};
+
+/** Bütün etiketler çubuktaki sırayla: konu grupları, her konunun altında alt başlıkları, sonda bağlar. */
+export const BUTUN_ETIKETLER: string[] = [
+  ...KONULAR.flatMap((k) => [k.id, ...(k.alt ?? []).map((a) => `${k.id}:${a.id}`)]),
+  ...BAGLAR.map((b) => `bag:${b.id}`),
+];
+
+/**
+ * Akış: en yenisi üstte. Seçili etiketlerden birine uyan (seçim yoksa hepsi);
+ * alt başlık seçilince yalnız o alt başlık, konu seçilince konunun hepsi.
+ */
+export const akisOlaylari = (olaylar: Olay[], secili: string[]) =>
+  olaylar
+    .filter((o) => {
+      if (!secili.length) return true;
+      const e = olayEtiketleri(o);
+      return secili.some((s) => e.includes(s));
+    })
+    .sort((a, b) => b.son.localeCompare(a.son));
+
+/** Etiketin son 24 saatteki olay sayısı: çubukta etiketin yanında. */
+export const etiketSayilari = (olaylar: Olay[], simdi: number) => {
+  const say: Record<string, number> = {};
+  for (const o of olaylar) if (Date.parse(o.son) >= simdi - 24 * SAAT) for (const e of olayEtiketleri(o)) say[e] = (say[e] ?? 0) + 1;
+  return say;
+};
+
+/* --- Takip edilen etiketler: kişinin görünüm tercihi, tarayıcıda --- */
+
+const TAKIP = "trt-planlama-gundem-etiket";
+export const takipEtiketleri = (): string[] => {
+  try {
+    return (JSON.parse(localStorage.getItem(TAKIP) ?? "[]") as string[]).filter((e) => BUTUN_ETIKETLER.includes(e));
+  } catch {
+    return [];
+  }
+};
+/* "Takip ettiğim etiketler" anahtarı da kalıcı: yenilemede kendiliğinden açılıp akışı daraltıyordu. */
+const YALNIZ = "trt-planlama-gundem-yalniz";
+export const yalnizTakipOku = () => {
+  try {
+    return localStorage.getItem(YALNIZ) === "1";
+  } catch {
+    return false;
+  }
+};
+export const yalnizTakipYaz = (a: boolean) => {
+  try {
+    localStorage.setItem(YALNIZ, a ? "1" : "0");
+  } catch {
+    /* kapalı */
+  }
+};
+export const takipEtiketleriniYaz = (l: string[]) => {
+  try {
+    localStorage.setItem(TAKIP, JSON.stringify(l));
+  } catch {
+    /* kapalı: bu açılışta bellekte */
+  }
+};
 
 /* --- Yeni ortaya çıkanlar ve yaklaşanlar --- */
-
-/** Son 12 saatte ilk kez görülen, en az iki kaynağın verdiği ya da ağır olay. */
-export const yeniOlaylar = (olaylar: Olay[], simdi: number) =>
-  olaylar
-    .filter(
-      (o) =>
-        Date.parse(o.ilk) >= simdi - 12 * SAAT &&
-        (o.kaynaklar.length >= 2 || o.agirlik >= 7),
-    )
-    .sort((a, b) => b.agirlik - a.agirlik);
 
 export const ileriOlaylar = (olaylar: Olay[], simdi: number) =>
   olaylar
@@ -1749,13 +1888,14 @@ export const demoHaberleri = (simdi: number): Haber[] => {
     h("Senate debates arms package for Israel and Ukraine", 16, "Örnek E"),
     h("Libya rival governments hold talks in Tripoli", 30, "Örnek B"),
     h("محادثات ايرانية اوروبية حول الملف النووي الاسبوع المقبل", 11, "Örnek A"),
+    // Tuzak: "مشاركة" Machar, "الرياضة" Riyad, "حلبة" Halep sayılmamalı (Arapça sözcük sınırı).
+    h("مشاركة واسعة في حلبة السباق ضمن مهرجان الرياضة", 4, "Örnek E"),
   ];
 };
 
-/* --- Tarayıcıda tutulan son haberler ve günlük skor geçmişi (kişinin kolaylığı; kayıt değil) --- */
+/* --- Tarayıcıda tutulan son haberler (kişinin kolaylığı; kayıt değil) --- */
 
 const SAKLA = "trt-planlama-gundem";
-const SKOR = "trt-planlama-gundem-skor";
 
 export const sakliHaberler = (): Haber[] => {
   try {
@@ -1786,33 +1926,3 @@ export const haberleriSakla = (yeni: Haber[], simdi: number): Haber[] => {
   }
   return liste;
 };
-
-export const skorGecmisi = (): Record<string, Record<string, number>> => {
-  try {
-    return JSON.parse(localStorage.getItem(SKOR) ?? "{}") as Record<
-      string,
-      Record<string, number>
-    >;
-  } catch {
-    return {};
-  }
-};
-
-/** Günün skorlarını yazar, son 14 günü tutar; eğilim önceki günlerin ortalamasıyla. */
-export const skorlariYaz = (gun: string, skorlar: Record<string, number>) => {
-  const g = { ...skorGecmisi(), [gun]: skorlar };
-  const tut = Object.keys(g).sort().slice(-14);
-  try {
-    localStorage.setItem(
-      SKOR,
-      JSON.stringify(Object.fromEntries(tut.map((k) => [k, g[k]]))),
-    );
-  } catch {
-    /* kapalı */
-  }
-};
-
-export const oncekiSkorlar = (gun: string, konuId: string) =>
-  Object.entries(skorGecmisi())
-    .filter(([k]) => k < gun && k >= gunEkle(gun, -7))
-    .map(([, v]) => v[konuId] ?? 0);

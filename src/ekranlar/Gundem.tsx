@@ -1,6 +1,4 @@
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Bookmark,
   BookmarkCheck,
   ExternalLink,
@@ -8,6 +6,7 @@ import {
   Lightbulb,
   RefreshCw,
   Settings,
+  Star,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -31,33 +30,33 @@ import {
   BRIFING_A,
   BRIFING_B,
   GUNDEM_BOLUMLERI,
-  KONULAR,
-  bolumKonulari,
   brifingSatiri,
   capraz,
   demoHaberleri,
-  egilim,
   firsatlar,
   aramaAdresi,
   eksikVarsayilanlar,
   gundemKaynaklari,
   haberleriSakla,
   ileriOlaylar,
+  akisOlaylari,
+  BUTUN_ETIKETLER,
+  etiketAdi,
+  etiketSayilari,
+  olayEtiketleri,
+  takipEtiketleri,
+  takipEtiketleriniYaz,
+  yalnizTakipOku,
+  yalnizTakipYaz,
   konuBul,
-  konuOlaylari,
-  konuSkoru,
-  oncekiSkorlar,
   olaylariKur,
   sakliHaberler,
   seviye,
-  skorlariYaz,
-  yeniOlaylar,
   type BrifingSatiri,
   type Firsat,
   type FirsatTuru,
   type GundemBolumu,
   type Haber,
-  type Konu,
   type Olay,
   type Seviye,
 } from "../gundem";
@@ -71,7 +70,7 @@ import {
   type Kisi,
   type Ulke,
 } from "../veri";
-import { git } from "../yol";
+import { git, yerineGit } from "../yol";
 import { gundemAkislari } from "../yz";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -84,14 +83,7 @@ import { SayfaBasi } from "./ana/Planlama";
 
 const BOLUM_ADI: Record<GundemBolumu, Anahtar> = {
   brifing: "gdBrifing",
-  ortadogu: "gdOrtadogu",
-  boynuz: "gdBoynuz",
-  turkiye: "gdTurkiye",
-  rusya: "gdRusya",
-  abd: "gdAbd",
-  kuruluslar: "gdKuruluslar",
-  capraz: "gdCapraz",
-  yeni: "gdYeni",
+  akis: "gdAkis",
   etkinlikler: "gdEtkinlikler",
   firsatlar: "gdFirsatlar",
   arsiv: "gdArsiv",
@@ -211,22 +203,14 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
   )
     ? (sekme as GundemBolumu)
     : "brifing";
+  // Kaldırılan klasör sekmelerinin (ortadogu, boynuz…) eski adresi brifinge döner, adres de düzelsin.
+  useEffect(() => {
+    if (sekme && sekme !== bolum) yerineGit(`gundem/${bolum}`);
+  }, [sekme, bolum]);
   const { haberler, taraniyor, hatalar, son, tara } = useGundemHaberleri();
   const [kaynakAcik, setKaynakAcik] = useState(false);
   const simdiAn = useMemo(() => Date.now(), [haberler]);
   const olaylar = useMemo(() => olaylariKur(haberler), [haberler]);
-  const B = bugun();
-
-  // Günün skorları eğilim için tarayıcıda; bir sonraki gün bugünkünü önceki sayar.
-  useEffect(() => {
-    if (!haberler.length) return;
-    skorlariYaz(
-      B,
-      Object.fromEntries(
-        KONULAR.map((k) => [k.id, konuSkoru(olaylar, k.id, simdiAn)]),
-      ),
-    );
-  }, [olaylar, B, simdiAn, haberler.length]);
 
   if (!ben.hesapYoneticisi) return <Bos metin={t("gdErisim")} />;
 
@@ -280,27 +264,7 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
       {bolum === "brifing" && (
         <Brifing olaylar={olaylar} simdi={simdiAn} ben={ben} />
       )}
-      {(
-        ["ortadogu", "boynuz", "turkiye", "rusya", "abd", "kuruluslar"] as const
-      ).includes(bolum as never) && (
-        <KonuIzgarasi
-          olaylar={olaylar}
-          bolum={bolum}
-          simdi={simdiAn}
-          ben={ben}
-        />
-      )}
-      {bolum === "capraz" && (
-        <Capraz olaylar={olaylar} simdi={simdiAn} ben={ben} />
-      )}
-      {bolum === "yeni" && (
-        <OlayListesi
-          olaylar={yeniOlaylar(olaylar, simdiAn)}
-          ben={ben}
-          bos={t("gdYeniYok")}
-          veri="yeni"
-        />
-      )}
+      {bolum === "akis" && <Akis olaylar={olaylar} simdi={simdiAn} ben={ben} />}
       {bolum === "etkinlikler" && (
         <Etkinlikler olaylar={olaylar} simdi={simdiAn} ben={ben} />
       )}
@@ -331,20 +295,6 @@ function SeviyeRozeti({ skor }: { skor: number }) {
   );
 }
 
-function Egilim({ konuId, skor }: { konuId: string; skor: number }) {
-  const { t } = useDil();
-  const e = egilim(skor, oncekiSkorlar(bugun(), konuId));
-  if (e === "ayni") return null;
-  return e === "artis" ? (
-    <ArrowUpRight size={16} className="kotu-yazi" aria-label={t("gdArtis")} />
-  ) : (
-    <ArrowDownRight
-      size={16}
-      className="sonuk-yazi"
-      aria-label={t("gdDusus")}
-    />
-  );
-}
 
 /* Haber metni akışın dilinde: Arapça başlık sağdan, İngilizce soldan; yön metinden. */
 const Metin = ({ children }: { children: ReactNode }) => (
@@ -355,10 +305,13 @@ function OlaySatiri({
   o,
   ben,
   kisa = false,
+  etiketSec,
 }: {
   o: Olay;
   ben: Kisi;
   kisa?: boolean;
+  /** Akışta etikete basınca süzgece eklenir. */
+  etiketSec?: (e: string) => void;
 }) {
   const { t, dil } = useDil();
   const v = useVeri();
@@ -409,15 +362,19 @@ function OlaySatiri({
           {t("gdKaynakSayisi").replace("{n}", String(o.kaynaklar.length))}
         </button>
         {!kisa &&
-          o.konular.length > 1 &&
-          o.konular.map((k) => (
-            <span key={k} className="cip">
-              {t(konuBul(k)!.ad)}
-            </span>
-          ))}
-        {o.baglar.length > 0 && (
-          <span className="cip cip-vurgu">{t("gdBaglantili")}</span>
-        )}
+          olayEtiketleri(o).map((e) => {
+            const ad = etiketAdi(e);
+            if (!ad) return null;
+            return etiketSec ? (
+              <button key={e} className={`cip cip-dugme${e.startsWith("bag:") ? " cip-vurgu" : ""}`} onClick={() => etiketSec(e)} data-olay-etiket={e}>
+                {t(ad)}
+              </button>
+            ) : (
+              <span key={e} className={`cip${e.startsWith("bag:") ? " cip-vurgu" : ""}`} data-olay-etiket={e}>
+                {t(ad)}
+              </span>
+            );
+          })}
       </div>
       {ac && (
         <ul className="gundem-kaynak-listesi">
@@ -476,87 +433,7 @@ function OlayListesi({
 
 /* --- Bölümler --- */
 
-function KonuIzgarasi({
-  olaylar,
-  bolum,
-  simdi,
-  ben,
-}: {
-  olaylar: Olay[];
-  bolum: GundemBolumu;
-  simdi: number;
-  ben: Kisi;
-}) {
-  const konular = bolumKonulari(olaylar, bolum, simdi);
-  return (
-    <div className="gundem-izgara">
-      {konular.map(({ konu, skor }) => (
-        <KonuKarti
-          key={konu.id}
-          konu={konu}
-          skor={skor}
-          olaylar={olaylar}
-          ben={ben}
-        />
-      ))}
-    </div>
-  );
-}
 
-/* Kartın yeri önceliğinden: yüksek geniş, sakin dar ve kapalı; izleme sürüyor. */
-function KonuKarti({
-  konu,
-  skor,
-  olaylar,
-  ben,
-}: {
-  konu: Konu;
-  skor: number;
-  olaylar: Olay[];
-  ben: Kisi;
-}) {
-  const { t } = useDil();
-  const [alt, setAlt] = useState<string | null>(null);
-  const s = seviye(skor);
-  const tum = konuOlaylari(olaylar, konu.id);
-  const liste = alt ? tum.filter((o) => o.altlar[konu.id]?.includes(alt)) : tum;
-  return (
-    <section className={`kart gundem-konu sev-${s}`} data-konu={konu.id}>
-      <header className="gundem-konu-ust">
-        <h3>{t(konu.ad)}</h3>
-        <Egilim konuId={konu.id} skor={skor} />
-        <SeviyeRozeti skor={skor} />
-      </header>
-      {konu.alt && (
-        <div className="gundem-altlar">
-          {konu.alt.map((a) => {
-            const n = tum.filter((o) =>
-              o.altlar[konu.id]?.includes(a.id),
-            ).length;
-            return (
-              <button
-                key={a.id}
-                className={`cip cip-dugme${alt === a.id ? " secili" : ""}`}
-                aria-pressed={alt === a.id}
-                onClick={() => setAlt(alt === a.id ? null : a.id)}
-                data-alt={a.id}
-              >
-                {t(a.ad)} <em>{n}</em>
-              </button>
-            );
-          })}
-        </div>
-      )}
-      <OlayListesi
-        olaylar={liste}
-        ben={ben}
-        bos={t("gdDegisiklikYok")}
-        veri={konu.id}
-        enCok={s === "yuksek" ? 10 : s === "sakin" ? 3 : 6}
-      />
-    </section>
-  );
-}
 
 function BrifingKonusu({ s, ben }: { s: BrifingSatiri; ben: Kisi }) {
   const { t, dil } = useDil();
@@ -665,28 +542,88 @@ function Brifing({
   );
 }
 
-function Capraz({
-  olaylar,
-  simdi,
-  ben,
-}: {
-  olaylar: Olay[];
-  simdi: number;
-  ben: Kisi;
-}) {
+
+/*
+ * Haber akışı: en yenisi üstte, etiketle süzülür. Seçim bu oturumda; takip
+ * edilen etiketler tarayıcıda kalır, "Takip ettiklerim" açıkken akış onlarla
+ * süzülür. Etikete yıldızla takibe alınır.
+ */
+function Akis({ olaylar, simdi, ben }: { olaylar: Olay[]; simdi: number; ben: Kisi }) {
   const { t } = useDil();
-  const c = capraz(olaylar, simdi);
-  if (!c.length) return <Bos metin={t("gdDegisiklikYok")} />;
+  const [takip, setTakip] = useState<string[]>(takipEtiketleri);
+  const [secili, setSecili] = useState<string[]>([]);
+  const [yalnizTakip, setYalnizTakipDurum] = useState(yalnizTakipOku);
+  const setYalnizTakip = (a: boolean) => {
+    setYalnizTakipDurum(a);
+    yalnizTakipYaz(a);
+  };
+  // Telefonda çubuk kapalı gelir: bütün etiketler ekranı kaplıyor, ilk ekranda haber görünmüyordu.
+  const [tumu, setTumu] = useState(() => !matchMedia("(max-width: 760px)").matches);
+  const [hepsi, setHepsi] = useState(false);
+  const sayilar = useMemo(() => etiketSayilari(olaylar, simdi), [olaylar, simdi]);
+  // Takip açıkken seçilen etiket takip ettiklerinin içinde daraltır; ikisi birbirini ezmez.
+  const takipAcik = yalnizTakip && takip.length > 0;
+  const liste = akisOlaylari(takipAcik ? akisOlaylari(olaylar, takip) : olaylar, secili);
+  const degistir = (e: string) => setSecili((l) => (l.includes(e) ? l.filter((x) => x !== e) : [...l, e]));
+  const takibeAl = (e: string) => {
+    const yeni = takip.includes(e) ? takip.filter((x) => x !== e) : [...takip, e];
+    // İlk yıldızda anahtar da açılır: yoksa yıldız işe yaramıyor sanılıyordu.
+    if (!takip.length && yeni.length) setYalnizTakip(true);
+    setTakip(yeni);
+    takipEtiketleriniYaz(yeni);
+  };
+  // Çubukta yalnız akışta geçen ya da takip edilen etiketler; boş etiket kalabalık etmesin.
+  const gorunen = BUTUN_ETIKETLER.filter((e) => (tumu ? sayilar[e] : false) || takip.includes(e) || secili.includes(e));
+  const kapaliSayi = BUTUN_ETIKETLER.filter((e) => sayilar[e]).length;
   return (
-    <div className="gundem-izgara">
-      {c.map(({ bag, olaylar: l }) => (
-        <section key={bag.id} className="kart gundem-konu" data-bag={bag.id}>
-          <header className="gundem-konu-ust">
-            <h3>{t(bag.ad)}</h3>
-          </header>
-          <OlayListesi olaylar={l} ben={ben} bos="" veri={bag.id} enCok={6} />
-        </section>
-      ))}
+    <div className="gundem-akis" data-gundem-akis>
+      <section className="kart gundem-etiketler">
+        <div className="gundem-etiket-ust">
+          <label className="kontrol-kutu">
+            <input type="checkbox" checked={takipAcik} onChange={(e) => setYalnizTakip(e.target.checked)} disabled={!takip.length} data-yalniz-takip />
+            {t("gdTakipEttiklerim")} ({takip.length})
+          </label>
+          <button className="dugme dugme-sade dugme-kucuk" onClick={() => setTumu(!tumu)} aria-expanded={tumu} data-tum-etiketler>
+            {t(tumu ? "gdEtiketleriKapat" : "gdTumEtiketler")} ({kapaliSayi})
+          </button>
+          {secili.length > 0 && (
+            <button className="dugme dugme-sade dugme-kucuk" onClick={() => setSecili([])} data-secimi-temizle>
+              {t("gdSecimiTemizle")}
+            </button>
+          )}
+        </div>
+        <div className="gundem-altlar">
+          {gorunen.map((e) => {
+            const ad = etiketAdi(e);
+            if (!ad) return null;
+            const s = secili.includes(e);
+            const tk = takip.includes(e);
+            return (
+              <span key={e} className={`gundem-etiket${s ? " secili" : ""}${e.startsWith("bag:") ? " bag" : ""}${e.includes(":") && !e.startsWith("bag:") ? " alt" : ""}`} data-etiket={e}>
+                <button className="gundem-etiket-ad" aria-pressed={s} onClick={() => degistir(e)}>
+                  {t(ad)} <em>{sayilar[e] ?? 0}</em>
+                </button>
+                <button className="gundem-etiket-takip" aria-pressed={tk} onClick={() => takibeAl(e)} title={t(tk ? "gdTakiptenCikar" : "gdTakibeAl")} aria-label={t(tk ? "gdTakiptenCikar" : "gdTakibeAl")} data-etiket-takip>
+                  {tk ? <Star size={13} fill="currentColor" /> : <Star size={13} />}
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      </section>
+      <section className="kart">
+        {!liste.length && <Bos kucuk metin={t("gdAkisBos")} />}
+        <ul className="gundem-olaylar" data-olay-listesi="akis">
+          {(hepsi ? liste : liste.slice(0, 60)).map((o) => (
+            <OlaySatiri key={o.id} o={o} ben={ben} etiketSec={degistir} />
+          ))}
+        </ul>
+        {!hepsi && liste.length > 60 && (
+          <button className="dugme dugme-sade dugme-kucuk" onClick={() => setHepsi(true)}>
+            {t("gdHepsi")} ({liste.length})
+          </button>
+        )}
+      </section>
     </div>
   );
 }
@@ -830,7 +767,7 @@ function OneriyeCevir({
     });
     if (!id) return bildir(t("gdOneriOlmadi"));
     kapat();
-    bildir(t("gdOneriOldu"), { ad: t("ac"), f: () => git(`#/oneriler/${id}`) });
+    bildir(t("gdOneriOldu"), { ad: t("ac"), f: () => git(`oneriler/${id}`) });
   };
   return (
     <Pencere

@@ -70,6 +70,8 @@ export const akisCoz = (xml: string, enCok = 40): AkisOgesi[] => {
     let baslik = etiket(b, "title");
     // Toplayıcı başlığın sonuna yayıncıyı ekliyor ("… - Reuters"); başlık her akışta aynı kalsın, olaylar birleşsin.
     if (kaynak && baslik.endsWith(` - ${kaynak}`)) baslik = baslik.slice(0, -(kaynak.length + 3)).trim();
+    // Yayıncı adı farklı yazılmışsa da ("… - Foreign Affairs - Egypt", "… | Daily Sabah") kısa son ek atılır.
+    if (kaynak) for (let i = 0; i < 2; i++) baslik = baslik.replace(/\s[-|–]\s[^-|–]{1,40}$/, (e) => (e.split(/\s+/).length <= 7 ? "" : e)).trim();
     const baglanti = guvenliBaglanti(atom ? atomBaglanti(b) : etiket(b, "link") || etiket(b, "guid"));
     if (!baslik || !baglanti) continue;
     const zaman = tarih(etiket(b, "pubDate") || etiket(b, "published") || etiket(b, "updated") || etiket(b, "dc:date"));
