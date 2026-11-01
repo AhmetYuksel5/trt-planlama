@@ -579,7 +579,7 @@ const M = {
   kayitliHareketEkle: m("Kayıtlı hareketten seç", "اختيار من الحركات المسجلة", "Pick an existing one"),
   plandanCikar: m("Plandan çıkar", "إزالة من الخطة", "Remove from plan"),
   hareketTuru: m("Hareket türü", "نوع الحركة", "Movement type"),
-  htGorevlendirme: m("Görevlendirme", "تكليف", "Assignment"),
+  htGorevlendirme: m("Görevlendirme", "مهمة", "Assignment"),
   htSeyahat: m("Seyahat", "سفر", "Travel"),
   htIzin: m("İzin", "إجازة", "Leave"),
   htDiger: m("Diğer", "أخرى", "Other"),
