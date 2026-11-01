@@ -63,6 +63,11 @@ export const KONULAR: Konu[] = [
     ulkeler: ["filistin"],
     ana: true,
     sozcukler: [
+      "settler",
+      "settlers",
+      "مستوطن",
+      "occupied territories",
+      "الاراضي المحتله",
       "gaza",
       "west bank",
       "hamas",
@@ -182,6 +187,8 @@ export const KONULAR: Konu[] = [
     ulkeler: ["iran"],
     ana: true,
     sozcukler: [
+      "hormuz",
+      "هرمز",
       "iran",
       "iranian",
       "tehran",
@@ -203,7 +210,8 @@ export const KONULAR: Konu[] = [
     ad: "gkSudan",
     ulkeler: ["sudan"],
     ana: true,
-    haric: ["south sudan", "جنوب السودان"],
+    // "South Sudan" ve Irak başbakanının soyadı (محمد شياع السوداني) Sudan değil.
+    haric: ["south sudan", "جنوب السودان", "شياع السوداني", "محمد السوداني", "al-sudani", "sudani"],
     sozcukler: [
       "sudan",
       "khartoum",
@@ -270,6 +278,8 @@ export const KONULAR: Konu[] = [
     ulkeler: ["suudi", "bae", "katar", "bahreyn", "kuveyt", "umman", "urdun"],
     ana: true,
     sozcukler: [
+      "aramco",
+      "ارامكو",
       "saudi",
       "riyadh",
       "emirates",
@@ -591,6 +601,10 @@ export const KONULAR: Konu[] = [
     ad: "gkRusyaUkrayna",
     ulkeler: ["ukrayna", "rusya"],
     sozcukler: [
+      "russia",
+      "russian",
+      "روسيا",
+      "الروسي",
       "moscow",
       "موسكو",
       "oleshky",
@@ -1149,22 +1163,42 @@ const benzer = (a: Set<string>, b: Set<string>) => {
   return ortak >= 4 || (birlesim > 0 && ortak >= 2 && ortak / birlesim >= 0.4);
 };
 
-export const siniflandir = (metin: string) => {
-  const m = normal(metin);
+/*
+ * Sınıflandırma başlığa dayanır. Konu ya başlıkta geçer ya da özette o konunun
+ * en az iki ayrı sözcüğü geçer; özetteki tek bir sözcük konu vermez. Özette
+ * yayıncı adı ("صحيفة التغيير السودانية"), "ilgili haberler" ve başka
+ * konular geçiyor; tek sözcükle Fransa haberi Sudan'a düşüyordu.
+ */
+const haricli = (k: Konu, m: string) => (k.haric ? k.haric.reduce((x, h) => x.split(sozNormal(h)).join(" "), m) : m);
+const kacSozcuk = (m: string, liste: string[]) => liste.filter((w) => icerir(m, w)).length;
+
+export const siniflandir = (baslik: string, ozet = "") => {
+  const b = normal(baslik);
+  const o = normal(ozet);
   const konular: string[] = [];
   const altlar: Record<string, string[]> = {};
   for (const k of KONULAR) {
-    const mk = k.haric ? k.haric.reduce((x, h) => x.split(sozNormal(h)).join(" "), m) : m;
-    if (!herhangi(mk, k.sozcukler)) continue;
-    if (k.sart && !herhangi(mk, k.sart)) continue;
+    const kb = haricli(k, b);
+    const ko = haricli(k, o);
+    if (!herhangi(kb, k.sozcukler) && kacSozcuk(ko, k.sozcukler) < 2) continue;
+    if (k.sart && !herhangi(`${kb} ${ko}`, k.sart)) continue;
     konular.push(k.id);
-    const a = (k.alt ?? [])
-      .filter((x) => herhangi(mk, x.sozcukler))
-      .map((x) => x.id);
+    // Alt başlık da önce başlıktan; özette yalnız kendi iki sözcüğüyle.
+    const a = (k.alt ?? []).filter((x) => herhangi(kb, x.sozcukler) || kacSozcuk(ko, x.sozcukler) >= 2).map((x) => x.id);
     if (a.length) altlar[k.id] = a;
   }
   return { konular, altlar };
 };
+
+/** Özetten başlığın tekrarı ve yayıncının adı atılır: toplayıcının özeti çoğu zaman yalnız "başlık + yayıncı". */
+export const temizOzet = (h: Pick<Haber, "baslik" | "ozet" | "kaynak">) => {
+  let o = h.ozet ?? "";
+  if (o.startsWith(h.baslik)) o = o.slice(h.baslik.length);
+  if (h.kaynak) o = o.split(h.kaynak).join(" ");
+  return o.trim();
+};
+
+export const haberSiniflandir = (h: Haber) => siniflandir(h.baslik, temizOzet(h));
 
 const agirlikPuani = (m: string) => {
   let p = 0;
@@ -1182,7 +1216,7 @@ const OLAY_PENCERESI = 36 * SAAT;
  */
 export const olaylariKur = (haberler: Haber[]): Olay[] => {
   const sirali = [...haberler].sort((a, b) => b.zaman.localeCompare(a.zaman));
-  const gruplar: { imza: Set<string>; t: number; haberler: Haber[] }[] = [];
+  const gruplar: { imza: Set<string>; t: number; konular: string[]; haberler: Haber[] }[] = [];
   // Sözcük dizini: aday yalnız ortak sözcüğü olan gruplar; her haberi bütün gruplarla karşılaştırmak 3000 haberde bir saniyeyi buluyordu.
   const dizin = new Map<string, number[]>();
   const gorulen = new Set<string>();
@@ -1191,14 +1225,17 @@ export const olaylariKur = (haberler: Haber[]): Olay[] => {
     gorulen.add(h.baglanti);
     const i = imza(h.baslik);
     const t = Date.parse(h.zaman);
+    // Başlığın konuları: ikisi de konulu ama ortak konusu olmayan haberler (Fransa ve Sudan) benzer sözcüklerle birleşmez.
+    const hk = siniflandir(h.baslik).konular;
+    const uyumlu = (k: string[]) => !k.length || !hk.length || k.some((x) => hk.includes(x));
     const adaylar = new Set<number>();
     for (const w of i) for (const n of dizin.get(w) ?? []) adaylar.add(n);
     // İlk eklenen grup önce: eskiden de ilk uyan seçiliyordu.
-    const n = [...adaylar].sort((a, b) => a - b).find((k) => Math.abs(gruplar[k].t - t) <= OLAY_PENCERESI && benzer(gruplar[k].imza, i));
+    const n = [...adaylar].sort((a, b) => a - b).find((k) => Math.abs(gruplar[k].t - t) <= OLAY_PENCERESI && uyumlu(gruplar[k].konular) && benzer(gruplar[k].imza, i));
     // İmza büyütülmez, grubun ilk haberiyle karşılaştırılır: büyüyünce grup kartopu gibi alakasız haberleri çekiyordu.
     if (n !== undefined) gruplar[n].haberler.push(h);
     else {
-      gruplar.push({ imza: i, t, haberler: [h] });
+      gruplar.push({ imza: i, t, konular: hk, haberler: [h] });
       for (const w of i) {
         const l = dizin.get(w);
         if (l) l.push(gruplar.length - 1);
@@ -1212,7 +1249,7 @@ export const olaylariKur = (haberler: Haber[]): Olay[] => {
      * Etiket olayın haberlerinin en az %30'unda geçiyorsa olaya verilir:
      * yanlış birleşen tek haber olaya ek etiketler taşıyordu.
      */
-    const tek = hs.map((h) => siniflandir(`${h.baslik} ${h.ozet ?? ""}`));
+    const tek = hs.map(haberSiniflandir);
     const esik = Math.max(1, Math.ceil(hs.length * 0.3));
     const sayKonu = new Map<string, number>();
     const sayAlt = new Map<string, number>();
@@ -1920,6 +1957,9 @@ export const demoHaberleri = (simdi: number): Haber[] => {
     h("Senate debates arms package for Israel and Ukraine", 16, "Örnek E"),
     h("Libya rival governments hold talks in Tripoli", 30, "Örnek B"),
     h("محادثات ايرانية اوروبية حول الملف النووي الاسبوع المقبل", 11, "Örnek A"),
+    // Tuzak: özetteki tek sözcük konu vermez (Paris haberi Sudan'a düşüyordu); Irak başbakanının soyadı Sudan değil.
+    h("ماكرون يستقبل رئيس الوزراء اللبناني في باريس", 5, "Örnek B", "بحث اللقاء ملفات إقليمية بينها الأوضاع في السودان"),
+    h("محمد شياع السوداني يترأس اجتماعا أمنيا في بغداد", 6, "Örnek A"),
     // Tuzak: "مشاركة" Machar, "الرياضة" Riyad, "حلبة" Halep sayılmamalı (Arapça sözcük sınırı).
     h("مشاركة واسعة في حلبة السباق ضمن مهرجان الرياضة", 4, "Örnek E"),
   ];

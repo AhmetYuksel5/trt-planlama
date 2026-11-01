@@ -406,8 +406,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kızıldeniz/Assab); Türkiye ve ABD'de `sart` (dış politika, bölge) iç
     gündemi dışarıda tutar. Bölgeler arası bağlar `BAGLAR`: olay ikisine
     düşerse iki klasörde de aynı kayıt, "Bölgeler arası"nda da.
+  - Sınıflandırma başlığa dayanır (`siniflandir(baslik, ozet)`,
+    `haberSiniflandir`): konu başlıkta geçer ya da özette o konunun en az iki
+    ayrı sözcüğü geçer; özetten başlık tekrarı ve yayıncı adı atılır
+    (`temizOzet`). Özetteki tek sözcük ve yayıncı adı (ör. "…السودانية")
+    Fransa haberini Sudan'a düşürüyordu. Kişi adları konudan dışlanır
+    (`haric`: Irak başbakanı "شياع السوداني" Sudan değil).
   - Aynı olayı veren haberler başlık sözcükleri örtüşünce (36 saat) tek olay
-    (`olaylariKur`). Konu klasörleri kalktı (kullanıcı: klasöre bölünme iyi
+    (`olaylariKur`); başlık konuları ortaksız iki haber birleşmez. Konu klasörleri kalktı (kullanıcı: klasöre bölünme iyi
     işlemiyor): "Haber akışı" tek liste, en yenisi üstte, her haber
     etiketleriyle (`olayEtiketleri`: konu, alt başlık `konu:alt`, bağ
     `bag:…`; ad `etiketAdi`). Çubuktan ya da haberin etiketinden süzülür,

@@ -54,6 +54,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-secimi-temizle]").click();
   const tuzak = p.locator('[data-olay-listesi="akis"] [data-olay]').filter({ hasText: "مشاركة واسعة" });
   ok((await tuzak.count()) === 1 && (await tuzak.locator("[data-olay-etiket]").count()) === 0, "Arapça sözcük sınırı: مشاركة/الرياضة/حلبة etiket almadı");
+  const etiketleri = async (metin) => p.locator('[data-olay-listesi="akis"] [data-olay]').filter({ hasText: metin }).first().locator("[data-olay-etiket]").evaluateAll((l) => l.map((e) => e.dataset.olayEtiket));
+  const paris = await etiketleri("ماكرون يستقبل");
+  ok(paris.includes("lubnan") && !paris.includes("sudan"), "özetteki tek sözcük konu vermez: Paris haberi Lübnan, Sudan değil " + paris);
+  const sudani = await etiketleri("شياع السوداني");
+  ok(sudani.includes("irak") && !sudani.includes("sudan"), "Irak başbakanının soyadı Sudan sayılmaz " + sudani);
   // Türkiye: iç gündem değil, dış politika
   await p.locator('[data-etiket="turkiye"] .gundem-etiket-ad').click();
   ok((await p.locator('[data-olay-listesi="akis"] > [data-olay]').count()) === 1, "Türkiye etiketinde dış politika haberi");
