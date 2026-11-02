@@ -715,6 +715,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`kisiPozisyonu`); Excel'in cinsiyet sütunu yine okunmuyor. İlk sürümde
     kayıt düz kimlikti, okuma `veri.ts → gelismeMuhabirleri`'nden. Başlığın
     genel muhabirleri (`PlanBasligi.muhabirler`) ayrı kalır.
+  - Gelişmeye isteğe bağlı "Schedule" (`Gelisme.program`, saat + olay
+    satırları; gelişme formunda kutu işaretlenince açılır): ziyaret, zirve
+    gibi olayın saat saat programı. Plan ekranında, belgede ve çıktıda
+    paragrafın hemen altında "Schedule" satırı, sonra "SAAT / olay", saat
+    sırasıyla (`veri.ts → gelismeProgrami`, `Bolumler.tsx → GelismeProgrami`).
   - Haber türü PKG değilse Next Day'de haberin satırının sonunda kodu
     (`etiketler.ts → bicimEki`, `BICIM_KODU`: "… / ad VideoWall"): paket
     satırında paketin türü; paketsiz plana giren önerinin gelişmesinde

@@ -35,7 +35,7 @@ import {
   planBaslikLive,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
-import { baslikBul, gelismeMuhabirleri, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
+import { baslikBul, gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
@@ -172,6 +172,19 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {op ? <YerindeMetin acik cokSatir deger={g.metin} etiket={t("gelismeMetni")} kaydet={(x) => x && ben && gelismeKaydet(ben, { ...g, metin: x })} /> : g.metin}
           {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
         </Satir>
+        {/* Schedule paragrafın hemen altında, saat sırasıyla; muhabirden önce, gelişmenin parçası. */}
+        {gelismeProgrami(g).length > 0 && (
+          <>
+            <Satir>
+              <b data-schedule>{c("schedule")}</b>
+            </Satir>
+            {gelismeProgrami(g).map((x, i) => (
+              <Satir key={i} yer={x.saat || undefined}>
+                {x.olay}
+              </Satir>
+            ))}
+          </>
+        )}
         {/* Başlığın içindeki konuyu özel takip eden muhabir paragrafın hemen altında; başlığın genel muhabirleri ayrı. */}
         {gelismeMuhabirleri(g).length > 0 && (
           <>

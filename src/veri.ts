@@ -346,6 +346,8 @@ export interface Gelisme {
   takipId?: string;
   /** Başlığın içindeki bu konuyu özel takip eden muhabirler ve o günkü yerleri; başlığın genel muhabirlerinden ayrı, paragrafın altında yazılır. Eski kayıtta düz kimlik (gelismeMuhabirleri). */
   muhabirler?: (string | { kisiId: string; yer?: string })[];
+  /** İsteğe bağlı "Schedule": gelişmenin saat saat programı (ziyaret, zirve…); planda paragrafın altında. */
+  program?: ProgramSatiri[];
   onceki?: true;
   devir?: true;
 }
@@ -1737,5 +1739,12 @@ export const acikCagri = (d: Durum, tur: CagriTuru, bugun: string) =>
   d.cagrilar.filter((c) => cagriTuru(c) === tur && c.tarih > bugun).sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
 
 /* Gelişme muhabiri ilk sürümde düz kimlikti; yer eklenince nesneye döndü. */
+export interface ProgramSatiri {
+  saat: string;
+  olay: string;
+}
+/* Saat sırasıyla: planlamacı satırları sonradan araya ekleyebiliyor; saatsiz satır sonda. */
+export const gelismeProgrami = (g: Pick<Gelisme, "program">): ProgramSatiri[] =>
+  [...(g.program ?? [])].filter((x) => x.olay.trim()).sort((a, b) => (a.saat || "99").localeCompare(b.saat || "99"));
 export const gelismeMuhabirleri = (g: Pick<Gelisme, "muhabirler">): { kisiId: string; yer?: string }[] =>
   (g.muhabirler ?? []).map((m) => (typeof m === "string" ? { kisiId: m } : m));

@@ -130,7 +130,11 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     onerenId: mevcut?.onerenId ?? "",
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
     muhabirler: mevcut ? gelismeMuhabirleri(mevcut) : [],
+    schedule: !!mevcut?.program?.length,
+    program: mevcut?.program?.length ? mevcut.program : [{ saat: "", olay: "" }],
   });
+  const program = f.schedule ? f.program.map((x) => ({ saat: x.saat, olay: x.olay.trim() })).filter((x) => x.olay) : [];
+  const programDegis = (i: number, alan: "saat" | "olay", deger: string) => setF((x) => ({ ...x, program: x.program.map((y, j) => (j === i ? { ...y, [alan]: deger } : y)) }));
   const kaydet = () => {
     if (!ben || !f.metin.trim()) return;
     gelismeKaydet(ben, {
@@ -145,6 +149,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
       muhabirler: f.muhabirler.length ? f.muhabirler.map((m) => (m.yer?.trim() ? { kisiId: m.kisiId, yer: m.yer.trim() } : { kisiId: m.kisiId })) : undefined,
+      program: program.length ? program : undefined,
     }, sonra);
     kapat();
   };
@@ -214,6 +219,26 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
         )}
         <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.some((y) => y.kisiId === id) ? x : { ...x, muhabirler: [...x.muhabirler, { kisiId: id }] }))} bosEtiket={t("muhabirAta")} />
       </div>
+      <label className="secim">
+        <input type="checkbox" data-schedule-kutusu checked={f.schedule} onChange={(e) => setF({ ...f, schedule: e.target.checked })} />
+        {t("schedule")}
+      </label>
+      {f.schedule && (
+        <div className="form" data-program>
+          {f.program.map((x, i) => (
+            <div key={i} className="satir">
+              <input type="time" value={x.saat} aria-label={t("saat")} onChange={(e) => programDegis(i, "saat", e.target.value)} />
+              <input {...icerikAlani} value={x.olay} aria-label={t("programOlay")} onChange={(e) => programDegis(i, "olay", e.target.value)} />
+              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, program: y.program.length > 1 ? y.program.filter((_, j) => j !== i) : [{ saat: "", olay: "" }] }))} title={t("cikar")} aria-label={t("cikar")}>
+                ×
+              </button>
+            </div>
+          ))}
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, program: [...y.program, { saat: "", olay: "" }] }))}>
+            + {t("programSatiriEkle")}
+          </button>
+        </div>
+      )}
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
     </div>
   );

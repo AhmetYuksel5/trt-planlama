@@ -9,7 +9,7 @@ import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYa
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { gelismeMuhabirleri, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
+import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
 
 /**
@@ -572,6 +572,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                   {g.metin}
                   {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
                 </Icerik>
+                <GelismeProgrami g={g} />
                 <GelismeMuhabirSatirlari g={g} v={v} />
                 <small>
                   <Rozet>{t(KAYNAK_ADI[g.kaynakTuru])}</Rozet>
@@ -656,6 +657,24 @@ export function TakipBolumu({ plan, duzenler, d, no }: { plan: NextDayPlan; duze
     <Bolum ar no={no} baslik={metin("takipler", "ar")} ek={String(takipler.length)}>
       <GelismeListesi plan={plan} gelismeler={takipler} duzenler={duzenler} />
     </Bolum>
+  );
+}
+
+/* Gelişmenin "Schedule"ı: başlık satırı, altında "SAAT / olay"; saatsiz satırda yalnız olay. */
+export function GelismeProgrami({ g }: { g: Gelisme }) {
+  const program = gelismeProgrami(g);
+  if (!program.length) return null;
+  return (
+    <>
+      <Icerik blok>
+        <b data-schedule>{metin("schedule", "ar")}</b>
+      </Icerik>
+      {program.map((x, i) => (
+        <Icerik key={i} blok>
+          {x.saat ? satir(x.saat, x.olay) : x.olay}
+        </Icerik>
+      ))}
+    </>
   );
 }
 
