@@ -1135,6 +1135,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (muhabirinki; ülke ve süzgeçler ondan).
   - Next Day'in "Hazır paketler" bölümü (`hazirPaketler`) stoktan seçer;
     plan devredilince seçili paket `yayinlandi` alır.
+    Planın beklenen paketi (PKG) yapılmışsa satırındaki "Stok paket olarak
+    ekle" (plan ekranında ve belgede; `eylemler.ts → paketStogaAl`,
+    `paketStogaAlinabilir`: plan içeriğini düzenleyen, üretimde, iptal ve özel
+    yayın paketi değil) onu stok paketi yapar (`tamamlandi`), başlıktan
+    ayırır (iki yerde basılmasın), hazır paketlere ekler; hareket
+    `paketStogaAlindi`. Hazır pakette açıklama ve kod (slug) satırın hemen
+    altında; PKG satırında da kod altında.
 - Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş
   akışı, tam yönetici, gerçek kipte genel ayar belgesinde) iş Planlama'da
   biter (tasarım belgesi 3. aşama, paketin aşamaları):

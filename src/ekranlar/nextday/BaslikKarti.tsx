@@ -1,11 +1,11 @@
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
@@ -247,6 +247,11 @@ export default function BaslikKarti({
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
                       <Icerik blok>{satir(paketYeri(p), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}</Icerik>
                     </a>
+                    {p.slug && (
+                      <span dir="ltr" className="slug" data-paket-kodu>
+                        {p.slug}
+                      </span>
+                    )}
                     <small>
                       {p.oncelikli && <OncelikRozeti />}
                       {p.haftalikKalemId && <HaftalikRozeti />}
@@ -275,6 +280,9 @@ export default function BaslikKarti({
                     )}
                     {degerlendirir && !["tamamlandi", "iptal", "taslak", "degerlendiriliyor"].includes(p.durum) && (
                       <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
+                    )}
+                    {icerik && paketStogaAlinabilir(p) && (
+                      <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id)} />
                     )}
                     {icerik && paketPlandanSilinir(p) && (
                       <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />

@@ -1747,6 +1747,23 @@ export const hazirPaketEkle = (ben: Kisi, planId: string, id: string) => {
   if (!p || stokDurumu(p) !== "stokta") return false;
   return planIcerik(ben, planId, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, id) }));
 };
+/*
+ * Planın beklenen paketi (PKG) aslında yapılmış: stok paketi olarak hazır
+ * paketlere geçiyor. Paket tamamlandı sayılır, başlıktan ayrılır (iki yerde
+ * basılmasın), planın hazır paketleri listesine girer; devirde yayınlandı alır.
+ * Üretimdeki ve iptal paket alınmaz: akışı ya da kararı var.
+ */
+export const paketStogaAlinabilir = (p: Paket) => !!p.planId && !p.ozelId && ["taslak", "degerlendiriliyor", "onaylandi", "tamamlandi"].includes(p.durum) && !p.yayinlandi;
+export const paketStogaAl = (ben: Kisi, paketId: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const plan = planBul(d, p?.planId);
+  if (!p || !plan || !paketStogaAlinabilir(p) || !planIcerikDuzenler(ben, plan)) return false;
+  d = paketGuncelle(d, p.id, (x) => ({ ...x, stok: true, durum: "tamamlandi", planBaslikId: undefined, isaret: undefined }));
+  d = planGuncelle(d, plan.id, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, p.id) }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketStogaAlindi", paketId: p.id, planId: plan.id }));
+  return true;
+};
 export const hazirPaketCikar = (ben: Kisi, planId: string, id: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, hazirPaketler: cikar(p.hazirPaketler, id) }));
 export const hazirPaketTasi = (ben: Kisi, planId: string, id: string, yon: -1 | 1) =>

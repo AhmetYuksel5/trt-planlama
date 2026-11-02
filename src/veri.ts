@@ -1329,6 +1329,7 @@ export const HAREKET_TIPLERI = [
   "haftaliktanAktarildi",
   "uretimeAlindi",
   "stokYayinlandi",
+  "paketStogaAlindi",
   "faaliyetEklendi",
   "faaliyetPlanaAlindi",
 ] as const;

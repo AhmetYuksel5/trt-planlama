@@ -1,4 +1,4 @@
-import { ArrowRightLeft, ExternalLink, Printer } from "lucide-react";
+import { ArrowRightLeft, ExternalLink, PackageCheck, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
@@ -21,6 +21,8 @@ import {
   oncekiOnayla,
   paketKaydet,
   paketSil,
+  paketStogaAl,
+  paketStogaAlinabilir,
   paketTasi,
   planBaslikCikar,
   planBaslikTasi,
@@ -483,7 +485,14 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                               ekle={() => ac({ tur: "paket", pbId: pb.id, sonra: p.id })}
                               ekleEtiket={t("paketOnerisiEkle")}
                               duzenle={acikPaket ? () => ac({ tur: "paket", pbId: pb.id, mevcut: p }) : undefined}
-                              ek={<PaketBaglantisi id={p.id} />}
+                              ek={
+                                <>
+                                  <PaketBaglantisi id={p.id} />
+                                  {paketStogaAlinabilir(p) && (
+                                    <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id)} />
+                                  )}
+                                </>
+                              }
                               cikar={paketPlandanSilinir(p) ? sil(() => ben && paketSil(ben, p.id)) : undefined}
                             />
                           }
@@ -497,6 +506,12 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                             / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
 {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
                           </Satir>
+                          {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
+                          {p.slug && (
+                            <p className="cikti-slug" data-paket-kodu>
+                              <bdi>{p.slug}</bdi>
+                            </p>
+                          )}
                         </BelgeSatiri>
                       );
                     })}
