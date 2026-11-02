@@ -1729,7 +1729,7 @@ const M = {
   planaSecildi: m("Plana seçildi: {tarih}", "اختير للخطة: {tarih}", "Picked for: {tarih}"),
   stoktakiPaketler: m("Stoktaki paketler", "التقارير في المخزون", "Packages in stock"),
   stokPaketOlarakEkle: m("Stok paket olarak ekle", "إضافة كتقرير جاهز", "Add as stock package"),
-  schedule: m("Schedule", "Schedule", "Schedule"),
+  schedule: m("SCHEDULE", "SCHEDULE", "SCHEDULE"),
   programOlay: m("Olay", "الحدث", "Event"),
   programSatiriEkle: m("Satır ekle", "إضافة سطر", "Add line"),
   stokBaslikta: m("Paket başlığın altında da kalsın mı? İptal: yalnız hazır paketlerde olur.", "هل يبقى التقرير تحت عنوانه أيضاً؟ إلغاء: يبقى في التقارير الجاهزة فقط.", "Keep the package under its headline too? Cancel: only in ready packages."),

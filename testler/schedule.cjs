@@ -19,7 +19,7 @@ const { chromium } = require(process.env.PW);
   const sira = ekran.indexOf("10:30") > -1 && ekran.indexOf("10:30") < ekran.indexOf("14:00");
   await p.goto(B + "#/nextday/yarin/cikti"); await p.waitForTimeout(1000);
   const cikti = await p.locator("article.cikti").first().innerText();
-  const ciktida = /Schedule\s*\n?\s*10:30 \/ وصول الرئيس/.test(cikti) && cikti.includes("14:00 / مؤتمر صحفي مشترك");
+  const ciktida = /SCHEDULE\s*\n?\s*10:30 \/ وصول الرئيس/.test(cikti) && cikti.includes("14:00 / مؤتمر صحفي مشترك");
   console.log("ekranda sıra", sira, "çıktıda", ciktida);
   await b.close(); process.exit(sira && ciktida ? 0 : 1);
 })();

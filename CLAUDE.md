@@ -718,7 +718,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Gelişmeye isteğe bağlı "Schedule" (`Gelisme.program`, saat + olay
     satırları; gelişme formunda kutu işaretlenince açılır): ziyaret, zirve
     gibi olayın saat saat programı. Plan ekranında, belgede ve çıktıda
-    paragrafın hemen altında "Schedule" satırı, sonra "SAAT / olay", saat
+    paragrafın hemen altında kalın "SCHEDULE" satırı, sonra "SAAT / olay" (saat kalın), saat
     sırasıyla (`veri.ts → gelismeProgrami`, `Bolumler.tsx → GelismeProgrami`).
   - Haber türü PKG değilse Next Day'de haberin satırının sonunda kodu
     (`etiketler.ts → bicimEki`, `BICIM_KODU`: "… / ad VideoWall"): paket

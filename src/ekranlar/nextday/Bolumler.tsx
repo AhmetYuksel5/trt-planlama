@@ -671,7 +671,8 @@ export function GelismeProgrami({ g }: { g: Gelisme }) {
       </Icerik>
       {program.map((x, i) => (
         <Icerik key={i} blok>
-          {x.saat ? satir(x.saat, x.olay) : x.olay}
+          {x.saat && <b>{x.saat} / </b>}
+          {x.olay}
         </Icerik>
       ))}
     </>
