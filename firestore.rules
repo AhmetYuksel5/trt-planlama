@@ -34,8 +34,45 @@ service cloud.firestore {
     function kisitli() { return kisitliJ(get(kisiYolu()).data); }
     // Kişi belgesindeki düz "kisitli" alanı metinle aynı olmalı (kısıtlı kişinin göreceği kişileri süzmeye yarıyor).
     function kisitliTutarli(k) { return k.get("kisitli", kisitliJ(k)) == kisitliJ(k); }
-    // Kısıtlı kişinin kimlikleri: kendisi ve hesaba bağlanmadan önceki hesapsız kaydı.
-    function kimliklerim() { return [request.auth.uid, get(kisiYolu()).data.get("oncekiKimlik", "")]; }
+    // Kısıtlı kişinin kimlikleri: kendisi ve hesaba bağlanmadan önceki kaydı. Önceki kimlik yalnız o kayıt
+    // hesapsızsa ya da e-postası bu hesaba taşınıyorsa geçerli: yoksa davete etkin bir muhabirin kimliğini
+    // yazan, o muhabirin kayıtlarını okuyup üstlenirdi.
+    function eskiYolu(o) { return /databases/$(veritabani)/documents/kisiler/$(o); }
+    function oncekiGecerli(o) {
+      return o != "" && exists(eskiYolu(o))
+        && (get(eskiYolu(o)).data.get("hesapsiz", false) == true || get(eskiYolu(o)).data.get("yeniEposta", "") == eposta());
+    }
+    function kimliklerim() {
+      return oncekiGecerli(get(kisiYolu()).data.get("oncekiKimlik", ""))
+        ? [request.auth.uid, get(kisiYolu()).data.get("oncekiKimlik", "")]
+        : [request.auth.uid];
+    }
+    // Kayıt metni (j) düz alanlarla tutarlı mı. Program kişiyi j'den kuruyor, kural düz alanları okuyor; kişi
+    // kendi j'sine "hesapYoneticisi": true ya da başka bir birim yazıp düz alanı değiştirmeden geçebiliyordu.
+    function jVar(k, p) { return k.get("j", "").matches('.*' + p + '.*'); }
+    function adGuvenli(x) { return x is string && x.matches('[A-Za-z0-9_-]{1,120}'); }
+    // Pozisyon alanı (birim, rol, görev) düz alanda da yazılı ve j'de bir kez, aynı değerle geçiyor.
+    function jAlan(k, a) {
+      return k.get(a, "") == ""
+        ? !jVar(k, '"' + a + '":')
+        : adGuvenli(k.get(a, "")) && jVar(k, '"' + a + '":"' + k.get(a, "") + '"[,}]') && !jVar(k, '"' + a + '":.*"' + a + '":');
+    }
+    function jTutarli(k) {
+      return jAlan(k, "birim") && jAlan(k, "rol") && jAlan(k, "gorev")
+        && (!jVar(k, '"hesapYoneticisi":true') || k.get("hesapYoneticisi", false) == true)
+        && (!jVar(k, '"yetkiler":\\[[^\\]]') || k.get("yetkiler", []).size() > 0)
+        && (!jVar(k, '"pasif":true') || k.get("pasif", false) == true)
+        && !jVar(k, '"hesapYoneticisi":.*"hesapYoneticisi":');
+    }
+    // Pozisyon (birim, rol, görev) ve ücret yetkisi değişmedi: yalnız tam yönetici ve kişi düzenleme yetkilisi
+    // değiştirir. İstisna: dış muhabirin şehirden gelen ünvanı (muhabir-…), şehir profilde değişince değişiyor.
+    function alanAyni(k, e, a) { return k.get(a, "") == "" ? !jVar(e, '"' + a + '":"') : jVar(e, '"' + a + '":"' + k.get(a, "") + '"[,}]'); }
+    function pozisyonAyni(k, e) {
+      return alanAyni(k, e, "birim") && alanAyni(k, e, "rol")
+        && (alanAyni(k, e, "gorev")
+            || (k.get("gorev", "").matches('muhabir(-[A-Za-z0-9_-]+)?') && jVar(e, '"gorev":"muhabir(-[^"]*)?"[,}]')))
+        && jVar(k, '"ucretYetkisi":true') == jVar(e, '"ucretYetkisi":true');
+    }
     // Belgenin erişim listesinde (m) adı geçiyor mu.
     function erisir(d) { return d.get("m", []).hasAny(kimliklerim()); }
     // Kişiye bağlı ayar belgesi: anahtar kişi ya da "kişi:…" (ana sayfa düzeni).
@@ -55,14 +92,23 @@ service cloud.firestore {
         && k.get("oncekiKimlik", "") == "";
     }
 
+    // Davetteki kişi kimliği (hesaba bağla, e-posta değişikliği): hesapsız kişi; etkin hesabı yalnız kişi
+    // düzenleme yetkilisi (e-postayı zaten o değiştiriyor) ve yöneticisiz, yetkisiz kişide gösterebilir.
+    function davetKisisi(d) {
+      return d.get("kisiId", "") == ""
+        || (exists(eskiYolu(d.kisiId))
+            && (get(eskiYolu(d.kisiId)).data.get("hesapsiz", false) == true
+                || (yetkiVar("kisiDuzenle") && yetkisiz(get(eskiYolu(d.kisiId)).data))));
+    }
+
     match /davetler/{adres} {
       allow read: if yetkiVar("davet") || (oturum() && eposta() == adres);
       // Davet yetkisiyle yönetici davet edilemez: yöneticilik yalnız tam yöneticiden.
-      allow create: if hesapYoneticisi() || (yetkiVar("davet") && yetkisiz(request.resource.data));
+      allow create: if hesapYoneticisi() || (yetkiVar("davet") && yetkisiz(request.resource.data) && davetKisisi(request.resource.data));
       allow delete: if yetkiVar("davet");
       // Yönetici her şeyi; davetli yalnız kendi davetini "kullanıldı" yapabilir (ilk girişte).
       allow update: if hesapYoneticisi()
-        || (yetkiVar("davet") && yetkisiz(request.resource.data))
+        || (yetkiVar("davet") && yetkisiz(request.resource.data) && davetKisisi(request.resource.data))
         || (oturum() && eposta() == adres
             && resource.data.durum == "bekliyor"
             && request.resource.data.durum == "kullanildi"
@@ -95,7 +141,7 @@ service cloud.firestore {
       // İlk giriş: kendi kaydı, bekleyen davetle (davetteki yetkiyle), kayıt bağlantısıyla ya da kurucu olarak.
       // Bağlantıda adresin sahibi olduğu e-posta bağlantısıyla kanıtlanmış olmalı (email_verified).
       // Hesapsız kişi (yalnız adı olan): giriş yapamaz, yetkisiz.
-      allow create: if kisitliTutarli(request.resource.data) && (hesapYoneticisi()
+      allow create: if kisitliTutarli(request.resource.data) && jTutarli(request.resource.data) && (hesapYoneticisi()
         || (yetkiVar("hesapsizKisi") && request.resource.data.get("hesapsiz", false) == true
             && yetkisiz(request.resource.data) && request.resource.data.get("oncekiKimlik", "") == "")
         || (oturum() && id == request.auth.uid
@@ -103,34 +149,44 @@ service cloud.firestore {
             && request.resource.data.pasif == false
             && request.resource.data.get("hesapsiz", false) == false
             && request.resource.data.get("yeniEposta", "") == ""
+            // Kendi kaydını kuran ücret yetkisini kendine veremez.
+            && !jVar(request.resource.data, '"ucretYetkisi":true')
             // Yetkiler yalnız davetten (e-posta değişikliğinde kişinin yetkileri taşınıyor); öbür yollarda yetkisiz.
             && ((exists(davetYolu())
                  && get(davetYolu()).data.durum == "bekliyor"
                  && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi
                  && request.resource.data.get("yetkiler", []) == get(davetYolu()).data.get("yetkiler", [])
                  && request.resource.data.get("oncekiKimlik", "") == get(davetYolu()).data.get("kisiId", "")
+                 // Birim davetteki: davetli kendini başka birimde kuramıyor.
+                 && request.resource.data.get("birim", "") == get(davetYolu()).data.get("birim", request.resource.data.get("birim", ""))
                  // Davet muhabire ise kayıt da muhabir: davetli kendini başka birimde kuramıyor.
                  && kisitliJ(request.resource.data) == (get(davetYolu()).data.get("birim", "") == "muhabir"))
                 || (request.resource.data.get("yetkiler", []).size() == 0
                     // Kayıt bağlantısıyla gelen yönetici onaylayana kadar kısıtlı (kontrolBekliyor).
-                    && ((request.auth.token.email_verified == true && kayitGecerli(request.resource.data) && kisitliJ(request.resource.data))
+                    && ((request.auth.token.email_verified == true && kayitGecerli(request.resource.data) && kisitliJ(request.resource.data)
+                         && request.resource.data.get("rol", "") != "yonetici")
                         || (eposta() == kurucuEposta() && request.auth.token.email_verified == true))))));
       // Etkin herkes kişi kaydını düzenleyebiliyor (profil, durum); yetki alanlarını yalnız hesap yöneticisi.
       // Hesap kapatma yetkisi olan, tam yönetici olmayanın hesabını kapatıp açabiliyor.
       // Kısıtlılık (muhabir birimi, onay bekleme) yalnız kişi düzenleme yetkisiyle değişir: muhabir kendini
       // başka birime alıp her şeyi göremesin. Kısıtlı kişi yalnız kendi kaydını düzenler.
-      allow update: if kisitliTutarli(request.resource.data) && (hesapYoneticisi()
-        || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari())
-            && kisitliJ(request.resource.data) == kisitliJ(resource.data)
-            && (!kisitli() || id == request.auth.uid))
+      allow update: if kisitliTutarli(request.resource.data) && jTutarli(request.resource.data) && (hesapYoneticisi()
         // Kişi düzenleme yetkisi olan, tam yönetici olmayanın e-postasını değiştiriyor: hesapsızda doğrudan,
         // etkin hesapta yalnız "yeni e-posta" işareti (aktivasyon daveti onun adresine gidiyor).
         || (yetkiVar("kisiDuzenle") && resource.data.get("hesapYoneticisi", false) == false
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["s", "j", "eposta", "yeniEposta", "kisitli"])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["s", "j", "eposta", "yeniEposta", "kisitli", "birim", "rol", "gorev"])
+            && jVar(request.resource.data, '"ucretYetkisi":true') == jVar(resource.data, '"ucretYetkisi":true')
             && (resource.data.get("hesapsiz", false) == true || !request.resource.data.diff(resource.data).affectedKeys().hasAny(["eposta"])))
         || (yetkiVar("hesapAcKapa") && resource.data.get("hesapYoneticisi", false) == false && id != request.auth.uid
             && kisitliJ(request.resource.data) == kisitliJ(resource.data)
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"])));
+            && pozisyonAyni(request.resource.data, resource.data)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["hesapYoneticisi", "eposta", "yetkiler", "hesapsiz", "oncekiKimlik"]))
+        // Sıra bilerek: yetkili dallar önce (ilk denetimleri ucuz). Pozisyon karşılaştırması pahalı; reddedilen
+        // dal ifade sınırını (1000) doldurup yetkilinin meşru yazışını da düşürüyordu.
+        || (etkin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(yetkiAlanlari())
+            && kisitliJ(request.resource.data) == kisitliJ(resource.data)
+            && pozisyonAyni(request.resource.data, resource.data)
+            && (!kisitli() || id == request.auth.uid)));
       // Hesaba bağlanan kişi kendi eski kaydını kaldırıyor (oncekiKimlik onu gösteriyor): hesapsız kayıt ya da e-postası değişen hesap.
       // Kişi silme yetkisi olan, tam yönetici olmayanı siliyor; kendini silemiyor (sistem yöneticisiz kalmasın).
       allow delete: if hesapYoneticisi()
@@ -150,6 +206,45 @@ service cloud.firestore {
       allow write: if hesapYoneticisi() && alan in ["yapilar", "yapiTaslaklari"];
     }
 
+    // Kısıtlı kişinin yazdığı içerik: durumu yalnız kendi yapabildiği geçişlerle değişir, kaydı yalnız
+    // kendi adıyla açar. Yoksa muhabir paketini "tamamlandı", önerisini "plana eklendi" yazıp onayı atlıyor,
+    // hareket kaydına başkasının adıyla bildirim yazabiliyordu. Program durumu j'de tutuyor; kural metinden okur.
+    function durumu(k, d) { return jVar(k, '"durum":"' + d + '"'); }
+    function tekDurum(k) { return !jVar(k, '"durum":.*"durum":'); }
+    function oneriDurumAyni(n, o) {
+      return durumu(n, "teklif") == durumu(o, "teklif") && durumu(n, "yeni") == durumu(o, "yeni")
+        && durumu(n, "degerlendiriliyor") == durumu(o, "degerlendiriliyor") && durumu(n, "duzeltme") == durumu(o, "duzeltme")
+        && durumu(n, "takip") == durumu(o, "takip") && durumu(n, "planaEklendi") == durumu(o, "planaEklendi")
+        && durumu(n, "reddedildi") == durumu(o, "reddedildi") && durumu(n, "sonra") == durumu(o, "sonra")
+        && durumu(n, "geriCekildi") == durumu(o, "geriCekildi");
+    }
+    function paketDurumAyni(n, o) {
+      return durumu(n, "taslak") == durumu(o, "taslak") && durumu(n, "degerlendiriliyor") == durumu(o, "degerlendiriliyor")
+        && durumu(n, "onaylandi") == durumu(o, "onaylandi") && durumu(n, "uretimde") == durumu(o, "uretimde")
+        && durumu(n, "tamamlandi") == durumu(o, "tamamlandi") && durumu(n, "iptal") == durumu(o, "iptal");
+    }
+    // Yazanın kimliği (k, src/depo/fark.ts → ogeBelgesi): kendisi ya da değişmemiş.
+    function yazanGecerli(n, eski) {
+      return adGuvenli(n.get("k", "")) && jVar(n, '"kisiId":"' + n.k + '"') && !jVar(n, '"kisiId":.*"kisiId":')
+        && (n.k in kimliklerim() || (eski != null && jVar(eski.data, '"kisiId":"' + n.k + '"')));
+    }
+    function kisitliIcerik(alan, n, eski) {
+      return (alan == "oneriler" && tekDurum(n)
+              && (eski == null
+                  // Yeni öneri ya da takip.
+                  ? (durumu(n, "yeni") || durumu(n, "takip"))
+                  : (oneriDurumAyni(n, eski.data)
+                     // Düzeltip yeniden gönderme, takibi öneriye çevirme, Planlama dokunmadan geri çekme.
+                     || (durumu(n, "yeni") && (durumu(eski.data, "duzeltme") || durumu(eski.data, "takip")))
+                     || (durumu(n, "geriCekildi") && durumu(eski.data, "yeni")))))
+        || (alan == "paketler" && eski != null && tekDurum(n)
+              && (paketDurumAyni(n, eski.data)
+                  // Özel yayın paketini işi yapan teslim ediyor (ozelPaketTeslimEdebilir); öbürü işaret ve onayla kapanır.
+                  || (durumu(n, "tamamlandi") && jVar(n, '"ozelId":"') && (durumu(eski.data, "onaylandi") || durumu(eski.data, "uretimde")))))
+        || (alan in ["hareketler", "mesajlar"] && yazanGecerli(n, eski))
+        || alan in ["takipler", "bahsetmeler"];
+    }
+
     // Öbür bütün kayıt: etkin personel okur ve yazar. Kısıtlı kişi (muhabir) yalnız erişim listesinde (m)
     // adı geçen belgeyi okur; yalnız kendi işinin koleksiyonlarına, listesinde adı kalan belgeyi yazar
     // (src/depo/fark.ts → erisimListesi). Kişiye bağlı ayarlarda (bildirim okundu, ana sayfa, görünüm,
@@ -164,7 +259,8 @@ service cloud.firestore {
             || alan == "sehirler");
       allow create, update: if etkin() && kisitli()
         && ((alan in ["oneriler", "paketler", "takipler", "mesajlar", "hareketler", "bahsetmeler"]
-             && erisir(request.resource.data) && (resource == null || erisir(resource.data)))
+             && erisir(request.resource.data) && (resource == null || erisir(resource.data))
+             && kisitliIcerik(alan, request.resource.data, resource))
             || kendiAyari(alan, belge)
             // Muhabir profilinde listede olmayan şehrini ekleyebilir; var olanı değiştiremez.
             || (alan == "sehirler" && resource == null));

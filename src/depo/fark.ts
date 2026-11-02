@@ -130,7 +130,12 @@ export interface OgeBelgesi {
   oncekiKimlik?: string;
   yetkiler?: string[];
   yeniEposta?: string;
-  /** Kişide: kural ona yalnız kendi belgelerini veriyor; kısıtlı kişi öbür kısıtlıları göremiyor. */
+  birim?: string;
+  rol?: string;
+  gorev?: string;
+  /** Hareket ve mesajda yazanın kimliği. */
+  k?: string;
+    /** Kişide: kural ona yalnız kendi belgelerini veriyor; kısıtlı kişi öbür kısıtlıları göremiyor. */
   kisitli?: boolean;
   /** Erişim listesi: kısıtlı kişilerden bu belgeyi görebilenler. */
   m?: string[];
@@ -205,8 +210,15 @@ type Oge = { id: string };
 export const ogeBelgesi = (alan: string, oge: Oge, s: number, d?: Durum): OgeBelgesi => {
   const b: OgeBelgesi = { s, j: JSON.stringify(oge) };
   if (d && (KISITLI_OKUR as readonly string[]).includes(alan)) b.m = erisimListesi(alan, oge, d);
+  // Yazanın kimliği: kural kısıtlı kişiye yalnız kendi adıyla kayıt açtırıyor (firestore.rules → yazanGecerli).
+  if ((alan === "hareketler" || alan === "mesajlar") && typeof (oge as { kisiId?: unknown }).kisiId === "string") b.k = (oge as unknown as { kisiId: string }).kisiId;
   if (alan === "kisiler") {
     b.kisitli = kisitliJson(b.j);
+    // Pozisyon düz alanda da: kural j ile karşılaştırıp kişinin kendi birimini, rolünü değiştirmesini engelliyor.
+    const p = oge as Oge & { birim?: unknown; rol?: unknown; gorev?: unknown };
+    if (typeof p.birim === "string") b.birim = p.birim;
+    if (typeof p.rol === "string") b.rol = p.rol;
+    if (typeof p.gorev === "string") b.gorev = p.gorev;
     const k = oge as Oge & { eposta?: string; pasif?: boolean; hesapYoneticisi?: boolean; kayitKodu?: string; hesapsiz?: boolean; oncekiKimlik?: string; yetkiler?: string[]; yeniEposta?: string };
     b.eposta = (k.eposta ?? "").toLowerCase();
     b.pasif = !!k.pasif;
@@ -224,6 +236,26 @@ export const ogeBelgesi = (alan: string, oge: Oge, s: number, d?: Durum): OgeBel
     if (k.yeniEposta) b.yeniEposta = k.yeniEposta.toLowerCase();
   }
   return b;
+};
+
+/*
+ * Kişi belgesinden kişi: yetki alanları metinden (j) değil düz alanlardan.
+ * Kural yalnız düz alanları koruyor; j'yi kişinin kendisi de yazabiliyor.
+ * j'deki "hesapYoneticisi": true okunsaydı yöneticinin tarayıcısı o kişiyi
+ * bir sonraki yazışta düz alana da taşıyacaktı (yetki kendiliğinden yükselirdi).
+ */
+export const kisiBelgedenOku = (v: OgeBelgesi): Record<string, unknown> => {
+  const k = JSON.parse(v.j) as Record<string, unknown>;
+  for (const a of ["hesapYoneticisi", "pasif", "hesapsiz", "oncekiKimlik", "yetkiler", "yeniEposta"]) delete k[a];
+  if (v.hesapYoneticisi) k.hesapYoneticisi = true;
+  if (v.pasif) k.pasif = true;
+  if (v.hesapsiz) k.hesapsiz = true;
+  if (v.oncekiKimlik) k.oncekiKimlik = v.oncekiKimlik;
+  if (v.yetkiler?.length) k.yetkiler = [...v.yetkiler];
+  if (v.yeniEposta) k.yeniEposta = v.yeniEposta;
+  // Giriş adresi düz alandaki; metindeki yalnız yazımı (büyük harf) taşıyor.
+  if (typeof v.eposta === "string" && String(k.eposta ?? "").toLowerCase() !== v.eposta) k.eposta = v.eposta || undefined;
+  return k;
 };
 
 /* Firestore belge kimliğinde "/" olamıyor; harita anahtarları kişi kimliği, yine de korunsun. */

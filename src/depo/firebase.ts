@@ -43,7 +43,7 @@ import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnv
 import { gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
-import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
+import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
  * Gerçek kipin Firebase katmanı: oturum (Auth), davet ve etkinleştirme
@@ -248,15 +248,20 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     d = { ...d, [alan]: liste.map(([, x]) => x.o) };
   };
   /* Belgenin düz alanından tazelenecek olan: erişim listesi, kişide kısıt işareti (erisimiTazele). */
-  const ek = (alan: string, v: OgeBelgesi) => (alan === "kisiler" ? String(v.kisitli) : JSON.stringify(v.m ?? []));
+  // Kişide düz yetki alanları da: metin aynı kalıp yalnız düz alan değiştiyse (yönetici yetki verdi) kişi tazelensin.
+  const ek = (alan: string, v: OgeBelgesi) =>
+    alan === "kisiler"
+      ? JSON.stringify([v.kisitli, v.hesapYoneticisi, v.pasif, v.hesapsiz, v.oncekiKimlik, v.yetkiler, v.yeniEposta, v.eposta])
+      : JSON.stringify(v.m ?? []);
   const belgeIsle = (alan: string, id: string, v: (OgeBelgesi & { silindi?: boolean }) | undefined): boolean => {
     const m = onbellek[alan];
     if (!v || v.silindi) return m.delete(id);
     if (alan === "kisiler") kendimDegisti(id, v);
     const eski = m.get(id);
     if (eski && eski.j === v.j && eski.s === v.s && eski.e === ek(alan, v)) return false;
-    m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j ? eski.o : JSON.parse(v.j), e: ek(alan, v) });
-    return !eski || eski.j !== v.j || eski.s !== v.s;
+    const e = ek(alan, v);
+    m.set(id, { s: v.s, j: v.j, o: eski && eski.j === v.j && eski.e === e ? eski.o : alan === "kisiler" ? kisiBelgedenOku(v) : JSON.parse(v.j), e });
+    return !eski || eski.j !== v.j || eski.s !== v.s || eski.e !== e;
   };
 
   const diziDinle = (alan: string, mod: "tam" | "fark" | "suz") => {

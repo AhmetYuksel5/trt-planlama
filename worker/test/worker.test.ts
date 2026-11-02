@@ -276,6 +276,10 @@ test("model listesi: yalnız tam yönetici, yeni yazılan ya da kayıtlı anahta
   assert.deepEqual(claude.modeller, ["claude-opus-5-5"]);
   assert.equal((await t.cagir("/modeller", "yon", { tur: "openai", adres: "http://kotu.test/v1", anahtar: "x" })).status, 400);
   assert.equal((await t.cagir("/modeller", "yon", { tur: "openai", adres: "https://api.ornek.test/v1" })).status, 400, "anahtarsız");
+  // Kayıtlı anahtar istekteki yabancı adrese gitmiyor: kayıtlı adres kullanılıyor
+  await t.cagir("/modeller", "yon", { saglayici: "diger", tur: "openai", adres: "https://saldirgan.test/v1" });
+  assert.ok(!t.istekler.some((x) => x.url.includes("saldirgan.test")), "saklı anahtar başka sunucuya gitmedi");
+  assert.equal(t.istekler.at(-1)!.basliklar.authorization, "Bearer sk-diger-5678");
   // Yeni yazılan anahtar saklanmadı
   assert.ok(!t.depo.get("ayar")!.includes("sk-yeni"));
 });

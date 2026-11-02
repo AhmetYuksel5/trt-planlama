@@ -266,7 +266,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sayfa başa dönüyordu (haftalık toplantıda her kararda).
   - Kurallar (`firestore.rules`) "etkin kişi"yi, hesap alanlarını
     (`pasif`, `hesapYoneticisi`, `eposta`) ve kısıtlı kişiyi denetliyor;
-    öbür birim yetkisi programda. Davetler `Durum`'da değil, `davetler`
+    öbür birim yetkisi programda.
+    - Kişi kaydının metni (`j`) düz alanlarla tutarlı olmalı (`jTutarli`):
+      program kişiyi `j`'den kuruyor, kişi kendi `j`'sini yazabiliyor; içine
+      "hesapYoneticisi": true yazıp yöneticinin tarayıcısı onu düz alana
+      taşıyınca tam yönetici oluyordu. Okumada yetki alanları düz alandan
+      (`depo/fark.ts → kisiBelgedenOku`); birim, rol, görev düz alanda da
+      (`ogeBelgesi`) ve `j`'de bir kez. Bunları ve `ucretYetkisi`'ni yalnız tam
+      yönetici ve kişi düzenleme yetkilisi değiştirir (`pozisyonAyni`; şehirden
+      gelen muhabir ünvanı hariç). Yetkili dallar kuralda önce: pozisyon
+      karşılaştırması pahalı, reddedilen dal 1000 ifade sınırını doldurup
+      meşru yazışı düşürüyordu.
+    - Kısıtlı kişinin yazdığı içerik (`kisitliIcerik`): önerinin durumu yalnız
+      yeni/takip açma, düzeltip yeniden gönderme, takibi öneriye çevirme ve
+      geri çekmeyle; paketin durumu değişmez (özel yayın paketinin teslimi
+      hariç); hareket ve mesaj yalnız kendi adıyla (düz `k`, `ogeBelgesi`).
+    - Önceki kimlik yalnız o kayıt hesapsızsa ya da e-postası bu hesaba
+      taşınıyorsa geçerli (`oncekiGecerli`); davetteki `kisiId` hesapsız kişiyi
+      ya da kişi düzenleme yetkilisinde yöneticisiz, yetkisiz kişiyi gösterir
+      (`davetKisisi`). Test `testler/kurallar.mjs` (`belgeler/gercek-kip.md`). Davetler `Durum`'da değil, `davetler`
     koleksiyonunda.
   - Muhabir yalnız kendi işini görür, kural düzeyinde (`depo/fark.ts →
     kisitliJson`, `KISITLI_OKUR`, `erisimListesi`; `yetki.ts → kisitliKisi`).
@@ -313,7 +331,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Firestore'u her etkin kişi yazabildiği için adres oradan okunsaydı
       anahtar başka sunucuya yönlendirilebilirdi.
     - Model sağlayıcının listesinden seçilir (`/modeller`, "Modelleri getir";
-      formdaki yeni anahtar yalnız o istekte kullanılır). Hata metinleri
+      formdaki yeni anahtar yalnız o istekte kullanılır). Kayıtlı anahtar yalnız
+      kayıtlı adrese ve türe gider; istekteki adres yalnız yeni anahtarla. Hata metinleri
       sağlayıcının kendi iletisiyle (`ayrinti`).
     - Claude sağlayıcısında isteğe bağlı "Çalışma alanı kimliği"
       (`Saglayici.calismaAlani`): anahtar Console'da bir çalışma alanına bağlı

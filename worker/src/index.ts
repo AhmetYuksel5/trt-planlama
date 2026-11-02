@@ -100,9 +100,10 @@ const kisiOku = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): 
   const j = (await r.json()) as { fields?: Record<string, { booleanValue?: boolean; stringValue?: string }> };
   const f = j.fields ?? {};
   if (f.pasif?.booleanValue) return "pasif";
-  let birim = "";
+  // Birim önce düz alandan: kural onu j ile tutarlı tutuyor (firestore.rules → jTutarli); eski belgede j'den.
+  let birim = f.birim?.stringValue ?? "";
   try {
-    birim = String((JSON.parse(f.j?.stringValue ?? "{}") as { birim?: unknown }).birim ?? "");
+    if (!birim) birim = String((JSON.parse(f.j?.stringValue ?? "{}") as { birim?: unknown }).birim ?? "");
   } catch {
     /* bozuk kayıt: birimsiz */
   }
@@ -231,12 +232,18 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (req.method === "POST" && yol === "/modeller") {
       const g = (await req.json().catch(() => null)) as { saglayici?: string; tur?: string; adres?: string; anahtar?: string; calismaAlani?: string } | null;
       const kayitli = ayar.saglayicilar.find((x) => x.id === g?.saglayici);
-      const tur = (g?.tur ?? kayitli?.tur) as "anthropic" | "openai" | undefined;
-      const anahtar = (typeof g?.anahtar === "string" && g.anahtar.trim()) || kayitli?.anahtar;
+      const yeniAnahtar = typeof g?.anahtar === "string" ? g.anahtar.trim() : "";
+      /*
+       * Kayıtlı anahtar yalnız kayıtlı adrese ve türe gider: istekteki adres
+       * kullanılsaydı yöneticinin oturumunu ele geçiren saklı anahtarı kendi
+       * sunucusuna çektirebilirdi (ayarın KV'de durmasının amacı bu).
+       */
+      const tur = (yeniAnahtar ? (g?.tur ?? kayitli?.tur) : kayitli?.tur) as "anthropic" | "openai" | undefined;
+      const anahtar = yeniAnahtar || kayitli?.anahtar;
       if ((tur !== "anthropic" && tur !== "openai") || !anahtar) return yanit({ hata: "anahtar" }, 400);
       let adres: string | undefined;
       if (tur === "openai") {
-        adres = String(g?.adres ?? kayitli?.adres ?? "").trim().replace(/\/+$/, "");
+        adres = String((yeniAnahtar ? g?.adres : undefined) ?? kayitli?.adres ?? "").trim().replace(/\/+$/, "");
         // Anahtar düz metin bağlantıda ya da yanlış biçimli adrese gitmesin.
         if (!/^https:\/\/[^\s/]+/.test(adres)) return yanit({ hata: "adres" }, 400);
       }

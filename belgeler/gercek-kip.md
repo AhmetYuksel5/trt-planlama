@@ -145,6 +145,19 @@ Tarayıcıda `localStorage["trt-planlama-firebase"]` alanına deneme yapılandı
 
 Etkinleştirme bağlantıları emülatörün `oobCodes` uç noktasında görünür.
 
+Kuralların testi (`testler/kurallar.mjs`): güvenlik incelemesindeki saldırılar
+(kişinin kendi kaydına yöneticilik, rol ya da birim yazması; muhabirin
+önerisini "plana eklendi", paketini "tamamlandı" yapması; başkası adına
+hareket; etkin muhabiri gösteren davet) reddediliyor, olağan yazışlar
+geçiyor. Depoya bağımlılık eklememek için geçici klasörde:
+
+```
+mkdir -p /tmp/kt && cd /tmp/kt && npm i firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10
+cp <depo>/testler/kurallar.mjs <depo>/firestore.rules . && sed -i 's|new URL("../firestore.rules", import.meta.url)|"firestore.rules"|' kurallar.mjs
+echo '{"firestore":{"rules":"firestore.rules"}}' > firebase.json
+npx firebase emulators:exec --only firestore --project demo-trt "node kurallar.mjs"
+```
+
 ## Yayın: Firebase Hosting
 
 Uygulama `https://plannersflow.net` adresinde (projenin kendi sitesi `planners-flow-2026.web.app`; alan adı Cloudflare'de kayıtlı, DNS kayıtları gri bulut "DNS only"). `main`'e her gönderimde GitHub Actions (`.github/workflows/firebase-yayin.yml`) derlenmiş `docs/` klasörünü bu siteye yayınlar ve Firestore kurallarını depodaki `firestore.rules` ile eşitler; kuralları konsola elle yapıştırmak gerekmez.
