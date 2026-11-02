@@ -4,7 +4,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, paketNotEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -325,6 +325,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
               <div className="cikti-paket">
                 <Satir yer={paketYeri(h)}>
                   {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
+                  {paketNotEki(h) && <span data-paket-notu>{paketNotEki(h)}</span>}
                 </Satir>
                 <p className="cikti-aciklama">{h.aciklama}</p>
                 {h.slug && (
@@ -349,7 +350,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
           {paketler.map((p) => (
             <Satir key={p.id} yer={paketYeri(p)}>
               {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
-{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
             </Satir>
           ))}
         </section>
@@ -504,7 +505,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                               p.baslik
                             )}{" "}
                             / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
-{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
                           </Satir>
                           {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
                           {p.slug && (
@@ -543,7 +544,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             <BelgeSatiri key={p.id} duzen={ic} serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}>
               <Satir yer={paketYeri(p)}>
                 {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
-{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
+{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
               </Satir>
             </BelgeSatiri>
           ))}

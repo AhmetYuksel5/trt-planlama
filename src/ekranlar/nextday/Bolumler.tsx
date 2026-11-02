@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
-import { bicimEki, gelismeBicimEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
+import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
@@ -412,7 +412,7 @@ function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
   return (
     <>
       <a href={`#/paketler/${p.id}`} className="kalin-bag">
-        <Icerik blok>{satir(paketYeri(p), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}</Icerik>
+        <Icerik blok>{satir(paketYeri(p), p.baslik, kisiAr(kisiBul(d, p.muhabirId)))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}</Icerik>
       </a>
       <Icerik blok className="kayit-metin">
         {p.aciklama}

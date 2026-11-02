@@ -333,3 +333,9 @@ export const gelismeBicimEki = (d: Durum, g: { oneriId?: string }) => {
   if (!o || (o.paketId && d.paketler.some((p) => p.id === o.paketId && p.durum !== "iptal"))) return "";
   return bicimEki(o.bicim);
 };
+
+/* Pakete eklenen notlar planda satırın sonunda parantez içinde: plan metni paketin son halini de söylesin. */
+export const paketNotEki = (p: { notlar?: { metin: string }[] }) => {
+  const n = (p.notlar ?? []).map((x) => x.metin.trim()).filter(Boolean);
+  return n.length ? ` (${n.join(" - ")})` : "";
+};

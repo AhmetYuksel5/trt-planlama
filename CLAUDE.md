@@ -720,6 +720,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     satırında paketin türü; paketsiz plana giren önerinin gelişmesinde
     önerinin türü (`gelismeBicimEki`; paketi varsa yalnız pakette). PKG
     yazılmaz, bölümün adı zaten o.
+  - Pakete eklenen notlar (`Paket.notlar`: not, yönetici notu, durak notu)
+    planda paket satırının sonunda parantez içinde (`etiketler.ts →
+    paketNotEki`; PKG, başlıksız ve hazır paket; plan ekranı, belge, çıktı).
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
     gelişme muhabirinde formda; boşsa muhabirin şehri.
