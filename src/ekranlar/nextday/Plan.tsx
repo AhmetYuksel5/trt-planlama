@@ -314,6 +314,11 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
             <Undo2 size={16} /> {t("taslagaGeriAl")}
           </button>
         )}
+        {plan.durum === "onayli" && planAdimiYapabilir(ben, "ndOnayGeri") && (
+          <button className="dugme dugme-ikincil" data-onay-geri onClick={() => confirm(t("onayiGeriAlSoru")) && durumDegistir("toplantida", "bOnayGeriAlindi")}>
+            <Undo2 size={16} /> {t("onayiGeriAl")}
+          </button>
+        )}
         {plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral") && (
           <button className="dugme" onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}>
             <UserCheck size={16} /> {t("planiDevral")}

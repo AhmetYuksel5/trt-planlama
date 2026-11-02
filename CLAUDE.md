@@ -506,7 +506,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `BIRIM_ADI`/`GOREV_ADI`'yı ekrana doğrudan yazma.
   - Plan yetkileri (`organizasyon/PlanYetkileri.tsx`, `#/organizasyon/planlar`;
     Ayarlar › İş akışı kartından da): Next Day'i toplantıya götürme/taslağa
-    alma, onay, devir; Weekly'yi toplantıya götürme/hazırlığa alma,
+    alma, onay, onayı geri alma (`ndOnayGeri`: yanlış onaylanan plan toplantı
+    aşamasına döner, onayla kabul edilen paketler kabullü kalır; varsayılan
+    Planlama yöneticisi, tam yönetici kuraldan bağımsız her zaman; devredilmiş
+    plan geri alınmaz, paketler üretimde), devir; Weekly'yi toplantıya götürme/hazırlığa alma,
     toplantıda karar, kesinleştirme. Kural yapıda (`Yapi.planYetkileri`,
     taslak ve "Yayınla"; yoksa `VARSAYILAN_PLAN_YETKILERI`, bugünkü
     davranış): satırlar (birim alt birimleriyle ve örnek aldığı yerleşik

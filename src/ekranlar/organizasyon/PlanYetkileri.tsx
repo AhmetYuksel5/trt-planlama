@@ -32,6 +32,7 @@ import { useTaslak } from "./Organizasyon";
 export const PLAN_ADIMI_ADI: Record<PlanAdimi, Anahtar> = {
   ndToplanti: "pyNdToplanti",
   ndOnay: "pyNdOnay",
+  ndOnayGeri: "pyNdOnayGeri",
   ndDevral: "pyNdDevral",
   hfToplanti: "pyHfToplanti",
   hfKarar: "pyHfKarar",
@@ -40,7 +41,7 @@ export const PLAN_ADIMI_ADI: Record<PlanAdimi, Anahtar> = {
 };
 
 const GRUPLAR: { ad: Anahtar; ikon: React.ReactNode; adimlar: PlanAdimi[] }[] = [
-  { ad: "pyNextDay", ikon: <CalendarDays size={18} />, adimlar: ["ndToplanti", "ndOnay", "ndDevral"] },
+  { ad: "pyNextDay", ikon: <CalendarDays size={18} />, adimlar: ["ndToplanti", "ndOnay", "ndOnayGeri", "ndDevral"] },
   { ad: "pyWeekly", ikon: <CalendarRange size={18} />, adimlar: ["hfToplanti", "hfKarar", "hfKesinlestir"] },
   { ad: "ozel", ikon: <Tv size={18} />, adimlar: ["ozOnay"] },
 ];

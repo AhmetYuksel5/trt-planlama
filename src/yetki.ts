@@ -253,7 +253,8 @@ export const haftalikDuzenler = (k: Kisi | undefined, h: HaftalikPlan) =>
 export const planAdimiYapabilir = (
   k: Kisi | undefined,
   adim: PlanAdimi,
-): boolean => !!k && !k.pasif && adimYetkilisi(k, planYetkisi(adim));
+): boolean =>
+  !!k && !k.pasif && (adimYetkilisi(k, planYetkisi(adim)) || (adim === "ndOnayGeri" && !!k.hesapYoneticisi));
 
 /** Toplantının kararı: varsayılanda planlamacı kaydediyor, toplantıyı yöneten yönetici de verebiliyor. */
 export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) =>

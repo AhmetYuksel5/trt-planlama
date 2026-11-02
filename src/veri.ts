@@ -1279,6 +1279,7 @@ export const HAREKET_TIPLERI = [
   "planToplantida",
   "planTaslaga",
   "planOnaylandi",
+  "planOnayiGeriAlindi",
   "planDevralindi",
   "paketOlusturuldu",
   "ozelOlusturuldu",

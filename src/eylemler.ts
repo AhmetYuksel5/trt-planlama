@@ -1627,7 +1627,9 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     (yeni === "toplantida" && plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti")) ||
     (yeni === "taslak" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndToplanti")) ||
     (yeni === "onayli" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay")) ||
-    (yeni === "devralindi" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral"));
+    (yeni === "devralindi" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral")) ||
+    // Yanlış onayın dönüşü: plan toplantıya döner, onayla kabul edilen paketler kabullü kalır (muhabire görev gitmiş olabilir).
+    (yeni === "toplantida" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndOnayGeri"));
   if (!gecerli) return false;
 
   d = planGuncelle(d, planId, (p) => ({ ...p, durum: yeni }));
@@ -1667,7 +1669,7 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
       d = hareketYaz(d, { kisiId: ben.id, tip: "stokYayinlandi", paketId: id, planId, veri: { tarih: plan.tarih } });
     }
   }
-  const tip = yeni === "toplantida" ? "planToplantida" : yeni === "onayli" ? "planOnaylandi" : yeni === "devralindi" ? "planDevralindi" : "planTaslaga";
+  const tip = yeni === "toplantida" && plan.durum === "onayli" ? "planOnayiGeriAlindi" : yeni === "toplantida" ? "planToplantida" : yeni === "onayli" ? "planOnaylandi" : yeni === "devralindi" ? "planDevralindi" : "planTaslaga";
   const sahip: Birim | "" = yeni === "toplantida" ? "yonetim" : yeni === "onayli" ? "newsdesk" : "";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, planId, veri: { tarih: plan.tarih, durum: yeni, sahip } }));
   return true;
