@@ -1729,6 +1729,7 @@ const M = {
   planaSecildi: m("Plana seçildi: {tarih}", "اختير للخطة: {tarih}", "Picked for: {tarih}"),
   stoktakiPaketler: m("Stoktaki paketler", "التقارير في المخزون", "Packages in stock"),
   stokPaketOlarakEkle: m("Stok paket olarak ekle", "إضافة كتقرير جاهز", "Add as stock package"),
+  stokBaslikta: m("Paket başlığın altında da kalsın mı? İptal: yalnız hazır paketlerde olur.", "هل يبقى التقرير تحت عنوانه أيضاً؟ إلغاء: يبقى في التقارير الجاهزة فقط.", "Keep the package under its headline too? Cancel: only in ready packages."),
   stokPaketOnay: m("Paket hazır paket olarak eklensin mi? Beklenen paketlerden çıkar, planın hazır paketlerine geçer.", "هل يُضاف التقرير كتقرير جاهز؟ يخرج من التقارير المتوقعة وينتقل إلى التقارير الجاهزة في الخطة.", "Add this package as a ready package? It leaves the expected packages and moves to the plan's ready packages."),
   hrPaketStogaAlindi: m("{kisi} paketi hazır paket olarak plana ekledi", "أضاف {kisi} التقرير إلى الخطة كتقرير جاهز", "{kisi} added the package to the plan as a ready package"),
   stoktanSec: m("Stoktan seç", "اختيار من المخزون", "Pick from stock"),

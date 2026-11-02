@@ -126,6 +126,8 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
   const canlilar = v.canliYayinlar.filter((x) => x.planId === plan.id).sort((a, b) => (a.tarih + a.saatGmt).localeCompare(b.tarih + b.saatGmt));
   const hazirlar = plan.hazirPaketler.map((id) => paketBul(v, id)).filter((h) => h !== undefined);
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
+  // Hazır paketlere alınan beklenenlerde ikinci kez basılmaz; başlığın altında kalması planlamacının seçimi.
+  const beklenenler = paketler.filter((p) => !plan.hazirPaketler.includes(p.id));
   const takipler = v.gelismeler.filter((g) => g.planId === plan.id && !g.planBaslikId);
   // Plana dosyasız giren haber (başlığa bağlanmamış paket) çıktıda hiç görünmüyordu; متابعات'in altında. Hazır paketler kendi bölümünde.
   const dosyasizPaketler = paketler.filter((p) => !plan.basliklar.some((pb) => pb.id === p.planBaslikId) && !plan.hazirPaketler.includes(p.id));
@@ -344,10 +346,10 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
         </section>
       )}
 
-      {paketler.length > 0 && (
+      {beklenenler.length > 0 && (
         <section>
           <h2 className="yesil">{c("ciktiBeklenen")}</h2>
-          {paketler.map((p) => (
+          {beklenenler.map((p) => (
             <Satir key={p.id} yer={paketYeri(p)}>
               {p.baslik} / <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
 {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
@@ -490,7 +492,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                                 <>
                                   <PaketBaglantisi id={p.id} />
                                   {paketStogaAlinabilir(p) && (
-                                    <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id)} />
+                                    <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
                                   )}
                                 </>
                               }

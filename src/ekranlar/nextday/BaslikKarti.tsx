@@ -289,7 +289,7 @@ export default function BaslikKarti({
                       <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
                     )}
                     {icerik && paketStogaAlinabilir(p) && (
-                      <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id)} />
+                      <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
                     )}
                     {icerik && paketPlandanSilinir(p) && (
                       <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
