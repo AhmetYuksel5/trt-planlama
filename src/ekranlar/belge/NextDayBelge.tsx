@@ -3,8 +3,8 @@ import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { ciktiTarihi, metin, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, paketNotEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { ciktiTarihi, metin, sureYaz, useDil, type Anahtar } from "../../dil";
+import { TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, paketNotEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -251,14 +251,14 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                 }
               >
                 <Satir yer={ic ? <YerindeMetin acik deger={g.yer} etiket={t("yer")} kaydet={(x) => x && ben && gorevlendirmeMetni(ben, plan.id, g.id, { yer: x })} /> : g.yer}>
-                  {kisiAdi(g.kisiId)} · {c(HAREKET_TURU_ADI[g.tur])}
+                  {kisiAdi(g.kisiId)} / {sureYaz(g.baslangic, g.bitis, "ar")}
                   {ic ? (
                     <>
-                      {" · "}
+                      {" / "}
                       <YerindeMetin acik deger={g.aciklama} etiket={t("aciklama")} kaydet={(x) => ben && gorevlendirmeMetni(ben, plan.id, g.id, { aciklama: x })} />
                     </>
                   ) : g.aciklama ? (
-                    ` · ${g.aciklama}`
+                    ` / ${g.aciklama}`
                   ) : (
                     ""
                   )}

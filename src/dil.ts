@@ -2991,6 +2991,12 @@ export const aralikYaz = (bas: string, bit: string, d: Dil = dil) => {
   return ay(bas) === ay(bit) ? `${g(bas)} - ${g(bit)} ${ay(bit)}` : `${g(bas)} ${ay(bas)} - ${g(bit)} ${ay(bit)}`;
 };
 
+/** Muhabir hareketinin süresi: tek günse o gün ("05 نوفمبر"), değilse aralık; kurum satırda "YER / ad / süre" istedi. */
+export const sureYaz = (bas: string, bit: string, d: Dil = dil) => {
+  if (!bit || bas === bit) return aralikYaz(bas, bas, d).replace(/^\d+ - /, "");
+  return aralikYaz(bas, bit, d);
+};
+
 /** "12 dk önce" gibi göreli zaman. */
 export const gecenSure = (isoZaman: string, d: Dil = dil) => {
   const fark = (new Date(isoZaman).getTime() - Date.now()) / 1000;

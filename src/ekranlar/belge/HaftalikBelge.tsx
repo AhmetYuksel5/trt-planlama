@@ -3,8 +3,8 @@ import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Pencere } from "../../bilesenler/Parcalar";
-import { aralikYaz, ciktiGunu, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
+import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
+import { TBC, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, haftaSonu } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
@@ -239,7 +239,7 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
     .filter((g) => sahaGorevi(g) && g.baslangic <= bit && g.bitis >= bas && g.durum !== "talep")
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
   /* Aynı yere aynı süreyle giden ekip tek satırda, kurumun belgesindeki gibi: "YER / ad - ad - ad في مهمة حتى …". */
-  const hareketSatirlari = [...hareketler.reduce((m, g) => m.set(`${g.yer}|${g.tur}|${g.bitis}`, [...(m.get(`${g.yer}|${g.tur}|${g.bitis}`) ?? []), g]), new Map<string, typeof hareketler>()).values()];
+  const hareketSatirlari = [...hareketler.reduce((m, g) => m.set(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`, [...(m.get(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`) ?? []), g]), new Map<string, typeof hareketler>()).values()];
   const kalemler = duzen || hafta.durum !== "kesinlesti" ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
   const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g));
   const stok = kalemler.filter((k) => !k.tarih);
@@ -257,8 +257,8 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
             const g = grup[0];
             return (
               <Satir key={g.id} yer={g.yer}>
-                {grup.map((x) => kisiAdi(x.kisiId)).join(" - ")} · {c(HAREKET_TURU_ADI[g.tur])} {c("ciktiKadar", { tarih: tarihYaz(g.bitis, "ar", "kisa") })}
-                {g.aciklama ? ` · ${g.aciklama}` : ""}
+                {grup.map((x) => kisiAdi(x.kisiId)).join(" - ")} / {sureYaz(g.baslangic, g.bitis, "ar")}
+                {g.aciklama ? ` / ${g.aciklama}` : ""}
               </Satir>
             );
           })}

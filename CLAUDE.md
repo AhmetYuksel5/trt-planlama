@@ -741,6 +741,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün
     planlamacılar seçer (`kisiPlanAdi`, `planDuzenle`): ekip çipinde ve
     belgedeki ekip penceresinde, seçenekler adın kendisiyle.
+  - Muhabir hareketleri (تحركات وإجازات المراسلين) belgede ve çıktıda
+    "YER / ad / süre / açıklama" (Next Day ve Weekly; kurumun isteği): süre
+    tek günse o gün, değilse aralık (`dil.ts → sureYaz`). Tür sözcüğü
+    ("مهمة"…) ve "·" ayracı yazılmaz.
   - Dosyasız kayıt çıktının sonundaki yeşil "متابعات" bölümünde: başlıksız
     gelişmeler ve plana başlıksız giren haberler (paket, "YER / haber /
     muhabir"; hazır paketler kendi bölümünde).
