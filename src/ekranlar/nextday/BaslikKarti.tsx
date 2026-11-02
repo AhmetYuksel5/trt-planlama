@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
 import { oneriGunde } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
@@ -50,6 +50,7 @@ export default function BaslikKarti({
   const [oneriAcik, setOneriAcik] = useState("");
   const [katPenceresi, setKatPenceresi] = useState(false);
   const [takipPenceresi, setTakipPenceresi] = useState(false);
+  const [notKisi, setNotKisi] = useState<string | null>(null);
   const takipAcik = !!useYz("takipMetni");
   const [birakilir, setBirakilir] = useState(false);
   const baslik = baslikBul(v, pb.baslikId);
@@ -187,6 +188,12 @@ export default function BaslikKarti({
                     />
                   ) : (
                     m.saat && <Rozet>{vardiyaYaz(m.saat)}</Rozet>
+                  )}
+                  {icerik && (
+                    // Not varsa simge dolu ve ipucunda notun kendisi: planlamacı açmadan görsün.
+                    <button onClick={() => setNotKisi(m.kisiId)} aria-label={t("muhabireNot")} title={m.not ? `${t("muhabireNot")}: ${m.not}` : t("muhabireNot")} data-muhabir-not={m.not ? "dolu" : "bos"}>
+                      <StickyNote size={13} fill={m.not ? "currentColor" : "none"} />
+                    </button>
                   )}
                   {icerik && (
                     <button onClick={() => ben && planMuhabir(ben, plan.id, pb.id, m.kisiId, false)} aria-label={t("cikar")} title={t("cikar")}>
@@ -342,6 +349,18 @@ export default function BaslikKarti({
     </details>
     {/* Pencere kartın dışında: kapalı <details> içindekini göstermiyor. */}
     {/* Son gelişmeler gelişme olarak başlığın altına giriyor; kaynak alıntılanan siteler (medya). */}
+    {notKisi && ben && (
+      <Pencere baslik={t("muhabireNot")} alt={kisiAr(kisiBul(v, notKisi))} kapat={() => setNotKisi(null)}>
+        <MuhabirNotuFormu
+          ilk={pb.muhabirler.find((m) => m.kisiId === notKisi)?.not ?? ""}
+          kaydet={(not) => {
+            planMuhabirGuncelle(ben, plan.id, pb.id, notKisi, { not: not.trim() || undefined });
+            setNotKisi(null);
+          }}
+          kapat={() => setNotKisi(null)}
+        />
+      </Pencere>
+    )}
     {takipPenceresi && baslik && (
       <Pencere baslik={t("yzTakipMetni")} alt={<Icerik>{baslik.ad}</Icerik>} kapat={() => setTakipPenceresi(false)}>
         <YzSonGelismeler
@@ -404,6 +423,25 @@ export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Pa
           {t("iptal")}
         </button>
         <button type="button" className="dugme" disabled={!f.baslik.trim()} onClick={() => paketMetniDuzenle(ben, p.id, f) && kapat()} data-paket-metni-kaydet>
+          {t("kaydet")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* Planlamacının muhabire notu: neyi takip edeceği, işiyle ilgili; plan onaylanınca muhabire gider. */
+export function MuhabirNotuFormu({ ilk, kaydet, kapat }: { ilk: string; kaydet: (not: string) => void; kapat: () => void }) {
+  const { t } = useDil();
+  const [not, setNot] = useState(ilk);
+  return (
+    <div className="form">
+      <textarea dir="auto" value={not} onChange={(e) => setNot(e.target.value)} aria-label={t("muhabireNot")} data-muhabir-not-metni autoFocus />
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button type="button" className="dugme" onClick={() => kaydet(not)} data-muhabir-not-kaydet>
           {t("kaydet")}
         </button>
       </div>

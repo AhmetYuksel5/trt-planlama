@@ -723,6 +723,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Pakete eklenen notlar (`Paket.notlar`: not, yönetici notu, durak notu)
     planda paket satırının sonunda parantez içinde (`etiketler.ts →
     paketNotEki`; PKG, başlıksız ve hazır paket; plan ekranı, belge, çıktı).
+  - Başlıktaki muhabire planlamacının notu (`PlanMuhabiri.not`; plan ekranında
+    çipteki not simgesi, doluysa ipucunda notun kendisi; belgede muhabir
+    penceresinde): neyi takip edeceği, işiyle ilgili. Çıktıya girmez. Plan
+    onaylanınca başlıktaki ve başlığın gelişmelerindeki her muhabire
+    `planaMuhabirEklendi` hareketi (`eylemler.ts → planMuhabirBildirimleri`;
+    `veri.kime`, başlığın adı ve not içinde: kısıtlı muhabir planı okuyamıyor);
+    zilde ve muhabirin Takiplerim'inde "Planda eklendiğin başlıklar"
+    (`Takipler.tsx → PlandaEklendiklerim`; bugünden sonraki planlar, başlık
+    başına son kayıt). Onay geri alınıp yeniden verilince aynı başlık aynı
+    notla ikinci kez gitmez; not değiştiyse yenisi gider.
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
     gelişme muhabirinde formda; boşsa muhabirin şehri.

@@ -283,6 +283,8 @@ export interface PlanMuhabiri {
   kisiId: string;
   yer?: string;
   saat?: string;
+  /** Planlamacının muhabire notu (neyi takip edeceği…); plan onaylanınca muhabire gider, çıktıya girmez. */
+  not?: string;
   onceki?: true;
   /** Önceki plandan dokunulmadan geldi; onay silmiyor, düzenleme siliyor (yarinPlaniniAc). */
   devir?: true;
@@ -1280,6 +1282,7 @@ export const HAREKET_TIPLERI = [
   "planTaslaga",
   "planOnaylandi",
   "planOnayiGeriAlindi",
+  "planaMuhabirEklendi",
   "planDevralindi",
   "paketOlusturuldu",
   "ozelOlusturuldu",

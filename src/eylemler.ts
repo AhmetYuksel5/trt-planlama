@@ -100,6 +100,7 @@ import {
   type YanitDurum,
   paketBicimi,
   baslikBul,
+  gelismeMuhabirleri,
   TAKIP_BICIMI,
   type OneriBicimi,
   type GundemKaynagi,
@@ -1619,6 +1620,31 @@ export const yarinPlaniniAc = (): string | null => {
  * geçiyor; böylece akşam toplantısının kararı her paketin geçmişine
  * ayrı ayrı düşüyor.
  */
+/*
+ * Plan onaylanınca planda başlığa (ya da başlığın gelişmesine) eklenen her
+ * muhabire "şu başlığa eklendin" ve planlamacının notu gidiyor; muhabir
+ * planı okuyamıyor (kısıtlı), bilgi hareketin içinde taşınıyor ve
+ * Takiplerim'de görünüyor. Onay geri alınıp yeniden verilirse aynı başlık,
+ * aynı notla ikinci kez gitmiyor.
+ */
+const planMuhabirBildirimleri = (d: Durum, planId: string, ben: Kisi): Durum => {
+  const plan = planBul(d, planId);
+  if (!plan) return d;
+  const gidecek = new Map<string, { kisiId: string; pbId: string; not: string }>();
+  for (const pb of plan.basliklar) {
+    for (const m of pb.muhabirler) gidecek.set(`${pb.id}|${m.kisiId}`, { kisiId: m.kisiId, pbId: pb.id, not: m.not?.trim() ?? "" });
+    for (const g of d.gelismeler.filter((x) => x.planId === planId && x.planBaslikId === pb.id))
+      for (const m of gelismeMuhabirleri(g)) if (!gidecek.has(`${pb.id}|${m.kisiId}`)) gidecek.set(`${pb.id}|${m.kisiId}`, { kisiId: m.kisiId, pbId: pb.id, not: "" });
+  }
+  for (const x of gidecek.values()) {
+    const gitti = d.hareketler.some((h) => h.tip === "planaMuhabirEklendi" && h.planId === planId && h.veri?.pb === x.pbId && h.veri?.kime === x.kisiId && (h.veri?.not ?? "") === x.not);
+    if (gitti || x.kisiId === ben.id) continue;
+    const pb = plan.basliklar.find((b) => b.id === x.pbId)!;
+    d = hareketYaz(d, { kisiId: ben.id, tip: "planaMuhabirEklendi", planId, veri: { kime: x.kisiId, muhabir: x.kisiId, tarih: plan.tarih, baslik: baslikBul(d, pb.baslikId)?.ad ?? "", pb: x.pbId, ...(x.not ? { not: x.not } : {}) } });
+  }
+  return d;
+};
+
 export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
   let d = getir();
   const plan = planBul(d, planId);
@@ -1652,6 +1678,7 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     for (const p of paketler.filter((x) => x.haftalikKalemId && x.muhabirId && x.durum === "onaylandi"))
       d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { hatirlatma: "1", tarih: plan.tarih, kime: p.muhabirId! } });
   }
+  if (yeni === "onayli") d = planMuhabirBildirimleri(d, planId, ben);
   if (yeni === "devralindi") {
     for (const p of paketler.filter((x) => x.durum === "onaylandi")) {
       const adim = ilkAdim(p);
@@ -2013,7 +2040,7 @@ export const planBaslikLive = (ben: Kisi, planId: string, pbId: string, acik: bo
 export const planMuhabirTasi = (ben: Kisi, planId: string, pbId: string, kisiId: string, yon: -1 | 1) =>
   planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => komsuylaDegis(m, (x) => x.kisiId === kisiId, () => true, yon) ?? m));
 
-export const planMuhabirGuncelle = (ben: Kisi, planId: string, pbId: string, kisiId: string, g: { yer?: string; saat?: string }) =>
+export const planMuhabirGuncelle = (ben: Kisi, planId: string, pbId: string, kisiId: string, g: { yer?: string; saat?: string; not?: string }) =>
   planIcerik(ben, planId, (p) => pbGuncelle(p, pbId, (m) => m.map((x) => (x.kisiId === kisiId ? { ...x, ...g, onceki: undefined, devir: undefined } : x))));
 
 export type OncekiHedef = { ekip: string } | { hareket: string } | { muhabir: [string, string] } | { gelisme: string } | { canli: string };

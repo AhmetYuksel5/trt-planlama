@@ -1,11 +1,12 @@
 import { Binoculars, Plus } from "lucide-react";
 import { useState } from "react";
 import { Bos, Kart, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { tarihYaz } from "../dil";
 import { metin, useDil } from "../dil";
 import { takipKaydet, takipOneriyeCevir } from "../eylemler";
 import { BICIM_ADI, TAKIP_TUR_ADI } from "../etiketler";
 import { bugun, gunEkle } from "../tarih";
-import { BICIMLER, TAKIP_TURLERI, useVeri, type Bicim, type Durum, type Kisi, type NextDayPlan, type Oneri, type TakipTuru } from "../veri";
+import { BICIMLER, TAKIP_TURLERI, useVeri, type Bicim, type Durum, type Hareket, type Kisi, type NextDayPlan, type Oneri, type TakipTuru } from "../veri";
 import { oneriArsivde, oneriSonGunu, takibinOnerisi } from "../oneriPlanlari";
 import { git } from "../yol";
 import { OneriKarti } from "./oneri/OneriKarti";
@@ -43,6 +44,7 @@ export default function Takipler({ ben }: { ben: Kisi }) {
         }
       />
       {form && <TakipFormu ben={ben} kapat={() => setForm(false)} />}
+      {muhabir && <PlandaEklendiklerim ben={ben} />}
       <Kart baslik={t(muhabir ? "mTakiplerim" : "mMuhabirTakipleri")} ek={String(oneriler.length)}>
         {oneriler.length ? <TakipOnerileri ben={ben} liste={oneriler} /> : <Bos metin={t("mtYok")} />}
       </Kart>
@@ -208,5 +210,35 @@ function OneriyeCevirFormu({ ben, oneri: o, kapat }: { ben: Kisi; oneri: Oneri; 
         </button>
       </div>
     </div>
+  );
+}
+
+/*
+ * Onaylanan planda muhabirin eklendiği başlıklar ve planlamacının notu.
+ * Muhabir planı okuyamıyor; bilgi ona yazılan hareketin içinde. Geçmiş
+ * günlerin planı burada kalmaz; aynı başlığa iki kez yazıldıysa (not
+ * değişti) yalnız sonuncusu.
+ */
+function PlandaEklendiklerim({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const son = new Map<string, Hareket>();
+  for (const h of v.hareketler)
+    if (h.tip === "planaMuhabirEklendi" && h.veri?.kime === ben.id && (h.veri?.tarih ?? "") >= bugun()) {
+      const a = `${h.planId}|${h.veri?.pb}`;
+      const e = son.get(a);
+      if (!e || e.zaman < h.zaman) son.set(a, h);
+    }
+  const liste = [...son.values()].sort((a, b) => (a.veri?.tarih ?? "").localeCompare(b.veri?.tarih ?? ""));
+  if (!liste.length) return null;
+  return (
+    <Kart baslik={t("mtPlandakiler")} ek={String(liste.length)}>
+      {liste.map((h) => (
+        <div key={h.id} className="kayit" data-plana-eklendin>
+          <b>{t("mtPlanaEklendin", { tarih: tarihYaz(h.veri?.tarih ?? "", dil, "kisa"), baslik: `\u2068${h.veri?.baslik ?? ""}\u2069` })}</b>
+          {h.veri?.not && <p dir="auto">{h.veri.not}</p>}
+        </div>
+      ))}
+    </Kart>
   );
 }

@@ -631,7 +631,7 @@ function EkipUyesi({ ben, plan, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan;
 function MuhabirAyari({ ben, plan, pbId, kisiId, kapat }: { ben: Kisi; plan: NextDayPlan; pbId: string; kisiId: string; kapat: () => void }) {
   const { t } = useDil();
   const m = plan.basliklar.find((b) => b.id === pbId)?.muhabirler.find((x) => x.kisiId === kisiId);
-  const [f, setF] = useState({ saat: m?.saat ?? "", yer: m?.yer ?? "" });
+  const [f, setF] = useState({ saat: m?.saat ?? "", yer: m?.yer ?? "", not: m?.not ?? "" });
   if (!m) return null;
   return (
     <div className="form">
@@ -645,7 +645,11 @@ function MuhabirAyari({ ben, plan, pbId, kisiId, kapat }: { ben: Kisi; plan: Nex
           <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
         </label>
       </div>
-      <FormAlt kapat={kapat} kaydet={() => planMuhabirGuncelle(ben, plan.id, pbId, kisiId, { saat: f.saat || undefined, yer: f.yer.trim() || undefined }) && kapat()} />
+      <label>
+        {t("muhabireNot")}
+        <textarea dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} />
+      </label>
+      <FormAlt kapat={kapat} kaydet={() => planMuhabirGuncelle(ben, plan.id, pbId, kisiId, { saat: f.saat || undefined, yer: f.yer.trim() || undefined, not: f.not.trim() || undefined }) && kapat()} />
     </div>
   );
 }
