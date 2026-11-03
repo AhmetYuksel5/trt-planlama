@@ -761,6 +761,12 @@ function PlanAsamalari({ ben, o }: { ben: Kisi; o: OzelYayin }) {
     PLAN_ADIM_ADI,
     (adim, tamam) => ozelAsamaDegisebilir(ben, o, adim as Exclude<OzelDurum, "hazirlik">, tamam),
     (adim, tamam) => {
+      // Planın onayı onay bekleyen nafizeleri ve paket önerilerini de onaylıyor; pencere kaçını söylüyor.
+      if (adim === "onayli" && tamam) {
+        const n = (o.nafizeler ?? []).filter((x) => x.durum === "planlandi").length;
+        const p = (o.paketOnerileri ?? []).filter((x) => x.durum === "oneri").length;
+        if ((n || p) && !confirm(t("ozelOnaySayili", { n, p }))) return;
+      }
       if (ozelAsamaIsaretle(ben, o.id, adim as Exclude<OzelDurum, "hazirlik">, tamam)) bildir(t(adim === "onayli" && tamam ? "bPlanOnaylandi" : "bKaydedildi"));
     },
   );

@@ -1585,6 +1585,29 @@ const M = {
   hazirligaGeriAl: m("Hazırlığa geri al", "إعادة إلى الإعداد", "Back to preparation"),
   kalanlariKabulEt: m("Kalanları kabul et ({n})", "قبول البنود المتبقية ({n})", "Accept the rest ({n})"),
   kesinlestir: m("Planı kesinleştir", "اعتماد الخطة", "Finalise the plan"),
+  toplantiyaGoturSoru: m("Plan haber toplantısına götürülsün mü?", "هل تُعرض الخطة على اجتماع التحرير؟", "Take the plan to the news meeting?"),
+  ozelOnaySayili: m(
+    "Plan onaylansın mı? Onay bekleyen {n} nafize ve {p} paket önerisi de onaylanacak.",
+    "هل تُعتمد الخطة؟ ستُعتمد أيضاً {n} نافذة و{p} مقترح تقرير بانتظار الاعتماد.",
+    "Approve the plan? {n} pending live windows and {p} package proposals will be approved too.",
+  ),
+  planOnaySoru: m("Plan onaylansın mı?", "هل تُعتمد الخطة؟", "Approve the plan?"),
+  planOnaySayili: m(
+    "Plan onaylansın mı? Kararsız {n} paket kabul edilecek, {m} muhabire görev gidecek.",
+    "هل تُعتمد الخطة؟ سيُقبل {n} تقرير لم يُبتّ فيه، وتُرسل مهمة إلى {m} مراسل.",
+    "Approve the plan? {n} undecided packages will be accepted and {m} reporters will get the task.",
+  ),
+  kesinlesmeOnay: m(
+    "Plan kesinleşsin mi? {n} haber Next Day'e geçecek, {p} paket açılacak, {r} öneri reddedilecek.",
+    "هل تُعتمد الخطة؟ سينتقل {n} خبر إلى Next Day، ويُفتح {p} تقرير، ويُرفض {r} مقترح.",
+    "Finalise the plan? {n} stories go to Next Day, {p} packages open, {r} proposals are rejected.",
+  ),
+  acikOnerilerReddedilsin: m(
+    "Gündeme alınmamış {n} haftalık öneri reddedilsin mi? İptal: açık kalır.",
+    "هل يُرفض {n} مقترح أسبوعي لم يُدرج في الأجندة؟ إلغاء: يبقى مفتوحاً.",
+    "Reject {n} weekly proposals not on the agenda? Cancel: they stay open.",
+  ),
+  kalanlarKabulOnay: m("Karar bekleyen {n} kalem kabul edilsin mi? Ön incelemedekiler dahil değil.", "هل تُقبل البنود المتبقية ({n})؟ لا يشمل ذلك البنود قيد المراجعة المسبقة.", "Accept the {n} remaining items? Items under pre-review are not included."),
   kesinlestirmeIcinKarar: m(
     "Kesinleştirmek için {n} kaleme daha karar verilmeli.",
     "يجب البت في {n} بنود أخرى قبل الاعتماد.",

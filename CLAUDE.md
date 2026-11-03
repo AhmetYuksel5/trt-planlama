@@ -1097,6 +1097,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yalnız düzenlerken). Kesinleşince pakete geçer (`toplantidan`), muhabire
     "paketOnaylandi" bildirimi gider (paket doğduğu an: kesinleşmede ya da
     günlük plan açılınca). Ret notu öneriye gerekçe olur.
+  - Kesinleştirme onayı sonucu sayıyla söyler (`haftalik.ts → kesinlesmeOzeti`:
+    Next Day'e geçecek haber, açılacak paket, reddedilecek öneri); gündeme
+    alınmamış açık haftalık öneri varsa ayrıca sorulur, "İptal" açık bırakır
+    (`haftalikKesinlestir(…, acikReddet)`). "Kalanları kabul et" ön
+    incelemedeki kalemi almaz (`topluKabulAdaylari`), onay sorar. Next Day'de
+    toplantıya götürme ve onay da sorar; onay kararsız paket sayısını ve görev
+    gidecek muhabiri yazar. Özel yayının onayı birlikte onaylanacak nafize ve
+    paket önerisi sayısını yazar.
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
     `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.

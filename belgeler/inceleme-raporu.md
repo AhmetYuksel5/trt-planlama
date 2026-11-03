@@ -80,10 +80,10 @@ düğme tıklanarak denendi; konsol hatası, hata sınırı ve 390 pikselde yata
 
 ## D. İş akışı (planlamacı gözüyle)
 
-19. **Weekly kesinleştirme gündeme alınmamış önerileri gerekçesiz reddediyor
+19. ✅ **Weekly kesinleştirme gündeme alınmamış önerileri gerekçesiz reddediyor
     (P3);** muhabir düzeltme beklerken ret alıyor, Planlama önceden görmüyor.
     Onayda "N öneri reddedilecek" yazsın, seçenek sunulsun.
-20. **Onaylar sonucunu söylemiyor (P3, T3, P1):** plan onayı kararsız paketleri
+20. ✅ **Onaylar sonucunu söylemiyor (P3, T3, P1):** plan onayı kararsız paketleri
     kabul sayıyor, "Kalanları kabul et" ön incelemedekileri de alıyor, özel yayın
     onayı bütün nafize ve paketleri topluca onaylıyor. Onay penceresi sayıyla
     yazsın ("3 paket kabul edilecek, 5 muhabire görev gidecek"). Buna karşılık

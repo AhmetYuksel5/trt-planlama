@@ -2,7 +2,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "./haftalik";
+import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
@@ -1268,7 +1268,7 @@ export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
   const d = getir();
   const h = haftaBul(d, haftaId);
   if (!h || !kararVerebilir(ben, h)) return 0;
-  const kalan = new Set(kararBekleyenler(h).map((k) => k.id));
+  const kalan = new Set(topluKabulAdaylari(h).map((k) => k.id));
   if (!kalan.size) return 0;
   kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.map((k) => (kalan.has(k.id) ? { ...k, karar: "kabul" } : k)) })));
   return kalan.size;
@@ -1454,7 +1454,8 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
  * Haftaya gelen öneriler kalemin kararını alıyor; gündeme hiç alınmamış
  * öneri reddedilmiş sayılıyor. Muhabire bildirim ayrı düğmeyle (geri dönüş).
  */
-export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
+// `acikReddet`: gündeme hiç alınmamış haftalık öneriler reddedilsin mi; hayırsa açık kalır, sonraki haftaya ya da Next Day'e gidebilir.
+export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = true) => {
   let d = getir();
   const h = haftaBul(d, haftaId);
   if (!h || h.durum !== "toplantida" || !planAdimiYapabilir(ben, "hfKesinlestir") || kararBekleyenler(h).length) return false;
@@ -1478,7 +1479,7 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string) => {
       // Toplantının ret notu muhabirin önerisine gerekçe olarak düşüyor.
       if (k) return k.karar === "ret" ? { ...o, durum: "reddedildi", gerekce: k.kararNotu || k.onInceleme?.gerekce || o.gerekce } : { ...o, durum: "planaEklendi" };
       // Düzeltmesi beklenen öneri de kapanıyor: hafta kesinleşti, yeniden gönderilecek gündem kalmadı.
-      return o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme" ? { ...o, durum: "reddedildi" } : o;
+      return acikReddet && (o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme") ? { ...o, durum: "reddedildi" } : o;
     }),
   };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic } }));

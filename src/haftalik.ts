@@ -29,6 +29,25 @@ export const gundemde = (k: HaftalikKalem) => k.onInceleme?.durum !== "reddedild
 
 export const kararBekleyenler = (h: HaftalikPlan) => h.kalemler.filter((k) => gundemde(k) && k.karar === "bekliyor");
 
+/* "Kalanları kabul et" ön incelemedeki kalemi almaz: kararı inceleyenin görüşü gelince, tek tek verilir. */
+export const topluKabulAdaylari = (h: HaftalikPlan) => kararBekleyenler(h).filter((k) => k.onInceleme?.durum !== "gonderildi");
+
+/*
+ * Kesinleştirmenin sonucu, onay penceresinde sayıyla: Next Day'e geçecek
+ * haber, açılacak plansız paket, reddedilecek öneri ve gündeme hiç alınmamış
+ * açık öneri. Önce sessizce oluyordu; muhabir düzeltme beklerken ret alıyordu.
+ */
+export const kesinlesmeOzeti = (d: Durum, h: HaftalikPlan) => {
+  const kabul = h.kalemler.filter((k) => gundemde(k) && k.karar === "kabul");
+  const kalemli = new Set(h.kalemler.map((k) => k.oneriId).filter(Boolean));
+  return {
+    nextDay: kabul.filter((k) => k.tur === "haber" && k.tarih).length,
+    paket: kabul.filter((k) => !(k.tur === "haber" && k.tarih)).length,
+    ret: h.kalemler.filter((k) => k.karar === "ret" && k.oneriId).length,
+    acik: d.oneriler.filter((o) => o.hafta === h.baslangic && !kalemli.has(o.id) && (o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme")).length,
+  };
+};
+
 /** Çıktıya giren: kabul ve bilgi. */
 export const ciktida = (k: HaftalikKalem) => gundemde(k) && (k.karar === "kabul" || k.karar === "bilgi");
 

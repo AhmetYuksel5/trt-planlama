@@ -19,7 +19,7 @@ import {
   onIncelemeyeGonder,
 } from "../../eylemler";
 import { etiketUret } from "../../eposta";
-import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir } from "../../haftalik";
+import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, kesinlesmeOzeti, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, yapabilir } from "../../yetki";
@@ -52,6 +52,14 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   useSekmeAdi(`${t("haftalik")} · ${aralikYaz(bas, haftaSonu(bas), dil)}`);
   const duzenler = haftalikDuzenler(ben, hafta);
   const bekleyen = kararBekleyenler(hafta).length;
+  const topluKabul = topluKabulAdaylari(hafta).length;
+  // Sonucu onay penceresinde sayıyla söylüyor; gündeme alınmamış öneriler için ayrıca soruyor.
+  const kesinlestir = () => {
+    const oz = kesinlesmeOzeti(v, hafta);
+    if (!confirm(t("kesinlesmeOnay", { n: oz.nextDay, p: oz.paket, r: oz.ret }))) return;
+    const acikReddet = oz.acik > 0 ? confirm(t("acikOnerilerReddedilsin", { n: oz.acik })) : true;
+    haftalikKesinlestir(ben, hafta.id, acikReddet) && bildir(t("bHaftalikKesinlesti"));
+  };
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
   const durumSirasi = HAFTA_DURUMLARI.indexOf(hafta.durum);
@@ -123,13 +131,13 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               <Send size={16} className="yon" /> {t("haftalikToplantiyaGotur")}
             </button>
           )}
-          {hafta.durum === "toplantida" && kararVerebilir(ben, hafta) && bekleyen > 0 && (
-            <button className="dugme dugme-ikincil" onClick={() => kalanlariKabulEt(ben, hafta.id) && bildir(t("bKalanlarKabul"))}>
-              <CheckCheck size={16} /> {t("kalanlariKabulEt", { n: bekleyen })}
+          {hafta.durum === "toplantida" && kararVerebilir(ben, hafta) && topluKabul > 0 && (
+            <button className="dugme dugme-ikincil" onClick={() => confirm(t("kalanlarKabulOnay", { n: topluKabul })) && kalanlariKabulEt(ben, hafta.id) && bildir(t("bKalanlarKabul"))}>
+              <CheckCheck size={16} /> {t("kalanlariKabulEt", { n: topluKabul })}
             </button>
           )}
           {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfKesinlestir") && (
-            <button className="dugme dugme-iyi" disabled={bekleyen > 0} onClick={() => haftalikKesinlestir(ben, hafta.id) && bildir(t("bHaftalikKesinlesti"))}>
+            <button className="dugme dugme-iyi" disabled={bekleyen > 0} onClick={kesinlestir}>
               <Check size={16} /> {t("kesinlestir")}
             </button>
           )}

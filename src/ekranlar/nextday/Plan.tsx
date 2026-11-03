@@ -281,6 +281,10 @@ function KayipGrupSatiri({ ben, plan, grup }: { ben: Kisi; plan: NextDayPlan; gr
 /* Planın durumu ve akıştaki eylemler: bölümlerin altında. */
 function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t } = useDil();
+  const v = useVeri();
+  // Onay kararsız paketleri kabul sayıyor (planDurum); onay penceresi kaç paketin kabul edileceğini, kaç muhabire görev gideceğini söylüyor.
+  const kararsiz = v.paketler.filter((p) => p.planId === plan.id && (p.durum === "taslak" || p.durum === "degerlendiriliyor"));
+  const gorevli = new Set(kararsiz.map((p) => p.muhabirId).filter(Boolean)).size;
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
   };
@@ -300,12 +304,12 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
       </div>
       <div className="dugmeler ara-ust-2">
         {plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti") && (
-          <button className="dugme" onClick={() => durumDegistir("toplantida", "bToplantiya")}>
+          <button className="dugme" onClick={() => confirm(t("toplantiyaGoturSoru")) && durumDegistir("toplantida", "bToplantiya")}>
             <Send size={16} className="yon" /> {t("toplantiyaGotur")}
           </button>
         )}
         {plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay") && (
-          <button className="dugme dugme-iyi" onClick={() => durumDegistir("onayli", "bPlanOnaylandi")}>
+          <button className="dugme dugme-iyi" onClick={() => confirm(kararsiz.length ? t("planOnaySayili", { n: kararsiz.length, m: gorevli }) : t("planOnaySoru")) && durumDegistir("onayli", "bPlanOnaylandi")}>
             <Check size={16} /> {t("planiOnayla")}
           </button>
         )}
