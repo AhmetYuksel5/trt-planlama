@@ -25,6 +25,7 @@ const belge = async (uid: string, o: { anahtar?: CryptoKey; aud?: string; exp?: 
   return `${bas}.${yuk}.${b64u(imza)}`;
 };
 
+const GENEL_BIRIMLER: string[] = [];
 const KISILER: Record<string, { birim: string; yonetici?: boolean; pasif?: boolean }> = {
   yon: { birim: "planlama", yonetici: true },
   pl: { birim: "planlama" },
@@ -44,6 +45,8 @@ const kur = () => {
   const sahteFetch = (async (girdi: RequestInfo | URL, init?: RequestInit) => {
     const req = new Request(girdi as RequestInfo, init);
     const url = req.url;
+    if (url.endsWith("/documents/ayar/genel"))
+      return Response.json({ fields: { gundemPaylasim: { mapValue: { fields: { birimler: { arrayValue: { values: GENEL_BIRIMLER.map((b) => ({ stringValue: b })) } }, kisiler: { arrayValue: {} } } } } } });
     if (url.startsWith("https://firestore.googleapis.com/")) {
       const uid = decodeURIComponent(url.split("/").pop()!);
       const k = KISILER[uid];
@@ -472,6 +475,10 @@ test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevril
   const t = kur();
   const adresler = ["https://haber.test/rss", "https://haber.test/atom", "https://haber.test/yok", "http://haber.test/rss", "https://localhost/x"];
   assert.equal((await t.cagir("/rss", "pl", { adresler })).status, 403);
+  // Paylaşılan birim okur
+  GENEL_BIRIMLER.push(KISILER.pl.birim);
+  assert.equal((await t.cagir("/rss", "pl", { adresler: ["https://haber.test/rss"] })).status, 200);
+  GENEL_BIRIMLER.length = 0;
   const r = await t.cagir("/rss", "yon", { adresler });
   assert.equal(r.status, 200);
   const j = (await r.json()) as { akislar: { adres: string; ogeler?: { baslik: string; baglanti: string; zaman?: string; ozet?: string }[]; hata?: string }[] };

@@ -157,6 +157,35 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       ok(t === 0, `390px ${dil} ${s}: taşma ${t}`);
     }
   }
+  // Paylaşım: tam yönetici kişiyle ve birimle paylaşır; paylaşılan görür, kaynak ayarı yok
+  await p.setViewportSize({ width: 1440, height: 1000 });
+  await kim("yo3");
+  await git("#/gundem");
+  await p.click("[data-gundem-paylas]");
+  await p.click('[data-gundem-paylas-kisiler] [data-kisi="pl1"]');
+  await p.click('[data-gundem-paylas-birimler] [data-birim="newsdesk"]');
+  const pay = (await veri()).gundemPaylasim;
+  ok(pay?.kisiler.includes("pl1") && pay?.birimler.includes("newsdesk"), "paylaşım kayıtta: " + JSON.stringify(pay));
+  await kim("pl1");
+  await git("#/");
+  ok((await p.locator('a[href="#/gundem"]').count()) >= 1, "paylaşılan kişinin menüsünde gündem");
+  await git("#/gundem");
+  ok((await p.locator("[data-gundem]").count()) === 1 && (await p.locator("[data-gundem-kaynaklar], [data-gundem-paylas]").count()) === 0, "paylaşılan kişi açar, kaynak ve paylaşım ayarı yok");
+  const nd = (await veri()).kisiler.find((k) => k.birim === "newsdesk");
+  await kim(nd.id);
+  await git("#/gundem");
+  ok((await p.locator("[data-gundem]").count()) === 1, "paylaşılan birimdeki kişi açar");
+  const once = (await veri()).oneriler.length;
+  await git("#/gundem/firsatlar");
+  await p.locator("[data-oneriye-cevir]").first().click();
+  await p.locator("[data-cevir-header]").fill("فرصة من نيوزديسك");
+  await p.locator("[data-cevir-gonder]").click();
+  await p.waitForTimeout(300);
+  ok((await veri()).oneriler.length === once + 1, "paylaşılan Newsdesk kişisi fırsatı öneriye çevirir");
+  const mu = (await veri()).kisiler.find((k) => k.birim === "muhabir");
+  await kim(mu.id);
+  await git("#/gundem");
+  ok((await p.locator("[data-gundem]").count()) === 0, "muhabir açamaz");
   await p.screenshot({ path: (process.env.OUT || ".") + "/gundem-390-ar.png", fullPage: false });
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));
   console.log(`\n${gec} geçti, ${kal} kaldı`);

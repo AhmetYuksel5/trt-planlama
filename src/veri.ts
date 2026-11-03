@@ -1420,6 +1420,8 @@ export interface Durum {
   /** Gündem takibinin kaynakları (boşsa gundem.ts → VARSAYILAN_KAYNAKLAR) ve araştırma arşivi. */
   gundemKaynaklari?: GundemKaynagi[];
   gundemArsivi?: GundemNotu[];
+  /** Gündem takibini tam yönetici dışında görenler: birim (altıyla) ya da kişi. Genel ayar belgesinde. */
+  gundemPaylasim?: { birimler: BirimId[]; kisiler: string[] };
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */

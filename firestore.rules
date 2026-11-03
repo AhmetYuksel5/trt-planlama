@@ -250,7 +250,12 @@ service cloud.firestore {
     // (src/depo/fark.ts → erisimListesi). Kişiye bağlı ayarlarda (bildirim okundu, ana sayfa, görünüm,
     // workspace) yalnız kendi belgesi; genel ayarı okur, yazamaz.
     match /{alan}/{belge} {
-      allow read, write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli();
+      allow read: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli();
+      // Gündem paylaşımı genel ayar belgesinde; herkes sayacı yazıyor, paylaşımı yalnız tam yönetici
+      // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi).
+      allow write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli()
+        && (!(alan == "ayar" && belge == "genel") || hesapYoneticisi()
+            || request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null)));
       allow read: if etkin() && kisitli()
         && ((alan in ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler", "bahsetmeler"] && erisir(resource.data))
             || kendiAyari(alan, belge)

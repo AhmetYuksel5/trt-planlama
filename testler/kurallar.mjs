@@ -79,6 +79,11 @@ await t("davet kimliksiz", true, dv("c@x.test", ""));
 await t("önceki kimliği etkin muhabir: onun önerisini okuyamaz", false, getDoc(doc(db("mux"), "oneriler", "o3")));
 await t("önceki kimliği hesapsız: onun önerisini okur", true, getDoc(doc(db("muy"), "oneriler", "o4")));
 await t("muhabir kendi önerisini okur", true, getDoc(doc(db("mu"), "oneriler", "o9")));
+// 4. Gündem paylaşımı genel ayarda: yalnız tam yönetici değiştirir, sayaç herkesçe yazılır.
+await t("yönetici gündemi paylaşır", true, setDoc(doc(db("adm"), "ayar", "genel"), { sayac: 1, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
+await t("personel sayacı yazar, paylaşım aynı", true, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 2, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
+await t("personel kendini paylaşıma ekleyemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3, gundemPaylasim: { birimler: ["planlama"], kisiler: ["dv"] } }));
+await t("personel paylaşımı silemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3 }));
 console.log(`\n${gec} geçti, ${kal} kaldı`);
 await env.cleanup();
 process.exit(kal ? 1 : 0);

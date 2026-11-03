@@ -157,6 +157,8 @@ import {
   ozelDuzenler,
   ozelPaketDagitabilir,
   ozelPaketTeslimEdebilir,
+  gundemGorebilir,
+  kisitliKisi,
 } from "./yetki";
 
 /**
@@ -269,8 +271,9 @@ export interface OneriGirdisi {
 
 
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
-  // Tam yönetici hangi birimde olursa olsun muhabir dışı kaynaktan öneri girer: gündem takibindeki fırsat öneriye çevriliyor.
-  if (!(yapabilir(ben, "oneriGonder") || (ben.hesapYoneticisi && !g.muhabirId && g.kaynakTuru && g.kaynakTuru !== "muhabir")) || (!g.hafta && !g.hedefTarih)) return null;
+  // Gündem takibini kullanan (tam yönetici ya da paylaştığı) hangi birimde olursa olsun muhabir dışı
+  // kaynaktan öneri girer: gündemdeki fırsat öneriye çevriliyor.
+  if (!(yapabilir(ben, "oneriGonder") || (gundemGorebilir(getir(), ben) && !g.muhabirId && g.kaynakTuru && g.kaynakTuru !== "muhabir")) || (!g.hafta && !g.hedefTarih)) return null;
   const muhabir = ben.birim === "muhabir";
   const takip = g.bicim === TAKIP_BICIMI;
   // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı); takipte paket önerilmiyor.
@@ -2669,8 +2672,8 @@ export const bahsetmeGoruldu = (ben: Kisi, id: string) => {
 /* --- Gündem takibi (gundem.ts): yalnız tam yönetici; arşiv kişinin kendi notları --- */
 
 export const gundemNotuKaydet = (ben: Kisi, n: Omit<GundemNotu, "id" | "kisiId" | "zaman"> & { id?: string }) => {
-  if (!ben.hesapYoneticisi || !n.baglanti) return null;
   const d = getir();
+  if (!gundemGorebilir(d, ben) || !n.baglanti) return null;
   const eski = d.gundemArsivi ?? [];
   const var_ = eski.find((x) => x.kisiId === ben.id && (x.id === n.id || x.baglanti === n.baglanti));
   // Aynı haber ikinci kez işaretlenince yeni kayıt değil, notu güncellenir.
@@ -2684,6 +2687,21 @@ export const gundemNotuSil = (ben: Kisi, id: string) => {
   const n = d.gundemArsivi?.find((x) => x.id === id);
   if (!n || n.kisiId !== ben.id) return false;
   kaydet({ ...d, gundemArsivi: d.gundemArsivi!.filter((x) => x !== n) });
+  return true;
+};
+
+/** Gündemi kimlerle paylaştığını yalnız tam yönetici seçer; muhabir paylaşılamaz. */
+export const gundemPaylasimKaydet = (ben: Kisi, birimler: BirimId[], kisiler: string[]) => {
+  if (!ben.hesapYoneticisi) return false;
+  const d = getir();
+  const kisi = new Map(d.kisiler.map((k) => [k.id, k]));
+  kaydet({
+    ...d,
+    gundemPaylasim: {
+      birimler: [...new Set(birimler)].filter((b) => b !== "muhabir"),
+      kisiler: [...new Set(kisiler)].filter((id) => { const k = kisi.get(id); return k && !kisitliKisi(k) && !k.hesapYoneticisi; }),
+    },
+  });
   return true;
 };
 

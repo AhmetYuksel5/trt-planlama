@@ -12,7 +12,7 @@ import { cagir, modelleriGetir } from "./saglayici.ts";
  *   GET  /ayar       (tam yönetici) ayar, anahtarsız; bugünkü kullanım
  *   PUT  /ayar       (tam yönetici) ayarı yaz
  *   POST /dene       (tam yönetici) {saglayici} kısa deneme çağrısı
- *   POST /rss        (tam yönetici) {adresler} → {akislar: [{adres, ogeler|hata}]}; gündem takibinin akışları
+ *   POST /rss        (tam yönetici ve paylaştığı birim/kişi) {adresler} → {akislar: [{adres, ogeler|hata}]}; gündem takibinin akışları
  * Kişinin kim olduğu Firebase oturum belgesinden, yetkisi kişi kaydından
  * (Firestore, kişinin kendi oturumuyla okunuyor; tam yöneticilik alanını
  * kurallar koruyor).
@@ -65,6 +65,8 @@ interface Kisi {
   kimlik: Kimlik;
   birim: string;
   yonetici: boolean;
+  /** Dış muhabir ya da onay bekleyen: gündem paylaşılmaz (src/yetki.ts → kisitliKisi). */
+  kisitli: boolean;
 }
 
 const AYAR_ANAHTARI = "ayar";
@@ -102,12 +104,33 @@ const kisiOku = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): 
   if (f.pasif?.booleanValue) return "pasif";
   // Birim önce düz alandan: kural onu j ile tutarlı tutuyor (firestore.rules → jTutarli); eski belgede j'den.
   let birim = f.birim?.stringValue ?? "";
+  let bekliyor = false;
   try {
-    if (!birim) birim = String((JSON.parse(f.j?.stringValue ?? "{}") as { birim?: unknown }).birim ?? "");
+    const j = JSON.parse(f.j?.stringValue ?? "{}") as { birim?: unknown; kontrolBekliyor?: unknown };
+    if (!birim) birim = String(j.birim ?? "");
+    bekliyor = j.kontrolBekliyor === true;
   } catch {
     /* bozuk kayıt: birimsiz */
   }
-  return { kimlik, birim, yonetici: f.hesapYoneticisi?.booleanValue === true };
+  return { kimlik, birim, yonetici: f.hesapYoneticisi?.booleanValue === true, kisitli: birim === "muhabir" || bekliyor };
+};
+
+/*
+ * Tam yönetici gündemi birime ya da kişiye paylaşabiliyor (genel ayar belgesi, gundemPaylasim).
+ * Belgeyi kişinin kendi oturumuyla okuyoruz; paylaşımı kural yalnız tam yöneticiye yazdırıyor.
+ */
+type RestDeger = { stringValue?: string; arrayValue?: { values?: RestDeger[] }; mapValue?: { fields?: Record<string, RestDeger> } };
+const gundemPaylasildi = async (belge: string, kisi: Kisi, env: Env, d: Bagimlilik): Promise<boolean> => {
+  if (kisi.kisitli) return false;
+  const kok = d.firestoreKoku ?? "https://firestore.googleapis.com";
+  const r = await d.fetch(`${kok}/v1/projects/${env.FIREBASE_PROJE}/databases/(default)/documents/ayar/genel`, {
+    headers: { authorization: `Bearer ${belge}` },
+  });
+  if (!r.ok) return false;
+  const j = (await r.json().catch(() => ({}))) as { fields?: Record<string, RestDeger> };
+  const p = j.fields?.gundemPaylasim?.mapValue?.fields ?? {};
+  const liste = (x?: RestDeger) => (x?.arrayValue?.values ?? []).map((v) => v.stringValue ?? "");
+  return liste(p.kisiler).includes(kisi.kimlik.uid) || liste(p.birimler).includes(kisi.birim);
 };
 
 const json = (govde: unknown, durum: number, cors: Record<string, string>) =>
@@ -184,7 +207,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
    * KV'de: birkaç sekme ya da yenileme aynı siteye tekrar tekrar gitmesin.
    */
   if (req.method === "POST" && yol === "/rss") {
-    if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
+    if (!kisi.yonetici && !(await gundemPaylasildi(belge, kisi, env, d).catch(() => false))) return yanit({ hata: "yetki" }, 403);
     const g = (await req.json().catch(() => null)) as { adresler?: unknown } | null;
     const adresler = Array.isArray(g?.adresler) ? [...new Set(g.adresler.filter(akisAdresiGecerli))].slice(0, 40) : [];
     if (!adresler.length) return yanit({ hata: "girdi" }, 400);

@@ -405,9 +405,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tutucu).
   - **Testler:** `cd worker && npm test`.
 - Gündem takibi (`ekranlar/Gundem.tsx`, `#/gundem/<sekme>`, kurallar `gundem.ts`;
-  yalnız tam yönetici, `yetki.ts → sayfaGorebilir`): haber akışlarından (RSS,
+  tam yönetici ve paylaştıkları, `yetki.ts → gundemGorebilir`): haber akışlarından (RSS,
   Atom) jeopolitik izleme. Yapay zeka yok, her tarama ücretsiz.
-  - Akışı kapı okur (`worker/src/rss.ts`, `POST /rss`, yalnız tam yönetici,
+  - Paylaşım: tam yönetici sayfadaki paylaş düğmesinden birim (alt birimleriyle)
+    ve kişi seçer (`Durum.gundemPaylasim`, genel ayar belgesinde; `eylemler.ts →
+    gundemPaylasimKaydet`). Muhabir ve onay bekleyen paylaşılmaz. Paylaşılan sayfayı tam
+    kullanır (tarar, arşive not düşer, fırsatı öneriye çevirir; `oneriGonder` her birimde); kaynakları ve paylaşımı yalnız tam yönetici değiştirir. Kural
+    genel belgede `gundemPaylasim`'ı yalnız tam yöneticiye yazdırır (herkes sayacı
+    yazıyor, kendini ekleyemesin); kapı `/rss`'te genel belgeyi kişinin oturumuyla
+    okuyup kişiyi ya da birimini arar (`index.ts → gundemPaylasildi`; alt birim
+    kapıda tanınmaz, seçilen birimin kendisi).
+  - Akışı kapı okur (`worker/src/rss.ts`, `POST /rss`, tam yönetici ve paylaştıkları,
     yalnız https, 10 dakika Cloudflare önbelleği, Cache API; KV değil:
     ücretsiz planda KV'ye günde 1000 yazma, her tarama 60'ı aşkın akış
     yazıyordu; önbelleğe yazılamasa da haber döner): tarayıcı haber

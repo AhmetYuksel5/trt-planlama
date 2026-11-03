@@ -6,6 +6,7 @@ import {
   Lightbulb,
   RefreshCw,
   Settings,
+  Share2,
   Star,
   Trash2,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
   gundemKaynaklariKaydet,
   gundemNotuKaydet,
   gundemNotuSil,
+  gundemPaylasimKaydet,
   oneriGonder,
 } from "../eylemler";
 import {
@@ -73,6 +75,8 @@ import {
 } from "../veri";
 import { git, yerineGit } from "../yol";
 import { gundemAkislari } from "../yz";
+import { gundemGorebilir, kisitliKisi } from "../yetki";
+import { birimAdi, kisiBirimleri } from "../yapi";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -210,10 +214,11 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
   }, [sekme, bolum]);
   const { haberler, taraniyor, hatalar, son, tara } = useGundemHaberleri();
   const [kaynakAcik, setKaynakAcik] = useState(false);
+  const [paylasAcik, setPaylasAcik] = useState(false);
   const simdiAn = useMemo(() => Date.now(), [haberler]);
   const olaylar = useMemo(() => olaylariKur(haberler), [haberler]);
 
-  if (!ben.hesapYoneticisi) return <Bos metin={t("gdErisim")} />;
+  if (!gundemGorebilir(v, ben)) return <Bos metin={t("gdErisim")} />;
 
   return (
     <div className="gundem" data-gundem>
@@ -236,7 +241,18 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
               <RefreshCw size={15} className={taraniyor ? "donuyor" : ""} />{" "}
               {t("gdTara")}
             </button>
-            <button
+            {ben.hesapYoneticisi && (
+              <button
+                className="dugme dugme-sade dugme-ikon"
+                onClick={() => setPaylasAcik(true)}
+                title={t("gdPaylas")}
+                aria-label={t("gdPaylas")}
+                data-gundem-paylas
+              >
+                <Share2 size={16} />
+              </button>
+            )}
+            {ben.hesapYoneticisi && <button
               className="dugme dugme-sade dugme-ikon"
               onClick={() => setKaynakAcik(true)}
               title={t("gdKaynaklar")}
@@ -244,7 +260,7 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
               data-gundem-kaynaklar
             >
               <Settings size={16} />
-            </button>
+            </button>}
           </div>
         }
       />
@@ -273,6 +289,7 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
         <Firsatlar liste={firsatlar(v, olaylar, simdiAn)} ben={ben} />
       )}
       {bolum === "arsiv" && <Arsiv ben={ben} />}
+      {paylasAcik && <PaylasimPenceresi ben={ben} kapat={() => setPaylasAcik(false)} />}
       {kaynakAcik && (
         <KaynakPenceresi
           ben={ben}
@@ -285,6 +302,52 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
 }
 
 /* --- Parçalar --- */
+
+/* Tam yönetici gündemi birimle (alt birimleriyle) ya da kişiyle paylaşır; seçim hemen kaydedilir. */
+function PaylasimPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const p = v.gundemPaylasim ?? { birimler: [], kisiler: [] };
+  const [ara, setAra] = useState("");
+  const yaz = (birimler: string[], kisiler: string[]) => gundemPaylasimKaydet(ben, birimler as typeof p.birimler, kisiler);
+  const adaylar = v.kisiler
+    .filter((k) => !k.pasif && !k.hesapYoneticisi && !kisitliKisi(k))
+    .filter((k) => !ara.trim() || `${ad(k)} ${k.ad}`.toLowerCase().includes(ara.trim().toLowerCase()))
+    .sort((a, b) => Number(p.kisiler.includes(b.id)) - Number(p.kisiler.includes(a.id)));
+  return (
+    <Pencere baslik={t("gdPaylas")} kapat={kapat}>
+      <h3>{t("gdPaylasBirimler")}</h3>
+      <div className="yetki-listesi" data-gundem-paylas-birimler>
+        {kisiBirimleri().filter((b) => b !== "muhabir").map((b) => (
+          <label key={b} className="secim">
+            <input
+              type="checkbox"
+              checked={p.birimler.includes(b)}
+              onChange={(e) => yaz(e.target.checked ? [...p.birimler, b] : p.birimler.filter((x) => x !== b), p.kisiler)}
+              data-birim={b}
+            />
+            {birimAdi(b)}
+          </label>
+        ))}
+      </div>
+      <h3>{t("gdPaylasKisiler")}</h3>
+      <input className="girdi" value={ara} onChange={(e) => setAra(e.target.value)} placeholder={t("ara")} aria-label={t("ara")} />
+      <div className="yetki-listesi" data-gundem-paylas-kisiler>
+        {adaylar.map((k) => (
+          <label key={k.id} className="secim">
+            <input
+              type="checkbox"
+              checked={p.kisiler.includes(k.id)}
+              onChange={(e) => yaz(p.birimler, e.target.checked ? [...p.kisiler, k.id] : p.kisiler.filter((x) => x !== k.id))}
+              data-kisi={k.id}
+            />
+            {ad(k)} · {birimAdi(k.birim)}
+          </label>
+        ))}
+      </div>
+    </Pencere>
+  );
+}
 
 function SeviyeRozeti({ skor }: { skor: number }) {
   const { t } = useDil();

@@ -8,6 +8,7 @@ import {
 import {
   VARSAYILAN_PLAN_YETKILERI,
   adimYetkilisi,
+  altindaMi,
   izinBirimi,
   planYetkisi,
   varsayilanYapi,
@@ -22,6 +23,7 @@ import {
   TAKIP_BICIMI,
   oneriBul,
   paketBul,
+  anlik,
   type Birim,
   type BirimId,
   type Durum,
@@ -758,7 +760,7 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
       sayfa === "kullanicilar"
       ? GERCEK && (!!k.hesapYoneticisi || !!k.yetkiler?.length)
       : sayfa === "gundem"
-        ? !!k.hesapYoneticisi
+        ? gundemGorebilir(anlik(), k)
         : sayfa === "organizasyon"
           ? yapiDuzenleyebilir(k) ||
             hesapYetkisi(k, "kisiDuzenle") ||
@@ -867,6 +869,18 @@ export const ozelPaketTeslimEdebilir = (
  * yönetici onayı bekleyen kayıt. Firestore kuralı aynı ölçüyü kişi
  * kaydının metninden okuyor (depo/fark.ts → kisitliJson).
  */
+/*
+ * Gündem takibi tam yöneticinin; paylaştığı birim (alt birimleriyle) ve kişiler de görür.
+ * Kısıtlı kişi (muhabir) görmez: kapı da onu geri çevirir.
+ */
+export const gundemGorebilir = (d: Durum | null | undefined, k: Kisi | undefined): boolean => {
+  if (!k) return false;
+  if (k.hesapYoneticisi) return true;
+  const p = d?.gundemPaylasim;
+  if (!p || kisitliKisi(k)) return false;
+  return p.kisiler.includes(k.id) || p.birimler.some((b) => altindaMi(k.birim, b));
+};
+
 export const kisitliKisi = (k: Kisi): boolean =>
   k.birim === "muhabir" || !!k.kontrolBekliyor;
 export const takipEkleyebilir = (k: Kisi | undefined): boolean =>
