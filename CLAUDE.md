@@ -715,6 +715,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yayın alınabilir. Belgede ve çıktıda muhabirlerin altında "LIVE" satırı.
     Saatli canlı yayın (`CanliYayin`, "مباشر" bölümü) ayrı; işaret ertesi güne
     taşınmaz.
+  - Canlı yayın satırı ("مباشر" ve başlığın altındaki LIVE) "ŞEHİR / saat /
+    konu / ayrıntı / muhabir" (kurumun isteği; saat kalın, yoksa "TBC").
   - Başlığa bağlı canlı yayın (`CanliYayin.planBaslikId`) belgede ve çıktıda
     üstteki "مباشر" bölümünde ve başlığın altında "LIVE" alt başlığıyla, iki
     yerde de.

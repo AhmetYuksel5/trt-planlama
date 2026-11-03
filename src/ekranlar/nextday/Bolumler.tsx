@@ -361,7 +361,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
               <div className="kayit-bas">
                 <div>
                   <b>
-                    <Icerik blok>{satir(c.yer, c.konu, c.saatGmt ? `${c.saatGmt} GMT` : "TBC")}</Icerik>
+                    <Icerik blok>{satir(c.yer, c.saatGmt ? `${c.saatGmt} GMT` : "TBC", c.konu, c.aciklama)}</Icerik>
                   </b>
                   <Icerik blok className="kayit-metin">
                     {[c.aciklama, c.notlar].filter(Boolean).join(" · ")}

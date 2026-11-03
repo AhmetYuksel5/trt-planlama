@@ -305,9 +305,11 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                 />
               }
             >
+              {/* Kurumun istediği sıra: ŞEHİR / saat / konu / ayrıntı / muhabir. */}
               <Satir yer={x.yer}>
+                <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> /{" "}
                 {op ? <YerindeMetin acik deger={x.konu} etiket={t("etkinlikAdi")} kaydet={(k) => k && ben && canliKaydet(ben, { ...x, konu: k })} /> : x.konu}
-                {x.aciklama ? ` · ${x.aciklama}` : ""} / <b>{x.saatGmt ? `${vardiyaYaz(x.saatGmt)}` : "TBC"}</b>
+                {x.aciklama ? ` / ${x.aciklama}` : ""}
                 {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
               </Satir>
             </BelgeSatiri>
@@ -467,8 +469,8 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                     {pbCanli.map((x) => (
                       <BelgeSatiri key={x.id} duzen={op} onceki={x.onceki} serit={<SatirSeridi duzenle={() => ac({ tur: "canli", mevcut: x })} cikar={!x.oneriId || (ben && yapabilir(ben, "oneriDegerlendir")) ? sil(() => ben && canliSil(ben, x.id)) : undefined} />}>
                         <Satir yer={x.yer}>
-                          <span data-baslik-canli>{x.konu}</span>
-                          {x.aciklama ? ` · ${x.aciklama}` : ""} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
+                          <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> / <span data-baslik-canli>{x.konu}</span>
+                          {x.aciklama ? ` / ${x.aciklama}` : ""}
                           {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
                         </Satir>
                       </BelgeSatiri>
