@@ -155,6 +155,35 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     hareketler: d.hareketler.filter((h) => !hareketler.has(h.id)),
   };
 
+  /*
+   * Silinen öneri plandan "Plandan çıkar"daki gibi iz bırakmadan gitsin:
+   * kaydı silinen başlıkta önerinin muhabiri (orada başka işi yoksa) ve
+   * içi boşalan başlık da kalkıyor; önceden ikisi planda kalıyordu.
+   */
+  const etkilenen = new Set<string>();
+  for (const x of [...d.gelismeler.filter((g) => gelismeler.has(g.id)), ...d.paketler.filter((p) => paketler.has(p.id)), ...d.canliYayinlar.filter((c) => canlilar.has(c.id))])
+    if (x.planBaslikId) etkilenen.add(x.planBaslikId);
+  const silinenMuhabir = new Set(d.oneriler.filter((o) => oneriler.has(o.id) && o.muhabirId).map((o) => o.muhabirId!));
+  if (etkilenen.size) {
+    const isVar = (pbId: string, kisiId?: string) =>
+      yeni.gelismeler.some((g) => g.planBaslikId === pbId && (!kisiId || g.onerenId === kisiId || (g.oneriId && yeni.oneriler.find((o) => o.id === g.oneriId)?.muhabirId === kisiId))) ||
+      yeni.paketler.some((p) => p.planBaslikId === pbId && p.durum !== "iptal" && (!kisiId || p.muhabirId === kisiId)) ||
+      (!kisiId && yeni.canliYayinlar.some((c) => c.planBaslikId === pbId));
+    yeni = {
+      ...yeni,
+      planlar: yeni.planlar.map((p) => {
+        if (!p.basliklar.some((b) => etkilenen.has(b.id))) return p;
+        const basliklar = p.basliklar
+          .map((b) => (etkilenen.has(b.id) && b.muhabirler.some((m) => silinenMuhabir.has(m.kisiId) && !isVar(b.id, m.kisiId)) ? { ...b, muhabirler: b.muhabirler.filter((m) => !silinenMuhabir.has(m.kisiId) || isVar(b.id, m.kisiId)) } : b))
+          .filter((b) => !etkilenen.has(b.id) || b.muhabirler.length > 0 || b.live || b.muhabirTbc || isVar(b.id));
+        return { ...p, basliklar };
+      }),
+    };
+  }
+  // Silinen önerinin sayfasında yazılmış notun anılma kaydı da gidiyor: açınca "bulunamadı"ya çıkıyordu.
+  if (oneriler.size && yeni.bahsetmeler?.some((b) => [...oneriler].some((id) => b.yol.includes(id))))
+    yeni = { ...yeni, bahsetmeler: yeni.bahsetmeler.filter((b) => ![...oneriler].some((id) => b.yol.includes(id))) };
+
   // 4. Hiçbir kayıtta geçmeyen başlıklar (tarihsiz; temizlikten sonra boşta kalanlar da)
   let basliklar = 0;
   if (tur.has("basliklar")) {

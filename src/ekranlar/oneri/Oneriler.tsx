@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -410,6 +410,8 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
   // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
   const muhabirde = oneri.durum === "duzeltme";
+  // Açık haftanın gündemindeki önerinin kararı toplantıda: ret, düzeltme ve takip önce "Gündemden çıkar" ister.
+  const gundemde = acikGundemde(v, oneri);
 
   const ust = pencerede ? (
     <p className="ara-alt-2">
@@ -669,18 +671,18 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                         <Clock size={15} /> {t("degerlendirmeyeAl")}
                       </button>
                     )}
-                    {oneriDuzeltmeyeGider(ben, oneri) && (
+                    {!gundemde && oneriDuzeltmeyeGider(ben, oneri) && (
                       <button className="dugme dugme-ikincil" onClick={() => setDuzelt(true)} data-duzeltmeye-gonder>
                         <Undo2 size={15} /> {t("duzeltmeyeGonder")}
                       </button>
                     )}
                     {/* "Sonra değerlendirilecek" takibe katıldı. */}
-                    {!veren && !muhabirde && !!oneri.muhabirId && oneri.durum !== "takip" && oneri.durum !== "reddedildi" && (
+                    {!gundemde && !veren && !muhabirde && !!oneri.muhabirId && oneri.durum !== "takip" && oneri.durum !== "reddedildi" && (
                       <button className="dugme dugme-ikincil" onClick={() => oneriDurum(ben, oneri.id, "takip") && bildir(t("bTakibeAlindi"))} data-takip-olarak-kalsin>
                         <Lightbulb size={15} /> {t("takipOlarakKalsin")}
                       </button>
                     )}
-                    {!veren && oneri.durum !== "reddedildi" && (
+                    {!gundemde && !veren && oneri.durum !== "reddedildi" && (
                       <button className="dugme dugme-kotu" onClick={() => setRet("")}>
                         <Ban size={15} /> {t("reddet")}
                       </button>

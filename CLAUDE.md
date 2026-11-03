@@ -260,6 +260,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kayıtların gösterdiği kimlikle eklenir, varsa kayıtlar ona geçer;
     önerinin ya da Weekly kaleminin dosyası önerilir. Başlık çıkarma
     altındakileri sildiği için şerit olağan akışta çıkmaz.
+    Sistemin yazışları bağlantı canlıyken çalışır (`kip.ts → baglantiCanliMi`:
+    dinlenenlerden biri bile önbellekten geliyorsa değil): eşitlik bir kez
+    olunca sürüyor, uyuyup bağlantısız uyanan dizüstü yarının planını bayat
+    görüntüyle kurup düzenlenmiş planı eziyordu.
     Zaman sorgusunda `removed` silme sayılmaz (`diziDinle → isle(alan,
     true)`): kendi yazışımız sunucuya varana dek `z` bekleyen sunucu zamanı,
     belge sorgudan bir an çıkıyor; silinmiş sayılınca kayıt ekrandan kalkıp
@@ -835,6 +839,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   ("Gönderildiği hal"). Plana eklenmişse gelişme ve paket de güncellenir,
   ama yalnız plandaki metin hâlâ önerinin eski metniyse; havuzdaki başlığın
   adına dokunulmaz.
+
+  Plana ve gündeme yalnız karar bekleyen öneri girer, eylem de sorar
+  (`eylemler.ts → plandaKarara`: teklif, ret, geri çekilmiş, düzeltmede,
+  arşivde değil). Açık haftanın gündemindeki öneri reddedilmez, düzeltmeye
+  ve takibe gitmez (`oneriPlanlari.ts → acikGundemde`; önce "Gündemden
+  çıkar"). `oneriDuzenle` devralınmış planın kaydına dokunmaz, paketi yalnız
+  taslakta tam, onaylıda yalnız metniyle günceller. Öneriden gelen gelişme
+  ya da canlıyı silmek karar yetkisi ister (`oneriBagiSilinir`; öneriyi
+  değerlendirmeye döndürüyor). Gelişme başka başlığa ya da متابعات'e
+  taşınınca PKG'si ve muhabiri de gider. "İzleriyle sil" ve temizlik
+  boşalan başlığı, önerinin muhabirini ve anılma kayıtlarını da kaldırır.
 
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda

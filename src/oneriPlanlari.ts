@@ -67,6 +67,9 @@ export interface OneriYeri {
 }
 
 // Next Day'deki yer önerinin kopyasından değil plandaki kayıttan (`oneriPlanKaydi`).
+/* Kesinleşmemiş haftanın gündeminde mi: orada karar toplantıda verilir; ret ya da düzeltme kalemi gündemde bırakıyordu, önce "Gündemden çıkar". */
+export const acikGundemde = (d: Durum, o: Oneri) => d.haftalik.some((h) => h.durum !== "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id));
+
 export const oneriYeri = (d: Durum, o: Oneri): OneriYeri | null => {
   const kayit = o.durum === "teklif" ? null : oneriPlanKaydi(d, o);
   const hafta = d.haftalik.find((h) => h.kalemler.some((k) => k.oneriId === o.id));

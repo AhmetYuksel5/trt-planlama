@@ -156,7 +156,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                 <YzKisaltSerit metin={g.metin} kaydet={(m) => ben && gelismeKaydet(ben, { ...g, metin: m })} />
               </>
             }
-            cikar={sil(() => ben && gelismeSil(ben, g.id))}
+            cikar={!g.oneriId || (ben && yapabilir(ben, "oneriDegerlendir")) ? sil(() => ben && gelismeSil(ben, g.id)) : undefined}
           />
         }
       >
@@ -301,7 +301,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                 <SatirSeridi
                   duzenle={() => ac({ tur: "canli", mevcut: x })}
                   onceki={x.onceki ? () => ben && oncekiOnayla(ben, plan.id, { canli: x.id }) : undefined}
-                  cikar={sil(() => ben && canliSil(ben, x.id))}
+                  cikar={!x.oneriId || (ben && yapabilir(ben, "oneriDegerlendir")) ? sil(() => ben && canliSil(ben, x.id)) : undefined}
                 />
               }
             >
@@ -465,7 +465,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                       <bdi>LIVE</bdi>
                     </p>
                     {pbCanli.map((x) => (
-                      <BelgeSatiri key={x.id} duzen={op} onceki={x.onceki} serit={<SatirSeridi duzenle={() => ac({ tur: "canli", mevcut: x })} cikar={sil(() => ben && canliSil(ben, x.id))} />}>
+                      <BelgeSatiri key={x.id} duzen={op} onceki={x.onceki} serit={<SatirSeridi duzenle={() => ac({ tur: "canli", mevcut: x })} cikar={!x.oneriId || (ben && yapabilir(ben, "oneriDegerlendir")) ? sil(() => ben && canliSil(ben, x.id)) : undefined} />}>
                         <Satir yer={x.yer}>
                           <span data-baslik-canli>{x.konu}</span>
                           {x.aciklama ? ` · ${x.aciklama}` : ""} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>

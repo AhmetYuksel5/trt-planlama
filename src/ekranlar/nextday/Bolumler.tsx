@@ -1,3 +1,4 @@
+import { yapabilir } from "../../yetki";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { ArrowRightLeft, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -374,7 +375,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                   <div className="islemler">
                     {c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}
                     <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(c.id)} />
-                    <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />
+                    {(!c.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />}
                   </div>
                 )}
               </div>
@@ -590,7 +591,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                   {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !g.planBaslikId)) && (
                     <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => setTasinan(g)} />
                   )}
-                  <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />
+                  {(!g.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />}
                 </div>
               )}
             </div>

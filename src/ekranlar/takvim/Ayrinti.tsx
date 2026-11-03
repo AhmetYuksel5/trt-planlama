@@ -352,7 +352,12 @@ function NextDayAktarim({ o, ben, planId, geri }: { o: Olusum; ben: Kisi; planId
   const v = useVeri();
   const f = o.f;
   const planlar = olusumPlanlari(v, o).filter((p) => planOperasyonDuzenler(ben, p));
-  const [secili, setSecili] = useState(planId && planlar.some((p) => p.id === planId) ? planId : (planlar[0]?.id ?? ""));
+  /*
+   * Belli bir plandan açıldıysa o plan; kişinin orada yetkisi yoksa başka
+   * güne geçilmez, düğme pasif ve nedeni yazılı. Önce sessizce bugünün
+   * planı seçiliyordu, faaliyet yanlış güne gidiyordu.
+   */
+  const [secili, setSecili] = useState(planId ? (planlar.some((p) => p.id === planId) ? planId : "") : (planlar[0]?.id ?? ""));
   const [baslik, setBaslik] = useState("");
   const [yeniAd, setYeniAd] = useState(f.baslik);
   const [yer, setYer] = useState(f.sehir ?? "");
@@ -371,7 +376,7 @@ function NextDayAktarim({ o, ben, planId, geri }: { o: Olusum; ben: Kisi; planId
     if (id) {
       bildir(t("planaEklendiNd"));
       geri();
-    }
+    } else bildir(t("aktarimYapilamadi"));
   };
   return (
     <Pencere
@@ -390,6 +395,7 @@ function NextDayAktarim({ o, ben, planId, geri }: { o: Olusum; ben: Kisi; planId
       }
     >
       <div className="form">
+        {planId && !secili && <small>{t("ghYetkiYok")}</small>}
         <div className="satir">
           <label>
             {t("plan")}
@@ -438,9 +444,15 @@ function HaftalikAktarim({ o, ben, haftaId, geri }: { o: Olusum; ben: Kisi; haft
   const v = useVeri();
   const f = o.f;
   const haftalar = olusumHaftalari(v, o).filter((h) => haftalikDuzenler(ben, h));
-  const [secili, setSecili] = useState(haftaId && haftalar.some((h) => h.id === haftaId) ? haftaId : (haftalar[0]?.id ?? ""));
+  // Next Day'deki gibi: belli haftadan açıldıysa yalnız o; yetki yoksa başka haftaya geçilmez.
+  const [secili, setSecili] = useState(haftaId ? (haftalar.some((h) => h.id === haftaId) ? haftaId : "") : (haftalar[0]?.id ?? ""));
   const hafta = haftaBul(v, secili);
-  if (!hafta) return null;
+  if (!hafta)
+    return (
+      <Pencere baslik={t("haftalikaEkle")} alt={<Icerik>{f.baslik}</Icerik>} kapat={geri}>
+        <small>{t("ghYetkiYok")}</small>
+      </Pencere>
+    );
   /* Kalemin günü: tekrar bu haftada başlıyorsa o gün, önceki haftadan sürüyorsa haftanın ilk günü. */
   const gun = o.bas < hafta.baslangic ? hafta.baslangic : o.bas;
   return (

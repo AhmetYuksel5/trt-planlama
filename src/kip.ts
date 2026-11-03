@@ -107,6 +107,17 @@ export const sunucuyaEsitlendi = () => {
   esitBekleyen.splice(0).forEach((f) => f());
 };
 export const sunucuyaEsitMi = () => esit;
+/*
+ * Bağlantı şu an canlı mı: eşitlik bir kez sağlanınca sürüyor (kişinin kendi
+ * yazışı kuyrukta bekleyebilir), ama sistemin yazışları için yetmiyor. Uyuyup
+ * bağlantısız uyanan dizüstü gün dönünce yarının planını önbellekteki bayat
+ * görüntüye göre kurup bağlantı gelince başka cihazda düzenlenmiş planı eziyordu.
+ */
+let canli = true;
+export const baglantiCanli = (x: boolean) => {
+  canli = x;
+};
+export const baglantiCanliMi = () => canli && (typeof navigator === "undefined" || navigator.onLine !== false);
 /* Eşitlenince bir kez çalışacak iş (hesap geçişleri); eşitse hemen. */
 export const sunucuyaEsitOlunca = (f: () => void) => (esit ? f() : void esitBekleyen.push(f));
 export const useSunucuyaEsit = () =>

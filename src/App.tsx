@@ -47,7 +47,7 @@ import Takvim from "./ekranlar/takvim/Takvim";
 import { Bos, bildir } from "./bilesenler/Parcalar";
 import { useDil } from "./dil";
 import { gercekKipKurulu } from "./firebase-ayar";
-import { GERCEK, firebaseYukle, useGercekDurum, useSunucuyaEsit } from "./kip";
+import { GERCEK, firebaseYukle, useGercekDurum, baglantiCanliMi, useSunucuyaEsit } from "./kip";
 import { useBen } from "./oturum";
 import {
   haftaBul,
@@ -137,6 +137,8 @@ export default function App() {
     const yokla = () => {
       // İzlemede yazış kapalı; plan, yöneticinin kendi sekmesinde ya da başkasınınkinde açılır.
       if (izlemede()) return;
+      // Bağlantı kopukken sistem yazmaz: önbellekteki görüntü bayat olabilir (kip.ts → baglantiCanliMi).
+      if (GERCEK && !baglantiCanliMi()) return;
       /*
        * Her iş ayrı korumada: biri kayıttaki beklenmedik bir öğede hata
        * fırlatınca bütün uygulama beyaz kalıyordu (gizli pencerede, yani

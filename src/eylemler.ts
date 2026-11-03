@@ -17,7 +17,7 @@ import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
-import { oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -375,6 +375,7 @@ export const oneriDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "s
   let d = getir();
   const o = oneriBul(d, id);
   if (!o || o.durum === "planaEklendi" || o.durum === "geriCekildi") return false;
+  if (yeni !== "degerlendiriliyor" && acikGundemde(d, o)) return false;
   // Teklifte karar gönderende (Planlama dışından da olabilir); reddedilmez: değerlendirmeye ya da takibe alınır, geri çekilir.
   if (o.durum === "teklif" ? !teklifKarariVerebilir(ben, o) || yeni === "reddedildi" || yeni === "sonra" : !yapabilir(ben, "oneriDegerlendir")) return false;
   // Talimat reddedilmez ve ertelenmez; yalnız değerlendirmeye alınıp plana eklenir.
@@ -397,7 +398,7 @@ export const oneriDuzeltmeIste = (ben: Kisi, id: string, not: string) => {
   const metin = not.trim();
   let d = getir();
   const o = oneriBul(d, id);
-  if (!o || !metin || !oneriDuzeltmeyeGider(ben, o)) return false;
+  if (!o || !metin || !oneriDuzeltmeyeGider(ben, o) || acikGundemde(d, o)) return false;
   d = {
     ...d,
     oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, durum: "duzeltme" as const, duzeltmeNotu: metin, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 } : x)),
@@ -447,6 +448,13 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
  */
 export const planMetni = (o: Oneri) => o.gelisme.trim() || o.haberBasligi;
 
+/*
+ * Plana ya da gündeme yalnız karar bekleyen öneri girer. Yetki yalnız düğmede
+ * soruluyordu: muhabire giden teklif, reddedilen, geri çekilen, düzeltmede
+ * bekleyen ya da arşive düşmüş öneri eylemle plana girebiliyordu.
+ */
+const plandaKarara = (o: Oneri) => !["teklif", "reddedildi", "geriCekildi", "duzeltme"].includes(o.durum) && !oneriArsivde(o);
+
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
@@ -456,6 +464,7 @@ export const oneriPlanaEkle = (
   const o = oneriBul(d, oneriId);
   const plan = planBul(d, g.planId);
   if (!o || !plan || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
+  if (!plandaKarara(o)) return false;
   // Haftalık gündemdeki öneri Next Day'e ayrıca girmez: kesinleşince haftalıktan aktarılıyor, iki kez düşerdi.
   // Kesinleşmiş haftanın kalemi yalnız kayıt: Next Day'den çıkarılan öneri yeniden eklenebiliyor.
   if (o.durum === "planaEklendi" || d.haftalik.some((h) => h.durum !== "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id))) return false;
@@ -774,6 +783,11 @@ export const oneriKopyala = (ben: Kisi, oneriId: string): string | null => {
     geriBildirim: _gb,
     geriDonus: _gd,
     satirlar: _s,
+    // Takip, e-posta yanıtı ve düzeltme turu asılın geçmişi; kopya yeni karar (CLAUDE.md: "geçmez").
+    takipId: _ti,
+    yanitId: _yi,
+    duzeltmeNotu: _dn,
+    duzeltmeSayisi: _ds,
     ...ic
   } = o;
   const kopya: Oneri = { ...ic, id, zaman: simdi(), durum: "degerlendiriliyor", kopyaKaynagi: o.id };
@@ -1134,7 +1148,7 @@ export const oneriGundemeEkle = (
   const h = haftaBul(d, haftaId);
   const o = oneriBul(d, oneriId);
   // Haftalık öneri ya da günü (aralığı) bu haftaya düşen öneri.
-  if (!h || !o || !oneriHaftada(o, h) || !haftalikDuzenler(ben, h) || !yapabilir(ben, "oneriDegerlendir")) return null;
+  if (!h || !o || !oneriHaftada(o, h) || !haftalikDuzenler(ben, h) || !yapabilir(ben, "oneriDegerlendir") || !plandaKarara(o)) return null;
   if (d.haftalik.some((x) => x.kalemler.some((k) => k.oneriId === o.id)) || o.durum === "reddedildi" || o.durum === "planaEklendi") return null;
   if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
   let baslikId = g.baslikId || undefined;
@@ -2103,13 +2117,35 @@ export const gelismeBasligaTasi = (ben: Kisi, id: string, hedefPbId?: string) =>
   if (hedefPbId && !hedef) return false;
   const yeni: Gelisme = { ...g, planBaslikId: hedefPbId, onceki: undefined, devir: undefined };
   d = { ...d, gelismeler: [...d.gelismeler.filter((x) => x.id !== id), yeni] };
-  if (g.oneriId && hedef) {
+  /*
+   * Öneriden gelen gelişmenin PKG'si ve muhabiri de onunla gider: hedef
+   * başlıksız متابعات olunca ikisi eski başlıkta kalıyordu. Muhabir eski
+   * başlıktan yalnız orada onun başka işi (önerisi, paketi) yoksa çıkar.
+   */
+  if (g.oneriId) {
     const eskiPb = g.planBaslikId;
+    const o = oneriBul(d, g.oneriId);
     d = {
       ...d,
-      oneriler: d.oneriler.map((o) => (o.id === g.oneriId && o.baslikId !== hedef.baslikId ? { ...o, baslikId: hedef.baslikId } : o)),
-      paketler: d.paketler.map((p) => (p.oneriId === g.oneriId && p.planId === plan.id && p.planBaslikId === eskiPb && p.durum !== "iptal" ? { ...p, planBaslikId: hedef.id } : p)),
+      oneriler: hedef ? d.oneriler.map((x) => (x.id === g.oneriId && x.baslikId !== hedef.baslikId ? { ...x, baslikId: hedef.baslikId } : x)) : d.oneriler,
+      paketler: d.paketler.map((p) => (p.oneriId === g.oneriId && p.planId === plan.id && p.planBaslikId === eskiPb && p.durum !== "iptal" ? { ...p, planBaslikId: hedef?.id } : p)),
     };
+    const m = o?.muhabirId;
+    if (m && eskiPb) {
+      const kaldi =
+        d.gelismeler.some((x) => x.planId === plan.id && x.planBaslikId === eskiPb && x.oneriId && x.oneriId !== g.oneriId && oneriBul(d, x.oneriId)?.muhabirId === m) ||
+        d.paketler.some((p) => p.planId === plan.id && p.planBaslikId === eskiPb && p.durum !== "iptal" && p.muhabirId === m);
+      const eski = plan.basliklar.find((b) => b.id === eskiPb);
+      const pm = eski?.muhabirler.find((x) => x.kisiId === m);
+      d = planGuncelle(d, plan.id, (pl) => ({
+        ...pl,
+        basliklar: pl.basliklar.map((b) => {
+          if (b.id === eskiPb && pm && !kaldi) return { ...b, muhabirler: b.muhabirler.filter((x) => x.kisiId !== m) };
+          if (hedef && b.id === hedef.id && pm && !b.muhabirler.some((x) => x.kisiId === m)) return { ...b, muhabirler: [...b.muhabirler, { kisiId: m, ...(pm.yer && { yer: pm.yer }) }] };
+          return b;
+        }),
+      }));
+    }
   }
   kaydet(d);
   return true;
@@ -2127,11 +2163,19 @@ export const gelismeTasi = (ben: Kisi, id: string, yon: -1 | 1) => {
   return true;
 };
 
+/*
+ * Öneriden gelen gelişmeyi ya da canlıyı silmek öneriyi değerlendirmeye
+ * döndürüyor (oneriBaglariniTazele), yani "Plandan çıkar"la aynı sonuç; o
+ * karar yetkisi istiyor. Devralınmış planda operasyon yetkisiyle Newsdesk
+ * öneriyi sessizce geri çevirebiliyordu.
+ */
+const oneriBagiSilinir = (ben: Kisi, oneriId?: string) => !oneriId || yapabilir(ben, "oneriDegerlendir");
+
 export const gelismeSil = (ben: Kisi, id: string) => {
   const d = getir();
   const g = d.gelismeler.find((x) => x.id === id);
   const plan = planBul(d, g?.planId);
-  if (!g || !plan || !planOperasyonDuzenler(ben, plan)) return false;
+  if (!g || !plan || !planOperasyonDuzenler(ben, plan) || !oneriBagiSilinir(ben, g.oneriId)) return false;
   kaydet(oneriBaglariniTazele({ ...d, gelismeler: d.gelismeler.filter((x) => x.id !== id) }, [g.oneriId]));
   return true;
 };
@@ -2152,7 +2196,7 @@ export const canliSil = (ben: Kisi, id: string) => {
   const d = getir();
   const c = d.canliYayinlar.find((x) => x.id === id);
   const plan = planBul(d, c?.planId);
-  if (!c || !plan || !planOperasyonDuzenler(ben, plan)) return false;
+  if (!c || !plan || !planOperasyonDuzenler(ben, plan) || !oneriBagiSilinir(ben, c.oneriId)) return false;
   kaydet(oneriBaglariniTazele({ ...d, canliYayinlar: d.canliYayinlar.filter((x) => x.id !== id) }, [c.oneriId]));
   return true;
 };
@@ -2848,17 +2892,26 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
   // Plandaki gelişmenin metni oneriPlanaEkle'deki kuralla (planMetni).
   const metin = (x: Oneri, _paketli: boolean) => planMetni(x);
   const paketli = !!o.paketId;
+  /*
+   * Devralınmış plan Newsdesk'te: onun gelişmesine ve paketine dokunulmaz.
+   * Paketin yalnız taslağı tam güncellenir; onaylıda yalnız metin (strap,
+   * açıklama; paketMetniDuzenle ile aynı kural), üretimdeki ve bitmiş pakete
+   * hiç: masa değişince paketin akışı da değişiyordu.
+   */
+  const devralinmis = (planId?: string) => planBul(d, planId)?.durum === "devralindi";
   d = {
     ...d,
     oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)),
-    gelismeler: d.gelismeler.map((x) => (x.oneriId === oneriId && x.metin === metin(o, paketli) && metin(o, paketli) !== metin(yeni, paketli) ? { ...x, metin: metin(yeni, paketli) } : x)),
+    gelismeler: d.gelismeler.map((x) => (x.oneriId === oneriId && !devralinmis(x.planId) && x.metin === metin(o, paketli) && metin(o, paketli) !== metin(yeni, paketli) ? { ...x, metin: metin(yeni, paketli) } : x)),
     paketler: d.paketler.map((p) => {
-      if (p.oneriId !== oneriId) return p;
+      if (p.oneriId !== oneriId || devralinmis(p.planId)) return p;
+      const taslak = p.durum === "taslak" || p.durum === "degerlendiriliyor";
+      if (!taslak && p.durum !== "onaylandi") return p;
       const yeniStrap = oneriPaketBasligi(yeni);
       const baslik = p.baslik === (oneriPaketBasligi(o) ?? "") && yeniStrap ? yeniStrap : p.baslik;
       const aciklama = p.aciklama === o.gelisme ? yeni.gelisme : p.aciklama;
-      const tur = p.tur === o.tur ? yeni.tur : p.tur;
-      const bicim = p.bicim === paketBicimi(o.bicim) ? (paketBicimi(yeni.bicim) ?? p.bicim) : p.bicim;
+      const tur = taslak && p.tur === o.tur ? yeni.tur : p.tur;
+      const bicim = taslak && p.bicim === paketBicimi(o.bicim) ? (paketBicimi(yeni.bicim) ?? p.bicim) : p.bicim;
       if (baslik === p.baslik && aciklama === p.aciklama && tur === p.tur && bicim === p.bicim) return p;
       return { ...p, baslik, aciklama, tur, ...(bicim ? { bicim } : {}), guncelleme: simdi() };
     }),
@@ -3154,6 +3207,11 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
   const d = getir();
   const k = d.kisiler.find((x) => x.id === kisiId);
   if (!k || !(ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi))) return false;
+  // Açık plandaki gelişme muhabirliği de gider: silinen kişi paragrafın altında "المراسل" olarak kalıyordu.
+  const acikPlan = new Set(d.planlar.filter((p) => p.durum === "taslak" || p.durum === "toplantida").map((p) => p.id));
+  const gelismeler = d.gelismeler.map((g) =>
+    acikPlan.has(g.planId) && gelismeMuhabirleri(g).some((m) => m.kisiId === kisiId) ? { ...g, muhabirler: gelismeMuhabirleri(g).filter((m) => m.kisiId !== kisiId) } : g,
+  );
   const planlar = d.planlar.map((p) => {
     if (p.durum !== "taslak" && p.durum !== "toplantida") return p;
     const ekipte = p.ekip.some((e) => e.kisiId === kisiId);
@@ -3173,6 +3231,7 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
         ...d,
         kisiler: d.kisiler.filter((x) => x.id !== kisiId),
         planlar: planlar.some((p, i) => p !== d.planlar[i]) ? planlar : d.planlar,
+        gelismeler: gelismeler.some((g, i) => g !== d.gelismeler[i]) ? gelismeler : d.gelismeler,
         okundu: anahtarlariAt(d.okundu, kendi) ?? {},
         anaSayfa: anahtarlariAt(d.anaSayfa, (x) => x.startsWith(`${kisiId}:`)),
         oneriGorunumu: anahtarlariAt(d.oneriGorunumu, kendi),
@@ -3939,7 +3998,9 @@ export const oneriArsivdenCikar = (ben: Kisi, id: string) => {
   if (!o || !arsivdenCikarabilir(ben)) return false;
   const { arsiv: _, ...x } = o;
   const kapali = o.durum === "reddedildi" || o.durum === "geriCekildi";
-  const yeni: Oneri = { ...x, arsivdenCikti: simdi(), ...(kapali && { durum: "degerlendiriliyor" as const }) };
+  // Değerlendirmeye açılan reddedilmiş önerinin eski ret gerekçesi kalmasın: yeniden karar bekliyor.
+  const { gerekce: _g, ...acik } = x;
+  const yeni: Oneri = { ...(kapali ? acik : x), arsivdenCikti: simdi(), ...(kapali && { durum: "degerlendiriliyor" as const }) };
   kaydet(
     hareketYaz({ ...d, oneriler: d.oneriler.map((y) => (y.id === id ? yeni : y)) }, { kisiId: ben.id, tip: "oneriArsivdenCikarildi", oneriId: id, veri: o.muhabirId ? { kime: o.muhabirId } : undefined }),
   );

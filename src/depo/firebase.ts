@@ -40,7 +40,7 @@ import {
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
 import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
-import { gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
+import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
@@ -192,7 +192,12 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     bekleyen.add(k);
     dinlenen.add(k);
   };
+  // Her dinlenenin son görüntüsü önbellekten mi: biri bile öyleyse bağlantı canlı sayılmaz (kip.ts → baglantiCanli).
+  const onbellekte = new Set<string>();
   const sunucuGeldi = (k: string, snap: { metadata: { fromCache: boolean } }) => {
+    if (snap.metadata.fromCache) onbellekte.add(k);
+    else onbellekte.delete(k);
+    baglantiCanli(onbellekte.size === 0);
     if (snap.metadata.fromCache || sunucudan.has(k)) return;
     sunucudan.add(k);
     if ([...dinlenen].every((x) => sunucudan.has(x))) sunucuyaEsitlendi();

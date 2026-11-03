@@ -1729,6 +1729,7 @@ const M = {
   planaSecildi: m("Plana seçildi: {tarih}", "اختير للخطة: {tarih}", "Picked for: {tarih}"),
   stoktakiPaketler: m("Stoktaki paketler", "التقارير في المخزون", "Packages in stock"),
   stokPaketOlarakEkle: m("Stok paket olarak ekle", "إضافة كتقرير جاهز", "Add as stock package"),
+  aktarimYapilamadi: m("Plana eklenemedi: plan açık değil ya da yetkin yok.", "تعذّرت الإضافة إلى الخطة: الخطة غير مفتوحة أو لا صلاحية لديك.", "Could not add to the plan: it is not open or you have no access."),
   schedule: m("SCHEDULE", "SCHEDULE", "SCHEDULE"),
   programOlay: m("Olay", "الحدث", "Event"),
   programSatiriEkle: m("Satır ekle", "إضافة سطر", "Add line"),

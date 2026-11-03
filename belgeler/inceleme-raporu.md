@@ -13,7 +13,7 @@ düğme tıklanarak denendi; konsol hatası, hata sınırı ve 390 pikselde yata
 
 ## A. Güvenlik (gerçek kipte, önce bunlar)
 
-1. **Kritik: muhabir kendini tam yönetici yapabiliyor (Y2).** Kural kişi
+1. ✅ **Kritik: muhabir kendini tam yönetici yapabiliyor (Y2).** Kural kişi
    belgesinde yalnız düz alanları (`hesapYoneticisi`, `pasif`…) koruyor, program
    kişiyi `j` metninden kuruyor. Muhabir kendi `j`'sine `"hesapYoneticisi":true`
    yazar; tam yöneticinin tarayıcısı o kişiyi yeniden yazdığında (ör.
@@ -21,17 +21,17 @@ düğme tıklanarak denendi; konsol hatası, hata sınırı ve 390 pikselde yata
    kural kabul eder. (`firestore.rules:122-125`, `depo/fark.ts:205-224`)
    Çözüm: kural `j` içindeki yetki anahtarlarını düz alanla eşit tutsun; program
    yetkiyi düz alandan okusun.
-2. **Yüksek: kısıtlı muhabir kendi paket/öneri belgesine her alanı yazabiliyor
+2. ✅ **Yüksek: kısıtlı muhabir kendi paket/öneri belgesine her alanı yazabiliyor
    (Y2).** Kural yalnız erişim listesine bakıyor: muhabir paketini `tamamlandi`,
    önerisini "plana eklendi" yapabilir, onay yetkisini atlar; hareket kaydına
    başkasının adıyla bildirim yazabilir. (`firestore.rules:165-167`)
-3. **Orta: davetteki `kisiId` denetlenmiyor (Y2).** Davet yetkili kişi davete
+3. ✅ **Orta: davetteki `kisiId` denetlenmiyor (Y2).** Davet yetkili kişi davete
    etkin bir muhabirin kimliğini koyarsa yeni hesap o muhabirin kayıtlarını okur
    ve üstlenir; `kendiKayitlariniTasi` hesapsız denetimi yapmıyor.
-4. **Orta: `/modeller` kayıtlı anahtarı istekteki adrese gönderiyor (Y2).**
+4. ✅ **Orta: `/modeller` kayıtlı anahtarı istekteki adrese gönderiyor (Y2).**
    Yöneticinin oturumu ele geçirilirse saklı yapay zeka anahtarı başka sunucuya
    sızar. (`worker/src/index.ts:232-246`) Kayıtlı anahtar yalnız kayıtlı adresle.
-5. **Düşük-orta:** kapı birimi kişinin kendi yazabildiği `j`'den alıyor (yapay
+5. ✅ **Düşük-orta:** kapı birimi kişinin kendi yazabildiği `j`'den alıyor (yapay
    zekada birime kapalı özellik açılabilir); kayıt başvurusu kod bilen herkesçe
    başkası adına ezilebiliyor; günlük yapay zeka sınırı eşzamanlı istekte
    aşılıyor (Y2).
@@ -42,7 +42,7 @@ düğme tıklanarak denendi; konsol hatası, hata sınırı ve 390 pikselde yata
    planın farklı başlıklarını düzenlerse birinin değişikliği sessizce gidebilir;
    haftalık ve özel yayın da öyle. Alan düzeyinde güncelleme ya da sürüm
    denetimi gerekli.
-7. **Bayat sekme yarının planını yeniden yazabilir (Y2).** Eşitlik bir kez
+7. ✅ **Bayat sekme yarının planını yeniden yazabilir (Y2).** Eşitlik bir kez
    sağlanınca kopukluk sonrasında da sürüyor; uyuyup bağlantısız uyanan dizüstü
    `nd-<tarih>`'i şablondan kurup bağlantı gelince düzenlenmiş planı ezebilir.
 8. **Paket kodu sayacı işlemsiz (Y2):** aynı anda iki paket aynı `TRT-AR-…` kodunu
@@ -54,24 +54,24 @@ düğme tıklanarak denendi; konsol hatası, hata sınırı ve 390 pikselde yata
 
 ## C. Kural ve kod çelişkileri
 
-10. **`oneriDuzenle` üretimdeki, tamamlanmış, devredilmiş paketleri de değiştiriyor
+10. ✅ **`oneriDuzenle` üretimdeki, tamamlanmış, devredilmiş paketleri de değiştiriyor
     (Y1).** Masa (kol) değişirse paketin akışı değişiyor; devralınmış planın
     gelişmesi de. CLAUDE.md "onaylı paketin yalnız metni düzelir" diyor.
-11. **`oneriPlanaEkle` eylemde teklif, reddedilmiş, geri çekilmiş, düzeltmedeki ve
+11. ✅ **`oneriPlanaEkle` eylemde teklif, reddedilmiş, geri çekilmiş, düzeltmedeki ve
     arşivdeki öneriyi reddetmiyor (Y1)** — yetki yalnız düğmede.
-12. **Haftalık gündemdeki öneri düzeltmeye gönderilebiliyor ya da reddedilebiliyor
+12. ✅ **Haftalık gündemdeki öneri düzeltmeye gönderilebiliyor ya da reddedilebiliyor
     (Y1);** kalemi gündemde kalıyor.
-13. **Gelişme başlıksız متابعات'e taşınınca PKG'si ve muhabiri eski başlıkta
+13. ✅ **Gelişme başlıksız متابعات'e taşınınca PKG'si ve muhabiri eski başlıkta
     kalıyor (Y1).** (`eylemler.ts:2059`)
-14. **Newsdesk devraldığı planda gelişme/canlı silerek öneriyi değerlendirmeye
+14. ✅ **Newsdesk devraldığı planda gelişme/canlı silerek öneriyi değerlendirmeye
     döndürebiliyor (Y1);** aynı sonucu doğuran "Plandan çıkar" karar yetkisi ister.
-15. **"İzleriyle sil" ve kayıt temizliği başlıktaki muhabiri ve boş başlığı
+15. ✅ **"İzleriyle sil" ve kayıt temizliği başlıktaki muhabiri ve boş başlığı
     bırakıyor (Y1);** "Plandan çıkar" kaldırıyor. Anılma kayıtları da kalıyor.
-16. **Küçükler (Y1):** `kisiSil` gelişme muhabirini (`Gelisme.muhabirler`) açık
+16. ✅ **Küçükler (Y1):** `kisiSil` gelişme muhabirini (`Gelisme.muhabirler`) açık
     plandan çıkarmıyor; `oneriKopyala` `takipId`, `yanitId`, düzeltme notu gibi
     "geçmez" denen alanları taşıyor; arşivden çıkan reddedilmiş öneride ret
     gerekçesi kalıyor.
-17. **Takvimden aktarım yanlış güne gidebiliyor (Y3).** Yarının planından "bu
+17. ✅ **Takvimden aktarım yanlış güne gidebiliyor (Y3).** Yarının planından "bu
     güne" açılan pencerede kişinin yarında yetkisi yoksa form bugünün planını
     seçiyor; başarısız gönderimde de hiçbir bildirim çıkmıyor.
     (`takvim/Ayrinti.tsx:354-374`)
