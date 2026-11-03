@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet } from "../../eylemler";
+import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet, formNotuKimligi } from "../../eylemler";
 import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirAr, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
@@ -408,6 +408,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
     sahaGerekli: mevcut?.sahaGerekli ?? false,
     slug: mevcut?.slug ?? "",
     muhabirTbc: !!mevcut?.muhabirTbc,
+    not: mevcut ? (mevcut.notlar ?? []).find((n) => n.id === formNotuKimligi(mevcut.id))?.metin ?? "" : "",
   });
   /* Muhabir seçilince şehir onun şehrine geliyor; çıktıdaki "ŞEHİR /" çoğu zaman muhabirin yeri. TBC kalkıyor. */
   const muhabirSec = (id: string) => {
@@ -433,6 +434,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
       sahaGerekli: f.sahaGerekli,
       slug: f.slug.trim() || undefined,
       muhabirTbc: f.muhabirTbc,
+      not: f.not,
     }, sonra);
     if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
     kapat();
@@ -487,6 +489,10 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
       <label>
         {t("kisaAciklama")}
         <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+      </label>
+      <label>
+        {t("not")}
+        <input dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} data-paket-form-notu />
       </label>
       <div className="satir">
         <label>

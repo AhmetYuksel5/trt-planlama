@@ -2260,7 +2260,20 @@ export interface PaketGirdisi {
   sahaGerekli: boolean;
   slug?: string;
   muhabirTbc?: boolean;
+  /** Formda girilen not; paketin notlarından biri olur, planda satırın sonunda parantez içinde (paketNotEki). */
+  not?: string;
 }
+
+/* Formun notu paketin notlarında kendi kimliğiyle: düzenlemede o not değişir, öbür notlar (yönetici, durak) kalır. */
+export const formNotuKimligi = (paketId: string) => `nf-${paketId}`;
+const formNotuyla = (notlar: Paket["notlar"], paketId: string, metin: string | undefined, ben: Kisi): Paket["notlar"] => {
+  const id = formNotuKimligi(paketId);
+  const eski = notlar.find((n) => n.id === id);
+  const m = metin?.trim() ?? "";
+  if ((eski?.metin ?? "") === m) return notlar;
+  const kalan = notlar.filter((n) => n.id !== id);
+  return m ? [...kalan, { id, kisiId: ben.id, zaman: simdi(), metin: m }] : kalan;
+};
 
 /* Yeni paket listelerde önde (en yeni üstte); belgede "altına ekle" denince o satırın arkasına giriyor. */
 export const paketKaydet = (ben: Kisi, g: PaketGirdisi, sonra?: string): string | null => {
@@ -2268,15 +2281,16 @@ export const paketKaydet = (ben: Kisi, g: PaketGirdisi, sonra?: string): string 
   const plan = planBul(d, g.planId);
   if (!plan || !planIcerikDuzenler(ben, plan)) return null;
   g = { ...g, muhabirTbc: g.muhabirTbc && !g.muhabirId ? true : undefined };
+  const { not: formNotu, ...alanlar } = g;
   if (g.id) {
     const id = g.id;
-    kaydet(paketGuncelle(d, id, (p) => ({ ...p, ...g, muhabirTbc: g.muhabirTbc || undefined, id })));
+    kaydet(paketGuncelle(d, id, (p) => ({ ...p, ...alanlar, muhabirTbc: g.muhabirTbc || undefined, id, notlar: formNotuyla(p.notlar ?? [], id, formNotu, ben) })));
     return id;
   }
   let kod: string;
   [kod, d] = yeniKod(d);
   const id = kimlik("p");
-  const paket: Paket = { ...g, muhabirTbc: g.muhabirTbc || undefined, id, kod, durum: "taslak", notlar: [], olusturma: simdi(), guncelleme: simdi() };
+  const paket: Paket = { ...alanlar, muhabirTbc: g.muhabirTbc || undefined, id, kod, durum: "taslak", notlar: formNotuyla([], id, formNotu, ben), olusturma: simdi(), guncelleme: simdi() };
   d = { ...d, paketler: arkasina([paket, ...d.paketler], kimlikOf, id, sonra) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketOlusturuldu", paketId: id, planId: plan.id }));
   return id;
