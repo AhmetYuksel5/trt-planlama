@@ -231,7 +231,8 @@ export default function App() {
       case "nextday": {
         // "yarin": ana sayfadaki kısayol hangi kimlik olduğunu bilmeden yarının planına gidiyor.
         const plan = yol.id === "yarin" ? yarinPlani(v) : planBul(v, yol.id);
-        if (yol.id && !plan) icerik = <Yetkisiz />;
+        // Yarının planı yoksa (henüz açılmadı ya da kaydı kayboldu) liste: kayıp plan şeridi orada, "erişimin yok" yanıltıyordu.
+        if (yol.id && yol.id !== "yarin" && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
         else if (plan && yol.alt === "belge")
           icerik = <NextDayBelge ben={ben} plan={plan} />;

@@ -260,6 +260,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kayıtların gösterdiği kimlikle eklenir, varsa kayıtlar ona geçer;
     önerinin ya da Weekly kaleminin dosyası önerilir. Başlık çıkarma
     altındakileri sildiği için şerit olağan akışta çıkmaz.
+    Plan belgesi kaybolup bağlı gelişme, canlı ya da paketi kalırsa
+    (`kayipPlanlar.ts`; gün `nd-<tarih>` kimliğinden ya da açılış
+    hareketinden) sistem o günü yeniden açmaz, plan hiç görünmüyordu: Next
+    Day listesinde (ve plansız `#/nextday/yarin`'de) "kaydı kaybolmuş" şeridi,
+    "Planı geri getir" (`eylemler.ts → kayipPlaniGeriGetir`, `planDuzenle`)
+    aynı kimlikle boş plan açar, kayıtlar ona döner, başlıkları "Başlığı
+    kaybolmuş" şeridi geri koyar; ekip önceki planın şablonundan.
     Sistemin yazışları bağlantı canlıyken çalışır (`kip.ts → baglantiCanliMi`:
     dinlenenlerden biri bile önbellekten geliyorsa değil): eşitlik bir kez
     olunca sürüyor, uyuyup bağlantısız uyanan dizüstü yarının planını bayat

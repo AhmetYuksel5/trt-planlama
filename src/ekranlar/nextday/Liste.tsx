@@ -4,7 +4,8 @@ import { Bos, Icerik, Kart, Pencere, Rozet, bildir } from "../../bilesenler/Parc
 import { tarihYaz, useDil } from "../../dil";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { gecmisPlanlariYukle } from "../../eylemler";
+import { gecmisPlanlariYukle, kayipPlaniGeriGetir } from "../../eylemler";
+import { kayipPlanlar } from "../../kayipPlanlar";
 import { GERCEK } from "../../kip";
 import { arSade, gecmisDosyaOku, planTaslagi, type GecmisGun } from "../../planAktar";
 import { getir, useVeri, type Kisi } from "../../veri";
@@ -40,6 +41,7 @@ export default function NextDayListe({ ben }: { ben: Kisi }) {
         }
       />
       {yukle && <GecmisPenceresi ben={ben} kapat={() => setYukle(false)} />}
+      <KayipPlanlar ben={ben} />
       <Kart baslik={t("planlar")} ikon={<CalendarDays size={18} />}>
         {planlar.length === 0 ? (
           <Bos metin={t("planYok")} />
@@ -177,5 +179,26 @@ function GecmisPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
         </div>
       )}
     </Pencere>
+  );
+}
+
+/* Kaydı kaybolmuş plan (kayipPlanlar.ts): bağlı kayıtları duruyor, plan aynı kimlikle geri açılır. */
+export function KayipPlanlar({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  if (!yapabilir(ben, "planDuzenle")) return null;
+  const l = kayipPlanlar(v);
+  if (!l.length) return null;
+  return (
+    <>
+      {l.map((k) => (
+        <div key={k.id} className="onceki-seridi" data-kayip-plan={k.id}>
+          <span>{t("kayipPlanSeridi", { tarih: tarihYaz(k.tarih, dil, "tam"), n: k.sayi })}</span>
+          <button type="button" className="dugme" onClick={() => kayipPlaniGeriGetir(ben, k.id) && git(`nextday/${k.id}`)} data-kayip-plan-getir>
+            {t("planiGeriGetir")}
+          </button>
+        </div>
+      ))}
+    </>
   );
 }

@@ -17,6 +17,7 @@ import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
+import { kayipPlanlar } from "./kayipPlanlar";
 import { acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
@@ -1534,6 +1535,33 @@ export const planCiftleriniTopla = (): number => {
     d = hareketYaz(d, { kisiId: SISTEM, tip: "planlarBirlestirildi", planId: b.kalan, veri: { tarih: b.tarih, sayi: String(b.gidenler.length + 1) } }, `h-${turet(b.kalan, b.gidenler.join(","))}`);
   kaydet(d);
   return birlesimler.length;
+};
+
+/*
+ * Kaydı kaybolmuş planı aynı kimlikle geri açar: bağlı gelişme, canlı ve
+ * paket kendiliğinden ona döner; başlıklar plan belgesindeydi, onları
+ * "Başlığı kaybolmuş N kayıt" şeridi geri koyar (kayipBaslikGeriGetir).
+ * Ekip önceki planın şablonundan, "dünden" işaretli.
+ */
+export const kayipPlaniGeriGetir = (ben: Kisi, id: string): boolean => {
+  let d = getir();
+  const k = kayipPlanlar(d).find((x) => x.id === id);
+  if (!k || !yapabilir(ben, "planDuzenle")) return false;
+  const kaynak = oncekiPlan(d, k.tarih);
+  const plan: NextDayPlan = {
+    id,
+    tarih: k.tarih,
+    durum: "taslak",
+    ekip: (kaynak?.ekip ?? []).map((e) => ({ ...e, onceki: true as const })),
+    gorevlendirmeler: [],
+    hazirPaketler: [],
+    basliklar: [],
+    olusturan: ben.id,
+    olusturma: simdi(),
+  };
+  d = { ...d, planlar: [plan, ...d.planlar] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "planGeriGetirildi", planId: id, veri: { tarih: k.tarih } }));
+  return true;
 };
 
 export const yarinPlaniniAc = (): string | null => {
