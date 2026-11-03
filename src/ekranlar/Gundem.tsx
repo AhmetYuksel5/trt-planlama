@@ -4,13 +4,15 @@ import {
   ExternalLink,
   Globe,
   Lightbulb,
+  Plus,
   RefreshCw,
+  ShoppingBasket,
   Settings,
   Share2,
   Star,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Bos,
   Icerik,
@@ -26,6 +28,9 @@ import {
   gundemNotuKaydet,
   gundemNotuSil,
   gundemPaylasimKaydet,
+  gundemSepeteEkle,
+  gundemSepettenCikar,
+  oneriyeSatirlarEkle,
   oneriGonder,
 } from "../eylemler";
 import {
@@ -52,6 +57,7 @@ import {
   yalnizTakipOku,
   yalnizTakipYaz,
   konuBul,
+  normal,
   olaylariKur,
   sakliHaberler,
   seviye,
@@ -68,14 +74,17 @@ import { bugun, gunEkle } from "../tarih";
 import { yaklasanlar } from "../takvim";
 import {
   ULKELER,
+  baslikBul,
   useVeri,
+  type Durum,
   type GundemKaynagi,
   type Kisi,
   type Ulke,
 } from "../veri";
 import { git, yerineGit } from "../yol";
-import { gundemAkislari } from "../yz";
-import { gundemGorebilir, kisitliKisi } from "../yetki";
+import { gundemAkislari, gundemMakale, type Makale } from "../yz";
+import { acikGunPlanlari, oneriArsivde } from "../oneriPlanlari";
+import { gundemGorebilir, kisitliKisi, oneriSatiriEkleyebilir } from "../yetki";
 import { birimAdi, kisiBirimleri } from "../yapi";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -215,6 +224,7 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
   const { haberler, taraniyor, hatalar, son, tara } = useGundemHaberleri();
   const [kaynakAcik, setKaynakAcik] = useState(false);
   const [paylasAcik, setPaylasAcik] = useState(false);
+  const [sepetAcik, setSepetAcik] = useState(false);
   const simdiAn = useMemo(() => Date.now(), [haberler]);
   const olaylar = useMemo(() => olaylariKur(haberler), [haberler]);
 
@@ -289,6 +299,14 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
         <Firsatlar liste={firsatlar(v, olaylar, simdiAn)} ben={ben} />
       )}
       {bolum === "arsiv" && <Arsiv ben={ben} />}
+      {(v.gundemSepetleri?.[ben.id]?.length ?? 0) > 0 && (
+        <div className="gundem-sepet-cubugu">
+          <button className="dugme" onClick={() => setSepetAcik(true)} data-sepet-ac>
+            <ShoppingBasket size={16} /> {t("gdSepet")} · {v.gundemSepetleri![ben.id].length}
+          </button>
+        </div>
+      )}
+      {sepetAcik && <SepetPenceresi ben={ben} kapat={() => setSepetAcik(false)} />}
       {paylasAcik && <PaylasimPenceresi ben={ben} kapat={() => setPaylasAcik(false)} />}
       {kaynakAcik && (
         <KaynakPenceresi
@@ -381,6 +399,9 @@ function OlaySatiri({
   const v = useVeri();
   const [ac, setAc] = useState(false);
   const [arsiv, setArsiv] = useState(false);
+  const [oku, setOku] = useState(false);
+  const [cevir, setCevir] = useState(false);
+  const bizde = bizdeki(v, o);
   const kayitli = (v.gundemArsivi ?? []).some(
     (n) =>
       n.kisiId === ben.id && o.haberler.some((h) => h.baglanti === n.baglanti),
@@ -389,14 +410,29 @@ function OlaySatiri({
   return (
     <li className="gundem-olay" data-olay={o.id} data-agirlik={o.agirlik}>
       <div className="gundem-olay-ust">
+        {/* Başlık okuma penceresini açar; siteye gitmek ↗'da. Önce yeni sekmede site açılıyor, editör gidip dönüyordu. */}
+        <button className="gundem-olay-baslik" onClick={() => setOku(true)} data-olay-oku>
+          <Metin>{o.baslik}</Metin>
+        </button>
         <a
+          className="dugme dugme-sade dugme-ikon"
           href={o.haberler[0].baglanti}
           target="_blank"
           rel="noopener noreferrer"
-          className="gundem-olay-baslik"
+          title={t("gdSiteyeGit")}
+          aria-label={t("gdSiteyeGit")}
         >
-          <Metin>{o.baslik}</Metin>
+          <ExternalLink size={15} />
         </a>
+        <button
+          className="dugme dugme-sade dugme-ikon"
+          onClick={() => setCevir(true)}
+          title={t("gdOneriyeCevir")}
+          aria-label={t("gdOneriyeCevir")}
+          data-olay-cevir
+        >
+          <Lightbulb size={16} />
+        </button>
         <button
           className="dugme dugme-sade dugme-ikon"
           onClick={() => setArsiv(true)}
@@ -417,6 +453,11 @@ function OlaySatiri({
             z.getFullYear() === new Date().getFullYear() ? "kisa" : "uzun",
           )}
         </span>
+        {bizde && (
+          <span className="cip cip-vurgu" title={bizde.ad} data-bizde>
+            {t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))}
+          </span>
+        )}
         <button
           className="dugme-metin"
           onClick={() => setAc(!ac)}
@@ -454,6 +495,17 @@ function OlaySatiri({
       )}
       {arsiv && (
         <ArsivPenceresi o={o} ben={ben} kapat={() => setArsiv(false)} />
+      )}
+      {oku && <OkumaPenceresi o={o} ben={ben} kapat={() => setOku(false)} />}
+      {cevir && (
+        <OneriyeCevir
+          baslik={o.baslik}
+          kaynaklar={o.kaynaklar}
+          gelisme={o.haberler[0].ozet}
+          ulkeler={olayUlkeleri(o)}
+          ben={ben}
+          kapat={() => setCevir(false)}
+        />
       )}
     </li>
   );
@@ -772,7 +824,15 @@ function FirsatSatirlari({ liste, ben }: { liste: Firsat[]; ben: Kisi }) {
         ))}
       </ul>
       {cevir && (
-        <OneriyeCevir f={cevir} ben={ben} kapat={() => setCevir(null)} />
+        <OneriyeCevir
+          baslik={cevir.olay.baslik}
+          kaynaklar={cevir.olay.kaynaklar}
+          gelisme={cevir.olay.haberler[0].ozet}
+          ulkeler={cevir.konu.ulkeler}
+          saha={cevir.tur === "saha"}
+          ben={ben}
+          kapat={() => setCevir(null)}
+        />
       )}
     </>
   );
@@ -800,43 +860,59 @@ function Firsatlar({ liste, ben }: { liste: Firsat[]; ben: Kisi }) {
 }
 
 /* Fırsat bizim öneri akışına muhabir dışı kaynak (medya) olarak girer; Header Arapça yazılır. */
+/*
+ * Fırsat, haber satırı, okuma penceresi ve sepet aynı formu açıyor. Header Arapça
+ * başlıktan; İngilizce başlık Header'a yazılmıyor (içerik Arapça). Sepetten gelen
+ * gelişme parçaların kendisi, Arapça değilse de: editör çevirip kısaltıyor.
+ */
 function OneriyeCevir({
-  f,
+  baslik,
+  kaynaklar,
+  gelisme,
+  ulkeler = [],
+  saha = false,
   ben,
   kapat,
+  gonderildi,
 }: {
-  f: Firsat;
+  baslik: string;
+  kaynaklar: string[];
+  gelisme?: string;
+  ulkeler?: Ulke[];
+  saha?: boolean;
   ben: Kisi;
   kapat: () => void;
+  gonderildi?: () => void;
 }) {
   const { t } = useDil();
-  const ar = /[؀-ۿ]/.test(f.olay.baslik);
+  const ar = /[؀-ۿ]/.test(baslik);
   const [g, setG] = useState({
-    haberBasligi: ar ? f.olay.baslik : "",
-    gelisme: ar ? (f.olay.haberler[0].ozet ?? "") : "",
-    ulke: (f.konu.ulkeler[0] ?? "turkiye") as Ulke,
+    haberBasligi: ar ? baslik : "",
+    gelisme: gelisme ?? "",
+    ulke: (ulkeler[0] ?? "turkiye") as Ulke,
     hedefTarih: bugun(),
   });
   const gonder = () => {
     const id = oneriGonder(ben, {
       kaynakTuru: "medya",
-      kaynakAdi: f.olay.kaynaklar.join("، "),
+      kaynakAdi: [...new Set(kaynaklar)].join("، "),
       ulke: g.ulke,
       haberBasligi: g.haberBasligi.trim(),
       gelisme: g.gelisme.trim() || g.haberBasligi.trim(),
       tur: "haber",
-      sahaGerekli: f.tur === "saha",
+      sahaGerekli: saha,
       kanal: "sistem",
       hedefTarih: g.hedefTarih,
     });
     if (!id) return bildir(t("gdOneriOlmadi"));
+    gonderildi?.();
     kapat();
     bildir(t("gdOneriOldu"), { ad: t("ac"), f: () => git(`oneriler/${id}`) });
   };
   return (
     <Pencere
       baslik={t("gdOneriyeCevir")}
-      alt={<Metin>{f.olay.baslik}</Metin>}
+      alt={<Metin>{baslik}</Metin>}
       kapat={kapat}
       altBilgi={
         <div className="form-alt">
@@ -899,6 +975,260 @@ function OneriyeCevir({
           </label>
         </div>
       </div>
+    </Pencere>
+  );
+}
+
+/* --- Okuma penceresi ve sepet --- */
+
+/*
+ * Planda bu olaya benzeyen başlık (adı ve gelişmeleri, en az iki ortak anlamlı sözcük):
+ * aynı konu ikinci kez önerilmesin diye satırda durum rozeti. Kayıt başına bir kez kurulur.
+ */
+const anlamli = (s: string) => new Set(normal(s).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 4));
+const bizdeOnbellek = new WeakMap<Durum, { tarih: string; ad: string; sozler: Set<string> }[]>();
+function bizdeki(v: Durum, o: Olay): { tarih: string; ad: string } | null {
+  let liste = bizdeOnbellek.get(v);
+  if (!liste) {
+    liste = acikGunPlanlari(v).flatMap((p) =>
+      p.basliklar.map((b) => {
+        const ad = baslikBul(v, b.baslikId)?.ad ?? "";
+        const metin = [ad, ...v.gelismeler.filter((g) => g.planId === p.id && g.planBaslikId === b.id).map((g) => g.metin)].join(" ");
+        return { tarih: p.tarih, ad, sozler: anlamli(metin) };
+      }),
+    );
+    bizdeOnbellek.set(v, liste);
+  }
+  const ow = anlamli(o.baslik);
+  if (ow.size < 2) return null;
+  for (const x of liste) {
+    let n = 0;
+    for (const w of ow) if (x.sozler.has(w) && ++n >= 2) return { tarih: x.tarih, ad: x.ad };
+  }
+  return null;
+}
+
+const olayUlkeleri = (o: Olay): Ulke[] => o.konular.flatMap((k) => konuBul(k)?.ulkeler ?? []);
+
+/*
+ * Haberin tam metni sayfanın içinde: kapı siteyi okuyup paragraflara ayırıyor. Paragrafın
+ * "+"sı ya da seçilen metin sepete gider. Okunamayan sitede (ücretli, bot korumalı) özet
+ * kalır, ↗ siteyi açar. Telegram'da mesajın tamamı zaten akışta; demoda kapıya gidilmez.
+ */
+function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => void }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const [i, setI] = useState(0);
+  const h = o.haberler[i];
+  const [durum, setDurum] = useState<{ adres: string; makale?: Makale; hata?: string } | null>(null);
+  const [not, setNot] = useState(false);
+  const [cevir, setCevir] = useState(false);
+  const kutu = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const yerel = (): Makale => ({ adres: h.baglanti, site: h.kaynak, baslik: h.baslik, paragraflar: [h.baslik, h.ozet ?? ""].filter((x, j, l) => x && l.indexOf(x) === j) });
+    if (!GERCEK || /^https:\/\/t\.me\//.test(h.baglanti)) {
+      setDurum({ adres: h.baglanti, makale: yerel() });
+      return;
+    }
+    let iptal = false;
+    setDurum(null);
+    void gundemMakale(h.baglanti).then((r) => {
+      if (!iptal) setDurum(r.tamam ? { adres: h.baglanti, makale: r.veri.makale } : { adres: h.baglanti, hata: r.hata });
+    });
+    return () => {
+      iptal = true;
+    };
+  }, [h.baglanti]);
+  const paragraflar = durum?.makale?.paragraflar ?? (durum?.hata ? [h.ozet || h.baslik] : []);
+  const ekle = (metin: string) => {
+    if (!metin.trim()) return;
+    if (gundemSepeteEkle(ben, { metin, baslik: o.baslik, kaynak: h.kaynak, baglanti: h.baglanti })) bildir(t("gdSepeteEklendi"));
+  };
+  const secimiEkle = () => {
+    const s = window.getSelection();
+    if (s && kutu.current && s.anchorNode && kutu.current.contains(s.anchorNode)) ekle(s.toString());
+    else bildir(t("gdSecimYok"));
+  };
+  const bizde = bizdeki(v, o);
+  return (
+    <Pencere
+      genis
+      baslik={<Metin>{o.baslik}</Metin>}
+      alt={bizde ? <span data-bizde>{t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))} · <Icerik>{bizde.ad}</Icerik></span> : undefined}
+      kapat={kapat}
+      altBilgi={
+        <div className="form-alt">
+          <a className="dugme dugme-ikincil" href={h.baglanti} target="_blank" rel="noopener noreferrer">
+            <ExternalLink size={15} /> {t("gdSiteyeGit")}
+          </a>
+          <button className="dugme dugme-ikincil" onClick={() => setNot(true)} data-okuma-not>
+            <Bookmark size={15} /> {t("gdArsiveEkle")}
+          </button>
+          <button className="dugme" onClick={() => setCevir(true)} data-okuma-cevir>
+            <Lightbulb size={15} /> {t("gdOneriyeCevir")}
+          </button>
+        </div>
+      }
+    >
+      {o.haberler.length > 1 && (
+        <div className="gundem-okuma-kaynaklar" role="tablist">
+          {o.haberler.map((x, j) => (
+            <button key={x.baglanti} role="tab" aria-selected={j === i} className={`cip cip-dugme${j === i ? " cip-vurgu" : ""}`} onClick={() => setI(j)} data-okuma-kaynak>
+              {x.kaynak}
+            </button>
+          ))}
+        </div>
+      )}
+      <div ref={kutu} className="gundem-okuma" data-okuma>
+        {!durum && <p className="soluk">{t("yukleniyor")}</p>}
+        {durum?.hata && <p className="soluk" data-okuma-hata>{t("gdMetinYok")}</p>}
+        {paragraflar.map((p, k) => (
+          <div key={k} className="gundem-paragraf" data-paragraf>
+            <p dir="auto">{p}</p>
+            <button className="dugme dugme-sade dugme-ikon" onClick={() => ekle(p)} title={t("gdSepeteEkle")} aria-label={t("gdSepeteEkle")} data-paragraf-ekle>
+              <Plus size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="form-alt">
+        {/* Basınca seçim kaybolmasın diye odak düğmeye geçmiyor. */}
+        <button className="dugme dugme-ikincil dugme-kucuk" onMouseDown={(e) => e.preventDefault()} onClick={secimiEkle} data-secimi-ekle>
+          <ShoppingBasket size={15} /> {t("gdSecimiEkle")}
+        </button>
+      </div>
+      {not && <ArsivPenceresi o={o} ben={ben} kapat={() => setNot(false)} />}
+      {cevir && (
+        <OneriyeCevir
+          baslik={o.baslik}
+          kaynaklar={o.kaynaklar}
+          gelisme={paragraflar.slice(0, 2).join("\n")}
+          ulkeler={olayUlkeleri(o)}
+          ben={ben}
+          kapat={() => setCevir(false)}
+        />
+      )}
+    </Pencere>
+  );
+}
+
+/*
+ * Sepet: birkaç haberden toplanan parçalar tek yere boşaltılır. Yeni öneri, var olan
+ * önerinin gelişme satırları ya da tek not. Boşaltınca sepet temizlenir.
+ */
+function SepetPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const sepet = v.gundemSepetleri?.[ben.id] ?? [];
+  const [hedef, setHedef] = useState<"" | "satir" | "not" | "oneri">("");
+  const adaylar = v.oneriler.filter((o) => !oneriArsivde(o) && oneriSatiriEkleyebilir(ben, o)).sort((a, b) => b.zaman.localeCompare(a.zaman));
+  const [oneriId, setOneriId] = useState("");
+  const [not, setNot] = useState("");
+  const kaynaklar = [...new Set(sepet.map((p) => p.kaynak))];
+  const ilk = sepet.find((p) => /[؀-ۿ]/.test(p.baslik)) ?? sepet[0];
+  const bitti = (mesaj: string, yol?: string) => {
+    gundemSepettenCikar(ben);
+    kapat();
+    bildir(mesaj, yol ? { ad: t("ac"), f: () => git(yol) } : undefined);
+  };
+  const satirEkle = () => {
+    if (oneriyeSatirlarEkle(ben, oneriId, sepet.map((p) => `${p.metin} (${p.kaynak})`))) bitti(t("gdSatirEklendi"), `oneriler/${oneriId}`);
+  };
+  const notKaydet = () => {
+    if (
+      ilk &&
+      gundemNotuKaydet(ben, {
+        baslik: ilk.baslik,
+        baglanti: ilk.baglanti,
+        kaynak: kaynaklar.join(", "),
+        konular: [],
+        not: [not.trim(), ...sepet.map((p) => `${p.metin} (${p.kaynak})`)].filter(Boolean).join("\n\n"),
+        haberZamani: ilk.zaman,
+      })
+    )
+      bitti(t("gdNotEklendi"));
+  };
+  if (!sepet.length) return null;
+  return (
+    <Pencere
+      genis
+      baslik={`${t("gdSepet")} · ${sepet.length}`}
+      kapat={kapat}
+      altBilgi={
+        <div className="form-alt">
+          <button className="dugme dugme-sade" onClick={() => gundemSepettenCikar(ben)} data-sepet-temizle>
+            <Trash2 size={15} /> {t("gdSepetTemizle")}
+          </button>
+          <button className="dugme dugme-ikincil" onClick={() => setHedef("not")} aria-pressed={hedef === "not"} data-sepet-not>
+            {t("gdNotaEkle")}
+          </button>
+          {adaylar.length > 0 && (
+            <button className="dugme dugme-ikincil" onClick={() => setHedef("satir")} aria-pressed={hedef === "satir"} data-sepet-satir>
+              {t("gdSatirEkle")}
+            </button>
+          )}
+          <button className="dugme" onClick={() => setHedef("oneri")} data-sepet-oneri>
+            {t("gdOneriyeCevir")}
+          </button>
+        </div>
+      }
+    >
+      <ul className="gundem-sepet" data-sepet>
+        {sepet.map((p) => (
+          <li key={p.id} data-sepet-parca>
+            <div>
+              <p dir="auto">{p.metin}</p>
+              <small className="soluk">{p.kaynak}</small>
+            </div>
+            <button className="dugme dugme-sade dugme-ikon" onClick={() => gundemSepettenCikar(ben, p.id)} title={t("cikar")} aria-label={t("cikar")}>
+              <Trash2 size={15} />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {hedef === "satir" && (
+        <div className="form" data-sepet-satir-formu>
+          <label>
+            {t("oneri")}
+            <select value={oneriId} onChange={(e) => setOneriId(e.target.value)} data-sepet-oneri-sec>
+              <option value="">—</option>
+              {adaylar.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.haberBasligi}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="form-alt">
+            <button className="dugme" disabled={!oneriId} onClick={satirEkle} data-sepet-satir-kaydet>
+              {t("gdSatirEkle")}
+            </button>
+          </div>
+        </div>
+      )}
+      {hedef === "not" && (
+        <div className="form" data-sepet-not-formu>
+          <label>
+            {t("not")}
+            <textarea rows={3} dir="auto" value={not} onChange={(e) => setNot(e.target.value)} />
+          </label>
+          <div className="form-alt">
+            <button className="dugme" onClick={notKaydet} data-sepet-not-kaydet>
+              {t("kaydet")}
+            </button>
+          </div>
+        </div>
+      )}
+      {hedef === "oneri" && ilk && (
+        <OneriyeCevir
+          baslik={ilk.baslik}
+          kaynaklar={kaynaklar}
+          gelisme={sepet.map((p) => p.metin).join("\n")}
+          ben={ben}
+          kapat={() => setHedef("")}
+          gonderildi={() => bitti(t("gdOneriOldu"))}
+        />
+      )}
     </Pencere>
   );
 }

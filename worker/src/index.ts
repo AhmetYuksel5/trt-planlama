@@ -1,6 +1,7 @@
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur, sonucCoz } from "./ozellikler.ts";
+import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 
@@ -12,7 +13,8 @@ import { cagir, modelleriGetir } from "./saglayici.ts";
  *   GET  /ayar       (tam yönetici) ayar, anahtarsız; bugünkü kullanım
  *   PUT  /ayar       (tam yönetici) ayarı yaz
  *   POST /dene       (tam yönetici) {saglayici} kısa deneme çağrısı
- *   POST /rss        (tam yönetici ve paylaştığı birim/kişi) {adresler} → {akislar: [{adres, ogeler|hata}]}; gündem takibinin akışları
+ *   POST /rss        (tam yönetici ve paylaştığı birim/kişi)
+ *   POST /makale     (aynı kişiler) {adres} → {makale: {adres, site, baslik, paragraflar}}; okuma penceresi {adresler} → {akislar: [{adres, ogeler|hata}]}; gündem takibinin akışları
  * Kişinin kim olduğu Firebase oturum belgesinden, yetkisi kişi kaydından
  * (Firestore, kişinin kendi oturumuyla okunuyor; tam yöneticilik alanını
  * kurallar koruyor).
@@ -232,6 +234,40 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
       }),
     );
     return yanit({ akislar });
+  }
+
+  /*
+   * Haberin tam metni (okuma penceresi): yalnız kişi habere basınca, tek adres.
+   * Aynı haber 10 dakika önbellekte; tam metin kayda girmez, ekranda okunur.
+   */
+  if (req.method === "POST" && yol === "/makale") {
+    if (!kisi.yonetici && !(await gundemPaylasildi(belge, kisi, env, d).catch(() => false))) return yanit({ hata: "yetki" }, 403);
+    const g = (await req.json().catch(() => null)) as { adres?: unknown } | null;
+    if (!akisAdresiGecerli(g?.adres)) return yanit({ hata: "girdi" }, 400);
+    const kAnahtar = `makale:${g.adres}`;
+    const onbellek = await d.onbellek?.get(kAnahtar).catch(() => null);
+    if (onbellek) return yanit({ makale: JSON.parse(onbellek) as Makale });
+    const getir = async (adres: string) => {
+      const r = await d.fetch(adres, { headers: { accept: "text/html", "user-agent": "Mozilla/5.0 (compatible; Plannersflow/1.0; +https://plannersflow.net)" }, signal: AbortSignal.timeout(8000) });
+      return { r, metin: r.ok ? (await r.text()).slice(0, 3_000_000) : "" };
+    };
+    try {
+      let { r, metin } = await getir(g.adres);
+      let son = r.url || g.adres;
+      if (r.ok && new URL(son).hostname.endsWith("news.google.com")) {
+        const asil = yonlendirmeCoz(metin);
+        if (!asil) return yanit({ hata: "yonlendirme" }, 502);
+        ({ r, metin } = await getir(asil));
+        son = r.url || asil;
+      }
+      if (!r.ok) return yanit({ hata: `http ${r.status}` }, 502);
+      const makale = makaleCoz(metin, son);
+      if (!makale.paragraflar.length) return yanit({ hata: "bos" }, 502);
+      await d.onbellek?.put(kAnahtar, JSON.stringify(makale), 600).catch(() => {});
+      return yanit({ makale });
+    } catch (e) {
+      return yanit({ hata: String(e instanceof Error ? e.message : e).slice(0, 120) }, 502);
+    }
   }
 
   // Ayar yalnız tam yöneticide.

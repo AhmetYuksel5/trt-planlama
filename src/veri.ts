@@ -624,6 +624,15 @@ export interface GundemNotu {
   zaman: string;
   haberZamani?: string;
 }
+/** Gündemden toplanan parça: okuma penceresinden paragraf ya da seçilen metin; sepetten öneriye, satıra ya da nota gider. */
+export interface SepetParcasi {
+  id: string;
+  metin: string;
+  baslik: string;
+  kaynak: string;
+  baglanti: string;
+  zaman: string;
+}
 export interface YzGorus {
   id: string;
   oneriId: string;
@@ -1422,6 +1431,8 @@ export interface Durum {
   gundemArsivi?: GundemNotu[];
   /** Gündem takibini tam yönetici dışında görenler: birim (altıyla) ya da kişi. Genel ayar belgesinde. */
   gundemPaylasim?: { birimler: BirimId[]; kisiler: string[] };
+  /** Kişinin gündem sepeti (kişi → parçalar); kayıtta, telefonda toplanan bilgisayarda da görünsün. */
+  gundemSepetleri?: Record<string, SepetParcasi[]>;
   /** Yayınlanmış kurum yapıları (yapi.ts); boşsa koddaki varsayılan. */
   yapilar: Yapi[];
   /** Yöneticinin yayınlamadığı taslak (kişi → yapı). */

@@ -393,6 +393,14 @@ export const takipSatiriEkleyebilir = (
   (o.durum === "takip" ||
     (o.durum === "planaEklendi" && o.bicim === TAKIP_BICIMI));
 
+/*
+ * Öneriye tarihli gelişme satırı: muhabir kendi takibine; Planlama (öneriyi düzenleyebilen) ve tam yönetici
+ * her güncel öneriye, gündemden topladığı parçalarla da.
+ */
+export const oneriSatiriEkleyebilir = (k: Kisi | undefined, o: Oneri): boolean =>
+  takipSatiriEkleyebilir(k, o) ||
+  ((oneriDuzenleyebilir(k, o) || (!!k?.hesapYoneticisi && o.durum !== "teklif")) && o.durum !== "reddedildi" && o.durum !== "geriCekildi");
+
 /* Arşivden geri çıkarma yetkiyle: tam yönetici ya da yetki verdiği kişi. */
 export const arsivdenCikarabilir = (k: Kisi | undefined): boolean =>
   !!k && !k.pasif && hesapYetkisi(k, "arsivdenCikarma");

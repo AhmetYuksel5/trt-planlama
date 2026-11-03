@@ -106,6 +106,7 @@ import {
   type OneriBicimi,
   type GundemKaynagi,
   type GundemNotu,
+  type SepetParcasi,
 } from "./veri";
 import {
   adimYapabilir,
@@ -122,7 +123,7 @@ import {
   oneriDuzeltmeyeGider,
   oneriYazisabilir,
   arsivdenCikarabilir,
-  takipSatiriEkleyebilir,
+  oneriSatiriEkleyebilir,
   geriAlabilir,
   oneriSilebilir,
   baskaMuhabireVerebilir,
@@ -2705,6 +2706,31 @@ export const gundemPaylasimKaydet = (ben: Kisi, birimler: BirimId[], kisiler: st
   return true;
 };
 
+/* --- Gündem sepeti: kişinin kendi parçaları --- */
+
+export const gundemSepeteEkle = (ben: Kisi, p: Omit<SepetParcasi, "id" | "zaman">) => {
+  const d = getir();
+  const metin = p.metin.trim();
+  if (!gundemGorebilir(d, ben) || !metin) return false;
+  const eski = d.gundemSepetleri?.[ben.id] ?? [];
+  // Aynı parça ikinci kez eklenmez: paragrafın "+"sına iki kez basılabiliyor.
+  if (eski.some((x) => x.metin === metin && x.baglanti === p.baglanti)) return true;
+  kaydet({ ...d, gundemSepetleri: { ...d.gundemSepetleri, [ben.id]: [...eski, { ...p, metin, id: kimlik("sp"), zaman: simdi() }] } });
+  return true;
+};
+
+export const gundemSepettenCikar = (ben: Kisi, id?: string) => {
+  const d = getir();
+  const eski = d.gundemSepetleri?.[ben.id];
+  if (!eski) return false;
+  const kalan = id ? eski.filter((x) => x.id !== id) : [];
+  const yeni = { ...d.gundemSepetleri };
+  if (kalan.length) yeni[ben.id] = kalan;
+  else delete yeni[ben.id];
+  kaydet({ ...d, gundemSepetleri: yeni });
+  return true;
+};
+
 export const gundemKaynaklariKaydet = (ben: Kisi, liste: GundemKaynagi[]) => {
   if (!ben.hesapYoneticisi) return false;
   const temiz = liste.filter((k) => k.ad.trim() && /^https:\/\//.test(k.adres.trim())).map((k) => ({ ...k, ad: k.ad.trim(), adres: k.adres.trim() }));
@@ -4170,10 +4196,17 @@ export const takipOneriyeCevir = (ben: Kisi, oneriId: string, g: { paketBasligi:
  * arşiv gününü ileri taşır, takip canlı kalır. Planlama'ya bildirim.
  */
 export const takipSatiriEkle = (ben: Kisi, oneriId: string, metin: string) => {
+  return oneriyeSatirlarEkle(ben, oneriId, [metin]);
+};
+
+/** Bir ya da birkaç satır tek yazışla (gündem sepeti); satırların zamanı sırayı korusun diye milisaniye arayla. */
+export const oneriyeSatirlarEkle = (ben: Kisi, oneriId: string, metinler: string[]) => {
   const d = getir();
   const o = oneriBul(d, oneriId);
-  if (!o || !takipSatiriEkleyebilir(ben, o) || !metin.trim()) return false;
-  const yeni: Oneri = { ...o, satirlar: [...(o.satirlar ?? []), { zaman: simdi(), metin: metin.trim() }] };
+  const temiz = metinler.map((m) => m.trim()).filter(Boolean);
+  if (!o || !oneriSatiriEkleyebilir(ben, o) || !temiz.length) return false;
+  const t0 = Date.now();
+  const yeni: Oneri = { ...o, satirlar: [...(o.satirlar ?? []), ...temiz.map((metin, i) => ({ zaman: new Date(t0 + i).toISOString(), metin }))] };
   kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "takipSatiriEklendi", oneriId, veri: { sahip: "planlama" } }));
   return true;
 };

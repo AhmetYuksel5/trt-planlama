@@ -68,6 +68,10 @@ const kur = () => {
     if (url.startsWith("https://api.anthropic.com/v1/models"))
       return Response.json({ data: [{ id: "claude-opus-5-5", type: "model", display_name: "Opus", created_at: "2026-01-01T00:00:00Z" }], has_more: false, first_id: "claude-opus-5-5", last_id: "claude-opus-5-5" });
     if (url === "https://api.yok.test/v1/chat/completions") return Response.json({ error: { message: "The model `yok-model` does not exist" } }, { status: 404 });
+    if (url === "https://haber.test/makale")
+      return new Response(`<html><head><meta property="og:title" content="عنوان الخبر"><script>x()</script></head><body><nav><p>قائمة الموقع الطويلة التي لا علاقة لها بالخبر نفسه إطلاقا</p></nav><article><h1>عنوان</h1><p>الفقرة الأولى من الخبر وهي طويلة بما يكفي لتظهر في القارئ.</p><p>قصير</p><p>الفقرة الثانية من الخبر وهي أيضا طويلة بما يكفي لتظهر هنا.</p></article><aside><p>خبر آخر في الشريط الجانبي لا ينبغي أن يظهر في القارئ أبدا</p></aside></body></html>`);
+    if (url === "https://news.google.com/rss/articles/yon")
+      return new Response(`<html><body><c-wiz data-n-au="https://haber.test/makale"></c-wiz></body></html>`);
     if (url === "https://haber.test/rss")
       return new Response(`<?xml version="1.0"?><rss><channel><title>Akış</title>
         <item><title><![CDATA[اشتباكات في <b>الفاشر</b>]]></title><link>https://haber.test/1</link><pubDate>Wed, 14 Oct 2026 08:00:00 GMT</pubDate><description>&lt;p&gt;قتلى &amp;amp; جرحى&lt;/p&gt;</description></item>
@@ -516,4 +520,18 @@ test("gündem akışları: yalnız tam yönetici; RSS ve Atom düz metne çevril
   assert.equal(ilk.baglanti, "https://t.me/ornekkanal/10");
   assert.equal(ilk.kaynak, "قناة الجزيرة");
   assert.equal(ilk.zaman, "2026-10-14T07:00:00.000Z");
+});
+
+test("makale: tam metin paragrafları, menü ve yan sütun atılır, Google Haberler yönlendirmesi çözülür, yetki", async () => {
+  const t = kur();
+  assert.equal((await t.cagir("/makale", "pl", { adres: "https://haber.test/makale" })).status, 403);
+  for (const adres of ["https://haber.test/makale", "https://news.google.com/rss/articles/yon"]) {
+    const r = await t.cagir("/makale", "yon", { adres });
+    assert.equal(r.status, 200);
+    const j = (await r.json()) as { makale: { baslik: string; paragraflar: string[]; site: string } };
+    assert.equal(j.makale.baslik, "عنوان الخبر");
+    assert.equal(j.makale.paragraflar.length, 2);
+    assert.ok(j.makale.paragraflar[0].startsWith("الفقرة الأولى"));
+  }
+  assert.equal((await t.cagir("/makale", "yon", { adres: "http://haber.test/makale" })).status, 400);
 });

@@ -77,7 +77,7 @@ service cloud.firestore {
     function erisir(d) { return d.get("m", []).hasAny(kimliklerim()); }
     // Kişiye bağlı ayar belgesi: anahtar kişi ya da "kişi:…" (ana sayfa düzeni).
     function kendiAyari(alan, belge) {
-      return alan in ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar"]
+      return alan in ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "gundemSepetleri"]
         && (belge == request.auth.uid || belge.matches(request.auth.uid + ':.*'));
     }
     function kayitYolu(kod) { return /databases/$(veritabani)/documents/kayitBaglantilari/$(kod); }

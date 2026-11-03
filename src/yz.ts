@@ -276,3 +276,12 @@ export interface AkisSonucu {
   hata?: string;
 }
 export const gundemAkislari = (adresler: string[]) => istek<{ akislar: AkisSonucu[] }>("/rss", "POST", { adresler });
+
+/* Haberin tam metni (okuma penceresi): kapı sayfayı okuyup paragraflara ayırıyor; tam metin kayda girmez. */
+export interface Makale {
+  adres: string;
+  site: string;
+  baslik: string;
+  paragraflar: string[];
+}
+export const gundemMakale = (adres: string) => istek<{ makale: Makale }>("/makale", "POST", { adres });

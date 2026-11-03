@@ -12,7 +12,7 @@ import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAd
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { arsivdenCikarabilir, geriAlabilir, oneriSilebilir, takipSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -348,7 +348,7 @@ function BagliOneriler({ oneri: o }: { oneri: Oneri }) {
 function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const { t, dil } = useDil();
   const [metin, setMetin] = useState("");
-  const ekler = takipSatiriEkleyebilir(ben, o);
+  const ekler = oneriSatiriEkleyebilir(ben, o);
   const satirlar = [...(o.satirlar ?? [])].reverse();
   if (!ekler && !satirlar.length && o.durum !== "takip") return null;
   const ekle = () => {

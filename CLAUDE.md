@@ -415,6 +415,27 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yazıyor, kendini ekleyemesin); kapı `/rss`'te genel belgeyi kişinin oturumuyla
     okuyup kişiyi ya da birimini arar (`index.ts → gundemPaylasildi`; alt birim
     kapıda tanınmaz, seçilen birimin kendisi).
+  - Okuma penceresi (`Gundem.tsx → OkumaPenceresi`): haberin başlığı siteyi değil
+    pencereyi açar (siteye gidip dönmek uzundu; site ↗'da). Tam metni kapı okur
+    (`worker/src/makale.ts`, `POST /makale`, yalnız basınca, tek adres, 10 dakika
+    önbellek): `<article>` önce, menü/yan sütun/betik atılır, paragraflar; Google
+    Haberler yönlendirmesi sayfadaki asıl adresten (`yonlendirmeCoz`). Okunamayan
+    sitede özet ve "tam metin yok" satırı; Telegram'da ve demoda kapıya gidilmez.
+    Tam metin kayda girmez. Pencerede kaynaklar arasında geçilir, paragrafın "+"sı
+    ya da seçili metin sepete gider; not ve "Öneriye çevir" de oradan. Haber
+    satırında da "Öneriye çevir" (`OneriyeCevir` fırsat, satır, pencere ve sepette
+    ortak). Planda benzeyen başlık varsa satırda ve pencerede "Next Day'de var"
+    (`bizdeki`: açık Next Day başlığının adı ve gelişmeleriyle en az iki ortak
+    anlamlı sözcük; yalnız bildirir).
+  - Sepet (`Durum.gundemSepetleri`, kişiye bağlı harita, kayıtta: telefonda toplanan
+    bilgisayarda da; `eylemler.ts → gundemSepeteEkle`, `gundemSepettenCikar`; aynı
+    parça çoğalmaz). Sayfanın altında yapışık "Sepet · n"; pencerede üç hedef: yeni
+    öneri (gelişme parçaların kendisi), var olan öneriye gelişme satırı
+    (`oneriyeSatirlarEkle`, satır sonunda kaynak adı), tek not. Boşaltınca temizlenir.
+  - Öneriye gelişme satırını muhabir kendi takibine, Planlama (öneriyi
+    düzenleyebilen) ve tam yönetici her güncel öneriye ekler (`yetki.ts →
+    oneriSatiriEkleyebilir`; reddedilen, geri çekilen ve teklif hariç); ayrıntıdaki
+    satır formu da bu kuralla.
   - Akışı kapı okur (`worker/src/rss.ts`, `POST /rss`, tam yönetici ve paylaştıkları,
     yalnız https, 10 dakika Cloudflare önbelleği, Cache API; KV değil:
     ücretsiz planda KV'ye günde 1000 yazma, her tarama 60'ı aşkın akış

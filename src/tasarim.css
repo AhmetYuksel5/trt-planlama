@@ -2412,7 +2412,19 @@ input[aria-invalid="true"] {
 .gundem-olay { border-block-end: 1px solid var(--cizgi); padding-block-end: var(--ara-2); min-width: 0; }
 .gundem-olay:last-child { border-block-end: 0; }
 .gundem-olay-ust { display: flex; gap: var(--ara-2); align-items: start; }
-.gundem-olay-baslik { flex: 1; min-width: 0; color: var(--murekkep); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.gundem-olay-baslik { flex: 1; min-width: 0; color: var(--murekkep); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; background: none; border: 0; padding: 0; font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+/* Okuma penceresi: haberin tam metni, paragrafın yanında "+" (sepete). */
+.gundem-okuma-kaynaklar { display: flex; flex-wrap: wrap; gap: var(--ara-2); margin-block-end: var(--ara-3); }
+.gundem-okuma { display: grid; gap: var(--ara-2); max-height: 60vh; overflow-y: auto; }
+.gundem-paragraf { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ara-2); align-items: start; }
+.gundem-paragraf p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.gundem-sepet { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); }
+.gundem-sepet li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ara-2); padding: var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.gundem-sepet p { margin: 0; overflow-wrap: anywhere; }
+/* Sepet sayfanın altında yapışık; üst çubuğa satır eklenmez. Telefonda alt çubuğun hemen üstünde. */
+.gundem-sepet-cubugu { position: sticky; bottom: var(--ara-3); display: flex; justify-content: center; margin-block-start: var(--ara-4); z-index: 5; pointer-events: none; }
+.gundem-sepet-cubugu .dugme { pointer-events: auto; box-shadow: var(--golge-acilir); }
+@media (max-width: 760px) { .gundem-sepet-cubugu { bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom) + var(--ara-2)); } }
 .gundem-olay-baslik:hover { text-decoration: underline; }
 .gundem-olay-alt { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; font-size: var(--punto-kucuk); color: var(--sonuk); margin-top: 2px; }
 .gundem-olay-alt .dugme-metin { border: 0; background: none; padding: 0; color: var(--vurgu); cursor: pointer; font: inherit; }

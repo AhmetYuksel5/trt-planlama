@@ -157,6 +157,85 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       ok(t === 0, `390px ${dil} ${s}: taşma ${t}`);
     }
   }
+  // Okuma penceresi ve sepet: başlık sayfada okunur, paragraflar sepete, sepet öneriye, satıra ve nota
+  await kim("yo3");
+  await git("#/gundem/akis");
+  const ilkOlay = p.locator('[data-olay-listesi="akis"] > [data-olay]').first();
+  await ilkOlay.locator("[data-olay-oku]").click();
+  await p.waitForTimeout(300);
+  ok((await p.locator("dialog[open] [data-okuma] [data-paragraf]").count()) >= 1, "okuma penceresi paragraflarla açıldı");
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  ok(((await veri()).gundemSepetleri?.yo3 ?? []).length === 1, "paragraf sepete girdi, ikinci basış çoğaltmadı");
+  // Seçili metin
+  await p.evaluate(() => { const el = document.querySelector("dialog[open] [data-paragraf] p"); const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); s.modify && s.modify("extend", "backward", "character"); });
+  await p.locator("dialog[open] [data-secimi-ekle]").click();
+  ok(((await veri()).gundemSepetleri?.yo3 ?? []).length === 2, "seçili metin sepete girdi");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(200);
+  // İkinci haberden de parça
+  const ikinciOlay = p.locator('[data-olay-listesi="akis"] > [data-olay]').nth(1);
+  await ikinciOlay.locator("[data-olay-oku]").click();
+  await p.waitForTimeout(300);
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  await p.keyboard.press("Escape");
+  ok((await p.locator("[data-sepet-ac]").count()) === 1, "sepet çubuğu göründü");
+  // Sepet → var olan öneriye gelişme satırı (Planlama'nın yeni izni)
+  await p.click("[data-sepet-ac]");
+  ok((await p.locator("dialog[open] [data-sepet-parca]").count()) === 3, "sepette 3 parça");
+  await p.click("dialog[open] [data-sepet-satir]");
+  const hedefOneri = await p.locator("dialog[open] [data-sepet-oneri-sec] option").nth(1).getAttribute("value");
+  await p.selectOption("dialog[open] [data-sepet-oneri-sec]", hedefOneri);
+  const onceSatir = ((await veri()).oneriler.find((o) => o.id === hedefOneri).satirlar ?? []).length;
+  await p.click("dialog[open] [data-sepet-satir-kaydet]");
+  await p.waitForTimeout(200);
+  d = await veri();
+  ok((d.oneriler.find((o) => o.id === hedefOneri).satirlar ?? []).length === onceSatir + 3 && !d.gundemSepetleri?.yo3, "sepet öneriye 3 gelişme satırı oldu, sepet boşaldı");
+  await git("#/oneriler/" + hedefOneri);
+  ok((await p.locator("[data-takip-satirlari] li").count()) >= 3 && (await p.locator("[data-takip-satiri-formu]").count()) === 1, "öneri ayrıntısında satırlar ve Planlama'ya satır formu");
+  // Sepet → not, sonra sepet → öneri
+  await git("#/gundem/akis");
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-oku]").click();
+  await p.waitForTimeout(300);
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  await p.keyboard.press("Escape");
+  const notOnce = ((await veri()).gundemArsivi ?? []).length;
+  await p.click("[data-sepet-ac]");
+  await p.click("dialog[open] [data-sepet-not]");
+  await p.click("dialog[open] [data-sepet-not-kaydet]");
+  await p.waitForTimeout(200);
+  ok(((await veri()).gundemArsivi ?? []).length >= notOnce && !(await veri()).gundemSepetleri?.yo3, "sepet nota döndü, boşaldı");
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').nth(2).locator("[data-olay-oku]").click();
+  await p.waitForTimeout(300);
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  await p.keyboard.press("Escape");
+  const oneriOnce = (await veri()).oneriler.length;
+  await p.click("[data-sepet-ac]");
+  await p.click("dialog[open] [data-sepet-oneri]");
+  await p.locator("dialog[open] [data-cevir-header]").last().fill("خبر من السلة");
+  await p.locator("dialog[open] [data-cevir-gonder]").last().click();
+  await p.waitForTimeout(300);
+  d = await veri();
+  ok(d.oneriler.length === oneriOnce + 1 && d.oneriler.some((o) => o.haberBasligi === "خبر من السلة" && o.gelisme) && !d.gundemSepetleri?.yo3, "sepet öneriye döndü, boşaldı");
+  // Satırdan doğrudan öneriye çevir
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-cevir]").click();
+  ok((await p.locator("dialog[open] [data-cevir-header]").count()) === 1, "haber satırından öneriye çevir açılıyor");
+  await p.keyboard.press("Escape");
+  // 390px: okuma penceresi ve sepet taşmıyor
+  await p.setViewportSize({ width: 390, height: 800 });
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-oku]").click();
+  await p.waitForTimeout(300);
+  await p.locator("dialog[open] [data-paragraf-ekle]").first().click();
+  let tasma = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const pt = await p.evaluate(() => { const d = document.querySelector("dialog[open]"); return d.scrollWidth - d.clientWidth; });
+  ok(tasma === 0 && pt === 0, `390px okuma penceresi taşma ${tasma}/${pt}`);
+  await p.keyboard.press("Escape");
+  await p.click("[data-sepet-ac]");
+  tasma = await p.evaluate(() => { const d = document.querySelector("dialog[open]"); return d.scrollWidth - d.clientWidth; });
+  ok(tasma === 0, `390px sepet taşma ${tasma}`);
+  await p.click("dialog[open] [data-sepet-temizle]");
+  await p.setViewportSize({ width: 1440, height: 1000 });
+
   // Paylaşım: tam yönetici kişiyle ve birimle paylaşır; paylaşılan görür, kaynak ayarı yok
   await p.setViewportSize({ width: 1440, height: 1000 });
   await kim("yo3");
