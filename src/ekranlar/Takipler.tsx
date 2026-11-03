@@ -222,14 +222,17 @@ function OneriyeCevirFormu({ ben, oneri: o, kapat }: { ben: Kisi; oneri: Oneri; 
 function PlandaEklendiklerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
+  // Kayıt eklenişinden 7 gün sonra listeden kendiliğinden düşer (kurumun isteği);
+  // hareket kaydı yerinde kalır, yalnız muhabirin listesi sadeleşir.
+  const sinir = gunEkle(bugun(), -7);
   const son = new Map<string, Hareket>();
   for (const h of v.hareketler)
-    if (h.tip === "planaMuhabirEklendi" && h.veri?.kime === ben.id && (h.veri?.tarih ?? "") >= bugun()) {
+    if (h.tip === "planaMuhabirEklendi" && h.veri?.kime === ben.id && h.zaman.slice(0, 10) > sinir) {
       const a = `${h.planId}|${h.veri?.pb}`;
       const e = son.get(a);
       if (!e || e.zaman < h.zaman) son.set(a, h);
     }
-  const liste = [...son.values()].sort((a, b) => (a.veri?.tarih ?? "").localeCompare(b.veri?.tarih ?? ""));
+  const liste = [...son.values()].sort((a, b) => b.zaman.localeCompare(a.zaman));
   if (!liste.length) return null;
   return (
     <Kart baslik={t("mtPlandakiler")} ek={String(liste.length)}>

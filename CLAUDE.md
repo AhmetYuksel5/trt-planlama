@@ -751,8 +751,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `planaMuhabirEklendi` hareketi (`eylemler.ts → planMuhabirBildirimleri`;
     `veri.kime`, başlığın adı ve not içinde: kısıtlı muhabir planı okuyamıyor);
     zilde ve muhabirin Takiplerim'inde "Planda eklendiğin başlıklar"
-    (`Takipler.tsx → PlandaEklendiklerim`; bugünden sonraki planlar, başlık
-    başına son kayıt). Onay geri alınıp yeniden verilince aynı başlık aynı
+    (`Takipler.tsx → PlandaEklendiklerim`; başlık başına son kayıt, en yenisi
+    üstte, eklenişinden 7 gün sonra listeden düşer). Onay geri alınıp yeniden verilince aynı başlık aynı
     notla ikinci kez gitmez; not değiştiyse yenisi gider.
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
