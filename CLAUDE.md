@@ -664,8 +664,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şeritte): hedefin sonuna; öneriden geldiyse önerinin başlığı ve bu
     plandaki PKG'si (eski başlıktaysa) de gider.
   - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
-    başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden) ya da
-    başlığı sürükleyip öbürünün üstüne bırakmak; onay sorulur, ↶ geri alır.
+    başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden); onay
+    sorulur, ↶ geri alır. Başlığı sürükleyip bırakmak katmaz, sıralar:
+    bırakıldığı başlığın yerine geçer (`eylemler.ts → planBaslikYerine`).
     Gelişmeler, PKG önerileri ve canlılar hedefin kendi kayıtlarının
     arkasına (kendi sıralarıyla), muhabirler yoksa saat ve yerleriyle;
     bu plandaki öneriler hedef başlığa bağlanır. Pencere kartın dışında

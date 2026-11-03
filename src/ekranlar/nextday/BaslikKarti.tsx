@@ -5,7 +5,7 @@ import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencer
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, paketNotEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
@@ -88,7 +88,8 @@ export default function BaslikKarti({
         setBirakilir(false);
         if (!kaynak) return;
         e.preventDefault();
-        kat(kaynak, pb.id);
+        // Sürükleme sıralar; katmak "+" menüsündeki "Başka başlığa kat"la (kullanıcının isteği).
+        if (ben && kaynak !== pb.id) planBaslikYerine(ben, plan.id, kaynak, pb.id);
       }}
     >
       <summary

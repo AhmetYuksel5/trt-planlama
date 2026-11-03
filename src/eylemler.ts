@@ -2047,6 +2047,18 @@ export const planBaslikTasi = (ben: Kisi, planId: string, pbId: string, yon: -1 
     return { ...p, basliklar: yeni };
   });
 
+/* Sürükle-bırak: başlık bırakıldığı başlığın yerine geçer (aşağı inerken arkasına, yukarı çıkarken önüne); katma "+" menüsünde. */
+export const planBaslikYerine = (ben: Kisi, planId: string, pbId: string, hedefId: string) =>
+  planIcerik(ben, planId, (p) => {
+    const i = p.basliklar.findIndex((b) => b.id === pbId);
+    const j = p.basliklar.findIndex((b) => b.id === hedefId);
+    if (i < 0 || j < 0 || i === j) return p;
+    const yeni = [...p.basliklar];
+    const [b] = yeni.splice(i, 1);
+    yeni.splice(j, 0, b);
+    return { ...p, basliklar: yeni };
+  });
+
 const pbGuncelle = (p: NextDayPlan, pbId: string, f: (m: PlanMuhabiri[]) => PlanMuhabiri[]): NextDayPlan => ({
   ...p,
   basliklar: p.basliklar.map((b) => (b.id === pbId ? { ...b, muhabirler: f(b.muhabirler) } : b)),
