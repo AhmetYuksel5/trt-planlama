@@ -36,7 +36,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(yeni && yeni.tarih === gun && yeni.gunler[0]?.satirlar[0]?.tur === "pkg" && yeni.ekip[0]?.gorev === "muhabir", "olay adım adım kaydedildi (gün, PKG satırı, ekip) " + JSON.stringify(yeni));
   ok((await p.locator("[data-ay-olay]").count()) === 4, "yeni olay belgede");
   ok((await p.locator(".ay-belge h1").innerText()).includes("الخطة الشهرية المتوقعة"), "belge başlığı kurumun Arapçasıyla");
-  ok((await p.locator(".ay-tablo").count()) === 2, "dış ve iç görev tabloları");
+  ok((await p.locator(".ay-tablo").count()) === 1, "tek görevlendirme tablosu");
   // Weekly: bu haftaya düşen olay gündeme alınır
   const hedef = d.haftalik.filter((h) => h.durum !== "kesinlesti").find((h) => {
     const son = new Date(h.baslangic); son.setDate(son.getDate() + 6);

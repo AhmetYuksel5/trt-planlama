@@ -937,7 +937,7 @@ export interface PlanKalemi {
  */
 export const AYLIK_SATIR_TURLERI = ["pkg", "live", "walktalk", "rebroadcast", "nafize", "konuk", "grafik", "diger"] as const;
 export type AylikSatirTuru = (typeof AYLIK_SATIR_TURLERI)[number];
-export const AYLIK_ETIKETLERI = ["inhouseOutput", "inhouseInput", "dahiliGorev", "disGorev", "ozel", "ekonomi", "news", "yeniSabah"] as const;
+export const AYLIK_ETIKETLERI = ["inhouseOutput", "inhouseInput", "disGorev", "ozel", "ekonomi", "news", "yeniSabah"] as const;
 export type AylikEtiketi = (typeof AYLIK_ETIKETLERI)[number];
 export const AYLIK_EKIP_GOREVLERI = ["muhabir", "kameraman", "sunucu", "yapimci"] as const;
 export type AylikEkipGorevi = (typeof AYLIK_EKIP_GOREVLERI)[number];
@@ -976,8 +976,8 @@ export interface AylikOlay {
   etiketler: AylikEtiketi[];
   gunler: AylikGun[];
   ekip: AylikEkip[];
-  /** Dış ya da iç görev: belgenin sonundaki tablolar bundan. */
-  gorev?: { tur: "dis" | "ic"; gidis?: string; donus?: string };
+  /** Görevlendirme (kurumda iç/dış ayrımı yok): belgenin sonundaki tablo bundan. */
+  gorev?: { gidis?: string; donus?: string };
   not?: string;
   baglanti?: string;
   /** Özel yayın olarak açıldıysa o yayın. */

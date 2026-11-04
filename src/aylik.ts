@@ -58,7 +58,6 @@ export const SATIR_KODU: Record<AylikSatirTuru, string> = {
 export const ETIKET_KODU: Record<AylikEtiketi, string> = {
   inhouseOutput: "INHOUSE-COVERAGE / OUTPUT",
   inhouseInput: "INHOUSE-COVERAGE / INPUT",
-  dahiliGorev: "INTERNAL DEPLOYMENT",
   disGorev: "DEPLOYMENT",
   ozel: "SPECIAL COVERAGE",
   ekonomi: "ECONOMY",
@@ -69,8 +68,8 @@ export const ETIKET_KODU: Record<AylikEtiketi, string> = {
 const TUR_AR: Partial<Record<AylikSatirTuru, string>> = { pkg: "تقارير", live: "لايفات", walktalk: "ووك آند توك", nafize: "نوافذ", konuk: "ضيوف", grafik: "جرافيك" };
 export const kapsamOzeti = (o: AylikOlay): string => [...new Set(o.gunler.flatMap((g) => g.satirlar.map((s) => TUR_AR[s.tur]).filter(Boolean)))].join(" + ");
 
-/** Belgenin sonundaki görev tabloları: dış ve iç görevler, gidiş sırasıyla. */
-export const gorevler = (p: AylikPlan | undefined, tur: "dis" | "ic") => olaylar(p).filter((o) => o.gorev?.tur === tur).sort((a, b) => (a.gorev?.gidis ?? a.tarih).localeCompare(b.gorev?.gidis ?? b.tarih));
+/** Belgenin sonundaki görevlendirme tablosu, gidiş sırasıyla. */
+export const gorevler = (p: AylikPlan | undefined) => olaylar(p).filter((o) => o.gorev).sort((a, b) => (a.gorev?.gidis ?? a.tarih).localeCompare(b.gorev?.gidis ?? b.tarih));
 
 /** Weekly kaleminin biçimleri olayın satırlarından (PKG → pkg, LIVE → canli, Walk & Talk). */
 export const olayBicimleri = (o: AylikOlay) => {

@@ -123,13 +123,13 @@ const ekipSatiri = (d: Durum, o: AylikOlay) => o.ekip.map((e) => `${metin(`ayEki
 /*
  * Belge kurumun düzeniyle, her arayüz dilinde Arapça: başlık, ana kapsamlar,
  * öne çıkan olaylar (kırmızı gün başlığı, "YER / olay", açıklama, önem,
- * etiket kodları, gün gün kapsam, ekip), en sonda dış ve iç görev tabloları.
+ * etiket kodları, gün gün kapsam, ekip), en sonda görevlendirme tablosu.
  */
 function AylikBelgesi({ plan, d, belgeRef, ac }: { plan: AylikPlan; d: Durum; belgeRef: RefObject<HTMLElement | null>; ac?: (o: AylikOlay) => void }) {
   const ol = olaylar(plan);
   const ana = ol.filter((o) => o.anaKapsam);
-  const tablo = (tur: "dis" | "ic", baslik: Anahtar) => {
-    const l = gorevler(plan, tur);
+  const tablo = (baslik: Anahtar) => {
+    const l = gorevler(plan);
     if (!l.length) return null;
     return (
       <section>
@@ -215,8 +215,7 @@ function AylikBelgesi({ plan, d, belgeRef, ac }: { plan: AylikPlan; d: Durum; be
           );
         })}
       </section>
-      {tablo("dis", "ayDisGorevler")}
-      {tablo("ic", "ayIcGorevler")}
+      {tablo("ayGorevler")}
     </article>
   );
 }
@@ -404,13 +403,9 @@ function OlayFormu({ ben, ay, olay, kapat }: { ben: Kisi; ay: string; olay?: Ayl
               <Plus size={14} /> {t("ayEkipEkle")}
             </button>
             <div className="satir ara-ust-2">
-              <label>
-                {t("ayGorev")}
-                <select value={f.gorev?.tur ?? ""} onChange={(e) => setF({ ...f, gorev: e.target.value ? { ...f.gorev, tur: e.target.value as "dis" | "ic" } : undefined })}>
-                  <option value="">{t("ayGorevYok")}</option>
-                  <option value="dis">{t("ayDisGorev")}</option>
-                  <option value="ic">{t("ayIcGorev")}</option>
-                </select>
+              <label className="secim">
+                <input type="checkbox" data-ay-gorev checked={!!f.gorev} onChange={(e) => setF({ ...f, gorev: e.target.checked ? { ...f.gorev } : undefined })} />
+                {t("ayGorevVar")}
               </label>
               {f.gorev && (
                 <>

@@ -2523,7 +2523,7 @@ export const ORNEK = (): Durum => {
               { tarih: gun(4), satirlar: [{ id: "as3", tur: "live", metin: "البيان الختامي" }] },
             ],
             ekip: [{ gorev: "muhabir", kisiId: "mu1" }, { gorev: "kameraman", tbc: true }],
-            gorev: { tur: "dis", gidis: gun(2), donus: gun(5) },
+            gorev: { gidis: gun(2), donus: gun(5) },
           },
           {
             id: "ao-dijital",
@@ -2533,7 +2533,7 @@ export const ORNEK = (): Durum => {
             etiketler: ["ekonomi", "inhouseOutput"],
             gunler: [{ tarih: gun(9), satirlar: [{ id: "as4", tur: "walktalk", metin: "جولة في أجنحة المعرض" }] }],
             ekip: [{ gorev: "muhabir", kisiId: "mu11" }],
-            gorev: { tur: "ic", gidis: gun(9), donus: gun(9) },
+            gorev: { gidis: gun(9), donus: gun(9) },
           },
           {
             id: "ao-ozel",

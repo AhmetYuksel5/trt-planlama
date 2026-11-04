@@ -1217,7 +1217,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   ayrı (takvim not gibi), kesin plan ama bağlayıcı değil; Next Day'le bağı yok.
   - Sayfa belgenin kendisi, her arayüz dilinde Arapça: ana kapsamlar, öne çıkan
     olaylar (kırmızı gün, "YER / olay", önem, etiket kodları, gün gün kapsam
-    "PKG / …", ekip), dış ve iç görev tabloları; kopyala, Word, yazdır. Hazırlayan
+    "PKG / …", ekip), görevlendirme tablosu (kurumda iç/dış ayrımı yok); kopyala, Word, yazdır. Hazırlayan
     teknolojiye yabancı: tek büyük "Olay ekle" ve altı adımlı form (ne/nerede,
     ne zaman, önem, gün gün kapsam, ekip ve görev, etiketler); olaya basınca aynı
     form. Zorunlu yalnız ad ve gün. Olay (`AylikOlay`) başladığı ayın planında.
