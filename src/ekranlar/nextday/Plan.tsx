@@ -12,7 +12,7 @@ import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
-import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
+import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yalnizPlanlama, yapabilir } from "../../yetki";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
@@ -323,7 +323,8 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
             <Undo2 size={16} /> {t("onayiGeriAl")}
           </button>
         )}
-        {plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral") && (
+        {/* Newsdesk sistemde değilken devir yok: Next Day paketleri Planlama'nın yolunda kapanıyor. */}
+        {plan.durum === "onayli" && !yalnizPlanlama(v) && planAdimiYapabilir(ben, "ndDevral") && (
           <button className="dugme" onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}>
             <UserCheck size={16} /> {t("planiDevral")}
           </button>

@@ -820,6 +820,7 @@ const M = {
   baslikIslemleri: m("Başlık işlemleri", "إجراءات العنوان", "Headline actions"),
   baslikKatildi: m("Başlık birleştirildi", "دُمج العنوان", "Headlines merged"),
   baslikKatilsinMi: m("«{katilan}» başlığı «{hedef}» başlığının içine katılsın mı?", "هل يُدمج عنوان «{katilan}» في عنوان «{hedef}»؟", "Merge «{katilan}» into «{hedef}»?"),
+  akisNewsdeskKapali: m("Newsdesk sistemde değil: bu akışlar yalnız \"Üretime al\" ile üretime giren paketlere (feature, ekonomi, program) uygulanıyor; Next Day paketleri Planlama'da kapanıyor.", "Newsdesk ليس في النظام بعد: تُطبّق هذه المسارات فقط على التقارير التي تدخل الإنتاج عبر \"بدء الإنتاج\" (فيتشر، اقتصاد، برامج)؛ تقارير Next Day تُغلق في التخطيط.", "Newsdesk is not in the system: these workflows apply only to packages entering production via \"Start production\" (feature, economy, programme); Next Day packages close in Planning."),
   hrOneriPlandakineBaglandi: m("{kisi} öneriyi plandaki kaydına bağladı", "ربط {kisi} المقترح بسجله في الخطة", "{kisi} linked the proposal to its plan entry"),
   pbBaslik: m("Planda bu muhabirin kayıtları", "سجلات هذا المراسل في الخطة", "This reporter's entries in the plan"),
   pbBagla: m("Bu öneriye bağla", "ربط بهذا المقترح", "Link to this proposal"),

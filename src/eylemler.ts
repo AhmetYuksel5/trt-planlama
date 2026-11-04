@@ -1701,7 +1701,9 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     (yeni === "toplantida" && plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti")) ||
     (yeni === "taslak" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndToplanti")) ||
     (yeni === "onayli" && plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay")) ||
-    (yeni === "devralindi" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral")) ||
+    // Devir Newsdesk'e geçiştir: Newsdesk sistemde değilken plan devredilirse onaylı paketler Planlama'nın
+    // "Yapıldı / onay" yolundan çıkıp üretim akışına düşüyor, orada sahipsiz kalıyordu.
+    (yeni === "devralindi" && plan.durum === "onayli" && !yalnizPlanlama(d) && planAdimiYapabilir(ben, "ndDevral")) ||
     // Yanlış onayın dönüşü: plan toplantıya döner, onayla kabul edilen paketler kabullü kalır (muhabire görev gitmiş olabilir).
     (yeni === "toplantida" && plan.durum === "onayli" && planAdimiYapabilir(ben, "ndOnayGeri"));
   if (!gecerli) return false;

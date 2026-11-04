@@ -90,6 +90,12 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
 
   return (
     <>
+      {/* Newsdesk kapalıyken Next Day paketi üretime girmiyor; akış yalnız "Üretime al"la girene işliyor. */}
+      {!v.newsdeskDevrede && (
+        <p className="uyari-satiri ara-alt-2" data-akis-newsdesk-kapali>
+          {t("akisNewsdeskKapali")}
+        </p>
+      )}
       <Kart baslik={t("orgKolSahipleri")} ikon={<GitBranch size={18} />}>
         <div className="form">
           <div className="satir" data-kol-sahipleri>

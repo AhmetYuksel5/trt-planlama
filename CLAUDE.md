@@ -1290,6 +1290,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     onaylı paket yeni muhabire teklif olarak gider (`Oneri.kaynakPaketId`,
     teklif akışı); eski paket iptal, `Paket.devredildi` iziyle eski muhabirin
     geçmişinde; iki muhabire bildirim.
+  - Plan devri ("Planı Newsdesk olarak devral") anahtar kapalıyken yok:
+    düğme (`nextday/Plan.tsx`) ve eylem (`planDurum`, `yalnizPlanlama`)
+    kapalı. Devredilen planın onaylı paketleri üretim akışına düşüyor, Newsdesk
+    sistemde olmadığı için orada sahipsiz kalıyordu. İş akışları (Organizasyon)
+    o zaman yalnız "Üretime al"la giren paketlere (feature, ekonomi, program)
+    işliyor; sayfanın başında bunu söyleyen durum satırı (`Akislar.tsx`,
+    `akisNewsdeskKapali`).
   - Özel yayın paketi kendi teslimiyle (`paketTamamla`). Hesapsız muhabir
     için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,
