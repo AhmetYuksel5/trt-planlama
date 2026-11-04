@@ -1,6 +1,6 @@
 import { haftaSonu } from "./haftalik";
 import { bugun, gunEkle, yerelGun } from "./tarih";
-import type { Durum, HaftalikKalem, HaftalikPlan, NextDayPlan, Oneri } from "./veri";
+import type { Durum, Gelisme, HaftalikKalem, HaftalikPlan, NextDayPlan, Oneri, Paket } from "./veri";
 
 /*
  * Önerinin hangi planlara düştüğü (saf). Muhabir artık Next Day ya da
@@ -174,6 +174,52 @@ export const esCiftleri = (d: Durum): [Oneri, Oneri][] => {
   }
   return ciftler;
 };
+
+/*
+ * Plandakine bağlama: Planlamacı muhabirin önerisini kullanmayıp planda doğrudan
+ * onun adına PKG ya da gelişme açınca öneri "değerlendiriliyor"da kalıyor,
+ * muhabir aynı işi hem öneri hem görev olarak görüyordu. Son 7 günün Next Day
+ * planlarında (onaylı ve devredilmiş de: bağlamak planın içeriğini değiştirmiyor)
+ * öneriye bağlı olmayan, aynı muhabirin paketi ve gelişmesi aday. Benzer başlıklı
+ * önce. Bağlamak kaydın yalnız `oneriId`'sini doldurur.
+ */
+export const BAGLAMA_GUNU = 7;
+export interface BaglanabilirKayit {
+  tur: "paket" | "gelisme";
+  id: string;
+  plan: NextDayPlan;
+  metin: string;
+  benzer: boolean;
+}
+const baglanabilirOneri = (d: Pick<Durum, "planlar" | "gelismeler" | "paketler" | "canliYayinlar">, o: Oneri) =>
+  !!o.muhabirId && !o.talimatVeren && !["teklif", "reddedildi", "geriCekildi"].includes(o.durum) && !oneriPlanKaydi(d, o);
+const yakinPlanlar = (d: Durum, b = bugun()) => new Map(d.planlar.filter((p) => p.tarih >= gunEkle(b, -BAGLAMA_GUNU)).map((p) => [p.id, p]));
+const gelismeninMuhabirleri = (g: Gelisme, p: NextDayPlan) => [
+  ...(g.muhabirler ?? []).map((m) => (typeof m === "string" ? m : m.kisiId)),
+  ...(p.basliklar.find((x) => x.id === g.planBaslikId)?.muhabirler.map((m) => m.kisiId) ?? []),
+];
+const oneriBasliklari = (o: Oneri) => [o.haberBasligi, o.paketBasligi ?? ""].filter(Boolean);
+
+export const baglanabilirKayitlar = (d: Durum, o: Oneri): BaglanabilirKayit[] => {
+  if (!baglanabilirOneri(d, o)) return [];
+  const planlar = yakinPlanlar(d);
+  const benzer = (m: string) => oneriBasliklari(o).some((b) => esBasliklar(b, m));
+  const l: BaglanabilirKayit[] = [
+    ...d.paketler
+      .filter((x) => !x.oneriId && x.planId && planlar.has(x.planId) && x.durum !== "iptal" && x.muhabirId === o.muhabirId)
+      .map((x) => ({ tur: "paket" as const, id: x.id, plan: planlar.get(x.planId!)!, metin: x.baslik, benzer: benzer(x.baslik) })),
+    ...d.gelismeler
+      .filter((g) => !g.oneriId && planlar.has(g.planId) && gelismeninMuhabirleri(g, planlar.get(g.planId)!).includes(o.muhabirId!))
+      .map((g) => ({ tur: "gelisme" as const, id: g.id, plan: planlar.get(g.planId)!, metin: g.metin, benzer: benzer(g.metin) })),
+  ];
+  return l.sort((a, b) => Number(b.benzer) - Number(a.benzer) || b.plan.tarih.localeCompare(a.plan.tarih));
+};
+
+/** Ters yön: plandaki öneriye bağlı olmayan paketin muhabirinin bekleyen, benzer başlıklı önerileri. */
+export const paketinOneriAdaylari = (d: Durum, p: Paket): Oneri[] =>
+  p.oneriId || !p.muhabirId || p.durum === "iptal" || !p.planId || !yakinPlanlar(d).has(p.planId)
+    ? []
+    : d.oneriler.filter((o) => o.muhabirId === p.muhabirId && baglanabilirOneri(d, o) && oneriBasliklari(o).some((b) => esBasliklar(b, p.baslik)));
 
 export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
   const yer = oneriYeri(d, o);

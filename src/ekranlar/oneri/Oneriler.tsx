@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, esAsili, esCiftleri, esOneriler, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, baglanabilirKayitlar, esAsili, esCiftleri, esOneriler, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriPlandakineBagla, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
@@ -314,6 +314,7 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
       )}
       <BagliOneriler oneri={o} />
       <EsOneriler ben={ben} oneri={o} />
+      <PlandakineBagla ben={ben} oneri={o} />
     </>
   );
 }
@@ -388,6 +389,46 @@ function EsOneriler({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
             </li>
           );
         })}
+      </ul>
+    </div>
+  );
+}
+
+/*
+ * Planda muhabirin adına doğrudan açılmış ama öneriye bağlanmamış paket ve gelişmeler
+ * (oneriPlanlari.ts → baglanabilirKayitlar): öneri onlara bağlanınca "plana eklendi"
+ * olur, muhabir aynı işi iki ayrı kayıt olarak görmez.
+ */
+function PlandakineBagla({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  if (ben.birim === "muhabir" || !(oneriDuzenleyebilir(ben, o) || ben.hesapYoneticisi)) return null;
+  const adaylar = baglanabilirKayitlar(v, o);
+  if (!adaylar.length) return null;
+  return (
+    <div className="ara-ust-2" data-plandakine-bagla>
+      <div className="alan-etiket">{t("pbBaslik")}</div>
+      <ul className="liste">
+        {adaylar.map((x) => (
+          <li key={x.tur + x.id} data-bagla-aday={x.id}>
+            <small className="soluk">
+              {x.tur === "paket" ? "PKG" : t("gelismeMetni")} · {tarihYaz(x.plan.tarih, dil, "kisa")}
+              {x.benzer && <> · {t("pbBenzer")}</>}
+            </small>{" "}
+            <Icerik>{x.metin}</Icerik>{" "}
+            <button
+              type="button"
+              className="dugme dugme-ikincil dugme-kucuk"
+              onClick={() => {
+                if (!confirm(t("pbBaglaOnay"))) return;
+                if (oneriPlandakineBagla(ben, o.id, { tur: x.tur, id: x.id })) bildir(t("pbBaglandi"));
+              }}
+              data-bagla
+            >
+              {t("pbBagla")}
+            </button>
+          </li>
+        ))}
       </ul>
     </div>
   );

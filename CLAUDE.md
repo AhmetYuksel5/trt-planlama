@@ -910,6 +910,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kararı da; durum kayda göre (`oneriPlanaGore`), kopya silinir, hareket
   `onerilerBirlestirildi`.
 
+  Plandakine bağlama (`oneriPlanlari.ts → baglanabilirKayitlar`,
+  `paketinOneriAdaylari`; eylem `eylemler.ts → oneriPlandakineBagla`): planlamacı
+  önerinin yerine planda doğrudan muhabir adına PKG ya da gelişme açınca öneri
+  "değerlendiriliyor"da kalıyor, muhabir aynı işi hem öneri hem görev olarak
+  görüyordu. Adaylar son 7 günün (`BAGLAMA_GUNU`) bütün Next Day planlarında,
+  onaylı ve devredilmiş de: öneriye bağlı olmayan, aynı muhabirin paketi ve
+  gelişmesi (başlığın muhabiri de), benzer başlıklı önce. Bağlamak kayda yalnız
+  `oneriId` yazar; plan, paketin durumu ve onayı değişmez, muhabire bildirim
+  gitmez; öneri kayda göre "plana eklendi" (`oneriPlanaGore`), hareket
+  `oneriPlandakineBaglandi`. Önerinin ayrıntısında "Planda bu muhabirin
+  kayıtları" (`Oneriler.tsx → PlandakineBagla`), plandaki bağsız PKG satırında
+  benzer başlıklı bekleyen öneri varsa 🔗 (`BaslikKarti.tsx → PaketOneriBagi`);
+  Planlama (öneri değerlendiren) ve tam yönetici.
+
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
   kaynak her yerde `OneriKaynagi` / `OneriAvatari` ile gösterilir

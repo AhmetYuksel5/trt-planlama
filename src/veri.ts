@@ -1264,6 +1264,7 @@ export const HAREKET_TIPLERI = [
   "kayitTemizlendi",
   "oneriSilindi",
   "onerilerBirlestirildi",
+  "oneriPlandakineBaglandi",
   "baslikBirlestirildi",
   "planlarBirlestirildi",
   "gorevKaydedildi",

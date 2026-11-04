@@ -1,11 +1,11 @@
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
-import { oneriGunde } from "../../oneriPlanlari";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
+import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { oneriPlandakineBagla, gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, paketNotEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { simdi, vardiyaYaz } from "../../tarih";
@@ -270,6 +270,7 @@ export default function BaslikKarti({
                     </small>
                   </div>
                   <div className="islemler">
+                    <PaketOneriBagi ben={ben} paket={p} />
                     {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
                       <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
                     )}
@@ -406,6 +407,51 @@ export default function BaslikKarti({
 }
 
 /* Onaylı paketin yalnız metni (Strap, açıklama); geri kalanı kilitli. */
+/*
+ * Ters yön: planda muhabir adına doğrudan açılmış PKG'nin muhabirinin bekleyen,
+ * benzer başlıklı önerisi varsa satırda bağla düğmesi. Paket ve plan değişmez.
+ */
+function PaketOneriBagi({ ben, paket: p }: { ben: Kisi | undefined; paket: Paket }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  if (!ben || (!ben.hesapYoneticisi && !yapabilir(ben, "oneriDegerlendir"))) return null;
+  const adaylar = paketinOneriAdaylari(v, p);
+  if (!adaylar.length) return null;
+  return (
+    <>
+      <IkonDugme ikon={<Link2 size={15} />} etiket={t("pbPaketAdayi")} onClick={() => setAcik(true)} />
+      {acik && (
+        <Pencere baslik={t("pbPaketAdayi")} alt={<Icerik>{p.baslik}</Icerik>} kapat={() => setAcik(false)}>
+          <ul className="liste" data-paket-oneri-adaylari>
+            {adaylar.map((o) => (
+              <li key={o.id}>
+                <a href={`#/oneriler/${o.id}`}>
+                  <Icerik>{o.haberBasligi}</Icerik>
+                </a>{" "}
+                <button
+                  type="button"
+                  className="dugme dugme-ikincil dugme-kucuk"
+                  onClick={() => {
+                    if (!confirm(t("pbBaglaOnay"))) return;
+                    if (oneriPlandakineBagla(ben, o.id, { tur: "paket", id: p.id })) {
+                      setAcik(false);
+                      bildir(t("pbBaglandi"));
+                    }
+                  }}
+                  data-paket-bagla
+                >
+                  {t("pbBagla")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Pencere>
+      )}
+    </>
+  );
+}
+
 export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Paket; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ baslik: p.baslik, aciklama: p.aciklama ?? "" });

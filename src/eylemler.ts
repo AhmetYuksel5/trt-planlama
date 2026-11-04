@@ -18,7 +18,7 @@ import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
-import { acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -2753,6 +2753,27 @@ export const oneriBirlestir = (ben: Kisi, asilId: string, kopyaId: string) => {
     oneriler: y.oneriler.filter((x) => x.id !== kopyaId).map((x) => (x.id === asilId ? yeniAsil : x.kopyaKaynagi === kopyaId ? { ...x, kopyaKaynagi: asilId } : x)),
   };
   kaydet(hareketYaz(y, { kisiId: ben.id, tip: "onerilerBirlestirildi", oneriId: asilId, veri: { baslik: kopya.haberBasligi } }));
+  return true;
+};
+
+/*
+ * Plandaki paketi ya da gelişmeyi muhabirin önerisine bağlar (oneriPlanlari.ts →
+ * baglanabilirKayitlar): kayda yalnız `oneriId` yazılır, planın içeriğine, paketin
+ * durumuna ve onayına dokunulmaz; öneri kayda göre "plana eklendi" olur. Muhabire
+ * yeni görev ya da iptal gitmez.
+ */
+export const oneriPlandakineBagla = (ben: Kisi, oneriId: string, kayit: { tur: "paket" | "gelisme"; id: string }) => {
+  const d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !(oneriDuzenleyebilir(ben, o) || ben.hesapYoneticisi)) return false;
+  if (!baglanabilirKayitlar(d, o).some((x) => x.tur === kayit.tur && x.id === kayit.id)) return false;
+  let y: Durum =
+    kayit.tur === "paket"
+      ? { ...d, paketler: d.paketler.map((x) => (x.id === kayit.id ? { ...x, oneriId } : x)) }
+      : { ...d, gelismeler: d.gelismeler.map((x) => (x.id === kayit.id ? { ...x, oneriId } : x)) };
+  const yeni = oneriPlanaGore(y, o.durum === "planaEklendi" ? o : { ...o, durum: "degerlendiriliyor" });
+  y = { ...y, oneriler: y.oneriler.map((x) => (x.id === oneriId ? yeni : x)) };
+  kaydet(hareketYaz(y, { kisiId: ben.id, tip: "oneriPlandakineBaglandi", oneriId, planId: yeni.planId, veri: { kayit: kayit.tur } }));
   return true;
 };
 
