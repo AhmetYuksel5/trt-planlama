@@ -2516,7 +2516,8 @@ export const ORNEK = (): Durum => {
             aciklama: "يجتمع القادة العرب لبحث تطورات الأوضاع الإقليمية.",
             onem: "وتكمن أهمية القمة في أنها الأولى منذ اتفاق وقف إطلاق النار.",
             anaKapsam: true,
-            anaOzet: "تغطية ميدانية من القاهرة على مدى يومين",
+            anaOzet: "من المخطط أن تبدأ التغطية قبل القمة بيوم",
+            kapsamBas: gun(2),
             etiketler: ["disGorev", "news"],
             gunler: [
               { tarih: gun(3), satirlar: [{ id: "as1", tur: "pkg", metin: "ملفات القمة على الطاولة" }, { id: "as2", tur: "live", metin: "", tbc: true }] },
@@ -2534,6 +2535,16 @@ export const ORNEK = (): Durum => {
             gunler: [{ tarih: gun(9), satirlar: [{ id: "as4", tur: "walktalk", metin: "جولة في أجنحة المعرض" }] }],
             ekip: [{ gorev: "muhabir", kisiId: "mu11" }],
             gorev: { gidis: gun(9), donus: gun(9) },
+          },
+          {
+            id: "ao-gun",
+            tur: "gun",
+            baslik: "اليوم العالمي للتعليم الرقمي",
+            tarih: gun(6),
+            aciklama: "يوم دولي افتراضي لأغراض العرض.",
+            etiketler: ["yeniSabah"],
+            gunler: [],
+            ekip: [],
           },
           {
             id: "ao-ozel",

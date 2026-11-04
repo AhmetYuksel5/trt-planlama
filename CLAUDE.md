@@ -1213,14 +1213,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`HaftalikBelge.tsx → Dosyalar`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
 - Aylık plan (`ekranlar/aylik/Aylik.tsx`, kurallar `aylik.ts`, eylemler
-  `eylemler.ts → aylik*`): kurumun "الخطة الشهرية المتوقعة" belgesi. Takvimden
+  `eylemler.ts → aylik*`): kurumun "الخطة الشهرية المتوقعة" şablonu. Takvimden
   ayrı (takvim not gibi), kesin plan ama bağlayıcı değil; Next Day'le bağı yok.
-  - Sayfa belgenin kendisi, her arayüz dilinde Arapça: ana kapsamlar, öne çıkan
-    olaylar (kırmızı gün, "YER / olay", önem, etiket kodları, gün gün kapsam
-    "PKG / …", ekip), görevlendirme tablosu (kurumda iç/dış ayrımı yok); kopyala, Word, yazdır. Hazırlayan
-    teknolojiye yabancı: tek büyük "Olay ekle" ve altı adımlı form (ne/nerede,
-    ne zaman, önem, gün gün kapsam, ekip ve görev, etiketler); olaya basınca aynı
-    form. Zorunlu yalnız ad ve gün. Olay (`AylikOlay`) başladığı ayın planında.
+  - Hiyerarşi şablondan: ay planı → bölüm → olay → kapsam günü → satır
+    (PKG / LIVE / WALK & TALK…). Bölümler: 1. ana kapsamlar (ayrı kayıt değil,
+    `anaKapsam` işaretli olay; özet cümlesiyle), 2. öne çıkan olaylar ve
+    etkinlikler (gün gün; olay ya da uluslararası gün, `AylikOlay.tur`), 3.
+    görevlendirmeler (olayın `gorev`'inden türer; kurumda iç/dış ayrımı yok).
+  - "Plan" görünümü çalışma ekranı: üç numaralı bölüm, her birinin kendi "Ekle"
+    düğmesi (türü eklendiği yer belirler), satıra basınca olayın tek düzenleme
+    penceresi. Pencere şablonun başlıklarıyla alt alta: künye (kategori kodları
+    dahil), önemi, önerilen kapsam (kapsam süresi `kapsamBas`/`kapsamBit`, gün gün
+    satırlar), ekip, görevlendirme, bağlantı ve not; boş isteğe bağlı bölüm "+"
+    düğmesiyle açılır. Adım adım form denendi, ciddi plan gibi durmadı.
+  - "Çıktı" görünümü şablonun kağıdı, her arayüz dilinde Arapça: gri bant
+    başlık ve kırmızı kategori kodu, sarı tarih kutusu, "**" önem, التغطية
+    المقترحة / مدة التغطية, الفريق المعتمد للتغطية, ayraç; sonda görevlendirme
+    tablosu. Kopyala, Word, yazdır.
   - Onay Plan yetkilerinde (`ayOnay`, varsayılan Planlama yöneticisi); onaylı
     plan düzenlenmez, "Hazırlığa al" açar.
   - Weekly'de "Aylık plandan" bölümü (`haftayaDusenler`): haftayla kesişen

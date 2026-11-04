@@ -962,6 +962,8 @@ export interface AylikEkip {
 }
 export interface AylikOlay {
   id: string;
+  /** Şablonun 2. bölümünde olay ya da "أيام دولية" (uluslararası gün); yoksa olay. */
+  tur?: "olay" | "gun";
   /** "ÜLKE / ŞEHİR", Arapça, serbest. */
   yer?: string;
   baslik: string;
@@ -974,6 +976,9 @@ export interface AylikOlay {
   anaKapsam?: true;
   anaOzet?: string;
   etiketler: AylikEtiketi[];
+  /** "مدة التغطية": kapsamın süresi olayın günlerinden geniş olabilir (seçim öncesi günler). */
+  kapsamBas?: string;
+  kapsamBit?: string;
   gunler: AylikGun[];
   ekip: AylikEkip[];
   /** Görevlendirme (kurumda iç/dış ayrımı yok): belgenin sonundaki tablo bundan. */
