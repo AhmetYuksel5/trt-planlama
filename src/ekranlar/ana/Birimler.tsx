@@ -439,12 +439,13 @@ function KonukOrganizasyonu() {
 
 /* --- Output ve dil denetimi --- */
 
-export function OutputAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
+/* Script Editor da aynı kalıpla, kendi düzeniyle (dil kuyruğu); dil denetmeninin sayfası ayrı (DilDenetimi). */
+export function OutputAna({ ben, kisisel = true, birim = "output" }: { ben: Kisi; kisisel?: boolean; birim?: "output" | "scriptEditor" }) {
   const { t } = useDil();
   return (
     <>
-      <SayfaBasi sekme={!kisisel} ikon={<SpellCheck size={26} />} baslik={t("biOutput")} />
-      <CalismaAlani ben={ben} duzen="output" kisisel={kisisel} />
+      <SayfaBasi sekme={!kisisel} ikon={<SpellCheck size={26} />} baslik={t(birim === "output" ? "biOutput" : "biScriptEditor")} />
+      <CalismaAlani ben={ben} duzen={birim} kisisel={kisisel} />
     </>
   );
 }

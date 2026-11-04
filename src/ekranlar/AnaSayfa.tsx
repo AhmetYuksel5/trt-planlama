@@ -25,6 +25,8 @@ export default function AnaSayfa({ ben }: { ben: Kisi }) {
       return <EkonomiAna ben={ben} />;
     case "output":
       return <OutputAna ben={ben} />;
+    case "scriptEditor":
+      return <OutputAna ben={ben} birim="scriptEditor" />;
     case "media":
       return <MediaAna ben={ben} />;
     case "yonetim":

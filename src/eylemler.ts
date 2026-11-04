@@ -3311,6 +3311,18 @@ export const muhabirUnvanlariniEsitle = () => {
   if (degisti) kaydet({ ...d, kisiler });
 };
 
+/*
+ * Dil denetmenleri Output'un içindeydi; Script Editor birimi açılınca
+ * (yapi.ts → scriptEditoruKur) Output'ta dil denetmeni ünvanıyla kalan
+ * kişiler oraya geçiyor. Dil durağı Script Editor'ün; geçmeselerdi sıradaki
+ * metni göremezlerdi.
+ */
+export const dilDenetmenleriniTasi = () => {
+  const d = getir();
+  if (!d.kisiler.some((k) => k.birim === "output" && k.gorev === "dilDenetmeni")) return;
+  kaydet({ ...d, kisiler: d.kisiler.map((k) => (k.birim === "output" && k.gorev === "dilDenetmeni" ? { ...k, birim: "scriptEditor" } : k)) });
+};
+
 /** Ünvanı sistemin verdiği (genel ya da eski yer ünvanı) ve olması gerekenden farklı dış muhabirler; elle verilmiş ünvana dokunulmuyor. */
 export const ulkeUnvaniBekleyenler = (d: Durum): Kisi[] => {
   const y = guncelYapi(d);

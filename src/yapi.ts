@@ -200,7 +200,7 @@ const VARSAYILAN_DURAKLAR: Durak[] = [
   { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
   // Belgede "Newsdesk / Output" metin kontrolünü birlikte yapıyor.
   { id: "kontrol", tur: "kontrol", sorumlu: { tur: "birim", birim: "output" }, yardimci: ["newsdesk"], geriGonderir: true, asama: "uretim" },
-  { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "output" }, geriGonderir: true, asama: "uretim" },
+  { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "scriptEditor" }, geriGonderir: true, asama: "uretim" },
   { id: "video", tur: "video", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
   { id: "iletim", tur: "iletim", sorumlu: { tur: "kol" }, asama: "teknik" },
   { id: "media", tur: "media", sorumlu: { tur: "birim", birim: "media" }, asama: "teknik" },
@@ -214,7 +214,8 @@ const VARSAYILAN_UNVANLAR: Record<Birim, GorevId[]> = {
   newsgathering: ["yonetici", "koordinator"],
   program: ["yonetici", "programEditoru", "sunucu"],
   ekonomi: ["yonetici", "editor"],
-  output: ["yonetici", "dilDenetmeni", "editor", "tercuman"],
+  output: ["yonetici", "editor", "tercuman"],
+  scriptEditor: ["yonetici", "dilDenetmeni"],
   media: ["yonetici", "mediaManager"],
   yonetim: ["inputMuduru", "programMuduru", "koordinator"],
   muhabir: ["muhabir"],
@@ -251,6 +252,7 @@ const VARSAYILAN_UST: Record<Birim, BirimId> = {
   newsgathering: "bInput",
   ekonomi: "bInput",
   output: "bOutput",
+  scriptEditor: "bOutput",
   media: "bOutput",
   program: "bProgram",
   yonetim: KOK_MERKEZ,
@@ -297,7 +299,7 @@ export const varsayilanYapi = (): Yapi => {
  */
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
-  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust))) return y;
+  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor"))) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -307,9 +309,34 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = { ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) };
+  const t = scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) });
   tamamlanan.set(y, t);
   return t;
+};
+
+/*
+ * Script Editor (Output'un altında, dil denetmenleri) sonradan yerleşik oldu;
+ * önce dil denetimi Output'un içindeydi. Onsuz yayınlanmış yapıda okurken:
+ * birim Output'un yanına, dil denetmeni ünvanı Output'tan ona, Output'a
+ * verilmiş dil durağı ona. Kayıttaki sürüm değişmiyor; kurum hiçbir şey
+ * yapmadan yeni düzeni görüyor, yönetici bir sonraki yayında bunu yayınlıyor.
+ */
+const scriptEditoruKur = (y: Yapi): Yapi => {
+  if (y.birimler.some((b) => b.id === "scriptEditor")) return y;
+  const output = y.birimler.find((b) => b.id === "output");
+  const birimler = y.birimler.flatMap((b) =>
+    b.id !== "output"
+      ? [b]
+      : [
+          { ...b, unvanlar: b.unvanlar?.filter((u) => u !== "dilDenetmeni") },
+          { id: "scriptEditor", unvanlar: VARSAYILAN_UNVANLAR.scriptEditor, ...(output?.ust ? { ust: output.ust } : { ust: VARSAYILAN_UST.scriptEditor }) } as BirimTanimi,
+        ],
+  );
+  const akislar = y.akislar.map((a) => ({
+    ...a,
+    duraklar: a.duraklar.map((d) => (d.tur === "dil" && d.sorumlu.tur === "birim" && d.sorumlu.birim === "output" ? { ...d, sorumlu: { ...d.sorumlu, birim: "scriptEditor" } } : d)),
+  }));
+  return { ...y, birimler: output ? birimler : [...birimler, { id: "scriptEditor", unvanlar: VARSAYILAN_UNVANLAR.scriptEditor, ust: VARSAYILAN_UST.scriptEditor }], akislar };
 };
 
 /* --- Okuma --- */

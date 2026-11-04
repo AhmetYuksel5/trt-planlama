@@ -39,7 +39,7 @@ import {
 } from "firebase/firestore";
 import type { Metin, Yazi } from "../dil";
 import { firebaseAyari } from "../firebase-ayar";
-import { bekleyenGecisleriTamamla, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
+import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle } from "../eylemler";
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
@@ -220,6 +220,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         setTimeout(() => sunucuyaEsitOlunca(bekleyenGecisleriTamamla));
         // Davetle ya da kayıt bağlantısıyla gelen dış muhabir genel ünvanla kalmasın: ünvanı hemen şehrinden.
         setTimeout(() => sunucuyaEsitOlunca(muhabirUnvanlariniEsitle));
+        setTimeout(() => sunucuyaEsitOlunca(dilDenetmenleriniTasi));
       }
     }
   };

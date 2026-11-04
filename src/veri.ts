@@ -34,7 +34,7 @@ import type { Yapi } from "./yapi";
  * toplantıdan önce bakıyor (ön inceleme). Üretim akışında masası yok;
  * ekonomi paketini Planlama'nın feature/stok ekibi yürütüyor (akis.ts).
  */
-export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "media", "muhabir", "yonetim"] as const;
+export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "scriptEditor", "media", "muhabir", "yonetim"] as const;
 export type Birim = (typeof BIRIMLER)[number];
 /** Yerleşik birim ya da yöneticinin açtığı birim (yapi.ts). */
 export type BirimId = Birim | (string & {});

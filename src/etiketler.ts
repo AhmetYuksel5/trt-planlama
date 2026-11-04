@@ -48,6 +48,7 @@ export const BIRIM_ADI: Record<Birim, Anahtar> = {
   program: "biProgram",
   ekonomi: "biEkonomi",
   output: "biOutput",
+  scriptEditor: "biScriptEditor",
   media: "biMedia",
   muhabir: "biMuhabir",
   yonetim: "biYonetim",

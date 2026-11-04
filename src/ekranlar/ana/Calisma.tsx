@@ -55,6 +55,8 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   ekonomi: ["genIslerim", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
   program: ["genIslerim", "prHafta", "prUretim", "prOneri", "prKonuk"],
   output: ["genIslerim", "ouOzel", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
+  // Dil denetmeninin sayfası DilDenetimi; birimin yöneticisi dil kuyruğunu görür.
+  scriptEditor: ["genIslerim", "ouDil", "ouSon"],
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
   yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
   panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],

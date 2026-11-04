@@ -513,7 +513,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Birimler ağaç (`BirimTanimi.ust`, derinlik serbest): iki kök, "Haber
     merkezi" (`KOK_MERKEZ`) ve "Dış muhabirler" (`KOK_DIS`); varsayılanda
     Input (Planlama, Newsdesk, News Gathering, Ekonomi), Output (Output,
-    Media), Program, Yönetim ve Dış muhabirler › Muhabir. Grup düğümünün
+    Script Editor, Media), Program, Yönetim ve Dış muhabirler › Muhabir.
+    Script Editor dil denetmenlerinin birimi; dil durağının sorumlusu o.
+    Sonradan yerleşik oldu: onsuz yayınlanmış yapıda okurken birim Output'un
+    yanına, dil denetmeni ünvanı ve Output'a verilmiş dil durağı ona geçer
+    (`yapi.ts → scriptEditoruKur`, `tamamla` içinde); Output'ta kalan dil
+    denetmenlerini sistemin işi taşır (`eylemler.ts → dilDenetmenleriniTasi`,
+    açılışta ve gerçek kipte tam yöneticinin tarayıcısında). Grup düğümünün
     ünvanı yok. Birim penceresinde üst birim seçilir, oklar kardeşler arasında
     sıralar; altında birim olan silinmez (`orgAltBirimVar`). Yardımcılar
     `birimAgaci`, `ustBirimler`, `altindaMi`, `disMuhabirMi`. Eski yayın

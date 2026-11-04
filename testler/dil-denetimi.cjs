@@ -40,6 +40,31 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate((x) => localStorage.setItem("trt-planlama-oturum", x), yon.id);
   await git("#/");
   ok((await p.locator("[data-dil-menusu]").count()) === 0, "Output yöneticisi sade düzende değil");
+  // Script Editor'süz yayınlanmış eski yapı ve Output'ta kalmış dil denetmeni (gerçek sitedeki durum)
+  let e = await veri();
+  const yapiEski = { surum: 1, id: "y-eski", zaman: new Date().toISOString(), yayinlayan: "yo3", birimler: [
+    { id: "output", unvanlar: ["yonetici", "dilDenetmeni", "editor", "tercuman"], ust: "bOutput" },
+    ...["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "media", "muhabir", "yonetim"].map((id) => ({ id })),
+  ], unvanlar: [], akislar: [{ id: "uretim", kollar: ["haber", "feature", "ekonomi", "program"], duraklar: [
+    { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
+    { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "output" }, geriGonderir: true, asama: "uretim" },
+    { id: "video", tur: "video", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
+  ] }], kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "planlama", program: "program" } };
+  e.yapilar = [yapiEski];
+  await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "ou3"));
+  e.kisiler.find((k) => k.id === "ou3").birim = "output";
+  const dp = e.paketler.find((x) => x.durum === "uretimde");
+  Object.assign(dp, { adim: "dil", akis: undefined });
+  await p.evaluate((x) => { localStorage.setItem("trt-planlama-v24", JSON.stringify(x)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); }, e);
+  await git("#/");
+  await p.waitForTimeout(500);
+  e = await veri();
+  ok(e.kisiler.find((k) => k.id === "ou3").birim === "scriptEditor", "Output'ta kalan dil denetmeni Script Editor'e geçti");
+  ok((await p.locator("[data-dd-metin='" + dp.id + "']").count()) === 1, "eski yapıda da dil durağı Script Editor'ün: metin sayfada");
+  await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "yo3"));
+  await git("#/organizasyon/birimler");
+  ok((await p.getByText("Script Editor").count()) > 0, "Organizasyon'da Script Editor birimi görünüyor");
+
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));
   console.log(`\n${gec} geçti, ${kal} kaldı`);
   await b.close();
