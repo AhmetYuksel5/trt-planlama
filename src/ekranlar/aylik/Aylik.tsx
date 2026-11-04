@@ -283,11 +283,11 @@ function OlayFormu({ ben, ay, olay, kapat }: { ben: Kisi; ay: string; olay?: Ayl
         </div>
       }
     >
-      <ol className="ay-adimlar" aria-hidden="true">
+      <ol className="ay-adimlar">
         {ADIMLAR.map((a, i) => (
           <li key={a} className={i === adim ? "simdi" : i < adim ? "gecti" : ""}>
-            <button type="button" onClick={() => (i <= 1 || gecerli) && setAdim(i)}>
-              {i + 1}
+            <button type="button" aria-current={i === adim ? "step" : undefined} disabled={i > 1 && !gecerli} onClick={() => setAdim(i)}>
+              {t(a)}
             </button>
           </li>
         ))}

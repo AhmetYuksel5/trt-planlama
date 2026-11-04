@@ -2493,8 +2493,9 @@ input[aria-invalid="true"] {
 .ay-not { background: var(--cikti-sari); display: inline-block; }
 .ay-tablo { width: 100%; border-collapse: collapse; margin-top: var(--ara-2); font-size: 13px; }
 .ay-tablo th, .ay-tablo td { border: 1px solid #000; padding: 4px 6px; text-align: start; vertical-align: top; overflow-wrap: anywhere; }
-.ay-adimlar { list-style: none; display: flex; gap: var(--ara-2); padding: 0; margin: 0 0 var(--ara-3); }
-.ay-adimlar button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--cizgi); background: var(--yuzey); font-weight: 600; cursor: pointer; }
+.ay-adimlar { list-style: none; display: flex; flex-wrap: wrap; gap: var(--ara-2); padding: 0; margin: 0 0 var(--ara-3); }
+.ay-adimlar button { min-height: 44px; padding-inline: var(--ara-3); border-radius: 999px; border: 1px solid var(--cizgi); background: var(--yuzey); font-weight: 600; cursor: pointer; }
+.ay-adimlar button:disabled { opacity: 0.5; cursor: default; }
 .ay-adimlar .gecti button { background: var(--vurgu-sis); border-color: var(--vurgu); }
 .ay-adimlar .simdi button { background: var(--vurgu); color: var(--vurgu-yazi); border-color: var(--vurgu); }
 .ay-gun { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); display: grid; gap: var(--ara-2); min-width: 0; }
