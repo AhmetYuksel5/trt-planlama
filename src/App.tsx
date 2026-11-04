@@ -3,6 +3,7 @@ import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
 import { MuhabirHaberlerim, MuhabirOnerilerim } from "./ekranlar/ana/Muhabir";
 import AnaSayfa from "./ekranlar/AnaSayfa";
+import DilDenetimi from "./ekranlar/ana/DilDenetimi";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
 import { Ayarlar, Yetkisiz } from "./ekranlar/Ayarlar";
 import Raporlar from "./ekranlar/Raporlar";
@@ -67,6 +68,7 @@ import {
   paketGorebilir,
   sayfaGorebilir,
   yapabilir,
+  dilDenetmeniMi,
 } from "./yetki";
 import { GOMULU, useYol } from "./yol";
 
@@ -214,7 +216,7 @@ export default function App() {
   } else {
     switch (sayfa) {
       case "ana":
-        icerik = <AnaSayfa ben={ben} />;
+        icerik = dilDenetmeniMi(ben) ? <DilDenetimi ben={ben} /> : <AnaSayfa ben={ben} />;
         break;
       case "ortam":
         icerik = GOMULU ? (

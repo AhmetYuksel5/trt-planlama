@@ -5,6 +5,7 @@ import { kisaAdi, maddeAdi, sayfaMaddesi } from "../../bilesenler/AnaMenu";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { bildir } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
+import { dilDenetmeniMi } from "../../yetki";
 import { ortamDuzeni, ortamGeriAc, ortamSil } from "../../eylemler";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, yolSayfasi } from "../../ortam";
 import { ORTAM_DUZENLERI, getir, useVeri, type Kisi, type Ortam, type OrtamDuzeni } from "../../veri";
@@ -164,7 +165,7 @@ export function UstSekmeler({ ben }: { ben: Kisi }) {
   const etiket = useOrtamEtiketi(ben);
   const kapat = useOrtamKapat(ben);
   // Muhabirde workspace yok: birkaç sayfayı yan yana açacak kadar işi yok, sekme ve "+" çubuğu kalabalıklaştırıyordu.
-  const sade = ben.birim === "muhabir";
+  const sade = ben.birim === "muhabir" || dilDenetmeniMi(ben);
   const liste = sade ? [] : kisininOrtamlari(v, ben.id);
   const ortamda = yol.sayfa === "ortam";
   const yeniSayfa = ortamda && yol.id === "yeni";

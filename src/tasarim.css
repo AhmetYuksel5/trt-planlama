@@ -2529,3 +2529,6 @@ input[aria-invalid="true"] {
   .ay-kapsam-satiri { grid-template-columns: minmax(0, 1fr) auto auto; }
   .ay-kapsam-satiri > select:first-child { grid-column: 1 / -1; }
 }
+
+/* Dil denetmeninin sayfası: metin alanı kartın tamamı, uzun script rahat okunsun. */
+.dd-alan { inline-size: 100%; margin-block: var(--ara-2); padding: var(--ara-3); line-height: 1.7; }

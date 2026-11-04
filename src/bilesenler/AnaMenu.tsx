@@ -8,7 +8,7 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
+import { dilDenetmeniMi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
 import { GERCEK } from "../kip";
 import Logo from "./Logo";
 
@@ -216,7 +216,7 @@ const sayfaGrubu = (sayfa: string) => MENU.find((g) => g.ad && g.maddeler.some((
 function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const { t } = useDil();
   const v = useVeri();
-  const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : (m.say?.(v, ben) ?? 0);
+  const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : dilDenetmeniMi(ben) && m.sayfa === "ana" ? dilSirasi(v, ben).length : (m.say?.(v, ben) ?? 0);
   const Ikon = m.ikon;
   // "Öneri gönder" Önerilerim'in alt adresi: ikisi aynı anda vurgulanmasın.
   const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
@@ -243,6 +243,7 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const { t, ad } = useDil();
   const muhabir = ben.birim === "muhabir";
+  const dilci = dilDenetmeniMi(ben);
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -282,7 +283,21 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
           </div>
         </>
       )}
-      {!muhabir && MENU.map((g, i) => {
+      {dilci && (
+        <>
+          <div className="menu-grup" data-dil-menusu>
+            {muhabirMaddeleri(ben, ["ana"]).map((m) => (
+              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+            ))}
+          </div>
+          <div className="menu-grup menu-alta">
+            {muhabirMaddeleri(ben, MUHABIR_ALT).map((m) => (
+              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+            ))}
+          </div>
+        </>
+      )}
+      {!muhabir && !dilci && MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         if (!g.ad || maddeler.length === 1) {

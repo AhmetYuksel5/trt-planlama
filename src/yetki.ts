@@ -1,5 +1,6 @@
 import {
   ADIM_ADI,
+  adimTuru,
   durakBul,
   kolSahibi,
   paketSahibi,
@@ -897,3 +898,13 @@ export const kisitliKisi = (k: Kisi): boolean =>
   k.birim === "muhabir" || !!k.kontrolBekliyor;
 export const takipEkleyebilir = (k: Kisi | undefined): boolean =>
   !!k && k.birim === "muhabir" && !k.hesapsiz;
+
+/*
+ * Dil denetmeni sistemde tek iş görüyor: sırası gelen metni düzeltip
+ * göndermek. Ana sayfası, menüsü ve çubukları o işe indirgenmiş sade düzen
+ * (muhabirinki gibi); Output'un öbür personeli ve yöneticisi bunun dışında.
+ */
+export const dilDenetmeniMi = (k: Kisi): boolean => k.gorev === "dilDenetmeni" && k.rol !== "yonetici" && !k.hesapYoneticisi;
+
+/** Dil denetmeninin sırası: dil durağındaki, yapabileceği metinler (sayfası ve menü sayısı aynı kuraldan). */
+export const dilSirasi = (d: Durum, k: Kisi) => d.paketler.filter((p) => p.durum === "uretimde" && adimTuru(p) === "dil" && adimYapabilir(k, p));

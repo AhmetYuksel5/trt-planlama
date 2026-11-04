@@ -8,6 +8,7 @@ import { oturumdanCik } from "../oturum";
 import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
+import { dilDenetmeniMi } from "../yetki";
 import { MENU, MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, maddeGorunur, muhabirMaddeleri } from "./AnaMenu";
 
 /**
@@ -27,7 +28,9 @@ export default function MobilMenu({
   onKapat: () => void;
 }) {
   const { t, ad } = useDil();
-  const muhabir = ben.birim === "muhabir";
+  // Dil denetmeni de muhabir gibi sade: tek sayfası ve Ayarlar.
+  const dilci = dilDenetmeniMi(ben);
+  const muhabir = ben.birim === "muhabir" || dilci;
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function MobilMenu({
       {/* Muhabirde menünün aynı altı maddesi; kısayol ve öbür sayfalar yok. */}
       {muhabir ? (
         <nav className="mobil-kayitlar" data-mobil-muhabir>
-          {muhabirMaddeleri(ben, [...MUHABIR_MENUSU, ...MUHABIR_ALT]).map((m) => {
+          {muhabirMaddeleri(ben, dilci ? ["ana", ...MUHABIR_ALT] : [...MUHABIR_MENUSU, ...MUHABIR_ALT]).map((m) => {
             const Ikon = m.ikon;
             return (
               <a key={m.sayfa} href={`#/${m.sayfa}`} onClick={onKapat}>

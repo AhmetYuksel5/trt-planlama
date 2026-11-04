@@ -1652,6 +1652,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Temel, geri dönülemeyen ya da yöneticinin düzeltmesini gerektiren
       adımda (öneri ve takip gönderme, düzeltip yeniden gönderme, öneriye
       çevirme, teslim, davet) "Emin misin?" sorulur (`eminMisin`).
+  - Dil denetmeninin ekranı da en sade hali (kurumun isteği; `yetki.ts →
+    dilDenetmeniMi`: görevi dil denetmeni, yönetici değil): ana sayfası
+    `ekranlar/ana/DilDenetimi.tsx`, sırası gelen (dil durağındaki) metinler
+    düzenlenebilir alanda, "Düzelt ve gönder" düzeltilmiş metni pakete yazıp
+    işi sonraki durağa geçirir (`adimIlerle(…, { metin })`). Menüde yalnız bu
+    sayfa (sayısı `dilSirasi`) ve Ayarlar; üst çubukta sekme ve kısayol yok,
+    telefonda alt çubukta yalnız Menü. Başka ayrıntı yok.
   - Masaüstünde sol menü. Gruplar katlanır: grup adına basınca açılıp
     kapanır, kapalı grubun yanında maddelerin sayıları toplanır, açık
     sayfanın grubu kendiliğinden açılır. Başlıksız grup (ana sayfa, panel)

@@ -2,7 +2,7 @@ import { Binoculars, CalendarDays, ClipboardList, House, Lightbulb, MapPinned, M
 import { useDil, type Anahtar } from "../dil";
 import type { Kisi } from "../veri";
 import { izinBirimi } from "../yapi";
-import { sayfaGorebilir } from "../yetki";
+import { dilDenetmeniMi, sayfaGorebilir } from "../yetki";
 
 /**
  * Telefonda alttaki sekme çubuğu.
@@ -39,7 +39,9 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
   const muhabir = ben.birim === "muhabir";
   const planlama = izinBirimi(ben.birim) === "planlama";
   const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
-  const sekmeler: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = muhabir
+  const sekmeler: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = dilDenetmeniMi(ben)
+    ? []
+    : muhabir
     ? MUHABIR_SEKMELERI
     : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);
   const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : acik === y && !(y === "oneriler" && yeni));
