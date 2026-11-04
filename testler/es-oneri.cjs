@@ -11,8 +11,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => { sorular.push(x.message()); x.accept(); });
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v23")));
-  const yaz = (d) => p.evaluate((x) => { localStorage.setItem("trt-planlama-v23", JSON.stringify(x)); localStorage.setItem("trt-planlama-v23-iz", String(Date.now())); }, d);
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const yaz = (d) => p.evaluate((x) => { localStorage.setItem("trt-planlama-v24", JSON.stringify(x)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); }, d);
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl1"); localStorage.setItem("trt-planlama-dil", "tr"); });
   await git("#/oneriler");

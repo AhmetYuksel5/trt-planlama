@@ -66,7 +66,7 @@ export const MENU: Grup[] = [
       { sayfa: "nextday", ad: "mNextday", kisa: "kaNextday", ikon: CalendarDays },
       // Sayı: kişinin önündeki ön inceleme (müdür, Ekonomi).
       { sayfa: "haftalik", ad: "mHaftalik", kisa: "kaHaftalik", ikon: CalendarRange, say: (d, ben) => gorusBekleyenler(d, ben).length },
-      { sayfa: "aylik", ad: "mAylik", kisa: "kaAylik", ikon: Calendar, taslak: true },
+      { sayfa: "aylik", ad: "mAylik", kisa: "kaAylik", ikon: Calendar },
       { sayfa: "ozel", ad: "mOzel", kisa: "kaOzel", ikon: Tv },
       // Sayı: zamanı gelen hatırlatmalar; yalnız takvimi tutanlara ve muhabire (kendi faaliyeti), öbür masalara gürültü olmasın.
       {

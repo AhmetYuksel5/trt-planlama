@@ -85,13 +85,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v23`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v24`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v23-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v24-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -1212,6 +1212,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     bağlı olmayanların) en altında yeşil, kalın "متابعات" başlığıyla
     (`HaftalikBelge.tsx → Dosyalar`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
+- Aylık plan (`ekranlar/aylik/Aylik.tsx`, kurallar `aylik.ts`, eylemler
+  `eylemler.ts → aylik*`): kurumun "الخطة الشهرية المتوقعة" belgesi. Takvimden
+  ayrı (takvim not gibi), kesin plan ama bağlayıcı değil; Next Day'le bağı yok.
+  - Sayfa belgenin kendisi, her arayüz dilinde Arapça: ana kapsamlar, öne çıkan
+    olaylar (kırmızı gün, "YER / olay", önem, etiket kodları, gün gün kapsam
+    "PKG / …", ekip), dış ve iç görev tabloları; kopyala, Word, yazdır. Hazırlayan
+    teknolojiye yabancı: tek büyük "Olay ekle" ve altı adımlı form (ne/nerede,
+    ne zaman, önem, gün gün kapsam, ekip ve görev, etiketler); olaya basınca aynı
+    form. Zorunlu yalnız ad ve gün. Olay (`AylikOlay`) başladığı ayın planında.
+  - Onay Plan yetkilerinde (`ayOnay`, varsayılan Planlama yöneticisi); onaylı
+    plan düzenlenmez, "Hazırlığa al" açar.
+  - Weekly'de "Aylık plandan" bölümü (`haftayaDusenler`): haftayla kesişen
+    olaylar, "Gündeme ekle" karar bekleyen kalem açar (`aylikOlayiGundemeEkle`,
+    `HaftalikKalem.aylikOlayId`); toplantıda yeniden değerlendirilir.
+  - "SPECIAL COVERAGE" etiketli olay Özel yayın sayfasında öneri
+    (`ozelOnerileri`); "Özel yayın olarak aç" yayını açar (`aylikOlaydanOzel`),
+    yayın kendi onayına (`ozOnay`) tabi.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
   girişi çıktı önizlemesinde ve plan başlığında "Belgede düzenle".

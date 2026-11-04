@@ -33,7 +33,7 @@ import {
   KisiDetay,
   PersonelListe,
 } from "./ekranlar/Personel";
-import { Aylik } from "./ekranlar/Planlar";
+import { Aylik } from "./ekranlar/aylik/Aylik";
 import { OzelListe, OzelSayfa } from "./ekranlar/OzelYayin";
 import OzelCikti from "./ekranlar/OzelCikti";
 import HaftalikCagri from "./ekranlar/haftalik/Cagri";

@@ -9,7 +9,7 @@ const { chromium } = require(process.env.PW);
   const once = await p.locator("[data-bicim-eki]", { hasText: "VideoWall" }).count();
   // Yarının planındaki ilk paketi VideoWall yap
   await p.evaluate(() => {
-    const k = "trt-planlama-v23", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const pk = d.paketler.find((x) => x.planId === plan.id && x.durum !== "iptal");
     pk.bicim = "videowall"; localStorage.setItem(k, JSON.stringify(d));

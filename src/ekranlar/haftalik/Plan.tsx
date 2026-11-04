@@ -10,6 +10,7 @@ import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../
 import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI } from "../../etiketler";
 import {
   anaKonuKaydet,
+  aylikOlayiGundemeEkle,
   anaKonuSil,
   anaKonuTasi,
   haftalikDurum,
@@ -21,6 +22,7 @@ import {
 import { etiketUret } from "../../eposta";
 import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, kesinlesmeOzeti, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
+import { haftayaDusenler } from "../../aylik";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, yapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
@@ -159,6 +161,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         </Pencere>
       )}
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
+      <AyliktanBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler && hafta.durum !== "kesinlesti"} />
       <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />
       <AnaDosyalar ben={ben} hafta={hafta} />
@@ -168,6 +171,41 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         <HareketGecmisi hareketler={v.hareketler.filter((h) => h.haftaId === hafta.id)} d={v} />
       </Bolum>
     </>
+  );
+}
+
+/*
+ * Aylık plandan bu haftaya düşen olaylar: kesin değil, gündeme alınınca
+ * karar bekleyen kalem olur ve toplantıda yeniden değerlendirilir.
+ */
+function AyliktanBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: HaftalikPlan; ekleyebilir: boolean }) {
+  const { t, dil } = useDil();
+  const l = haftayaDusenler(useVeri(), hafta);
+  if (!l.length) return null;
+  return (
+    <Bolum no="▤" baslik={t("ayAylikPlandan")} ek={String(l.length)}>
+      <ul className="liste" data-aylik-plandan>
+        {l.map(({ olay, gun, kalemId }) => (
+          <li key={olay.id}>
+            <div className="ad">
+              <b>
+                <Icerik blok>{[olay.yer, olay.baslik].filter(Boolean).join(" / ")}</Icerik>
+              </b>
+              <small>{olay.bitis && olay.bitis > olay.tarih ? aralikYaz(olay.tarih, olay.bitis, dil) : tarihYaz(olay.tarih, dil)}</small>
+            </div>
+            {kalemId ? (
+              <Rozet ton="iyi">{t("ayGundemde")}</Rozet>
+            ) : (
+              ekleyebilir && (
+                <button className="dugme dugme-ikincil dugme-kucuk" data-aylik-gundeme={olay.id} onClick={() => aylikOlayiGundemeEkle(ben, hafta.id, olay.id, gun) && bildir(t("bAyGundemeAlindi"))}>
+                  {t("gundemeEkle")}
+                </button>
+              )
+            )}
+          </li>
+        ))}
+      </ul>
+    </Bolum>
   );
 }
 

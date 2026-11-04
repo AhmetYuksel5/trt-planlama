@@ -892,6 +892,8 @@ export interface HaftalikKalem {
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;
+  /** Aylık plandan gündeme alındıysa o olay: aylıkta "gündemde" görünsün, ikinci kez alınmasın. */
+  aylikOlayId?: string;
   karar: Karar;
   onInceleme?: OnInceleme;
   /** Kabul edilip aktarılınca: Next Day planı ve doğan paket. */
@@ -926,11 +928,70 @@ export interface PlanKalemi {
   onayli: boolean;
 }
 
+/*
+ * Aylık plan kurumun "الخطة الشهرية المتوقعة" belgesinin kaydı: ayın olayları,
+ * her birinde gün gün önerilen kapsam, etiket, ekip ve görev. Takvimden ayrı
+ * (takvim not gibi), Next Day'le bağı yok: olaylar Weekly'de yeniden
+ * değerlendirilmek üzere öneri olarak duruyor (aylik.ts → haftayaDusenler).
+ * Özel yayın işaretli olay Özel yayın bölümünde öneri; açılınca onaya tabi.
+ */
+export const AYLIK_SATIR_TURLERI = ["pkg", "live", "walktalk", "rebroadcast", "nafize", "konuk", "grafik", "diger"] as const;
+export type AylikSatirTuru = (typeof AYLIK_SATIR_TURLERI)[number];
+export const AYLIK_ETIKETLERI = ["inhouseOutput", "inhouseInput", "dahiliGorev", "disGorev", "ozel", "ekonomi", "news", "yeniSabah"] as const;
+export type AylikEtiketi = (typeof AYLIK_ETIKETLERI)[number];
+export const AYLIK_EKIP_GOREVLERI = ["muhabir", "kameraman", "sunucu", "yapimci"] as const;
+export type AylikEkipGorevi = (typeof AYLIK_EKIP_GOREVLERI)[number];
+
+export interface AylikSatir {
+  id: string;
+  tur: AylikSatirTuru;
+  /** İçerik (Arapça); boşsa yalnız türün kodu. */
+  metin: string;
+  tbc?: true;
+}
+export interface AylikGun {
+  tarih: string;
+  satirlar: AylikSatir[];
+}
+export interface AylikEkip {
+  gorev: AylikEkipGorevi;
+  kisiId?: string;
+  /** Kayıtta olmayan (serbest çalışan…) kişinin Arapça adı. */
+  ad?: string;
+  tbc?: true;
+}
+export interface AylikOlay {
+  id: string;
+  /** "ÜLKE / ŞEHİR", Arapça, serbest. */
+  yer?: string;
+  baslik: string;
+  tarih: string;
+  bitis?: string;
+  aciklama?: string;
+  /** "وتكمن أهمية…" paragrafı. */
+  onem?: string;
+  /** Belgenin başındaki "Ana kapsamlar" listesinde; kısa plan cümlesi. */
+  anaKapsam?: true;
+  anaOzet?: string;
+  etiketler: AylikEtiketi[];
+  gunler: AylikGun[];
+  ekip: AylikEkip[];
+  /** Dış ya da iç görev: belgenin sonundaki tablolar bundan. */
+  gorev?: { tur: "dis" | "ic"; gidis?: string; donus?: string };
+  not?: string;
+  baglanti?: string;
+  /** Özel yayın olarak açıldıysa o yayın. */
+  ozelId?: string;
+}
+
 export interface AylikPlan {
   id: string;
   ay: string;
   durum: "hazirlik" | "onayli";
+  /** Eski düz liste (ilk taslak); yeni plan olaylarla. */
   kalemler: PlanKalemi[];
+  olaylar?: AylikOlay[];
+  onay?: { kisiId: string; zaman: string };
 }
 
 /*
@@ -1265,6 +1326,9 @@ export const HAREKET_TIPLERI = [
   "oneriSilindi",
   "onerilerBirlestirildi",
   "oneriPlandakineBaglandi",
+  "aylikOlayKaydedildi",
+  "aylikOnaylandi",
+  "aylikHazirligaAlindi",
   "baslikBirlestirildi",
   "planlarBirlestirildi",
   "gorevKaydedildi",
@@ -1482,7 +1546,7 @@ export interface Durum {
  * notları, özel yayının paket önerileri; v23: notta anılanlar, özel yayın
  * paketinde ayrı görevlendirme).
  */
-const SAKLA = "trt-planlama-v23";
+const SAKLA = "trt-planlama-v24";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı

@@ -1,10 +1,12 @@
 import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Avatar, Bos, Icerik, Ilerleme, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, TUR_ADI } from "../etiketler";
 import {
+  aylikOlaydanOzel,
   konukKaydet,
   konukSil,
   nafizeAsamaDegisebilir,
@@ -182,6 +184,44 @@ const yayinAraligi = (o: OzelYayin, dil: ReturnType<typeof useDil>["dil"]) => (o
 
 /* --- Liste --- */
 
+/*
+ * Aylık planda özel yayın işaretli olaylar burada öneri olarak bekler;
+ * "Özel yayın olarak aç" yayını açar, yayın kendi onayına (ozOnay) tabi.
+ */
+function AylikOzelOnerileri({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const l = ozelOnerileri(useVeri());
+  if (!l.length) return null;
+  return (
+    <Kart baslik={t("ayOzelOnerileri")} className="ara-alt-2">
+      <ul className="liste" data-aylik-ozel>
+        {l.map(({ olay }) => (
+          <li key={olay.id}>
+            <div className="ad">
+              <b>
+                <Icerik blok>{olay.baslik}</Icerik>
+              </b>
+              <small>{olay.bitis && olay.bitis > olay.tarih ? aralikYaz(olay.tarih, olay.bitis, dil) : tarihYaz(olay.tarih, dil)}</small>
+            </div>
+            {ozelDuzenler(ben) && (
+              <button
+                className="dugme dugme-ikincil dugme-kucuk"
+                onClick={() => {
+                  if (!confirm(t("ayOzelAcOnay", { ad: olay.baslik }))) return;
+                  const id = aylikOlaydanOzel(ben, olay.id);
+                  if (id) location.hash = `#/ozel/${id}`;
+                }}
+              >
+                {t("ayOzelAc")}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Kart>
+  );
+}
+
 export function OzelListe({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
@@ -202,6 +242,7 @@ export function OzelListe({ ben }: { ben: Kisi }) {
           )
         }
       />
+      <AylikOzelOnerileri ben={ben} />
       {gelecek.length === 0 && <Bos metin={t("oyYok")} ikon={<Tv size={28} />} />}
       <div className="iz iz-2">
         {gelecek.map((o) => (

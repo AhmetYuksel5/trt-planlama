@@ -151,7 +151,7 @@ export interface Yapi {
  * satırda birim (alt birimleriyle), istenirse ünvan ve "yalnız
  * yöneticiler"; birimi ve ünvanı boş satır haber merkezinin tamamı.
  */
-export const PLAN_ADIMLARI = ["ndToplanti", "ndOnay", "ndOnayGeri", "ndDevral", "hfToplanti", "hfKarar", "hfKesinlestir", "ozOnay"] as const;
+export const PLAN_ADIMLARI = ["ndToplanti", "ndOnay", "ndOnayGeri", "ndDevral", "hfToplanti", "hfKarar", "hfKesinlestir", "ozOnay", "ayOnay"] as const;
 export type PlanAdimi = (typeof PLAN_ADIMLARI)[number];
 
 export interface YetkiSatiri {
@@ -177,6 +177,8 @@ export const VARSAYILAN_PLAN_YETKILERI: Record<PlanAdimi, AdimYetkisi> = {
   hfKesinlestir: { satirlar: [{ birim: "planlama", yonetici: true }, { birim: "yonetim" }], kisiler: [] },
   // Özel yayının hazırlığı ve onayı Planlama'nın denetiminde.
   ozOnay: { satirlar: [{ birim: "planlama", yonetici: true }], kisiler: [] },
+  // Aylık planı Planlama hazırlıyor, yöneticisi onaylıyor.
+  ayOnay: { satirlar: [{ birim: "planlama", yonetici: true }], kisiler: [] },
 };
 
 export const planYetkisi = (adim: PlanAdimi, y: Yapi = yapi()): AdimYetkisi => y.planYetkileri?.[adim] ?? VARSAYILAN_PLAN_YETKILERI[adim];

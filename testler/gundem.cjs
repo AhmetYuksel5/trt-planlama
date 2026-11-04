@@ -11,7 +11,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
   const kim = async (id, dil = "tr") => { await p.goto(B); await p.evaluate(([k, d]) => { localStorage.setItem("trt-planlama-oturum", k); localStorage.setItem("trt-planlama-dil", d); }, [id, dil]); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v23")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
   await p.goto(B);
   await p.evaluate(() => localStorage.clear());
 

@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
   const id = await p.evaluate(() => {
-    const k = "trt-planlama-v23", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     // Gerçek kipteki kimlik (nd-<tarih>): kayıtlar ona bağlı, plan belgesi gitmiş.
     const yeni = `nd-${plan.tarih}`;
@@ -18,7 +18,7 @@ const { chromium } = require(process.env.PW);
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
   const serit = await p.locator(`[data-kayip-plan="${id}"]`).count();
   await p.locator("[data-kayip-plan-getir]").first().click(); await p.waitForTimeout(800);
-  const geri = await p.evaluate((id) => JSON.parse(localStorage.getItem("trt-planlama-v23")).planlar.some((x) => x.id === id), id);
+  const geri = await p.evaluate((id) => JSON.parse(localStorage.getItem("trt-planlama-v24")).planlar.some((x) => x.id === id), id);
   const baslikSeridi = await p.locator("[data-kayip-seridi]").count();
   console.log("şerit", serit, "geri", geri, "başlık şeridi", baslikSeridi);
   await b.close(); process.exit(serit && geri && baslikSeridi ? 0 : 1);
