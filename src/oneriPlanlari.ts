@@ -193,6 +193,14 @@ export interface BaglanabilirKayit {
 }
 const baglanabilirOneri = (d: Pick<Durum, "planlar" | "gelismeler" | "paketler" | "canliYayinlar">, o: Oneri) =>
   !!o.muhabirId && !o.talimatVeren && !["teklif", "reddedildi", "geriCekildi"].includes(o.durum) && !oneriPlanKaydi(d, o);
+/*
+ * Paket bağlamada plandaki öneri de aday, yeter ki iptal edilmemiş paketi
+ * olmasın: öneri plana gelişmeyle girip PKG'si planda muhabir adına ayrıca
+ * açılınca (eş öneri birleştirmesinden sonra da) muhabir paketi öneriden
+ * ayrı satırda görüyordu, bağlayacak yol yoktu.
+ */
+const paketBaglanabilirOneri = (d: Pick<Durum, "planlar" | "gelismeler" | "paketler" | "canliYayinlar">, o: Oneri) =>
+  !!o.muhabirId && !o.talimatVeren && !["teklif", "reddedildi", "geriCekildi"].includes(o.durum) && !d.paketler.some((x) => x.oneriId === o.id && x.durum !== "iptal");
 const yakinPlanlar = (d: Durum, b = bugun()) => new Map(d.planlar.filter((p) => p.tarih >= gunEkle(b, -BAGLAMA_GUNU)).map((p) => [p.id, p]));
 const gelismeninMuhabirleri = (g: Gelisme, p: NextDayPlan) => [
   ...(g.muhabirler ?? []).map((m) => (typeof m === "string" ? m : m.kisiId)),
@@ -201,14 +209,16 @@ const gelismeninMuhabirleri = (g: Gelisme, p: NextDayPlan) => [
 const oneriBasliklari = (o: Oneri) => [o.haberBasligi, o.paketBasligi ?? ""].filter(Boolean);
 
 export const baglanabilirKayitlar = (d: Durum, o: Oneri): BaglanabilirKayit[] => {
-  if (!baglanabilirOneri(d, o)) return [];
+  const pkt = paketBaglanabilirOneri(d, o);
+  const glm = baglanabilirOneri(d, o);
+  if (!pkt && !glm) return [];
   const planlar = yakinPlanlar(d);
   const benzer = (m: string) => oneriBasliklari(o).some((b) => esBasliklar(b, m));
   const l: BaglanabilirKayit[] = [
-    ...d.paketler
+    ...(pkt ? d.paketler : [])
       .filter((x) => !x.oneriId && x.planId && planlar.has(x.planId) && x.durum !== "iptal" && x.muhabirId === o.muhabirId)
       .map((x) => ({ tur: "paket" as const, id: x.id, plan: planlar.get(x.planId!)!, metin: x.baslik, benzer: benzer(x.baslik) })),
-    ...d.gelismeler
+    ...(glm ? d.gelismeler : [])
       .filter((g) => !g.oneriId && planlar.has(g.planId) && gelismeninMuhabirleri(g, planlar.get(g.planId)!).includes(o.muhabirId!))
       .map((g) => ({ tur: "gelisme" as const, id: g.id, plan: planlar.get(g.planId)!, metin: g.metin, benzer: benzer(g.metin) })),
   ];
@@ -219,7 +229,7 @@ export const baglanabilirKayitlar = (d: Durum, o: Oneri): BaglanabilirKayit[] =>
 export const paketinOneriAdaylari = (d: Durum, p: Paket): Oneri[] =>
   p.oneriId || !p.muhabirId || p.durum === "iptal" || !p.planId || !yakinPlanlar(d).has(p.planId)
     ? []
-    : d.oneriler.filter((o) => o.muhabirId === p.muhabirId && baglanabilirOneri(d, o) && oneriBasliklari(o).some((b) => esBasliklar(b, p.baslik)));
+    : d.oneriler.filter((o) => o.muhabirId === p.muhabirId && paketBaglanabilirOneri(d, o) && oneriBasliklari(o).some((b) => esBasliklar(b, p.baslik)));
 
 export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
   const yer = oneriYeri(d, o);

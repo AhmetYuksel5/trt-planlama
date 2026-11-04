@@ -922,7 +922,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `oneriPlandakineBaglandi`. Önerinin ayrıntısında "Planda bu muhabirin
   kayıtları" (`Oneriler.tsx → PlandakineBagla`), plandaki bağsız PKG satırında
   benzer başlıklı bekleyen öneri varsa 🔗 (`BaslikKarti.tsx → PaketOneriBagi`);
-  Planlama (öneri değerlendiren) ve tam yönetici.
+  Planlama (öneri değerlendiren) ve tam yönetici. PKG için plandaki öneri de
+  aday, iptal edilmemiş paketi yoksa (`paketBaglanabilirOneri`): öneri plana
+  gelişmeyle girip PKG'si muhabir adına ayrıca açılınca (eş öneri
+  birleştirmesinden sonra da) muhabir paketi öneriden ayrı satırda görüyordu;
+  gelişme bağlama yalnız plana girmemiş öneride.
 
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda

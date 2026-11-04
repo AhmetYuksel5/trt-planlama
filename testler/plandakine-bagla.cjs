@@ -25,10 +25,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     d.planlar.push(plan);
   }
   const bekleyen = d.oneriler.filter((o) => o.muhabirId && !o.giren && !o.talimatVeren && ["yeni", "degerlendiriliyor"].includes(o.durum) && !d.gelismeler.some((g) => g.oneriId === o.id) && !d.paketler.some((x) => x.oneriId === o.id));
-  const [a1, a2] = bekleyen.filter((o, i, l) => l.findIndex((x) => x.muhabirId === o.muhabirId) === i);
+  const [a1, a2, a3] = bekleyen.filter((o, i, l) => l.findIndex((x) => x.muhabirId === o.muhabirId) === i);
   const sablon = d.paketler.find((x) => x.planId);
   const paket = (id, o) => ({ ...sablon, id, kod: id, planId: plan.id, planBaslikId: plan.basliklar[0].id, muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, durum: "onaylandi", oneriId: undefined, haftalikKalemId: undefined, ozelId: undefined, isaret: undefined, stok: undefined });
-  d.paketler.push(paket("p-bagla-1", a1), paket("p-bagla-2", a2));
+  d.paketler.push(paket("p-bagla-1", a1), paket("p-bagla-2", a2), paket("p-bagla-3", a3));
+  // a3 plana yalnız gelişmeyle girmiş (eş öneri birleştirmesinden sonraki hal); PKG'si planda ayrıca açılmış, bağsız.
+  const gSablon = d.gelismeler.find((g) => g.planId);
+  d.gelismeler.push({ ...gSablon, id: "g-bagla-3", planId: plan.id, planBaslikId: plan.basliklar[0].id, oneriId: a3.id, metin: a3.haberBasligi });
+  Object.assign(d.oneriler.find((o) => o.id === a3.id), { durum: "planaEklendi", planId: plan.id, planTarihi: plan.tarih });
   await yaz(d);
 
   // 1. Önerinin ayrıntısından
@@ -48,8 +52,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // 2. Plan satırından (ters yön)
   await git("#/nextday/" + plan.id);
   await p.locator("details").evaluateAll((l) => l.forEach((x) => (x.open = true)));
-  const dugme = p.locator(`[aria-label="Muhabirin önerisi var, bağla"]`);
-  ok((await dugme.count()) === 1, "plandaki bağsız PKG satırında bağla düğmesi (yalnız bağsız olanda)");
+  ok((await p.locator("[data-paket-oneri-bagi]").count()) === 2 && (await p.locator("[data-paket-oneri-bagi='p-bagla-1']").count()) === 0, "plandaki bağsız PKG satırlarında bağla düğmesi (yalnız bağsız olanda)");
+  const dugme = p.locator("[data-paket-oneri-bagi='p-bagla-2'] button");
   await dugme.first().click();
   await p.locator("[data-paket-bagla]").first().click();
   await p.waitForTimeout(300);
@@ -61,6 +65,18 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/oneriler");
   d = await veri();
   ok(d.oneriler.find((x) => x.id === a1.id).durum === "planaEklendi", "yeniden açılışta plana eklendi kaldı");
+
+  // 3b. Plana gelişmeyle girmiş öneri: bağsız PKG'si aday, bağlanınca muhabirde tek satır
+  await git("#/oneriler/" + a3.id);
+  ok((await p.locator("[data-plandakine-bagla] [data-bagla-aday='p-bagla-3']").count()) === 1, "plandaki (gelişmeli) önerinin bağsız PKG'si aday");
+  await p.locator("[data-bagla-aday='p-bagla-3'] [data-bagla]").click();
+  await p.waitForTimeout(300);
+  d = await veri();
+  ok(d.paketler.find((x) => x.id === "p-bagla-3").oneriId === a3.id && d.oneriler.find((x) => x.id === a3.id).paketId === "p-bagla-3", "PKG plandaki öneriye bağlandı");
+  await p.evaluate((m) => localStorage.setItem("trt-planlama-oturum", m), a3.muhabirId);
+  await git("#/oneriler");
+  ok((await p.locator("[data-plandaki='" + a3.id + "']").count()) === 0, "muhabirde öneri ayrı 'plana eklendi' satırında değil, paketiyle tek iş");
+  await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "pl1"));
 
   // 4. Muhabir: değerlendiriliyor kartı yok
   await p.evaluate((m) => localStorage.setItem("trt-planlama-oturum", m), a1.muhabirId);

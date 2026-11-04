@@ -420,7 +420,9 @@ function PaketOneriBagi({ ben, paket: p }: { ben: Kisi | undefined; paket: Paket
   if (!adaylar.length) return null;
   return (
     <>
-      <IkonDugme ikon={<Link2 size={15} />} etiket={t("pbPaketAdayi")} onClick={() => setAcik(true)} />
+      <span data-paket-oneri-bagi={p.id}>
+        <IkonDugme ikon={<Link2 size={15} />} etiket={t("pbPaketAdayi")} onClick={() => setAcik(true)} />
+      </span>
       {acik && (
         <Pencere baslik={t("pbPaketAdayi")} alt={<Icerik>{p.baslik}</Icerik>} kapat={() => setAcik(false)}>
           <ul className="liste" data-paket-oneri-adaylari>
