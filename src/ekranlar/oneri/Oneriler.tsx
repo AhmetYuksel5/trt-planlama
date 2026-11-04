@@ -1,5 +1,5 @@
 import { birimAdi } from "../../yapi";
-import { ONERI_ETIKETLERI, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, esAsili, esCiftleri, esOneriler, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
@@ -7,12 +7,12 @@ import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { oneriArsiveGonder, oneriArsivdenCikar, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { oneriBirlestirebilir, arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -105,6 +105,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
         }
       />
       {muhabireOner && <MuhabireOneriPenceresi ben={ben} kapat={() => setMuhabireOner(false)} />}
+      {!arsiv && !muhabir && <EsCiftleri ben={ben} />}
       <Kart>
         <div className="sekmeler ara-alt-2" role="tablist" data-oneri-arsiv-sekmesi>
           <a href="#/oneriler" role="tab" aria-selected={!arsiv} className={arsiv ? "" : "acik"} data-oneri-guncel>
@@ -312,6 +313,7 @@ function OneriKapiDugmeleri({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
         </div>
       )}
       <BagliOneriler oneri={o} />
+      <EsOneriler ben={ben} oneri={o} />
     </>
   );
 }
@@ -337,6 +339,94 @@ function BagliOneriler({ oneri: o }: { oneri: Oneri }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+/*
+ * Eş öneri (aynı muhabirin aynı haberi iki kayıtta; oneriPlanlari.ts → esOneriler):
+ * ayrıntıda listelenir, yetkili asıla (muhabirin gönderdiğine) katar. Onay sorulur:
+ * kopya silinir, geri alınamaz.
+ */
+export function esBirlestirSor(ben: Kisi, asil: Oneri, kopya: Oneri, t: (k: Anahtar) => string): boolean {
+  if (!confirm(t("esBirlestirOnay").replace("{kopya}", kopya.haberBasligi))) return false;
+  if (!oneriBirlestir(ben, asil.id, kopya.id)) return false;
+  bildir(t("esBirlestirildi"));
+  return true;
+}
+
+function EsOneriler({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const esler = esOneriler(v, o);
+  if (!esler.length || ben.birim === "muhabir") return null;
+  return (
+    <div className="ara-ust-2" data-es-oneriler>
+      <div className="alan-etiket">{t("esOneriler")}</div>
+      <ul className="liste">
+        {esler.map((x) => {
+          const asil = esAsili(o, x);
+          const kopya = asil === o ? x : o;
+          return (
+            <li key={x.id} data-es-oneri={x.id}>
+              <small className="soluk">{t(x.giren ? "esElle" : "esAsil")}</small>{" "}
+              <a href={`#/oneriler/${x.id}`}>
+                <Icerik>{x.haberBasligi}</Icerik>
+              </a>{" "}
+              <OneriDurumRozeti oneri={x} />{" "}
+              {oneriBirlestirebilir(ben, asil, kopya) && (
+                <button
+                  type="button"
+                  className="dugme dugme-ikincil dugme-kucuk"
+                  onClick={() => {
+                    if (esBirlestirSor(ben, asil, kopya, t) && kopya === o) git(`oneriler/${asil.id}`);
+                  }}
+                  data-es-birlestir
+                >
+                  {t("esBirlestir")}
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/* Öneriler sayfasında eş çiftlerinin toplu görünümü: elle girilip takılmış eski çiftler buradan bulunur. */
+function EsCiftleri({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const ciftler = esCiftleri(v).filter(([a, k]) => oneriBirlestirebilir(ben, a, k));
+  if (!ciftler.length) return null;
+  return (
+    <>
+      <p className="uyari-satiri ara-alt-2">
+        <button type="button" className="dugme-metin" onClick={() => setAcik(true)} data-es-ciftleri>
+          {t("esCiftSayisi").replace("{n}", String(ciftler.length))}
+        </button>
+      </p>
+      {acik && (
+        <Pencere genis baslik={t("esCiftSayisi").replace("{n}", String(ciftler.length))} kapat={() => setAcik(false)}>
+          <ul className="liste" data-es-cift-listesi>
+            {ciftler.map(([a, k]) => (
+              <li key={`${a.id}|${k.id}`} data-es-cift>
+                <div>
+                  <small className="soluk">{t("esAsil")}</small> <a href={`#/oneriler/${a.id}`}><Icerik>{a.haberBasligi}</Icerik></a> <OneriDurumRozeti oneri={a} />
+                </div>
+                <div>
+                  <small className="soluk">{t(k.giren ? "esElle" : "esAsil")}</small> <a href={`#/oneriler/${k.id}`}><Icerik>{k.haberBasligi}</Icerik></a> <OneriDurumRozeti oneri={k} />
+                </div>
+                <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => esBirlestirSor(ben, a, k, t)} data-es-cift-birlestir>
+                  {t("esBirlestir")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Pencere>
+      )}
+    </>
   );
 }
 

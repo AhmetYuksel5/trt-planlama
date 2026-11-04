@@ -401,6 +401,10 @@ export const oneriSatiriEkleyebilir = (k: Kisi | undefined, o: Oneri): boolean =
   takipSatiriEkleyebilir(k, o) ||
   ((oneriDuzenleyebilir(k, o) || (!!k?.hesapYoneticisi && o.durum !== "teklif")) && o.durum !== "reddedildi" && o.durum !== "geriCekildi");
 
+/* Eş öneriyi birleştirmek ikisini de düzenleyebilen Planlama'da ve tam yöneticide. */
+export const oneriBirlestirebilir = (k: Kisi | undefined, a: Oneri, b: Oneri): boolean =>
+  !!k && (!!k.hesapYoneticisi || (oneriDuzenleyebilir(k, a) && oneriDuzenleyebilir(k, b)));
+
 /* Arşivden geri çıkarma yetkiyle: tam yönetici ya da yetki verdiği kişi. */
 export const arsivdenCikarabilir = (k: Kisi | undefined): boolean =>
   !!k && !k.pasif && hesapYetkisi(k, "arsivdenCikarma");

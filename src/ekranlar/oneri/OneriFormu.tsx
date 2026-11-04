@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { muhabirinBenzerOnerileri } from "../../oneriPlanlari";
+import type { Durum } from "../../veri";
 import { metin, useDil } from "../../dil";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
@@ -200,6 +202,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         {t("haberBasligi")}
         <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} data-oneri-header />
       </label>
+      {!muhabir && f.kaynak === "muhabir" && <EsUyarisi v={v} muhabirId={f.muhabirId} header={f.haberBasligi} />}
       <label>
         {t("gelismeAciklama")}
         <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} data-oneri-gelisme />
@@ -231,6 +234,30 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
       </label>
       {f.sahaGerekli && !baskaKaynak && ulkeSecici}
     </>
+  );
+}
+
+/*
+ * Planlamacı muhabir adına öneri girerken muhabirin aynı haberi zaten göndermişse:
+ * elle girilen ikinci kayıt plana girince muhabirin kendi önerisi "değerlendiriliyor"da
+ * kalıyordu. Engellemez, gösterir; asıl öneri bağlantıdan açılır.
+ */
+function EsUyarisi({ v, muhabirId, header }: { v: Durum; muhabirId: string; header: string }) {
+  const { t } = useDil();
+  const esler = muhabirinBenzerOnerileri(v, muhabirId, header);
+  if (!esler.length) return null;
+  return (
+    <p className="uyari-satiri" data-es-uyari>
+      {t("esOneriVar")}:{" "}
+      {esler.map((x, i) => (
+        <span key={x.id}>
+          {i > 0 && " · "}
+          <a href={`#/oneriler/${x.id}`} target="_blank" rel="noopener">
+            <Icerik>{x.haberBasligi}</Icerik>
+          </a>
+        </span>
+      ))}
+    </p>
   );
 }
 

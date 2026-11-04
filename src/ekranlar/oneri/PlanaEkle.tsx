@@ -4,7 +4,7 @@ import { tarihYaz, useDil } from "../../dil";
 import { oneriPaketsizGirer, oneriPlanaEkle } from "../../eylemler";
 import { kalacakPlan } from "../../planCiftleri";
 import { adiylaBaslik, ndBaslikSecenekleri } from "../../baslikSecimi";
-import { acikGunPlanlari, oneriGunde, oneriHaftada, oneriPaketBasligi } from "../../oneriPlanlari";
+import { esAsili, esOneriler, acikGunPlanlari, oneriGunde, oneriHaftada, oneriPaketBasligi } from "../../oneriPlanlari";
 import { bugun, gunEkle } from "../../tarih";
 import { TAKIP_BICIMI, useVeri, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { haftalikDuzenler, planIcerikDuzenler } from "../../yetki";
@@ -118,6 +118,9 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
     const istenen = talimat || paket;
     // Paketsiz giren muhabir haberinde muhabire "takip olarak plana eklendi" gidiyor; planlamacı bunu bilerek onaylasın.
     const paketsiz = oneriPaketsizGirer(oneri, { paketli: istenen && !!strap && !canli, canli: istenen && canli, muhabirId: oneri.muhabirId ?? (muhabirId || undefined) });
+    // Elle girilen öneri plana girerken muhabirin kendi gönderdiği eşi varsa önce o söylenir.
+    const asil = esOneriler(v, oneri).find((x) => esAsili(x, oneri) === x);
+    if (asil && !confirm(t("esPlanaEkleOnay").replace("{baslik}", asil.haberBasligi))) return;
     if (!confirm(t(paketsiz ? "takipPaketsizOnay" : "planaEkleOnay"))) return;
     const tamam = oneriPlanaEkle(ben, oneri.id, {
       planId: plan.id,

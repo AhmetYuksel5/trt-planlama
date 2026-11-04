@@ -124,6 +124,7 @@ import {
   oneriYazisabilir,
   arsivdenCikarabilir,
   oneriSatiriEkleyebilir,
+  oneriBirlestirebilir,
   geriAlabilir,
   oneriSilebilir,
   baskaMuhabireVerebilir,
@@ -2703,6 +2704,55 @@ export const gundemPaylasimKaydet = (ben: Kisi, birimler: BirimId[], kisiler: st
       kisiler: [...new Set(kisiler)].filter((id) => { const k = kisi.get(id); return k && !kisitliKisi(k) && !k.hesapYoneticisi; }),
     },
   });
+  return true;
+};
+
+/*
+ * Eş öneriyi asıl öneriye katar (oneriPlanlari.ts → esOneriler): kopyanın plan
+ * bağları (gelişme, canlı, paket, haftalık kalem), yazışması, hareketleri ve takip
+ * satırları asıla geçer, kopya silinir. Asıl karar bekliyorsa kopyanın kararı
+ * (plana eklendi, gündem…) asıla geçer; plan durumu sonra kayda göre kurulur.
+ * Değişmeyen öğenin nesnesine dokunulmuyor (fark nesne kimliğiyle).
+ */
+export const oneriBirlestir = (ben: Kisi, asilId: string, kopyaId: string) => {
+  const d = getir();
+  const asil = oneriBul(d, asilId);
+  const kopya = oneriBul(d, kopyaId);
+  if (!asil || !kopya || asil === kopya || !oneriBirlestirebilir(ben, asil, kopya)) return false;
+  const tasi = <T extends { oneriId?: string }>(l: T[]): T[] => (l.some((x) => x.oneriId === kopyaId) ? l.map((x) => (x.oneriId === kopyaId ? { ...x, oneriId: asilId } : x)) : l);
+  const kararBekliyor = asil.durum === "yeni" || asil.durum === "degerlendiriliyor";
+  const kopyaKarari = kararBekliyor && kopya.durum !== "yeni" && kopya.durum !== "degerlendiriliyor";
+  let yeniAsil: Oneri = {
+    ...asil,
+    ...(kopyaKarari && {
+      durum: kopya.durum,
+      ...(kopya.planId && { planId: kopya.planId }),
+      ...(kopya.planTarihi && { planTarihi: kopya.planTarihi }),
+      ...(kopya.paketId && { paketId: kopya.paketId }),
+      ...(kopya.gerekce && { gerekce: kopya.gerekce }),
+      ...(kopya.hafta && { hafta: kopya.hafta }),
+      ...(kopya.haftaGunu && { haftaGunu: kopya.haftaGunu }),
+    }),
+    ...((kopya.satirlar?.length ?? 0) > 0 && { satirlar: [...(asil.satirlar ?? []), ...kopya.satirlar!].sort((a, b) => a.zaman.localeCompare(b.zaman)) }),
+  };
+  const yzVar = d.yzGorusleri?.some((x) => x.oneriId === asilId);
+  let y: Durum = {
+    ...d,
+    gelismeler: tasi(d.gelismeler),
+    canliYayinlar: tasi(d.canliYayinlar),
+    paketler: tasi(d.paketler),
+    mesajlar: tasi(d.mesajlar ?? []),
+    hareketler: tasi(d.hareketler),
+    haftalik: d.haftalik.some((h) => h.kalemler.some((k) => k.oneriId === kopyaId)) ? d.haftalik.map((h) => (h.kalemler.some((k) => k.oneriId === kopyaId) ? { ...h, kalemler: tasi(h.kalemler) } : h)) : d.haftalik,
+    // Asılın yapay zeka görüşü varsa kopyanınki gider (öneri başına bir görüş).
+    ...(d.yzGorusleri && { yzGorusleri: yzVar ? d.yzGorusleri.filter((x) => x.oneriId !== kopyaId) : tasi(d.yzGorusleri) }),
+  };
+  yeniAsil = oneriPlanaGore(y, yeniAsil);
+  y = {
+    ...y,
+    oneriler: y.oneriler.filter((x) => x.id !== kopyaId).map((x) => (x.id === asilId ? yeniAsil : x.kopyaKaynagi === kopyaId ? { ...x, kopyaKaynagi: asilId } : x)),
+  };
+  kaydet(hareketYaz(y, { kisiId: ben.id, tip: "onerilerBirlestirildi", oneriId: asilId, veri: { baslik: kopya.haberBasligi } }));
   return true;
 };
 

@@ -102,6 +102,79 @@ export const takibinOnerisi = (d: Durum, t: Oneri): Oneri | undefined =>
     ? undefined
     : d.oneriler.find((o) => o.id !== t.id && o.durum !== "takip" && o.durum !== "reddedildi" && o.durum !== "geriCekildi" && !o.arsiv && !o.takipId && o.muhabirId === t.muhabirId && o.zaman >= t.zaman && adNormal(o.haberBasligi) === adNormal(t.haberBasligi));
 
+/*
+ * Eş öneri: aynı muhabirin aynı haberi iki kayıtta. Planlamacı muhabirin gönderdiği
+ * öneriyi kullanmayıp onun adına elle yeniden girince doğuyordu: "plana eklendi"
+ * elle girilende, muhabirin kendi önerisi "değerlendiriliyor"da kalıyor, "Plana ekle"
+ * seçenekleri sürüyordu. Header Arapça normalleştirilip karşılaştırılır: aynısı ya da
+ * kısa olanın anlamlı sözcüklerinin en az üçte ikisi ötekinde (en az iki sözcük).
+ * Günleri bir haftadan uzak öneriler (aynı konunun başka günü) eş sayılmaz; "Başka
+ * plana da ekle" kopyası bilerek çift, o da sayılmaz. Kendiliğinden birleştirilmez.
+ */
+const esNormal = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي");
+const esSozler = (s: string) => new Set(esNormal(s).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3));
+export const esBasliklar = (a: string, b: string): boolean => {
+  const x = esNormal(a).replace(/\s+/g, " ").trim();
+  const y = esNormal(b).replace(/\s+/g, " ").trim();
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const [k, u] = [esSozler(a), esSozler(b)].sort((p, q) => p.size - q.size);
+  if (k.size < 2) return false;
+  let n = 0;
+  for (const w of k) if (u.has(w)) n++;
+  return n * 3 >= k.size * 2;
+};
+const esGunu = (o: Oneri) => o.hedefTarih ?? yerelGun(o.zaman);
+const gunFarki = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000;
+const esAday = (o: Oneri) => !!o.muhabirId && !o.talimatVeren && o.durum !== "reddedildi" && o.durum !== "geriCekildi" && o.durum !== "teklif";
+
+/** Formda yazılan Header için muhabirin benzer, güncel önerileri (giriş uyarısı). */
+export const muhabirinBenzerOnerileri = (d: Durum, muhabirId: string, header: string, gun = bugun()): Oneri[] =>
+  !muhabirId || !header.trim()
+    ? []
+    : d.oneriler.filter((x) => x.muhabirId === muhabirId && esAday(x) && !oneriArsivde(x) && gunFarki(esGunu(x), gun) <= 7 && esBasliklar(header, x.haberBasligi));
+
+export const esOneriler = (d: Durum, o: Oneri): Oneri[] =>
+  !esAday(o)
+    ? []
+    : d.oneriler.filter(
+        (x) =>
+          x.id !== o.id &&
+          x.muhabirId === o.muhabirId &&
+          esAday(x) &&
+          x.kopyaKaynagi !== o.id &&
+          o.kopyaKaynagi !== x.id &&
+          gunFarki(esGunu(x), esGunu(o)) <= 7 &&
+          esBasliklar(o.haberBasligi, x.haberBasligi),
+      );
+
+/** İkisinden asıl olan: muhabirin kendi gönderdiği (elle girilmemiş), ikisi de öyleyse eskisi. */
+export const esAsili = (a: Oneri, b: Oneri): Oneri => (!!a.giren !== !!b.giren ? (a.giren ? b : a) : a.zaman <= b.zaman ? a : b);
+
+/** Güncel eş çiftleri [asıl, kopya]; her çift bir kez. */
+export const esCiftleri = (d: Durum): [Oneri, Oneri][] => {
+  const gorulen = new Set<string>();
+  const ciftler: [Oneri, Oneri][] = [];
+  for (const o of d.oneriler) {
+    if (oneriArsivde(o)) continue;
+    for (const x of esOneriler(d, o)) {
+      const a = esAsili(o, x);
+      const k = a === o ? x : o;
+      const anahtar = `${a.id}|${k.id}`;
+      if (gorulen.has(anahtar)) continue;
+      gorulen.add(anahtar);
+      ciftler.push([a, k]);
+    }
+  }
+  return ciftler;
+};
+
 export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
   const yer = oneriYeri(d, o);
   if (yer) return [...(yer.planda ? (["nextday"] as const) : []), ...(yer.hafta ? (["haftalik"] as const) : [])];

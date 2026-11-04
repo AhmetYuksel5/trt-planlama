@@ -892,6 +892,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   taşınınca PKG'si ve muhabiri de gider. "İzleriyle sil" ve temizlik
   boşalan başlığı, önerinin muhabirini ve anılma kayıtlarını da kaldırır.
 
+  Eş öneri (`oneriPlanlari.ts → esOneriler`, `esBasliklar`): aynı muhabirin
+  aynı haberi iki kayıtta. Planlamacı muhabirin gönderdiğini kullanmayıp onun
+  adına elle yeniden girince doğuyordu: "plana eklendi" elle girilende,
+  muhabirin kendi önerisi "değerlendiriliyor"da kalıyor, "Plana ekle"
+  sürüyordu. Header Arapça normalleştirilip karşılaştırılır (aynısı ya da kısa
+  olanın anlamlı sözcüklerinin üçte ikisi; günleri bir haftadan uzak değil;
+  talimat, teklif, ret, geri çekilmiş ve "Başka plana da ekle" kopyası dışarıda).
+  Kendiliğinden birleştirilmez. Muhabir adına giriş formunda durum satırı
+  (`OneriFormu.tsx → EsUyarisi`); elle girilen eşi plana eklerken asıl öneri
+  onay sorusunda (`PlanaEkle`). Ayrıntıda "Aynı haber olabilir" ve "Bu öneriye
+  kat" (`Oneriler.tsx → EsOneriler`), öneriler sayfasında "N eş öneri" şeridi
+  (`EsCiftleri`, `esCiftleri`); eylem `eylemler.ts → oneriBirlestir` (yetki
+  `oneriBirlestirebilir`: ikisini de düzenleyen ya da tam yönetici): kopyanın
+  gelişme, canlı, paket, haftalık kalem, yazışma, hareket ve takip satırları
+  asıla (muhabirin gönderdiği, `esAsili`) geçer, asıl karar bekliyorsa kopyanın
+  kararı da; durum kayda göre (`oneriPlanaGore`), kopya silinir, hareket
+  `onerilerBirlestirildi`.
+
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
   kaynak her yerde `OneriKaynagi` / `OneriAvatari` ile gösterilir

@@ -905,6 +905,10 @@ a.cip { color: var(--murekkep); padding: 3px var(--ara-2); }
 .not-kutu svg { flex: none; margin-top: 1px; }
 .not-kutu.vurgu { background: var(--vurgu-sis); color: var(--vurgu-koyu); }
 .not-kutu.uyari { background: var(--uyari-sis); color: var(--uyari); }
+/* Formun içinde kısa durum satırı (eş öneri): engellemez, gösterir. */
+.uyari-satiri { margin: 0; padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap); background: var(--uyari-sis); color: var(--uyari); overflow-wrap: anywhere; }
+.uyari-satiri a { color: inherit; font-weight: 600; }
+.uyari-satiri .dugme-metin { border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 600; cursor: pointer; min-height: 44px; }
 .not-kutu.iyi { background: var(--iyi-sis); color: var(--iyi); }
 .not-kutu b { color: inherit; }
 .taslak-etiketi { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: var(--yaricap-hap); border: 1px dashed var(--aylik); color: var(--aylik); background: var(--aylik-sis); font-size: var(--punto-mini); font-weight: 600; }
