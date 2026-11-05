@@ -1,6 +1,6 @@
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
-import { adimTuru, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
+import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
@@ -83,6 +83,7 @@ import {
   type Oneri,
   type OneriGorunumu,
   type Paket,
+  type MetinParcasi,
   type OzelYayin,
   type OzelIz,
   type OzelDurum,
@@ -112,6 +113,7 @@ import {
 } from "./veri";
 import {
   adimYapabilir,
+  parcaYapabilir,
   haftalikDuzenler,
   hesapYetkisi,
   epostaDegistirebilir,
@@ -2589,6 +2591,7 @@ const ADIM_HAREKETI: Record<UretimAdimi, Hareket["tip"]> = {
   kontrol: "kontrolEdildi",
   dil: "sonScript",
   video: "videoGeldi",
+  videoKontrol: "videoOnaylandi",
   iletim: "mediayaGonderildi",
   media: "klipKodu",
   inews: "tamamlandi",
@@ -2601,8 +2604,11 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   if (!p || !adimYapabilir(ben, p)) return false;
   // Davranış durağın türünden: yöneticinin eklediği ikinci bir kontrol durağı da kontrol gibi işliyor.
   const adim = adimTuru(p) ?? "is";
+  // Parçalı metin durağında metin parça parça gidiyor; durağı geçiren montajın video bağlantısı, bütün parçalar dönünce.
+  const parcali = adim === "metin" && parcaliMi(p);
   if (adim === "gorevlendirme" && !(g.muhabirId || p.muhabirId)) return false;
-  if (adim === "metin" && !g.metin?.trim()) return false;
+  if (parcali && (!g.video?.trim() || !parcalarHazir(p))) return false;
+  if (adim === "metin" && !parcali && !g.metin?.trim()) return false;
   if (adim === "video" && !g.video?.trim()) return false;
   if (adim === "media" && !g.klipKodu?.trim()) return false;
 
@@ -2616,7 +2622,7 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
     ...(g.klipKodu ? { klipKodu: g.klipKodu } : {}),
     ...(g.not?.trim() ? { notlar: [...p.notlar, { id: kimlik("n"), kisiId: ben.id, zaman: simdi(), metin: g.not.trim() }] } : {}),
     ...(adim === "newsdesk" ? { gorevZamani: simdi() } : {}),
-    ...(adim === "video" ? { muhabirTeslimi: simdi() } : {}),
+    ...(adim === "video" || parcali ? { muhabirTeslimi: simdi(), videoIade: undefined } : {}),
     ...(sonraki === "tamam" ? { durum: "tamamlandi", adim: undefined } : { adim: sonraki }),
   };
   d = paketGuncelle(d, paketId, () => yeni);
@@ -2627,7 +2633,68 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   if (g.klipKodu) veri.kod = g.klipKodu;
   if (g.muhabirId) veri.muhabir = g.muhabirId;
   if (adim === "is") veri.durak = p.adim ?? "";
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : parcali ? "videoGeldi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
+  return true;
+};
+
+/* --- Parçalı metin (akis.ts → parcaliMi): her parça muhabir → Newsdesk → Script Editor → hazır --- */
+
+const parcaHareketi = (d: Durum, ben: Kisi, p: Paket, tip: Hareket["tip"], parca: MetinParcasi, sahip: string, ek: Record<string, string> = {}) =>
+  hareketYaz(d, { kisiId: ben.id, tip, paketId: p.id, planId: p.planId, veri: { parca: parca.ad, sahip, ...ek } });
+
+/** Muhabir yeni parça ya da iade edilen parçayı gönderiyor; parça Newsdesk'e düşer. */
+export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: string; metin: string }) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !parcaYapabilir(ben, p, "muhabir") || !g.ad.trim() || !g.metin.trim()) return false;
+  const eski = g.id ? p.parcalar?.find((x) => x.id === g.id) : undefined;
+  if (g.id && eski?.asama !== "muhabir") return false;
+  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: "newsdesk" };
+  const parcalar = eski ? p.parcalar!.map((x) => (x === eski ? parca : x)) : [...(p.parcalar ?? []), parca];
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar, guncelleme: simdi() }));
+  kaydet(parcaHareketi(d, ben, p, "parcaGeldi", parca, kolSahibi(p.tur)));
+  return true;
+};
+
+/** Newsdesk parçayı düzeltip Script Editor'e geçiriyor. */
+export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const eski = p?.parcalar?.find((x) => x.id === parcaId);
+  if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !metin.trim()) return false;
+  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "dil" };
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), guncelleme: simdi() }));
+  kaydet(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, "scriptEditor"));
+  return true;
+};
+
+/** Newsdesk parçayı gerekçesiyle muhabire iade ediyor; muhabir düzeltip yeniden gönderir. */
+export const parcaIade = (ben: Kisi, paketId: string, parcaId: string, gerekce: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const eski = p?.parcalar?.find((x) => x.id === parcaId);
+  if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !gerekce.trim()) return false;
+  const parca: MetinParcasi = { ...eski, asama: "muhabir", iade: gerekce.trim() };
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1, guncelleme: simdi() }));
+  kaydet(parcaHareketi(d, ben, p, "parcaIade", parca, "muhabir", { gerekce: gerekce.trim() }));
+  return true;
+};
+
+/**
+ * Script Editor parçanın son halini veriyor (yalnız düzeltip ilerletiyor,
+ * geri göndermiyor). Bütün parçalar hazırsa metin birleşir ve sıra montaja,
+ * muhabire geçer.
+ */
+export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const eski = p?.parcalar?.find((x) => x.id === parcaId);
+  if (!p || !eski || eski.asama !== "dil" || !parcaYapabilir(ben, p, "dil") || !metin.trim()) return false;
+  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "tamam" };
+  const parcalar = p.parcalar!.map((y) => (y.id === parcaId ? parca : y));
+  const hazir = parcalarHazir({ parcalar });
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }));
+  kaydet(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""));
   return true;
 };
 
@@ -2641,7 +2708,9 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
   const p = paketBul(d, paketId);
   const hedef = p && geriHedefi(p);
   if (!p || !hedef || !adimYapabilir(ben, p) || !gerekce.trim()) return false;
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: hedef, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1 }));
+  // Video kontrolünün revizyon gerekçesi muhabirin ekranında montaj formunun üstünde.
+  const video = adimTuru(p) === "videoKontrol";
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: hedef, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1, ...(video && { videoIade: gerekce.trim() }) }));
   kaydet(
     hareketYaz(d, {
       kisiId: ben.id,

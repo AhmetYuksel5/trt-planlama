@@ -114,6 +114,8 @@ export interface Durak {
   kosul?: "saha";
   /** Sorumlu işi gerekçeyle geri gönderebiliyor (metin kontrolü, dil denetimi). */
   geriGonderir?: boolean;
+  /** Metin durağı parça parça işliyor (Newsdesk ve Script Editor parça başına); video bütün parçalar dönünce. */
+  parcali?: boolean;
   asama: Asama;
 }
 
@@ -194,16 +196,34 @@ export const adimYetkilisi = (k: { id: string; birim: BirimId; gorev: GorevId; r
 
 /* --- Varsayılan: bugünkü sabitler (rapor bölüm 2 ve 4, notlardaki beş aşama) --- */
 
-const VARSAYILAN_DURAKLAR: Durak[] = [
+/*
+ * Paketin yolu (kurumun yeni süreci): Newsdesk görev verir → muhabir metni
+ * parça parça yazar, her parça Newsdesk'ten ve Script Editor'den geçer →
+ * bütün parçalar dönünce muhabir montajın video bağlantısını gönderir →
+ * Newsdesk videoyu kontrol eder (revizyona iade edebilir) → sisteme yükler →
+ * yayına hazır. Output'un metin kontrolü, Media Manager ve iletim yoldan
+ * çıktı; News Gathering saha görevlendirmesi şimdilik bu sürecin dışında.
+ */
+/* Eski yol: yeni yoldan önce üretime girmiş paketler bununla bitiyor (akış kimliği "uretim"). */
+const ESKI_DURAKLAR: Durak[] = [
   { id: "gorevlendirme", tur: "gorevlendirme", sorumlu: { tur: "birim", birim: "newsgathering" }, kosul: "saha", asama: "newsgathering" },
   { id: "newsdesk", tur: "newsdesk", sorumlu: { tur: "kol" }, asama: "newsdesk" },
   { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
-  // Belgede "Newsdesk / Output" metin kontrolünü birlikte yapıyor.
   { id: "kontrol", tur: "kontrol", sorumlu: { tur: "birim", birim: "output" }, yardimci: ["newsdesk"], geriGonderir: true, asama: "uretim" },
   { id: "dil", tur: "dil", sorumlu: { tur: "birim", birim: "scriptEditor" }, geriGonderir: true, asama: "uretim" },
   { id: "video", tur: "video", sorumlu: { tur: "birim", birim: "muhabir" }, asama: "uretim" },
   { id: "iletim", tur: "iletim", sorumlu: { tur: "kol" }, asama: "teknik" },
   { id: "media", tur: "media", sorumlu: { tur: "birim", birim: "media" }, asama: "teknik" },
+  { id: "inews", tur: "inews", sorumlu: { tur: "kol" }, asama: "teknik" },
+];
+export const ESKI_AKIS = "uretim";
+export const YENI_AKIS = "yol";
+const BUTUN_KOLLAR: IcerikTuru[] = ["haber", "feature", "ekonomi", "program"];
+
+const VARSAYILAN_DURAKLAR: Durak[] = [
+  { id: "newsdesk", tur: "newsdesk", sorumlu: { tur: "kol" }, asama: "newsdesk" },
+  { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, parcali: true, asama: "uretim" },
+  { id: "videoKontrol", tur: "videoKontrol", sorumlu: { tur: "kol" }, geriGonderir: true, asama: "uretim" },
   { id: "inews", tur: "inews", sorumlu: { tur: "kol" }, asama: "teknik" },
 ];
 
@@ -285,7 +305,10 @@ export const varsayilanYapi = (): Yapi => {
       ...BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id], ust: VARSAYILAN_UST[id] })),
     ],
     unvanlar,
-    akislar: [{ id: "uretim", kollar: ["haber", "feature", "ekonomi", "program"], duraklar: VARSAYILAN_DURAKLAR }],
+    akislar: [
+      { id: YENI_AKIS, kollar: BUTUN_KOLLAR, duraklar: VARSAYILAN_DURAKLAR },
+      { id: ESKI_AKIS, kollar: [], duraklar: ESKI_DURAKLAR },
+    ],
     kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "planlama", program: "program" },
     ekipGorevleri: ekipKurallari(unvanlar),
   });
@@ -299,7 +322,7 @@ export const varsayilanYapi = (): Yapi => {
  */
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
-  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor"))) return y;
+  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS))) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -309,10 +332,18 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) });
+  const t = yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) }));
   tamamlanan.set(y, t);
   return t;
 };
+
+/*
+ * Yeni paket yolu (parçalı metin, video kontrolü) yeni yoldan önce
+ * yayınlanmış yapıda yok: okurken bütün kollar ona geçiyor, eski akışlar
+ * kolsuz kalıyor. Üretimdeki paket damgasındaki eski akışla bitiyor.
+ */
+const yeniYoluKur = (y: Yapi): Yapi =>
+  y.akislar.some((a) => a.id === YENI_AKIS) ? y : { ...y, akislar: [{ id: YENI_AKIS, kollar: BUTUN_KOLLAR, duraklar: VARSAYILAN_DURAKLAR }, ...y.akislar.map((a) => ({ ...a, kollar: [] }))] };
 
 /*
  * Script Editor (Output'un altında, dil denetmenleri) sonradan yerleşik oldu;

@@ -8,7 +8,7 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { dilDenetmeniMi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
+import { dilDenetmeniMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
 import { GERCEK } from "../kip";
 import Logo from "./Logo";
 
@@ -216,7 +216,7 @@ const sayfaGrubu = (sayfa: string) => MENU.find((g) => g.ad && g.maddeler.some((
 function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const { t } = useDil();
   const v = useVeri();
-  const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : dilDenetmeniMi(ben) && m.sayfa === "ana" ? dilSirasi(v, ben).length : (m.say?.(v, ben) ?? 0);
+  const sayi = ben.birim === "muhabir" && m.sayfa === "oneriler" ? muhabirOneriSayisi(v, ben) : dilDenetmeniMi(ben) && m.sayfa === "ana" ? dilSirasi(v, ben).length + dilParcaSirasi(v, ben).length : (m.say?.(v, ben) ?? 0);
   const Ikon = m.ikon;
   // "Öneri gönder" Önerilerim'in alt adresi: ikisi aynı anda vurgulanmasın.
   const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");

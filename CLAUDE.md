@@ -594,6 +594,28 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     varsa söylenir). Durak: tür (programın bildiği iş ya da genel iş "Tamamla ve
     geç"), sorumlu (kolun sahibi, birim, ünvan [birimde], kişiler), birlikte
     çalışan birimler, "yalnız sahada", "geri gönderebilir", aşama.
+  - Varsayılan paket yolu (akış kimliği `yol`, `yapi.ts → VARSAYILAN_DURAKLAR`):
+    Newsdesk görev verir → parçalı metin (muhabir) → video kontrolü (Newsdesk,
+    revizyona iade: `geriHedefi` video durağına, yoksa metin durağına;
+    gerekçe `Paket.videoIade`) → sisteme yükleme (Newsdesk; kod isteğe bağlı,
+    `klipKodu`) → yayına hazır (`tamamlandi`). Output'un metin kontrolü,
+    iletim, Media Manager ve News Gathering saha görevlendirmesi bu yolda yok.
+    Eski yol `uretim` kimliğiyle kolsuz duruyor: damgasız üretimdeki ve eski
+    damgalı paket onunla biter (`akis.ts → paketAkisi`); yeni yoldan önce
+    yayınlanmış yapıya okurken yeni yol eklenir, kollar ona geçer
+    (`yapi.ts → yeniYoluKur`, `tamamla` içinde).
+  - Parçalı metin (`Durak.parcali`, `Paket.parcalar`, `MetinParcasi`): muhabir
+    metni bölüm bölüm gönderir (ad şimdilik serbest; intro, text, PTC türleri
+    sonra), PTC çekimden önce denetime girebilsin diye parçalar birbirini
+    beklemez. Her parça muhabir → Newsdesk (düzeltip Script Editor'e geçirir
+    ya da gerekçeyle iade eder) → Script Editor (yalnız düzeltip ilerletir) →
+    hazır (`eylemler.ts → parcaGonder`, `parcaDuzelt`, `parcaIade`,
+    `parcaSonHal`; yetki `yetki.ts → parcaYapabilir`, durağın yardımcısı
+    yok). Video bağlantısı ancak bütün parçalar hazırken gönderilir
+    (`akis.ts → parcalarHazir`, `adimIlerle`), metin parçalardan birleşir.
+    Kart (`bilesenler/ParcaliMetin.tsx`) paket sayfasında herkese açık, düğme
+    sırası gelende; dil denetmeninin sayfasında parça başına kart
+    (`dilParcaSirasi`).
   - Davranış durağın kimliğinden değil türünden: ekran ve eylem `adimTuru(p)`
     sorar, `p.adim === "kontrol"` yazılmaz. Geri gönderilen iş geride kalan son
     metin durağına, yoksa bir öncekine döner (`geriHedefi`). Genel iş

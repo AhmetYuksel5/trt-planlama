@@ -1,6 +1,7 @@
 import {
   ADIM_ADI,
   adimTuru,
+  parcaliMi,
   durakBul,
   kolSahibi,
   paketSahibi,
@@ -41,6 +42,7 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oneri,
+  type MetinParcasi,
   type Paket,
 } from "./veri";
 
@@ -910,3 +912,22 @@ export const dilDenetmeniMi = (k: Kisi): boolean => k.gorev === "dilDenetmeni" &
 
 /** Dil denetmeninin sırası: dil durağındaki, yapabileceği metinler (sayfası ve menü sayısı aynı kuraldan). */
 export const dilSirasi = (d: Durum, k: Kisi) => d.paketler.filter((p) => p.durum === "uretimde" && adimTuru(p) === "dil" && adimYapabilir(k, p));
+
+/*
+ * Parçalı metinde her parçanın işi sırası geldiği elde: muhabirde yazan
+ * (sorumlusu metin durağının sorumlusu), Newsdesk'te kolun sahibi, dil
+ * aşamasında Script Editor. Yardımcı birim yok: Newsdesk muhabirin parçasını
+ * yazamasın, Script Editor yalnız düzeltip ilerletsin.
+ */
+export const parcaYapabilir = (k: Kisi | undefined, p: Paket, asama: MetinParcasi["asama"]): boolean => {
+  if (!k || p.durum !== "uretimde" || adimTuru(p) !== "metin" || !parcaliMi(p)) return false;
+  const d = durakBul(p, p.adim);
+  if (asama === "muhabir") return !!d && sorumluMu(k, p, d.sorumlu);
+  if (asama === "newsdesk") return sorumluMu(k, p, { tur: "kol" });
+  if (asama === "dil") return sorumluMu(k, p, { tur: "birim", birim: "scriptEditor" });
+  return false;
+};
+
+/** Script Editor'ün sırası: dil aşamasındaki parçalar (yeni yol) ve eski yolda dil durağındaki paketler. */
+export const dilParcaSirasi = (d: Durum, k: Kisi): { p: Paket; parca: MetinParcasi }[] =>
+  d.paketler.flatMap((p) => (p.parcalar ?? []).filter((x) => x.asama === "dil" && parcaYapabilir(k, p, "dil")).map((parca) => ({ p, parca })));

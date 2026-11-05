@@ -1,6 +1,6 @@
 import { metin, yaz, type Anahtar } from "./dil";
 import { anlik, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
-import { yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
+import { ESKI_AKIS, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
  * İş akışı: bir paket önerisinin plandan yayına kadar izlediği yol.
@@ -30,6 +30,7 @@ export const URETIM_ADIMLARI = [
   "kontrol",
   "dil",
   "video",
+  "videoKontrol",
   "iletim",
   "media",
   "inews",
@@ -66,7 +67,8 @@ export const akisSec = (tur: IcerikTuru, y: Yapi = yapi()): Akis => y.akislar.fi
  * başlangıç düzeniyle (sürüm 0) sürüyor.
  */
 export const paketAkisi = (p: AkisPaketi): Akis => {
-  if (!p.akis) return p.durum === "uretimde" ? akisSec(p.tur, yapiSurumu(0)) : akisSec(p.tur);
+  // Damgasız üretimdeki paket yeni yoldan önce girmiş: eski akışla bitiyor.
+  if (!p.akis) return p.durum === "uretimde" ? (yapiSurumu(0).akislar.find((a) => a.id === ESKI_AKIS) ?? akisSec(p.tur, yapiSurumu(0))) : akisSec(p.tur);
   const y = yapiSurumu(p.akis.surum);
   return y.akislar.find((a) => a.id === p.akis!.id) ?? akisSec(p.tur, y);
 };
@@ -106,6 +108,7 @@ export const ADIM_ADI: Record<UretimAdimi, Anahtar> = {
   kontrol: "adKontrol",
   dil: "adDil",
   video: "adVideo",
+  videoKontrol: "adVideoKontrol",
   iletim: "adIletim",
   media: "adMedia",
   inews: "adInews",
@@ -140,6 +143,7 @@ const ADIM_KUTUSU: Record<UretimAdimi, number> = {
   kontrol: 6,
   dil: 6,
   video: 7,
+  videoKontrol: 7,
   iletim: 7,
   media: 8,
   inews: 9,
@@ -169,6 +173,11 @@ export const geriHedefi = (p: AkisPaketi & Pick<Paket, "adim">): string | undefi
   const i = yol.indexOf(d.id);
   if (i <= 0) return undefined;
   const once = yol.slice(0, i);
+  // Video kontrolü revizyonu montajı yapana döndürüyor: video durağına, yoksa (parçalı yol) metin durağına.
+  if (d.tur === "videoKontrol") {
+    const video = [...once].reverse().find((id) => durakBul(p, id)?.tur === "video");
+    if (video) return video;
+  }
   return [...once].reverse().find((id) => durakBul(p, id)?.tur === "metin") ?? once[once.length - 1];
 };
 
@@ -273,3 +282,9 @@ export const NEXTDAY_KUTULARI: Kutu[] = [
   { no: 9, baslik: "k9", aciklama: "k9a", birimler: ["newsdesk"], vakit: "vErtesiGun" },
   { no: 10, baslik: "k10", aciklama: "k10a", birimler: ["newsdesk"], vakit: "vErtesiGun" },
 ];
+
+/** Paketin bulunduğu metin durağı parçalı mı (yeni yol). */
+export const parcaliMi = (p: AkisPaketi & Pick<Paket, "adim">): boolean => !!durakBul(p, p.adim)?.parcali;
+
+/** Bütün parçalar Script Editor'den döndü mü; video ancak o zaman gönderilir. */
+export const parcalarHazir = (p: Pick<Paket, "parcalar">): boolean => !!p.parcalar?.length && p.parcalar.every((x) => x.asama === "tamam");

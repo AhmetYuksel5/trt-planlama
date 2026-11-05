@@ -2,8 +2,9 @@ import { birimAdi } from "../yapi";
 import { AnmaGirdisi } from "../bilesenler/Anma";
 import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimKutusu, adimTuru, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
+import { adimAdi, adimKutusu, adimTuru, parcaliMi, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
+import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
@@ -261,6 +262,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const [metin, setMetin] = useState(paket.metin ?? "");
   const [video, setVideo] = useState(paket.video ?? "");
   const [klip, setKlip] = useState(paket.klipKodu ?? `TRTA_${(plan(v, paket) ?? "").slice(2).replace(/-/g, "")}_${String(v.sayac % 1000).padStart(3, "0")}`);
+  const [kod, setKod] = useState(paket.klipKodu ?? "");
   const [gerekce, setGerekce] = useState<string | null>(null);
   const [not, setNot] = useState("");
 
@@ -345,6 +347,9 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
       </Kart>
     );
   }
+
+  // Parçalı metinde iş parça başına el değiştiriyor; kartı herkes görür, düğme sırası gelende.
+  if (adimTuru(paket) === "metin" && parcaliMi(paket)) return <ParcaliMetin ben={ben} paket={paket} />;
 
   if (!adimYapabilir(ben, paket)) {
     const sahip = paketSahibi(paket);
@@ -472,11 +477,37 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
             </div>
           </>
         )}
+        {adim === "videoKontrol" && (
+          <>
+            {paket.video && (
+              <a href={paket.video} target="_blank" rel="noreferrer" dir="ltr" data-video-baglanti>
+                {paket.video}
+              </a>
+            )}
+            <div className="form-alt">
+              {gerekce === null && (
+                <button className="dugme dugme-kotu" onClick={() => setGerekce("")} data-video-revizyon>
+                  <Undo2 size={15} /> {t("revizyonaGonder")}
+                </button>
+              )}
+              <button className="dugme dugme-iyi" onClick={() => ilerle({})} data-video-onayla>
+                <CircleCheck size={15} /> {t("videoOnayla")}
+              </button>
+            </div>
+          </>
+        )}
         {adim === "inews" && (
           <>
+            {/* Yeni yolda sisteme yükleme; kod şimdilik isteğe bağlı. */}
+            {!paket.stok && (
+              <label>
+                {t("sistemKodu")}
+                <input value={kod} onChange={(e) => setKod(e.target.value.toUpperCase())} dir="ltr" data-sistem-kodu />
+              </label>
+            )}
             <div className="form-alt">
-              <button className="dugme dugme-iyi" onClick={() => ilerle({})}>
-                <CircleCheck size={15} /> {t(paket.stok ? "stogaAl" : "inewsTamam")}
+              <button className="dugme dugme-iyi" onClick={() => ilerle(paket.stok ? {} : { klipKodu: kod.trim() || undefined })} data-sistem-yukle>
+                <CircleCheck size={15} /> {t(paket.stok ? "stogaAl" : "sistemeYuklendi")}
               </button>
             </div>
           </>
@@ -484,8 +515,8 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         {gerekce !== null && (
           <div className="form-kutu form">
             <label>
-              {t("geriGondermeGerekcesi")}
-              <textarea dir="auto" value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus />
+              {t(adim === "videoKontrol" ? "revizyonGerekcesi" : "geriGondermeGerekcesi")}
+              <textarea dir="auto" value={gerekce} onChange={(e) => setGerekce(e.target.value)} autoFocus data-geri-gerekce />
             </label>
             <div className="form-alt">
               <button className="dugme dugme-ikincil" onClick={() => setGerekce(null)}>

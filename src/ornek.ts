@@ -1496,6 +1496,7 @@ const ADIM_HAREKETI: Record<UretimAdimi, HareketTipi> = {
   kontrol: "kontrolEdildi",
   dil: "sonScript",
   video: "videoGeldi",
+  videoKontrol: "videoOnaylandi",
   iletim: "mediayaGonderildi",
   media: "klipKodu",
   inews: "tamamlandi",

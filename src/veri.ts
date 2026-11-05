@@ -717,6 +717,22 @@ export interface Ucret {
   durum: "bekliyor" | "onaylandi" | "odendi";
 }
 
+/*
+ * Parçalı metin: muhabir metni bölüm bölüm (intro, text, PTC…) gönderiyor;
+ * her parça Newsdesk'ten (düzelt ya da iade) sonra Script Editor'den geçiyor.
+ * Muhabir PTC'yi çekimden önce çektiği için parçalar birbirini beklemiyor.
+ * Bölüm türleri ve özellikleri sonra belirlenecek; şimdilik ad serbest.
+ */
+export type ParcaAsamasi = "muhabir" | "newsdesk" | "dil" | "tamam";
+export interface MetinParcasi {
+  id: string;
+  ad: string;
+  metin: string;
+  asama: ParcaAsamasi;
+  /** Newsdesk'in iade gerekçesi; muhabir yeniden gönderince kalkar. */
+  iade?: string;
+}
+
 export interface Paket {
   id: string;
   kod: string;
@@ -769,6 +785,10 @@ export interface Paket {
   oneriId?: string;
   metin?: string;
   video?: string;
+  /** Parçalı metin durağında metnin bölümleri (yeni yol). */
+  parcalar?: MetinParcasi[];
+  /** Newsdesk'in video kontrolünde revizyon gerekçesi; muhabir yeni videoyu gönderince kalkar. */
+  videoIade?: string;
   klipKodu?: string;
   ucret?: Ucret;
   /** Tamamlanan pakete Newsdesk'in verdiği nitelik puanı (1–5); ölçütü birimle netleşecek. */
@@ -1392,6 +1412,11 @@ export const HAREKET_TIPLERI = [
   "durakTamamlandi",
   "sonScript",
   "videoGeldi",
+  "parcaGeldi",
+  "parcaDuzeltildi",
+  "parcaIade",
+  "parcaTamam",
+  "videoOnaylandi",
   "mediayaGonderildi",
   "klipKodu",
   "tamamlandi",
