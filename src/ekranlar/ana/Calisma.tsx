@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Check, LayoutGrid, Plus, RotateCcw, X } from "lucide-react";
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { OnayKuyrugu } from "../../bilesenler/PaketSonucu";
+import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
 import { useState, type ReactNode } from "react";
 import { Kart } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -99,6 +100,7 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
       {/* Kişinin anıldığı notlar düzenden bağımsız en üstte: alan kaldırılınca kaçırılmasın. */}
       {kisisel && <AnildigimNotlar ben={ben} />}
       {kisisel && <OnayKuyrugu ben={ben} />}
+      {kisisel && <OnayBekleyenHesaplar ben={ben} />}
       {/* Düzenlerken üstte yapışkan çubuk; kaydırırken "Bitti" elde dursun. Düzenlemezken sayfanın üstünde satır yok. */}
       {kisisel && duzenle && (
         <div className="alan-arac duzen-cubugu">

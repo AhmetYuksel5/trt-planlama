@@ -1,3 +1,4 @@
+import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
 import {
   ArrowDown,
   ArrowUp,
@@ -162,6 +163,8 @@ export default function Organizasyon({
   return (
     <>
       <SayfaBasi ikon={<Building2 size={26} />} baslik={t("mOrganizasyon")} />
+      {/* Onay bekleyen hesaplar her sekmenin üstünde: menüdeki sayı buraya getiriyor. */}
+      <OnayBekleyenHesaplar ben={ben} />
       <div
         className="sekmeler ara-alt-2"
         role="tablist"

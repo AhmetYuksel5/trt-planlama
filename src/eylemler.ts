@@ -3292,6 +3292,21 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
 };
 
 /**
+ * Kayıt bağlantısıyla gelen kişinin hesabını onaylar: "kontrol bekliyor"
+ * kalkar, kişi kısıtlı olmaktan çıkar ve birimindeki kayıtları görür. Birim
+ * ya da görevi düzeltmek gerekirse "Düzenle" (kisiPozisyonu) da onaylıyor.
+ */
+export const kayitOnayla = (ben: Kisi, kisiId: string) => {
+  if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
+  const d = getir();
+  const k = d.kisiler.find((x) => x.id === kisiId);
+  if (!k?.kontrolBekliyor) return false;
+  const { kontrolBekliyor: _, ...kalan } = k;
+  kaydet(hareketYaz({ ...d, kisiler: d.kisiler.map((x) => (x === k ? kalan : x)) }, { kisiId: ben.id, tip: "kayitOnaylandi", veri: { ad: yaz(k.ad), kime: kisiId } }));
+  return true;
+};
+
+/**
  * Kişinin e-postası. Hesapsızda (ve demoda) doğrudan değişiyor. Etkin
  * hesapta giriş adresi Firebase'de, yönetici onu değiştiremiyor: yeni
  * adres "yeniEposta" olarak işaretleniyor, o adrese aktivasyon daveti

@@ -1,3 +1,4 @@
+import { onayBekleyenler } from "./HesapOnayi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
 import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
@@ -144,7 +145,7 @@ export const MENU: Grup[] = [
       { sayfa: "ucretler", ad: "mUcretler", kisa: "kaUcretler", ikon: Wallet },
       { sayfa: "raporlar", ad: "mRaporlar", kisa: "kaRaporlar", ikon: ChartColumn },
       { sayfa: "plan", ad: "mProjePlani", kisa: "kaProjePlani", ikon: BookOpen },
-      { sayfa: "organizasyon", ad: "mOrganizasyon", kisa: "kaOrganizasyon", ikon: Building2 },
+      { sayfa: "organizasyon", ad: "mOrganizasyon", kisa: "kaOrganizasyon", ikon: Building2, say: (d, ben) => onayBekleyenler(d.kisiler, ben).length },
       { sayfa: "ayarlar", ad: "mAyarlar", kisa: "kaAyarlar", ikon: Settings },
     ],
   },

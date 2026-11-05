@@ -1,3 +1,4 @@
+import { OnayBekleyenHesaplar } from "../bilesenler/HesapOnayi";
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
 import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
 import { Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
@@ -186,6 +187,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   return (
     <>
       {!gomulu && <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />}
+      {!gomulu && <OnayBekleyenHesaplar ben={ben} />}
       {ekleyebilir && (
         <Kart
           baslik={t("kisiEkle")}

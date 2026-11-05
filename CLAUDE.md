@@ -151,7 +151,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     içeri alır; değilse şifre belirleme e-postasını kendisi gönderir
     (`kayit/sifre-gitti`), kişi yeni şifresiyle girince kaydı başvurudan kurulur. Personel,
     hesap yöneticisi değil, `kontrolBekliyor` işaretli; yönetici
-    "Düzenle"de kaydedince işaret kalkar. Kural `kayitGecerli` (açık,
+    "Düzenle"de kaydedince ya da "Onayla"yla (`eylemler.ts → kayitOnayla`,
+    hareket `kayitOnaylandi`, kişiye bildirim) işaret kalkar. Onay bekleyenler
+    kişi düzenleme yetkilisinin ana sayfasının başında (düzenden bağımsız),
+    Organizasyon'un her sekmesinin üstünde kart (`bilesenler/HesapOnayi.tsx →
+    OnayBekleyenHesaplar`), menüde Organizasyon'un sayısı; önce yalnız
+    Hesaplar listesinde rozetti, yönetici bekleyen kişiyi görmüyordu. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).
   - Hesapsız kişi (pilot; sistemi kullanmayan personel): yalnız adı var
     (`Kisi.hesapsiz`), her seçimde görünür, giriş yapamaz; işini Planlama

@@ -1362,6 +1362,7 @@ export const HAREKET_TIPLERI = [
   "isAtandi",
   "isDurumu",
   "kisiTayinEdildi",
+  "kayitOnaylandi",
   "yapiYayinlandi",
   "oneriMuhabireGonderildi",
   "teklifKabulEdildi",
