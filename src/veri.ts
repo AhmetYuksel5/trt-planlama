@@ -346,6 +346,8 @@ export interface Gelisme {
   takipId?: string;
   /** Başlığın içindeki bu konuyu özel takip eden muhabirler ve o günkü yerleri; başlığın genel muhabirlerinden ayrı, paragrafın altında yazılır. Eski kayıtta düz kimlik (gelismeMuhabirleri). */
   muhabirler?: (string | { kisiId: string; yer?: string })[];
+  /** İsteğe bağlı "Teams": gelişmede çalışan ekip; kayıtlı personel (kisiId) ya da kayıtta olmayan için elle yazılan ad. Muhabirlerin altında yazılır. */
+  teams?: ({ kisiId: string } | { ad: string })[];
   /** İsteğe bağlı "Schedule": gelişmenin saat saat programı (ziyaret, zirve…); planda paragrafın altında. */
   program?: ProgramSatiri[];
   onceki?: true;

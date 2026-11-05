@@ -4,7 +4,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import { LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, metin, sureYaz, useDil, type Anahtar } from "../../dil";
-import { TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, paketNotEki, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { TBC, adParcalari, ekipAdi, kisiAr, bicimEki, gelismeBicimEki, paketNotEki, muhabirUnvani, muhabirYeri, paketYeri, pkgGruplari, sehirAr } from "../../etiketler";
 import {
   baslikDuzenle,
   canliKaydet,
@@ -37,7 +37,7 @@ import {
 import { vardiyaYaz } from "../../tarih";
 import { baslikBul, gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
-import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gorevEkibi } from "../nextday/Bolumler";
+import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gelismeTeamAdlari, gorevEkibi } from "../nextday/Bolumler";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { CanliFormu, FormAlt, GelismeFormu, GorevlendirmeFormu, MuhabirSecici, PaketFormu } from "../nextday/Formlar";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
@@ -195,6 +195,16 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
               <Satir key={m.kisiId} yer={m.yer || sehirAr(kisiBul(v, m.kisiId)?.sehir)}>
                 {kisiAdi(m.kisiId)}
               </Satir>
+            ))}
+          </>
+        )}
+        {gelismeTeamAdlari(g, v).length > 0 && (
+          <>
+            <Satir>
+              <b data-gelisme-teams>TEAMS</b>
+            </Satir>
+            {gelismeTeamAdlari(g, v).map((a, i) => (
+              <Satir key={i}>{a}</Satir>
             ))}
           </>
         )}
@@ -484,12 +494,13 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                     </Satir>
                   </BelgeSatiri>
                 )}
-                {pkg.length > 0 && (
-                  <>
-                    <p className="alt-baslik">
-                      <bdi>PKG</bdi>
+                {/* Kararı verilmemiş paket "PKG PROPOSAL", kabul edilen "PKG" altında (kurumun isteği). */}
+                {pkgGruplari(pkg).map(([ad, grup]) => (
+                  <Fragment key={ad}>
+                    <p className="alt-baslik" data-pkg-grubu={ad}>
+                      <bdi>{ad}</bdi>
                     </p>
-                    {pkg.map((p, j) => {
+                    {grup.map((p, j) => {
                       // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
                       const acikPaket = p.durum === "taslak" || p.durum === "degerlendiriliyor";
                       return (
@@ -499,7 +510,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                           serit={
                             <SatirSeridi
                               yukari={yukari(j, () => ben && paketTasi(ben, p.id, -1))}
-                              asagi={asagi(j, pkg.length, () => ben && paketTasi(ben, p.id, 1))}
+                              asagi={asagi(j, grup.length, () => ben && paketTasi(ben, p.id, 1))}
                               ekle={() => ac({ tur: "paket", pbId: pb.id, sonra: p.id })}
                               ekleEtiket={t("paketOnerisiEkle")}
                               duzenle={acikPaket ? () => ac({ tur: "paket", pbId: pb.id, mevcut: p }) : undefined}
@@ -533,8 +544,8 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                         </BelgeSatiri>
                       );
                     })}
-                  </>
-                )}
+                  </Fragment>
+                ))}
                 {(ic || op) && (
                   <EkleCubugu>
                     {op && <EkleDugmesi metin={t("gelismeEkle")} onClick={() => ac({ tur: "gelisme", planBaslikId: pb.id, sonra: gelismeler.at(-1)?.id })} />}

@@ -340,3 +340,15 @@ export const paketNotEki = (p: { notlar?: { metin: string }[] }) => {
   const n = (p.notlar ?? []).map((x) => x.metin.trim()).filter(Boolean);
   return n.length ? ` (${n.join(" - ")})` : "";
 };
+
+/** Kararı verilmemiş (taslak, değerlendirmede) paket planda öneri sayılır. */
+export const pkgOnerisiMi = (p: { durum: string }) => p.durum === "taslak" || p.durum === "degerlendiriliyor";
+
+/** Plan metninde paketler iki alt başlıkta: kabul edilenler "PKG", karar bekleyenler "PKG PROPOSAL"; boş grup yazılmaz. */
+export function pkgGruplari<T extends { durum: string }>(l: T[]): [string, T[]][] {
+  const gruplar: [string, T[]][] = [
+    ["PKG", l.filter((p) => !pkgOnerisiMi(p))],
+    ["PKG PROPOSAL", l.filter(pkgOnerisiMi)],
+  ];
+  return gruplar.filter(([, g]) => g.length > 0);
+}

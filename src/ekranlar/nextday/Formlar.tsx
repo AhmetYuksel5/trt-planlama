@@ -31,7 +31,7 @@ import {
   type Sehir,
   gelismeMuhabirleri,
 } from "../../veri";
-import { icMuhabirMi } from "../../yapi";
+import { disMuhabirMi, icMuhabirMi } from "../../yapi";
 import { yapabilir } from "../../yetki";
 
 /*
@@ -130,6 +130,8 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     onerenId: mevcut?.onerenId ?? "",
     tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
     muhabirler: mevcut ? gelismeMuhabirleri(mevcut) : [],
+    teams: mevcut?.teams ?? [],
+    teamAd: "",
     schedule: !!mevcut?.program?.length,
     program: mevcut?.program?.length ? mevcut.program : [{ saat: "", olay: "" }],
   });
@@ -149,6 +151,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
       muhabirler: f.muhabirler.length ? f.muhabirler.map((m) => (m.yer?.trim() ? { kisiId: m.kisiId, yer: m.yer.trim() } : { kisiId: m.kisiId })) : undefined,
+      teams: f.teams.length ? f.teams : undefined,
       program: program.length ? program : undefined,
     }, sonra);
     kapat();
@@ -218,6 +221,43 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
           </div>
         )}
         <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.some((y) => y.kisiId === id) ? x : { ...x, muhabirler: [...x.muhabirler, { kisiId: id }] }))} bosEtiket={t("muhabirAta")} />
+      </div>
+      {/* Teams: kayıtlı personelden seçilir; kayıtta yoksa adı elle yazılır. */}
+      <div className="form" data-gelisme-teams-formu>
+        <span>{t("gelismeTeams")}</span>
+        {f.teams.map((x, i) => (
+          <div key={i} className="satir">
+            {"ad" in x ? <Icerik>{x.ad}</Icerik> : <span>{ad(kisiBul(v, x.kisiId))}</span>}
+            <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, teams: y.teams.filter((_, j) => j !== i) }))} title={t("cikar")} aria-label={t("cikar")}>
+              ×
+            </button>
+          </div>
+        ))}
+        <select
+          value=""
+          data-teams-sec
+          aria-label={t("teamsKisiSec")}
+          onChange={(e) => {
+            const id = e.target.value;
+            if (id) setF((y) => (y.teams.some((z) => "kisiId" in z && z.kisiId === id) ? y : { ...y, teams: [...y.teams, { kisiId: id }] }));
+          }}
+        >
+          <option value="">{t("teamsKisiSec")}</option>
+          {v.kisiler
+            .filter((k) => !k.pasif && !disMuhabirMi(k) && !f.teams.some((z) => "kisiId" in z && z.kisiId === k.id))
+            .sort((a, b) => ad(a).localeCompare(ad(b)))
+            .map((k) => (
+              <option key={k.id} value={k.id}>
+                {ad(k)}
+              </option>
+            ))}
+        </select>
+        <div className="satir">
+          <input {...icerikAlani} data-teams-ad value={f.teamAd} aria-label={t("teamsElleAd")} placeholder={t("teamsElleAd")} onChange={(e) => setF({ ...f, teamAd: e.target.value })} />
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" data-teams-ekle disabled={!f.teamAd.trim()} onClick={() => setF((y) => ({ ...y, teams: [...y.teams, { ad: y.teamAd.trim() }], teamAd: "" }))}>
+            + {t("ekle")}
+          </button>
+        </div>
       </div>
       <label className="secim">
         <input type="checkbox" data-schedule-kutusu checked={f.schedule} onChange={(e) => setF({ ...f, schedule: e.target.checked })} />

@@ -575,6 +575,7 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                 </Icerik>
                 <GelismeProgrami g={g} />
                 <GelismeMuhabirSatirlari g={g} v={v} />
+                <GelismeTeamSatirlari g={g} v={v} />
                 <small>
                   <Rozet>{t(KAYNAK_ADI[g.kaynakTuru])}</Rozet>
                   {g.kaynakAdi && <Icerik>{g.kaynakAdi}</Icerik>}
@@ -674,6 +675,28 @@ export function GelismeProgrami({ g }: { g: Gelisme }) {
         <Icerik key={i} blok>
           {x.saat && <b>{x.saat} / </b>}
           {x.olay}
+        </Icerik>
+      ))}
+    </>
+  );
+}
+
+/* Teams'teki adlar Arapça yazımıyla; kayıtlı olmayan elle yazıldığı gibi. */
+export const gelismeTeamAdlari = (g: Gelisme, v: Durum): string[] =>
+  (g.teams ?? []).map((x) => ("ad" in x ? x.ad : kisiAr(kisiBul(v, x.kisiId)) || "?"));
+
+/* Gelişmenin ekibi muhabirlerin altında: kalın "TEAMS", altında her ad bir satır. */
+export function GelismeTeamSatirlari({ g, v }: { g: Gelisme; v: Durum }) {
+  const adlar = gelismeTeamAdlari(g, v);
+  if (!adlar.length) return null;
+  return (
+    <>
+      <Icerik blok>
+        <b data-gelisme-teams>TEAMS</b>
+      </Icerik>
+      {adlar.map((a, i) => (
+        <Icerik key={i} blok>
+          {a}
         </Icerik>
       ))}
     </>

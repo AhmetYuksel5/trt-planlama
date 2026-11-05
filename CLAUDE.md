@@ -764,6 +764,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`kisiPozisyonu`); Excel'in cinsiyet sütunu yine okunmuyor. İlk sürümde
     kayıt düz kimlikti, okuma `veri.ts → gelismeMuhabirleri`'nden. Başlığın
     genel muhabirleri (`PlanBasligi.muhabirler`) ayrı kalır.
+  - Gelişmeye isteğe bağlı "Teams" (`Gelisme.teams`, gelişme formunda):
+    kayıtlı personelden seçilir (dış muhabir değil), kayıtta yoksa ad elle
+    yazılır (`{ ad }`). Plan ekranında, belgede ve çıktıda muhabirlerin altında
+    kalın "TEAMS", altında her ad bir satır (`Bolumler.tsx →
+    gelismeTeamAdlari`, `GelismeTeamSatirlari`).
+  - Başlığın altındaki paketler iki alt başlıkta (`etiketler.ts →
+    pkgGruplari`; belge ve çıktı): kabul edilenler "PKG", karar bekleyenler
+    (taslak, değerlendirmede) "PKG PROPOSAL"; boş grup yazılmaz.
   - Gelişmeye isteğe bağlı "Schedule" (`Gelisme.program`, saat + olay
     satırları; gelişme formunda kutu işaretlenince açılır): ziyaret, zirve
     gibi olayın saat saat programı. Plan ekranında, belgede ve çıktıda
