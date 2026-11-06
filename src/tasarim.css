@@ -2609,3 +2609,124 @@ input[aria-invalid="true"] {
   .cikti-sutunlu .nd-sutunlar { grid-template-columns: minmax(0, 1fr); }
   .cikti-sutunlu .nd-yan { position: static; border-inline-end: 0; padding-inline-end: 0; border-block-end: 1px solid var(--cizgi); padding-block-end: var(--ara-4); }
 }
+
+/* ======================================================================
+ * Yeni tasarım (deneme; tasarimSecimi.ts, belgeler/kimlik.md): Linear'ın
+ * sakin, yoğun görünüşü. Eski tasarım yerinde; bu blok yalnız
+ * html.yeni-tasarim açıkken geçerli. Önce token'lar: ekranlar çıplak değer
+ * yazmadığı için sitenin çoğu bunlarla değişiyor.
+ * ==================================================================== */
+html.yeni-tasarim {
+  /* Nötrler yüzeyin %90'ı; tek vurgu mavisi; marka lacivert. */
+  --zemin: #f6f7f9;
+  --yuzey: #ffffff;
+  --yuzey-2: #f2f4f7;
+  --yuzey-3: #eaecf0;
+  --murekkep: #101828;
+  --sonuk: #475467;
+  --silik: #667085;
+  --cizgi: #e4e7ec;
+  --vurgu: #2459d6;
+  --vurgu-koyu: #1a44a8;
+  --vurgu-sis: #eff4ff;
+  --onceki-fon: #f5f8ff;
+  --onceki-cizgi: #d1e0ff;
+  --lacivert: #13274a;
+  /* Planlar renkle değil adla ve simgeyle ayrılır: durum renkleriyle karışmasın. */
+  --nextday: var(--lacivert); --nextday-sis: var(--yuzey-2);
+  --haftalik: var(--lacivert); --haftalik-sis: var(--yuzey-2);
+  --aylik: var(--lacivert); --aylik-sis: var(--yuzey-2);
+  --ozel: var(--lacivert); --ozel-sis: var(--yuzey-2);
+  --saha: var(--lacivert); --saha-sis: var(--yuzey-2);
+  /* Durum renkleri yalnız durum için. */
+  --iyi: #067647; --iyi-sis: #dcfae6;
+  --uyari: #b54708; --uyari-sis: #fef0c7;
+  --kotu: #b42318; --kotu-sis: #fee4e2;
+  /* Gölgesiz kart, 8 piksel köşe; gölge yalnız açılır katmanda. */
+  --yaricap-kart: 8px;
+  --golge-kart: none;
+  --golge-acilir: 0 8px 30px rgba(16, 24, 40, .14);
+  /* Tam punto ölçeği: 12 · 13 · 15 · 17 · 20 · 28. */
+  --punto-mini: 12px;
+  --punto-kucuk: 12px;
+  --punto: 13px;
+  --punto-orta: 15px;
+  --punto-buyuk: 20px;
+  --punto-dev: 28px;
+  /* Arapça içerik kendi ailesiyle: metin Naskh, başlık Kufi. */
+  --yazi-arapca: "Noto Naskh Arabic", "Noto Sans Arabic", serif;
+  --yazi-baslik-arapca: "Noto Kufi Arabic", "Noto Sans Arabic", sans-serif;
+  --yazi-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+/* Arapça arayüzün düğme ve menü yazısı okunaklı kalsın; Naskh yalnız içerikte. */
+html.yeni-tasarim:lang(ar) body { font-family: "Noto Sans Arabic", var(--yazi); }
+html.yeni-tasarim .icerik, html.yeni-tasarim input[lang="ar"], html.yeni-tasarim textarea[lang="ar"] { font-family: var(--yazi-arapca); font-size: 1.08em; }
+html.yeni-tasarim body { line-height: 1.5; }
+html.yeni-tasarim h1 { letter-spacing: -.01em; }
+
+/* Kabuk: menü açık zeminde, ince çizgiyle ayrılır; seçili madde yalnız hafif zeminle. */
+html.yeni-tasarim .uygulama { background: linear-gradient(to right, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+html.yeni-tasarim[dir="rtl"] .uygulama, html.yeni-tasarim [dir="rtl"] .uygulama { background: linear-gradient(to left, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+html.yeni-tasarim .menu {
+  background: var(--yuzey); color: var(--sonuk); border-inline-end: 1px solid var(--cizgi);
+  scrollbar-color: var(--yuzey-3) transparent; gap: 0; padding-inline: var(--ara-2);
+}
+html.yeni-tasarim .marka-alt { color: var(--silik); }
+html.yeni-tasarim .birim-kutusu { background: var(--yuzey-2); color: var(--murekkep); font-size: var(--punto); padding: var(--ara-2) var(--ara-3); }
+html.yeni-tasarim .birim-kutusu small { color: var(--silik); }
+html.yeni-tasarim .menu-grup + .menu-grup { border-top-color: var(--cizgi); }
+html.yeni-tasarim .menu-grup-bas { color: var(--silik); font-size: var(--punto-mini); letter-spacing: .04em; min-height: 30px; }
+html.yeni-tasarim .menu-grup-bas:hover { color: var(--murekkep); background: var(--yuzey-2); }
+html.yeni-tasarim .menu a { color: var(--sonuk); padding: 6px var(--ara-3); border-inline-start: 0; border-radius: 6px; font-size: var(--punto); }
+html.yeni-tasarim .menu a svg { opacity: .7; }
+html.yeni-tasarim .menu a:hover { background: var(--yuzey-2); color: var(--murekkep); }
+html.yeni-tasarim .menu a.acik { background: var(--yuzey-3); color: var(--murekkep); font-weight: 600; }
+html.yeni-tasarim .menu a.acik svg { opacity: 1; color: var(--vurgu); }
+html.yeni-tasarim .menu a .say, html.yeni-tasarim .menu-grup-bas .say { background: transparent; color: var(--silik); font-weight: 500; min-width: 0; padding: 0; }
+html.yeni-tasarim .menu a.acik .say { color: var(--murekkep); }
+html.yeni-tasarim .menu-alt { color: var(--silik); }
+
+/* Üst çubuk: plan kısayolları renkli kutu değil, sade simge ve ad. */
+html.yeni-tasarim .ust { box-shadow: inset 0 -1px 0 var(--cizgi); }
+html.yeni-tasarim .kisayol-kutu { background: transparent; color: var(--sonuk); border-color: transparent; }
+html.yeni-tasarim a.kisayol-kutu:hover { background: var(--yuzey-2); color: var(--murekkep); outline: none; }
+html.yeni-tasarim .kisayol-kutu.yazili { flex-direction: row; gap: 6px; block-size: 32px; max-inline-size: 160px; }
+html.yeni-tasarim .kisayol-yazi { font-size: var(--punto); font-weight: 500; }
+html.yeni-tasarim .ust-saat { display: inline-flex; gap: var(--ara-3); font-family: var(--yazi-mono); font-size: var(--punto); color: var(--murekkep); white-space: nowrap; direction: ltr; }
+html.yeni-tasarim .ust-saat small { font-family: var(--yazi); font-size: var(--punto-mini); color: var(--silik); margin-inline-end: 2px; }
+@container ust (max-width: 900px) { html.yeni-tasarim .ust-saat { display: none; } }
+@media (max-width: 760px) { html.yeni-tasarim .ust-saat { display: none; } }
+
+/* Yüzeyler: gölgesiz kart, ince başlık satırı. */
+html.yeni-tasarim .kart { box-shadow: none; padding: var(--ara-4); }
+html.yeni-tasarim .kart-bas { margin-bottom: var(--ara-2); min-height: 24px; }
+html.yeni-tasarim .kart-bas h2 { font-size: var(--punto); font-weight: 600; }
+html.yeni-tasarim .kart-bas h2 svg { color: var(--silik); }
+html.yeni-tasarim .tumu { background: transparent; color: var(--vurgu); padding: 0; }
+html.yeni-tasarim .tumu:hover { background: transparent; color: var(--vurgu-koyu); }
+html.yeni-tasarim .sayfa { gap: var(--ara-4); }
+html.yeni-tasarim .sayfa-basi h1 { font-size: var(--punto-buyuk); }
+
+/* Düğmeler: birincil lacivert (marka), ikincil ince çizgili; vurgu mavisi bağlantı ve seçili için. */
+html.yeni-tasarim .dugme { height: 32px; font-weight: 500; font-size: var(--punto); background: var(--lacivert); border-color: var(--lacivert); }
+html.yeni-tasarim .dugme:hover { background: #0d1c37; border-color: #0d1c37; }
+html.yeni-tasarim .dugme-ikincil { background: var(--yuzey); color: var(--murekkep); border-color: var(--cizgi); }
+html.yeni-tasarim .dugme-ikincil:hover { background: var(--yuzey-2); border-color: var(--cizgi); }
+html.yeni-tasarim .dugme-sade { background: transparent; border-color: transparent; color: var(--sonuk); }
+html.yeni-tasarim .dugme-sade:hover { background: var(--yuzey-2); color: var(--murekkep); }
+html.yeni-tasarim .dugme-kotu { background: var(--yuzey); color: var(--kotu); border-color: var(--cizgi); }
+html.yeni-tasarim .dugme-kotu:hover { background: var(--kotu-sis); border-color: var(--kotu-sis); }
+html.yeni-tasarim .dugme-iyi { background: var(--iyi); border-color: var(--iyi); }
+html.yeni-tasarim .dugme-kucuk { height: 28px; font-size: var(--punto-mini); }
+
+/* Form: sakin alanlar, odakta tek mavi çizgi. */
+html.yeni-tasarim .form label, html.yeni-tasarim .alan-etiket { font-weight: 500; }
+html.yeni-tasarim .form input:focus, html.yeni-tasarim .form select:focus, html.yeni-tasarim .form textarea:focus, html.yeni-tasarim .girdi:focus { box-shadow: 0 0 0 1px var(--vurgu); }
+html.yeni-tasarim .form-kutu { background: var(--yuzey-2); border-color: transparent; }
+
+/* Pencere sağdan açılan panel: liste yerinde kalsın (Linear'ın ayrıntı paneli). */
+html.yeni-tasarim dialog.pencere:not(.genis) { margin-block: 0; margin-inline: auto 0; height: 100dvh; max-height: 100dvh; width: min(520px, 100vw); max-width: 100vw; border-radius: 0; border: 0; border-inline-start: 1px solid var(--cizgi); }
+html.yeni-tasarim dialog.pencere::backdrop { background: rgba(16, 24, 40, .12); }
+/* Kenar şeritli kart yok (kimlik, yapılmayacaklar): öneri kartı ince çizgili, üstüne gelince tek mavi. */
+html.yeni-tasarim .oneri-karti, html.yeni-tasarim .oneri-karti.talimat { border-inline-start: 1px solid var(--cizgi); }
+html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline-start-color: var(--vurgu); }

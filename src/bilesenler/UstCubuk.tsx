@@ -1,5 +1,6 @@
 import { birimAdi, gorevAdi } from "../yapi";
 import {
+  Palette,
   Bell,
   BookOpen,
   CircleUser,
@@ -28,6 +29,7 @@ import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { KomutPaleti } from "./KomutPaleti";
 import { Avatar, Bos } from "./Parcalar";
 import Logo from "./Logo";
+import { useYeniTasarim, yeniTasarimKaydet } from "../tasarimSecimi";
 
 /**
  * Üst çubuk: tek ince satır. Sayfanın üstünde başka satır yok; sekmeler,
@@ -56,6 +58,7 @@ export default function UstCubuk({
 }) {
   const { t, ad } = useDil();
   const v = useVeri();
+  const yeniTasarim = useYeniTasarim();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">(
     "",
   );
@@ -166,6 +169,7 @@ export default function UstCubuk({
        * kaplamasın diye çubukta etiket, tam cümle ipucunda ve basınca.
        * Gerçek kipte kayıt gerçek, etiket yok.
        */}
+      {yeniTasarim && <UstSaat />}
       {!GERCEK && (
         <div className="acilir-kap">
           <button
@@ -283,6 +287,16 @@ export default function UstCubuk({
             >
               <CircleUser size={16} /> {t("profilim")}
             </a>
+            <button
+              className="acilir-satir"
+              onClick={() => {
+                setAcik("");
+                yeniTasarimKaydet(!yeniTasarim);
+              }}
+              data-tasarim-gecis
+            >
+              <Palette size={16} /> {t(yeniTasarim ? "eskiTasarimaDon" : "yeniTasarimiAc")}
+            </button>
             <a
               className="acilir-satir"
               href="#/ayarlar"
@@ -325,5 +339,29 @@ export default function UstCubuk({
       </div>
       {palet && <KomutPaleti ben={ben} kapat={paletiKapat} />}
     </header>
+  );
+}
+
+/*
+ * Yeni tasarımda üst çubukta saat (kimlik: "zaman görünürdür"): GMT ve İstanbul,
+ * tek genişlikli yazıyla. Yayın akışı GMT'yle konuşuyor, ekip İstanbul'da.
+ */
+function UstSaat() {
+  const { t } = useDil();
+  const [an, setAn] = useState(() => new Date());
+  useEffect(() => {
+    const z = window.setInterval(() => setAn(new Date()), 15000);
+    return () => window.clearInterval(z);
+  }, []);
+  const saat = (tz: string) => an.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+  return (
+    <span className="ust-saat" data-ust-saat>
+      <span>
+        <small>{t("ustSaatGmt")}</small> {saat("UTC")}
+      </span>
+      <span>
+        <small>{t("ustSaatIst")}</small> {saat("Europe/Istanbul")}
+      </span>
+    </span>
   );
 }

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { HataSiniri } from "./bilesenler/HataSiniri";
 import "./tasarim.css";
+import "./tasarimSecimi";
 
 const kok = document.getElementById("kok");
 if (!kok) throw new Error("Kök eleman bulunamadı.");

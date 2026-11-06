@@ -16,6 +16,7 @@ import { YapayZekaAyari } from "./YapayZeka";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
+import { useYeniTasarim, yeniTasarimKaydet } from "../tasarimSecimi";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
 export function Ayarlar({ ben }: { ben: Kisi }) {
@@ -38,6 +39,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
           </p>
         </Kart>
         {ben.birim === "muhabir" && <KisiselAyar ben={ben} />}
+        <TasarimAyari />
         <WhatsappAyari />
         <SesAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
@@ -98,6 +100,20 @@ function KisiselAyar({ ben }: { ben: Kisi }) {
           </label>
         ))}
       </div>
+    </Kart>
+  );
+}
+
+/* Yeni tasarım denemesi; bu tarayıcıda saklanıyor (tasarimSecimi.ts). */
+function TasarimAyari() {
+  const { t } = useDil();
+  const acik = useYeniTasarim();
+  return (
+    <Kart baslik={t("yeniTasarim")}>
+      <label className="satir-kutu">
+        <input type="checkbox" checked={acik} onChange={(e) => yeniTasarimKaydet(e.target.checked)} data-tasarim-ayari />{" "}
+        {t("yeniTasarimiAc")}
+      </label>
     </Kart>
   );
 }

@@ -140,5 +140,11 @@ Her ekran bunlardan kurulur; benzerini yeniden yazmak yok.
    masası, paket ayrıntısı, birimler ve performans. Örnekleri tasarım
    kanvasında (NO-1…NO-5).
 
+Uygulama önce deneme olarak: "Yeni tasarım" anahtarı (Ayarlar, avatar
+menüsü) bütün siteyi bu belgeye göre değiştirir, eski tasarım yanında kalır.
+Görünüşte Linear (sakin, yoğun, klavyeyle), işlevde Monday (grup + sütun
+tablosu, tek tıkla durum, aynı veriye Liste/Pano görünümü) örnek alınır;
+adı, rengi, logosu değil.
+
 Her adım ayrı commit; üç dil, sağdan sola içerik, telefon düzeni ve 390
 pikselde taşmasızlık kuralları değişmez.

@@ -1,4 +1,5 @@
 import { onayBekleyenler } from "./HesapOnayi";
+import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
 import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
@@ -243,6 +244,8 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
  */
 export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const { t, ad } = useDil();
+  // Yeni tasarımda menü açık zeminde: lacivert yazılı logo.
+  const yeniTasarim = useYeniTasarim();
   const muhabir = ben.birim === "muhabir";
   const dilci = dilDenetmeniMi(ben);
   const v = useVeri();
@@ -259,7 +262,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   return (
     <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
       <a className="marka" href="#/" aria-label={t("uygulama")}>
-        <Logo koyu />
+        <Logo koyu={!yeniTasarim} />
       </a>
       <span className="marka-alt">{t("markaAlt")}</span>
       {/* Muhabirin adı sayfanın üstünde tek satırda (Kabuk); menüde ayrıca kutu yok. */}

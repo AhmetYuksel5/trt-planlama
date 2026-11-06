@@ -1551,6 +1551,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (şu an ne oluyor, kimde bekliyor, sıradaki ne), ilkeler, renk/yazı sistemi,
   ses ve yapılmayacaklar. Tasarım kararları ona dayanır; çelişen istek gelirse
   önce belge güncellenir.
+- Yeni tasarım (deneme; kullanıcı: Linear'ın görünüşü, Monday'in işlevi;
+  `belgeler/kimlik.md`): eski tasarım silinmeden yanında. Anahtar Ayarlar'da
+  ("Yeni tasarım") ve avatar menüsünde; seçim tarayıcıda
+  (`tasarimSecimi.ts`, `trt-planlama-tasarim`), açıkken `<html>`'de
+  `yeni-tasarim` sınıfı (ilk çizimden önce, `main.tsx` içe aktarıyor).
+  Bütün değişiklik `tasarim.css`'in sonundaki `html.yeni-tasarim` bloğunda:
+  kimliğin token'ları (nötrler, tek mavi, planların renkleri lacivert,
+  durum renkleri, gölgesiz 8 piksel kart, 12·13·15·17·20·28 ölçeği, Arapça
+  içerik Naskh), açık zeminli menü (logo `koyu={!yeniTasarim}`), sade
+  kısayollar, üst çubukta GMT/İstanbul saati (`UstCubuk.tsx → UstSaat`,
+  IBM Plex Mono), lacivert birincil düğme, sağdan açılan pencere, şeritsiz
+  öneri kartı. Sonraki adımlar sayfa sayfa (durum dairesi, grup + sütun
+  tablosu, Liste/Pano görünümü, klavye). Beğenilirse token'lar `:root`'a
+  taşınır, eski blok ve anahtar kalkar. Test `testler/yeni-tasarim.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
