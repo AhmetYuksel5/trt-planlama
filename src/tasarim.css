@@ -1358,7 +1358,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 
 @media print {
   body { background: #fff; }
-  .menu, .ust, .yazdirma-gizle, .sayfa-basi, .perde, .bildiri { display: none !important; }
+  .menu, .ust, .alt-cubuk, .demo-serit, .yazdirma-gizle, .sayfa-basi, .perde, .bildiri { display: none !important; }
   .yalniz-yazdir { display: block; margin-bottom: var(--ara-3); }
   .kart, .sayac { box-shadow: none; break-inside: avoid; }
   .uygulama { display: block; }
@@ -2730,3 +2730,26 @@ html.yeni-tasarim dialog.pencere::backdrop { background: rgba(16, 24, 40, .12); 
 /* Kenar şeritli kart yok (kimlik, yapılmayacaklar): öneri kartı ince çizgili, üstüne gelince tek mavi. */
 html.yeni-tasarim .oneri-karti, html.yeni-tasarim .oneri-karti.talimat { border-inline-start: 1px solid var(--cizgi); }
 html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline-start-color: var(--vurgu); }
+
+/*
+ * Next Day başlık kartının satırı: başlık Arapça, numara her arayüz dilinde
+ * başlığın sağında (kağıttaki gibi); satır sağdan dizilir. Sayaçta simge ve
+ * sayı bölünmez. Telefonda sayaçlar başlığın altına, dört düğme kenarda 2×2:
+ * yatayda yarım ekranı kaplıyor, başlık harf harf kırılıyordu.
+ */
+.baslik-karti > summary { direction: rtl; }
+.baslik-karti > summary .sayimlar > span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; direction: ltr; }
+.baslik-karti > summary .sag-uc { direction: ltr; }
+@media (max-width: 760px) {
+  .baslik-karti > summary {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "sira baslik uc" ". sayim uc"; gap: var(--ara-1) var(--ara-2); padding: var(--ara-3);
+  }
+  .baslik-karti > summary .sira { grid-area: sira; }
+  .baslik-karti > summary h3 { grid-area: baslik; min-width: 0; }
+  .baslik-karti > summary .sayimlar { grid-area: sayim; gap: var(--ara-1) var(--ara-3); }
+  .baslik-karti > summary .sag-uc { grid-area: uc; display: grid; grid-template-columns: repeat(2, 36px); gap: 2px; margin: 0; align-self: center; }
+  html body .baslik-karti > summary .sag-uc :is(button, .dugme) { width: 36px; height: 36px; min-height: 36px; padding: 0; }
+  /* Oklar üst satırda yan yana (simetrik), "+" ve sil altta. */
+  .baslik-karti > summary .sag-uc > :first-child { order: 1; }
+}
