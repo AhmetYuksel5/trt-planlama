@@ -17,6 +17,11 @@ const { chromium } = require(process.env.PW);
   const kutu = await p.locator(".yeni-plan dialog.pencere[open]").boundingBox();
   s.yanPanel = !!kutu && kutu.height > 850 && kutu.x + kutu.width > 1430;
   await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  // Başlık işlemleri: klasiğin başlık kartı yan panelde, açık
+  await p.locator("[data-yp-baslik-islem]").first().click(); await p.waitForTimeout(400);
+  s.baslikPaneli = await p.locator(".yeni-plan dialog.pencere[open] details.baslik-karti[open]").count() === 1;
+  await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  s.araclar = await p.locator('.yeni-plan [data-arac="aktar"]').count() === 1;
   for (const sekme of ["takip", "takvim", "durum", "oneri"]) { await p.click(`[data-yp-sekme="${sekme}"]`); await p.waitForTimeout(150); }
   for (const dil of ["tr", "ar"]) {
     await p.evaluate((d) => localStorage.setItem("trt-planlama-dil", d), dil);

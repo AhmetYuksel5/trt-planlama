@@ -1,4 +1,4 @@
-import { ArrowLeft, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import { oneriBuGunun, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
@@ -88,12 +88,16 @@ type YanSekme = "oneri" | "takip" | "takvim" | "durum";
  * (.yeni-plan dialog.pencere): plan yerinde kalsın, ekranı kaplayan form yok.
  */
 function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: ReactNode }) {
-  const { t, dil } = useDil();
+  const { t, dil, ad } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const [pencere, setPencere] = useState<NdPencere | null>(null);
   const [sekme, setSekme] = useState<YanSekme>("oneri");
+  // Klasiğin başlık kartı (paket kararları, LIVE/TBC, muhabire not, başlık menüsü, 🔗…) yan panelde: yeni görünümde özellik eksilmesin.
+  const [baslikPanel, setBaslikPanel] = useState<string | null>(null);
+  const [aktar, setAktar] = useState(false);
+  const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
   useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
   const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere } : undefined;
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
@@ -114,9 +118,27 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
         </h1>
         <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>{t(PLAN_DURUM_ADI[plan.durum])}</Rozet>
-        <span className="sonuk-yazi">{t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}</span>
+        <span className="sonuk-yazi">
+          {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}
+          {sorumlu.length > 0 && (
+            <span data-nd-sorumlu={sorumlu.join(",")}>
+              {" · "}
+              {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
+            </span>
+          )}
+        </span>
         <span className="yp-ust-sag">
           {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+          {icerik && (
+            <button type="button" className="dugme dugme-ikincil dugme-ikon" title={t("planIceAktar")} aria-label={t("planIceAktar")} onClick={() => setAktar(true)} data-arac="aktar">
+              <FileUp size={16} />
+            </button>
+          )}
+          {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && (
+            <a className="dugme dugme-ikincil dugme-kucuk" href={`#/oneriler/cagri/${plan.tarih}`} data-arac="cagri">
+              <Megaphone size={15} /> {t("oneriCagrisi")}
+            </a>
+          )}
           <a className="dugme dugme-ikincil dugme-kucuk" href={`#/nextday/${plan.id}/cikti`}>
             <Printer size={15} /> {t("cikti")}
           </a>
@@ -131,10 +153,15 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           {plan.basliklar.map((pb) => {
             const n = v.gelismeler.filter((g) => g.planBaslikId === pb.id).length + paketler.filter((p) => p.planBaslikId === pb.id).length;
             return (
-              <button key={pb.id} type="button" onClick={() => kay(pb.id)} data-yp-icindekiler={pb.id}>
-                <Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>
-                <span className="sonuk-yazi">{n}</span>
-              </button>
+              <div key={pb.id} className="yp-icindekiler-satir">
+                <button type="button" onClick={() => kay(pb.id)} data-yp-icindekiler={pb.id}>
+                  <Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>
+                  <span className="sonuk-yazi">{n}</span>
+                </button>
+                <button type="button" className="yp-islem" title={t("baslikIslemleri")} aria-label={t("baslikIslemleri")} onClick={() => setBaslikPanel(pb.id)} data-yp-baslik-islem={pb.id}>
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
             );
           })}
         </nav>
@@ -158,6 +185,18 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
         </aside>
       </div>
       {pencere && duzen && <NdPencereIcerik ben={ben} plan={plan} p={pencere} kapat={() => setPencere(null)} />}
+      {baslikPanel &&
+        (() => {
+          const i = plan.basliklar.findIndex((x) => x.id === baslikPanel);
+          const pb = plan.basliklar[i];
+          if (!pb) return null;
+          return (
+            <Pencere baslik={t("baslikIslemleri")} alt={<Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>} kapat={() => setBaslikPanel(null)}>
+              <BaslikKarti plan={plan} pb={pb} sira={i} toplam={plan.basliklar.length} icerik={icerik} operasyon={operasyon} acik />
+            </Pencere>
+          );
+        })()}
+      {aktar && <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setAktar(false)} />}
     </div>
   );
 }

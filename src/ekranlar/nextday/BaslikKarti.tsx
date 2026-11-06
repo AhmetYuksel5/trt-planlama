@@ -34,6 +34,7 @@ export default function BaslikKarti({
   toplam,
   icerik,
   operasyon,
+  acik,
 }: {
   plan: NextDayPlan;
   pb: PlanBasligi;
@@ -41,6 +42,8 @@ export default function BaslikKarti({
   toplam: number;
   icerik: boolean;
   operasyon: boolean;
+  /** Yeni görünümün yan panelinde açık gelir. */
+  acik?: boolean;
 }) {
   const { t, dil } = useDil();
   const v = useVeri();
@@ -76,6 +79,7 @@ export default function BaslikKarti({
     <>
     <details
       className={`baslik-karti${birakilir ? " birakilir" : ""}`}
+      open={acik}
       data-plan-baslik={pb.id}
       onDragOver={(e) => {
         if (!icerik || !e.dataTransfer.types.includes(SURUKLENEN)) return;

@@ -704,7 +704,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   belgesi düzenleme kipinde (`NextDayBelgesi`, satır yerinde yazılır), solda
   içindekiler (başlıklar, sayılarıyla, `data-nd-baslik`'a kayar), sağda sekmeli
   panel (gelen öneriler, takipler, takvim, plan durumu); ayrıntı penceresi
-  ortada değil yandan açılan panel (`.yeni-plan dialog.pencere`). Ekranda
+  ortada değil yandan açılan panel (`.yeni-plan dialog.pencere`). Klasiğin
+  özellikleri eksilmesin diye içindekilerde her başlığın ⋯ düğmesi klasik
+  başlık kartını (`BaslikKarti acik`: paket kararları, LIVE/TBC, muhabire not,
+  başlık menüsü, 🔗, stok paket) yan panelde açar; başlıkta sorumlu, öneri
+  çağrısı ve geçmiş plandan aktar da var. Ekranda
   içerik Naskh, başlık Kufi; baskı ve Word klasik çıktıdan, Calibri'yle.
   Beğenilirse klasik görünüm (`KlasikPlan`) ve ayrı belge sayfası silinecek.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan

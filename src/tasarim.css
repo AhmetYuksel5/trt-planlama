@@ -2571,3 +2571,7 @@ input[aria-invalid="true"] {
   .yeni-plan .yp-icindekiler { position: static; }
   .yeni-plan .yp-icindekiler, .yeni-plan .yp-ust-sag { width: 100%; }
 }
+.yeni-plan .yp-icindekiler-satir { display: flex; align-items: center; gap: 2px; }
+.yeni-plan .yp-icindekiler-satir > button:first-child { flex: 1; min-width: 0; }
+.yeni-plan .yp-islem { flex: none; width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--sonuk); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.yeni-plan .yp-islem:hover { background: var(--yuzey-2); color: var(--murekkep); }
