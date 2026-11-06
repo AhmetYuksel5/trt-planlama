@@ -717,6 +717,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   ve onay formda kalır. Ekranda
   içerik Naskh, başlık Kufi; baskı ve Word klasik çıktıdan, Calibri'yle.
   Beğenilirse klasik görünüm (`KlasikPlan`) ve ayrı belge sayfası silinecek.
+  Üçüncü deneme "Sütunlu" (kullanıcının çizimi; `YeniPlan sutunlu`): aynı
+  sade belge iki sütunda (`NextDayBelgesi sutunlu`, `.cikti-sutunlu`):
+  başlıklar ve beklenen paketler geniş alanda, her başlık ince çizgili
+  kutuda; ekip, hareketler, canlı, hazır paketler ve متابعات sağda dar,
+  yapışkan sütunda. İçindekiler yok; öneriler, takipler, takvim ve durum
+  "Öneriler ve takvim" çekmecesinde (kipsiz, öneri belgeye sürüklenir).
+  Çıktı, baskı ve Word tek sütunda kalır.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
   düğmeler (`PlanAraclari`: gelen öneriler, muhabir takipleri ve takvimden bu güne, sayılarıyla;

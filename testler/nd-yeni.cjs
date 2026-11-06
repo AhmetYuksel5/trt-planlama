@@ -49,6 +49,20 @@ const { chromium } = require(process.env.PW);
   }
   await p.evaluate(() => localStorage.setItem("trt-planlama-dil", "tr"));
   await p.setViewportSize({ width: 1440, height: 900 }); await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1000);
+  // Sütunlu görünüm: başlıklar açık kutu, sabit bölümler dar sütunda
+  await p.click('[data-nd-gorunum="sutunlu"]'); await p.waitForTimeout(500);
+  s.sutunlu = (await p.locator(".yeni-plan.sutunlu .nd-yan").count()) === 1 && (await p.locator(".nd-ana [data-nd-baslik]").count()) > 0 && (await p.locator(".yp-icindekiler").count()) === 0;
+  await p.screenshot({ path: process.env.EKRAN || "/tmp/sutunlu.png" });
+  await p.click("[data-yp-cekmece]"); await p.waitForTimeout(300);
+  s.cekmece = (await p.locator(".yp-cekmece [data-oneri]").count()) > 0;
+  await p.screenshot({ path: (process.env.EKRAN || "/tmp/sutunlu.png").replace(".png", "-cekmece.png") });
+  for (const dil of ["tr", "ar"]) {
+    await p.evaluate((d) => localStorage.setItem("trt-planlama-dil", d), dil);
+    await p.setViewportSize({ width: 390, height: 844 }); await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1000);
+    s["sutunluTasma_" + dil] = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth) === 0;
+  }
+  await p.evaluate(() => localStorage.setItem("trt-planlama-dil", "tr"));
+  await p.setViewportSize({ width: 1440, height: 900 }); await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1000);
   await p.click('[data-nd-gorunum="klasik"]'); await p.waitForTimeout(400);
   s.klasigeDondu = await p.locator("[data-yeni-plan]").count() === 0;
   console.log(s, "hata", hata);

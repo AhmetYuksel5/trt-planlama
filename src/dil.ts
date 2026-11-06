@@ -1100,6 +1100,8 @@ const M = {
   ndGorunum: m("Görünüm", "طريقة العرض", "View"),
   ndKlasik: m("Klasik", "الكلاسيكي", "Classic"),
   ndYeni: m("Yeni", "الجديد", "New"),
+  ndSutunlu: m("Sütunlu", "بالأعمدة", "Columns"),
+  ndYanPanel: m("Öneriler ve takvim", "المقترحات والتقويم", "Proposals and calendar"),
   hizliEkleYer: m("Yaz ya da / ile ekle…", "اكتب أو أضف بـ /…", "Type, or add with /…"),
   icindekiler: m("İçindekiler", "المحتويات", "Contents"),
   ndSekmeOneri: m("Öneriler", "المقترحات", "Proposals"),

@@ -2587,3 +2587,25 @@ input[aria-invalid="true"] {
 .yeni-plan .oneri-karti[draggable] { cursor: grab; }
 .yeni-plan .yp-belge.birakiliyor [data-nd-baslik] { outline: 1px dashed var(--cizgi); border-radius: var(--yaricap); }
 .yeni-plan .yp-belge.birakiliyor [data-nd-baslik].hedef { outline: 2px dashed var(--vurgu); background: var(--vurgu-sis); }
+
+/*
+ * Sütunlu deneme: belge iki sütun. Başlıklar (olaylar) geniş alanda, her biri ince
+ * çizgili kendi kutusunda; ekip, hareketler, canlı, hazır ve متابعات dar sütunda,
+ * küçük puntoyla. Gölge yok (kimlik: sakin yüzey); çekmece açılır katman olduğu için gölgeli.
+ */
+.yeni-plan.sutunlu .yp-izgara { grid-template-columns: minmax(0, 1fr); }
+.yeni-plan.sutunlu .cikti-sutunlu { max-width: none; }
+.cikti-sutunlu .nd-sutunlar { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: var(--ara-6); align-items: start; }
+/* Belge sağdan başlıyor: dar sütun sağda (çizimdeki gibi), başlıklar solda geniş. */
+.cikti-sutunlu .nd-yan { order: -1; border-inline-end: 1px solid var(--cizgi); padding-inline-end: var(--ara-5); font-size: var(--punto); position: sticky; top: calc(var(--ust-yukseklik) + var(--ara-4)); }
+.cikti-sutunlu .nd-yan section + section { margin-top: var(--ara-5); }
+.cikti-sutunlu .nd-ana h2.ortali { text-align: start; margin-block-end: var(--ara-3); }
+.cikti-sutunlu .nd-ana [data-nd-baslik] { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-3) var(--ara-4); margin-block-end: var(--ara-3); }
+.cikti-sutunlu .nd-ana [data-nd-baslik] h3 { margin-block-start: 0; }
+.yeni-plan .yp-cekmece { position: fixed; inset-block: var(--ust-yukseklik) 0; inset-inline-end: 0; top: var(--ust-yukseklik); z-index: 30; width: min(380px, 100vw); max-height: none; border-radius: 0; border-block: 0; border-inline-end: 0; box-shadow: var(--golge-acilir); }
+.yeni-plan .yp-cekmece-kapat { position: absolute; inset-inline-end: var(--ara-2); inset-block-start: var(--ara-2); z-index: 1; }
+.yeni-plan .yp-cekmece .yp-sekmeler { padding-inline-end: calc(var(--dokunma) + var(--ara-2)); }
+@media (max-width: 1100px) {
+  .cikti-sutunlu .nd-sutunlar { grid-template-columns: minmax(0, 1fr); }
+  .cikti-sutunlu .nd-yan { position: static; border-inline-end: 0; padding-inline-end: 0; border-block-end: 1px solid var(--cizgi); padding-block-end: var(--ara-4); }
+}

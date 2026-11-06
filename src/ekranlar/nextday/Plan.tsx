@@ -1,8 +1,34 @@
-import { ArrowLeft, MoreHorizontal, Binoculars, CalendarDays, CalendarSearch, Check, FilePen, FileUp, Lightbulb, Megaphone, Plus, Printer, Send, Undo2, UserCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  MoreHorizontal,
+  PanelRight,
+  X,
+  Binoculars,
+  CalendarDays,
+  CalendarSearch,
+  Check,
+  FilePen,
+  FileUp,
+  Lightbulb,
+  Megaphone,
+  Plus,
+  Printer,
+  Send,
+  Undo2,
+  UserCheck,
+} from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import { oneriBuGunun, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
-import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani, talimatOnce } from "../../bilesenler/Parcalar";
+import {
+  Bos,
+  Icerik,
+  Pencere,
+  Rozet,
+  bildir,
+  icerikAlani,
+  talimatOnce,
+} from "../../bilesenler/Parcalar";
 import { temelSorumlular } from "../../gorevler";
 import { gunEkle } from "../../tarih";
 import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -11,18 +37,53 @@ import { kayipBaslikGeriGetir, oncekiOnayla, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
-import { PLAN_DURUMLARI, baslikBul, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
-import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yalnizPlanlama, yapabilir } from "../../yetki";
-import { GorunumSecici, ONERI_TURU, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
+import {
+  PLAN_DURUMLARI,
+  baslikBul,
+  oncekiSayisi,
+  planBul,
+  useVeri,
+  type Durum,
+  type Kisi,
+  type NextDayPlan,
+  type Oneri,
+} from "../../veri";
+import {
+  planAdimiYapabilir,
+  planIcerikDuzenler,
+  planOperasyonDuzenler,
+  yalnizPlanlama,
+  yapabilir,
+} from "../../yetki";
+import {
+  GorunumSecici,
+  ONERI_TURU,
+  OneriListesi,
+  useOneriGorunumu,
+  type PencereDurumu,
+} from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import BaslikKarti from "./BaslikKarti";
-import { NdPencereIcerik, NextDayBelgesi, type NdPencere } from "../belge/NextDayBelge";
+import {
+  NdPencereIcerik,
+  NextDayBelgesi,
+  type NdPencere,
+} from "../belge/NextDayBelge";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import IceAktarPenceresi from "./IceAktar";
-import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
+import {
+  BaslikEkleFormu,
+  Bolum,
+  CanliBolumu,
+  EkipBolumu,
+  EkleDugmesi,
+  HareketBolumu,
+  HazirBolumu,
+  TakipBolumu,
+} from "./Bolumler";
 
 /**
  * Next Day planı düzenleme ekranı: promptun "en ayrıntılı geliştirilmesi
@@ -44,17 +105,26 @@ type AracPenceresi = "oneriler" | "takipler" | "takvim" | "aktar" | null;
  * Yeni görünüm denemede: seçim tarayıcıda, beğenilirse klasik silinecek.
  */
 const GORUNUM_ANAHTARI = "trt-planlama-nd-gorunum";
-const kayitliGorunum = (): "klasik" | "yeni" => {
+type NdGorunum = "klasik" | "yeni" | "sutunlu";
+const GORUNUMLER: NdGorunum[] = ["klasik", "yeni", "sutunlu"];
+const kayitliGorunum = (): NdGorunum => {
   try {
-    return localStorage.getItem(GORUNUM_ANAHTARI) === "yeni" ? "yeni" : "klasik";
+    const g = localStorage.getItem(GORUNUM_ANAHTARI) as NdGorunum | null;
+    return g && GORUNUMLER.includes(g) ? g : "klasik";
   } catch {
     return "klasik";
   }
 };
 
-export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
+export default function PlanEkrani({
+  ben,
+  plan,
+}: {
+  ben: Kisi;
+  plan: NextDayPlan;
+}) {
   const [gorunum, setGorunum] = useState(kayitliGorunum);
-  const degistir = (g: "klasik" | "yeni") => {
+  const degistir = (g: NdGorunum) => {
     setGorunum(g);
     try {
       localStorage.setItem(GORUNUM_ANAHTARI, g);
@@ -63,16 +133,45 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
     }
   };
   const secim = <NdGorunumSecimi deger={gorunum} degistir={degistir} />;
-  return gorunum === "yeni" ? <YeniPlan ben={ben} plan={plan} secim={secim} /> : <KlasikPlan ben={ben} plan={plan} secim={secim} />;
+  if (gorunum === "klasik")
+    return <KlasikPlan ben={ben} plan={plan} secim={secim} />;
+  return (
+    <YeniPlan
+      key={gorunum}
+      ben={ben}
+      plan={plan}
+      secim={secim}
+      sutunlu={gorunum === "sutunlu"}
+    />
+  );
 }
 
-function NdGorunumSecimi({ deger, degistir }: { deger: "klasik" | "yeni"; degistir: (g: "klasik" | "yeni") => void }) {
+function NdGorunumSecimi({
+  deger,
+  degistir,
+}: {
+  deger: NdGorunum;
+  degistir: (g: NdGorunum) => void;
+}) {
   const { t } = useDil();
   return (
-    <div className="nd-gorunum yazdirma-gizle" role="group" aria-label={t("ndGorunum")}>
-      {(["klasik", "yeni"] as const).map((g) => (
-        <button key={g} type="button" aria-pressed={deger === g} className={deger === g ? "secili" : ""} onClick={() => degistir(g)} data-nd-gorunum={g}>
-          {t(g === "klasik" ? "ndKlasik" : "ndYeni")}
+    <div
+      className="nd-gorunum yazdirma-gizle"
+      role="group"
+      aria-label={t("ndGorunum")}
+    >
+      {GORUNUMLER.map((g) => (
+        <button
+          key={g}
+          type="button"
+          aria-pressed={deger === g}
+          className={deger === g ? "secili" : ""}
+          onClick={() => degistir(g)}
+          data-nd-gorunum={g}
+        >
+          {t(
+            g === "klasik" ? "ndKlasik" : g === "yeni" ? "ndYeni" : "ndSutunlu",
+          )}
         </button>
       ))}
     </div>
@@ -87,7 +186,22 @@ type YanSekme = "oneri" | "takip" | "takvim" | "durum";
  * takvim ve planın durumu. Ayrıntı penceresi CSS'te yandan açılan panel
  * (.yeni-plan dialog.pencere): plan yerinde kalsın, ekranı kaplayan form yok.
  */
-function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: ReactNode }) {
+/*
+ * sutunlu (deneme, kullanıcının çizimi): içindekiler yok, belge iki sütun (başlıklar
+ * geniş, sabit bölümler dar); öneri/takip/takvim paneli çekmece, kapalıyken belge
+ * tam genişlik. Çekmece kipsiz: açıkken öneri kartı belgeye sürüklenebilsin.
+ */
+function YeniPlan({
+  ben,
+  plan,
+  secim,
+  sutunlu,
+}: {
+  ben: Kisi;
+  plan: NextDayPlan;
+  secim: ReactNode;
+  sutunlu?: boolean;
+}) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
@@ -97,13 +211,27 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
   // Klasiğin başlık kartı (paket kararları, LIVE/TBC, muhabire not, başlık menüsü, 🔗…) yan panelde: yeni görünümde özellik eksilmesin.
   const [baslikPanel, setBaslikPanel] = useState<string | null>(null);
   const [hedef, setHedef] = useState<string | null>(null);
-  const [birak, setBirak] = useState<{ oneriId: string; baslikId: string } | null>(null);
+  const [birak, setBirak] = useState<{
+    oneriId: string;
+    baslikId: string;
+  } | null>(null);
   const [aktar, setAktar] = useState(false);
+  const [cekmece, setCekmece] = useState(false);
   const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
-  useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
-  const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere, hizli: true } : undefined;
-  const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
-  const kay = (id: string) => document.querySelector(`[data-nd-baslik="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  useSekmeAdi(
+    `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`,
+  );
+  const duzen =
+    icerik || operasyon
+      ? { ben, icerik, operasyon, ac: setPencere, hizli: true }
+      : undefined;
+  const paketler = v.paketler.filter(
+    (p) => p.planId === plan.id && p.durum !== "iptal",
+  );
+  const kay = (id: string) =>
+    document
+      .querySelector(`[data-nd-baslik="${id}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   const SEKMELER: [YanSekme, Anahtar][] = [
     ["oneri", "ndSekmeOneri"],
     ["takip", "ndSekmeTakip"],
@@ -111,7 +239,7 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
     ["durum", "ndSekmeDurum"],
   ];
   return (
-    <div className="yeni-plan" data-yeni-plan>
+    <div className={`yeni-plan${sutunlu ? " sutunlu" : ""}`} data-yeni-plan>
       <header className="yp-ust">
         <a className="geri-bag" href="#/nextday">
           <ArrowLeft size={14} className="yon" /> {t("nextdayPlanlari")}
@@ -119,61 +247,115 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
         <h1 className="sayfa-adi-tekrar">
           {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
         </h1>
-        <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>{t(PLAN_DURUM_ADI[plan.durum])}</Rozet>
+        <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>
+          {t(PLAN_DURUM_ADI[plan.durum])}
+        </Rozet>
         <span className="sonuk-yazi">
-          {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}
+          {t("baslikPaketSayisi", {
+            b: plan.basliklar.length,
+            p: paketler.length,
+          })}
           {sorumlu.length > 0 && (
             <span data-nd-sorumlu={sorumlu.join(",")}>
               {" · "}
-              {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
+              {t("gvBugununSorumlusu")}:{" "}
+              {sorumlu
+                .map((id) => ad(v.kisiler.find((k) => k.id === id)))
+                .join(", ")}
             </span>
           )}
         </span>
         <span className="yp-ust-sag">
-          {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+          {(icerik || operasyon) && (
+            <GeriAlDugmesi ben={ben} planId={plan.id} />
+          )}
           {icerik && (
-            <button type="button" className="dugme dugme-ikincil dugme-ikon" title={t("planIceAktar")} aria-label={t("planIceAktar")} onClick={() => setAktar(true)} data-arac="aktar">
+            <button
+              type="button"
+              className="dugme dugme-ikincil dugme-ikon"
+              title={t("planIceAktar")}
+              aria-label={t("planIceAktar")}
+              onClick={() => setAktar(true)}
+              data-arac="aktar"
+            >
               <FileUp size={16} />
             </button>
           )}
           {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && (
-            <a className="dugme dugme-ikincil dugme-kucuk" href={`#/oneriler/cagri/${plan.tarih}`} data-arac="cagri">
+            <a
+              className="dugme dugme-ikincil dugme-kucuk"
+              href={`#/oneriler/cagri/${plan.tarih}`}
+              data-arac="cagri"
+            >
               <Megaphone size={15} /> {t("oneriCagrisi")}
             </a>
           )}
-          <a className="dugme dugme-ikincil dugme-kucuk" href={`#/nextday/${plan.id}/cikti`}>
+          <a
+            className="dugme dugme-ikincil dugme-kucuk"
+            href={`#/nextday/${plan.id}/cikti`}
+          >
             <Printer size={15} /> {t("cikti")}
           </a>
+          {sutunlu && (
+            <button
+              type="button"
+              className={`dugme dugme-ikincil dugme-kucuk${cekmece ? " secili" : ""}`}
+              aria-pressed={cekmece}
+              onClick={() => setCekmece((x) => !x)}
+              data-yp-cekmece
+            >
+              <PanelRight size={15} /> {t("ndYanPanel")}
+            </button>
+          )}
           {secim}
         </span>
       </header>
       <OncekiSeridi ben={ben} plan={plan} />
       <KayipSeridi ben={ben} plan={plan} />
       <div className="yp-izgara">
-        <nav className="yp-icindekiler" aria-label={t("icindekiler")}>
-          <span className="yp-etiket">{t("icindekiler")}</span>
-          {plan.basliklar.map((pb) => {
-            const n = v.gelismeler.filter((g) => g.planBaslikId === pb.id).length + paketler.filter((p) => p.planBaslikId === pb.id).length;
-            return (
-              <div key={pb.id} className="yp-icindekiler-satir">
-                <button type="button" onClick={() => kay(pb.id)} data-yp-icindekiler={pb.id}>
-                  <Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>
-                  <span className="sonuk-yazi">{n}</span>
-                </button>
-                <button type="button" className="yp-islem" title={t("baslikIslemleri")} aria-label={t("baslikIslemleri")} onClick={() => setBaslikPanel(pb.id)} data-yp-baslik-islem={pb.id}>
-                  <MoreHorizontal size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </nav>
+        {!sutunlu && (
+          <nav className="yp-icindekiler" aria-label={t("icindekiler")}>
+            <span className="yp-etiket">{t("icindekiler")}</span>
+            {plan.basliklar.map((pb) => {
+              const n =
+                v.gelismeler.filter((g) => g.planBaslikId === pb.id).length +
+                paketler.filter((p) => p.planBaslikId === pb.id).length;
+              return (
+                <div key={pb.id} className="yp-icindekiler-satir">
+                  <button
+                    type="button"
+                    onClick={() => kay(pb.id)}
+                    data-yp-icindekiler={pb.id}
+                  >
+                    <Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>
+                    <span className="sonuk-yazi">{n}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="yp-islem"
+                    title={t("baslikIslemleri")}
+                    aria-label={t("baslikIslemleri")}
+                    onClick={() => setBaslikPanel(pb.id)}
+                    data-yp-baslik-islem={pb.id}
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </nav>
+        )}
         <div
           className={`yp-belge cikti-sarici belge-duzen ${hedef ? "birakiliyor" : ""}`}
           // Öneri kartı başlığa bırakılınca "Plana ekle" o başlıkla açılır; PKG/canlı kararı ve onay formda.
           onDragOver={(e) => {
             if (!icerik || !e.dataTransfer.types.includes(ONERI_TURU)) return;
-            const b = (e.target as HTMLElement).closest<HTMLElement>("[data-nd-baslik]");
-            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x !== b && x.classList.remove("hedef"));
+            const b = (e.target as HTMLElement).closest<HTMLElement>(
+              "[data-nd-baslik]",
+            );
+            e.currentTarget
+              .querySelectorAll(".hedef")
+              .forEach((x) => x !== b && x.classList.remove("hedef"));
             if (!b) return setHedef(null);
             e.preventDefault();
             b.classList.add("hedef");
@@ -181,11 +363,15 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           }}
           onDragLeave={(e) => {
             if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x.classList.remove("hedef"));
+            e.currentTarget
+              .querySelectorAll(".hedef")
+              .forEach((x) => x.classList.remove("hedef"));
             setHedef(null);
           }}
           onDrop={(e) => {
-            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x.classList.remove("hedef"));
+            e.currentTarget
+              .querySelectorAll(".hedef")
+              .forEach((x) => x.classList.remove("hedef"));
             const id = e.dataTransfer.getData(ONERI_TURU);
             const pb = plan.basliklar.find((x) => x.id === hedef);
             setHedef(null);
@@ -195,33 +381,83 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           }}
           data-yp-hedef={hedef ?? undefined}
         >
-          <NextDayBelgesi plan={plan} duzen={duzen} />
+          <NextDayBelgesi plan={plan} duzen={duzen} sutunlu={sutunlu} />
         </div>
-        <aside className="yp-yan">
-          <div className="yp-sekmeler" role="tablist">
-            {SEKMELER.map(([s, ad]) => (
-              <button key={s} type="button" role="tab" aria-selected={sekme === s} className={sekme === s ? "secili" : ""} onClick={() => setSekme(s)} data-yp-sekme={s}>
-                {t(ad)}
+        {(!sutunlu || cekmece) && (
+          <aside className={`yp-yan${sutunlu ? " yp-cekmece" : ""}`}>
+            {sutunlu && (
+              <button
+                type="button"
+                className="dugme dugme-sade dugme-ikon yp-cekmece-kapat"
+                title={t("kapat")}
+                aria-label={t("kapat")}
+                onClick={() => setCekmece(false)}
+              >
+                <X size={16} />
               </button>
-            ))}
-          </div>
-          <div className="yp-yan-icerik">
-            {sekme === "oneri" && <GelenOneriler ben={ben} plan={plan} />}
-            {sekme === "takip" && <PlanTakipleri ben={ben} plan={plan} />}
-            {sekme === "takvim" && <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={operasyon} eklemeMetni={t("planaEkle")} />}
-            {sekme === "durum" && <PlanDurumKarti ben={ben} plan={plan} />}
-          </div>
-        </aside>
+            )}
+            <div className="yp-sekmeler" role="tablist">
+              {SEKMELER.map(([s, ad]) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="tab"
+                  aria-selected={sekme === s}
+                  className={sekme === s ? "secili" : ""}
+                  onClick={() => setSekme(s)}
+                  data-yp-sekme={s}
+                >
+                  {t(ad)}
+                </button>
+              ))}
+            </div>
+            <div className="yp-yan-icerik">
+              {sekme === "oneri" && <GelenOneriler ben={ben} plan={plan} />}
+              {sekme === "takip" && <PlanTakipleri ben={ben} plan={plan} />}
+              {sekme === "takvim" && (
+                <TakvimdenListe
+                  ben={ben}
+                  bas={plan.tarih}
+                  bit={plan.tarih}
+                  tur="nextday"
+                  planId={plan.id}
+                  ekleyebilir={operasyon}
+                  eklemeMetni={t("planaEkle")}
+                />
+              )}
+              {sekme === "durum" && <PlanDurumKarti ben={ben} plan={plan} />}
+            </div>
+          </aside>
+        )}
       </div>
-      {pencere && duzen && <NdPencereIcerik ben={ben} plan={plan} p={pencere} kapat={() => setPencere(null)} />}
+      {pencere && duzen && (
+        <NdPencereIcerik
+          ben={ben}
+          plan={plan}
+          p={pencere}
+          kapat={() => setPencere(null)}
+        />
+      )}
       {baslikPanel &&
         (() => {
           const i = plan.basliklar.findIndex((x) => x.id === baslikPanel);
           const pb = plan.basliklar[i];
           if (!pb) return null;
           return (
-            <Pencere baslik={t("baslikIslemleri")} alt={<Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>} kapat={() => setBaslikPanel(null)}>
-              <BaslikKarti plan={plan} pb={pb} sira={i} toplam={plan.basliklar.length} icerik={icerik} operasyon={operasyon} acik />
+            <Pencere
+              baslik={t("baslikIslemleri")}
+              alt={<Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>}
+              kapat={() => setBaslikPanel(null)}
+            >
+              <BaslikKarti
+                plan={plan}
+                pb={pb}
+                sira={i}
+                toplam={plan.basliklar.length}
+                icerik={icerik}
+                operasyon={operasyon}
+                acik
+              />
             </Pencere>
           );
         })()}
@@ -230,24 +466,52 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           const o = v.oneriler.find((x) => x.id === birak.oneriId);
           if (!o) return null;
           return (
-            <Pencere baslik={t("planaEkle")} alt={<Icerik>{o.haberBasligi}</Icerik>} kapat={() => setBirak(null)}>
-              <PlanaEkle ben={ben} oneri={o} planId={plan.id} baslikId={birak.baslikId} kapat={() => setBirak(null)} />
+            <Pencere
+              baslik={t("planaEkle")}
+              alt={<Icerik>{o.haberBasligi}</Icerik>}
+              kapat={() => setBirak(null)}
+            >
+              <PlanaEkle
+                ben={ben}
+                oneri={o}
+                planId={plan.id}
+                baslikId={birak.baslikId}
+                kapat={() => setBirak(null)}
+              />
             </Pencere>
           );
         })()}
-      {aktar && <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setAktar(false)} />}
+      {aktar && (
+        <IceAktarPenceresi
+          ben={ben}
+          plan={plan}
+          kapat={() => setAktar(false)}
+        />
+      )}
     </div>
   );
 }
 
-function KlasikPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: ReactNode }) {
+function KlasikPlan({
+  ben,
+  plan,
+  secim,
+}: {
+  ben: Kisi;
+  plan: NextDayPlan;
+  secim: ReactNode;
+}) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
-  const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
+  const paketler = v.paketler.filter(
+    (p) => p.planId === plan.id && p.durum !== "iptal",
+  );
   const [arac, setArac] = useState<AracPenceresi>(null);
-  useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
+  useSekmeAdi(
+    `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`,
+  );
   // Bir günün planını önceki gün hazırlıyor: sorumlu, bir önceki günün Next Day görevlisi (iş taksimi, gorevler.ts).
   const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
 
@@ -265,12 +529,20 @@ function KlasikPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim:
             {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
           </h1>
           <p>
-            <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>{t(PLAN_DURUM_ADI[plan.durum])}</Rozet>{" "}
-            {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}
+            <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>
+              {t(PLAN_DURUM_ADI[plan.durum])}
+            </Rozet>{" "}
+            {t("baslikPaketSayisi", {
+              b: plan.basliklar.length,
+              p: paketler.length,
+            })}
             {sorumlu.length > 0 && (
               <span data-nd-sorumlu={sorumlu.join(",")}>
                 {" · "}
-                {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
+                {t("gvBugununSorumlusu")}:{" "}
+                {sorumlu
+                  .map((id) => ad(v.kisiler.find((k) => k.id === id)))
+                  .join(", ")}
               </span>
             )}
           </p>
@@ -292,34 +564,77 @@ function KlasikPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim:
       <PlanDurumKarti ben={ben} plan={plan} />
 
       {arac === "oneriler" && (
-        <Pencere genis baslik={t("buPlanaGelenOneriler")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
+        <Pencere
+          genis
+          baslik={t("buPlanaGelenOneriler")}
+          alt={tarihYaz(plan.tarih, dil, "tam")}
+          kapat={() => setArac(null)}
+        >
           <GelenOneriler ben={ben} plan={plan} />
         </Pencere>
       )}
       {/* Muhabir takipleri gelen önerilerden ayrı: yalnız gelişme bildiren takip öneri listesini kalabalıklaştırmasın. */}
       {arac === "takipler" && (
-        <Pencere genis baslik={t("mtAcikTakipler")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
+        <Pencere
+          genis
+          baslik={t("mtAcikTakipler")}
+          alt={tarihYaz(plan.tarih, dil, "tam")}
+          kapat={() => setArac(null)}
+        >
           <PlanTakipleri ben={ben} plan={plan} />
         </Pencere>
       )}
       {arac === "takvim" && (
-        <Pencere genis baslik={t("takvimdenGun")} alt={tarihYaz(plan.tarih, dil, "tam")} kapat={() => setArac(null)}>
-          <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={operasyon} eklemeMetni={t("planaEkle")} />
+        <Pencere
+          genis
+          baslik={t("takvimdenGun")}
+          alt={tarihYaz(plan.tarih, dil, "tam")}
+          kapat={() => setArac(null)}
+        >
+          <TakvimdenListe
+            ben={ben}
+            bas={plan.tarih}
+            bit={plan.tarih}
+            tur="nextday"
+            planId={plan.id}
+            ekleyebilir={operasyon}
+            eklemeMetni={t("planaEkle")}
+          />
         </Pencere>
       )}
-      {arac === "aktar" && <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setArac(null)} />}
+      {arac === "aktar" && (
+        <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setArac(null)} />
+      )}
     </>
   );
 }
 
-function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a: AracPenceresi) => void }) {
+function PlanAraclari({
+  ben,
+  plan,
+  ac,
+}: {
+  ben: Kisi;
+  plan: NextDayPlan;
+  ac: (a: AracPenceresi) => void;
+}) {
   const { t } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
-  const bekleyen = v.oneriler.filter((o) => oneriBuGunun(o, plan.tarih) && (o.durum === "yeni" || o.durum === "degerlendiriliyor")).length;
+  const bekleyen = v.oneriler.filter(
+    (o) =>
+      oneriBuGunun(o, plan.tarih) &&
+      (o.durum === "yeni" || o.durum === "degerlendiriliyor"),
+  ).length;
   const faaliyet = plandakiFaaliyetler(v, ben, plan.tarih, plan.tarih).length;
-  const arac = (anahtar: string, ikon: ReactNode, ad: Anahtar, hedef: string | (() => void), sayi = 0) => {
+  const arac = (
+    anahtar: string,
+    ikon: ReactNode,
+    ad: Anahtar,
+    hedef: string | (() => void),
+    sayi = 0,
+  ) => {
     const ic = (
       <>
         {ikon} {t(ad)}
@@ -339,16 +654,61 @@ function PlanAraclari({ ben, plan, ac }: { ben: Kisi; plan: NextDayPlan; ac: (a:
   };
   return (
     <nav className="sag-uc plan-araclari" aria-label={t("planAraclari")}>
-      {icerik && arac("oneriler", <Lightbulb size={16} />, "buPlanaGelenOneriler", () => ac("oneriler"), bekleyen)}
-      {icerik && arac("takipler", <Binoculars size={16} />, "mtAcikTakipler", () => ac("takipler"), takipOnerileri(ben, v).length)}
-      {arac("takvim", <CalendarSearch size={16} />, "takvimdenGun", () => ac("takvim"), faaliyet)}
-      {yapabilir(ben, "cagriHazirla") && plan.durum === "taslak" && arac("cagri", <Megaphone size={16} />, "oneriCagrisi", `#/oneriler/cagri/${plan.tarih}`)}
-      {arac("cikti", <Printer size={16} />, "ciktiOnizleme", `#/nextday/${plan.id}/cikti`)}
-      {(icerik || operasyon) && arac("belge", <FilePen size={16} />, "belgedeDuzenle", `#/nextday/${plan.id}/belge`)}
+      {icerik &&
+        arac(
+          "oneriler",
+          <Lightbulb size={16} />,
+          "buPlanaGelenOneriler",
+          () => ac("oneriler"),
+          bekleyen,
+        )}
+      {icerik &&
+        arac(
+          "takipler",
+          <Binoculars size={16} />,
+          "mtAcikTakipler",
+          () => ac("takipler"),
+          takipOnerileri(ben, v).length,
+        )}
+      {arac(
+        "takvim",
+        <CalendarSearch size={16} />,
+        "takvimdenGun",
+        () => ac("takvim"),
+        faaliyet,
+      )}
+      {yapabilir(ben, "cagriHazirla") &&
+        plan.durum === "taslak" &&
+        arac(
+          "cagri",
+          <Megaphone size={16} />,
+          "oneriCagrisi",
+          `#/oneriler/cagri/${plan.tarih}`,
+        )}
+      {arac(
+        "cikti",
+        <Printer size={16} />,
+        "ciktiOnizleme",
+        `#/nextday/${plan.id}/cikti`,
+      )}
+      {(icerik || operasyon) &&
+        arac(
+          "belge",
+          <FilePen size={16} />,
+          "belgedeDuzenle",
+          `#/nextday/${plan.id}/belge`,
+        )}
       {/* Geri alma ve geçmiş plandan aktarma yer kaplamasın: yalnız simge, adı ipucunda. */}
       {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
       {icerik && (
-        <button type="button" className="dugme dugme-ikincil dugme-ikon" title={t("planIceAktar")} aria-label={t("planIceAktar")} onClick={() => ac("aktar")} data-arac="aktar">
+        <button
+          type="button"
+          className="dugme dugme-ikincil dugme-ikon"
+          title={t("planIceAktar")}
+          aria-label={t("planIceAktar")}
+          onClick={() => ac("aktar")}
+          data-arac="aktar"
+        >
           <FileUp size={16} />
         </button>
       )}
@@ -362,14 +722,23 @@ function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const v = useVeri();
   const sablon = planBul(v, plan.kopyaKaynagi);
   const onceki = oncekiSayisi(v, plan);
-  if (onceki === 0 || !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))) return null;
+  if (
+    onceki === 0 ||
+    !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))
+  )
+    return null;
   return (
     <div className="onceki-seridi">
-      <button className="dugme" onClick={() => oncekiOnayla(ben, plan.id)} data-bugune-al>
+      <button
+        className="dugme"
+        onClick={() => oncekiOnayla(ben, plan.id)}
+        data-bugune-al
+      >
         <Check size={16} /> {t("hepsiniBuguneAl")}
       </button>
       <span className="onceki-sayi">
-        <span className="onceki-ornek" aria-hidden="true" /> {t(sablon ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
+        <span className="onceki-ornek" aria-hidden="true" />{" "}
+        {t(sablon ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
       </span>
     </div>
   );
@@ -386,7 +755,10 @@ function KayipSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const [acik, setAcik] = useState(false);
   const gruplar = kayipBasliklar(v, plan);
   if (!planIcerikDuzenler(ben, plan) || (!gruplar.length && !acik)) return null;
-  const sayi = gruplar.reduce((n, g) => n + g.gelismeler.length + g.paketler.length + g.canlilar.length, 0);
+  const sayi = gruplar.reduce(
+    (n, g) => n + g.gelismeler.length + g.paketler.length + g.canlilar.length,
+    0,
+  );
   return (
     <>
       {gruplar.length > 0 && (
@@ -398,24 +770,55 @@ function KayipSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         </div>
       )}
       {acik && (
-        <Pencere genis baslik={t("kayipKayitlarBaslik")} kapat={() => setAcik(false)}>
-          {gruplar.length === 0 ? <Bos kucuk metin={t("kayitYok")} /> : gruplar.map((g) => <KayipGrupSatiri key={g.pbId} ben={ben} plan={plan} grup={g} />)}
+        <Pencere
+          genis
+          baslik={t("kayipKayitlarBaslik")}
+          kapat={() => setAcik(false)}
+        >
+          {gruplar.length === 0 ? (
+            <Bos kucuk metin={t("kayitYok")} />
+          ) : (
+            gruplar.map((g) => (
+              <KayipGrupSatiri key={g.pbId} ben={ben} plan={plan} grup={g} />
+            ))
+          )}
         </Pencere>
       )}
     </>
   );
 }
 
-function KayipGrupSatiri({ ben, plan, grup }: { ben: Kisi; plan: NextDayPlan; grup: KayipGrup }) {
+function KayipGrupSatiri({
+  ben,
+  plan,
+  grup,
+}: {
+  ben: Kisi;
+  plan: NextDayPlan;
+  grup: KayipGrup;
+}) {
   const { t } = useDil();
   const v = useVeri();
   const { plandaki, onceki } = ndBaslikSecenekleri(v, plan);
-  const onerilen = grup.onerilen ? v.basliklar.find((b) => b.id === grup.onerilen) : undefined;
-  const ekBaslik = onerilen && ![...plandaki, ...onceki].some((b) => b.id === onerilen.id) ? onerilen : undefined;
+  const onerilen = grup.onerilen
+    ? v.basliklar.find((b) => b.id === grup.onerilen)
+    : undefined;
+  const ekBaslik =
+    onerilen && ![...plandaki, ...onceki].some((b) => b.id === onerilen.id)
+      ? onerilen
+      : undefined;
   const [secim, setSecim] = useState(onerilen?.id ?? "yeni");
   const [yeni, setYeni] = useState("");
   const geriKoy = () => {
-    if (kayipBaslikGeriGetir(ben, plan.id, grup.pbId, secim === "yeni" ? { yeniBaslik: yeni } : { baslikId: secim })) bildir(t("bKaydedildi"));
+    if (
+      kayipBaslikGeriGetir(
+        ben,
+        plan.id,
+        grup.pbId,
+        secim === "yeni" ? { yeniBaslik: yeni } : { baslikId: secim },
+      )
+    )
+      bildir(t("bKaydedildi"));
   };
   return (
     <section className="kart form" data-kayip-grup={grup.pbId}>
@@ -439,7 +842,11 @@ function KayipGrupSatiri({ ben, plan, grup }: { ben: Kisi; plan: NextDayPlan; gr
       <div className="satir">
         <label>
           {t("baslik")}
-          <select value={secim} onChange={(e) => setSecim(e.target.value)} data-kayip-baslik>
+          <select
+            value={secim}
+            onChange={(e) => setSecim(e.target.value)}
+            data-kayip-baslik
+          >
             {plandaki.length > 0 && (
               <optgroup label={t("plandakiBasliklar")}>
                 {plandaki.map((b) => (
@@ -469,12 +876,22 @@ function KayipGrupSatiri({ ben, plan, grup }: { ben: Kisi; plan: NextDayPlan; gr
         {secim === "yeni" && (
           <label>
             {t("yeniBaslik")}
-            <input {...icerikAlani} value={yeni} onChange={(e) => setYeni(e.target.value)} data-kayip-yeni />
+            <input
+              {...icerikAlani}
+              value={yeni}
+              onChange={(e) => setYeni(e.target.value)}
+              data-kayip-yeni
+            />
           </label>
         )}
       </div>
       <div className="form-alt">
-        <button className="dugme" onClick={geriKoy} disabled={secim === "yeni" && !yeni.trim()} data-kayip-koy>
+        <button
+          className="dugme"
+          onClick={geriKoy}
+          disabled={secim === "yeni" && !yeni.trim()}
+          data-kayip-koy
+        >
           {t("basligaGeriKoy")}
         </button>
       </div>
@@ -487,8 +904,13 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t } = useDil();
   const v = useVeri();
   // Onay kararsız paketleri kabul sayıyor (planDurum); onay penceresi kaç paketin kabul edileceğini, kaç muhabire görev gideceğini söylüyor.
-  const kararsiz = v.paketler.filter((p) => p.planId === plan.id && (p.durum === "taslak" || p.durum === "degerlendiriliyor"));
-  const gorevli = new Set(kararsiz.map((p) => p.muhabirId).filter(Boolean)).size;
+  const kararsiz = v.paketler.filter(
+    (p) =>
+      p.planId === plan.id &&
+      (p.durum === "taslak" || p.durum === "degerlendiriliyor"),
+  );
+  const gorevli = new Set(kararsiz.map((p) => p.muhabirId).filter(Boolean))
+    .size;
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
     if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
   };
@@ -498,7 +920,10 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         {PLAN_DURUMLARI.map((d, i) => {
           const simdi = PLAN_DURUMLARI.indexOf(plan.durum);
           return (
-            <span key={d} className={i < simdi ? "gecti" : i === simdi ? "simdi" : ""}>
+            <span
+              key={d}
+              className={i < simdi ? "gecti" : i === simdi ? "simdi" : ""}
+            >
               {i > 0 && <span className="ayrac" aria-hidden="true" />}
               <i>{i < simdi ? <Check size={11} /> : i + 1}</i>
               {t(PLAN_DURUM_ADI[d])}
@@ -508,31 +933,62 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
       </div>
       <div className="dugmeler ara-ust-2">
         {plan.durum === "taslak" && planAdimiYapabilir(ben, "ndToplanti") && (
-          <button className="dugme" onClick={() => confirm(t("toplantiyaGoturSoru")) && durumDegistir("toplantida", "bToplantiya")}>
+          <button
+            className="dugme"
+            onClick={() =>
+              confirm(t("toplantiyaGoturSoru")) &&
+              durumDegistir("toplantida", "bToplantiya")
+            }
+          >
             <Send size={16} className="yon" /> {t("toplantiyaGotur")}
           </button>
         )}
         {plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndOnay") && (
-          <button className="dugme dugme-iyi" onClick={() => confirm(kararsiz.length ? t("planOnaySayili", { n: kararsiz.length, m: gorevli }) : t("planOnaySoru")) && durumDegistir("onayli", "bPlanOnaylandi")}>
+          <button
+            className="dugme dugme-iyi"
+            onClick={() =>
+              confirm(
+                kararsiz.length
+                  ? t("planOnaySayili", { n: kararsiz.length, m: gorevli })
+                  : t("planOnaySoru"),
+              ) && durumDegistir("onayli", "bPlanOnaylandi")
+            }
+          >
             <Check size={16} /> {t("planiOnayla")}
           </button>
         )}
-        {plan.durum === "toplantida" && planAdimiYapabilir(ben, "ndToplanti") && (
-          <button className="dugme dugme-ikincil" onClick={() => durumDegistir("taslak", "bTaslaga")}>
-            <Undo2 size={16} /> {t("taslagaGeriAl")}
-          </button>
-        )}
+        {plan.durum === "toplantida" &&
+          planAdimiYapabilir(ben, "ndToplanti") && (
+            <button
+              className="dugme dugme-ikincil"
+              onClick={() => durumDegistir("taslak", "bTaslaga")}
+            >
+              <Undo2 size={16} /> {t("taslagaGeriAl")}
+            </button>
+          )}
         {plan.durum === "onayli" && planAdimiYapabilir(ben, "ndOnayGeri") && (
-          <button className="dugme dugme-ikincil" data-onay-geri onClick={() => confirm(t("onayiGeriAlSoru")) && durumDegistir("toplantida", "bOnayGeriAlindi")}>
+          <button
+            className="dugme dugme-ikincil"
+            data-onay-geri
+            onClick={() =>
+              confirm(t("onayiGeriAlSoru")) &&
+              durumDegistir("toplantida", "bOnayGeriAlindi")
+            }
+          >
             <Undo2 size={16} /> {t("onayiGeriAl")}
           </button>
         )}
         {/* Newsdesk sistemde değilken devir yok: Next Day paketleri Planlama'nın yolunda kapanıyor. */}
-        {plan.durum === "onayli" && !yalnizPlanlama(v) && planAdimiYapabilir(ben, "ndDevral") && (
-          <button className="dugme" onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}>
-            <UserCheck size={16} /> {t("planiDevral")}
-          </button>
-        )}
+        {plan.durum === "onayli" &&
+          !yalnizPlanlama(v) &&
+          planAdimiYapabilir(ben, "ndDevral") && (
+            <button
+              className="dugme"
+              onClick={() => durumDegistir("devralindi", "bPlanDevralindi")}
+            >
+              <UserCheck size={16} /> {t("planiDevral")}
+            </button>
+          )}
       </div>
     </section>
   );
@@ -540,22 +996,46 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 
 /* --- 5. Haber gündemi: merkezi başlıklardan seçilen ve sıralanan başlıklar --- */
 
-function GundemBolumu({ plan, icerik, operasyon }: { plan: NextDayPlan; icerik: boolean; operasyon: boolean }) {
+function GundemBolumu({
+  plan,
+  icerik,
+  operasyon,
+}: {
+  plan: NextDayPlan;
+  icerik: boolean;
+  operasyon: boolean;
+}) {
   const { t } = useDil();
   const [ekle, setEkle] = useState(false);
 
   return (
-    <Bolum ar no={5} baslik={metin("haberGundemi", "ar")} ek={t("baslikSayisi", { n: plan.basliklar.length })}>
+    <Bolum
+      ar
+      no={5}
+      baslik={metin("haberGundemi", "ar")}
+      ek={t("baslikSayisi", { n: plan.basliklar.length })}
+    >
       {plan.basliklar.length === 0 && <Bos metin={t("baslikYok")} />}
       {plan.basliklar.map((pb, i) => (
-        <BaslikKarti key={pb.id} plan={plan} pb={pb} sira={i} toplam={plan.basliklar.length} icerik={icerik} operasyon={operasyon} />
+        <BaslikKarti
+          key={pb.id}
+          plan={plan}
+          pb={pb}
+          sira={i}
+          toplam={plan.basliklar.length}
+          icerik={icerik}
+          operasyon={operasyon}
+        />
       ))}
       {icerik &&
         (ekle ? (
           <BaslikEkleFormu plan={plan} kapat={() => setEkle(false)} />
         ) : (
           <div className="ara-ust-2">
-            <button className="dugme dugme-ikincil" onClick={() => setEkle(true)}>
+            <button
+              className="dugme dugme-ikincil"
+              onClick={() => setEkle(true)}
+            >
               <Plus size={16} /> {t("baslikEkle")}
             </button>
           </div>
@@ -595,7 +1075,9 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         />
       ) : (
         <div className="oneri-arac ara-alt-2">
-          {yapabilir(ben, "oneriGonder") && <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />}
+          {yapabilir(ben, "oneriGonder") && (
+            <EkleDugmesi metin={t("oneriEkle")} onClick={() => setElle(true)} />
+          )}
           <span className="bosluk-esnek" />
           <GorunumSecici deger={gorunum} degistir={setGorunum} />
         </div>
@@ -608,7 +1090,9 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         pencere={pencere}
         setPencere={setPencere}
         ekleMetni={t("planaEkle")}
-        ekleFormu={(o, kapat) => <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={kapat} />}
+        ekleFormu={(o, kapat) => (
+          <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={kapat} />
+        )}
         ertelenebilir
       />
     </>
@@ -616,6 +1100,19 @@ function GelenOneriler({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
 }
 
 // Düzeltmedeki öneri muhabirde bekliyor; Planlama'nın önündekilerin arkasında.
-const SIRA: Record<Oneri["durum"], number> = { yeni: 0, degerlendiriliyor: 1, duzeltme: 2, takip: 2, teklif: 3, sonra: 4, reddedildi: 5, geriCekildi: 5, planaEklendi: 6 };
+const SIRA: Record<Oneri["durum"], number> = {
+  yeni: 0,
+  degerlendiriliyor: 1,
+  duzeltme: 2,
+  takip: 2,
+  teklif: 3,
+  sonra: 4,
+  reddedildi: 5,
+  geriCekildi: 5,
+  planaEklendi: 6,
+};
 // Haftalık gündeme alınan öneri de karar almış: plana eklenenle birlikte en sonda.
-const sira = (d: Durum, o: Oneri) => (o.durum !== "planaEklendi" && oneriYeri(d, o) ? SIRA.planaEklendi : SIRA[o.durum]);
+const sira = (d: Durum, o: Oneri) =>
+  o.durum !== "planaEklendi" && oneriYeri(d, o)
+    ? SIRA.planaEklendi
+    : SIRA[o.durum];
