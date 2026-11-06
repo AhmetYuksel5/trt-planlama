@@ -1521,6 +1521,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     lacivert (`.renk-takvim`).
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
     süre korunur, kenar tutamacı tek ucu değiştirir.
+- Kimlik `belgeler/kimlik.md`: konum (Newsroom Operations Platform), üç soru
+  (şu an ne oluyor, kimde bekliyor, sıradaki ne), ilkeler, renk/yazı sistemi,
+  ses ve yapılmayacaklar. Tasarım kararları ona dayanır; çelişen istek gelirse
+  önce belge güncellenir.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;
