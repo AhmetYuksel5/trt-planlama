@@ -23,6 +23,25 @@ const { chromium } = require(process.env.PW);
   await p.keyboard.press("Escape"); await p.waitForTimeout(200);
   s.araclar = await p.locator('.yeni-plan [data-arac="aktar"]').count() === 1;
   for (const sekme of ["takip", "takvim", "durum", "oneri"]) { await p.click(`[data-yp-sekme="${sekme}"]`); await p.waitForTimeout(150); }
+  // Hızlı ekleme: "YER / metin" + Enter gelişme olur; "/" menüsü pencere açar
+  const hz = p.locator("[data-hizli-ekle]").first();
+  await hz.fill("بيروت / اختبار الإضافة السريعة"); await hz.press("Enter"); await p.waitForTimeout(500);
+  s.hizliGelisme = (await p.locator(".yp-belge", { hasText: "اختبار الإضافة السريعة" }).count()) === 1 && (await hz.inputValue()) === "";
+  await hz.fill("/"); await p.waitForTimeout(200);
+  s.hizliMenu = (await p.locator("[data-hizli-secenek]").count()) >= 3;
+  await p.locator('[data-hizli-secenek="paket"]').first().click(); await p.waitForTimeout(400);
+  s.hizliPencere = (await p.locator(".yeni-plan dialog.pencere[open]").count()) === 1;
+  await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  // Sürükle-bırak: öneri kartı başlığa bırakılınca Plana ekle o başlıkla açılır
+  const kart = p.locator(".yp-yan [data-oneri][draggable]").first();
+  if (await kart.count()) {
+    const hedefPb = await p.locator(".yp-belge [data-nd-baslik]").nth(1).getAttribute("data-nd-baslik");
+    await kart.dragTo(p.locator(".yp-belge [data-nd-baslik]").nth(1)); await p.waitForTimeout(500);
+    const secilen = await p.locator("dialog.pencere[open] [data-pe-baslik]").inputValue().catch(() => "");
+    const beklenen = await p.evaluate((id) => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); for (const pl of d.planlar) for (const pb of pl.basliklar) if (pb.id === id) return pb.baslikId; }, hedefPb);
+    s.birakma = !!secilen && secilen === beklenen;
+    await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  } else s.birakma = "kart yok";
   for (const dil of ["tr", "ar"]) {
     await p.evaluate((d) => localStorage.setItem("trt-planlama-dil", d), dil);
     await p.setViewportSize({ width: 390, height: 844 }); await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1000);

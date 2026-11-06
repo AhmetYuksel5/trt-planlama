@@ -33,7 +33,7 @@ import { MuhabirSecici } from "../nextday/Formlar";
  * gün ve dosya soruluyor (GundemeEkle). Önerinin günü çalışılan planlara
  * düşmüyorsa bugünün ve yarının planı.
  */
-export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; kapat: () => void }) {
+export default function PlanaEkle({ ben, oneri, planId, baslikId, kapat }: { ben: Kisi; oneri: Oneri; planId?: string; baslikId?: string; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const B = bugun();
@@ -68,12 +68,12 @@ export default function PlanaEkle({ ben, oneri, planId, kapat }: { ben: Kisi; on
           ))}
         </div>
       )}
-      {secim === "haftalik" && hafta ? <GundemeEkle ben={ben} hafta={hafta} oneri={oneri} kapat={kapat} /> : <NextDayeEkle ben={ben} oneri={oneri} planlar={planlar} kapat={kapat} />}
+      {secim === "haftalik" && hafta ? <GundemeEkle ben={ben} hafta={hafta} oneri={oneri} kapat={kapat} /> : <NextDayeEkle ben={ben} oneri={oneri} planlar={planlar} baslikId={baslikId} kapat={kapat} />}
     </>
   );
 }
 
-function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri; planlar: NextDayPlan[]; kapat: () => void }) {
+function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: Kisi; oneri: Oneri; planlar: NextDayPlan[]; baslikId?: string; kapat: () => void }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const ilkPlan = planlar.find((p) => oneriGunde(oneri, p.tarih)) ?? planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0];
@@ -96,6 +96,8 @@ function NextDayeEkle({ ben, oneri, planlar, kapat }: { ben: Kisi; oneri: Oneri;
   const varsayilan = (p?: NextDayPlan) => {
     const { plandaki, onceki, kendi } = secenek(p);
     const hepsi = [...plandaki, ...onceki, ...(kendi ? [kendi] : [])];
+    // Belgede başlığa bırakıldıysa o başlık.
+    if (istenen && plandaki.some((b) => b.id === istenen)) return istenen;
     if (oneri.baslikId && hepsi.some((b) => b.id === oneri.baslikId)) return oneri.baslikId;
     const ayni = adiylaBaslik({ basliklar: plandaki }, oneri.haberBasligi);
     return ayni?.id ?? "yeni";

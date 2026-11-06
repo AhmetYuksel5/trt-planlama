@@ -708,7 +708,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   özellikleri eksilmesin diye içindekilerde her başlığın ⋯ düğmesi klasik
   başlık kartını (`BaslikKarti acik`: paket kararları, LIVE/TBC, muhabire not,
   başlık menüsü, 🔗, stok paket) yan panelde açar; başlıkta sorumlu, öneri
-  çağrısı ve geçmiş plandan aktar da var. Ekranda
+  çağrısı ve geçmiş plandan aktar da var. Belgede her başlığın altında hızlı
+  ekleme satırı (`NdDuzen.hizli`, `NextDayBelge.tsx → HizliEkle`): yazıp Enter
+  gelişme ("YER / metin" ise yer ayrılır, kaynak ajans), "/" menüsü gelişme,
+  PKG, muhabir ve canlı pencerelerini açar. Sağ paneldeki öneri kartı
+  sürüklenip belgedeki başlığa bırakılır (`OneriKarti.tsx → ONERI_TURU`):
+  "Plana ekle" o başlık seçili açılır (`PlanaEkle baslikId`), PKG/canlı kararı
+  ve onay formda kalır. Ekranda
   içerik Naskh, başlık Kufi; baskı ve Word klasik çıktıdan, Calibri'yle.
   Beğenilirse klasik görünüm (`KlasikPlan`) ve ayrı belge sayfası silinecek.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan

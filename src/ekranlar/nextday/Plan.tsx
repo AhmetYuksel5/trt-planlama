@@ -13,7 +13,7 @@ import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import { PLAN_DURUMLARI, baslikBul, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yalnizPlanlama, yapabilir } from "../../yetki";
-import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
+import { GorunumSecici, ONERI_TURU, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { plandakiFaaliyetler } from "../../takvim";
@@ -96,10 +96,12 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
   const [sekme, setSekme] = useState<YanSekme>("oneri");
   // Klasiğin başlık kartı (paket kararları, LIVE/TBC, muhabire not, başlık menüsü, 🔗…) yan panelde: yeni görünümde özellik eksilmesin.
   const [baslikPanel, setBaslikPanel] = useState<string | null>(null);
+  const [hedef, setHedef] = useState<string | null>(null);
+  const [birak, setBirak] = useState<{ oneriId: string; baslikId: string } | null>(null);
   const [aktar, setAktar] = useState(false);
   const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
   useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
-  const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere } : undefined;
+  const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere, hizli: true } : undefined;
   const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
   const kay = (id: string) => document.querySelector(`[data-nd-baslik="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const SEKMELER: [YanSekme, Anahtar][] = [
@@ -165,7 +167,34 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
             );
           })}
         </nav>
-        <div className="yp-belge cikti-sarici belge-duzen">
+        <div
+          className={`yp-belge cikti-sarici belge-duzen ${hedef ? "birakiliyor" : ""}`}
+          // Öneri kartı başlığa bırakılınca "Plana ekle" o başlıkla açılır; PKG/canlı kararı ve onay formda.
+          onDragOver={(e) => {
+            if (!icerik || !e.dataTransfer.types.includes(ONERI_TURU)) return;
+            const b = (e.target as HTMLElement).closest<HTMLElement>("[data-nd-baslik]");
+            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x !== b && x.classList.remove("hedef"));
+            if (!b) return setHedef(null);
+            e.preventDefault();
+            b.classList.add("hedef");
+            setHedef(b.dataset.ndBaslik ?? null);
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x.classList.remove("hedef"));
+            setHedef(null);
+          }}
+          onDrop={(e) => {
+            e.currentTarget.querySelectorAll(".hedef").forEach((x) => x.classList.remove("hedef"));
+            const id = e.dataTransfer.getData(ONERI_TURU);
+            const pb = plan.basliklar.find((x) => x.id === hedef);
+            setHedef(null);
+            if (!id || !pb) return;
+            e.preventDefault();
+            setBirak({ oneriId: id, baslikId: pb.baslikId });
+          }}
+          data-yp-hedef={hedef ?? undefined}
+        >
           <NextDayBelgesi plan={plan} duzen={duzen} />
         </div>
         <aside className="yp-yan">
@@ -193,6 +222,16 @@ function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: R
           return (
             <Pencere baslik={t("baslikIslemleri")} alt={<Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>} kapat={() => setBaslikPanel(null)}>
               <BaslikKarti plan={plan} pb={pb} sira={i} toplam={plan.basliklar.length} icerik={icerik} operasyon={operasyon} acik />
+            </Pencere>
+          );
+        })()}
+      {birak &&
+        (() => {
+          const o = v.oneriler.find((x) => x.id === birak.oneriId);
+          if (!o) return null;
+          return (
+            <Pencere baslik={t("planaEkle")} alt={<Icerik>{o.haberBasligi}</Icerik>} kapat={() => setBirak(null)}>
+              <PlanaEkle ben={ben} oneri={o} planId={plan.id} baslikId={birak.baslikId} kapat={() => setBirak(null)} />
             </Pencere>
           );
         })()}

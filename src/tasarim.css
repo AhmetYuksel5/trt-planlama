@@ -2575,3 +2575,15 @@ input[aria-invalid="true"] {
 .yeni-plan .yp-icindekiler-satir > button:first-child { flex: 1; min-width: 0; }
 .yeni-plan .yp-islem { flex: none; width: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--sonuk); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .yeni-plan .yp-islem:hover { background: var(--yuzey-2); color: var(--murekkep); }
+
+/* Yeni görünüm: hızlı ekleme satırı ve öneri bırakma hedefi. */
+.yeni-plan .hizli-ekle { position: relative; margin-block-start: var(--ara-1); }
+.yeni-plan .hizli-ekle input { inline-size: 100%; box-sizing: border-box; border: 1px dashed transparent; background: transparent; padding: var(--ara-1) var(--ara-2); font: inherit; color: var(--murekkep); border-radius: var(--yaricap); }
+.yeni-plan .hizli-ekle input::placeholder { color: var(--silik); }
+.yeni-plan .hizli-ekle input:focus { border-color: var(--vurgu); outline: none; background: var(--yuzey); }
+.yeni-plan .hizli-menu { position: absolute; inset-inline-end: 0; inset-block-start: 100%; z-index: 5; min-inline-size: 240px; max-inline-size: 100%; display: flex; flex-direction: column; padding: var(--ara-1); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); box-shadow: var(--golge-acilir); }
+.yeni-plan .hizli-menu button { text-align: start; padding: var(--ara-2) var(--ara-3); min-block-size: var(--dokunma); border: 0; background: none; border-radius: var(--yaricap); font-family: Inter, system-ui, sans-serif; font-size: var(--punto); cursor: pointer; color: var(--murekkep); }
+.yeni-plan .hizli-menu button.secili, .yeni-plan .hizli-menu button:hover { background: var(--vurgu-sis); }
+.yeni-plan .oneri-karti[draggable] { cursor: grab; }
+.yeni-plan .yp-belge.birakiliyor [data-nd-baslik] { outline: 1px dashed var(--cizgi); border-radius: var(--yaricap); }
+.yeni-plan .yp-belge.birakiliyor [data-nd-baslik].hedef { outline: 2px dashed var(--vurgu); background: var(--vurgu-sis); }

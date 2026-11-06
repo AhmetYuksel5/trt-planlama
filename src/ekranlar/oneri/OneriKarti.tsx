@@ -55,6 +55,9 @@ export function GorunumSecici({ deger, degistir }: { deger: Gorunum; degistir: (
   );
 }
 
+/** Sürüklenen önerinin veri türü: yeni Next Day görünümünde başlığa bırakılır. */
+export const ONERI_TURU = "application/x-plannersflow-oneri";
+
 export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Durum; ac: () => void; eylemler?: ReactNode }) {
   const { t, dil } = useDil();
   const arka = arkaPlan(o);
@@ -62,6 +65,11 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
     <article
       className={`oneri-karti tur-${o.tur} ${o.talimatVeren ? "talimat" : ""} ${o.durum === "reddedildi" || o.durum === "geriCekildi" ? "sonuk-kart" : ""}`}
       data-oneri={o.id}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(ONERI_TURU, o.id);
+        e.dataTransfer.effectAllowed = "copy";
+      }}
       // Kartın boş yerine basmak da açıyor; düğme ve bağlantılar kendi işini yapsın.
       onClick={(e) => !(e.target as HTMLElement).closest("button, a") && ac()}
     >

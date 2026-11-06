@@ -34,7 +34,7 @@ import {
   planMuhabirTbc,
   planBaslikLive,
 } from "../../eylemler";
-import { vardiyaYaz } from "../../tarih";
+import { simdi, vardiyaYaz } from "../../tarih";
 import { baslikBul, gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket } from "../../veri";
 import { paketPlandanSilinir, planIcerikDuzenler, planOperasyonDuzenler, yapabilir } from "../../yetki";
 import { BaslikEkleFormu, BaslikaTasiPenceresi, EkipEkleFormu, IkonDugme, KayitliHareketSecici, PlanAdiSecici, StoktanSecici, ekipSirasi, gelismeTeamAdlari, gorevEkibi } from "../nextday/Bolumler";
@@ -74,6 +74,81 @@ export interface NdDuzen {
   icerik: boolean;
   operasyon: boolean;
   ac: (p: NdPencere) => void;
+  /** Yeni görünüm: başlığın altında hızlı ekleme satırı ("/" menüsü). */
+  hizli?: boolean;
+}
+
+/*
+ * Hızlı ekleme: yazıp Enter gelişme olarak ekler ("YER / metin" ise yer ayrılır);
+ * "/" ile başlayınca menü, seçilen tür kendi penceresini açar (kararlar formda kalsın).
+ * Render dışında: yazı kutusu her kayıtta sıfırlanmasın.
+ */
+function HizliEkle({ ben, plan, pbId, sonra, icerik, ac }: { ben: Kisi; plan: NextDayPlan; pbId: string; sonra?: string; icerik: boolean; ac: (p: NdPencere) => void }) {
+  const { t } = useDil();
+  const [yazi, setYazi] = useState("");
+  const [secili, setSecili] = useState(0);
+  const menu = yazi.startsWith("/");
+  const secenekler: [Anahtar, NdPencere][] = [
+    ["gelismeEkle", { tur: "gelisme", planBaslikId: pbId, sonra }],
+    ...(icerik
+      ? ([
+          ["paketOnerisiEkle", { tur: "paket", pbId }],
+          ["muhabirAta", { tur: "muhabirEkle", pbId }],
+        ] as [Anahtar, NdPencere][])
+      : []),
+    ["canliEkle", { tur: "canli" }],
+  ];
+  const ara = yazi.slice(1).trim().toLocaleLowerCase();
+  const uyan = secenekler.filter(([k]) => !ara || t(k).toLocaleLowerCase().includes(ara));
+  const sec = (p: NdPencere) => {
+    setYazi("");
+    ac(p);
+  };
+  const ekle = () => {
+    const ham = yazi.trim();
+    if (!ham) return;
+    const i = ham.indexOf(" / ");
+    const yer = i > 0 && i < 30 ? ham.slice(0, i).trim() : undefined;
+    const govde = yer ? ham.slice(i + 3).trim() : ham;
+    if (!govde) return;
+    if (gelismeKaydet(ben, { planId: plan.id, planBaslikId: pbId, yer, metin: govde, kaynakTuru: "ajans", kaynakAdi: "", tarih: simdi() }, sonra)) setYazi("");
+  };
+  return (
+    <div className="hizli-ekle">
+      <input
+        {...icerikAlani}
+        value={yazi}
+        placeholder={t("hizliEkleYer")}
+        aria-label={t("hizliEkleYer")}
+        onChange={(e) => {
+          setYazi(e.target.value);
+          setSecili(0);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setYazi("");
+          if (menu && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+            e.preventDefault();
+            setSecili((x) => (x + (e.key === "ArrowDown" ? 1 : uyan.length - 1)) % Math.max(uyan.length, 1));
+          }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (menu) uyan[secili] && sec(uyan[secili][1]);
+            else ekle();
+          }
+        }}
+        data-hizli-ekle={pbId}
+      />
+      {menu && uyan.length > 0 && (
+        <div className="hizli-menu" role="listbox">
+          {uyan.map(([k, p], i) => (
+            <button key={k} type="button" role="option" aria-selected={i === secili} className={i === secili ? "secili" : ""} onMouseDown={(e) => e.preventDefault()} onClick={() => sec(p)} data-hizli-secenek={p.tur}>
+              {t(k)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* "YER / metin" satırı: yer kalın, kurumun belgesindeki gibi. Render dışında: içindeki yazı kutusu her kayıtta sıfırlanmasın. */
@@ -552,6 +627,9 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
                     {ic && <EkleDugmesi metin={t("muhabirAta")} onClick={() => ac({ tur: "muhabirEkle", pbId: pb.id, sonra: pb.muhabirler.at(-1)?.kisiId })} />}
                     {ic && <EkleDugmesi metin={t("paketOnerisiEkle")} onClick={() => ac({ tur: "paket", pbId: pb.id, sonra: pkg.at(-1)?.id })} />}
                   </EkleCubugu>
+                )}
+                {duzen?.hizli && op && (
+                  <HizliEkle ben={duzen.ben} plan={plan} pbId={pb.id} sonra={gelismeler.at(-1)?.id} icerik={ic} ac={ac} />
                 )}
               </div>
             );

@@ -1100,6 +1100,7 @@ const M = {
   ndGorunum: m("Görünüm", "طريقة العرض", "View"),
   ndKlasik: m("Klasik", "الكلاسيكي", "Classic"),
   ndYeni: m("Yeni", "الجديد", "New"),
+  hizliEkleYer: m("Yaz ya da / ile ekle…", "اكتب أو أضف بـ /…", "Type, or add with /…"),
   icindekiler: m("İçindekiler", "المحتويات", "Contents"),
   ndSekmeOneri: m("Öneriler", "المقترحات", "Proposals"),
   ndSekmeTakip: m("Takipler", "المتابعات", "Follow-ups"),
