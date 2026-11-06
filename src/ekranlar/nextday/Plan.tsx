@@ -17,6 +17,7 @@ import {
   Undo2,
   UserCheck,
 } from "lucide-react";
+import { CiktiOnizleme } from "./Cikti";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import { oneriBuGunun, oneriYeri } from "../../oneriPlanlari";
 import { useState, type ReactNode } from "react";
@@ -217,6 +218,7 @@ function YeniPlan({
   } | null>(null);
   const [aktar, setAktar] = useState(false);
   const [cekmece, setCekmece] = useState(false);
+  const [onizleme, setOnizleme] = useState(false);
   const sorumlu = temelSorumlular(v, "nextday", gunEkle(plan.tarih, -1));
   useSekmeAdi(
     `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`,
@@ -290,12 +292,14 @@ function YeniPlan({
               <Megaphone size={15} /> {t("oneriCagrisi")}
             </a>
           )}
-          <a
+          <button
+            type="button"
             className="dugme dugme-ikincil dugme-kucuk"
-            href={`#/nextday/${plan.id}/cikti`}
+            onClick={() => setOnizleme(true)}
+            data-arac="cikti"
           >
             <Printer size={15} /> {t("cikti")}
-          </a>
+          </button>
           {sutunlu && (
             <button
               type="button"
@@ -488,6 +492,9 @@ function YeniPlan({
           kapat={() => setAktar(false)}
         />
       )}
+      {onizleme && (
+        <CiktiOnizleme plan={plan} kapat={() => setOnizleme(false)} />
+      )}
     </div>
   );
 }
@@ -622,6 +629,7 @@ function PlanAraclari({
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
+  const [onizleme, setOnizleme] = useState(false);
   const bekleyen = v.oneriler.filter(
     (o) =>
       oneriBuGunun(o, plan.tarih) &&
@@ -685,12 +693,10 @@ function PlanAraclari({
           "oneriCagrisi",
           `#/oneriler/cagri/${plan.tarih}`,
         )}
-      {arac(
-        "cikti",
-        <Printer size={16} />,
-        "ciktiOnizleme",
-        `#/nextday/${plan.id}/cikti`,
+      {arac("cikti", <Printer size={16} />, "ciktiOnizleme", () =>
+        setOnizleme(true),
       )}
+      {onizleme && <CiktiOnizleme plan={plan} kapat={() => setOnizleme(false)} />}
       {(icerik || operasyon) &&
         arac(
           "belge",

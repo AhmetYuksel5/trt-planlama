@@ -81,7 +81,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   düzenin yazısı okunmaz. Koyu zeminde (sol menü, giriş, proje planı)
   `<Logo koyu />` ("Planners" beyaz), açık zeminde düz `<Logo />`. Boyu
   yerine göre `--logo-*` token'larından. Favicon işaretin kendisi
-  (`varliklar/simge.png`, `simge-180.png`). Kurumun eski logosu kalktı;
+  (`varliklar/simge.png`, `simge-180.png`). Kurumun eski logosu arayüzden kalktı (TRT عربي logosu yalnız çıktının baskı tasarımlarında);
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
@@ -1309,6 +1309,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - "SPECIAL COVERAGE" etiketli olay Özel yayın sayfasında öneri
     (`ozelOnerileri`); "Özel yayın olarak aç" yayını açar (`aylikOlaydanOzel`),
     yayın kendi onayına (`ozOnay`) tabi.
+- Next Day çıktısında baskı tasarımları (kullanıcı kurumun çıktısının görselinden
+  memnun değil; `nextday/Cikti.tsx`, `NextDayBelgesi baski`, CSS `.cikti.baski-1…4`):
+  "Kurum" (eski düzen) · 1 klasik (ölçülü aralık, numaralı başlık, alt başlık
+  altındakinden ayrılmaz) · 2 manşetli iki sütun (sağda ekip, hareketler, canlı,
+  hazır; solda beklenen ve başlıklar; متابعات sonda tam genişlikte; `Manset`) ·
+  3 gazete akışı (künye bandı, canlı yayın zaman çizgisi, başlıklar iki sütunda) ·
+  4 künye bandı ve üç sütun (sayfa sütunlara bölününce ilk bakılan ekip, hareketler
+  ve canlı en üstte üç kutuda; başlıklar üç sütunda akar). Plan ekranındaki
+  "Çıktı" önizleme penceresi açar (`CiktiOnizleme`: küçültülmüş kağıt, üstte
+  seçim; "Yazdır" tam sayfaya gidip baskıyı açar, `trt-planlama-hemen-yazdir`).
+  Seçim tarayıcıda (`trt-planlama-baski`). Ekranda ve baskıda aynı; `@page`
+  kenarı seçilince eklenen `<style>`da. Sütunlu akışta başlık bölünebilir, başlık
+  satırı gövdesinden ayrılmaz; ızgara içinde sütun kullanılmaz (Chrome sayfaya
+  bölmüyor). Word ve "metni kopyala" her zaman kurumun düz kopyasından
+  (`.word-kaynagi`, gizli). Bölümler `data-bolum` (ekip, hareket, canlı) ile seçilir.
+  Baskılarda kurumun logosu TRT عربي (`varliklar/trt-arabi.svg`, manşette
+  `trt-arabi-beyaz.svg`); kurum düzeninde ve Word'de yok. Test `testler/baski.cjs`.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
   girişi çıktı önizlemesinde ve plan başlığında "Belgede düzenle".
@@ -1332,6 +1349,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yedi gün ve karar bekleyen kalem (soluk) de var; çıktıda yok.
   - Baskı, Word ve kopya ekranda görünmeyen temiz kopyadan (`.belge-temiz`);
     Word ortak (`bilesenler/indir.ts → wordIndir`), Next Day'de de var.
+  - "E-posta için kopyala" (`CiktiAraclari`; Next Day, Weekly, Özel yayın):
+    panoya Word'ün biçimi satır içi stil olarak yazılmış HTML ve düz metin
+    birlikte (`indir.ts → epostaHtml`, `zenginKopyala`; Clipboard API, olmazsa
+    seçip kopyalama). E-posta istemcisi stil dosyasını almıyor; düz metin
+    kopyası ve sayfadan seçme biçimi bozuyordu, Word'e indirip oradan
+    kopyalanıyordu. Biçim `EPOSTA_STILI`, `WORD_BICIMI` ile aynı tutulur. Test
+    `testler/kopya.cjs`.
   - Aralık kurumun kuralı: aynı başlığın altındaki satırlar 1,15, başlıklar
     ve bölümler arası 1,30 satır; satırlar arasına başka boşluk girmez.
     Ekran, baskı (`.cikti`) ve Word (`WORD_BICIMI`) aynı değerde.

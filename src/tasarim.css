@@ -1357,7 +1357,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .yalniz-yazdir { display: none; }
 
 @media print {
-  body { background: #fff; }
+  html, body { background: #fff; }
   .menu, .ust, .alt-cubuk, .demo-serit, .yazdirma-gizle, .sayfa-basi, .perde, .bildiri { display: none !important; }
   .yalniz-yazdir { display: block; margin-bottom: var(--ara-3); }
   .kart, .sayac { box-shadow: none; break-inside: avoid; }
@@ -2753,3 +2753,140 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
   /* Oklar üst satırda yan yana (simetrik), "+" ve sil altta. */
   .baslik-karti > summary .sag-uc > :first-child { order: 1; }
 }
+
+/* ======================================================================
+ * Çıktı baskı denemeleri (nextday/Cikti.tsx → baski; NextDayBelgesi baski).
+ * Kurumun düzeni (Calibri, 1,15/1,30) seçim yokken aynen; Word ve kopya hep
+ * ondan. Denemeler ekranda ve baskıda aynı görünsün diye @media'sız.
+ * ==================================================================== */
+.word-kaynagi { position: fixed; inset-block-start: 0; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }
+@media print { .word-kaynagi { display: none; } .baski-sarici .cikti { padding: 0; } .uygulama, .ana, .sayfa, .cikti-sarici { background: #fff !important; } }
+.cikti[class*="baski-"] { color: #111; font-family: "Noto Naskh Arabic", Inter, var(--yazi-arapca); }
+.cikti[class*="baski-"] p { margin: 0; orphans: 2; widows: 2; }
+.cikti[class*="baski-"] .cikti-slug { font-family: "IBM Plex Mono", ui-monospace, monospace; direction: ltr; text-align: right; }
+
+/* --- 1 · Klasik: kurumun kağıdı, ölçülü aralık, numaralı başlık, siyah-beyazda okunur --- */
+.cikti.baski-1 { font-size: 15px; line-height: 1.3; }
+.cikti.baski-1 h1 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 21px; color: #9b1b1b; text-align: center; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 1.5px solid #111; }
+.cikti.baski-1 section { margin: 0 0 18px; }
+.cikti.baski-1 section + section { margin-top: 0; }
+.cikti.baski-1 h2 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 16px; margin: 0 0 6px; padding-bottom: 4px; border-bottom: .7px solid #bdbdbd; break-after: avoid; }
+.cikti.baski-1 h2.ortali { text-align: center; font-size: 17px; border-bottom: 1.5px solid #111; }
+.cikti.baski-1 [data-bolum="ekip"] > p { display: grid; grid-template-columns: 100px minmax(0, 1fr); column-gap: 8px; }
+.cikti.baski-1 { counter-reset: b; }
+.cikti.baski-1 .cikti-baslik { counter-increment: b; padding: 10px 0 12px; border-bottom: .7px solid #d0d0d0; margin: 0; }
+.cikti.baski-1 .cikti-baslik h3 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 16.5px; text-decoration: none; margin: 0 0 4px; break-after: avoid; }
+.cikti.baski-1 .cikti-baslik h3::before { content: counter(b) ". "; font-family: Inter; font-weight: 800; }
+/* Alt başlık (المراسلون, PKG, LIVE) altındaki ilk satırdan ayrılmasın: sayfa sonunda yalnız kalıyordu. */
+.cikti.baski-1 .alt-baslik { font-family: "Noto Kufi Arabic", Inter; font-weight: 700; font-size: 12px; color: #111; margin-top: 6px; break-after: avoid; }
+.cikti.baski-1 .cikti-slug { font-size: 11px; color: #555; }
+.cikti.baski-1 .cikti-aciklama { font-size: 14px; }
+
+/* --- 2 · Manşet ve iki sütun: sağda günün sabit bilgisi, solda numaralı başlıklar --- */
+.cikti.baski-2 { padding: 0; font-size: 14px; line-height: 1.5; max-width: 860px; }
+.baski-manset { background: #13274a; color: #fff; padding: 30px 48px 22px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 20px; border-bottom: 5px solid #c8102e; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.baski-manset .bm-gun { font-family: Inter; font-weight: 800; font-size: 64px; line-height: .85; letter-spacing: -.04em; }
+.baski-manset .bm-ad { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 21px; line-height: 1.3; }
+.baski-manset .bm-ad small { display: block; font-family: "Noto Naskh Arabic", Inter; font-weight: 400; font-size: 13px; opacity: .75; }
+.baski-manset .bm-sayilar { display: flex; gap: 18px; font-family: "Noto Kufi Arabic", Inter; font-size: 11px; opacity: .9; white-space: nowrap; }
+.baski-manset .bm-sayilar span { display: grid; justify-items: center; }
+.baski-manset .bm-sayilar b { font-family: Inter; font-size: 20px; }
+.cikti.baski-2 .nd-sutunlar { display: grid; grid-template-columns: minmax(0, 270px) minmax(0, 1fr); gap: 0 30px; padding: 26px 44px 0; align-items: start; }
+.cikti.baski-2 .nd-yan { order: -1; border-inline-end: .7px solid #d5d9e0; padding-inline-end: 22px; font-size: 13px; line-height: 1.5; }
+.cikti.baski-2 .nd-yan h2, .cikti.baski-2 .nd-ana h2, .cikti.baski-2 > section h2 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 13px; color: #13274a; text-align: start; margin: 0 0 8px; }
+.cikti.baski-2 .nd-yan section { margin: 0 0 18px; padding-top: 10px; border-top: 2px solid #13274a; break-inside: avoid; }
+.cikti.baski-2 .nd-yan section:first-child { border-top: 0; padding-top: 0; }
+.cikti.baski-2 .nd-yan p { margin-bottom: 4px; }
+.cikti.baski-2 .nd-ana section { margin: 0 0 14px; }
+.cikti.baski-2 .nd-ana { counter-reset: b; }
+.cikti.baski-2 .cikti-baslik { counter-increment: b; display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; padding: 14px 0; border-top: .7px solid #e3e6ea; margin: 0; }
+.cikti.baski-2 .cikti-baslik::before { content: counter(b, decimal-leading-zero); font-family: Inter; font-weight: 800; font-size: 32px; line-height: 1; color: #c9ced8; grid-row: 1 / span 60; }
+.cikti.baski-2 .cikti-baslik > * { grid-column: 2; }
+.cikti.baski-2 .cikti-baslik h3 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 19px; line-height: 1.35; color: #13274a; text-decoration: none; margin: 0 0 6px; break-after: avoid; }
+.cikti.baski-2 .cikti-baslik p { margin-bottom: 3px; }
+.cikti.baski-2 .alt-baslik { font-family: "Noto Kufi Arabic", Inter; font-weight: 700; font-size: 11px; color: #3a4252; margin-top: 8px; break-after: avoid; }
+.cikti.baski-2 .cikti-slug { font-size: 10px; color: #6b7280; }
+.cikti.baski-2 > section { margin: 8px 44px 0; padding-top: 12px; border-top: 2px solid #13274a; }
+@media (max-width: 760px) {
+  .cikti.baski-2 .nd-sutunlar { grid-template-columns: minmax(0, 1fr); padding: 18px 16px 0; }
+  .cikti.baski-2 .nd-yan { border-inline-end: 0; padding-inline-end: 0; }
+  .baski-manset { padding: 20px 16px 16px; grid-template-columns: auto minmax(0, 1fr); }
+  .baski-manset .bm-sayilar { grid-column: 1 / -1; }
+  .cikti.baski-2 > section { margin-inline: 16px; }
+}
+
+/* --- 3 · Gazete akışı: künye bandı, canlı yayın zaman çizgisi, başlıklar iki sütunda sırayla akar; tek renk, az mürekkep --- */
+.cikti.baski-3 { font-size: 13.5px; line-height: 1.42; }
+.cikti.baski-3 h1 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 27px; color: #111; text-align: start; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 4px double #111; }
+.cikti.baski-3 section { margin: 0 0 14px; }
+.cikti.baski-3 section + section { margin-top: 0; }
+.cikti.baski-3 h2 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 11.5px; letter-spacing: .02em; color: #111 !important; text-align: start !important; margin: 0 0 6px; padding: 3px 0; border-top: 1.5px solid #111; border-bottom: .5px solid #111; break-after: avoid; }
+/* Künye: ekip iki sütun, küçük */
+.cikti.baski-3 [data-bolum="ekip"] { columns: 2; column-gap: 24px; font-size: 12.5px; }
+.cikti.baski-3 [data-bolum="ekip"] h2 { column-span: all; }
+.cikti.baski-3 [data-bolum="ekip"] p { break-inside: avoid; }
+/* Canlı yayın: zaman çizgisi; saat (satırın ikinci kalını) iri ve tek genişlikli */
+.cikti.baski-3 [data-bolum="canli"] p { position: relative; padding-inline-start: 16px; border-inline-start: 1.5px solid #111; padding-block: 2px 6px; }
+.cikti.baski-3 [data-bolum="canli"] p::before { content: ""; position: absolute; inset-inline-start: -5px; inset-block-start: 7px; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 1.5px solid #111; }
+.cikti.baski-3 [data-bolum="canli"] p > b + b { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px; }
+/* Haber başlıkları: iki sütun, sıra sağdan sola sütun sütun korunur */
+.cikti.baski-3 section:has(> .cikti-baslik) { columns: 2; column-gap: 26px; column-rule: .5px solid #bbb; }
+.cikti.baski-3 section:has(> .cikti-baslik) > h2 { column-span: all; font-size: 15px; text-align: center !important; }
+.cikti.baski-3 { counter-reset: b; }
+.cikti.baski-3 .cikti-baslik { counter-increment: b; margin: 0 0 14px; padding-top: 6px; border-top: 1.5px solid #111; }
+.cikti.baski-3 .cikti-baslik h3 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 16px; line-height: 1.35; text-decoration: none; margin: 0 0 4px; }
+.cikti.baski-3 .cikti-baslik h3::before { content: counter(b, decimal-leading-zero) " · "; font-family: Inter; font-weight: 800; font-size: 12px; vertical-align: 2px; }
+.cikti.baski-3 .cikti-baslik p { margin-bottom: 2px; text-align: justify; }
+.cikti.baski-3 .alt-baslik { font-family: "Noto Kufi Arabic", Inter; font-weight: 700; font-size: 10.5px; margin-top: 6px; text-align: start !important; break-after: avoid; }
+.cikti.baski-3 .cikti-slug { font-size: 9.5px; color: #555; }
+@media (max-width: 760px) {
+  .cikti.baski-3 [data-bolum="ekip"], .cikti.baski-3 section:has(> .cikti-baslik) { columns: 1; }
+}
+
+/* Baskılarda kurumun logosu (TRT عربي, varliklar/trt-arabi*.svg): kağıdın başında; 2'de manşette beyaz. */
+.cikti .baski-logo { display: flex; justify-content: flex-start; margin: 0 0 10px; }
+.cikti .baski-logo img { height: 30px; width: auto; display: block; }
+.cikti.baski-1 .baski-logo { justify-content: center; }
+.baski-manset { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+.baski-manset .bm-logo { height: 34px; width: auto; align-self: center; }
+@media (max-width: 760px) { .baski-manset { grid-template-columns: auto minmax(0, 1fr); } .baski-manset .bm-logo { grid-column: 1 / -1; } }
+
+/*
+ * 4 · Künye bandı ve sütunlar: sayfa sütunlara bölününce ilk bakılan bilgi
+ * (ekip, hareketler, canlı yayın) en üstte yan yana üç kutuda; altında hazır ve
+ * beklenen paketler, sonra başlıklar üç sütunda sırayla akar.
+ */
+/* Izgara değil: Chrome ızgara öğesindeki sütunlu bölümü sayfalara bölemiyor, bütün başlıkları sonraki sayfaya atıyordu. */
+.cikti.baski-4 { font-size: 13px; line-height: 1.4; }
+.cikti.baski-4 > [data-bolum="ekip"], .cikti.baski-4 > [data-bolum="hareket"], .cikti.baski-4 > [data-bolum="canli"] { display: inline-block; vertical-align: top; width: calc((100% - 36px) / 3); margin-inline-end: 18px; min-height: 150px; background: #f4f5f7; border-top: 3px solid #13274a; padding: 10px 12px; margin: 0 0 16px; font-size: 12px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cikti.baski-4 > [data-bolum="canli"] { margin-inline-end: 0; }
+.cikti.baski-4 .baski-logo { float: right; margin: 0; }
+.cikti.baski-4 h1 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 22px; color: #13274a; text-align: left; margin: 0 0 16px; padding: 2px 0 12px; border-bottom: 1.5px solid #13274a; line-height: 30px; }
+.cikti.baski-4 section { margin: 0 0 14px; }
+.cikti.baski-4 section + section { margin-top: 0; }
+.cikti.baski-4 h2 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 13px; color: #13274a !important; text-align: start !important; margin: 0 0 6px; break-after: avoid; }
+.cikti.baski-4 [data-bolum="canli"] p > b + b { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.cikti.baski-4 [data-bolum] p { margin-bottom: 3px; }
+.cikti.baski-4 section:has(> .cikti-baslik) { columns: 3; column-gap: 18px; column-rule: .5px solid #c8ccd3; }
+.cikti.baski-4 section:has(> .cikti-baslik) > h2 { column-span: all; font-size: 15px; padding-bottom: 4px; border-bottom: 1.5px solid #13274a; margin-bottom: 10px; }
+.cikti.baski-4 { counter-reset: b; }
+/* Sütunlu akışta başlık bölünebilir: "bölünmez" kuralı Chrome'da sayfa sonunda öbür sütunları boş bırakıyordu; başlık satırı gövdesinden ayrılmaz. */
+.cikti.baski-4 .cikti-baslik { counter-increment: b; margin: 0 0 12px; }
+.cikti.baski-4 .cikti-baslik h3, .cikti.baski-3 .cikti-baslik h3 { break-after: avoid; }
+.cikti.baski-4 .cikti-baslik h3 { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 14.5px; line-height: 1.35; color: #13274a; text-decoration: none; margin: 0 0 3px; }
+.cikti.baski-4 .cikti-baslik h3::before { content: counter(b) " "; display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-inline-end: 4px; border-radius: 50%; background: #13274a; color: #fff; font-family: Inter; font-size: 10px; vertical-align: 2px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+.cikti.baski-4 .alt-baslik { font-family: "Noto Kufi Arabic", Inter; font-weight: 700; font-size: 10.5px; color: #3a4252; margin-top: 5px; break-after: avoid; }
+.cikti.baski-4 .cikti-slug { font-size: 9.5px; color: #555; }
+@media (max-width: 760px) {
+  .cikti.baski-4 > [data-bolum] { width: 100% !important; margin-inline-end: 0 !important; min-height: 0 !important; }
+  .cikti.baski-4 .baski-logo { float: none; margin-bottom: 8px; }
+  .cikti.baski-4 section:has(> .cikti-baslik) { columns: 1; }
+}
+
+/* Çıktı önizlemesi (plan ekranındaki "Çıktı"): kağıt küçültülmüş, gri masada; üstte tasarım seçimi. */
+.onizleme-ust { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; }
+.baski-secimi button { min-width: 36px; font-weight: 700; }
+.baski-onizleme { background: var(--yuzey-3); border-radius: var(--yaricap); padding: var(--ara-5); max-height: 70vh; overflow: auto; }
+.onizleme-kagit { zoom: .62; }
+.onizleme-kagit .cikti { box-shadow: 0 2px 12px rgba(16, 24, 40, .12); margin: 0 auto; }
+@media (max-width: 760px) { .baski-onizleme { padding: var(--ara-2); } .onizleme-kagit { zoom: .45; } }

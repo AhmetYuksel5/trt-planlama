@@ -4,6 +4,9 @@ import {
   PackageCheck,
   Printer,
 } from "lucide-react";
+// Kurumun logosu yalnız baskı tasarımlarında; kurumun düz çıktısı ve Word'de yok.
+import trtArabi from "../../varliklar/trt-arabi.svg";
+import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
@@ -305,12 +308,18 @@ export function NextDayBelgesi({
   duzen,
   belgeRef,
   sutunlu,
+  baski,
 }: {
   plan: NextDayPlan;
   duzen?: NdDuzen;
   belgeRef?: Ref<HTMLElement>;
   sutunlu?: boolean;
+  /** Çıktı sayfasındaki baskı denemesi (1 klasik, 2 manşetli iki sütun, 3 gazete akışı, 4 künye bandı ve üç sütun); yoksa kurumun düzeni. */
+  baski?: Baski;
 }) {
+  // 2. baskı iki sütun ama kurumun sırasıyla: متابعات sütunlardan sonra, tam genişlikte.
+  const ikiSutun = sutunlu || baski === 2;
+  const takipSonda = baski === 2;
   const { t } = useDil();
   const v = useVeri();
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
@@ -485,771 +494,71 @@ export function NextDayBelgesi({
     );
   };
 
+  const takipBolumu = (takipler.length > 0 ||
+    dosyasizPaketler.length > 0 ||
+    op) && (
+    <section>
+      <h2 className="yesil">{c("takipler")}</h2>
+      {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
+      {dosyasizPaketler.map((p) => (
+        <BelgeSatiri
+          key={p.id}
+          duzen={ic}
+          serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}
+        >
+          <Satir yer={paketYeri(p)}>
+            {p.baslik} /{" "}
+            <b>
+              {muhabirYeri(
+                [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
+                p.muhabirTbc,
+              )}
+            </b>
+            {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
+            {paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
+          </Satir>
+        </BelgeSatiri>
+      ))}
+      {op && (
+        <EkleCubugu>
+          <EkleDugmesi
+            metin={t("takipEkle")}
+            onClick={() => ac({ tur: "gelisme", sonra: takipler.at(-1)?.id })}
+          />
+        </EkleCubugu>
+      )}
+    </section>
+  );
+
   return (
     <article
-      className={`cikti${sutunlu ? " cikti-sutunlu" : ""}`}
+      className={`cikti${sutunlu ? " cikti-sutunlu" : ""}${baski ? ` baski-${baski}` : ""}`}
       ref={belgeRef}
       dir="rtl"
       lang="ar"
     >
-      <h1>
-        {c("ciktiBaslik")} {ciktiTarihi(plan.tarih, "ar")}
-      </h1>
+      {baski && baski !== 2 && (
+        <div className="baski-logo">
+          <img src={trtArabi} alt="TRT عربي" />
+        </div>
+      )}
+      {baski === 2 ? (
+        <Manset plan={plan} />
+      ) : (
+        <h1>
+          {c("ciktiBaslik")} {ciktiTarihi(plan.tarih, "ar")}
+        </h1>
+      )}
 
-      {sutunlu ? (
-        <div className="nd-sutunlar">
-          <div className="nd-ana">
-            {beklenenler.length > 0 && (
-              <section>
-                <h2 className="yesil">{c("ciktiBeklenen")}</h2>
-                {beklenenler.map((p) => (
-                  <Satir key={p.id} yer={paketYeri(p)}>
-                    {p.baslik} /{" "}
-                    <b>
-                      {muhabirYeri(
-                        [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                        p.muhabirTbc,
-                      )}
-                    </b>
-                    {bicimEki(p.bicim) && (
-                      <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                    )}
-                    {paketNotEki(p) && (
-                      <span data-paket-notu>{paketNotEki(p)}</span>
-                    )}
-                  </Satir>
-                ))}
-              </section>
-            )}
-
-            {(plan.basliklar.length > 0 || ic) && (
-              <section>
-                <h2 className="kirmizi ortali">{c("ciktiOlaylar")}</h2>
-                {plan.basliklar.map((pb, i) => {
-                  const gelismeler = v.gelismeler.filter(
-                    (g) => g.planBaslikId === pb.id,
-                  );
-                  const pkg = paketler.filter((p) => p.planBaslikId === pb.id);
-                  // Başlığa bağlı canlı yayın üstteki "مباشر"da ve başlığın altında da; okuyan haberle birlikte görsün.
-                  const pbCanli = canlilar.filter(
-                    (x) => x.planBaslikId === pb.id,
-                  );
-                  // Çıktıda boş başlık görünmüyor; belgede görünüyor ki içine eklenebilsin.
-                  if (
-                    !d &&
-                    !gelismeler.length &&
-                    !pb.muhabirler.length &&
-                    !pb.muhabirTbc &&
-                    !pb.live &&
-                    !pbCanli.length &&
-                    !pkg.length
-                  )
-                    return null;
-                  const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
-                  const cikabilir = !pkg.length;
-                  return (
-                    <div
-                      key={pb.id}
-                      className="cikti-baslik"
-                      data-nd-baslik={pb.id}
-                    >
-                      <BelgeSatiri
-                        duzen={ic}
-                        serit={
-                          <SatirSeridi
-                            yukari={yukari(
-                              i,
-                              () =>
-                                ben && planBaslikTasi(ben, plan.id, pb.id, -1),
-                            )}
-                            asagi={asagi(
-                              i,
-                              plan.basliklar.length,
-                              () =>
-                                ben && planBaslikTasi(ben, plan.id, pb.id, 1),
-                            )}
-                            ekle={() => ac({ tur: "baslikEkle", sonra: pb.id })}
-                            ekleEtiket={t("baslikEkle")}
-                            cikar={() => {
-                              if (!ben) return;
-                              if (!cikabilir)
-                                return bildir(t("paketliBaslikCikmaz"));
-                              if (confirm(t("baslikCikarilsinMi")))
-                                planBaslikCikar(ben, plan.id, pb.id);
-                            }}
-                            cikarEtiket={t("plandanCikar")}
-                          />
-                        }
-                      >
-                        <h3>
-                          {ic && ben && yapabilir(ben, "baslikYonet") ? (
-                            <YerindeMetin
-                              acik
-                              deger={ad}
-                              etiket={t("baslik")}
-                              kaydet={(x) =>
-                                x && baslikDuzenle(ben, pb.baslikId, { ad: x })
-                              }
-                            />
-                          ) : (
-                            ad
-                          )}
-                        </h3>
-                      </BelgeSatiri>
-                      {gelismeler.map((g, j) =>
-                        gelismeSatiri(g, j, gelismeler, pb.id),
-                      )}
-                      {pb.muhabirler.length > 0 && (
-                        <>
-                          <p className="alt-baslik">
-                            {c(
-                              pb.muhabirler.length > 1
-                                ? "ciktiMuhabirler"
-                                : "ciktiMuhabir",
-                            )}
-                          </p>
-                          {pb.muhabirler.map((m, j) => (
-                            <BelgeSatiri
-                              key={m.kisiId}
-                              duzen={ic}
-                              onceki={m.onceki}
-                              serit={
-                                <SatirSeridi
-                                  yukari={yukari(
-                                    j,
-                                    () =>
-                                      ben &&
-                                      planMuhabirTasi(
-                                        ben,
-                                        plan.id,
-                                        pb.id,
-                                        m.kisiId,
-                                        -1,
-                                      ),
-                                  )}
-                                  asagi={asagi(
-                                    j,
-                                    pb.muhabirler.length,
-                                    () =>
-                                      ben &&
-                                      planMuhabirTasi(
-                                        ben,
-                                        plan.id,
-                                        pb.id,
-                                        m.kisiId,
-                                        1,
-                                      ),
-                                  )}
-                                  ekle={() =>
-                                    ac({
-                                      tur: "muhabirEkle",
-                                      pbId: pb.id,
-                                      sonra: m.kisiId,
-                                    })
-                                  }
-                                  ekleEtiket={t("muhabirAta")}
-                                  duzenle={() =>
-                                    ac({
-                                      tur: "muhabir",
-                                      pbId: pb.id,
-                                      kisiId: m.kisiId,
-                                    })
-                                  }
-                                  onceki={
-                                    m.onceki
-                                      ? () =>
-                                          ben &&
-                                          oncekiOnayla(ben, plan.id, {
-                                            muhabir: [pb.id, m.kisiId],
-                                          })
-                                      : undefined
-                                  }
-                                  cikar={sil(
-                                    () =>
-                                      ben &&
-                                      planMuhabir(
-                                        ben,
-                                        plan.id,
-                                        pb.id,
-                                        m.kisiId,
-                                        false,
-                                      ),
-                                  )}
-                                />
-                              }
-                            >
-                              <Satir
-                                yer={
-                                  ic ? (
-                                    <YerindeMetin
-                                      acik
-                                      deger={m.yer ?? ""}
-                                      goster={sehir(m.kisiId)}
-                                      etiket={t("yer")}
-                                      kaydet={(x) =>
-                                        ben &&
-                                        planMuhabirGuncelle(
-                                          ben,
-                                          plan.id,
-                                          pb.id,
-                                          m.kisiId,
-                                          { yer: x || undefined },
-                                        )
-                                      }
-                                    />
-                                  ) : (
-                                    m.yer || sehir(m.kisiId)
-                                  )
-                                }
-                              >
-                                {kisiAdi(m.kisiId)}{" "}
-                                {m.saat && <b>{vardiyaYaz(m.saat)}</b>}
-                              </Satir>
-                            </BelgeSatiri>
-                          ))}
-                        </>
-                      )}
-                      {!pb.muhabirler.length && pb.muhabirTbc && (
-                        <>
-                          <p className="alt-baslik">{c("ciktiMuhabir")}</p>
-                          <BelgeSatiri
-                            duzen={ic}
-                            serit={
-                              <SatirSeridi
-                                ekle={() =>
-                                  ac({ tur: "muhabirEkle", pbId: pb.id })
-                                }
-                                ekleEtiket={t("muhabirAta")}
-                                cikar={() =>
-                                  ben &&
-                                  planMuhabirTbc(ben, plan.id, pb.id, false)
-                                }
-                              />
-                            }
-                          >
-                            <Satir>
-                              <span data-tbc-satir>{TBC}</span>
-                            </Satir>
-                          </BelgeSatiri>
-                        </>
-                      )}
-                      {pbCanli.length > 0 && (
-                        <>
-                          <p className="alt-baslik">
-                            <bdi>LIVE</bdi>
-                          </p>
-                          {pbCanli.map((x) => (
-                            <BelgeSatiri
-                              key={x.id}
-                              duzen={op}
-                              onceki={x.onceki}
-                              serit={
-                                <SatirSeridi
-                                  duzenle={() =>
-                                    ac({ tur: "canli", mevcut: x })
-                                  }
-                                  cikar={
-                                    !x.oneriId ||
-                                    (ben && yapabilir(ben, "oneriDegerlendir"))
-                                      ? sil(() => ben && canliSil(ben, x.id))
-                                      : undefined
-                                  }
-                                />
-                              }
-                            >
-                              <Satir yer={x.yer}>
-                                <b>
-                                  {x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}
-                                </b>{" "}
-                                / <span data-baslik-canli>{x.konu}</span>
-                                {x.aciklama ? ` / ${x.aciklama}` : ""}
-                                {x.muhabirId
-                                  ? ` / ${kisiAdi(x.muhabirId)}`
-                                  : ""}
-                              </Satir>
-                            </BelgeSatiri>
-                          ))}
-                        </>
-                      )}
-                      {pb.live && (
-                        <BelgeSatiri
-                          duzen={ic}
-                          serit={
-                            <SatirSeridi
-                              cikar={() =>
-                                ben &&
-                                planBaslikLive(ben, plan.id, pb.id, false)
-                              }
-                            />
-                          }
-                        >
-                          <Satir>
-                            <b data-live-satir>LIVE</b>
-                          </Satir>
-                        </BelgeSatiri>
-                      )}
-                      {/* Kararı verilmemiş paket "PKG PROPOSAL", kabul edilen "PKG" altında (kurumun isteği). */}
-                      {pkgGruplari(pkg).map(([ad, grup]) => (
-                        <Fragment key={ad}>
-                          <p className="alt-baslik" data-pkg-grubu={ad}>
-                            <bdi>{ad}</bdi>
-                          </p>
-                          {grup.map((p, j) => {
-                            // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
-                            const acikPaket =
-                              p.durum === "taslak" ||
-                              p.durum === "degerlendiriliyor";
-                            return (
-                              <BelgeSatiri
-                                key={p.id}
-                                duzen={ic}
-                                serit={
-                                  <SatirSeridi
-                                    yukari={yukari(
-                                      j,
-                                      () => ben && paketTasi(ben, p.id, -1),
-                                    )}
-                                    asagi={asagi(
-                                      j,
-                                      grup.length,
-                                      () => ben && paketTasi(ben, p.id, 1),
-                                    )}
-                                    ekle={() =>
-                                      ac({
-                                        tur: "paket",
-                                        pbId: pb.id,
-                                        sonra: p.id,
-                                      })
-                                    }
-                                    ekleEtiket={t("paketOnerisiEkle")}
-                                    duzenle={
-                                      acikPaket
-                                        ? () =>
-                                            ac({
-                                              tur: "paket",
-                                              pbId: pb.id,
-                                              mevcut: p,
-                                            })
-                                        : undefined
-                                    }
-                                    ek={
-                                      <>
-                                        <PaketBaglantisi id={p.id} />
-                                        {paketStogaAlinabilir(p) && (
-                                          <IkonDugme
-                                            ikon={<PackageCheck size={15} />}
-                                            etiket={t("stokPaketOlarakEkle")}
-                                            onClick={() =>
-                                              ben &&
-                                              confirm(t("stokPaketOnay")) &&
-                                              paketStogaAl(
-                                                ben,
-                                                p.id,
-                                                confirm(t("stokBaslikta")),
-                                              )
-                                            }
-                                          />
-                                        )}
-                                      </>
-                                    }
-                                    cikar={
-                                      paketPlandanSilinir(p)
-                                        ? sil(() => ben && paketSil(ben, p.id))
-                                        : undefined
-                                    }
-                                  />
-                                }
-                              >
-                                <Satir yer={paketYeri(p)}>
-                                  {ic && acikPaket ? (
-                                    <YerindeMetin
-                                      acik
-                                      deger={p.baslik}
-                                      etiket={t("paketBasligi")}
-                                      kaydet={(x) =>
-                                        x &&
-                                        ben &&
-                                        paketKaydet(ben, paketGirdisi(p, x))
-                                      }
-                                    />
-                                  ) : (
-                                    p.baslik
-                                  )}{" "}
-                                  /{" "}
-                                  <b>
-                                    {muhabirYeri(
-                                      [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                                      p.muhabirTbc,
-                                    )}
-                                  </b>
-                                  {bicimEki(p.bicim) && (
-                                    <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                                  )}
-                                  {paketNotEki(p) && (
-                                    <span data-paket-notu>
-                                      {paketNotEki(p)}
-                                    </span>
-                                  )}
-                                </Satir>
-                                {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
-                                {p.slug && (
-                                  <p className="cikti-slug" data-paket-kodu>
-                                    <bdi>{p.slug}</bdi>
-                                  </p>
-                                )}
-                              </BelgeSatiri>
-                            );
-                          })}
-                        </Fragment>
-                      ))}
-                      {(ic || op) && (
-                        <EkleCubugu>
-                          {op && (
-                            <EkleDugmesi
-                              metin={t("gelismeEkle")}
-                              onClick={() =>
-                                ac({
-                                  tur: "gelisme",
-                                  planBaslikId: pb.id,
-                                  sonra: gelismeler.at(-1)?.id,
-                                })
-                              }
-                            />
-                          )}
-                          {ic && (
-                            <EkleDugmesi
-                              metin={t("muhabirAta")}
-                              onClick={() =>
-                                ac({
-                                  tur: "muhabirEkle",
-                                  pbId: pb.id,
-                                  sonra: pb.muhabirler.at(-1)?.kisiId,
-                                })
-                              }
-                            />
-                          )}
-                          {ic && (
-                            <EkleDugmesi
-                              metin={t("paketOnerisiEkle")}
-                              onClick={() =>
-                                ac({
-                                  tur: "paket",
-                                  pbId: pb.id,
-                                  sonra: pkg.at(-1)?.id,
-                                })
-                              }
-                            />
-                          )}
-                        </EkleCubugu>
-                      )}
-                      {duzen?.hizli && op && (
-                        <HizliEkle
-                          ben={duzen.ben}
-                          plan={plan}
-                          pbId={pb.id}
-                          sonra={gelismeler.at(-1)?.id}
-                          icerik={ic}
-                          ac={ac}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-                {ic && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("baslikEkle")}
-                      onClick={() =>
-                        ac({
-                          tur: "baslikEkle",
-                          sonra: plan.basliklar.at(-1)?.id,
-                        })
-                      }
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-          </div>
-          <aside className="nd-yan">
-            {(plan.ekip.length > 0 || ic) && (
-              <section>
-                <h2 className="yesil">{c("calismaEkibi")}</h2>
-                {ekipSirasi(plan).map((g) => {
-                  const uyeler = gorevEkibi(plan, g);
-                  if (!uyeler.length) return null;
-                  return (
-                    <BelgeSatiri
-                      key={g}
-                      duzen={ic}
-                      serit={
-                        <SatirSeridi
-                          ekle={() => ac({ tur: "ekipEkle", gorev: g })}
-                          ekleEtiket={t("ekibeEkle")}
-                        />
-                      }
-                    >
-                      <p>
-                        <b>{ekipGorevAdi(g)}: </b>
-                        {ic
-                          ? uyeler.map((e, i) => (
-                              <Fragment key={e.kisiId}>
-                                {i > 0 && " | "}
-                                <button
-                                  type="button"
-                                  className={`belge-kisi${e.onceki ? " onceki" : ""}`}
-                                  title={
-                                    e.onceki ? t("oncekiGunden") : t("duzenle")
-                                  }
-                                  onClick={() =>
-                                    ac({ tur: "ekipUye", kisiId: e.kisiId })
-                                  }
-                                >
-                                  {ekipAdi(kisiBul(v, e.kisiId))}{" "}
-                                  {vardiyaYaz(e.vardiya)}
-                                </button>
-                              </Fragment>
-                            ))
-                          : uyeler
-                              .map(
-                                (e) =>
-                                  `${ekipAdi(kisiBul(v, e.kisiId))} ${vardiyaYaz(e.vardiya)}`,
-                              )
-                              .join(" | ")}
-                      </p>
-                    </BelgeSatiri>
-                  );
-                })}
-                {ic && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("ekibeEkle")}
-                      onClick={() => ac({ tur: "ekipEkle" })}
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-
-            {(gorevlendirmeler.length > 0 || ic) && (
-              <section>
-                <h2 className="yesil">{c("muhabirHareketleri")}</h2>
-                {gorevlendirmeler.map((g, i) => {
-                  const onceki = plan.oncekiHareketler?.includes(g.id);
-                  return (
-                    <BelgeSatiri
-                      key={g.id}
-                      duzen={ic}
-                      onceki={onceki}
-                      serit={
-                        <SatirSeridi
-                          yukari={yukari(
-                            i,
-                            () =>
-                              ben &&
-                              planGorevlendirmeTasi(ben, plan.id, g.id, -1),
-                          )}
-                          asagi={asagi(
-                            i,
-                            gorevlendirmeler.length,
-                            () =>
-                              ben &&
-                              planGorevlendirmeTasi(ben, plan.id, g.id, 1),
-                          )}
-                          onceki={
-                            onceki
-                              ? () =>
-                                  ben &&
-                                  oncekiOnayla(ben, plan.id, { hareket: g.id })
-                              : undefined
-                          }
-                          cikar={sil(
-                            () =>
-                              ben && planGorevlendirmeCikar(ben, plan.id, g.id),
-                          )}
-                          cikarEtiket={t("plandanCikar")}
-                        />
-                      }
-                    >
-                      <Satir
-                        yer={
-                          ic ? (
-                            <YerindeMetin
-                              acik
-                              deger={g.yer}
-                              etiket={t("yer")}
-                              kaydet={(x) =>
-                                x &&
-                                ben &&
-                                gorevlendirmeMetni(ben, plan.id, g.id, {
-                                  yer: x,
-                                })
-                              }
-                            />
-                          ) : (
-                            g.yer
-                          )
-                        }
-                      >
-                        {kisiAdi(g.kisiId)} /{" "}
-                        {sureYaz(g.baslangic, g.bitis, "ar")}
-                        {ic ? (
-                          <>
-                            {" / "}
-                            <YerindeMetin
-                              acik
-                              deger={g.aciklama}
-                              etiket={t("aciklama")}
-                              kaydet={(x) =>
-                                ben &&
-                                gorevlendirmeMetni(ben, plan.id, g.id, {
-                                  aciklama: x,
-                                })
-                              }
-                            />
-                          </>
-                        ) : g.aciklama ? (
-                          ` / ${g.aciklama}`
-                        ) : (
-                          ""
-                        )}
-                      </Satir>
-                    </BelgeSatiri>
-                  );
-                })}
-                {ic && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("yeniHareket")}
-                      onClick={() => ac({ tur: "hareketEkle" })}
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-
-            {(canlilar.length > 0 || op) && (
-              <section>
-                <h2 className="kirmizi">{c("ciktiCanli")}</h2>
-                {canlilar.map((x) => (
-                  <BelgeSatiri
-                    key={x.id}
-                    duzen={op}
-                    onceki={x.onceki}
-                    serit={
-                      <SatirSeridi
-                        duzenle={() => ac({ tur: "canli", mevcut: x })}
-                        onceki={
-                          x.onceki
-                            ? () =>
-                                ben &&
-                                oncekiOnayla(ben, plan.id, { canli: x.id })
-                            : undefined
-                        }
-                        cikar={
-                          !x.oneriId ||
-                          (ben && yapabilir(ben, "oneriDegerlendir"))
-                            ? sil(() => ben && canliSil(ben, x.id))
-                            : undefined
-                        }
-                      />
-                    }
-                  >
-                    {/* Kurumun istediği sıra: ŞEHİR / saat / konu / ayrıntı / muhabir. */}
-                    <Satir yer={x.yer}>
-                      <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> /{" "}
-                      {op ? (
-                        <YerindeMetin
-                          acik
-                          deger={x.konu}
-                          etiket={t("etkinlikAdi")}
-                          kaydet={(k) =>
-                            k && ben && canliKaydet(ben, { ...x, konu: k })
-                          }
-                        />
-                      ) : (
-                        x.konu
-                      )}
-                      {x.aciklama ? ` / ${x.aciklama}` : ""}
-                      {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
-                    </Satir>
-                  </BelgeSatiri>
-                ))}
-                {op && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("canliEkle")}
-                      onClick={() => ac({ tur: "canli" })}
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-
-            {(hazirlar.length > 0 || ic) && (
-              <section>
-                <h2 className="yesil">{c("ciktiHazir")}</h2>
-                {hazirlar.map((h, i) => (
-                  <BelgeSatiri
-                    key={h.id}
-                    duzen={ic}
-                    serit={
-                      <SatirSeridi
-                        yukari={yukari(
-                          i,
-                          () => ben && hazirPaketTasi(ben, plan.id, h.id, -1),
-                        )}
-                        asagi={asagi(
-                          i,
-                          hazirlar.length,
-                          () => ben && hazirPaketTasi(ben, plan.id, h.id, 1),
-                        )}
-                        ek={<PaketBaglantisi id={h.id} />}
-                        cikar={sil(
-                          () => ben && hazirPaketCikar(ben, plan.id, h.id),
-                        )}
-                        cikarEtiket={t("plandanCikar")}
-                      />
-                    }
-                  >
-                    <div className="cikti-paket">
-                      <Satir yer={paketYeri(h)}>
-                        {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
-                        {paketNotEki(h) && (
-                          <span data-paket-notu>{paketNotEki(h)}</span>
-                        )}
-                      </Satir>
-                      <p className="cikti-aciklama">{h.aciklama}</p>
-                      {h.slug && (
-                        <p className="cikti-slug">
-                          <bdi>{h.slug}</bdi>
-                        </p>
-                      )}
-                    </div>
-                  </BelgeSatiri>
-                ))}
-                {ic && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("stoktanSec")}
-                      onClick={() => ac({ tur: "hazirSec" })}
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-
-            {(takipler.length > 0 || dosyasizPaketler.length > 0 || op) && (
-              <section>
-                <h2 className="yesil">{c("takipler")}</h2>
-                {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
-                {dosyasizPaketler.map((p) => (
-                  <BelgeSatiri
-                    key={p.id}
-                    duzen={ic}
-                    serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}
-                  >
-                    <Satir yer={paketYeri(p)}>
+      {ikiSutun ? (
+        <>
+          <div className="nd-sutunlar">
+            <div className="nd-ana">
+              {beklenenler.length > 0 && (
+                <section>
+                  <h2 className="yesil">{c("ciktiBeklenen")}</h2>
+                  {beklenenler.map((p) => (
+                    <Satir key={p.id} yer={paketYeri(p)}>
                       {p.baslik} /{" "}
                       <b>
                         {muhabirYeri(
@@ -1264,26 +573,754 @@ export function NextDayBelgesi({
                         <span data-paket-notu>{paketNotEki(p)}</span>
                       )}
                     </Satir>
-                  </BelgeSatiri>
-                ))}
-                {op && (
-                  <EkleCubugu>
-                    <EkleDugmesi
-                      metin={t("takipEkle")}
-                      onClick={() =>
-                        ac({ tur: "gelisme", sonra: takipler.at(-1)?.id })
+                  ))}
+                </section>
+              )}
+
+              {(plan.basliklar.length > 0 || ic) && (
+                <section>
+                  <h2 className="kirmizi ortali">{c("ciktiOlaylar")}</h2>
+                  {plan.basliklar.map((pb, i) => {
+                    const gelismeler = v.gelismeler.filter(
+                      (g) => g.planBaslikId === pb.id,
+                    );
+                    const pkg = paketler.filter(
+                      (p) => p.planBaslikId === pb.id,
+                    );
+                    // Başlığa bağlı canlı yayın üstteki "مباشر"da ve başlığın altında da; okuyan haberle birlikte görsün.
+                    const pbCanli = canlilar.filter(
+                      (x) => x.planBaslikId === pb.id,
+                    );
+                    // Çıktıda boş başlık görünmüyor; belgede görünüyor ki içine eklenebilsin.
+                    if (
+                      !d &&
+                      !gelismeler.length &&
+                      !pb.muhabirler.length &&
+                      !pb.muhabirTbc &&
+                      !pb.live &&
+                      !pbCanli.length &&
+                      !pkg.length
+                    )
+                      return null;
+                    const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
+                    const cikabilir = !pkg.length;
+                    return (
+                      <div
+                        key={pb.id}
+                        className="cikti-baslik"
+                        data-nd-baslik={pb.id}
+                      >
+                        <BelgeSatiri
+                          duzen={ic}
+                          serit={
+                            <SatirSeridi
+                              yukari={yukari(
+                                i,
+                                () =>
+                                  ben &&
+                                  planBaslikTasi(ben, plan.id, pb.id, -1),
+                              )}
+                              asagi={asagi(
+                                i,
+                                plan.basliklar.length,
+                                () =>
+                                  ben && planBaslikTasi(ben, plan.id, pb.id, 1),
+                              )}
+                              ekle={() =>
+                                ac({ tur: "baslikEkle", sonra: pb.id })
+                              }
+                              ekleEtiket={t("baslikEkle")}
+                              cikar={() => {
+                                if (!ben) return;
+                                if (!cikabilir)
+                                  return bildir(t("paketliBaslikCikmaz"));
+                                if (confirm(t("baslikCikarilsinMi")))
+                                  planBaslikCikar(ben, plan.id, pb.id);
+                              }}
+                              cikarEtiket={t("plandanCikar")}
+                            />
+                          }
+                        >
+                          <h3>
+                            {ic && ben && yapabilir(ben, "baslikYonet") ? (
+                              <YerindeMetin
+                                acik
+                                deger={ad}
+                                etiket={t("baslik")}
+                                kaydet={(x) =>
+                                  x &&
+                                  baslikDuzenle(ben, pb.baslikId, { ad: x })
+                                }
+                              />
+                            ) : (
+                              ad
+                            )}
+                          </h3>
+                        </BelgeSatiri>
+                        {gelismeler.map((g, j) =>
+                          gelismeSatiri(g, j, gelismeler, pb.id),
+                        )}
+                        {pb.muhabirler.length > 0 && (
+                          <>
+                            <p className="alt-baslik">
+                              {c(
+                                pb.muhabirler.length > 1
+                                  ? "ciktiMuhabirler"
+                                  : "ciktiMuhabir",
+                              )}
+                            </p>
+                            {pb.muhabirler.map((m, j) => (
+                              <BelgeSatiri
+                                key={m.kisiId}
+                                duzen={ic}
+                                onceki={m.onceki}
+                                serit={
+                                  <SatirSeridi
+                                    yukari={yukari(
+                                      j,
+                                      () =>
+                                        ben &&
+                                        planMuhabirTasi(
+                                          ben,
+                                          plan.id,
+                                          pb.id,
+                                          m.kisiId,
+                                          -1,
+                                        ),
+                                    )}
+                                    asagi={asagi(
+                                      j,
+                                      pb.muhabirler.length,
+                                      () =>
+                                        ben &&
+                                        planMuhabirTasi(
+                                          ben,
+                                          plan.id,
+                                          pb.id,
+                                          m.kisiId,
+                                          1,
+                                        ),
+                                    )}
+                                    ekle={() =>
+                                      ac({
+                                        tur: "muhabirEkle",
+                                        pbId: pb.id,
+                                        sonra: m.kisiId,
+                                      })
+                                    }
+                                    ekleEtiket={t("muhabirAta")}
+                                    duzenle={() =>
+                                      ac({
+                                        tur: "muhabir",
+                                        pbId: pb.id,
+                                        kisiId: m.kisiId,
+                                      })
+                                    }
+                                    onceki={
+                                      m.onceki
+                                        ? () =>
+                                            ben &&
+                                            oncekiOnayla(ben, plan.id, {
+                                              muhabir: [pb.id, m.kisiId],
+                                            })
+                                        : undefined
+                                    }
+                                    cikar={sil(
+                                      () =>
+                                        ben &&
+                                        planMuhabir(
+                                          ben,
+                                          plan.id,
+                                          pb.id,
+                                          m.kisiId,
+                                          false,
+                                        ),
+                                    )}
+                                  />
+                                }
+                              >
+                                <Satir
+                                  yer={
+                                    ic ? (
+                                      <YerindeMetin
+                                        acik
+                                        deger={m.yer ?? ""}
+                                        goster={sehir(m.kisiId)}
+                                        etiket={t("yer")}
+                                        kaydet={(x) =>
+                                          ben &&
+                                          planMuhabirGuncelle(
+                                            ben,
+                                            plan.id,
+                                            pb.id,
+                                            m.kisiId,
+                                            { yer: x || undefined },
+                                          )
+                                        }
+                                      />
+                                    ) : (
+                                      m.yer || sehir(m.kisiId)
+                                    )
+                                  }
+                                >
+                                  {kisiAdi(m.kisiId)}{" "}
+                                  {m.saat && <b>{vardiyaYaz(m.saat)}</b>}
+                                </Satir>
+                              </BelgeSatiri>
+                            ))}
+                          </>
+                        )}
+                        {!pb.muhabirler.length && pb.muhabirTbc && (
+                          <>
+                            <p className="alt-baslik">{c("ciktiMuhabir")}</p>
+                            <BelgeSatiri
+                              duzen={ic}
+                              serit={
+                                <SatirSeridi
+                                  ekle={() =>
+                                    ac({ tur: "muhabirEkle", pbId: pb.id })
+                                  }
+                                  ekleEtiket={t("muhabirAta")}
+                                  cikar={() =>
+                                    ben &&
+                                    planMuhabirTbc(ben, plan.id, pb.id, false)
+                                  }
+                                />
+                              }
+                            >
+                              <Satir>
+                                <span data-tbc-satir>{TBC}</span>
+                              </Satir>
+                            </BelgeSatiri>
+                          </>
+                        )}
+                        {pbCanli.length > 0 && (
+                          <>
+                            <p className="alt-baslik">
+                              <bdi>LIVE</bdi>
+                            </p>
+                            {pbCanli.map((x) => (
+                              <BelgeSatiri
+                                key={x.id}
+                                duzen={op}
+                                onceki={x.onceki}
+                                serit={
+                                  <SatirSeridi
+                                    duzenle={() =>
+                                      ac({ tur: "canli", mevcut: x })
+                                    }
+                                    cikar={
+                                      !x.oneriId ||
+                                      (ben &&
+                                        yapabilir(ben, "oneriDegerlendir"))
+                                        ? sil(() => ben && canliSil(ben, x.id))
+                                        : undefined
+                                    }
+                                  />
+                                }
+                              >
+                                <Satir yer={x.yer}>
+                                  <b>
+                                    {x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}
+                                  </b>{" "}
+                                  / <span data-baslik-canli>{x.konu}</span>
+                                  {x.aciklama ? ` / ${x.aciklama}` : ""}
+                                  {x.muhabirId
+                                    ? ` / ${kisiAdi(x.muhabirId)}`
+                                    : ""}
+                                </Satir>
+                              </BelgeSatiri>
+                            ))}
+                          </>
+                        )}
+                        {pb.live && (
+                          <BelgeSatiri
+                            duzen={ic}
+                            serit={
+                              <SatirSeridi
+                                cikar={() =>
+                                  ben &&
+                                  planBaslikLive(ben, plan.id, pb.id, false)
+                                }
+                              />
+                            }
+                          >
+                            <Satir>
+                              <b data-live-satir>LIVE</b>
+                            </Satir>
+                          </BelgeSatiri>
+                        )}
+                        {/* Kararı verilmemiş paket "PKG PROPOSAL", kabul edilen "PKG" altında (kurumun isteği). */}
+                        {pkgGruplari(pkg).map(([ad, grup]) => (
+                          <Fragment key={ad}>
+                            <p className="alt-baslik" data-pkg-grubu={ad}>
+                              <bdi>{ad}</bdi>
+                            </p>
+                            {grup.map((p, j) => {
+                              // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
+                              const acikPaket =
+                                p.durum === "taslak" ||
+                                p.durum === "degerlendiriliyor";
+                              return (
+                                <BelgeSatiri
+                                  key={p.id}
+                                  duzen={ic}
+                                  serit={
+                                    <SatirSeridi
+                                      yukari={yukari(
+                                        j,
+                                        () => ben && paketTasi(ben, p.id, -1),
+                                      )}
+                                      asagi={asagi(
+                                        j,
+                                        grup.length,
+                                        () => ben && paketTasi(ben, p.id, 1),
+                                      )}
+                                      ekle={() =>
+                                        ac({
+                                          tur: "paket",
+                                          pbId: pb.id,
+                                          sonra: p.id,
+                                        })
+                                      }
+                                      ekleEtiket={t("paketOnerisiEkle")}
+                                      duzenle={
+                                        acikPaket
+                                          ? () =>
+                                              ac({
+                                                tur: "paket",
+                                                pbId: pb.id,
+                                                mevcut: p,
+                                              })
+                                          : undefined
+                                      }
+                                      ek={
+                                        <>
+                                          <PaketBaglantisi id={p.id} />
+                                          {paketStogaAlinabilir(p) && (
+                                            <IkonDugme
+                                              ikon={<PackageCheck size={15} />}
+                                              etiket={t("stokPaketOlarakEkle")}
+                                              onClick={() =>
+                                                ben &&
+                                                confirm(t("stokPaketOnay")) &&
+                                                paketStogaAl(
+                                                  ben,
+                                                  p.id,
+                                                  confirm(t("stokBaslikta")),
+                                                )
+                                              }
+                                            />
+                                          )}
+                                        </>
+                                      }
+                                      cikar={
+                                        paketPlandanSilinir(p)
+                                          ? sil(
+                                              () => ben && paketSil(ben, p.id),
+                                            )
+                                          : undefined
+                                      }
+                                    />
+                                  }
+                                >
+                                  <Satir yer={paketYeri(p)}>
+                                    {ic && acikPaket ? (
+                                      <YerindeMetin
+                                        acik
+                                        deger={p.baslik}
+                                        etiket={t("paketBasligi")}
+                                        kaydet={(x) =>
+                                          x &&
+                                          ben &&
+                                          paketKaydet(ben, paketGirdisi(p, x))
+                                        }
+                                      />
+                                    ) : (
+                                      p.baslik
+                                    )}{" "}
+                                    /{" "}
+                                    <b>
+                                      {muhabirYeri(
+                                        [
+                                          p.muhabirId
+                                            ? kisiAdi(p.muhabirId)
+                                            : "",
+                                        ],
+                                        p.muhabirTbc,
+                                      )}
+                                    </b>
+                                    {bicimEki(p.bicim) && (
+                                      <b data-bicim-eki> {bicimEki(p.bicim)}</b>
+                                    )}
+                                    {paketNotEki(p) && (
+                                      <span data-paket-notu>
+                                        {paketNotEki(p)}
+                                      </span>
+                                    )}
+                                  </Satir>
+                                  {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
+                                  {p.slug && (
+                                    <p className="cikti-slug" data-paket-kodu>
+                                      <bdi>{p.slug}</bdi>
+                                    </p>
+                                  )}
+                                </BelgeSatiri>
+                              );
+                            })}
+                          </Fragment>
+                        ))}
+                        {(ic || op) && (
+                          <EkleCubugu>
+                            {op && (
+                              <EkleDugmesi
+                                metin={t("gelismeEkle")}
+                                onClick={() =>
+                                  ac({
+                                    tur: "gelisme",
+                                    planBaslikId: pb.id,
+                                    sonra: gelismeler.at(-1)?.id,
+                                  })
+                                }
+                              />
+                            )}
+                            {ic && (
+                              <EkleDugmesi
+                                metin={t("muhabirAta")}
+                                onClick={() =>
+                                  ac({
+                                    tur: "muhabirEkle",
+                                    pbId: pb.id,
+                                    sonra: pb.muhabirler.at(-1)?.kisiId,
+                                  })
+                                }
+                              />
+                            )}
+                            {ic && (
+                              <EkleDugmesi
+                                metin={t("paketOnerisiEkle")}
+                                onClick={() =>
+                                  ac({
+                                    tur: "paket",
+                                    pbId: pb.id,
+                                    sonra: pkg.at(-1)?.id,
+                                  })
+                                }
+                              />
+                            )}
+                          </EkleCubugu>
+                        )}
+                        {duzen?.hizli && op && (
+                          <HizliEkle
+                            ben={duzen.ben}
+                            plan={plan}
+                            pbId={pb.id}
+                            sonra={gelismeler.at(-1)?.id}
+                            icerik={ic}
+                            ac={ac}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {ic && (
+                    <EkleCubugu>
+                      <EkleDugmesi
+                        metin={t("baslikEkle")}
+                        onClick={() =>
+                          ac({
+                            tur: "baslikEkle",
+                            sonra: plan.basliklar.at(-1)?.id,
+                          })
+                        }
+                      />
+                    </EkleCubugu>
+                  )}
+                </section>
+              )}
+            </div>
+            <aside className="nd-yan">
+              {(plan.ekip.length > 0 || ic) && (
+                <section data-bolum="ekip">
+                  <h2 className="yesil">{c("calismaEkibi")}</h2>
+                  {ekipSirasi(plan).map((g) => {
+                    const uyeler = gorevEkibi(plan, g);
+                    if (!uyeler.length) return null;
+                    return (
+                      <BelgeSatiri
+                        key={g}
+                        duzen={ic}
+                        serit={
+                          <SatirSeridi
+                            ekle={() => ac({ tur: "ekipEkle", gorev: g })}
+                            ekleEtiket={t("ekibeEkle")}
+                          />
+                        }
+                      >
+                        <p>
+                          <b>{ekipGorevAdi(g)}: </b>
+                          {ic
+                            ? uyeler.map((e, i) => (
+                                <Fragment key={e.kisiId}>
+                                  {i > 0 && " | "}
+                                  <button
+                                    type="button"
+                                    className={`belge-kisi${e.onceki ? " onceki" : ""}`}
+                                    title={
+                                      e.onceki
+                                        ? t("oncekiGunden")
+                                        : t("duzenle")
+                                    }
+                                    onClick={() =>
+                                      ac({ tur: "ekipUye", kisiId: e.kisiId })
+                                    }
+                                  >
+                                    {ekipAdi(kisiBul(v, e.kisiId))}{" "}
+                                    {vardiyaYaz(e.vardiya)}
+                                  </button>
+                                </Fragment>
+                              ))
+                            : uyeler
+                                .map(
+                                  (e) =>
+                                    `${ekipAdi(kisiBul(v, e.kisiId))} ${vardiyaYaz(e.vardiya)}`,
+                                )
+                                .join(" | ")}
+                        </p>
+                      </BelgeSatiri>
+                    );
+                  })}
+                  {ic && (
+                    <EkleCubugu>
+                      <EkleDugmesi
+                        metin={t("ekibeEkle")}
+                        onClick={() => ac({ tur: "ekipEkle" })}
+                      />
+                    </EkleCubugu>
+                  )}
+                </section>
+              )}
+
+              {(gorevlendirmeler.length > 0 || ic) && (
+                <section data-bolum="hareket">
+                  <h2 className="yesil">{c("muhabirHareketleri")}</h2>
+                  {gorevlendirmeler.map((g, i) => {
+                    const onceki = plan.oncekiHareketler?.includes(g.id);
+                    return (
+                      <BelgeSatiri
+                        key={g.id}
+                        duzen={ic}
+                        onceki={onceki}
+                        serit={
+                          <SatirSeridi
+                            yukari={yukari(
+                              i,
+                              () =>
+                                ben &&
+                                planGorevlendirmeTasi(ben, plan.id, g.id, -1),
+                            )}
+                            asagi={asagi(
+                              i,
+                              gorevlendirmeler.length,
+                              () =>
+                                ben &&
+                                planGorevlendirmeTasi(ben, plan.id, g.id, 1),
+                            )}
+                            onceki={
+                              onceki
+                                ? () =>
+                                    ben &&
+                                    oncekiOnayla(ben, plan.id, {
+                                      hareket: g.id,
+                                    })
+                                : undefined
+                            }
+                            cikar={sil(
+                              () =>
+                                ben &&
+                                planGorevlendirmeCikar(ben, plan.id, g.id),
+                            )}
+                            cikarEtiket={t("plandanCikar")}
+                          />
+                        }
+                      >
+                        <Satir
+                          yer={
+                            ic ? (
+                              <YerindeMetin
+                                acik
+                                deger={g.yer}
+                                etiket={t("yer")}
+                                kaydet={(x) =>
+                                  x &&
+                                  ben &&
+                                  gorevlendirmeMetni(ben, plan.id, g.id, {
+                                    yer: x,
+                                  })
+                                }
+                              />
+                            ) : (
+                              g.yer
+                            )
+                          }
+                        >
+                          {kisiAdi(g.kisiId)} /{" "}
+                          {sureYaz(g.baslangic, g.bitis, "ar")}
+                          {ic ? (
+                            <>
+                              {" / "}
+                              <YerindeMetin
+                                acik
+                                deger={g.aciklama}
+                                etiket={t("aciklama")}
+                                kaydet={(x) =>
+                                  ben &&
+                                  gorevlendirmeMetni(ben, plan.id, g.id, {
+                                    aciklama: x,
+                                  })
+                                }
+                              />
+                            </>
+                          ) : g.aciklama ? (
+                            ` / ${g.aciklama}`
+                          ) : (
+                            ""
+                          )}
+                        </Satir>
+                      </BelgeSatiri>
+                    );
+                  })}
+                  {ic && (
+                    <EkleCubugu>
+                      <EkleDugmesi
+                        metin={t("yeniHareket")}
+                        onClick={() => ac({ tur: "hareketEkle" })}
+                      />
+                    </EkleCubugu>
+                  )}
+                </section>
+              )}
+
+              {(canlilar.length > 0 || op) && (
+                <section data-bolum="canli">
+                  <h2 className="kirmizi">{c("ciktiCanli")}</h2>
+                  {canlilar.map((x) => (
+                    <BelgeSatiri
+                      key={x.id}
+                      duzen={op}
+                      onceki={x.onceki}
+                      serit={
+                        <SatirSeridi
+                          duzenle={() => ac({ tur: "canli", mevcut: x })}
+                          onceki={
+                            x.onceki
+                              ? () =>
+                                  ben &&
+                                  oncekiOnayla(ben, plan.id, { canli: x.id })
+                              : undefined
+                          }
+                          cikar={
+                            !x.oneriId ||
+                            (ben && yapabilir(ben, "oneriDegerlendir"))
+                              ? sil(() => ben && canliSil(ben, x.id))
+                              : undefined
+                          }
+                        />
                       }
-                    />
-                  </EkleCubugu>
-                )}
-              </section>
-            )}
-          </aside>
-        </div>
+                    >
+                      {/* Kurumun istediği sıra: ŞEHİR / saat / konu / ayrıntı / muhabir. */}
+                      <Satir yer={x.yer}>
+                        <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> /{" "}
+                        {op ? (
+                          <YerindeMetin
+                            acik
+                            deger={x.konu}
+                            etiket={t("etkinlikAdi")}
+                            kaydet={(k) =>
+                              k && ben && canliKaydet(ben, { ...x, konu: k })
+                            }
+                          />
+                        ) : (
+                          x.konu
+                        )}
+                        {x.aciklama ? ` / ${x.aciklama}` : ""}
+                        {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
+                      </Satir>
+                    </BelgeSatiri>
+                  ))}
+                  {op && (
+                    <EkleCubugu>
+                      <EkleDugmesi
+                        metin={t("canliEkle")}
+                        onClick={() => ac({ tur: "canli" })}
+                      />
+                    </EkleCubugu>
+                  )}
+                </section>
+              )}
+
+              {(hazirlar.length > 0 || ic) && (
+                <section>
+                  <h2 className="yesil">{c("ciktiHazir")}</h2>
+                  {hazirlar.map((h, i) => (
+                    <BelgeSatiri
+                      key={h.id}
+                      duzen={ic}
+                      serit={
+                        <SatirSeridi
+                          yukari={yukari(
+                            i,
+                            () => ben && hazirPaketTasi(ben, plan.id, h.id, -1),
+                          )}
+                          asagi={asagi(
+                            i,
+                            hazirlar.length,
+                            () => ben && hazirPaketTasi(ben, plan.id, h.id, 1),
+                          )}
+                          ek={<PaketBaglantisi id={h.id} />}
+                          cikar={sil(
+                            () => ben && hazirPaketCikar(ben, plan.id, h.id),
+                          )}
+                          cikarEtiket={t("plandanCikar")}
+                        />
+                      }
+                    >
+                      <div className="cikti-paket">
+                        <Satir yer={paketYeri(h)}>
+                          {h.baslik} / <b>{kisiAdi(h.muhabirId)}</b>
+                          {paketNotEki(h) && (
+                            <span data-paket-notu>{paketNotEki(h)}</span>
+                          )}
+                        </Satir>
+                        <p className="cikti-aciklama">{h.aciklama}</p>
+                        {h.slug && (
+                          <p className="cikti-slug">
+                            <bdi>{h.slug}</bdi>
+                          </p>
+                        )}
+                      </div>
+                    </BelgeSatiri>
+                  ))}
+                  {ic && (
+                    <EkleCubugu>
+                      <EkleDugmesi
+                        metin={t("stoktanSec")}
+                        onClick={() => ac({ tur: "hazirSec" })}
+                      />
+                    </EkleCubugu>
+                  )}
+                </section>
+              )}
+
+              {!takipSonda && takipBolumu}
+            </aside>
+          </div>
+          {takipSonda && takipBolumu}
+        </>
       ) : (
         <>
           {(plan.ekip.length > 0 || ic) && (
-            <section>
+            <section data-bolum="ekip">
               <h2 className="yesil">{c("calismaEkibi")}</h2>
               {ekipSirasi(plan).map((g) => {
                 const uyeler = gorevEkibi(plan, g);
@@ -1342,7 +1379,7 @@ export function NextDayBelgesi({
           )}
 
           {(gorevlendirmeler.length > 0 || ic) && (
-            <section>
+            <section data-bolum="hareket">
               <h2 className="yesil">{c("muhabirHareketleri")}</h2>
               {gorevlendirmeler.map((g, i) => {
                 const onceki = plan.oncekiHareketler?.includes(g.id);
@@ -1436,7 +1473,7 @@ export function NextDayBelgesi({
           )}
 
           {(canlilar.length > 0 || op) && (
-            <section>
+            <section data-bolum="canli">
               <h2 className="kirmizi">{c("ciktiCanli")}</h2>
               {canlilar.map((x) => (
                 <BelgeSatiri
@@ -2007,48 +2044,44 @@ export function NextDayBelgesi({
             </section>
           )}
 
-          {(takipler.length > 0 || dosyasizPaketler.length > 0 || op) && (
-            <section>
-              <h2 className="yesil">{c("takipler")}</h2>
-              {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
-              {dosyasizPaketler.map((p) => (
-                <BelgeSatiri
-                  key={p.id}
-                  duzen={ic}
-                  serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}
-                >
-                  <Satir yer={paketYeri(p)}>
-                    {p.baslik} /{" "}
-                    <b>
-                      {muhabirYeri(
-                        [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                        p.muhabirTbc,
-                      )}
-                    </b>
-                    {bicimEki(p.bicim) && (
-                      <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                    )}
-                    {paketNotEki(p) && (
-                      <span data-paket-notu>{paketNotEki(p)}</span>
-                    )}
-                  </Satir>
-                </BelgeSatiri>
-              ))}
-              {op && (
-                <EkleCubugu>
-                  <EkleDugmesi
-                    metin={t("takipEkle")}
-                    onClick={() =>
-                      ac({ tur: "gelisme", sonra: takipler.at(-1)?.id })
-                    }
-                  />
-                </EkleCubugu>
-              )}
-            </section>
-          )}
+          {!takipSonda && takipBolumu}
         </>
       )}
     </article>
+  );
+}
+
+export type Baski = 1 | 2 | 3 | 4;
+
+/* 2. baskının manşeti: günün tarihi büyük, belgenin adı, günün sayıları (başlık, PKG, canlı). */
+function Manset({ plan }: { plan: NextDayPlan }) {
+  const v = useVeri();
+  const pkg = v.paketler.filter(
+    (p) => p.planId === plan.id && p.durum !== "iptal",
+  ).length;
+  const canli = v.canliYayinlar.filter((x) => x.planId === plan.id).length;
+  const gun = plan.tarih.split("-")[2];
+  return (
+    <header className="baski-manset">
+      <img className="bm-logo" src={trtArabiBeyaz} alt="TRT عربي" />
+      <span className="bm-gun">{gun}</span>
+      <span className="bm-ad">
+        {c("ciktiBaslik")}
+        <small>{ciktiTarihi(plan.tarih, "ar")}</small>
+      </span>
+      <span className="bm-sayilar">
+        <span>
+          <b>{plan.basliklar.length}</b>
+          {c("bmBaslik")}
+        </span>
+        <span>
+          <b>{pkg}</b>PKG
+        </span>
+        <span>
+          <b>{canli}</b>LIVE
+        </span>
+      </span>
+    </header>
   );
 }
 

@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowLeft, ArrowUp, Check, ClipboardCopy, FileDown, Pencil, Plus, Printer, X } from "lucide-react";
 import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
-import { wordIndir } from "../../bilesenler/indir";
+import { epostaHtml, wordIndir, zenginKopyala } from "../../bilesenler/indir";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { IkonDugme } from "../nextday/Bolumler";
@@ -198,12 +198,10 @@ export function CiktiAraclari({
 }) {
   const { t } = useDil();
   const kopyala = async () => {
-    try {
-      await navigator.clipboard.writeText(belge.current?.innerText ?? "");
-      bildir(t("bKopyalandi"));
-    } catch {
-      bildir(t("kopyalanamadi"));
-    }
+    // E-postaya biçimiyle yapışsın: satır içi stilli HTML ve düz metin birlikte (indir.ts → epostaHtml).
+    const el = belge.current;
+    if (!el) return;
+    bildir(t((await zenginKopyala(epostaHtml(el.innerHTML), el.innerText)) ? "bKopyalandi" : "kopyalanamadi"));
   };
   return (
     <div className="dugmeler yazdirma-gizle">
