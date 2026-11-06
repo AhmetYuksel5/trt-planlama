@@ -759,6 +759,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     arkasına (kendi sıralarıyla), muhabirler yoksa saat ve yerleriyle;
     bu plandaki öneriler hedef başlığa bağlanır. Pencere kartın dışında
     çizilir (kapalı `<details>` içini göstermiyor).
+  - Başlık kartının satırı ve açılınca içindeki kutular her arayüz dilinde
+    sağdan sola (`.baslik-karti > summary`, `.baslik-govde { direction: rtl }`,
+    kutunun içi arayüzün yönünde): numara başlığın sağında, Gelişmeler sağda.
+    Telefonda sayaçlar başlığın altında, düğmeler kenarda 2×2.
   - Araç düğmeleri kendi satırında sayfaya ortalı (`.plan-araclari`):
     Türkçe ve Arapça arayüzde aynı yerde dursun.
   - Geri al (↶, Ctrl/⌘+Z yazı alanı dışında; `bilesenler/GeriAl.tsx`)

@@ -2890,3 +2890,11 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
 .onizleme-kagit { zoom: .62; }
 .onizleme-kagit .cikti { box-shadow: 0 2px 12px rgba(16, 24, 40, .12); margin: 0 auto; }
 @media (max-width: 760px) { .baski-onizleme { padding: var(--ara-2); } .onizleme-kagit { zoom: .45; } }
+
+/*
+ * Başlık kartı açılınca kutular (Gelişmeler, muhabirler, PKG…) her arayüz
+ * dilinde sağdan sola dizilir: içerik Arapça, kağıttaki gibi Gelişmeler sağda.
+ * Kutunun içi arayüzün yönünde kalır (Türkçe düğme ve etiketler).
+ */
+.baslik-govde { direction: rtl; }
+:root[dir="ltr"] .baslik-govde > * { direction: ltr; }
