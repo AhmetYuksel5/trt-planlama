@@ -396,7 +396,7 @@ export function NextDayBelgesi({ plan, duzen, belgeRef }: { plan: NextDayPlan; d
             const ad = baslikBul(v, pb.baslikId)?.ad ?? "";
             const cikabilir = !pkg.length;
             return (
-              <div key={pb.id} className="cikti-baslik">
+              <div key={pb.id} className="cikti-baslik" data-nd-baslik={pb.id}>
                 <BelgeSatiri
                   duzen={ic}
                   serit={
@@ -700,7 +700,7 @@ function HareketEkle({ plan, kapat }: { plan: NextDayPlan; kapat: () => void }) 
   );
 }
 
-function NdPencereIcerik({ ben, plan, p, kapat }: { ben: Kisi; plan: NextDayPlan; p: NdPencere; kapat: () => void }) {
+export function NdPencereIcerik({ ben, plan, p, kapat }: { ben: Kisi; plan: NextDayPlan; p: NdPencere; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const pencere = (baslik: ReactNode, govde: ReactNode) => (

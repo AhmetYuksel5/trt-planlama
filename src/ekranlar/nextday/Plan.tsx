@@ -11,7 +11,7 @@ import { kayipBaslikGeriGetir, oncekiOnayla, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
-import { PLAN_DURUMLARI, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
+import { PLAN_DURUMLARI, baslikBul, oncekiSayisi, planBul, useVeri, type Durum, type Kisi, type NextDayPlan, type Oneri } from "../../veri";
 import { planAdimiYapabilir, planIcerikDuzenler, planOperasyonDuzenler, yalnizPlanlama, yapabilir } from "../../yetki";
 import { GorunumSecici, OneriListesi, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
@@ -19,6 +19,7 @@ import PlanaEkle from "../oneri/PlanaEkle";
 import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import BaslikKarti from "./BaslikKarti";
+import { NdPencereIcerik, NextDayBelgesi, type NdPencere } from "../belge/NextDayBelge";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import IceAktarPenceresi from "./IceAktar";
 import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBolumu, HazirBolumu, TakipBolumu } from "./Bolumler";
@@ -37,7 +38,131 @@ import { BaslikEkleFormu, Bolum, CanliBolumu, EkipBolumu, EkleDugmesi, HareketBo
  */
 type AracPenceresi = "oneriler" | "takipler" | "takvim" | "aktar" | null;
 
+/*
+ * Plan ekranının iki görünümü: klasik (bölümler ve formlar) ve yeni (tek
+ * yüzey: belge yerinde düzenlenir, ayrıntı yan panelde; belgeler/kimlik.md).
+ * Yeni görünüm denemede: seçim tarayıcıda, beğenilirse klasik silinecek.
+ */
+const GORUNUM_ANAHTARI = "trt-planlama-nd-gorunum";
+const kayitliGorunum = (): "klasik" | "yeni" => {
+  try {
+    return localStorage.getItem(GORUNUM_ANAHTARI) === "yeni" ? "yeni" : "klasik";
+  } catch {
+    return "klasik";
+  }
+};
+
 export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
+  const [gorunum, setGorunum] = useState(kayitliGorunum);
+  const degistir = (g: "klasik" | "yeni") => {
+    setGorunum(g);
+    try {
+      localStorage.setItem(GORUNUM_ANAHTARI, g);
+    } catch {
+      /* tarayıcı saklamıyor: bu oturumda geçerli */
+    }
+  };
+  const secim = <NdGorunumSecimi deger={gorunum} degistir={degistir} />;
+  return gorunum === "yeni" ? <YeniPlan ben={ben} plan={plan} secim={secim} /> : <KlasikPlan ben={ben} plan={plan} secim={secim} />;
+}
+
+function NdGorunumSecimi({ deger, degistir }: { deger: "klasik" | "yeni"; degistir: (g: "klasik" | "yeni") => void }) {
+  const { t } = useDil();
+  return (
+    <div className="nd-gorunum yazdirma-gizle" role="group" aria-label={t("ndGorunum")}>
+      {(["klasik", "yeni"] as const).map((g) => (
+        <button key={g} type="button" aria-pressed={deger === g} className={deger === g ? "secili" : ""} onClick={() => degistir(g)} data-nd-gorunum={g}>
+          {t(g === "klasik" ? "ndKlasik" : "ndYeni")}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+type YanSekme = "oneri" | "takip" | "takvim" | "durum";
+
+/*
+ * Yeni görünüm: solda içindekiler, ortada planın belgesi (NextDayBelgesi
+ * düzenleme kipinde; satır yerinde yazılır), sağda öneriler, takipler,
+ * takvim ve planın durumu. Ayrıntı penceresi CSS'te yandan açılan panel
+ * (.yeni-plan dialog.pencere): plan yerinde kalsın, ekranı kaplayan form yok.
+ */
+function YeniPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: ReactNode }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const icerik = planIcerikDuzenler(ben, plan);
+  const operasyon = planOperasyonDuzenler(ben, plan);
+  const [pencere, setPencere] = useState<NdPencere | null>(null);
+  const [sekme, setSekme] = useState<YanSekme>("oneri");
+  useSekmeAdi(`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`);
+  const duzen = icerik || operasyon ? { ben, icerik, operasyon, ac: setPencere } : undefined;
+  const paketler = v.paketler.filter((p) => p.planId === plan.id && p.durum !== "iptal");
+  const kay = (id: string) => document.querySelector(`[data-nd-baslik="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const SEKMELER: [YanSekme, Anahtar][] = [
+    ["oneri", "ndSekmeOneri"],
+    ["takip", "ndSekmeTakip"],
+    ["takvim", "ndSekmeTakvim"],
+    ["durum", "ndSekmeDurum"],
+  ];
+  return (
+    <div className="yeni-plan" data-yeni-plan>
+      <header className="yp-ust">
+        <a className="geri-bag" href="#/nextday">
+          <ArrowLeft size={14} className="yon" /> {t("nextdayPlanlari")}
+        </a>
+        <h1 className="sayfa-adi-tekrar">
+          {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
+        </h1>
+        <Rozet ton={PLAN_DURUM_TONU[plan.durum]}>{t(PLAN_DURUM_ADI[plan.durum])}</Rozet>
+        <span className="sonuk-yazi">{t("baslikPaketSayisi", { b: plan.basliklar.length, p: paketler.length })}</span>
+        <span className="yp-ust-sag">
+          {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+          <a className="dugme dugme-ikincil dugme-kucuk" href={`#/nextday/${plan.id}/cikti`}>
+            <Printer size={15} /> {t("cikti")}
+          </a>
+          {secim}
+        </span>
+      </header>
+      <OncekiSeridi ben={ben} plan={plan} />
+      <KayipSeridi ben={ben} plan={plan} />
+      <div className="yp-izgara">
+        <nav className="yp-icindekiler" aria-label={t("icindekiler")}>
+          <span className="yp-etiket">{t("icindekiler")}</span>
+          {plan.basliklar.map((pb) => {
+            const n = v.gelismeler.filter((g) => g.planBaslikId === pb.id).length + paketler.filter((p) => p.planBaslikId === pb.id).length;
+            return (
+              <button key={pb.id} type="button" onClick={() => kay(pb.id)} data-yp-icindekiler={pb.id}>
+                <Icerik>{baslikBul(v, pb.baslikId)?.ad ?? ""}</Icerik>
+                <span className="sonuk-yazi">{n}</span>
+              </button>
+            );
+          })}
+        </nav>
+        <div className="yp-belge cikti-sarici belge-duzen">
+          <NextDayBelgesi plan={plan} duzen={duzen} />
+        </div>
+        <aside className="yp-yan">
+          <div className="yp-sekmeler" role="tablist">
+            {SEKMELER.map(([s, ad]) => (
+              <button key={s} type="button" role="tab" aria-selected={sekme === s} className={sekme === s ? "secili" : ""} onClick={() => setSekme(s)} data-yp-sekme={s}>
+                {t(ad)}
+              </button>
+            ))}
+          </div>
+          <div className="yp-yan-icerik">
+            {sekme === "oneri" && <GelenOneriler ben={ben} plan={plan} />}
+            {sekme === "takip" && <PlanTakipleri ben={ben} plan={plan} />}
+            {sekme === "takvim" && <TakvimdenListe ben={ben} bas={plan.tarih} bit={plan.tarih} tur="nextday" planId={plan.id} ekleyebilir={operasyon} eklemeMetni={t("planaEkle")} />}
+            {sekme === "durum" && <PlanDurumKarti ben={ben} plan={plan} />}
+          </div>
+        </aside>
+      </div>
+      {pencere && duzen && <NdPencereIcerik ben={ben} plan={plan} p={pencere} kapat={() => setPencere(null)} />}
+    </div>
+  );
+}
+
+function KlasikPlan({ ben, plan, secim }: { ben: Kisi; plan: NextDayPlan; secim: ReactNode }) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
@@ -73,6 +198,7 @@ export default function PlanEkrani({ ben, plan }: { ben: Kisi; plan: NextDayPlan
           </p>
         </div>
         <PlanAraclari ben={ben} plan={plan} ac={setArac} />
+        {secim}
       </header>
 
       <OncekiSeridi ben={ben} plan={plan} />

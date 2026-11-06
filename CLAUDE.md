@@ -698,6 +698,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kesişen haftalık plan, ikisi de varsa üstte Next Day / Weekly seçimi.
     Haftalıkta "Gündeme ekle": haftanın günü ve dosya
     (`haftalik/Plan.tsx → GundemeEkle`).
+- Next Day'in iki görünümü (deneme; `nextday/Plan.tsx → PlanEkrani`): plan
+  başlığındaki "Klasik / Yeni" geçişi, seçim tarayıcıda (`trt-planlama-nd-gorunum`).
+  Yeni görünüm (`YeniPlan`, `belgeler/kimlik.md`): tek yüzey, ortada planın
+  belgesi düzenleme kipinde (`NextDayBelgesi`, satır yerinde yazılır), solda
+  içindekiler (başlıklar, sayılarıyla, `data-nd-baslik`'a kayar), sağda sekmeli
+  panel (gelen öneriler, takipler, takvim, plan durumu); ayrıntı penceresi
+  ortada değil yandan açılan panel (`.yeni-plan dialog.pencere`). Ekranda
+  içerik Naskh, başlık Kufi; baskı ve Word klasik çıktıdan, Calibri'yle.
+  Beğenilirse klasik görünüm (`KlasikPlan`) ve ayrı belge sayfası silinecek.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
   düğmeler (`PlanAraclari`: gelen öneriler, muhabir takipleri ve takvimden bu güne, sayılarıyla;
