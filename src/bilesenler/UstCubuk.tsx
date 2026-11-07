@@ -8,6 +8,7 @@ import {
   Info,
   LogIn,
   LogOut,
+  Mail,
   Menu,
   Search,
   Settings,
@@ -18,6 +19,7 @@ import { useBildirimSesi } from "./Ses";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
 import { GERCEK, demoyuAc, girisiAc } from "../kip";
+import { useKimlikDurum } from "../posta-kimlik-durum";
 import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
@@ -59,6 +61,7 @@ export default function UstCubuk({
   const { t, ad } = useDil();
   const v = useVeri();
   const yeniTasarim = useYeniTasarim();
+  const kimlikDurum = useKimlikDurum();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">(
     "",
   );
@@ -117,7 +120,9 @@ export default function UstCubuk({
   const bildirimler = v.hareketler
     .filter((h) => bildirimMi(ben, h, v))
     .slice(0, 25);
-  const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length;
+  // Posta kimliği "Sonra yap" denince: bilgiler girilene kadar zilde hatırlatma.
+  const postaHatirlat = GERCEK && kimlikDurum === "sonra";
+  const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length + (postaHatirlat ? 1 : 0);
   useBildirimSesi(okunmamis);
 
   const ac = (n: typeof acik) => {
@@ -230,7 +235,13 @@ export default function UstCubuk({
                 <X size={14} />
               </button>
             </h4>
-            {bildirimler.length === 0 ? (
+            {postaHatirlat && (
+              <a className="acilir-satir yeni" href="#/posta" onClick={() => setAcik("")}>
+                <Mail size={18} className="sonuk" />
+                <div>{t("postaKimlikHatirlat")}</div>
+              </a>
+            )}
+            {bildirimler.length === 0 && !postaHatirlat ? (
               <Bos kucuk metin={t("bildirimYok")} />
             ) : (
               bildirimler.map((h) => {

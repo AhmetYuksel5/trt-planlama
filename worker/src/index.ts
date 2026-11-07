@@ -5,7 +5,7 @@ import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 import { cfBaglan, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsMesaj } from "./ews.ts";
-import { bosPostaAyar, postaAyarBirlestir, postaGorunur, type PostaAyar } from "./posta-ayar.ts";
+import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
 /*
  * Plannersflow yapay zeka kapısı. Veritabanı Firebase'de kalıyor; bu Worker
@@ -84,6 +84,13 @@ const ayarOku = async (env: Env): Promise<Ayar> => {
 const postaAyarOku = async (env: Env): Promise<PostaAyar> => {
   const ham = await env.YZ.get(POSTA_AYAR_ANAHTARI);
   return ham ? ({ ...bosPostaAyar(), ...(JSON.parse(ham) as PostaAyar) }) : bosPostaAyar();
+};
+
+/* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi) uid'ye bağlı. */
+const postaKimlikAnahtari = (uid: string) => `posta-kimlik:${uid}`;
+const postaKimlikOku = async (env: Env, uid: string): Promise<PostaKimlik> => {
+  const ham = await env.YZ.get(postaKimlikAnahtari(uid));
+  return ham ? ({ ...bosPostaKimlik(), ...(JSON.parse(ham) as PostaKimlik) }) : bosPostaKimlik();
 };
 
 /* EWS mesajını tarayıcının postaIsle'sine uygun biçime indirger; gövde temizliğini istemci de yapıyor (tek kaynak). */
@@ -288,21 +295,37 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
    * istemiyoruz): çektiğini döndürüyor, tarayıcı kişinin kendi oturumuyla
    * yazıyor (belgeler/eposta-entegrasyonu.md).
    */
-  if (yol === "/posta/ayar" || yol === "/posta/dene") {
+  /* Ortak ayar (sunucu, alan, açık/kapalı) yalnız tam yöneticide. */
+  if (yol === "/posta/ayar") {
     if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
     const pa = await postaAyarOku(env);
-    if (req.method === "GET" && yol === "/posta/ayar") return yanit(postaGorunur(pa));
-    if (req.method === "PUT" && yol === "/posta/ayar") {
+    if (req.method === "GET") return yanit(postaGorunur(pa));
+    if (req.method === "PUT") {
       const r = postaAyarBirlestir(pa, await req.json().catch(() => null));
       if ("hata" in r) return yanit({ hata: r.hata }, 400);
       await env.YZ.put(POSTA_AYAR_ANAHTARI, JSON.stringify(r.ayar));
       return yanit(postaGorunur(r.ayar));
     }
+  }
+
+  /* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi): herkes kendininkini. */
+  if (yol === "/posta/kimlik" || yol === "/posta/dene") {
+    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    const pk = await postaKimlikOku(env, kisi.kimlik.uid);
+    if (req.method === "GET" && yol === "/posta/kimlik") return yanit(postaKimlikGorunur(pk));
+    if (req.method === "PUT" && yol === "/posta/kimlik") {
+      const r = postaKimlikBirlestir(pk, await req.json().catch(() => null));
+      if ("hata" in r) return yanit({ hata: r.hata }, 400);
+      await env.YZ.put(postaKimlikAnahtari(kisi.kimlik.uid), JSON.stringify(r.kimlik));
+      return yanit(postaKimlikGorunur(r.kimlik));
+    }
     if (req.method === "POST" && yol === "/posta/dene") {
-      if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
-      const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
+      const pa = await postaAyarOku(env);
+      if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
+      if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
+      const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
       if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
-      return yanit({ tamam: true, sayi: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).length });
+      return yanit({ tamam: true, sayi: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).length });
     }
   }
 
@@ -310,27 +333,31 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
     const pa = await postaAyarOku(env);
     if (!pa.acik) return yanit({ hata: "kapali" }, 403);
-    if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
+    if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
+    const pk = await postaKimlikOku(env, kisi.kimlik.uid);
+    if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
     const g = (await req.json().catch(() => null)) as { adet?: number } | null;
     const adet = Math.min(50, Math.max(1, Number(g?.adet) || 25));
-    const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
+    const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
-    return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).map(postaDisa) });
+    return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa) });
   }
 
-  /* Buradan yanıt gönderme (EWS CreateItem). Alıcı belirtilmezse planlama grubu adresi. */
+  /* Buradan yanıt gönderme (EWS CreateItem). Alıcı belirtilmezse kişinin grup adresi. */
   if (req.method === "POST" && yol === "/posta/gonder") {
     if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
     const pa = await postaAyarOku(env);
     if (!pa.acik) return yanit({ hata: "kapali" }, 403);
-    if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
+    if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
+    const pk = await postaKimlikOku(env, kisi.kimlik.uid);
+    if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
     const g = (await req.json().catch(() => null)) as { kime?: string; konu?: string; metin?: string } | null;
-    const kime = (typeof g?.kime === "string" && g.kime.trim()) || pa.grupAdresi;
+    const kime = (typeof g?.kime === "string" && g.kime.trim()) || pk.grupAdresi;
     const metin = String(g?.metin ?? "").trim();
     if (!/^[^\s@]+@[^\s@]+$/.test(kime)) return yanit({ hata: "kime" }, 400);
     if (!metin) return yanit({ hata: "bos" }, 400);
     const konu = String(g?.konu ?? "").slice(0, 255) || "(konusuz)";
-    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, konu, metin });
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, konu, metin });
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true });
   }
 

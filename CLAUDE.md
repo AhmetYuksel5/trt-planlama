@@ -1073,12 +1073,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tarayıcı (`src/posta-kapi.ts → postalariCek`) kişinin kendi oturumuyla
     `postaIsle` ile yazıyor. Yani otomatik çekme bir Planlama tarayıcısı
     açıkken olur (bilgisayar tümüyle kapalıyken değil). Posta ekranı gerçek
-    kipte açılışta bir kez ve "Postaları çek" düğmesiyle çekiyor. Parola ve
-    kullanıcı kapının KV'sinde (`posta-ayar`), tarayıcıya hiç gelmiyor;
-    Ayarlar › "E-posta kutusu (EWS)" (`ekranlar/PostaAyari.tsx`, yalnız tam
-    yönetici, gerçek kip) sunucu/kullanıcı/alan/grup adresi/parola ve
-    "Bağlantıyı dene". Worker uçları: `GET/PUT /posta/ayar` (tam yönetici),
-    `POST /posta/dene` (tam yönetici), `POST /posta/cek` (Planlama/yönetici).
+    kipte açılışta bir kez ve "Postaları çek" düğmesiyle çekiyor. **Kimlik
+    kişiye özel:** ortak ayar (sunucu, alan, açık/kapalı) tam yöneticide
+    (`posta-ayar` KV; Ayarlar › "E-posta kutusu (EWS)", `ekranlar/PostaAyari.tsx`);
+    kullanıcı adı, parola ve grup adresi herkesin kendisinde (kapının KV'sinde
+    uid'ye bağlı `posta-kimlik:<uid>`, parola tarayıcıya hiç gelmiyor). Her kişi
+    kendi kurumsal hesabını ve kendi biriminin grup adresini girer (planlamacı
+    planlama grubunu, Newsdesk kendi grubunu), böylece herkes kendi grubunun
+    yazışmalarını görür. Kimlik formu Posta sayfasında (`ekranlar/posta/
+    PostaKimlik.tsx`): ilk girişte kart açık; "Sonra yap" denince
+    `posta-kimlik-durum.ts` tarayıcıda "sonra" işaretler ve bilgiler girilene
+    kadar zilde "E-posta giriş bilgilerini gir" hatırlatması durur
+    (`UstCubuk.tsx`). `/posta/cek`, `/posta/gonder`, `/posta/dene` çağıranın
+    kendi kimliğini (uid) + ortak sunucu/alanı kullanır, çağıranın grup
+    adresiyle süzer. Worker uçları: `GET/PUT /posta/ayar` (tam yönetici, ortak),
+    `GET/PUT /posta/kimlik` ve `POST /posta/dene` (Planlama/yönetici, kendi),
+    `POST /posta/cek` (Planlama/yönetici).
     NTLMv2 kriptosu MS-NLMP §4.2.4 vektörleriyle sınanıyor; testler
     `worker/test/ntlm.test.ts`, `ews.test.ts`, `posta-ayar.test.ts`
     (`cd worker && npm test`). Microsoft Graph yolu (dinleyici kutu +

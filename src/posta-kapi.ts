@@ -11,27 +11,38 @@ import { type Kisi } from "./veri";
  * yazıyor (belgeler/eposta-entegrasyonu.md).
  */
 
+/* Ortak ayar (tam yönetici): sunucu, alan (domain), açık/kapalı. */
 export interface PostaAyarGorunum {
   acik: boolean;
   sunucu: string;
-  kullanici: string;
   alan: string;
-  grupAdresi: string;
-  parolaVar: boolean;
 }
 
 export interface PostaAyarGirdi {
   acik?: boolean;
   sunucu?: string;
-  kullanici?: string;
   alan?: string;
+}
+
+export const postaAyariGetir = () => kapiIstek<PostaAyarGorunum>("/posta/ayar");
+export const postaAyariKaydet = (g: PostaAyarGirdi) => kapiIstek<PostaAyarGorunum>("/posta/ayar", "PUT", g);
+
+/* Kişiye özel kimlik (herkes kendi): kullanıcı adı, parola, grup adresi. */
+export interface PostaKimlikGorunum {
+  kullanici: string;
+  grupAdresi: string;
+  parolaVar: boolean;
+}
+
+export interface PostaKimlikGirdi {
+  kullanici?: string;
   grupAdresi?: string;
   /** Yeni parola; boş gönderilirse eskisi korunur, null silmek için. */
   parola?: string | null;
 }
 
-export const postaAyariGetir = () => kapiIstek<PostaAyarGorunum>("/posta/ayar");
-export const postaAyariKaydet = (g: PostaAyarGirdi) => kapiIstek<PostaAyarGorunum>("/posta/ayar", "PUT", g);
+export const postaKimlikGetir = () => kapiIstek<PostaKimlikGorunum>("/posta/kimlik");
+export const postaKimlikKaydet = (g: PostaKimlikGirdi) => kapiIstek<PostaKimlikGorunum>("/posta/kimlik", "PUT", g);
 export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/posta/dene", "POST", {});
 
 /* Buradan yanıt gönderir (kapı EWS CreateItem ile). Alıcı boşsa kapı planlama grubu adresini kullanır. */

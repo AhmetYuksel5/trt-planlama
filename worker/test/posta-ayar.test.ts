@@ -1,31 +1,41 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { bosPostaAyar, postaGorunur, postaAyarBirlestir, type PostaAyar } from "../src/posta-ayar.ts";
+import { bosPostaAyar, bosPostaKimlik, postaGorunur, postaKimlikGorunur, postaAyarBirlestir, postaKimlikBirlestir, type PostaAyar, type PostaKimlik } from "../src/posta-ayar.ts";
 
-test("postaGorunur parolayı gizliyor", () => {
-  const a: PostaAyar = { acik: true, sunucu: "posta.trt.net.tr", kullanici: "x", alan: "TRT", grupAdresi: "planning@trtarabi.com", parola: "gizli" };
+test("ortak ayar görünürde yalnız açık/sunucu/alan", () => {
+  const a: PostaAyar = { acik: true, sunucu: "posta.trt.net.tr", alan: "TRT" };
   const g = postaGorunur(a) as Record<string, unknown>;
-  assert.equal(g.parolaVar, true);
-  assert.ok(!("parola" in g), "parola dışarı çıkmıyor");
+  assert.deepEqual(g, { acik: true, sunucu: "posta.trt.net.tr", alan: "TRT" });
 });
 
-test("birleştirme: parola yalnız dolu metinle değişir, boş alan eskiyi korur", () => {
-  const eski: PostaAyar = { ...bosPostaAyar(), parola: "p1" };
-  const r1 = postaAyarBirlestir(eski, { kullanici: "ahmet" });
-  assert.ok("ayar" in r1 && r1.ayar.parola === "p1", "parola gönderilmeyince korunur");
-  const r2 = postaAyarBirlestir(eski, { parola: "p2" });
-  assert.ok("ayar" in r2 && r2.ayar.parola === "p2");
-  const r3 = postaAyarBirlestir(eski, { parola: null });
-  assert.ok("ayar" in r3 && r3.ayar.parola === "", "null parolayı siler");
-  const r4 = postaAyarBirlestir(eski, { parola: "" });
-  assert.ok("ayar" in r4 && r4.ayar.parola === "p1", "boş metin eskiyi korur");
-});
-
-test("birleştirme: geçersiz sunucu/alan/grup reddediliyor", () => {
+test("ortak ayar: geçersiz sunucu/alan reddediliyor, sunucu/alan birleşiyor", () => {
   const eski = bosPostaAyar();
   assert.ok("hata" in postaAyarBirlestir(eski, { sunucu: "bad host!" }));
   assert.ok("hata" in postaAyarBirlestir(eski, { alan: "a b" }));
-  assert.ok("hata" in postaAyarBirlestir(eski, { grupAdresi: "notanemail" }));
-  const ok = postaAyarBirlestir(eski, { sunucu: "posta.trt.net.tr", kullanici: "u", alan: "TRT", grupAdresi: "Planning@TRTArabi.com", acik: true });
-  assert.ok("ayar" in ok && ok.ayar.grupAdresi === "planning@trtarabi.com" && ok.ayar.acik === true);
+  const ok = postaAyarBirlestir(eski, { sunucu: "posta.trt.net.tr", alan: "TRT", acik: true });
+  assert.ok("ayar" in ok && ok.ayar.sunucu === "posta.trt.net.tr" && ok.ayar.alan === "TRT" && ok.ayar.acik === true);
+});
+
+test("kişi kimliği görünürde parolayı gizliyor", () => {
+  const k: PostaKimlik = { kullanici: "x", parola: "gizli", grupAdresi: "planning@trtarabi.com" };
+  const g = postaKimlikGorunur(k) as Record<string, unknown>;
+  assert.equal(g.parolaVar, true);
+  assert.equal(g.kullanici, "x");
+  assert.equal(g.grupAdresi, "planning@trtarabi.com");
+  assert.ok(!("parola" in g), "parola dışarı çıkmıyor");
+});
+
+test("kimlik birleştirme: parola yalnız dolu metinle değişir, grup adresi küçük harf", () => {
+  const eski: PostaKimlik = { ...bosPostaKimlik(), parola: "p1" };
+  const r1 = postaKimlikBirlestir(eski, { kullanici: "ahmet" });
+  assert.ok("kimlik" in r1 && r1.kimlik.parola === "p1", "parola gönderilmeyince korunur");
+  const r2 = postaKimlikBirlestir(eski, { parola: "p2" });
+  assert.ok("kimlik" in r2 && r2.kimlik.parola === "p2");
+  const r3 = postaKimlikBirlestir(eski, { parola: null });
+  assert.ok("kimlik" in r3 && r3.kimlik.parola === "", "null parolayı siler");
+  const r4 = postaKimlikBirlestir(eski, { parola: "" });
+  assert.ok("kimlik" in r4 && r4.kimlik.parola === "p1", "boş metin eskiyi korur");
+  const r5 = postaKimlikBirlestir(bosPostaKimlik(), { grupAdresi: "News@TRTArabi.com", kullanici: "u" });
+  assert.ok("kimlik" in r5 && r5.kimlik.grupAdresi === "news@trtarabi.com");
+  assert.ok("hata" in postaKimlikBirlestir(bosPostaKimlik(), { grupAdresi: "notanemail" }));
 });

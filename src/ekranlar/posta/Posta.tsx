@@ -1,4 +1,4 @@
-import { ArrowLeft, FileText, Mail, MessageSquare, RefreshCw, Send, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Mail, MessageSquare, RefreshCw, Send, Trash2, Upload, UserCog } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
@@ -7,7 +7,9 @@ import { gizliEkMi, gondereniBul, postaAlintiMetni, postaKonuBasligi, postaMetni
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
-import { postalariCek, postaGonder } from "../../posta-kapi";
+import { postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
+import { kimlikDurumOku, kimlikDurumYaz } from "../../posta-kimlik-durum";
+import { PostaKimlikKart } from "./PostaKimlik";
 import { SayfaBasi } from "../ana/Planlama";
 import { dosyaOku } from "../oneri/Eposta";
 
@@ -268,13 +270,23 @@ export function Posta({ ben }: { ben: Kisi }) {
     if ("hata" in r) bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
     else bildir(r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok"));
   };
-  // Gerçek kipte sayfa açılınca bir kez kutuyu yokla; parola kapıda, tarayıcıya gelmiyor.
+  // Kimlik kişiye özel: parola varsa açılışta kutuyu yokla; yoksa kimlik kartı.
+  const [kimlikEksik, setKimlikEksik] = useState(false);
+  const [kimlikKart, setKimlikKart] = useState(false);
   const ilk = useRef(false);
   useEffect(() => {
-    if (GERCEK && !ilk.current) {
-      ilk.current = true;
-      void cek();
-    }
+    if (!GERCEK || ilk.current) return;
+    ilk.current = true;
+    void postaKimlikGetir().then((r) => {
+      if (r.tamam && r.veri.parolaVar) {
+        kimlikDurumYaz("var");
+        void cek();
+      } else if (r.tamam) {
+        setKimlikEksik(true);
+        if (kimlikDurumOku() !== "sonra") setKimlikKart(true); // ilk girişte kart açık
+      }
+      // kapıya ulaşılamadıysa sessiz: "Postaları çek" düğmesi nedeni gösterir
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
@@ -290,6 +302,20 @@ export function Posta({ ben }: { ben: Kisi }) {
           ) : undefined
         }
       />
+      {kimlikKart ? (
+        <PostaKimlikKart
+          onKaydedildi={() => {
+            setKimlikKart(false);
+            setKimlikEksik(false);
+            void cek();
+          }}
+          onSonra={() => setKimlikKart(false)}
+        />
+      ) : kimlikEksik ? (
+        <button className="dugme dugme-ikincil posta-kimlik-bar" onClick={() => setKimlikKart(true)}>
+          <UserCog size={16} /> {t("postaKimlikGir")}
+        </button>
+      ) : null}
       <div className={`posta-duzen${secik ? " secili" : ""}`}>
         <div className="iz posta-liste-sutun">
           <Kart baslik={t("postaSohbetler")} ek={String(sohbetler.length)}>
