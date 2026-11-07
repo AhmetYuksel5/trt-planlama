@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, httpCerceveCoz, postalariCek, type Soket, type EwsAyar } from "../src/ews.ts";
+import { findItemIstegi, getItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, httpCerceveCoz, postalariCek, postalariCekOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -129,6 +129,24 @@ test("postalariCek: NTLM el sıkışması (Type1→401→Type3→200) ve GetItem
   assert.ok(istekler[0].includes("Authorization: NTLM TlRMTVNTUAABAAAA"), "Type1 gönderildi");
   assert.ok(istekler[1].includes("Authorization: NTLM TlRMTVNTUAADAAAA"), "Type3 gönderildi");
   assert.ok(istekler[2].includes("GetItem") && !istekler[2].includes("Authorization: NTLM TlRMTVNTUAAB"), "GetItem aynı bağlantıda, yeni handshake yok");
+});
+
+test("postalariCekOtomatik: MIC'siz kimlik reddedilince MIC'li yeni bağlantıda yeniden dener", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.trt.net.tr", kullanici: "mehmetsafa.bicer", parola: "p", alan: "TRT" };
+  const findXml = `<t:Message><t:ItemId Id="ID1" ChangeKey="CK1"/></t:Message>`;
+  const getXml = `<t:Message><t:Subject>x</t:Subject><t:Body BodyType="Text">m</t:Body><t:From><t:Mailbox><t:EmailAddress>a@trt.net.tr</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`;
+  let baglanti = 0;
+  const baglan = async () => {
+    baglanti++;
+    // İlk bağlantı (MIC'siz): Type3 sonrası 401 (reddedildi). İkinci (MIC'li): 401 challenge → 200 → 200.
+    return baglanti === 1
+      ? sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("401 Unauthorized", "", auth)]).soket
+      : sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), httpYanit("200 OK", getXml)]).soket;
+  };
+  const sonuc = await postalariCekOtomatik(ayar, baglan, Date.now(), 25);
+  assert.ok("mesajlar" in sonuc && sonuc.mesajlar.length === 1, "MIC'li ikinci denemede bağlandı");
+  assert.equal(baglanti, 2, "iki bağlantı denendi");
 });
 
 test("postalariCek: yanlış kimlikte 401 → hata metni", async () => {

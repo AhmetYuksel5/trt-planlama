@@ -4,7 +4,7 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
-import { cfBaglan, grubaUygun, postalariCek, type EwsMesaj } from "./ews.ts";
+import { cfBaglan, grubaUygun, postalariCekOtomatik, type EwsMesaj } from "./ews.ts";
 import { bosPostaAyar, postaAyarBirlestir, postaGorunur, type PostaAyar } from "./posta-ayar.ts";
 
 /*
@@ -300,7 +300,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     }
     if (req.method === "POST" && yol === "/posta/dene") {
       if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
-      const r = await postalariCek({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
+      const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
       if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
       return yanit({ tamam: true, sayi: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).length });
     }
@@ -313,7 +313,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
     const g = (await req.json().catch(() => null)) as { adet?: number } | null;
     const adet = Math.min(50, Math.max(1, Number(g?.adet) || 25));
-    const r = await postalariCek({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
+    const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
     return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).map(postaDisa) });
   }

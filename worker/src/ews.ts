@@ -283,7 +283,7 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
  * 200 ve SOAP yanıtı. Bağlantı doğrulandığı için sonraki istekler (aynı
  * soket) yeniden el sıkışması istemez.
  */
-export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi: number, elSikisGerek: boolean): Promise<HttpYanit> => {
+export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi: number, elSikisGerek: boolean, mic = false): Promise<HttpYanit> => {
   if (!elSikisGerek) {
     await soket.yaz(istekBaytlari(ayar, null, soap));
     return yanitOku(soket);
@@ -296,7 +296,7 @@ export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi
   const m = baslik.match(/NTLM\s+([A-Za-z0-9+/=]+)/);
   if (!m) throw new Error("sunucu NTLM challenge vermedi: " + baslik.slice(0, 60));
   const t2 = tip2Coz(b64Coz(m[1]));
-  const t3 = tip3({ kullanici: ayar.kullanici, parola: ayar.parola, alan: ayar.alan, tip2: t2, simdi, tip1Ham: t1 });
+  const t3 = tip3({ kullanici: ayar.kullanici, parola: ayar.parola, alan: ayar.alan, tip2: t2, simdi, tip1Ham: t1, mic });
   await soket.yaz(istekBaytlari(ayar, `NTLM ${b64Yap(t3)}`, soap));
   return yanitOku(soket);
 };
@@ -312,12 +312,13 @@ export interface Baglan {
  * GetItem ile gövdeler. Tek soket; FindItem el sıkışmasından sonra GetItem
  * aynı doğrulanmış bağlantıda. Hata metinle döner (kullanıcı "dene"de görsün).
  */
-export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[] } | { hata: string }> => {
+export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[] } | { hata: string; kimlik?: boolean }> => {
   let soket: Soket | undefined;
   try {
     soket = await baglan(ayar.sunucu);
-    const bul = await ntlmIstek(soket, ayar, findItemIstegi(adet), simdi, true);
-    if (bul.durum === 401) return { hata: "kimlik doğrulanamadı (kullanıcı adı, parola ya da alan yanlış olabilir)" };
+    const bul = await ntlmIstek(soket, ayar, findItemIstegi(adet), simdi, true, mic);
+    // 401: kimlik reddedildi. Üst katman MIC'li/MIC'siz ikinci denemeyi buna bakarak yapıyor.
+    if (bul.durum === 401) return { hata: "kimlik doğrulanamadı (kullanıcı adı, parola ya da alan yanlış olabilir)", kimlik: true };
     if (bul.durum !== 200) return { hata: `FindItem beklenmedik durum: ${bul.durum}` };
     const idler = findItemCoz(latin1Utf8(bul.govde));
     if (idler.length === 0) return { mesajlar: [] };
@@ -329,6 +330,13 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
   } finally {
     await soket?.kapat().catch(() => {});
   }
+};
+
+/* Önce sade NTLMv2 (MIC'siz), kimlik reddedilirse MIC'li yeni bağlantıda dener; hangisi tuttuysa o. */
+export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[] } | { hata: string }> => {
+  const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
+  if (!("hata" in ilk) || !ilk.kimlik) return ilk;
+  return postalariCek(ayar, baglan, simdi, adet, true);
 };
 
 /* Gövde UTF-8; soketten gelen baytları metne çevir. */

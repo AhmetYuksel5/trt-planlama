@@ -208,6 +208,8 @@ export interface Tip3Girdi {
   istemciMeydan?: Uint8Array;
   /** Tip1 ve Tip2'nin ham baytları: MIC hesabı için. */
   tip1Ham: Uint8Array;
+  /** MIC ekle (yalnız sunucu zorunlu kılıyorsa); varsayılan kapalı, sade NTLMv2. */
+  mic?: boolean;
 }
 
 /*
@@ -217,37 +219,38 @@ export interface Tip3Girdi {
  * oturum anahtarıyla üç mesajın HMAC-MD5'i, Tip3 içinde MIC alanı sıfırken.
  */
 export function tip3(g: Tip3Girdi): Uint8Array {
+  const micli = g.mic ?? false;
   const v2 = ntlmv2Karma(g.parola, g.kullanici, g.alan);
   const istemciMeydan = g.istemciMeydan ?? rastgele(8);
   const zaman = hedefZaman(g.tip2.hedefBilgi, g.simdi);
-  const hedef = bayrakliHedef(g.tip2.hedefBilgi);
+  // MIC istenirse hedef bilgiye MsvAvFlags bayrağı ekleniyor; istenmezse sunucunun
+  // verdiği hedef bilgi olduğu gibi (doğrulanmış sade NTLMv2; Exchange on-prem çoğunlukla böyle kabul ediyor).
+  const hedef = micli ? bayrakliHedef(g.tip2.hedefBilgi) : g.tip2.hedefBilgi;
   // temp: resp type(1)+hi ver(1)+reserved(6)+time(8)+clientChal(8)+reserved(4)+targetInfo+reserved(4)
   const temp = birlestir(new Uint8Array([1, 1, 0, 0, 0, 0, 0, 0]), zaman, istemciMeydan, le32(0), hedef, le32(0));
   const { ntResp, oturumTemel } = ntlmv2Yanit(v2, g.tip2.sunucuMeydan, temp);
   const lmResp = birlestir(hmacMd5(v2, birlestir(g.tip2.sunucuMeydan, istemciMeydan)), istemciMeydan);
-  const oturumAnahtar = oturumTemel; // anahtar değişimi yok → dışa aktarılan = temel
 
   const dom = utf16le(g.alan), usr = utf16le(g.kullanici), ws = utf16le(g.calisma ?? "");
   const bos = new Uint8Array(0);
   const bayrak = NEG_UNICODE | NEG_NTLM | NEG_ALWAYS_SIGN | NEG_EXT_SEC | NEG_TARGET_INFO | NEG_VERSION;
 
-  // Başlık 88 bayt: 8 imza + 4 tip + 6 güvenlik tanımı × 8 (lm,nt,dom,usr,ws,sessKey) + 4 bayrak + 8 sürüm + 16 MIC
-  const basUz = 88;
+  // Başlık: 8 imza + 4 tip + 6 güvenlik tanımı × 8 (lm,nt,dom,usr,ws,sessKey) + 4 bayrak + 8 sürüm (+ 16 MIC).
+  const basUz = micli ? 88 : 72;
   const alanlar = [lmResp, ntResp, dom, usr, ws, bos];
   const ofsetler: number[] = [];
   let o = basUz;
   for (const a of alanlar) { ofsetler.push(o); o += a.length; }
   const tanim = (a: Uint8Array, of: number) => birlestir(le16(a.length), le16(a.length), le32(of));
-
-  const micSifir = new Uint8Array(16);
   const govde = birlestir(...alanlar);
-  const basla = (mic: Uint8Array) => birlestir(
+  const basla = (mic?: Uint8Array) => birlestir(
     IMZA, le32(3),
     tanim(lmResp, ofsetler[0]), tanim(ntResp, ofsetler[1]), tanim(dom, ofsetler[2]), tanim(usr, ofsetler[3]), tanim(ws, ofsetler[4]), tanim(bos, ofsetler[5]),
-    le32(bayrak), SURUM, mic,
+    le32(bayrak), SURUM, ...(mic ? [mic] : []),
   );
-  const micsiz = birlestir(basla(micSifir), govde);
-  const mic = hmacMd5(oturumAnahtar, birlestir(g.tip1Ham, g.tip2.ham, micsiz));
+  if (!micli) return birlestir(basla(), govde);
+  const micsiz = birlestir(basla(new Uint8Array(16)), govde);
+  const mic = hmacMd5(oturumTemel, birlestir(g.tip1Ham, g.tip2.ham, micsiz));
   return birlestir(basla(mic), govde);
 }
 

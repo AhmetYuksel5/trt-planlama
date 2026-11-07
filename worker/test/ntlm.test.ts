@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { md4, md5, hmacMd5, ntlmv2Karma, ntlmv2Yanit, birlestir, tip1, tip2Coz, b64Coz } from "../src/ntlm.ts";
+import { md4, md5, hmacMd5, ntlmv2Karma, ntlmv2Yanit, birlestir, tip1, tip2Coz, tip3, b64Coz } from "../src/ntlm.ts";
 
 /*
  * NTLMv2 kriptosunun doğruluğu: MD4/MD5/HMAC-MD5 standart vektörleri ve
@@ -50,6 +50,27 @@ test("Tip1 NTLMSSP imzası ve tipi", () => {
   const t1 = tip1();
   assert.equal(Buffer.from(t1.subarray(0, 8)).toString("latin1"), "NTLMSSP\0");
   assert.equal(t1[8], 1); // mesaj tipi 1
+});
+
+test("Tip3 (MIC'siz) yapısı: imza, tip, 72 bayt başlık, alanlar yerli yerinde", () => {
+  const t1 = tip1();
+  // Küçük bir hedef bilgi: NetBIOS alan "TRT" (AvId 2) + sonlandırıcı.
+  const hedef = bayt("02000600540052005400" + "00000000");
+  const ham = birlestir(bayt("4e544c4d53535000"), bayt("02000000"), bayt("06000600" + "30000000"), bayt("05828a62"), bayt("1122334455667788"), bayt("0000000000000000"), bayt("2c002c00" + "38000000"), hedef);
+  // ham burada tam Type2 değil; tip2Coz yalnız sunucuMeydan/hedefBilgi/bayrak okuyor.
+  const t2 = tip2Coz(ham);
+  const msg = tip3({ kullanici: "User", parola: "Password", alan: "Domain", calisma: "WS", tip2: t2, simdi: 0, istemciMeydan: bayt("aaaaaaaaaaaaaaaa"), tip1Ham: t1 });
+  assert.equal(Buffer.from(msg.subarray(0, 8)).toString("latin1"), "NTLMSSP\0");
+  assert.equal(msg[8], 3);
+  const oku16 = (o: number) => msg[o] | (msg[o + 1] << 8);
+  const oku32 = (o: number) => (msg[o] | (msg[o + 1] << 8) | (msg[o + 2] << 16) | (msg[o + 3] << 24)) >>> 0;
+  // Domain alanı (tanım 28. bayttan) "Domain", kullanıcı "User" (UTF-16LE).
+  const alan = (base: number) => { const len = oku16(base), off = oku32(base + 4); return Buffer.from(msg.subarray(off, off + len)).toString("utf16le"); };
+  assert.equal(alan(28), "Domain");
+  assert.equal(alan(36), "User");
+  assert.equal(alan(44), "WS");
+  // İlk güvenlik tanımı (LM) 72. bayttan başlıyor (başlık MIC'siz 72 bayt).
+  assert.equal(oku32(16), 72);
 });
 
 test("gerçek Type2 (posta.trt.net.tr) çözülüyor", () => {
