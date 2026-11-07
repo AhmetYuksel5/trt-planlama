@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
+import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -218,4 +218,48 @@ test("postalariCek: yanlış kimlikte 401 → hata metni", async () => {
   ]);
   const sonuc = await postalariCek(ayar, async () => soket, Date.now(), 25);
   assert.ok("hata" in sonuc && sonuc.hata.includes("doğrulanamadı"));
+});
+
+/* --- Ek indirme (kurgusal posta ve dosya) --- */
+
+test("ek: Message-ID ile arama, ek listesi ve içerik çözülüyor", () => {
+  const x = imidBulIstegi("<abc@ornek.test>");
+  assert.ok(x.includes('FieldURI="message:InternetMessageId"') && x.includes('Value="&lt;abc@ornek.test&gt;"') && x.includes('Id="inbox"'));
+  assert.ok(x.indexOf("Restriction") < x.indexOf("ParentFolderIds"), "şema sırası: Restriction önce");
+  const liste = ekListesiCoz(`<t:Attachments><t:FileAttachment><t:AttachmentId Id="EK1"/><t:Name>işe giriş bildirgesi.pdf</t:Name><t:Size>1234</t:Size></t:FileAttachment><t:ItemAttachment><t:AttachmentId Id="IT"/><t:Name>ileti</t:Name></t:ItemAttachment></t:Attachments>`);
+  assert.deepEqual(liste, [{ id: "EK1", ad: "işe giriş bildirgesi.pdf", boyut: 1234 }]);
+  const veri = new Uint8Array([0, 1, 2, 250, 255, 60, 62]);
+  const xml = `<m:Attachments><t:FileAttachment><t:Name>a.pdf</t:Name><t:ContentType>application/pdf</t:ContentType><t:ContentId>x</t:ContentId><t:Content>${Buffer.from(veri).toString("base64")}</t:Content></t:FileAttachment></m:Attachments>`;
+  const c = ekIcerikCoz(new TextEncoder().encode(xml));
+  assert.equal(c?.tur, "application/pdf");
+  assert.deepEqual([...c!.veri], [...veri]);
+});
+
+test("ekIndirOtomatik: el sıkışması, arama, liste, GetAttachment (parça parça gelen chunked yanıt)", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const dosya = new Uint8Array(200_000).map((_, i) => (i * 7) % 256);
+  const ekXml = `<m:GetAttachmentResponse><t:FileAttachment><t:Name>bordro.xlsx</t:Name><t:ContentType>application/vnd.ms-excel</t:ContentType><t:Content>${Buffer.from(dosya).toString("base64")}</t:Content></t:FileAttachment></m:GetAttachmentResponse>`;
+  // Chunked gövde, 16 KB'lık soket okumalarına bölünmüş: okuyucu tamamlanınca çözmeli.
+  const parcala = (s: string, n: number) => Array.from({ length: Math.ceil(s.length / n) }, (_, i) => s.slice(i * n, (i + 1) * n));
+  const chunkli = `HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n` + parcala(ekXml, 30_000).map((p) => `${Buffer.byteLength(p).toString(16)}\r\n${p}\r\n`).join("") + "0\r\n\r\n";
+  const okumalar = [
+    httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="IT1" ChangeKey="CK"/></t:Message>`),
+    httpYanit("200 OK", `<t:Attachments><t:FileAttachment><t:AttachmentId Id="EK9"/><t:Name>bordro.xlsx</t:Name><t:Size>200000</t:Size></t:FileAttachment></t:Attachments>`),
+    ...parcala(chunkli, 16_384),
+  ];
+  const { soket, istekler } = sahteSoket(okumalar);
+  const r = await ekIndirOtomatik(ayar, async () => soket, Date.now(), "abc@ornek.test", "bordro.xlsx");
+  assert.ok("veri" in r, JSON.stringify(r).slice(0, 200));
+  assert.equal(r.tur, "application/vnd.ms-excel");
+  assert.equal(r.veri.length, dosya.length);
+  assert.deepEqual(r.veri.subarray(0, 50), dosya.subarray(0, 50));
+  assert.ok(istekler[1].includes("InternetMessageId") && istekler[2].includes("item:Attachments") && istekler[3].includes('AttachmentId Id="EK9"'));
+});
+
+test("ekIndirOtomatik: posta kutuda yoksa 'yok'", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const { soket } = sahteSoket([httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`), httpYanit("200 OK", `<m:FindItemResponse><t:Items/></m:FindItemResponse>`)]);
+  const r = await ekIndirOtomatik(ayar, async () => soket, Date.now(), "yok@ornek.test", "a.pdf");
+  assert.ok("hata" in r && r.yok);
 });

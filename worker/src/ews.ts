@@ -66,6 +66,29 @@ export const getItemIstegi = (idler: { id: string; degisim: string }[]): string 
       `<m:ItemIds>${idler.map((i) => `<t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/>`).join("")}</m:ItemIds></m:GetItem>`,
   );
 
+/*
+ * Ek indirme (kişi dosyaya basınca): eklerin kendisi kayda girmiyor, yalnız
+ * adları. Posta kişinin kendi kutusunda Message-ID'siyle bulunuyor (kimlikler
+ * kutuya özgü; sohbet ortak, postayı başka biri çekmiş olabilir), ekleri
+ * listeleniyor, adı tutan GetAttachment ile çekiliyor.
+ */
+export const imidBulIstegi = (imid: string): string =>
+  ZARF(
+    `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
+      `<m:IndexedPageItemView MaxEntriesReturned="5" Offset="0" BasePoint="Beginning"/>` +
+      `<m:Restriction><t:IsEqualTo><t:FieldURI FieldURI="message:InternetMessageId"/><t:FieldURIOrConstant><t:Constant Value="${kacXml(imid)}"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction>` +
+      `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
+  );
+
+export const ekListesiIstegi = (i: { id: string; degisim: string }): string =>
+  ZARF(
+    `<m:GetItem><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI="item:Attachments"/></t:AdditionalProperties></m:ItemShape>` +
+      `<m:ItemIds><t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/></m:ItemIds></m:GetItem>`,
+  );
+
+export const ekIstegi = (ekId: string): string =>
+  ZARF(`<m:GetAttachment><m:AttachmentIds><t:AttachmentId Id="${kacXml(ekId)}"/></m:AttachmentIds></m:GetAttachment>`);
+
 /* Gönderilecek posta: birden çok alıcı, CC ve BCC (yeni posta ve "tümünü yanıtla"). */
 export interface GidenPosta {
   kime: string[];
@@ -164,6 +187,56 @@ export const grubaUygun = (m: EwsMesaj, grupAdresi: string): boolean => {
   const g = grupAdresi.trim().toLowerCase();
   if (!g) return true;
   return m.alicilar.includes(g);
+};
+
+export interface EwsEk {
+  id: string;
+  ad: string;
+  boyut: number;
+}
+
+/* GetItem (item:Attachments) yanıtındaki dosya ekleri. */
+export const ekListesiCoz = (xml: string): EwsEk[] => {
+  const ekler: EwsEk[] = [];
+  for (const e of xml.matchAll(/<(?:[a-z]+:)?FileAttachment\b[^>]*>([\s\S]*?)<\/(?:[a-z]+:)?FileAttachment>/gi)) {
+    const id = oznitelik(e[1], "AttachmentId", "Id");
+    const ad = etiketDegeri(e[1], "Name");
+    if (id && ad) ekler.push({ id, ad, boyut: Number(etiketDegeri(e[1], "Size") ?? 0) || 0 });
+  }
+  return ekler;
+};
+
+const bayttaAra = (u: Uint8Array, desen: string, bas = 0): number => {
+  const d = [...desen].map((c) => c.charCodeAt(0));
+  for (let i = u.indexOf(d[0], bas); i >= 0 && i <= u.length - d.length; i = u.indexOf(d[0], i + 1)) {
+    let tamam = true;
+    for (let j = 1; j < d.length; j++) if (u[i + j] !== d[j]) { tamam = false; break; }
+    if (tamam) return i;
+  }
+  return -1;
+};
+
+const b64Bayt = (b64: string): Uint8Array => {
+  const ikili = atob(b64.replace(/\s+/g, ""));
+  const u = new Uint8Array(ikili.length);
+  for (let i = 0; i < ikili.length; i++) u[i] = ikili.charCodeAt(i);
+  return u;
+};
+
+/*
+ * GetAttachment yanıtından içerik ve tür. Yanıt büyük olabilir (base64 dosya):
+ * bütününü metne çevirmek yerine <Content> bölgesi baytlarda aranıyor
+ * ("ContentType>", "ContentId>" "Content>" ile bitmiyor; base64'te "<" yok).
+ */
+export const ekIcerikCoz = (govde: Uint8Array): { tur: string; veri: Uint8Array } | null => {
+  const ac = bayttaAra(govde, "Content>");
+  if (ac < 0) return null;
+  const bas = ac + "Content>".length;
+  const son = govde.indexOf(60, bas);
+  if (son < 0) return null;
+  const once = new TextDecoder().decode(govde.subarray(0, ac));
+  const tur = etiketDegeri(once, "ContentType") ?? "";
+  return { tur, veri: b64Bayt(new TextDecoder().decode(govde.subarray(bas, son))) };
 };
 
 /* GetItem yanıtındaki her <t:Message> bloğunu PostaMesaji'ye yakın bir yapıya çözer. */
@@ -334,11 +407,40 @@ const OKUMA_ZAMAN_ASIMI = 20000;
 // GetItem tek istekte çok mesaj isteyince sunucunun ilk baytı üretmesi zaman
 // aşımını aşıyor; gövdeler küçük gruplar hâlinde, aynı bağlantıda çekiliyor.
 const GETITEM_PARCA = 6;
+/* Ek indirmede yanıtın üst sınırı: base64 dosya artı zarf. */
+export const YANIT_SINIRI = 36 * 1024 * 1024;
+
+/*
+ * Parçalar dizide birikiyor, yalnız tamamlanmış olabileceği anda
+ * birleştirilip çözülüyor: her parçada bütün tamponu kopyalayıp baştan
+ * çözmek büyük ekte (megabaytlarca) işlemciyi bitiriyordu.
+ */
 const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
-  let tampon: Uint8Array = new Uint8Array(0);
+  let parcalar: Uint8Array[] = [];
+  let toplam = 0;
+  let bas: { boy: number; uzunluk: number; chunked: boolean } | null = null;
+  const tumu = () => {
+    if (parcalar.length > 1) parcalar = [birlestirBayt(parcalar)];
+    return parcalar[0] ?? new Uint8Array(0);
+  };
+  const bitti = (): boolean => {
+    if (!bas) return false;
+    if (!bas.chunked) return toplam - bas.boy >= bas.uzunluk;
+    // Chunked gövde "0\r\n\r\n" ile biter; son baytlara bakmak yeterli.
+    const son = parcalar[parcalar.length - 1];
+    const kuyruk = son.length >= 5 ? son.subarray(son.length - 5) : tumu().subarray(Math.max(0, toplam - 5));
+    return latin1(kuyruk) === "0\r\n\r\n";
+  };
   for (;;) {
-    const cerceve = httpCerceveCoz(tampon);
-    if (cerceve) return cerceve;
+    if (!bas && toplam) {
+      const t = tumu();
+      const b = basliklariCoz(t);
+      if (b) bas = { boy: t.length - b.kalan.length, uzunluk: Number(b.basliklar["content-length"] ?? "0"), chunked: (b.basliklar["transfer-encoding"] ?? "").toLowerCase().includes("chunked") };
+    }
+    if (bitti()) {
+      const cerceve = httpCerceveCoz(tumu());
+      if (cerceve) return cerceve;
+    }
     let zamanlayici: ReturnType<typeof setTimeout> | null = null;
     // Soketin sıfırlanması ("Stream was cancelled") okuma hatası olarak gelir; EOF gibi ele al.
     const parca = await Promise.race([
@@ -347,11 +449,14 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
     ]).finally(() => { if (zamanlayici !== null) clearTimeout(zamanlayici); });
     if (!parca) {
       // Bağlantı kapandı/sıfırlandı: tam çerçeve varsa onu, yoksa başlık+eldeki gövdeyle en iyisini döndür.
-      const son = httpCerceveCoz(tampon) ?? cerceveZorla(tampon);
+      const t = tumu();
+      const son = httpCerceveCoz(t) ?? cerceveZorla(t);
       if (son) return son;
       throw new Error("bağlantı yanıt gelmeden kapandı");
     }
-    tampon = birlestirBayt([tampon, parca]);
+    parcalar.push(parca);
+    toplam += parca.length;
+    if (toplam > YANIT_SINIRI) throw new Error("yanıt çok büyük");
   }
 };
 
@@ -447,6 +552,43 @@ export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: 
   const ilk = await postaGonder(ayar, baglan, simdi, g, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postaGonder(ayar, baglan, simdi, g, true);
+};
+
+/* Bu boyuttan büyük ek indirilmez: Worker belleği (yanıt base64, artı çözülmüşü). */
+export const EK_SINIRI = 20 * 1024 * 1024;
+
+export type EkSonucu = { tur: string; veri: Uint8Array } | { hata: string; kimlik?: boolean; yok?: boolean; buyuk?: boolean };
+
+/* Ekin kendisi: Message-ID ile postayı bul, eklerinden adı tutanı çek. Tek soket. */
+export const ekIndir = async (ayar: EwsAyar, baglan: Baglan, simdi: number, imid: string, ad: string, mic = false): Promise<EkSonucu> => {
+  let soket: Soket | undefined;
+  try {
+    soket = await baglan(ayar.sunucu);
+    const bul = await ntlmIstek(soket, ayar, imidBulIstegi(`<${imid.replace(/[<>]/g, "")}>`), simdi, true, mic);
+    if (bul.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
+    if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
+    const ogeler = findItemCoz(latin1Utf8(bul.govde));
+    if (!ogeler.length) return { hata: "posta kutunda bulunamadı", yok: true };
+    const liste = await ntlmIstek(soket, ayar, ekListesiIstegi(ogeler[0]), simdi, false);
+    if (liste.durum !== 200) return { hata: `GetItem ${liste.durum}: ${faultMetni(latin1Utf8(liste.govde))}` };
+    const ek = ekListesiCoz(latin1Utf8(liste.govde)).find((e) => e.ad === ad);
+    if (!ek) return { hata: "ek bulunamadı", yok: true };
+    if (ek.boyut > EK_SINIRI) return { hata: "ek çok büyük", buyuk: true };
+    const al = await ntlmIstek(soket, ayar, ekIstegi(ek.id), simdi, false);
+    if (al.durum !== 200) return { hata: `GetAttachment ${al.durum}: ${faultMetni(latin1Utf8(al.govde.subarray(0, 4000)))}` };
+    const icerik = ekIcerikCoz(al.govde);
+    return icerik ?? { hata: "ek okunamadı" };
+  } catch (e) {
+    return { hata: e instanceof Error ? e.message : String(e) };
+  } finally {
+    await soket?.kapat().catch(() => {});
+  }
+};
+
+export const ekIndirOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, imid: string, ad: string): Promise<EkSonucu> => {
+  const ilk = await ekIndir(ayar, baglan, simdi, imid, ad, false);
+  if (!("hata" in ilk) || !ilk.kimlik) return ilk;
+  return ekIndir(ayar, baglan, simdi, imid, ad, true);
 };
 
 /* Gövde UTF-8; soketten gelen baytları metne çevir. */

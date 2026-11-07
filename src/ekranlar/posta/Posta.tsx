@@ -1,4 +1,4 @@
-import { ArrowLeft, File, Lock, Mail, MessageSquare, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, File, Loader2, Lock, Mail, MessageSquare, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
@@ -7,7 +7,7 @@ import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari,
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
-import { postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
+import { postaEkiGetir, postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
 
 /**
@@ -255,6 +255,31 @@ function DosyaIkonu({ ad, buyuk }: { ad: string; buyuk?: boolean }) {
   );
 }
 
+/*
+ * Ekin kendisi: kayıtta yalnız adı var, dosyayı kapı kişinin kendi kutusundan
+ * getirir (posta-kapi.ts → postaEkiGetir) ve tarayıcı indirir. Demoda kutu yok.
+ */
+const useEkIndir = () => {
+  const { t } = useDil();
+  const [suren, setSuren] = useState("");
+  const indir = async (m: PostaMesaji, ad: string) => {
+    if (!GERCEK) return bildir(t("postaEkDemo"));
+    if (!m.mesajKimligi) return bildir(t("postaEkYok"));
+    const anahtar = `${m.id}:${ad}`;
+    if (suren) return;
+    setSuren(anahtar);
+    const r = await postaEkiGetir(m.mesajKimligi, ad);
+    setSuren("");
+    if (!r.tamam) return bildir(r.hata === "ekYok" ? t("postaEkYok") : r.hata === "ekBuyuk" ? t("postaEkBuyuk") : `${t("postaEkHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(r.veri);
+    a.download = ad;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  };
+  return { indir, suruyor: (m: PostaMesaji, ad: string) => suren === `${m.id}:${ad}` };
+};
+
 /* Balondaki zaman: gün ve saat birlikte (gün ayracı yok). */
 const balonZamani = (zaman: string, dil: Parameters<typeof saatYaz>[1]) => `${yerelGun(zaman).split("-").reverse().join(".")} ${saatYaz(zaman, dil)}`;
 
@@ -266,6 +291,7 @@ const balonZamani = (zaman: string, dil: Parameters<typeof saatYaz>[1]) => `${ye
 function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
   const { ad, dil, t } = useDil();
   const v = useVeri();
+  const ek = useEkIndir();
   return (
     <div className="posta-govde" data-posta-sohbet={sohbet.konuKimligi}>
       <ol className="posta-mesajlar">
@@ -294,10 +320,10 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                 !m.giden && ekler.length === 0 && <span className="posta-bos">{t("postaBosGovde")}</span>
               )}
               {ekler.map((e, j) => (
-                <span className="posta-ek" key={j}>
-                  <DosyaIkonu ad={e} />
+                <button type="button" className="posta-ek" key={j} onClick={() => ek.indir(m, e)} aria-busy={ek.suruyor(m, e)} title={t("postaEkIndir")} data-posta-ek={e}>
+                  {ek.suruyor(m, e) ? <Loader2 size={22} className="donen" /> : <DosyaIkonu ad={e} />}
                   <bdi>{e}</bdi>
-                </span>
+                </button>
               ))}
               <AliciSatiri m={m} />
               <span className="posta-zaman">{balonZamani(m.zaman, dil)}</span>
@@ -311,10 +337,11 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
 
 /*
  * Sohbetin dosyaları yanda dikey (kullanıcı: üstte yatay şerit değil): en
- * yenisi üstte; basınca dosyanın geldiği mesaja kayar.
+ * yenisi üstte; basınca dosya iner, geldiği mesaj da görünür olur.
  */
 function SohbetDosyalari({ sohbet }: { sohbet: Sohbet }) {
   const { t } = useDil();
+  const ek = useEkIndir();
   const dosyalar = sohbet.mesajlar.flatMap((m) => m.ekler.filter((e) => !gizliEkMi(e)).map((ad) => ({ ad, m }))).reverse();
   if (!dosyalar.length) return null;
   const git = (id: string) => {
@@ -330,8 +357,18 @@ function SohbetDosyalari({ sohbet }: { sohbet: Sohbet }) {
       <ol>
         {dosyalar.map(({ ad, m }, i) => (
           <li key={`${m.id}-${i}`}>
-            <button type="button" className="posta-dosya" title={ad} onClick={() => git(m.id)} data-posta-dosya>
-              <DosyaIkonu ad={ad} buyuk />
+            <button
+              type="button"
+              className="posta-dosya"
+              title={`${ad} · ${t("postaEkIndir")}`}
+              aria-busy={ek.suruyor(m, ad)}
+              onClick={() => {
+                git(m.id);
+                void ek.indir(m, ad);
+              }}
+              data-posta-dosya
+            >
+              {ek.suruyor(m, ad) ? <Loader2 size={44} className="donen" /> : <DosyaIkonu ad={ad} buyuk />}
               <bdi>{uzantisiz(ad)}</bdi>
               <small>{yerelGun(m.zaman).split("-").reverse().join(".")}</small>
             </button>

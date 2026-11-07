@@ -4,7 +4,7 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
-import { cfBaglan, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
+import { cfBaglan, ekIndirOtomatik, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, otoCagriBirlestir, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
@@ -226,13 +226,13 @@ export const isle = async (req: Request, env: Env, d: Bagimlilik): Promise<Respo
    * yanıtı okuyamıyor, ekran yalnız "kapıya ulaşılamadı" diyordu.
    */
   try {
-    return await isleIc(req, env, d, yanit);
+    return await isleIc(req, env, d, yanit, cors);
   } catch (e) {
     return yanit({ hata: "kapi", ayrinti: String(e instanceof Error ? e.message : e).slice(0, 300) }, 500);
   }
 };
 
-const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown, s?: number) => Response): Promise<Response> => {
+const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown, s?: number) => Response, cors: Record<string, string> = {}): Promise<Response> => {
 
   const belge = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   const kimlik = belge ? await oturumuDogrula(belge, env.FIREBASE_PROJE, d.anahtarBul, d.simdi()).catch(() => null) : null;
@@ -397,6 +397,29 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
     return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa) });
+  }
+
+  /*
+   * Ekin kendisi (kişi dosyaya basınca): kayıtta yalnız adı var. Posta
+   * çağıranın kendi kutusunda Message-ID'siyle aranıyor; dosya saklanmıyor,
+   * olduğu gibi tarayıcıya gidiyor.
+   */
+  if (req.method === "POST" && yol === "/posta/ek") {
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
+    const pa = await postaAyarOku(env);
+    if (!pa.acik) return yanit({ hata: "kapali" }, 403);
+    if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
+    const pk = await postaKimlikOku(env, kisi.kimlik.uid);
+    if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
+    const g = (await req.json().catch(() => null)) as { mesajKimligi?: unknown; ad?: unknown } | null;
+    const imid = typeof g?.mesajKimligi === "string" ? g.mesajKimligi.trim() : "";
+    const ad = typeof g?.ad === "string" ? g.ad : "";
+    if (!imid || imid.length > 500 || !ad || ad.length > 400) return yanit({ hata: "girdi" }, 400);
+    const r = await ekIndirOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), imid, ad);
+    if ("hata" in r) return yanit({ hata: r.yok ? "ekYok" : r.buyuk ? "ekBuyuk" : "baglanti", ayrinti: r.hata.slice(0, 200) }, r.yok ? 404 : r.buyuk ? 413 : 502);
+    return new Response(r.veri, {
+      headers: { "content-type": /^[\w.+-]+\/[\w.+-]+$/.test(r.tur) ? r.tur : "application/octet-stream", "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(ad)}`, "cache-control": "no-store", ...cors },
+    });
   }
 
   /* Yeni posta ve yanıt (EWS CreateItem). Alıcı yoksa kişinin grup adresi; grup her zaman CC'de. */

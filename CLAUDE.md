@@ -1066,7 +1066,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   atılır, ikinci/iç içe alıntıda durulur, kalan imza temizliğinden geçer) ve
   balonda ince kenarlı alıntı stiliyle (`.posta-alinti`) gösteriliyor; böylece
   muhabirin mail üzerinden harekeleyip/düzeltip döndüğü metin görünüyor. Ekler başlıksız, dosya
-  biçiminde kutu (`.posta-ek`, dosya ikonu + ad; dosyanın kendisi indirilmiyor);
+  biçiminde kutu (`.posta-ek`, dosya ikonu + ad; basınca dosya iner, aşağıda "Ekin kendisi");
   imza/gömülü görsel ekleri (`gizliEkMi`: svg/ico/gif/bmp/webp/tiff, GUID'li
   otomatik adlar [trtlogo_<guid>.png], image001.png, logo/sosyal/imza geçen
   png/jpg) gösterilmiyor, pdf/docx gibi gerçek dosyalar kalıyor. Sohbet listesi kontürlü ayrı kartlar
@@ -1178,6 +1178,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     adresiyle süzer. Worker uçları: `GET/PUT /posta/ayar` (tam yönetici, ortak),
     `GET/PUT /posta/kimlik` ve `POST /posta/dene` (Planlama/yönetici, kendi),
     `POST /posta/cek` (Planlama/yönetici).
+    Ekin kendisi (`POST /posta/ek`, `ews.ts → ekIndir`, istemcide `posta-kapi.ts →
+    postaEkiGetir`, `Posta.tsx → useEkIndir`): kayıtta yalnız adı var; kişi
+    ekte ya da yandaki dosya sütununda basınca kapı postayı onun kendi
+    kutusunda (gelen kutusu) Message-ID'siyle bulur (EWS kimlikleri kutuya
+    özgü, sohbet ortak), ekleri listeler, adı tutanı GetAttachment ile çekip
+    olduğu gibi döndürür; tarayıcı indirir, hiçbir yere saklanmaz. 20 MB üstü
+    reddedilir (Worker belleği); kişinin kutusunda olmayan posta "bulunamadı".
+    Yanıt okuyucu parçaları biriktirip yalnız tamamlanınca birleştiriyor
+    (`yanitOku`): her parçada bütün tamponu kopyalamak büyük ekte işlemciyi
+    bitiriyordu. Demoda kutu yok, iner yerine bildirim.
     NTLMv2 kriptosu MS-NLMP §4.2.4 vektörleriyle sınanıyor; testler
     `worker/test/ntlm.test.ts`, `ews.test.ts`, `posta-ayar.test.ts`
     (`cd worker && npm test`). Microsoft Graph yolu (dinleyici kutu +

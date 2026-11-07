@@ -85,6 +85,23 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
   return { tamam: true, veri: j };
 };
 
+/* Kapıdan dosya (posta eki): yanıt JSON değil, dosyanın kendisi; hata yine JSON. */
+export const kapiDosya = async (yol: string, govde: unknown): Promise<YzSonuc<Blob>> => {
+  const belge = await (await firebaseYukle()).oturumBelgesi().catch(() => null);
+  if (!belge) return { tamam: false, hata: "oturum" };
+  let r: Response;
+  try {
+    r = await fetch(`${adres()}${yol}`, { method: "POST", headers: { authorization: `Bearer ${belge}`, "content-type": "application/json" }, body: JSON.stringify(govde) });
+  } catch {
+    return { tamam: false, hata: "baglanti" };
+  }
+  if (!r.ok) {
+    const j = (await r.json().catch(() => null)) as { hata?: string; ayrinti?: string } | null;
+    return { tamam: false, hata: j?.hata ?? "baglanti", ayrinti: j?.ayrinti ?? `HTTP ${r.status}` };
+  }
+  return { tamam: true, veri: await r.blob() };
+};
+
 /* --- Kişinin kullanabildiği özellikler: oturum boyunca bir kez soruluyor, kullanım sonrası tazeleniyor --- */
 
 type Durum = Partial<Record<YzOzellik, { kalan: number; sinir: number }>>;

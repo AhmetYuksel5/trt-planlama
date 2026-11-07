@@ -556,7 +556,9 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
 .posta-alinti { border-inline-start: 3px solid var(--cizgi); padding-inline-start: 8px; opacity: 0.9; }
 /* Kimlik girilmemişken "Sonra yap" sonrası Posta sayfasındaki ince giriş çubuğu. */
 /* Ek: başlıksız, dosya biçiminde bir kutu (ikon + ad). */
-.posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: var(--ara-2); font-weight: 600; color: var(--lacivert); max-inline-size: 100%; }
+.posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: var(--ara-2); min-block-size: 44px; padding: 0; background: none; border: 0; font: inherit; font-weight: 600; color: var(--lacivert); text-align: start; max-inline-size: 100%; cursor: pointer; }
+.posta-ek:hover bdi { text-decoration: underline; }
+.posta-ek[aria-busy="true"], .posta-dosya[aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .posta-ek bdi { overflow-wrap: anywhere; }
 .posta-zaman { display: block; text-align: end; margin-block-start: var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); font-variant-numeric: tabular-nums; }
 /* Dosya ikonu: sayfa çizgisi ve altında türün etiketi, türün renginde. */

@@ -1,4 +1,4 @@
-import { kapiIstek, type YzSonuc } from "./yz";
+import { kapiDosya, kapiIstek, type YzSonuc } from "./yz";
 import { cagriYanitiysaIsle, postaIsle } from "./eylemler";
 import { type GelenEposta } from "./eposta";
 import { type Kisi } from "./veri";
@@ -52,6 +52,9 @@ export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/pos
  */
 export const postaGonder = (g: { kime: string[]; cc?: string[]; bcc?: string[]; konu: string; metin: string }) =>
   kapiIstek<{ tamam: boolean; kime: string[]; cc: string[]; bcc: string[] }>("/posta/gonder", "POST", g);
+
+/* Ekin kendisi: kapı postayı kişinin kendi kutusunda Message-ID ile bulup eki getirir; kayda girmez. */
+export const postaEkiGetir = (mesajKimligi: string, ad: string) => kapiDosya("/posta/ek", { mesajKimligi, ad });
 
 interface KapiMesaji {
   kimden: string;
