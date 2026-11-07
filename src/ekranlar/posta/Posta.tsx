@@ -265,7 +265,13 @@ export function Posta({ ben }: { ben: Kisi }) {
     setCekiliyor(true);
     const r = await postalariCek(ben);
     setCekiliyor(false);
-    if ("hata" in r) bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    if ("hata" in r) {
+      // Nedeni ayırt et: kimlik/sunucu/kapalı için ne yapılacağı bellidir,
+      // bağlantı hatasında kapının verdiği ayrıntıyı göster.
+      const ozel = r.hata === "eksikKimlik" ? "bPostaCekKimlikYok" : r.hata === "kapali" ? "bPostaCekKapali" : r.hata === "eksikSunucu" ? "bPostaCekSunucuYok" : "";
+      if (ozel) bildir(t(ozel as Parameters<typeof t>[0]));
+      else bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    }
     else bildir(r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok"));
   };
   // Kimlik kişiye özel (Ayarlar'dan girilir): parola varsa açılışta kutuyu
