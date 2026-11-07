@@ -519,6 +519,18 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-sohbetler button.secili { background: var(--vurgu-sis); }
 .posta-sohbet-bas { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ara-2); }
 
+/* Sohbet WhatsApp gibi: sade balonlar, gönderen adı grup başına bir kez, köşede saat, gün ayracı. */
+.posta-govde { background: var(--zemin); border-radius: var(--yaricap-kart); }
+.posta-mesajlar { list-style: none; margin: 0; padding: var(--ara-3); display: flex; flex-direction: column; gap: 3px; max-block-size: 66vh; overflow: auto; }
+.posta-balon { position: relative; align-self: flex-start; max-inline-size: 85%; background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 12px; border-start-start-radius: 4px; padding: var(--ara-2) var(--ara-3); padding-inline-end: 56px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06); }
+.posta-gonderen { font-size: var(--punto-kucuk); font-weight: 600; color: var(--vurgu); margin-block-end: 2px; }
+.posta-metin { white-space: pre-wrap; overflow-wrap: anywhere; }
+.posta-ek { display: inline-flex; align-items: center; gap: 4px; margin-block-start: 4px; padding: 4px 8px; background: var(--zemin); border: 1px solid var(--cizgi); border-radius: 8px; font-size: var(--punto-kucuk); }
+.posta-ek bdi { overflow-wrap: anywhere; }
+.posta-zaman { position: absolute; inset-block-end: 4px; inset-inline-end: 10px; font-size: 11px; color: var(--sonuk); }
+.posta-gun { align-self: center; margin-block: var(--ara-2); }
+.posta-gun span { background: var(--yuzey-2); color: var(--sonuk); font-size: var(--punto-kucuk); padding: 2px 10px; border-radius: 10px; }
+
 /* --- Ana başlıkların renkleri (kısayollar, rozetler, çip ve kutucuklar) --- */
 
 .renk-nextday { --renk: var(--nextday); --sis: var(--nextday-sis); }
@@ -1567,9 +1579,12 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .kollar { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
-  /* Posta telefonda tek sütun: önce sohbet listesi, sonra seçili sohbet. */
+  /* Posta telefonda WhatsApp gibi: liste ya da seçili sohbet, ikisi bir arada değil. */
   .posta-duzen { grid-template-columns: minmax(0, 1fr); }
   .posta-sohbetler { max-block-size: none; }
+  .posta-duzen.secili .posta-liste-sutun { display: none; }
+  .posta-duzen:not(.secili) .posta-sohbet-sutun { display: none; }
+  .posta-mesajlar { max-block-size: 70vh; }
   /* Plan satırında ad üstte, ilerleme ve durum altta. */
   .plan-satiri { flex-wrap: wrap; row-gap: var(--ara-1); }
   .plan-satiri .ad { flex: 1 1 100%; }

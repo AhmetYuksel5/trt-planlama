@@ -1,6 +1,6 @@
-import { Mail, MessageSquare, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
-import { useEffect, useRef, useState, type DragEvent } from "react";
-import { Avatar, Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { ArrowLeft, Mail, MessageSquare, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
+import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
 import { gondereniBul, postaKonuBasligi, type GelenEposta } from "../../eposta";
@@ -52,37 +52,48 @@ const GonderenEtiketi = ({ m }: { m: PostaMesaji }) => {
   return <b dir={kisi ? undefined : "ltr"}>{kisi ? ad(kisi) : m.kimdenAd || m.kimden}</b>;
 };
 
+/*
+ * Sohbet WhatsApp gibi: gereksiz üst veri yok, yalnız mesaj balonu ve ekli
+ * dosyalar. Gönderen adı grup başına bir kez (ardışık aynı gönderende
+ * tekrarlamaz), köşede saat, günler arasında ayraç.
+ */
 function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
-  const { t, ad, dil } = useDil();
+  const { ad, dil } = useDil();
   const v = useVeri();
   return (
-    <div className="yazisma" data-posta-sohbet={sohbet.konuKimligi}>
-      <ol className="mesajlar">
-        {sohbet.mesajlar.map((m) => {
+    <div className="posta-govde" data-posta-sohbet={sohbet.konuKimligi}>
+      <ol className="posta-mesajlar">
+        {sohbet.mesajlar.map((m, i) => {
           const kisi = gondereniBul(v, m.kimden);
+          const onceki = sohbet.mesajlar[i - 1];
+          const yeniGun = !onceki || yerelGun(onceki.zaman) !== yerelGun(m.zaman);
+          const yeniGonderen = yeniGun || !onceki || onceki.kimden !== m.kimden;
           return (
-            <li key={m.id} data-posta-mesaj>
-              <Avatar kisi={kisi} boy="kucuk" />
-              <div>
-                <small>
-                  <b dir={kisi ? undefined : "ltr"}>{kisi ? ad(kisi) : m.kimdenAd || m.kimden}</b> · {tarihYaz(yerelGun(m.zaman), dil, "kisa")} {saatYaz(m.zaman, dil)}
-                </small>
-                <Icerik blok>{m.metin}</Icerik>
-                {m.ekler.length > 0 && (
-                  <small className="sonuk ince">
-                    <Paperclip size={12} /> {m.ekler.join(", ")}
-                  </small>
+            <Fragment key={m.id}>
+              {yeniGun && (
+                <li className="posta-gun">
+                  <span>{tarihYaz(yerelGun(m.zaman), dil, "tam")}</span>
+                </li>
+              )}
+              <li className="posta-balon" data-posta-mesaj>
+                {yeniGonderen && (
+                  <div className="posta-gonderen" dir={kisi ? undefined : "ltr"}>
+                    {kisi ? ad(kisi) : m.kimdenAd || m.kimden}
+                  </div>
                 )}
-                {m.tamMetin !== m.metin && (
-                  <details>
-                    <summary className="bos-kucuk">{t("tamMetin")}</summary>
-                    <pre className="tam-metin" dir="auto">
-                      {m.tamMetin}
-                    </pre>
-                  </details>
+                {m.metin.trim() && (
+                  <Icerik blok className="posta-metin">
+                    {m.metin}
+                  </Icerik>
                 )}
-              </div>
-            </li>
+                {m.ekler.map((e, j) => (
+                  <span className="posta-ek" key={j}>
+                    <Paperclip size={14} /> <bdi>{e}</bdi>
+                  </span>
+                ))}
+                <span className="posta-zaman">{saatYaz(m.zaman, dil)}</span>
+              </li>
+            </Fragment>
           );
         })}
       </ol>
@@ -195,8 +206,8 @@ export function Posta({ ben }: { ben: Kisi }) {
           ) : undefined
         }
       />
-      <div className="posta-duzen">
-        <div className="iz">
+      <div className={`posta-duzen${secik ? " secili" : ""}`}>
+        <div className="iz posta-liste-sutun">
           <Kart baslik={t("postaSohbetler")} ek={String(sohbetler.length)}>
             {sohbetler.length === 0 ? (
               <Bos kucuk metin={t("postaMesajYok")} />
@@ -220,21 +231,28 @@ export function Posta({ ben }: { ben: Kisi }) {
           </Kart>
           <IceAktar ben={ben} onEklendi={onEklendi} />
         </div>
-        {secik ? (
-          <Kart
-            baslik={<Icerik>{secik.baslik}</Icerik>}
-            ikon={<MessageSquare size={18} />}
-            sagUc={
-              <button className="dugme dugme-sade dugme-kucuk" onClick={() => sil(secik.konuKimligi)} title={t("postaSohbetSil")}>
-                <Trash2 size={14} /> {t("sil")}
+        <div className="posta-sohbet-sutun">
+          {secik ? (
+            <>
+              <button className="geri-bag yalniz-telefon" onClick={() => setSecili("")}>
+                <ArrowLeft size={14} className="yon" /> {t("postaSohbetler")}
               </button>
-            }
-          >
-            <SohbetGovdesi sohbet={secik} />
-          </Kart>
-        ) : (
-          <Bos metin={t("postaSohbetSec")} ikon={<Mail size={28} />} />
-        )}
+              <Kart
+                baslik={<Icerik>{secik.baslik}</Icerik>}
+                ikon={<MessageSquare size={18} />}
+                sagUc={
+                  <button className="dugme dugme-sade dugme-kucuk" onClick={() => sil(secik.konuKimligi)} title={t("postaSohbetSil")}>
+                    <Trash2 size={14} /> {t("sil")}
+                  </button>
+                }
+              >
+                <SohbetGovdesi sohbet={secik} />
+              </Kart>
+            </>
+          ) : (
+            <Bos metin={t("postaSohbetSec")} ikon={<Mail size={28} />} />
+          )}
+        </div>
       </div>
     </>
   );
