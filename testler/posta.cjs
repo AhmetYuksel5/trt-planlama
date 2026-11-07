@@ -88,7 +88,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
       id: "pm-ek-test", konuKimligi: "ek-test-konu", kimden: "ekli@ornek.local",
       kimdenAd: "Ekli Gönderen", konu: "Ekli posta", metin: "Rapor ektedir.", tamMetin: "Rapor ektedir.",
-      zaman: new Date().toISOString(), ekler: ["rapor.pdf", "image001.png", "logo.png", "imza-banner.jpg"],
+      zaman: new Date().toISOString(), ekler: ["rapor.pdf", "image001.png", "logo.png", "imza-banner.jpg", "trtlogo_fa524c36-bb0d-49e9-9a6b-04762f995512.png", "facebook_13f4222f-a2aa-44fb-93ad-116e2eecf20a.png"],
       kaynak: "iceAktarma",
     }]);
     localStorage.setItem("trt-planlama-v24", JSON.stringify(v));

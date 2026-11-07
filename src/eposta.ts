@@ -208,12 +208,27 @@ const GORSEL_REF = /\[cid:[^\]]*\]|\[image:?[^\]]*\]|\[صورة[^\]]*\]|<[^<>\s]
 // Yalnız bir görsel dosya adından ibaret satır (imza logosu): atılır.
 const GORSEL_SATIR = /^\s*\S+\.(?:png|jpe?g|gif|bmp|svg|webp|ico)\s*$/i;
 
-/* Ek, imza/gömülü görseli mi (image001.png, logo.png…): öyleyse ekranda gösterilmiyor; gerçek dosyalar (pdf, docx…) kalıyor. */
-const INLINE_GORSEL = /^(?:image|img|logo|signature|sig|footer|header|banner|icon|emoji|~wr[dl]|oledata)\d*\.(?:png|jpe?g|gif|bmp|svg|webp|ico|emz|wmz)$/i;
+/*
+ * Ek, imza/gömülü görseli mi: öyleyse ekranda gösterilmiyor, gerçek dosyalar
+ * (pdf, docx…) kalıyor. E-posta istemcileri gövdedeki/imzadaki görselleri
+ * otomatik adla ekliyor (image001.png, trtlogo_<guid>.png, facebook_<guid>.png);
+ * bunlar "gönderilen dosya" değil, gürültü.
+ */
+const GORSEL_TUR = /\.(png|jpe?g|gif|bmp|svg|webp|ico|tiff?|emz|wmz)$/i;
+// Her zaman gömülü sayılan türler: svg/ico/gif/bmp/webp gerçek ek olarak gönderilmez.
+const VEKTOR_TUR = /\.(gif|bmp|svg|webp|ico|tiff?|emz|wmz)$/i;
+const INLINE_GORSEL = /^(?:image|img|logo|signature|sig|footer|header|banner|icon|emoji|~wr[dl]|oledata|outlook-emoji|part)[-_.]?\d*\./i;
+// Gövdeye gömülü görselin otomatik adındaki GUID/uzun onaltılık öbek.
+const GUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+// Adında imza/sosyal/logo geçen görsel ("trtlogo" gibi bitişik de).
+const IMZA_GORSEL_SOZ = /(logo|signature|imza|banner|footer|header|icon|avatar|facebook|twitter|instagram|linkedin|youtube|whatsapp|telegram|sosyal|social|trt[-_]?ar)/i;
 export const gizliEkMi = (ad: string): boolean => {
   const t = ad.trim();
-  if (INLINE_GORSEL.test(t)) return true;
-  return /\.(png|jpe?g|gif|bmp|svg|webp|ico)$/i.test(t) && /\b(logo|signature|imza|banner|footer|header|icon)\b/i.test(t);
+  if (!GORSEL_TUR.test(t)) return false; // gerçek dosyalar (pdf, docx, xlsx…) kalır
+  if (VEKTOR_TUR.test(t)) return true; // svg/ico/gif/bmp/webp/tiff
+  if (INLINE_GORSEL.test(t)) return true; // image001.png, part1.png
+  if (GUID.test(t)) return true; // trtlogo_<guid>.png, facebook_<guid>.png
+  return IMZA_GORSEL_SOZ.test(t); // içinde logo/sosyal/imza geçen png/jpg
 };
 
 export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
