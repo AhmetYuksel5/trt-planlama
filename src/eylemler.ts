@@ -1,7 +1,7 @@
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
-import { bosYanitMi, cagriyiBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { bosYanitMi, cagriKonusu, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
@@ -9,7 +9,7 @@ import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { sablonlar } from "./geriBildirim";
 import { metin, yaz, type Yazi } from "./dil";
-import { ayniYapi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, icMuhabirMi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -71,6 +71,7 @@ import {
   type Hareket,
   type IcerikTuru,
   type Bicim,
+  type Cagri,
   type CagriTuru,
   type HaftalikKalem,
   type HaftalikPlan,
@@ -3023,13 +3024,14 @@ export interface YanitSonucu {
  * Message-ID ikinci kez işlenmiyor. Sunucu fazında posta kutusunu izleyen
  * hizmet de bunu çağıracak; tarayıcıda yalnız Planlama içe aktarabiliyor.
  */
-export const epostaYanitiIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Yanit["kaynak"]): YanitSonucu | null => {
+export const epostaYanitiIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Yanit["kaynak"], cagriZorla?: Cagri): YanitSonucu | null => {
   if (kaynak === "iceAktarma" && !yapabilir(ben, "cagriHazirla")) return null;
   let d = getir();
   if (gelen.mesajKimligi && d.yanitlar.some((y) => y.mesajKimligi === gelen.mesajKimligi)) return { durum: "tekrar" };
   const zaman = gelen.zaman ?? simdi();
   const kisi = gondereniBul(d, gelen.kimden);
-  const cagri = cagriyiBul(d, gelen.konu, zaman, kisi);
+  // Kutudan gelen postada çağrıyı konudan çözen önceden buldu; tahmine bırakma.
+  const cagri = cagriZorla ?? cagriyiBul(d, gelen.konu, zaman, kisi);
   const metin = yeniMetin(gelen.metin) || gelen.metin.trim();
   const durum: YanitDurum = !kisi || !cagri ? "eslesmedi" : bosYanitMi(metin) ? "oneriYok" : "oneri";
   const yanit: Yanit = {
@@ -3051,6 +3053,39 @@ export const epostaYanitiIsle = (ben: Kisi | undefined, gelen: GelenEposta, kayn
   return { durum, yanitId: yanit.id, oneriId: yanitiYerlestir(d, yanit) };
 };
 
+/*
+ * Kutudan çekilen posta çağrıya verilmiş muhabir yanıtıysa öneri akışına da
+ * girer; sohbette de kalır (kullanıcı: sohbet olduğu gibi dursun, işe yarayan
+ * öneriye aktarılsın; öneri her halükarda Planlama'nın kontrolünden geçiyor).
+ * - Konuda ND-/HP- etiketi: o çağrı. Gönderen tanınmıyorsa "eşleşmedi" olarak
+ *   saklanır, Gelen yanıtlar'da elle bağlanır. Tanınıyor ama çağrının alıcısı
+ *   ve muhabir değilse (planlamacının kendi yanıtı, grubun geri dönen postası)
+ *   alınmaz: yoksa onun adına öneri açılırdı.
+ * - Etiket silinmişse: gönderen o çağrının BCC'sinde ve konu çağrının
+ *   konusuyla aynı olmalı; yoksa muhabirin her postası öneri olurdu.
+ */
+export const cagriYanitiysaIsle = (ben: Kisi, gelen: GelenEposta): YanitSonucu | null => {
+  const d = getir();
+  if (gelen.mesajKimligi && d.yanitlar.some((y) => y.mesajKimligi === gelen.mesajKimligi)) return null;
+  const kisi = gondereniBul(d, gelen.kimden);
+  const muhabirMi = (k: Kisi) => k.birim === "muhabir" || icMuhabirMi(k);
+  const etiket = etiketBul(gelen.konu);
+  if (etiket) {
+    const cagri = d.cagrilar.find((c) => c.etiket === etiket);
+    if (!cagri) return null;
+    if (kisi && !cagri.bcc.includes(kisi.id) && !muhabirMi(kisi)) return null;
+    return epostaYanitiIsle(ben, gelen, "posta", cagri);
+  }
+  if (!kisi) return null;
+  const cekirdek = (konu: string) => postaKonuCekirdegi(konu.replace(/\[[^\]]*\]/g, ""));
+  const konu = cekirdek(gelen.konu);
+  if (!konu) return null;
+  const cagri = [...d.cagrilar]
+    .filter((c) => c.bcc.includes(kisi.id) && cekirdek(cagriKonusu(c.tarih, c.tur)) === konu)
+    .sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
+  return cagri ? epostaYanitiIsle(ben, gelen, "posta", cagri) : null;
+};
+
 /* Eşleşmiş yanıt: öneri ya da "önerisi yok" hareketi; eşleşmemiş yalnız saklanıyor. */
 const yanitiYerlestir = (d: Durum, y: Yanit): string | undefined => {
   const kisi = kisiBul(d, y.kisiId);
@@ -3062,6 +3097,18 @@ const yanitiYerlestir = (d: Durum, y: Yanit): string | undefined => {
   if (y.durum === "oneriYok") {
     kaydet(hareketYaz(d, { kisiId: kisi.id, tip: "yanitOneriYok", veri: { tarih: cagri.tarih } }));
     return undefined;
+  }
+  /*
+   * Aynı muhabirin aynı çağrıya sonraki postası (Planlama sordu, muhabir
+   * açtı) yeni öneri açmasın: metni o önerinin altına satır olarak girer,
+   * Planlama'ya bildirim gider. Reddedilmiş ya da geri çekilmişse yeni öneri.
+   */
+  const onceki = d.oneriler.find((o) => o.cagriId === cagri.id && o.muhabirId === kisi.id && o.kanal === "eposta" && o.durum !== "reddedildi" && o.durum !== "geriCekildi");
+  if (onceki) {
+    const yeni: Oneri = { ...onceki, satirlar: [...(onceki.satirlar ?? []), { zaman: y.zaman, metin: y.metin }] };
+    d = { ...d, oneriler: d.oneriler.map((o) => (o.id === onceki.id ? yeni : o)) };
+    kaydet(hareketYaz(d, { kisiId: kisi.id, tip: "takipSatiriEklendi", oneriId: onceki.id, veri: { sahip: "planlama", kanal: "eposta" } }));
+    return onceki.id;
   }
   const oneri = yanittanOneriTaslagi(y, kisi, cagri, kimlik("o"));
   d = { ...d, oneriler: [oneri, ...d.oneriler] };

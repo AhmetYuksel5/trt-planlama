@@ -1093,6 +1093,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yazışma kimliğini öğrenir; konudan açılmış iplik o kimliğe taşınır. Kendi
     postası dönmeden yanıt gelirse sunucu kimliğinde sohbet yoksa aynı konuyla
     buradan açılmış sohbete katılır.
+  - Çağrı yanıtı öneriye de aktarılır (kullanıcı: sohbet olduğu gibi dursun,
+    işe yarayan öneriye geçsin; öneri her halükarda Planlama'nın
+    kontrolünden geçiyor): kutudan çekilen her posta sohbete yazıldıktan
+    sonra `eylemler.ts → cagriYanitiysaIsle`'den geçer, çağrıya verilmiş
+    muhabir yanıtıysa mevcut yanıt akışına (`epostaYanitiIsle`, "Gelen
+    yanıtlar", `yanittanOneriTaslagi`) girer. Konuda `ND-`/`HP-` etiketi
+    varsa o çağrı: gönderen tanınmıyorsa "eşleşmedi" (elle bağlanır),
+    tanınıyor ama çağrının BCC'sinde değil ve muhabir (dış ya da iç) değilse
+    alınmaz (planlamacının kendi yanıtı, grubun geri dönen postası onun adına
+    öneri açardı). Etiket silinmişse gönderen o çağrının BCC'sinde ve konu
+    çağrının konusuyla (`cagriKonusu`, etiketsiz çekirdek) aynı olmalı; yoksa
+    muhabirin her postası öneri olurdu. Aynı muhabirin aynı çağrıya sonraki
+    postası (reddedilmemiş, geri çekilmemiş e-posta önerisi varken) yeni öneri
+    açmaz: metni önerinin `satirlar`'ına girer, hareket `takipSatiriEklendi`
+    (Planlama'ya); elle içe aktarmada da aynı. "Önerim yok" önerisiz.
+    Bildirimde "N yeni posta · M öneriye aktarıldı". Gerçek kipte, Node'da
+    denendi; e2e'ye girmiyor (demoda kutu yok).
   - İçe aktarma kartı (Outlook'tan sürükle-bırak, `.eml`, yapıştır) kalktı:
     posta kutudan geliyor. Demoda örnek yazışmalar `ornek.ts → ornekPosta`
     (kurgusal). Kısıtlı muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil;
