@@ -297,12 +297,12 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
   for (;;) {
     const cerceve = httpCerceveCoz(tampon);
     if (cerceve) return cerceve;
-    let zamanlayici: ReturnType<typeof setTimeout> | undefined;
+    let zamanlayici: ReturnType<typeof setTimeout> | null = null;
     // Soketin sıfırlanması ("Stream was cancelled") okuma hatası olarak gelir; EOF gibi ele al.
     const parca = await Promise.race([
       soket.oku().catch(() => null),
       new Promise<never>((_, red) => { zamanlayici = setTimeout(() => red(new Error("okuma zaman aşımı")), OKUMA_ZAMAN_ASIMI); }),
-    ]).finally(() => clearTimeout(zamanlayici));
+    ]).finally(() => { if (zamanlayici !== null) clearTimeout(zamanlayici); });
     if (!parca) {
       // Bağlantı kapandı/sıfırlandı: tam çerçeve varsa onu, yoksa başlık+eldeki gövdeyle en iyisini döndür.
       const son = httpCerceveCoz(tampon) ?? cerceveZorla(tampon);
