@@ -23,6 +23,7 @@ export const DIZI_ALANLARI = [
   "oneriler",
   "cagrilar",
   "yanitlar",
+  "postaMesajlari",
   "paketler",
   "haftalik",
   "aylik",

@@ -156,7 +156,37 @@ export interface GelenEposta {
   zaman?: string;
   mesajKimligi?: string;
   ekler?: string[];
+  /** Sunucudan (Graph) gelen ipliğin kimliği; içe aktarmada yok, konudan türetiliyor. */
+  konuKimligi?: string;
 }
+
+/*
+ * Posta sohbetini konuya göre ipliklere ayırmak için konunun çekirdeği:
+ * baştaki "RE:", "FW:", "FWD:", "رد:", "إعادة توجيه:" gibi önekler ve
+ * boşluklar atılıp küçük harfe indiriliyor. Aynı yazışmanın yanıtları
+ * böylece tek sohbette toplanıyor. Sunucuda conversationId varsa o kullanılır.
+ */
+const KONU_ON_EK = /^\s*(re|fw|fwd|rv|اعادة توجيه|إعادة توجيه|رد|ردود|回复|回覆)\s*(\[\d+\])?\s*:\s*/i;
+export const postaKonuCekirdegi = (konu: string) => {
+  let k = (konu ?? "").replace(/\r\n?/g, " ").trim();
+  let onceki;
+  do {
+    onceki = k;
+    k = k.replace(KONU_ON_EK, "");
+  } while (k !== onceki);
+  return k.replace(/\s+/g, " ").trim().toLowerCase();
+};
+
+/** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */
+export const postaKonuBasligi = (konu: string) => {
+  let k = (konu ?? "").replace(/\r\n?/g, " ").trim();
+  let onceki;
+  do {
+    onceki = k;
+    k = k.replace(KONU_ON_EK, "");
+  } while (k !== onceki);
+  return k.replace(/\s+/g, " ").trim();
+};
 
 /*
  * Yanıtın altına eklenen alıntı ve imza: Outlook (Türkçe, Arapça, İngilizce

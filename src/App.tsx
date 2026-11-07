@@ -23,6 +23,7 @@ import HaftalikBelge from "./ekranlar/belge/HaftalikBelge";
 import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
 import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
+import { Posta } from "./ekranlar/posta/Posta";
 import {
   OneriDetay,
   OnerilerListe,
@@ -273,6 +274,9 @@ export default function App() {
         break;
       case "gorevler":
         icerik = <Gorevler ben={ben} />;
+        break;
+      case "posta":
+        icerik = yapabilir(ben, "cagriHazirla") ? <Posta ben={ben} /> : <Yetkisiz />;
         break;
       case "oneriler": {
         if (yol.id === "yeni")

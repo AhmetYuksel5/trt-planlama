@@ -1,7 +1,7 @@
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
-import { bosYanitMi, cagriyiBul, gondereniBul, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { bosYanitMi, cagriyiBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
@@ -100,6 +100,7 @@ import {
   type Sehir,
   type TakipTuru,
   type Ulke,
+  type PostaMesaji,
   type Yanit,
   type YanitDurum,
   paketBicimi,
@@ -3078,6 +3079,55 @@ export const yanitBagla = (ben: Kisi, yanitId: string, kisiId: string, cagriId: 
   const yeni = { ...y, kisiId, cagriId, durum };
   d = { ...d, yanitlar: d.yanitlar.map((x) => (x.id === yanitId ? yeni : x)) };
   return { durum, yanitId, oneriId: yanitiYerlestir(d, yeni) };
+};
+
+/* --- Gelen posta sohbeti (öneri-yanıt akışından ayrı) --- */
+
+export interface PostaSonucu {
+  durum: "eklendi" | "tekrar";
+  mesajId?: string;
+  konuKimligi?: string;
+}
+
+/*
+ * Gelen postayı sohbete ekler: ekler atılıyor (yalnız ad kalıyor), alıntı ve
+ * imza ayıklanıyor, konunun çekirdeğine göre iplikçiğe bağlanıyor ("RE:",
+ * "FW:", "رد:" aynı sohbette). Aynı Message-ID ikinci kez eklenmiyor. Bugün
+ * Planlama Outlook'tan içe aktarıyor; sunucu fazında posta kutusunu izleyen
+ * hizmet (EWS/Graph) de bunu çağıracak, tarayıcıyla sunucu ayrışmasın.
+ */
+export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: PostaMesaji["kaynak"]): PostaSonucu | null => {
+  if (kaynak === "iceAktarma" && !yapabilir(ben, "cagriHazirla")) return null;
+  let d = getir();
+  const mevcut = d.postaMesajlari ?? [];
+  if (gelen.mesajKimligi && mevcut.some((m) => m.mesajKimligi === gelen.mesajKimligi)) return { durum: "tekrar" };
+  // Sunucuda conversationId varsa o; içe aktarmada konudan, boşsa yeni iplik.
+  const konuKimligi = gelen.konuKimligi?.trim() || postaKonuCekirdegi(gelen.konu) || kimlik("pk");
+  const mesaj: PostaMesaji = {
+    id: kimlik("pm"),
+    konuKimligi,
+    kimden: gelen.kimden.trim(),
+    kimdenAd: gelen.kimdenAd,
+    konu: gelen.konu,
+    metin: yeniMetin(gelen.metin) || gelen.metin.trim(),
+    tamMetin: gelen.metin,
+    zaman: gelen.zaman ?? simdi(),
+    mesajKimligi: gelen.mesajKimligi,
+    ekler: gelen.ekler ?? [],
+    kaynak,
+  };
+  kaydet({ ...d, postaMesajlari: [mesaj, ...mevcut] });
+  return { durum: "eklendi", mesajId: mesaj.id, konuKimligi };
+};
+
+/* Sohbeti izleriyle siler (Planlama temizliği); çağrı ve öneri akışına dokunmaz. */
+export const postaSil = (ben: Kisi, konuKimligi: string): boolean => {
+  if (!yapabilir(ben, "cagriHazirla")) return false;
+  const d = getir();
+  const mevcut = d.postaMesajlari ?? [];
+  if (!mevcut.some((m) => m.konuKimligi === konuKimligi)) return false;
+  kaydet({ ...d, postaMesajlari: mevcut.filter((m) => m.konuKimligi !== konuKimligi) });
+  return true;
 };
 
 export interface YanitOneriGirdisi {

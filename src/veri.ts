@@ -697,6 +697,38 @@ export interface Yanit {
   kaynak: "posta" | "iceAktarma";
 }
 
+/*
+ * Gelen posta sohbeti: planlama kutusuna düşen bütün e-postalar, eklerden
+ * arındırılmış ve alıntı/imza ayıklanmış biçimde, konuya göre sohbet
+ * iplikçiklerinde. Öneri-yanıt akışından ayrı; çağrıya bağlı değil, her
+ * posta burada. Bugün Outlook'tan sürükle-bırakla besleniyor; sunucu fazında
+ * posta kutusunu izleyen hizmet (EWS/Graph) aynı kaydı yazacak
+ * (belgeler/eposta-entegrasyonu.md). Ekler yalnız ad olarak tutuluyor.
+ */
+export interface PostaMesaji {
+  id: string;
+  /*
+   * İpliğin kimliği: aynı sohbete düşen postalar. Sunucuda Graph'ın
+   * conversationId'si; içe aktarmada konudan türetiliyor ("RE:", "FW:",
+   * "رد:" ayıklanıp normalleştirilerek), öyle ki aynı yazışma tek sohbette
+   * toplansın.
+   */
+  konuKimligi: string;
+  kimden: string;
+  kimdenAd?: string;
+  konu: string;
+  /** Alıntı ve imza ayıklanmış metin. */
+  metin: string;
+  /** Tam metin; ayıklama yanlış kesse de hiçbir şey kaybolmasın. */
+  tamMetin: string;
+  zaman: string;
+  /** Message-ID / internetMessageId: aynı posta iki kez işlenmesin. */
+  mesajKimligi?: string;
+  /** Yalnız ek adları; dosyalar indirilmiyor. */
+  ekler: string[];
+  kaynak: "posta" | "iceAktarma";
+}
+
 /* --- Paket önerisi: birimler arası ortak kayıt (rapor bölüm 7). --- */
 
 export const PAKET_DURUMLARI = ["taslak", "degerlendiriliyor", "onaylandi", "uretimde", "tamamlandi", "iptal"] as const;
@@ -1506,6 +1538,8 @@ export interface Durum {
   oneriler: Oneri[];
   cagrilar: Cagri[];
   yanitlar: Yanit[];
+  /** Gelen posta sohbeti; eski kayıtta yok, boşsa []. */
+  postaMesajlari?: PostaMesaji[];
   paketler: Paket[];
   haftalik: HaftalikPlan[];
   aylik: AylikPlan[];
@@ -1646,6 +1680,7 @@ export const bosDurum = (): Durum => ({
   oneriler: [],
   cagrilar: [],
   yanitlar: [],
+  postaMesajlari: [],
   paketler: [],
   haftalik: [],
   aylik: [],

@@ -314,7 +314,7 @@ const htmldenMetin = (html: string) => new DOMParser().parseFromString(html, "te
  * yükleniyor; ana sayfa ağırlaşmasın. Exchange içinden gelen e-postada
  * gönderen alanı iç adres olabiliyor; önce SMTP adresine bakılıyor.
  */
-const dosyaOku = async (f: File): Promise<GelenEposta> => {
+export const dosyaOku = async (f: File): Promise<GelenEposta> => {
   if (/\.msg$/i.test(f.name)) {
     /* CommonJS paketin varsayılanı paketleyicide bir kat daha sarılı gelebiliyor; ikisini de karşıla. */
     type Okuyucu = typeof import("@kenjiuno/msgreader").default;

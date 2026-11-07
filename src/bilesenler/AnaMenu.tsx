@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { kisininIsleri } from "../gorevler";
@@ -108,6 +108,8 @@ export const MENU: Grup[] = [
         goster: (ben) => ben.birim !== "muhabir",
         say: (d) => d.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o)).length,
       },
+      // Gelen posta sohbeti: planlama kutusuna düşen postalar (yetki.ts → SAYFA_IZNI.posta).
+      { sayfa: "posta", ad: "mPosta", kisa: "kaPosta", ikon: Mail },
       {
         sayfa: "takipler",
         ad: "mMuhabirTakipleri",

@@ -46,7 +46,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     mailto, BCC sığmazsa panoya) ve gelen yanıtı
     eşleştirme kuralları; saf, sunucu fazında posta kutusunu izleyen hizmet
     de aynısını kullanacak (`belgeler/eposta-entegrasyonu.md`). Next Day
-    etiketi `ND-`, haftalık `HP-` (haftanın Cumartesi'si)
+    etiketi `ND-`, haftalık `HP-` (haftanın Cumartesi'si). Ayrıca gelen posta
+    sohbetinin konu çekirdeği (`postaKonuCekirdegi`, "RE:/FW:/رد:" ayıklanıp
+    normalleştirilir; aynı yazışma tek iplik) ve ekrandaki başlığı
+    (`postaKonuBasligi`)
   - `haftalik.ts`: haftalık planın okuma kuralları (gündemde mi, karar
     bekleyen, Next Day'e gider mi, ön inceleme bekleyenler)
   - `takvim.ts`: planlama takviminin okuma kuralları (tekrarların açılımı,
@@ -1005,6 +1008,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
+- Gelen posta sohbeti (`ekranlar/posta/Posta.tsx`, `#/posta`; yalnız
+  Planlama, `yetki.ts → SAYFA_IZNI.posta`, route `cagriHazirla`): planlama
+  kutusuna düşen postalar, eklerinden arındırılmış (yalnız ad) ve alıntı/imza
+  ayıklanmış (`eposta.ts → yeniMetin`) biçimde, konuya göre sohbet
+  iplikçiklerinde. Öneri-yanıt akışından ayrı (`Durum.postaMesajlari`,
+  `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
+  öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,
+  içe aktarmada konu çekirdeğinden. Aynı Message-ID iki kez işlenmiyor.
+  Solda sohbet listesi (dar, `.posta-duzen`), sağda seçili sohbet balonlarla
+  (`.yazisma`/`.mesajlar`, gönderen kayıtlı kişiyse adı ve avatarı). Köprü
+  (Outlook'tan `.msg` sürükle-bırak, `.eml`, yapıştır) `oneri/Eposta.tsx →
+  dosyaOku`'dan geçiyor, Gelen yanıtlar ekranıyla aynı okuyucu. Kısıtlı
+  muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil; kural catch-all'u
+  kapsıyor). Sunucu fazında posta kutusunu izleyen hizmet (EWS/Graph) aynı
+  `postaIsle`'yi çağıracak (`belgeler/eposta-entegrasyonu.md`). Test
+  `testler/posta.cjs`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.
