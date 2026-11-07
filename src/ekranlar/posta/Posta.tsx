@@ -3,7 +3,7 @@ import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
-import { gondereniBul, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
+import { gizliEkMi, gondereniBul, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
@@ -109,7 +109,7 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                     {govde}
                   </Icerik>
                 )}
-                {m.ekler.map((e, j) => (
+                {m.ekler.filter((e) => !gizliEkMi(e)).map((e, j) => (
                   <span className="posta-ek" key={j}>
                     <span className="posta-ek-ikon">
                       <FileText size={18} />

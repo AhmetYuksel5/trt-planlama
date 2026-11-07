@@ -82,6 +82,24 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const sonra = (await veri()).postaMesajlari.length;
   ok(sonra < once, "sohbet izleriyle silindi: " + once + " → " + sonra);
 
+  // Ek filtresi: gerçek dosya görünür, imza/logo görseli gizli
+  await p.evaluate(() => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    v.postaMesajlari = (v.postaMesajlari || []).concat([{
+      id: "pm-ek-test", konuKimligi: "ek-test-konu", kimden: "ekli@ornek.local",
+      kimdenAd: "Ekli Gönderen", konu: "Ekli posta", metin: "Rapor ektedir.", tamMetin: "Rapor ektedir.",
+      zaman: new Date().toISOString(), ekler: ["rapor.pdf", "image001.png", "logo.png", "imza-banner.jpg"],
+      kaynak: "iceAktarma",
+    }]);
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  });
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Ekli posta" }).first().click();
+  await p.waitForTimeout(300);
+  ok((await p.locator("[data-posta-sohbet] .posta-ek").count()) === 1, "yalnız gerçek dosya eki görünür (pdf), görseller gizli");
+  ok((await p.locator("[data-posta-sohbet] .posta-ek").first().innerText()).includes("rapor.pdf"), "görünen ek rapor.pdf");
+
   // 390px: yatay taşma yok (Türkçe ve Arapça)
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);

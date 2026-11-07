@@ -203,11 +203,25 @@ const imzaMi = (s: string): boolean => {
 };
 // Bağlantısı atılınca boş kalan etiket satırı ("رابط:", "Link:"): atılır.
 const BOS_ETIKET = /^\s*(?:رابط|الرابط|link|url|detay|detaylar|kaynak|المصدر|source)\s*:\s*$/i;
+// HTML postanın metne dönüşünde kalan gömülü görsel izleri: [cid:…], [image: …], <logo.png>.
+const GORSEL_REF = /\[cid:[^\]]*\]|\[image:?[^\]]*\]|\[صورة[^\]]*\]|<[^<>\s]+\.(?:png|jpe?g|gif|bmp|svg|webp|ico)>/gi;
+// Yalnız bir görsel dosya adından ibaret satır (imza logosu): atılır.
+const GORSEL_SATIR = /^\s*\S+\.(?:png|jpe?g|gif|bmp|svg|webp|ico)\s*$/i;
+
+/* Ek, imza/gömülü görseli mi (image001.png, logo.png…): öyleyse ekranda gösterilmiyor; gerçek dosyalar (pdf, docx…) kalıyor. */
+const INLINE_GORSEL = /^(?:image|img|logo|signature|sig|footer|header|banner|icon|emoji|~wr[dl]|oledata)\d*\.(?:png|jpe?g|gif|bmp|svg|webp|ico|emz|wmz)$/i;
+export const gizliEkMi = (ad: string): boolean => {
+  const t = ad.trim();
+  if (INLINE_GORSEL.test(t)) return true;
+  return /\.(png|jpe?g|gif|bmp|svg|webp|ico)$/i.test(t) && /\b(logo|signature|imza|banner|footer|header|icon)\b/i.test(t);
+};
+
 export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
   const satirlar = metin
     .replace(BAGLANTI, "")
+    .replace(GORSEL_REF, "")
     .split(/\r?\n/)
-    .map((s) => (BOS_ETIKET.test(s) ? "" : s));
+    .map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
   const ad = gonderenAd.trim().toLowerCase();
   const adSatiri = (s: string) => !!ad && s.trim().toLowerCase() === ad; // imzadaki ad satırı
   let son = satirlar.length;
