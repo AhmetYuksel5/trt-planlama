@@ -1021,9 +1021,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (Outlook'tan `.msg` sürükle-bırak, `.eml`, yapıştır) `oneri/Eposta.tsx →
   dosyaOku`'dan geçiyor, Gelen yanıtlar ekranıyla aynı okuyucu. Kısıtlı
   muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil; kural catch-all'u
-  kapsıyor). Sunucu fazında posta kutusunu izleyen hizmet (EWS/Graph) aynı
-  `postaIsle`'yi çağıracak (`belgeler/eposta-entegrasyonu.md`). Test
-  `testler/posta.cjs`.
+  kapsıyor). Test `testler/posta.cjs`.
+  - Gerçek kipte otomatik besleme EWS köprüsüyle (`worker/src/ews.ts`,
+    `ntlm.ts`, `posta-ayar.ts`): kurumun Exchange'i (posta.trt.net.tr) yalnız
+    NTLM/Negotiate kabul ettiği ve Worker'ın fetch'i NTLM el sıkışmasını tek
+    bağlantıya sabitleyemediği için ham TLS soketinde (`cloudflare:sockets`)
+    elle NTLMv2 + minimal HTTP/1.1 yürütülüyor. Worker FindItem+GetItem ile
+    gelen kutusunu okuyor, planlama grubu adresine (To/Cc) gelenleri süzüyor,
+    ekleri ad olarak bırakıp gövdeyi `yeniMetin`le temizliyor. **Servis hesabı
+    istemiyoruz:** Worker Firestore'a kendi yazmıyor, çektiğini döndürüyor;
+    tarayıcı (`src/posta-kapi.ts → postalariCek`) kişinin kendi oturumuyla
+    `postaIsle` ile yazıyor. Yani otomatik çekme bir Planlama tarayıcısı
+    açıkken olur (bilgisayar tümüyle kapalıyken değil). Posta ekranı gerçek
+    kipte açılışta bir kez ve "Postaları çek" düğmesiyle çekiyor. Parola ve
+    kullanıcı kapının KV'sinde (`posta-ayar`), tarayıcıya hiç gelmiyor;
+    Ayarlar › "E-posta kutusu (EWS)" (`ekranlar/PostaAyari.tsx`, yalnız tam
+    yönetici, gerçek kip) sunucu/kullanıcı/alan/grup adresi/parola ve
+    "Bağlantıyı dene". Worker uçları: `GET/PUT /posta/ayar` (tam yönetici),
+    `POST /posta/dene` (tam yönetici), `POST /posta/cek` (Planlama/yönetici).
+    NTLMv2 kriptosu MS-NLMP §4.2.4 vektörleriyle sınanıyor; testler
+    `worker/test/ntlm.test.ts`, `ews.test.ts`, `posta-ayar.test.ts`
+    (`cd worker && npm test`). Microsoft Graph yolu (dinleyici kutu +
+    abonelik) ileride aynı `postaIsle`'yi besleyebilir
+    (`belgeler/eposta-entegrasyonu.md`).
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.

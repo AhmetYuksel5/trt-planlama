@@ -43,6 +43,35 @@ Yanıt işleme kuralları `src/eposta.ts` ve `src/eylemler.ts` →
 `epostaYanitiIsle` içinde. Sunucu aynı kodu kullanacak, tarayıcıyla sunucu
 ayrışmayacak.
 
+## 2.5. Uygulanan: EWS köprüsü (BT'siz, bugün çalışıyor)
+
+Kurumun Exchange'i kurum içi (`posta.trt.net.tr`, Exchange 2019); IMAP/POP
+dışarı kapalı, EWS ucu yalnız **NTLM/Negotiate** istiyor. Microsoft Graph BT
+onayı gerektirdiği için araya kurumsal onay girmeden çalışan yol EWS oldu.
+
+- **Kapı (`worker/src/ews.ts`, `ntlm.ts`, `posta-ayar.ts`):** Cloudflare
+  Worker'ın `fetch`'i NTLM el sıkışmasını (Type1→Type2→Type3) tek TCP
+  bağlantısına sabitleyemiyor; bu yüzden ham TLS soketinde
+  (`cloudflare:sockets`) elle **NTLMv2** ve minimal bir HTTP/1.1 istemcisi
+  yürütülüyor. Web Crypto'da MD4/MD5 olmadığından saf JS ile yazıldı; doğruluk
+  MS-NLMP §4.2.4 vektörleriyle sınanıyor.
+- **Okuma:** `FindItem` (gelen kutusu, en yeni önce) + `GetItem` (düz metin
+  gövde, gönderen, tarih, `InternetMessageId`, `ConversationId`, To/Cc, ek
+  adları). Planlama grubu adresine (To/Cc) gelenler süzülüyor; ekler yalnız ad,
+  gövde alıntı/imzadan arındırılmış.
+- **Veritabanı:** Worker Firestore'a **kendi yazmıyor** (servis hesabı
+  istemiyoruz). Çektiği postaları döndürüyor; tarayıcı (`src/posta-kapi.ts`)
+  kişinin kendi oturumuyla `postaIsle` ile yazıyor. Sonuç: otomatik çekme bir
+  Planlama tarayıcısı açıkken oluyor; bilgisayar tümüyle kapalıyken sürekli
+  çekme için ya Graph (bölüm 3) ya da ayrı bir barındırma gerekir.
+- **Parola:** kapının KV'sinde (`posta-ayar`), tarayıcıya hiç gelmiyor. Ayarlar
+  › "E-posta kutusu (EWS)" yalnız tam yöneticide, gerçek kipte.
+- **Uçlar:** `GET/PUT /posta/ayar`, `POST /posta/dene` (tam yönetici),
+  `POST /posta/cek` (Planlama/yönetici).
+
+Graph (bölüm 3) ileride aynı `epostaYanitiIsle`/`postaIsle` işlemesini
+besleyebilir; aşağıdaki hedef mimari geçerliliğini koruyor.
+
 ## 3. Hedef mimari
 
 ```

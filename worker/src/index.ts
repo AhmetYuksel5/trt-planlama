@@ -4,6 +4,8 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
+import { cfBaglan, grubaUygun, postalariCek, type EwsMesaj } from "./ews.ts";
+import { bosPostaAyar, postaAyarBirlestir, postaGorunur, type PostaAyar } from "./posta-ayar.ts";
 
 /*
  * Plannersflow yapay zeka kapısı. Veritabanı Firebase'de kalıyor; bu Worker
@@ -72,11 +74,20 @@ interface Kisi {
 }
 
 const AYAR_ANAHTARI = "ayar";
+const POSTA_AYAR_ANAHTARI = "posta-ayar";
 
 const ayarOku = async (env: Env): Promise<Ayar> => {
   const ham = await env.YZ.get(AYAR_ANAHTARI);
   return ham ? (JSON.parse(ham) as Ayar) : bosAyar();
 };
+
+const postaAyarOku = async (env: Env): Promise<PostaAyar> => {
+  const ham = await env.YZ.get(POSTA_AYAR_ANAHTARI);
+  return ham ? ({ ...bosPostaAyar(), ...(JSON.parse(ham) as PostaAyar) }) : bosPostaAyar();
+};
+
+/* EWS mesajını tarayıcının postaIsle'sine uygun biçime indirger; gövde temizliğini istemci de yapıyor (tek kaynak). */
+const postaDisa = (m: EwsMesaj) => ({ kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.tamMetin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler });
 
 /* Gün İstanbul saatiyle dönüyor: haber merkezinin günü. */
 const gun = (simdi: number) => new Date(simdi + 3 * 3600_000).toISOString().slice(0, 10);
@@ -268,6 +279,43 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     } catch (e) {
       return yanit({ hata: String(e instanceof Error ? e.message : e).slice(0, 120) }, 502);
     }
+  }
+
+  /*
+   * Posta köprüsü (EWS). Ayar ve bağlantı denemesi yalnız tam yöneticide;
+   * postayı çekmeyi Planlama da yapabiliyor. Parola KV'de, tarayıcıya hiç
+   * gelmiyor. Worker postayı Firestore'a kendi yazmıyor (servis hesabı
+   * istemiyoruz): çektiğini döndürüyor, tarayıcı kişinin kendi oturumuyla
+   * yazıyor (belgeler/eposta-entegrasyonu.md).
+   */
+  if (yol === "/posta/ayar" || yol === "/posta/dene") {
+    if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
+    const pa = await postaAyarOku(env);
+    if (req.method === "GET" && yol === "/posta/ayar") return yanit(postaGorunur(pa));
+    if (req.method === "PUT" && yol === "/posta/ayar") {
+      const r = postaAyarBirlestir(pa, await req.json().catch(() => null));
+      if ("hata" in r) return yanit({ hata: r.hata }, 400);
+      await env.YZ.put(POSTA_AYAR_ANAHTARI, JSON.stringify(r.ayar));
+      return yanit(postaGorunur(r.ayar));
+    }
+    if (req.method === "POST" && yol === "/posta/dene") {
+      if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
+      const r = await postalariCek({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
+      if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
+      return yanit({ tamam: true, sayi: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).length });
+    }
+  }
+
+  if (req.method === "POST" && yol === "/posta/cek") {
+    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    const pa = await postaAyarOku(env);
+    if (!pa.acik) return yanit({ hata: "kapali" }, 403);
+    if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
+    const g = (await req.json().catch(() => null)) as { adet?: number } | null;
+    const adet = Math.min(50, Math.max(1, Number(g?.adet) || 25));
+    const r = await postalariCek({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
+    if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
+    return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).map(postaDisa) });
   }
 
   // Ayar yalnız tam yöneticide.

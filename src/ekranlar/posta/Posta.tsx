@@ -1,11 +1,13 @@
-import { Mail, MessageSquare, Paperclip, Trash2, Upload } from "lucide-react";
-import { useState, type DragEvent } from "react";
+import { Mail, MessageSquare, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
 import { gondereniBul, postaKonuBasligi, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
+import { GERCEK } from "../../kip";
+import { postalariCek } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
 import { dosyaOku } from "../oneri/Eposta";
 
@@ -163,9 +165,36 @@ export function Posta({ ben }: { ben: Kisi }) {
     if (!confirm(t("postaSilOnay"))) return;
     if (postaSil(ben, konuKimligi) && secili === konuKimligi) setSecili("");
   };
+  const [cekiliyor, setCekiliyor] = useState(false);
+  const cek = async () => {
+    setCekiliyor(true);
+    const r = await postalariCek(ben);
+    setCekiliyor(false);
+    if ("hata" in r) bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    else bildir(r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok"));
+  };
+  // Gerçek kipte sayfa açılınca bir kez kutuyu yokla; parola kapıda, tarayıcıya gelmiyor.
+  const ilk = useRef(false);
+  useEffect(() => {
+    if (GERCEK && !ilk.current) {
+      ilk.current = true;
+      void cek();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <>
-      <SayfaBasi ikon={<Mail size={26} />} baslik={t("postaBasligi")} />
+      <SayfaBasi
+        ikon={<Mail size={26} />}
+        baslik={t("postaBasligi")}
+        sagUc={
+          GERCEK ? (
+            <button className="dugme dugme-ikincil" onClick={cek} disabled={cekiliyor} data-posta-cek>
+              <RefreshCw size={16} /> {t(cekiliyor ? "postaCekiliyor" : "postaCek")}
+            </button>
+          ) : undefined
+        }
+      />
       <div className="posta-duzen">
         <div className="iz">
           <Kart baslik={t("postaSohbetler")} ek={String(sohbetler.length)}>

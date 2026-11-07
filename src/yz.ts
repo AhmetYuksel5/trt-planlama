@@ -64,6 +64,8 @@ const adres = () => {
   }
 };
 
+export const kapiIstek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<YzSonuc<T>> => istek(yol, method, govde);
+
 const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<YzSonuc<T>> => {
   const belge = await (await firebaseYukle()).oturumBelgesi().catch(() => null);
   if (!belge) return { tamam: false, hata: "oturum" };
