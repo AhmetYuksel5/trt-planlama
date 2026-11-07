@@ -261,13 +261,22 @@ const istekBaytlari = (ayar: EwsAyar, authz: string | null, soap: string): Uint8
   return birlestirBayt([metinBayt(bas), govde]);
 };
 
-/* Soketten tam bir HTTP yanıtı okunana dek biriktirir. */
+/*
+ * Soketten tam bir HTTP yanıtı okunana dek biriktirir. Her okumada zaman
+ * aşımı var: sunucu beklediğimiz uzunlukta/biçimde kapatmazsa Worker'ın süre
+ * sınırına çarpıp ham 500 vermesin, temiz bir hata dönsün.
+ */
+const OKUMA_ZAMAN_ASIMI = 15000;
 const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
   let tampon: Uint8Array = new Uint8Array(0);
   for (;;) {
     const cerceve = httpCerceveCoz(tampon);
     if (cerceve) return cerceve;
-    const parca = await soket.oku();
+    let zamanlayici: ReturnType<typeof setTimeout> | undefined;
+    const parca = await Promise.race([
+      soket.oku(),
+      new Promise<never>((_, red) => { zamanlayici = setTimeout(() => red(new Error("okuma zaman aşımı")), OKUMA_ZAMAN_ASIMI); }),
+    ]).finally(() => clearTimeout(zamanlayici));
     if (!parca) {
       const son = httpCerceveCoz(tampon);
       if (son) return son;
