@@ -47,7 +47,7 @@ export const findItemIstegi = (adet: number): string =>
   ZARF(
     `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
       `<m:IndexedPageItemView MaxEntriesReturned="${adet}" Offset="0" BasePoint="Beginning"/>` +
-      `<m:SortOrder><t:FieldOrder Order="Descending"><t:FieldURI FieldURI="item:DateTimeReceived"/></t:FieldOrder></m:SortOrder>` +
+      `<t:SortOrder><t:FieldOrder Order="Descending"><t:FieldURI FieldURI="item:DateTimeReceived"/></t:FieldOrder></t:SortOrder>` +
       `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
   );
 

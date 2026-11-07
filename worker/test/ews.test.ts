@@ -14,6 +14,8 @@ test("FindItem isteği gelen kutusunu en yeni önce istiyor", () => {
   assert.ok(x.includes('DistinguishedFolderId Id="inbox"'));
   assert.ok(x.includes('MaxEntriesReturned="25"'));
   assert.ok(x.includes('Order="Descending"'));
+  // SortOrder types (t:) ad alanında olmalı; m:SortOrder EWS'de "The request is invalid" veriyordu.
+  assert.ok(x.includes("<t:SortOrder>") && !x.includes("<m:SortOrder>"));
 });
 
 test("GetItem isteği düz metin gövde ve gerekli alanları istiyor", () => {
