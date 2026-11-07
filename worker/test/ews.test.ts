@@ -155,6 +155,17 @@ test("postalariCekOtomatik: MIC'siz kimlik reddedilince MIC'li yeni bağlantıda
   assert.equal(baglanti, 2, "iki bağlantı denendi");
 });
 
+test("postalariCek: 500 yanıtı bağlantı sıfırlanınca da fault metnini veriyor", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.trt.net.tr", kullanici: "u", parola: "p", alan: "TRT" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`;
+  const fault = "<soap:Fault><faultstring>ErrorInternalServerError</faultstring></soap:Fault>";
+  // 500'ün Content-Length'i gövdeden büyük (eksik), ardından soket sıfırlanıyor (oku → null).
+  const eksik500 = `HTTP/1.1 500 Internal Server Error\r\nContent-Length: 9999\r\n\r\n${fault}`;
+  const { soket } = sahteSoket([`HTTP/1.1 401 Unauthorized\r\n${auth}Content-Length: 0\r\n\r\n`, eksik500]);
+  const sonuc = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("hata" in sonuc && /500/.test(sonuc.hata) && /ErrorInternalServerError/.test(sonuc.hata), "500 ve fault metni: " + JSON.stringify(sonuc));
+});
+
 test("postalariCek: yanlış kimlikte 401 → hata metni", async () => {
   const ayar: EwsAyar = { sunucu: "posta.trt.net.tr", kullanici: "x", parola: "y", alan: "TRT" };
   const { soket } = sahteSoket([

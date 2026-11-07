@@ -188,11 +188,11 @@ const CRLF2 = [13, 10, 13, 10];
  * Content-Length ya da Transfer-Encoding: chunked ile belirleniyor. Tam
  * değilse null (soketten daha çok okunmalı).
  */
-export const httpCerceveCoz = (baytlar: Uint8Array): HttpYanit | null => {
+/* Başlık bloğu tamamlandıysa durum, başlıklar ve gövde baytlarını ayırır. */
+const basliklariCoz = (baytlar: Uint8Array): { durum: number; basliklar: Record<string, string>; kalan: Uint8Array } | null => {
   const bosSatir = altIndeks(baytlar, CRLF2);
   if (bosSatir < 0) return null;
-  const basMetin = latin1(baytlar.subarray(0, bosSatir));
-  const satirlar = basMetin.split("\r\n");
+  const satirlar = latin1(baytlar.subarray(0, bosSatir)).split("\r\n");
   const durum = Number(satirlar[0].split(" ")[1]) || 0;
   const basliklar: Record<string, string> = {};
   for (const s of satirlar.slice(1)) {
@@ -204,8 +204,13 @@ export const httpCerceveCoz = (baytlar: Uint8Array): HttpYanit | null => {
     // sonuncuyla ezmeyip birleştir, yoksa NTLM challenge "Negotiate"in altında kaybolup bulunamıyordu.
     basliklar[ad] = basliklar[ad] ? `${basliklar[ad]}, ${deger}` : deger;
   }
-  const govdeBas = bosSatir + 4;
-  const kalan = baytlar.subarray(govdeBas);
+  return { durum, basliklar, kalan: baytlar.subarray(bosSatir + 4) };
+};
+
+export const httpCerceveCoz = (baytlar: Uint8Array): HttpYanit | null => {
+  const b = basliklariCoz(baytlar);
+  if (!b) return null;
+  const { durum, basliklar, kalan } = b;
   if ((basliklar["transfer-encoding"] ?? "").toLowerCase().includes("chunked")) {
     const govde = dechunk(kalan);
     return govde ? { durum, basliklar, govde } : null;
@@ -213,6 +218,19 @@ export const httpCerceveCoz = (baytlar: Uint8Array): HttpYanit | null => {
   const uzunluk = Number(basliklar["content-length"] ?? "0");
   if (kalan.length < uzunluk) return null;
   return { durum, basliklar, govde: kalan.subarray(0, uzunluk) };
+};
+
+/*
+ * Bağlantı yanıt tamamlanmadan kapanınca (Exchange 500'den sonra bağlantıyı
+ * sıfırlayabiliyor): başlık bloğu geldiyse eldeki gövdeyle en iyi çerçeveyi
+ * döndür, böylece 500'ün SOAP fault metni yine okunabilsin. Başlık yoksa null.
+ */
+const cerceveZorla = (baytlar: Uint8Array): HttpYanit | null => {
+  const b = basliklariCoz(baytlar);
+  if (!b) return null;
+  const chunked = (b.basliklar["transfer-encoding"] ?? "").toLowerCase().includes("chunked");
+  const govde = chunked ? (dechunk(b.kalan) ?? b.kalan) : b.kalan;
+  return { durum: b.durum, basliklar: b.basliklar, govde };
 };
 
 /* Chunked gövdeyi birleştirir; son parça (0) gelmemişse null. */
@@ -280,14 +298,16 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
     const cerceve = httpCerceveCoz(tampon);
     if (cerceve) return cerceve;
     let zamanlayici: ReturnType<typeof setTimeout> | undefined;
+    // Soketin sıfırlanması ("Stream was cancelled") okuma hatası olarak gelir; EOF gibi ele al.
     const parca = await Promise.race([
-      soket.oku(),
+      soket.oku().catch(() => null),
       new Promise<never>((_, red) => { zamanlayici = setTimeout(() => red(new Error("okuma zaman aşımı")), OKUMA_ZAMAN_ASIMI); }),
     ]).finally(() => clearTimeout(zamanlayici));
     if (!parca) {
-      const son = httpCerceveCoz(tampon);
+      // Bağlantı kapandı/sıfırlandı: tam çerçeve varsa onu, yoksa başlık+eldeki gövdeyle en iyisini döndür.
+      const son = httpCerceveCoz(tampon) ?? cerceveZorla(tampon);
       if (son) return son;
-      throw new Error("bağlantı yanıt tamamlanmadan kapandı");
+      throw new Error("bağlantı yanıt gelmeden kapandı");
     }
     tampon = birlestirBayt([tampon, parca]);
   }
