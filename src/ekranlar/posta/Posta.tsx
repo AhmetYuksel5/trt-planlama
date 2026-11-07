@@ -1,9 +1,9 @@
-import { ArrowLeft, Mail, MessageSquare, Paperclip, RefreshCw, Send, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Mail, MessageSquare, RefreshCw, Send, Trash2, Upload } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
-import { gondereniBul, postaKonuBasligi, type GelenEposta } from "../../eposta";
+import { gondereniBul, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
@@ -58,6 +58,14 @@ const gonderenAdi = (v: ReturnType<typeof useVeri>, m: PostaMesaji, ad: (k: Kisi
   return ham.includes("@") ? ham.split("@")[0] : ham;
 };
 
+/* Sohbet kartının avatar harfi ve rengi (konuya göre sabit). */
+const ilkHarf = (s: string): string => [...s.trim()][0]?.toLocaleUpperCase("tr") ?? "?";
+const sohbetTonu = (s: string): string => {
+  let h = 0;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return `hsl(${h % 360} 42% 52%)`;
+};
+
 /* Sohbet listesinde gönderenin adı (e-postasız). */
 const GonderenEtiketi = ({ m }: { m: PostaMesaji }) => {
   const { ad } = useDil();
@@ -82,6 +90,7 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const onceki = sohbet.mesajlar[i - 1];
           const yeniGun = !onceki || yerelGun(onceki.zaman) !== yerelGun(m.zaman);
           const yeniGonderen = yeniGun || !onceki || onceki.kimden !== m.kimden;
+          const govde = m.giden ? m.metin : postaMetniSadelestir(m.metin, gonderenAdi(v, m, ad));
           return (
             <Fragment key={m.id}>
               {yeniGun && (
@@ -95,14 +104,17 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                     @{gonderenAdi(v, m, ad)}
                   </div>
                 )}
-                {m.metin.trim() && (
+                {govde.trim() && (
                   <Icerik blok className="posta-metin">
-                    {m.metin}
+                    {govde}
                   </Icerik>
                 )}
                 {m.ekler.map((e, j) => (
                   <span className="posta-ek" key={j}>
-                    <Paperclip size={14} /> <bdi>{e}</bdi>
+                    <span className="posta-ek-ikon">
+                      <FileText size={18} />
+                    </span>
+                    <bdi>{e}</bdi>
                   </span>
                 ))}
                 <span className="posta-zaman">{saatYaz(m.zaman, dil)}</span>
@@ -280,14 +292,19 @@ export function Posta({ ben }: { ben: Kisi }) {
               <ol className="posta-sohbetler" data-posta-liste>
                 {sohbetler.map((s) => (
                   <li key={s.konuKimligi}>
-                    <button type="button" className={s.konuKimligi === secili ? "secili" : ""} onClick={() => setSecili(s.konuKimligi)} data-posta-sohbet-bag={s.konuKimligi}>
-                      <span className="posta-sohbet-bas">
-                        <Icerik>{s.baslik}</Icerik>
-                        <small className="sonuk ince">{saatYaz(s.son.zaman, dil)}</small>
+                    <button type="button" className={`posta-sohbet${s.konuKimligi === secili ? " secili" : ""}`} onClick={() => setSecili(s.konuKimligi)} data-posta-sohbet-bag={s.konuKimligi}>
+                      <span className="posta-sohbet-avatar" style={{ ["--ton" as string]: sohbetTonu(s.konuKimligi) }} aria-hidden="true">
+                        {ilkHarf(s.baslik)}
                       </span>
-                      <small className="sonuk">
-                        <GonderenEtiketi m={s.son} /> · {t("postaMesajSayisi", { n: s.mesajlar.length })}
-                      </small>
+                      <span className="posta-sohbet-govde">
+                        <span className="posta-sohbet-bas">
+                          <Icerik>{s.baslik}</Icerik>
+                          <small className="sonuk ince">{saatYaz(s.son.zaman, dil)}</small>
+                        </span>
+                        <small className="sonuk posta-sohbet-alt">
+                          <GonderenEtiketi m={s.son} /> · {t("postaMesajSayisi", { n: s.mesajlar.length })}
+                        </small>
+                      </span>
                     </button>
                   </li>
                 ))}

@@ -29,7 +29,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/posta");
   ok((await p.locator("[data-posta-kimden]").count()) === 1, "köprü açık");
 
-  const metinli = "Yarın Gazze'den bir paket önerim var.\n\nOn Mon, 3 Nov 2026 at 10:00, Planlama <planning@trt.net.tr> wrote:\n> Önerilerinizi bekliyoruz";
+  const metinli = "Yarın Gazze'den bir paket önerim var.\nDetay: https://ornek.local/haber\n\nMuhammed Ali\nمراسل TRT عربي\nجوال: +90 555 111 2233\n\nOn Mon, 3 Nov 2026 at 10:00, Planlama <planning@trt.net.tr> wrote:\n> Önerilerinizi bekliyoruz";
   await p.locator("[data-posta-kimden]").fill("omar@ornek.local");
   await p.locator("[data-posta-konu]").fill("Gazze önerisi");
   await p.locator("[data-posta-metin]").fill(metinli);
@@ -43,6 +43,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const govde = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
   ok(govde.includes("paket önerim var"), "yeni metin sohbette");
   ok(!govde.includes("wrote:") && !govde.includes("Önerilerinizi bekliyoruz"), "alıntı ayıklandı");
+  ok(!govde.includes("https://") && !govde.includes("ornek.local"), "bağlantı silindi");
+  ok(!govde.includes("مراسل") && !govde.includes("555"), "imza/ünvan/telefon silindi");
 
   // Aynı konunun yanıtı (RE:) aynı sohbete
   await p.locator("[data-posta-kimden]").fill("omar@ornek.local");

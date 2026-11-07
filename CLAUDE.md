@@ -1017,9 +1017,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,
   içe aktarmada konu çekirdeğinden. Aynı Message-ID iki kez işlenmiyor.
   Görünüm WhatsApp gibi (`.posta-govde`/`.posta-balon`/`.posta-yaz`): sade
-  balonlar, yalnız mesaj + ekli dosya çipleri + köşede saat, gün ayracı;
-  gönderen grup başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı,
-  yoksa `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Telefonda tek ekran:
+  balonlar, yalnız mesaj + ekli dosya + köşede saat, gün ayracı; gönderen grup
+  başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı, yoksa
+  `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Balonda gövde ekranda
+  `eposta.ts → postaMetniSadelestir` ile daha da sadeleşiyor: bağlantılar, boş
+  bağlantı etiketleri ve sondaki imza bloğu (e-posta, telefon, sosyal, kısa
+  ünvan satırları, gönderenin ad satırı) atılıyor; tam metin `tamMetin`'de
+  duruyor. Ekler başlıksız, dosya biçiminde kutu (`.posta-ek`, dosya ikonu +
+  ad; dosyanın kendisi indirilmiyor). Sohbet listesi kontürlü ayrı kartlar
+  (`.posta-sohbet`: renkli avatar harfi, başlık, `@gönderen`, mesaj sayısı). Telefonda tek ekran:
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
   Buradan yanıt gönderilir (`Yazma`, `.posta-yaz`): alıcı sohbetteki son gelen
   postanın göndereni, konu "RE: …"; gerçek kipte kapı EWS `CreateItem`

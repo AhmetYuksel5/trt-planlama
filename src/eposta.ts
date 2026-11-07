@@ -177,6 +177,46 @@ export const postaKonuCekirdegi = (konu: string) => {
   return k.replace(/\s+/g, " ").trim().toLowerCase();
 };
 
+/*
+ * Ekranda gösterilecek mesaj gövdesini sadeleştirir: bağlantılar (http, www,
+ * t.me, mailto) atılır, sondaki imza bloğu (boş satır, e-posta, telefon,
+ * sosyal, kısa ünvan/iletişim satırları) kesilir. Yalnız mesajın kendisi
+ * kalsın. Tam metin ayrıca saklanıyor (PostaMesaji.tamMetin), hiçbir şey
+ * kaybolmuyor.
+ */
+const BAGLANTI = /\bhttps?:\/\/\S+|\bwww\.\S+|\bt\.me\/\S+|\bmailto:\S+/gi;
+const IMZA_SATIRI = [
+  /^[-_–—]{2,}\s*$/, // ayraç çizgisi
+  /@[^\s@]+\.[^\s@]+/, // e-posta adresi
+  /(?:\+?\d[\d ()\-]{6,}\d)/, // telefon
+  /\b(?:facebook|twitter|instagram|youtube|linkedin|tiktok|telegram|snapchat)\b/i,
+  /تابعونا|follow us|تابعنا/i,
+];
+// Kısa son satırda ünvan/iletişim sözcüğü (cümle noktalaması yoksa): imza say.
+const UNVAN_SOZCUK = /\b(محرر|مراسل|مراسلة|منتج|مدير|رئيس|قسم|هاتف|جوال|موبايل|محمول|تلفون|فاكس|مكتب|قناة|TRT|tel|phone|fax|mob)\b/i;
+const imzaMi = (s: string): boolean => {
+  const t = s.trim();
+  if (t === "") return true;
+  if (IMZA_SATIRI.some((r) => r.test(t))) return true;
+  // Kısa (<45) ve cümle bitişi olmayan ünvan satırı.
+  return t.length <= 45 && UNVAN_SOZCUK.test(t) && !/[.!؟?]\s*$/.test(t);
+};
+// Bağlantısı atılınca boş kalan etiket satırı ("رابط:", "Link:"): atılır.
+const BOS_ETIKET = /^\s*(?:رابط|الرابط|link|url|detay|detaylar|kaynak|المصدر|source)\s*:\s*$/i;
+export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
+  const satirlar = metin
+    .replace(BAGLANTI, "")
+    .split(/\r?\n/)
+    .map((s) => (BOS_ETIKET.test(s) ? "" : s));
+  const ad = gonderenAd.trim().toLowerCase();
+  const adSatiri = (s: string) => !!ad && s.trim().toLowerCase() === ad; // imzadaki ad satırı
+  let son = satirlar.length;
+  while (son > 0 && (imzaMi(satirlar[son - 1]) || adSatiri(satirlar[son - 1]))) son--;
+  const sade = satirlar.slice(0, son).join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  // Her şey imza sanıldıysa (tümü kısa/linkli) özgün metni ver, boş balon çıkmasın.
+  return sade || metin.replace(BAGLANTI, "").trim();
+};
+
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */
 export const postaKonuBasligi = (konu: string) => {
   let k = (konu ?? "").replace(/\r\n?/g, " ").trim();

@@ -513,11 +513,15 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 
 /* Posta: solda sohbet listesi (dar), sağda seçili sohbet (geniş); telefonda alt alta. */
 .posta-duzen { display: grid; gap: var(--ara-4); grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
-.posta-sohbetler { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-block-size: 68vh; overflow: auto; }
-.posta-sohbetler button { inline-size: 100%; text-align: start; border: 0; background: transparent; cursor: pointer; border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); display: grid; gap: 2px; color: inherit; font: inherit; }
-.posta-sohbetler button:hover { background: var(--zemin); }
-.posta-sohbetler button.secili { background: var(--vurgu-sis); }
+.posta-sohbetler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); max-block-size: 68vh; overflow: auto; }
+/* Her sohbet kontürlü ayrı kart: avatar + başlık/gönderen. */
+.posta-sohbet { inline-size: 100%; text-align: start; cursor: pointer; font: inherit; color: inherit; display: flex; gap: var(--ara-3); align-items: center; padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); }
+.posta-sohbet:hover { border-color: var(--vurgu); }
+.posta-sohbet.secili { border-color: var(--vurgu); background: var(--vurgu-sis); }
+.posta-sohbet-avatar { flex: 0 0 auto; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--ton, var(--vurgu)); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: var(--punto); }
+.posta-sohbet-govde { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
 .posta-sohbet-bas { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ara-2); }
+.posta-sohbet-alt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Sohbet WhatsApp gibi: sade balonlar, gönderen adı grup başına bir kez, köşede saat, gün ayracı. */
 .posta-govde { background: var(--zemin); border-radius: var(--yaricap-kart); }
@@ -525,7 +529,9 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-balon { position: relative; align-self: flex-start; max-inline-size: 85%; background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 12px; border-start-start-radius: 4px; padding: var(--ara-2) var(--ara-3); padding-inline-end: 56px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06); }
 .posta-gonderen { font-size: var(--punto-kucuk); font-weight: 600; color: var(--vurgu); margin-block-end: 2px; }
 .posta-metin { white-space: pre-wrap; overflow-wrap: anywhere; }
-.posta-ek { display: inline-flex; align-items: center; gap: 4px; margin-block-start: 4px; padding: 4px 8px; background: var(--zemin); border: 1px solid var(--cizgi); border-radius: 8px; font-size: var(--punto-kucuk); }
+/* Ek: başlıksız, dosya biçiminde bir kutu (ikon + ad). */
+.posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: 4px; padding: 6px 10px; background: var(--zemin); border: 1px solid var(--cizgi); border-radius: 10px; font-size: var(--punto-kucuk); max-inline-size: 100%; }
+.posta-ek-ikon { flex: 0 0 auto; inline-size: 30px; block-size: 30px; border-radius: 6px; background: var(--yuzey); border: 1px solid var(--cizgi); display: grid; place-items: center; color: var(--vurgu); }
 .posta-ek bdi { overflow-wrap: anywhere; }
 .posta-zaman { position: absolute; inset-block-end: 4px; inset-inline-end: 10px; font-size: 11px; color: var(--sonuk); }
 .posta-gun { align-self: center; margin-block: var(--ara-2); }
