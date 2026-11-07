@@ -1034,10 +1034,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
   öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,
   içe aktarmada konu çekirdeğinden. Aynı Message-ID iki kez işlenmiyor.
-  Görünüm WhatsApp gibi (`.posta-govde`/`.posta-balon`/`.posta-yaz`): sade
-  balonlar, yalnız mesaj + ekli dosya + köşede saat, gün ayracı; gönderen grup
-  başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı, yoksa
-  `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Balonda gövde ekranda
+  Görünüm (kullanıcının gösterdiği örnekten; `.posta-govde`/`.posta-balon`/`.posta-yaz`):
+  gelen balon başta, giden sonda, aralarında girinti; her gönderenin hafif tonu
+  (`Posta.tsx → gonderenTonu`, `--ton`; giden kırmızımsı, gelen o tona düşmez),
+  az yuvarlak köşe; gönderenin adı grup başına bir kez (adres görünmez: kayıtlı
+  kişiyse adı, yoksa `kimdenAd`/adresin yerel kısmı; `gonderenAdi`), altta gün
+  ve saat (gün ayracı yok). Ek balonda türünün renkli ikonuyla (`DosyaIkonu`:
+  PDF kırmızı, XLS yeşil, DOC mavi; .xlsx da "XLS"). Sohbetin dosyaları yanda
+  dikey sütunda (`SohbetDosyalari`, `.posta-dosyalar`; kullanıcı: üstte yatay
+  şerit değil), en yenisi üstte, basınca mesajına kayar; telefonda dar sütun. Balonda gövde ekranda
   `eposta.ts → postaMetniSadelestir` ile daha da sadeleşiyor: gömülü görsel
   izleri ([cid:…], <logo.png>), yasal uyarı/tarama footer'ı ve sondaki imza
   bloğu atılıyor; tam metin `tamMetin`'de duruyor. İmza bloğu "bölge" olarak
@@ -2017,6 +2022,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Özel yayında konuk listesi: ad kalın, unvan altında sönük, durum rozet gibi
   hap seçici (`.durum-secimi`), ekleme satırı `girdi` alanlarıyla
   (`.konuk-ekle`, telefonda alt alta).
+- Ayarlar sayfası başlık satırlarından oluşur (kullanıcı: kartlar bütün
+  sayfayı kaplamasın): her `Kart` katlanır satır, basınca açılır
+  (`Parcalar.tsx → KatlanirKartlar` bağlamı; sayfa açar, içteki kartlar
+  katlanmaz). Muhabirde "Bilgisayarda WhatsApp" yok (onun ekranında WhatsApp
+  düğmesi yok).
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
   yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Uçtan uca testler
   depoda (`testler/`, `testler/calistir.sh`; önizleme açıkken): geçici

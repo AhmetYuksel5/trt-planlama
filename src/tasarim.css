@@ -493,6 +493,14 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .kart-bas h2 svg { color: var(--lacivert); }
 .kart-bas .ek { color: var(--sonuk); font-weight: 500; font-size: var(--punto-kucuk); }
 .kart-bas .sag-uc { margin-inline-start: auto; display: flex; gap: var(--ara-2); align-items: center; }
+/* Katlanır kart (Ayarlar): başlık satırı, basınca ayrıntı; satırlar alt alta, okunur genişlikte. */
+.ayar-listesi { display: flex; flex-direction: column; gap: var(--ara-2); max-inline-size: 760px; }
+details.kart.katlanir { padding-block: 0; }
+details.kart.katlanir > summary.kart-bas { list-style: none; cursor: pointer; margin: 0; min-block-size: 52px; padding-block: var(--ara-2); }
+details.kart.katlanir > summary.kart-bas::-webkit-details-marker { display: none; }
+.katlanir-ok { margin-inline-start: auto; flex: 0 0 auto; color: var(--sonuk); transition: transform 0.15s; }
+details.kart.katlanir[open] > summary .katlanir-ok { transform: rotate(180deg); }
+details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-4); border-block-start: 1px solid var(--cizgi); }
 .tumu {
   display: inline-flex; align-items: center; gap: var(--ara-1);
   font-size: var(--punto-kucuk); font-weight: 600; color: var(--murekkep);
@@ -523,11 +531,24 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-sohbet-bas { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ara-2); }
 .posta-sohbet-alt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Sohbet WhatsApp gibi: sade balonlar, gönderen adı grup başına bir kez, köşede saat, gün ayracı. */
-.posta-govde { background: var(--zemin); border-radius: var(--yaricap-kart); }
-.posta-mesajlar { list-style: none; margin: 0; padding: var(--ara-3); display: flex; flex-direction: column; gap: 3px; max-block-size: 66vh; overflow: auto; }
-.posta-balon { position: relative; align-self: flex-start; max-inline-size: 85%; background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 12px; border-start-start-radius: 4px; padding: var(--ara-2) var(--ara-3); padding-inline-end: 56px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06); }
-.posta-gonderen { font-size: var(--punto-kucuk); font-weight: 600; color: var(--vurgu); margin-block-end: 2px; }
+/*
+ * Sohbet: gelen balon başta, giden sonda, aralarında girinti. Her gönderenin
+ * kendi hafif tonu (--ton, Posta.tsx → gonderenTonu): zemin, kenar ve adı
+ * aynı tondan; giden kırmızımsı. Köşeler az yuvarlak, gölgesiz.
+ */
+.posta-sohbet-ic { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ara-3); align-items: start; }
+.posta-govde { background: var(--yuzey); border-radius: var(--yaricap-kart); min-inline-size: 0; }
+.posta-mesajlar { list-style: none; margin: 0; padding: var(--ara-3) var(--ara-2); display: flex; flex-direction: column; gap: var(--ara-2); max-block-size: 66vh; overflow: auto; }
+.posta-balon {
+  --ton: 220;
+  position: relative; align-self: flex-start; max-inline-size: 80%; margin-inline-end: 12%;
+  background: hsl(var(--ton) 28% 96%); border: 1px solid hsl(var(--ton) 22% 84%); border-radius: 4px;
+  padding: var(--ara-3) var(--ara-4) var(--ara-2);
+  transition: box-shadow 0.3s;
+}
+.posta-balon.ilk { margin-block-start: var(--ara-2); }
+.posta-balon.vurgulu { box-shadow: 0 0 0 3px hsl(var(--ton) 60% 70%); }
+.posta-gonderen { font-size: var(--punto-kucuk); font-weight: 700; color: hsl(var(--ton) 25% 38%); margin-block-end: 2px; }
 .posta-metin { white-space: pre-wrap; overflow-wrap: anywhere; }
 /* Gövdesi tümüyle imza/bağlantı olan posta: metin yerine sönük kısa işaret. */
 .posta-bos { font-size: 12px; font-style: italic; color: var(--sonuk); }
@@ -535,20 +556,33 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-alinti { border-inline-start: 3px solid var(--cizgi); padding-inline-start: 8px; opacity: 0.9; }
 /* Kimlik girilmemişken "Sonra yap" sonrası Posta sayfasındaki ince giriş çubuğu. */
 /* Ek: başlıksız, dosya biçiminde bir kutu (ikon + ad). */
-.posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: 4px; padding: 6px 10px; background: var(--zemin); border: 1px solid var(--cizgi); border-radius: 10px; font-size: var(--punto-kucuk); max-inline-size: 100%; }
-.posta-ek-ikon { flex: 0 0 auto; inline-size: 30px; block-size: 30px; border-radius: 6px; background: var(--yuzey); border: 1px solid var(--cizgi); display: grid; place-items: center; color: var(--vurgu); }
+.posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: var(--ara-2); font-weight: 600; color: var(--lacivert); max-inline-size: 100%; }
 .posta-ek bdi { overflow-wrap: anywhere; }
-.posta-zaman { position: absolute; inset-block-end: 4px; inset-inline-end: 10px; font-size: 11px; color: var(--sonuk); }
-.posta-gun { align-self: center; margin-block: var(--ara-2); }
-.posta-gun span { background: var(--yuzey-2); color: var(--sonuk); font-size: var(--punto-kucuk); padding: 2px 10px; border-radius: 10px; }
-/* Giden (buradan gönderilen yanıt): sağda, yeşilimsi balon. */
-.posta-balon.giden { align-self: flex-end; background: var(--iyi-sis, #dcf8c6); border-color: transparent; border-radius: 12px; border-end-end-radius: 4px; border-start-start-radius: 12px; }
+.posta-zaman { display: block; text-align: end; margin-block-start: var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); font-variant-numeric: tabular-nums; }
+/* Dosya ikonu: sayfa çizgisi ve altında türün etiketi, türün renginde. */
+.dosya-ikon { --dosya: var(--sonuk); position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; color: var(--dosya); }
+.dosya-ikon b { position: absolute; inset-block-end: 5px; padding: 0 3px; border-radius: 2px; background: var(--dosya); color: #fff; font-size: 8px; font-weight: 700; line-height: 1.3; letter-spacing: 0.02em; }
+.dosya-ikon.buyuk b { inset-block-end: 9px; font-size: 10px; padding: 1px 5px; }
+.dosya-ikon[data-tur="pdf"] { --dosya: #c0392b; }
+.dosya-ikon[data-tur="xls"] { --dosya: #1e7b34; }
+.dosya-ikon[data-tur="doc"] { --dosya: #2a5caa; }
+.dosya-ikon[data-tur="ppt"] { --dosya: #c55a11; }
+.dosya-ikon[data-tur="gorsel"], .dosya-ikon[data-tur="video"] { --dosya: #7b4fa0; }
+/* Sohbetin dosyaları yanda dikey sütun; basınca mesajına kayar. */
+.posta-dosyalar { inline-size: 168px; max-block-size: 66vh; overflow: auto; }
+.posta-dosyalar ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ara-2); }
+.posta-dosya { inline-size: 100%; min-block-size: 44px; display: flex; flex-direction: column; align-items: center; gap: var(--ara-1); padding: var(--ara-3) var(--ara-2); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 4px; text-align: center; font: inherit; color: inherit; cursor: pointer; }
+.posta-dosya:hover { border-color: var(--lacivert); }
+.posta-dosya bdi { font-size: var(--punto-kucuk); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.posta-dosya small { color: var(--sonuk); font-size: 11px; }
+/* Giden (buradan gönderilen yanıt): sonda, girintili, kırmızımsı ton. */
+.posta-balon.giden { --ton: 355; align-self: flex-end; margin-inline-end: 0; margin-inline-start: 12%; background: hsl(var(--ton) 60% 96%); border-color: hsl(var(--ton) 45% 86%); }
 /* WhatsApp gibi yazma kutusu: sohbetin altında. */
 .posta-yaz { display: flex; gap: var(--ara-2); align-items: flex-end; padding-block-start: var(--ara-2); }
 .posta-yaz textarea { flex: 1; min-block-size: 40px; max-block-size: 120px; resize: none; }
 .posta-yaz .dugme { flex: 0 0 auto; align-self: stretch; }
 /* Kim kime yazdı: balonun altında sönük alıcı satırı, yanıtın üstünde alıcı çipleri. */
-.posta-alicilar { margin-block-start: 4px; padding-inline-end: 44px; font-size: 11px; color: var(--sonuk); overflow-wrap: anywhere; }
+.posta-alicilar { margin-block-start: 4px; font-size: 11px; color: var(--sonuk); overflow-wrap: anywhere; }
 .posta-yaz-alani { padding-block-start: var(--ara-2); border-block-start: 1px solid var(--cizgi); margin-block-start: var(--ara-2); }
 .posta-alici-satiri { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ara-2); font-size: var(--punto-kucuk); }
 .posta-alici-satiri .posta-adres-alani { flex: 1 1 160px; min-inline-size: 0; }
@@ -1622,6 +1656,13 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .posta-duzen.secili .posta-liste-sutun { display: none; }
   .posta-duzen:not(.secili) .posta-sohbet-sutun { display: none; }
   .posta-mesajlar { max-block-size: 70vh; }
+  /* Telefonda dosya sütunu daralır: ikon ve kısaltılmış ad. */
+  .posta-dosyalar { inline-size: 76px; max-block-size: 70vh; }
+  .posta-dosya { padding: var(--ara-2) var(--ara-1); }
+  .posta-dosya bdi { font-size: 11px; -webkit-line-clamp: 2; }
+  .posta-dosya small { display: none; }
+  .posta-balon { max-inline-size: 90%; margin-inline-end: 6%; }
+  .posta-balon.giden { margin-inline-start: 6%; }
   /* Plan satırında ad üstte, ilerleme ve durum altta. */
   .plan-satiri { flex-wrap: wrap; row-gap: var(--ara-1); }
   .plan-satiri .ad { flex: 1 1 100%; }

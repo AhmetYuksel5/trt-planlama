@@ -1,7 +1,7 @@
-import { ArrowLeft, FileText, Lock, Mail, MessageSquare, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { ArrowLeft, File, Lock, Mail, MessageSquare, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { saatYaz, tarihYaz, useDil } from "../../dil";
+import { saatYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaSil, postaEtiketsizleriGruba } from "../../eylemler";
 import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, type KomutTuru } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
@@ -227,10 +227,41 @@ function AliciSatiri({ m }: { m: PostaMesaji }) {
   );
 }
 
+/* Gönderene göre sabit, hafif ton (balonun zemini ve adı): kim yazdı bir bakışta ayrılsın. */
+const gonderenTonu = (adres: string): string => {
+  let h = 7;
+  for (const c of adres.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  // Giden balonun kırmızımsı tonuna (330–40) düşmesin: gelenle giden karışmasın.
+  return String(40 + (h % 280));
+};
+
+/* Dosyanın türü uzantıdan: ikonun rengi ve üstündeki etiket (PDF kırmızı, XLS yeşil…). */
+const DOSYA_TURU: Record<string, string> = {
+  pdf: "pdf", doc: "doc", docx: "doc", rtf: "doc", txt: "doc", xls: "xls", xlsx: "xls", csv: "xls", ppt: "ppt", pptx: "ppt",
+  zip: "zip", rar: "zip", "7z": "zip", jpg: "gorsel", jpeg: "gorsel", png: "gorsel", heic: "gorsel", mp4: "video", mov: "video", mp3: "ses", wav: "ses", m4a: "ses",
+};
+/* İkondaki etiket kurumun alıştığı üç harf: .xlsx da XLS, .docx da DOC. */
+const ETIKET: Record<string, string> = { pdf: "pdf", xls: "xls", doc: "doc", ppt: "ppt", zip: "zip" };
+const uzanti = (ad: string) => (ad.includes(".") ? ad.split(".").pop()!.toLowerCase() : "");
+const uzantisiz = (ad: string) => (ad.includes(".") ? ad.slice(0, ad.lastIndexOf(".")) : ad);
+
+function DosyaIkonu({ ad, buyuk }: { ad: string; buyuk?: boolean }) {
+  const u = uzanti(ad);
+  return (
+    <span className={`dosya-ikon${buyuk ? " buyuk" : ""}`} data-tur={DOSYA_TURU[u] ?? "diger"} aria-hidden="true">
+      <File size={buyuk ? 44 : 26} strokeWidth={1.4} />
+      {u && <b>{(ETIKET[DOSYA_TURU[u]] ?? u.slice(0, 4)).toUpperCase()}</b>}
+    </span>
+  );
+}
+
+/* Balondaki zaman: gün ve saat birlikte (gün ayracı yok). */
+const balonZamani = (zaman: string, dil: Parameters<typeof saatYaz>[1]) => `${yerelGun(zaman).split("-").reverse().join(".")} ${saatYaz(zaman, dil)}`;
+
 /*
- * Sohbet WhatsApp gibi: gereksiz üst veri yok, yalnız mesaj balonu ve ekli
- * dosyalar. Gönderen adı grup başına bir kez (ardışık aynı gönderende
- * tekrarlamaz), köşede saat, günler arasında ayraç; altta kime gittiği.
+ * Sohbet: gelen balon başta, giden sonda, aralarında girinti; her gönderenin
+ * kendi hafif tonu, adı grup başına bir kez (ardışık aynı gönderende
+ * tekrarlamaz). Ek balonun içinde türünün ikonuyla; altta kime gittiği.
  */
 function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
   const { ad, dil, t } = useDil();
@@ -241,8 +272,7 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
         {sohbet.mesajlar.map((m, i) => {
           const kisi = gondereniBul(v, m.kimden);
           const onceki = sohbet.mesajlar[i - 1];
-          const yeniGun = !onceki || yerelGun(onceki.zaman) !== yerelGun(m.zaman);
-          const yeniGonderen = yeniGun || !onceki || onceki.kimden !== m.kimden;
+          const yeniGonderen = !onceki || onceki.kimden !== m.kimden || !!onceki.giden !== !!m.giden;
           const gad = gonderenAdi(v, m, ad);
           const sade = m.giden ? m.metin : postaMetniSadelestir(m.metin, gad);
           // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
@@ -250,41 +280,65 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const govde = sade.trim() ? sade : alinti;
           const ekler = m.ekler.filter((e) => !gizliEkMi(e));
           return (
-            <Fragment key={m.id}>
-              {yeniGun && (
-                <li className="posta-gun">
-                  <span>{tarihYaz(yerelGun(m.zaman), dil, "tam")}</span>
-                </li>
+            <li key={m.id} className={`posta-balon${m.giden ? " giden" : ""}${yeniGonderen ? " ilk" : ""}`} style={m.giden ? undefined : { ["--ton" as string]: gonderenTonu(m.kimden) }} data-posta-mesaj={m.id}>
+              {yeniGonderen && !m.giden && (
+                <div className="posta-gonderen" dir={kisi ? undefined : "ltr"}>
+                  {gad}
+                </div>
               )}
-              <li className={`posta-balon${m.giden ? " giden" : ""}`} data-posta-mesaj>
-                {yeniGonderen && !m.giden && (
-                  <div className="posta-gonderen" dir={kisi ? undefined : "ltr"}>
-                    @{gad}
-                  </div>
-                )}
-                {govde.trim() ? (
-                  <Icerik blok className={`posta-metin${!sade.trim() ? " posta-alinti" : ""}`}>
-                    {govde}
-                  </Icerik>
-                ) : (
-                  !m.giden && ekler.length === 0 && <span className="posta-bos">{t("postaBosGovde")}</span>
-                )}
-                {ekler.map((e, j) => (
-                  <span className="posta-ek" key={j}>
-                    <span className="posta-ek-ikon">
-                      <FileText size={18} />
-                    </span>
-                    <bdi>{e}</bdi>
-                  </span>
-                ))}
-                <AliciSatiri m={m} />
-                <span className="posta-zaman">{saatYaz(m.zaman, dil)}</span>
-              </li>
-            </Fragment>
+              {govde.trim() ? (
+                <Icerik blok className={`posta-metin${!sade.trim() ? " posta-alinti" : ""}`}>
+                  {govde}
+                </Icerik>
+              ) : (
+                !m.giden && ekler.length === 0 && <span className="posta-bos">{t("postaBosGovde")}</span>
+              )}
+              {ekler.map((e, j) => (
+                <span className="posta-ek" key={j}>
+                  <DosyaIkonu ad={e} />
+                  <bdi>{e}</bdi>
+                </span>
+              ))}
+              <AliciSatiri m={m} />
+              <span className="posta-zaman">{balonZamani(m.zaman, dil)}</span>
+            </li>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+/*
+ * Sohbetin dosyaları yanda dikey (kullanıcı: üstte yatay şerit değil): en
+ * yenisi üstte; basınca dosyanın geldiği mesaja kayar.
+ */
+function SohbetDosyalari({ sohbet }: { sohbet: Sohbet }) {
+  const { t } = useDil();
+  const dosyalar = sohbet.mesajlar.flatMap((m) => m.ekler.filter((e) => !gizliEkMi(e)).map((ad) => ({ ad, m }))).reverse();
+  if (!dosyalar.length) return null;
+  const git = (id: string) => {
+    const el = document.querySelector<HTMLElement>(`[data-posta-mesaj="${CSS.escape(id)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.classList.remove("vurgulu");
+    void el.offsetWidth;
+    el.classList.add("vurgulu");
+  };
+  return (
+    <aside className="posta-dosyalar" aria-label={t("postaDosyalar")} data-posta-dosyalar>
+      <ol>
+        {dosyalar.map(({ ad, m }, i) => (
+          <li key={`${m.id}-${i}`}>
+            <button type="button" className="posta-dosya" title={ad} onClick={() => git(m.id)} data-posta-dosya>
+              <DosyaIkonu ad={ad} buyuk />
+              <bdi>{uzantisiz(ad)}</bdi>
+              <small>{yerelGun(m.zaman).split("-").reverse().join(".")}</small>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </aside>
   );
 }
 
@@ -669,7 +723,10 @@ export function Posta({ ben }: { ben: Kisi }) {
                   </button>
                 }
               >
-                <SohbetGovdesi sohbet={secik} />
+                <div className="posta-sohbet-ic">
+                  <SohbetGovdesi sohbet={secik} />
+                  <SohbetDosyalari sohbet={secik} />
+                </div>
                 <Yazma key={secik.konuKimligi} ben={ben} sohbet={secik} grup={grup} />
               </Kart>
             </>

@@ -1,5 +1,5 @@
-import { ArrowRight, CalendarRange, Check, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ArrowRight, CalendarRange, Check, ChevronDown, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, sadeAkis, sadeSira, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
@@ -28,6 +28,13 @@ export function Icerik({ children, blok = false, className = "" }: { children?: 
 /** İçerik yazılan form alanı: yazarken de sağdan sola. Dil denetimi yok; Latin özel isim serbest. */
 export const icerikAlani = { dir: "rtl", lang: "ar" } as const;
 
+/*
+ * Katlanır kart (Ayarlar): başlık bir satır, basınca ayrıntı açılır. Kart
+ * bileşenleri ayrı dosyalarda; her birine prop geçirmek yerine sayfa bu
+ * bağlamı açar. İçteki kartlar katlanmaz.
+ */
+export const KatlanirKartlar = createContext(false);
+
 export function Kart({
   baslik,
   ikon,
@@ -43,6 +50,26 @@ export function Kart({
   children: ReactNode;
   className?: string;
 }) {
+  const katlanir = useContext(KatlanirKartlar);
+  if (katlanir && baslik)
+    return (
+      <details className={`kart katlanir ${className}`}>
+        <summary className="kart-bas">
+          <h2>
+            {ikon}
+            {baslik}
+          </h2>
+          {ek && <span className="ek">{ek}</span>}
+          <ChevronDown size={18} className="katlanir-ok" aria-hidden="true" />
+        </summary>
+        <KatlanirKartlar.Provider value={false}>
+          <div className="katlanir-govde">
+            {sagUc && <div className="dugmeler">{sagUc}</div>}
+            {children}
+          </div>
+        </KatlanirKartlar.Provider>
+      </details>
+    );
   return (
     <section className={`kart ${className}`}>
       {(baslik || sagUc) && (

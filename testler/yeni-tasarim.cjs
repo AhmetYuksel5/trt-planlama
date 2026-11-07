@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/ayarlar"); await p.waitForTimeout(1000);
   s.eskiAcilis = !(await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim")));
-  await p.check("[data-tasarim-ayari]"); await p.waitForTimeout(300);
+  await p.evaluate(() => (document.querySelector("[data-tasarim-ayari]").closest("details").open = true)); await p.check("[data-tasarim-ayari]"); await p.waitForTimeout(300);
   s.acildi = await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim"));
   await p.goto("about:blank"); await p.goto(B + "#/"); await p.waitForTimeout(1000);
   s.hatirlandi = await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim"));

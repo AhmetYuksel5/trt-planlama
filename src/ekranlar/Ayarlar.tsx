@@ -3,7 +3,7 @@ import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Workflow } from
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
-import { Kart, bildir } from "../bilesenler/Parcalar";
+import { KatlanirKartlar, Kart, bildir } from "../bilesenler/Parcalar";
 import { gunAdi, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
@@ -31,7 +31,9 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         baslik={t("mAyarlar")}
        
       />
-      <div className="iz iz-2">
+      {/* Her ayar bir başlık satırı, basınca açılır (kullanıcı: kartlar bütün sayfayı kaplamasın). */}
+      <KatlanirKartlar.Provider value={true}>
+      <div className="ayar-listesi" data-ayar-listesi>
         <Kart baslik={t("arayuzDili")}>
           <DilSecici />
         </Kart>
@@ -43,7 +45,8 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         </Kart>
         {ben.birim === "muhabir" && <KisiselAyar ben={ben} />}
         <TasarimAyari />
-        <WhatsappAyari />
+        {/* Muhabirin ekranında WhatsApp düğmesi yok (muhabir listesi ve profil başkalarının). */}
+        {ben.birim !== "muhabir" && <WhatsappAyari />}
         <SesAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
@@ -71,6 +74,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
           </Kart>
         )}
       </div>
+      </KatlanirKartlar.Provider>
       {ben.birim === "muhabir" && <MuhabirKilavuzu />}
     </>
   );

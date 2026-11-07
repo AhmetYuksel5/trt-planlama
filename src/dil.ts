@@ -1560,6 +1560,7 @@ const M = {
   mPosta: m("Posta", "البريد", "Mail"),
   kaPosta: m("Posta", "البريد", "Mail"),
   postaBasligi: m("Gelen posta", "البريد الوارد", "Incoming mail"),
+  postaDosyalar: m("Sohbetin dosyaları", "ملفات المحادثة", "Conversation files"),
   postaSohbetler: m("Sohbetler", "المحادثات", "Conversations"),
   postaMesajYok: m("Henüz posta yok", "لا بريد بعد", "No mail yet"),
   postaBosGovde: m("(yalnızca imza)", "(توقيع فقط)", "(signature only)"),
