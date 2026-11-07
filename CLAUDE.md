@@ -1056,7 +1056,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     NTLM/Negotiate kabul ettiği ve Worker'ın fetch'i NTLM el sıkışmasını tek
     bağlantıya sabitleyemediği için ham TLS soketinde (`cloudflare:sockets`)
     elle NTLMv2 + minimal HTTP/1.1 yürütülüyor. Worker FindItem+GetItem ile
-    gelen kutusunu okuyor, planlama grubu adresine (To/Cc) gelenleri süzüyor,
+    gelen kutusunu okuyor (GetItem küçük gruplar hâlinde, aynı bağlantıda:
+    tek büyük yanıt okuma zaman aşımına düşüyordu; her okumada 20 sn sınır),
+    planlama grubu adresine (To/Cc) gelenleri süzüyor,
     ekleri ad olarak bırakıp gövdeyi `yeniMetin`le temizliyor. **Servis hesabı
     istemiyoruz:** Worker Firestore'a kendi yazmıyor, çektiğini döndürüyor;
     tarayıcı (`src/posta-kapi.ts → postalariCek`) kişinin kendi oturumuyla

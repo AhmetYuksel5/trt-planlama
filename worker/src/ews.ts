@@ -303,7 +303,10 @@ const istekBaytlari = (ayar: EwsAyar, authz: string | null, soap: string): Uint8
  * aşımı var: sunucu beklediğimiz uzunlukta/biçimde kapatmazsa Worker'ın süre
  * sınırına çarpıp ham 500 vermesin, temiz bir hata dönsün.
  */
-const OKUMA_ZAMAN_ASIMI = 15000;
+const OKUMA_ZAMAN_ASIMI = 20000;
+// GetItem tek istekte çok mesaj isteyince sunucunun ilk baytı üretmesi zaman
+// aşımını aşıyor; gövdeler küçük gruplar hâlinde, aynı bağlantıda çekiliyor.
+const GETITEM_PARCA = 6;
 const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
   let tampon: Uint8Array = new Uint8Array(0);
   for (;;) {
@@ -370,10 +373,16 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
     const idler = findItemCoz(latin1Utf8(bul.govde));
     if (idler.length === 0) return { mesajlar: [] };
-    const al = await ntlmIstek(soket, ayar, getItemIstegi(idler), simdi, false);
-    if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
+    // Gövdeleri küçük gruplar hâlinde çek: büyük tek GetItem yanıtı zaman
+    // aşımına düşüyordu. Hepsi aynı doğrulanmış soket üzerinde (handshake yok).
+    const mesajlar: EwsMesaj[] = [];
+    for (let i = 0; i < idler.length; i += GETITEM_PARCA) {
+      const al = await ntlmIstek(soket, ayar, getItemIstegi(idler.slice(i, i + GETITEM_PARCA)), simdi, false);
+      if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
+      mesajlar.push(...getItemCoz(latin1Utf8(al.govde)));
+    }
     // FindItem sıralamıyor; en yeni önce gelsin diye tarihe göre azalan (istemci sohbette ters çeviriyor).
-    const mesajlar = getItemCoz(latin1Utf8(al.govde)).sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
+    mesajlar.sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
     return { mesajlar };
   } catch (e) {
     return { hata: e instanceof Error ? e.message : String(e) };
