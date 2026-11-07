@@ -3096,13 +3096,14 @@ export interface PostaSonucu {
  * Planlama Outlook'tan içe aktarıyor; sunucu fazında posta kutusunu izleyen
  * hizmet (EWS/Graph) de bunu çağıracak, tarayıcıyla sunucu ayrışmasın.
  */
-export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: PostaMesaji["kaynak"]): PostaSonucu | null => {
+export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: PostaMesaji["kaynak"], grup?: string): PostaSonucu | null => {
   if (kaynak === "iceAktarma" && !yapabilir(ben, "cagriHazirla")) return null;
   let d = getir();
   const mevcut = d.postaMesajlari ?? [];
   if (gelen.mesajKimligi && mevcut.some((m) => m.mesajKimligi === gelen.mesajKimligi)) return { durum: "tekrar" };
   // Sunucuda conversationId varsa o; içe aktarmada konudan, boşsa yeni iplik.
   const konuKimligi = gelen.konuKimligi?.trim() || postaKonuCekirdegi(gelen.konu) || kimlik("pk");
+  const g = grup?.trim().toLowerCase();
   const mesaj: PostaMesaji = {
     id: kimlik("pm"),
     konuKimligi,
@@ -3115,6 +3116,7 @@ export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Pos
     mesajKimligi: gelen.mesajKimligi,
     ekler: gelen.ekler ?? [],
     kaynak,
+    ...(g ? { grup: g } : {}),
   };
   kaydet({ ...d, postaMesajlari: [mesaj, ...mevcut] });
   return { durum: "eklendi", mesajId: mesaj.id, konuKimligi };
@@ -3125,9 +3127,10 @@ export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Pos
  * gönderim kapı üzerinden EWS'yle oluyor; bu yalnız ekrana yansıtıyor (giden
  * posta Gelen Kutusu'na düşmediği için çekişte gelmez).
  */
-export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, metin: string): string | null => {
+export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, metin: string, grup?: string): string | null => {
   if (!yapabilir(ben, "cagriHazirla")) return null;
   const d = getir();
+  const g = grup?.trim().toLowerCase();
   const mesaj: PostaMesaji = {
     id: kimlik("pm"),
     konuKimligi,
@@ -3139,9 +3142,28 @@ export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, met
     ekler: [],
     kaynak: "iceAktarma",
     giden: true,
+    ...(g ? { grup: g } : {}),
   };
   kaydet({ ...d, postaMesajlari: [mesaj, ...(d.postaMesajlari ?? [])] });
   return mesaj.id;
+};
+
+/*
+ * Etiketsiz (grup bilgisi olmayan) eski sohbetleri bir gruba atar: kişiye
+ * özel kimliğe geçmeden önce admin hesabından çekilenler ortak havuzda
+ * duruyordu; herkese görünmesin diye bir kez admin kendi grubuna mal eder.
+ * Yalnız tam yönetici, yalnız etiketsizlere dokunur.
+ */
+export const postaEtiketsizleriGruba = (ben: Kisi, grup: string): number => {
+  if (!ben.hesapYoneticisi) return 0;
+  const g = grup.trim().toLowerCase();
+  if (!g) return 0;
+  const d = getir();
+  const mevcut = d.postaMesajlari ?? [];
+  const etiketsiz = mevcut.filter((m) => !m.grup);
+  if (!etiketsiz.length) return 0;
+  kaydet({ ...d, postaMesajlari: mevcut.map((m) => (m.grup ? m : { ...m, grup: g })) });
+  return etiketsiz.length;
 };
 
 /* Sohbeti izleriyle siler (Planlama temizliği); çağrı ve öneri akışına dokunmaz. */

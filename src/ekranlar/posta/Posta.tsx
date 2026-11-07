@@ -2,7 +2,7 @@ import { ArrowLeft, FileText, Mail, MessageSquare, RefreshCw, Send, Trash2, Uplo
 import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { postaGidenEkle, postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
+import { postaGidenEkle, postaIsle, postaSil, postaEtiketsizleriGruba, type PostaSonucu } from "../../eylemler";
 import { gizliEkMi, gondereniBul, postaAlintiMetni, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
@@ -155,7 +155,8 @@ function Yazma({ ben, sohbet }: { ben: Kisi; sohbet: Sohbet }) {
       setGonderiliyor(false);
       if (!r.tamam) return bildir(`${t("bPostaGonderHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
     } else setGonderiliyor(false);
-    postaGidenEkle(ben, sohbet.konuKimligi, konu, m);
+    // Giden yanıt ipliğin grubuna ait olsun (aynı sohbet aynı grupta).
+    postaGidenEkle(ben, sohbet.konuKimligi, konu, m, sohbet.son.grup);
     setMetin("");
     bildir(t("bPostaGonderildi"));
   };
@@ -181,14 +182,14 @@ function Yazma({ ben, sohbet }: { ben: Kisi; sohbet: Sohbet }) {
 }
 
 /* Köprü: Outlook'tan .msg sürükle-bırak, indirilmiş .eml ya da yapıştırılan metin; hepsi aynı işlemeden geçiyor. */
-function IceAktar({ ben, onEklendi }: { ben: Kisi; onEklendi: (s: PostaSonucu) => void }) {
+function IceAktar({ ben, grup, onEklendi }: { ben: Kisi; grup?: string; onEklendi: (s: PostaSonucu) => void }) {
   const { t } = useDil();
   const [ustunde, setUstunde] = useState(false);
   const [yapistir, setYapistir] = useState({ kimden: "", konu: "", metin: "" });
   const dosyalar = async (liste: FileList | null) => {
     for (const f of Array.from(liste ?? [])) {
       try {
-        const s = postaIsle(ben, await dosyaOku(f), "iceAktarma");
+        const s = postaIsle(ben, await dosyaOku(f), "iceAktarma", grup);
         if (s) onEklendi(s);
       } catch (hata) {
         /* Okunamayan dosyanın nedeni geliştirici konsolunda kalsın; kullanıcıya kısa bildirim. */
@@ -209,7 +210,7 @@ function IceAktar({ ben, onEklendi }: { ben: Kisi; onEklendi: (s: PostaSonucu) =
     const kimden = esli ? esli[2].trim() : ham;
     const kimdenAd = esli ? esli[1].trim() || undefined : undefined;
     const gelen: GelenEposta = { kimden, kimdenAd, konu: yapistir.konu, metin: yapistir.metin };
-    const s = postaIsle(ben, gelen, "iceAktarma");
+    const s = postaIsle(ben, gelen, "iceAktarma", grup);
     if (s) {
       onEklendi(s);
       setYapistir({ kimden: "", konu: "", metin: "" });
@@ -249,7 +250,10 @@ function IceAktar({ ben, onEklendi }: { ben: Kisi; onEklendi: (s: PostaSonucu) =
 export function Posta({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const sohbetler = sohbetleriKur(v.postaMesajlari ?? []);
+  // Kişi yalnız kendi grubunun sohbetini görür (gerçek kipte): biri kendi
+  // hesabıyla çekince başka birimin postası ona karışmasın. Demoda süzme yok.
+  const [grup, setGrup] = useState("");
+  const sohbetler = sohbetleriKur((v.postaMesajlari ?? []).filter((m) => !GERCEK || (!!grup && m.grup === grup)));
   const [secili, setSecili] = useState("");
   const secik = sohbetler.find((s) => s.konuKimligi === secili);
   const onEklendi = (s: PostaSonucu) => {
@@ -261,9 +265,9 @@ export function Posta({ ben }: { ben: Kisi }) {
     if (postaSil(ben, konuKimligi) && secili === konuKimligi) setSecili("");
   };
   const [cekiliyor, setCekiliyor] = useState(false);
-  const cek = async () => {
+  const cek = async (g = grup) => {
     setCekiliyor(true);
-    const r = await postalariCek(ben);
+    const r = await postalariCek(ben, 25, g);
     setCekiliyor(false);
     if ("hata" in r) {
       // Nedeni ayırt et: kimlik/sunucu/kapalı için ne yapılacağı bellidir,
@@ -281,9 +285,14 @@ export function Posta({ ben }: { ben: Kisi }) {
     if (!GERCEK || ilk.current) return;
     ilk.current = true;
     void postaKimlikGetir().then((r) => {
-      if (r.tamam && r.veri.parolaVar) void cek();
-      // kimlik yoksa ya da kapıya ulaşılamadıysa sessiz: kullanıcı Ayarlar'dan
-      // girer, "Postaları çek" düğmesi nedeni gösterir
+      if (!r.tamam) return; // kapıya ulaşılamadı: sessiz, "Postaları çek" nedeni gösterir
+      const g = (r.veri.grupAdresi || "").trim().toLowerCase();
+      setGrup(g);
+      // Eski ortak havuzu (kişiye özel kimlikten önce admin hesabından
+      // çekilenler) bir kez admin kendi grubuna mal eder; başkalarına görünmesin.
+      if (g && ben.hesapYoneticisi) postaEtiketsizleriGruba(ben, g);
+      if (r.veri.parolaVar) void cek(g);
+      // kimlik yoksa sessiz: kullanıcı Ayarlar'dan girer
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -294,7 +303,7 @@ export function Posta({ ben }: { ben: Kisi }) {
         baslik={t("postaBasligi")}
         sagUc={
           GERCEK ? (
-            <button className="dugme dugme-ikincil" onClick={cek} disabled={cekiliyor} data-posta-cek>
+            <button className="dugme dugme-ikincil" onClick={() => cek()} disabled={cekiliyor} data-posta-cek>
               <RefreshCw size={16} /> {t(cekiliyor ? "postaCekiliyor" : "postaCek")}
             </button>
           ) : undefined
@@ -328,7 +337,7 @@ export function Posta({ ben }: { ben: Kisi }) {
               </ol>
             )}
           </Kart>
-          <IceAktar ben={ben} onEklendi={onEklendi} />
+          <IceAktar ben={ben} grup={grup} onEklendi={onEklendi} />
         </div>
         <div className="posta-sohbet-sutun">
           {secik ? (

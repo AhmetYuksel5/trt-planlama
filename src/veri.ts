@@ -729,6 +729,13 @@ export interface PostaMesaji {
   kaynak: "posta" | "iceAktarma";
   /** Planlama'nın buradan gönderdiği yanıt; sohbette sağda (giden) balon. */
   giden?: boolean;
+  /*
+   * Ait olduğu grup adresi (küçük harf): bu postayı hangi birimin grup
+   * kutusundan çektik. Posta ekranı kişiye yalnız kendi grubunun sohbetini
+   * gösteriyor; biri kendi hesabıyla çekince başka birimin postası ona
+   * karışmasın. Eski (etiketsiz) kayıtlar bir kez admin'in grubuna atanıyor.
+   */
+  grup?: string;
 }
 
 /* --- Paket önerisi: birimler arası ortak kayıt (rapor bölüm 7). --- */

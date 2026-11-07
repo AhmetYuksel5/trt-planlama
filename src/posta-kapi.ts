@@ -64,7 +64,7 @@ interface KapiMesaji {
  * (tekillik, alıntı/imza ayıklama, konuya göre iplik). Dönen sayı yeni
  * eklenen mesaj; tekrar gelenler sayılmıyor.
  */
-export const postalariCek = async (ben: Kisi, adet = 25): Promise<{ eklenen: number; toplam: number } | { hata: string; ayrinti?: string }> => {
+export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number } | { hata: string; ayrinti?: string }> => {
   const r: YzSonuc<{ mesajlar: KapiMesaji[] }> = await kapiIstek<{ mesajlar: KapiMesaji[] }>("/posta/cek", "POST", { adet });
   if (!r.tamam) return { hata: r.hata, ayrinti: r.ayrinti };
   // En eski önce yazılsın ki sohbet sırası doğru olsun (kapı en yeni önce veriyor).
@@ -72,7 +72,7 @@ export const postalariCek = async (ben: Kisi, adet = 25): Promise<{ eklenen: num
   let eklenen = 0;
   for (const m of mesajlar) {
     const gelen: GelenEposta = { kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.metin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler };
-    const s = postaIsle(ben, gelen, "posta");
+    const s = postaIsle(ben, gelen, "posta", grup);
     if (s?.durum === "eklendi") eklenen++;
   }
   return { eklenen, toplam: mesajlar.length };

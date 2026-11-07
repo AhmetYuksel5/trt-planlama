@@ -1060,6 +1060,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   dosyaOku`'dan geçiyor, Gelen yanıtlar ekranıyla aynı okuyucu. Kısıtlı
   muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil; kural catch-all'u
   kapsıyor). Test `testler/posta.cjs`.
+  - Sohbet gruba göre ayrı (gerçek kip): her mesaj çekildiği grup adresine
+    etiketleniyor (`PostaMesaji.grup`, küçük harf; `postaIsle`/`postaGidenEkle`/
+    `postalariCek` grubu yazıyor, giden yanıt ipliğin grubuna); Posta ekranı
+    yalnız kişinin kendi grubunu (`postaKimlikGetir().grupAdresi`) gösteriyor,
+    biri kendi hesabıyla çekince başka birimin postası karışmasın. Koleksiyon
+    hâlâ ortak (herkes okuyabiliyor), ayrım ekranda süzgeçle; demoda süzgeç
+    yok. Kişiye özel kimliğe geçmeden önce admin hesabından çekilip ortak
+    havuzda kalan etiketsiz mesajları, admin Posta'yı açınca bir kez kendi
+    grubuna mal ediyor (`eylemler.ts → postaEtiketsizleriGruba`, yalnız tam
+    yönetici, yalnız etiketsize dokunur).
   - Gerçek kipte otomatik besleme EWS köprüsüyle (`worker/src/ews.ts`,
     `ntlm.ts`, `posta-ayar.ts`): kurumun Exchange'i (posta.trt.net.tr) yalnız
     NTLM/Negotiate kabul ettiği ve Worker'ın fetch'i NTLM el sıkışmasını tek
