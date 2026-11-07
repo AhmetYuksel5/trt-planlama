@@ -138,6 +138,25 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(linkGovde.includes("example.com/haber"), "ana metindeki bağlantı korundu");
   ok(!linkGovde.includes("trtarabi.com") && !linkGovde.includes("محمد صفا") && !linkGovde.includes("مراسل"), "imza bağlantısı ve isim silindi");
 
+  // Gövde tümüyle imza (içerik yok): ham imza dökülmez, "yalnızca imza" işareti
+  const yalnizImza = "https://www.trt.net.tr/>>\n<https://www.trtarabi.com/>\nShafık SAHLI\n\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+";
+  await p.evaluate((metin) => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    v.postaMesajlari = (v.postaMesajlari || []).concat([{
+      id: "pm-imzaonly-test", konuKimligi: "imzaonly-konu", kimden: "sahli@ornek.local",
+      kimdenAd: "Shafık SAHLI", konu: "Yalnız imza testi", metin, tamMetin: metin,
+      zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
+    }]);
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  }, yalnizImza);
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Yalnız imza testi" }).first().click();
+  await p.waitForTimeout(300);
+  const imzaOnly = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
+  ok(!imzaOnly.includes("trt.net.tr") && !imzaOnly.includes("Senior Script") && !imzaOnly.includes("212"), "ham imza dökülmedi");
+  ok((await p.locator("[data-posta-sohbet] .posta-bos").count()) === 1, "yalnızca imza işareti gösterildi");
+
   // 390px: yatay taşma yok (Türkçe ve Arapça)
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);

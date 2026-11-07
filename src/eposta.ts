@@ -216,9 +216,6 @@ const baglantiSatiri = (t: string): boolean => {
   if (!/(?:https?:\/\/|www\.|t\.me\/|mailto:)/i.test(t)) return false;
   return t.replace(BAGLANTI, "").replace(/[\s\p{P}]/gu, "").length <= 10;
 };
-// Güçlü imza çıpası: e-posta/telefon/sosyal/ayraç, kapanış, kurum ya da ünvan.
-const gucluImza = (t: string): boolean =>
-  IMZA_SATIRI.some((r) => r.test(t)) || KAPANIS.test(t) || KURUM_SATIRI.test(t) || (UNVAN_SOZCUK.test(t) && t.length <= 60 && !/[.!؟?]\s*$/.test(t));
 // Alttan başlayan yasal uyarı / tarama bildirimi bloğu: buradan sona atılır.
 const SORUMLULUK =
   /^[\s\p{P}]*(?:هذه الرسالة|هذا البريد|تحتوي هذه|المعلومات الواردة|قد تحتوي|تم فحص|this (?:e-?mail|message)|the information|this email and|confidential|disclaimer|please consider|virus|yasal uyarı|gizlilik|bu (?:e-?posta|mesaj|elektronik|ileti)|işbu|bu elektronik posta)/iu;
@@ -276,17 +273,25 @@ export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => 
   // bağlantılar korunur.
   let j = satirlar.length;
   let cipa = false;
+  let sert = false; // bölgede "sert" çıpa var mı: e-posta/telefon/bağlantı/ünvan/kurum
   while (j > 0) {
     const t = satirlar[j - 1].trim();
     if (t === "") { j--; continue; }
-    if (gucluImza(t) || adSatiri(t)) { cipa = true; j--; continue; }
-    if (baglantiSatiri(t) || adGibiSatir(t)) { j--; continue; } // tek başına çıpa değil
+    // Sert çıpa: kimse bunu mesaj gövdesi olarak yazmaz (iletişim/kurum/bağlantı/ünvan).
+    const sertCipa =
+      IMZA_SATIRI.some((r) => r.test(t)) || KURUM_SATIRI.test(t) || baglantiSatiri(t) ||
+      (UNVAN_SOZCUK.test(t) && t.length <= 60 && !/[.!؟?]\s*$/.test(t));
+    if (sertCipa) { cipa = true; sert = true; j--; continue; }
+    if (KAPANIS.test(t) || adSatiri(t)) { cipa = true; j--; continue; } // yumuşak: kapanış, gönderen adı
+    if (adGibiSatir(t)) { j--; continue; } // tek başına çıpa değil
     break;
   }
   const son = cipa ? j : satirlar.length;
   const sade = satirlar.slice(0, son).join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  // Her şey imza sanıldıysa özgün metni ver, boş balon çıkmasın.
-  return sade || metin.replace(GORSEL_REF, "").trim();
+  // Gövde tümüyle imza çıktıysa: sert çıpa (imza bloğu) varsa boş döndür, ekran
+  // "metin yok" yer tutucusu gösterir; yalnız kapanış/ad ise (ör. "شكرا") özgün
+  // kısa metni ver, boş balon olmasın.
+  return sade || (sert ? "" : metin.replace(GORSEL_REF, "").trim());
 };
 
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */

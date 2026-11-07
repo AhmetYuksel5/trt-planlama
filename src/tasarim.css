@@ -529,6 +529,8 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-balon { position: relative; align-self: flex-start; max-inline-size: 85%; background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 12px; border-start-start-radius: 4px; padding: var(--ara-2) var(--ara-3); padding-inline-end: 56px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06); }
 .posta-gonderen { font-size: var(--punto-kucuk); font-weight: 600; color: var(--vurgu); margin-block-end: 2px; }
 .posta-metin { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Gövdesi tümüyle imza/bağlantı olan posta: metin yerine sönük kısa işaret. */
+.posta-bos { font-size: 12px; font-style: italic; color: var(--sonuk); }
 /* Ek: başlıksız, dosya biçiminde bir kutu (ikon + ad). */
 .posta-ek { display: flex; align-items: center; gap: var(--ara-2); margin-block-start: 4px; padding: 6px 10px; background: var(--zemin); border: 1px solid var(--cizgi); border-radius: 10px; font-size: var(--punto-kucuk); max-inline-size: 100%; }
 .posta-ek-ikon { flex: 0 0 auto; inline-size: 30px; block-size: 30px; border-radius: 6px; background: var(--yuzey); border: 1px solid var(--cizgi); display: grid; place-items: center; color: var(--vurgu); }

@@ -1548,6 +1548,7 @@ const M = {
   postaBasligi: m("Gelen posta", "البريد الوارد", "Incoming mail"),
   postaSohbetler: m("Sohbetler", "المحادثات", "Conversations"),
   postaMesajYok: m("Henüz posta yok", "لا بريد بعد", "No mail yet"),
+  postaBosGovde: m("(yalnızca imza)", "(توقيع فقط)", "(signature only)"),
   postaSohbetSec: m("Soldan bir sohbet seç", "اختر محادثة", "Select a conversation"),
   postaSohbetSil: m("Sohbeti sil", "حذف المحادثة", "Delete conversation"),
   postaSilOnay: m("Bu sohbet bütün mesajlarıyla silinsin mi?", "هل تُحذف هذه المحادثة بكل رسائلها؟", "Delete this conversation and all its messages?"),

@@ -80,7 +80,7 @@ const GonderenEtiketi = ({ m }: { m: PostaMesaji }) => {
  * tekrarlamaz), köşede saat, günler arasında ayraç.
  */
 function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
-  const { ad, dil } = useDil();
+  const { ad, dil, t } = useDil();
   const v = useVeri();
   return (
     <div className="posta-govde" data-posta-sohbet={sohbet.konuKimligi}>
@@ -91,6 +91,7 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const yeniGun = !onceki || yerelGun(onceki.zaman) !== yerelGun(m.zaman);
           const yeniGonderen = yeniGun || !onceki || onceki.kimden !== m.kimden;
           const govde = m.giden ? m.metin : postaMetniSadelestir(m.metin, gonderenAdi(v, m, ad));
+          const ekler = m.ekler.filter((e) => !gizliEkMi(e));
           return (
             <Fragment key={m.id}>
               {yeniGun && (
@@ -104,12 +105,14 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                     @{gonderenAdi(v, m, ad)}
                   </div>
                 )}
-                {govde.trim() && (
+                {govde.trim() ? (
                   <Icerik blok className="posta-metin">
                     {govde}
                   </Icerik>
+                ) : (
+                  !m.giden && ekler.length === 0 && <span className="posta-bos">{t("postaBosGovde")}</span>
                 )}
-                {m.ekler.filter((e) => !gizliEkMi(e)).map((e, j) => (
+                {ekler.map((e, j) => (
                   <span className="posta-ek" key={j}>
                     <span className="posta-ek-ikon">
                       <FileText size={18} />

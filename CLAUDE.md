@@ -1033,7 +1033,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   İçerik sözcüğü taşıyan satır isim sanılıp kesilmiyor. **Bağlantılar koşulsuz
   silinmiyor:** ana metindeki bağlantı içeriktir, korunuyor; yalnız imza
   bölgesindeki (neredeyse tümüyle linkten ibaret) site/sosyal bağlantısı
-  atılıyor (`baglantiSatiri`). Ekler başlıksız, dosya
+  atılıyor (`baglantiSatiri`). Gövde tümüyle imza çıkarsa (ör. muhabir metni
+  mail üzerinden düzeltip yalnız imzasıyla dönmüş) ham imza dökülmüyor: bölgede
+  "sert çıpa" (e-posta, telefon, bağlantı, ünvan, kurum) varsa gövde boş
+  bırakılıp ekranda sönük "yalnızca imza" işareti (`.posta-bos`, `postaBosGovde`)
+  çıkıyor; yalnız kapanış/ad ise (ör. "شكرا") kısa metin korunuyor. Ekler başlıksız, dosya
   biçiminde kutu (`.posta-ek`, dosya ikonu + ad; dosyanın kendisi indirilmiyor);
   imza/gömülü görsel ekleri (`gizliEkMi`: svg/ico/gif/bmp/webp/tiff, GUID'li
   otomatik adlar [trtlogo_<guid>.png], image001.png, logo/sosyal/imza geçen
