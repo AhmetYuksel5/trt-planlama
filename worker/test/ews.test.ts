@@ -19,8 +19,9 @@ test("FindItem isteği gelen kutusunu en yeni önce istiyor", () => {
 
 test("GetItem isteği düz metin gövde ve gerekli alanları istiyor", () => {
   const x = getItemIstegi([{ id: "AAA", degisim: "CK1" }]);
+  assert.ok(x.includes("<t:BaseShape>AllProperties</t:BaseShape>"));
   assert.ok(x.includes("<t:BodyType>Text</t:BodyType>"));
-  assert.ok(x.includes('FieldURI="message:ConversationId"'));
+  assert.ok(!x.includes("AdditionalProperties"));
   assert.ok(x.includes('Id="AAA"') && x.includes('ChangeKey="CK1"'));
 });
 

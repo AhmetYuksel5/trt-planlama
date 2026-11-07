@@ -54,16 +54,15 @@ export const findItemIstegi = (adet: number): string =>
       `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
   );
 
-/* Seçili postaların gövdesi (düz metin), göndereni, konusu, tarihi, kimlikleri ve ek adları. */
+/*
+ * Seçili postaların bütün ortak alanları (gönderen, alıcılar, konu, tarih,
+ * gövde, InternetMessageId, ConversationId, ekler). AllProperties kullanılıyor:
+ * FieldURI'leri elle saymak bir alan geçersizse "The request is invalid"
+ * veriyordu; AllProperties hepsini kendiliğinden döndürüyor. Gövde düz metin.
+ */
 export const getItemIstegi = (idler: { id: string; degisim: string }[]): string =>
   ZARF(
-    `<m:GetItem><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape><t:BodyType>Text</t:BodyType>` +
-      `<t:AdditionalProperties>` +
-      `<t:FieldURI FieldURI="item:Subject"/><t:FieldURI FieldURI="item:DateTimeReceived"/><t:FieldURI FieldURI="item:Body"/>` +
-      `<t:FieldURI FieldURI="message:From"/><t:FieldURI FieldURI="message:InternetMessageId"/><t:FieldURI FieldURI="message:ConversationId"/>` +
-      `<t:FieldURI FieldURI="message:ToRecipients"/><t:FieldURI FieldURI="message:CcRecipients"/>` +
-      `<t:FieldURI FieldURI="item:HasAttachments"/><t:FieldURI FieldURI="item:Attachments"/>` +
-      `</t:AdditionalProperties></m:ItemShape>` +
+    `<m:GetItem><m:ItemShape><t:BaseShape>AllProperties</t:BaseShape><t:BodyType>Text</t:BodyType></m:ItemShape>` +
       `<m:ItemIds>${idler.map((i) => `<t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/>`).join("")}</m:ItemIds></m:GetItem>`,
   );
 
