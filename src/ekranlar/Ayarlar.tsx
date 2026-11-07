@@ -8,12 +8,13 @@ import { gunAdi, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
-import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri } from "../yetki";
+import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri, postaGorebilir } from "../yetki";
 import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
 import { KayitTemizligi } from "./KayitTemizligi";
 import { KayitYedegi, YeniDuzenGecisi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
 import { PostaAyari } from "./PostaAyari";
+import { PostaKimlikKart } from "./posta/PostaKimlik";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
@@ -48,6 +49,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {ben.hesapYoneticisi && <PostaAyari />}
+        {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}
         {kayitTemizleyebilir(ben) && <KayitYedegi />}
         {kayitTemizleyebilir(ben) && <YeniDuzenGecisi ben={ben} />}
         {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}

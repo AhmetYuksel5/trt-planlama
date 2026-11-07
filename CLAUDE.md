@@ -1080,11 +1080,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     uid'ye bağlı `posta-kimlik:<uid>`, parola tarayıcıya hiç gelmiyor). Her kişi
     kendi kurumsal hesabını ve kendi biriminin grup adresini girer (planlamacı
     planlama grubunu, Newsdesk kendi grubunu), böylece herkes kendi grubunun
-    yazışmalarını görür. Kimlik formu Posta sayfasında (`ekranlar/posta/
-    PostaKimlik.tsx`): ilk girişte kart açık; "Sonra yap" denince
-    `posta-kimlik-durum.ts` tarayıcıda "sonra" işaretler ve bilgiler girilene
-    kadar zilde "E-posta giriş bilgilerini gir" hatırlatması durur
-    (`UstCubuk.tsx`). `/posta/cek`, `/posta/gonder`, `/posta/dene` çağıranın
+    yazışmalarını görür. Kimlik formu Ayarlar'da (`ekranlar/posta/
+    PostaKimlik.tsx`, Ayarlar'da `GERCEK && postaGorebilir(ben)`); dileyen
+    girer, zorlama ve hatırlatma yok (Posta sayfasındaki zorunlu kart, zilde
+    hatırlatma ve `posta-kimlik-durum.ts` kalktı). Posta sayfası açılışta parola
+    varsa sessizce çeker, yoksa hiçbir şey yapmaz; kimliksiz kişi Ayarlar'dan
+    girer. `/posta/cek`, `/posta/gonder`, `/posta/dene` çağıranın
     kendi kimliğini (uid) + ortak sunucu/alanı kullanır, çağıranın grup
     adresiyle süzer. Worker uçları: `GET/PUT /posta/ayar` (tam yönetici, ortak),
     `GET/PUT /posta/kimlik` ve `POST /posta/dene` (Planlama/yönetici, kendi),

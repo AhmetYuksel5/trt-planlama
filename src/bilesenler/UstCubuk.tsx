@@ -8,7 +8,6 @@ import {
   Info,
   LogIn,
   LogOut,
-  Mail,
   Menu,
   Search,
   Settings,
@@ -19,12 +18,11 @@ import { useBildirimSesi } from "./Ses";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
 import { GERCEK, demoyuAc, girisiAc } from "../kip";
-import { useKimlikDurum } from "../posta-kimlik-durum";
 import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
-import { bildirimMi, dilDenetmeniMi, postaGorebilir } from "../yetki";
+import { bildirimMi, dilDenetmeniMi } from "../yetki";
 import type { BolmeAramasi } from "../yol";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
@@ -61,7 +59,6 @@ export default function UstCubuk({
   const { t, ad } = useDil();
   const v = useVeri();
   const yeniTasarim = useYeniTasarim();
-  const kimlikDurum = useKimlikDurum();
   const [acik, setAcik] = useState<"" | "bildirim" | "kullanici" | "prototip">(
     "",
   );
@@ -120,10 +117,7 @@ export default function UstCubuk({
   const bildirimler = v.hareketler
     .filter((h) => bildirimMi(ben, h, v))
     .slice(0, 25);
-  // Posta kimliği "Sonra yap" denince: bilgiler girilene kadar zilde hatırlatma
-  // (yalnız postayı görebilenlerde; dış muhabirlerde posta yok).
-  const postaHatirlat = GERCEK && kimlikDurum === "sonra" && postaGorebilir(ben);
-  const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length + (postaHatirlat ? 1 : 0);
+  const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length;
   useBildirimSesi(okunmamis);
 
   const ac = (n: typeof acik) => {
@@ -236,13 +230,7 @@ export default function UstCubuk({
                 <X size={14} />
               </button>
             </h4>
-            {postaHatirlat && (
-              <a className="acilir-satir yeni" href="#/posta" onClick={() => setAcik("")}>
-                <Mail size={18} className="sonuk" />
-                <div>{t("postaKimlikHatirlat")}</div>
-              </a>
-            )}
-            {bildirimler.length === 0 && !postaHatirlat ? (
+            {bildirimler.length === 0 ? (
               <Bos kucuk metin={t("bildirimYok")} />
             ) : (
               bildirimler.map((h) => {

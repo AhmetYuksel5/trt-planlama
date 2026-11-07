@@ -2,16 +2,15 @@ import { Loader2, Plug, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Kart, bildir } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
-import { kimlikDurumYaz } from "../../posta-kimlik-durum";
 import { postaKimlikGetir, postaKimlikKaydet, postaDene, type PostaKimlikGorunum } from "../../posta-kapi";
 
 /*
  * Posta kimliği kişiye özel: herkes kendi kurumsal kullanıcı adı/parolasını ve
  * kendi biriminin grup adresini girer (planlamacı planlama grubunu, Newsdesk
  * kendi grubunu). Parola kapının KV'sinde uid'ye bağlı, tarayıcıya hiç gelmiyor.
- * İlk girişte bu kart çıkar; "Sonra yap" denince zilde hatırlatma kalır.
+ * Kart Ayarlar'da; dileyen girer, zorlama ve hatırlatma yok.
  */
-export function PostaKimlikKart({ onKaydedildi, onSonra }: { onKaydedildi: () => void; onSonra: () => void }) {
+export function PostaKimlikKart() {
   const { t } = useDil();
   const [kimlik, setKimlik] = useState<PostaKimlikGorunum | null>(null);
   const [hata, setHata] = useState("");
@@ -37,23 +36,13 @@ export function PostaKimlikKart({ onKaydedildi, onSonra }: { onKaydedildi: () =>
     if (!r.tamam) return bildir(`${t("postaKapiYok")} [${r.hata}]${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
     setKimlik(r.veri);
     setParola("");
-    if (r.veri.parolaVar) {
-      kimlikDurumYaz("var");
-      bildir(t("bKaydedildi"));
-      onKaydedildi();
-    } else {
-      bildir(t("bKaydedildi"));
-    }
+    bildir(t("bKaydedildi"));
   };
   const dene = async () => {
     setDeneniyor(true);
     const r = await postaDene();
     setDeneniyor(false);
     bildir(r.tamam ? t("bPostaDeneTamam", { n: String(r.veri.sayi) }) : `${t("bPostaDeneHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
-  };
-  const sonra = () => {
-    kimlikDurumYaz("sonra");
-    onSonra();
   };
 
   return (
@@ -74,9 +63,6 @@ export function PostaKimlikKart({ onKaydedildi, onSonra }: { onKaydedildi: () =>
           <input type="email" dir="ltr" value={kimlik.grupAdresi} onChange={(e) => alan("grupAdresi", e.target.value)} placeholder="planning@trtarabi.com" />
         </label>
         <div className="form-alt">
-          <button className="dugme dugme-sade" onClick={sonra}>
-            {t("postaSonraYap")}
-          </button>
           <button className="dugme dugme-ikincil" onClick={dene} disabled={deneniyor}>
             {deneniyor ? <Loader2 size={16} className="donen" /> : <Plug size={16} />} {t("postaBaglantiDene")}
           </button>

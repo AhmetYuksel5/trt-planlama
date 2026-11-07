@@ -1577,10 +1577,7 @@ const M = {
   postaBaglantiDene: m("Bağlantıyı dene", "اختبار الاتصال", "Test connection"),
   // Kişiye özel kimlik (herkes kendi kurumsal hesabını girer)
   postaKimlikBaslik: m("E-posta giriş bilgilerin", "بيانات دخول بريدك", "Your mailbox login"),
-  postaKimlikKisiye: m("Kullanıcı adı, parola ve grup adresini herkes Posta sayfasında kendisi girer.", "يُدخل كل شخص اسم المستخدم وكلمة المرور وعنوان المجموعة بنفسه في صفحة البريد.", "Each person enters their own username, password and group address on the Mail page."),
-  postaKimlikGir: m("E-posta giriş bilgilerini gir", "أدخل بيانات دخول البريد", "Enter mailbox login"),
-  postaSonraYap: m("Sonra yap", "لاحقًا", "Later"),
-  postaKimlikHatirlat: m("E-posta giriş bilgilerini gir", "أدخل بيانات دخول البريد", "Enter your mailbox login"),
+  postaKimlikKisiye: m("Kullanıcı adı, parola ve grup adresini herkes Ayarlar'da kendisi girer.", "يُدخل كل شخص اسم المستخدم وكلمة المرور وعنوان المجموعة بنفسه في الإعدادات.", "Each person enters their own username, password and group address in Settings."),
   bPostaDeneTamam: m("Bağlandı · {n} posta görüldü", "تم الاتصال · {n} رسالة", "Connected · {n} messages seen"),
   bPostaDeneHata: m("Bağlanılamadı", "تعذّر الاتصال", "Could not connect"),
   postaKapiYok: m("Yapay zeka/posta kapısına ulaşılamadı", "تعذّر الوصول إلى البوابة", "Gateway unreachable"),
