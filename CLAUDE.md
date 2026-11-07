@@ -1178,6 +1178,32 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`cd worker && npm test`). Microsoft Graph yolu (dinleyici kutu +
     abonelik) ileride aynı `postaIsle`'yi besleyebilir
     (`belgeler/eposta-entegrasyonu.md`).
+  - Otomatik öneri çağrısı (kullanıcı: çağrıyı her gün elle göndermek
+    istemiyor; `src/otoCagri.ts`, kapıda `worker/src/oto-cagri.ts`): Next Day
+    her gün 09:00'da ertesi günün planı için, haftalık her Cuma 10:00'da 8 gün
+    sonra başlayan hafta için (Perşembe toplantısında görüşülen); İstanbul
+    saati, hafta sonu dahil. Gönderen anahtarı açan planlamacı (onun EWS
+    kimliği), Kime planning grubu (gönderenin grup adresi), muhabirler BCC'de
+    (izinde olmayan, kurumsal adresi olan; elle çağrının varsayılanı), metin
+    elle çağrının şablonu (`cagriGovdesi`, `haftalikGovde`, `govdeHtml`; HTML
+    gövde, EWS `BodyType="HTML"`), son saat 15:00. Zamanlayıcı Cloudflare Cron
+    (`wrangler.toml → [triggers]`, UTC 06:00 ve Cuma 07:00; ifadeler
+    `index.ts → CRON_NEXTDAY`, `CRON_HAFTALIK` ile aynı). Kapı veritabanını
+    okuyamıyor: gönderenin tarayıcısı önümüzdeki 14 günün çağrılarını hazır
+    haliyle (konu, metin, HTML) ve BCC listesini kapıya bırakır (`PUT
+    /oto-cagri`, `otoPaketiBirak`; açılışta ve saatte bir, değişmediyse
+    yazmaz); şablon tek yerde kalır. Gönderen sessizce değişmez: başkasının
+    tarayıcısı yazamaz (409 `baskasi`), "Benim hesabımdan gönderilsin" açıkça
+    devralır. Kayıtta çağrısı olan etiket (elle gönderilmiş) ve "Bunu gönderme"
+    denen gitmez. Kapı sonucu geçmişe yazar (`oto-cagri-gecmis`); gönderilen
+    çağrıyı kayda uygulamayı açan planlamacının tarayıcısı yazar (`eylemler.ts
+    → otoCagrilariKaydet`, kimlik `oc-<etiket>`, hareket `cagriHazirlandi`;
+    `postalariCek` postayı çekmeden önce de): yanıt ND-/HP- etiketiyle ona
+    bağlanır. Gönderilemeyen (kimlik eksik, liste 14 gündür tazelenmedi, EWS
+    hatası) gönderene bir kez bildirilir. Anahtar Ayarlar › "Otomatik öneri
+    çağrısı" (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan):
+    sıradaki çağrılar, liste tarihi, son gönderimler. Testler
+    `worker/test/oto-cagri.test.ts`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.

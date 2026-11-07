@@ -253,6 +253,30 @@ export const cagriKaydet = (
 };
 
 
+/*
+ * Kapının otomatik gönderdiği çağrılar (src/otoCagri.ts) kayda burada girer:
+ * uygulamayı ilk açan planlamacının tarayıcısı yazar, postaları çekmeden önce
+ * de; yanıt ND-/HP- etiketiyle bu kayda bağlanıyor. Kimlik etiketten: iki
+ * tarayıcı aynı anda yazarsa aynı belgeyi yazsın, çağrı çoğalmasın.
+ */
+export const otoCagrilariKaydet = (
+  ben: Kisi,
+  kayitlar: { etiket: string; tur: CagriTuru; tarih: string; zaman: string; uid: string; kime: string; bccIdler: string[]; metin: string; sonSaat: string; tamam: boolean }[],
+) => {
+  if (!yapabilir(ben, "cagriHazirla")) return 0;
+  let d = getir();
+  const yeni = kayitlar.filter((k) => k.tamam && k.etiket && !d.cagrilar.some((c) => c.etiket === k.etiket));
+  if (!yeni.length) return 0;
+  for (const k of yeni) {
+    const olusturan = d.kisiler.some((x) => x.id === k.uid) ? k.uid : ben.id;
+    d = { ...d, cagrilar: [{ id: `oc-${k.etiket}`, tur: k.tur, tarih: k.tarih, metin: k.metin, sonSaat: k.sonSaat, kime: k.kime, bcc: k.bccIdler, etiket: k.etiket, olusturan, zaman: k.zaman }, ...d.cagrilar] };
+    const haftaId = k.tur === "haftalik" ? d.haftalik.find((h) => h.baslangic === k.tarih)?.id : undefined;
+    d = hareketYaz(d, { kisiId: olusturan, tip: "cagriHazirlandi", haftaId, veri: { tarih: k.tarih, sahip: "muhabir", ...(k.tur === "haftalik" ? { hafta: "1" } : {}) } });
+  }
+  kaydet(d);
+  return yeni.length;
+};
+
 export interface OneriGirdisi {
   /** Muhabir adına girilende muhabir; muhabir dışı kaynakta boş, kaynakTuru dolu. */
   muhabirId?: string;

@@ -849,6 +849,10 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .form-kutu { background: var(--zemin); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-4); }
 .form-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; flex-wrap: wrap; }
 
+/* Otomatik çağrının sıradaki gönderimi: konu solda (içerik sağa yaslı), "Bunu gönderme" kenarda; dar ekranda alta iner. */
+.oto-siradaki { display: flex; gap: var(--ara-2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.oto-siradaki > div { flex: 1 1 14rem; min-width: 0; }
+
 /* --- Sekmeler ve süzgeç --- */
 
 .sekmeler { display: flex; gap: var(--ara-1); flex-wrap: wrap; }

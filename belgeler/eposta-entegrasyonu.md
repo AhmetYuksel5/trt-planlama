@@ -204,3 +204,18 @@ Prototipte otomatik denetlenenler (Playwright):
 - **Yanıttan öneri ayırma ve düzenleme:** orijinal e-posta değişmiyor.
 - **Muhabir:** kendi e-posta önerisini ve yanıtını görüyor, düzenleyemiyor;
   gelen yanıtlar ekranına giremiyor.
+
+## Otomatik öneri çağrısı
+
+Next Day çağrısı her gün 09:00'da (ertesi günün planı), haftalık çağrı her
+Cuma 10:00'da (8 gün sonra başlayan hafta) kapıdan gider: Cloudflare Cron
+(`worker/wrangler.toml → [triggers]`, UTC). Gönderen Ayarlar › "Otomatik öneri
+çağrısı"nı açan planlamacı; posta onun EWS kimliğiyle, Kime onun grup adresi
+(planning), muhabirler BCC'de.
+
+Kapı Firestore'u okuyamadığı için (servis hesabı yok) gönderenin tarayıcısı
+önümüzdeki 14 günün çağrılarını hazır metinle ve BCC listesini kapının KV'sine
+bırakır (`PUT /oto-cagri`). Kapı gönderdiğini `oto-cagri-gecmis`'e yazar;
+uygulamayı açan planlamacının tarayıcısı onu çağrı kaydı olarak Firestore'a
+yazar (`otoCagrilariKaydet`), postaları çekmeden önce de. Gönderen 14 gün hiç
+açmazsa liste biter, çağrı gitmez ve geçmişte "liste güncel değil" görünür.

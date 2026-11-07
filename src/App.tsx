@@ -63,6 +63,8 @@ import {
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc } from "./eylemler";
 import { izlemede } from "./izleme";
+import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
+import { otoHataMetni } from "./ekranlar/posta/OtoCagri";
 import {
   kisitliKisi,
   oneriGorebilir,
@@ -161,6 +163,30 @@ export default function App() {
     const z = setInterval(yokla, GUN_YOKLAMA);
     return () => clearInterval(z);
   }, [sistemHazir, sistemYazar]);
+
+  /*
+   * Otomatik çağrı (otoCagri.ts): kapının gönderdiği çağrı kayda girsin (yanıtlar
+   * ona bağlanır), gönderen muhabir listesini tazelesin; saatte bir. Gönderim
+   * olmadıysa gönderen bir kez bildirim görür.
+   */
+  const otoKisi = GERCEK && !!ben && postaGorebilir(ben) && yapabilir(ben, "cagriHazirla") ? ben : null;
+  const otoId = otoKisi?.id;
+  useEffect(() => {
+    if (GOMULU || !sistemHazir || !otoKisi) return;
+    const yokla = () => {
+      if (izlemede() || !baglantiCanliMi()) return;
+      otoCagriEsitle(otoKisi)
+        .then((d) => {
+          const son = d?.benim ? d.gecmis[0] : undefined;
+          if (son && !son.tamam && otoHataYeni(son.zaman)) bildir(t("otoCagriHata", { hata: otoHataMetni(t, son.hata) }));
+        })
+        .catch((hata) => console.error("otoCagriEsitle", hata));
+    };
+    yokla();
+    const z = setInterval(yokla, 3600_000);
+    return () => clearInterval(z);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sistemHazir, otoId]);
 
   // Tanıtım: adres çıplak açılınca (demoda; gerçek kipte kalmış kişi doğrudan sisteme) ya da `#/tanitim`.
   if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;

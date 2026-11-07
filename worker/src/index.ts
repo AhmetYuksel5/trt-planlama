@@ -4,7 +4,8 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
-import { cfBaglan, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsMesaj } from "./ews.ts";
+import { cfBaglan, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
+import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, otoCagriBirlestir, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
 /*
@@ -84,6 +85,50 @@ const ayarOku = async (env: Env): Promise<Ayar> => {
 const postaAyarOku = async (env: Env): Promise<PostaAyar> => {
   const ham = await env.YZ.get(POSTA_AYAR_ANAHTARI);
   return ham ? ({ ...bosPostaAyar(), ...(JSON.parse(ham) as PostaAyar) }) : bosPostaAyar();
+};
+
+/* Otomatik çağrı (oto-cagri.ts): ayar ve gönderim geçmişi ayrı anahtarlarda; geçmişi yalnız zamanlayıcı yazıyor. */
+const OTO_ANAHTARI = "oto-cagri";
+const OTO_GECMIS_ANAHTARI = "oto-cagri-gecmis";
+const otoOku = async (env: Env): Promise<OtoCagriAyar> => {
+  const ham = await env.YZ.get(OTO_ANAHTARI);
+  return ham ? { ...bosOtoCagri(), ...(JSON.parse(ham) as OtoCagriAyar) } : bosOtoCagri();
+};
+const otoGecmisOku = async (env: Env): Promise<OtoCagriKaydi[]> => JSON.parse((await env.YZ.get(OTO_GECMIS_ANAHTARI)) ?? "[]") as OtoCagriKaydi[];
+
+/* Zamanlayıcıların ifadesi wrangler.toml'dakiyle aynı olmalı: hangisinin çaldığı türü belirliyor. */
+export const CRON_NEXTDAY = "0 6 * * *";
+export const CRON_HAFTALIK = "0 7 * * 5";
+
+export type Gonderici = (ayar: EwsAyar, g: GidenPosta) => Promise<{ tamam: true } | { hata: string }>;
+
+/*
+ * Zamanlayıcının işi: günün çağrısını gönderenin kimliğiyle gönderir.
+ * Kime gönderenin grup adresi (planning); muhabirler BCC'de. Gönderilmeyen
+ * (kimlik eksik, liste bayat, EWS hatası) geçmişe nedeniyle yazılır.
+ */
+export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTuru, gonder: Gonderici): Promise<OtoCagriKaydi | null> => {
+  const ayar = await otoOku(env);
+  const gecmis = await otoGecmisOku(env);
+  const gun = istanbulGunu(simdi);
+  const s = gununKalemi(ayar, tur, gun, gecmis);
+  if ("atla" in s && s.atla !== "liste") return null;
+  const zaman = new Date(simdi).toISOString();
+  const kayit = async (k: OtoCagriKaydi) => {
+    await env.YZ.put(OTO_GECMIS_ANAHTARI, JSON.stringify(gecmiseEkle(gecmis, k)));
+    return k;
+  };
+  if ("atla" in s) return kayit({ etiket: "", tur, tarih: gun, zaman, uid: ayar.uid, kime: "", bccIdler: [], konu: "", metin: "", sonSaat: "", tamam: false, hata: "liste" });
+  const k = s.kalem;
+  const pa = await postaAyarOku(env);
+  const pk = await postaKimlikOku(env, ayar.uid);
+  const temel: OtoCagriKaydi = { etiket: k.etiket, tur, tarih: k.tarih, zaman, uid: ayar.uid, kime: pk.grupAdresi, bccIdler: ayar.bccIdler, konu: k.konu, metin: k.metin, sonSaat: k.sonSaat, tamam: false };
+  if (!pa.acik || !pa.sunucu) return kayit({ ...temel, hata: "postaKapali" });
+  if (!pk.kullanici || !pk.parola) return kayit({ ...temel, hata: "eksikKimlik" });
+  if (!pk.grupAdresi) return kayit({ ...temel, hata: "grup" });
+  if (!ayar.bcc.length) return kayit({ ...temel, hata: "bcc" });
+  const r = await gonder({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, { kime: [pk.grupAdresi], bcc: ayar.bcc.filter((a) => a !== pk.grupAdresi), konu: k.konu, metin: k.metin, html: k.html || undefined });
+  return kayit("hata" in r ? { ...temel, hata: r.hata.slice(0, 200) } : { ...temel, tamam: true });
 };
 
 /* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi) uid'ye bağlı. */
@@ -382,6 +427,23 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });
   }
 
+  /*
+   * Otomatik çağrı: durum ve geçmiş haber merkezinde herkese (çağrının kaydını
+   * uygulamayı ilk açan planlamacı yazıyor); listeyi ve anahtarı gönderen ya
+   * da açıkça devralan değiştiriyor (oto-cagri.ts → otoCagriBirlestir).
+   */
+  if (yol === "/oto-cagri") {
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
+    const oa = await otoOku(env);
+    if (req.method === "GET") return yanit(otoCagriGorunur(oa, kisi.kimlik.uid, await otoGecmisOku(env)));
+    if (req.method === "PUT") {
+      const r = otoCagriBirlestir(oa, await req.json().catch(() => null), kisi.kimlik.uid, new Date(d.simdi()).toISOString());
+      if ("hata" in r) return yanit({ hata: r.hata }, r.hata === "baskasi" ? 409 : 400);
+      await env.YZ.put(OTO_ANAHTARI, JSON.stringify(r.ayar));
+      return yanit(otoCagriGorunur(r.ayar, kisi.kimlik.uid, await otoGecmisOku(env)));
+    }
+  }
+
   // Ayar yalnız tam yöneticide.
   if (yol === "/ayar" || yol === "/dene" || yol === "/modeller") {
     if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
@@ -436,5 +498,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 };
 
 export default {
+  scheduled: (olay: { cron: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
+    const tur: OtoCagriTuru | null = olay.cron === CRON_NEXTDAY ? "nextday" : olay.cron === CRON_HAFTALIK ? "haftalik" : null;
+    if (tur) ctx.waitUntil(otoCagriCalistir(env, Date.now(), tur, (a, g) => postaGonderOtomatik(a, cfBaglan, Date.now(), g)));
+  },
   fetch: (req: Request, env: Env) => isle(req, env, { fetch: (...a) => fetch(...a), simdi: Date.now, anahtarBul: googleAnahtarlari((...a) => fetch(...a), Date.now), onbellek: cacheOnbellegi() }),
 };

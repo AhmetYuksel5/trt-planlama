@@ -2,6 +2,7 @@ import { kapiIstek, type YzSonuc } from "./yz";
 import { cagriYanitiysaIsle, postaIsle } from "./eylemler";
 import { type GelenEposta } from "./eposta";
 import { type Kisi } from "./veri";
+import { otoCagriEsitle } from "./otoCagri";
 
 /*
  * Posta köprüsünün istemcisi: Exchange kutusunu NTLM ile okuyan kapı
@@ -73,6 +74,8 @@ interface KapiMesaji {
  * tekrar gelenler sayılmıyor.
  */
 export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number; oneri: number } | { hata: string; ayrinti?: string }> => {
+  // Kapının sabah gönderdiği çağrı önce kayda girsin: yanıtı o çağrıya bağlanıp öneri olsun.
+  await otoCagriEsitle(ben).catch(() => null);
   const r: YzSonuc<{ mesajlar: KapiMesaji[] }> = await kapiIstek<{ mesajlar: KapiMesaji[] }>("/posta/cek", "POST", { adet });
   if (!r.tamam) return { hata: r.hata, ayrinti: r.ayrinti };
   // En eski önce yazılsın ki sohbet sırası doğru olsun (kapı en yeni önce veriyor).

@@ -73,6 +73,8 @@ export interface GidenPosta {
   bcc?: string[];
   konu: string;
   metin: string;
+  /** Verilirse gövde HTML (otomatik çağrı: kırmızı vurgu ve tablo kurumun e-postasındaki gibi). */
+  html?: string;
 }
 
 /*
@@ -85,7 +87,7 @@ export const createItemIstegi = (g: GidenPosta): string => {
   return ZARF(
     `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
       `<t:Subject>${kacXml(g.konu)}</t:Subject>` +
-      `<t:Body BodyType="Text">${kacXml(g.metin)}</t:Body>` +
+      (g.html ? `<t:Body BodyType="HTML">${kacXml(g.html)}</t:Body>` : `<t:Body BodyType="Text">${kacXml(g.metin)}</t:Body>`) +
       liste("ToRecipients", g.kime) +
       liste("CcRecipients", g.cc) +
       liste("BccRecipients", g.bcc) +
