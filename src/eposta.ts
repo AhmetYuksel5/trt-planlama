@@ -186,21 +186,34 @@ export const postaKonuCekirdegi = (konu: string) => {
  */
 const BAGLANTI = /\bhttps?:\/\/\S+|\bwww\.\S+|\bt\.me\/\S+|\bmailto:\S+/gi;
 const IMZA_SATIRI = [
-  /^[-_–—]{2,}\s*$/, // ayraç çizgisi
+  /^[-_–—=*.·•]{2,}\s*$/, // ayraç çizgisi
   /@[^\s@]+\.[^\s@]+/, // e-posta adresi
   /(?:\+?\d[\d ()\-]{6,}\d)/, // telefon
-  /\b(?:facebook|twitter|instagram|youtube|linkedin|tiktok|telegram|snapchat)\b/i,
-  /تابعونا|follow us|تابعنا/i,
+  /\b(?:facebook|twitter|instagram|youtube|linkedin|tiktok|telegram|snapchat|whatsapp)\b/i,
+  /تابعونا|تابعنا|follow us|bizi takip/i,
 ];
-// Kısa son satırda ünvan/iletişim sözcüğü (cümle noktalaması yoksa): imza say.
-const UNVAN_SOZCUK = /\b(محرر|مراسل|مراسلة|منتج|مدير|رئيس|قسم|هاتف|جوال|موبايل|محمول|تلفون|فاكس|مكتب|قناة|TRT|tel|phone|fax|mob)\b/i;
-const imzaMi = (s: string): boolean => {
-  const t = s.trim();
-  if (t === "") return true;
-  if (IMZA_SATIRI.some((r) => r.test(t))) return true;
-  // Kısa (<45) ve cümle bitişi olmayan ünvan satırı.
-  return t.length <= 45 && UNVAN_SOZCUK.test(t) && !/[.!؟?]\s*$/.test(t);
-};
+// Kısa satırda ünvan/iletişim sözcüğü (cümle noktalaması yoksa): imza say.
+// JS \b yalnız ASCII sınırıdır; Arapça/Türkçe sözcükleri de yakalamak için
+// Unicode harf/rakam sınırı (lookaround).
+const UNVAN_SOZCUK =
+  /(?<![\p{L}\p{N}])(?:محرر|محرره|مراسل|مراسلة|منتج|منتجة|مذيع|مذيعة|مقدم|مقدمة|مدير|مديرة|رئيس|رئيسة|نائب|مسؤول|مسئول|منسق|منسقة|قسم|إدارة|ادارة|وحدة|دائرة|مكتب|هاتف|جوال|موبايل|محمول|تلفون|فاكس|البريد|بريد|العنوان|عنوان|داخلي|تحويلة|editor|reporter|correspondent|producer|presenter|anchor|manager|director|head|chief|coordinator|desk|department|tel|phone|mobile|mob|fax|office|e-?mail|address|adres|telefon|cep|faks|dahili|birim|müdür|editör|muhabir|yapımcı|sunucu)(?![\p{L}\p{N}])/iu;
+// İmza kapanış selamı: "مع التحية", "Saygılarımla", "Best regards"…
+const KAPANIS =
+  /^[\s\p{P}]*(?:مع التحية|مع تحياتي|تحياتي|وتقبلوا|مع خالص|خالص التحية|مع فائق|وتفضلوا بقبول|مع الشكر|شكرا|شكراً|وشكرا|وشكراً|دمتم|تحية طيبة وبعد|saygılarımla|saygılarımızla|saygılar|iyi çalışmalar|kolay gelsin|teşekkürler|teşekkür eder|selamlar|iyi günler|best regards|kind regards|warm regards|best wishes|regards|sincerely|cheers|thank you)(?![\p{L}\p{N}])/iu;
+// İmza bloğundaki kurum/birim satırı.
+const KURUM_SATIRI = /(?<![\p{L}\p{N}])(?:TRT|تي ?آر ?تي|قناة|شبكة|إذاعة|اذاعة|channel|network|broadcast)(?![\p{L}\p{N}])/iu;
+// İçerik sözcüğü taşıyan satır isim sanılmasın (yanlış kesmeyi önler).
+const ICERIK_SOZ =
+  /(?<![\p{L}\p{N}])(?:رجاء|يرجى|نرجو|ارجو|أرجو|مراجعة|اجتماع|خبر|تقرير|موضوع|بخصوص|مقترح|اقتراح|تغطية|برنامج|حلقة|ضيف|please|lütfen|rica|toplantı|haber|öneri|konu|hakkında|program|rapor)(?![\p{L}\p{N}])/iu;
+// Kişi adı gibi kısa satır: 1-4 sözcük, rakam ve cümle/işaret bitişi yok, içerik sözcüğü yok.
+const adGibiSatir = (t: string): boolean =>
+  !!t && t.length <= 40 && !/\d/.test(t) && !/[.!؟?،؛,:]\s*$/.test(t) && !ICERIK_SOZ.test(t) && t.split(/\s+/).length <= 4;
+// Güçlü imza çıpası: e-posta/telefon/sosyal/ayraç, kapanış, kurum ya da ünvan.
+const gucluImza = (t: string): boolean =>
+  IMZA_SATIRI.some((r) => r.test(t)) || KAPANIS.test(t) || KURUM_SATIRI.test(t) || (UNVAN_SOZCUK.test(t) && t.length <= 60 && !/[.!؟?]\s*$/.test(t));
+// Alttan başlayan yasal uyarı / tarama bildirimi bloğu: buradan sona atılır.
+const SORUMLULUK =
+  /^[\s\p{P}]*(?:هذه الرسالة|هذا البريد|تحتوي هذه|المعلومات الواردة|قد تحتوي|تم فحص|this (?:e-?mail|message)|the information|this email and|confidential|disclaimer|please consider|virus|yasal uyarı|gizlilik|bu (?:e-?posta|mesaj|elektronik|ileti)|işbu|bu elektronik posta)/iu;
 // Bağlantısı atılınca boş kalan etiket satırı ("رابط:", "Link:"): atılır.
 const BOS_ETIKET = /^\s*(?:رابط|الرابط|link|url|detay|detaylar|kaynak|المصدر|source)\s*:\s*$/i;
 // HTML postanın metne dönüşünde kalan gömülü görsel izleri: [cid:…], [image: …], <logo.png>.
@@ -232,18 +245,32 @@ export const gizliEkMi = (ad: string): boolean => {
 };
 
 export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
-  const satirlar = metin
+  let satirlar = metin
     .replace(BAGLANTI, "")
     .replace(GORSEL_REF, "")
     .split(/\r?\n/)
     .map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
+  // Yasal uyarı / tarama bildirimi: ilk satırından sona kadar at.
+  const uyari = satirlar.findIndex((s) => SORUMLULUK.test(s.trim()));
+  if (uyari >= 0) satirlar = satirlar.slice(0, uyari);
   const ad = gonderenAd.trim().toLowerCase();
-  const adSatiri = (s: string) => !!ad && s.trim().toLowerCase() === ad; // imzadaki ad satırı
+  const adSatiri = (s: string) => !!ad && s.trim().toLowerCase() === ad; // tam gönderen adı
+  // Alttan imza kesimi: güçlü imza satırları, tam ad; isim gibi satır yalnız
+  // altında güçlü bir imza çıpası görülmüşse (ünvan/telefon/kurum) kesilir,
+  // böylece gerçek içerik yanlışlıkla atılmaz.
   let son = satirlar.length;
-  while (son > 0 && (imzaMi(satirlar[son - 1]) || adSatiri(satirlar[son - 1]))) son--;
+  let cipaGorundu = false;
+  while (son > 0) {
+    const t = satirlar[son - 1].trim();
+    if (t === "") { son--; continue; }
+    if (gucluImza(t)) { cipaGorundu = true; son--; continue; }
+    if (adSatiri(t)) { son--; continue; }
+    if (cipaGorundu && adGibiSatir(t)) { son--; continue; }
+    break;
+  }
   const sade = satirlar.slice(0, son).join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   // Her şey imza sanıldıysa (tümü kısa/linkli) özgün metni ver, boş balon çıkmasın.
-  return sade || metin.replace(BAGLANTI, "").trim();
+  return sade || metin.replace(BAGLANTI, "").replace(GORSEL_REF, "").trim();
 };
 
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */

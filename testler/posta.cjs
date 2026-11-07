@@ -100,6 +100,25 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-posta-sohbet] .posta-ek").count()) === 1, "yalnız gerçek dosya eki görünür (pdf), görseller gizli");
   ok((await p.locator("[data-posta-sohbet] .posta-ek").first().innerText()).includes("rapor.pdf"), "görünen ek rapor.pdf");
 
+  // İmza/isim bloğu silinir, içerik kalır
+  const imzali = "رجاء مراجعة التقرير المرفق قبل الغد.\n\nمحمد صفا\nمراسل TRT عربي\nجوال: +90 555 111 2233\nmehmet@trt.net.tr\nمع التحية";
+  await p.evaluate((metin) => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    v.postaMesajlari = (v.postaMesajlari || []).concat([{
+      id: "pm-imza-test", konuKimligi: "imza-test-konu", kimden: "muhammed@trt.net.tr",
+      kimdenAd: "Muhammed Ali", konu: "İmza testi", metin, tamMetin: metin,
+      zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
+    }]);
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  }, imzali);
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "İmza testi" }).first().click();
+  await p.waitForTimeout(300);
+  const imzaGovde = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
+  ok(imzaGovde.includes("مراجعة التقرير"), "içerik kaldı");
+  ok(!imzaGovde.includes("محمد صفا") && !imzaGovde.includes("مراسل") && !imzaGovde.includes("مع التحية") && !imzaGovde.includes("555"), "isim/ünvan/kapanış/telefon silindi");
+
   // 390px: yatay taşma yok (Türkçe ve Arapça)
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);

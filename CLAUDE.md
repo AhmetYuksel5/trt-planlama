@@ -1021,10 +1021,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı, yoksa
   `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Balonda gövde ekranda
   `eposta.ts → postaMetniSadelestir` ile daha da sadeleşiyor: bağlantılar, boş
-  bağlantı etiketleri ve sondaki imza bloğu (e-posta, telefon, sosyal, kısa
-  ünvan satırları, gönderenin ad satırı) atılıyor; tam metin `tamMetin`'de
-  duruyor. Ekler başlıksız, dosya biçiminde kutu (`.posta-ek`, dosya ikonu +
-  ad; dosyanın kendisi indirilmiyor). Sohbet listesi kontürlü ayrı kartlar
+  bağlantı etiketleri, gömülü görsel izleri ([cid:…], <logo.png>), yasal uyarı/
+  tarama footer'ı ve sondaki imza bloğu atılıyor; tam metin `tamMetin`'de
+  duruyor. İmza bloğu alttan kesiliyor: güçlü çıpa satırları (e-posta, telefon,
+  sosyal, kurum [TRT/قناة], ünvan/iletişim sözcüğü, kapanış selamı [مع التحية/
+  Saygılarımla]) ve çıpanın hemen üstündeki isim satırı (kısa, rakamsız,
+  cümle/içerik sözcüğü taşımayan ad) siliniyor; JS `\b` yalnız ASCII sınırı
+  olduğu için sözcük sınırı Unicode harf/rakam lookaround'u (`(?<![\p{L}\p{N}])`).
+  İçerik sözcüğü taşıyan satır isim sanılıp kesilmiyor. Ekler başlıksız, dosya
+  biçiminde kutu (`.posta-ek`, dosya ikonu + ad; dosyanın kendisi indirilmiyor);
+  imza/gömülü görsel ekleri (`gizliEkMi`: svg/ico/gif/bmp/webp/tiff, GUID'li
+  otomatik adlar [trtlogo_<guid>.png], image001.png, logo/sosyal/imza geçen
+  png/jpg) gösterilmiyor, pdf/docx gibi gerçek dosyalar kalıyor. Sohbet listesi kontürlü ayrı kartlar
   (`.posta-sohbet`: renkli avatar harfi, başlık, `@gönderen`, mesaj sayısı). Telefonda tek ekran:
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
   Buradan yanıt gönderilir (`Yazma`, `.posta-yaz`): alıcı sohbetteki son gelen
