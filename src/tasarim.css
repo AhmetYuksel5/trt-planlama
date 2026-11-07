@@ -530,6 +530,12 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-zaman { position: absolute; inset-block-end: 4px; inset-inline-end: 10px; font-size: 11px; color: var(--sonuk); }
 .posta-gun { align-self: center; margin-block: var(--ara-2); }
 .posta-gun span { background: var(--yuzey-2); color: var(--sonuk); font-size: var(--punto-kucuk); padding: 2px 10px; border-radius: 10px; }
+/* Giden (buradan gönderilen yanıt): sağda, yeşilimsi balon. */
+.posta-balon.giden { align-self: flex-end; background: var(--iyi-sis, #dcf8c6); border-color: transparent; border-radius: 12px; border-end-end-radius: 4px; border-start-start-radius: 12px; }
+/* WhatsApp gibi yazma kutusu: sohbetin altında. */
+.posta-yaz { display: flex; gap: var(--ara-2); align-items: flex-end; padding-block-start: var(--ara-2); }
+.posta-yaz textarea { flex: 1; min-block-size: 40px; max-block-size: 120px; resize: none; }
+.posta-yaz .dugme { flex: 0 0 auto; align-self: stretch; }
 
 /* --- Ana başlıkların renkleri (kısayollar, rozetler, çip ve kutucuklar) --- */
 

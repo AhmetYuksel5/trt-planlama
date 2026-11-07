@@ -3120,6 +3120,30 @@ export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Pos
   return { durum: "eklendi", mesajId: mesaj.id, konuKimligi };
 };
 
+/*
+ * Planlama'nın buradan gönderdiği yanıtı sohbete (giden balon) ekler. Gerçek
+ * gönderim kapı üzerinden EWS'yle oluyor; bu yalnız ekrana yansıtıyor (giden
+ * posta Gelen Kutusu'na düşmediği için çekişte gelmez).
+ */
+export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, metin: string): string | null => {
+  if (!yapabilir(ben, "cagriHazirla")) return null;
+  const d = getir();
+  const mesaj: PostaMesaji = {
+    id: kimlik("pm"),
+    konuKimligi,
+    kimden: ben.eposta ?? "",
+    konu,
+    metin,
+    tamMetin: metin,
+    zaman: simdi(),
+    ekler: [],
+    kaynak: "iceAktarma",
+    giden: true,
+  };
+  kaydet({ ...d, postaMesajlari: [mesaj, ...(d.postaMesajlari ?? [])] });
+  return mesaj.id;
+};
+
 /* Sohbeti izleriyle siler (Planlama temizliği); çağrı ve öneri akışına dokunmaz. */
 export const postaSil = (ben: Kisi, konuKimligi: string): boolean => {
   if (!yapabilir(ben, "cagriHazirla")) return false;

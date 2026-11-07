@@ -1016,8 +1016,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
   öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,
   içe aktarmada konu çekirdeğinden. Aynı Message-ID iki kez işlenmiyor.
-  Solda sohbet listesi (dar, `.posta-duzen`), sağda seçili sohbet balonlarla
-  (`.yazisma`/`.mesajlar`, gönderen kayıtlı kişiyse adı ve avatarı). Köprü
+  Görünüm WhatsApp gibi (`.posta-govde`/`.posta-balon`/`.posta-yaz`): sade
+  balonlar, yalnız mesaj + ekli dosya çipleri + köşede saat, gün ayracı;
+  gönderen grup başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı,
+  yoksa `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Telefonda tek ekran:
+  sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
+  Buradan yanıt gönderilir (`Yazma`, `.posta-yaz`): alıcı sohbetteki son gelen
+  postanın göndereni, konu "RE: …"; gerçek kipte kapı EWS `CreateItem`
+  (`SendAndSaveCopy`) ile gönderiyor (`worker/src/ews.ts → postaGonder`,
+  `POST /posta/gonder`, Planlama/yönetici), sonra giden balon ekleniyor
+  (`eylemler.ts → postaGidenEkle`, `PostaMesaji.giden`, sağda yeşil); demoda
+  yalnız ekrana. Giden posta Gelen Kutusu'na düşmediği için çekişte gelmez,
+  ekrana bu yüzden elle ekleniyor. Köprü
   (Outlook'tan `.msg` sürükle-bırak, `.eml`, yapıştır) `oneri/Eposta.tsx →
   dosyaOku`'dan geçiyor, Gelen yanıtlar ekranıyla aynı okuyucu. Kısıtlı
   muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil; kural catch-all'u

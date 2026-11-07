@@ -4,7 +4,7 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
-import { cfBaglan, grubaUygun, postalariCekOtomatik, type EwsMesaj } from "./ews.ts";
+import { cfBaglan, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsMesaj } from "./ews.ts";
 import { bosPostaAyar, postaAyarBirlestir, postaGorunur, type PostaAyar } from "./posta-ayar.ts";
 
 /*
@@ -316,6 +316,22 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
     return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pa.grupAdresi)).map(postaDisa) });
+  }
+
+  /* Buradan yanıt gönderme (EWS CreateItem). Alıcı belirtilmezse planlama grubu adresi. */
+  if (req.method === "POST" && yol === "/posta/gonder") {
+    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    const pa = await postaAyarOku(env);
+    if (!pa.acik) return yanit({ hata: "kapali" }, 403);
+    if (!pa.sunucu || !pa.kullanici || !pa.parola) return yanit({ hata: "eksikAyar" }, 400);
+    const g = (await req.json().catch(() => null)) as { kime?: string; konu?: string; metin?: string } | null;
+    const kime = (typeof g?.kime === "string" && g.kime.trim()) || pa.grupAdresi;
+    const metin = String(g?.metin ?? "").trim();
+    if (!/^[^\s@]+@[^\s@]+$/.test(kime)) return yanit({ hata: "kime" }, 400);
+    if (!metin) return yanit({ hata: "bos" }, 400);
+    const konu = String(g?.konu ?? "").slice(0, 255) || "(konusuz)";
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pa.kullanici, parola: pa.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, konu, metin });
+    return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true });
   }
 
   // Ayar yalnız tam yöneticide.

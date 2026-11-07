@@ -1561,6 +1561,9 @@ const M = {
   bPostaCekildi: m("{n} yeni posta geldi", "وصلت {n} رسالة جديدة", "{n} new messages arrived"),
   bPostaCekYok: m("Yeni posta yok", "لا بريد جديد", "No new mail"),
   bPostaCekHata: m("Posta çekilemedi", "تعذّر جلب البريد", "Could not fetch mail"),
+  postaYaz: m("Yanıt yaz", "اكتب ردًا", "Write a reply"),
+  bPostaGonderildi: m("Gönderildi", "تم الإرسال", "Sent"),
+  bPostaGonderHata: m("Gönderilemedi", "تعذّر الإرسال", "Could not send"),
   // Ayarlar › E-posta kutusu (EWS)
   postaAyariBaslik: m("E-posta kutusu (EWS)", "صندوق البريد (EWS)", "Mailbox (EWS)"),
   postaAcikAyar: m("Postayı kutudan otomatik çek", "جلب البريد تلقائيًا من الصندوق", "Fetch mail from the mailbox automatically"),

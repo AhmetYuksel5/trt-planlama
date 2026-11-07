@@ -34,6 +34,9 @@ export const postaAyariGetir = () => kapiIstek<PostaAyarGorunum>("/posta/ayar");
 export const postaAyariKaydet = (g: PostaAyarGirdi) => kapiIstek<PostaAyarGorunum>("/posta/ayar", "PUT", g);
 export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/posta/dene", "POST", {});
 
+/* Buradan yanıt gönderir (kapı EWS CreateItem ile). Alıcı boşsa kapı planlama grubu adresini kullanır. */
+export const postaGonder = (g: { kime?: string; konu: string; metin: string }) => kapiIstek<{ tamam: boolean }>("/posta/gonder", "POST", g);
+
 interface KapiMesaji {
   kimden: string;
   kimdenAd?: string;

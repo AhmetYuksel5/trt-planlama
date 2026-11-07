@@ -1,13 +1,13 @@
-import { ArrowLeft, Mail, MessageSquare, Paperclip, RefreshCw, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Mail, MessageSquare, Paperclip, RefreshCw, Send, Trash2, Upload } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
-import { postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
+import { postaGidenEkle, postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
 import { gondereniBul, postaKonuBasligi, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
-import { postalariCek } from "../../posta-kapi";
+import { postalariCek, postaGonder } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
 import { dosyaOku } from "../oneri/Eposta";
 
@@ -44,12 +44,26 @@ const sohbetleriKur = (mesajlar: PostaMesaji[]): Sohbet[] => {
     .sort((a, b) => b.son.zaman.localeCompare(a.son.zaman));
 };
 
-/* Postanın göndereni kayıtlı kişiyse adı, değilse e-postadaki ad/adres. */
+/*
+ * Gönderenin görünen adı: kayıtlı kişiyse adı; değilse postadaki görünen ad
+ * (adres kısmı atılır: "Ad <x@y>" → "Ad", yoksa "x@y" → "x"). E-posta hiç
+ * görünmesin, yalnız isim.
+ */
+const gonderenAdi = (v: ReturnType<typeof useVeri>, m: PostaMesaji, ad: (k: Kisi) => string): string => {
+  const kisi = gondereniBul(v, m.kimden);
+  if (kisi) return ad(kisi);
+  const ham = (m.kimdenAd || m.kimden).trim();
+  const esli = ham.match(/^"?([^"<]+?)"?\s*<[^>]+>$/);
+  if (esli) return esli[1].trim();
+  return ham.includes("@") ? ham.split("@")[0] : ham;
+};
+
+/* Sohbet listesinde gönderenin adı (e-postasız). */
 const GonderenEtiketi = ({ m }: { m: PostaMesaji }) => {
   const { ad } = useDil();
   const v = useVeri();
   const kisi = gondereniBul(v, m.kimden);
-  return <b dir={kisi ? undefined : "ltr"}>{kisi ? ad(kisi) : m.kimdenAd || m.kimden}</b>;
+  return <b dir={kisi ? undefined : "ltr"}>@{gonderenAdi(v, m, ad)}</b>;
 };
 
 /*
@@ -75,10 +89,10 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                   <span>{tarihYaz(yerelGun(m.zaman), dil, "tam")}</span>
                 </li>
               )}
-              <li className="posta-balon" data-posta-mesaj>
-                {yeniGonderen && (
+              <li className={`posta-balon${m.giden ? " giden" : ""}`} data-posta-mesaj>
+                {yeniGonderen && !m.giden && (
                   <div className="posta-gonderen" dir={kisi ? undefined : "ltr"}>
-                    {kisi ? ad(kisi) : m.kimdenAd || m.kimden}
+                    @{gonderenAdi(v, m, ad)}
                   </div>
                 )}
                 {m.metin.trim() && (
@@ -97,6 +111,52 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           );
         })}
       </ol>
+    </div>
+  );
+}
+
+/*
+ * WhatsApp gibi yanıt kutusu: sohbetin altında. Alıcı, sohbetteki son gelen
+ * postanın göndereni (konuştuğumuz kişi); konu "RE: <başlık>". Gerçek kipte
+ * kapı EWS ile gönderiyor, sonra giden balon ekleniyor; demoda yalnız ekrana.
+ */
+function Yazma({ ben, sohbet }: { ben: Kisi; sohbet: Sohbet }) {
+  const { t } = useDil();
+  const [metin, setMetin] = useState("");
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const sonGelen = [...sohbet.mesajlar].reverse().find((m) => !m.giden) ?? sohbet.son;
+  const kime = sonGelen.kimden;
+  const konu = /^re:/i.test(sohbet.son.konu) ? sohbet.son.konu : `RE: ${sohbet.baslik}`;
+  const gonder = async () => {
+    const m = metin.trim();
+    if (!m) return;
+    setGonderiliyor(true);
+    if (GERCEK) {
+      const r = await postaGonder({ kime, konu, metin: m });
+      setGonderiliyor(false);
+      if (!r.tamam) return bildir(`${t("bPostaGonderHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    } else setGonderiliyor(false);
+    postaGidenEkle(ben, sohbet.konuKimligi, konu, m);
+    setMetin("");
+    bildir(t("bPostaGonderildi"));
+  };
+  return (
+    <div className="posta-yaz">
+      <textarea
+        {...icerikAlani}
+        rows={1}
+        value={metin}
+        placeholder={t("postaYaz")}
+        onChange={(e) => setMetin(e.target.value)}
+        onKeyDown={(e) => {
+          // Ctrl/⌘+Enter gönderir; düz Enter satır açar.
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) void gonder();
+        }}
+        data-posta-yaz
+      />
+      <button type="button" className="dugme" disabled={!metin.trim() || gonderiliyor} onClick={gonder} data-posta-gonder>
+        <Send size={16} className="yon" />
+      </button>
     </div>
   );
 }
@@ -124,7 +184,12 @@ function IceAktar({ ben, onEklendi }: { ben: Kisi; onEklendi: (s: PostaSonucu) =
     dosyalar(e.dataTransfer.files);
   };
   const yapistirIsle = () => {
-    const gelen: GelenEposta = { kimden: yapistir.kimden.trim(), kimdenAd: yapistir.kimden.trim(), konu: yapistir.konu, metin: yapistir.metin };
+    // "Ad <adres>" biçimini ada ve adrese ayır; yoksa yazılanı adres say.
+    const ham = yapistir.kimden.trim();
+    const esli = ham.match(/^"?([^"<]*?)"?\s*<([^>]+)>$/);
+    const kimden = esli ? esli[2].trim() : ham;
+    const kimdenAd = esli ? esli[1].trim() || undefined : undefined;
+    const gelen: GelenEposta = { kimden, kimdenAd, konu: yapistir.konu, metin: yapistir.metin };
     const s = postaIsle(ben, gelen, "iceAktarma");
     if (s) {
       onEklendi(s);
@@ -247,6 +312,7 @@ export function Posta({ ben }: { ben: Kisi }) {
                 }
               >
                 <SohbetGovdesi sohbet={secik} />
+                <Yazma ben={ben} sohbet={secik} />
               </Kart>
             </>
           ) : (

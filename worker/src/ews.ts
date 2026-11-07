@@ -66,6 +66,16 @@ export const getItemIstegi = (idler: { id: string; degisim: string }[]): string 
       `<m:ItemIds>${idler.map((i) => `<t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/>`).join("")}</m:ItemIds></m:GetItem>`,
   );
 
+/* Yanıt gönderme: düz metin gövdeli e-posta, gönderilip Gönderilmiş'e kopyalanıyor. */
+export const createItemIstegi = (kime: string, konu: string, metin: string): string =>
+  ZARF(
+    `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
+      `<t:Subject>${kacXml(konu)}</t:Subject>` +
+      `<t:Body BodyType="Text">${kacXml(metin)}</t:Body>` +
+      `<t:ToRecipients><t:Mailbox><t:EmailAddress>${kacXml(kime)}</t:EmailAddress></t:Mailbox></t:ToRecipients>` +
+      `</t:Message></m:Items></m:CreateItem>`,
+  );
+
 /* --- XML çözme (DOMParser Worker'da yok; küçük düz metin çözücü) --- */
 
 const varlikCoz = (s: string): string =>
@@ -377,6 +387,30 @@ export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi:
   const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postalariCek(ayar, baglan, simdi, adet, true);
+};
+
+/* Yanıt gönderir (EWS CreateItem, SendAndSaveCopy). */
+export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: { kime: string; konu: string; metin: string }, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean }> => {
+  let soket: Soket | undefined;
+  try {
+    soket = await baglan(ayar.sunucu);
+    const r = await ntlmIstek(soket, ayar, createItemIstegi(g.kime, g.konu, g.metin), simdi, true, mic);
+    if (r.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
+    if (r.durum !== 200) return { hata: `CreateItem ${r.durum}: ${faultMetni(latin1Utf8(r.govde))}` };
+    const xml = latin1Utf8(r.govde);
+    if (!/ResponseClass="Success"/.test(xml) && !/>NoError</.test(xml)) return { hata: `gönderilemedi: ${faultMetni(xml)}` };
+    return { tamam: true };
+  } catch (e) {
+    return { hata: e instanceof Error ? e.message : String(e) };
+  } finally {
+    await soket?.kapat().catch(() => {});
+  }
+};
+
+export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: { kime: string; konu: string; metin: string }): Promise<{ tamam: true } | { hata: string }> => {
+  const ilk = await postaGonder(ayar, baglan, simdi, g, false);
+  if (!("hata" in ilk) || !ilk.kimlik) return ilk;
+  return postaGonder(ayar, baglan, simdi, g, true);
 };
 
 /* Gövde UTF-8; soketten gelen baytları metne çevir. */

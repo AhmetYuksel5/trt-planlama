@@ -727,6 +727,8 @@ export interface PostaMesaji {
   /** Yalnız ek adları; dosyalar indirilmiyor. */
   ekler: string[];
   kaynak: "posta" | "iceAktarma";
+  /** Planlama'nın buradan gönderdiği yanıt; sohbette sağda (giden) balon. */
+  giden?: boolean;
 }
 
 /* --- Paket önerisi: birimler arası ortak kayıt (rapor bölüm 7). --- */

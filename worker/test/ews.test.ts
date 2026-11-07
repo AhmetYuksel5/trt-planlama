@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
+import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -56,6 +56,23 @@ test("GetItem yanıtı mesaja çözülüyor; alıntı ayıklanıyor, ekler ad ol
   assert.ok(m[0].metin.includes("paket önerim var"));
   assert.ok(!m[0].metin.includes("wrote:") && !m[0].metin.includes("eski"), "alıntı ayıklandı");
   assert.ok(m[0].tamMetin.includes("wrote:"), "tam metin korunuyor");
+});
+
+test("CreateItem isteği: gönderilip kopyalanır, konu/gövde/alıcı XML'de", () => {
+  const x = createItemIstegi("planning@trtarabi.com", "RE: <selam>", "merhaba & hoşçakal");
+  assert.ok(x.includes('MessageDisposition="SendAndSaveCopy"'));
+  assert.ok(x.includes("<t:Body BodyType=\"Text\">merhaba &amp; hoşçakal</t:Body>"));
+  assert.ok(x.includes("RE: &lt;selam&gt;"));
+  assert.ok(x.includes("<t:EmailAddress>planning@trtarabi.com</t:EmailAddress>"));
+});
+
+test("postaGonderOtomatik: el sıkışması + CreateItem başarı", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.trt.net.tr", kullanici: "u", parola: "p", alan: "TRT" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`;
+  const basari = `<m:CreateItemResponse><m:ResponseMessages><m:CreateItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode></m:CreateItemResponseMessage></m:ResponseMessages></m:CreateItemResponse>`;
+  const { soket } = sahteSoket([`HTTP/1.1 401 Unauthorized\r\n${auth}Content-Length: 0\r\n\r\n`, httpYanit("200 OK", basari)]);
+  const r = await postaGonderOtomatik(ayar, async () => soket, Date.now(), { kime: "a@trt.net.tr", konu: "RE: x", metin: "selam" });
+  assert.ok("tamam" in r && r.tamam, JSON.stringify(r));
 });
 
 test("faultMetni: SOAP fault ve EWS MessageText çıkarılıyor", () => {

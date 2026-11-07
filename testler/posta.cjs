@@ -55,6 +55,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(300);
   ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 2, "sohbette iki mesaj, zaman sırasıyla");
 
+  // Buradan yanıt gönder (demoda yalnız ekrana giden balon)
+  await p.locator("[data-posta-yaz]").fill("Teşekkürler, planladık.");
+  await p.locator("[data-posta-gonder]").click();
+  await p.waitForTimeout(400);
+  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 3, "gönderilen yanıt sohbete eklendi");
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").count()) === 1, "giden balon sağda");
+
   // Farklı konu ayrı sohbet
   await p.locator("[data-posta-kimden]").fill("selin@ornek.local");
   await p.locator("[data-posta-konu]").fill("Kudüs gelişmesi");
@@ -65,7 +72,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // Tekillik: aynı Message-ID yoksa yapıştırmada mesaj kimliği yok, ama kayıt sayısı artar; silme izleriyle gider
   const once = (await veri()).postaMesajlari.length;
-  ok(once === 3, "üç mesaj kayıtlı: " + once);
+  ok(once === 4, "dört mesaj kayıtlı (2 Gazze + 1 giden + 1 Kudüs): " + once);
   await p.locator('[data-posta-sohbet-bag]').first().click();
   await p.waitForTimeout(200);
   await p.locator('.posta-duzen .kart').last().locator('button[title]').click();
