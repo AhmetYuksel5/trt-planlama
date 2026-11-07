@@ -1,6 +1,6 @@
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { ArrowLeft, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -10,7 +10,8 @@ import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKE
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, CALISMA_BICIMLERI, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
-import { gorevlendirmeGorebilir, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
+import { gorevlendirmeGorebilir, hesapYetkisi, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
+import { EslestirPenceresi } from "./Kullanicilar";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { ProfilTakipleri } from "./Takipler";
 import { SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
@@ -63,10 +64,24 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     )
     .sort((a, b) => ad(a).localeCompare(ad(b)));
   const perfGorur = muhabirSayfasi && tum.some((k) => performansGorebilir(ben, k) && k.id !== ben.id);
+  // Çağrının CC'sindeki adresleri muhabirlere toplu yazmak (epostaEslestir.ts).
+  const [eslestir, setEslestir] = useState(false);
+  const eslestirebilir = muhabirSayfasi && hesapYetkisi(ben, "kisiDuzenle");
 
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(ayar.baslik)} />
+      <SayfaBasi
+        ikon={ayar.ikon}
+        baslik={t(ayar.baslik)}
+        sagUc={
+          eslestirebilir ? (
+            <button type="button" className="dugme dugme-ikincil" onClick={() => setEslestir(true)} data-eposta-eslestir>
+              <AtSign size={16} /> {t("epostaEslestir")}
+            </button>
+          ) : undefined
+        }
+      />
+      {eslestir && <EslestirPenceresi ben={ben} kapat={() => setEslestir(false)} />}
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">

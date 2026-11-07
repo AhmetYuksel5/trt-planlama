@@ -177,6 +177,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Aynı e-posta ya da Arapça ad kayıtlıysa atlanır; liste ikinci kez
     yüklenince çoğalmaz. Listedeki konum yazımları `KONUM` tablosuyla
     şehre bağlanır; tanınmayan İstanbul'a yazılır ve önizlemede uyarılır.
+  - E-posta listesiyle eşleştirme (kullanıcı: çağrının CC'sindeki muhabir
+    adreslerini teker teker girmek istemiyor; `epostaEslestir.ts`, pencere
+    `Kullanicilar.tsx → EslestirPenceresi`, Dış muhabirler sayfasının başında
+    ve Hesaplar'da; demoda Hesaplar yok). Liste yapıştırılır (virgül, noktalı
+    virgül, satır, "Ad <adres>"), adresin yerel kısmı muhabirin Latin adının
+    parçalarıyla (Türkçe/aksanlı harf Latin'e; kayıtlı adreslerin yerel
+    kısmı da parça) karşılaştırılır: noktalı, bitişik, rakamlı yazım tutar.
+    En az iki parça tutan ve ikinciden açıkça iyi olan "eşleşti" (işaretli);
+    tek parça ya da eşit adaylar "seçilecek" (adaylar önce), hiç tutmayan
+    "bulunamadı", başkasında kayıtlı "zaten kayıtlı". Yanlış kişiye yazılan
+    adres çağrı yanıtını başkasının önerisi yapardı; bu yüzden kesin olmayan
+    işaretsiz. Alan: boşsa kurumsal (çağrının BCC'si oradan), sonra kişisel;
+    aynı kişinin listedeki ikinci adresi öbür alana, üçüncüsü "alanlar
+    dolu". Hesabı açık kişinin kurumsal adresi giriş adresi, buradan yazılmaz
+    (kişisele; değişimi "Düzenle"deki aktivasyon akışı). Kayıt
+    `eylemler.ts → epostaListesiUygula` (kişi düzenleme yetkisi; başkasında
+    kayıtlı adres atlanır). Gerçek adresler depoya girmez: liste tarayıcıda.
+    Test `testler/eposta-eslestir.cjs` (kurgusal adresler).
   - Muhabirin görev yaptığı şehir profil formunda ("Profili düzenle"; kişinin
     kendisi ve `profilDuzenle` yetkisi): listede yoksa "+ Yeni şehir…" ile
     Arapça adı (zorunlu), Türkçe ve İngilizce adı, ülkesi girilir. Yerleşik

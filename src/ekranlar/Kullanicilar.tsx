@@ -1,15 +1,16 @@
 import { OnayBekleyenHesaplar } from "../bilesenler/HesapOnayi";
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
-import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
-import { Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
+import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, icMuhabirMi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
+import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, KayitBaglantisi } from "../depo/firebase";
 import { sehirAdi } from "../etiketler";
-import { hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { epostaListesiUygula, hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
+import { bosAlan, epostaListesiniEslestir, listedenAdresler, type EpostaAlani, type EslesmeSatiri } from "../epostaEslestir";
 import { izlemeBaslat } from "../izleme";
 import { GERCEK, firebaseYukle } from "../kip";
 import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
@@ -105,6 +106,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   const [baglanan, setBaglanan] = useState<Kisi | null>(null);
   const [yetkiVerilen, setYetkiVerilen] = useState<Kisi | null>(null);
   const [aktar, setAktar] = useState(false);
+  const [eslestir, setEslestir] = useState(false);
   const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
   // Kayıtlı yapıda başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
   const gorev = birimeUygunUnvan(form.birim, form.gorev);
@@ -193,10 +195,19 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
           baslik={t("kisiEkle")}
           ikon={<UserPlus size={18} />}
           sagUc={
-            hesapsizYetkisi && (
-              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAktar(true)} data-excel-aktar>
-                <FileSpreadsheet size={14} /> {t("excelAktar")}
-              </button>
+            (hesapsizYetkisi || hesapYetkisi(ben, "kisiDuzenle")) && (
+              <span className="dugmeler">
+                {hesapsizYetkisi && (
+                  <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAktar(true)} data-excel-aktar>
+                    <FileSpreadsheet size={14} /> {t("excelAktar")}
+                  </button>
+                )}
+                {hesapYetkisi(ben, "kisiDuzenle") && (
+                  <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setEslestir(true)} data-eposta-eslestir>
+                    <AtSign size={14} /> {t("epostaEslestir")}
+                  </button>
+                )}
+              </span>
             )
           }
         >
@@ -473,6 +484,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
       {baglanan && <BaglaPenceresi ben={ben} kisi={baglanan} kapat={() => setBaglanan(null)} />}
       {yetkiVerilen && <YetkiPenceresi ben={ben} kisi={yetkiVerilen} kapat={() => setYetkiVerilen(null)} />}
       {aktar && <AktarPenceresi ben={ben} kapat={() => setAktar(false)} />}
+      {eslestir && <EslestirPenceresi ben={ben} kapat={() => setEslestir(false)} />}
     </>
   );
 }
@@ -603,6 +615,167 @@ function AktarPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
           </button>
           <button type="button" className="dugme dugme-kucuk" disabled={!yeni.length} onClick={ekle} data-aktar-ekle>
             <FileSpreadsheet size={14} /> {t("aktarEkle", { n: String(yeni.length) })}
+          </button>
+        </div>
+      </div>
+    </Pencere>
+  );
+}
+
+/*
+ * Yapıştırılan e-posta listesini muhabirlerle eşleştirir (epostaEslestir.ts):
+ * çağrının CC'sindeki adresler teker teker girilmesin. Önizlemede her satırın
+ * kişisi ve alanı değişir; kesin olmayan işaretsiz gelir, kişisi seçilince
+ * işaretlenir. Kayıt onayla (eylemler.ts → epostaListesiUygula). Hesabı açık
+ * kişide kurumsal alan giriş adresi, seçilemez. Hesaplar'da ve Dış muhabirler
+ * sayfasında (demoda Hesaplar yok; asıl yeri muhabir listesi).
+ */
+type EslestirSatiri = EslesmeSatiri & { sec: boolean };
+
+export function EslestirPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const [metin, setMetin] = useState("");
+  const [satirlar, setSatirlar] = useState<EslestirSatiri[] | null>(null);
+  const kurumsalYazilir = (k: Kisi) => !GERCEK || !!k.hesapsiz;
+  const muhabirler = v.kisiler.filter((k) => !k.pasif && (k.birim === "muhabir" || icMuhabirMi(k))).sort((a, b) => ad(a).localeCompare(ad(b)));
+  const latinAd = (k: Kisi) => (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.en || "");
+  const kisi = (id?: string) => v.kisiler.find((k) => k.id === id);
+  const eslestir = () =>
+    setSatirlar(
+      epostaListesiniEslestir(listedenAdresler(metin), muhabirler, v.kisiler, kurumsalYazilir).map((s) => ({ ...s, sec: s.durum === "eslesti" })),
+    );
+  const degistir = (i: number, yeni: Partial<EslestirSatiri>) => setSatirlar((l) => l && l.map((s, j) => (j === i ? { ...s, ...yeni } : s)));
+  const kisiSec = (i: number, kisiId: string) => {
+    const k = kisi(kisiId);
+    degistir(i, { kisiId: kisiId || undefined, alan: k ? (bosAlan(k, kurumsalYazilir(k)) ?? "kisiselEposta") : undefined, sec: !!k });
+  };
+  const sayi = (d: EslesmeSatiri["durum"]) => (satirlar ?? []).filter((s) => s.durum === d).length;
+  const kaydedilecek = (satirlar ?? []).filter((s) => s.sec && s.kisiId && s.alan && s.durum !== "kayitli");
+  const kaydet = () => {
+    const r = epostaListesiUygula(
+      ben,
+      kaydedilecek.map((s) => ({ kisiId: s.kisiId!, adres: s.adres, alan: s.alan! })),
+    );
+    if (!r) return;
+    bildir(t("eslestirSonuc", { n: String(r.yazilan), a: String(r.atlanan) }));
+    kapat();
+  };
+  const durumRozeti = (s: EslestirSatiri) =>
+    s.durum === "kayitli" ? (
+      <Rozet>{t("eslestirKayitli")}</Rozet>
+    ) : s.durum === "eslesti" ? (
+      <Rozet ton="iyi">{t("eslestirEslesti")}</Rozet>
+    ) : s.durum === "dolu" ? (
+      <Rozet ton="uyari">{t("eslestirDolu")}</Rozet>
+    ) : s.durum === "belirsiz" ? (
+      <Rozet ton="uyari">{t("eslestirSecilecek")}</Rozet>
+    ) : (
+      <Rozet ton="kotu">{t("eslestirBulunamadi")}</Rozet>
+    );
+  return (
+    <Pencere baslik={t("epostaEslestir")} kapat={kapat} genis>
+      <div className="form" data-eslestir-penceresi>
+        <textarea dir="ltr" rows={4} value={metin} onChange={(e) => setMetin(e.target.value)} placeholder="ad.soyad@ornek.com, ad2@ornek.com" data-eslestir-metin />
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" disabled={!listedenAdresler(metin).length} onClick={eslestir} data-eslestir-dugme>
+            <AtSign size={14} /> {t("eslestirDugme")}
+          </button>
+        </div>
+        {satirlar && (
+          <>
+            <p data-eslestir-ozet>
+              {t("eslestirOzet", {
+                n: String(satirlar.length),
+                e: String(sayi("eslesti")),
+                b: String(sayi("belirsiz") + sayi("dolu")),
+                y: String(sayi("bulunamadi")),
+                k: String(sayi("kayitli")),
+              })}
+            </p>
+            <div className="tablo-sar">
+              <table className="tablo kartli">
+                <thead>
+                  <tr>
+                    <th aria-label={t("kaydet")} />
+                    <th>{t("eposta")}</th>
+                    <th>{t("muhabir")}</th>
+                    <th>{t("eslestirAlan")}</th>
+                    <th>{t("durum")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {satirlar.map((s, i) => {
+                    const k = kisi(s.kisiId);
+                    // Önce uyan adaylar, sonra bütün muhabirler.
+                    const adayKisiler = s.adaylar.map((id) => kisi(id)).filter((x): x is Kisi => !!x);
+                    return (
+                      <tr key={s.adres} data-eslestir-satir={s.adres}>
+                        <td data-etiket={t("kaydet")}>
+                          {s.durum !== "kayitli" && (
+                            <input type="checkbox" checked={s.sec} disabled={!s.kisiId || !s.alan} onChange={(e) => degistir(i, { sec: e.target.checked })} aria-label={t("kaydet")} data-eslestir-sec />
+                          )}
+                        </td>
+                        <td className="birincil">
+                          <bdi dir="ltr">{s.adres}</bdi>
+                        </td>
+                        <td data-etiket={t("muhabir")}>
+                          {s.durum === "kayitli" ? (
+                            <bdi>{k ? ad(k) : "—"}</bdi>
+                          ) : (
+                            <select value={s.kisiId ?? ""} onChange={(e) => kisiSec(i, e.target.value)} data-eslestir-kisi>
+                              <option value="">{t("eslestirAtla")}</option>
+                              {adayKisiler.length > 0 && (
+                                <optgroup label={t("eslestirAdaylar")}>
+                                  {adayKisiler.map((x) => (
+                                    <option key={x.id} value={x.id}>
+                                      {ad(x)} · {latinAd(x)}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              <optgroup label={t("muhabir")}>
+                                {muhabirler.map((x) => (
+                                  <option key={x.id} value={x.id}>
+                                    {ad(x)} · {latinAd(x)}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          )}
+                        </td>
+                        <td data-etiket={t("eslestirAlan")}>
+                          {s.durum !== "kayitli" && k && (
+                            <>
+                              <select value={s.alan ?? ""} onChange={(e) => degistir(i, { alan: e.target.value as EpostaAlani })} data-eslestir-alan>
+                                <option value="eposta" disabled={!kurumsalYazilir(k)}>
+                                  {t("kurumsalEposta")}
+                                </option>
+                                <option value="kisiselEposta">{t("kisiselEposta")}</option>
+                              </select>
+                              {s.alan && k[s.alan] && (
+                                <small className="sonuk ince">
+                                  {t("eslestirYerine")} <bdi dir="ltr">{k[s.alan]}</bdi>
+                                </small>
+                              )}
+                            </>
+                          )}
+                        </td>
+                        <td data-etiket={t("durum")}>{durumRozeti(s)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+            {t("iptal")}
+          </button>
+          <button type="button" className="dugme dugme-kucuk" disabled={!kaydedilecek.length} onClick={kaydet} data-eslestir-kaydet>
+            {t("eslestirKaydet", { n: String(kaydedilecek.length) })}
           </button>
         </div>
       </div>

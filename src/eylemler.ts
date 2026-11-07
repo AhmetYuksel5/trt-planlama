@@ -3728,6 +3728,37 @@ export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: BirimId; gorev
  * liste ikinci kez yüklenince kişi çoğalmasın. Hepsi hesapsız; yönetici
  * zamanla "Hesaba bağla" ile davet edip etkinleştiriyor.
  */
+/*
+ * Yapıştırılan e-posta listesinden eşleşen adresleri kişilere yazar
+ * (epostaEslestir.ts; kullanıcı onayladıktan sonra). Kişi düzenleme yetkisi.
+ * Hesabı açık kişinin kurumsal adresi giriş adresidir, buradan değişmez
+ * ("Düzenle"deki aktivasyon akışı); başka kişide kayıtlı adres yazılmaz.
+ * Değişmeyen kişinin nesnesine dokunulmaz (fark nesne kimliğiyle çıkıyor).
+ */
+export const epostaListesiUygula = (ben: Kisi, satirlar: { kisiId: string; adres: string; alan: "eposta" | "kisiselEposta" }[]): { yazilan: number; atlanan: number } | null => {
+  if (!ben.hesapYoneticisi && !hesapYetkisi(ben, "kisiDuzenle")) return null;
+  const d = getir();
+  const sahip = new Map<string, string>();
+  for (const k of d.kisiler) for (const a of [k.eposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
+  const degisen = new Map<string, Kisi>();
+  let yazilan = 0;
+  let atlanan = 0;
+  for (const s of satirlar) {
+    const adres = s.adres.trim().toLowerCase();
+    const k = degisen.get(s.kisiId) ?? d.kisiler.find((x) => x.id === s.kisiId);
+    const baskasinin = sahip.get(adres);
+    if (!k || !/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(adres) || (baskasinin && baskasinin !== k.id) || (s.alan === "eposta" && GERCEK && !k.hesapsiz)) {
+      atlanan++;
+      continue;
+    }
+    degisen.set(k.id, { ...k, [s.alan]: adres });
+    sahip.set(adres, k.id);
+    yazilan++;
+  }
+  if (degisen.size) kaydet({ ...d, kisiler: d.kisiler.map((k) => degisen.get(k.id) ?? k) });
+  return { yazilan, atlanan };
+};
+
 export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {
   if (!GERCEK || !hesapYetkisi(ben, "hesapsizKisi")) return null;
   const d = getir();
