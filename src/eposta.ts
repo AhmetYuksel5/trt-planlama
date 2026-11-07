@@ -205,9 +205,17 @@ const KURUM_SATIRI = /(?<![\p{L}\p{N}])(?:TRT|تي ?آر ?تي|قناة|شبكة
 // İçerik sözcüğü taşıyan satır isim sanılmasın (yanlış kesmeyi önler).
 const ICERIK_SOZ =
   /(?<![\p{L}\p{N}])(?:رجاء|يرجى|نرجو|ارجو|أرجو|مراجعة|اجتماع|خبر|تقرير|موضوع|بخصوص|مقترح|اقتراح|تغطية|برنامج|حلقة|ضيف|please|lütfen|rica|toplantı|haber|öneri|konu|hakkında|program|rapor)(?![\p{L}\p{N}])/iu;
-// Kişi adı gibi kısa satır: 1-4 sözcük, rakam ve cümle/işaret bitişi yok, içerik sözcüğü yok.
+// Kişi adı gibi kısa satır: en çok 3 sözcük, kısa, rakam/bağlantı/cümle-işaret
+// bitişi ve içerik sözcüğü yok. Gövdedeki kısa cümleyi isim sanmasın diye dar.
 const adGibiSatir = (t: string): boolean =>
-  !!t && t.length <= 40 && !/\d/.test(t) && !/[.!؟?،؛,:]\s*$/.test(t) && !ICERIK_SOZ.test(t) && t.split(/\s+/).length <= 4;
+  !!t && t.length <= 30 && !/\d/.test(t) && !/[.!؟?،؛,:]\s*$/.test(t) && !/https?:|www\./i.test(t) && !ICERIK_SOZ.test(t) && t.split(/\s+/).length <= 3;
+// Satır neredeyse yalnız bağlantıdan mı ibaret (imza sitesi/sosyal): bağlantı
+// dışında çok az metin. Gövdedeki "şu haberi okuyun <link>" cümlesi değildir;
+// o yüzden ana metindeki bağlantılar korunur, yalnız imza bağlantısı atılır.
+const baglantiSatiri = (t: string): boolean => {
+  if (!/(?:https?:\/\/|www\.|t\.me\/|mailto:)/i.test(t)) return false;
+  return t.replace(BAGLANTI, "").replace(/[\s\p{P}]/gu, "").length <= 10;
+};
 // Güçlü imza çıpası: e-posta/telefon/sosyal/ayraç, kapanış, kurum ya da ünvan.
 const gucluImza = (t: string): boolean =>
   IMZA_SATIRI.some((r) => r.test(t)) || KAPANIS.test(t) || KURUM_SATIRI.test(t) || (UNVAN_SOZCUK.test(t) && t.length <= 60 && !/[.!؟?]\s*$/.test(t));
@@ -245,32 +253,40 @@ export const gizliEkMi = (ad: string): boolean => {
 };
 
 export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
+  // Bağlantılar koşulsuz silinmiyor: ana metindeki bağlantı içeriktir, yalnız
+  // imza bloğundaki site/sosyal bağlantısı (ve en sondaki isim) atılacak.
   let satirlar = metin
-    .replace(BAGLANTI, "")
     .replace(GORSEL_REF, "")
     .split(/\r?\n/)
     .map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
   // Yasal uyarı / tarama bildirimi: ilk satırından sona kadar at.
   const uyari = satirlar.findIndex((s) => SORUMLULUK.test(s.trim()));
   if (uyari >= 0) satirlar = satirlar.slice(0, uyari);
-  const ad = gonderenAd.trim().toLowerCase();
-  const adSatiri = (s: string) => !!ad && s.trim().toLowerCase() === ad; // tam gönderen adı
-  // Alttan imza kesimi: güçlü imza satırları, tam ad; isim gibi satır yalnız
-  // altında güçlü bir imza çıpası görülmüşse (ünvan/telefon/kurum) kesilir,
-  // böylece gerçek içerik yanlışlıkla atılmaz.
-  let son = satirlar.length;
-  let cipaGorundu = false;
-  while (son > 0) {
-    const t = satirlar[son - 1].trim();
-    if (t === "") { son--; continue; }
-    if (gucluImza(t)) { cipaGorundu = true; son--; continue; }
-    if (adSatiri(t)) { son--; continue; }
-    if (cipaGorundu && adGibiSatir(t)) { son--; continue; }
+  // Gönderen adının sözcükleri: imzadaki ad satırını (tam ad ya da adın bir
+  // parçası, ör. "محمد صفا") tanır, altında ünvan/telefon olmasa da.
+  const adKelime = gonderenAd.trim().toLowerCase().split(/\s+/).filter((w) => w.length >= 2);
+  const adSatiri = (t: string): boolean => {
+    const kel = t.trim().toLowerCase().split(/\s+/).filter((w) => w.length >= 2);
+    return adKelime.length > 0 && kel.length > 0 && kel.length <= 4 && kel.every((w) => adKelime.includes(w));
+  };
+  // Sondaki imza bölgesi: kesintisiz boş / güçlü çıpa (telefon, e-posta, sosyal,
+  // ünvan, kurum, kapanış) / gönderen adı / kısa ad-gibi / yalnız-bağlantı
+  // satırları. Bölge yalnız gerçek bir çıpa (ya da gönderen adı) içeriyorsa
+  // kesilir; yoksa hiçbir şey atılmaz, böylece ana metin ve içindeki
+  // bağlantılar korunur.
+  let j = satirlar.length;
+  let cipa = false;
+  while (j > 0) {
+    const t = satirlar[j - 1].trim();
+    if (t === "") { j--; continue; }
+    if (gucluImza(t) || adSatiri(t)) { cipa = true; j--; continue; }
+    if (baglantiSatiri(t) || adGibiSatir(t)) { j--; continue; } // tek başına çıpa değil
     break;
   }
+  const son = cipa ? j : satirlar.length;
   const sade = satirlar.slice(0, son).join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  // Her şey imza sanıldıysa (tümü kısa/linkli) özgün metni ver, boş balon çıkmasın.
-  return sade || metin.replace(BAGLANTI, "").replace(GORSEL_REF, "").trim();
+  // Her şey imza sanıldıysa özgün metni ver, boş balon çıkmasın.
+  return sade || metin.replace(GORSEL_REF, "").trim();
 };
 
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */

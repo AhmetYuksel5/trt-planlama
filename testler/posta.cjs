@@ -119,6 +119,25 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(imzaGovde.includes("مراجعة التقرير"), "içerik kaldı");
   ok(!imzaGovde.includes("محمد صفا") && !imzaGovde.includes("مراسل") && !imzaGovde.includes("مع التحية") && !imzaGovde.includes("555"), "isim/ünvan/kapanış/telefon silindi");
 
+  // Ana metindeki bağlantı korunur; imza bağlantısı ve isim gider
+  const linkli = "الخبر مهم، التفاصيل هنا https://example.com/haber\nنرجو المتابعة اليوم\nمحمد صفا\nمراسل TRT عربي\nhttps://trtarabi.com";
+  await p.evaluate((metin) => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    v.postaMesajlari = (v.postaMesajlari || []).concat([{
+      id: "pm-link-test", konuKimligi: "link-test-konu", kimden: "selim@ornek.local",
+      kimdenAd: "Selim", konu: "Link testi", metin, tamMetin: metin,
+      zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
+    }]);
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  }, linkli);
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Link testi" }).first().click();
+  await p.waitForTimeout(300);
+  const linkGovde = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
+  ok(linkGovde.includes("example.com/haber"), "ana metindeki bağlantı korundu");
+  ok(!linkGovde.includes("trtarabi.com") && !linkGovde.includes("محمد صفا") && !linkGovde.includes("مراسل"), "imza bağlantısı ve isim silindi");
+
   // 390px: yatay taşma yok (Türkçe ve Arapça)
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);

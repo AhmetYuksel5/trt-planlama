@@ -1020,15 +1020,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   balonlar, yalnız mesaj + ekli dosya + köşede saat, gün ayracı; gönderen grup
   başına bir kez `@isim` (adres görünmez: kayıtlı kişiyse adı, yoksa
   `kimdenAd`/adresin yerel kısmı; `gonderenAdi`). Balonda gövde ekranda
-  `eposta.ts → postaMetniSadelestir` ile daha da sadeleşiyor: bağlantılar, boş
-  bağlantı etiketleri, gömülü görsel izleri ([cid:…], <logo.png>), yasal uyarı/
-  tarama footer'ı ve sondaki imza bloğu atılıyor; tam metin `tamMetin`'de
-  duruyor. İmza bloğu alttan kesiliyor: güçlü çıpa satırları (e-posta, telefon,
+  `eposta.ts → postaMetniSadelestir` ile daha da sadeleşiyor: gömülü görsel
+  izleri ([cid:…], <logo.png>), yasal uyarı/tarama footer'ı ve sondaki imza
+  bloğu atılıyor; tam metin `tamMetin`'de duruyor. İmza bloğu "bölge" olarak
+  kesiliyor: en alttaki kesintisiz blok (boş / güçlü çıpa / gönderen adı / kısa
+  ad-gibi / yalnız-bağlantı satırları) toplanır, blokta gerçek bir çıpa varsa
+  atılır; yoksa hiçbir şey kesilmez (içerik korunur). Çıpa: e-posta, telefon,
   sosyal, kurum [TRT/قناة], ünvan/iletişim sözcüğü, kapanış selamı [مع التحية/
-  Saygılarımla]) ve çıpanın hemen üstündeki isim satırı (kısa, rakamsız,
-  cümle/içerik sözcüğü taşımayan ad) siliniyor; JS `\b` yalnız ASCII sınırı
+  Saygılarımla] ya da gönderen adı (adın sözcükleriyle bulanık eşleşme, altında
+  ünvan/telefon olmasa da en sondaki ismi yakalar). JS `\b` yalnız ASCII sınırı
   olduğu için sözcük sınırı Unicode harf/rakam lookaround'u (`(?<![\p{L}\p{N}])`).
-  İçerik sözcüğü taşıyan satır isim sanılıp kesilmiyor. Ekler başlıksız, dosya
+  İçerik sözcüğü taşıyan satır isim sanılıp kesilmiyor. **Bağlantılar koşulsuz
+  silinmiyor:** ana metindeki bağlantı içeriktir, korunuyor; yalnız imza
+  bölgesindeki (neredeyse tümüyle linkten ibaret) site/sosyal bağlantısı
+  atılıyor (`baglantiSatiri`). Ekler başlıksız, dosya
   biçiminde kutu (`.posta-ek`, dosya ikonu + ad; dosyanın kendisi indirilmiyor);
   imza/gömülü görsel ekleri (`gizliEkMi`: svg/ico/gif/bmp/webp/tiff, GUID'li
   otomatik adlar [trtlogo_<guid>.png], image001.png, logo/sosyal/imza geçen
