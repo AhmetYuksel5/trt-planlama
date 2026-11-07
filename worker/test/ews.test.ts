@@ -13,9 +13,8 @@ test("FindItem isteği gelen kutusunu en yeni önce istiyor", () => {
   const x = findItemIstegi(25);
   assert.ok(x.includes('DistinguishedFolderId Id="inbox"'));
   assert.ok(x.includes('MaxEntriesReturned="25"'));
-  assert.ok(x.includes('Order="Descending"'));
-  // SortOrder types (t:) ad alanında olmalı; m:SortOrder EWS'de "The request is invalid" veriyordu.
-  assert.ok(x.includes("<t:SortOrder>") && !x.includes("<m:SortOrder>"));
+  // SortOrder çıkarıldı (EWS "The request is invalid" veriyordu); sıralama istemcide.
+  assert.ok(!x.includes("SortOrder"));
 });
 
 test("GetItem isteği düz metin gövde ve gerekli alanları istiyor", () => {

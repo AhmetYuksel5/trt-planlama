@@ -42,12 +42,15 @@ const ZARF = (govde: string) =>
   `<soap:Header><t:RequestServerVersion Version="Exchange2013"/></soap:Header>` +
   `<soap:Body>${govde}</soap:Body></soap:Envelope>`;
 
-/* Gelen kutusundaki en yeni N postanın kimlikleri; alınan tarihe göre azalan. */
+/*
+ * Gelen kutusundaki en yeni N postanın kimlikleri. Microsoft'un belgelediği
+ * en sade FindItem: sıralama yok (EWS bazı sürümlerde SortOrder'ı reddediyordu);
+ * sıralama GetItem'den gelen tarihle istemcide yapılıyor.
+ */
 export const findItemIstegi = (adet: number): string =>
   ZARF(
     `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
       `<m:IndexedPageItemView MaxEntriesReturned="${adet}" Offset="0" BasePoint="Beginning"/>` +
-      `<t:SortOrder><t:FieldOrder Order="Descending"><t:FieldURI FieldURI="item:DateTimeReceived"/></t:FieldOrder></t:SortOrder>` +
       `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
   );
 
@@ -360,7 +363,9 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     if (idler.length === 0) return { mesajlar: [] };
     const al = await ntlmIstek(soket, ayar, getItemIstegi(idler), simdi, false);
     if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
-    return { mesajlar: getItemCoz(latin1Utf8(al.govde)) };
+    // FindItem sıralamıyor; en yeni önce gelsin diye tarihe göre azalan (istemci sohbette ters çeviriyor).
+    const mesajlar = getItemCoz(latin1Utf8(al.govde)).sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
+    return { mesajlar };
   } catch (e) {
     return { hata: e instanceof Error ? e.message : String(e) };
   } finally {
