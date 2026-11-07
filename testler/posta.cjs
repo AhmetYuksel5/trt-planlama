@@ -157,6 +157,28 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(!imzaOnly.includes("trt.net.tr") && !imzaOnly.includes("Senior Script") && !imzaOnly.includes("212"), "ham imza dökülmedi");
   ok((await p.locator("[data-posta-sohbet] .posta-bos").count()) === 1, "yalnızca imza işareti gösterildi");
 
+  // Yeni metin yoksa, düzeltilip dönen alıntı metni gösterilir
+  const duzeltilmis = "Shafık SAHLI\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+\n\nFrom: Planlama <planning@trt.net.tr>\nSent: Monday\nTo: Shafık\nSubject: للتدقيق\n\nتَبْدُو فَرَنْسَا أَمَامَ حَالَةٍ مِنَ الِانْسِدَادِ.\nوَبَيْنَ احْتِجَاجَاتٍ تَتَوَاصَلُ.\n\nMehmet Safa\nمراسل TRT عربي";
+  await p.evaluate((tamMetin) => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    // metin: yeniMetin'in yaptığı gibi alıntı kesilmiş hali (yalnız imza kalır)
+    const metin = "Shafık SAHLI\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+";
+    v.postaMesajlari = (v.postaMesajlari || []).concat([{
+      id: "pm-alinti-test", konuKimligi: "alinti-konu", kimden: "sahli@ornek.local",
+      kimdenAd: "Shafık SAHLI", konu: "Düzeltme testi", metin, tamMetin,
+      zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
+    }]);
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  }, duzeltilmis);
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Düzeltme testi" }).first().click();
+  await p.waitForTimeout(300);
+  const duzeltGovde = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
+  ok(duzeltGovde.includes("تَبْدُو فَرَنْسَا"), "düzeltilip dönen alıntı metni gösterildi");
+  ok(!duzeltGovde.includes("Senior Script") && !duzeltGovde.includes("From:") && !duzeltGovde.includes("Subject"), "alıntı başlığı ve imza alıntıda da temizlendi");
+  ok((await p.locator("[data-posta-sohbet] .posta-alinti").count()) >= 1, "alıntı metni ayırt edici stille");
+
   // 390px: yatay taşma yok (Türkçe ve Arapça)
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);

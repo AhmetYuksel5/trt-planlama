@@ -330,6 +330,39 @@ export const yeniMetin = (tam: string) => {
   return m.replace(/\n{3,}/g, "\n\n").trim();
 };
 
+// Alıntı bloğunun başlık satırları (atılır): From/Sent/To/Subject… ve "On … wrote:".
+const ALINTI_BASLIK =
+  /^\s*>*\s*(?:(?:From|Kimden|من|De|Von|Sent|Date|Gönderildi|Tarih|To|Kime|إلى|Cc|CC|Bcc|Subject|Konu|الموضوع|أرسلت|التاريخ|تاريخ الإرسال|Envoyé|Gesendet|Reply-To)\s*:|-{2,}\s*(?:Original Message|Özgün İleti|Orijinal İleti|الرسالة الأصلية)\s*-{2,}|_{10,}\s*$|(?:On|Le|Am) .+(?:wrote|a écrit|schrieb)\s*:\s*$|.+ tarihinde .+ şunu yazdı\s*:\s*$|في .+ كتب.*:\s*$)/i;
+
+/*
+ * Yanıtın kendi yeni metni yoksa (ör. muhabir kontrol metnini mail üzerinden
+ * düzeltip yalnız imzasıyla dönmüş), düzeltilen metin alıntı bloğundadır.
+ * tamMetin'deki ilk alıntı bloğunu çıkarır: alıntı başlıklarını ve "> " ön
+ * eklerini atar, ikinci (iç içe eski) alıntı başlığında durur, kalanı imza
+ * temizliğinden geçirir. Böylece dönen düzeltilmiş metin ekranda görünür.
+ */
+export const postaAlintiMetni = (tam: string, gonderenAd = ""): string => {
+  const metin = (tam ?? "").replace(/\r\n?/g, "\n");
+  let kesim = -1;
+  for (const k of ALINTI) {
+    const i = metin.search(k);
+    if (i >= 0 && (kesim < 0 || i < kesim)) kesim = i;
+  }
+  if (kesim < 0) return "";
+  const satirlar = metin.slice(kesim).split("\n").map((s) => s.replace(/^\s*>+\s?/, ""));
+  const govde: string[] = [];
+  let basladi = false;
+  for (const s of satirlar) {
+    if (ALINTI_BASLIK.test(s)) {
+      if (basladi) break; // ikinci alıntı başlığı: iç içe eski alıntı, dur
+      continue; // ilk alıntının başlık satırları
+    }
+    if (s.trim()) basladi = true;
+    govde.push(s);
+  }
+  return postaMetniSadelestir(govde.join("\n"), gonderenAd);
+};
+
 /*
  * E-posta herkesten yanıt istiyor ("حتى و لو لم يكن لديكم"): "لا يوجد"
  * gibi kısa yanıt öneri listesini doldurmasın, "yanıt verdi, önerisi yok"

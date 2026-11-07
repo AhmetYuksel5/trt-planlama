@@ -3,7 +3,7 @@ import { Fragment, useEffect, useRef, useState, type DragEvent } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaIsle, postaSil, type PostaSonucu } from "../../eylemler";
-import { gizliEkMi, gondereniBul, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
+import { gizliEkMi, gondereniBul, postaAlintiMetni, postaKonuBasligi, postaMetniSadelestir, type GelenEposta } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
@@ -90,7 +90,11 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const onceki = sohbet.mesajlar[i - 1];
           const yeniGun = !onceki || yerelGun(onceki.zaman) !== yerelGun(m.zaman);
           const yeniGonderen = yeniGun || !onceki || onceki.kimden !== m.kimden;
-          const govde = m.giden ? m.metin : postaMetniSadelestir(m.metin, gonderenAdi(v, m, ad));
+          const gad = gonderenAdi(v, m, ad);
+          const sade = m.giden ? m.metin : postaMetniSadelestir(m.metin, gad);
+          // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
+          const alinti = !m.giden && !sade.trim() ? postaAlintiMetni(m.tamMetin, gad) : "";
+          const govde = sade.trim() ? sade : alinti;
           const ekler = m.ekler.filter((e) => !gizliEkMi(e));
           return (
             <Fragment key={m.id}>
@@ -106,7 +110,7 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
                   </div>
                 )}
                 {govde.trim() ? (
-                  <Icerik blok className="posta-metin">
+                  <Icerik blok className={`posta-metin${!sade.trim() ? " posta-alinti" : ""}`}>
                     {govde}
                   </Icerik>
                 ) : (

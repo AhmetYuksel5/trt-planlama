@@ -1037,7 +1037,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   mail üzerinden düzeltip yalnız imzasıyla dönmüş) ham imza dökülmüyor: bölgede
   "sert çıpa" (e-posta, telefon, bağlantı, ünvan, kurum) varsa gövde boş
   bırakılıp ekranda sönük "yalnızca imza" işareti (`.posta-bos`, `postaBosGovde`)
-  çıkıyor; yalnız kapanış/ad ise (ör. "شكرا") kısa metin korunuyor. Ekler başlıksız, dosya
+  çıkıyor; yalnız kapanış/ad ise (ör. "شكرا") kısa metin korunuyor. Yeni metin
+  boşsa düzeltilip dönen metin alıntıdadır: `postaAlintiMetni` tamMetin'deki ilk
+  alıntı bloğunu çıkarıyor (From/Sent/To/Subject başlıkları ve "> " ön ekleri
+  atılır, ikinci/iç içe alıntıda durulur, kalan imza temizliğinden geçer) ve
+  balonda ince kenarlı alıntı stiliyle (`.posta-alinti`) gösteriliyor; böylece
+  muhabirin mail üzerinden harekeleyip/düzeltip döndüğü metin görünüyor. Ekler başlıksız, dosya
   biçiminde kutu (`.posta-ek`, dosya ikonu + ad; dosyanın kendisi indirilmiyor);
   imza/gömülü görsel ekleri (`gizliEkMi`: svg/ico/gif/bmp/webp/tiff, GUID'li
   otomatik adlar [trtlogo_<guid>.png], image001.png, logo/sosyal/imza geçen
