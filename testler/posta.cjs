@@ -1,4 +1,4 @@
-// Gelen posta sohbeti: yapıştırma ile sohbete düşme, alıntı ayıklama, konuya göre iplik, silme, muhabir görmez, 390px
+// Gelen posta sohbeti: örnek yazışmalar, kim kime yazdı, tümünü yanıtla + CC, yeni posta, silme, imza ayıklama, muhabir görmez, 390px
 const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
 let gec = 0, kal = 0;
@@ -22,65 +22,71 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/posta");
   ok((await p.locator("[data-posta-liste]").count()) === 0 && (await p.locator("[data-posta-kimden]").count()) === 0, "muhabir posta sayfasını açamıyor");
 
-  // Planlamacı görür ve yapıştırarak ekler
+  // Planlamacı görür; içe aktarma kartı yok, demoda örnek yazışmalar var
   await kim("pl1");
   await git("#/");
   ok((await p.locator('a[href="#/posta"]').count()) >= 1, "planlamacının menüsünde posta");
   await git("#/posta");
-  ok((await p.locator("[data-posta-kimden]").count()) === 1, "köprü açık");
+  ok((await p.locator("[data-posta-kimden]").count()) === 0 && (await p.locator(".birakma-alani").count()) === 0, "içe aktarma kartı kalktı");
+  ok((await p.locator("[data-posta-liste] > li").count()) === 2, "demoda iki örnek yazışma");
+  const v0 = await veri();
+  const muhabirler = v0.kisiler.filter((k) => k.birim === "muhabir");
+  const kucuk = (a) => String(a || "").toLowerCase();
+  const m1 = muhabirler[0], m2 = muhabirler[1];
+  const arAd = (k) => (typeof k.ad === "string" ? k.ad : k.ad.ar);
+  const trAd = (k) => (typeof k.ad === "string" ? k.ad : k.ad.tr);
 
-  const metinli = "Yarın Gazze'den bir paket önerim var.\nDetay: https://ornek.local/haber\n\nMuhammed Ali\nمراسل TRT عربي\nجوال: +90 555 111 2233\n\nOn Mon, 3 Nov 2026 at 10:00, Planlama <planning@trt.net.tr> wrote:\n> Önerilerinizi bekliyoruz";
-  await p.locator("[data-posta-kimden]").fill("omar@ornek.local");
-  await p.locator("[data-posta-konu]").fill("Gazze önerisi");
-  await p.locator("[data-posta-metin]").fill(metinli);
-  await p.locator("[data-posta-isle]").click();
-  await p.waitForTimeout(400);
-  ok((await p.locator("[data-posta-liste] > li").count()) === 1, "yapıştırılan posta sohbete düştü");
-
-  // Sohbeti aç: alıntı ayıklanmış, ekleniş metni görünür
-  await p.locator("[data-posta-sohbet-bag]").first().click();
+  // Kim kime yazdı: her balonun altında alıcı satırı
+  await p.locator('[data-posta-sohbet-bag="ornek-gazze"]').click();
   await p.waitForTimeout(300);
-  const govde = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").first().innerText();
-  ok(govde.includes("paket önerim var"), "yeni metin sohbette");
-  ok(!govde.includes("wrote:") && !govde.includes("Önerilerinizi bekliyoruz"), "alıntı ayıklandı");
-  ok(!govde.includes("https://") && !govde.includes("ornek.local"), "bağlantı silindi");
-  ok(!govde.includes("مراسل") && !govde.includes("555"), "imza/ünvan/telefon silindi");
+  ok((await p.locator("[data-posta-sohbet] [data-posta-alici-satiri]").count()) === 3, "her balonda kime/CC satırı");
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden [data-posta-alici-satiri]").innerText()).includes("CC"), "giden balonda CC görünüyor");
 
-  // Aynı konunun yanıtı (RE:) aynı sohbete
-  await p.locator("[data-posta-kimden]").fill("omar@ornek.local");
-  await p.locator("[data-posta-konu]").fill("RE: Gazze önerisi");
-  await p.locator("[data-posta-metin]").fill("Ek olarak canlı yayın da olabilir.");
-  await p.locator("[data-posta-isle]").click();
-  await p.waitForTimeout(400);
-  ok((await p.locator("[data-posta-liste] > li").count()) === 1, "RE: yanıtı yeni sohbet açmadı, tek iplik");
-  await p.locator("[data-posta-sohbet-bag]").first().click();
-  await p.waitForTimeout(300);
-  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 2, "sohbette iki mesaj, zaman sırasıyla");
-
-  // Buradan yanıt gönder (demoda yalnız ekrana giden balon)
+  // Tümünü yanıtla: alıcı yazışmadan gelir (seçtirilmez), yalnız CC eklenir
+  ok((await p.locator("[data-posta-alicilar]").innerText()).includes(arAd(m1)), "yanıt yazışmadaki muhabire gidiyor");
+  const ccYaz = p.locator('[data-posta-alicilar] [data-posta-adres-yaz="cc"]');
+  await ccYaz.fill("yeni.kisi@ornek.local");
+  await ccYaz.press("Enter");
+  ok((await p.locator('[data-posta-alicilar] [data-posta-cip="yeni.kisi@ornek.local"]').count()) === 1, "yeni CC eklendi");
+  await ccYaz.fill("yanlis");
+  await ccYaz.press("Enter");
+  ok((await p.locator("[data-posta-alicilar] [data-posta-cip]").count()) === 1, "geçersiz adres çipe dönüşmedi");
+  await ccYaz.fill("");
   await p.locator("[data-posta-yaz]").fill("Teşekkürler, planladık.");
   await p.locator("[data-posta-gonder]").click();
   await p.waitForTimeout(400);
-  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 3, "gönderilen yanıt sohbete eklendi");
-  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").count()) === 1, "giden balon sağda");
+  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 4, "yanıt sohbete eklendi");
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").last().locator("[data-posta-alici-satiri]").innerText()).includes("yeni.kisi"), "eklenen CC giden balonun alıcı satırında");
+  const yanit = (await veri()).postaMesajlari.find((m) => m.giden && m.metin === "Teşekkürler, planladık.");
+  ok(!!yanit && yanit.kime.includes(kucuk(m1.eposta)) && yanit.cc.includes("yeni.kisi@ornek.local"), "kayıtta kime ve CC: " + JSON.stringify(yanit && { kime: yanit.kime, cc: yanit.cc }));
+  ok((await p.locator('[data-posta-alicilar] [data-posta-cip="yeni.kisi@ornek.local"]').count()) === 0, "gönderince ek CC sıfırlandı");
 
-  // Farklı konu ayrı sohbet
-  await p.locator("[data-posta-kimden]").fill("selin@ornek.local");
-  await p.locator("[data-posta-konu]").fill("Kudüs gelişmesi");
-  await p.locator("[data-posta-metin]").fill("Bugün Kudüs'te gerginlik var.");
-  await p.locator("[data-posta-isle]").click();
-  await p.waitForTimeout(400);
-  ok((await p.locator("[data-posta-liste] > li").count()) === 2, "farklı konu ayrı sohbet");
-
-  // Tekillik: aynı Message-ID yoksa yapıştırmada mesaj kimliği yok, ama kayıt sayısı artar; silme izleriyle gider
-  const once = (await veri()).postaMesajlari.length;
-  ok(once === 4, "dört mesaj kayıtlı (2 Gazze + 1 giden + 1 Kudüs): " + once);
-  await p.locator('[data-posta-sohbet-bag]').first().click();
+  // Yeni posta: "+" ile; alıcısız gönderilmez, öneriyle kişi seçilir, BCC isteğe bağlı
+  await p.locator("[data-posta-yeni-ac]").click();
   await p.waitForTimeout(200);
-  await p.locator('.posta-duzen .kart').last().locator('button[title]').click();
+  ok(await p.locator("[data-posta-yeni-gonder]").isDisabled(), "alıcısız gönder pasif");
+  await p.locator('[data-posta-yeni] [data-posta-adres-yaz="kime"]').fill(trAd(m2));
+  await p.waitForTimeout(200);
+  ok((await p.locator(`[data-posta-oneri="${kucuk(m2.eposta)}"]`).count()) === 1, "Latin adla yazınca öneri çıktı");
+  await p.locator(`[data-posta-oneri="${kucuk(m2.eposta)}"]`).click();
+  ok((await p.locator(`[data-posta-adres="kime"] [data-posta-cip="${kucuk(m2.eposta)}"]`).count()) === 1, "öneri Kime'ye eklendi");
+  ok((await p.locator('[data-posta-adres="bcc"]').count()) === 0, "BCC kapalı gelir");
+  await p.locator("[data-posta-bcc-ac]").click();
+  ok((await p.locator('[data-posta-adres="bcc"]').count()) === 1, "BCC açıldı");
+  await p.locator("[data-posta-yeni-konu]").fill("اجتماع التخطيط");
+  await p.locator("[data-posta-yeni-metin]").fill("نرجو الحضور غداً.");
+  await p.locator("[data-posta-yeni-gonder]").click();
+  await p.waitForTimeout(400);
+  ok((await p.locator("dialog[open]").count()) === 0, "pencere kapandı");
+  ok((await p.locator("[data-posta-liste] > li").count()) === 3, "yeni posta yeni sohbet açtı");
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").count()) === 1 && (await p.locator("[data-posta-sohbet]").innerText()).includes("نرجو الحضور"), "yeni sohbet seçili, giden balon");
+
+  // Sohbet izleriyle silinir
+  const once = (await veri()).postaMesajlari.length;
+  await p.locator("[data-posta-sil]").click();
   await p.waitForTimeout(400);
   const sonra = (await veri()).postaMesajlari.length;
-  ok(sonra < once, "sohbet izleriyle silindi: " + once + " → " + sonra);
+  ok(sonra === once - 1 && (await p.locator("[data-posta-liste] > li").count()) === 2, "sohbet izleriyle silindi: " + once + " → " + sonra);
 
   // Ek filtresi: gerçek dosya görünür, imza/logo görseli gizli
   await p.evaluate(() => {
@@ -186,6 +192,18 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await git("#/posta");
     const tasma = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(tasma <= 1, "390px taşma yok (" + d + "): " + tasma);
+    // Açık sohbet (alıcı satırı ve CC alanı) ve yeni posta penceresi de taşmasın
+    await p.locator('[data-posta-sohbet-bag="ornek-mukabele"]').click();
+    await p.waitForTimeout(300);
+    const tasma2 = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    ok(tasma2 <= 1, "390px açık sohbette taşma yok (" + d + "): " + tasma2);
+    await p.locator(".posta-sohbet-sutun .geri-bag").click();
+    await p.waitForTimeout(200);
+    await p.locator("[data-posta-yeni-ac]").click();
+    await p.waitForTimeout(200);
+    const tasma3 = await p.evaluate(() => { const g = document.querySelector("dialog[open]"); return g ? g.scrollWidth - g.clientWidth : -1; });
+    ok(tasma3 >= 0 && tasma3 <= 1, "390px yeni posta penceresi taşmıyor (" + d + "): " + tasma3);
+    await p.keyboard.press("Escape");
   }
   await p.setViewportSize({ width: 1440, height: 1000 });
 

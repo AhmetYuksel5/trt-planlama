@@ -158,6 +158,9 @@ export interface GelenEposta {
   ekler?: string[];
   /** Sunucudan (Graph) gelen ipliğin kimliği; içe aktarmada yok, konudan türetiliyor. */
   konuKimligi?: string;
+  /** Alıcılar (To, Cc); kim kime yazdı ve "tümünü yanıtla" için. */
+  kime?: string[];
+  cc?: string[];
 }
 
 /*

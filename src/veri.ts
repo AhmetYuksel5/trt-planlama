@@ -736,6 +736,9 @@ export interface PostaMesaji {
    * karışmasın. Eski (etiketsiz) kayıtlar bir kez admin'in grubuna atanıyor.
    */
   grup?: string;
+  /* Kime ve CC (küçük harf): balonun altındaki "→ kime · CC" satırı ve "tümünü yanıtla". */
+  kime?: string[];
+  cc?: string[];
 }
 
 /* --- Paket önerisi: birimler arası ortak kayıt (rapor bölüm 7). --- */

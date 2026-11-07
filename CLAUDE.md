@@ -1008,9 +1008,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`bilesenler/Tablolar.tsx`); muhabir/talimat ayrımı elle yazılmaz.
   Muhabir dışı kaynağın öneri çağrısıyla bağı ve geri dönüşü yoktur;
   plana eklenince gelişmenin kaynağı önerinin kaynağı olur.
-- Gelen posta sohbeti (`ekranlar/posta/Posta.tsx`, `#/posta`; yalnız
-  Planlama, `yetki.ts → SAYFA_IZNI.posta`, route `cagriHazirla`): planlama
-  kutusuna düşen postalar, eklerinden arındırılmış (yalnız ad) ve alıntı/imza
+- Gelen posta sohbeti (`ekranlar/posta/Posta.tsx`, `#/posta`; dış muhabir ve
+  onay bekleyen dışında haber merkezinin herkesi, `yetki.ts → postaGorebilir`,
+  `SAYFA_IZNI.posta` `MASA`): kişinin grup kutusuna düşen postalar, eklerinden arındırılmış (yalnız ad) ve alıntı/imza
   ayıklanmış (`eposta.ts → yeniMetin`) biçimde, konuya göre sohbet
   iplikçiklerinde. Öneri-yanıt akışından ayrı (`Durum.postaMesajlari`,
   `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
@@ -1049,17 +1049,45 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   png/jpg) gösterilmiyor, pdf/docx gibi gerçek dosyalar kalıyor. Sohbet listesi kontürlü ayrı kartlar
   (`.posta-sohbet`: renkli avatar harfi, başlık, `@gönderen`, mesaj sayısı). Telefonda tek ekran:
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
-  Buradan yanıt gönderilir (`Yazma`, `.posta-yaz`): alıcı sohbetteki son gelen
-  postanın göndereni, konu "RE: …"; gerçek kipte kapı EWS `CreateItem`
-  (`SendAndSaveCopy`) ile gönderiyor (`worker/src/ews.ts → postaGonder`,
-  `POST /posta/gonder`, Planlama/yönetici), sonra giden balon ekleniyor
-  (`eylemler.ts → postaGidenEkle`, `PostaMesaji.giden`, sağda yeşil); demoda
-  yalnız ekrana. Giden posta Gelen Kutusu'na düşmediği için çekişte gelmez,
-  ekrana bu yüzden elle ekleniyor. Köprü
-  (Outlook'tan `.msg` sürükle-bırak, `.eml`, yapıştır) `oneri/Eposta.tsx →
-  dosyaOku`'dan geçiyor, Gelen yanıtlar ekranıyla aynı okuyucu. Kısıtlı
-  muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil; kural catch-all'u
-  kapsıyor). Test `testler/posta.cjs`.
+  Basit mesaj mantığı (kullanıcı: "karmaşık olmasın, ama kim kime yazdı
+  bilinsin"):
+  - Yanıt (`Yazma`, `.posta-yaz-alani`) "tümünü yanıtla": alıcılar seçtirilmez,
+    yazışmadan gelir (`yanitAlicilari`: son gelen postanın göndereni ve Kime'si
+    Kime'ye, CC'si CC'ye; kişinin kendi adresi ve grup çıkar; gelen yoksa
+    gidenin alıcıları) ve kutunun üstünde çip satırında görünür
+    (`data-posta-alicilar`). Eksik olan yalnız yeni CC: "CC ekle" alanı
+    (`AdresGirdisi`). @ ile alıcı seçme denendi, gerek görülmedi. Konu "RE: …".
+  - "Sohbetler"in yanında "+" yeni posta (`YeniPosta`, `Pencere`): Kime, CC
+    (grup kilitli çip), "BCC ekle"yle BCC, konu, metin; alıcısız gönderilmez.
+    Sohbet konunun çekirdeğiyle açılır.
+  - Adres girdisi çip + yazı alanı; Enter/virgül çipe çevirir, geçersiz adres
+    çip olmaz ve bildirilir; öneriler (e-postası olan kayıtlı kişiler ve
+    yazışmalarda geçen adresler; Arapça, Latin ad ya da adresle) kutunun
+    altında düğme (`datalist` değil, Android).
+  - Kim kime yazdı: her balonun altında sönük "→ kime · CC: …"
+    (`AliciSatiri`, `PostaMesaji.kime`/`cc`; adres yerine kayıtlı kişinin adı,
+    yoksa yerel kısmı, tamamı ipucunda). Kapı gelen postanın To ve Cc'sini ayrı
+    okuyor (`ews.ts → getItemCoz`, `EwsMesaj.kime`/`cc`).
+  - Gönderim kapıda EWS `CreateItem` (`SendAndSaveCopy`; `worker/src/ews.ts →
+    createItemIstegi`, `GidenPosta`: çoklu Kime, CC, BCC; şema sırası To, Cc,
+    Bcc), `POST /posta/gonder` (dış muhabir ve onay bekleyen hariç).
+    **Grup adresini kapı her zaman CC'ye ekler** (tarayıcıya bırakılmıyor:
+    yazışma grupta kalsın, yanıtlar kutudan geri gelsin); adreslerden biri
+    bile geçersizse gönderim reddedilir (`index.ts → adresListesi`), en çok 50
+    alıcı. Kapı gerçekten gönderdiği Kime/CC'yi döndürür; giden balon onunla
+    eklenir (`eylemler.ts → postaGidenEkle`, `PostaMesaji.giden`, sağda yeşil).
+    Demoda yalnız ekrana.
+  - Grup CC'de olduğu için gönderilen posta kutuya geri düşer:
+    `postaIsle` onu Message-ID'siz giden balonla (metnin başı aynı, 6 saat
+    içinde) eşleştirip yeni mesaj saymaz, yalnız Message-ID'sini ve sunucudaki
+    yazışma kimliğini öğrenir; konudan açılmış iplik o kimliğe taşınır. Kendi
+    postası dönmeden yanıt gelirse sunucu kimliğinde sohbet yoksa aynı konuyla
+    buradan açılmış sohbete katılır.
+  - İçe aktarma kartı (Outlook'tan sürükle-bırak, `.eml`, yapıştır) kalktı:
+    posta kutudan geliyor. Demoda örnek yazışmalar `ornek.ts → ornekPosta`
+    (kurgusal). Kısıtlı muhabir görmez (koleksiyon `KISITLI_OKUR`'da değil;
+    kural catch-all'u kapsıyor). Test `testler/posta.cjs`; `postaIsle`'nin
+    geri dönüş ve iplik kuralı gerçek kipte, e2e'ye girmiyor.
   - Sohbet gruba göre ayrı (gerçek kip): her mesaj çekildiği grup adresine
     etiketleniyor (`PostaMesaji.grup`, küçük harf; `postaIsle`/`postaGidenEkle`/
     `postalariCek` grubu yazıyor, giden yanıt ipliğin grubuna); Posta ekranı

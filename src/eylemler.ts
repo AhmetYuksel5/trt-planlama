@@ -3098,36 +3098,79 @@ export interface PostaSonucu {
  */
 export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: PostaMesaji["kaynak"], grup?: string): PostaSonucu | null => {
   if (kaynak === "iceAktarma" && !yapabilir(ben, "cagriHazirla")) return null;
-  let d = getir();
+  const d = getir();
   const mevcut = d.postaMesajlari ?? [];
   if (gelen.mesajKimligi && mevcut.some((m) => m.mesajKimligi === gelen.mesajKimligi)) return { durum: "tekrar" };
-  // Sunucuda conversationId varsa o; içe aktarmada konudan, boşsa yeni iplik.
-  const konuKimligi = gelen.konuKimligi?.trim() || postaKonuCekirdegi(gelen.konu) || kimlik("pk");
+  const metin = yeniMetin(gelen.metin) || gelen.metin.trim();
+  const cekirdek = postaKonuCekirdegi(gelen.konu);
+  const sunucuKonu = gelen.konuKimligi?.trim();
+
+  /*
+   * Kendi gönderdiğimiz posta grup CC'de olduğu için kutumuza geri düşüyor.
+   * Yeni mesaj sayma (balon çiftlenirdi); ekrandaki giden balonu bul, kimliğini
+   * öğren. Yeni postada ipliğin sunucudaki kimliği gönderirken bilinmiyordu:
+   * öğrenilince iplik o kimliğe taşınıyor, sonraki yanıtlar oraya düşüyor.
+   */
+  const duz = (x: string) => x.replace(/\s+/g, " ").trim();
+  const zamanFarki = (a: string) => Math.abs(new Date(a).getTime() - new Date(gelen.zaman ?? simdi()).getTime());
+  const esGiden = mevcut.find((m) => m.giden && !m.mesajKimligi && duz(metin).startsWith(duz(m.metin).slice(0, 200)) && zamanFarki(m.zaman) < 6 * 3600_000);
+  if (esGiden) {
+    const eskiKonu = esGiden.konuKimligi;
+    const yeniKonu = sunucuKonu || eskiKonu;
+    kaydet({
+      ...d,
+      postaMesajlari: mevcut.map((m) =>
+        m === esGiden ? { ...m, mesajKimligi: gelen.mesajKimligi, konuKimligi: yeniKonu } : m.konuKimligi === eskiKonu && yeniKonu !== eskiKonu ? { ...m, konuKimligi: yeniKonu } : m,
+      ),
+    });
+    return { durum: "tekrar", konuKimligi: yeniKonu };
+  }
+
+  /*
+   * İplik: sunucunun kimliği; o kimlikte sohbet yoksa ama aynı konuyla buradan
+   * açılmış sohbet varsa (yeni posta, kimliği henüz öğrenilmemiş) ona katıl.
+   */
+  const konuKimligi =
+    sunucuKonu && !mevcut.some((m) => m.konuKimligi === sunucuKonu) && cekirdek && mevcut.some((m) => m.konuKimligi === cekirdek)
+      ? cekirdek
+      : sunucuKonu || cekirdek || kimlik("pk");
   const g = grup?.trim().toLowerCase();
+  const kucukListe = (l?: string[]) => (l ?? []).map((a) => a.trim().toLowerCase()).filter(Boolean);
   const mesaj: PostaMesaji = {
     id: kimlik("pm"),
     konuKimligi,
     kimden: gelen.kimden.trim(),
     kimdenAd: gelen.kimdenAd,
     konu: gelen.konu,
-    metin: yeniMetin(gelen.metin) || gelen.metin.trim(),
+    metin,
     tamMetin: gelen.metin,
     zaman: gelen.zaman ?? simdi(),
     mesajKimligi: gelen.mesajKimligi,
     ekler: gelen.ekler ?? [],
     kaynak,
     ...(g ? { grup: g } : {}),
+    ...(gelen.kime?.length ? { kime: kucukListe(gelen.kime) } : {}),
+    ...(gelen.cc?.length ? { cc: kucukListe(gelen.cc) } : {}),
   };
   kaydet({ ...d, postaMesajlari: [mesaj, ...mevcut] });
   return { durum: "eklendi", mesajId: mesaj.id, konuKimligi };
 };
 
 /*
- * Planlama'nın buradan gönderdiği yanıtı sohbete (giden balon) ekler. Gerçek
- * gönderim kapı üzerinden EWS'yle oluyor; bu yalnız ekrana yansıtıyor (giden
- * posta Gelen Kutusu'na düşmediği için çekişte gelmez).
+ * Buradan gönderilen postayı (yanıt ya da yeni posta) sohbete giden balon
+ * olarak ekler. Gerçek gönderim kapı üzerinden EWS'yle; alıcılar kapının
+ * gerçekten gönderdiği listeden (grup CC'si dahil), "kim kime yazdı" doğru
+ * görünsün. Grup CC'de olduğu için posta kutudan geri de gelir; postaIsle onu
+ * bu balonla eşleştiriyor, çiftlemiyor.
  */
-export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, metin: string, grup?: string): string | null => {
+export const postaGidenEkle = (
+  ben: Kisi,
+  konuKimligi: string,
+  konu: string,
+  metin: string,
+  grup?: string,
+  alicilar?: { kime: string[]; cc?: string[] },
+): string | null => {
   if (!yapabilir(ben, "cagriHazirla")) return null;
   const d = getir();
   const g = grup?.trim().toLowerCase();
@@ -3143,6 +3186,8 @@ export const postaGidenEkle = (ben: Kisi, konuKimligi: string, konu: string, met
     kaynak: "iceAktarma",
     giden: true,
     ...(g ? { grup: g } : {}),
+    ...(alicilar?.kime.length ? { kime: alicilar.kime } : {}),
+    ...(alicilar?.cc?.length ? { cc: alicilar.cc } : {}),
   };
   kaydet({ ...d, postaMesajlari: [mesaj, ...(d.postaMesajlari ?? [])] });
   return mesaj.id;

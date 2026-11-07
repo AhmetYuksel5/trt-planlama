@@ -45,8 +45,12 @@ export const postaKimlikGetir = () => kapiIstek<PostaKimlikGorunum>("/posta/kiml
 export const postaKimlikKaydet = (g: PostaKimlikGirdi) => kapiIstek<PostaKimlikGorunum>("/posta/kimlik", "PUT", g);
 export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/posta/dene", "POST", {});
 
-/* Buradan yanıt gönderir (kapı EWS CreateItem ile). Alıcı boşsa kapı planlama grubu adresini kullanır. */
-export const postaGonder = (g: { kime?: string; konu: string; metin: string }) => kapiIstek<{ tamam: boolean }>("/posta/gonder", "POST", g);
+/*
+ * Yeni posta ve yanıt (kapı EWS CreateItem ile). Grup adresini kapı her zaman
+ * CC'ye ekler; dönen kime/cc gerçekten gönderilen liste ("kim kime yazdı").
+ */
+export const postaGonder = (g: { kime: string[]; cc?: string[]; bcc?: string[]; konu: string; metin: string }) =>
+  kapiIstek<{ tamam: boolean; kime: string[]; cc: string[]; bcc: string[] }>("/posta/gonder", "POST", g);
 
 interface KapiMesaji {
   kimden: string;
@@ -57,6 +61,8 @@ interface KapiMesaji {
   mesajKimligi?: string;
   konuKimligi?: string;
   ekler?: string[];
+  kime?: string[];
+  cc?: string[];
 }
 
 /*
@@ -71,7 +77,7 @@ export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise
   const mesajlar = [...r.veri.mesajlar].reverse();
   let eklenen = 0;
   for (const m of mesajlar) {
-    const gelen: GelenEposta = { kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.metin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler };
+    const gelen: GelenEposta = { kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.metin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler, kime: m.kime, cc: m.cc };
     const s = postaIsle(ben, gelen, "posta", grup);
     if (s?.durum === "eklendi") eklenen++;
   }

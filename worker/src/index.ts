@@ -94,7 +94,18 @@ const postaKimlikOku = async (env: Env, uid: string): Promise<PostaKimlik> => {
 };
 
 /* EWS mesajını tarayıcının postaIsle'sine uygun biçime indirger; gövde temizliğini istemci de yapıyor (tek kaynak). */
-const postaDisa = (m: EwsMesaj) => ({ kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.tamMetin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler });
+const postaDisa = (m: EwsMesaj) => ({ kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.tamMetin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler, kime: m.kime, cc: m.cc });
+
+/*
+ * Gönderimin adres listesi: tek metin ("a@x, b@y") ya da dizi; küçük harf,
+ * tekrarsız. Biri bile geçersizse null: yanlış yazılmış adres sessizce
+ * düşmesin, gönderim reddedilsin.
+ */
+const adresListesi = (v: unknown): string[] | null => {
+  const ham = Array.isArray(v) ? v.map(String) : typeof v === "string" ? v.split(/[,;\s]+/) : [];
+  const temiz = [...new Set(ham.map((a) => a.trim().toLowerCase()).filter(Boolean))];
+  return temiz.every((a) => /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(a)) ? temiz : null;
+};
 
 /* Gün İstanbul saatiyle dönüyor: haber merkezinin günü. */
 const gun = (simdi: number) => new Date(simdi + 3 * 3600_000).toISOString().slice(0, 10);
@@ -343,7 +354,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa) });
   }
 
-  /* Buradan yanıt gönderme (EWS CreateItem). Alıcı belirtilmezse kişinin grup adresi. */
+  /* Yeni posta ve yanıt (EWS CreateItem). Alıcı yoksa kişinin grup adresi; grup her zaman CC'de. */
   if (req.method === "POST" && yol === "/posta/gonder") {
     if (kisi.kisitli) return yanit({ hata: "yetki" }, 403); // dış muhabirler ve onay bekleyen hariç
     const pa = await postaAyarOku(env);
@@ -351,14 +362,24 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
-    const g = (await req.json().catch(() => null)) as { kime?: string; konu?: string; metin?: string } | null;
-    const kime = (typeof g?.kime === "string" && g.kime.trim()) || pk.grupAdresi;
+    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string } | null;
+    const kimeL = adresListesi(g?.kime), ccL = adresListesi(g?.cc), bccL = adresListesi(g?.bcc);
+    if (!kimeL || !ccL || !bccL) return yanit({ hata: "kime" }, 400);
+    const grup = pk.grupAdresi;
+    const kime = kimeL.length ? kimeL : grup ? [grup] : [];
+    if (!kime.length) return yanit({ hata: "kime" }, 400);
+    // Grup adresi her zaman CC'de: yazışma grupta kalsın, yanıtlar kutudan geri gelsin.
+    // Tarayıcıya bırakılmıyor; kapı ekliyor.
+    let cc = ccL.filter((a) => !kime.includes(a));
+    if (grup && !kime.includes(grup) && !cc.includes(grup)) cc = [...cc, grup];
+    const bcc = bccL.filter((a) => !kime.includes(a) && !cc.includes(a));
+    if (kime.length + cc.length + bcc.length > 50) return yanit({ hata: "kime" }, 400);
     const metin = String(g?.metin ?? "").trim();
-    if (!/^[^\s@]+@[^\s@]+$/.test(kime)) return yanit({ hata: "kime" }, 400);
     if (!metin) return yanit({ hata: "bos" }, 400);
     const konu = String(g?.konu ?? "").slice(0, 255) || "(konusuz)";
-    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, konu, metin });
-    return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true });
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin });
+    // Gerçekten kime gittiğini döndür: ekrandaki "→ kime · CC" satırı bundan.
+    return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });
   }
 
   // Ayar yalnız tam yöneticide.

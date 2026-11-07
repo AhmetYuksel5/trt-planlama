@@ -66,15 +66,32 @@ export const getItemIstegi = (idler: { id: string; degisim: string }[]): string 
       `<m:ItemIds>${idler.map((i) => `<t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/>`).join("")}</m:ItemIds></m:GetItem>`,
   );
 
-/* Yanıt gönderme: düz metin gövdeli e-posta, gönderilip Gönderilmiş'e kopyalanıyor. */
-export const createItemIstegi = (kime: string, konu: string, metin: string): string =>
-  ZARF(
+/* Gönderilecek posta: birden çok alıcı, CC ve BCC (yeni posta ve "tümünü yanıtla"). */
+export interface GidenPosta {
+  kime: string[];
+  cc?: string[];
+  bcc?: string[];
+  konu: string;
+  metin: string;
+}
+
+/*
+ * Yanıt ve yeni posta: düz metin gövdeli e-posta, gönderilip Gönderilmiş'e
+ * kopyalanıyor. Şema sırayı şart koşuyor (To, Cc, Bcc); boş liste yazılmıyor.
+ */
+export const createItemIstegi = (g: GidenPosta): string => {
+  const liste = (etiket: string, adresler: string[] = []) =>
+    adresler.length ? `<t:${etiket}>${adresler.map((a) => `<t:Mailbox><t:EmailAddress>${kacXml(a)}</t:EmailAddress></t:Mailbox>`).join("")}</t:${etiket}>` : "";
+  return ZARF(
     `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
-      `<t:Subject>${kacXml(konu)}</t:Subject>` +
-      `<t:Body BodyType="Text">${kacXml(metin)}</t:Body>` +
-      `<t:ToRecipients><t:Mailbox><t:EmailAddress>${kacXml(kime)}</t:EmailAddress></t:Mailbox></t:ToRecipients>` +
+      `<t:Subject>${kacXml(g.konu)}</t:Subject>` +
+      `<t:Body BodyType="Text">${kacXml(g.metin)}</t:Body>` +
+      liste("ToRecipients", g.kime) +
+      liste("CcRecipients", g.cc) +
+      liste("BccRecipients", g.bcc) +
       `</t:Message></m:Items></m:CreateItem>`,
   );
+};
 
 /* --- XML çözme (DOMParser Worker'da yok; küçük düz metin çözücü) --- */
 
@@ -135,6 +152,9 @@ export interface EwsMesaj {
   ekler: string[];
   /** To ve Cc adresleri (küçük harf); planlama grubuna geleni süzmek için. */
   alicilar: string[];
+  /* Ayrı ayrı To ve Cc: ekranda "kim kime yazdı" ve "tümünü yanıtla" için. */
+  kime: string[];
+  cc: string[];
 }
 
 /* Postanın alıcıları (To+Cc) arasında grup adresi var mı; grupAdresi boşsa hepsi geçer. */
@@ -157,10 +177,13 @@ export const getItemCoz = (xml: string): EwsMesaj[] => {
     }
     const tam = etiketDegeri(g, "Body") ?? "";
     const imid = etiketDegeri(g, "InternetMessageId");
-    const alicilar: string[] = [];
-    for (const r of g.matchAll(/<(?:[a-z]+:)?(?:ToRecipients|CcRecipients)\b[^>]*>([\s\S]*?)<\/(?:[a-z]+:)?(?:ToRecipients|CcRecipients)>/gi)) {
-      for (const e of r[1].matchAll(/<(?:[a-z]+:)?EmailAddress>([\s\S]*?)<\/(?:[a-z]+:)?EmailAddress>/gi)) alicilar.push(varlikCoz(e[1]).trim().toLowerCase());
+    const kime: string[] = [];
+    const cc: string[] = [];
+    for (const r of g.matchAll(/<(?:[a-z]+:)?(ToRecipients|CcRecipients)\b[^>]*>([\s\S]*?)<\/(?:[a-z]+:)?(?:ToRecipients|CcRecipients)>/gi)) {
+      const hedef = /^Cc/i.test(r[1]) ? cc : kime;
+      for (const e of r[2].matchAll(/<(?:[a-z]+:)?EmailAddress>([\s\S]*?)<\/(?:[a-z]+:)?EmailAddress>/gi)) hedef.push(varlikCoz(e[1]).trim().toLowerCase());
     }
+    const alicilar = [...kime, ...cc];
     mesajlar.push({
       kimden: etiketDegeri(kutu, "EmailAddress") ?? "",
       kimdenAd: etiketDegeri(kutu, "Name"),
@@ -172,6 +195,8 @@ export const getItemCoz = (xml: string): EwsMesaj[] => {
       konuKimligi: oznitelik(g, "ConversationId", "Id"),
       ekler,
       alicilar,
+      kime,
+      cc,
     });
   }
   return mesajlar;
@@ -398,12 +423,12 @@ export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi:
   return postalariCek(ayar, baglan, simdi, adet, true);
 };
 
-/* Yanıt gönderir (EWS CreateItem, SendAndSaveCopy). */
-export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: { kime: string; konu: string; metin: string }, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean }> => {
+/* Postayı gönderir (EWS CreateItem, SendAndSaveCopy). */
+export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean }> => {
   let soket: Soket | undefined;
   try {
     soket = await baglan(ayar.sunucu);
-    const r = await ntlmIstek(soket, ayar, createItemIstegi(g.kime, g.konu, g.metin), simdi, true, mic);
+    const r = await ntlmIstek(soket, ayar, createItemIstegi(g), simdi, true, mic);
     if (r.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
     if (r.durum !== 200) return { hata: `CreateItem ${r.durum}: ${faultMetni(latin1Utf8(r.govde))}` };
     const xml = latin1Utf8(r.govde);
@@ -416,7 +441,7 @@ export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, 
   }
 };
 
-export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: { kime: string; konu: string; metin: string }): Promise<{ tamam: true } | { hata: string }> => {
+export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string }> => {
   const ilk = await postaGonder(ayar, baglan, simdi, g, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postaGonder(ayar, baglan, simdi, g, true);

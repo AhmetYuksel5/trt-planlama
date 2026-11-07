@@ -59,11 +59,21 @@ test("GetItem yanıtı mesaja çözülüyor; alıntı ayıklanıyor, ekler ad ol
 });
 
 test("CreateItem isteği: gönderilip kopyalanır, konu/gövde/alıcı XML'de", () => {
-  const x = createItemIstegi("planning@trtarabi.com", "RE: <selam>", "merhaba & hoşçakal");
+  const x = createItemIstegi({ kime: ["planning@trtarabi.com"], konu: "RE: <selam>", metin: "merhaba & hoşçakal" });
   assert.ok(x.includes('MessageDisposition="SendAndSaveCopy"'));
   assert.ok(x.includes("<t:Body BodyType=\"Text\">merhaba &amp; hoşçakal</t:Body>"));
   assert.ok(x.includes("RE: &lt;selam&gt;"));
   assert.ok(x.includes("<t:EmailAddress>planning@trtarabi.com</t:EmailAddress>"));
+  assert.ok(!x.includes("CcRecipients") && !x.includes("BccRecipients"), "boş CC/BCC yazılmıyor");
+});
+
+test("CreateItem isteği: birden çok alıcı, CC ve BCC şemanın sırasıyla", () => {
+  const x = createItemIstegi({ kime: ["a@trt.net.tr", "b@trt.net.tr"], cc: ["planning@trtarabi.com"], bcc: ["gizli@trt.net.tr"], konu: "k", metin: "m" });
+  const to = x.indexOf("<t:ToRecipients>"), cc = x.indexOf("<t:CcRecipients>"), bcc = x.indexOf("<t:BccRecipients>");
+  assert.ok(to > 0 && cc > to && bcc > cc, "sıra To, Cc, Bcc");
+  assert.equal((x.match(/<t:Mailbox>/g) ?? []).length, 4);
+  assert.ok(x.slice(cc, bcc).includes("planning@trtarabi.com"));
+  assert.ok(x.slice(bcc).includes("gizli@trt.net.tr"));
 });
 
 test("postaGonderOtomatik: el sıkışması + CreateItem başarı", async () => {
@@ -71,7 +81,7 @@ test("postaGonderOtomatik: el sıkışması + CreateItem başarı", async () => 
   const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`;
   const basari = `<m:CreateItemResponse><m:ResponseMessages><m:CreateItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode></m:CreateItemResponseMessage></m:ResponseMessages></m:CreateItemResponse>`;
   const { soket } = sahteSoket([`HTTP/1.1 401 Unauthorized\r\n${auth}Content-Length: 0\r\n\r\n`, httpYanit("200 OK", basari)]);
-  const r = await postaGonderOtomatik(ayar, async () => soket, Date.now(), { kime: "a@trt.net.tr", konu: "RE: x", metin: "selam" });
+  const r = await postaGonderOtomatik(ayar, async () => soket, Date.now(), { kime: ["a@trt.net.tr"], konu: "RE: x", metin: "selam" });
   assert.ok("tamam" in r && r.tamam, JSON.stringify(r));
 });
 
@@ -89,9 +99,24 @@ test("grup adresi süzgeci: To/Cc'de grup adresi arıyor", () => {
     `</t:Message>`;
   const m = getItemCoz(xml)[0];
   assert.deepEqual(m.alicilar, ["planning@trtarabi.com", "x@trt.net.tr"]);
+  assert.deepEqual(m.kime, ["planning@trtarabi.com", "x@trt.net.tr"]);
+  assert.deepEqual(m.cc, []);
   assert.equal(grubaUygun(m, "planning@trtarabi.com"), true);
   assert.equal(grubaUygun(m, "baska@trtarabi.com"), false);
   assert.equal(grubaUygun(m, ""), true, "boş grupta hepsi geçer");
+});
+
+test("To ve Cc ayrı okunuyor (kim kime yazdı)", () => {
+  const xml =
+    `<t:Message><t:Subject>k</t:Subject><t:Body BodyType="Text">x</t:Body>` +
+    `<t:From><t:Mailbox><t:EmailAddress>omar@trt.net.tr</t:EmailAddress></t:Mailbox></t:From>` +
+    `<t:ToRecipients><t:Mailbox><t:EmailAddress>Ali@trt.net.tr</t:EmailAddress></t:Mailbox></t:ToRecipients>` +
+    `<t:CcRecipients><t:Mailbox><t:EmailAddress>planning@trtarabi.com</t:EmailAddress></t:Mailbox><t:Mailbox><t:EmailAddress>veli@trt.net.tr</t:EmailAddress></t:Mailbox></t:CcRecipients>` +
+    `</t:Message>`;
+  const m = getItemCoz(xml)[0];
+  assert.deepEqual(m.kime, ["ali@trt.net.tr"]);
+  assert.deepEqual(m.cc, ["planning@trtarabi.com", "veli@trt.net.tr"]);
+  assert.equal(grubaUygun(m, "planning@trtarabi.com"), true, "CC'deki grup da süzgeçten geçer");
 });
 
 test("gövde temizleme Arapça imzayı da atıyor", () => {

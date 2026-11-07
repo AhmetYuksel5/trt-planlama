@@ -29,6 +29,7 @@ import type {
   Ucret,
   Ulke,
   Yanit,
+  PostaMesaji,
 } from "./veri";
 import { paketBicimi } from "./veri";
 
@@ -1563,6 +1564,42 @@ const tohumlu = (t: number) => () => {
   return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
 };
 
+/*
+ * Demoda Posta boş açılmasın: kurgusal iki yazışma. İçe aktarma kartı kalktı,
+ * gerçek kipte posta kutudan geliyor; demoda kutu yok. Adresler örnek alan
+ * adında, kişiler kurgusal muhabirler; Kime/CC dolu ki "kim kime yazdı"
+ * satırı ve "tümünü yanıtla" görülsün.
+ */
+const ornekPosta = (kisiler: Kisi[], saat: (s: string, geri?: number) => string): PostaMesaji[] => {
+  const [m1, m2, m3] = kisiler.filter((k) => k.birim === "muhabir");
+  if (!m1 || !m2 || !m3) return [];
+  const pl = kisiler.find((k) => k.birim === "planlama");
+  const P = ORNEK_PLANLAMA_ADRESI;
+  const ad = (k: Kisi) => (typeof k.ad === "string" ? k.ad : k.ad.tr);
+  return [
+    {
+      id: "pm-o1", konuKimligi: "ornek-gazze", kimden: m1.eposta ?? "", kimdenAd: ad(m1), konu: "تقرير عن معبر رفح",
+      metin: "أقترح تقريراً عن حركة الشاحنات عند معبر رفح اليوم، مع مقابلة سائقين.", tamMetin: "أقترح تقريراً عن حركة الشاحنات عند معبر رفح اليوم، مع مقابلة سائقين.",
+      zaman: saat("09:10", 120), ekler: [], kaynak: "posta", kime: [P], cc: [],
+    },
+    {
+      id: "pm-o2", konuKimligi: "ornek-gazze", kimden: pl?.eposta ?? P, konu: "RE: تقرير عن معبر رفح",
+      metin: "فكرة جيدة، نرجو إرسال النص قبل الساعة الثالثة.", tamMetin: "فكرة جيدة، نرجو إرسال النص قبل الساعة الثالثة.",
+      zaman: saat("09:40", 90), ekler: [], kaynak: "iceAktarma", giden: true, kime: [m1.eposta ?? ""], cc: [P],
+    },
+    {
+      id: "pm-o3", konuKimligi: "ornek-gazze", kimden: m1.eposta ?? "", kimdenAd: ad(m1), konu: "RE: تقرير عن معبر رفح",
+      metin: "تم، سأرسل النص مع الصور.", tamMetin: "تم، سأرسل النص مع الصور.",
+      zaman: saat("10:05", 60), ekler: ["rafah-notlar.docx"], kaynak: "posta", kime: [pl?.eposta ?? P], cc: [P],
+    },
+    {
+      id: "pm-o4", konuKimligi: "ornek-mukabele", kimden: m2.eposta ?? "", kimdenAd: ad(m2), konu: "مقابلة مع وزير الخارجية",
+      metin: "حصلنا على موافقة مبدئية لمقابلة وزير الخارجية غداً صباحاً.", tamMetin: "حصلنا على موافقة مبدئية لمقابلة وزير الخارجية غداً صباحاً.",
+      zaman: saat("11:20", 30), ekler: [], kaynak: "posta", kime: [P], cc: [m3.eposta ?? ""],
+    },
+  ];
+};
+
 export const ORNEK = (): Durum => {
   const B = bugun();
   const gun = (n: number) => gunEkle(B, n);
@@ -2498,6 +2535,7 @@ export const ORNEK = (): Durum => {
         etiket: etiketUret(haftaBas, "haftalik"),
       }),
     yanitlar,
+    postaMesajlari: ornekPosta(kisiListesi, bugunSaat),
     paketler: [...paketler, ...arsiv, ...ozelPaketler(yil, B)],
     haftalik,
     aylik: [
