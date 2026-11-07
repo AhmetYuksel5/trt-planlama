@@ -87,6 +87,13 @@ const oznitelik = (xml: string, ad: string, oz: string): string | undefined => {
   return m ? varlikCoz(m[1]) : undefined;
 };
 
+/* SOAP/EWS hata gövdesinden okunur metin: faultstring, MessageText ya da ResponseCode; yoksa ham kısaltma. */
+export const faultMetni = (xml: string): string => {
+  const f = etiketDegeri(xml, "faultstring") ?? etiketDegeri(xml, "MessageText") ?? etiketDegeri(xml, "ResponseCode") ?? etiketDegeri(xml, "Message");
+  if (f) return f.replace(/\s+/g, " ").trim().slice(0, 200);
+  return xml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200) || "(boş gövde)";
+};
+
 export interface EwsItemKimlik {
   id: string;
   degisim: string;
@@ -328,11 +335,11 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     const bul = await ntlmIstek(soket, ayar, findItemIstegi(adet), simdi, true, mic);
     // 401: kimlik reddedildi. Üst katman MIC'li/MIC'siz ikinci denemeyi buna bakarak yapıyor.
     if (bul.durum === 401) return { hata: "kimlik doğrulanamadı (kullanıcı adı, parola ya da alan yanlış olabilir)", kimlik: true };
-    if (bul.durum !== 200) return { hata: `FindItem beklenmedik durum: ${bul.durum}` };
+    if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
     const idler = findItemCoz(latin1Utf8(bul.govde));
     if (idler.length === 0) return { mesajlar: [] };
     const al = await ntlmIstek(soket, ayar, getItemIstegi(idler), simdi, false);
-    if (al.durum !== 200) return { hata: `GetItem beklenmedik durum: ${al.durum}` };
+    if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
     return { mesajlar: getItemCoz(latin1Utf8(al.govde)) };
   } catch (e) {
     return { hata: e instanceof Error ? e.message : String(e) };

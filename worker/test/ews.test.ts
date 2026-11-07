@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, httpCerceveCoz, postalariCek, postalariCekOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
+import { findItemIstegi, getItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -54,6 +54,12 @@ test("GetItem yanıtı mesaja çözülüyor; alıntı ayıklanıyor, ekler ad ol
   assert.ok(m[0].metin.includes("paket önerim var"));
   assert.ok(!m[0].metin.includes("wrote:") && !m[0].metin.includes("eski"), "alıntı ayıklandı");
   assert.ok(m[0].tamMetin.includes("wrote:"), "tam metin korunuyor");
+});
+
+test("faultMetni: SOAP fault ve EWS MessageText çıkarılıyor", () => {
+  assert.match(faultMetni("<soap:Fault><faultstring>The request failed schema validation</faultstring></soap:Fault>"), /schema validation/);
+  assert.match(faultMetni('<m:ResponseCode>ErrorInvalidServerVersion</m:ResponseCode>'), /ErrorInvalidServerVersion/);
+  assert.match(faultMetni("<html><body>Server Error</body></html>"), /Server Error/);
 });
 
 test("grup adresi süzgeci: To/Cc'de grup adresi arıyor", () => {
