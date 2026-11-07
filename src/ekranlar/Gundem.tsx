@@ -1,6 +1,8 @@
 import {
   Bookmark,
   BookmarkCheck,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Globe,
   Lightbulb,
@@ -12,7 +14,7 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
   Bos,
   Icerik,
@@ -70,7 +72,7 @@ import {
   type Seviye,
 } from "../gundem";
 import { GERCEK } from "../kip";
-import { bugun, gunEkle } from "../tarih";
+import { bugun, gunEkle, yerelGun } from "../tarih";
 import { yaklasanlar } from "../takvim";
 import {
   ULKELER,
@@ -675,7 +677,6 @@ function Akis({ olaylar, simdi, ben }: { olaylar: Olay[]; simdi: number; ben: Ki
   };
   // Telefonda çubuk kapalı gelir: bütün etiketler ekranı kaplıyor, ilk ekranda haber görünmüyordu.
   const [tumu, setTumu] = useState(() => !matchMedia("(max-width: 760px)").matches);
-  const [hepsi, setHepsi] = useState(false);
   const sayilar = useMemo(() => etiketSayilari(olaylar, simdi), [olaylar, simdi]);
   // Takip açıkken seçilen etiket takip ettiklerinin içinde daraltır; ikisi birbirini ezmez.
   const takipAcik = yalnizTakip && takip.length > 0;
@@ -727,20 +728,118 @@ function Akis({ olaylar, simdi, ben }: { olaylar: Olay[]; simdi: number; ben: Ki
           })}
         </div>
       </section>
-      <section className="kart">
-        {!liste.length && <Bos kucuk metin={t("gdAkisBos")} />}
-        <ul className="gundem-olaylar" data-olay-listesi="akis">
-          {(hepsi ? liste : liste.slice(0, 60)).map((o) => (
-            <OlaySatiri key={o.id} o={o} ben={ben} etiketSec={degistir} />
-          ))}
-        </ul>
-        {!hepsi && liste.length > 60 && (
-          <button className="dugme dugme-sade dugme-kucuk" onClick={() => setHepsi(true)}>
-            {t("gdHepsi")} ({liste.length})
-          </button>
-        )}
-      </section>
+      <AkisIkili liste={liste} ben={ben} etiketSec={degistir} />
     </div>
+  );
+}
+
+const SAYFA = 50;
+/* İki sütun yalnız geniş ekranda; dar ekranda (tablet, telefon) haber pencerede okunur. */
+const GENIS = "(min-width: 1100px)";
+const useGenis = () => {
+  const [g, setG] = useState(() => matchMedia(GENIS).matches);
+  useEffect(() => {
+    const m = matchMedia(GENIS);
+    const f = () => setG(m.matches);
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, []);
+  return g;
+};
+
+/*
+ * Haber akışı ajans ekranı gibi (kullanıcının gösterdiği AFP Forum): solda
+ * saatli liste, seçili haber vurgulu; sağda okuyucu (başlık bandı, etiketler,
+ * kaynak · tarih · kelime, metin). Sayfa sayfa; ok tuşlarıyla haberler arası.
+ * Ağır olay (çok kaynak, ağır sözcük) başlığı kırmızı, ajansın "URGENT"i gibi.
+ */
+function AkisIkili({ liste, ben, etiketSec }: { liste: Olay[]; ben: Kisi; etiketSec: (e: string) => void }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const genis = useGenis();
+  const [sayfa, setSayfa] = useState(0);
+  const [secili, setSecili] = useState("");
+  const [pencere, setPencere] = useState<Olay | null>(null);
+  const sayfaSayisi = Math.max(1, Math.ceil(liste.length / SAYFA));
+  const s = Math.min(sayfa, sayfaSayisi - 1);
+  const gorunen = liste.slice(s * SAYFA, (s + 1) * SAYFA);
+  const secik = gorunen.find((o) => o.id === secili) ?? (genis ? gorunen[0] : undefined);
+  const sec = (o: Olay) => (genis ? setSecili(o.id) : setPencere(o));
+  const tus = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    const k = gorunen.findIndex((o) => o.id === secik?.id);
+    const y = gorunen[Math.max(0, Math.min(gorunen.length - 1, k + (e.key === "ArrowDown" ? 1 : -1)))];
+    if (!y) return;
+    e.preventDefault();
+    setSecili(y.id);
+    document.querySelector<HTMLElement>(`[data-olay="${CSS.escape(y.id)}"] [data-olay-oku]`)?.focus();
+  };
+  return (
+    <section className="kart gundem-ajans" data-gundem-ajans>
+      <div className="gundem-ajans-bas">
+        <span className="gundem-ajans-sayi" data-akis-sayi>
+          {t("gdHaberSayisi", { n: String(liste.length) })}
+        </span>
+        {sayfaSayisi > 1 && (
+          <span className="gundem-ajans-sayfa">
+            <button className="dugme dugme-sade dugme-ikon" disabled={s === 0} onClick={() => setSayfa(s - 1)} aria-label={t("gdOncekiSayfa")} title={t("gdOncekiSayfa")}>
+              <ChevronLeft size={16} className="yon" />
+            </button>
+            <span dir="ltr">
+              {s + 1} / {sayfaSayisi}
+            </span>
+            <button className="dugme dugme-sade dugme-ikon" disabled={s >= sayfaSayisi - 1} onClick={() => setSayfa(s + 1)} aria-label={t("gdSonrakiSayfa")} title={t("gdSonrakiSayfa")} data-sonraki-sayfa>
+              <ChevronRight size={16} className="yon" />
+            </button>
+          </span>
+        )}
+      </div>
+      {!liste.length && <Bos kucuk metin={t("gdAkisBos")} />}
+      <div className="gundem-ajans-ic">
+        <ul className="gundem-ajans-liste" data-olay-listesi="akis" onKeyDown={tus}>
+          {gorunen.map((o) => {
+            const z = new Date(o.son);
+            const bizde = bizdeki(v, o);
+            return (
+              <li key={o.id} className={`gundem-ajans-satir${secik?.id === o.id ? " secili" : ""}${o.agirlik >= 12 ? " agir" : ""}`} data-olay={o.id} data-agirlik={o.agirlik}>
+                <span className="gundem-ajans-zaman" data-olay-zaman>
+                  <b>{saatYaz(z.toISOString(), dil)}</b>
+                  {/* Bu yılın değilse yıl da yazılıyor: eski haber bugünkü sanılmasın. */}
+                  <small>{tarihYaz(z.toISOString().slice(0, 10), dil, z.getFullYear() === new Date().getFullYear() ? "kisa" : "uzun")}</small>
+                </span>
+                <span className="gundem-ajans-govde">
+                  <button className="gundem-ajans-baslik" onClick={() => sec(o)} aria-current={secik?.id === o.id} data-olay-oku>
+                    <Metin>{o.baslik}</Metin>
+                  </button>
+                  <span className="gundem-ajans-alt">
+                    <span data-olay-kaynaklar>{t("gdKaynakSayisi").replace("{n}", String(o.kaynaklar.length))}</span>
+                    {bizde && (
+                      <span className="cip cip-vurgu" title={bizde.ad} data-bizde>
+                        {t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))}
+                      </span>
+                    )}
+                    {olayEtiketleri(o).map((e) => {
+                      const ad = etiketAdi(e);
+                      return ad ? (
+                        <button key={e} className={`cip cip-dugme${e.startsWith("bag:") ? " cip-vurgu" : ""}`} onClick={() => etiketSec(e)} data-olay-etiket={e}>
+                          {t(ad)}
+                        </button>
+                      ) : null;
+                    })}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        {genis && secik && (
+          <div className="gundem-ajans-okuyucu" data-okuma-alani>
+            <OkumaIcerik key={secik.id} o={secik} ben={ben} bant />
+          </div>
+        )}
+      </div>
+      {pencere && <OkumaPenceresi o={pencere} ben={ben} kapat={() => setPencere(null)} />}
+    </section>
   );
 }
 
@@ -1015,11 +1114,11 @@ const olayUlkeleri = (o: Olay): Ulke[] => o.konular.flatMap((k) => konuBul(k)?.u
  * "+"sı ya da seçilen metin sepete gider. Okunamayan sitede (ücretli, bot korumalı) özet
  * kalır, ↗ siteyi açar. Telegram'da mesajın tamamı zaten akışta; demoda kapıya gidilmez.
  */
-function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => void }) {
+function OkumaIcerik({ o, ben, bant = false }: { o: Olay; ben: Kisi; bant?: boolean }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const [i, setI] = useState(0);
-  const h = o.haberler[i];
+  const h = o.haberler[Math.min(i, o.haberler.length - 1)];
   const [durum, setDurum] = useState<{ adres: string; makale?: Makale; hata?: string } | null>(null);
   const [not, setNot] = useState(false);
   const [cevir, setCevir] = useState(false);
@@ -1040,6 +1139,9 @@ function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => vo
     };
   }, [h.baglanti]);
   const paragraflar = durum?.makale?.paragraflar ?? (durum?.hata ? [h.ozet || h.baslik] : []);
+  // Bant başlığın kendisi; paragrafların ilki başlığın tekrarıysa ikinci kez yazılmasın.
+  const govde = bant && paragraflar.length > 1 && paragraflar[0] === h.baslik ? paragraflar.slice(1) : paragraflar;
+  const kelime = paragraflar.join(" ").split(/\s+/).filter(Boolean).length;
   const ekle = (metin: string) => {
     if (!metin.trim()) return;
     if (gundemSepeteEkle(ben, { metin, baslik: o.baslik, kaynak: h.kaynak, baglanti: h.baglanti })) bildir(t("gdSepeteEklendi"));
@@ -1050,39 +1152,59 @@ function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => vo
     else bildir(t("gdSecimYok"));
   };
   const bizde = bizdeki(v, o);
+  const kayitli = (v.gundemArsivi ?? []).some((n) => n.kisiId === ben.id && o.haberler.some((x) => x.baglanti === n.baglanti));
+  const z = new Date(h.zaman || o.son);
+  const etiketler = olayEtiketleri(o).map((e) => etiketAdi(e)).filter((a): a is Anahtar => !!a);
   return (
-    <Pencere
-      genis
-      baslik={<Metin>{o.baslik}</Metin>}
-      alt={bizde ? <span data-bizde>{t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))} · <Icerik>{bizde.ad}</Icerik></span> : undefined}
-      kapat={kapat}
-      altBilgi={
-        <div className="form-alt">
-          <a className="dugme dugme-ikincil" href={h.baglanti} target="_blank" rel="noopener noreferrer">
-            <ExternalLink size={15} /> {t("gdSiteyeGit")}
-          </a>
-          <button className="dugme dugme-ikincil" onClick={() => setNot(true)} data-okuma-not>
-            <Bookmark size={15} /> {t("gdArsiveEkle")}
-          </button>
-          <button className="dugme" onClick={() => setCevir(true)} data-okuma-cevir>
-            <Lightbulb size={15} /> {t("gdOneriyeCevir")}
-          </button>
-        </div>
-      }
-    >
-      {o.haberler.length > 1 && (
-        <div className="gundem-okuma-kaynaklar" role="tablist">
-          {o.haberler.map((x, j) => (
-            <button key={x.baglanti} role="tab" aria-selected={j === i} className={`cip cip-dugme${j === i ? " cip-vurgu" : ""}`} onClick={() => setI(j)} data-okuma-kaynak>
-              {x.kaynak}
-            </button>
-          ))}
-        </div>
+    <div className="gundem-okuyucu" data-okuyucu>
+      {/* Araçlar üstte: siteye git, arşiv, öneriye çevir, seçimi sepete. */}
+      <div className="gundem-okuyucu-araclar">
+        <a className="dugme dugme-sade dugme-ikon" href={h.baglanti} target="_blank" rel="noopener noreferrer" title={t("gdSiteyeGit")} aria-label={t("gdSiteyeGit")}>
+          <ExternalLink size={16} />
+        </a>
+        <button className="dugme dugme-sade dugme-ikon" onClick={() => setNot(true)} title={t("gdArsiveEkle")} aria-label={t("gdArsiveEkle")} data-okuma-not data-arsive-ekle>
+          {kayitli ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+        </button>
+        {/* Basınca seçim kaybolmasın diye odak düğmeye geçmiyor. */}
+        <button className="dugme dugme-sade dugme-ikon" onMouseDown={(e) => e.preventDefault()} onClick={secimiEkle} title={t("gdSecimiEkle")} aria-label={t("gdSecimiEkle")} data-secimi-ekle>
+          <ShoppingBasket size={16} />
+        </button>
+        <button className="dugme dugme-kucuk" onClick={() => setCevir(true)} data-okuma-cevir data-olay-cevir>
+          <Lightbulb size={15} /> {t("gdOneriyeCevir")}
+        </button>
+      </div>
+      {bant && (
+        <h2 className="gundem-okuyucu-bant" dir="auto">
+          {h.baslik}
+        </h2>
+      )}
+      {etiketler.length > 0 && <div className="gundem-okuyucu-etiketler">{etiketler.map((a) => t(a)).join(" | ")}</div>}
+      <div className="gundem-okuyucu-kunye" dir="ltr">
+        {o.haberler.length > 1 ? (
+          <span className="gundem-okuma-kaynaklar" role="tablist">
+            {o.haberler.map((x, j) => (
+              <button key={x.baglanti} role="tab" aria-selected={x === h} className={`cip cip-dugme${x === h ? " cip-vurgu" : ""}`} onClick={() => setI(j)} data-okuma-kaynak>
+                {x.kaynak}
+              </button>
+            ))}
+          </span>
+        ) : (
+          <b>{h.kaynak}</b>
+        )}
+        <span>
+          {yerelGun(z.toISOString()).split("-").reverse().join("-")} · {saatYaz(z.toISOString(), dil)}
+        </span>
+        {durum?.makale && !durum.hata && kelime > 0 && <span>{t("gdKelime", { n: String(kelime) })}</span>}
+      </div>
+      {bizde && (
+        <p className="gundem-okuyucu-bizde" data-bizde>
+          {t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))} · <Icerik>{bizde.ad}</Icerik>
+        </p>
       )}
       <div ref={kutu} className="gundem-okuma" data-okuma>
         {!durum && <p className="soluk">{t("yukleniyor")}</p>}
         {durum?.hata && <p className="soluk" data-okuma-hata>{t("gdMetinYok")}</p>}
-        {paragraflar.map((p, k) => (
+        {govde.map((p, k) => (
           <div key={k} className="gundem-paragraf" data-paragraf>
             <p dir="auto">{p}</p>
             <button className="dugme dugme-sade dugme-ikon" onClick={() => ekle(p)} title={t("gdSepeteEkle")} aria-label={t("gdSepeteEkle")} data-paragraf-ekle>
@@ -1090,12 +1212,6 @@ function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => vo
             </button>
           </div>
         ))}
-      </div>
-      <div className="form-alt">
-        {/* Basınca seçim kaybolmasın diye odak düğmeye geçmiyor. */}
-        <button className="dugme dugme-ikincil dugme-kucuk" onMouseDown={(e) => e.preventDefault()} onClick={secimiEkle} data-secimi-ekle>
-          <ShoppingBasket size={15} /> {t("gdSecimiEkle")}
-        </button>
       </div>
       {not && <ArsivPenceresi o={o} ben={ben} kapat={() => setNot(false)} />}
       {cevir && (
@@ -1108,6 +1224,15 @@ function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => vo
           kapat={() => setCevir(false)}
         />
       )}
+    </div>
+  );
+}
+
+/* Okuma penceresi (brifing, etkinlik, telefonda akış): aynı okuyucu pencerede. */
+function OkumaPenceresi({ o, ben, kapat }: { o: Olay; ben: Kisi; kapat: () => void }) {
+  return (
+    <Pencere genis baslik={<Metin>{o.baslik}</Metin>} kapat={kapat}>
+      <OkumaIcerik o={o} ben={ben} />
     </Pencere>
   );
 }

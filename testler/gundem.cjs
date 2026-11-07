@@ -35,7 +35,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // Haber akışı: en yenisi üstte, etiketlerle
   await git("#/gundem/akis");
-  const zamanlar = await p.locator('[data-olay-listesi="akis"] > [data-olay]').evaluateAll((l) => l.map((e) => e.querySelector(".gundem-olay-alt span").textContent));
+  const zamanlar = await p.locator('[data-olay-listesi="akis"] > [data-olay]').evaluateAll((l) => l.map((e) => e.querySelector("[data-olay-zaman]").textContent));
   ok(zamanlar.length >= 10, "akışta haberler: " + zamanlar.length);
   const hanYunus = p.locator('[data-olay-listesi="akis"] [data-olay]').filter({ hasText: "خان يونس" });
   ok((await hanYunus.count()) === 1 && (await hanYunus.locator("[data-olay-kaynaklar]").innerText()).includes("2"), "iki kaynağın aynı haberi tek olay, 2 kaynak");
@@ -80,13 +80,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // Arşiv
   const sudanHaberi = () => p.locator('[data-olay-listesi="akis"] [data-olay]').filter({ has: p.locator('[data-olay-etiket="sudan"]') }).first();
-  await sudanHaberi().locator("[data-arsive-ekle]").click();
+  await sudanHaberi().locator("[data-olay-oku]").click(); await p.locator("[data-okuma-alani] [data-arsive-ekle]").click();
   await p.locator("[data-arsiv-not]").fill("Darfur dosyası için kaynak");
   await p.locator("[data-arsiv-kaydet]").click();
   await p.waitForTimeout(300);
   let d = await veri();
   ok(d.gundemArsivi.length === 1 && d.gundemArsivi[0].kisiId === "yo3" && d.gundemArsivi[0].konular.includes("sudan"), "arşive not kaydedildi");
-  await sudanHaberi().locator("[data-arsive-ekle]").click();
+  await sudanHaberi().locator("[data-olay-oku]").click(); await p.locator("[data-okuma-alani] [data-arsive-ekle]").click();
   await p.locator("[data-arsiv-kaydet]").click();
   await p.waitForTimeout(300);
   ok((await veri()).gundemArsivi.length === 1, "aynı haber ikinci kez: çoğalmadı");
@@ -157,6 +157,19 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       ok(t === 0, `390px ${dil} ${s}: taşma ${t}`);
     }
   }
+  // Geniş ekranda ajans düzeni: solda liste, sağda seçili haberin okuyucusu (pencere yok); ok tuşu, sayfa
+  await p.setViewportSize({ width: 1440, height: 1000 });
+  await kim("yo3");
+  await git("#/gundem/akis");
+  ok((await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().getAttribute("class")).includes("secili") && (await p.locator("[data-okuma-alani] .gundem-okuyucu-bant").count()) === 1, "ilk haber seçili, sağda başlık bandıyla okuyucu");
+  ok((await p.locator("[data-okuma-alani] [data-paragraf]").count()) >= 1 && (await p.locator("dialog[open]").count()) === 0, "okuyucu sayfada, pencere açılmadı");
+  const ikinciBaslik = await p.locator('[data-olay-listesi="akis"] > [data-olay]').nth(1).locator("[data-olay-oku]").innerText();
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-oku]").focus();
+  await p.keyboard.press("ArrowDown");
+  await p.waitForTimeout(200);
+  ok((await p.locator("[data-okuma-alani] .gundem-okuyucu-bant").innerText()).trim() === ikinciBaslik.trim() || (await p.locator('[data-olay-listesi="akis"] > [data-olay]').nth(1).getAttribute("class")).includes("secili"), "aşağı ok bir sonraki haberi açtı");
+  ok((await p.locator("[data-akis-sayi]").innerText()).match(/\d+/) !== null, "haber sayısı başta");
+  await p.setViewportSize({ width: 390, height: 844 });
   // Okuma penceresi ve sepet: başlık sayfada okunur, paragraflar sepete, sepet öneriye, satıra ve nota
   await kim("yo3");
   await git("#/gundem/akis");
@@ -218,8 +231,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   d = await veri();
   ok(d.oneriler.length === oneriOnce + 1 && d.oneriler.some((o) => o.haberBasligi === "خبر من السلة" && o.gelisme) && !d.gundemSepetleri?.yo3, "sepet öneriye döndü, boşaldı");
   // Satırdan doğrudan öneriye çevir
-  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-cevir]").click();
-  ok((await p.locator("dialog[open] [data-cevir-header]").count()) === 1, "haber satırından öneriye çevir açılıyor");
+  await p.locator('[data-olay-listesi="akis"] > [data-olay]').first().locator("[data-olay-oku]").click();
+  await p.locator("dialog[open] [data-olay-cevir]").click();
+  ok((await p.locator("dialog[open] [data-cevir-header]").count()) === 1, "haberin okuyucusundan öneriye çevir açılıyor");
+  await p.keyboard.press("Escape");
   await p.keyboard.press("Escape");
   // 390px: okuma penceresi ve sepet taşmıyor
   await p.setViewportSize({ width: 390, height: 800 });

@@ -441,7 +441,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yazıyor, kendini ekleyemesin); kapı `/rss`'te genel belgeyi kişinin oturumuyla
     okuyup kişiyi ya da birimini arar (`index.ts → gundemPaylasildi`; alt birim
     kapıda tanınmaz, seçilen birimin kendisi).
-  - Okuma penceresi (`Gundem.tsx → OkumaPenceresi`): haberin başlığı siteyi değil
+  - Haber akışı ajans ekranı gibi (kullanıcının gösterdiği AFP Forum, bizim
+    renklerle; `Gundem.tsx → AkisIkili`): başta haber sayısı ve sayfa (50'şer),
+    solda saatli liste (seçili satır lacivert, ağır olay [`agirlik` ≥ 12]
+    kırmızı), sağda seçili haberin okuyucusu (`OkumaIcerik bant`: lacivert
+    başlık bandı, etiket satırı, "kaynak | tarih · saat | sözcük" künyesi,
+    metin; araçlar üstte). Ok tuşları haberler arasında gezer. İki sütun
+    1100 pikselden genişte; daha darda haber okuma penceresinde açılır.
+  - Okuma penceresi (`Gundem.tsx → OkumaPenceresi`, içi `OkumaIcerik`, akışın okuyucusuyla aynı): haberin başlığı siteyi değil
     pencereyi açar (siteye gidip dönmek uzundu; site ↗'da). Tam metni kapı okur
     (`worker/src/makale.ts`, `POST /makale`, yalnız basınca, tek adres, 10 dakika
     önbellek): `<article>` önce, menü/yan sütun/betik atılır, paragraflar; Google
