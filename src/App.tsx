@@ -67,6 +67,7 @@ import {
   kisitliKisi,
   oneriGorebilir,
   paketGorebilir,
+  postaGorebilir,
   sayfaGorebilir,
   yapabilir,
   dilDenetmeniMi,
@@ -276,7 +277,7 @@ export default function App() {
         icerik = <Gorevler ben={ben} />;
         break;
       case "posta":
-        icerik = yapabilir(ben, "cagriHazirla") ? <Posta ben={ben} /> : <Yetkisiz />;
+        icerik = postaGorebilir(ben) ? <Posta ben={ben} /> : <Yetkisiz />;
         break;
       case "oneriler": {
         if (yol.id === "yeni")

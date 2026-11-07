@@ -24,7 +24,7 @@ import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
-import { bildirimMi, dilDenetmeniMi } from "../yetki";
+import { bildirimMi, dilDenetmeniMi, postaGorebilir } from "../yetki";
 import type { BolmeAramasi } from "../yol";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
@@ -120,8 +120,9 @@ export default function UstCubuk({
   const bildirimler = v.hareketler
     .filter((h) => bildirimMi(ben, h, v))
     .slice(0, 25);
-  // Posta kimliği "Sonra yap" denince: bilgiler girilene kadar zilde hatırlatma.
-  const postaHatirlat = GERCEK && kimlikDurum === "sonra";
+  // Posta kimliği "Sonra yap" denince: bilgiler girilene kadar zilde hatırlatma
+  // (yalnız postayı görebilenlerde; dış muhabirlerde posta yok).
+  const postaHatirlat = GERCEK && kimlikDurum === "sonra" && postaGorebilir(ben);
   const okunmamis = bildirimler.filter((h) => h.zaman > sonBakis).length + (postaHatirlat ? 1 : 0);
   useBildirimSesi(okunmamis);
 

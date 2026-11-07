@@ -310,7 +310,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 
   /* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi): herkes kendininkini. */
   if (yol === "/posta/kimlik" || yol === "/posta/dene") {
-    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403); // dış muhabirler ve onay bekleyen hariç
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (req.method === "GET" && yol === "/posta/kimlik") return yanit(postaKimlikGorunur(pk));
     if (req.method === "PUT" && yol === "/posta/kimlik") {
@@ -330,7 +330,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
   }
 
   if (req.method === "POST" && yol === "/posta/cek") {
-    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403); // dış muhabirler ve onay bekleyen hariç
     const pa = await postaAyarOku(env);
     if (!pa.acik) return yanit({ hata: "kapali" }, 403);
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
@@ -345,7 +345,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 
   /* Buradan yanıt gönderme (EWS CreateItem). Alıcı belirtilmezse kişinin grup adresi. */
   if (req.method === "POST" && yol === "/posta/gonder") {
-    if (!(kisi.yonetici || kisi.birim === "planlama")) return yanit({ hata: "yetki" }, 403);
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403); // dış muhabirler ve onay bekleyen hariç
     const pa = await postaAyarOku(env);
     if (!pa.acik) return yanit({ hata: "kapali" }, 403);
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);

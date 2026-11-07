@@ -734,8 +734,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   takipler: ["planlama", "yonetim", "muhabir"],
   // Planlama görevleri ve iş taksimi: birimin kendi düzeni; Yönetim izliyor.
   gorevler: ["planlama", "yonetim"],
-  // Gelen posta sohbeti: planlama kutusunu okuyan Planlama (route cagriHazirla soruyor).
-  posta: ["planlama"],
+  // Gelen posta sohbeti: dış muhabirler hariç haber merkezi (route postaGorebilir soruyor).
+  posta: MASA,
   basliklar: ["planlama", "newsdesk", "program", "yonetim"],
   paketler: HERKES,
   feature: MASA,
@@ -902,6 +902,9 @@ export const gundemGorebilir = (d: Durum | null | undefined, k: Kisi | undefined
 
 export const kisitliKisi = (k: Kisi): boolean =>
   k.birim === "muhabir" || !!k.kontrolBekliyor;
+/* Gelen posta: dış muhabirler (ve onay bekleyen) hariç haber merkezinin herkesi;
+   her birim kendi grup adresiyle kendi yazışmalarını görür (worker da aynı kuralla). */
+export const postaGorebilir = (k: Kisi | undefined): boolean => !!k && !kisitliKisi(k);
 export const takipEkleyebilir = (k: Kisi | undefined): boolean =>
   !!k && k.birim === "muhabir" && !k.hesapsiz;
 
