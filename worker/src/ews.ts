@@ -190,7 +190,12 @@ export const httpCerceveCoz = (baytlar: Uint8Array): HttpYanit | null => {
   const basliklar: Record<string, string> = {};
   for (const s of satirlar.slice(1)) {
     const i = s.indexOf(":");
-    if (i > 0) basliklar[s.slice(0, i).trim().toLowerCase()] = s.slice(i + 1).trim();
+    if (i <= 0) continue;
+    const ad = s.slice(0, i).trim().toLowerCase();
+    const deger = s.slice(i + 1).trim();
+    // Aynı başlık birden çok gelebilir (Exchange 401'de "WWW-Authenticate: NTLM …" ve ayrı satırda "Negotiate"):
+    // sonuncuyla ezmeyip birleştir, yoksa NTLM challenge "Negotiate"in altında kaybolup bulunamıyordu.
+    basliklar[ad] = basliklar[ad] ? `${basliklar[ad]}, ${deger}` : deger;
   }
   const govdeBas = bosSatir + 4;
   const kalan = baytlar.subarray(govdeBas);

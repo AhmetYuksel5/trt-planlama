@@ -80,6 +80,13 @@ test("HTTP çerçeve: content-length", () => {
   assert.equal(new TextDecoder().decode(y!.govde), "hello");
 });
 
+test("HTTP çerçeve: yinelenen WWW-Authenticate birleşiyor (NTLM Negotiate'in altında kaybolmasın)", () => {
+  const ham = new TextEncoder().encode("HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: NTLM TlRMTVNTUAAC\r\nWWW-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n");
+  const y = httpCerceveCoz(ham);
+  assert.equal(y?.durum, 401);
+  assert.match(y!.basliklar["www-authenticate"], /NTLM TlRMTVNTUAAC/);
+});
+
 test("HTTP çerçeve: chunked ve eksik veride null", () => {
   assert.equal(httpCerceveCoz(new TextEncoder().encode("HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nkisa")), null);
   const chunked = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n4\r\nWiki\r\n5\r\npedia\r\n0\r\n\r\n";
@@ -109,7 +116,8 @@ test("postalariCek: NTLM el sıkışması (Type1→401→Type3→200) ve GetItem
   const findXml = `<t:Message><t:ItemId Id="ID1" ChangeKey="CK1"/></t:Message>`;
   const getXml = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">merhaba</t:Body><t:From><t:Mailbox><t:EmailAddress>a@trt.net.tr</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
   const { soket, istekler } = sahteSoket([
-    httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`),
+    // Gerçek Exchange 401'i gibi: NTLM challenge'ın ardından ayrı bir Negotiate satırı.
+    httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`),
     httpYanit("200 OK", findXml),
     httpYanit("200 OK", getXml),
   ]);
