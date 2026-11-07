@@ -298,6 +298,52 @@ export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => 
 };
 
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */
+/*
+ * Sohbet yanıtındaki alıcı satırları (kullanıcı: alıcı ayrı alanda değil,
+ * metne yazılsın): "@Ali, Veli" Kime, "cc: …" (ya da "cc …") CC, "bcc: …"
+ * BCC; Arapça klavyede "نسخة:" CC, "مخفية:" ya da "نسخة مخفية:" BCC. Arapçada
+ * iki nokta şart: "نسخة من التقرير…" sıradan cümle CC sanılmasın. Virgülle
+ * (Arapça "،" ve ";" de) birden çok; öğenin başındaki @ atılır. Bu satırlar
+ * postanın metnine girmez. Satır nerede olursa olsun okunur.
+ */
+export interface PostaKomutlari {
+  govde: string;
+  kime: string[];
+  cc: string[];
+  bcc: string[];
+}
+
+export type KomutTuru = "kime" | "cc" | "bcc";
+
+/* Satırın alıcı satırı olup olmadığı ve listenin satırdaki başlangıcı. */
+export const komutSatiri = (satir: string): { tur: KomutTuru; bas: number } | null => {
+  const bcc = satir.match(/^\s*(?:bcc\s*[:：]?\s+|bcc\s*[:：]\s*|(?:نسخة\s+)?مخفية\s*[:：]\s*)/i);
+  if (bcc) return { tur: "bcc", bas: bcc[0].length };
+  const cc = satir.match(/^\s*(?:cc\s*[:：]?\s+|cc\s*[:：]\s*|نسخة\s*[:：]\s*)/i);
+  if (cc) return { tur: "cc", bas: cc[0].length };
+  const kime = satir.match(/^\s*@/);
+  if (kime) return { tur: "kime", bas: kime[0].length - 1 };
+  return null;
+};
+
+export const postaOgeleri = (liste: string): string[] =>
+  liste
+    .split(/[,،;]+/)
+    .map((x) => x.trim().replace(/^@+/, "").trim())
+    .filter(Boolean);
+
+export const postaKomutlari = (metin: string): PostaKomutlari => {
+  const k: PostaKomutlari = { govde: "", kime: [], cc: [], bcc: [] };
+  const kalan: string[] = [];
+  for (const satir of metin.split(/\r?\n/)) {
+    const komut = komutSatiri(satir);
+    if (komut) k[komut.tur].push(...postaOgeleri(satir.slice(komut.bas)));
+    else kalan.push(satir);
+  }
+  k.govde = kalan.join("\n").trim();
+  return k;
+};
+
 export const postaKonuBasligi = (konu: string) => {
   let k = (konu ?? "").replace(/\r\n?/g, " ").trim();
   let onceki;

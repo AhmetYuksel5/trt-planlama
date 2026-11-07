@@ -1576,6 +1576,7 @@ const M = {
   postaMetin: m("Mesaj", "الرسالة", "Message"),
   postaGrupSabit: m("Grup her zaman CC'de", "المجموعة دائماً في النسخة", "The group is always in CC"),
   bPostaAdresGecersiz: m("Geçersiz adres: {a}", "عنوان غير صالح: {a}", "Invalid address: {a}"),
+  postaAliciBulunamadi: m("Bulunamadı: {a}", "غير موجود: {a}", "Not found: {a}"),
   bPostaGonderildi: m("Gönderildi", "تم الإرسال", "Sent"),
   bPostaGonderHata: m("Gönderilemedi", "تعذّر الإرسال", "Could not send"),
   // Ayarlar › E-posta kutusu (EWS)

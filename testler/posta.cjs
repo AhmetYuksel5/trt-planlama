@@ -1,4 +1,4 @@
-// Gelen posta sohbeti: örnek yazışmalar, kim kime yazdı, tümünü yanıtla + CC, yeni posta, silme, imza ayıklama, muhabir görmez, 390px
+// Gelen posta sohbeti: örnek yazışmalar, kim kime yazdı, yanıtta @/cc/bcc satırları, yeni posta, silme, imza ayıklama, muhabir görmez, 390px
 const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
 let gec = 0, kal = 0;
@@ -42,24 +42,50 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-posta-sohbet] [data-posta-alici-satiri]").count()) === 3, "her balonda kime/CC satırı");
   ok((await p.locator("[data-posta-sohbet] .posta-balon.giden [data-posta-alici-satiri]").innerText()).includes("CC"), "giden balonda CC görünüyor");
 
-  // Tümünü yanıtla: alıcı yazışmadan gelir (seçtirilmez), yalnız CC eklenir
-  ok((await p.locator("[data-posta-alicilar]").innerText()).includes(arAd(m1)), "yanıt yazışmadaki muhabire gidiyor");
-  const ccYaz = p.locator('[data-posta-alicilar] [data-posta-adres-yaz="cc"]');
-  await ccYaz.fill("yeni.kisi@ornek.local");
-  await ccYaz.press("Enter");
-  ok((await p.locator('[data-posta-alicilar] [data-posta-cip="yeni.kisi@ornek.local"]').count()) === 1, "yeni CC eklendi");
-  await ccYaz.fill("yanlis");
-  await ccYaz.press("Enter");
-  ok((await p.locator("[data-posta-alicilar] [data-posta-cip]").count()) === 1, "geçersiz adres çipe dönüşmedi");
-  await ccYaz.fill("");
-  await p.locator("[data-posta-yaz]").fill("Teşekkürler, planladık.");
+  // Yanıt: @ yazılmazsa yazışmadaki herkese (tümünü yanıtla)
+  ok((await p.locator("[data-posta-alicilar]").innerText()).includes(arAd(m1)), "yanıt varsayılan olarak yazışmadaki muhabire");
+  const yaz = p.locator("[data-posta-yaz]");
+
+  // Alıcılar metne yazılır: "@" Kime, "cc:" CC, "bcc:" BCC; virgülle birden çok
+  await yaz.fill("@" + trAd(m2) + ", yeni.kisi@ornek.local\ncc: kopya@ornek.local, " + trAd(muhabirler[2]) + "\nbcc gizli@ornek.local\nTeşekkürler, planladık.");
+  await p.waitForTimeout(200);
+  const onizleme = await p.locator("[data-posta-alicilar]").innerText();
+  ok(onizleme.includes(arAd(m2)) && !onizleme.includes(arAd(m1)), "@ yazılınca Kime o kişiler (önizleme): " + onizleme.replace(/\n/g, " "));
+  ok((await p.locator('[data-posta-alicilar] [data-posta-cip="kopya@ornek.local"]').count()) === 1 && (await p.locator('[data-posta-alicilar] [data-posta-cip="gizli@ornek.local"]').count()) === 1, "CC ve BCC önizlemede");
+  ok((await p.locator("[data-posta-alicilar] [data-posta-bulunamadi]").count()) === 0, "bütün adlar çözüldü");
+
+  // Bulunamayan ad: kırmızı çip, gönderilmez
+  await yaz.fill("@Kimseyok Yokoglu\nMerhaba");
+  await p.waitForTimeout(150);
+  ok((await p.locator("[data-posta-alicilar] [data-posta-bulunamadi]").count()) === 1, "bulunamayan ad işaretlendi");
+  const mesajSayisi = await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count();
+  ok((await p.locator("[data-posta-gonder]").getAttribute("aria-disabled")) === "true", "gönder pasif görünüyor, nedeni ipucunda");
+  await p.locator("[data-posta-gonder]").click({ force: true });
+  await p.waitForTimeout(300);
+  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === mesajSayisi, "bulunamayan alıcıyla gönderilmedi");
+
+  // Satırda yazarken öneri; seçince satıra yazılır
+  await yaz.fill("cc: " + trAd(muhabirler[3]).slice(0, -2));
+  await yaz.press("End");
+  await p.waitForTimeout(200);
+  const hedef = kucuk(muhabirler[3].eposta);
+  ok((await p.locator(`[data-posta-oneriler] [data-posta-oneri="${hedef}"]`).count()) === 1, "cc satırında öneri çıktı");
+  await p.locator(`[data-posta-oneriler] [data-posta-oneri="${hedef}"]`).click();
+  await p.waitForTimeout(150);
+  ok((await p.locator(`[data-posta-alicilar] [data-posta-cip="${hedef}"]`).count()) === 1, "seçilen öneri CC'ye girdi");
+
+  // Gönder: komut satırları metne girmez, alıcılar kayıtta, BCC kayda yazılmaz
+  await yaz.fill("@" + trAd(m2) + ", yeni.kisi@ornek.local\ncc: kopya@ornek.local\nbcc: gizli@ornek.local\nTeşekkürler, planladık.");
   await p.locator("[data-posta-gonder]").click();
   await p.waitForTimeout(400);
-  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === 4, "yanıt sohbete eklendi");
-  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").last().locator("[data-posta-alici-satiri]").innerText()).includes("yeni.kisi"), "eklenen CC giden balonun alıcı satırında");
-  const yanit = (await veri()).postaMesajlari.find((m) => m.giden && m.metin === "Teşekkürler, planladık.");
-  ok(!!yanit && yanit.kime.includes(kucuk(m1.eposta)) && yanit.cc.includes("yeni.kisi@ornek.local"), "kayıtta kime ve CC: " + JSON.stringify(yanit && { kime: yanit.kime, cc: yanit.cc }));
-  ok((await p.locator('[data-posta-alicilar] [data-posta-cip="yeni.kisi@ornek.local"]').count()) === 0, "gönderince ek CC sıfırlandı");
+  ok((await p.locator("[data-posta-sohbet] [data-posta-mesaj]").count()) === mesajSayisi + 1, "yanıt sohbete eklendi");
+  const yanit = (await veri()).postaMesajlari.find((m) => m.giden && m.metin.includes("Teşekkürler, planladık."));
+  ok(!!yanit && yanit.metin === "Teşekkürler, planladık.", "@/cc/bcc satırları posta metnine girmedi: " + JSON.stringify(yanit && yanit.metin));
+  ok(!!yanit && yanit.kime.includes(kucuk(m2.eposta)) && yanit.kime.includes("yeni.kisi@ornek.local") && !yanit.kime.includes(kucuk(m1.eposta)), "Kime @ ile yazılanlar: " + JSON.stringify(yanit && yanit.kime));
+  ok(!!yanit && yanit.cc.includes("kopya@ornek.local"), "CC kayıtta: " + JSON.stringify(yanit && yanit.cc));
+  ok(!!yanit && !JSON.stringify(yanit).includes("gizli@ornek.local"), "BCC kayda yazılmadı");
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").last().locator("[data-posta-alici-satiri]").innerText()).includes("kopya"), "giden balonda kime/CC satırı");
+  ok((await yaz.inputValue()) === "", "gönderince kutu boşaldı");
 
   // Yeni posta: "+" ile; alıcısız gönderilmez, öneriyle kişi seçilir, BCC isteğe bağlı
   await p.locator("[data-posta-yeni-ac]").click();

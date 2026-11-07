@@ -3,7 +3,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaSil, postaEtiketsizleriGruba } from "../../eylemler";
-import { gizliEkMi, gondereniBul, postaAlintiMetni, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir } from "../../eposta";
+import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, type KomutTuru } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
@@ -85,7 +85,8 @@ const adresAdi = (v: Veri, adres: string, ad: (k: Kisi) => string): string => {
 };
 
 /* Adres önerileri: e-postası olan kayıtlı kişiler ve yazışmalarda geçen adresler; Arapça, Latin ad ya da adresle aranır. */
-const useAdresOnerileri = (): { adres: string; ad: string; ara: string }[] => {
+type AdresOnerisi = { adres: string; ad: string; ara: string; adlar: string[] };
+const useAdresOnerileri = (): AdresOnerisi[] => {
   const v = useVeri();
   const { ad } = useDil();
   const adresler = new Set<string>();
@@ -95,8 +96,9 @@ const useAdresOnerileri = (): { adres: string; ad: string; ara: string }[] => {
     const kisi = gondereniBul(v, a);
     const adi = adresAdi(v, a, ad);
     // Latin yazımla da aransın (kişi adı ekranda Arapça; arama Latin de tanır).
-    const latin = !kisi ? "" : typeof kisi.ad === "string" ? kisi.ad : `${kisi.ad.tr ?? ""} ${kisi.ad.en ?? ""}`;
-    return { adres: a, ad: adi, ara: [adi, latin, a].filter(Boolean).join(" ").toLocaleLowerCase("tr") };
+    const latinler = !kisi ? [] : typeof kisi.ad === "string" ? [kisi.ad] : [kisi.ad.tr, kisi.ad.en];
+    const adlar = [adi, ...latinler, a.split("@")[0]].filter((x): x is string => !!x).map((x) => x.trim().toLocaleLowerCase("tr"));
+    return { adres: a, ad: adi, ara: [...adlar, a].join(" "), adlar };
   });
 };
 
@@ -306,62 +308,175 @@ const gonderimHatasi = (r: { hata: string; ayrinti?: string }, t: ReturnType<typ
   r.hata === "eksikKimlik" ? t("bPostaCekKimlikYok") : r.hata === "kapali" ? t("bPostaCekKapali") : `${t("bPostaGonderHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
 
 /*
- * Yanıt kutusu: sohbetin altında, basit mesaj mantığı. Alıcılar yazışmadan
- * gelir ve üstte görünür (seçtirilmez); eksik olan yalnız yeni CC. Konu
- * "RE: <başlık>". Gerçek kipte kapı EWS ile gönderiyor, giden balon kapının
- * gerçekten gönderdiği alıcılarla ekleniyor; demoda yalnız ekrana.
+ * Alıcı satırındaki adı adrese çevirir: adres ise kendisi; değilse tam ad
+ * (Arapça, Latin ya da adresin yerel kısmı), yoksa adın geçtiği tek kişi.
+ * Birden çok uyan varsa yazışmadakiler öncelikli; yine birden çoksa
+ * bulunamadı sayılır (yanlış kişiye gitmesin).
+ */
+const adresCoz = (oge: string, oneriler: AdresOnerisi[], yazismada: Set<string>): string | null => {
+  const a = kucuk(oge);
+  if (ADRES.test(a)) return a;
+  const ara = oge.trim().toLocaleLowerCase("tr");
+  const tek = (l: AdresOnerisi[]) => (l.length === 1 ? l[0].adres : l.filter((o) => yazismada.has(o.adres)).length === 1 ? l.find((o) => yazismada.has(o.adres))!.adres : null);
+  return tek(oneriler.filter((o) => o.adlar.includes(ara))) ?? tek(oneriler.filter((o) => o.ara.includes(ara)));
+};
+
+/* İmlecin bulunduğu alıcı satırındaki yarım öğe: öneri buna göre, seçilen buraya yazılır. */
+const yarimOge = (metin: string, imlec: number): { bas: number; yazi: string; tur: KomutTuru } | null => {
+  const satirBas = metin.lastIndexOf("\n", imlec - 1) + 1;
+  const satir = metin.slice(satirBas, imlec);
+  const komut = komutSatiri(satir + (satir.endsWith(" ") ? "" : " "));
+  if (!komut || komut.bas > satir.length) return null;
+  const ayrac = Math.max(satir.lastIndexOf(","), satir.lastIndexOf("،"), satir.lastIndexOf(";"), komut.bas - 1);
+  const ham = satir.slice(ayrac + 1);
+  const bosluk = ham.length - ham.trimStart().length;
+  const yazi = ham.trim().replace(/^@+/, "");
+  return { bas: satirBas + ayrac + 1 + bosluk + (ham.trimStart().startsWith("@") ? ham.trimStart().match(/^@+/)![0].length : 0), yazi, tur: komut.tur };
+};
+
+/*
+ * Yanıt kutusu: sohbetin altında. Alıcılar metne yazılır (kullanıcı): "@Ali,
+ * Veli" Kime, "cc: …" CC, "bcc: …" BCC; bu satırlar postaya girmez
+ * (eposta.ts → postaKomutlari). @ yoksa yazışmadaki herkese (tümünü yanıtla).
+ * Gönderilmeden kime gideceği üstte çip olarak görünür; bulunamayan ad
+ * kırmızı, gönderim durur. Grup her zaman CC'de (kapı ekliyor). BCC kayda
+ * yazılmaz: kayıt grupta ortak, CC'deki grup BCC'yi görürdü.
  */
 function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string }) {
   const { t, ad } = useDil();
   const v = useVeri();
+  const oneriler = useAdresOnerileri();
+  const alan = useRef<HTMLTextAreaElement>(null);
   const [metin, setMetin] = useState("");
-  const [ekCc, setEkCc] = useState<string[]>([]);
+  const [imlec, setImlec] = useState(0);
   const [gonderiliyor, setGonderiliyor] = useState(false);
-  const { kime, cc } = yanitAlicilari(sohbet, ben, grup);
+  const varsayilan = yanitAlicilari(sohbet, ben, grup);
+  const yazismada = new Set(sohbet.mesajlar.flatMap((m) => [m.kimden, ...(m.kime ?? []), ...(m.cc ?? [])]).map(kucuk));
+  const komut = postaKomutlari(metin);
+  const coz = (l: string[]) => l.map((o) => ({ oge: o, adres: adresCoz(o, oneriler, yazismada) }));
+  const kimeC = coz(komut.kime), ccC = coz(komut.cc), bccC = coz(komut.bcc);
+  const bulunamayan = [...kimeC, ...ccC, ...bccC].filter((x) => !x.adres).map((x) => x.oge);
+  const adresler = (l: { adres: string | null }[]) => tekil(l.map((x) => x.adres).filter((x): x is string => !!x));
+  // @ yazıldıysa Kime o; yazışmanın CC'si kalır, cc satırı eklenir.
+  const kime = komut.kime.length ? adresler(kimeC) : varsayilan.kime;
+  const cc = tekil([...varsayilan.cc, ...adresler(ccC)]).filter((a) => !kime.includes(a));
+  const bcc = adresler(bccC).filter((a) => !kime.includes(a) && !cc.includes(a));
+  const hazir = !!komut.govde && !bulunamayan.length && !gonderiliyor;
   const konu = /^re:/i.test(sohbet.son.konu) ? sohbet.son.konu : `RE: ${sohbet.baslik}`;
+
+  // Alıcı satırında yazarken öneri: önce yazışmadakiler.
+  const yarim = yarimOge(metin, imlec);
+  const uygun = yarim && yarim.yazi
+    ? oneriler
+        .filter((o) => o.ara.includes(yarim.yazi.toLocaleLowerCase("tr")))
+        .sort((a, b) => Number(yazismada.has(b.adres)) - Number(yazismada.has(a.adres)))
+        .slice(0, 6)
+    : [];
+  const sec = (o: AdresOnerisi) => {
+    if (!yarim) return;
+    // Ad tek kişiye çözülüyorsa ad yazılır (okunur), değilse adres.
+    const etiket = adresCoz(o.ad, oneriler, yazismada) === o.adres ? o.ad : o.adres;
+    const yeni = metin.slice(0, yarim.bas) + etiket + metin.slice(imlec);
+    const konum = yarim.bas + etiket.length;
+    setMetin(yeni);
+    setImlec(konum);
+    requestAnimationFrame(() => {
+      alan.current?.focus();
+      alan.current?.setSelectionRange(konum, konum);
+    });
+  };
+
   const gonder = async () => {
-    const m = metin.trim();
-    if (!m || gonderiliyor) return;
-    const ccTum = tekil([...cc, ...ekCc]);
+    if (!hazir) {
+      if (bulunamayan.length) bildir(t("postaAliciBulunamadi", { a: bulunamayan.join(", ") }));
+      return;
+    }
+    const govde = komut.govde;
     setGonderiliyor(true);
-    let alicilar = { kime, cc: tekil([...ccTum, ...(grup ? [grup] : [])]).filter((a) => !kime.includes(a)) };
+    let alicilar = { kime, cc: tekil([...cc, ...(grup ? [grup] : [])]).filter((a) => !kime.includes(a)) };
     if (GERCEK) {
-      const r = await postaGonder({ kime, cc: ccTum, konu, metin: m });
+      const r = await postaGonder({ kime, cc, bcc, konu, metin: govde });
       setGonderiliyor(false);
       if (!r.tamam) return bildir(gonderimHatasi(r, t));
       alicilar = { kime: r.veri.kime, cc: r.veri.cc };
     } else setGonderiliyor(false);
-    postaGidenEkle(ben, sohbet.konuKimligi, konu, m, sohbet.son.grup || grup, alicilar);
+    postaGidenEkle(ben, sohbet.konuKimligi, konu, govde, sohbet.son.grup || grup, alicilar);
     setMetin("");
-    setEkCc([]);
+    setImlec(0);
     bildir(t("bPostaGonderildi"));
   };
+
+  const cipler = (l: string[]) =>
+    l.map((a) => (
+      <span key={a} className="posta-cip" title={a} data-posta-cip={a}>
+        <bdi>{adresAdi(v, a, ad)}</bdi>
+      </span>
+    ));
+  const imleciAl = () => setImlec(alan.current?.selectionStart ?? 0);
   return (
     <div className="posta-yaz-alani">
       <div className="posta-alici-satiri" data-posta-alicilar>
         <span className="sonuk">{t("postaKime")}:</span>
-        {(kime.length ? kime : grup ? [grup] : []).map((a) => (
-          <span key={a} className="posta-cip" title={a}>
-            <bdi>{adresAdi(v, a, ad)}</bdi>
+        {cipler(kime.length ? kime : grup ? [grup] : [])}
+        <span className="sonuk">{t("postaCc")}:</span>
+        {grup && kime.length > 0 && (
+          <span className="posta-cip kilitli" title={`${grup} · ${t("postaGrupSabit")}`}>
+            <Lock size={12} aria-hidden="true" />
+            <bdi>{adresAdi(v, grup, ad)}</bdi>
+          </span>
+        )}
+        {cipler(cc)}
+        {bcc.length > 0 && (
+          <>
+            <span className="sonuk">{t("postaBcc")}:</span>
+            {cipler(bcc)}
+          </>
+        )}
+        {bulunamayan.map((o) => (
+          <span key={o} className="posta-cip hatali" title={t("postaAliciBulunamadi", { a: o })} data-posta-bulunamadi>
+            <bdi>{o}</bdi>
           </span>
         ))}
-        <span className="sonuk">{t("postaCc")}:</span>
-        <AdresGirdisi etiket="cc" kilitli={grup && kime.length ? [grup] : []} sabit={cc} adresler={ekCc} degistir={setEkCc} yerTutucu={t("postaCcEkle")} />
       </div>
+      {uygun.length > 0 && (
+        <div className="posta-oneriler" data-posta-oneriler>
+          {uygun.map((o) => (
+            <button
+              key={o.adres}
+              type="button"
+              className="dugme dugme-ikincil dugme-kucuk"
+              // Odak yazı alanında kalsın; imleç yeri bozulmasın.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => sec(o)}
+              title={o.adres}
+              data-posta-oneri={o.adres}
+            >
+              <bdi>{o.ad}</bdi>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="posta-yaz">
         <textarea
+          ref={alan}
           {...icerikAlani}
-          rows={1}
+          rows={2}
           value={metin}
           placeholder={t("postaYaz")}
-          onChange={(e) => setMetin(e.target.value)}
+          onChange={(e) => {
+            setMetin(e.target.value);
+            setImlec(e.target.selectionStart ?? 0);
+          }}
+          onSelect={imleciAl}
+          onKeyUp={imleciAl}
+          onClick={imleciAl}
           onKeyDown={(e) => {
             // Ctrl/⌘+Enter gönderir; düz Enter satır açar.
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) void gonder();
           }}
           data-posta-yaz
         />
-        <button type="button" className="dugme" disabled={!metin.trim() || gonderiliyor} onClick={gonder} data-posta-gonder aria-label={t("gonder")} title={t("gonder")}>
+        <button type="button" className="dugme" aria-disabled={!hazir} disabled={gonderiliyor || !komut.govde} onClick={gonder} data-posta-gonder aria-label={t("gonder")} title={bulunamayan.length ? t("postaAliciBulunamadi", { a: bulunamayan.join(", ") }) : t("gonder")}>
           <Send size={16} className="yon" />
         </button>
       </div>

@@ -1051,12 +1051,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
   Basit mesaj mantığı (kullanıcı: "karmaşık olmasın, ama kim kime yazdı
   bilinsin"):
-  - Yanıt (`Yazma`, `.posta-yaz-alani`) "tümünü yanıtla": alıcılar seçtirilmez,
-    yazışmadan gelir (`yanitAlicilari`: son gelen postanın göndereni ve Kime'si
-    Kime'ye, CC'si CC'ye; kişinin kendi adresi ve grup çıkar; gelen yoksa
-    gidenin alıcıları) ve kutunun üstünde çip satırında görünür
-    (`data-posta-alicilar`). Eksik olan yalnız yeni CC: "CC ekle" alanı
-    (`AdresGirdisi`). @ ile alıcı seçme denendi, gerek görülmedi. Konu "RE: …".
+  - Yanıtta (`Yazma`, `.posta-yaz-alani`) alıcılar metne yazılır (kullanıcı):
+    "@Ali, Veli" satırı Kime, "cc: …" (ya da "cc …") CC, "bcc: …" BCC; Arapça
+    klavyede "نسخة:" CC, "مخفية:" BCC (iki nokta şart: "نسخة من التقرير…"
+    cümlesi CC sanılmasın). Virgülle (Arapça "،", ";") birden çok, satır
+    nerede olursa olsun; bu satırlar postanın metnine girmez (`eposta.ts →
+    postaKomutlari`, `komutSatiri`). Ad ya da adres: `adresCoz` (tam ad
+    Arapça/Latin/yerel kısım, yoksa adın geçtiği tek kişi; birden çok uyarsa
+    yazışmadakiler öncelikli, yine çoksa bulunamadı). Satırda yazarken öneri
+    (`yarimOge`; önce yazışmadakiler), seçilen satıra yazılır (ad tek kişiye
+    çözülüyorsa ad, değilse adres). @ yoksa "tümünü yanıtla" (`yanitAlicilari`:
+    son gelen postanın göndereni ve Kime'si Kime'ye, CC'si CC'ye; kendi adresi
+    ve grup çıkar; gelen yoksa gidenin alıcıları). @ varsa Kime o; yazışmanın
+    CC'si kalır, cc satırı eklenir. Kime/CC/BCC kutunun üstünde çip satırında
+    (`data-posta-alicilar`); bulunamayan ad kırmızı çip, gönder pasif
+    (`aria-disabled`, nedeni ipucunda ve basınca). BCC kayda yazılmaz: kayıt
+    grupta ortak, CC'deki grup BCC'yi görürdü. Konu "RE: …".
   - "Sohbetler"in yanında "+" yeni posta (`YeniPosta`, `Pencere`): Kime, CC
     (grup kilitli çip), "BCC ekle"yle BCC, konu, metin; alıcısız gönderilmez.
     Sohbet konunun çekirdeğiyle açılır.

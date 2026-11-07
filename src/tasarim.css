@@ -558,6 +558,7 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .posta-cip { display: inline-flex; align-items: center; gap: 4px; max-inline-size: 100%; padding: 2px 8px; border-radius: 999px; background: var(--zemin); border: 1px solid var(--cizgi); font-size: var(--punto-kucuk); }
 .posta-cip bdi { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .posta-cip.kilitli { color: var(--sonuk); }
+.posta-cip.hatali { color: var(--kotu); border-color: currentColor; background: var(--yuzey); text-decoration: line-through dotted; }
 .posta-cip button { display: inline-grid; place-items: center; min-inline-size: 24px; min-block-size: 24px; margin-inline-end: -4px; border: 0; background: transparent; color: var(--sonuk); cursor: pointer; border-radius: 999px; }
 .posta-cip button:hover { color: var(--murekkep); background: var(--yuzey-3); }
 .posta-oneriler { display: flex; flex-wrap: wrap; gap: 4px; margin-block-start: 4px; }
