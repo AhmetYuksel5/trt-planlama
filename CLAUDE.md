@@ -1121,7 +1121,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tanınıyor ama çağrının BCC'sinde değil ve muhabir (dış ya da iç) değilse
     alınmaz (planlamacının kendi yanıtı, grubun geri dönen postası onun adına
     öneri açardı). Etiket silinmişse gönderen o çağrının BCC'sinde ve konu
-    çağrının konusuyla (`cagriKonusu`, etiketsiz çekirdek) aynı olmalı; yoksa
+    çağrının konusuyla (`cagriKonusu`, etiketsiz çekirdek; kurumun başlığı "طلب خطة اليوم التالي / 06 نوفمبر - الجمعة", "طلب الخطة الأسبوعية للفترة بين 14 - 20 نوفمبر", önceki başlık da `cagriKonulari`'nda) aynı olmalı; yoksa
     muhabirin her postası öneri olurdu. Aynı muhabirin aynı çağrıya sonraki
     postası (reddedilmemiş, geri çekilmemiş e-posta önerisi varken) yeni öneri
     açmaz: metni önerinin `satirlar`'ına girer, hareket `takipSatiriEklendi`

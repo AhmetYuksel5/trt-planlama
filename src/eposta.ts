@@ -1,4 +1,4 @@
-import { aralikYaz, gunAdi, metin } from "./dil";
+import { aralikYaz, gunAdi, metin, sureYaz } from "./dil";
 import { gunEkle } from "./tarih";
 import { sehirUlkesi } from "./etiketler";
 import { type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
@@ -40,7 +40,17 @@ export const haftaAraligiAr = (bas: string) => aralikYaz(bas, gunEkle(bas, 6), "
 export const cagriKonusu = (tarih: string, tur: CagriTuru = "nextday") =>
   tur === "haftalik"
     ? `${metin("haftalikCagriKonu", "ar", { aralik: haftaAraligiAr(tarih) })} [${etiketUret(tarih, tur)}]`
-    : `${metin("cagriKonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih) })} [${etiketUret(tarih)}]`;
+    : `${metin("cagriKonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: sureYaz(tarih, tarih, "ar") })} [${etiketUret(tarih)}]`;
+
+/*
+ * Kurumun istediği başlıktan önce gönderilmiş çağrıların başlığı: etiketi
+ * silinmiş yanıt o çağrıya hâlâ konusuyla bağlansın (eylemler.ts →
+ * cagriYanitiysaIsle).
+ */
+export const cagriKonulari = (tarih: string, tur: CagriTuru = "nextday") => [
+  cagriKonusu(tarih, tur),
+  tur === "haftalik" ? `مقترحات الخطة الأسبوعية – ${haftaAraligiAr(tarih)}` : `خطة الغد – ${gunAdi(tarih, "ar")} ${noktali(tarih)}`,
+];
 
 export const cagriGovdesi = (tarih: string, sonSaat: string) =>
   metin("cagriSablonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih), saat: sonSaat });

@@ -875,7 +875,7 @@ const M = {
   alicilar: m("Alıcılar", "المرسل إليهم", "Recipients"),
   cagriyiKaydet: m("Çağrıyı kaydet", "حفظ الطلب", "Save call"),
   oncekiCagrilar: m("Önceki çağrılar", "الطلبات السابقة", "Previous calls"),
-  cagriKonu: m("Yarının planı – {gun} {tarih}", "خطة الغد – {gun} {tarih}", "Tomorrow's plan – {gun} {tarih}"),
+  cagriKonu: m("Ertesi günün plan talebi / {tarih} - {gun}", "طلب خطة اليوم التالي / {tarih} - {gun}", "Next day plan request / {tarih} - {gun}"),
   /* Kurumun bugünkü çağrı e-postası; e-posta her zaman Arapça gidiyor, diğer iki dil ekranda anlam için. */
   cagriSablonu: m(
     "Değerli meslektaşlar,\n\nYarının planını hazırlıyoruz: {gun} {tarih}\nBütün bölgelerden yarınki önerilerinizi ve etkinlik gündemlerinizi, yurt içi ve yurt dışı hareket ve görevlerinizle birlikte bekliyoruz.\nYanıt için son saat: {saat} GMT\n\nÖnemli not: Yarının planına girecek bir şeyiniz olmasa bile lütfen mutlaka bu e-postayı yanıtlayın.\n\nTeşekkürler",
@@ -1818,7 +1818,7 @@ const M = {
   haftalikCagri: m("Haftalık öneri çağrısı", "طلب مقترحات الخطة الأسبوعية", "Weekly call for proposals"),
   haftalikCagriyiAc: m("Haftalık çağrıyı aç", "فتح طلب المقترحات الأسبوعي", "Open the weekly call"),
   haftalikCagriAlt: m("Muhabirlere haftanın beklenen olaylarını soran e-posta", "بريد يطلب من المراسلين أحداث الأسبوع المتوقعة", "Email asking reporters for the week's expected events"),
-  haftalikCagriKonu: m("Haftalık plan önerileri – {aralik}", "مقترحات الخطة الأسبوعية – {aralik}", "Weekly plan proposals – {aralik}"),
+  haftalikCagriKonu: m("{aralik} dönemi için haftalık plan talebi", "طلب الخطة الأسبوعية للفترة بين {aralik}", "Weekly plan request for {aralik}"),
   /* Kurumun haftalık çağrı e-postası; giden metin her zaman Arapça, diğer iki dil ekranda anlam için. */
   haftalikCagriSablonu: m(
     "Değerli muhabir arkadaşlar,\nİyi çalışmalar.\n\n{aralik} dönemi için haftalık planı ve bölgelerinizdeki gelişmelerle ilgili beklenen olayları birlikte hazırlıyoruz.\n\nBütün arkadaşlardan, gelecek haftanın gündemi için bu bölgelerde beklenen haber ve olayları ya da çevrenizdeki başka bölge ve ülkelerde bunlarla bağlantılı gelişmeleri bize iletmelerini rica ediyoruz.\nGündeminizi ekteki tabloya göre yalnızca planlama biriminin e-posta adresine ({adres}) gönderiniz.\n\nÇok teşekkürler",

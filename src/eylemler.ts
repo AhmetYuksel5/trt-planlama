@@ -1,7 +1,7 @@
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
-import { bosYanitMi, cagriKonusu, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
@@ -3105,7 +3105,7 @@ export const cagriYanitiysaIsle = (ben: Kisi, gelen: GelenEposta): YanitSonucu |
   const konu = cekirdek(gelen.konu);
   if (!konu) return null;
   const cagri = [...d.cagrilar]
-    .filter((c) => c.bcc.includes(kisi.id) && cekirdek(cagriKonusu(c.tarih, c.tur)) === konu)
+    .filter((c) => c.bcc.includes(kisi.id) && cagriKonulari(c.tarih, c.tur).some((k) => cekirdek(k) === konu))
     .sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
   return cagri ? epostaYanitiIsle(ben, gelen, "posta", cagri) : null;
 };
