@@ -448,6 +448,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlık bandı, etiket satırı, "kaynak | tarih · saat | sözcük" künyesi,
     metin; araçlar üstte). Ok tuşları haberler arasında gezer. İki sütun
     1100 pikselden genişte; daha darda haber okuma penceresinde açılır.
+    Sabah brifingi de aynı düzende (`Brifing`, ortak `AjansSatiri`,
+    `useAjansSecimi`): solda A, B, C bölüm bantları ve konu grupları (ad,
+    seviye, satırlar ya da "değişiklik yok", altında izlenecekler), sağda
+    okuyucu; D (editoryal fırsatlar) haber değil öneri, altta kendi kartında.
   - Okuma penceresi (`Gundem.tsx → OkumaPenceresi`, içi `OkumaIcerik`, akışın okuyucusuyla aynı): haberin başlığı siteyi değil
     pencereyi açar (siteye gidip dönmek uzundu; site ↗'da). Tam metni kapı okur
     (`worker/src/makale.ts`, `POST /makale`, yalnız basınca, tek adres, 10 dakika

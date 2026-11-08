@@ -553,40 +553,38 @@ function OlayListesi({
 
 
 
-function BrifingKonusu({ s, ben }: { s: BrifingSatiri; ben: Kisi }) {
+/*
+ * Brifing konusu ajans listesinde bir grup: konu adı ve seviyesi, son 24
+ * saatin haber satırları (yoksa "değişiklik yok"), altında önümüzdeki
+ * günlerde izlenecekler.
+ */
+function BrifingKonusu({ s, secik, sec }: { s: BrifingSatiri; secik?: Olay; sec: (o: Olay) => void }) {
   const { t, dil } = useDil();
   return (
-    <div
-      className={`gundem-brifing-konu sev-${seviye(s.skor)}`}
-      data-brifing-konu={s.konu.id}
-    >
-      <h4>
-        {t(s.konu.ad)} <SeviyeRozeti skor={s.skor} />
-      </h4>
-      <div className="gundem-brifing-sutunlar">
-        <div>
-          <h5>{t("gdSon24")}</h5>
-          {s.olaylar.length ? (
-            <ul className="gundem-olaylar">
-              {s.olaylar.map((o) => (
-                <OlaySatiri key={o.id} o={o} ben={ben} kisa />
-              ))}
-            </ul>
-          ) : (
-            <p className="sonuk-yazi" data-degisiklik-yok>
-              {t("gdDegisiklikYok")}
-            </p>
-          )}
-        </div>
-        <div>
-          <h5>{t("gdIzlenecek")}</h5>
-          {!s.izlenecek.length && !s.etkinlikler.length && (
-            <p className="sonuk-yazi">—</p>
-          )}
-          <ul className="gundem-izlenecek">
+    <li className={`gundem-ajans-konu sev-${seviye(s.skor)}`} data-brifing-konu={s.konu.id}>
+      <div className="gundem-ajans-konu-bas">
+        <b>{t(s.konu.ad)}</b> <SeviyeRozeti skor={s.skor} />
+      </div>
+      {s.olaylar.length ? (
+        <ul className="gundem-ajans-alt-liste">
+          {s.olaylar.map((o) => (
+            <AjansSatiri key={o.id} o={o} secili={secik?.id === o.id} sec={sec} />
+          ))}
+        </ul>
+      ) : (
+        <p className="gundem-ajans-yok" data-degisiklik-yok>
+          {t("gdDegisiklikYok")}
+        </p>
+      )}
+      {(s.izlenecek.length > 0 || s.etkinlikler.length > 0) && (
+        <div className="gundem-ajans-izlenecek">
+          <small>{t("gdIzlenecek")}</small>
+          <ul>
             {s.izlenecek.map((o) => (
               <li key={o.id}>
-                <Metin>{o.baslik}</Metin>
+                <button className="dugme-metin" onClick={() => sec(o)} data-izlenecek>
+                  <Metin>{o.baslik}</Metin>
+                </button>
               </li>
             ))}
             {s.etkinlikler.map((x) => (
@@ -598,11 +596,16 @@ function BrifingKonusu({ s, ben }: { s: BrifingSatiri; ben: Kisi }) {
             ))}
           </ul>
         </div>
-      </div>
-    </div>
+      )}
+    </li>
   );
 }
 
+/*
+ * Sabah brifingi ajans düzeninde (akışla aynı): solda A, B, C bölümleri ve
+ * konu grupları, satıra basınca sağda okuyucu; D (editoryal fırsatlar) haber
+ * değil öneri, altta kendi kartında.
+ */
 function Brifing({
   olaylar,
   simdi,
@@ -622,35 +625,51 @@ function Brifing({
     [...l].sort(
       (x, y) => (y.skor > 0 ? 1 : 0) - (x.skor > 0 ? 1 : 0) || y.skor - x.skor,
     );
-  const c = capraz(olaylar, simdi);
+  const sa = sirala(a);
+  const sb = sirala(b);
+  const c = capraz(olaylar, simdi).map((x) => ({ ...x, olaylar: x.olaylar.slice(0, 3) }));
   const f = firsatlar(v, olaylar, simdi);
+  // Ok tuşları ekrandaki sırayla gezsin: A, B, C'nin haberleri art arda (aynı olay iki konuda olabilir).
+  const duz = [...new Map([...sa, ...sb].flatMap((x) => x.olaylar).concat(c.flatMap((x) => x.olaylar)).map((o) => [o.id, o])).values()];
+  const sec = useAjansSecimi(duz, ben);
   return (
     <div className="gundem-brifing" data-brifing>
-      <section className="kart">
-        <h3>A · {t("gdBrifA")}</h3>
-        {sirala(a).map((s) => (
-          <BrifingKonusu key={s.konu.id} s={s} ben={ben} />
-        ))}
-      </section>
-      <section className="kart">
-        <h3>B · {t("gdBrifB")}</h3>
-        {sirala(b).map((s) => (
-          <BrifingKonusu key={s.konu.id} s={s} ben={ben} />
-        ))}
-      </section>
-      <section className="kart" data-brifing-c>
-        <h3>C · {t("gdBrifC")}</h3>
-        {!c.length && <p className="sonuk-yazi">{t("gdDegisiklikYok")}</p>}
-        {c.map(({ bag, olaylar: l }) => (
-          <div key={bag.id} className="gundem-brifing-konu">
-            <h4>{t(bag.ad)}</h4>
-            <ul className="gundem-olaylar">
-              {l.slice(0, 3).map((o) => (
-                <OlaySatiri key={o.id} o={o} ben={ben} />
-              ))}
-            </ul>
-          </div>
-        ))}
+      <section className="kart gundem-ajans">
+        <div className="gundem-ajans-bas">
+          <span className="gundem-ajans-sayi">{t("gdHaberSayisi", { n: String(duz.length) })}</span>
+        </div>
+        <div className="gundem-ajans-ic">
+          <ul className="gundem-ajans-liste" onKeyDown={sec.tus} data-brifing-liste>
+            <li className="gundem-ajans-bolum">A · {t("gdBrifA")}</li>
+            {sa.map((s) => (
+              <BrifingKonusu key={s.konu.id} s={s} secik={sec.secik} sec={sec.sec} />
+            ))}
+            <li className="gundem-ajans-bolum">B · {t("gdBrifB")}</li>
+            {sb.map((s) => (
+              <BrifingKonusu key={s.konu.id} s={s} secik={sec.secik} sec={sec.sec} />
+            ))}
+            <li className="gundem-ajans-bolum">C · {t("gdBrifC")}</li>
+            <li data-brifing-c>
+              {!c.length && <p className="gundem-ajans-yok">{t("gdDegisiklikYok")}</p>}
+              <ul className="gundem-ajans-alt-liste">
+                {c.map(({ bag, olaylar: l }) => (
+                  <li key={bag.id} className="gundem-ajans-konu">
+                    <div className="gundem-ajans-konu-bas">
+                      <b>{t(bag.ad)}</b>
+                    </div>
+                    <ul className="gundem-ajans-alt-liste">
+                      {l.map((o) => (
+                        <AjansSatiri key={o.id} o={o} secili={sec.secik?.id === o.id} sec={sec.sec} />
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          </ul>
+          {sec.okuyucu}
+        </div>
+        {sec.pencere}
       </section>
       <section className="kart" data-brifing-d>
         <h3>D · {t("gdBrifD")}</h3>
@@ -659,7 +678,6 @@ function Brifing({
     </div>
   );
 }
-
 
 /*
  * Haber akışı: en yenisi üstte, etiketle süzülür. Seçim bu oturumda; takip
@@ -747,6 +765,78 @@ const useGenis = () => {
   return g;
 };
 
+/* Ajans satırı (akış ve brifing): saat ve tarih, başlık, kaynak sayısı, "planda var", etiketler. */
+function AjansSatiri({ o, secili, sec, etiketSec }: { o: Olay; secili: boolean; sec: (o: Olay) => void; etiketSec?: (e: string) => void }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const z = new Date(o.son);
+  const bizde = bizdeki(v, o);
+  return (
+    <li className={`gundem-ajans-satir${secili ? " secili" : ""}${o.agirlik >= 12 ? " agir" : ""}`} data-olay={o.id} data-agirlik={o.agirlik}>
+      <span className="gundem-ajans-zaman" data-olay-zaman>
+        <b>{saatYaz(z.toISOString(), dil)}</b>
+        {/* Bu yılın değilse yıl da yazılıyor: eski haber bugünkü sanılmasın. */}
+        <small>{tarihYaz(z.toISOString().slice(0, 10), dil, z.getFullYear() === new Date().getFullYear() ? "kisa" : "uzun")}</small>
+      </span>
+      <span className="gundem-ajans-govde">
+        <button className="gundem-ajans-baslik" onClick={() => sec(o)} aria-current={secili} data-olay-oku>
+          <Metin>{o.baslik}</Metin>
+        </button>
+        <span className="gundem-ajans-alt">
+          <span data-olay-kaynaklar>{t("gdKaynakSayisi").replace("{n}", String(o.kaynaklar.length))}</span>
+          {bizde && (
+            <span className="cip cip-vurgu" title={bizde.ad} data-bizde>
+              {t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))}
+            </span>
+          )}
+          {olayEtiketleri(o).map((e) => {
+            const ad = etiketAdi(e);
+            if (!ad) return null;
+            return etiketSec ? (
+              <button key={e} className={`cip cip-dugme${e.startsWith("bag:") ? " cip-vurgu" : ""}`} onClick={() => etiketSec(e)} data-olay-etiket={e}>
+                {t(ad)}
+              </button>
+            ) : (
+              <span key={e} className={`cip${e.startsWith("bag:") ? " cip-vurgu" : ""}`} data-olay-etiket={e}>
+                {t(ad)}
+              </span>
+            );
+          })}
+        </span>
+      </span>
+    </li>
+  );
+}
+
+/*
+ * Seçim (akış ve brifing): geniş ekranda seçilen haber sağdaki okuyucuda,
+ * darda pencerede. Ok tuşları listedeki sırayla (`duz`) gezer.
+ */
+function useAjansSecimi(duz: Olay[], ben: Kisi) {
+  const genis = useGenis();
+  // Seçilen olayın kendisi tutuluyor: brifingin "izlenecek"leri ok tuşu sırasında (duz) yok.
+  const [secili, setSecili] = useState<Olay | null>(null);
+  const [pencere, setPencere] = useState<Olay | null>(null);
+  const secik = (secili && (duz.find((o) => o.id === secili.id) ?? secili)) || (genis ? duz[0] : undefined);
+  const sec = (o: Olay) => (genis ? setSecili(o) : setPencere(o));
+  const tus = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    const k = duz.findIndex((o) => o.id === secik?.id);
+    const y = duz[Math.max(0, Math.min(duz.length - 1, k + (e.key === "ArrowDown" ? 1 : -1)))];
+    if (!y) return;
+    e.preventDefault();
+    setSecili(y);
+    document.querySelector<HTMLElement>(`[data-olay="${CSS.escape(y.id)}"] [data-olay-oku]`)?.focus();
+  };
+  const okuyucu =
+    genis && secik ? (
+      <div className="gundem-ajans-okuyucu" data-okuma-alani>
+        <OkumaIcerik key={secik.id} o={secik} ben={ben} bant />
+      </div>
+    ) : null;
+  return { secik, sec, tus, okuyucu, pencere: pencere && <OkumaPenceresi o={pencere} ben={ben} kapat={() => setPencere(null)} /> };
+}
+
 /*
  * Haber akışı ajans ekranı gibi (kullanıcının gösterdiği AFP Forum): solda
  * saatli liste, seçili haber vurgulu; sağda okuyucu (başlık bandı, etiketler,
@@ -754,26 +844,12 @@ const useGenis = () => {
  * Ağır olay (çok kaynak, ağır sözcük) başlığı kırmızı, ajansın "URGENT"i gibi.
  */
 function AkisIkili({ liste, ben, etiketSec }: { liste: Olay[]; ben: Kisi; etiketSec: (e: string) => void }) {
-  const { t, dil } = useDil();
-  const v = useVeri();
-  const genis = useGenis();
+  const { t } = useDil();
   const [sayfa, setSayfa] = useState(0);
-  const [secili, setSecili] = useState("");
-  const [pencere, setPencere] = useState<Olay | null>(null);
   const sayfaSayisi = Math.max(1, Math.ceil(liste.length / SAYFA));
   const s = Math.min(sayfa, sayfaSayisi - 1);
   const gorunen = liste.slice(s * SAYFA, (s + 1) * SAYFA);
-  const secik = gorunen.find((o) => o.id === secili) ?? (genis ? gorunen[0] : undefined);
-  const sec = (o: Olay) => (genis ? setSecili(o.id) : setPencere(o));
-  const tus = (e: KeyboardEvent) => {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    const k = gorunen.findIndex((o) => o.id === secik?.id);
-    const y = gorunen[Math.max(0, Math.min(gorunen.length - 1, k + (e.key === "ArrowDown" ? 1 : -1)))];
-    if (!y) return;
-    e.preventDefault();
-    setSecili(y.id);
-    document.querySelector<HTMLElement>(`[data-olay="${CSS.escape(y.id)}"] [data-olay-oku]`)?.focus();
-  };
+  const a = useAjansSecimi(gorunen, ben);
   return (
     <section className="kart gundem-ajans" data-gundem-ajans>
       <div className="gundem-ajans-bas">
@@ -796,49 +872,14 @@ function AkisIkili({ liste, ben, etiketSec }: { liste: Olay[]; ben: Kisi; etiket
       </div>
       {!liste.length && <Bos kucuk metin={t("gdAkisBos")} />}
       <div className="gundem-ajans-ic">
-        <ul className="gundem-ajans-liste" data-olay-listesi="akis" onKeyDown={tus}>
-          {gorunen.map((o) => {
-            const z = new Date(o.son);
-            const bizde = bizdeki(v, o);
-            return (
-              <li key={o.id} className={`gundem-ajans-satir${secik?.id === o.id ? " secili" : ""}${o.agirlik >= 12 ? " agir" : ""}`} data-olay={o.id} data-agirlik={o.agirlik}>
-                <span className="gundem-ajans-zaman" data-olay-zaman>
-                  <b>{saatYaz(z.toISOString(), dil)}</b>
-                  {/* Bu yılın değilse yıl da yazılıyor: eski haber bugünkü sanılmasın. */}
-                  <small>{tarihYaz(z.toISOString().slice(0, 10), dil, z.getFullYear() === new Date().getFullYear() ? "kisa" : "uzun")}</small>
-                </span>
-                <span className="gundem-ajans-govde">
-                  <button className="gundem-ajans-baslik" onClick={() => sec(o)} aria-current={secik?.id === o.id} data-olay-oku>
-                    <Metin>{o.baslik}</Metin>
-                  </button>
-                  <span className="gundem-ajans-alt">
-                    <span data-olay-kaynaklar>{t("gdKaynakSayisi").replace("{n}", String(o.kaynaklar.length))}</span>
-                    {bizde && (
-                      <span className="cip cip-vurgu" title={bizde.ad} data-bizde>
-                        {t("gdPlandaVar").replace("{tarih}", tarihYaz(bizde.tarih, dil, "kisa"))}
-                      </span>
-                    )}
-                    {olayEtiketleri(o).map((e) => {
-                      const ad = etiketAdi(e);
-                      return ad ? (
-                        <button key={e} className={`cip cip-dugme${e.startsWith("bag:") ? " cip-vurgu" : ""}`} onClick={() => etiketSec(e)} data-olay-etiket={e}>
-                          {t(ad)}
-                        </button>
-                      ) : null;
-                    })}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
+        <ul className="gundem-ajans-liste" data-olay-listesi="akis" onKeyDown={a.tus}>
+          {gorunen.map((o) => (
+            <AjansSatiri key={o.id} o={o} secili={a.secik?.id === o.id} sec={a.sec} etiketSec={etiketSec} />
+          ))}
         </ul>
-        {genis && secik && (
-          <div className="gundem-ajans-okuyucu" data-okuma-alani>
-            <OkumaIcerik key={secik.id} o={secik} ben={ben} bant />
-          </div>
-        )}
+        {a.okuyucu}
       </div>
-      {pencere && <OkumaPenceresi o={pencere} ben={ben} kapat={() => setPencere(null)} />}
+      {a.pencere}
     </section>
   );
 }
