@@ -318,8 +318,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       yeni/takip açma, düzeltip yeniden gönderme, takibi öneriye çevirme ve
       geri çekmeyle; paketin durumu değişmez (özel yayın paketinin teslimi
       hariç); hareket ve mesaj yalnız kendi adıyla (düz `k`, `ogeBelgesi`).
-    - Önceki kimlik yalnız o kayıt hesapsızsa ya da e-postası bu hesaba
-      taşınıyorsa geçerli (`oncekiGecerli`); davetteki `kisiId` hesapsız kişiyi
+    - Önceki kimlik yalnız o kayıt hesapsızsa, e-postası bu hesaba
+      taşınıyorsa ya da silinmişse (geçişi tam yönetici tamamlamış) geçerli
+      (`oncekiGecerli`; silinince sayılmıyordu, tarayıcı iki kimlikle
+      sorguladığı için muhabir "permission-denied"la hiç giremiyordu; kişi
+      önceki kimliği kendisi yazamıyor, kayıt bağlantısında boş); davetteki `kisiId` hesapsız kişiyi
       ya da kişi düzenleme yetkilisinde yöneticisiz, yetkisiz kişiyi gösterir
       (`davetKisisi`). Test `testler/kurallar.mjs` (`belgeler/gercek-kip.md`). Davetler `Durum`'da değil, `davetler`
     koleksiyonunda.

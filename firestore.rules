@@ -38,9 +38,12 @@ service cloud.firestore {
     // hesapsızsa ya da e-postası bu hesaba taşınıyorsa geçerli: yoksa davete etkin bir muhabirin kimliğini
     // yazan, o muhabirin kayıtlarını okuyup üstlenirdi.
     function eskiYolu(o) { return /databases/$(veritabani)/documents/kisiler/$(o); }
+    // Eski kayıt silinmişse geçiş tamamlanmıştır (tam yönetici taşıyıp sildi): kimlik yine geçerli. Tarayıcı
+    // önceki kimlikle birlikte sorguluyor; sayılmayınca bütün sorgu reddediliyor, muhabir hiç giremiyordu.
+    // Önceki kimliği kişi kendisi yazamıyor (yetkiAlanlari), yalnız davetten geliyor.
     function oncekiGecerli(o) {
-      return o != "" && exists(eskiYolu(o))
-        && (get(eskiYolu(o)).data.get("hesapsiz", false) == true || get(eskiYolu(o)).data.get("yeniEposta", "") == eposta());
+      return o != "" && (!exists(eskiYolu(o))
+        || get(eskiYolu(o)).data.get("hesapsiz", false) == true || get(eskiYolu(o)).data.get("yeniEposta", "") == eposta());
     }
     function kimliklerim() {
       return oncekiGecerli(get(kisiYolu()).data.get("oncekiKimlik", ""))

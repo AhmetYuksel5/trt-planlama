@@ -1,7 +1,7 @@
 // Firestore kuralları: güvenlik incelemesindeki saldırılar reddediliyor, programın olağan yazışları geçiyor.
 // Çalıştırma belgeler/gercek-kip.md'de (emülatör, @firebase/rules-unit-testing).
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, getDocs, query, collection, where } from "firebase/firestore";
 import fs from "node:fs";
 const env = await initializeTestEnvironment({ projectId: "demo-trt", firestore: { rules: fs.readFileSync(new URL("../firestore.rules", import.meta.url), "utf8"), host: "127.0.0.1", port: 8080 } });
 const kisi = (id, o, duz = {}) => ({ s: 0, j: JSON.stringify({ id, ad: { tr: id, ar: id, en: id }, telefon: "1", ...o }), eposta: id + "@x.test", pasif: false, hesapYoneticisi: !!o.hesapYoneticisi, kisitli: o.birim === "muhabir", ...(o.birim ? { birim: o.birim, rol: o.rol, gorev: o.gorev } : {}), ...duz });
@@ -15,6 +15,8 @@ const KISILER = {
   hs: kisi("hs", { birim: "muhabir", rol: "personel", gorev: "muhabir", hesapsiz: true }, { hesapsiz: true }),
   mux: kisi("mux", { birim: "muhabir", rol: "personel", gorev: "muhabir", oncekiKimlik: "mu2" }, { oncekiKimlik: "mu2" }),
   muy: kisi("muy", { birim: "muhabir", rol: "personel", gorev: "muhabir", oncekiKimlik: "hs" }, { oncekiKimlik: "hs" }),
+  // Geçişi tamamlanmış: eski hesapsız kaydı tam yönetici silmiş, önceki kimlik kişide duruyor.
+  muz: kisi("muz", { birim: "muhabir", rol: "personel", gorev: "muhabir", oncekiKimlik: "silinen" }, { oncekiKimlik: "silinen" }),
   // Düz pozisyon alanı olmayan eski belge
   eski: { s: 0, j: JSON.stringify({ id: "eski", birim: "planlama", rol: "personel", gorev: "planlamaci", telefon: "1" }), eposta: "eski@x.test", pasif: false, hesapYoneticisi: false, kisitli: false },
 };
@@ -78,6 +80,10 @@ await t("davet hesapsız kişiyi gösterir", true, dv("b@x.test", "hs"));
 await t("davet kimliksiz", true, dv("c@x.test", ""));
 await t("önceki kimliği etkin muhabir: onun önerisini okuyamaz", false, getDoc(doc(db("mux"), "oneriler", "o3")));
 await t("önceki kimliği hesapsız: onun önerisini okur", true, getDoc(doc(db("muy"), "oneriler", "o4")));
+// Tarayıcı önceki kimlikle birlikte sorguluyor (depo/firebase.ts → kayitBagla); eski kayıt silinince bütün sorgu reddediliyordu.
+await t("geçişi tamamlanmış muhabir: iki kimlikle sorgu", true, getDocs(query(collection(db("muz"), "oneriler"), where("m", "array-contains-any", ["muz", "silinen"]))));
+await t("önceki kimliği hesapsız: iki kimlikle sorgu", true, getDocs(query(collection(db("muy"), "oneriler"), where("m", "array-contains-any", ["muy", "hs"]))));
+await t("önceki kimliği etkin muhabir: iki kimlikle sorgu", false, getDocs(query(collection(db("mux"), "oneriler"), where("m", "array-contains-any", ["mux", "mu2"]))));
 await t("muhabir kendi önerisini okur", true, getDoc(doc(db("mu"), "oneriler", "o9")));
 // 4. Gündem paylaşımı genel ayarda: yalnız tam yönetici değiştirir, sayaç herkesçe yazılır.
 await t("yönetici gündemi paylaşır", true, setDoc(doc(db("adm"), "ayar", "genel"), { sayac: 1, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
