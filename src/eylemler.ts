@@ -18,7 +18,7 @@ import { planCiftleriniBirlestir } from "./planCiftleri";
 import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
-import { baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
@@ -857,6 +857,25 @@ export const oneriSil = (ben: Kisi, id: string): number | null => {
   const { yeni, toplam } = temizle(d, { turler: ["oneriler"], idler: [id] });
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "oneriSilindi", veri: { baslik: o.haberBasligi, sayi: String(toplam) } }));
   return toplam;
+};
+
+/*
+ * E-posta yanıtından doğmuş, karara girmemiş öneri planlamacının tek
+ * basışıyla izsiz silinir (kullanıcı: muhabir "günaydın" yazınca öneri
+ * oluyordu). Plana girmiş, reddedilmiş, takipteki öneriye dokunulmaz.
+ */
+export const epostaOnerisiSilinir = (ben: Kisi | undefined, d: Durum, o: Oneri) =>
+  !!ben && !ben.pasif && yapabilir(ben, "oneriDegerlendir") && o.kanal === "eposta" && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriPlanKaydi(d, o);
+
+export const epostaOnerisiSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  if (!o || !epostaOnerisiSilinir(ben, d, o)) return false;
+  // Öneri, yazışması ve hareketleri gider; ayrıca "silindi" hareketi yazılmaz.
+  const { yeni } = temizle(d, { turler: ["oneriler"], idler: [id] });
+  // E-postanın kendisi (yanıt kaydı) kalır, "önerisi yok" sayılır: Gelen yanıtlar'da kopuk bağ kalmasın.
+  kaydet({ ...yeni, yanitlar: yeni.yanitlar.map((y) => (y.id === o.yanitId ? { ...y, durum: "oneriYok" as const } : y)) });
+  return true;
 };
 
 /** Yapay zekanın haber değeri görüşü öneriye bağlı ayrı kayıtta; öneri başına bir tane, yenisi eskisinin yerine. */

@@ -843,6 +843,7 @@ const M = {
   esAsil: m("Muhabirin gönderdiği", "أرسله المراسل", "Sent by reporter"),
   esElle: m("Elle girilen", "أُدخل يدويا", "Entered manually"),
   hrOneriSilindi: m("{kisi} bir öneriyi izleriyle sildi: {baslik}", "حذف {kisi} مقترحا مع آثاره: {baslik}", "{kisi} deleted a proposal with its traces: {baslik}"),
+  epostaOnerisiSilOnay: m("Bu öneri silinsin mi? E-posta Gelen yanıtlar'da kalır.", "هل يُحذف هذا المقترح؟ يبقى البريد في الردود الواردة.", "Delete this proposal? The email stays in Incoming replies."),
   oneriSil: m("İzleriyle sil", "احذف مع الآثار", "Delete with traces"),
   oneriSilOnay: m(
     "Bu öneri izleriyle birlikte ({n} kayıt) kalıcı olarak silinecek. Bu geri alınamaz. Devam edilsin mi?",

@@ -1142,6 +1142,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     postası (reddedilmemiş, geri çekilmemiş e-posta önerisi varken) yeni öneri
     açmaz: metni önerinin `satirlar`'ına girer, hareket `takipSatiriEklendi`
     (Planlama'ya); elle içe aktarmada da aynı. "Önerim yok" önerisiz.
+    Yalnız selam ya da teşekkürden oluşan kısa yanıt ("günaydın", "صباح الخير",
+    "شكرا"; `eposta.ts → selamMi`, `bosYanitMi` içinde) öneri olmaz, "önerisi
+    yok" sayılır. E-postadan doğmuş, karara girmemiş öneriyi (yeni ya da
+    değerlendirmede, planda kaydı yok) planlamacı ayrıntıda ve pencerede "Sil"le
+    izsiz siler (`eylemler.ts → epostaOnerisiSil`, `epostaOnerisiSilinir`;
+    öneri değerlendiren): öneri, yazışması ve hareketleri gider, "silindi"
+    hareketi yazılmaz; e-posta Gelen yanıtlar'da "önerisi yok" olarak kalır.
     Bildirimde "N yeni posta · M öneriye aktarıldı". Gerçek kipte, Node'da
     denendi; e2e'ye girmiyor (demoda kutu yok).
   - İçe aktarma kartı (Outlook'tan sürükle-bırak, `.eml`, yapıştır) kalktı:

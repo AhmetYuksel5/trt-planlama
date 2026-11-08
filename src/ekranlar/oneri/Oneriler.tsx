@@ -7,7 +7,7 @@ import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriPlandakineBagla, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder } from "../../eylemler";
+import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriPlandakineBagla, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder, epostaOnerisiSil, epostaOnerisiSilinir } from "../../eylemler";
 import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
@@ -201,6 +201,24 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
 function OneriSilDugmesi({ ben, oneri, sayfada = false }: { ben: Kisi; oneri: Oneri; sayfada?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
+  // E-postadan doğmuş, karara girmemiş öneri: planlamacı tek basışta izsiz siler ("günaydın" yanıtı gibi).
+  if (epostaOnerisiSilinir(ben, v, oneri))
+    return (
+      <button
+        type="button"
+        className="dugme dugme-sade dugme-kucuk kotu-yazi oneri-sil"
+        onClick={() => {
+          if (!confirm(t("epostaOnerisiSilOnay"))) return;
+          if (epostaOnerisiSil(ben, oneri.id)) {
+            bildir(t("oneriSilindi"));
+            if (sayfada) git("oneriler");
+          }
+        }}
+        data-eposta-oneri-sil
+      >
+        <Trash2 size={14} /> {t("sil")}
+      </button>
+    );
   if (!oneriSilebilir(ben)) return null;
   const sil = () => {
     const n = temizle(v, { turler: ["oneriler"], idler: [oneri.id] }).toplam;

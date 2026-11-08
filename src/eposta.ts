@@ -428,7 +428,28 @@ export const postaAlintiMetni = (tam: string, gonderenAd = ""): string => {
  * olarak işaretlensin. Yalnız kısa ve bu kalıplardan biriyle başlayan yanıt.
  */
 const BOS = /^(لا يوجد|لايوجد|لا شيء|لا شي|لا جديد|ليس لدي|ليس لدينا|لا مقترحات|لا يوجد لدي|nothing|no news|none|yok|bende yok)/i;
-export const bosYanitMi = (m: string) => m.length <= 80 && BOS.test(m.replace(/^[\s\p{P}]+/u, ""));
+/*
+ * Yalnız selam ya da teşekkür ("günaydın", "صباح الخير", "شكرا") da öneri
+ * değil: muhabir çağrıya selamla dönünce öneri açılıyordu. Kısa metinden
+ * bu kalıplar ve noktalama atılınca bir şey kalmıyorsa selamdır.
+ */
+const SELAM = [
+  "صباح الخير", "صباح النور", "مساء الخير", "مساء النور", "السلام عليكم", "وعليكم السلام", "مرحبا", "اهلا", "أهلا", "شكرا جزيلا", "شكراً", "شكرا",
+  "تمام", "حسنا", "حسناً", "وصلت", "تم", "يعطيكم العافية", "الله يعطيكم العافية", "تحياتي",
+  "günaydın", "iyi günler", "iyi akşamlar", "merhaba", "selam", "teşekkür ederim", "teşekkürler", "sağ olun", "sağol", "tamam", "kolay gelsin",
+  "good morning", "good afternoon", "hello", "hi", "thank you", "thanks", "noted", "received", "ok", "okay", "regards", "best",
+];
+export const selamMi = (m: string) => {
+  if (m.length > 60) return false;
+  let k = ` ${m.toLocaleLowerCase("tr").replace(/[\p{P}\p{S}\d]+/gu, " ").replace(/\s+/g, " ")} `;
+  // Aynı kalıp art arda gelebilir ("شكرا شكرا"): değişiklik kalmayana dek sil.
+  for (const s of [...SELAM].sort((a, b) => b.length - a.length)) {
+    const p = ` ${s.toLocaleLowerCase("tr")} `;
+    while (k.includes(p)) k = k.replace(p, " ");
+  }
+  return !k.trim();
+};
+export const bosYanitMi = (m: string) => (m.length <= 80 && BOS.test(m.replace(/^[\s\p{P}]+/u, ""))) || selamMi(m);
 
 const kucuk = (s?: string) => (s ?? "").trim().toLowerCase();
 
