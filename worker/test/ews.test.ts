@@ -263,3 +263,27 @@ test("ekIndirOtomatik: posta kutuda yoksa 'yok'", async () => {
   const r = await ekIndirOtomatik(ayar, async () => soket, Date.now(), "yok@ornek.test", "a.pdf");
   assert.ok("hata" in r && r.yok);
 });
+
+test("postalariCek: sunucu bağlantıyı yanıt vermeden kapatınca yeni bağlantıyla sürdürür", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const findXml = `<t:Message><t:ItemId Id="ID1" ChangeKey="CK1"/></t:Message>`;
+  const getXml = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">merhaba</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  // İlk bağlantı FindItem'dan sonra kapanıyor (GetItem'a yanıt yok); ikincisi el sıkışıp GetItem'ı yanıtlıyor.
+  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml)]);
+  const ikinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", getXml)]);
+  let n = 0;
+  const r = await postalariCek(ayar, async () => (n++ === 0 ? birinci.soket : ikinci.soket), Date.now(), 25);
+  assert.ok("mesajlar" in r, JSON.stringify(r));
+  assert.equal(r.mesajlar.length, 1);
+  assert.equal(n, 2, "ikinci bağlantı açıldı");
+  assert.ok(ikinci.istekler[0].includes("GetItem") && ikinci.istekler[0].includes("Authorization: NTLM TlRMTVNTUAAB"), "yeni bağlantıda el sıkışması aynı GetItem'la");
+});
+
+test("postalariCek: ikinci bağlantı da kapanırsa hata metni döner (sonsuz deneme yok)", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  let n = 0;
+  const r = await postalariCek(ayar, async () => (n++, sahteSoket([]).soket), Date.now(), 25);
+  assert.ok("hata" in r && /kapandı/.test(r.hata));
+  assert.equal(n, 2);
+});

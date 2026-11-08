@@ -491,25 +491,58 @@ export interface Baglan {
 }
 
 /*
+ * Birkaç isteklik okuma oturumu (posta çekme, ek indirme). Exchange bağlantıyı
+ * bir süre ya da birkaç istek sonra yanıt vermeden kapatabiliyor ("bağlantı
+ * yanıt gelmeden kapandı"): o zaman yeni bağlantı açılıp el sıkışmasıyla aynı
+ * istek bir kez daha gönderiliyor. Sunucu "Connection: close" derse sonraki
+ * istek baştan yeni bağlantıda. Yalnız okuma için: gönderim yinelenirse posta
+ * iki kez gidebilirdi.
+ */
+const YENILENIR = /kapandı|zaman aşımı|reset|closed|cancel/i;
+export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: boolean) => {
+  let soket: Soket | undefined;
+  let dogrulandi = false;
+  const birak = async () => {
+    await soket?.kapat().catch(() => {});
+    soket = undefined;
+    dogrulandi = false;
+  };
+  const iste = async (soap: string): Promise<HttpYanit> => {
+    for (let deneme = 0; ; deneme++) {
+      if (!soket) soket = await baglan(ayar.sunucu);
+      try {
+        const r = await ntlmIstek(soket, ayar, soap, simdi, !dogrulandi, mic);
+        if (r.durum !== 401) dogrulandi = true;
+        if (/close/i.test(r.basliklar.connection ?? "")) await birak();
+        return r;
+      } catch (e) {
+        await birak();
+        if (deneme >= 1 || !YENILENIR.test(e instanceof Error ? e.message : String(e))) throw e;
+      }
+    }
+  };
+  return { iste, kapat: birak };
+};
+
+/*
  * Gelen kutusundan en yeni `adet` postayı çeker: FindItem ile kimlikler,
  * GetItem ile gövdeler. Tek soket; FindItem el sıkışmasından sonra GetItem
  * aynı doğrulanmış bağlantıda. Hata metinle döner (kullanıcı "dene"de görsün).
  */
 export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[] } | { hata: string; kimlik?: boolean }> => {
-  let soket: Soket | undefined;
+  const o = okumaOturumu(ayar, baglan, simdi, mic);
   try {
-    soket = await baglan(ayar.sunucu);
-    const bul = await ntlmIstek(soket, ayar, findItemIstegi(adet), simdi, true, mic);
+    const bul = await o.iste(findItemIstegi(adet));
     // 401: kimlik reddedildi. Üst katman MIC'li/MIC'siz ikinci denemeyi buna bakarak yapıyor.
     if (bul.durum === 401) return { hata: "kimlik doğrulanamadı (kullanıcı adı, parola ya da alan yanlış olabilir)", kimlik: true };
     if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
     const idler = findItemCoz(latin1Utf8(bul.govde));
     if (idler.length === 0) return { mesajlar: [] };
     // Gövdeleri küçük gruplar hâlinde çek: büyük tek GetItem yanıtı zaman
-    // aşımına düşüyordu. Hepsi aynı doğrulanmış soket üzerinde (handshake yok).
+    // aşımına düşüyordu. Aynı doğrulanmış bağlantıda; kapanırsa oturum yeniler.
     const mesajlar: EwsMesaj[] = [];
     for (let i = 0; i < idler.length; i += GETITEM_PARCA) {
-      const al = await ntlmIstek(soket, ayar, getItemIstegi(idler.slice(i, i + GETITEM_PARCA)), simdi, false);
+      const al = await o.iste(getItemIstegi(idler.slice(i, i + GETITEM_PARCA)));
       if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
       mesajlar.push(...getItemCoz(latin1Utf8(al.govde)));
     }
@@ -519,7 +552,7 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
   } catch (e) {
     return { hata: e instanceof Error ? e.message : String(e) };
   } finally {
-    await soket?.kapat().catch(() => {});
+    await o.kapat();
   }
 };
 
@@ -561,27 +594,26 @@ export type EkSonucu = { tur: string; veri: Uint8Array } | { hata: string; kimli
 
 /* Ekin kendisi: Message-ID ile postayı bul, eklerinden adı tutanı çek. Tek soket. */
 export const ekIndir = async (ayar: EwsAyar, baglan: Baglan, simdi: number, imid: string, ad: string, mic = false): Promise<EkSonucu> => {
-  let soket: Soket | undefined;
+  const o = okumaOturumu(ayar, baglan, simdi, mic);
   try {
-    soket = await baglan(ayar.sunucu);
-    const bul = await ntlmIstek(soket, ayar, imidBulIstegi(`<${imid.replace(/[<>]/g, "")}>`), simdi, true, mic);
+    const bul = await o.iste(imidBulIstegi(`<${imid.replace(/[<>]/g, "")}>`));
     if (bul.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
     if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
     const ogeler = findItemCoz(latin1Utf8(bul.govde));
     if (!ogeler.length) return { hata: "posta kutunda bulunamadı", yok: true };
-    const liste = await ntlmIstek(soket, ayar, ekListesiIstegi(ogeler[0]), simdi, false);
+    const liste = await o.iste(ekListesiIstegi(ogeler[0]));
     if (liste.durum !== 200) return { hata: `GetItem ${liste.durum}: ${faultMetni(latin1Utf8(liste.govde))}` };
     const ek = ekListesiCoz(latin1Utf8(liste.govde)).find((e) => e.ad === ad);
     if (!ek) return { hata: "ek bulunamadı", yok: true };
     if (ek.boyut > EK_SINIRI) return { hata: "ek çok büyük", buyuk: true };
-    const al = await ntlmIstek(soket, ayar, ekIstegi(ek.id), simdi, false);
+    const al = await o.iste(ekIstegi(ek.id));
     if (al.durum !== 200) return { hata: `GetAttachment ${al.durum}: ${faultMetni(latin1Utf8(al.govde.subarray(0, 4000)))}` };
     const icerik = ekIcerikCoz(al.govde);
     return icerik ?? { hata: "ek okunamadı" };
   } catch (e) {
     return { hata: e instanceof Error ? e.message : String(e) };
   } finally {
-    await soket?.kapat().catch(() => {});
+    await o.kapat();
   }
 };
 
