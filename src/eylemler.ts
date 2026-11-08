@@ -1006,7 +1006,8 @@ export const haftalikOlustur = (ben: Kisi, gun: string): { id: string; vardi: bo
   let d = getir();
   const var_ = d.haftalik.find((h) => h.baslangic === baslangic);
   if (var_) return { id: var_.id, vardi: true };
-  const id = kimlik("hf");
+  // Kimlik haftadan (Next Day'deki gunPlaniKimligi gibi): bayat görüntüyle iki tarayıcı aynı haftayı açarsa aynı belgeyi yazsın, iki plan doğmasın.
+  const id = `hf-${baslangic}`;
   const plan: HaftalikPlan = { id, baslangic, durum: "hazirlik", anaKonular: [], kalemler: [], olusturan: ben.id, olusturma: simdi() };
   d = { ...d, haftalik: [plan, ...d.haftalik] };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikOlusturuldu", haftaId: id, veri: { tarih: baslangic } }));

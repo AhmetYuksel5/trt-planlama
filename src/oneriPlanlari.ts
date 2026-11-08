@@ -48,12 +48,21 @@ export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik" | "p
   return { buGun: adaylar.filter((o) => oneriBuGunun(o, plan.tarih)), digerleri: adaylar.filter((o) => !oneriBuGunun(o, plan.tarih)) };
 };
 
-/** Haftalık planın haftasına düşüyor mu (eski haftalık öneride haftası). */
+/*
+ * Haftalık planın haftasına düşüyor mu. Günü olan öneride gün aralığı
+ * (ekranda yazılan da o, `oneriAraligi`); yalnız günü olmayan eski haftalık
+ * öneride `hafta`. Önce `hafta` önce bakılıyordu: ikisi de doluysa ekranda
+ * 15–16 Kasım yazan öneri başka haftanın listesine düşüyor, etiket yine
+ * "Weekly" diyordu.
+ */
 export const oneriHaftada = (o: Oneri, h: HaftalikPlan) => {
-  if (o.hafta) return o.hafta === h.baslangic;
+  if (o.hafta && !o.hedefTarih) return o.hafta === h.baslangic;
   const a = oneriAraligi(o);
   return !!a && a[0] <= haftaSonu(h.baslangic) && a[1] >= h.baslangic;
 };
+
+/* Haftalık planın "Bu haftaya gelen öneriler" listesindeki öneri mi: etiket de bu kuraldan, liste ile etiket ayrışmasın. */
+export const haftaninOnerisi = (o: Oneri, h: HaftalikPlan) => (oneriHaftada(o, h) && o.durum !== "takip") || h.kalemler.some((k) => k.oneriId === o.id);
 
 /** Üzerinde çalışılan Next Day planları (Newsdesk'e devredilmemiş, geçmemiş). */
 export const acikGunPlanlari = (d: Durum): NextDayPlan[] => d.planlar.filter((p) => p.durum !== "devralindi" && p.tarih >= bugun());
@@ -231,15 +240,25 @@ export const paketinOneriAdaylari = (d: Durum, p: Paket): Oneri[] =>
     ? []
     : d.oneriler.filter((o) => o.muhabirId === p.muhabirId && paketBaglanabilirOneri(d, o) && oneriBasliklari(o).some((b) => esBasliklar(b, p.baslik)));
 
-export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
+/*
+ * Etiketin gösterdiği planlar: etiket "Weekly" diyorsa öneri o planın
+ * listesinde olmalı. Etiket ayrı kuraldan hesaplanınca (eski haftalık
+ * öneride planı olmasa da) listede bulunmayan öneri "Weekly" görünüyordu;
+ * şimdi etiket planın kendisinden, ipucunda ve bağlantıda o plan.
+ */
+export const oneriEtiketPlanlari = (d: Durum, o: Oneri): { nextday: NextDayPlan[]; haftalik: HaftalikPlan[] } => {
   const yer = oneriYeri(d, o);
-  if (yer) return [...(yer.planda ? (["nextday"] as const) : []), ...(yer.hafta ? (["haftalik"] as const) : [])];
-  const e: OneriEtiketi[] = [];
-  const nd = acikGunPlanlari(d).some((p) => oneriBuGunun(o, p.tarih));
-  const hf = !!o.hafta || d.haftalik.some((h) => h.durum !== "kesinlesti" && oneriHaftada(o, h));
-  if (nd) e.push("nextday");
-  if (hf) e.push("haftalik");
-  return e;
+  if (yer) return { nextday: yer.planda && yer.plan ? [yer.plan] : [], haftalik: yer.hafta ? [yer.hafta] : [] };
+  return {
+    nextday: acikGunPlanlari(d).filter((p) => oneriBuGunun(o, p.tarih)),
+    haftalik: d.haftalik.filter((h) => h.durum !== "kesinlesti" && haftaninOnerisi(o, h)),
+  };
+};
+
+export const oneriEtiketleri = (d: Durum, o: Oneri): OneriEtiketi[] => {
+  const p = oneriEtiketPlanlari(d, o);
+  const yer = oneriYeri(d, o);
+  return [...(p.nextday.length || yer?.planda ? (["nextday"] as const) : []), ...(p.haftalik.length ? (["haftalik"] as const) : [])];
 };
 
 /*

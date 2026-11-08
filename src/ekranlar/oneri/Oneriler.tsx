@@ -654,7 +654,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               <div className="alan">
                 <small>{t("hedefPlan")}</small>
                 <b data-oneri-gunu>{oneriGunu(oneri)}</b>
-                <OneriPlanEtiketleri oneri={oneri} d={v} />
+                <OneriPlanEtiketleri oneri={oneri} d={v} bagli />
               </div>
               <div className="alan">
                 <small>{t("tur")}</small>

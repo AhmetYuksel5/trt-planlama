@@ -1,5 +1,5 @@
 import { useSekmeAdi } from "../../sekmeAdi";
-import { oneriAraligi, oneriHaftada, oneriYeri } from "../../oneriPlanlari";
+import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
 import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
@@ -298,7 +298,7 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   // Gündeme ya da Next Day'e giren öneri de listede kalıyor (en sonda, notuyla): ne geldiği ve ne olduğu bir arada.
   const sonda = (o: Oneri) => (oneriYeri(v, o) ? 2 : o.durum === "reddedildi" ? 1 : 0);
   const oneriler = v.oneriler
-    .filter((o) => (oneriHaftada(o, hafta) && o.durum !== "takip") || hafta.kalemler.some((k) => k.oneriId === o.id))
+    .filter((o) => haftaninOnerisi(o, hafta))
     .sort((a, b) => sonda(a) - sonda(b) || b.zaman.localeCompare(a.zaman));
   const bekleyen = oneriler.filter((o) => !sonda(o)).length;
   return (

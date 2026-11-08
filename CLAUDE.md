@@ -956,6 +956,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`Oneri.hafta`, `haftaGunu`; e-posta yanıtından ve haftalık ekrandan
   girilen) olduğu gibi yalnız haftalık.
 
+  Etiket ile planın listesi tek kuraldan (`oneriPlanlari.ts →
+  oneriEtiketPlanlari`, haftalıkta `haftaninOnerisi`; "Bu haftaya gelen
+  öneriler" de onu kullanır): "Weekly" diyen öneri o planın listesinde.
+  Günü olan öneride hafta günden (`oneriHaftada`; `hafta` yalnız günü
+  olmayan eski öneride), ekranda 15–16 Kasım yazan öneri başka haftanın
+  `hafta`'sıyla listeye düşmüyordu. Etiketin ipucunda düştüğü plan, öneri
+  ayrıntısında etikete basınca o plan açılır (`OneriPlanEtiketleri bagli`).
+  Haftalık planın kimliği haftadan (`haftalikOlustur`, `hf-<Cumartesi>`):
+  iki tarayıcı aynı haftayı açarsa aynı belge. Test `testler/haftalik-oneri.cjs`.
+
   Özel yayın etiketi yok: günü özel yayın gününe denk gelen öneri de
   etiketlenmiyordu, özel yayının önerileri yayının içinde
   (`ONERI_ETIKETLERI` yalnız Next Day ve Weekly).

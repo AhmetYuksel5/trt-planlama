@@ -3,10 +3,11 @@ import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Trash2, Tv, type Luci
 import { epostaOnerisiSil, epostaOnerisiSilinir } from "../eylemler";
 import { useBen } from "../oturum";
 import { geciktiMi, gorunenSahip, stokDurumu } from "../akis";
-import { saatYaz, tarihYaz, useDil } from "../dil";
+import { aralikYaz, saatYaz, tarihYaz, useDil } from "../dil";
 import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
 import { bugun, yerelGun } from "../tarih";
-import { oneriAraligi, oneriEtiketleri } from "../oneriPlanlari";
+import { oneriAraligi, oneriEtiketPlanlari, oneriEtiketleri } from "../oneriPlanlari";
+import { haftaSonu } from "../haftalik";
 import { git } from "../yol";
 import { kisiBul, useVeri, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
 import { AsamaCubugu, Avatar, Bos, bildir, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
@@ -371,17 +372,36 @@ export const useSehir = () => {
  * kartta, listede ve ayrıntıda. Renk planın kendi rengi; etiket her an
  * kayıttan hesaplanıyor (oneriPlanlari.ts).
  */
-export function OneriPlanEtiketleri({ oneri, d }: { oneri: Oneri; d: Durum }) {
-  const { t } = useDil();
+/*
+ * Etiketin ipucunda düştüğü plan (aynı haftanın iki plan kaydı olursa ikisi
+ * de); `bagli` (öneri ayrıntısı) etikete basınca o planı açar: "Weekly"
+ * yazıp listede görünmeyen öneride hangi plana baktığı görülsün.
+ */
+export function OneriPlanEtiketleri({ oneri, d, bagli = false }: { oneri: Oneri; d: Durum; bagli?: boolean }) {
+  const { t, dil } = useDil();
   const e = oneriEtiketleri(d, oneri);
   if (!e.length) return null;
+  const p = oneriEtiketPlanlari(d, oneri);
+  const hedef = (x: (typeof e)[number]) =>
+    x === "nextday"
+      ? p.nextday.map((n) => ({ ad: tarihYaz(n.tarih, dil), yol: `#/nextday/${n.id}` }))
+      : p.haftalik.map((h) => ({ ad: aralikYaz(h.baslangic, haftaSonu(h.baslangic), dil), yol: `#/haftalik/${h.id}` }));
   return (
     <span className="plan-etiketleri">
-      {e.map((x) => (
-        <span key={x} className={`rozet rozet-plan renk-${x}`} data-oneri-etiketi={x}>
-          {t(ONERI_ETIKET_ADI[x])}
-        </span>
-      ))}
+      {e.map((x) => {
+        const h = hedef(x);
+        const ipucu = h.length ? `${t(ONERI_ETIKET_ADI[x])} · ${h.map((y) => y.ad).join(" / ")}` : undefined;
+        const sinif = `rozet rozet-plan renk-${x}`;
+        return bagli && h.length ? (
+          <a key={x} className={sinif} href={h[0].yol} title={ipucu} data-oneri-etiketi={x}>
+            {t(ONERI_ETIKET_ADI[x])}
+          </a>
+        ) : (
+          <span key={x} className={sinif} title={ipucu} data-oneri-etiketi={x}>
+            {t(ONERI_ETIKET_ADI[x])}
+          </span>
+        );
+      })}
     </span>
   );
 }
