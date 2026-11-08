@@ -1253,6 +1253,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     çağrısı" (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan):
     sıradaki çağrılar, liste tarihi, son gönderimler. Testler
     `worker/test/oto-cagri.test.ts`.
+- Takdir bildirimi (kullanıcı: plan onaylanınca kabul edilen paketin
+  muhabirine hazır şablonla posta; kendiliğinden gitmesin, tek tek işaretleyip
+  göndereyim; `src/takdir.ts`, sayfa `nextday/Takdir.tsx`,
+  `#/nextday/:id/takdir`): Next Day "Planı onayla"dan sonra (planlamacıda,
+  kabul edilen paket varsa) sayfa açılır; onaylı planda "Takdir bildirimi"
+  düğmesiyle sonradan da. Satır başına paket (onaylı ya da üretimde, muhabiri
+  belli, TBC ve özel yayın değil; `takdirPaketleri`), her biri ayrı posta;
+  adresi (kurumsal, yoksa kişisel) olmayan seçilemez, gönderilmiş olan
+  işaretsiz gelir ve "gönderildi · saat" (`Paket.takdirBildirimi`,
+  `eylemler.ts → takdirBildirildi`, hareket `takdirBildirildi`). Gönderim
+  kişinin EWS kimliğiyle `POST /posta/gonder` (grup CC'de, kapı ekliyor),
+  sırayla; demoda yalnız işaret. Şablon (konu "تكليف تقرير من {sehir} |
+  {strap}", metin "sen" diliyle ama cinsiyetsiz: "مرحبًا", emir kipi yok,
+  "نرجو منك" + mastar, sonda "غرفة الأخبار ile iletişim") Ayarlar › "Takdir
+  bildirimi şablonu" (`GeriBildirimSablonlari.tsx → TakdirAyari`; konu,
+  metin, CC, BCC, varsayılana dön): geri bildirim şablonlarının
+  koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`), o listede görünmez, onlar
+  yazılırken düşmez. Değeri boş alanın satırı düşer (notsuz "ملاحظة:" yok).
+  Test `testler/takdir.cjs`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.

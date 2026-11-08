@@ -9,7 +9,7 @@ import { GERCEK } from "../kip";
 import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri, postaGorebilir, yapabilir } from "../yetki";
-import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
+import { GeriBildirimAyarlari, TakdirAyari } from "./GeriBildirimSablonlari";
 import { KayitTemizligi } from "./KayitTemizligi";
 import { KayitYedegi, YeniDuzenGecisi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
@@ -51,6 +51,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
+        {geriBildirimSablonuDuzenler(ben) && <TakdirAyari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {ben.hesapYoneticisi && <PostaAyari />}
         {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}

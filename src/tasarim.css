@@ -473,6 +473,13 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 .pencere-ara-baslik { font-size: var(--punto-kucuk); color: var(--sonuk); margin-block: var(--ara-2) var(--ara-1); }
 .liste.oneriden-al > li { align-items: flex-start; }
 .liste.oneriden-al .ad { display: grid; gap: 2px; }
+/* Takdir bildirimi: işaret kutusu solda, önizleme satırın içinde açılıyor. */
+.takdir-listesi > li { align-items: flex-start; }
+.takdir-sec { display: grid; place-items: center; min-inline-size: 44px; min-block-size: 44px; margin-block: calc(var(--ara-2) * -1); }
+.takdir-sec input { inline-size: 18px; block-size: 18px; }
+.takdir-onizleme { margin-block-start: var(--ara-2); padding: var(--ara-2) var(--ara-3); background: var(--yuzey-2); border-radius: var(--yaricap); display: grid; gap: var(--ara-2); }
+.takdir-konu { font-weight: 600; }
+.takdir-metin { white-space: pre-wrap; }
 .sayfa-basi .plan-araclari { flex-basis: 100%; margin-inline-start: 0; justify-content: center; }
 /* Yazılı düğmelerin yanında simge düğmesi de aynı boyda dursun. */
 @media (min-width: 761px) { .plan-araclari .dugme-ikon, .dugmeler .dugme-ikon { width: 36px; height: 36px; } }

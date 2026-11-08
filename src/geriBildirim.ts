@@ -41,8 +41,14 @@ export const VARSAYILAN_SABLONLAR: GeriBildirimSablonu[] = [
   },
 ];
 
+/* Takdir bildiriminin şablonu bu koleksiyonda sabit kimlikle (src/takdir.ts); geri bildirim listesine karışmaz. */
+export const TAKDIR_SABLONU = "takdir-bildirimi";
+
 /** Kayıtta şablon yoksa (yeni kurulum, eski kayıt) varsayılanlar; hepsi silinirse de varsayılana dönülüyor. */
-export const sablonlar = (d: Durum): GeriBildirimSablonu[] => (d.geriBildirimSablonlari?.length ? d.geriBildirimSablonlari : VARSAYILAN_SABLONLAR);
+export const sablonlar = (d: Durum): GeriBildirimSablonu[] => {
+  const l = (d.geriBildirimSablonlari ?? []).filter((s) => s.id !== TAKDIR_SABLONU);
+  return l.length ? l : VARSAYILAN_SABLONLAR;
+};
 /** Geri bildirim kararı verilmiş öneride ve muhabiri varsa (talimat, ajans önerisinde dönülecek muhabir yok). */
 export const geriBildirimKarari = (o: Oneri): GeriBildirimKarari | undefined =>
   o.muhabirId && (o.durum === "planaEklendi" || o.durum === "reddedildi" || o.durum === "sonra") ? o.durum : undefined;

@@ -1,10 +1,11 @@
-import { MailCheck, Pencil, Plus, Trash2 } from "lucide-react";
+import { MailCheck, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
 import { ONERI_DURUM_ADI } from "../etiketler";
-import { geriBildirimSablonuKaydet, geriBildirimSablonuSil } from "../eylemler";
+import { geriBildirimSablonuKaydet, geriBildirimSablonuSil, takdirSablonuKaydet } from "../eylemler";
 import { sablonlar } from "../geriBildirim";
+import { TAKDIR_ALANLARI, VARSAYILAN_TAKDIR, takdirSablonu } from "../takdir";
 import { GERI_BILDIRIM_KARARLARI, kimlik, useVeri, type GeriBildirimKarari, type GeriBildirimSablonu, type Kisi } from "../veri";
 
 /*
@@ -116,5 +117,59 @@ function SablonPenceresi({ ben, sablon, kapat }: { ben: Kisi; sablon: GeriBildir
         </div>
       </div>
     </Pencere>
+  );
+}
+
+/*
+ * Ayarlar › Takdir bildirimi şablonu (src/takdir.ts): plan onaylanınca
+ * muhabire giden "تكليف تقرير" postası. Konu, metin, CC ve BCC buradan;
+ * Kime muhabirin adresi, planning grubu kapıda her zaman CC'de.
+ */
+export function TakdirAyari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const kayitli = takdirSablonu(v);
+  const [s, setS] = useState(kayitli);
+  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
+  const kaydet = (x = s) => {
+    if (takdirSablonuKaydet(ben, x)) {
+      setS(x);
+      bildir(t("bKaydedildi"));
+    }
+  };
+  return (
+    <Kart baslik={t("tkAyarBaslik")} ikon={<Send size={18} />}>
+      <div className="form" data-takdir-sablonu>
+        <div className="satir">
+          <label>
+            {t("gbCc")}
+            <input dir="ltr" value={s.cc} onChange={(e) => setS({ ...s, cc: e.target.value })} data-takdir-cc />
+          </label>
+          <label>
+            {t("gbBcc")}
+            <input dir="ltr" value={s.bcc} onChange={(e) => setS({ ...s, bcc: e.target.value })} data-takdir-bcc />
+          </label>
+        </div>
+        <label>
+          {t("gbKonu")}
+          <input {...icerikAlani} value={s.konu} onChange={(e) => setS({ ...s, konu: e.target.value })} data-takdir-konu />
+        </label>
+        <label>
+          {t("gbMetin")}
+          <textarea {...icerikAlani} rows={12} value={s.govde} onChange={(e) => setS({ ...s, govde: e.target.value })} data-takdir-metin />
+        </label>
+        <small className="sonuk" dir="ltr">
+          {TAKDIR_ALANLARI.map((a) => `{${a}}`).join(" ")}
+        </small>
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet({ ...VARSAYILAN_TAKDIR })} data-takdir-varsayilan>
+            {t("tkVarsayilan")}
+          </button>
+          <button type="button" className="dugme dugme-kucuk" disabled={!degisti || !s.konu.trim() || !s.govde.trim()} onClick={() => kaydet()} data-takdir-kaydet>
+            {t("kaydet")}
+          </button>
+        </div>
+      </div>
+    </Kart>
   );
 }

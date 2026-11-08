@@ -21,6 +21,8 @@ const { chromium } = require(process.env.PW);
   const say = () => p.evaluate((id) => JSON.parse(localStorage.getItem("trt-planlama-v24")).hareketler.filter((h) => h.tip === "planaMuhabirEklendi" && h.veri?.kime === id).length, m.kisiId);
   const ilk = await say();
   // Onayı geri al, yeniden onayla: aynı not tekrar gitmemeli
+  // Onaydan sonra takdir bildirimi sayfası açılıyor (kabul edilen paket varsa); plana dön.
+  if (p.url().endsWith("/takdir")) { await p.locator("[data-takdir-plana]").click(); await p.waitForTimeout(800); }
   await p.locator("[data-onay-geri]").click(); await p.waitForTimeout(400);
   await p.locator("button", { hasText: "Planı onayla" }).click(); await p.waitForTimeout(500);
   const ikinci = await say();

@@ -10,6 +10,7 @@ import {
   FilePen,
   FileUp,
   Lightbulb,
+  MailCheck,
   Megaphone,
   Plus,
   Printer,
@@ -36,11 +37,14 @@ import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { kayipBaslikGeriGetir, oncekiOnayla, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
+import { takdirPaketleri } from "../../takdir";
+import { git } from "../../yol";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import {
   PLAN_DURUMLARI,
   baslikBul,
+  getir,
   oncekiSayisi,
   planBul,
   useVeri,
@@ -918,7 +922,14 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const gorevli = new Set(kararsiz.map((p) => p.muhabirId).filter(Boolean))
     .size;
   const durumDegistir = (yeni: NextDayPlan["durum"], mesaj: Anahtar) => {
-    if (planDurum(ben, plan.id, yeni)) bildir(t(mesaj));
+    if (!planDurum(ben, plan.id, yeni)) return false;
+    bildir(t(mesaj));
+    return true;
+  };
+  // Onaydan sonra takdir bildirimi sayfası açılıyor (kullanıcı: paketleri tek tek işaretleyip göndereyim; kendiliğinden gitmesin).
+  const takdirSayisi = takdirPaketleri(v, plan.id).length;
+  const onayla = () => {
+    if (durumDegistir("onayli", "bPlanOnaylandi") && yapabilir(ben, "planDuzenle") && takdirPaketleri(getir(), plan.id).length) git(`nextday/${plan.id}/takdir`);
   };
   return (
     <section className="kart plan-durum-karti">
@@ -957,7 +968,7 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
                 kararsiz.length
                   ? t("planOnaySayili", { n: kararsiz.length, m: gorevli })
                   : t("planOnaySoru"),
-              ) && durumDegistir("onayli", "bPlanOnaylandi")
+              ) && onayla()
             }
           >
             <Check size={16} /> {t("planiOnayla")}
@@ -983,6 +994,11 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
           >
             <Undo2 size={16} /> {t("onayiGeriAl")}
           </button>
+        )}
+        {(plan.durum === "onayli" || plan.durum === "devralindi") && takdirSayisi > 0 && yapabilir(ben, "planDuzenle") && (
+          <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/takdir`} data-takdir-ac>
+            <MailCheck size={16} /> {t("tkBildir")}
+          </a>
         )}
         {/* Newsdesk sistemde değilken devir yok: Next Day paketleri Planlama'nın yolunda kapanıyor. */}
         {plan.durum === "onayli" &&

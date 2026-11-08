@@ -855,6 +855,8 @@ export interface Paket {
    * paketsiz kalıyor.
    */
   reddedildi?: { zaman: string; kisiId: string };
+  /** Takdir postası muhabire gitti (src/takdir.ts); bildirim sayfasında "gönderildi", ikinci kez seçili gelmez. */
+  takdirBildirimi?: { zaman: string; kisiId: string };
   /*
    * Muhabirin "yapıldı" ya da sebebiyle "yapılmadı" işareti, yetkilinin
    * onayını bekliyor. Onaylanınca yapıldı paketi kapatır (tamamlandı),
@@ -1417,6 +1419,7 @@ export const HAREKET_TIPLERI = [
   "oneriAsamayaDondu",
   "paketReddedildi",
   "paketBaskaMuhabire",
+  "takdirBildirildi",
   "gecisUygulandi",
   "paketIsaretlendi",
   "paketIsaretOnaylandi",

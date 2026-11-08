@@ -7,7 +7,8 @@ import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
-import { sablonlar } from "./geriBildirim";
+import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
+import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Yazi } from "./dil";
 import { ayniYapi, icMuhabirMi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
@@ -950,14 +951,41 @@ export const geriBildirimSablonuKaydet = (ben: Kisi, s: GeriBildirimSablonu) => 
   const d = getir();
   const l = sablonlar(d);
   const yeni = l.some((x) => x.id === s.id) ? l.map((x) => (x.id === s.id ? s : x)) : [...l, s];
-  kaydet({ ...d, geriBildirimSablonlari: yeni });
+  kaydet({ ...d, geriBildirimSablonlari: [...yeni, ...takdirKaydi(d)] });
   return true;
 };
 
 export const geriBildirimSablonuSil = (ben: Kisi, id: string) => {
   if (!geriBildirimSablonuDuzenler(ben)) return false;
   const d = getir();
-  kaydet({ ...d, geriBildirimSablonlari: sablonlar(d).filter((x) => x.id !== id) });
+  kaydet({ ...d, geriBildirimSablonlari: [...sablonlar(d).filter((x) => x.id !== id), ...takdirKaydi(d)] });
+  return true;
+};
+
+/* Takdir şablonu aynı koleksiyonda; geri bildirim şablonu yazılırken düşmesin. */
+const takdirKaydi = (d: Durum) => (d.geriBildirimSablonlari ?? []).filter((x) => x.id === TAKDIR_SABLONU);
+
+/* Takdir bildiriminin şablonu (Ayarlar): geri bildirim şablonlarıyla aynı yetki. Öbür şablonlar yerinde kalır. */
+export const takdirSablonuKaydet = (ben: Kisi, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "cc" | "bcc">) => {
+  if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim() || !s.govde.trim()) return false;
+  const d = getir();
+  const kayit: GeriBildirimSablonu = { ...VARSAYILAN_TAKDIR, ...s };
+  const oteki = (d.geriBildirimSablonlari ?? []).filter((x) => x.id !== TAKDIR_SABLONU);
+  // Kayıtta geri bildirim şablonu yokken yalnız takdiri yazmak varsayılanları silmesin diye onlar da yazılır.
+  kaydet({ ...d, geriBildirimSablonlari: [...(oteki.length ? oteki : VARSAYILAN_SABLONLAR), kayit] });
+  return true;
+};
+
+/*
+ * Takdir postası gitti: paket işaretlenir (sayfada "gönderildi", ikinci kez
+ * seçili gelmez), hareket kaydına düşer. Postayı kapı gönderiyor; bu yalnız iz.
+ */
+export const takdirBildirildi = (ben: Kisi, paketId: string) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !yapabilir(ben, "planDuzenle")) return false;
+  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: { zaman: simdi(), kisiId: ben.id } }));
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takdirBildirildi", paketId, planId: p.planId, ...(p.oneriId && { oneriId: p.oneriId }) }));
   return true;
 };
 

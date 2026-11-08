@@ -18,6 +18,7 @@ import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import Gundem from "./ekranlar/Gundem";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
 import Cikti from "./ekranlar/nextday/Cikti";
+import TakdirBildirimi from "./ekranlar/nextday/Takdir";
 import NextDayBelge from "./ekranlar/belge/NextDayBelge";
 import HaftalikBelge from "./ekranlar/belge/HaftalikBelge";
 import NextDayListe from "./ekranlar/nextday/Liste";
@@ -264,6 +265,7 @@ export default function App() {
         // Yarının planı yoksa (henüz açılmadı ya da kaydı kayboldu) liste: kayıp plan şeridi orada, "erişimin yok" yanıltıyordu.
         if (yol.id && yol.id !== "yarin" && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
+        else if (plan && yol.alt === "takdir") icerik = <TakdirBildirimi ben={ben} plan={plan} />;
         else if (plan && yol.alt === "belge")
           icerik = <NextDayBelge ben={ben} plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;
