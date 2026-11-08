@@ -1,7 +1,7 @@
 import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Plus, Undo2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
+import { EpostaOneriSil, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
 import { gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet, oneriPlandanCikar, oneriyePaketEkle, oneriyePaketEklenebilir } from "../../eylemler";
@@ -83,6 +83,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
         <span className="bosluk-esnek" />
         <YzGorusRozeti oneri={o} d={d} />
         <OneriDurumRozeti oneri={o} />
+        <EpostaOneriSil oneri={o} ikon />
       </div>
       <button type="button" className="ok-baslik" onClick={ac} aria-label={`${t("oneriyiAc")}: ${baslikOf(o)}`}>
         <Icerik blok>{baslikOf(o)}</Icerik>
@@ -244,6 +245,7 @@ export function OneriSatiri({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Du
           </small>
           <PlanaEklendiNotu oneri={o} d={d} />
         </div>
+        <EpostaOneriSil oneri={o} ikon />
         {eylemler && <div className="islemler">{eylemler}</div>}
       </div>
     </div>
@@ -267,6 +269,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
   const hedef = oneriGunu(o);
   return (
     <Pencere baslik={<Icerik>{baslikOf(o)}</Icerik>} alt={siniflama} kapat={kapat} altBilgi={altBilgi}>
+      <EpostaOneriSil oneri={o} sonra={kapat} />
       {ben && oneriDuzenleyebilir(ben, o) &&
         (duzenle ? (
           <div data-oneri-duzenle-formu>

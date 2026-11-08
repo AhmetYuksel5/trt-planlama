@@ -1145,9 +1145,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Yalnız selam ya da teşekkürden oluşan kısa yanıt ("günaydın", "صباح الخير",
     "شكرا"; `eposta.ts → selamMi`, `bosYanitMi` içinde) öneri olmaz, "önerisi
     yok" sayılır. E-postadan doğmuş, karara girmemiş öneriyi (yeni ya da
-    değerlendirmede, planda kaydı yok) planlamacı ayrıntıda ve pencerede "Sil"le
-    izsiz siler (`eylemler.ts → epostaOnerisiSil`, `epostaOnerisiSilinir`;
-    öneri değerlendiren): öneri, yazışması ve hareketleri gider, "silindi"
+    değerlendirmede, planda kaydı yok) planlamacı her yerde "Sil"le izsiz
+    siler (`Tablolar.tsx → EpostaOneriSil`: kartta ve satırda çöp simgesi, ana
+    sayfa tablosunda, plan ekranının öneri penceresinde, ayrıntıda; ilk sürümde
+    yalnız ayrıntıdaydı, Planlama orada aramıyordu; `eylemler.ts →
+    epostaOnerisiSil`, `epostaOnerisiSilinir`; öneri değerlendiren ya da
+    `oneriSilme` yetkili): öneri, yazışması ve hareketleri gider, "silindi"
     hareketi yazılmaz; e-posta Gelen yanıtlar'da "önerisi yok" olarak kalır.
     Bildirimde "N yeni posta · M öneriye aktarıldı". Gerçek kipte, Node'da
     denendi; e2e'ye girmiyor (demoda kutu yok).

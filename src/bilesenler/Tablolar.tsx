@@ -1,5 +1,7 @@
 import { birimAdi } from "../yapi";
-import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Tv, type LucideIcon } from "lucide-react";
+import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Trash2, Tv, type LucideIcon } from "lucide-react";
+import { epostaOnerisiSil, epostaOnerisiSilinir } from "../eylemler";
+import { useBen } from "../oturum";
 import { geciktiMi, gorunenSahip, stokDurumu } from "../akis";
 import { saatYaz, tarihYaz, useDil } from "../dil";
 import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
@@ -7,7 +9,7 @@ import { bugun, yerelGun } from "../tarih";
 import { oneriAraligi, oneriEtiketleri } from "../oneriPlanlari";
 import { git } from "../yol";
 import { kisiBul, useVeri, type Durum, type KaynakTuru, type Oneri, type Paket } from "../veri";
-import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
+import { AsamaCubugu, Avatar, Bos, bildir, HaftalikRozeti, Icerik, KisiHucre, OncelikRozeti, PaketDurumRozeti, Rozet, TalimatRozeti, TurRozeti, oncelikliOnce } from "./Parcalar";
 
 /*
  * Paket ve öneri tabloları: birçok ekran aynı sütunlarla gösteriyor, tek
@@ -302,7 +304,8 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
                 <OneriDurumRozeti oneri={o} />
                 <OneriPlanEtiketleri oneri={o} d={d} />
               </td>
-              <td className="dar sonuk ok-hucre">
+              <td className="dar sonuk ok-hucre" onClick={(e) => (e.target as HTMLElement).closest("button") && e.stopPropagation()}>
+                <EpostaOneriSil oneri={o} ikon />
                 <ChevronRight size={16} className="yon" />
               </td>
             </tr>
@@ -310,6 +313,34 @@ export function OneriTablosu({ oneriler, d, kisa = false }: { oneriler: Oneri[];
         </tbody>
       </table>
     </div>
+  );
+}
+
+/*
+ * E-postadan doğmuş, karara girmemiş önerinin izsiz silinmesi (muhabirin
+ * "günaydın"ı gibi). Planlama öneriyi çoğunlukla plan ekranlarında ve ana
+ * sayfada kartta görüyor: düğme kartta, satırda, pencerede ve ayrıntıda.
+ */
+export function EpostaOneriSil({ oneri, ikon = false, sonra }: { oneri: Oneri; ikon?: boolean; sonra?: () => void }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const v = useVeri();
+  if (!ben || !epostaOnerisiSilinir(ben, v, oneri)) return null;
+  const sil = () => {
+    if (!confirm(t("epostaOnerisiSilOnay"))) return;
+    if (epostaOnerisiSil(ben, oneri.id)) {
+      bildir(t("oneriSilindi"));
+      sonra?.();
+    }
+  };
+  return ikon ? (
+    <button type="button" className="dugme dugme-sade dugme-ikon kotu-yazi" onClick={sil} title={t("sil")} aria-label={t("sil")} data-eposta-oneri-sil>
+      <Trash2 size={15} />
+    </button>
+  ) : (
+    <button type="button" className="dugme dugme-sade dugme-kucuk kotu-yazi oneri-sil" onClick={sil} data-eposta-oneri-sil>
+      <Trash2 size={14} /> {t("sil")}
+    </button>
   );
 }
 

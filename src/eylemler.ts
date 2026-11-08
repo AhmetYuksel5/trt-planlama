@@ -865,7 +865,7 @@ export const oneriSil = (ben: Kisi, id: string): number | null => {
  * oluyordu). Plana girmiş, reddedilmiş, takipteki öneriye dokunulmaz.
  */
 export const epostaOnerisiSilinir = (ben: Kisi | undefined, d: Durum, o: Oneri) =>
-  !!ben && !ben.pasif && yapabilir(ben, "oneriDegerlendir") && o.kanal === "eposta" && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriPlanKaydi(d, o);
+  !!ben && !ben.pasif && (yapabilir(ben, "oneriDegerlendir") || oneriSilebilir(ben)) && o.kanal === "eposta" && (o.durum === "yeni" || o.durum === "degerlendiriliyor") && !oneriPlanKaydi(d, o);
 
 export const epostaOnerisiSil = (ben: Kisi, id: string) => {
   const d = getir();
