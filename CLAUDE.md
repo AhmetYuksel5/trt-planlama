@@ -1640,7 +1640,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Toplantıda paket başına karar: plan ekranında ve paket sayfasında
     "Kabul et" (`paketDurum(…, "onaylandi")`, muhabire görev) ve "Reddet"
     (`eylemler.ts → paketReddet`: paket iptal, `Paket.reddedildi` izi, haber
-    planda paketsiz, muhabire `paketReddedildi`); ikisi onaylı. Plan
+    planda paketsiz, muhabire `paketReddedildi`); ikisi onaylı. Öneri plana
+    eklendi kalır (gelişmesi planda); rozetinin yanında "PKG reddedildi"
+    (`Tablolar.tsx → OneriDurumRozeti`; yoksa ret hiçbir yerde görünmüyordu). Plan
     onaylanınca kararsız paketler kabul sayılır (`planDurum`).
   - Onaylı paketin sonucu muhabirden ("Senin sıran", paket sayfası;
     `bilesenler/PaketSonucu.tsx → PaketSonucDugmeleri`): "Yapıldı" ya da

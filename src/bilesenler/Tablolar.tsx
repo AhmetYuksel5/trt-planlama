@@ -160,7 +160,20 @@ export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
         <Rozet ton="iyi">{t("pdTamamlandi")}</Rozet>
       </span>
     );
-  return <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>;
+  // Planda paketi reddedilen haber gelişme olarak paketsiz kalıyor (paketReddet): öneri "plana eklendi"
+  // görünüyor, ret hiçbir yerde yazmıyordu. Başka geçerli paketi yoksa ret yanında yazılı.
+  const pk = v.paketler.filter((p) => p.oneriId === oneri.id);
+  const paketRet = oneri.durum === "planaEklendi" && pk.some((p) => p.reddedildi) && !pk.some((p) => p.durum !== "iptal");
+  return (
+    <>
+      <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>
+      {paketRet && (
+        <span data-oneri-paket-ret>
+          <Rozet ton="kotu">{t("oneriPaketReddedildi")}</Rozet>
+        </span>
+      )}
+    </>
+  );
 }
 
 /*

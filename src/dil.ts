@@ -2451,6 +2451,7 @@ const M = {
   kopyaKopya: m("Kopya", "نسخة", "Copy"),
   hrPaketReddedildi: m("{kisi} paket önerisini toplantıda reddetti", "رفض {kisi} مقترح التقرير في الاجتماع", "{kisi} rejected the package proposal in the meeting"),
   pdReddedildi: m("Reddedildi", "مرفوض", "Rejected"),
+  oneriPaketReddedildi: m("PKG reddedildi", "رُفض التقرير", "PKG rejected"),
   paketKabulOnay: m("Paket kabul edilecek; muhabire görev olarak gidecek. Emin misin?", "سيُقبل التقرير ويصل المراسل مهمةً. هل أنت متأكد؟", "The package will be accepted and sent to the reporter as a task. Are you sure?"),
   paketRetOnay: m("Paket reddedilecek; haber planda paketsiz kalacak. Emin misin?", "سيُرفض التقرير ويبقى الخبر في الخطة دون تقرير. هل أنت متأكد؟", "The package will be rejected; the story stays in the plan without a package. Are you sure?"),
   hrPaketYapildiDedi: m("{kisi} haberi yaptığını bildirdi; onay bekliyor", "أبلغ {kisi} بإنجاز الخبر؛ بانتظار الموافقة", "{kisi} reported the story done; awaiting approval"),
