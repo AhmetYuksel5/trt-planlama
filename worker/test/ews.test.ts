@@ -280,10 +280,24 @@ test("postalariCek: sunucu bağlantıyı yanıt vermeden kapatınca yeni bağlan
   assert.ok(ikinci.istekler[0].includes("GetItem") && ikinci.istekler[0].includes("Authorization: NTLM TlRMTVNTUAAB"), "yeni bağlantıda el sıkışması aynı GetItem'la");
 });
 
-test("postalariCek: ikinci bağlantı da kapanırsa hata metni döner (sonsuz deneme yok)", async () => {
+test("postalariCek: bağlantılar hep kapanırsa adımı yazılı hata döner (sonsuz deneme yok)", async () => {
   const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
   let n = 0;
   const r = await postalariCek(ayar, async () => (n++, sahteSoket([]).soket), Date.now(), 25);
-  assert.ok("hata" in r && /kapandı/.test(r.hata));
-  assert.equal(n, 2);
+  assert.ok("hata" in r && /^FindItem: .*kapandı \(0 bayt\).*3 bağlantı denendi/.test(r.hata), JSON.stringify(r));
+  assert.equal(n, 3);
+});
+
+test("postalariCek: bir GetItem grubu alınamazsa alınanlar uyarıyla döner", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const findXml = Array.from({ length: 8 }, (_, i) => `<t:Message><t:ItemId Id="ID${i}" ChangeKey="CK"/></t:Message>`).join("");
+  const getXml = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">merhaba</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  // İlk bağlantı FindItem ve ilk grubu yanıtlıyor, ikinci grupta kapanıyor; yenilemeler de kapalı.
+  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), httpYanit("200 OK", getXml)]);
+  let n = 0;
+  const r = await postalariCek(ayar, async () => (n++ === 0 ? birinci.soket : sahteSoket([]).soket), Date.now(), 25);
+  assert.ok("mesajlar" in r, JSON.stringify(r));
+  assert.equal(r.mesajlar.length, 1);
+  assert.ok(r.uyari && /^GetItem 2\/2: .*kapandı/.test(r.uyari), r.uyari);
 });

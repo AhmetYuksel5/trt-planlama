@@ -1583,6 +1583,7 @@ const M = {
   bPostaCekildi: m("{n} yeni posta geldi", "وصلت {n} رسالة جديدة", "{n} new messages arrived"),
   bPostaCekYok: m("Yeni posta yok", "لا بريد جديد", "No new mail"),
   bPostaCekildiOneri: m("{n} yeni posta · {o} öneriye aktarıldı", "{n} رسالة جديدة · نُقل {o} إلى المقترحات", "{n} new messages · {o} moved to proposals"),
+  bPostaCekKismi: m("Postaların bir kısmı alınamadı, sonraki çekişte gelir", "تعذّر جلب جزء من الرسائل، سيصل في الجلب التالي", "Some messages could not be fetched; they will come on the next fetch"),
   bPostaCekHata: m("Posta çekilemedi", "تعذّر جلب البريد", "Could not fetch mail"),
   bPostaCekKimlikYok: m("E-posta giriş bilgilerini Ayarlar'dan gir", "أدخل بيانات دخول البريد من الإعدادات", "Enter your mailbox login in Settings"),
   bPostaCekKapali: m("Posta çekme kapalı (yönetici açmalı)", "جلب البريد مُعطّل (يفعّله المدير)", "Mail fetching is off (admin must enable)"),

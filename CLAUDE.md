@@ -1177,9 +1177,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     gelen kutusunu okuyor (GetItem küçük gruplar hâlinde, aynı bağlantıda:
     tek büyük yanıt okuma zaman aşımına düşüyordu; her okumada 20 sn sınır;
     sunucu bağlantıyı yanıtsız kapatırsa ya da okuma zaman aşımına düşerse
-    `ews.ts → okumaOturumu` yeni bağlantıda el sıkışıp aynı isteği bir kez
-    yineler, "Connection: close"da sonraki istek yeni bağlantıda; "bağlantı
-    yanıt gelmeden kapandı" uyarısı böyle çıkıyordu. Gönderim yinelenmez,
+    `ews.ts → okumaOturumu` yeni bağlantıda el sıkışıp aynı isteği yineler
+    (en çok iki kez), "Connection: close"da sonraki istek yeni bağlantıda; "bağlantı
+    yanıt gelmeden kapandı" uyarısı böyle çıkıyordu. Hata adımıyla döner
+    ("GetItem 2/5: … (0 bayt) · 3 bağlantı denendi"): sunucu mu kesiyor görülsün.
+    Bir grup alınamazsa alınan postalar `uyari`yla yine döner, bildirimde
+    "bir kısmı alınamadı"; bağlantı kopunca hepsi gitmiyor. Gönderim yinelenmez,
     posta iki kez gidebilirdi),
     planlama grubu adresine (To/Cc) gelenleri süzüyor,
     ekleri ad olarak bırakıp gövdeyi `yeniMetin`le temizliyor. **Servis hesabı

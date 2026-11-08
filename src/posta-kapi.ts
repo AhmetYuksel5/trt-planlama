@@ -76,10 +76,11 @@ interface KapiMesaji {
  * cagriYanitiysaIsle). Dönen sayılar yeni eklenen mesaj ve öneriye aktarılan;
  * tekrar gelenler sayılmıyor.
  */
-export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number; oneri: number } | { hata: string; ayrinti?: string }> => {
+export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number; oneri: number; uyari?: string } | { hata: string; ayrinti?: string }> => {
   // Kapının sabah gönderdiği çağrı önce kayda girsin: yanıtı o çağrıya bağlanıp öneri olsun.
   await otoCagriEsitle(ben).catch(() => null);
-  const r: YzSonuc<{ mesajlar: KapiMesaji[] }> = await kapiIstek<{ mesajlar: KapiMesaji[] }>("/posta/cek", "POST", { adet });
+  // uyari: kapı bir grubu alamadı, alınanlar yine geldi (bağlantı kopunca hepsi gitmesin).
+  const r: YzSonuc<{ mesajlar: KapiMesaji[]; uyari?: string }> = await kapiIstek<{ mesajlar: KapiMesaji[]; uyari?: string }>("/posta/cek", "POST", { adet });
   if (!r.tamam) return { hata: r.hata, ayrinti: r.ayrinti };
   // En eski önce yazılsın ki sohbet sırası doğru olsun (kapı en yeni önce veriyor).
   const mesajlar = [...r.veri.mesajlar].reverse();
@@ -92,5 +93,5 @@ export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise
     // Çağrıya verilmiş muhabir yanıtı öneriye de aktarılır; sohbette de kalır.
     if (cagriYanitiysaIsle(ben, gelen)?.durum === "oneri") oneri++;
   }
-  return { eklenen, toplam: mesajlar.length, oneri };
+  return { eklenen, toplam: mesajlar.length, oneri, ...(r.veri.uyari ? { uyari: r.veri.uyari } : {}) };
 };

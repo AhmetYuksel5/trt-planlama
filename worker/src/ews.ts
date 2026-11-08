@@ -452,7 +452,7 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
       const t = tumu();
       const son = httpCerceveCoz(t) ?? cerceveZorla(t);
       if (son) return son;
-      throw new Error("bağlantı yanıt gelmeden kapandı");
+      throw new Error(`bağlantı yanıt gelmeden kapandı (${toplam} bayt)`);
     }
     parcalar.push(parca);
     toplam += parca.length;
@@ -499,6 +499,8 @@ export interface Baglan {
  * iki kez gidebilirdi.
  */
 const YENILENIR = /kapandı|zaman aşımı|reset|closed|cancel/i;
+/* Kapanan bağlantı en çok bu kadar kez yenilenir; sonra hata adımıyla döner. */
+const YENILEME = 2;
 export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: boolean) => {
   let soket: Soket | undefined;
   let dogrulandi = false;
@@ -517,7 +519,10 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
         return r;
       } catch (e) {
         await birak();
-        if (deneme >= 1 || !YENILENIR.test(e instanceof Error ? e.message : String(e))) throw e;
+        const metin = e instanceof Error ? e.message : String(e);
+        if (!YENILENIR.test(metin)) throw e;
+        // Kaç kez yenilendiği hatada yazsın: sorun bağlantının kendisinde mi, tek seferlik mi görülsün.
+        if (deneme >= YENILEME) throw new Error(`${metin} · ${deneme + 1} bağlantı denendi`);
       }
     }
   };
@@ -529,8 +534,11 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
  * GetItem ile gövdeler. Tek soket; FindItem el sıkışmasından sonra GetItem
  * aynı doğrulanmış bağlantıda. Hata metinle döner (kullanıcı "dene"de görsün).
  */
-export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[] } | { hata: string; kimlik?: boolean }> => {
+export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[]; uyari?: string } | { hata: string; kimlik?: boolean }> => {
   const o = okumaOturumu(ayar, baglan, simdi, mic);
+  // Hata hangi adımda olduysa metnin başında: bağlantı mı, liste mi, kaçıncı grup.
+  let adim = "FindItem";
+  const mesajlar: EwsMesaj[] = [];
   try {
     const bul = await o.iste(findItemIstegi(adet));
     // 401: kimlik reddedildi. Üst katman MIC'li/MIC'siz ikinci denemeyi buna bakarak yapıyor.
@@ -540,24 +548,29 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     if (idler.length === 0) return { mesajlar: [] };
     // Gövdeleri küçük gruplar hâlinde çek: büyük tek GetItem yanıtı zaman
     // aşımına düşüyordu. Aynı doğrulanmış bağlantıda; kapanırsa oturum yeniler.
-    const mesajlar: EwsMesaj[] = [];
+    const grup = Math.ceil(idler.length / GETITEM_PARCA);
     for (let i = 0; i < idler.length; i += GETITEM_PARCA) {
+      adim = `GetItem ${i / GETITEM_PARCA + 1}/${grup}`;
       const al = await o.iste(getItemIstegi(idler.slice(i, i + GETITEM_PARCA)));
-      if (al.durum !== 200) return { hata: `GetItem ${al.durum}: ${faultMetni(latin1Utf8(al.govde))}` };
+      if (al.durum !== 200) throw new Error(`${al.durum}: ${faultMetni(latin1Utf8(al.govde))}`);
       mesajlar.push(...getItemCoz(latin1Utf8(al.govde)));
     }
-    // FindItem sıralamıyor; en yeni önce gelsin diye tarihe göre azalan (istemci sohbette ters çeviriyor).
-    mesajlar.sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
-    return { mesajlar };
+    return { mesajlar: siraliMesajlar(mesajlar) };
   } catch (e) {
-    return { hata: e instanceof Error ? e.message : String(e) };
+    const hata = `${adim}: ${e instanceof Error ? e.message : String(e)}`;
+    // Bir grup alınamasa da alınanlar kaybolmasın; kalanı sonraki çekişte gelir.
+    if (mesajlar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: hata };
+    return { hata };
   } finally {
     await o.kapat();
   }
 };
 
+/* FindItem sıralamıyor; en yeni önce gelsin diye tarihe göre azalan (istemci sohbette ters çeviriyor). */
+const siraliMesajlar = (m: EwsMesaj[]) => [...m].sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
+
 /* Önce sade NTLMv2 (MIC'siz), kimlik reddedilirse MIC'li yeni bağlantıda dener; hangisi tuttuysa o. */
-export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[] } | { hata: string }> => {
+export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string } | { hata: string }> => {
   const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postalariCek(ayar, baglan, simdi, adet, true);

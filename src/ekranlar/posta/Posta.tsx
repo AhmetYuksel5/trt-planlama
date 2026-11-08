@@ -674,8 +674,10 @@ export function Posta({ ben }: { ben: Kisi }) {
       const ozel = r.hata === "eksikKimlik" ? "bPostaCekKimlikYok" : r.hata === "kapali" ? "bPostaCekKapali" : r.hata === "eksikSunucu" ? "bPostaCekSunucuYok" : "";
       if (ozel) bildir(t(ozel as Parameters<typeof t>[0]));
       else bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
-    } else if (r.oneri) bildir(t("bPostaCekildiOneri", { n: String(r.eklenen), o: String(r.oneri) }));
-    else bildir(r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok"));
+    } else {
+      const sonuc = r.oneri ? t("bPostaCekildiOneri", { n: String(r.eklenen), o: String(r.oneri) }) : r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok");
+      bildir(r.uyari ? `${sonuc} · ${t("bPostaCekKismi")} (${r.uyari})` : sonuc);
+    }
   };
   // Kimlik kişiye özel (Ayarlar'dan girilir): parola varsa açılışta kutuyu
   // sessizce yokla; yoksa hiçbir şey yapma (zorlama ve hatırlatma yok).
