@@ -16,6 +16,8 @@ import { b64Coz, b64Yap, tip1, tip2Coz, tip3 } from "./ntlm.ts";
 
 const ALINTI = [
   /^-{2,}\s*(Original Message|Özgün İleti|Orijinal İleti|الرسالة الأصلية)\s*-{2,}/im,
+  /^-{2,}\s*(Forwarded Message|İletilen İleti|İletilmiş İleti|الرسالة المُعاد توجيهها|الرسالة المعاد توجيهها|رسالة معاد توجيهها)\s*-{2,}/im,
+  /^Begin forwarded message\s*:/im,
   /^_{10,}\s*$/m,
   /^(On|Le|Am) .+(wrote|a écrit|schrieb)\s*:\s*$/m,
   /^.+ tarihinde .+ şunu yazdı\s*:\s*$/m,
@@ -23,7 +25,7 @@ const ALINTI = [
   /^(From|Kimden|من|De|Von)\s*:.+\n(.+\n){0,3}?(Sent|Date|Gönderildi|Tarih|تاريخ الإرسال|أرسلت|التاريخ|Envoyé|Gesendet)\s*:/im,
   /^>/m,
 ];
-const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im];
+const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im, /^(Sent from )?Yahoo Mail\b/im];
 
 export const yeniMetin = (tam: string): string => {
   let m = tam.replace(/\r\n?/g, "\n");

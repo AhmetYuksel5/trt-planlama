@@ -1040,7 +1040,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Gelen posta sohbeti (`ekranlar/posta/Posta.tsx`, `#/posta`; dış muhabir ve
   onay bekleyen dışında haber merkezinin herkesi, `yetki.ts → postaGorebilir`,
   `SAYFA_IZNI.posta` `MASA`): kişinin grup kutusuna düşen postalar, eklerinden arındırılmış (yalnız ad) ve alıntı/imza
-  ayıklanmış (`eposta.ts → yeniMetin`) biçimde, konuya göre sohbet
+  ayıklanmış (`eposta.ts → yeniMetin`; kapıda `ews.ts → yeniMetin` aynı kurallar,
+  iletilen posta ayracı "Forwarded Message" ve Yahoo imzası da; ekran eski kayda
+  da yeniden uygular) biçimde, konuya göre sohbet
   iplikçiklerinde. Öneri-yanıt akışından ayrı (`Durum.postaMesajlari`,
   `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
   öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaSil, postaEtiketsizleriGruba } from "../../eylemler";
-import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, type KomutTuru } from "../../eposta";
+import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, yeniMetin, type KomutTuru } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
@@ -300,7 +300,8 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const onceki = sohbet.mesajlar[i - 1];
           const yeniGonderen = !onceki || onceki.kimden !== m.kimden || !!onceki.giden !== !!m.giden;
           const gad = gonderenAdi(v, m, ad);
-          const sade = m.giden ? m.metin : postaMetniSadelestir(m.metin, gad);
+          // Kayıttaki metin kapının o günkü kurallarıyla kesilmiş; yeni kalıplar (Yahoo'nun iletisi) eski postaya da uygulansın.
+          const sade = m.giden ? m.metin : postaMetniSadelestir(yeniMetin(m.metin), gad);
           // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
           const alinti = !m.giden && !sade.trim() ? postaAlintiMetni(m.tamMetin, gad) : "";
           const govde = sade.trim() ? sade : alinti;

@@ -369,8 +369,13 @@ export const postaKonuBasligi = (konu: string) => {
  * arayüz), Gmail ve telefon uygulamalarının kalıpları. Kesim yanlış olsa
  * da tam metin ayrıca saklanıyor; hiçbir şey kaybolmuyor.
  */
+const ILETI = /^-{2,}\s*(Forwarded Message|İletilen İleti|İletilmiş İleti|الرسالة المُعاد توجيهها|الرسالة المعاد توجيهها|رسالة معاد توجيهها)\s*-{2,}/im;
 const ALINTI = [
   /^-{2,}\s*(Original Message|Özgün İleti|Orijinal İleti|الرسالة الأصلية)\s*-{2,}/im,
+  // İletilen posta (Yahoo "----- Forwarded Message -----", Gmail "---------- Forwarded message ---------", Apple "Begin forwarded message:"):
+  // tanınmayınca ayraç ve iletenin imzası balonda kalıyordu.
+  ILETI,
+  /^Begin forwarded message\s*:/im,
   /^_{10,}\s*$/m,
   /^(On|Le|Am) .+(wrote|a écrit|schrieb)\s*:\s*$/m,
   /^.+ tarihinde .+ şunu yazdı\s*:\s*$/m,
@@ -378,7 +383,8 @@ const ALINTI = [
   /^(From|Kimden|من|De|Von)\s*:.+\n(.+\n){0,3}?(Sent|Date|Gönderildi|Tarih|تاريخ الإرسال|أرسلت|التاريخ|Envoyé|Gesendet)\s*:/im,
   /^>/m,
 ];
-const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im];
+// Yahoo uygulaması "Sent from" olmadan da yazıyor ("Yahoo Mail: Search, Organize, Conquer<bağlantı>").
+const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im, /^(Sent from )?Yahoo Mail\b/im];
 
 export const yeniMetin = (tam: string) => {
   let m = tam.replace(/\r\n?/g, "\n");
@@ -391,7 +397,7 @@ export const yeniMetin = (tam: string) => {
 
 // Alıntı bloğunun başlık satırları (atılır): From/Sent/To/Subject… ve "On … wrote:".
 const ALINTI_BASLIK =
-  /^\s*>*\s*(?:(?:From|Kimden|من|De|Von|Sent|Date|Gönderildi|Tarih|To|Kime|إلى|Cc|CC|Bcc|Subject|Konu|الموضوع|أرسلت|التاريخ|تاريخ الإرسال|Envoyé|Gesendet|Reply-To)\s*:|-{2,}\s*(?:Original Message|Özgün İleti|Orijinal İleti|الرسالة الأصلية)\s*-{2,}|_{10,}\s*$|(?:On|Le|Am) .+(?:wrote|a écrit|schrieb)\s*:\s*$|.+ tarihinde .+ şunu yazdı\s*:\s*$|في .+ كتب.*:\s*$)/i;
+  /^\s*>*\s*(?:(?:From|Kimden|من|De|Von|Sent|Date|Gönderildi|Tarih|To|Kime|إلى|Cc|CC|Bcc|Subject|Konu|الموضوع|أرسلت|التاريخ|تاريخ الإرسال|Envoyé|Gesendet|Reply-To)\s*:|-{2,}\s*(?:Original Message|Özgün İleti|Orijinal İleti|الرسالة الأصلية|Forwarded Message|İletilen İleti|İletilmiş İleti|الرسالة المُعاد توجيهها|الرسالة المعاد توجيهها|رسالة معاد توجيهها)\s*-{2,}|Begin forwarded message\s*:|_{10,}\s*$|(?:On|Le|Am) .+(?:wrote|a écrit|schrieb)\s*:\s*$|.+ tarihinde .+ şunu yazdı\s*:\s*$|في .+ كتب.*:\s*$)/i;
 
 /*
  * Yanıtın kendi yeni metni yoksa (ör. muhabir kontrol metnini mail üzerinden
