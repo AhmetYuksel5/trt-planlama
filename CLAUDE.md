@@ -1272,7 +1272,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     çağrısı" (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan):
     sıradaki çağrılar, liste tarihi, son gönderimler. Testler
     `worker/test/oto-cagri.test.ts`.
-- Takdir bildirimi (kullanıcı: plan onaylanınca kabul edilen paketin
+- PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
+  "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin
   muhabirine hazır şablonla posta; kendiliğinden gitmesin, tek tek işaretleyip
   göndereyim; `src/takdir.ts`, sayfa `nextday/Takdir.tsx`,
   `#/nextday/:id/takdir`): Next Day "Planı onayla"dan sonra (planlamacıda,
@@ -1285,7 +1286,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kişinin EWS kimliğiyle `POST /posta/gonder` (grup CC'de, kapı ekliyor),
   sırayla; demoda yalnız işaret. Şablon (konu "تكليف تقرير من {sehir} |
   {strap}", metin "sen" diliyle ama cinsiyetsiz: "مرحبًا", emir kipi yok,
-  "نرجو منك" + mastar, sonda "غرفة الأخبار ile iletişim") Ayarlar › "Takdir
+  "نرجو منك" + mastar, sonda "غرفة الأخبار ile iletişim") Ayarlar › "PKG geri
   bildirimi şablonu" (`GeriBildirimSablonlari.tsx → TakdirAyari`; konu,
   metin, CC, BCC, varsayılana dön): geri bildirim şablonlarının
   koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`), o listede görünmez, onlar

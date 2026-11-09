@@ -16,7 +16,7 @@ export { TAKDIR_SABLONU };
 
 export const VARSAYILAN_TAKDIR: GeriBildirimSablonu = {
   id: TAKDIR_SABLONU,
-  ad: "Takdir bildirimi",
+  ad: "PKG geri bildirimi",
   konu: "تكليف تقرير من {sehir} | {strap}",
   govde:
     "مرحبًا {muhabir}،\n\nنرجو منك إعداد التقرير التالي ليوم {gun}، وشكرًا على جهودك.\n\nعنوان التقرير: {strap}\nالملف: {baslik}\nالتفاصيل: {aciklama}\nالمكان: {yer}\nملاحظة: {not}\n\nنرجو منك البقاء على تواصل مع غرفة الأخبار خلال العمل على التقرير.\n\nمع التحية،\n{gonderen}\nقسم التخطيط",
