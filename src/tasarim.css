@@ -2754,7 +2754,7 @@ input[aria-invalid="true"] {
 .ay-alti-cizili { text-decoration: underline; }
 .ay-ayrac { color: var(--sonuk); }
 /* Uzun bağlantı satırı kâğıdı taşırmasın; Arapça kâğıtta öbür satırlar gibi sağda. */
-.ay-baglanti { overflow-wrap: anywhere; }
+.ay-baglanti { overflow-wrap: anywhere; text-align: left; }
 .ay-baglanti-ekle { justify-self: start; align-self: flex-start; width: auto; }
 .ay-baglanti-alani { display: flex; gap: var(--ara-2); align-items: center; }
 .ay-baglanti-alani input { flex: 1; min-width: 0; }

@@ -352,9 +352,9 @@ function AylikBelgesi({ plan, d, belgeRef }: { plan: AylikPlan; d: Durum; belgeR
                 <>
                   <p>{metin("ayBaglanti", "ar")} :</p>
                   {olayBaglantilari(o).map((b) => (
-                    // Paragraf belgenin yönünde (Word'de de sağda), yalnız adres soldan sağa.
-                    <p key={b} className="ay-baglanti">
-                      <bdi dir="ltr">{b}</bdi>
+                    // Adres Latin harfli: kullanıcı sola yaslı istedi; dir Word'de de hizayı veriyor.
+                    <p key={b} className="ay-baglanti" dir="ltr">
+                      {b}
                     </p>
                   ))}
                 </>
