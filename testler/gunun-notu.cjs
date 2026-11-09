@@ -85,6 +85,23 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   });
   await git("#/");
   ok((await satir("sessizMuhabir").count()) === 1 && (await satir("sessizMuhabir").innerText()).includes(sessiz), "çağrıya yanıt vermeyen, önerisi kabul edilen muhabir: " + sessiz);
+  // Sayım başlangıcı: tam yönetici Ayarlar'dan girer, öncesindeki kayıt sayılmaz
+  await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "yo3"));
+  await git("#/ayarlar");
+  const kart = p.locator("details.katlanir", { has: p.locator("[data-sayim-baslangici]") });
+  await kart.locator("summary").click();
+  const bugunStr = await p.evaluate(() => new Date().toLocaleDateString("sv-SE"));
+  await p.locator("[data-sayim-baslangici]").fill(bugunStr);
+  await p.waitForTimeout(300);
+  ok((await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")).sayimBaslangici)) === bugunStr, "sayım başlangıcı kayda yazıldı");
+  await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "pl1"));
+  await git("#/");
+  ok((await satir("cevapsizOneri").count()) === 0, "başlangıçtan önceki cevapsız öneriler sayılmıyor");
+  ok((await satir("sonucBekleyen").count()) === 0, "başlangıçtan önceki plandaki paket sayılmıyor");
+  ok((await satir("sessizMuhabir").count()) === 0, "kabul oranı başlangıçtan önceki önerilerden hesaplanmıyor");
+  ok((await satir("plansizFaaliyet").count()) === 1, "takvim uyarısı başlangıçtan etkilenmiyor");
+  await p.evaluate(() => { const v = JSON.parse(localStorage.getItem("trt-planlama-v24")); delete v.sayimBaslangici; localStorage.setItem("trt-planlama-v24", JSON.stringify(v)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); });
+  await git("#/");
   // Satır işin sayfasına gider
   await satir("cevapsizOneri").locator("a").click();
   await p.waitForTimeout(400);

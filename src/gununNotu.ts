@@ -1,6 +1,6 @@
 import { geciktiMi } from "./akis";
 import { oneriArsivde } from "./oneriPlanlari";
-import { gunEkle, gunFarki } from "./tarih";
+import { gunEkle, gunFarki, yerelGun } from "./tarih";
 import { gorunenFaaliyetler, olusumBaglantilari, aralikOlusumlari, etkin } from "./takvim";
 import type { Durum, Kisi, NextDayPlan } from "./veri";
 
@@ -58,7 +58,7 @@ const gelismeImzasi = (d: Pick<Durum, "gelismeler">, planId: string, pbId: strin
  * gelişmelerin metnine bakılıyor: önceki günlerin planında aynı metinler
  * duruyorsa yeni bir şey eklenmemiş.
  */
-export const durganGun = (d: Pick<Durum, "planlar" | "gelismeler">, plan: NextDayPlan, baslikId: string): number => {
+export const durganGun = (d: Pick<Durum, "planlar" | "gelismeler">, plan: NextDayPlan, baslikId: string, bas = ""): number => {
   const pb = plan.basliklar.find((x) => x.baslikId === baslikId);
   if (!pb) return 0;
   const imza = gelismeImzasi(d, plan.id, pb.id);
@@ -66,7 +66,7 @@ export const durganGun = (d: Pick<Durum, "planlar" | "gelismeler">, plan: NextDa
   for (;;) {
     const onceki = d.planlar.find((p) => p.tarih === gunEkle(plan.tarih, -gun));
     const opb = onceki?.basliklar.find((x) => x.baslikId === baslikId);
-    if (!onceki || !opb || gelismeImzasi(d, onceki.id, opb.id) !== imza) return gun;
+    if (!onceki || onceki.tarih < bas || !opb || gelismeImzasi(d, onceki.id, opb.id) !== imza) return gun;
     gun++;
   }
 };
@@ -77,7 +77,14 @@ export function gununNotu(d: Durum, ben: Kisi, b: string, an = Date.now()): Gunu
     const { liste, ...geri } = n;
     if (liste.length) notlar.push({ ...geri, sayi: liste.length, ornekler: liste.slice(0, ORNEK) });
   };
-  const acik = d.oneriler.filter((o) => !oneriArsivde(o, b));
+  /*
+   * Sayım başlangıcından önceki kayıt sayılmaz: sistem yarım kullanılırken
+   * kararı dışarıda verilip işlenmemiş öneri, sonucu işaretlenmemiş paket
+   * uyarıları ve kabul oranını yanıltıyordu. Takvim ve gecikme bugüne baktığı
+   * için etkilenmez.
+   */
+  const bas = d.sayimBaslangici ?? "";
+  const acik = d.oneriler.filter((o) => !oneriArsivde(o, b) && yerelGun(o.zaman) >= bas);
   const yarin = gunEkle(b, 1);
 
   // Günü bugün ya da yarın, karar verilmemiş: akşam toplantısından önce bakılmazsa haber kaçar.
@@ -95,7 +102,7 @@ export function gununNotu(d: Durum, ben: Kisi, b: string, an = Date.now()): Gunu
   const plan = calisilanPlan(d, b);
   if (plan) {
     const durgun = plan.basliklar
-      .map((pb) => ({ pb, gun: durganGun(d, plan, pb.baslikId) }))
+      .map((pb) => ({ pb, gun: durganGun(d, plan, pb.baslikId, bas) }))
       .filter((x) => x.gun >= DURGUN_GUN)
       .sort((x, y) => y.gun - x.gun);
     const ad = (id: string) => d.basliklar.find((h) => h.id === id)?.ad ?? "";
@@ -107,7 +114,7 @@ export function gununNotu(d: Durum, ben: Kisi, b: string, an = Date.now()): Gunu
   const sonucsuz = d.paketler.filter((p) => {
     if (p.durum !== "onaylandi" || p.isaret || p.ozelId || p.stok || !p.planId) return false;
     const g = planGunu.get(p.planId);
-    return !!g && gunFarki(g, b) >= 1;
+    return !!g && g >= bas && gunFarki(g, b) >= 1;
   });
   ekle({ tur: "sonucBekleyen", ton: "uyari", yol: "#/paketler", liste: sonucsuz.map((p) => p.baslik) });
 
@@ -128,7 +135,9 @@ export function gununNotu(d: Durum, ben: Kisi, b: string, an = Date.now()): Gunu
    */
   const cagri = d.cagrilar.filter((c) => (c.tur ?? "nextday") === "nextday" && c.tarih >= b).sort((x, y) => y.zaman.localeCompare(x.zaman))[0];
   if (cagri) {
-    const sinir = new Date(an - KABUL_GUNU * 864e5).toISOString();
+    const otuz = new Date(an - KABUL_GUNU * 864e5).toISOString();
+    const basAn = bas ? new Date(bas + "T00:00:00").toISOString() : "";
+    const sinir = basAn > otuz ? basAn : otuz;
     const yanitlayan = new Set([
       ...d.oneriler.filter((o) => o.cagriId === cagri.id || o.zaman >= cagri.zaman).map((o) => o.muhabirId),
       ...d.yanitlar.filter((y) => y.cagriId === cagri.id).map((y) => y.kisiId),

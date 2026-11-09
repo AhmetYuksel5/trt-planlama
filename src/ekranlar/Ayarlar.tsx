@@ -1,12 +1,12 @@
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
-import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Workflow } from "lucide-react";
+import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
 import { KatlanirKartlar, Kart, bildir } from "../bilesenler/Parcalar";
 import { gunAdi, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
-import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet } from "../eylemler";
+import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet, sayimBaslangiciKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri, postaGorebilir, yapabilir } from "../yetki";
 import { GeriBildirimAyarlari, TakdirAyari } from "./GeriBildirimSablonlari";
@@ -50,6 +50,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         <SesAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
         {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
+        {ben.hesapYoneticisi && <GunNotuAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <TakdirAyari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
@@ -202,6 +203,20 @@ function MuhabireOneriAyari({ ben }: { ben: Kisi }) {
           </label>
         ))}
       </div>
+    </Kart>
+  );
+}
+
+/* Günün notunun sayım başlangıcı: tam kullanıma geçilen günden önceki eksik kayıtlar uyarıları yanıltmasın. Boş bırakılırsa hepsi sayılır. */
+function GunNotuAyari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  return (
+    <Kart baslik={t("gunNotu")} ikon={<Sparkles size={18} />}>
+      <label className="alan">
+        <span>{t("gnSayimBaslangici")}</span>
+        <input type="date" value={v.sayimBaslangici ?? ""} onChange={(e) => sayimBaslangiciKaydet(ben, e.target.value) && bildir(t("bKaydedildi"))} data-sayim-baslangici />
+      </label>
     </Kart>
   );
 }

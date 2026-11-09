@@ -739,7 +739,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   onaylı paket; geciken paket; bugün ve yarın plana aktarılmamış takvim
   faaliyeti; açık Next Day çağrısına yanıt vermemiş, son 30 günde önerilerinin
   en az yarısı plana girmiş (en az 3 öneri) muhabir. Her satır sayı, ilk üç
-  örnek ve işin sayfasına bağlantı. Sonraki adımda yapay zeka bu notu okuyup
+  örnek ve işin sayfasına bağlantı. Sayım başlangıcı (kullanıcı: sistem tam
+  faal değilken bot yanlış şey öğrenir mi; Ayarlar › Günün notu, tam yönetici,
+  `Durum.sayimBaslangici`, gerçek kipte genel ayar belgesinde, `eylemler.ts →
+  sayimBaslangiciKaydet`): o günden önce girilen öneri, öncesindeki plan ve
+  paket, kabul oranındaki öneriler sayılmaz; takvim ve gecikme bugüne baktığı
+  için etkilenmez; boşsa hepsi sayılır. Sonraki adımda yapay zeka bu notu okuyup
   yorum yazacak; kurallar yine buradan. Test `testler/gunun-notu.cjs`.
 - Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
   göstermez: sayılar, birim ışıkları (gerekçesi yazılı), planlar,

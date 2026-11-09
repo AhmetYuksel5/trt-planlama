@@ -2574,6 +2574,15 @@ export const eskiOnerileriCevir = (): number => {
   return n;
 };
 
+/** Günün notunun sayım başlangıcı (tam yönetici); boş tarih kaldırır. */
+export const sayimBaslangiciKaydet = (ben: Kisi, tarih: string) => {
+  if (!ben.hesapYoneticisi) return false;
+  if (tarih && !/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return false;
+  const d = getir();
+  kaydet({ ...d, sayimBaslangici: tarih || undefined });
+  return true;
+};
+
 /** Newsdesk'in sisteme katılıp katılmadığı (tam yönetici); yarım paketler kendi yolunda kalıyor. */
 export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
   if (!ben.hesapYoneticisi) return false;

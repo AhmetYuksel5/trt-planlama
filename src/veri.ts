@@ -1606,6 +1606,13 @@ export interface Durum {
    * akışı. Gerçek kipte genel ayar belgesinde.
    */
   newsdeskDevrede?: boolean;
+  /*
+   * Günün notunun saymaya başladığı gün (tam yönetici; gerçek kipte genel
+   * ayar belgesinde). Sistem yarım kullanılırken girilen eksik kayıtlar
+   * (sonucu işaretlenmemiş paket, sisteme girilmemiş karar) uyarıları ve
+   * muhabirin kabul oranını yanıltmasın; tam kullanıma geçilen gün yazılır.
+   */
+  sayimBaslangici?: string;
   /** Geri bildirim ve e-postayla takip ayarı (gerçek kipte genel ayar belgesinde). */
   geriBildirimAyari?: GeriBildirimAyari;
   sayac: number;

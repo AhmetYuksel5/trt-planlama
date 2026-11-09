@@ -421,14 +421,16 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         const birimler = s.data()?.muhabireOneriBirimleri as Birim[] | undefined;
         const geriBildirimAyari = s.data()?.geriBildirimAyari as Durum["geriBildirimAyari"];
         const newsdeskDevrede = s.data()?.newsdeskDevrede === true || undefined;
+        const sayimBaslangici = (s.data()?.sayimBaslangici as string | undefined) || undefined;
         const gundemPaylasim = s.data()?.gundemPaylasim as Durum["gundemPaylasim"];
         const degisti =
           sayac !== d.sayac ||
           JSON.stringify(birimler) !== JSON.stringify(d.muhabireOneriBirimleri) ||
           JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
           newsdeskDevrede !== d.newsdeskDevrede ||
+          sayimBaslangici !== d.sayimBaslangici ||
           JSON.stringify(gundemPaylasim) !== JSON.stringify(d.gundemPaylasim);
-        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari, newsdeskDevrede, gundemPaylasim };
+        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim };
         sunucuGeldi(GENEL.koleksiyon, s);
         geldi(GENEL.koleksiyon, degisti);
       },

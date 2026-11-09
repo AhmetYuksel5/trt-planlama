@@ -471,6 +471,7 @@ const M = {
   sonHareketler: m("Son hareketler", "آخر الحركات", "Recent activity"),
   muhabirlerinDurumu: m("Muhabirlerin durumu", "حالة المراسلين", "Reporter status"),
   gunNotu: m("Günün notu", "ملاحظة اليوم", "Today's note"),
+  gnSayimBaslangici: m("Sayım başlangıcı", "بداية الاحتساب", "Count from"),
   gnYolunda: m("Bekleyen ya da gözden kaçan bir iş yok.", "لا توجد أعمال معلقة أو فائتة.", "Nothing pending or overlooked."),
   gnKararGunu: m("{n} önerinin günü bugün ya da yarın, karar verilmedi", "{n} مقترحات موعدها اليوم أو غدا ولم يُتخذ قرار بشأنها", "{n} proposals are due today or tomorrow with no decision"),
   gnCevapsizOneri: m("{n} öneri bir günden uzun süredir yanıt bekliyor", "{n} مقترحات تنتظر الرد منذ أكثر من يوم", "{n} proposals have waited over a day for a response"),
