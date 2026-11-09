@@ -34,7 +34,7 @@ import { temelSorumlular } from "../../gorevler";
 import { gunEkle } from "../../tarih";
 import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
-import { kayipBaslikGeriGetir, oncekiOnayla, planDurum } from "../../eylemler";
+import { kayipBaslikGeriGetir, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
 import { takdirPaketleri } from "../../takdir";
 import { git } from "../../yol";
@@ -44,8 +44,6 @@ import {
   PLAN_DURUMLARI,
   baslikBul,
   getir,
-  oncekiSayisi,
-  planBul,
   useVeri,
   type Durum,
   type Kisi,
@@ -318,7 +316,6 @@ function YeniPlan({
           {secim}
         </span>
       </header>
-      <OncekiSeridi ben={ben} plan={plan} />
       <KayipSeridi ben={ben} plan={plan} />
       <div className="yp-izgara">
         {!sutunlu && (
@@ -673,19 +670,11 @@ function PlanMenusu({
   onizle: () => void;
 }) {
   const { t } = useDil();
-  const v = useVeri();
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const a = usePlanAkisi(ben, plan);
-  // Dünden kayıt varken kartta "Bugüne al" duruyor; toplantıya o kayıtlarla gitmek isteyen buradan götürür.
-  const toplantiMenude = a.toplantiyaGoturur && oncekiSayisi(v, plan) > 0 && (icerik || operasyon);
   return (
     <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
-      {toplantiMenude && (
-        <button type="button" role="menuitem" className="acilir-satir" onClick={a.toplantiyaGotur}>
-          <Send size={16} className="yon" /> {t("toplantiyaGotur")}
-        </button>
-      )}
       <button type="button" role="menuitem" className="acilir-satir" onClick={onizle} data-arac="cikti">
         <Printer size={16} /> {t("ciktiOnizleme")}
       </button>
@@ -726,27 +715,11 @@ function PlanMenusu({
  */
 function SiradakiKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
   const { t } = useDil();
-  const v = useVeri();
   const a = usePlanAkisi(ben, plan);
-  const duzenler = planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan);
-  // Dünden gelenleri almak taslağın işi; toplantıda karar öne geçer (onay o işaretleri zaten kaldırıyor).
-  const onceki = duzenler && plan.durum === "taslak" ? oncekiSayisi(v, plan) : 0;
   let metin: ReactNode = null;
   let dugmeler: ReactNode = null;
-  if (onceki > 0) {
-    metin = (
-      <>
-        <span className="onceki-ornek" aria-hidden="true" />
-        {t(planBul(v, plan.kopyaKaynagi) ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
-      </>
-    );
-    dugmeler = (
-      <button type="button" className="dugme dugme-yumusak" onClick={() => oncekiOnayla(ben, plan.id)} data-bugune-al>
-        <Check size={16} /> {t("hepsiniBuguneAl")}
-      </button>
-    );
-  } else if (plan.durum === "taslak") {
-    metin = t("skPlanHazir");
+  // Dünden gelenler için ayrı iş yok (kullanıcı: renkli duruyorlar, yeter); taslakta sıradaki iş toplantı.
+  if (plan.durum === "taslak") {
     dugmeler = a.toplantiyaGoturur && (
       <button type="button" className="dugme dugme-yumusak" onClick={a.toplantiyaGotur}>
         <Send size={16} className="yon" /> {t("toplantiyaGotur")}
@@ -793,34 +766,6 @@ function SiradakiKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
         {dugmeler && <span className="sk-dugmeler">{dugmeler}</span>}
       </div>
     </section>
-  );
-}
-
-/* Şablondan (dünden) gelenleri bugünün taslağına alma: planlamacının güne başladığı iş, en üstte. */
-function OncekiSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
-  const { t } = useDil();
-  const v = useVeri();
-  const sablon = planBul(v, plan.kopyaKaynagi);
-  const onceki = oncekiSayisi(v, plan);
-  if (
-    onceki === 0 ||
-    !(planIcerikDuzenler(ben, plan) || planOperasyonDuzenler(ben, plan))
-  )
-    return null;
-  return (
-    <div className="onceki-seridi">
-      <button
-        className="dugme"
-        onClick={() => oncekiOnayla(ben, plan.id)}
-        data-bugune-al
-      >
-        <Check size={16} /> {t("hepsiniBuguneAl")}
-      </button>
-      <span className="onceki-sayi">
-        <span className="onceki-ornek" aria-hidden="true" />{" "}
-        {t(sablon ? "dundenGelen" : "taslaktanGelen", { n: onceki })}
-      </span>
-    </div>
   );
 }
 

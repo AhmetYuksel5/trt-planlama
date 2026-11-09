@@ -765,19 +765,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Tek satır başlık (telefonda; masaüstünde sekmede), sağda ↶ ve ⋯.
   - Altında "Sıradaki" kartı (`SiradakiKarti`): kısa durum çizgisi
     (`DurumCizgisi kisa`; Newsdesk sistemde değilken "devraldı" adımı yok) ve
-    planın o anki tek işi. Taslakta dünden kayıt varsa "Dünden gelen N kayıt ·
-    Hepsini bugüne al" (`data-bugune-al`), yoksa "Plan hazır · Toplantıya
-    götür"; toplantıda "Kararsız n PKG · m muhabire görev · Planı onayla"
+    planın o anki tek işi. Taslakta "Toplantıya götür"; toplantıda "Kararsız n PKG · m muhabire görev · Planı onayla"
     (+ Taslağa geri al); onaylıda "Kabul edilen n paket · PKG geri bildirimi"
     (+ devral). Rutin iş yumuşak düğme (`.dugme-yumusak`, mavinin açık tonu),
-    dolu mavi yalnız onayda. Önce "Hepsini bugüne al" tam genişlik mavi
-    şeritti, akış düğmeleri sayfanın dibindeydi.
+    dolu mavi yalnız onayda; akış düğmeleri önce sayfanın dibindeydi.
+    "Hepsini bugüne al" kalktı (kullanıcı: dünden gelenler renkli duruyor,
+    yeter); `.onceki` fonu düzenleyince, satırdaki "bugün de geçerli"yle ya da
+    onayla kalkar.
   - Künye ve sayılı Öneri / Takip / Takvim düğmeleri (pencerede açılır):
     Öneri "bekleyen/toplam", kırmızı yalnız karar bekleyen varken.
   - ⋯ (`PlanMenusu`, `IslemMenusu katman`): çıktı önizleme
     (`data-arac="cikti"`), belgede düzenle, öneri çağrısı, geçmiş plandan
-    aktar, onayı geri al (`data-onay-geri`), dünden kayıt varken toplantıya
-    götür, Klasik/Yeni/Sütunlu seçimi.
+    aktar, onayı geri al (`data-onay-geri`), Klasik/Yeni/Sütunlu seçimi.
   - Akış adımları tek kancada (`usePlanAkisi`): kart ve yeni görünümün durum
     sekmesi (`PlanDurumKarti`) aynı eylemi aynı soruyla çağırır.
   - Başlığa gelişme muhabir önerisinden ve takibinden de eklenir: "Gelişme ekle"nin
