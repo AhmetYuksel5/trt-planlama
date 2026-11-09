@@ -1121,6 +1121,7 @@ const M = {
   pdKisaToplanti: m("Toplantı", "الاجتماع", "Meeting"),
   pdKisaOnayli: m("Onaylı", "معتمدة", "Approved"),
   pdKisaDevralindi: m("Devredildi", "سُلِّمت", "Handed over"),
+  oyKisaOnay: m("Onay", "الاعتماد", "Approval"),
   ndSekmeOneri: m("Öneriler", "المقترحات", "Proposals"),
   ndSekmeTakip: m("Takipler", "المتابعات", "Follow-ups"),
   ndSekmeTakvim: m("Takvim", "التقويم", "Calendar"),

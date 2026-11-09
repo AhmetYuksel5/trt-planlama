@@ -1,13 +1,15 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, CalendarRange, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
+import { IslemMenusu } from "../../bilesenler/IslemMenusu";
+import { PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, HAREKET_TURU_ADI } from "../../etiketler";
+import { HAFTA_DURUM_ADI, HAREKET_TURU_ADI } from "../../etiketler";
 import {
   anaKonuKaydet,
   aylikOlayiGundemeEkle,
@@ -64,7 +66,6 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   };
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
-  const durumSirasi = HAFTA_DURUMLARI.indexOf(hafta.durum);
   // Günü geçmiş kalem artık aktarılmaz; yalnız bugün ve sonrası "bekliyor".
   const aktarimBekleyen = gundem.filter((k) => nextDayeGider(k) && !k.aktarim?.planId && k.tarih! >= bugun()).length;
 
@@ -72,87 +73,85 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
 
   return (
     <>
-      <a className="geri-bag yazdirma-gizle" href="#/haftalik">
-        <ArrowLeft size={14} className="yon" /> {t("haftalikPlanlar")}
-      </a>
-      <header className="sayfa-basi">
-        <span className="ikon-kutu sayfa-adi-tekrar">
-          <CalendarRange size={26} />
-        </span>
-        <div>
-          <h1 className="sayfa-adi-tekrar">
-            {t("haftalik")} · {aralikYaz(bas, haftaSonu(bas), dil)}
-          </h1>
-          <p>
-            <Rozet ton={HAFTA_DURUM_TONU[hafta.durum]}>{t(HAFTA_DURUM_ADI[hafta.durum])}</Rozet>{" "}
-            {t("haftaOzetSatiri", { kalem: gundem.length, bekleyen, dosya: hafta.anaKonular.length })}
-          </p>
-        </div>
-        <div className="sag-uc plan-araclari">
-          {yapabilir(ben, "cagriHazirla") && hafta.durum === "hazirlik" && (
-            <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cagri`}>
-              <Megaphone size={16} /> {t(cagri ? "haftalikCagriyiAc" : "haftalikCagri")}
-            </a>
-          )}
-          {cagri && yapabilir(ben, "cagriHazirla") && (
-            <a className="dugme dugme-ikincil" href={`#/oneriler/yanitlar/${cagri.id}`}>
-              <Inbox size={16} /> {t("gelenYanitlar")}
-            </a>
-          )}
-          {duzenler && (
-            <button type="button" className="dugme dugme-ikincil" onClick={() => setTakipler(true)} data-arac="takipler">
-              <Binoculars size={16} /> {t("mtAcikTakipler")}
+      {/* Üst kısım Next Day'in kalıbıyla (bilesenler/PlanBasi): başlık, ↶ ⋯, "Sıradaki" kartı, künye ve takipler. */}
+      <PlanBasiKalibi
+        geri={
+          <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/haftalik" title={t("haftalikPlanlar")} aria-label={t("haftalikPlanlar")}>
+            <ArrowLeft size={18} className="yon" />
+          </a>
+        }
+        baslik={`${t("mHaftalik")} · ${aralikYaz(bas, haftaSonu(bas), dil)}`}
+        uc={
+          <>
+            {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
+            <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
+              <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/cikti`} data-arac="cikti">
+                <Printer size={16} /> {t("ciktiOnizleme")}
+              </a>
+              {duzenler && (
+                <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/belge`} data-arac="belge">
+                  <FilePen size={16} /> {t("belgedeDuzenle")}
+                </a>
+              )}
+              {yapabilir(ben, "cagriHazirla") && hafta.durum === "hazirlik" && (
+                <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/cagri`} data-arac="cagri">
+                  <Megaphone size={16} /> {t(cagri ? "haftalikCagriyiAc" : "haftalikCagri")}
+                </a>
+              )}
+              {cagri && yapabilir(ben, "cagriHazirla") && (
+                <a role="menuitem" className="acilir-satir" href={`#/oneriler/yanitlar/${cagri.id}`} data-arac="yanitlar">
+                  <Inbox size={16} /> {t("gelenYanitlar")}
+                </a>
+              )}
+            </IslemMenusu>
+          </>
+        }
+        adimlar={adimlariKur(HAFTA_DURUMLARI, hafta.durum, (d) => ({ ad: t(d === "toplantida" ? "pdKisaToplanti" : HAFTA_DURUM_ADI[d]), ipucu: t(HAFTA_DURUM_ADI[d]) }))}
+        metin={
+          hafta.durum === "toplantida" && bekleyen > 0 ? (
+            t("kesinlestirmeIcinKarar", { n: bekleyen })
+          ) : hafta.durum === "toplantida" && duzenler && !planAdimiYapabilir(ben, "hfKesinlestir") ? (
+            <>
+              {t("kesinlestirmeYoneticide")} <AdimYetkilileri adim="hfKesinlestir" />
+            </>
+          ) : hafta.durum === "kesinlesti" && aktarimBekleyen > 0 ? (
+            t("aktarimBekliyor", { n: aktarimBekleyen })
+          ) : null
+        }
+        dugmeler={
+          <>
+            {hafta.durum === "hazirlik" && planAdimiYapabilir(ben, "hfToplanti") && (
+              <button type="button" className="dugme dugme-yumusak" onClick={() => durumDegistir("toplantida", "bHaftalikToplantida")}>
+                <Send size={16} className="yon" /> {t("haftalikToplantiyaGotur")}
+              </button>
+            )}
+            {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfToplanti") && (
+              <button type="button" className="dugme dugme-sade" onClick={() => durumDegistir("hazirlik", "bHazirligaAlindi")}>
+                <Undo2 size={16} /> {t("hazirligaGeriAl")}
+              </button>
+            )}
+            {hafta.durum === "toplantida" && kararVerebilir(ben, hafta) && topluKabul > 0 && (
+              <button type="button" className="dugme dugme-yumusak" onClick={() => confirm(t("kalanlarKabulOnay", { n: topluKabul })) && kalanlariKabulEt(ben, hafta.id) && bildir(t("bKalanlarKabul"))}>
+                <CheckCheck size={16} /> {t("kalanlariKabulEt", { n: topluKabul })}
+              </button>
+            )}
+            {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfKesinlestir") && (
+              <button type="button" className="dugme" disabled={bekleyen > 0} onClick={kesinlestir}>
+                <Check size={16} /> {t("kesinlestir")}
+              </button>
+            )}
+          </>
+        }
+        kunye={t("haftaOzetSatiri", { kalem: gundem.length, bekleyen, dosya: hafta.anaKonular.length })}
+        araclar={
+          duzenler && (
+            <button type="button" className="dugme dugme-ikincil" onClick={() => setTakipler(true)} data-arac="takipler" title={t("mtAcikTakipler")}>
+              <Binoculars size={16} /> {t("pbTakip")}
               {takipOnerileri(ben, v).length > 0 && <em className="dugme-sayi">{takipOnerileri(ben, v).length}</em>}
             </button>
-          )}
-          <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/cikti`}>
-            <Printer size={16} /> {t("ciktiOnizleme")}
-          </a>
-          {duzenler && (
-            <a className="dugme dugme-ikincil" href={`#/haftalik/${hafta.id}/belge`}>
-              <FilePen size={16} /> {t("belgedeDuzenle")}
-            </a>
-          )}
-          {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
-        </div>
-      </header>
-
-      <section className="kart">
-        <div className="durum-cizgisi" aria-label={t("planDurumu")}>
-          {HAFTA_DURUMLARI.map((d, i) => (
-            <span key={d} className={i < durumSirasi || hafta.durum === "kesinlesti" ? "gecti" : i === durumSirasi ? "simdi" : ""}>
-              {i > 0 && <span className="ayrac" aria-hidden="true" />}
-              <i>{i < durumSirasi || hafta.durum === "kesinlesti" ? <Check size={11} /> : i + 1}</i>
-              {t(HAFTA_DURUM_ADI[d])}
-            </span>
-          ))}
-        </div>
-        <div className="dugmeler ara-ust-2">
-          {hafta.durum === "hazirlik" && planAdimiYapabilir(ben, "hfToplanti") && (
-            <button className="dugme" onClick={() => durumDegistir("toplantida", "bHaftalikToplantida")}>
-              <Send size={16} className="yon" /> {t("haftalikToplantiyaGotur")}
-            </button>
-          )}
-          {hafta.durum === "toplantida" && kararVerebilir(ben, hafta) && topluKabul > 0 && (
-            <button className="dugme dugme-ikincil" onClick={() => confirm(t("kalanlarKabulOnay", { n: topluKabul })) && kalanlariKabulEt(ben, hafta.id) && bildir(t("bKalanlarKabul"))}>
-              <CheckCheck size={16} /> {t("kalanlariKabulEt", { n: topluKabul })}
-            </button>
-          )}
-          {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfKesinlestir") && (
-            <button className="dugme dugme-iyi" disabled={bekleyen > 0} onClick={kesinlestir}>
-              <Check size={16} /> {t("kesinlestir")}
-            </button>
-          )}
-          {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfToplanti") && (
-            <button className="dugme dugme-ikincil" onClick={() => durumDegistir("hazirlik", "bHazirligaAlindi")}>
-              <Undo2 size={16} /> {t("hazirligaGeriAl")}
-            </button>
-          )}
-        </div>
-        {hafta.durum === "toplantida" && bekleyen > 0 && <p className="bos-kucuk ara-ust">{t("kesinlestirmeIcinKarar", { n: bekleyen })}</p>}
-        {hafta.durum === "toplantida" && duzenler && !planAdimiYapabilir(ben, "hfKesinlestir") && <p className="bos-kucuk ara-ust">{t("kesinlestirmeYoneticide")} <AdimYetkilileri adim="hfKesinlestir" /></p>}
-        {hafta.durum === "kesinlesti" && aktarimBekleyen > 0 && <p className="bos-kucuk ara-ust">{t("aktarimBekliyor", { n: aktarimBekleyen })}</p>}
-      </section>
+          )
+        }
+      />
 
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (

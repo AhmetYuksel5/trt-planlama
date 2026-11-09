@@ -76,6 +76,7 @@ import {
 } from "../belge/NextDayBelge";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
+import { DurumAdimlari, PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
 import IceAktarPenceresi from "./IceAktar";
 import {
   BaslikEkleFormu,
@@ -621,37 +622,47 @@ function PlanBasi({
       {sayac}
     </button>
   );
+  const is = useSiradakiIs(ben, plan);
+  const adimlar = useNdAdimlari(plan);
   return (
-    <header className="sayfa-basi plan-basi">
-      <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/nextday" title={t("nextdayPlanlari")} aria-label={t("nextdayPlanlari")}>
-        <ArrowLeft size={18} className="yon" />
-      </a>
-      <h1 className="sayfa-adi-tekrar">
-        {t("nextday")} · {tarihYaz(plan.tarih, dil, "kisa")} {kisaGunAdi(plan.tarih, dil)}
-      </h1>
-      <span className="pb-uc">
-        {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
-        <PlanMenusu ben={ben} plan={plan} secim={secim} ac={ac} onizle={() => setOnizleme(true)} />
-      </span>
-      <SiradakiKarti ben={ben} plan={plan} />
-      <div className="pb-alt">
-        <p className="pb-kunye">
-          {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paket })}
-          {sorumlu.length > 0 && (
-            <span data-nd-sorumlu={sorumlu.join(",")}>
-              {" · "}
-              {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
-            </span>
-          )}
-        </p>
-        <nav className="pb-araclar" aria-label={t("planAraclari")}>
-          {icerik && cip("oneriler", <Lightbulb size={16} />, "oneri", "buPlanaGelenOneriler", () => ac("oneriler"), bugunun.length > 0 && sayi(bekleyen ? `${bekleyen}/${bugunun.length}` : bugunun.length, bekleyen > 0))}
-          {icerik && cip("takipler", <Binoculars size={16} />, "pbTakip", "mtAcikTakipler", () => ac("takipler"), takip > 0 && sayi(takip, true))}
-          {cip("takvim", <CalendarSearch size={16} />, "ndSekmeTakvim", "takvimdenGun", () => ac("takvim"), faaliyet > 0 && sayi(faaliyet, false))}
-        </nav>
-      </div>
+    <>
+      <PlanBasiKalibi
+        geri={
+          <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/nextday" title={t("nextdayPlanlari")} aria-label={t("nextdayPlanlari")}>
+            <ArrowLeft size={18} className="yon" />
+          </a>
+        }
+        baslik={`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`}
+        uc={
+          <>
+            {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+            <PlanMenusu ben={ben} plan={plan} secim={secim} ac={ac} onizle={() => setOnizleme(true)} />
+          </>
+        }
+        adimlar={adimlar}
+        metin={is.metin}
+        dugmeler={is.dugmeler}
+        kunye={
+          <>
+            {t("baslikPaketSayisi", { b: plan.basliklar.length, p: paket })}
+            {sorumlu.length > 0 && (
+              <span data-nd-sorumlu={sorumlu.join(",")}>
+                {" · "}
+                {t("gvBugununSorumlusu")}: {sorumlu.map((id) => ad(v.kisiler.find((k) => k.id === id))).join(", ")}
+              </span>
+            )}
+          </>
+        }
+        araclar={
+          <>
+            {icerik && cip("oneriler", <Lightbulb size={16} />, "oneri", "buPlanaGelenOneriler", () => ac("oneriler"), bugunun.length > 0 && sayi(bekleyen ? `${bekleyen}/${bugunun.length}` : bugunun.length, bekleyen > 0))}
+            {icerik && cip("takipler", <Binoculars size={16} />, "pbTakip", "mtAcikTakipler", () => ac("takipler"), takip > 0 && sayi(takip, true))}
+            {cip("takvim", <CalendarSearch size={16} />, "ndSekmeTakvim", "takvimdenGun", () => ac("takvim"), faaliyet > 0 && sayi(faaliyet, false))}
+          </>
+        }
+      />
       {onizleme && <CiktiOnizleme plan={plan} kapat={() => setOnizleme(false)} />}
-    </header>
+    </>
   );
 }
 
@@ -713,7 +724,7 @@ function PlanMenusu({
  * Önce "Hepsini bugüne al" tam genişlik mavi şeritti, sayfanın en ağır öğesiydi;
  * plan akışının düğmeleri sayfanın dibindeydi.
  */
-function SiradakiKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
+function useSiradakiIs(ben: Kisi, plan: NextDayPlan): { metin: ReactNode; dugmeler: ReactNode } {
   const { t } = useDil();
   const a = usePlanAkisi(ben, plan);
   let metin: ReactNode = null;
@@ -758,15 +769,15 @@ function SiradakiKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
       </>
     );
   }
-  return (
-    <section className="siradaki-karti" aria-label={t("pbSiradaki")}>
-      <DurumCizgisi plan={plan} kisa />
-      <div className="sk-is">
-        <span className="sk-metin">{metin}</span>
-        {dugmeler && <span className="sk-dugmeler">{dugmeler}</span>}
-      </div>
-    </section>
-  );
+  return { metin, dugmeler };
+}
+
+/* Kartın kısa adımları: Newsdesk sistemde değilken "devraldı" adımı gelmiyor, gösterilmez. */
+function useNdAdimlari(plan: NextDayPlan) {
+  const { t } = useDil();
+  const v = useVeri();
+  const sira = yalnizPlanlama(v) && plan.durum !== "devralindi" ? PLAN_DURUMLARI.filter((d) => d !== "devralindi") : PLAN_DURUMLARI;
+  return adimlariKur(sira, plan.durum, (d) => ({ ad: t(KISA_DURUM_ADI[d]), ipucu: t(PLAN_DURUM_ADI[d]) }));
 }
 
 /*
@@ -977,26 +988,9 @@ const KISA_DURUM_ADI: Record<NextDayPlan["durum"], Anahtar> = {
   devralindi: "pdKisaDevralindi",
 };
 
-/*
- * kisa: "Sıradaki" kartında kısa adlarla; Newsdesk sistemde değilken
- * "devraldı" adımı gelmiyor, gösterilmez (telefonda çizgi iki satıra kırılıyordu).
- */
-function DurumCizgisi({ plan, kisa = false }: { plan: NextDayPlan; kisa?: boolean }) {
+function DurumCizgisi({ plan }: { plan: NextDayPlan }) {
   const { t } = useDil();
-  const v = useVeri();
-  const simdi = PLAN_DURUMLARI.indexOf(plan.durum);
-  const adimlar = kisa && yalnizPlanlama(v) && plan.durum !== "devralindi" ? PLAN_DURUMLARI.filter((d) => d !== "devralindi") : PLAN_DURUMLARI;
-  return (
-    <div className="durum-cizgisi" aria-label={t("planDurumu")}>
-      {adimlar.map((d, i) => (
-        <span key={d} className={i < simdi ? "gecti" : i === simdi ? "simdi" : ""} title={kisa ? t(PLAN_DURUM_ADI[d]) : undefined}>
-          {i > 0 && <span className="ayrac" aria-hidden="true" />}
-          <i>{i < simdi ? <Check size={11} /> : i + 1}</i>
-          {t(kisa ? KISA_DURUM_ADI[d] : PLAN_DURUM_ADI[d])}
-        </span>
-      ))}
-    </div>
-  );
+  return <DurumAdimlari adimlar={adimlariKur(PLAN_DURUMLARI, plan.durum, (d) => ({ ad: t(PLAN_DURUM_ADI[d]) }))} />;
 }
 
 /* Yeni görünümün durum sekmesi: çizgi ve bütün adımlar alt alta. */

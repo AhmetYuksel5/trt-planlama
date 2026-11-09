@@ -11,7 +11,7 @@ import { AYLIK_EKIP_GOREVLERI, AYLIK_ETIKETLERI, AYLIK_SATIR_TURLERI, kisiBul, u
 import { planAdimiYapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { TakvimdenListe } from "../takvim/Planlarda";
-import { SayfaBasi } from "../ana/Planlama";
+import { PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
 
 /*
  * Aylık plan kurumun "الخطة الشهرية المتوقعة" şablonunun hiyerarşisiyle:
@@ -45,46 +45,55 @@ export function Aylik({ ben, planId }: { ben: Kisi; planId?: string }) {
 
   return (
     <>
-      <SayfaBasi ikon={<Calendar size={26} />} baslik={t("aylik")} />
-      <section className="kart ay-ust">
-        <div className="ay-ust-satir">
-          <div className="tk-donem">
-            <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => kaydir(-1)} aria-label={t("oncekiAy")} title={t("oncekiAy")}>
-              <ChevronLeft size={18} className="yon" />
-            </button>
-            <b aria-live="polite">{tarihYaz(bas, dil, "ay")}</b>
-            <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => kaydir(1)} aria-label={t("sonrakiAy")} title={t("sonrakiAy")}>
-              <ChevronRight size={18} className="yon" />
-            </button>
-            {plan && <Rozet ton={plan.durum === "onayli" ? "iyi" : "uyari"}>{t(plan.durum === "onayli" ? "ayOnayli" : "hazirlaniyor")}</Rozet>}
-          </div>
-          <div className="secim-grubu" role="tablist">
-            {(["plan", "cikti"] as const).map((g) => (
-              <button key={g} type="button" role="tab" aria-selected={gorunum === g} data-ay-gorunum={g} className={`dugme dugme-kucuk ${gorunum === g ? "" : "dugme-ikincil"}`} onClick={() => setGorunum(g)}>
-                {t(g === "plan" ? "ayPlanGorunum" : "ayCiktiGorunum")}
+      {/* Üst kısım plan ekranlarının ortak kalıbıyla (bilesenler/PlanBasi): ‹ ay ›, "Sıradaki" kartı, Plan/Çıktı. */}
+      <PlanBasiKalibi
+        geri={
+          <button type="button" className="dugme dugme-sade dugme-ikon pb-geri" onClick={() => kaydir(-1)} aria-label={t("oncekiAy")} title={t("oncekiAy")}>
+            <ChevronLeft size={18} className="yon" />
+          </button>
+        }
+        baslik={<span aria-live="polite">{t("mAylik")} · {tarihYaz(bas, dil, "ay")}</span>}
+        baslikTekrar={false}
+        uc={
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => kaydir(1)} aria-label={t("sonrakiAy")} title={t("sonrakiAy")}>
+            <ChevronRight size={18} className="yon" />
+          </button>
+        }
+        adimlar={adimlariKur(["hazirlik", "onayli"] as const, plan?.durum === "onayli" ? "onayli" : "hazirlik", (d) => ({ ad: t(d === "onayli" ? "ayOnayli" : "hazirlaniyor") }))}
+        metin={
+          plan?.durum === "hazirlik" && !onaylar && ol.length > 0 ? (
+            <>
+              {t("ayOnayYetkili")} <AdimYetkilileri adim="ayOnay" />
+            </>
+          ) : null
+        }
+        dugmeler={
+          <>
+            {plan && plan.durum === "hazirlik" && onaylar && ol.length > 0 && (
+              <button className="dugme" data-ay-onayla onClick={() => confirm(t("ayOnayOnay")) && aylikDurum(ben, plan.id, "onayli") && bildir(t("bAyOnaylandi"))}>
+                <Check size={16} /> {t("ayOnayla")}
               </button>
-            ))}
-          </div>
-        </div>
-        <div className="dugmeler ara-ust-2">
-          {plan && plan.durum === "hazirlik" && onaylar && ol.length > 0 && (
-            <button className="dugme dugme-iyi" data-ay-onayla onClick={() => confirm(t("ayOnayOnay")) && aylikDurum(ben, plan.id, "onayli") && bildir(t("bAyOnaylandi"))}>
-              <Check size={16} /> {t("ayOnayla")}
-            </button>
-          )}
-          {plan && plan.durum === "onayli" && onaylar && (
-            <button className="dugme dugme-ikincil" data-ay-geri-al onClick={() => aylikDurum(ben, plan.id, "hazirlik") && bildir(t("bAyHazirliga"))}>
-              <Undo2 size={16} /> {t("hazirligaGeriAl")}
-            </button>
-          )}
-          {gorunum === "cikti" && ol.length > 0 && <BelgeAraclari belge={belge} ay={ay} />}
-        </div>
-        {plan?.durum === "hazirlik" && !onaylar && ol.length > 0 && (
-          <p className="bos-kucuk ara-ust">
-            {t("ayOnayYetkili")} <AdimYetkilileri adim="ayOnay" />
-          </p>
-        )}
-      </section>
+            )}
+            {plan && plan.durum === "onayli" && onaylar && (
+              <button className="dugme dugme-sade" data-ay-geri-al onClick={() => aylikDurum(ben, plan.id, "hazirlik") && bildir(t("bAyHazirliga"))}>
+                <Undo2 size={16} /> {t("hazirligaGeriAl")}
+              </button>
+            )}
+          </>
+        }
+        araclar={
+          <>
+            <div className="secim-grubu" role="tablist">
+              {(["plan", "cikti"] as const).map((g) => (
+                <button key={g} type="button" role="tab" aria-selected={gorunum === g} data-ay-gorunum={g} className={`dugme dugme-kucuk ${gorunum === g ? "" : "dugme-ikincil"}`} onClick={() => setGorunum(g)}>
+                  {t(g === "plan" ? "ayPlanGorunum" : "ayCiktiGorunum")}
+                </button>
+              ))}
+            </div>
+            {gorunum === "cikti" && ol.length > 0 && <BelgeAraclari belge={belge} ay={ay} />}
+          </>
+        }
+      />
 
       {gorunum === "cikti" ? (
         ol.length ? (

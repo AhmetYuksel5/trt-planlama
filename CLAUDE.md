@@ -761,7 +761,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Çıktı, baskı ve Word tek sütunda kalır.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
   bölümlerle (1–6) başlar. Üst kısım klasik görünümde `PlanBasi` (kullanıcı:
-  "üstte gereksiz kalabalık"; üç tasarım önerisinin birleşimi):
+  "üstte gereksiz kalabalık"; üç tasarım önerisinin birleşimi). Kalıp ortak:
+  `bilesenler/PlanBasi.tsx → PlanBasiKalibi` (başlık, `uc`, `adimlar`
+  [`adimlariKur`, `DurumAdimlari`], `metin`, `dugmeler`, `kunye`, `araclar`);
+  Weekly, Aylık ve Özel yayın da onu kullanır (aşağıda):
   - Tek satır başlık (telefonda; masaüstünde sekmede), sağda ↶ ve ⋯.
   - Altında "Sıradaki" kartı (`SiradakiKarti`): kısa durum çizgisi
     (`DurumCizgisi kisa`; Newsdesk sistemde değilken "devraldı" adımı yok) ve
@@ -1518,6 +1521,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kalıba girmez.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
+  - Üst kısım `PlanBasiKalibi` (Next Day'deki gibi): "Weekly · aralık", ↶ ve
+    ⋯ (çıktı, belge, haftalık çağrı, gelen yanıtlar); "Sıradaki" kartında
+    hazırlıkta "Haftalık toplantıya götür", toplantıda "Hazırlığa geri al",
+    "Kalanları kabul et" ve dolu "Planı kesinleştir" (karar bekleyen varken
+    pasif, sayısı kartta), kesinleşmişte bekleyen aktarım; künye ve Takip.
+    Önce büyük ikon, ortalı düğmeler ve ayrı durum kartı vardı.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
     başlıkla geçer, havuz ikiye bölünmez.
   - Dosya seçimleri (kalem formu, "Gündeme ekle", ana dosya) her hafta boş
@@ -1607,7 +1616,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     المقترحة / مدة التغطية, الفريق المعتمد للتغطية, ayraç; sonda görevlendirme
     tablosu. Kopyala, Word, yazdır.
   - Onay Plan yetkilerinde (`ayOnay`, varsayılan Planlama yöneticisi); onaylı
-    plan düzenlenmez, "Hazırlığa al" açar.
+    plan düzenlenmez, "Hazırlığa al" açar. Üst kısım `PlanBasiKalibi`: ‹ "Aylık ·
+    ay" ›, "Sıradaki" kartında Hazırlanıyor/Onaylandı ve onay düğmesi
+    (`data-ay-onayla`, `data-ay-geri-al`), altında Plan/Çıktı ve belge araçları.
   - Weekly'de "Aylık plandan" bölümü (`haftayaDusenler`): haftayla kesişen
     olaylar, "Gündeme ekle" karar bekleyen kalem açar (`aylikOlayiGundemeEkle`,
     `HaftalikKalem.aylikOlayId`); toplantıda yeniden değerlendirilir.
@@ -1758,6 +1769,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `nafize*`, `konuk*`): Planlama'nın denetiminde hazırlanır, onayı Plan
   yetkileri'nde (`ozOnay`, varsayılan Planlama yöneticisi). Künye: başlık,
   gün (ya da `bitis`), genel planın Arapça paragrafı (`aciklama`).
+  - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
+    (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında aşamalar
+    (Planlama, Onay, Uygulama, Son kontrol, Yayına hazır) ve işaretlenecek
+    sıradaki aşama (`data-ozel-siradaki`; dolu yalnız onayda, aynı onay
+    sorusuyla); ayrıntılı kontrol listesi ve notlar Genel bakış'ta.
   - Künyede sayı kutuları (gün, nafize, paket, talep) ve ilerleme
     (`ozelOzeti`); altında sekmeler (`OZEL_SEKMELERI`): Genel bakış (aşamalar,
     yapılacaklar), Günlük program, Nafizeler, İçerik (paketler, talepler),
@@ -2097,6 +2113,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - "Menü" (`MobilMenu`) kişiyi, aynı renkli kutuları, bütün sayfaları ve
     dili bir panelde topluyor. Workspace telefonda yok (bağlantıyla açılan
     çalışır); kısayol düzenleme masaüstünde
+- Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
+  işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
+  kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
+  metni dar şeride sıkıştırıyordu).
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

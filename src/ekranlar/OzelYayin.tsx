@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
@@ -55,6 +55,7 @@ import {
   siradaki,
   yapilacaklar,
   OZEL_ASAMA_ADI,
+  OZEL_ASAMALARI,
   OZEL_KALEM_TURLERI,
   OZEL_PAKET_ASAMALARI,
   type OzelKalemTuru,
@@ -90,6 +91,8 @@ import {
 import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
 import { ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
+import { IslemMenusu } from "../bilesenler/IslemMenusu";
+import { PlanBasiKalibi, adimlariKur } from "../bilesenler/PlanBasi";
 import { BicimSecici, FormAlt, MuhabirSecici } from "./nextday/Formlar";
 import { PAKET_ASAMA_ADI } from "../bilesenler/OzelGorevler";
 import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
@@ -579,8 +582,78 @@ const yayinGunleri = (o: OzelYayin): string[] => {
   return [...gunler].sort();
 };
 
-export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
+/*
+ * Özel yayının üst kısmı plan ekranlarının ortak kalıbıyla (bilesenler/PlanBasi):
+ * yayının adı, ⋯ (çıktı, künyeyi düzenle), "Sıradaki" kartı: aşamalar ve
+ * işaretlenecek sıradaki aşama. Dolu düğme yalnız onayda; ayrıntılı kontrol
+ * listesi ve notlar Genel bakış'ta (PlanAsamalari).
+ */
+function OzelBasi({ ben, o, duzen, kunyeAc }: { ben: Kisi; o: OzelYayin; duzen: boolean; kunyeAc: () => void }) {
   const { t, dil } = useDil();
+  const v = useVeri();
+  const durum = o.durum ?? "hazirlik";
+  const sonraki = siradaki(OZEL_SIRASI, durum) as Exclude<OzelDurum, "hazirlik"> | undefined;
+  const isaretler = !!sonraki && ozelAsamaDegisebilir(ben, o, sonraki, true);
+  const onaylayan = planAdimiYapabilir(ben, "ozOnay");
+  const bekleyen = yapilacaklar(o, v).length;
+  const isaretle = () => {
+    if (!sonraki) return;
+    // Planın onayı onay bekleyen nafizeleri ve paket önerilerini de onaylıyor; soru kaçını söylüyor.
+    if (sonraki === "onayli") {
+      const n = (o.nafizeler ?? []).filter((x) => x.durum === "planlandi").length;
+      const p = (o.paketOnerileri ?? []).filter((x) => x.durum === "oneri").length;
+      if ((n || p) && !confirm(t("ozelOnaySayili", { n, p }))) return;
+    }
+    if (ozelAsamaIsaretle(ben, o.id, sonraki, true)) bildir(t(sonraki === "onayli" ? "bPlanOnaylandi" : "bKaydedildi"));
+  };
+  const asama = ozelAsamasi(o);
+  const asamalar = [...OZEL_ASAMALARI, "tamam"] as const;
+  return (
+    <PlanBasiKalibi
+      geri={
+        <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/ozel" title={t("ozel")} aria-label={t("ozel")}>
+          <ArrowLeft size={18} className="yon" />
+        </a>
+      }
+      baslik={<Icerik>{o.ad}</Icerik>}
+      baslikTekrar={false}
+      uc={
+        <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
+          <a role="menuitem" className="acilir-satir" href={`#/ozel/${o.id}/cikti`} data-ozel-cikti>
+            <FileText size={16} /> {t("cikti")}
+          </a>
+          {duzen && (
+            <button type="button" role="menuitem" className="acilir-satir" onClick={kunyeAc} data-ozel-kunye-duzenle>
+              <Pencil size={16} /> {t("duzenle")}
+            </button>
+          )}
+        </IslemMenusu>
+      }
+      adimlar={adimlariKur(asamalar, asama, (a) => ({ ad: t(a === "onay" ? "oyKisaOnay" : OZEL_ASAMA_ADI[a]), ipucu: t(OZEL_ASAMA_ADI[a]) }))}
+      metin={
+        !onaylayan && !ozelOnayli(o) ? (
+          <>
+            {t("oyOnaylayan")} <AdimYetkilileri adim="ozOnay" />
+          </>
+        ) : ozelOnayli(o) && bekleyen > 0 ? (
+          t("oyBekleyenIs", { n: bekleyen })
+        ) : null
+      }
+      dugmeler={
+        isaretler &&
+        sonraki && (
+          <button type="button" className={`dugme${sonraki === "onayli" ? "" : " dugme-yumusak"}`} onClick={isaretle} data-ozel-siradaki={sonraki}>
+            <CheckCircle size={16} /> {t(PLAN_ADIM_ADI[sonraki])}
+          </button>
+        )
+      }
+      kunye={yayinAraligi(o, dil)}
+    />
+  );
+}
+
+export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
+  const { t } = useDil();
   const v = useVeri();
   const [kunye, setKunye] = useState(false);
   const [sekme, setSekme] = useState<OzelSekme>("genel");
@@ -596,23 +669,8 @@ export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
   ];
   return (
     <div className="ozel-sayfa" data-ozel-sayfa={o.id}>
-      <SayfaBasi ikon={<Tv size={26} />} baslik={t("ozel")} />
+      <OzelBasi ben={ben} o={o} duzen={duzen} kunyeAc={() => setKunye(true)} />
       <section className="kart ozel-kunye">
-        <div className="ozel-karti-ust">
-          <h2>
-            <Icerik>{o.ad}</Icerik>
-          </h2>
-          <OzelDurumRozeti o={o} />
-          <a className="dugme dugme-ikincil dugme-kucuk" href={`#/ozel/${o.id}/cikti`} data-ozel-cikti>
-            <FileText size={15} /> {t("cikti")}
-          </a>
-          {duzen && (
-            <button className="dugme dugme-sade dugme-ikon" onClick={() => setKunye(true)} title={t("duzenle")} aria-label={t("duzenle")} data-ozel-kunye-duzenle>
-              <Pencil size={15} />
-            </button>
-          )}
-        </div>
-        <p className="sonuk-yazi">{yayinAraligi(o, dil)}</p>
         <div className="ozel-sayilar">
           {sayilar.map(([k, n]) => (
             <div key={k} className="ozel-sayi" data-ozel-sayi={k}>

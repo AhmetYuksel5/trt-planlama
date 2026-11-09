@@ -1643,6 +1643,18 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .akis-kutulari { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .baslik-govde { grid-template-columns: minmax(0, 1fr); }
 }
+@media (max-width: 760px) {
+  /*
+   * Telefonda kayıtta (gelişme, paket, canlı…) işlem simgeleri metnin üstünde
+   * yatay satır, metin bütün genişlikte (kullanıcı: simgeler yan sütunda
+   * metni dar bir şeride sıkıştırıyordu). İç içe kutuların kenar boşluğu dar.
+   */
+  .baslik-govde { padding: var(--ara-2); gap: var(--ara-3); }
+  .alt-alan { padding: var(--ara-2); }
+  .kayit { padding: var(--ara-2); }
+  .kayit:not(.oneri-satiri) > .kayit-bas { flex-direction: column; gap: 2px; }
+  .kayit:not(.oneri-satiri) > .kayit-bas > .islemler { order: -1; align-self: stretch; justify-content: flex-end; flex-wrap: wrap; }
+}
 @media (max-width: 960px) {
   .uygulama, [dir="rtl"] .uygulama { grid-template-columns: minmax(0, 1fr); background: var(--zemin); }
   .menu {
@@ -2063,7 +2075,7 @@ html.gomulu body { background: var(--zemin); }
   gap: var(--ara-2) var(--ara-3); align-items: center; margin-block-end: var(--ara-4);
 }
 .plan-basi .pb-geri { grid-area: geri; width: 40px; height: 40px; color: var(--murekkep); }
-.plan-basi h1 { grid-area: baslik; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-basi h1 { grid-area: baslik; margin: 0; font-size: var(--punto-buyuk); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plan-basi .pb-uc { grid-area: uc; display: flex; gap: var(--ara-2); align-items: center; }
 .plan-basi .pb-uc .dugme-ikon { width: 40px; height: 40px; }
 .siradaki-karti {
@@ -2083,9 +2095,8 @@ html.gomulu body { background: var(--zemin); }
 .pb-alt { grid-area: alt; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2) var(--ara-3); min-width: 0; }
 .pb-kunye { margin: 0; flex: 1 1 100%; color: var(--sonuk); font-size: var(--punto-kucuk); }
 .pb-araclar { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
-/* Telefonda üç düğme tek satıra sığsın (Takvim alt satıra düşüyordu). */
+/* Telefonda Next Day'in üç düğmesi tek satıra sığsın (Takvim alt satıra düşüyordu); satır yine kırılabilir, Aylık'ın çıktı araçları taşmasın. */
 @media (max-width: 760px) {
-  .pb-araclar { flex-wrap: nowrap; }
   .pb-araclar .dugme { padding: 0 10px; gap: 6px; }
 }
 .dugme-sayi.sonuk { background: var(--yuzey-3); color: var(--sonuk); }
@@ -2096,6 +2107,8 @@ html.gomulu body { background: var(--zemin); }
 .plan-menusu-gorunum .nd-gorunum { margin: 0; justify-self: stretch; }
 @media (min-width: 761px) {
   .sayfa-basi.plan-basi { grid-template-areas: "geri sira uc" "alt alt alt"; }
+  /* Başlığı sekmede yazmayan planlar (Aylık'ın ayı, özel yayının adı): başlık masaüstünde de kendi satırında. */
+  .sayfa-basi.plan-basi:has(> .pb-baslik-hep) { grid-template-areas: "geri baslik uc" "sira sira sira" "alt alt alt"; }
   .siradaki-karti { display: flex; align-items: center; gap: var(--ara-4); }
   .siradaki-karti .sk-is { flex: 1; }
   .pb-kunye { flex: 0 1 auto; }
