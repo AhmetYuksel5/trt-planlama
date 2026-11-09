@@ -727,6 +727,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Yeni kart da böyle eklenir: birim dosyasındaki `*_ALANLARI` listesine.
   Katalog çizimde kurulur; alan dosyaları `Calisma.tsx`'i içe aktardığı
   için açılışta okunursa döngüde tanımsız kalır.
+- Günün notu (kullanıcı: sitenin işleyişinden öğrenip öneri yapan asistan
+  istedi; ilk adım yapay zekasız, ücretsiz katman): Planlama ana sayfasının
+  ilk alanı (`plGunNotu`, `Planlama.tsx → GununNotu`; kayıtlı düzeni olan
+  "Sayfayı düzenle"den ekler). Kurallar `gununNotu.ts`, saklanmaz: günü bugün
+  ya da yarın olup karar verilmemiş öneri; bir günden (`CEVAPSIZ_SAAT`) uzun
+  yanıt bekleyen öneri (öncekinde sayılan tekrar edilmez); çalışılan planda
+  (yarınınki, yoksa bugününki) en az `DURGUN_GUN` gündür aynı gelişmelerle
+  duran başlık (`durganGun`: "devir" işareti "bugün de geçerli"yle kalktığı
+  için gelişme metinleri karşılaştırılır); günü geçmiş, sonucu bildirilmemiş
+  onaylı paket; geciken paket; bugün ve yarın plana aktarılmamış takvim
+  faaliyeti; açık Next Day çağrısına yanıt vermemiş, son 30 günde önerilerinin
+  en az yarısı plana girmiş (en az 3 öneri) muhabir. Her satır sayı, ilk üç
+  örnek ve işin sayfasına bağlantı. Sonraki adımda yapay zeka bu notu okuyup
+  yorum yazacak; kurallar yine buradan. Test `testler/gunun-notu.cjs`.
 - Yönetici paneli (`ekranlar/YoneticiPaneli.tsx`) iş akışı ayrıntısı
   göstermez: sayılar, birim ışıkları (gerekçesi yazılı), planlar,
   talimatlar; ayrıntı için birimin kendi ekranına iner. "Dikkat

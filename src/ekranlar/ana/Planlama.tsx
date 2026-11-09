@@ -18,6 +18,7 @@ import {
   Network,
   Users,
   Package,
+  Sparkles,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { geciktiMi, paketSahibi } from "../../akis";
@@ -34,6 +35,7 @@ import { oneriArsivde } from "../../oneriPlanlari";
 import { muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
 import { YaklasanFaaliyetlerAlani } from "../takvim/Planlarda";
 import { CalismaAlani, type Alan } from "./Calisma";
+import { gununNotu, type NotTuru } from "../../gununNotu";
 
 /**
  * Planlama Birimi ana sayfası (rapor Şekil 4).
@@ -129,6 +131,7 @@ function PlanlamaSayaclari() {
 /* Planlama'nın çalışma alanları; Next Day'i görebilen her masa ekleyebilir. */
 const veriyle = (Bilesen: (p: { d: Durum }) => ReactNode) => () => <Bilesen d={useVeri()} />;
 export const PLANLAMA_ALANLARI: Alan[] = [
+  { id: "plGunNotu", ad: "gunNotu", grup: "planlama", sayfa: "nextday", Bilesen: ({ ben }) => <GununNotu ben={ben} /> },
   { id: "plSayac", ad: "alOzetSayilar", genis: true, grup: "planlama", sayfa: "nextday", Bilesen: () => <PlanlamaSayaclari /> },
   { id: "plHafta", ad: "buHaftaninPlani", genis: true, grup: "planlama", sayfa: "haftalik", Bilesen: veriyle(HaftaKarti) },
   { id: "plTakvim", ad: "bugununTakvimi", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(BugununTakvimi) },
@@ -142,6 +145,51 @@ export const PLANLAMA_ALANLARI: Alan[] = [
   { id: "plKoordinasyon", ad: "koordinasyon", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(Koordinasyon) },
   { id: "plDosyalar", ad: "onemliDosyalar", grup: "planlama", sayfa: "nextday", Bilesen: veriyle(OnemliDosyalar) },
 ];
+
+const NOT_METNI: Record<NotTuru, Anahtar> = {
+  kararGunu: "gnKararGunu",
+  cevapsizOneri: "gnCevapsizOneri",
+  durganBaslik: "gnDurganBaslik",
+  sonucBekleyen: "gnSonucBekleyen",
+  gecikenPaket: "gnGecikenPaket",
+  plansizFaaliyet: "gnPlansizFaaliyet",
+  sessizMuhabir: "gnSessizMuhabir",
+};
+const NOT_ROZETI = { kotu: "kotu", uyari: "uyari", bilgi: "vurgu" } as const;
+
+/* Günün notu: kayıttan kurallarla çıkan bekleyen ve gözden kaçan işler (gununNotu.ts); her satır işin sayfasına gider. */
+function GununNotu({ ben }: { ben: Kisi }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const notlar = gununNotu(v, ben, bugun());
+  return (
+    <Kart baslik={t("gunNotu")} ikon={<Sparkles size={18} />}>
+      {notlar.length === 0 ? (
+        <Bos kucuk metin={t("gnYolunda")} />
+      ) : (
+        <ul className="liste gun-notu">
+          {notlar.map((n) => (
+            <li key={n.tur} data-gun-notu={n.tur}>
+              <div className="ad">
+                <a href={n.yol}>{t(NOT_METNI[n.tur], { n: n.sayi, g: n.gun ?? 0 })}</a>
+                <small className="gun-notu-ornek">
+                  {n.ornekler.map((o, i) => (
+                    <span key={o + i}>
+                      {i > 0 && " · "}
+                      <Icerik>{n.kisiler ? ad(v.kisiler.find((k) => k.id === o)) : o}</Icerik>
+                    </span>
+                  ))}
+                  {n.sayi > n.ornekler.length && ` +${n.sayi - n.ornekler.length}`}
+                </small>
+              </div>
+              <Rozet ton={NOT_ROZETI[n.ton]}>{n.sayi}</Rozet>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Kart>
+  );
+}
 
 /* Prodüsörün bugünkü görevleri (iş taksiminden) ve açık işleri; iş buradan bitirilebiliyor. */
 function BugunkuGorevlerim({ ben }: { ben: Kisi }) {

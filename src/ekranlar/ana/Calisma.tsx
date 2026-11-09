@@ -48,7 +48,7 @@ export interface Alan {
  * katalogda. Plan kısayolları alan değil, üst çubukta.
  */
 export const VARSAYILAN: Record<Birim | "panel", string[]> = {
-  planlama: ["plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
+  planlama: ["plGunNotu", "plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
   // Muhabirin ana sayfası çalışma alanı değil, Önerilerim (ana/Muhabir.tsx).
   muhabir: [],
   newsdesk: ["genIslerim", "ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
