@@ -130,12 +130,19 @@ async function baslat(klasor) {
     kart: (ust, baslik, alt) => p.evaluate(([a, b, c]) => window.__egt.kart(a, b, c), [ust, baslik, alt]),
     // Parmak yerine fare: hedefe yavaşça gidip dokunur (halka pointerdown'da çizilir).
     async dokun(hedef, sonra = 0.6) {
-      await hedef.scrollIntoViewIfNeeded();
+      await v.goster(hedef);
       const k = await hedef.boundingBox();
       await p.mouse.move(k.x + k.width / 2, k.y + k.height / 2, { steps: 14 });
       await bekle(0.25);
       await hedef.click();
       await bekle(sonra);
+    },
+    // Hedef üst ve alt çubukların arasında değilse yumuşakça ortaya kaydırır (ani atlama izleyeni şaşırtıyor).
+    async goster(hedef) {
+      const k = await hedef.boundingBox();
+      if (k && k.y > 70 && k.y + k.height < BOY - 100) return;
+      await hedef.evaluate((e) => e.scrollIntoView({ behavior: "smooth", block: "center" }));
+      await bekle(0.9);
     },
     async kaydir(y) {
       await p.evaluate((yy) => window.scrollTo({ top: yy, behavior: "smooth" }), y);
