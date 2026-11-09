@@ -1977,7 +1977,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`GELECEK`: سيعقد، من المقرر، المقبل، قبيل، will, to be held, ahead of, "to
     + fiil" manşet kalıbı…; `ileriyeBakar`). Kullanıcı ilk sürümde listenin
     alakasız 2027 tarihleriyle dolduğunu gösterdi: geçmiş seçimi yorumlayan
-    haberlerdeki "27 Ekim" ertesi yıla atılıyordu. Bugünden önceki ve
+    haberlerdeki "27 Ekim" ertesi yıla atılıyordu. Sonra liste bugün tarihli
+    haberlerle doldu: özetin başındaki yayın tarihi ("Nov 9, 2026 —") olayın
+    günü sanılıyordu; haberin kendi günü ve bugün aday olmaz, yarından sonrası
+    olur. Bugünden önceki ve
     `UFUK_GUNU` 180 günden ileri tarih alınmaz. Aday bulan kuralın sürümünü
     taşır (`KURAL_SURUMU`); eski sürümün karar bekleyen adayı listede
     görünmez, ilk taramada kayıttan atılır (`adayTemizligi`). Aynı gün aynı olayı veren haberler tek aday

@@ -34,8 +34,10 @@ export interface TakvimAdayi {
  * 2: ilk sürüm geçmiş tarihi ("27 Ekim", Kasım'daki haberde) ertesi yıla
  * atıyordu, "seçim" geçen her siyasi yorum aday oluyordu; liste alakasız
  * 2027 tarihleriyle doldu.
+ * 3: haber özetinin başındaki yayın tarihi ("Nov 9, 2026 —") olayın günü
+ * sanılıyordu; liste bugünün tarihli alakasız haberleriyle doldu.
  */
-export const KURAL_SURUMU = 2;
+export const KURAL_SURUMU = 3;
 
 /* Olay sözcükleri ve türü; sıra önemli: "قمة" de "اجتماع" de geçen haber zirve. Sözcük yoksa tarih tek başına aday yapmaz. */
 const OLAY_SOZLERI: [FaaliyetTuru, string[]][] = [
@@ -162,7 +164,8 @@ export function haberAdaylari(haberler: Haber[], bugun: string): Omit<TakvimAday
     const haberGunu = iso(new Date(h.zaman));
     const i = imza(h.baslik);
     for (const tarih of tarihleriBul(metin, haberGunu)) {
-      if (tarih < bugun || gunFarki(bugun, tarih) > UFUK_GUNU) continue;
+      // Haberin kendi günü (özetin başındaki yayın tarihi) ve bugün olay değil: takvime bugün eklenecek iş yok.
+      if (tarih <= bugun || tarih <= haberGunu || gunFarki(bugun, tarih) > UFUK_GUNU) continue;
       const var_ = adaylar.find((a) => a.tarih === tarih && benzer(a.imza, i));
       if (var_) {
         var_.kaynaklar.add(h.kaynak);

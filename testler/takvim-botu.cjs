@@ -21,6 +21,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const adaylar = v0.takvimAdaylari ?? [];
   ok(adaylar.length === 3, "örnek akıştan üç aday (aynı zirveyi veren iki haber tek aday, geçmiş seçimi yorumlayan haber değil): " + adaylar.length);
   ok(!adaylar.some((a) => a.tur === "secim"), "geçmiş tarihli seçim haberi ertesi yıla atılıp aday olmadı");
+  const bugunStr = await p.evaluate(() => new Date().toLocaleDateString("sv-SE"));
+  ok(!adaylar.some((a) => a.tarih <= bugunStr), "özetteki yayın tarihi (bugün) aday olmadı");
   const zirve = adaylar.find((a) => a.tur === "zirve");
   ok(zirve && zirve.haberSayisi === 2, "zirve iki haberden");
   ok(adaylar.some((a) => a.tur === "ziyaret") && adaylar.some((a) => a.tur === "parlamento"), "ziyaret (yarın) ve meclis (İngilizce tarih) bulundu");
@@ -59,7 +61,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => {
     const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
     const d = new Date(); d.setFullYear(d.getFullYear() + 1);
-    v.takvimAdaylari.push({ id: "ta-eski", baslik: "Inside the election probe", tarih: d.toLocaleDateString("sv-SE"), tur: "secim", kaynak: "K", baglanti: "https://ornek.test/eski", haberSayisi: 1, bulundu: new Date().toISOString(), durum: "yeni" });
+    v.takvimAdaylari.push({ id: "ta-eski", kural: 2, baslik: "Inside the election probe", tarih: d.toLocaleDateString("sv-SE"), tur: "secim", kaynak: "K", baglanti: "https://ornek.test/eski", haberSayisi: 1, bulundu: new Date().toISOString(), durum: "yeni" });
     localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
     localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
   });

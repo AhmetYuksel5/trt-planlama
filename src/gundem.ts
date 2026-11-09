@@ -1974,6 +1974,8 @@ export const demoHaberleri = (simdi: number): Haber[] => {
     // Takvim botu için ileri tarihli olaylar (takvimBotu.ts): ay adıyla tarih, "غدا", İngilizce tarih.
     h(`قمة خليجية طارئة في الرياض يوم ${ileri(4, "ar")}`, 3, "Örnek A", "من المقرر أن يشارك قادة دول مجلس التعاون"),
     h(`تعقد القمة الخليجية الطارئة في الرياض ${ileri(4, "ar")} لبحث الأوضاع الإقليمية`, 5, "Örnek B"),
+    // Tuzak: özetin başındaki yayın tarihi olayın günü sanılmamalı.
+    h("Leaders to attend climate summit in Baku", 3, "Örnek C", `${ileri(0, "en")}, ${new Date(simdi).getFullYear()} - delegations arrive for talks`),
     // Tuzak: geçmiş seçimi yorumlayan haber; tarihi ertesi yıla atılıp aday olmamalı.
     h(`قراءة في نتائج الانتخابات التي جرت في ${ileri(-12, "ar")}`, 4, "Örnek D"),
     h("وزير الخارجية التركي يزور بغداد غدا لبحث ملف المياه", 2, "Örnek E"),
