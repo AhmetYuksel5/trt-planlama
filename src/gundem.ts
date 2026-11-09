@@ -1972,8 +1972,10 @@ export const demoHaberleri = (simdi: number): Haber[] => {
     // Tuzak: "مشاركة" Machar, "الرياضة" Riyad, "حلبة" Halep sayılmamalı (Arapça sözcük sınırı).
     h("مشاركة واسعة في حلبة السباق ضمن مهرجان الرياضة", 4, "Örnek E"),
     // Takvim botu için ileri tarihli olaylar (takvimBotu.ts): ay adıyla tarih, "غدا", İngilizce tarih.
-    h(`قمة خليجية طارئة في الرياض يوم ${ileri(4, "ar")}`, 3, "Örnek A", "بمشاركة قادة دول مجلس التعاون"),
-    h(`القمة الخليجية الطارئة في الرياض ${ileri(4, "ar")} لبحث الأوضاع الإقليمية`, 5, "Örnek B"),
+    h(`قمة خليجية طارئة في الرياض يوم ${ileri(4, "ar")}`, 3, "Örnek A", "من المقرر أن يشارك قادة دول مجلس التعاون"),
+    h(`تعقد القمة الخليجية الطارئة في الرياض ${ileri(4, "ar")} لبحث الأوضاع الإقليمية`, 5, "Örnek B"),
+    // Tuzak: geçmiş seçimi yorumlayan haber; tarihi ertesi yıla atılıp aday olmamalı.
+    h(`قراءة في نتائج الانتخابات التي جرت في ${ileri(-12, "ar")}`, 4, "Örnek D"),
     h("وزير الخارجية التركي يزور بغداد غدا لبحث ملف المياه", 2, "Örnek E"),
     h(`Iraqi parliament to convene on ${ileri(9, "en")} to vote on the budget`, 6, "Örnek C"),
   ];

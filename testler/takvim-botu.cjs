@@ -19,7 +19,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/takvim");
   const v0 = await veri();
   const adaylar = v0.takvimAdaylari ?? [];
-  ok(adaylar.length === 3, "örnek akıştan üç aday (aynı zirveyi veren iki haber tek aday): " + adaylar.length);
+  ok(adaylar.length === 3, "örnek akıştan üç aday (aynı zirveyi veren iki haber tek aday, geçmiş seçimi yorumlayan haber değil): " + adaylar.length);
+  ok(!adaylar.some((a) => a.tur === "secim"), "geçmiş tarihli seçim haberi ertesi yıla atılıp aday olmadı");
   const zirve = adaylar.find((a) => a.tur === "zirve");
   ok(zirve && zirve.haberSayisi === 2, "zirve iki haberden");
   ok(adaylar.some((a) => a.tur === "ziyaret") && adaylar.some((a) => a.tur === "parlamento"), "ziyaret (yarın) ve meclis (İngilizce tarih) bulundu");
@@ -54,6 +55,21 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const v2 = await veri();
   ok(v2.takvimAdaylari.length === 3, "gündem açılınca aday çoğalmadı: " + v2.takvimAdaylari.length);
   ok(v2.takvimAdaylari.find((a) => a.id === ziyaret.id).durum === "ilgisiz", "ilgisiz denen geri gelmedi");
+  // Eski kuralın bekleyen adayı (geçmiş tarihi ertesi yıla atan ilk sürüm) listeden düşer
+  await p.evaluate(() => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    v.takvimAdaylari.push({ id: "ta-eski", baslik: "Inside the election probe", tarih: d.toLocaleDateString("sv-SE"), tur: "secim", kaynak: "K", baglanti: "https://ornek.test/eski", haberSayisi: 1, bulundu: new Date().toISOString(), durum: "yeni" });
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  });
+  await oturum("pl1");
+  await git("#/takvim");
+  ok((await p.locator("[data-tb-ac]").innerText()).includes("1"), "eski kuralın adayı listede görünmüyor");
+  await oturum("yo3");
+  await git("#/gundem/akis");
+  await p.waitForTimeout(500);
+  ok(!(await veri()).takvimAdaylari.some((a) => a.id === "ta-eski"), "gündem taranınca eski kuralın adayı kayıttan atıldı");
   // Muhabir düğmeyi görmez
   const mu = v2.kisiler.find((k) => k.birim === "muhabir" && !k.pasif);
   await oturum(mu.id);

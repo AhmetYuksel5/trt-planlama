@@ -1970,10 +1970,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tarih geçenler aday olur (`eylemler.ts → takvimAdaylariniTopla`,
     `Durum.takvimAdaylari`). Tarih okuyucu `tarihleriBul`: ay adı + gün
     (Mısır/Körfez, Levant ve İngilizce adlar, Arapça rakam; yıl yoksa haberin
-    yılı, bir haftadan çok gerideyse ertesi yıl), "غدا/tomorrow", "بعد غد",
-    "الأحد المقبل/next Sunday"; "on Sunday" ve belirsiz "gelecek hafta" alınmaz
-    (geçmiş haberde de geçiyor, tarih uydurulmasın). Bugünden önceki ve bir
-    yıldan ileri tarih alınmaz. Aynı gün aynı olayı veren haberler tek aday
+    yılı, geçmişte kalıyorsa ertesi yıl ama yalnız `YIL_ATLAMA_GUNU` 90 gün
+    içindeyse), "غدا/tomorrow", "بعد غد", "الأحد المقبل/next Sunday"; "on
+    Sunday" ve belirsiz "gelecek hafta" alınmaz (geçmiş haberde de geçiyor,
+    tarih uydurulmasın). Ay adlı tarihte metinde ileriye bakan ifade de şart
+    (`GELECEK`: سيعقد، من المقرر، المقبل، قبيل، will, to be held, ahead of, "to
+    + fiil" manşet kalıbı…; `ileriyeBakar`). Kullanıcı ilk sürümde listenin
+    alakasız 2027 tarihleriyle dolduğunu gösterdi: geçmiş seçimi yorumlayan
+    haberlerdeki "27 Ekim" ertesi yıla atılıyordu. Bugünden önceki ve
+    `UFUK_GUNU` 180 günden ileri tarih alınmaz. Aday bulan kuralın sürümünü
+    taşır (`KURAL_SURUMU`); eski sürümün karar bekleyen adayı listede
+    görünmez, ilk taramada kayıttan atılır (`adayTemizligi`). Aynı gün aynı olayı veren haberler tek aday
     (`benzer`, haber sayısı); takvimde aynı gün benzer adlı faaliyet ya da
     önceki aday (kararı ne olursa olsun) varsa yazılmaz, "ilgisiz" denen geri
     gelmez; günü bir aydan çok geçen aday atılır. Takvime kendiliğinden

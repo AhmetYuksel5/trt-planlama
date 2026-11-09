@@ -24,7 +24,7 @@ import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneri
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
-import { adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
+import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
 import { oncesi, siradaki } from "./ozel";
 import { olayAyi, olayBaglantilari, olayBicimleri } from "./aylik";
 import { yeniAnilanlar } from "./bahsetme";
@@ -2862,10 +2862,10 @@ export const takvimAdaylariniTopla = (ben: Kisi, haberler: Haber[]) => {
 export const demoTakvimAdaylari = () => {
   if (GERCEK) return;
   const d = getir();
-  if (d.takvimAdaylari?.length) return;
+  if (d.takvimAdaylari?.some((a) => a.kural === KURAL_SURUMU)) return;
   const z = simdi();
   const liste = haberAdaylari(demoHaberleri(Date.now()), bugun()).map((a, i) => ({ ...a, id: `ta-ornek-${i}`, bulundu: z, durum: "yeni" as const }));
-  if (liste.length) kaydet({ ...d, takvimAdaylari: liste });
+  if (liste.length) kaydet({ ...d, takvimAdaylari: [...adayTemizligi(d.takvimAdaylari ?? [], bugun()), ...liste] });
 };
 
 /** Adayın kararı: "ilgisiz" ya da (faaliyet formu kaydedilince) "eklendi". Takvimi düzenleyen verir. */

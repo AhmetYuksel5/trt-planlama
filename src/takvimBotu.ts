@@ -26,7 +26,16 @@ export interface TakvimAdayi {
   durum: "yeni" | "eklendi" | "ilgisiz";
   karar?: { kisiId: string; zaman: string };
   faaliyetId?: string;
+  /** Bulan kuralın sürümü: kural düzelince eski kuralın bekleyen adayları listeden düşer. */
+  kural?: number;
 }
+
+/*
+ * 2: ilk sürüm geçmiş tarihi ("27 Ekim", Kasım'daki haberde) ertesi yıla
+ * atıyordu, "seçim" geçen her siyasi yorum aday oluyordu; liste alakasız
+ * 2027 tarihleriyle doldu.
+ */
+export const KURAL_SURUMU = 2;
 
 /* Olay sözcükleri ve türü; sıra önemli: "قمة" de "اجتماع" de geçen haber zirve. Sözcük yoksa tarih tek başına aday yapmaz. */
 const OLAY_SOZLERI: [FaaliyetTuru, string[]][] = [
@@ -56,6 +65,21 @@ const AY_ADLARI: Record<string, number> = {
 };
 const AY_DESENI = `(${Object.keys(AY_ADLARI).sort((a, b) => b.length - a.length).join("|")})(?![a-zء-ي])`;
 
+/*
+ * İleriye bakan ifade: olay sözcüğü ve tarih geçmesi yetmiyor, geçmiş olayı
+ * anlatan ya da yorumlayan haber de ikisini taşıyor. "Yarın / gelecek pazar"
+ * zaten ileriye bakıyor (tarihleriBul).
+ */
+const GELECEK = [
+  "سيعقد", "ستعقد", "تعقد", "يعقد", "سيزور", "ستزور", "سيلتقي", "ستلتقي", "ستجري", "سيجري", "تجري", "ستنطلق", "ستبدا", "سيبدا", "ستستضيف", "تستضيف",
+  "من المقرر", "المقرر", "المقبل", "المقبله", "القادم", "القادمه", "المرتقب", "المرتقبه", "يعتزم", "تعتزم", "قبيل", "استعدادا",
+  "will", "to be held", "to convene", "to meet", "to visit", "to attend", "to vote", "to hold", "scheduled", "upcoming", "next", "ahead of", "set to", "to host", "plans to", "expected to", "due to",
+];
+export const ileriyeBakar = (metin: string) => {
+  const m = normal(metin);
+  return GELECEK.some((s) => (/[a-z]/.test(s) ? new RegExp(`\\b${s}\\b`).test(m) : m.includes(s)));
+};
+
 /* Haftanın günleri, JS sırasıyla (0 Pazar). */
 const GUNLER: string[][] = [
   ["الاحد", "sunday"],
@@ -73,10 +97,14 @@ const iki = (n: number) => String(n).padStart(2, "0");
 
 /*
  * Metindeki ileri tarihler, haberin gününe göre. Ay adı + gün (yıl yoksa
- * haberin yılı; haberin gününden bir haftadan çok gerideyse ertesi yıl),
+ * haberin yılı; geçmişte kalıyorsa ertesi yıl, ama yalnız üç ay içindeyse:
+ * Kasım'daki haberde "15 Ocak" gelecek yıl, "27 Ekim" geçmiş olay),
  * "yarın / öbür gün", "gelecek pazar / next Sunday" ("on Sunday" geçmiş haberde de geçiyor). Belirsiz "gelecek hafta",
  * "gelecek ay" alınmaz: tarih uydurmak yanlış kayıt doğururdu.
  */
+/* Yıl yazılmamış tarih ertesi yıla en çok bu kadar gün ileri atılır. */
+export const YIL_ATLAMA_GUNU = 90;
+
 export const tarihleriBul = (metin: string, haberGunu: string): string[] => {
   const m = rakam(normal(metin));
   const bulunan = new Set<string>();
@@ -85,7 +113,10 @@ export const tarihleriBul = (metin: string, haberGunu: string): string[] => {
     if (!ay || gun < 1 || gun > 31) return;
     let y = yil ?? yil0;
     let t = `${y}-${iki(ay)}-${iki(gun)}`;
-    if (!yil && gunFarki(haberGunu, t) < -7) t = `${++y}-${iki(ay)}-${iki(gun)}`;
+    if (!yil && gunFarki(haberGunu, t) < -7) {
+      t = `${++y}-${iki(ay)}-${iki(gun)}`;
+      if (gunFarki(haberGunu, t) > YIL_ATLAMA_GUNU) return;
+    }
     // Geçersiz gün (31 Şubat) Date'te kayar; kaydıysa alınmaz.
     if (iso(new Date(t + "T12:00:00")) === t) bulunan.add(t);
   };
@@ -115,8 +146,11 @@ const haberUlkesi = (h: Haber): Ulke | undefined => {
   return konular.length === 1 ? konular[0]!.ulkeler[0] : undefined;
 };
 
-/* Aday ufku: bir yıldan ileri tarih çoğunlukla yanlış okuma ya da yıl dönümü. */
-export const UFUK_GUNU = 365;
+/* Aday ufku: uzak tarih çoğunlukla yanlış okuma, yıl dönümü ya da geçmiş olayın anılması. */
+export const UFUK_GUNU = 180;
+
+/* Göreli tarih ("yarın", "gelecek pazar") kendisi ileriye bakıyor; ay adlı tarihte ayrıca gelecek ifadesi aranır. */
+const GORELI = /بعد غد|day after tomorrow|(?:^|[^ء-ي])غدا(?:$|[^ء-ي])|\btomorrow\b|المقبل|القادم|\bnext\s+(?:sun|mon|tues|wednes|thurs|fri|satur)day\b/;
 
 /** Haberlerden bugünden sonraki olay adayları; aynı gün aynı olayı veren haberler tek aday. */
 export function haberAdaylari(haberler: Haber[], bugun: string): Omit<TakvimAdayi, "id" | "bulundu" | "durum">[] {
@@ -124,7 +158,7 @@ export function haberAdaylari(haberler: Haber[], bugun: string): Omit<TakvimAday
   for (const h of haberler) {
     const metin = `${h.baslik} ${h.ozet ?? ""}`;
     const tur = olayTuru(metin);
-    if (!tur) continue;
+    if (!tur || !(ileriyeBakar(metin) || GORELI.test(normal(metin)))) continue;
     const haberGunu = iso(new Date(h.zaman));
     const i = imza(h.baslik);
     for (const tarih of tarihleriBul(metin, haberGunu)) {
@@ -135,7 +169,7 @@ export function haberAdaylari(haberler: Haber[], bugun: string): Omit<TakvimAday
         var_.haberSayisi = var_.kaynaklar.size;
         continue;
       }
-      adaylar.push({ baslik: h.baslik, tarih, tur, ulke: haberUlkesi(h), kaynak: h.kaynak, baglanti: h.baglanti, haberSayisi: 1, imza: i, kaynaklar: new Set([h.kaynak]) });
+      adaylar.push({ kural: KURAL_SURUMU, baslik: h.baslik, tarih, tur, ulke: haberUlkesi(h), kaynak: h.kaynak, baglanti: h.baglanti, haberSayisi: 1, imza: i, kaynaklar: new Set([h.kaynak]) });
     }
   }
   return adaylar.map(({ imza: _i, kaynaklar: _k, ...a }) => a).sort((a, b) => b.haberSayisi - a.haberSayisi || a.tarih.localeCompare(b.tarih));
@@ -160,8 +194,10 @@ export const yeniAdaylar = (
 
 /** Planlama'nın bakacağı adaylar: karar bekleyen, günü geçmemiş, takvime başka yoldan girmemiş. */
 export const bekleyenAdaylar = (adaylar: TakvimAdayi[], faaliyetler: Faaliyet[], bugun: string) =>
-  adaylar.filter((a) => a.durum === "yeni" && a.tarih >= bugun && !takvimdeVar(faaliyetler, a)).sort((a, b) => a.tarih.localeCompare(b.tarih));
+  adaylar.filter((a) => a.durum === "yeni" && a.kural === KURAL_SURUMU && a.tarih >= bugun && !takvimdeVar(faaliyetler, a)).sort((a, b) => a.tarih.localeCompare(b.tarih));
 
 /* Kayıt şişmesin: günü bir aydan çok geçmiş adaylar atılır (ilgisiz denenler de; aynı olay o güne geri gelmez). */
 export const ESKI_ADAY_GUNU = 30;
-export const adayTemizligi = (adaylar: TakvimAdayi[], bugun: string) => adaylar.filter((a) => gunFarki(a.tarih, bugun) <= ESKI_ADAY_GUNU);
+/* Eski kuralın karar bekleyen adayı da atılır: yeni kural haberi yeniden tararsa doğruysa geri bulur. Kararı verilmiş olan kalır (ilgisiz geri gelmesin). */
+export const adayTemizligi = (adaylar: TakvimAdayi[], bugun: string) =>
+  adaylar.filter((a) => gunFarki(a.tarih, bugun) <= ESKI_ADAY_GUNU && !(a.durum === "yeni" && a.kural !== KURAL_SURUMU));
