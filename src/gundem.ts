@@ -1785,6 +1785,87 @@ const SITELER: GundemKaynagi[] = [
     dil: "en",
     tur: "derin",
   },
+  // Kullanıcının eklediği bölge ve derinlik kaynakları; akışları canlı denendi.
+  { id: "gk-amwaj", ad: "Amwaj.media", adres: "https://amwaj.media/feed", dil: "en", tur: "bolge" },
+  { id: "gk-dropsite", ad: "Drop Site News", adres: "https://www.dropsitenews.com/feed", dil: "en", tur: "derin" },
+  { id: "gk-enabbaladi", ad: "عنب بلدي", adres: "https://www.enabbaladi.net/feed/", dil: "ar", tur: "bolge" },
+  { id: "gk-syriadirect", ad: "Syria Direct", adres: "https://syriadirect.org/feed/", dil: "en", tur: "derin" },
+  { id: "gk-npaar", ad: "نورث برس", adres: "https://npasyria.com/feed/", dil: "ar", tur: "bolge" },
+  { id: "gk-npaen", ad: "North Press Agency", adres: "https://npasyria.com/en/feed/", dil: "en", tur: "bolge" },
+  // Arapça sürümün akışı .net'te; İngilizce .com bot korumalı, aşağıda site aramasıyla.
+  { id: "gk-sudantribunear", ad: "سودان تربيون", adres: "https://sudantribune.net/feed/", dil: "ar", tur: "bolge" },
+  { id: "gk-africareport", ad: "The Africa Report", adres: "https://www.theafricareport.com/feed/", dil: "en", tur: "bolge" },
+  /*
+   * Akışı olmayan ya da bot korumalı siteler Google Haberler'in o siteye özel
+   * aramasıyla (asıl yayıncı kapıda <source>'tan). Korumayı aşmaya çalışılmıyor.
+   * Local Call (שיחה מקומית) mekomit.co.il; mekomot.co.il başka bir site
+   * (mekan portalı), listede yanlış adresle gelmişti.
+   */
+  { id: "gk-972mag", ad: "+972 Magazine", adres: siteAramasi("972mag.com", "en"), dil: "en", tur: "derin" },
+  { id: "gk-localcall", ad: "Local Call · שיחה מקומית", adres: siteAramasi("mekomit.co.il", "he"), dil: "he", tur: "derin" },
+  { id: "gk-syriareport", ad: "The Syria Report", adres: siteAramasi("syria-report.com", "en"), dil: "en", tur: "derin" },
+  { id: "gk-libyaobserver", ad: "Libya Observer", adres: siteAramasi("libyaobserver.ly", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-muscatdaily", ad: "Muscat Daily", adres: siteAramasi("muscatdaily.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-africaintel", ad: "Africa Intelligence", adres: siteAramasi("africaintelligence.com", "en"), dil: "en", tur: "derin" },
+  { id: "gk-sudantribuneen", ad: "Sudan Tribune", adres: siteAramasi("sudantribune.com", "en"), dil: "en", tur: "bolge" },
+  // İkinci ve üçüncü liste (kullanıcı): akışı olanlar; akış adresleri canlı denendi.
+  { id: "gk-arij", ad: "أريج", adres: "https://arij.net/feed/", dil: "ar", tur: "derin" },
+  { id: "gk-daraj", ad: "درج", adres: "https://daraj.media/feed/", dil: "ar", tur: "derin" },
+  { id: "gk-raseef22", ad: "رصيف22", adres: "https://raseef22.net/feed/", dil: "ar", tur: "derin" },
+  { id: "gk-mondoweiss", ad: "Mondoweiss", adres: "https://mondoweiss.net/feed/", dil: "en", tur: "derin" },
+  { id: "gk-eintifada", ad: "The Electronic Intifada", adres: "https://electronicintifada.net/rss.xml", dil: "en", tur: "derin" },
+  { id: "gk-naharnet", ad: "Naharnet", adres: "https://www.naharnet.com/tags/lebanon/en/feed.atom", dil: "en", tur: "bolge" },
+  { id: "gk-dne", ad: "Daily News Egypt", adres: "https://www.dailynewsegypt.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-dneafrica", ad: "DNE Africa", adres: "https://africa.dailynewsegypt.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-nawaat", ad: "Nawaat", adres: "https://nawaat.org/feed/", dil: "fr", tur: "derin" },
+  { id: "gk-hespressen", ad: "Hespress English", adres: "https://en.hespress.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-timesofoman", ad: "Times of Oman", adres: "https://timesofoman.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-yemenshabab", ad: "يمن شباب", adres: "https://yemenshabab.net/rss", dil: "ar", tur: "bolge" },
+  { id: "gk-northafrica", ad: "The North Africa Journal", adres: "https://north-africa.com/feed/", dil: "en", tur: "derin" },
+  { id: "gk-seneweb", ad: "Seneweb", adres: "https://www.seneweb.com/feed/", dil: "fr", tur: "bolge" },
+  { id: "gk-africauncensored", ad: "Africa Uncensored", adres: "https://africauncensored.online/feed/", dil: "en", tur: "derin" },
+  { id: "gk-newsofbahrain", ad: "Daily Tribune Bahrain", adres: "https://www.newsofbahrain.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-voixdjibouti", ad: "La Voix de Djibouti", adres: "https://lavoixdedjibouti.info/feed/", dil: "fr", tur: "bolge" },
+  { id: "gk-royaen", ad: "Roya News", adres: "https://en.royanews.tv/rss", dil: "en", tur: "bolge" },
+  { id: "gk-7iber", ad: "حبر", adres: "https://www.7iber.com/feed/", dil: "ar", tur: "derin" },
+  { id: "gk-iraqinews", ad: "Iraqi News", adres: "https://www.iraqinews.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-almada", ad: "المدى", adres: "https://almadapaper.net/feed/", dil: "ar", tur: "bolge" },
+  // Adresteki anahtar sitenin kendi sayfasında herkese açık yayımladığı akış bağlantısının parçası.
+  { id: "gk-964", ad: "964", adres: "https://964media.com/feed/?for=public&access=dcf191addb8e5554d7986d6603ab8a26583615a3", dil: "ar", tur: "bolge" },
+  { id: "gk-ultrairaq", ad: "ألترا عراق", adres: "https://ultrairaq.ultrasawt.com/rss", dil: "ar", tur: "bolge" },
+  { id: "gk-libyanexpress", ad: "Libyan Express", adres: "https://www.libyanexpress.com/feed/", dil: "en", tur: "bolge" },
+  { id: "gk-3ayin", ad: "عين ليبيا", adres: "https://3ayin.com/feed/", dil: "ar", tur: "bolge" },
+  { id: "gk-beam", ad: "بيم ريبورتس", adres: "https://www.beamreports.com/feed/", dil: "ar", tur: "derin" },
+  // Akışı olmayan ya da bot korumalı olanlar: site araması (3 gün; sonuç verdiği canlı denendi).
+  { id: "gk-palchronicle", ad: "The Palestine Chronicle", adres: siteAramasi("palestinechronicle.com", "en"), dil: "en", tur: "derin" },
+  { id: "gk-rudaw", ad: "Rudaw", adres: siteAramasi("rudaw.net", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-shafaq", ad: "شفق نيوز", adres: siteAramasi("shafaq.com", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-nina", ad: "الوكالة الوطنية العراقية للأنباء", adres: siteAramasi("ninanews.com", "ar"), dil: "ar", tur: "ajans" },
+  { id: "gk-alsumaria", ad: "السومرية", adres: siteAramasi("alsumaria.tv", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-lorient", ad: "L'Orient Today", adres: siteAramasi("lorientlejour.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-lebanon24", ad: "لبنان 24", adres: siteAramasi("lebanon24.com", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-egyptindependent", ad: "Egypt Independent", adres: siteAramasi("egyptindependent.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-mwn", ad: "Morocco World News", adres: siteAramasi("moroccoworldnews.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-albawaba", ad: "Al Bawaba", adres: siteAramasi("albawaba.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-ahram", ad: "Ahram Online", adres: siteAramasi("english.ahram.org.eg", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-almanar", ad: "المنار", adres: siteAramasi("almanar.com.lb", "ar", "LB"), dil: "ar", tur: "bolge" },
+  { id: "gk-almayadeen", ad: "الميادين", adres: siteAramasi("almayadeen.net", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-kuna", ad: "كونا", adres: siteAramasi("kuna.net.kw", "ar"), dil: "ar", tur: "ajans" },
+  { id: "gk-omanobserver", ad: "Oman Observer", adres: siteAramasi("omanobserver.om", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-gulftimes", ad: "Gulf Times", adres: siteAramasi("gulf-times.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-peninsula", ad: "The Peninsula", adres: siteAramasi("thepeninsulaqatar.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-alsharq", ad: "الشرق", adres: siteAramasi("al-sharq.com", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-tunisienum", ad: "Tunisie Numérique", adres: siteAramasi("tunisienumerique.com", "fr"), dil: "fr", tur: "bolge" },
+  { id: "gk-tap", ad: "TAP", adres: siteAramasi("tap.info.tn", "fr"), dil: "fr", tur: "ajans" },
+  { id: "gk-al24", ad: "AL24 News", adres: siteAramasi("al24news.dz", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-koaci", ad: "Koaci", adres: siteAramasi("koaci.com", "fr"), dil: "fr", tur: "bolge" },
+  { id: "gk-gdn", ad: "Gulf Daily News", adres: siteAramasi("gdnonline.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-jordantimes", ad: "Jordan Times", adres: siteAramasi("jordantimes.com", "en"), dil: "en", tur: "bolge" },
+  { id: "gk-ammon", ad: "عمون", adres: siteAramasi("ammonnews.net", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-mamlaka", ad: "المملكة", adres: siteAramasi("almamlakatv.com", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-alsabaah", ad: "الصباح", adres: siteAramasi("alsabaah.iq", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-azzaman", ad: "الزمان", adres: siteAramasi("azzaman.com", "ar"), dil: "ar", tur: "bolge" },
+  { id: "gk-alwasat", ad: "الوسط", adres: siteAramasi("alwasat.ly", "ar"), dil: "ar", tur: "bolge" },
 ];
 
 /**
@@ -1793,6 +1874,17 @@ const SITELER: GundemKaynagi[] = [
  */
 export const aramaAdresi = (sorgu: string, dil: "ar" | "en") =>
   `https://news.google.com/rss/search?q=${encodeURIComponent(`${sorgu} when:1d`)}&${dil === "ar" ? "hl=ar&gl=EG&ceid=EG:ar" : "hl=en-US&gl=US&ceid=US:en"}`;
+
+/*
+ * Tek siteye özel Google Haberler araması. Bir günlük pencere az yayın yapan
+ * sitede çoğu gün boş geliyordu; haber gündemde zaten bir hafta tutuluyor.
+ */
+/* `ulke`: bazı siteler Google Haberler'in Mısır baskısında hiç çıkmıyor (Al-Manar Lübnan'da çıkıyor). */
+export function siteAramasi(site: string, dil: "ar" | "en" | "he" | "fr", ulke?: string) {
+  const g = ulke ?? { ar: "EG", he: "IL", fr: "FR", en: "US" }[dil];
+  const yer = dil === "en" ? `hl=en-US&gl=${g}&ceid=${g}:en` : `hl=${dil}&gl=${g}&ceid=${g}:${dil}`;
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(`site:${site} when:3d`)}&${yer}`;
+}
 
 /* Konu başına Arapça ve İngilizce arama: klasör yalnız genel akışlara kalmasın, derinleşsin. */
 const ARAMALAR: [string, "ar" | "en", string][] = [

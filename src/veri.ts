@@ -611,7 +611,7 @@ export interface GundemKaynagi {
   ad: string;
   /** RSS ya da Atom adresi; kapı yalnız https okur. */
   adres: string;
-  dil: "ar" | "en" | "tr";
+  dil: "ar" | "en" | "tr" | "he" | "fr";
   tur: GundemKaynakTuru;
   kapali?: boolean;
 }
