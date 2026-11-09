@@ -5,12 +5,13 @@ import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKo
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
 import type { MuhabirTaslagi } from "./iceAktar";
+import { bosAlan } from "./epostaEslestir";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Yazi } from "./dil";
-import { ayniYapi, icMuhabirMi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, grupMu, icMuhabirMi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -3839,6 +3840,86 @@ export const epostaListesiUygula = (ben: Kisi, satirlar: { kisiId: string; adres
   }
   if (degisen.size) kaydet({ ...d, kisiler: d.kisiler.map((k) => degisen.get(k.id) ?? k) });
   return { yazilan, atlanan };
+};
+
+/*
+ * Postadan kişiler (postaKisileri.ts; yönetici önizlemede seçtikten sonra),
+ * tek yazışta. Kayıtlı kişide yalnız boş alan dolar (adres, telefon); dolu
+ * bilgi değişmez. Birim ya da ünvan seçimi değiştiyse tayin
+ * (kisiPozisyonu'nun kuralıyla, hareketiyle). Yeni kişi hesapsız açılır
+ * (gerçek kipte), Arapça adı zorunlu; adresi başkasında kayıtlıysa atlanır.
+ */
+export interface PostaKisiKaydi {
+  adres: string;
+  /** Kayıtlı kişi; yoksa yeni kişi. */
+  kisiId?: string;
+  adAr?: string;
+  adLatin?: string;
+  telefon?: string;
+  birim: BirimId;
+  gorev: GorevId;
+}
+
+export const postaKisileriUygula = (ben: Kisi, satirlar: PostaKisiKaydi[]): { eklenen: number; guncellenen: number; atlanan: number } | null => {
+  const duzenler = hesapYetkisi(ben, "kisiDuzenle");
+  const ekler = hesapYetkisi(ben, "hesapsizKisi");
+  if (!duzenler && !ekler) return null;
+  let d = getir();
+  const sahip = new Map<string, string>();
+  for (const k of d.kisiler) for (const a of [k.eposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
+  const gecerli = (b: BirimId, g: GorevId) => !!b && !grupMu(b) && unvanListesi(b).includes(g);
+  const degisen = new Map<string, Kisi>();
+  const tayinler: { eski: Kisi; yeni: Kisi }[] = [];
+  const yeniler: Kisi[] = [];
+  let atlanan = 0;
+  satirlar.forEach((s, i) => {
+    const adres = s.adres.trim().toLowerCase();
+    const baskasinin = sahip.get(adres);
+    const telefon = s.telefon?.trim();
+    if (s.kisiId) {
+      const eski = d.kisiler.find((k) => k.id === s.kisiId);
+      const k = degisen.get(s.kisiId) ?? eski;
+      if (!duzenler || !k || !eski || (baskasinin && baskasinin !== k.id)) return void atlanan++;
+      let yeni: Kisi = k;
+      if (!baskasinin) {
+        const alan = bosAlan(k, !GERCEK || !!k.hesapsiz);
+        if (alan) {
+          yeni = { ...yeni, [alan]: adres };
+          sahip.set(adres, k.id);
+        }
+      }
+      if (telefon && !k.telefon?.trim()) yeni = { ...yeni, telefon };
+      if ((s.birim !== k.birim || s.gorev !== k.gorev) && gecerli(s.birim, s.gorev)) {
+        const { kontrolBekliyor: _, ...kalan } = yeni;
+        const yerli = yerUnvaniUygula({ ...kalan, birim: s.birim, gorev: s.gorev });
+        yeni = { ...yerli, rol: unvandanRol(yerli.gorev, k) };
+      }
+      if (yeni === k) return void atlanan++;
+      degisen.set(k.id, yeni);
+      return;
+    }
+    const adAr = s.adAr?.trim();
+    if (!ekler || baskasinin || !adAr || !gecerli(s.birim, s.gorev)) return void atlanan++;
+    const latin = s.adLatin?.trim() || adAr;
+    const k: Kisi = {
+      ...yeniKisi({ id: `${kimlik("kh")}${i}`, ad: { tr: latin, ar: adAr, en: latin }, eposta: adres, birim: s.birim, gorev: s.gorev, rol: unvandanRol(s.gorev), hesapYoneticisi: false }),
+      ...(telefon ? { telefon } : {}),
+      ...(GERCEK ? { hesapsiz: true } : {}),
+    };
+    sahip.set(adres, k.id);
+    yeniler.push(k);
+  });
+  for (const [id, yeni] of degisen) {
+    const eski = d.kisiler.find((k) => k.id === id)!;
+    if (eski.birim !== yeni.birim || eski.gorev !== yeni.gorev) tayinler.push({ eski, yeni });
+  }
+  if (!degisen.size && !yeniler.length) return { eklenen: 0, guncellenen: 0, atlanan };
+  d = { ...d, kisiler: [...d.kisiler.map((k) => degisen.get(k.id) ?? k), ...yeniler] };
+  // Tayin geçmişte kalsın, kişiye bildirim düşsün (kisiPozisyonu gibi).
+  for (const { eski, yeni } of tayinler)
+    d = hareketYaz(d, { kisiId: ben.id, tip: "kisiTayinEdildi", veri: { ad: yaz(eski.ad), kime: eski.id, birim: yeni.birim, gorev: yeni.gorev, eskiBirim: eski.birim, eskiGorev: eski.gorev } });
+  kaydet(d);
+  return { eklenen: yeniler.length, guncellenen: degisen.size, atlanan };
 };
 
 export const muhabirleriIceAktar = (ben: Kisi, taslaklar: MuhabirTaslagi[]) => {

@@ -1597,6 +1597,13 @@ const ornekPosta = (kisiler: Kisi[], saat: (s: string, geri?: number) => string)
       metin: "حصلنا على موافقة مبدئية لمقابلة وزير الخارجية غداً صباحاً.", tamMetin: "حصلنا على موافقة مبدئية لمقابلة وزير الخارجية غداً صباحاً.",
       zaman: saat("11:20", 30), ekler: [], kaynak: "posta", kime: [P], cc: [m3.eposta ?? ""],
     },
+    {
+      // Kayıtta olmayan haber merkezi çalışanı (kurgusal): Organizasyon › "Postadan kişiler" imzasından ünvanı ve telefonu okusun.
+      id: "pm-o5", konuKimligi: "ornek-studyo", kimden: "selim.aras@ornek.local", kimdenAd: "Selim Aras", konu: "ضيوف نشرة المساء",
+      metin: "تم تأكيد ضيفين لنشرة المساء، التفاصيل في الملف المرفق.",
+      tamMetin: "تم تأكيد ضيفين لنشرة المساء، التفاصيل في الملف المرفق.\n\nمع التحية\nسليم آراس\nNewsdesk Editor | TRT Arabi\nMob: +90 500 000 00 00",
+      zaman: saat("12:05", 20), ekler: [], kaynak: "posta", kime: [P], cc: [],
+    },
   ];
 };
 

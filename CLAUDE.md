@@ -195,6 +195,27 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `eylemler.ts → epostaListesiUygula` (kişi düzenleme yetkisi; başkasında
     kayıtlı adres atlanır). Gerçek adresler depoya girmez: liste tarayıcıda.
     Test `testler/eposta-eslestir.cjs` (kurgusal adresler).
+  - Postadan kişiler (kullanıcı: posta çoğunlukla haber merkezi
+    çalışanlarından geliyor, onları personele eklemek, kayıtlıların eksiğini
+    tamamlamak, birimini kolayca vermek istiyor; Organizasyon › Kişiler'de
+    düğme, `organizasyon/PostaKisileri.tsx`, kurallar `postaKisileri.ts`):
+    kayıtlı postalardaki kurum adresleri (`KURUM_ALANLARI`: trt.net.tr,
+    trtarabi.com; demoda ornek.local) gönderen, Kime ve CC'den toplanır;
+    grup kutuları (`PostaMesaji.grup`, `GRUP_ADRESI` deseni) ve otomatik
+    adresler girmez. İmzadan (`eposta.ts → imzaSatirlari`, `imzaBilgisi`;
+    sadeleştirmeyle aynı imza bölgesi, `imzaBolgesi`) telefon (cep önce),
+    ünvan satırı (kurum adı ayıklanır) ve Arapça ad okunur; ünvan ve birim
+    Organizasyon'daki adlarla üç dilde eşlenir (`birimUnvanTahmini`: önce
+    ünvan, adı metinden atılıp birim; birim yoksa ünvanı taşıyan ilk haber
+    merkezi birimi). Kayıtlı kişiyle eşleme e-posta eşleştirmesinin kuralıyla;
+    tek sözcük tutan (yaygın ad) aday yalnız öneri, satır "yeni". Kümeler:
+    yeni, eksik bilgi, seçilecek, kayıtlı. Birim ve ünvan satırda seçilir,
+    işaretli satırlara üstteki çubuktan toplu verilir. "Seçilenleri kaydet"
+    tek yazış (`eylemler.ts → postaKisileriUygula`): yeni kişi hesapsız
+    (gerçek kipte), Arapça adı zorunlu, `hesapsizKisi` yetkisi; kayıtlı
+    kişide yalnız boş alan dolar (adres `bosAlan` kuralıyla, telefon), birim
+    ya da ünvan değiştiyse tayin (`kisiTayinEdildi`), `kisiDuzenle` yetkisi.
+    Gerçek bilgiler depoya girmez, kayıtta kalır. Test `testler/posta-kisileri.cjs`.
   - Muhabirin görev yaptığı şehir profil formunda ("Profili düzenle"; kişinin
     kendisi ve `profilDuzenle` yetkisi): listede yoksa "+ Yeni şehir…" ile
     Arapça adı (zorunlu), Türkçe ve İngilizce adı, ülkesi girilir. Yerleşik

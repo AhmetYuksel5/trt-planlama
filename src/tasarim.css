@@ -2167,6 +2167,15 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 .taslak-cubugu .dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
 .sekmeler > a { display: inline-flex; align-items: center; text-decoration: none; }
 .org-agac { display: grid; gap: var(--ara-2); }
+/* Postadan kişiler: üstte toplu atama çubuğu, satırda birim ve ünvan seçimi. */
+.pk-ust-dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); justify-content: flex-end; }
+.pk-toplu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--zemin); }
+.pk-toplu select { flex: 1 1 160px; min-width: 0; }
+.pk-hepsi { display: inline-flex; align-items: center; gap: var(--ara-2); margin-inline-end: auto; white-space: nowrap; }
+.pk-tablo bdi[dir="ltr"] { white-space: nowrap; }
+.pk-tablo td select, .pk-tablo td input:not([type="checkbox"]) { width: 100%; min-width: 0; }
+.pk-tablo td > small { display: block; }
+.pk-tablo td input[data-pk-ad-ar] { margin-top: var(--ara-1); }
 .org-agac > details { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); }
 .org-agac > details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: var(--ara-2); }
 .org-unvan { padding-inline-start: var(--ara-4); margin-block: var(--ara-2); }

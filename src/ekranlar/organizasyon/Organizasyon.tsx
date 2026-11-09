@@ -91,6 +91,7 @@ import {
 import { hesapYetkisi, yapiDuzenleyebilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
 import { EkipSekmesi } from "./EkipSekmesi";
+import { PostaKisileriDugmesi } from "./PostaKisileri";
 import Kullanicilar, { IzleDugmesi, PozisyonPenceresi } from "../Kullanicilar";
 import { AkislarSekmesi } from "./Akislar";
 import { PLAN_ADIMI_ADI, PlanYetkileriSekmesi } from "./PlanYetkileri";
@@ -666,17 +667,19 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
       baslik={t("orgKisiler")}
       ek={String(kisiler.length)}
       sagUc={
-        yapiDuzenleyebilir(ben) &&
-        ulkeBekleyen.length > 0 && (
-          <button
-            type="button"
-            className="dugme dugme-ikincil dugme-kucuk"
-            onClick={() => confirm(t("orgUlkeUnvanlariSoru", { n: ulkeBekleyen.length })) && bildir(t("orgUlkeUnvanlariTamam", { n: muhabirlereUlkeUnvaniVer(ben) }))}
-            data-ulke-unvanlari
-          >
-            <Globe size={14} /> {t("orgUlkeUnvanlari")}
-          </button>
-        )
+        <span className="pk-ust-dugmeler">
+          <PostaKisileriDugmesi ben={ben} />
+          {yapiDuzenleyebilir(ben) && ulkeBekleyen.length > 0 && (
+            <button
+              type="button"
+              className="dugme dugme-ikincil dugme-kucuk"
+              onClick={() => confirm(t("orgUlkeUnvanlariSoru", { n: ulkeBekleyen.length })) && bildir(t("orgUlkeUnvanlariTamam", { n: muhabirlereUlkeUnvaniVer(ben) }))}
+              data-ulke-unvanlari
+            >
+              <Globe size={14} /> {t("orgUlkeUnvanlari")}
+            </button>
+          )}
+        </span>
       }
     >
       <label className="arama ara-alt-2">

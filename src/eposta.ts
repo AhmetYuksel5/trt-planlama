@@ -264,16 +264,12 @@ export const gizliEkMi = (ad: string): boolean => {
   return IMZA_GORSEL_SOZ.test(t); // içinde logo/sosyal/imza geçen png/jpg
 };
 
-export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
-  // Bağlantılar koşulsuz silinmiyor: ana metindeki bağlantı içeriktir, yalnız
-  // imza bloğundaki site/sosyal bağlantısı (ve en sondaki isim) atılacak.
-  let satirlar = metin
-    .replace(GORSEL_REF, "")
-    .split(/\r?\n/)
-    .map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
-  // Yasal uyarı / tarama bildirimi: ilk satırından sona kadar at.
-  const uyari = satirlar.findIndex((s) => SORUMLULUK.test(s.trim()));
-  if (uyari >= 0) satirlar = satirlar.slice(0, uyari);
+/*
+ * Sondaki imza bölgesinin başladığı satır. Sadeleştirme onu atıyor, kişi
+ * aktarımı (postaKisileri.ts) aynı bölgeden ünvan ve telefon okuyor: iki
+ * yerde ayrı kural olsaydı biri imzayı başka yerde keserdi.
+ */
+const imzaBolgesi = (satirlar: string[], gonderenAd: string): { son: number; sert: boolean } => {
   // Gönderen adının sözcükleri: imzadaki ad satırını (tam ad ya da adın bir
   // parçası, ör. "محمد صفا") tanır, altında ünvan/telefon olmasa da.
   const adKelime = gonderenAd.trim().toLowerCase().split(/\s+/).filter((w) => w.length >= 2);
@@ -301,12 +297,83 @@ export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => 
     if (adGibiSatir(t)) { j--; continue; } // tek başına çıpa değil
     break;
   }
-  const son = cipa ? j : satirlar.length;
+  return { son: cipa ? j : satirlar.length, sert };
+};
+
+export const postaMetniSadelestir = (metin: string, gonderenAd = ""): string => {
+  // Bağlantılar koşulsuz silinmiyor: ana metindeki bağlantı içeriktir, yalnız
+  // imza bloğundaki site/sosyal bağlantısı (ve en sondaki isim) atılacak.
+  let satirlar = metin
+    .replace(GORSEL_REF, "")
+    .split(/\r?\n/)
+    .map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
+  // Yasal uyarı / tarama bildirimi: ilk satırından sona kadar at.
+  const uyari = satirlar.findIndex((s) => SORUMLULUK.test(s.trim()));
+  if (uyari >= 0) satirlar = satirlar.slice(0, uyari);
+  const { son, sert } = imzaBolgesi(satirlar, gonderenAd);
   const sade = satirlar.slice(0, son).join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   // Gövde tümüyle imza çıktıysa: sert çıpa (imza bloğu) varsa boş döndür, ekran
   // "metin yok" yer tutucusu gösterir; yalnız kapanış/ad ise (ör. "شكرا") özgün
   // kısa metni ver, boş balon olmasın.
   return sade || (sert ? "" : metin.replace(GORSEL_REF, "").trim());
+};
+
+/*
+ * Postanın kendi imzası (kişi aktarımı, postaKisileri.ts): alıntıdan önceki
+ * metnin sondaki imza bölgesi. "--" ayracı ve "Sent from" satırları
+ * sadeleştirmede kesiliyor ama imza onların altında da olabiliyor; burada
+ * yalnız alıntı ve yasal uyarı kesiliyor.
+ */
+export const imzaSatirlari = (tam: string, gonderenAd = ""): string[] => {
+  let m = tam.replace(/\r\n?/g, "\n");
+  for (const k of ALINTI) {
+    const i = m.search(k);
+    if (i >= 0) m = m.slice(0, i);
+  }
+  let satirlar = m.replace(GORSEL_REF, "").split("\n").map((s) => (BOS_ETIKET.test(s) || GORSEL_SATIR.test(s) ? "" : s));
+  const uyari = satirlar.findIndex((s) => SORUMLULUK.test(s.trim()));
+  if (uyari >= 0) satirlar = satirlar.slice(0, uyari);
+  const { son } = imzaBolgesi(satirlar, gonderenAd);
+  return satirlar.slice(son).map((s) => s.trim()).filter((s) => s && !IMZA_SATIRI[0].test(s));
+};
+
+const TELEFON = /\+?\d[\d ()\-./]{7,}\d/;
+// Cep numarası önce: masa hattına değil kişiye ulaşılsın.
+const MOBIL = /(?<![\p{L}\p{N}])(?:mob|mobile|gsm|cep|cell|whatsapp|جوال|موبايل|محمول|واتساب|واتس)(?![\p{L}\p{N}])/iu;
+// İmzada kişinin işini anlatan sözcük (iletişim sözcükleri hariç).
+const ROL_SOZCUK =
+  /(?<![\p{L}\p{N}])(?:محرر|محررة|مراسل|مراسلة|منتج|منتجة|مذيع|مذيعة|مقدم|مقدمة|مدير|مديرة|رئيس|رئيسة|نائب|مسؤول|مسؤولة|مسئول|منسق|منسقة|مخطط|مخططة|مترجم|مترجمة|مدقق|مدققة|مونتير|مصور|قسم|إدارة|ادارة|وحدة|دائرة|editor|reporter|correspondent|producer|presenter|anchor|manager|director|head|chief|coordinator|planner|translator|desk|department|editör|muhabir|yapımcı|sunucu|müdür|müdürü|koordinatör|planlamacı|tercüman|şefi?|sorumlusu?)(?![\p{L}\p{N}])/iu;
+const ILETISIM_SATIRI = (s: string) => /@/.test(s) || TELEFON.test(s) || /https?:|www\./i.test(s) || IMZA_SATIRI[3].test(s) || IMZA_SATIRI[4].test(s);
+
+export interface ImzaBilgisi {
+  telefon?: string;
+  /** Ünvan satırı, kurum adı ayıklanmış ("Senior Producer · Newsdesk"). */
+  unvan?: string;
+  /** İmzadaki Arapça ad satırı. */
+  adAr?: string;
+  /** İletişim dışındaki satırlar: birim ve ünvanı Organizasyon'daki adlarla eşlemek için. */
+  metin: string;
+}
+
+/*
+ * İmzadan telefon, ünvan ve Arapça ad. Herkesin imzası başka; bunlar öneri,
+ * kişi aktarımında yönetici görüp düzeltiyor.
+ */
+export const imzaBilgisi = (satirlar: string[]): ImzaBilgisi => {
+  const tel = satirlar.flatMap((s) => {
+    const m = s.match(TELEFON);
+    return m && m[0].replace(/\D/g, "").length >= 9 ? [{ s, n: m[0].replace(/\s+/g, " ").trim() }] : [];
+  });
+  const telefon = (tel.find((x) => MOBIL.test(x.s)) ?? tel[0])?.n;
+  const yazi = satirlar.filter((s) => !ILETISIM_SATIRI(s) && !KAPANIS.test(s));
+  const unvanSatiri = yazi.find((s) => s.length <= 90 && ROL_SOZCUK.test(s));
+  const unvan = unvanSatiri
+    ?.split(/\s*[|•·–—,،]\s*|\s+-\s+/)
+    .map((p) => p.trim())
+    .filter((p) => p && !(KURUM_SATIRI.test(p) && !ROL_SOZCUK.test(p)))
+    .join(" · ");
+  const adAr = yazi.find((s) => /^[\u0600-\u06FF\s]+$/.test(s) && s.split(/\s+/).length >= 2 && s.split(/\s+/).length <= 5 && !ROL_SOZCUK.test(s) && !KURUM_SATIRI.test(s))?.replace(/\s+/g, " ");
+  return { ...(telefon ? { telefon } : {}), ...(unvan ? { unvan } : {}), ...(adAr ? { adAr } : {}), metin: yazi.join(" | ") };
 };
 
 /** Sohbetin ekranda görünen başlığı: önekler atılmış ama özgün büyük/küçük harfiyle konu. */

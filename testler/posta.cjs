@@ -28,7 +28,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator('a[href="#/posta"]').count()) >= 1, "planlamacının menüsünde posta");
   await git("#/posta");
   ok((await p.locator("[data-posta-kimden]").count()) === 0 && (await p.locator(".birakma-alani").count()) === 0, "içe aktarma kartı kalktı");
-  ok((await p.locator("[data-posta-liste] > li").count()) === 2, "demoda iki örnek yazışma");
+  ok((await p.locator("[data-posta-liste] > li").count()) === 3, "demoda üç örnek yazışma");
   const v0 = await veri();
   const muhabirler = v0.kisiler.filter((k) => k.birim === "muhabir");
   const kucuk = (a) => String(a || "").toLowerCase();
@@ -104,7 +104,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-posta-yeni-gonder]").click();
   await p.waitForTimeout(400);
   ok((await p.locator("dialog[open]").count()) === 0, "pencere kapandı");
-  ok((await p.locator("[data-posta-liste] > li").count()) === 3, "yeni posta yeni sohbet açtı");
+  ok((await p.locator("[data-posta-liste] > li").count()) === 4, "yeni posta yeni sohbet açtı");
   ok((await p.locator("[data-posta-sohbet] .posta-balon.giden").count()) === 1 && (await p.locator("[data-posta-sohbet]").innerText()).includes("نرجو الحضور"), "yeni sohbet seçili, giden balon");
 
   // Sohbet izleriyle silinir
@@ -112,7 +112,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-posta-sil]").click();
   await p.waitForTimeout(400);
   const sonra = (await veri()).postaMesajlari.length;
-  ok(sonra === once - 1 && (await p.locator("[data-posta-liste] > li").count()) === 2, "sohbet izleriyle silindi: " + once + " → " + sonra);
+  ok(sonra === once - 1 && (await p.locator("[data-posta-liste] > li").count()) === 3, "sohbet izleriyle silindi: " + once + " → " + sonra);
 
   // Ek filtresi: gerçek dosya görünür, imza/logo görseli gizli
   await p.evaluate(() => {
