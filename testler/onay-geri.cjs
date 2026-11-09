@@ -15,6 +15,8 @@ const { chromium } = require(process.env.PW);
       plan.durum = "onayli"; localStorage.setItem(k, JSON.stringify(d));
     });
     await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
+    // "Onayı geri al" ⋯ menüsünde; menü yetkisi olmayanda da açılıyor.
+    if (await p.locator(".pb-uc button[aria-haspopup]").count()) { await p.locator(".pb-uc button[aria-haspopup]").click(); await p.waitForTimeout(200); }
     const dugme = await p.locator("[data-onay-geri]").count();
     if (dugme) { await p.locator("[data-onay-geri]").click(); await p.waitForTimeout(400); }
     const durum = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); return [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0].durum; });

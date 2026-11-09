@@ -760,13 +760,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   "Öneriler ve takvim" çekmecesinde (kipsiz, öneri belgeye sürüklenir).
   Çıktı, baskı ve Word tek sütunda kalır.
 - Next Day plan ekranı (`nextday/Plan.tsx`) doğrudan doldurulan
-  bölümlerle (1–6) başlar. Planın araçları başlığın yanında yazılı
-  düğmeler (`PlanAraclari`: gelen öneriler, muhabir takipleri ve takvimden bu güne, sayılarıyla;
-  çağrı, çıktı, belge); öneriler ve takvim geniş `Pencere`de açılır. Simgeli
-  kare satır denendi, beğenilmedi. "Hepsini bugüne al" günün başlangıç işi:
-  başlığın hemen altında (`OncekiSeridi`), dünden gelen kayıt varken.
-  Durum çizgisi ve akış eylemleri (toplantıya götür, onayla, devral, geri
-  dönüş) en altta `PlanDurumKarti`.
+  bölümlerle (1–6) başlar. Üst kısım klasik görünümde `PlanBasi` (kullanıcı:
+  "üstte gereksiz kalabalık"; üç tasarım önerisinin birleşimi):
+  - Tek satır başlık (telefonda; masaüstünde sekmede), sağda ↶ ve ⋯.
+  - Altında "Sıradaki" kartı (`SiradakiKarti`): kısa durum çizgisi
+    (`DurumCizgisi kisa`; Newsdesk sistemde değilken "devraldı" adımı yok) ve
+    planın o anki tek işi. Taslakta dünden kayıt varsa "Dünden gelen N kayıt ·
+    Hepsini bugüne al" (`data-bugune-al`), yoksa "Plan hazır · Toplantıya
+    götür"; toplantıda "Kararsız n PKG · m muhabire görev · Planı onayla"
+    (+ Taslağa geri al); onaylıda "Kabul edilen n paket · PKG geri bildirimi"
+    (+ devral). Rutin iş yumuşak düğme (`.dugme-yumusak`, mavinin açık tonu),
+    dolu mavi yalnız onayda. Önce "Hepsini bugüne al" tam genişlik mavi
+    şeritti, akış düğmeleri sayfanın dibindeydi.
+  - Künye ve sayılı Öneri / Takip / Takvim düğmeleri (pencerede açılır):
+    Öneri "bekleyen/toplam", kırmızı yalnız karar bekleyen varken.
+  - ⋯ (`PlanMenusu`, `IslemMenusu katman`): çıktı önizleme
+    (`data-arac="cikti"`), belgede düzenle, öneri çağrısı, geçmiş plandan
+    aktar, onayı geri al (`data-onay-geri`), dünden kayıt varken toplantıya
+    götür, Klasik/Yeni/Sütunlu seçimi.
+  - Akış adımları tek kancada (`usePlanAkisi`): kart ve yeni görünümün durum
+    sekmesi (`PlanDurumKarti`) aynı eylemi aynı soruyla çağırır.
   - Başlığa gelişme muhabir önerisinden ve takibinden de eklenir: "Gelişme ekle"nin
     sağında ve gelişme formunun sağ üstünde "Öneri ve takiplerden al" (sayısıyla;
     `Formlar.tsx → OneridenAl`), `Pencere`de öneri kartları, her birinde
@@ -798,8 +811,6 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sağdan sola (`.baslik-karti > summary`, `.baslik-govde { direction: rtl }`,
     kutunun içi arayüzün yönünde): numara başlığın sağında, Gelişmeler sağda.
     Telefonda sayaçlar başlığın altında, düğmeler kenarda 2×2.
-  - Araç düğmeleri kendi satırında sayfaya ortalı (`.plan-araclari`):
-    Türkçe ve Arapça arayüzde aynı yerde dursun.
   - Geri al (↶, Ctrl/⌘+Z yazı alanı dışında; `bilesenler/GeriAl.tsx`)
     Next Day, haftalık ve belge görünümünde. Kişinin o plandaki son
     düzenlemesini geri alır (`geriAl.ts`, `eylemler.ts → planGeriAl`):

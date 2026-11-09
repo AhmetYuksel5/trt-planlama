@@ -23,7 +23,7 @@ const { chromium } = require(process.env.PW);
   // Onayı geri al, yeniden onayla: aynı not tekrar gitmemeli
   // Onaydan sonra takdir bildirimi sayfası açılıyor (kabul edilen paket varsa); plana dön.
   if (p.url().endsWith("/takdir")) { await p.locator("[data-takdir-plana]").click(); await p.waitForTimeout(800); }
-  await p.locator("[data-onay-geri]").click(); await p.waitForTimeout(400);
+  await p.locator('.pb-uc button[aria-haspopup]').click(); await p.waitForTimeout(200); await p.locator("[data-onay-geri]").click(); await p.waitForTimeout(400);
   await p.locator("button", { hasText: "Planı onayla" }).click(); await p.waitForTimeout(500);
   const ikinci = await say();
   await p.evaluate((id) => localStorage.setItem("trt-planlama-oturum", id), m.kisiId);

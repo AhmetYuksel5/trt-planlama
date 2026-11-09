@@ -6,7 +6,8 @@ const { chromium } = require(process.env.PW);
   const B = "http://localhost:4173/", s = {};
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  await p.click('[data-arac="cikti"]'); await p.waitForTimeout(500);
+  // Çıktı önizleme ⋯ menüsünde (plan başı sadeleşti).
+  await p.locator('.pb-uc button[aria-haspopup]').click(); await p.waitForTimeout(200); await p.click('[data-arac="cikti"]'); await p.waitForTimeout(500);
   s.onizleme = (await p.locator("dialog[open] [data-onizleme] .cikti").count()) === 1;
   for (const n of [1, 2, 3, 4]) { await p.click(`dialog[open] [data-baski="${n}"]`); await p.waitForTimeout(200); s["baski" + n] = (await p.locator(`dialog[open] .cikti.baski-${n}`).count()) === 1; }
   s.logo = (await p.locator("dialog[open] .cikti.baski-4 .baski-logo img").count()) === 1;

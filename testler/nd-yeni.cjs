@@ -6,7 +6,8 @@ const { chromium } = require(process.env.PW);
   const B = "http://localhost:4173/", s = {};
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  s.klasikteSecim = await p.locator('[data-nd-gorunum="yeni"]').count() === 1;
+  // Klasikte görünüm seçimi ⋯ menüsünde.
+  await p.locator('.pb-uc button[aria-haspopup]').click(); await p.waitForTimeout(200); s.klasikteSecim = await p.locator('[data-nd-gorunum="yeni"]').count() === 1;
   await p.click('[data-nd-gorunum="yeni"]'); await p.waitForTimeout(500);
   s.yeniAcik = await p.locator("[data-yeni-plan]").count() === 1;
   s.icindekiler = await p.locator("[data-yp-icindekiler]").count() > 0;

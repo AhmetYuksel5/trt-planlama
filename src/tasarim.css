@@ -2052,6 +2052,55 @@ html.gomulu body { background: var(--zemin); }
 /* Arapça adlı bölümün başlık satırı her arayüz dilinde sağdan sola; gövde arayüz dilinde kalıyor. */
 .bolum.ar > summary { direction: rtl; }
 .plan-durum-karti { margin-block-start: var(--ara-4); }
+
+/*
+ * Next Day üst kısmı (PlanBasi): tek satır başlık + ↶ ⋯, "Sıradaki" kartı,
+ * künye ve sayılı araçlar. Telefonda üç satır; masaüstünde kart başlık
+ * satırına geçer (başlık orada sekmede yazıyor).
+ */
+.sayfa-basi.plan-basi {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "geri baslik uc" "sira sira sira" "alt alt alt";
+  gap: var(--ara-2) var(--ara-3); align-items: center; margin-block-end: var(--ara-4);
+}
+.plan-basi .pb-geri { grid-area: geri; width: 40px; height: 40px; color: var(--murekkep); }
+.plan-basi h1 { grid-area: baslik; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-basi .pb-uc { grid-area: uc; display: flex; gap: var(--ara-2); align-items: center; }
+.plan-basi .pb-uc .dugme-ikon { width: 40px; height: 40px; }
+.siradaki-karti {
+  grid-area: sira; display: grid; gap: var(--ara-2); min-width: 0;
+  padding: var(--ara-2) var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart);
+}
+.siradaki-karti .durum-cizgisi span { padding: 2px 0; gap: 4px; font-size: var(--punto-mini); }
+.siradaki-karti .durum-cizgisi span i { width: 18px; height: 18px; }
+.siradaki-karti .durum-cizgisi .ayrac { width: 14px; margin-inline: 6px; }
+.sk-is { display: flex; align-items: center; gap: var(--ara-2) var(--ara-3); flex-wrap: wrap; min-width: 0; }
+.sk-metin { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: var(--ara-2); color: var(--sonuk); font-size: var(--punto-kucuk); font-weight: 600; }
+.sk-metin .onceki-ornek { margin: 0; }
+.sk-dugmeler { display: flex; gap: var(--ara-2); flex-wrap: wrap; margin-inline-start: auto; }
+/* Rutin iş düğmesi: mavinin açık tonu; dolu mavi yalnız gerçek kararda (onay). */
+.dugme-yumusak { background: var(--vurgu-sis); color: var(--vurgu-koyu); border-color: transparent; }
+.dugme-yumusak:hover { background: var(--vurgu-sis); border-color: var(--vurgu); }
+.pb-alt { grid-area: alt; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2) var(--ara-3); min-width: 0; }
+.pb-kunye { margin: 0; flex: 1 1 100%; color: var(--sonuk); font-size: var(--punto-kucuk); }
+.pb-araclar { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+/* Telefonda üç düğme tek satıra sığsın (Takvim alt satıra düşüyordu). */
+@media (max-width: 760px) {
+  .pb-araclar { flex-wrap: nowrap; }
+  .pb-araclar .dugme { padding: 0 10px; gap: 6px; }
+}
+.dugme-sayi.sonuk { background: var(--yuzey-3); color: var(--sonuk); }
+.plan-menusu { min-width: 240px; }
+.plan-menusu .acilir-satir { align-items: center; color: var(--murekkep); text-decoration: none; }
+.plan-menusu-gorunum { display: grid; gap: var(--ara-1); margin-block-start: var(--ara-1); padding: var(--ara-2) var(--ara-3) var(--ara-1); border-top: 1px solid var(--cizgi); }
+.plan-menusu-gorunum small { color: var(--sonuk); font-size: var(--punto-mini); }
+.plan-menusu-gorunum .nd-gorunum { margin: 0; justify-self: stretch; }
+@media (min-width: 761px) {
+  .sayfa-basi.plan-basi { grid-template-areas: "geri sira uc" "alt alt alt"; }
+  .siradaki-karti { display: flex; align-items: center; gap: var(--ara-4); }
+  .siradaki-karti .sk-is { flex: 1; }
+  .pb-kunye { flex: 0 1 auto; }
+  .pb-araclar { margin-inline-start: auto; }
+}
 dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 
 /* --- Telefonun workspace öncesi düzeni: prototip şeridi ve renkli plan kutuları (yalnız 760 piksel ve altı) --- */
