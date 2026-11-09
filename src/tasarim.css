@@ -1054,6 +1054,8 @@ a.cip { color: var(--murekkep); padding: 3px var(--ara-2); }
 .alanlar > .alan small { display: block; font-size: var(--punto-mini); color: var(--sonuk); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .alanlar > .alan b, .alanlar > .alan span { font-weight: 600; font-size: var(--punto); overflow-wrap: anywhere; }
 .alanlar > .alan a { color: var(--vurgu); font-weight: 600; overflow-wrap: anywhere; }
+/* Pencerede (öneri penceresi telefonda) alanlar tek sütuna düşüp aşağı uzuyordu: dar sütunla iki yan yana. */
+dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr)); }
 .kilitli { display: inline-flex; align-items: center; gap: 4px; color: var(--silik); font-size: var(--punto-kucuk); font-weight: 500; }
 .metin-kutu { white-space: pre-wrap; background: var(--zemin); border-radius: var(--yaricap); padding: var(--ara-3) var(--ara-4); font-size: var(--punto); line-height: 1.7; }
 

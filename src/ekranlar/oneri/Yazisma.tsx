@@ -28,8 +28,9 @@ export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: 
   };
   const govde = (
     <div className="yazisma" data-yazisma={oneri.id}>
+      {/* Yazabilen için boş yazışmada "mesaj yok" satırı yer kaplamasın: yazı kutusu yeter. */}
       {mesajlar.length === 0 ? (
-        <Bos kucuk metin={t("mesajYok")} />
+        !yazabilir && <Bos kucuk metin={t("mesajYok")} />
       ) : (
         <ol className="mesajlar">
           {mesajlar.map((m) => {
@@ -52,7 +53,7 @@ export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: 
         <div className="mesaj-yaz">
           <AnmaGirdisi
             cokSatir
-            rows={2}
+            rows={mesajlar.length || yazi ? 2 : 1}
             deger={yazi}
             aria-label={t("mesaj")}
             degistir={setYazi}

@@ -25,7 +25,7 @@ const ALINTI = [
   /^(From|Kimden|من|De|Von)\s*:.+\n(.+\n){0,3}?(Sent|Date|Gönderildi|Tarih|تاريخ الإرسال|أرسلت|التاريخ|Envoyé|Gesendet)\s*:/im,
   /^>/m,
 ];
-const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im, /^(Sent from )?Yahoo Mail\b/im];
+const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من|Отправлено (из|с) )/im, /^(Sent from )?Yahoo (Mail|Почт)/im];
 
 export const yeniMetin = (tam: string): string => {
   let m = tam.replace(/\r\n?/g, "\n");

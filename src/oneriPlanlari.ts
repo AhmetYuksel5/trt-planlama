@@ -187,12 +187,14 @@ export const esCiftleri = (d: Durum): [Oneri, Oneri][] => {
 /*
  * Plandakine bağlama: Planlamacı muhabirin önerisini kullanmayıp planda doğrudan
  * onun adına PKG ya da gelişme açınca öneri "değerlendiriliyor"da kalıyor,
- * muhabir aynı işi hem öneri hem görev olarak görüyordu. Son 7 günün Next Day
- * planlarında (onaylı ve devredilmiş de: bağlamak planın içeriğini değiştirmiyor)
- * öneriye bağlı olmayan, aynı muhabirin paketi ve gelişmesi aday. Benzer başlıklı
- * önce. Bağlamak kaydın yalnız `oneriId`'sini doldurur.
+ * muhabir aynı işi hem öneri hem görev olarak görüyordu. Bugünün ve sonraki
+ * günlerin Next Day planlarında (onaylı da: bağlamak planın içeriğini
+ * değiştirmiyor) öneriye bağlı olmayan, aynı muhabirin paketi ve gelişmesi
+ * aday. Önce son 7 gün aranıyordu; kullanıcı: geçmiş planlara artık dokunulmuyor,
+ * listede eski planlar kalabalık ediyordu. Benzer başlıklı önce. Bağlamak
+ * kaydın yalnız `oneriId`'sini doldurur.
  */
-export const BAGLAMA_GUNU = 7;
+export const BAGLAMA_GUNU = 0;
 export interface BaglanabilirKayit {
   tur: "paket" | "gelisme";
   id: string;

@@ -21,12 +21,21 @@ import { SayfaBasi } from "../ana/Planlama";
 
 interface Sohbet {
   konuKimligi: string;
+  /* Aynı konunun sunucuda ayrı yazışma kimliğiyle gelmiş iplikleri de (silme hepsini kaldırır). */
+  kimlikler: string[];
   baslik: string;
   mesajlar: PostaMesaji[];
   son: PostaMesaji;
 }
 
-/* Mesajları konu çekirdeğine göre ipliklere ayırıp en yeni sohbet üstte. */
+const enEski = (l: PostaMesaji[]) => l.reduce((e, m) => (m.zaman < e ? m.zaman : e), l[0].zaman);
+
+/*
+ * Mesajları ipliklere ayırıp en yeni sohbet üstte. İplik sunucunun yazışma
+ * kimliği; ama Yahoo ya da başka istemciden gelen yanıt yeni kimlikle
+ * geliyor, aynı postanın yanıtı ayrı sohbet açıyordu. Konu çekirdeği aynı
+ * (yeterince uzun, "Re:" gibi kısa konular karışmasın) iplikler birleşir.
+ */
 const sohbetleriKur = (mesajlar: PostaMesaji[]): Sohbet[] => {
   const grup = new Map<string, PostaMesaji[]>();
   for (const m of mesajlar) {
@@ -34,11 +43,22 @@ const sohbetleriKur = (mesajlar: PostaMesaji[]): Sohbet[] => {
     l.push(m);
     grup.set(m.konuKimligi, l);
   }
-  return [...grup.entries()]
-    .map(([konuKimligi, liste]) => {
+  const birlesik = new Map<string, { kimlikler: string[]; liste: PostaMesaji[] }>();
+  const iplikler = [...grup.entries()].sort((a, b) => enEski(a[1]).localeCompare(enEski(b[1])));
+  for (const [kimlik, liste] of iplikler) {
+    const c = postaKonuCekirdegi(liste[0].konu);
+    const anahtar = c.length >= 12 ? `c:${c}` : `k:${kimlik}`;
+    const var_ = birlesik.get(anahtar);
+    if (var_) {
+      var_.kimlikler.push(kimlik);
+      var_.liste.push(...liste);
+    } else birlesik.set(anahtar, { kimlikler: [kimlik], liste: [...liste] });
+  }
+  return [...birlesik.values()]
+    .map(({ kimlikler, liste }) => {
       const sirali = [...liste].sort((a, b) => a.zaman.localeCompare(b.zaman));
       const son = sirali[sirali.length - 1];
-      return { konuKimligi, baslik: postaKonuBasligi(son.konu) || son.konu, mesajlar: sirali, son };
+      return { konuKimligi: kimlikler[0], kimlikler, baslik: postaKonuBasligi(son.konu) || son.konu, mesajlar: sirali, son };
     })
     .sort((a, b) => b.son.zaman.localeCompare(a.son.zaman));
 };
@@ -301,7 +321,9 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           const yeniGonderen = !onceki || onceki.kimden !== m.kimden || !!onceki.giden !== !!m.giden;
           const gad = gonderenAdi(v, m, ad);
           // Kayıttaki metin kapının o günkü kurallarıyla kesilmiş; yeni kalıplar (Yahoo'nun iletisi) eski postaya da uygulansın.
-          const sade = m.giden ? m.metin : postaMetniSadelestir(yeniMetin(m.metin), gad);
+          // İmzadaki ad Latin yazımla da olabiliyor ("Basel Awni Al TANANY"): adın bütün yazımları ve postadaki görünen ad.
+          const imzaAdi = [gad, ...(typeof kisi?.ad === "object" ? [kisi.ad.tr, kisi.ad.en] : [kisi?.ad]), m.kimdenAd].filter(Boolean).join(" ");
+          const sade = m.giden ? m.metin : postaMetniSadelestir(yeniMetin(m.metin), imzaAdi);
           // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
           const alinti = !m.giden && !sade.trim() ? postaAlintiMetni(m.tamMetin, gad) : "";
           const govde = sade.trim() ? sade : alinti;
@@ -661,8 +683,9 @@ export function Posta({ ben }: { ben: Kisi }) {
   const [yeni, setYeni] = useState(false);
   const secik = sohbetler.find((s) => s.konuKimligi === secili);
   const sil = (konuKimligi: string) => {
+    const kimlikler = sohbetler.find((x) => x.konuKimligi === konuKimligi)?.kimlikler ?? [konuKimligi];
     if (!confirm(t("postaSilOnay"))) return;
-    if (postaSil(ben, konuKimligi) && secili === konuKimligi) setSecili("");
+    if (postaSil(ben, kimlikler) && secili === konuKimligi) setSecili("");
   };
   const [cekiliyor, setCekiliyor] = useState(false);
   const cek = async (g = grup) => {

@@ -1,4 +1,4 @@
-// Plandakine bağla: muhabir adına doğrudan açılmış (öneriye bağlı olmayan) dünkü onaylı PKG, öneriye ayrıntıdan ve plan satırından bağlanır; paket değişmez, öneri "plana eklendi"
+// Plandakine bağla: muhabir adına doğrudan açılmış (öneriye bağlı olmayan) bugünkü onaylı PKG, öneriye ayrıntıdan ve plan satırından bağlanır; paket değişmez, öneri "plana eklendi"
 const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
 let gec = 0, kal = 0;
@@ -16,12 +16,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl1"); localStorage.setItem("trt-planlama-dil", "tr"); });
   await git("#/oneriler");
   let d = await veri();
-  const dun = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  // Günün tek planı var (açılış işi aynı günün çiftlerini topluyor): dünkü plan varsa o, yoksa bir kopya.
+  // Yalnız bugünün ve sonrasının planları aday (geçmiş planlara dokunulmuyor); test bugünün planıyla.
+  const dun = new Date().toISOString().slice(0, 10);
+  // Günün tek planı var (açılış işi aynı günün çiftlerini topluyor): bugünün planı varsa o, yoksa bir kopya.
   let plan = d.planlar.find((x) => x.tarih === dun && x.basliklar.length);
   if (plan) plan.durum = "onayli";
   else {
-    plan = { ...d.planlar.find((x) => x.basliklar.length), id: "nd-test-dun", tarih: dun, durum: "onayli" };
+    plan = { ...d.planlar.find((x) => x.basliklar.length), id: "nd-test-bugun", tarih: dun, durum: "onayli" };
     d.planlar.push(plan);
   }
   const bekleyen = d.oneriler.filter((o) => o.muhabirId && !o.giren && !o.talimatVeren && ["yeni", "degerlendiriliyor"].includes(o.durum) && !d.gelismeler.some((g) => g.oneriId === o.id) && !d.paketler.some((x) => x.oneriId === o.id));
@@ -37,7 +38,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // 1. Önerinin ayrıntısından
   await git("#/oneriler/" + a1.id);
-  ok((await p.locator("[data-plandakine-bagla] [data-bagla-aday='p-bagla-1']").count()) === 1, "ayrıntıda dünkü onaylı PKG aday");
+  ok((await p.locator("[data-plandakine-bagla] [data-bagla-aday='p-bagla-1']").count()) === 1, "ayrıntıda bugünkü onaylı PKG aday");
   await p.locator("[data-bagla-aday='p-bagla-1'] [data-bagla]").click();
   await p.waitForTimeout(300);
   d = await veri();

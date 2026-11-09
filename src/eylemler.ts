@@ -3249,10 +3249,18 @@ export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Pos
    * İplik: sunucunun kimliği; o kimlikte sohbet yoksa ama aynı konuyla buradan
    * açılmış sohbet varsa (yeni posta, kimliği henüz öğrenilmemiş) ona katıl.
    */
+  /*
+   * Sunucunun kimliğinde sohbet yoksa aynı konu çekirdeğiyle (yeterince uzun)
+   * var olan sohbete katıl: Yahoo'dan ya da Rusça Outlook'tan gelen yanıt yeni
+   * yazışma kimliğiyle geliyor, aynı postanın yanıtı ayrı sohbet açıyordu.
+   */
+  const ayniKonu = sunucuKonu && !mevcut.some((m) => m.konuKimligi === sunucuKonu) && cekirdek.length >= 12
+    ? mevcut.find((m) => postaKonuCekirdegi(m.konu) === cekirdek && (!grup || !m.grup || m.grup === grup.trim().toLowerCase()))
+    : undefined;
   const konuKimligi =
     sunucuKonu && !mevcut.some((m) => m.konuKimligi === sunucuKonu) && cekirdek && mevcut.some((m) => m.konuKimligi === cekirdek)
       ? cekirdek
-      : sunucuKonu || cekirdek || kimlik("pk");
+      : ayniKonu?.konuKimligi || sunucuKonu || cekirdek || kimlik("pk");
   const g = grup?.trim().toLowerCase();
   const kucukListe = (l?: string[]) => (l ?? []).map((a) => a.trim().toLowerCase()).filter(Boolean);
   const mesaj: PostaMesaji = {
@@ -3331,12 +3339,14 @@ export const postaEtiketsizleriGruba = (ben: Kisi, grup: string): number => {
 };
 
 /* Sohbeti izleriyle siler (Planlama temizliği); çağrı ve öneri akışına dokunmaz. */
-export const postaSil = (ben: Kisi, konuKimligi: string): boolean => {
+// Ekranda birleşmiş sohbet birden çok iplik kimliğinden oluşabiliyor (Posta.tsx → sohbetleriKur); hepsi gider.
+export const postaSil = (ben: Kisi, konuKimligi: string | string[]): boolean => {
   if (!yapabilir(ben, "cagriHazirla")) return false;
   const d = getir();
   const mevcut = d.postaMesajlari ?? [];
-  if (!mevcut.some((m) => m.konuKimligi === konuKimligi)) return false;
-  kaydet({ ...d, postaMesajlari: mevcut.filter((m) => m.konuKimligi !== konuKimligi) });
+  const silinen = new Set(typeof konuKimligi === "string" ? [konuKimligi] : konuKimligi);
+  if (!mevcut.some((m) => silinen.has(m.konuKimligi))) return false;
+  kaydet({ ...d, postaMesajlari: mevcut.filter((m) => !silinen.has(m.konuKimligi)) });
   return true;
 };
 

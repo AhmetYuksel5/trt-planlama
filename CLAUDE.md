@@ -1035,7 +1035,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   gelişmesi (başlığın muhabiri de), benzer başlıklı önce. Bağlamak kayda yalnız
   `oneriId` yazar; plan, paketin durumu ve onayı değişmez, muhabire bildirim
   gitmez; öneri kayda göre "plana eklendi" (`oneriPlanaGore`), hareket
-  `oneriPlandakineBaglandi`. Önerinin ayrıntısında "Planda bu muhabirin
+  `oneriPlandakineBaglandi`. Adaylar yalnız bugünün ve sonraki günlerin
+  planlarında (`BAGLAMA_GUNU` 0; kullanıcı: geçmiş planlara dokunulmuyor,
+  önce son 7 gündü). Önerinin ayrıntısında "Planda bu muhabirin
   kayıtları" (`Oneriler.tsx → PlandakineBagla`), plandaki bağsız PKG satırında
   benzer başlıklı bekleyen öneri varsa 🔗 (`BaslikKarti.tsx → PaketOneriBagi`);
   Planlama (öneri değerlendiren) ve tam yönetici. PKG için plandaki öneri de
@@ -1059,7 +1061,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   iplikçiklerinde. Öneri-yanıt akışından ayrı (`Durum.postaMesajlari`,
   `PostaMesaji`, `eylemler.ts → postaIsle`, `postaSil`); çağrıya bağlı değil,
   öneri doğurmuyor. İplik `konuKimligi`: sunucuda Graph'ın conversationId'si,
-  içe aktarmada konu çekirdeğinden. Aynı Message-ID iki kez işlenmiyor.
+  içe aktarmada konu çekirdeğinden. Yahoo'dan ya da Rusça Outlook'tan gelen
+  yanıt yeni yazışma kimliğiyle geliyor, ayrı sohbet açıyordu: kimliği yeni
+  olan posta aynı konu çekirdeğiyle (12+ harf) var olan sohbete katılır
+  (`postaIsle → ayniKonu`), ekranda da aynı çekirdekli iplikler tek sohbet
+  (`Posta.tsx → sohbetleriKur`, `kimlikler`; silme hepsini). Konu öneki
+  Rusça "Отв.:", Almanca "AW:", Türkçe "YNT:" de (`KONU_ON_EK`). İmza
+  kuyruğunda Rusça "Отправлено из Yahoo Почты" (`IMZA`, kapıda da) ve dört
+  sözcüklü Latin ad (`adGibiSatir`; balona adın Latin yazımı da gider). Aynı Message-ID iki kez işlenmiyor.
   Görünüm (kullanıcının gösterdiği örnekten; `.posta-govde`/`.posta-balon`/`.posta-yaz`):
   gelen balon başta, giden sonda, aralarında girinti; her gönderenin hafif tonu
   (`Posta.tsx → gonderenTonu`, `--ton`; giden kırmızımsı, gelen o tona düşmez),
@@ -1487,6 +1496,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Kart ya da liste kişinin seçimi, ana sayfa düzeni gibi kayıtta
     (`Durum.oneriGorunumu`, `eylemler.ts → oneriGorunumuKaydet`); aynı
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
+  - Öneri penceresi kısa (kullanıcı: aşağı çok uzuyordu): satırsız öneride
+    "Gelişmeler" kartı yerine "Gelişme ekle" düğmesi, boş yazışmada "mesaj
+    yok" satırı yok, pencerede orijinal e-posta ve hareket geçmişi katlanır
+    satır (`KatlanirKartlar`), alanlar dar sütunda (`dialog.pencere .alanlar`).
   - Öneriler sayfası (`oneri/Oneriler.tsx → OnerilerListe`) da aynı seçimi
     izler: kartta karta basınca geniş pencerede ayrıntı sayfasının tamamı
     (`OneriDetay pencerede`: kararlar, yazışma, geçmiş), listede bugünkü

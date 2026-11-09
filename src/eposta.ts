@@ -179,7 +179,8 @@ export interface GelenEposta {
  * boşluklar atılıp küçük harfe indiriliyor. Aynı yazışmanın yanıtları
  * böylece tek sohbette toplanıyor. Sunucuda conversationId varsa o kullanılır.
  */
-const KONU_ON_EK = /^\s*(re|fw|fwd|rv|اعادة توجيه|إعادة توجيه|رد|ردود|回复|回覆)\s*(\[\d+\])?\s*:\s*/i;
+// Rusça ("Отв.:", "Пересл.:"), Almanca ("AW:", "WG:"), İskandinav ("SV:"), Türkçe ("YNT:", "İLT:") önekleri de: Rusça Outlook'tan gelen yanıt ayrı sohbet açıyordu.
+const KONU_ON_EK = /^\s*(re|fw|fwd|rv|aw|wg|sv|enc|ynt|yanıt|ilt|ilet|отв|ответ|пересл|اعادة توجيه|إعادة توجيه|رد|ردود|回复|回覆)\s*(\[\d+\])?\s*\.?\s*:\s*/iu;
 export const postaKonuCekirdegi = (konu: string) => {
   let k = (konu ?? "").replace(/\r\n?/g, " ").trim();
   let onceki;
@@ -220,8 +221,9 @@ const ICERIK_SOZ =
   /(?<![\p{L}\p{N}])(?:رجاء|يرجى|نرجو|ارجو|أرجو|مراجعة|اجتماع|خبر|تقرير|موضوع|بخصوص|مقترح|اقتراح|تغطية|برنامج|حلقة|ضيف|please|lütfen|rica|toplantı|haber|öneri|konu|hakkında|program|rapor)(?![\p{L}\p{N}])/iu;
 // Kişi adı gibi kısa satır: en çok 3 sözcük, kısa, rakam/bağlantı/cümle-işaret
 // bitişi ve içerik sözcüğü yok. Gövdedeki kısa cümleyi isim sanmasın diye dar.
+// Latin yazımlı tam ad dört sözcük olabiliyor ("Basel Awni Al TANANY"); tek başına çıpa olmadığı için kesmeyi o başlatmaz.
 const adGibiSatir = (t: string): boolean =>
-  !!t && t.length <= 30 && !/\d/.test(t) && !/[.!؟?،؛,:]\s*$/.test(t) && !/https?:|www\./i.test(t) && !ICERIK_SOZ.test(t) && t.split(/\s+/).length <= 3;
+  !!t && t.length <= 36 && !/\d/.test(t) && !/[.!؟?،؛,:]\s*$/.test(t) && !/https?:|www\./i.test(t) && !ICERIK_SOZ.test(t) && t.split(/\s+/).length <= 4;
 // Satır neredeyse yalnız bağlantıdan mı ibaret (imza sitesi/sosyal): bağlantı
 // dışında çok az metin. Gövdedeki "şu haberi okuyun <link>" cümlesi değildir;
 // o yüzden ana metindeki bağlantılar korunur, yalnız imza bağlantısı atılır.
@@ -384,7 +386,8 @@ const ALINTI = [
   /^>/m,
 ];
 // Yahoo uygulaması "Sent from" olmadan da yazıyor ("Yahoo Mail: Search, Organize, Conquer<bağlantı>").
-const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من)/im, /^(Sent from )?Yahoo Mail\b/im];
+// Rusça telefon imzası ("Отправлено из Yahoo Почты на iPhone<bağlantı>") da: kuyruk sohbette kalıyordu.
+const IMZA = [/^--\s*$/m, /^(Sent from|Get Outlook for|Gönderen:? iPhone|iPhone'umdan gönderildi|أُرسلت من|ارسلت من|تم الإرسال من|Отправлено (из|с) )/im, /^(Sent from )?Yahoo (Mail|Почт)/im];
 
 export const yeniMetin = (tam: string) => {
   let m = tam.replace(/\r\n?/g, "\n");

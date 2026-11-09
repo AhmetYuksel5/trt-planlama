@@ -4,7 +4,7 @@ import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
 import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, BicimRozeti, Bos, Icerik, Kart, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, Icerik, Kart, KatlanirKartlar, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { EpostaOneriSil, KaynakRozeti, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni, useOneriGunu } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { oneriArsiveGonder, oneriArsivdenCikar, oneriBirlestir, oneriPlandakineBagla, oneriAsamayaDon, oneriDurum, oneriKopyala, takipSatiriEkle, oneriDuzenle, oneriGeriCek, oneriGonder, oneriSil, oneriYenidenGonder, epostaOnerisiSilinir } from "../../eylemler";
@@ -481,6 +481,7 @@ function EsCiftleri({ ben }: { ben: Kisi }) {
 function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const { t, dil } = useDil();
   const [metin, setMetin] = useState("");
+  const [formAcik, setFormAcik] = useState(false);
   const ekler = oneriSatiriEkleyebilir(ben, o);
   const satirlar = [...(o.satirlar ?? [])].reverse();
   if (!ekler && !satirlar.length && o.durum !== "takip") return null;
@@ -489,6 +490,19 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
     setMetin("");
     bildir(t("tsEklendi"));
   };
+  /*
+   * Satırı olmayan öneride kart boş bir yazı kutusu ve "kayıt yok"tan ibaretti,
+   * pencere aşağı doğru uzuyordu (kullanıcı): o zaman yalnız "Gelişme ekle"
+   * düğmesi, basınca form.
+   */
+  if (ekler && !satirlar.length && !formAcik)
+    return (
+      <div className="ara-ust-2">
+        <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setFormAcik(true)} data-takip-satiri-ac>
+          <Lightbulb size={14} /> {t("tsEkle")}
+        </button>
+      </div>
+    );
   return (
     <Kart baslik={t("tsGelismeler")} ikon={<Lightbulb size={18} />}>
       {ekler && (
@@ -696,10 +710,13 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
           </Kart>
           <TakipSatirlari ben={ben} oneri={oneri} />
           <OneriYazismasi ben={ben} oneri={oneri} />
-          {yanit && <EpostaKaynagi ben={ben} oneri={oneri} yanit={yanit} />}
-          <Kart baslik={t("hareketGecmisi")}>
-            {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}
-          </Kart>
+          {/* Pencerede orijinal e-posta (gelişmenin tekrarı) ve geçmiş kapalı satır: pencere aşağı doğru çok uzuyordu. */}
+          <KatlanirKartlar.Provider value={pencerede}>
+            {yanit && <EpostaKaynagi ben={ben} oneri={oneri} yanit={yanit} />}
+            <Kart baslik={t("hareketGecmisi")} ek={pencerede ? String(hareketler.length) : undefined}>
+              {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}
+            </Kart>
+          </KatlanirKartlar.Provider>
         </div>
         <div className="iz">
           <Kart baslik={t("degerlendirme")}>
