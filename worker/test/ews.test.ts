@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, type Soket, type EwsAyar } from "../src/ews.ts";
+import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -61,7 +61,8 @@ test("GetItem yanıtı mesaja çözülüyor; alıntı ayıklanıyor, ekler ad ol
 test("CreateItem isteği: gönderilip kopyalanır, konu/gövde/alıcı XML'de", () => {
   const x = createItemIstegi({ kime: ["planning@trtarabi.com"], konu: "RE: <selam>", metin: "merhaba & hoşçakal" });
   assert.ok(x.includes('MessageDisposition="SendAndSaveCopy"'));
-  assert.ok(x.includes("<t:Body BodyType=\"Text\">merhaba &amp; hoşçakal</t:Body>"));
+  assert.ok(x.includes('<t:Body BodyType="HTML">'), "gövde yönlü HTML");
+  assert.ok(x.includes("merhaba &amp;amp; hoşçakal"), "metin HTML'de, XML'de bir kez daha kaçmış");
   assert.ok(x.includes("RE: &lt;selam&gt;"));
   assert.ok(x.includes("<t:EmailAddress>planning@trtarabi.com</t:EmailAddress>"));
   assert.ok(!x.includes("CcRecipients") && !x.includes("BccRecipients"), "boş CC/BCC yazılmıyor");
@@ -300,4 +301,18 @@ test("postalariCek: bir GetItem grubu alınamazsa alınanlar uyarıyla döner", 
   assert.ok("mesajlar" in r, JSON.stringify(r));
   assert.equal(r.mesajlar.length, 1);
   assert.ok(r.uyari && /^GetItem 2\/2: .*kapandı/.test(r.uyari), r.uyari);
+});
+
+test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", () => {
+  assert.equal(satirYonu("مرحبا بكم"), "rtl");
+  assert.equal(satirYonu("Merhaba, şöyle"), "ltr");
+  assert.equal(satirYonu("15:00 تقرير"), "rtl", "baştaki rakam yönü belirlemez");
+  const h = metinHtml("مرحبا\n\nNATO toplantısı\n12345");
+  assert.ok(h.includes('<div dir="rtl" style="text-align:right">مرحبا</div>'));
+  assert.ok(h.includes('<div dir="rtl" style="text-align:right"><br></div>'), "boş satır önceki yönde");
+  assert.ok(h.includes('<div dir="ltr" style="text-align:left">NATO toplantısı</div>'));
+  assert.ok(h.includes('<div dir="ltr" style="text-align:left">12345</div>'));
+  assert.ok(metinHtml("<b>&").includes("&lt;b&gt;&amp;"), "metin kaçar");
+  const x = createItemIstegi({ kime: ["a@ornek.test"], konu: "k", metin: "شكرا" });
+  assert.ok(x.includes("dir=&quot;rtl&quot;"));
 });

@@ -1151,7 +1151,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     okuyor (`ews.ts → getItemCoz`, `EwsMesaj.kime`/`cc`).
   - Gönderim kapıda EWS `CreateItem` (`SendAndSaveCopy`; `worker/src/ews.ts →
     createItemIstegi`, `GidenPosta`: çoklu Kime, CC, BCC; şema sırası To, Cc,
-    Bcc), `POST /posta/gonder` (dış muhabir ve onay bekleyen hariç).
+    Bcc). Gövde her zaman HTML: düz metin `ews.ts → metinHtml` ile satır
+    satır yönlü (`satirYonu`: ilk güçlü harf Arapçaysa `dir="rtl"` ve sağa
+    yaslı, değilse sola; harfsiz satır öncekinin yönünde). Düz metin gövdede
+    Outlook Arapça postayı karşıya sola yaslı gönderiyordu; PKG geri
+    bildirimi de bu yoldan, `POST /posta/gonder` (dış muhabir ve onay bekleyen hariç).
     **Grup adresini kapı her zaman CC'ye ekler** (tarayıcıya bırakılmıyor:
     yazışma grupta kalsın, yanıtlar kutudan geri gelsin); adreslerden biri
     bile geçersizse gönderim reddedilir (`index.ts → adresListesi`), en çok 50

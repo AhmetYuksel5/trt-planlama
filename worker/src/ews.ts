@@ -103,7 +103,34 @@ export interface GidenPosta {
 }
 
 /*
- * Yanıt ve yeni posta: düz metin gövdeli e-posta, gönderilip Gönderilmiş'e
+ * Düz metni yönlü HTML'e çevirir. Düz metin gövdede Outlook paragrafı hep
+ * sola yaslıyordu, Arapça posta karşıya sola yaslı gidiyordu. Her satır kendi
+ * ilk güçlü harfine göre: Arapça ise sağdan sola ve sağa yaslı, Latin ise
+ * soldan sağa; karışık postada her satır kendi yönünde.
+ */
+const ARAPCA_HARF = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const GUCLU_HARF = /[\p{L}]/u;
+const kacHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+export const satirYonu = (satir: string, varsayilan: "rtl" | "ltr" = "ltr"): "rtl" | "ltr" => {
+  const h = satir.match(GUCLU_HARF)?.[0];
+  return h ? (ARAPCA_HARF.test(h) ? "rtl" : "ltr") : varsayilan;
+};
+export const metinHtml = (metin: string): string => {
+  const satirlar = metin.replace(/\r\n?/g, "\n").split("\n");
+  // Boş ya da harfsiz satır (rakam, imza çizgisi) bir önceki satırın yönünde kalır.
+  let yon = satirYonu(metin);
+  const govde = satirlar
+    .map((s) => {
+      yon = satirYonu(s, yon);
+      const hiza = yon === "rtl" ? "right" : "left";
+      return `<div dir="${yon}" style="text-align:${hiza}">${s.trim() ? kacHtml(s) : "<br>"}</div>`;
+    })
+    .join("");
+  return `<html><body><div style="font-family:Arial,sans-serif;font-size:11pt">${govde}</div></body></html>`;
+};
+
+/*
+ * Yanıt ve yeni posta: gövde her zaman HTML (düz metin `metinHtml` ile yönlü), gönderilip Gönderilmiş'e
  * kopyalanıyor. Şema sırayı şart koşuyor (To, Cc, Bcc); boş liste yazılmıyor.
  */
 export const createItemIstegi = (g: GidenPosta): string => {
@@ -112,7 +139,7 @@ export const createItemIstegi = (g: GidenPosta): string => {
   return ZARF(
     `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
       `<t:Subject>${kacXml(g.konu)}</t:Subject>` +
-      (g.html ? `<t:Body BodyType="HTML">${kacXml(g.html)}</t:Body>` : `<t:Body BodyType="Text">${kacXml(g.metin)}</t:Body>`) +
+      `<t:Body BodyType="HTML">${kacXml(g.html ?? metinHtml(g.metin))}</t:Body>` +
       liste("ToRecipients", g.kime) +
       liste("CcRecipients", g.cc) +
       liste("BccRecipients", g.bcc) +
