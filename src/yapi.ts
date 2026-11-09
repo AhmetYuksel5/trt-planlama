@@ -335,7 +335,8 @@ export const varsayilanYapi = (): Yapi => {
  */
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
-  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && !yonetimGecisiGerekli(y))) return y;
+  // Sürüm 0'a (varsayılan) ayrıca bakılmıyor: varsayılandan açılmış taslak da sürüm 0 taşıyor, eski düzende kaydedilmişse tamamlanmalı.
+  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && !yonetimGecisiGerekli(y)) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;

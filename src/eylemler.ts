@@ -11,7 +11,7 @@ import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Yazi } from "./dil";
-import { ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -3664,8 +3664,16 @@ export const kisiEpostasi = (ben: Kisi, kisiId: string, eposta: string): "degist
 
 /* --- Kurumun yapısı (yapi.ts): taslak, yayın, sürüme dönüş; yalnız tam yönetici --- */
 
-/** Yöneticinin taslağı; yoksa yayındaki yapının kopyası (henüz kaydedilmemiş). */
-export const yapiTaslagi = (d: Durum, ben: Kisi): Yapi => d.yapiTaslaklari?.[ben.id] ?? guncelYapi(d);
+/*
+ * Yöneticinin taslağı; yoksa yayındaki yapının kopyası (henüz kaydedilmemiş).
+ * Taslak da okurken tamamlanır: yeni düzenden (yönetim kademesi, Script
+ * Editor, yeni yol) önce kaydedilmiş taslakta Organizasyon ekranı eski hali
+ * gösteriyordu, kullanıcı "bende hiçbir şey değişmedi" dedi.
+ */
+export const yapiTaslagi = (d: Durum, ben: Kisi): Yapi => {
+  const t = d.yapiTaslaklari?.[ben.id];
+  return t ? tamamla(t) : guncelYapi(d);
+};
 
 /**
  * Taslağı değiştiriyor. Yayındaki yapıya dokunmuyor: yönetici birkaç
@@ -3699,7 +3707,8 @@ export const yapiYayinla = (ben: Kisi, not = "") => {
   const taslak = d.yapiTaslaklari?.[ben.id];
   if (!yapiDuzenleyebilir(ben) || !taslak) return false;
   const surum = Math.max(0, ...d.yapilar.map((y) => y.surum)) + 1;
-  const yayin: Yapi = { ...taslak, surum, id: kimlik("y"), zaman: simdi(), yayinlayan: ben.id, ...(not.trim() ? { not: not.trim() } : { not: undefined }) };
+  // Eski düzende kaydedilmiş taslak tamamlanmış haliyle yayınlanır (ekranda görülen o).
+  const yayin: Yapi = { ...tamamla(taslak), surum, id: kimlik("y"), zaman: simdi(), yayinlayan: ben.id, ...(not.trim() ? { not: not.trim() } : { not: undefined }) };
   const { [ben.id]: _, ...kalan } = d.yapiTaslaklari ?? {};
   kaydet(hareketYaz({ ...d, yapilar: [...d.yapilar, yayin], yapiTaslaklari: kalan }, { kisiId: ben.id, tip: "yapiYayinlandi", veri: { sayi: String(surum) } }));
   return true;

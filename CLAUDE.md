@@ -607,7 +607,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     okurken Yönetim'in ünvanları gruplara iner, Yönetim gizlenir
     (`yonetimiKademeyeKur`, `tamamla` içinde); kişileri sistemin açılış işi
     taşır (`eylemler.ts → yonetimiAgacaTasi`, `kademeHedefi`; gerçek kipte
-    tam yöneticinin tarayıcısında da). Test `testler/yonetim-kademe.cjs`.
+    tam yöneticinin tarayıcısında da). Yöneticinin taslağı da okurken
+    tamamlanır (`eylemler.ts → yapiTaslagi`, yayında `tamamla(taslak)`;
+    `tamamla` sürüm 0'ı ayrıca geçmez): değişiklikten önce kaydedilmiş taslak
+    Organizasyon ekranında eski hali gösteriyordu, kullanıcı "bende hiçbir şey
+    değişmedi" dedi. Test `testler/yonetim-kademe.cjs`.
   - Plan ekibi (`organizasyon/EkipSekmesi.tsx`, `Yapi.ekipGorevleri`): Next
     Day ekibindeki görevler (منتج تنفيذي…) ve kuralları. Görev adı Arapça
     zorunlu; kural birim + ünvan seçimi (boşsa hepsi; birim seçimi altını da

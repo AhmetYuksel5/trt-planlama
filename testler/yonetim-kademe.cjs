@@ -47,6 +47,21 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const yeniUnvan = taslak?.unvanlar?.find((u) => u.ad?.tr === "Output müdürü");
   ok(yeniUnvan && yeniUnvan.yonetici === true, "kademeye eklenen ünvan yönetici ünvanı");
 
+  // Yeni düzenden önce kaydedilmiş taslak: Organizasyon ekranı onu da yeni düzende gösterir
+  await p.evaluate(() => {
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const t = v.yapiTaslaklari.yo3;
+    const yon = t.birimler.find((b) => b.id === "yonetim");
+    yon.gizli = false;
+    yon.unvanlar = ["koordinator", "inputMuduru", "programMuduru"];
+    for (const b of t.birimler) if (b.id !== "yonetim") b.unvanlar = (b.unvanlar ?? []).filter((u) => !yon.unvanlar.includes(u));
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  });
+  await git("#/organizasyon/birimler");
+  ok((await p.locator('[data-birim-satiri="yonetim"]').getAttribute("class")).includes("soluk"), "eski düzende kaydedilmiş taslakta da Yönetim gizli");
+  ok((await p.locator('[data-unvanlar="bInput"] [data-unvan="inputMuduru"]').count()) === 1, "eski taslakta Input müdürü Input'a indi");
+
   // Eski düzen: Yönetim'deki kişi açılışta yerine geçer
   await p.evaluate(() => {
     const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
