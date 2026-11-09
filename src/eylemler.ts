@@ -23,6 +23,8 @@ import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
+import { demoHaberleri, type Haber } from "./gundem";
+import { adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
 import { oncesi, siradaki } from "./ozel";
 import { olayAyi, olayBaglantilari, olayBicimleri } from "./aylik";
 import { yeniAnilanlar } from "./bahsetme";
@@ -2828,6 +2830,51 @@ export const bahsetmeGoruldu = (ben: Kisi, id: string) => {
   const b = d.bahsetmeler?.find((x) => x.id === id);
   if (!b || b.kisiId !== ben.id || b.goruldu) return false;
   kaydet({ ...d, bahsetmeler: d.bahsetmeler!.map((x) => (x.id === id ? { ...x, goruldu: simdi() } : x)) });
+  return true;
+};
+
+/* --- Takvim botu (takvimBotu.ts): haberlerden olay adayı; takvime Planlama ekler --- */
+
+/*
+ * Gündem taranınca bulunan adaylar kayda girer: tarayan kişi Planlama
+ * olmayabilir, adaylar takvimi düzenleyene görünsün. Yalnız yeni aday varsa
+ * ya da eski aday atılacaksa yazılır; her açılışta boş yazış olmasın.
+ */
+export const takvimAdaylariniTopla = (ben: Kisi, haberler: Haber[]) => {
+  const d = getir();
+  if (!gundemGorebilir(d, ben)) return 0;
+  const B = bugun();
+  const mevcut = d.takvimAdaylari ?? [];
+  const temiz = adayTemizligi(mevcut, B);
+  const yeni = yeniAdaylar(haberAdaylari(haberler, B), temiz, d.faaliyetler);
+  if (!yeni.length && temiz.length === mevcut.length) return 0;
+  const z = simdi();
+  kaydet({ ...d, takvimAdaylari: [...temiz, ...yeni.map((a) => ({ ...a, id: kimlik("ta"), bulundu: z, durum: "yeni" as const }))] });
+  return yeni.length;
+};
+
+/*
+ * Demoda Gündem'i yalnız tam yönetici açıyor; Planlama da adayları görsün diye
+ * sistemin açılış işi örnek akıştan bir kez doldurur (gerçek kipte değil).
+ * Örnek veride kurulmuyor: ornek.ts gündemi yüklerse açılışta modül döngüsü
+ * (yetki henüz tanımsız) uygulamayı açtırmıyordu.
+ */
+export const demoTakvimAdaylari = () => {
+  if (GERCEK) return;
+  const d = getir();
+  if (d.takvimAdaylari?.length) return;
+  const z = simdi();
+  const liste = haberAdaylari(demoHaberleri(Date.now()), bugun()).map((a, i) => ({ ...a, id: `ta-ornek-${i}`, bulundu: z, durum: "yeni" as const }));
+  if (liste.length) kaydet({ ...d, takvimAdaylari: liste });
+};
+
+/** Adayın kararı: "ilgisiz" ya da (faaliyet formu kaydedilince) "eklendi". Takvimi düzenleyen verir. */
+export const takvimAdayiKarar = (ben: Kisi, id: string, durum: "eklendi" | "ilgisiz", faaliyetId?: string) => {
+  if (!yapabilir(ben, "takvimDuzenle")) return false;
+  const d = getir();
+  const a = d.takvimAdaylari?.find((x) => x.id === id);
+  if (!a) return false;
+  kaydet({ ...d, takvimAdaylari: d.takvimAdaylari!.map((x) => (x === a ? { ...a, durum, faaliyetId, karar: { kisiId: ben.id, zaman: simdi() } } : x)) });
   return true;
 };
 

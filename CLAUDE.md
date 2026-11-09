@@ -1963,6 +1963,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     lacivert (`.renk-takvim`).
   - Sürükle-bırak yalnız fareyle ve tek seferlik faaliyette; taşımada
     süre korunur, kenar tutamacı tek ucu değiştirir.
+  - Takvim botu (kullanıcı: gündemdeki zirve, seçim, faaliyetleri bulup
+    takvime eklesin; ilk katman yapay zekasız, ücretsiz; kurallar
+    `takvimBotu.ts`): Gündem taranınca (`Gundem.tsx`, eşitlenince, izlemede
+    değil) haberlerde olay sözcüğüyle (`OLAY_SOZLERI`, türü de oradan) ileri
+    tarih geçenler aday olur (`eylemler.ts → takvimAdaylariniTopla`,
+    `Durum.takvimAdaylari`). Tarih okuyucu `tarihleriBul`: ay adı + gün
+    (Mısır/Körfez, Levant ve İngilizce adlar, Arapça rakam; yıl yoksa haberin
+    yılı, bir haftadan çok gerideyse ertesi yıl), "غدا/tomorrow", "بعد غد",
+    "الأحد المقبل/next Sunday"; "on Sunday" ve belirsiz "gelecek hafta" alınmaz
+    (geçmiş haberde de geçiyor, tarih uydurulmasın). Bugünden önceki ve bir
+    yıldan ileri tarih alınmaz. Aynı gün aynı olayı veren haberler tek aday
+    (`benzer`, haber sayısı); takvimde aynı gün benzer adlı faaliyet ya da
+    önceki aday (kararı ne olursa olsun) varsa yazılmaz, "ilgisiz" denen geri
+    gelmez; günü bir aydan çok geçen aday atılır. Takvime kendiliğinden
+    girmez: takvimi düzenleyene sayfa başında "Bulunan faaliyetler · n"
+    (`takvim/Bulunan.tsx`, yalnız bekleyen varken), pencerede tarih, tür,
+    ülke, kaynak ↗; "Takvime ekle" faaliyet formunu haberden dolu açar
+    (`FaaliyetFormu taslak`, notta kaynak ve bağlantı), kaydedince aday
+    "eklendi" (`takvimAdayiKarar`); "İlgisiz". Demoda Gündem'i yalnız tam
+    yönetici açtığı için sistemin açılış işi örnek akıştan bir kez doldurur
+    (`demoTakvimAdaylari`; `ornek.ts` gündemi yüklerse modül döngüsü açılışı
+    bozuyordu). Sonraki katman: yapay zekayla ayıklama ve haftalık internet
+    taraması. Test `testler/takvim-botu.cjs`.
 - Kimlik `belgeler/kimlik.md`: konum (Newsroom Operations Platform), üç soru
   (şu an ne oluyor, kimde bekliyor, sıradaki ne), ilkeler, renk/yazı sistemi,
   ses ve yapılmayacaklar. Tasarım kararları ona dayanır; çelişen istek gelirse

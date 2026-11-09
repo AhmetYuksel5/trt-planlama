@@ -1,3 +1,4 @@
+import type { TakvimAdayi } from "./takvimBotu";
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
 import { izlemede } from "./izleme";
@@ -1580,6 +1581,8 @@ export interface Durum {
   /** Gündem takibinin kaynakları (boşsa gundem.ts → VARSAYILAN_KAYNAKLAR) ve araştırma arşivi. */
   gundemKaynaklari?: GundemKaynagi[];
   gundemArsivi?: GundemNotu[];
+  /** Takvim botunun haberlerden bulduğu olay adayları (takvimBotu.ts); Planlama ekler ya da "ilgisiz" der. */
+  takvimAdaylari?: TakvimAdayi[];
   /** Gündem takibini tam yönetici dışında görenler: birim (altıyla) ya da kişi. Genel ayar belgesinde. */
   gundemPaylasim?: { birimler: BirimId[]; kisiler: string[] };
   /** Kişinin gündem sepeti (kişi → parçalar); kayıtta, telefonda toplanan bilgisayarda da görünsün. */
@@ -1724,6 +1727,7 @@ export const bosDurum = (): Durum => ({
   bahsetmeler: [],
   gundemKaynaklari: [],
   gundemArsivi: [],
+  takvimAdaylari: [],
   yapilar: [],
   okundu: {},
   sayac: 0,

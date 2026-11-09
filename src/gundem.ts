@@ -1156,7 +1156,7 @@ export const imza = (baslik: string) =>
       .filter((w) => w.length >= 3 && !DURAK.has(w)),
   );
 
-const benzer = (a: Set<string>, b: Set<string>) => {
+export const benzer = (a: Set<string>, b: Set<string>) => {
   let ortak = 0;
   for (const w of a) if (b.has(w)) ortak++;
   const birlesim = a.size + b.size - ortak;
@@ -1893,8 +1893,17 @@ export const eksikVarsayilanlar = (liste: GundemKaynagi[]) =>
 
 /* --- Demo: kapıya gidilmiyor, kurgusal örnek akış --- */
 
+const DEMO_AYLAR = {
+  ar: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+};
+
 export const demoHaberleri = (simdi: number): Haber[] => {
   const s = (saat: number) => new Date(simdi - saat * SAAT).toISOString();
+  const ileri = (gun: number, dil: "ar" | "en") => {
+    const t = new Date(simdi + gun * 24 * SAAT);
+    return dil === "ar" ? `${t.getDate()} ${DEMO_AYLAR.ar[t.getMonth()]}` : `${DEMO_AYLAR.en[t.getMonth()]} ${t.getDate()}`;
+  };
   const h = (
     baslik: string,
     saat: number,
@@ -1962,6 +1971,11 @@ export const demoHaberleri = (simdi: number): Haber[] => {
     h("محمد شياع السوداني يترأس اجتماعا أمنيا في بغداد", 6, "Örnek A"),
     // Tuzak: "مشاركة" Machar, "الرياضة" Riyad, "حلبة" Halep sayılmamalı (Arapça sözcük sınırı).
     h("مشاركة واسعة في حلبة السباق ضمن مهرجان الرياضة", 4, "Örnek E"),
+    // Takvim botu için ileri tarihli olaylar (takvimBotu.ts): ay adıyla tarih, "غدا", İngilizce tarih.
+    h(`قمة خليجية طارئة في الرياض يوم ${ileri(4, "ar")}`, 3, "Örnek A", "بمشاركة قادة دول مجلس التعاون"),
+    h(`القمة الخليجية الطارئة في الرياض ${ileri(4, "ar")} لبحث الأوضاع الإقليمية`, 5, "Örnek B"),
+    h("وزير الخارجية التركي يزور بغداد غدا لبحث ملف المياه", 2, "Örnek E"),
+    h(`Iraqi parliament to convene on ${ileri(9, "en")} to vote on the budget`, 6, "Örnek C"),
   ];
 };
 

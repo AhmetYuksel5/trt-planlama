@@ -25,6 +25,7 @@ import { Yetkisiz } from "../Ayarlar";
 import { SayfaBasi } from "../ana/Planlama";
 import { FaaliyetAyrintisi, type AcikFaaliyet } from "./Ayrinti";
 import { FaaliyetFormu } from "./Form";
+import { BulunanFaaliyetler } from "./Bulunan";
 import { AyGorunumu, GunGorunumu, HaftaGorunumu, ListeGorunumu, YilGorunumu, donemAdi, type Gorunum, type GorunumOrtak } from "./Gorunumler";
 import { FaaliyetSatiri, HatirlatmaListesi, YaklasanListe, useMedya } from "./ortak";
 
@@ -127,9 +128,12 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
        
         sagUc={
           duzenler && (
-            <button type="button" className="dugme" onClick={() => setYeni(gorunum === "liste" ? B : tarih)}>
-              <Plus size={16} /> {t("yeniFaaliyet")}
-            </button>
+            <>
+              <BulunanFaaliyetler ben={ben} />
+              <button type="button" className="dugme" onClick={() => setYeni(gorunum === "liste" ? B : tarih)}>
+                <Plus size={16} /> {t("yeniFaaliyet")}
+              </button>
+            </>
           )
         }
       />

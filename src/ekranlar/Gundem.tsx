@@ -71,7 +71,9 @@ import {
   type Olay,
   type Seviye,
 } from "../gundem";
-import { GERCEK } from "../kip";
+import { GERCEK, useSunucuyaEsit } from "../kip";
+import { izlemede } from "../izleme";
+import { takvimAdaylariniTopla } from "../eylemler";
 import { bugun, gunEkle, yerelGun } from "../tarih";
 import { yaklasanlar } from "../takvim";
 import {
@@ -224,6 +226,11 @@ export default function Gundem({ ben, sekme }: { ben: Kisi; sekme?: string }) {
     if (sekme && sekme !== bolum) yerineGit(`gundem/${bolum}`);
   }, [sekme, bolum]);
   const { haberler, taraniyor, hatalar, son, tara } = useGundemHaberleri();
+  // Takvim botu: taranan haberlerdeki ileri tarihli olaylar takvime aday (takvimBotu.ts). İzlemede yazış yok, gerçek kipte eşitlenince.
+  const esit = useSunucuyaEsit();
+  useEffect(() => {
+    if (!izlemede() && (!GERCEK || esit)) takvimAdaylariniTopla(ben, haberler);
+  }, [haberler, esit, ben]);
   const [kaynakAcik, setKaynakAcik] = useState(false);
   const [paylasAcik, setPaylasAcik] = useState(false);
   const [sepetAcik, setSepetAcik] = useState(false);

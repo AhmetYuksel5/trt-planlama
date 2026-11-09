@@ -35,24 +35,33 @@ import { arapcaIpucu } from "./ortak";
  * öncelik, yer); gerisi "Diğer alanlar" altında. Güne basılarak
  * açıldıysa tarih dolu geliyor.
  */
-export function FaaliyetFormu({ ben, mevcut, tarih, kapat, kaydedildi }: { ben: Kisi; mevcut?: Faaliyet; tarih?: string; kapat: () => void; kaydedildi?: (id: string) => void }) {
+/** Takvim botunun adayından açılan formun dolu gelen alanları (takvimBotu.ts). */
+export interface FaaliyetTaslagi {
+  baslik: string;
+  tarih: string;
+  tur: FaaliyetTuru;
+  ulke?: Ulke;
+  notlar?: string;
+}
+
+export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }: { ben: Kisi; mevcut?: Faaliyet; tarih?: string; taslak?: FaaliyetTaslagi; kapat: () => void; kaydedildi?: (id: string) => void }) {
   const { t, dil } = useDil();
   const h = mevcut?.hatirlatma;
   const [f, setF] = useState({
-    baslik: mevcut?.baslik ?? "",
-    baslangic: mevcut?.baslangic ?? tarih ?? "",
-    bitis: mevcut?.bitis ?? tarih ?? "",
+    baslik: mevcut?.baslik ?? taslak?.baslik ?? "",
+    baslangic: mevcut?.baslangic ?? tarih ?? taslak?.tarih ?? "",
+    bitis: mevcut?.bitis ?? tarih ?? taslak?.tarih ?? "",
     saat: mevcut?.saat ?? "",
     bitisSaati: mevcut?.bitisSaati ?? "",
-    tur: (mevcut?.tur ?? "toplanti") as FaaliyetTuru,
+    tur: (mevcut?.tur ?? taslak?.tur ?? "toplanti") as FaaliyetTuru,
     oncelik: (mevcut?.oncelik ?? "normal") as Oncelik,
-    ulke: (mevcut?.ulke ?? "") as Ulke | "",
+    ulke: (mevcut?.ulke ?? taslak?.ulke ?? "") as Ulke | "",
     sehir: mevcut?.sehir ?? "",
     bolge: (mevcut?.bolge ?? "") as Bolge | "",
     potansiyel: (mevcut?.potansiyel ?? "oneri") as Potansiyel,
     birim: (mevcut?.birim ?? "") as Birim | "",
     muhabirId: mevcut?.muhabirId ?? "",
-    notlar: mevcut?.notlar ?? "",
+    notlar: mevcut?.notlar ?? taslak?.notlar ?? "",
     hatirlatma: (h ? ("zaman" in h ? "ozel" : h.once) : "") as HatirlatmaSuresi | "ozel" | "",
     hatirlatmaZamani: h && "zaman" in h ? yerelGirdi(h.zaman) : "",
     tekrar: (mevcut?.tekrar?.siklik ?? "") as TekrarSikligi | "",
