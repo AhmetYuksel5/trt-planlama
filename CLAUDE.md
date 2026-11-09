@@ -1635,7 +1635,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     penceresi. Pencere şablonun başlıklarıyla alt alta: künye (kategori kodları
     dahil), önemi, önerilen kapsam (kapsam süresi `kapsamBas`/`kapsamBit`, gün gün
     satırlar), ekip, görevlendirme, bağlantı ve not; boş isteğe bağlı bölüm "+"
-    düğmesiyle açılır. Adım adım form denendi, ciddi plan gibi durmadı.
+    düğmesiyle açılır. Bağlantı birden çok (`AylikOlay.baglantilar`, "+ Bağlantı
+    ekle"; ilk sürümün tek `baglanti`'sı `aylik.ts → olayBaglantilari` ile okunur,
+    kaydedince listeye geçer); çıktıda "الرابط :" satırının altında her biri
+    ayrı satırda (kullanıcı: başlığın yanında değil). Adım adım form denendi, ciddi plan gibi durmadı.
   - "Çıktı" görünümü şablonun kağıdı, her arayüz dilinde Arapça: gri bant
     başlık ve kırmızı kategori kodu, sarı tarih kutusu, "**" önem, التغطية
     المقترحة / مدة التغطية, الفريق المعتمد للتغطية, ayraç; sonda görevlendirme

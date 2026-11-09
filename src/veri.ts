@@ -1052,7 +1052,10 @@ export interface AylikOlay {
   /** Görevlendirme (kurumda iç/dış ayrımı yok): belgenin sonundaki tablo bundan. */
   gorev?: { gidis?: string; donus?: string };
   not?: string;
+  /** Eski tek bağlantı; okuma `aylik.ts → olayBaglantilari`, kaydederken listeye geçer. */
   baglanti?: string;
+  /** Birden çok bağlantı (kullanıcı: bir olayın birkaç kaynağı oluyor). */
+  baglantilar?: string[];
   /** Özel yayın olarak açıldıysa o yayın. */
   ozelId?: string;
 }

@@ -3119,6 +3119,7 @@ const M = {
   ayKapsamSuresi: m("Kapsam süresi", "مدة التغطية", "Coverage period"),
   ayEkipBolum: m("Ekip", "الفريق المعتمد للتغطية", "Assigned team"),
   ayBaglanti: m("Bağlantı", "الرابط", "Link"),
+  ayBaglantiEkle: m("Bağlantı ekle", "إضافة رابط", "Add link"),
   ayNotBolum: m("Not", "ملاحظة", "Note"),
   ayBolumBos: m("Kayıt yok", "لا سجلات", "No entries"),
   ayGunSayisi: m("{n} gün kapsam", "تغطية {n} يوم", "{n} days of coverage"),

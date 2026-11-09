@@ -30,12 +30,17 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-ay-ekip-tbc]").first().check();
   await p.locator(".ay-duzen button", { hasText: "Görevlendirme" }).click();
   await p.fill("[data-ay-gidis]", gun);
+  await p.locator(".ay-duzen button", { hasText: "Bağlantı" }).first().click();
+  await p.locator("[data-ay-baglanti]").first().fill("https://ornek.example/bir");
+  await p.click("[data-ay-baglanti-ekle]");
+  await p.locator("[data-ay-baglanti]").nth(1).fill("https://ornek.example/iki");
   await p.click("[data-ay-kaydet]");
   await p.waitForTimeout(300);
   let d = await veri();
   const yeni = d.aylik.flatMap((a) => a.olaylar ?? []).find((o) => o.baslik === "مؤتمر المناخ");
   ok(yeni && yeni.tarih === gun && yeni.gunler[0]?.satirlar[0]?.tur === "pkg" && yeni.ekip[0]?.tbc && yeni.gorev?.gidis === gun, "olay tek pencerede kaydedildi (kapsam, ekip TBC, görevlendirme) " + JSON.stringify(yeni));
   ok((await p.locator("[data-ay-bolum='3'] [data-ay-olay]").count()) === 3, "görevlendirme 3. bölümde");
+  ok(JSON.stringify(yeni?.baglantilar) === JSON.stringify(["https://ornek.example/bir", "https://ornek.example/iki"]), "iki bağlantı kaydedildi");
   await p.click("[data-ay-ekle='gun']");
   await p.fill("[data-ay-baslik]", "يوم تجريبي");
   await p.fill("[data-ay-tarih]", d0.aylik[0].ay + "-21");
@@ -47,6 +52,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-ay-belge-olay]").count()) === 6, "çıktıda bütün olaylar");
   ok((await p.locator(".ay-belge h1").innerText()).includes("الخطة الشهرية المتوقعة"), "belge başlığı kurumun Arapçasıyla");
   ok((await p.locator(".ay-tablo").count()) === 1, "tek görevlendirme tablosu");
+  ok((await p.locator(".ay-baglanti").allInnerTexts()).join("|") === "https://ornek.example/bir|https://ornek.example/iki", "çıktıda bağlantılar alt alta, ayrı satırda");
   await p.click("[data-ay-gorunum='plan']");
   // Weekly: bu haftaya düşen olay gündeme alınır
   const hedef = d.haftalik.filter((h) => h.durum !== "kesinlesti").find((h) => {

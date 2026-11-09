@@ -24,7 +24,7 @@ import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneri
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { oncesi, siradaki } from "./ozel";
-import { olayAyi, olayBicimleri } from "./aylik";
+import { olayAyi, olayBaglantilari, olayBicimleri } from "./aylik";
 import { yeniAnilanlar } from "./bahsetme";
 import {
   ORTAM_DUZENLERI,
@@ -4355,6 +4355,8 @@ const aylikOlayYaz = (d: Durum, ben: Kisi, g: AylikOlayGirdisi): [Durum, string]
     ...(g.bitis && g.bitis > g.tarih ? { bitis: g.bitis } : { bitis: undefined }),
     gunler: g.gunler.map((x) => ({ ...x, satirlar: x.satirlar.filter((s) => s.metin.trim() || s.tur !== "diger") })).filter((x) => x.satirlar.length).sort((a, b) => a.tarih.localeCompare(b.tarih)),
     ekip: g.ekip.filter((e) => e.kisiId || e.ad?.trim() || e.tbc),
+    baglanti: undefined,
+    baglantilar: olayBaglantilari(g),
   };
   let aylik = d.aylik.map((a) => (a.olaylar?.some((o) => o.id === id) && a.ay !== ay ? { ...a, olaylar: a.olaylar.filter((o) => o.id !== id) } : a));
   if (!aylik.some((a) => a.ay === ay)) aylik = [...aylik, { id: kimlik("ay"), ay, durum: "hazirlik", kalemler: [], olaylar: [] } satisfies AylikPlan];

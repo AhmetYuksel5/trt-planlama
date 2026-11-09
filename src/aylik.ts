@@ -11,6 +11,10 @@ export const olaylar = (p: AylikPlan | undefined): AylikOlay[] => [...(p?.olayla
 export const olaySonu = (o: Pick<AylikOlay, "tarih" | "bitis">) => o.bitis && o.bitis > o.tarih ? o.bitis : o.tarih;
 
 /** Ay "YYYY-MM"; olay ayın içine düşüyorsa o ayın planına girer (başladığı ay). */
+/* Olayın bağlantıları; ilk sürümdeki tek bağlantı da listede. */
+export const olayBaglantilari = (o: Pick<AylikOlay, "baglanti" | "baglantilar">): string[] =>
+  [...new Set([...(o.baglantilar ?? []), ...(o.baglanti ? [o.baglanti] : [])].map((b) => b.trim()).filter(Boolean))];
+
 export const olayAyi = (tarih: string) => tarih.slice(0, 7);
 
 /*

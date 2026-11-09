@@ -3,7 +3,7 @@ import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { wordIndir } from "../../bilesenler/indir";
 import { aralikYaz, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { ETIKET_KODU, SATIR_KODU, gorevler, kapsamOzeti, olaylar, olaySonu } from "../../aylik";
+import { ETIKET_KODU, SATIR_KODU, gorevler, kapsamOzeti, olayBaglantilari, olaylar, olaySonu } from "../../aylik";
 import { kisiAr } from "../../etiketler";
 import { aylikDurum, aylikDuzenler, aylikOlayKaydet, aylikOlaySil, type AylikOlayGirdisi } from "../../eylemler";
 import { ayEkle, aySonu, bugun, gunEkle } from "../../tarih";
@@ -347,10 +347,17 @@ function AylikBelgesi({ plan, d, belgeRef }: { plan: AylikPlan; d: Durum; belgeR
                   ))}
                 </>
               )}
-              {o.baglanti && (
-                <p>
-                  {metin("ayBaglanti", "ar")} : <span dir="ltr">{o.baglanti}</span>
-                </p>
+              {/* Kullanıcı: bağlantılar başlığın yanında değil, altında satır satır. */}
+              {olayBaglantilari(o).length > 0 && (
+                <>
+                  <p>{metin("ayBaglanti", "ar")} :</p>
+                  {olayBaglantilari(o).map((b) => (
+                    // Paragraf belgenin yönünde (Word'de de sağda), yalnız adres soldan sağa.
+                    <p key={b} className="ay-baglanti">
+                      <bdi dir="ltr">{b}</bdi>
+                    </p>
+                  ))}
+                </>
               )}
               {o.not && (
                 <p>
@@ -456,9 +463,11 @@ function OlayDuzenle({ ben, ay, olay, yeni, kapat }: { ben: Kisi; ay: string; ol
     kapsam: f.gunler.some((g) => g.satirlar.length) || !!f.kapsamBas,
     ekip: f.ekip.length > 0,
     gorev: !!f.gorev,
-    not: !!(f.not || f.baglanti),
+    not: !!(f.not || olayBaglantilari(f).length),
   }));
   const gunler = gunleriKur(f);
+  // Boş olsa da bir alan görünsün; eski tek bağlantı da listede gelir.
+  const baglantiAlanlari = f.baglantilar ?? (olayBaglantilari(f).length ? olayBaglantilari(f) : [""]);
   const gecerli = !!f.baslik.trim() && !!f.tarih;
   const kisiler = v.kisiler.filter((k) => !k.pasif).sort((a, b) => ad(a).localeCompare(ad(b)));
   const gunDegis = (tarih: string, satirlar: AylikGun["satirlar"]) => setF((x) => ({ ...x, gunler: gunleriKur(x).map((g) => (g.tarih === tarih ? { ...g, satirlar } : g)) }));
@@ -670,8 +679,29 @@ function OlayDuzenle({ ben, ay, olay, yeni, kapat }: { ben: Kisi; ay: string; ol
           {!gunMu && (
             <label>
               {t("ayBaglanti")}
-              <input type="url" dir="ltr" value={f.baglanti ?? ""} onChange={(e) => setF({ ...f, baglanti: e.target.value })} />
+              {baglantiAlanlari.map((b, i) => (
+                <span key={i} className="ay-baglanti-alani">
+                  <input
+                    type="url"
+                    dir="ltr"
+                    value={b}
+                    onChange={(e) => setF({ ...f, baglanti: undefined, baglantilar: baglantiAlanlari.map((x, j) => (j === i ? e.target.value : x)) })}
+                    aria-label={t("ayBaglanti")}
+                    data-ay-baglanti
+                  />
+                  {baglantiAlanlari.length > 1 && (
+                    <button type="button" className="dugme-ikon" onClick={() => setF({ ...f, baglanti: undefined, baglantilar: baglantiAlanlari.filter((_, j) => j !== i) })} title={t("cikar")} aria-label={t("cikar")}>
+                      ×
+                    </button>
+                  )}
+                </span>
+              ))}
             </label>
+          )}
+          {!gunMu && (
+            <button type="button" className="dugme dugme-ikincil dugme-kucuk ay-baglanti-ekle" onClick={() => setF({ ...f, baglanti: undefined, baglantilar: [...baglantiAlanlari, ""] })} data-ay-baglanti-ekle>
+              + {t("ayBaglantiEkle")}
+            </button>
           )}
           <label>
             {t("ayNotBolum")}
