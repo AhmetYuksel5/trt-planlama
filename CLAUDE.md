@@ -1188,6 +1188,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   png/jpg) gösterilmiyor, pdf/docx gibi gerçek dosyalar kalıyor. Sohbet listesi kontürlü ayrı kartlar
   (`.posta-sohbet`: renkli avatar harfi, başlık, `@gönderen`, mesaj sayısı). Telefonda tek ekran:
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
+  Sohbetin başlığında 🔍 (kullanıcı: sohbet içinde arama; `Posta.tsx →
+  useSohbetAramasi`, `SohbetAramaCubugu`): balonda görünen metin, gönderenin
+  adı ve ek adları aranır (`balonIcerigi`, `arama.ts → sozcuklerUyar`: hareke
+  ve hemze fark etmez; gizli imza ya da alıntı eşleşip boş görünen balonu
+  işaretlemesin diye ham metin değil). Eşleşen balon çerçeveli, gezilen dolu;
+  en yeni eşleşmeden başlar, sayaç "1/n", oklar ve Enter/Shift+Enter gezer,
+  Esc kapatır; başka sohbete geçince kapanır.
   Basit mesaj mantığı (kullanıcı: "karmaşık olmasın, ama kim kime yazdı
   bilinsin"):
   - Yanıtta (`Yazma`, `.posta-yaz-alani`) alıcılar metne yazılır (kullanıcı):

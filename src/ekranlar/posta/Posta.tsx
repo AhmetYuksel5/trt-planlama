@@ -1,4 +1,4 @@
-import { ArrowLeft, File, Loader2, Lock, Mail, MessageSquare, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
@@ -9,6 +9,7 @@ import { yerelGun } from "../../tarih";
 import { GERCEK } from "../../kip";
 import { postaEkiGetir, postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
+import { sozcuklerUyar } from "../../arama";
 
 /**
  * Gelen posta sohbeti: kişinin grup kutusuna düşen postalar, eklerinden
@@ -308,7 +309,25 @@ const balonZamani = (zaman: string, dil: Parameters<typeof saatYaz>[1]) => `${ye
  * kendi hafif tonu, adı grup başına bir kez (ardışık aynı gönderende
  * tekrarlamaz). Ek balonun içinde türünün ikonuyla; altta kime gittiği.
  */
-function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
+/*
+ * Balonda gösterilen metin. Sohbet içi arama da bunu arar: ekranda
+ * görünmeyen imza ya da alıntı eşleşip boş görünen balonu işaretlemesin.
+ */
+function balonIcerigi(v: ReturnType<typeof useVeri>, m: PostaMesaji, ad: ReturnType<typeof useDil>["ad"]) {
+  const kisi = gondereniBul(v, m.kimden);
+  const gad = gonderenAdi(v, m, ad);
+  // Kayıttaki metin kapının o günkü kurallarıyla kesilmiş; yeni kalıplar (Yahoo'nun iletisi) eski postaya da uygulansın.
+  // İmzadaki ad Latin yazımla da olabiliyor ("Basel Awni Al TANANY"): adın bütün yazımları ve postadaki görünen ad.
+  const imzaAdi = [gad, ...(typeof kisi?.ad === "object" ? [kisi.ad.tr, kisi.ad.en] : [kisi?.ad]), m.kimdenAd].filter(Boolean).join(" ");
+  const sade = m.giden ? m.metin : postaMetniSadelestir(yeniMetin(m.metin), imzaAdi);
+  // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
+  const alinti = !m.giden && !sade.trim() ? postaAlintiMetni(m.tamMetin, gad) : "";
+  const govde = sade.trim() ? sade : alinti;
+  const ekler = m.ekler.filter((e) => !gizliEkMi(e));
+  return { kisi, gad, sade, govde, ekler };
+}
+
+function SohbetGovdesi({ sohbet, bulunan, simdi }: { sohbet: Sohbet; bulunan?: Set<string>; simdi?: string }) {
   const { ad, dil, t } = useDil();
   const v = useVeri();
   const ek = useEkIndir();
@@ -316,20 +335,12 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
     <div className="posta-govde" data-posta-sohbet={sohbet.konuKimligi}>
       <ol className="posta-mesajlar">
         {sohbet.mesajlar.map((m, i) => {
-          const kisi = gondereniBul(v, m.kimden);
           const onceki = sohbet.mesajlar[i - 1];
           const yeniGonderen = !onceki || onceki.kimden !== m.kimden || !!onceki.giden !== !!m.giden;
-          const gad = gonderenAdi(v, m, ad);
-          // Kayıttaki metin kapının o günkü kurallarıyla kesilmiş; yeni kalıplar (Yahoo'nun iletisi) eski postaya da uygulansın.
-          // İmzadaki ad Latin yazımla da olabiliyor ("Basel Awni Al TANANY"): adın bütün yazımları ve postadaki görünen ad.
-          const imzaAdi = [gad, ...(typeof kisi?.ad === "object" ? [kisi.ad.tr, kisi.ad.en] : [kisi?.ad]), m.kimdenAd].filter(Boolean).join(" ");
-          const sade = m.giden ? m.metin : postaMetniSadelestir(yeniMetin(m.metin), imzaAdi);
-          // Yeni metin yoksa (yalnız imza), düzeltilip dönen alıntı metnini göster.
-          const alinti = !m.giden && !sade.trim() ? postaAlintiMetni(m.tamMetin, gad) : "";
-          const govde = sade.trim() ? sade : alinti;
-          const ekler = m.ekler.filter((e) => !gizliEkMi(e));
+          const { kisi, gad, sade, govde, ekler } = balonIcerigi(v, m, ad);
+          const bulundu = bulunan?.has(m.id) ? (m.id === simdi ? " bulundu simdi" : " bulundu") : "";
           return (
-            <li key={m.id} className={`posta-balon${m.giden ? " giden" : ""}${yeniGonderen ? " ilk" : ""}`} style={m.giden ? undefined : { ["--ton" as string]: gonderenTonu(m.kimden) }} data-posta-mesaj={m.id}>
+            <li key={m.id} className={`posta-balon${m.giden ? " giden" : ""}${yeniGonderen ? " ilk" : ""}${bulundu}`} style={m.giden ? undefined : { ["--ton" as string]: gonderenTonu(m.kimden) }} data-posta-mesaj={m.id}>
               {yeniGonderen && !m.giden && (
                 <div className="posta-gonderen" dir={kisi ? undefined : "ltr"}>
                   {gad}
@@ -354,6 +365,103 @@ function SohbetGovdesi({ sohbet }: { sohbet: Sohbet }) {
           );
         })}
       </ol>
+    </div>
+  );
+}
+
+/*
+ * Sohbet içi arama (kullanıcının isteği): eşleşen balonlar işaretlenir, sayaç
+ * ve oklarla aralarında gezilir; en yeni eşleşmeden başlar. Enter sonraki
+ * (daha eski), Shift+Enter önceki, Esc kapatır.
+ */
+function useSohbetAramasi(sohbet: Sohbet | undefined) {
+  const { ad } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const [sorgu, setSorgu] = useState("");
+  const [sira, setSira] = useState(0);
+  const anahtar = sohbet?.konuKimligi ?? "";
+  // Başka sohbete geçince arama kapanır: eski sorgu yeni sohbette boş sonuç gösterirdi.
+  useEffect(() => {
+    setAcik(false);
+    setSorgu("");
+  }, [anahtar]);
+  const sorguVar = acik && !!sorgu.trim();
+  const eslesen = !sohbet || !sorguVar
+    ? []
+    : sohbet.mesajlar
+        .filter((m) => {
+          const b = balonIcerigi(v, m, ad);
+          return sozcuklerUyar([b.govde, b.gad, ...b.ekler].join(" "), sorgu);
+        })
+        .map((m) => m.id)
+        .reverse();
+  const n = eslesen.length;
+  const simdi = n ? eslesen[Math.min(sira, n - 1)] : undefined;
+  useEffect(() => setSira(0), [sorgu]);
+  useEffect(() => {
+    if (!simdi) return;
+    document.querySelector<HTMLElement>(`[data-posta-mesaj="${CSS.escape(simdi)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [simdi]);
+  return {
+    acik,
+    ac: () => setAcik(true),
+    kapat: () => {
+      setAcik(false);
+      setSorgu("");
+    },
+    sorgu,
+    setSorgu,
+    sorguVar,
+    n,
+    konum: n ? Math.min(sira, n - 1) + 1 : 0,
+    // Liste en yeniden en eskiye: "sonraki" daha eski mesaj.
+    sonraki: () => n && setSira((x) => (Math.min(x, n - 1) + 1) % n),
+    onceki: () => n && setSira((x) => (Math.min(x, n - 1) - 1 + n) % n),
+    bulunan: sorguVar ? new Set(eslesen) : undefined,
+    simdi,
+  };
+}
+
+function SohbetAramaCubugu({ a }: { a: ReturnType<typeof useSohbetAramasi> }) {
+  const { t } = useDil();
+  return (
+    <div className="posta-ara" role="search" data-posta-ara>
+      <Search size={16} className="sonuk" aria-hidden="true" />
+      <input
+        type="text"
+        dir="auto"
+        autoFocus
+        value={a.sorgu}
+        onChange={(e) => a.setSorgu(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (e.shiftKey) a.onceki();
+            else a.sonraki();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            a.kapat();
+          }
+        }}
+        placeholder={t("postaSohbetAra")}
+        aria-label={t("postaSohbetAra")}
+        data-posta-ara-girdi
+      />
+      {a.sorguVar && (
+        <small className={`posta-ara-sayi${a.n ? "" : " yok"}`} aria-live="polite" data-posta-ara-sayi>
+          {a.n ? `${a.konum}/${a.n}` : t("postaAramaYok")}
+        </small>
+      )}
+      <button type="button" className="dugme dugme-sade dugme-ikon" onClick={a.onceki} disabled={!a.n} title={t("postaAramaYeni")} aria-label={t("postaAramaYeni")} data-posta-ara-onceki>
+        <ChevronUp size={16} />
+      </button>
+      <button type="button" className="dugme dugme-sade dugme-ikon" onClick={a.sonraki} disabled={!a.n} title={t("postaAramaEski")} aria-label={t("postaAramaEski")} data-posta-ara-sonraki>
+        <ChevronDown size={16} />
+      </button>
+      <button type="button" className="dugme dugme-sade dugme-ikon" onClick={a.kapat} title={t("kapat")} aria-label={t("kapat")} data-posta-ara-kapat>
+        <X size={16} />
+      </button>
     </div>
   );
 }
@@ -682,6 +790,7 @@ export function Posta({ ben }: { ben: Kisi }) {
   const [secili, setSecili] = useState("");
   const [yeni, setYeni] = useState(false);
   const secik = sohbetler.find((s) => s.konuKimligi === secili);
+  const arama = useSohbetAramasi(secik);
   const sil = (konuKimligi: string) => {
     const kimlikler = sohbetler.find((x) => x.konuKimligi === konuKimligi)?.kimlikler ?? [konuKimligi];
     if (!confirm(t("postaSilOnay"))) return;
@@ -781,13 +890,19 @@ export function Posta({ ben }: { ben: Kisi }) {
                 baslik={<Icerik>{secik.baslik}</Icerik>}
                 ikon={<MessageSquare size={18} />}
                 sagUc={
-                  <button className="dugme dugme-sade dugme-kucuk" onClick={() => sil(secik.konuKimligi)} title={t("postaSohbetSil")} data-posta-sil>
-                    <Trash2 size={14} /> {t("sil")}
-                  </button>
+                  <>
+                    <button type="button" className={`dugme dugme-sade dugme-ikon${arama.acik ? " secili" : ""}`} onClick={arama.acik ? arama.kapat : arama.ac} aria-pressed={arama.acik} title={t("postaSohbetAra")} aria-label={t("postaSohbetAra")} data-posta-ara-ac>
+                      <Search size={16} />
+                    </button>
+                    <button className="dugme dugme-sade dugme-kucuk" onClick={() => sil(secik.konuKimligi)} title={t("postaSohbetSil")} data-posta-sil>
+                      <Trash2 size={14} /> {t("sil")}
+                    </button>
+                  </>
                 }
               >
+                {arama.acik && <SohbetAramaCubugu a={arama} />}
                 <div className="posta-sohbet-ic">
-                  <SohbetGovdesi sohbet={secik} />
+                  <SohbetGovdesi sohbet={secik} bulunan={arama.bulunan} simdi={arama.simdi} />
                   <SohbetDosyalari sohbet={secik} />
                 </div>
                 <Yazma key={secik.konuKimligi} ben={ben} sohbet={secik} grup={grup} />

@@ -212,6 +212,38 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-posta-sohbet] .posta-alinti").count()) >= 1, "alıntı metni ayırt edici stille");
 
   // 390px: yatay taşma yok (Türkçe ve Arapça)
+  // Sohbet içi arama: eşleşen balonlar işaretlenir, en yeniden başlar, oklarla gezilir.
+  await kim("pl1");
+  await git("#/posta");
+  await p.locator('[data-posta-sohbet-bag="ornek-gazze"]').click();
+  await p.waitForTimeout(200);
+  await p.locator("[data-posta-ara-ac]").click();
+  await p.locator("[data-posta-ara-girdi]").fill("النص");
+  await p.waitForTimeout(200);
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.bulundu").count()) === 2, "aramada iki balon eşleşti");
+  ok((await p.locator("[data-posta-ara-sayi]").innerText()) === "1/2", "sayaç 1/2");
+  ok((await p.locator('[data-posta-mesaj="pm-o3"]').getAttribute("class")).includes("simdi"), "en yeni eşleşmeden başlıyor");
+  await p.locator("[data-posta-ara-girdi]").press("Enter");
+  await p.waitForTimeout(150);
+  ok((await p.locator('[data-posta-mesaj="pm-o2"]').getAttribute("class")).includes("simdi") && (await p.locator("[data-posta-ara-sayi]").innerText()) === "2/2", "Enter daha eski eşleşmeye geçiyor");
+  await p.locator("[data-posta-ara-onceki]").click();
+  await p.waitForTimeout(150);
+  ok((await p.locator('[data-posta-mesaj="pm-o3"]').getAttribute("class")).includes("simdi"), "yukarı ok daha yeniye dönüyor");
+  await p.locator("[data-posta-ara-girdi]").fill("النصّ");
+  await p.waitForTimeout(150);
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.bulundu").count()) === 2, "hareke aramayı bozmuyor");
+  await p.locator("[data-posta-ara-girdi]").fill("xyzq");
+  await p.waitForTimeout(150);
+  ok((await p.locator("[data-posta-sohbet] .posta-balon.bulundu").count()) === 0 && (await p.locator("[data-posta-ara-sayi].yok").count()) === 1, "sonuç yok yazıyor");
+  await p.locator("[data-posta-ara-girdi]").press("Escape");
+  await p.waitForTimeout(150);
+  ok((await p.locator("[data-posta-ara]").count()) === 0, "Esc aramayı kapatıyor");
+  await p.locator("[data-posta-ara-ac]").click();
+  await p.locator("[data-posta-ara-girdi]").fill("النص");
+  await p.locator('[data-posta-sohbet-bag="ornek-mukabele"]').click();
+  await p.waitForTimeout(150);
+  ok((await p.locator("[data-posta-ara]").count()) === 0 && (await p.locator(".posta-balon.bulundu").count()) === 0, "başka sohbete geçince arama kapanıyor");
+
   for (const d of ["tr", "ar"]) {
     await kim("pl1", d);
     await p.setViewportSize({ width: 390, height: 840 });
@@ -223,6 +255,12 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.waitForTimeout(300);
     const tasma2 = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(tasma2 <= 1, "390px açık sohbette taşma yok (" + d + "): " + tasma2);
+    await p.locator("[data-posta-ara-ac]").click();
+    await p.locator("[data-posta-ara-girdi]").fill("وزير");
+    await p.waitForTimeout(200);
+    const tasma4 = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    ok(tasma4 <= 1, "390px sohbet aramasında taşma yok (" + d + "): " + tasma4);
+    await p.locator("[data-posta-ara-kapat]").click();
     await p.locator(".posta-sohbet-sutun .geri-bag").click();
     await p.waitForTimeout(200);
     await p.locator("[data-posta-yeni-ac]").click();
