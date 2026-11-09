@@ -10,7 +10,7 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { dilDenetmeniMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir } from "../yetki";
+import { dilDenetmeniMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
 import { GERCEK } from "../kip";
 import Logo from "./Logo";
 
@@ -59,7 +59,7 @@ export const MENU: Grup[] = [
         say: (d, ben) => d.paketler.filter((p) => p.durum === "uretimde" && siramMi(ben, p) && paketGorebilir(ben, p, d)).length,
       },
       // Yönetim biriminde panel zaten ana sayfa; birim yöneticisi ona buradan ulaşıyor.
-      { sayfa: "panel", ad: "mPanel", kisa: "kaPanel", ikon: Gauge, goster: (ben) => ben.birim !== "yonetim" },
+      { sayfa: "panel", ad: "mPanel", kisa: "kaPanel", ikon: Gauge, goster: (ben) => !yonetimdeMi(ben) },
     ],
   },
   {

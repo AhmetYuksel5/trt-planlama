@@ -2563,6 +2563,7 @@ const M = {
   orgSurumler: m("Sürümler", "الإصدارات", "Versions"),
   orgHesaplar: m("Hesaplar", "الحسابات", "Accounts"),
   orgUnvan: m("Ünvan", "المسمى الوظيفي", "Title"),
+  orgKademe: m("Yönetim kademesi", "مستوى إداري", "Management level"),
   pkBaslik: m("Postadan kişiler", "أشخاص من البريد", "People from mail"),
   pkYeni: m("Yeni", "جديد", "New"),
   pkEksik: m("Eksik bilgi", "معلومات ناقصة", "Missing info"),

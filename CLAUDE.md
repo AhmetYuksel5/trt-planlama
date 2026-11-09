@@ -32,9 +32,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `veri.ts`: tipler, depo, yükle/kaydet
   - `akis.ts`: adımlar, aşamalar, adım sahipleri
   - `yetki.ts`: birim/rol/alan yetkisi, görünürlük, sayfa izinleri;
-    yönetici kapsamı (`MUDURLUKLER`, `kapsam`): Input müdürü Planlama,
-    Newsdesk, News Gathering ve muhabirlerden, Program müdürü Program'dan,
-    birim yöneticisi kendi biriminden sorumlu
+    yönetici kapsamı (`kapsam`): kademedeki müdür ağaçta altındaki
+    birimlerden (aşağıda, Yönetim kademesi), birim yöneticisi kendi
+    biriminden sorumlu; `MUDURLUKLER` yalnız eski Yönetim birimindeki kişi için
   - `eylemler.ts`: kaydı değiştiren her şey; önce yetki, sonra hareket kaydı
   - `performans.ts`: muhabir göstergeleri; saklanmaz, paket kaydındaki
     ölçüm noktalarından (gorevZamani, muhabirTeslimi, duzeltmeSayisi,
@@ -581,10 +581,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`yapi.ts → scriptEditoruKur`, `tamamla` içinde); Output'ta kalan dil
     denetmenlerini sistemin işi taşır (`eylemler.ts → dilDenetmenleriniTasi`,
     açılışta ve gerçek kipte tam yöneticinin tarayıcısında). Grup düğümünün
-    ünvanı yok. Birim penceresinde üst birim seçilir, oklar kardeşler arasında
+    ünvanı yalnız yöneticisininki (aşağıda). Birim penceresinde üst birim seçilir, oklar kardeşler arasında
     sıralar; altında birim olan silinmez (`orgAltBirimVar`). Yardımcılar
     `birimAgaci`, `ustBirimler`, `altindaMi`, `disMuhabirMi`. Eski yayın
     okunurken `tamamla` ağacı ve ekip görevlerini varsayılandan doldurur.
+  - Yönetim kademesi (kullanıcı: kurumda Yönetim ayrı birim değil; en üstte
+    kanalın müdürü koordinatör, altında Input, Output, Program, Creative ve
+    müdürleri; "Yönetim" ayrı birim gibi görünüp karışıklık yapıyordu):
+    müdür kendi grup düğümünde durur. Altında birim olan yerleşik olmayan
+    düğüm kademe (`yapi.ts → kademeMi`); izinlerde "yonetim" sayılır
+    (`izinBirimi`; izin listeleri, plan yetkileri, ana sayfa [yönetici
+    paneli], menü bu adla kaldı, `yetki.ts → yonetimdeMi`). Düğümün kendi
+    ünvanı müdürünki: Haber merkezi koordinatör, Input Input müdürü, Program
+    Program müdürü (`KADEME_UNVANLARI`); kademeye eklenen ünvan yönetici
+    ünvanı, Output ve Creative'in müdür ünvanını kurum ekler. Ünvanı olan
+    düğüm `grupMu` değil, kişi formlarında seçilir (yalnız kendi ünvanıyla).
+    Sorumluluk ağaçtan (`yetki.ts → kademeKapsami`): altındaki bütün birimler,
+    kolları `BIRIM_KOLLARI`'ndan; Planlama'yı kapsayan muhabirleri de; kökteki
+    (koordinatör) her şey; müdür kolundaki ve altındaki masada duran paketten
+    sorumlu (`paketKapsamda`). Ekonomi Output'a taşınınca Output müdürü
+    kendiliğinden görür. Yönetim birimi gizli; önceden yayınlanmış yapıda
+    okurken Yönetim'in ünvanları gruplara iner, Yönetim gizlenir
+    (`yonetimiKademeyeKur`, `tamamla` içinde); kişileri sistemin açılış işi
+    taşır (`eylemler.ts → yonetimiAgacaTasi`, `kademeHedefi`; gerçek kipte
+    tam yöneticinin tarayıcısında da). Test `testler/yonetim-kademe.cjs`.
   - Plan ekibi (`organizasyon/EkipSekmesi.tsx`, `Yapi.ekipGorevleri`): Next
     Day ekibindeki görevler (منتج تنفيذي…) ve kuralları. Görev adı Arapça
     zorunlu; kural birim + ünvan seçimi (boşsa hepsi; birim seçimi altını da
@@ -599,8 +619,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`MuhabirSecici`) dış muhabirlerden ayrı grupta; öneri, e-posta çağrısı
     ve yazışma seçicilerinde yok (`ic={false}`).
   - Kişi formları (davet, hesapsız, düzenle/tayin, kayıt bağlantısı) birim ve
-    görevi `bilesenler/BirimSecimi.tsx`'ten alır: birim ağaç sırasıyla, grup
-    seçilemez (`grupMu`, `kisiBirimSecenekleri`); görev yalnız birimin
+    görevi `bilesenler/BirimSecimi.tsx`'ten alır: birim ağaç sırasıyla, ünvansız
+    grup seçilemez (`grupMu`, `kisiBirimSecenekleri`; müdür ünvanlı kademe
+    seçilir); görev yalnız birimin
     ünvanları, birim değişince birimin ilk ünvanına geçer (`birimeUygunUnvan`).
     Rol seçilmez, ünvandan gelir (`UnvanTanimi.yonetici`, "yönetici ünvanı";
     yerleşikte yönetici ve müdürler): yönetici ünvanına gelen yönetici,

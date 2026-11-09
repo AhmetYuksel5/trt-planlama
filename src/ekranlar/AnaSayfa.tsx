@@ -1,5 +1,6 @@
 import type { Kisi } from "../veri";
 import YoneticiPaneli from "./YoneticiPaneli";
+import { yonetimdeMi } from "../yetki";
 import { EkonomiAna, GenelAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
 import MuhabirAna from "./ana/Muhabir";
 import PlanlamaAna from "./ana/Planlama";
@@ -10,6 +11,8 @@ import PlanlamaAna from "./ana/Planlama";
  * birim yöneticileri ona menüden ulaşıyor, kendi masaları değişmiyor.
  */
 export default function AnaSayfa({ ben }: { ben: Kisi }) {
+  // Kademedeki müdür (Input, Output… düğümünde) ve koordinatör de Yönetim gibi: masası yönetici paneli.
+  if (yonetimdeMi(ben)) return <YoneticiPaneli ben={ben} ana />;
   switch (ben.birim) {
     case "planlama":
       return <PlanlamaAna ben={ben} />;

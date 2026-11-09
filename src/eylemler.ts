@@ -11,7 +11,7 @@ import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Yazi } from "./dil";
-import { ayniYapi, grupMu, icMuhabirMi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -169,6 +169,7 @@ import {
   ozelPaketTeslimEdebilir,
   gundemGorebilir,
   kisitliKisi,
+  yonetimdeMi,
 } from "./yetki";
 
 /**
@@ -1283,8 +1284,8 @@ export const onIncelemeyeGonder = (ben: Kisi, haftaId: string, kalemIdleri: stri
     kalemler: x.kalemler.map((k) => (ids.has(k.id) ? { ...k, onInceleme: { durum: "gonderildi", gonderen: ben.id, zaman, gorusler: [] } } : k)),
   }));
   for (const k of secilen) {
-    const kime = d.kisiler.filter((x) => x.birim === "yonetim" && onIncelemeci(x, k)).map((x) => x.id);
-    const birim = d.kisiler.find((x) => x.birim !== "yonetim" && onIncelemeci(x, k))?.birim;
+    const kime = d.kisiler.filter((x) => yonetimdeMi(x) && onIncelemeci(x, k)).map((x) => x.id);
+    const birim = d.kisiler.find((x) => !yonetimdeMi(x) && onIncelemeci(x, k))?.birim;
     d = hareketYaz(d, { kisiId: ben.id, tip: "onIncelemeyeGonderildi", haftaId, veri: { kalem: k.id, kime: kime.join(","), sahip: birim ?? "" } });
   }
   kaydet(d);
@@ -3672,6 +3673,23 @@ export const muhabirUnvanlariniEsitle = () => {
  * kişiler oraya geçiyor. Dil durağı Script Editor'ün; geçmeselerdi sıradaki
  * metni göremezlerdi.
  */
+/*
+ * Müdürler ve koordinatör Yönetim biriminden ağaçtaki yerlerine (yapi.ts →
+ * kademeHedefi: Input müdürü Input'a, Program müdürü Program'a,
+ * koordinatör Haber merkezi'ne). Yerinde ünvanı olmayan Yönetim'de kalır.
+ * Sistemin açılış işi; gerçek kipte tam yöneticinin tarayıcısında da.
+ */
+export const yonetimiAgacaTasi = () => {
+  const d = getir();
+  const y = guncelYapi(d);
+  const hedef = new Map(d.kisiler.filter((k) => k.birim === "yonetim").flatMap((k) => {
+    const h = kademeHedefi(k.gorev, y);
+    return h ? [[k.id, h] as const] : [];
+  }));
+  if (!hedef.size) return;
+  kaydet({ ...d, kisiler: d.kisiler.map((k) => (hedef.has(k.id) ? { ...k, birim: hedef.get(k.id)! } : k)) });
+};
+
 export const dilDenetmenleriniTasi = () => {
   const d = getir();
   if (!d.kisiler.some((k) => k.birim === "output" && k.gorev === "dilDenetmeni")) return;

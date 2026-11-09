@@ -98,8 +98,8 @@ const KISILER: KisiSatiri[] = [
   ["me2", "Onur Aydemir", "أونور آيدمير", "media", "personel", "mediaManager", "istanbul"],
   ["me3", "Mona Saad", "منى سعد", "media", "personel", "mediaManager", "istanbul"],
   ["me4", "Tamer Hilal", "تامر هلال", "media", "personel", "mediaManager", "istanbul"],
-  ["yo1", "Kemal Erdem", "كمال أردم", "yonetim", "yonetici", "inputMuduru", "istanbul"],
-  ["yo2", "Fatima Zahra Idrissi", "فاطمة الزهراء الإدريسي", "yonetim", "yonetici", "programMuduru", "istanbul"],
+  ["yo1", "Kemal Erdem", "كمال أردم", "bInput", "yonetici", "inputMuduru", "istanbul"],
+  ["yo2", "Fatima Zahra Idrissi", "فاطمة الزهراء الإدريسي", "bProgram", "yonetici", "programMuduru", "istanbul"],
   ["mu1", "Omar Haddad", "عمر حداد", "muhabir", "personel", "muhabir", "gazze", { durum: "sahada" }],
   ["mu2", "Selin Ercan", "سلين أرجان", "muhabir", "personel", "muhabir", "kudus"],
   ["mu3", "Mustafa Nasr", "مصطفى نصر", "muhabir", "personel", "muhabir", "beyrut", { durum: "sahada" }],
@@ -133,7 +133,7 @@ const KISILER: KisiSatiri[] = [
   ["mu31", "Nabil Awad", "نبيل عوض", "muhabir", "personel", "muhabir", "ramallah"],
   ["mu32", "Rasha Qasim", "رشا قاسم", "muhabir", "personel", "muhabir", "kudus"],
   // Sistem yöneticisi: Organizasyon'u (birim, ünvan, iş akışı, tayin) demoda deneyen kişi. Kurgusal; sona eklendi, örnek veri sıradan türüyor.
-  ["yo3", "Selma Korkmaz", "سلمى كوركماز", "yonetim", "yonetici", "koordinator", "istanbul", { hesapYoneticisi: true }],
+  ["yo3", "Selma Korkmaz", "سلمى كوركماز", "kHaberMerkezi", "yonetici", "koordinator", "istanbul", { hesapYoneticisi: true }],
   // Haber merkezinde çalışıp göreve giden iç muhabir: muhabir seçimlerinde dış muhabirlerle birlikte, ayrı grupta. Kurgusal; sona eklendi.
   ["ng6", "Tarik Nadir", "طارق نادر", "newsgathering", "personel", "muhabir", "istanbul"],
 ];

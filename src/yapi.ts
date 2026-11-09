@@ -266,6 +266,18 @@ const VARSAYILAN_GRUPLAR: { id: BirimId; ad: Anahtar; ust?: BirimId }[] = [
   { id: "bProgram", ad: "orgBolumProgram", ust: KOK_MERKEZ },
   { id: KOK_DIS, ad: "orgKokDis" },
 ];
+/*
+ * Yönetim kademesi (kullanıcı: kurumda Yönetim ayrı bir birim değil; en
+ * üstte kanalın müdürü koordinatör, altında Input, Output, Program,
+ * Creative ve onların müdürleri). Müdür kendi grubunda durur, sorumluluğu
+ * ağaçtan (yetki.ts → kapsam). Önce bütün müdürler "Yönetim" birimindeydi.
+ */
+const KADEME_UNVANLARI: Partial<Record<BirimId, GorevId[]>> = {
+  kHaberMerkezi: ["koordinator"],
+  bInput: ["inputMuduru"],
+  bProgram: ["programMuduru"],
+};
+
 const VARSAYILAN_UST: Record<Birim, BirimId> = {
   planlama: "bInput",
   newsdesk: "bInput",
@@ -300,9 +312,10 @@ export const varsayilanYapi = (): Yapi => {
     zaman: "",
     yayinlayan: "",
     birimler: [
-      // Grubun kendi ünvanı yok (boş liste): yoksa eski yayınla uyum için bütün ünvanları alıyordu.
-      ...VARSAYILAN_GRUPLAR.map((g) => ({ id: g.id, ad: dilde(g.ad), unvanlar: [], ...(g.ust && { ust: g.ust }) })),
-      ...BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id], ust: VARSAYILAN_UST[id] })),
+      // Grubun ünvanı yalnız yöneticisininki (boş liste: yoksa eski yayınla uyum için bütün ünvanları alıyordu).
+      ...VARSAYILAN_GRUPLAR.map((g) => ({ id: g.id, ad: dilde(g.ad), unvanlar: KADEME_UNVANLARI[g.id] ?? [], ...(g.ust && { ust: g.ust }) })),
+      // Yönetim birimi gizli: müdürler ağaçtaki yerlerinde (kademe), Yönetim yalnız eski kayıt için.
+      ...BIRIMLER.map((id) => ({ id, unvanlar: VARSAYILAN_UNVANLAR[id], ust: VARSAYILAN_UST[id], ...(id === "yonetim" ? { gizli: true } : {}) })),
     ],
     unvanlar,
     akislar: [
@@ -322,7 +335,7 @@ export const varsayilanYapi = (): Yapi => {
  */
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
-  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS))) return y;
+  if (y.surum === 0 || (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && !yonetimGecisiGerekli(y))) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -332,9 +345,42 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) }));
+  const t = yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) })));
   tamamlanan.set(y, t);
   return t;
+};
+
+/*
+ * Müdürlerin ağaca inmesinden önce yayınlanmış yapı: Yönetim birimi açık,
+ * gruplarda yönetim ünvanı yok. Okurken Yönetim'in ünvanları gruplara iner
+ * (Input müdürü Input'a, Program müdürü Program'a, öbürü en üste), Yönetim
+ * gizlenir; kişileri sistemin işi taşır (eylemler.ts → yonetimiAgacaTasi).
+ * Kurum hiçbir şey yapmadan yeni düzeni görür, sonraki yayında yayınlanır.
+ */
+const KADEME_HEDEFI: Partial<Record<GorevId, BirimId>> = { inputMuduru: "bInput", programMuduru: "bProgram" };
+export const kademeHedefi = (gorev: GorevId, y: Yapi): BirimId | undefined => {
+  const yer = (id: BirimId) => y.birimler.find((b) => b.id === id && b.unvanlar?.includes(gorev))?.id;
+  return yer(KADEME_HEDEFI[gorev] ?? KOK_MERKEZ) ?? y.birimler.find((b) => b.id !== "yonetim" && kademeMi(b.id, y) && b.unvanlar?.includes(gorev))?.id;
+};
+const yonetimGecisiGerekli = (y: Yapi) => {
+  const yon = y.birimler.find((b) => b.id === "yonetim");
+  return !!yon && !yon.gizli && !!yon.unvanlar?.length && !y.birimler.some((b) => b.id !== "yonetim" && b.unvanlar?.some((u) => yon.unvanlar!.includes(u)) && y.birimler.some((x) => x.ust === b.id));
+};
+const yonetimiKademeyeKur = (y: Yapi): Yapi => {
+  if (!yonetimGecisiGerekli(y)) return y;
+  const yon = y.birimler.find((b) => b.id === "yonetim")!;
+  const hedef = (u: GorevId) => {
+    const h = KADEME_HEDEFI[u] ?? KOK_MERKEZ;
+    return y.birimler.some((b) => b.id === h) ? h : KOK_MERKEZ;
+  };
+  return {
+    ...y,
+    birimler: y.birimler.map((b) => {
+      if (b.id === "yonetim") return { ...b, gizli: true };
+      const ek = (yon.unvanlar ?? []).filter((u) => hedef(u) === b.id && !b.unvanlar?.includes(u));
+      return ek.length ? { ...b, unvanlar: [...(b.unvanlar ?? []), ...ek] } : b;
+    }),
+  };
 };
 
 /*
@@ -603,7 +649,18 @@ export const ekipAdayi = (k: { birim: BirimId; gorev: GorevId }, id: EkipGoreviI
  * yöneticinin açtığı birim örnek aldığı birim. Birime özel davranış
  * (Planlama planı yapar…) yine yalnız yerleşik birimde.
  */
-export const izinBirimi = (id: BirimId, y: Yapi = yapi()): BirimId => (yerlesikBirim(id) ? id : (y.birimler.find((b) => b.id === id)?.ornek ?? id));
+/*
+ * Yönetim kademesi: altında birim olan düğüm (Haber merkezi, Input, Output…).
+ * Oraya yazılan kişi (yalnız düğümün kendi ünvanıyla: müdür, koordinatör)
+ * izinlerde Yönetim sayılır; izin listeleri "yonetim" adıyla kalır.
+ */
+export const kademeMi = (id: BirimId, y: Yapi = yapi()) => !yerlesikBirim(id) && y.birimler.some((b) => b.ust === id && b.id !== id);
+
+export const izinBirimi = (id: BirimId, y: Yapi = yapi()): BirimId => {
+  if (yerlesikBirim(id)) return id;
+  const b = y.birimler.find((x) => x.id === id);
+  return b?.ornek ?? (kademeMi(id, y) ? "yonetim" : id);
+};
 
 /* --- Düzenleme: saf, taslak üzerinde (eylemler.ts → yapiTaslagi) --- */
 

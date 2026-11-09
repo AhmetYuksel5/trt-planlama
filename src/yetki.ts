@@ -13,7 +13,10 @@ import {
   altindaMi,
   izinBirimi,
   planYetkisi,
+  ustBirim,
   varsayilanYapi,
+  yapi,
+  yerlesikBirim,
   type PlanAdimi,
   type Sorumlu,
 } from "./yapi";
@@ -191,14 +194,47 @@ export const MUDURLUKLER: Partial<
   programMuduru: { birimler: ["program"], kollar: ["program"] },
 };
 
+/* Kademedeki yöneticinin kolları altındaki birimlerden: Input'un altı haber, feature, ekonomi; Program'ın altı program. */
+const BIRIM_KOLLARI: Partial<Record<Birim, IcerikTuru[]>> = {
+  planlama: ["haber", "feature"],
+  newsdesk: ["haber"],
+  newsgathering: ["haber"],
+  muhabir: ["haber"],
+  ekonomi: ["ekonomi"],
+  program: ["program"],
+};
+
+/*
+ * Yönetim kademesindeki kişinin (grup düğümünde oturan müdür) sorumluluğu
+ * ağaçtan: altındaki bütün birimler; en üstteki (koordinatör, kanalın
+ * müdürü) her şey. Dış muhabirler ayrı kökte ama onları Planlama yönetiyor:
+ * Planlama'yı kapsayan muhabirleri de kapsar (eski Input müdürü gibi).
+ * Ekonomi'yi Output'un altına taşıyınca Output müdürü kendiliğinden görür.
+ */
+const kademeKapsami = (dugum: BirimId): Pick<Kapsam, "birimler" | "kollar"> => {
+  const y = yapi();
+  if (!ustBirim(dugum, y)) return { birimler: BIRIMLER.filter((b) => b !== "yonetim"), kollar: [...ICERIK_TURLERI] };
+  const alt = y.birimler
+    .filter((b) => b.id !== dugum && altindaMi(b.id, dugum, y))
+    .map((b) => izinBirimi(b.id, y))
+    .filter((b): b is Birim => yerlesikBirim(b) && b !== "yonetim");
+  const birimler = [...new Set<Birim>([...alt, ...(alt.includes("planlama") ? (["muhabir"] as const) : [])])];
+  return { birimler, kollar: [...new Set(birimler.flatMap((b) => BIRIM_KOLLARI[b] ?? []))] };
+};
+
+/** Yönetim kademesinde mi: eski Yönetim birimi ya da grup düğümü (yapi.ts → kademeMi). */
+export const yonetimdeMi = (k: { birim: BirimId } | undefined) => !!k && izinBirimi(k.birim) === "yonetim";
+
 export const kapsam = (k: Kisi | undefined): Kapsam | null => {
   if (!k) return null;
-  if (k.birim === "yonetim")
+  if (yonetimdeMi(k))
     return {
-      ...(MUDURLUKLER[k.gorev as Gorev] ?? {
-        birimler: BIRIMLER.filter((b) => b !== "yonetim"),
-        kollar: [...ICERIK_TURLERI],
-      }),
+      ...(k.birim !== "yonetim"
+        ? kademeKapsami(k.birim)
+        : (MUDURLUKLER[k.gorev as Gorev] ?? {
+            birimler: BIRIMLER.filter((b) => b !== "yonetim"),
+            kollar: [...ICERIK_TURLERI],
+          })),
       mudur: true,
       kolaGore: true,
     };
@@ -217,7 +253,9 @@ export const kapsam = (k: Kisi | undefined): Kapsam | null => {
 export const paketKapsamda = (k: Kisi | undefined, p: Paket): boolean => {
   const ks = kapsam(k);
   if (!k || !ks) return false;
-  return ks.kolaGore ? ks.kollar.includes(p.tur) : paketSahibi(p) === k.birim;
+  // Müdür kolundakinden ve şu an altındaki bir masada duran paketten sorumlu (Output'un kolu yok, masası var).
+  const sahip = paketSahibi(p);
+  return ks.kolaGore ? ks.kollar.includes(p.tur) || (ks.mudur && !!sahip && ks.birimler.includes(sahip as Birim)) : sahip === k.birim;
 };
 
 export const talimatVerebilir = (k: Kisi | undefined): boolean =>
@@ -703,7 +741,7 @@ export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean =>
 export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
   !!k &&
   (k.id === kisi.id ||
-    ["planlama", "newsdesk", "newsgathering", "yonetim"].includes(k.birim));
+    ["planlama", "newsdesk", "newsgathering", "yonetim"].includes(izinBirimi(k.birim)));
 
 /* --- Sayfalar --- */
 
@@ -867,7 +905,7 @@ export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
   p.durum === "onaylandi" &&
   k.rol === "yonetici" &&
   (izinBirimi(k.birim) === "output" ||
-    (k.birim === "yonetim" && !!kapsam(k)?.birimler.includes("output")));
+    (yonetimdeMi(k) && !!kapsam(k)?.birimler.includes("output")));
 
 /** Teslimi işi yapan (dış muhabir, Output'un görevlendirdiği kişi) ya da Planlama işliyor. Newsdesk henüz bu akışta yok. */
 export const ozelPaketTeslimEdebilir = (

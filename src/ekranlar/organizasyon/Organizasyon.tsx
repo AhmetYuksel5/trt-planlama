@@ -80,6 +80,7 @@ import {
   unvanTasi,
   varsayilanYapi,
   yapiFarki,
+  kademeMi,
   yerlesikBirim,
   yerlesikGorev,
   type BirimTanimi,
@@ -375,6 +376,7 @@ function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: Bi
   // Altında birim olan silinmez: alt birimler sahipsiz köke düşerdi.
   const altBirimi = taslak.birimler.some((x) => x.ust === b.id);
   const yerlesik = yerlesikBirim(b.id);
+  const kademe = kademeMi(b.id, taslak);
   const unvanlar = birimUnvanlari(b.id, taslak);
   const kisiSayisi = (id: string) => v.kisiler.filter((k) => k.birim === b.id && k.gorev === id).length;
   const durakSayisi = (id: string) =>
@@ -396,7 +398,8 @@ function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: Bi
     const aranan = ad.toLocaleLowerCase();
     const var_ = taslak.unvanlar.find((u) => (["tr", "ar", "en"] as const).some((d) => gorevAdiDilde(u.id, d, taslak).toLocaleLowerCase() === aranan));
     if (var_ && unvanlar.includes(var_.id)) return setYeni("");
-    degistir((y) => birimeUnvanEkle(y, b.id, var_ ? var_.id : { id: kimlik("u"), ad: { tr: ad, ar: ad, en: ad }, birimler: [b.id] }));
+    // Kademeye (Input, Output… düğümü) eklenen ünvan müdürün ünvanı: yönetici rolü verir.
+    degistir((y) => birimeUnvanEkle(y, b.id, var_ ? var_.id : { id: kimlik("u"), ad: { tr: ad, ar: ad, en: ad }, birimler: [b.id], ...(kademe ? { yonetici: true } : {}) }));
     setYeni("");
   };
   return (
@@ -405,7 +408,7 @@ function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: Bi
         <div>
           <b>{birimAdi(b.id, taslak)}</b> {b.gizli && <Rozet>{t("orgGizli")}</Rozet>}
           <small className="sonuk-yazi">
-            {t("orgKisiSayisi", { n: etki.kisiler })} · {yerlesik ? t("orgYerlesik") : b.ornek ? t("orgGibi", { birim: birimAdi(b.ornek, taslak) }) : t("orgOrneksiz")}
+            {t("orgKisiSayisi", { n: etki.kisiler })} · {yerlesik ? t("orgYerlesik") : b.ornek ? t("orgGibi", { birim: birimAdi(b.ornek, taslak) }) : kademe ? t("orgKademe") : t("orgOrneksiz")}
           </small>
         </div>
         <div className="dugmeler">
