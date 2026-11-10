@@ -1483,7 +1483,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   geçilecek ve kart silinecek. Seçilen Next Day planının paketleri ve canlı
   yayınları slug (`ÖNEK-PKG-<baş harfler>-<saat>-<gün>`, kurumun düzenine
   benzer, elle değişir) ve Arapça metinle; satır başına ve üç toplu biçimde
-  (yalnız slug, sekmeli, bloklar) kopyalanır. iNEWS'ten kopyalanan panonun
+  (yalnız slug, sekmeli, bloklar, NSML, HTML tablo) kopyalanır. Düz metin
+  iNEWS'te satır açmıyor (kendi kopyası özel pano biçiminde, tarayıcı onu
+  yazamıyor); NSML ve tablo bunun denemesi. iNEWS'ten kopyalanan panonun
   bütün biçimleri (`text/plain`, `text/html`…) ham haliyle gösterilir. Kayda
   yazmaz.
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):

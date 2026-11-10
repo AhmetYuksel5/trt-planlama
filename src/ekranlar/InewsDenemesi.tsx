@@ -1,6 +1,7 @@
 import { ClipboardPaste, Copy, Tv } from "lucide-react";
 import { useState } from "react";
 import { Kart, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { zenginKopyala } from "../bilesenler/indir";
 import { tarihYaz, useDil, yaz } from "../dil";
 import { kisiAr, paketYeri, satir, sehirAr } from "../etiketler";
 import { useVeri, type Kisi } from "../veri";
@@ -41,6 +42,27 @@ const kopyala = async (metin: string, t: ReturnType<typeof useDil>["t"]) => {
   bildir(t("bKopyalandi"));
 };
 
+const kacis = (m: string) => m.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/*
+ * iNEWS kuyruğa yapıştırılan düz metinden hikâye açmıyor; kendi kopyası özel
+ * pano biçiminde ve tarayıcı onu yazamıyor. Denenen iki yol: HTML tablo (bazı
+ * programlar her satırı ayrı kayıt yapıyor) ve iNEWS'in hikâye dili NSML
+ * (düz metin olarak; tanırsa hikâye açabilir).
+ */
+const htmlTablo = (l: Satir[]) =>
+  `<table>${l.map((s) => `<tr><td>${kacis(s.slug)}</td><td dir="rtl">${kacis(s.metin).replace(/\n/g, "<br>")}</td></tr>`).join("")}</table>`;
+const nsml = (l: Satir[]) =>
+  l
+    .map(
+      (s) =>
+        `<nsml version="-//AVID//DTD NSML 1.0//EN">\r\n<fields>\r\n<f id=title>${kacis(s.slug)}</f>\r\n</fields>\r\n<body>\r\n${s.metin
+          .split("\n")
+          .map((x) => `<p>${kacis(x)}</p>`)
+          .join("\r\n")}\r\n</body>\r\n</nsml>`,
+    )
+    .join("\r\n");
+
 export function InewsDenemesi() {
   const { t, dil } = useDil();
   const v = useVeri();
@@ -74,10 +96,16 @@ export function InewsDenemesi() {
       ].map((s) => ({ ...s, slug: elle[s.id] ?? s.slug }));
 
   const tekSatir = (m: string) => m.replace(/\s*\n\s*/g, " / ");
+  const sekmeli = () => satirlar.map((s) => `${s.slug}\t${tekSatir(s.metin)}`).join("\r\n");
+  const tabloKopyala = async () => {
+    await zenginKopyala(htmlTablo(satirlar), sekmeli());
+    bildir(t("bKopyalandi"));
+  };
   const bicimler: [string, () => string][] = [
     [t("inewsBicimSlug"), () => satirlar.map((s) => s.slug).join("\r\n")],
-    [t("inewsBicimSekme"), () => satirlar.map((s) => `${s.slug}\t${tekSatir(s.metin)}`).join("\r\n")],
+    [t("inewsBicimSekme"), sekmeli],
     [t("inewsBicimBlok"), () => satirlar.map((s) => `${s.slug}\r\n${s.metin.replace(/\n/g, "\r\n")}`).join("\r\n\r\n")],
+    [t("inewsBicimNsml"), () => nsml(satirlar)],
   ];
 
   return (
@@ -126,6 +154,9 @@ export function InewsDenemesi() {
                 <Copy size={16} /> {ad}
               </button>
             ))}
+            <button type="button" className="dugme dugme-ikincil" onClick={tabloKopyala} data-inews-tablo>
+              <Copy size={16} /> {t("inewsBicimTablo")}
+            </button>
           </div>
         </>
       )}

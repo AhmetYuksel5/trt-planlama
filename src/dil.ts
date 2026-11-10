@@ -1627,6 +1627,8 @@ const M = {
   inewsBicimSlug: m("Yalnız slug'lar", "الـSlug فقط", "Slugs only"),
   inewsBicimSekme: m("Slug + metin (sekmeyle)", "Slug + النص (بفاصل Tab)", "Slug + text (tab)"),
   inewsBicimBlok: m("Slug ve metin, bloklar", "Slug والنص، كتل", "Slug and text, blocks"),
+  inewsBicimTablo: m("Tablo (HTML)", "جدول (HTML)", "Table (HTML)"),
+  inewsBicimNsml: m("NSML", "NSML", "NSML"),
   inewsYapistir: m("iNEWS'ten kopyalayıp buraya yapıştır", "انسخ من iNEWS والصق هنا", "Copy from iNEWS and paste here"),
   postaTumunuAra: m("Bütün postalarda ara", "البحث في كل الرسائل", "Search all mail"),
   postaOkunmamis: m("Okunmamış · {n}", "غير مقروءة · {n}", "Unread · {n}"),
