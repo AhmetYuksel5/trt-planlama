@@ -1512,6 +1512,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     birimi ve ödeme aracı tanım olur; gerçek bilgi depoya girmez), Tanımlar
     (fiyat türleri ve kapsadığı iş türleri, ödeme araçları, para birimleri;
     hepsini muhasebe girer).
+  - Muhabir sekmesi (`#/muhasebe/muhabir/<kişi>`, `Muhasebe.tsx →
+    MuhabirSayfasi`; kullanıcı: muhabiri tek tek seçip işlerini görmek istedi,
+    döküm bütün muhabirleri tek ayda gösteriyordu): seçici, dökümün açılan
+    satırından ve anlaşmalar tablosundan da (`MuhabireGit`). Künyede anlaşma ve
+    toplam iş; ay ay tablo ilk işinden (ya da kapanışından) bu aya, en çok 24
+    ay (`muhasebe.ts → muhabirAylari`); seçilen ayın işleri tür süzgeciyle,
+    kota, onay ve ödendi dökümle aynı gövdeden (`DokumAyrintisi`).
   - Anlaşma: sabit maaş (aylık tutar, minimum kota; altında kalan kırmızı),
     parça başı (fiyat türü başına ücret), aylık anlaşma (tutar + kotayı aşan
     iş başına ek ücret). Kota aylık, ayın kapanışında o aya özel değişir.

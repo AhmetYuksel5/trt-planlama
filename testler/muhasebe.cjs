@@ -57,7 +57,7 @@ const xlsx = (satirlar) => {
   // Muhasebe çalışanı: sade ekran, ana sayfası Muhasebe
   await kim("mh1");
   await git("#/");
-  ok((await p.locator("[data-mh-sekme]").count()) === 3, "ana sayfası Muhasebe (üç sekme)");
+  ok((await p.locator("[data-mh-sekme]").count()) === 4, "ana sayfası Muhasebe (dört sekme)");
   ok((await p.locator('.menu a[href="#/muhasebe"]').count()) === 1 && (await p.locator('.menu a[href="#/nextday"]').count()) === 0 && (await p.locator('.menu a[href="#/posta"]').count()) === 0, "menüde yalnız Muhasebe (ve Ayarlar)");
   await git("#/nextday");
   ok((await p.locator("[data-mh-sekme]").count()) === 0 && (await p.locator(".plan-listesi, [data-nd-liste]").count()) === 0, "masa sayfaları muhasebeye açık değil");
@@ -90,6 +90,30 @@ const xlsx = (satirlar) => {
   await p.locator('[data-mh-kisi="mu3"] [data-mh-odendi]').click();
   await p.waitForTimeout(200);
   const k = (await veri()).muhasebeKapanislari.find((x) => x.kisiId === "mu3");
+
+  // Muhabir sayfası: satırdan muhabirin bütün işlerine; ay ay özet, seçilen ayın işleri
+  await p.locator('[data-mh-kisi="mu3"] [data-mh-muhabire="mu3"]').click();
+  await p.waitForTimeout(200);
+  ok(p.url().endsWith("#/muhasebe/muhabir/mu3") && (await p.locator('[data-mh-kunye="mu3"]').count()) === 1, "satırdan muhabir sayfasına");
+  ok((await p.locator("[data-mh-aylar] tbody tr").count()) >= 1, "ay ay özet");
+  const buAy = new Date().toISOString().slice(0, 7);
+  ok((await p.locator(`[data-mh-ay-satir="${buAy}"]`).getAttribute("aria-selected")) === "true", "bu ay seçili gelir");
+  ok((await p.locator("[data-mh-isler] li").count()) >= 2, "seçilen ayın işleri");
+  ok((await p.locator(`[data-mh-ay-satir="${buAy}"] .rozet`).count()) === 1, "ödendi bilgisi ay satırında");
+  if (await p.locator("[data-mh-tur]").count()) {
+    const tur = await p.locator("[data-mh-tur]").first().getAttribute("data-mh-tur");
+    await p.locator("[data-mh-tur]").first().click();
+    const n = await p.locator(`[data-mh-tur="${tur}"]`).innerText();
+    ok((await p.locator("[data-mh-isler] li").count()) === Number(n.split("·").pop().trim()), "tür süzgeci");
+  }
+  await p.locator("[data-mh-muhabir-sec]").selectOption("mu1");
+  await p.waitForTimeout(200);
+  ok(p.url().endsWith("#/muhasebe/muhabir/mu1") && (await p.locator('[data-mh-kunye="mu1"]').count()) === 1, "seçiciyle başka muhabir");
+  await git("#/muhasebe/muhabirler");
+  await p.locator('[data-mh-muhabire="mu2"]').click();
+  await p.waitForTimeout(200);
+  ok((await p.locator('[data-mh-kunye="mu2"]').count()) === 1, "anlaşmalar tablosundan muhabir sayfasına");
+  await git("#/muhasebe");
   ok(!!k?.onay && !!k?.odendi, "ay onaylandı ve ödendi işaretlendi");
 
   // Aylık anlaşmada bu aya özel kota: kotayı aşan iş ek ödeme olur
@@ -170,7 +194,7 @@ const xlsx = (satirlar) => {
   for (const dil of ["tr", "ar"]) {
     await kim("mh1", dil);
     await p.setViewportSize({ width: 390, height: 844 });
-    for (const s of ["dokum", "muhabirler", "tanimlar"]) {
+    for (const s of ["dokum", "muhabir/mu3", "muhabirler", "tanimlar"]) {
       await git(`#/muhasebe/${s}`);
       if (s === "dokum") await p.locator("[data-mh-kisi] > summary").first().click();
       const t = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

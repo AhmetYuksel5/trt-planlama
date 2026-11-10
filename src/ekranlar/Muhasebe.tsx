@@ -1,4 +1,4 @@
-import { Calculator, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, Download, FileSpreadsheet, ListChecks, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Kart, KisiHucre, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { indir } from "../bilesenler/indir";
@@ -6,7 +6,7 @@ import { ayAdi, tarihYaz, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, sehirAdi, sehirUlkesi, ulkeAdi } from "../etiketler";
 import { muhasebeAnlasmaKaydet, muhasebeAnlasmaSil, muhasebeIceAktar, muhasebeKapanisKaydet, muhasebeTanimKaydet, muhasebeTanimSil } from "../eylemler";
 import { xlsxOku } from "../iceAktar";
-import { anlasmaBul, anlasmaTaslaklari, aylikDokum, isaretsizCanlilar, muhasebeKisileri, tanimlar, type AnlasmaSatiri, type AylikDokum } from "../muhasebe";
+import { anlasmaBul, anlasmaTaslaklari, ayKaydir, aylikDokum, muhabirAylari, isaretsizCanlilar, muhasebeKisileri, tanimlar, type AnlasmaSatiri, type AylikDokum } from "../muhasebe";
 import { sozcuklerUyar as aramaUyar } from "../arama";
 import { bugun } from "../tarih";
 import { ANLASMA_TURLERI, BICIMLER, useVeri, type AnlasmaTuru, type Kisi, type MuhasebeAnlasmasi, type MuhasebeIs, type MuhasebeTanimi } from "../veri";
@@ -21,26 +21,21 @@ import { SayfaBasi } from "./ana/Planlama";
  * araçları, para birimleri). Kayıtlar gizli: firestore.rules → muhasebeci.
  */
 
-const SEKMELER = ["dokum", "muhabirler", "tanimlar"] as const;
+const SEKMELER = ["dokum", "muhabir", "muhabirler", "tanimlar"] as const;
 type Sekme = (typeof SEKMELER)[number];
-const SEKME_ADI: Record<Sekme, Anahtar> = { dokum: "mhDokum", muhabirler: "mhMuhabirler", tanimlar: "mhTanimlar" };
+const SEKME_ADI: Record<Sekme, Anahtar> = { dokum: "mhDokum", muhabir: "mhMuhabirDokumu", muhabirler: "mhMuhabirler", tanimlar: "mhTanimlar" };
 const TUR_ADI: Record<AnlasmaTuru, Anahtar> = { sabit: "mhSabit", parca: "mhParca", aylik: "mhAylik" };
 /* Muhasebenin saydığı iş türleri: paketin haber türleri ve canlı (BICIMLER'de var). */
 const IS_TURLERI: readonly MuhasebeIs[] = BICIMLER;
 
 const sayiYaz = (n: number) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
 const tutarYaz = (n: number | null | undefined, para?: string) => (n === null || n === undefined ? "–" : `${sayiYaz(n)}${para ? ` ${para}` : ""}`);
-const ayKaydir = (ay: string, n: number) => {
-  const [y, a] = ay.split("-").map(Number);
-  const t = new Date(Date.UTC(y, a - 1 + n, 1));
-  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;
-};
 const sayiOku = (s: string): number | undefined => {
   const n = Number(s.replace(",", "."));
   return s.trim() && Number.isFinite(n) && n >= 0 ? n : undefined;
 };
 
-export function Muhasebe({ ben, sekme }: { ben: Kisi; sekme: string }) {
+export function Muhasebe({ ben, sekme, kisiId }: { ben: Kisi; sekme: string; kisiId?: string }) {
   const { t } = useDil();
   const s: Sekme = (SEKMELER as readonly string[]).includes(sekme) ? (sekme as Sekme) : "dokum";
   return (
@@ -54,6 +49,7 @@ export function Muhasebe({ ben, sekme }: { ben: Kisi; sekme: string }) {
         ))}
       </div>
       {s === "dokum" && <AylikDokumSayfasi ben={ben} />}
+      {s === "muhabir" && <MuhabirSayfasi key={kisiId ?? ""} ben={ben} kisiId={kisiId} />}
       {s === "muhabirler" && <Anlasmalar ben={ben} />}
       {s === "tanimlar" && <Tanimlar ben={ben} />}
     </>
@@ -151,7 +147,7 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
 }
 
 function DokumSatiri({ x, ay, ben }: { x: AylikDokum; ay: string; ben: Kisi }) {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const a = x.anlasma;
   const digerTurler = Object.entries(x.turler).filter(([k]) => k !== "pkg" && k !== "canli") as [MuhasebeIs, number][];
   const kota = (yapilan: number, k?: number) => (k === undefined ? String(yapilan) : `${yapilan}/${k}`);
@@ -186,33 +182,49 @@ function DokumSatiri({ x, ay, ben }: { x: AylikDokum; ay: string; ben: Kisi }) {
           {x.kapanis?.odendi ? <Rozet ton="iyi">{t("mhOdendi")}</Rozet> : x.kapanis?.onay ? <Rozet ton="vurgu">{t("mhOnaylandi")}</Rozet> : null}
         </span>
       </summary>
-      <div className="muhasebe-ayrinti">
-        {x.isler.length === 0 ? (
-          <p className="sonuk">{t("mhIsYok")}</p>
-        ) : (
-          <ol className="muhasebe-isler" data-mh-isler>
-            {x.isler.map((i) => (
-              <li key={i.id}>
-                <small>{tarihYaz(i.tarih, dil)}</small>
-                <Rozet>{t(BICIM_ADI(i.tur))}</Rozet>
-                <Icerik>{i.baslik}</Icerik>
-              </li>
-            ))}
-          </ol>
-        )}
-        <div className="muhasebe-kapanis">
-          {a && a.tur !== "parca" && <AyKotasi x={x} ay={ay} ben={ben} />}
-          <div className="dugmeler">
-            <button type="button" className={`dugme ${x.kapanis?.onay ? "dugme-ikincil" : "dugme-birincil"}`} onClick={() => muhasebeKapanisKaydet(ben, ay, x.kisi.id, { onay: !x.kapanis?.onay })} disabled={!a} data-mh-onay>
-              {t(x.kapanis?.onay ? "mhOnayKaldir" : "mhOnayla")}
-            </button>
-            <button type="button" className="dugme dugme-ikincil" onClick={() => muhasebeKapanisKaydet(ben, ay, x.kisi.id, { odendi: !x.kapanis?.odendi })} disabled={!x.kapanis?.onay} data-mh-odendi>
-              {t(x.kapanis?.odendi ? "mhOdendiKaldir" : "mhOdendiIsaretle")}
-            </button>
-          </div>
-        </div>
+      <DokumAyrintisi x={x} ay={ay} ben={ben} />
+      <div className="muhasebe-git">
+        <MuhabireGit kisiId={x.kisi.id} yazili />
       </div>
     </details>
+  );
+}
+
+/*
+ * Ayın işleri ve kapanışı: döküm satırının içinde ve muhabir sayfasında aynı
+ * gövde, onay ve kota iki yerde ayrı davranmasın.
+ */
+function DokumAyrintisi({ x, ay, ben, tur }: { x: AylikDokum; ay: string; ben: Kisi; tur?: MuhasebeIs | "" }) {
+  const { t, dil } = useDil();
+  const a = x.anlasma;
+  const isler = tur ? x.isler.filter((i) => i.tur === tur) : x.isler;
+  return (
+    <div className="muhasebe-ayrinti">
+      {isler.length === 0 ? (
+        <p className="sonuk">{t("mhIsYok")}</p>
+      ) : (
+        <ol className="muhasebe-isler" data-mh-isler>
+          {isler.map((i) => (
+            <li key={i.id}>
+              <small>{tarihYaz(i.tarih, dil)}</small>
+              <Rozet>{t(BICIM_ADI(i.tur))}</Rozet>
+              <Icerik>{i.baslik}</Icerik>
+            </li>
+          ))}
+        </ol>
+      )}
+      <div className="muhasebe-kapanis">
+        {a && a.tur !== "parca" && <AyKotasi x={x} ay={ay} ben={ben} />}
+        <div className="dugmeler">
+          <button type="button" className={`dugme ${x.kapanis?.onay ? "dugme-ikincil" : "dugme-birincil"}`} onClick={() => muhasebeKapanisKaydet(ben, ay, x.kisi.id, { onay: !x.kapanis?.onay })} disabled={!a} data-mh-onay>
+            {t(x.kapanis?.onay ? "mhOnayKaldir" : "mhOnayla")}
+          </button>
+          <button type="button" className="dugme dugme-ikincil" onClick={() => muhasebeKapanisKaydet(ben, ay, x.kisi.id, { odendi: !x.kapanis?.odendi })} disabled={!x.kapanis?.onay} data-mh-odendi>
+            {t(x.kapanis?.odendi ? "mhOdendiKaldir" : "mhOdendiIsaretle")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -237,6 +249,155 @@ function AyKotasi({ x, ay, ben }: { x: AylikDokum; ay: string; ben: Kisi }) {
         <input type="number" min={0} inputMode="numeric" defaultValue={x.kapanis?.kotaCanli ?? ""} placeholder={x.anlasma?.kotaCanli === undefined ? "–" : String(x.anlasma.kotaCanli)} onBlur={(e) => kaydet("kotaCanli", e.target.value)} />
       </label>
     </div>
+  );
+}
+
+/* --- Muhabir dökümü: tek muhabirin ay ay işleri --- */
+
+function MuhabireGit({ kisiId, yazili }: { kisiId: string; yazili?: boolean }) {
+  const { t } = useDil();
+  return (
+    <button type="button" className={`dugme dugme-sade ${yazili ? "dugme-kucuk" : "dugme-ikon"}`} onClick={() => git(`muhasebe/muhabir/${encodeURIComponent(kisiId)}`)} aria-label={t("mhMuhabirinIsleri")} title={t("mhMuhabirinIsleri")} data-mh-muhabire={kisiId}>
+      <ListChecks size={16} /> {yazili && t("mhMuhabirinIsleri")}
+    </button>
+  );
+}
+
+/*
+ * Kullanıcı: muhabiri tek tek seçip işlerini görmek istedi; aylık döküm bütün
+ * muhabirleri tek ayda gösteriyordu. Burada seçilen muhabirin anlaşması, ay ay
+ * özeti (ilk işinden bu aya) ve seçilen ayın işleri tür süzgeciyle.
+ */
+function MuhabirSayfasi({ ben, kisiId }: { ben: Kisi; kisiId?: string }) {
+  const { t, dil, ad } = useDil();
+  const v = useVeri();
+  const kisiler = [...muhasebeKisileri(v)].sort((a, b) => ad(a).localeCompare(ad(b), "ar"));
+  const kisi = kisiId ? v.kisiler.find((k) => k.id === kisiId) : undefined;
+  const buAy = bugun().slice(0, 7);
+  const [secili, setSecili] = useState(buAy);
+  const [tur, setTur] = useState<MuhasebeIs | "">("");
+  const [duzen, setDuzen] = useState(false);
+  const secim = (
+    <label className="muhasebe-kisi-secimi">
+      <span className="sonuk">{t("mhMuhabir")}</span>
+      <select value={kisi?.id ?? ""} onChange={(e) => git(e.target.value ? `muhasebe/muhabir/${encodeURIComponent(e.target.value)}` : "muhasebe/muhabir")} data-mh-muhabir-sec>
+        <option value="">{t("mhMuhabirSec")}</option>
+        {kisi && !kisiler.includes(kisi) && <option value={kisi.id}>{ad(kisi)}</option>}
+        {kisiler.map((k) => (
+          <option key={k.id} value={k.id}>
+            {ad(k)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  if (!kisi)
+    return (
+      <>
+        <div className="muhasebe-ust">{secim}</div>
+        <Bos metin={t("mhMuhabirSec")} />
+      </>
+    );
+  const a = anlasmaBul(v, kisi.id);
+  const aylar = muhabirAylari(v, kisi.id, buAy);
+  const ay = aylar.includes(secili) ? secili : aylar[0];
+  const dokumler = aylar.map((x) => aylikDokum(v, kisi, x));
+  const x = dokumler[aylar.indexOf(ay)];
+  const toplam = dokumler.reduce((n, d) => n + d.isler.length, 0);
+  const turler = [...new Set(x.isler.map((i) => i.tur))];
+  return (
+    <>
+      <div className="muhasebe-ust">{secim}</div>
+      <Kart>
+        <div className="muhasebe-kunye" data-mh-kunye={kisi.id}>
+          <KisiHucre kisi={kisi} alt={sehirAdi(kisi.sehir)} />
+          <span>
+            <small className="sonuk">{t("mhAnlasma")}</small>
+            <b>{a ? t(TUR_ADI[a.tur]) : <span className="uyari-yazi">{t("mhAnlasmaYok")}</span>}</b>
+          </span>
+          {a && a.tur !== "parca" && (
+            <span>
+              <small className="sonuk">{t("mhTutar")}</small>
+              <b>{tutarYaz(a.tutar, a.para)}</b>
+            </span>
+          )}
+          {a && a.tur !== "parca" && (
+            <span>
+              <small className="sonuk">{t("mhKota")}</small>
+              <b>{`${a.kotaPaket ?? "–"} PKG · ${a.kotaCanli ?? "–"} ${t("mhCanli")}`}</b>
+            </span>
+          )}
+          {a?.odeme && (
+            <span>
+              <small className="sonuk">{t("mhOdemeAraci")}</small>
+              <b>{a.odeme}</b>
+            </span>
+          )}
+          <span>
+            <small className="sonuk">{t("mhToplamIs")}</small>
+            <b data-mh-toplam-is>{toplam}</b>
+          </span>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setDuzen(true)} aria-label={t("duzenle")} title={t("duzenle")} data-mh-kunye-duzenle>
+            <Pencil size={16} />
+          </button>
+        </div>
+      </Kart>
+      <Kart>
+        <table className="tablo kartli muhasebe-aylar" data-mh-aylar>
+          <thead>
+            <tr>
+              <th>{t("mhAy")}</th>
+              <th>PKG</th>
+              <th>{t("mhDigerIs")}</th>
+              <th>{t("mhCanli")}</th>
+              <th>{t("mhKota")}</th>
+              <th>{t("mhOdeme")}</th>
+              <th aria-label={t("mhOnay")} />
+            </tr>
+          </thead>
+          <tbody>
+            {dokumler.map((d, i) => {
+              const pkg = d.turler.pkg ?? 0;
+              return (
+                <tr key={aylar[i]} className={`${aylar[i] === ay ? "secili" : ""}${d.kotaAlti ? " kota-alti" : ""}`} onClick={() => setSecili(aylar[i])} aria-selected={aylar[i] === ay} data-mh-ay-satir={aylar[i]}>
+                  <td className="birincil">
+                    <button type="button" className="dugme-metin" onClick={() => setSecili(aylar[i])}>
+                      {ayAdi(`${aylar[i]}-01`, dil, "yil")}
+                    </button>
+                  </td>
+                  <td data-etiket="PKG">{pkg}</td>
+                  <td data-etiket={t("mhDigerIs")}>{d.paket - pkg}</td>
+                  <td data-etiket={t("mhCanli")}>{d.canli}</td>
+                  <td data-etiket={t("mhKota")} className={d.kotaAlti ? "uyari-yazi" : ""}>
+                    {d.kotaPaket === undefined && d.kotaCanli === undefined ? "–" : `${d.paket}/${d.kotaPaket ?? "–"} · ${d.canli}/${d.kotaCanli ?? "–"}`}
+                  </td>
+                  <td data-etiket={t("mhOdeme")}>{tutarYaz(d.odeme, d.anlasma?.para)}</td>
+                  <td data-etiket={t("mhOnay")}>
+                    {d.kapanis?.odendi ? <Rozet ton="iyi">{t("mhOdendi")}</Rozet> : d.kapanis?.onay ? <Rozet ton="vurgu">{t("mhOnaylandi")}</Rozet> : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Kart>
+      <Kart baslik={ayAdi(`${ay}-01`, dil, "yil")}>
+        {turler.length > 1 && (
+          <div className="cipler muhasebe-turler" role="group" aria-label={t("mhIsTuru")} data-mh-tur-suzgec>
+            <button type="button" className={`cip cip-dugme${tur === "" ? " secili" : ""}`} aria-pressed={tur === ""} onClick={() => setTur("")}>
+              {t("mhHepsi")} · {x.isler.length}
+            </button>
+            {turler.map((k) => (
+              <button key={k} type="button" className={`cip cip-dugme${tur === k ? " secili" : ""}`} aria-pressed={tur === k} onClick={() => setTur(k)} data-mh-tur={k}>
+                {t(BICIM_ADI(k))} · {x.isler.filter((i) => i.tur === k).length}
+              </button>
+            ))}
+          </div>
+        )}
+        <DokumAyrintisi x={x} ay={ay} ben={ben} tur={turler.includes(tur as MuhasebeIs) ? tur : ""} />
+      </Kart>
+      {duzen && <AnlasmaFormu ben={ben} kisi={kisi} kapat={() => setDuzen(false)} />}
+    </>
   );
 }
 
@@ -291,7 +452,8 @@ function Anlasmalar({ ben }: { ben: Kisi }) {
                     <td data-etiket={t("mhTutar")}>{a?.tur === "parca" ? t("mhFiyatli") : tutarYaz(a?.tutar, a?.para)}</td>
                     <td data-etiket={t("mhKota")}>{a && a.tur !== "parca" ? `${a.kotaPaket ?? "–"} PKG · ${a.kotaCanli ?? "–"} ${t("mhCanli")}` : "–"}</td>
                     <td data-etiket={t("mhOdemeAraci")}>{a?.odeme ?? "–"}</td>
-                    <td>
+                    <td className="muhasebe-araclar">
+                      <MuhabireGit kisiId={k.id} />
                       <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setDuzen(k)} aria-label={t("duzenle")} title={t("duzenle")} data-mh-duzenle={k.id}>
                         <Pencil size={16} />
                       </button>

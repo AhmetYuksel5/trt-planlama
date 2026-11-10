@@ -384,7 +384,7 @@ export default function App() {
         icerik = <Ucretler ben={ben} />;
         break;
       case "muhasebe":
-        icerik = <Muhasebe ben={ben} sekme={yol.id ?? ""} />;
+        icerik = <Muhasebe ben={ben} sekme={yol.id ?? ""} kisiId={yol.alt} />;
         break;
       case "raporlar":
         icerik = <Raporlar ben={ben} />;

@@ -43,6 +43,33 @@ export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
   return l.filter((x) => x.tarih).sort((a, b) => a.tarih.localeCompare(b.tarih));
 };
 
+/** Ay listesi için ayı kaydırır ("2026-01", -1 → "2025-12"). */
+export const ayKaydir = (ayi: string, n: number) => {
+  const [y, a] = ayi.split("-").map(Number);
+  const t = new Date(Date.UTC(y, a - 1 + n, 1));
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+/** Muhabir sayfasında geriye bakılan en çok ay: iki yıl ödeme geçmişi yeter, liste uzamasın. */
+export const MUHABIR_AY_SINIRI = 24;
+
+/**
+ * Muhabir sayfasının ayları, en yenisi önce: ilk işinin ayından (ya da kaydı
+ * kapanmış ilk aydan) bu aya. İşi hiç olmayan anlaşmalıda yalnız bu ay; boş
+ * aylar da listede kalır, kota altında kalınan ay görünsün.
+ */
+export const muhabirAylari = (d: Durum, kisiId: string, buAy: string): string[] => {
+  const ilkler = [...muhabirIsleri(d, kisiId).map((i) => ay(i.tarih)), ...(d.muhasebeKapanislari ?? []).filter((k) => k.kisiId === kisiId).map((k) => k.ay)].filter((a) => a <= buAy).sort();
+  const sinir = ayKaydir(buAy, -(MUHABIR_AY_SINIRI - 1));
+  let a = ilkler[0] && ilkler[0] > sinir ? ilkler[0] : ilkler[0] ? sinir : buAy;
+  const l: string[] = [];
+  while (a <= buAy) {
+    l.push(a);
+    a = ayKaydir(a, 1);
+  }
+  return l.reverse();
+};
+
 /** Yapılıp yapılmadığı işaretlenmemiş, günü geçmiş canlı (Newsdesk'i bekleyen): sayıma girmiyor, ekranda uyarı. */
 export const isaretsizCanlilar = (d: Durum, kisiId: string, ayi: string, bugun: string) =>
   d.canliYayinlar.filter((c) => c.muhabirId === kisiId && !c.sonuc && c.tarih && ay(c.tarih) === ayi && c.tarih < bugun);
