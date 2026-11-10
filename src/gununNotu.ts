@@ -2,7 +2,7 @@ import { geciktiMi } from "./akis";
 import { oneriArsivde } from "./oneriPlanlari";
 import { gunEkle, gunFarki, yerelGun } from "./tarih";
 import { gorunenFaaliyetler, olusumBaglantilari, aralikOlusumlari, etkin } from "./takvim";
-import type { Durum, Kisi, NextDayPlan } from "./veri";
+import { masaPaketi, type Durum, type Kisi, type NextDayPlan } from "./veri";
 
 /*
  * Günün notu (Planlama ana sayfası): kayıttan kurallarla çıkan uyarılar,
@@ -112,7 +112,8 @@ export function gununNotu(d: Durum, ben: Kisi, b: string, an = Date.now()): Gunu
   // Planın günü geçmiş, onaylı ama muhabirin sonucu (yapıldı/yapılmadı) gelmemiş paketler.
   const planGunu = new Map(d.planlar.map((p) => [p.id, p.tarih]));
   const sonucsuz = d.paketler.filter((p) => {
-    if (p.durum !== "onaylandi" || p.isaret || p.ozelId || p.stok || !p.planId) return false;
+    // Masa paketi (ekonomi, program, spor) muhabirin sonucuyla değil masanın akışıyla biter.
+    if (p.durum !== "onaylandi" || p.isaret || p.ozelId || p.stok || !p.planId || masaPaketi(p)) return false;
     const g = planGunu.get(p.planId);
     return !!g && g >= bas && gunFarki(g, b) >= 1;
   });

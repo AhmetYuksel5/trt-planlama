@@ -1,6 +1,6 @@
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
-import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, stokDurumu, type UretimAdimi } from "./akis";
+import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK } from "./kip";
@@ -113,6 +113,8 @@ import {
   gelismeMuhabirleri,
   TAKIP_BICIMI,
   oneriSinirIcinde,
+  MASA_KOLLARI,
+  masaPaketi,
   type OneriBicimi,
   type GundemKaynagi,
   type GundemNotu,
@@ -1534,8 +1536,8 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     bicim: k.bicimler[0],
     durum: "onaylandi",
     sahaGerekli: false,
-    // Program kendi birimine gidiyor; gerisi bitince stokta bekleyen paket.
-    stok: k.tur !== "program" || undefined,
+    // Masa kolları (ekonomi, program, spor) kendi birimine gidiyor; gerisi (feature, günü olmayan haber) bitince stokta bekliyor.
+    stok: !MASA_KOLLARI.includes(k.tur) || undefined,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
     notlar: [],
@@ -1836,7 +1838,7 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     // Plana stoktan seçilen paketler bu planla yayına çıkıyor; stoktan düşüp arşive geçiyor.
     for (const id of plan.hazirPaketler) {
       const p = paketBul(d, id);
-      if (!p || stokDurumu(p) !== "stokta") continue;
+      if (!p || !hazirSecilebilir(p)) continue;
       d = paketGuncelle(d, id, (x) => ({ ...x, yayinlandi: { planId, tarih: plan.tarih } }));
       d = hareketYaz(d, { kisiId: ben.id, tip: "stokYayinlandi", paketId: id, planId, veri: { tarih: plan.tarih } });
     }
@@ -1913,17 +1915,19 @@ export const gorevlendirmeOlustur = (ben: Kisi, planId: string, g: Omit<Gorevlen
   return true;
 };
 
-/** Plana yalnız stoktaki (bitmiş, henüz yayınlanmamış) paket seçiliyor. */
+/** Plana yalnız stoktaki ya da masanın bitirdiği (henüz yayınlanmamış) paket seçiliyor. */
 export const hazirPaketEkle = (ben: Kisi, planId: string, id: string) => {
   const p = paketBul(getir(), id);
-  if (!p || stokDurumu(p) !== "stokta") return false;
+  if (!p || !hazirSecilebilir(p)) return false;
   return planIcerik(ben, planId, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, id) }));
 };
 /*
- * Planın beklenen paketi (PKG) aslında yapılmış: stok paketi olarak hazır
- * paketlere geçiyor. Paket tamamlandı sayılır, başlıktan ayrılır (iki yerde
- * basılmasın), planın hazır paketleri listesine girer; devirde yayınlandı alır.
- * Üretimdeki ve iptal paket alınmaz: akışı ya da kararı var.
+ * Planın beklenen paketi (PKG) aslında yapılmış: stok paketi oluyor.
+ * Paket tamamlandı sayılır, Stok'un "Üretilmiş paketler"ine düşer (kullanıcı:
+ * Next Day yapılırken stok diye işaretlenen paket oraya gitsin; önce bu
+ * planın hazır paketlerine ekleniyordu), istenen gün "Hazır paketler"den
+ * seçilir. Başlıktan ayrılır (iki yerde basılmasın) ya da planlamacı isterse
+ * başlığın altında kalır. Üretimdeki ve iptal paket alınmaz: akışı ya da kararı var.
  */
 export const paketStogaAlinabilir = (p: Paket) => !!p.planId && !p.stok && !p.ozelId && ["taslak", "degerlendiriliyor", "onaylandi", "tamamlandi"].includes(p.durum) && !p.yayinlandi;
 /* Başlığın altında kalsın mı planlamacının seçimi: kurum bazen paketi haberinin yanında da görmek istiyor; beklenenlerde artık yok. */
@@ -1933,7 +1937,6 @@ export const paketStogaAl = (ben: Kisi, paketId: string, baslikta = false) => {
   const plan = planBul(d, p?.planId);
   if (!p || !plan || !paketStogaAlinabilir(p) || !planIcerikDuzenler(ben, plan)) return false;
   d = paketGuncelle(d, p.id, (x) => ({ ...x, stok: true, durum: "tamamlandi", planBaslikId: baslikta ? x.planBaslikId : undefined, isaret: undefined }));
-  d = planGuncelle(d, plan.id, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, p.id) }));
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketStogaAlindi", paketId: p.id, planId: plan.id }));
   return true;
 };
@@ -4963,6 +4966,20 @@ export const oneriyeSatirlarEkle = (ben: Kisi, oneriId: string, metinler: string
  * açıklamasıyla aynı olan Weekly paketine strap'i (yoksa dosyanın adını)
  * yazıyor; elle değiştirilmiş başlığa dokunmuyor.
  */
+/*
+ * Ekonomi (ve masası olan öbür kollar) önce stoka düşüyordu, Planlama'nın
+ * stok ekibi üretiyordu; şimdi kendi masasında. Sistemin açılış işi:
+ * henüz üretime alınmamış masa paketinin stok işareti kalkar, masasına
+ * geçer. Bitmiş (stokta) paket yerinde kalır, Next Day'den yine seçilir.
+ */
+export const masaPaketleriniStoktanAyir = (): number => {
+  let d = getir();
+  const tasinacak = d.paketler.filter((p) => p.stok && masaPaketi(p) && p.durum === "onaylandi" && !p.adim);
+  for (const p of tasinacak) d = paketGuncelle(d, p.id, (x) => ({ ...x, stok: undefined }));
+  if (tasinacak.length) kaydet(d);
+  return tasinacak.length;
+};
+
 export const haftalikPaketBasliklariniDuzelt = (): number => {
   let d = getir();
   const kalemler = new Map(d.haftalik.flatMap((h) => h.kalemler.map((k) => [k.id, k] as const)));
@@ -5121,6 +5138,11 @@ export const ozelAsamaIsaretle = (ben: Kisi, id: string, adim: Exclude<OzelDurum
   const yeni = tamam ? adim : oncesi(OZEL_SIRASI, o.durum ?? "hazirlik", adim)!;
   // İşaret kaldırılınca izde kaldırılan aşama ("geri") yazılı: kim geri aldı görünsün.
   d = ozelGuncelle(d, id, (x) => ({ ...x, durum: yeni, iz: [...(x.iz ?? []), izYaz(ben, "durum", tamam ? { durum: adim } : { durum: yeni, asama: adim, not: "↶" })] }));
+  // Yayına hazır: yayının stoktaki dosya paketleri bu yayınla verildi, Stok'ta "yayınlanan"a geçer (geri alınınca stoka döner).
+  if (adim === "hazir") {
+    for (const p of d.paketler.filter((x) => x.ozelId === id && x.durum === "tamamlandi"))
+      if (tamam ? !p.yayinlandi : p.yayinlandi?.ozelId === id) d = paketGuncelle(d, p.id, (x) => ({ ...x, yayinlandi: tamam ? { ozelId: id, tarih: o.bitis ?? o.tarih } : undefined }));
+  }
   if (tamam && adim === "onayli") {
     d = ozelGuncelle(d, id, (x) => ({ ...x, nafizeler: (x.nafizeler ?? []).map((n) => (n.durum === "planlandi" ? { ...n, durum: "onayli" as const, iz: [...n.iz, izYaz(ben, "durum", { durum: "onayli" })] } : n)) }));
     for (const x of ozelBul(d, id)!.paketOnerileri ?? []) if (x.durum === "oneri") d = paketOnerisiniOnayla(d, ben, ozelBul(d, id)!, x);

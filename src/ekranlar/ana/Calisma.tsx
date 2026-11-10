@@ -53,9 +53,12 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   muhabir: [],
   newsdesk: ["genIslerim", "ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
-  ekonomi: ["genIslerim", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta", "ekPaketler"],
-  program: ["genIslerim", "prHafta", "prUretim", "prOneri", "prKonuk"],
-  output: ["genIslerim", "ouOzel", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
+  // Ekonomi, Program ve Spor'un masası Newsdesk'inki gibi: kendi paketlerinin üretimi (MasaPaketleri).
+  ekonomi: ["genIslerim", "ekMasa", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta"],
+  program: ["genIslerim", "prMasa", "prHafta", "prOneri", "prKonuk"],
+  spor: ["genIslerim", "spMasa", "genSiram"],
+  // Özel yayın paketlerini artık Planlama'nın stok ekibi takip ediyor (Stok sayfası).
+  output: ["genIslerim", "ouSayac", "ouKontrol", "ouDil", "ouSon"],
   // Dil denetmeninin sayfası DilDenetimi; birimin yöneticisi dil kuyruğunu görür.
   scriptEditor: ["genIslerim", "ouDil", "ouSon"],
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],

@@ -133,7 +133,7 @@ export const planCiftleriniBirlestir = (d: Durum): { yeni: Durum; birlesimler: P
         ? {
             ...x,
             ...(x.planId && { planId: plan(x.planId), planBaslikId: pb(x.planBaslikId) }),
-            ...(x.yayinlandi && { yayinlandi: { ...x.yayinlandi, planId: plan(x.yayinlandi.planId) } }),
+            ...(x.yayinlandi?.planId && { yayinlandi: { ...x.yayinlandi, planId: plan(x.yayinlandi.planId) } }),
           }
         : x,
     ),

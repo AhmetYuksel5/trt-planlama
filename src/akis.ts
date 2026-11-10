@@ -1,5 +1,5 @@
 import { metin, yaz, type Anahtar } from "./dil";
-import { anlik, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
+import { anlik, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
 import { ESKI_AKIS, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
@@ -50,8 +50,10 @@ export type UretimAdimi = (typeof URETIM_ADIMLARI)[number];
 export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
   haber: "newsdesk",
   feature: "planlama",
-  ekonomi: "planlama",
+  // Ekonomi kendi masasında (önce Planlama'nın stok ekibi yürütüyordu); spor da öyle.
+  ekonomi: "ekonomi",
   program: "program",
+  spor: "spor",
 };
 
 export const kolSahibi = (tur: IcerikTuru, y: Yapi = yapi()): BirimId => y.kolSahibi[tur] ?? KOL_SAHIBI[tur];
@@ -218,9 +220,10 @@ export const asamaBul = (p: Paket): number | null => {
  */
 export const paketSahibi = (p: Paket): BirimId | null => {
   if (p.durum === "uretimde" && p.adim) return durakSahibi(p, p.adim);
-  // Özel yayın talebi: dış muhabirdeyse muhabirde, in-house ise Output'ta (müdürü dağıtıyor).
-  if (p.ozelId && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "output";
-  if (p.durum === "onaylandi" && !p.planId) return kolSahibi(p.tur);
+  // Özel yayın talebi: dış muhabirdeyse muhabirde, in-house ise Planlama'nın stok ekibinde (dağıtıyor; önce Output'taydı).
+  if (p.ozelId && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "planlama";
+  // Masa paketi (ekonomi, program, spor) Next Day'den de gelse masasında üretime alınmayı bekliyor.
+  if (p.durum === "onaylandi" && (!p.planId || masaPaketi(p))) return kolSahibi(p.tur);
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
   return null;
 };
@@ -234,7 +237,7 @@ export const paketSahibi = (p: Paket): BirimId | null => {
  * kendi yolunu gösteriyor.
  */
 export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTamam"];
-export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
+export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
 export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
@@ -250,11 +253,20 @@ export const STOK_DURUMLARI = ["bekliyor", "uretimde", "stokta", "yayinlandi"] a
 export type StokDurumu = (typeof STOK_DURUMLARI)[number];
 
 export const stokDurumu = (p: Paket): StokDurumu | null => {
-  if (!p.stok || p.durum === "iptal" || p.durum === "taslak" || p.durum === "degerlendiriliyor") return null;
+  // Özel yayının dosya paketi de stok (kullanıcı: önceden hazırlanıp yayın günü stoktan veriliyor); stok ekibi takip ediyor.
+  if (!(p.stok || p.ozelId) || p.durum === "iptal" || p.durum === "taslak" || p.durum === "degerlendiriliyor") return null;
   if (p.yayinlandi) return "yayinlandi";
   if (p.durum === "tamamlandi") return "stokta";
-  return p.durum === "uretimde" ? "uretimde" : "bekliyor";
+  // Özel yayın paketi "Üretime al"la değil kendi görevlendirmesiyle ilerliyor: onaylıysa üretimde sayılır.
+  return p.durum === "uretimde" || p.ozelId ? "uretimde" : "bekliyor";
 };
+
+/*
+ * Next Day'in "Hazır paketler"ine seçilebilen: stokta bekleyen ya da masanın
+ * (ekonomi, program, spor) bitirip henüz yayına çıkmamış paketi (kullanıcı:
+ * masaların paketi de Next Day'den seçilsin).
+ */
+export const hazirSecilebilir = (p: Paket) => stokDurumu(p) === "stokta" || (masaPaketi(p) && p.durum === "tamamlandi" && !p.yayinlandi);
 
 /** Teslim zamanı geçmiş ve henüz bitmemiş iş. */
 export const geciktiMi = (p: Paket, an = Date.now()) =>

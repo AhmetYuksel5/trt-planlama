@@ -7,7 +7,7 @@ import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
-import { stokDurumu } from "../../akis";
+import { hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
@@ -432,11 +432,11 @@ function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
   );
 }
 
-/** Stoktaki, plana henüz seçilmemiş paketler. */
+/** Stoktaki ya da masanın (ekonomi, program, spor) bitirdiği, plana henüz seçilmemiş paketler. */
 export function StoktanSecici({ plan, d, kapat }: { plan: NextDayPlan; d: Durum; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
-  const stokta = d.paketler.filter((p) => stokDurumu(p) === "stokta" && !plan.hazirPaketler.includes(p.id));
+  const stokta = d.paketler.filter((p) => hazirSecilebilir(p) && !plan.hazirPaketler.includes(p.id));
   return (
     <div className="form form-kutu ara-ust-2">
       <div className="alan-etiket">{t("stoktakiPaketler")}</div>
@@ -447,7 +447,7 @@ export function StoktanSecici({ plan, d, kapat }: { plan: NextDayPlan; d: Durum;
             <div>
               <HazirSatiri p={p} d={d} />
             </div>
-            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, p.id)}>
+            <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => ben && hazirPaketEkle(ben, plan.id, p.id)} data-hazir-sec={p.id}>
               <Plus size={14} /> {t("sec")}
             </button>
           </div>

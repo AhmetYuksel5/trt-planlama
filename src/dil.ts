@@ -220,6 +220,7 @@ const M = {
   turHaber: m("Haber / güncel", "خبر / حدث", "News"),
   turFeature: m("Feature / stok", "تقرير منوع", "Feature"),
   turEkonomi: m("Ekonomi", "اقتصاد", "Economy"),
+  turSpor: m("Spor", "رياضة", "Sports"),
   turProgram: m("Program", "برنامج", "Programme"),
   tumTurler: m("Tüm kollar", "كل المسارات", "All strands"),
   tumUlkeler: m("Tüm ülkeler", "كل البلدان", "All countries"),
@@ -1748,6 +1749,7 @@ const M = {
   bYoneticiNotu: m("Not iletildi.", "أُرسلت الملاحظة.", "Note sent."),
   /* Haftalık plan akışı */
   biEkonomi: m("Ekonomi", "الاقتصاد", "Economy"),
+  biSpor: m("Spor", "الرياضة", "Sports"),
   hdHazirlik: m("Hazırlık", "قيد الإعداد", "In preparation"),
   hdToplantida: m("Haftalık toplantıda", "في الاجتماع الأسبوعي", "At the weekly meeting"),
   hdKesinlesti: m("Kesinleşti", "معتمدة", "Finalised"),
@@ -1930,6 +1932,11 @@ const M = {
   sdBekliyor: m("Üretime alınacak", "بانتظار بدء الإنتاج", "To be produced"),
   sdUretimde: m("Üretimde", "قيد الإنتاج", "In production"),
   sdStokta: m("Stokta", "في المخزون", "In stock"),
+  sdUretilmis: m("Üretilmiş paketler", "التقارير المنتجة", "Produced packages"),
+  masaHazir: m("Yayına hazır", "جاهزة للبث", "Ready to air"),
+  ekMasa: m("Ekonomi masası", "مكتب الاقتصاد", "Economy desk"),
+  prMasa: m("Program masası", "مكتب البرامج", "Programmes desk"),
+  spMasa: m("Spor masası", "مكتب الرياضة", "Sports desk"),
   sdYayinlandi: m("Yayınlandı", "بُث", "Aired"),
   sdYayinlanan: m("Yayınlanan", "المبثوثة", "Aired"),
   uretimeAlinacaklar: m("Üretime alınacaklar", "بانتظار بدء الإنتاج", "Waiting to go into production"),
@@ -2851,6 +2858,11 @@ const M = {
     "If Planning adds the story without a package you are told it was \u201cadded to the plan as a follow-up; no package expected\u201d: follow the story and add new developments below the follow-up. If a package is given to you from another reporter, it appears in My proposals as \u201cOffered to reporter\u201d.",
   ),
 
+  kl7d: m(
+    "Ekonomi, program ve spor paketlerinde “Yapıldı” yok: paketi o masa takip eder. Sıra sana geldiğinde (metin, video) iş “Senin sıran”da görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
+    "تقارير الاقتصاد والبرامج والرياضة لا يُضغط فيها «أُنجز»: يتابعها مكتبها. حين يحين دورك (النص، الفيديو) يظهر العمل في «دورك»؛ وبعد إنجازه انقله إلى الخطوة التالية بالزر هناك.",
+    "Economy, programme and sports packages have no “Done” button: their desk follows them. When it is your turn (script, video) the job shows under “Your turn”; when done, move it on with the button there.",
+  ),
   kl7bNewsdesk: m(
     "Sıra sana geldiğinde (metin, video) iş \u201cSenin sıran\u201dda görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
     "حين يحين دورك (النص، الفيديو) يظهر العمل في «دورك»؛ وبعد إنجازه انقله إلى الخطوة التالية بالزر هناك.",

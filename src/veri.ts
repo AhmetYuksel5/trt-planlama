@@ -35,7 +35,7 @@ import type { Yapi } from "./yapi";
  * toplantıdan önce bakıyor (ön inceleme). Üretim akışında masası yok;
  * ekonomi paketini Planlama'nın feature/stok ekibi yürütüyor (akis.ts).
  */
-export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "output", "scriptEditor", "media", "muhabir", "yonetim"] as const;
+export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "spor", "output", "scriptEditor", "media", "muhabir", "yonetim"] as const;
 export type Birim = (typeof BIRIMLER)[number];
 /** Yerleşik birim ya da yöneticinin açtığı birim (yapi.ts). */
 export type BirimId = Birim | (string & {});
@@ -249,8 +249,16 @@ export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
 
-export const ICERIK_TURLERI = ["haber", "feature", "ekonomi", "program"] as const;
+export const ICERIK_TURLERI = ["haber", "feature", "ekonomi", "program", "spor"] as const;
 export type IcerikTuru = (typeof ICERIK_TURLERI)[number];
+/*
+ * Masası olan kollar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da
+ * programı için üretimi Newsdesk gibi takip ediyor). Paketleri stoka değil
+ * kendi birimine düşer, Next Day'de de Weekly'de de; muhabirin "Yapıldı"
+ * işaretiyle değil, akışla biter. Stok yalnız feature ve özel yayın dosyası.
+ */
+export const MASA_KOLLARI: readonly IcerikTuru[] = ["ekonomi", "program", "spor"];
+export const masaPaketi = (p: { tur: IcerikTuru; ozelId?: string }) => !p.ozelId && MASA_KOLLARI.includes(p.tur);
 
 /* --- Merkezi haber başlıkları --- */
 
@@ -896,7 +904,8 @@ export interface Paket {
   stok?: boolean;
   /** Paketin süresi: 3:20. */
   sure?: string;
-  yayinlandi?: { planId: string; tarih: string };
+  /** Yayına çıktığı Next Day planı ya da (dosya paketi) özel yayın. */
+  yayinlandi?: { planId?: string; ozelId?: string; tarih: string };
   notlar: Not[];
   olusturma: string;
   guncelleme: string;

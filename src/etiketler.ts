@@ -47,6 +47,7 @@ export const BIRIM_ADI: Record<Birim, Anahtar> = {
   newsgathering: "biNewsgathering",
   program: "biProgram",
   ekonomi: "biEkonomi",
+  spor: "biSpor",
   output: "biOutput",
   scriptEditor: "biScriptEditor",
   media: "biMedia",
@@ -88,6 +89,7 @@ export const TUR_ADI: Record<IcerikTuru, Anahtar> = {
   feature: "turFeature",
   ekonomi: "turEkonomi",
   program: "turProgram",
+  spor: "turSpor",
 };
 
 /** Muhabirin takibinin türü (takipler sayfası ve öneri formundaki "Takip"). */

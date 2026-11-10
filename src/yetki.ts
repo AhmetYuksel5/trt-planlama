@@ -47,6 +47,7 @@ import {
   type Oneri,
   type MetinParcasi,
   type Paket,
+  masaPaketi,
 } from "./veri";
 
 /**
@@ -98,6 +99,7 @@ export const IZINLER = {
       "newsgathering",
       "program",
       "ekonomi",
+      "spor",
       "output",
       "media",
       "yonetim",
@@ -108,6 +110,7 @@ export const IZINLER = {
       "newsgathering",
       "program",
       "ekonomi",
+      "spor",
       "output",
       "media",
     ],
@@ -129,6 +132,7 @@ export const IZINLER = {
       "newsgathering",
       "program",
       "ekonomi",
+      "spor",
       "output",
       "scriptEditor",
       "media",
@@ -139,6 +143,7 @@ export const IZINLER = {
       "newsgathering",
       "program",
       "ekonomi",
+      "spor",
       "output",
       "scriptEditor",
       "media",
@@ -176,12 +181,13 @@ export interface Kapsam {
 }
 
 /*
- * Üretimde masası olmayan, bir kolun içeriğinden sorumlu birim. Ekonomi
- * paketini Planlama'nın feature/stok ekibi yürütüyor; Ekonomi yöneticisi
- * masaya değil kola bakıyor.
+ * Kolun içeriğinden sorumlu birim: yöneticisi bütün kolun paketlerine bakar
+ * (masasındakine de, başka birimin durağındakine de). Ekonomi ve Spor'un
+ * artık kendi masası var (önce ekonomiyi Planlama'nın stok ekibi yürütüyordu).
  */
 const KOL_BIRIMLERI: Partial<Record<Birim, IcerikTuru[]>> = {
   ekonomi: ["ekonomi"],
+  spor: ["spor"],
 };
 
 export const MUDURLUKLER: Partial<
@@ -202,6 +208,7 @@ const BIRIM_KOLLARI: Partial<Record<Birim, IcerikTuru[]>> = {
   muhabir: ["haber"],
   ekonomi: ["ekonomi"],
   program: ["program"],
+  spor: ["spor"],
 };
 
 /*
@@ -349,11 +356,15 @@ export const adimYapabilir = (k: Kisi | undefined, p: Paket): boolean => {
   return sorumluMu(k, p, d.sorumlu) || (d.yardimci ?? []).includes(k.birim);
 };
 
-/** Plansız onaylı paketi (haftalık toplantının kabulü) kolun sahibi üretime alıyor; Planlama'da stok ekibi. */
+/*
+ * Plansız onaylı paketi (haftalık toplantının kabulü) kolun sahibi üretime
+ * alıyor; Planlama'da stok ekibi. Masa paketini (ekonomi, program, spor)
+ * Next Day'den gelse de masası alıyor.
+ */
 export const uretimeAlabilir = (k: Kisi | undefined, p: Paket): boolean =>
   !!k &&
   p.durum === "onaylandi" &&
-  !p.planId &&
+  (!p.planId || masaPaketi(p)) &&
   !p.ozelId &&
   paketSahibi(p) === k.birim &&
   ekipte(k);
@@ -515,6 +526,8 @@ export const paketTamamlayabilir = (
     ? ozelPaketTeslimEdebilir(k, p)
     : !!k &&
       yalnizPlanlama(d) &&
+      // Masa paketi (ekonomi, program, spor) muhabirin işaretiyle değil masanın akışıyla biter.
+      !masaPaketi(p) &&
       p.durum === "onaylandi" &&
       ((k.birim === "muhabir" && p.muhabirId === k.id) ||
         yapabilir(k, "paketDegerlendir"));
@@ -753,7 +766,7 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   // Herkesin kendi ana sayfası: örneği seçilmemiş yeni birimdeki kişi (AnaSayfa → GenelAna) de girince kapıda kalmasın.
   ana: HERKES,
   nextday: MASA,
-  haftalik: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
+  haftalik: ["planlama", "newsdesk", "program", "ekonomi", "spor", "yonetim"],
   aylik: ["planlama", "program", "yonetim"],
   ozel: [
     "planlama",
@@ -782,7 +795,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   saha: ["newsgathering", "planlama", "yonetim", "muhabir"],
   seyahat: ["newsgathering", "planlama", "yonetim"],
   talepler: ["newsgathering", "planlama", "yonetim"],
-  uretim: ["newsdesk", "output", "scriptEditor", "media", "planlama", "program", "yonetim"],
+  // Masası olan birimler (ekonomi, program, spor) üretimi Newsdesk gibi izliyor.
+  uretim: ["newsdesk", "output", "scriptEditor", "media", "planlama", "program", "ekonomi", "spor", "yonetim"],
   metinkontrol: ["output", "scriptEditor", "newsdesk", "planlama", "yonetim"],
   video: ["newsdesk", "media", "planlama", "yonetim"],
   ucretler: ["newsdesk", "yonetim"],
@@ -792,6 +806,7 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
     "newsgathering",
     "program",
     "ekonomi",
+    "spor",
     "yonetim",
   ],
   ayarlar: HERKES,
@@ -897,15 +912,17 @@ export const siramMi = (k: Kisi, p: Paket) =>
 export const ozelDuzenler = (k: Kisi | undefined): boolean =>
   yapabilir(k, "planDuzenle");
 
-/** In-house paketi Output'tan sorumlu yönetici dağıtıyor: Output yöneticisi ya da kapsamında Output olan müdür. */
+/*
+ * In-house paketi Planlama'nın stok ekibi dağıtıyor (kullanıcı: özel yayının
+ * dosya paketlerini stok ekibi takip etsin; önce Output'un yöneticisiydi).
+ * Planlama yöneticisi ve tam yönetici de.
+ */
 export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
   !!k &&
   !!p.ozelId &&
   p.ozelKaynak === "inhouse" &&
   p.durum === "onaylandi" &&
-  k.rol === "yonetici" &&
-  (izinBirimi(k.birim) === "output" ||
-    (yonetimdeMi(k) && !!kapsam(k)?.birimler.includes("output")));
+  (!!k.hesapYoneticisi || (izinBirimi(k.birim) === "planlama" && (k.gorev === "stokTakip" || k.rol === "yonetici")));
 
 /** Teslimi işi yapan (dış muhabir, Output'un görevlendirdiği kişi) ya da Planlama işliyor. Newsdesk henüz bu akışta yok. */
 export const ozelPaketTeslimEdebilir = (

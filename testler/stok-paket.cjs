@@ -1,9 +1,12 @@
-// PKG "Stok paket olarak ekle": beklenen paketlerden çıkıp planın hazır paketlerine geçer (başlığın altında kalsın mı sorusuna "hayır"); açıklama ve kod altında
-const { chromium } = require(process.env.PW);
+// PKG "Stok paket olarak ekle": Stok'un "Üretilmiş paketler"ine düşer (kullanıcı), başlıktan ayrılır; plana "Stoktan seç"le girer, açıklama ve kod altında
+const BASLIKTA = false;
+const { chromium } = require(process.env.PW || "playwright");
+let gec = 0, kal = 0;
+const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log("✗ " + m)));
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
-  p.on("pageerror", (e) => console.log("HATA", String(e)));
-  let soru = 0; p.on("dialog", (x) => (soru++ === 0 ? x.accept() : x.dismiss()));
+  const hatalar = []; p.on("pageerror", (e) => hatalar.push(String(e)));
+  let soru = 0; p.on("dialog", (x) => (soru++ === 0 ? x.accept() : BASLIKTA ? x.accept() : x.dismiss()));
   const B = "http://localhost:4173/";
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
@@ -15,22 +18,39 @@ const { chromium } = require(process.env.PW);
     pk.slug = "TEST-STOK-PKG"; pk.aciklama = "شرح التقرير الجاهز"; localStorage.setItem(k, JSON.stringify(d)); return pk.id;
   });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  await p.locator("details:not([open]) > summary").evaluateAll((s) => s.forEach((x) => x.click())); await p.waitForTimeout(300);
-  const kodPlanda = await p.locator("[data-paket-kodu]", { hasText: "TEST-STOK-PKG" }).count();
+  const ac = () => p.locator("details:not([open]) > summary").evaluateAll((s) => s.forEach((x) => x.click()));
+  await ac(); await p.waitForTimeout(300);
+  ok((await p.locator("[data-paket-kodu]", { hasText: "TEST-STOK-PKG" }).count()) > 0, "kod planda görünüyor");
   const kart = p.locator(`.kayit:has(a[href="#/paketler/${id}"])`).first();
   await kart.locator('button[aria-label="Stok paket olarak ekle"]').click(); await p.waitForTimeout(500);
-  const sonuc = await p.evaluate((id) => {
+  const durum = () => p.evaluate((id) => {
     const d = JSON.parse(localStorage.getItem("trt-planlama-v24"));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const pk = d.paketler.find((x) => x.id === id);
     return { hazir: plan.hazirPaketler.includes(id), durum: pk.durum, stok: pk.stok, baslik: pk.planBaslikId ?? null, ad: pk.baslik };
   }, id);
+  const s1 = await durum();
+  ok(s1.durum === "tamamlandi" && s1.stok, "stok paketi oldu, tamamlandı");
+  ok(!s1.hazir, "planın hazır paketlerine kendiliğinden girmedi");
+  ok(BASLIKTA ? s1.baslik !== null : s1.baslik === null, BASLIKTA ? "başlığın altında kaldı" : "başlıktan ayrıldı");
+  // Stok › Üretilmiş paketler
+  await p.goto("about:blank"); await p.goto(B + "#/stok"); await p.waitForTimeout(800);
+  ok((await p.locator('[role="tab"][aria-selected="true"]').innerText()).includes("Üretilmiş paketler"), "Stok'ta açık sekme Üretilmiş paketler");
+  ok((await p.locator(`a[href="#/paketler/${id}"]`).count()) > 0, "paket Üretilmiş paketler'de");
+  // İstenen planda "Stoktan seç"
+  await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
+  await ac(); await p.waitForTimeout(300);
+  await p.getByRole("button", { name: "Stoktan seç" }).first().click(); await p.waitForTimeout(300);
+  await p.locator(`[data-hazir-sec="${id}"]`).click(); await p.waitForTimeout(400);
+  ok((await durum()).hazir, "Stoktan seç ile planın hazır paketlerine girdi");
   await p.goto(B + "#/nextday/yarin/cikti"); await p.waitForTimeout(1000);
   const metin = await p.locator("article.cikti").first().innerText();
   const hazirBolum = metin.split("التقارير الجاهزة")[1] ?? "";
-  console.log("kod planda", kodPlanda, JSON.stringify(sonuc), "hazırda açıklama", hazirBolum.includes("شرح التقرير الجاهز"), "hazırda kod", hazirBolum.includes("TEST-STOK-PKG"));
-  const kez = metin.split(sonuc.ad).length - 1;
-  console.log("çıktıda kaç kez", kez);
-  const ok = kez === 1 && kodPlanda > 0 && sonuc.hazir && sonuc.durum === "tamamlandi" && sonuc.stok && sonuc.baslik === null && hazirBolum.includes("شرح التقرير الجاهز") && hazirBolum.includes("TEST-STOK-PKG");
-  await b.close(); process.exit(ok ? 0 : 1);
+  ok(hazirBolum.includes("شرح التقرير الجاهز") && hazirBolum.includes("TEST-STOK-PKG"), "çıktının hazır bölümünde açıklama ve kod");
+  const kez = metin.split(s1.ad).length - 1;
+  ok(kez === (BASLIKTA ? 2 : 1), "çıktıda " + (BASLIKTA ? "iki" : "bir") + " kez: " + kez);
+  ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
+  await b.close();
+  console.log(`\n${gec} geçti, ${kal} kaldı`);
+  process.exit(kal ? 1 : 0);
 })();

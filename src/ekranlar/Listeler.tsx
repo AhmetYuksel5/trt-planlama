@@ -3,12 +3,13 @@ import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
 import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
-import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, TurRozeti, bildir } from "../bilesenler/Parcalar";
+import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
+import { OzelTalepAlani } from "./OzelYayin";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, yaz, type Anahtar } from "../dil";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
 import { uretimeAl } from "../eylemler";
-import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
+import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -164,7 +165,7 @@ export function IsAkisi({ sayfa }: { sayfa: string }) {
   );
 }
 
-/* --- Stok haberler: feature, ekonomi ve günü olmayan haberin üretimi, stoğu ve yayını --- */
+/* --- Stok haberler: feature, günü olmayan haber ve özel yayın dosya paketlerinin üretimi, stoğu ve yayını --- */
 
 type StokSekme = "uretimde" | "stokta" | "yayinlandi";
 const STOK_SEKMELERI: StokSekme[] = ["uretimde", "stokta", "yayinlandi"];
@@ -186,7 +187,8 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
     stokta: durumda("stokta").sort((a, b) => b.guncelleme.localeCompare(a.guncelleme)),
     yayinlandi: durumda("yayinlandi").sort((a, b) => (b.yayinlandi?.tarih ?? "").localeCompare(a.yayinlandi?.tarih ?? "")),
   };
-  const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdStokta", yayinlandi: "sdYayinlanan" };
+  // "Stokta" sekmesi kullanıcının adıyla "Üretilmiş paketler": Next Day'de stok diye işaretlenen de buraya düşüyor.
+  const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdUretilmis", yayinlandi: "sdYayinlanan" };
   return (
     <>
       <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} />
@@ -195,6 +197,8 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
           <Sayac key={s} ikon={<Layers size={22} />} ton={s === "bekliyor" && bekleyen.length ? "uyari" : ""} renk="renk-haftalik" etiket={t(STOK_DURUM_ADI[s])} deger={durumda(s).length} />
         ))}
       </div>
+      {/* Özel yayının dosya paketlerini stok ekibi dağıtıyor ve izliyor (önce Output'taydı). */}
+      <OzelTalepAlani ben={ben} />
       {bekleyen.length > 0 && (
         <Kart baslik={t("uretimeAlinacaklar")} ikon={<CirclePlay size={18} />} ek={String(bekleyen.length)}>
           <ul className="liste">
@@ -238,6 +242,65 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
         </div>
       </Kart>
     </>
+  );
+}
+
+/*
+ * Masanın paketleri (Ekonomi, Program, Spor; kullanıcı: Newsdesk'in bülten
+ * için yaptığını kendi bülteni ya da programı için yapıyor): üretime
+ * alınacaklar ("Üretime al" masada), üretimdekiler ve yayına hazırlar.
+ * Weekly'den de Next Day'den de gelen paket burada; stoka düşmez. Hazır
+ * olanı Next Day "Hazır paketler"den seçer.
+ */
+export function MasaPaketleri({ ben, kol, baslik }: { ben: Kisi; kol: IcerikTuru; baslik: Anahtar }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const kolun = v.paketler.filter((p) => p.tur === kol && masaPaketi(p));
+  const bekleyen = kolun.filter((p) => p.durum === "onaylandi" && !p.adim);
+  const uretimde = kolun.filter((p) => p.durum === "uretimde");
+  const hazir = kolun.filter((p) => p.durum === "tamamlandi" && !p.yayinlandi).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  return (
+    <Kart baslik={t(baslik)} ikon={<Layers size={18} />} ek={String(bekleyen.length + uretimde.length)} sagUc={<Tumu href="#/uretim" />}>
+      <div data-masa={kol}>
+        <div className="alan-etiket">
+          {t("uretimeAlinacaklar")} <em>{bekleyen.length}</em>
+        </div>
+        {bekleyen.length === 0 ? (
+          <Bos kucuk metin={t("kayitYok")} />
+        ) : (
+          <ul className="liste" data-masa-bekleyen>
+            {bekleyen.map((p) => (
+              <li key={p.id}>
+                <div className="ad">
+                  <a href={`#/paketler/${p.id}`}>
+                    <Icerik blok>{p.baslik}</Icerik>
+                  </a>
+                  <small>
+                    {p.kod} · {p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}
+                  </small>
+                </div>
+                {p.haftalikKalemId && <HaftalikRozeti />}
+                {uretimeAlabilir(ben, p) && (
+                  <button className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
+                    <CirclePlay size={14} /> {t("uretimeAl")}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="alan-etiket ara-ust-2">
+          {t("sdUretimde")} <em>{uretimde.length}</em>
+        </div>
+        <PaketTablosu paketler={uretimde} d={v} sutunlar={["baslik", "muhabir", "asama", "kimde", "teslim"]} bosMetin={t("kayitYok")} />
+        <div className="alan-etiket ara-ust-2">
+          {t("masaHazir")} <em>{hazir.length}</em>
+        </div>
+        <div data-masa-hazir>
+          <PaketTablosu paketler={hazir} d={v} sutunlar={["baslik", "muhabir", "sure"]} bosMetin={t("kayitYok")} />
+        </div>
+      </div>
+    </Kart>
   );
 }
 

@@ -218,7 +218,7 @@ const ESKI_DURAKLAR: Durak[] = [
 ];
 export const ESKI_AKIS = "uretim";
 export const YENI_AKIS = "yol";
-const BUTUN_KOLLAR: IcerikTuru[] = ["haber", "feature", "ekonomi", "program"];
+const BUTUN_KOLLAR: IcerikTuru[] = ["haber", "feature", "ekonomi", "program", "spor"];
 
 const VARSAYILAN_DURAKLAR: Durak[] = [
   { id: "newsdesk", tur: "newsdesk", sorumlu: { tur: "kol" }, asama: "newsdesk" },
@@ -234,6 +234,7 @@ const VARSAYILAN_UNVANLAR: Record<Birim, GorevId[]> = {
   newsgathering: ["yonetici", "koordinator"],
   program: ["yonetici", "programEditoru", "sunucu"],
   ekonomi: ["yonetici", "editor"],
+  spor: ["yonetici", "editor"],
   output: ["yonetici", "editor", "tercuman"],
   scriptEditor: ["yonetici", "dilDenetmeni"],
   media: ["yonetici", "mediaManager"],
@@ -283,6 +284,7 @@ const VARSAYILAN_UST: Record<Birim, BirimId> = {
   newsdesk: "bInput",
   newsgathering: "bInput",
   ekonomi: "bInput",
+  spor: "bOutput",
   output: "bOutput",
   scriptEditor: "bOutput",
   media: "bOutput",
@@ -322,7 +324,7 @@ export const varsayilanYapi = (): Yapi => {
       { id: YENI_AKIS, kollar: BUTUN_KOLLAR, duraklar: VARSAYILAN_DURAKLAR },
       { id: ESKI_AKIS, kollar: [], duraklar: ESKI_DURAKLAR },
     ],
-    kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "planlama", program: "program" },
+    kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "ekonomi", program: "program", spor: "spor" },
     ekipGorevleri: ekipKurallari(unvanlar),
   });
 };
@@ -336,7 +338,7 @@ export const varsayilanYapi = (): Yapi => {
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
   // Sürüm 0'a (varsayılan) ayrıca bakılmıyor: varsayılandan açılmış taslak da sürüm 0 taşıyor, eski düzende kaydedilmişse tamamlanmalı.
-  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && !yonetimGecisiGerekli(y)) return y;
+  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && y.birimler.some((b) => b.id === "spor") && !yonetimGecisiGerekli(y)) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -346,7 +348,7 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) })));
+  const t = masalariKur(yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) }))));
   tamamlanan.set(y, t);
   return t;
 };
@@ -415,6 +417,24 @@ const scriptEditoruKur = (y: Yapi): Yapi => {
     duraklar: a.duraklar.map((d) => (d.tur === "dil" && d.sorumlu.tur === "birim" && d.sorumlu.birim === "output" ? { ...d, sorumlu: { ...d.sorumlu, birim: "scriptEditor" } } : d)),
   }));
   return { ...y, birimler: output ? birimler : [...birimler, { id: "scriptEditor", unvanlar: VARSAYILAN_UNVANLAR.scriptEditor, ust: VARSAYILAN_UST.scriptEditor }], akislar };
+};
+
+/*
+ * Masalar (kullanıcı: Ekonomi, Program ve Spor üretimini Newsdesk gibi takip
+ * ediyor; Spor Output'un altında yeni birim). Onlardan önce yayınlanmış yapıda
+ * okurken: Spor Output'un grubuna eklenir, Ekonomi kolunun sahibi hâlâ
+ * Planlama'ysa (eski varsayılan) Ekonomi'ye geçer, spor kolu ekonominin
+ * akışına katılır. Kurum hiçbir şey yapmadan yeni düzeni görür.
+ */
+const masalariKur = (y: Yapi): Yapi => {
+  if (y.birimler.some((b) => b.id === "spor")) return y;
+  const output = y.birimler.find((b) => b.id === "output");
+  const ust = output?.ust ?? VARSAYILAN_UST.spor;
+  const kolSahibi = { ...y.kolSahibi, ekonomi: y.kolSahibi.ekonomi === "planlama" ? "ekonomi" : (y.kolSahibi.ekonomi ?? "ekonomi"), spor: y.kolSahibi.spor ?? "spor" };
+  const akislar = y.akislar.some((a) => a.kollar.includes("spor"))
+    ? y.akislar
+    : y.akislar.map((a) => (a.kollar.includes("ekonomi") ? { ...a, kollar: [...a.kollar, "spor" as IcerikTuru] } : a));
+  return { ...y, birimler: [...y.birimler, { id: "spor", unvanlar: VARSAYILAN_UNVANLAR.spor, ust }], kolSahibi, akislar };
 };
 
 /* --- Okuma --- */

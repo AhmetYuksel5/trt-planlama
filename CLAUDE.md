@@ -577,7 +577,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Birimler ağaç (`BirimTanimi.ust`, derinlik serbest): iki kök, "Haber
     merkezi" (`KOK_MERKEZ`) ve "Dış muhabirler" (`KOK_DIS`); varsayılanda
     Input (Planlama, Newsdesk, News Gathering, Ekonomi), Output (Output,
-    Script Editor, Media), Program, Yönetim ve Dış muhabirler › Muhabir.
+    Script Editor, Media, Spor), Program, Yönetim ve Dış muhabirler › Muhabir.
     Script Editor dil denetmenlerinin birimi; dil durağının sorumlusu o.
     Sonradan yerleşik oldu: onsuz yayınlanmış yapıda okurken birim Output'un
     yanına, dil denetmeni ünvanı ve Output'a verilmiş dil durağı ona geçer
@@ -1773,9 +1773,41 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ve bölümler arası 1,30 satır; satırlar arasına başka boşluk girmez.
     Ekran, baskı (`.cikti`) ve Word (`WORD_BICIMI`) aynı değerde.
 - Stok haberi ayrı kayıt değil, `Paket` (`stok: true`): haftalıkta kabul
-  edilen plansız feature, ekonomi ya da günü olmayan haber. Durumu
-  saklanmaz, kayıttan çıkar (`akis.ts → stokDurumu`): üretime alınacak →
-  üretimde → stokta → yayınlandı.
+  edilen plansız feature ya da günü olmayan haber, Next Day'de "stok" diye
+  işaretlenen paket ve özel yayının dosya paketi (`ozelId`; kullanıcı:
+  önceden hazırlanıp yayın günü stoktan veriliyor). Ekonomi, program ve
+  spor stoka düşmez, masasına (aşağıda). Durumu saklanmaz, kayıttan çıkar
+  (`akis.ts → stokDurumu`): üretime alınacak → üretimde → stokta
+  ("Üretilmiş paketler" sekmesi, `sdUretilmis`) → yayınlandı. Özel yayın
+  paketi kendi görevlendirmesiyle ilerler (onaylıysa "üretimde"), yayının
+  "yayına hazır" aşaması işaretlenince stoktaki dosya paketleri o yayınla
+  yayınlandı (`Paket.yayinlandi.ozelId`; aşama geri alınınca stoka döner;
+  `eylemler.ts → ozelAsamaIsaretle`). Stok sayfasının başında özel yayın
+  paketleri (`OzelYayin.tsx → OzelTalepAlani`): in-house paketi Planlama'nın
+  stok ekibi (ya da Planlama yöneticisi, tam yönetici) hazırlayana verir
+  (`yetki.ts → ozelPaketDagitabilir`; kullanıcı: özel yayın paketlerini stok
+  ekibi takip etsin; önce Output'un yöneticisiydi, `ouOzel` Output'un
+  varsayılanından kalktı).
+- Masalar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da programı
+  için üretimi Newsdesk gibi takip ediyor; `veri.ts → MASA_KOLLARI`,
+  `masaPaketi`): kolun sahibi kendi birimi (`akis.ts → KOL_SAHIBI`, yapıda
+  `kolSahibi`; ekonomi önce Planlama'daydı). Paket Weekly'den de Next Day'den
+  de masasına düşer (`paketSahibi`: onaylı masa paketi planı olsa da kol
+  sahibinde), masası "Üretime al"ı yapar (`uretimeAlabilir`), akış
+  Organizasyon'daki yol, "kol" durakları masanın. Muhabirin "Yapıldı /
+  Yapılmadı"sı ve sade akış yok (`sadeAkis`, `paketTamamlayabilir`), Günün
+  notunun "sonuç bekleyen"ine girmez. Ana sayfada masa kartı
+  (`Listeler.tsx → MasaPaketleri`; `ekMasa`, `prMasa`, `spMasa`): üretime
+  alınacaklar, üretimde, yayına hazır. Bitmiş masa paketi Next Day "Hazır
+  paketler"den seçilir (`akis.ts → hazirSecilebilir`; stoktakiyle birlikte,
+  `StoktanSecici`, `hazirPaketEkle`, devirde yayınlandı). Spor yeni yerleşik
+  birim ve kol, Output'un altında, ünvanları yönetici ve editör; onsuz
+  yayınlanmış yapıda okurken eklenir, ekonominin sahibi Planlama'ysa
+  Ekonomi'ye geçer, spor kolu ekonominin akışına katılır (`yapi.ts →
+  masalariKur`, `tamamla` içinde). Eski kayıtta üretime alınmamış ekonomi
+  stok paketi masasına geçer (`eylemler.ts → masaPaketleriniStoktanAyir`,
+  sistemin açılış işi); bitmiş olan stokta kalır. Muhabir kılavuzunda `kl7d`.
+  Test `testler/masa-stok.cjs`.
   - Kolun Planlama'ya düşen adımlarını (görev verme, Media'ya iletme,
     montaj kontrolü ve yükleme) yalnız feature/stok ekibi (`stokTakip`)
     ve Planlama yöneticisi yapar (`yetki.ts → adimYapabilir`).
@@ -1790,7 +1822,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Planın beklenen paketi (PKG) yapılmışsa satırındaki "Stok paket olarak
     ekle" (plan ekranında ve belgede; `eylemler.ts → paketStogaAl`,
     `paketStogaAlinabilir`: plan içeriğini düzenleyen, üretimde, iptal ve özel
-    yayın paketi değil) onu stok paketi yapar (`tamamlandi`), hazır paketlere ekler; hareket
+    yayın paketi değil) onu stok paketi yapar (`tamamlandi`), Stok'un "Üretilmiş
+    paketler"ine düşer (kullanıcı; önce bu planın hazır paketlerine giriyordu),
+    istenen planda "Stoktan seç"le hazır paketlere girer; hareket
     `paketStogaAlindi`. Beklenen paketlerde (التقارير المتوقعة) artık
     basılmaz; başlığın altında kalıp kalmayacağı sorulur (`stokBaslikta`,
     `paketStogaAl(…, baslikta)`), hayırsa başlıktan ayrılır. Hazır pakette açıklama ve kod (slug) satırın hemen
@@ -1830,8 +1864,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     düğme (`nextday/Plan.tsx`) ve eylem (`planDurum`, `yalnizPlanlama`)
     kapalı. Devredilen planın onaylı paketleri üretim akışına düşüyor, Newsdesk
     sistemde olmadığı için orada sahipsiz kalıyordu. İş akışları (Organizasyon)
-    o zaman yalnız "Üretime al"la giren paketlere (feature, ekonomi, program)
-    işliyor; sayfanın başında bunu söyleyen durum satırı (`Akislar.tsx`,
+    o zaman "Üretime al"la giren paketlere (feature, ekonomi, program, spor;
+    masa paketi Next Day'den de) işliyor; sayfanın başında bunu söyleyen durum satırı (`Akislar.tsx`,
     `akisNewsdeskKapali`).
   - Özel yayın paketi kendi teslimiyle (`paketTamamla`). Hesapsız muhabir
     için Planlama paket
@@ -1910,16 +1944,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`paketGorebilir`, `ozelPaketTeslimEdebilir`); Planlama "Görevlendirildi"yi
     ayrıca işaretler (`ozelPaketGorevVer`, `ozelGorevVerebilir`; başlamadan
     geri alınır), görev ve bildirim muhabire o an, yayının adıyla
-    (`ozelPaketAtandi`). In-house'ta görevlendirme Output müdürünün seçimi.
+    (`ozelPaketAtandi`). In-house'ta görevlendirme stok ekibinin seçimi.
     Aşamaları (`ozelPaketAsamasi`): öneri → onaylandı →
     görevlendirildi (muhabir ya da hazırlayan) → hazırlanıyor (`ozelBasladi`,
     işi yapan ya da Planlama) → hazır (`tamamlandi`); ilerleyiş önerinin
     izine de düşer (`paketOnerisiIzi`), notlar öneride. Öneri kaydından önce
     doğrudan açılmış taslak paket önerisiz satır olarak sürer
-    (`ozelPaketSatirlari`, `ozelPaketOnayla`). In-house görev Output'a düşer,
-    Output'tan sorumlu yönetici (`ozelPaketDagitabilir`) ekibinden birine
-    verir (`hazirlayanId`, `ozelPaketAta`; Output ana sayfasında "Özel yayın
-    paket talepleri", `ouOzel`, yayının adıyla); dış muhabir görevi
+    (`ozelPaketSatirlari`, `ozelPaketOnayla`). In-house görev Planlama'nın stok
+    ekibine düşer, stok ekibi (`ozelPaketDagitabilir`) birine verir
+    (`hazirlayanId`, `ozelPaketAta`; Stok sayfasının başında "Özel yayın
+    paket talepleri", yayının adıyla; önce Output'taydı); dış muhabir görevi
     muhabirin kendi işi ("Senin sıran"da yayının adıyla; Görevlendirmelerim
     kartında ve `#/saha`'da da, `ozel.ts → ozelGorevleri`,
     `bilesenler/OzelGorevler.tsx`: bildirimi "görevlendirdi" diyor, muhabir
@@ -1958,9 +1992,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   koleksiyonu kısıtlı okurlarda: erişim listesi anılan ve yazan; muhabir
   yazışmada Planlama'yı anabilir. Yeni not alanı da `AnmaGirdisi` alır ve
   eyleminde `bahset` çağırır.
-- Ekonomi ayrı birim; üretimde masası yok (ekonomi paketini Planlama'nın
-  feature/stok ekibi yürütür). Yöneticisinin kapsamı kola göre
-  (`yetki.ts → KOL_BIRIMLERI`).
+- Ekonomi ve Spor ayrı birim, kendi masalarıyla (yukarıda, Masalar).
+  Yöneticilerinin kapsamı kola göre (`yetki.ts → KOL_BIRIMLERI`).
 - Yönetici panelindeki "Planların durumu" kartı sekmeli (günlük, haftalık,
   özel yayın, saha); satırda yalnız ad, durum, ilerleme, ayrıntı
   `Pencere`de (yerleşik `<dialog>`). Panele yeni bilgi eklenecekse de bu
