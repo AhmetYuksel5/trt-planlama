@@ -16,6 +16,7 @@ import { YapayZekaAyari } from "./YapayZeka";
 import { PostaAyari } from "./PostaAyari";
 import { PostaKimlikKart } from "./posta/PostaKimlik";
 import { OtoCagriKart } from "./posta/OtoCagri";
+import { InewsDenemesi } from "./InewsDenemesi";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
@@ -57,6 +58,8 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {ben.hesapYoneticisi && <PostaAyari />}
         {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}
         {GERCEK && postaGorebilir(ben) && yapabilir(ben, "cagriHazirla") && <OtoCagriKart />}
+        {/* Geçici: iNEWS kopyala-yapıştır denemesi; işe yararsa FTP aktarımına geçilip silinecek. */}
+        {ben.hesapYoneticisi && <InewsDenemesi />}
         {kayitTemizleyebilir(ben) && <KayitYedegi />}
         {kayitTemizleyebilir(ben) && <YeniDuzenGecisi ben={ben} />}
         {kayitTemizleyebilir(ben) && <KayitTemizligi ben={ben} />}

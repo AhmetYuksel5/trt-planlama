@@ -1477,6 +1477,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriKopyala`): kopya değerlendirmeden başlar, `kopyaKaynagi` asılı
     gösterir; plan bağı, takip, satırlar, arşiv, geri bildirim geçmez.
     İkisi ayrıntıda "Bağlı öneriler"de (`BagliOneriler`).
+- iNEWS denemesi (GEÇİCİ; Ayarlar, tam yönetici; `ekranlar/InewsDenemesi.tsx`):
+  kurumun iNEWS 5.2'sine (iç ağda, `AINEWS`) aktarımın kopyala-yapıştırla
+  olup olmadığı deneniyor; olursa bilgi işten FTP istenip otomatik aktarıma
+  geçilecek ve kart silinecek. Seçilen Next Day planının paketleri ve canlı
+  yayınları slug (`ÖNEK-PKG-<baş harfler>-<saat>-<gün>`, kurumun düzenine
+  benzer, elle değişir) ve Arapça metinle; satır başına ve üç toplu biçimde
+  (yalnız slug, sekmeli, bloklar) kopyalanır. iNEWS'ten kopyalanan panonun
+  bütün biçimleri (`text/plain`, `text/html`…) ham haliyle gösterilir. Kayda
+  yazmaz.
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
   bütün `Durum` tek JSON (`tur: "plannersflow-yedek"`); gerçek kipte sunucuyla
   eşitlenmeden düğme pasif. Davetler ve kayıt başvuruları `Durum`'da değil,
