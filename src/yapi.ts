@@ -240,6 +240,7 @@ const VARSAYILAN_UNVANLAR: Record<Birim, GorevId[]> = {
   media: ["yonetici", "mediaManager"],
   yonetim: ["inputMuduru", "programMuduru", "koordinator"],
   muhabir: ["muhabir"],
+  muhasebe: ["yonetici", "muhasebeci"],
 };
 
 /* Yerleşik ünvanların plandaki ekip görevi (etiketler.ts → varsayilanEkipGorevi'nin birime bakmayan kısmı). */
@@ -291,6 +292,8 @@ const VARSAYILAN_UST: Record<Birim, BirimId> = {
   program: "bProgram",
   yonetim: KOK_MERKEZ,
   muhabir: KOK_DIS,
+  // Muhasebe News Gathering'in alt birimi (kullanıcı).
+  muhasebe: "newsgathering",
 };
 
 const dilde = (k: Anahtar): Metin => ({ tr: metin(k, "tr"), ar: metin(k, "ar"), en: metin(k, "en") });
@@ -338,7 +341,7 @@ export const varsayilanYapi = (): Yapi => {
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
   // Sürüm 0'a (varsayılan) ayrıca bakılmıyor: varsayılandan açılmış taslak da sürüm 0 taşıyor, eski düzende kaydedilmişse tamamlanmalı.
-  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && y.birimler.some((b) => b.id === "spor") && !yonetimGecisiGerekli(y)) return y;
+  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && y.birimler.some((b) => b.id === "spor") && y.birimler.some((b) => b.id === "muhasebe") && !yonetimGecisiGerekli(y)) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -348,7 +351,7 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = masalariKur(yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) }))));
+  const t = muhasebeyiKur(masalariKur(yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) })))));
   tamamlanan.set(y, t);
   return t;
 };
@@ -436,6 +439,12 @@ const masalariKur = (y: Yapi): Yapi => {
     : y.akislar.map((a) => (a.kollar.includes("ekonomi") ? { ...a, kollar: [...a.kollar, "spor" as IcerikTuru] } : a));
   return { ...y, birimler: [...y.birimler, { id: "spor", unvanlar: VARSAYILAN_UNVANLAR.spor, ust }], kolSahibi, akislar };
 };
+
+/* Muhasebe sonradan yerleşik oldu: onsuz yayınlanmış yapıda okurken News Gathering'in altına eklenir. */
+const muhasebeyiKur = (y: Yapi): Yapi =>
+  y.birimler.some((b) => b.id === "muhasebe")
+    ? y
+    : { ...y, birimler: [...y.birimler, { id: "muhasebe", unvanlar: VARSAYILAN_UNVANLAR.muhasebe, ust: y.birimler.some((b) => b.id === "newsgathering") ? "newsgathering" : KOK_MERKEZ }] };
 
 /* --- Okuma --- */
 

@@ -1488,6 +1488,41 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yazamıyor); NSML ve tablo bunun denemesi. iNEWS'ten kopyalanan panonun
   bütün biçimleri (`text/plain`, `text/html`…) ham haliyle gösterilir. Kayda
   yazmaz.
+- Muhasebe (kullanıcının çizimi; News Gathering'in alt birimi, yerleşik birim
+  `muhasebe`, ünvanlar yönetici ve `muhasebeci`; onsuz yayınlanmış yapıda
+  okurken eklenir, `yapi.ts → muhasebeyiKur`). Sayfa `ekranlar/Muhasebe.tsx`
+  (`#/muhasebe/<sekme>`), kurallar `muhasebe.ts`, eylemler `eylemler.ts →
+  muhasebe*`:
+  - Kendine özel, sade ekran (`yetki.ts → muhasebeciMi`, `sadeEkranMi`; dil
+    denetmeni gibi): ana sayfası Muhasebe, menüde yalnız o ve Ayarlar; masa
+    sayfaları ona açık değil (`MASA` muhasebesiz).
+  - Gizli (`muhasebeGorebilir`, kuralda `muhasebeci`, ikisi aynı kural:
+    `depo/fark.ts → muhasebeOkur`): muhasebe birimi, tam yönetici, kademedeki
+    müdürler (koordinatör, Input, Output, Program düğümleri ve eski Yönetim;
+    kurumun açtığı kademeye hesap yetkisi `muhasebe` verilir). Koleksiyonlar
+    (`MUHASEBE_ALANLARI`: tanımlar, anlaşmalar, kapanışlar) catch-all'dan
+    çıkarıldı; tarayıcı yetkisizde dinlemiyor (red bütün dinlemeyi durdururdu),
+    hak değişince sayfa yenilenir. Hareket yazılmaz (hareketleri herkes okur).
+    Muhabir ücretleri örnek sayfası menüden kalktı, yerine Muhasebe.
+  - Sekmeler: Aylık döküm (ay seçilir; muhabir başına PKG, öbür türler, canlı,
+    kota, ödeme; ayrıntı satırın içinde katlanır: tarih tarih işler; o aya
+    özel kota; "Ayı onayla" ve "Ödendi"; Excel'e CSV), Muhabirler ve
+    anlaşmalar (Excel gibi tablo, satırda düzenle; ilk kurulumda "Excel'den
+    aktar": başlık adıyla sütun, kişi e-postayla ya da adla, bilinmeyen para
+    birimi ve ödeme aracı tanım olur; gerçek bilgi depoya girmez), Tanımlar
+    (fiyat türleri ve kapsadığı iş türleri, ödeme araçları, para birimleri;
+    hepsini muhasebe girer).
+  - Anlaşma: sabit maaş (aylık tutar, minimum kota; altında kalan kırmızı),
+    parça başı (fiyat türü başına ücret), aylık anlaşma (tutar + kotayı aşan
+    iş başına ek ücret). Kota aylık, ayın kapanışında o aya özel değişir.
+  - Sayılan iş (saklanmaz): tamamlanmış paket (yapılmadı, reddedilen, iptal
+    değil; türü haber türü), Newsdesk'in "yapıldı" işaretlediği canlı
+    (`CanliYayin.sonuc`, `eylemler.ts → canliSonuc`, yetki
+    `canliSonucIsaretleyebilir`: Newsdesk ve tam yönetici; plan ekranındaki
+    canlı satırında ✓/✕, plan kilitliyken de), yayınlanmış nafize.
+    İşaretlenmemiş geçmiş canlı sayılmaz, dökümde uyarı.
+  - Demoda kurgusal `mh1` ve örnek anlaşmalar. Test `testler/muhasebe.cjs`,
+    kural testleri `testler/kurallar.mjs`.
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
   bütün `Durum` tek JSON (`tur: "plannersflow-yedek"`); gerçek kipte sunucuyla
   eşitlenmeden düğme pasif. Davetler ve kayıt başvuruları `Durum`'da değil,

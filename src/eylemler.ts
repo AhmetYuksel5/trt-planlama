@@ -5,6 +5,7 @@ import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKo
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
+import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
 import { ILK_TABAN_SAAT, budanmis, okunduYap, okunmadiYap, type PostaOkuma } from "./postaOkuma";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { bosAlan } from "./epostaEslestir";
@@ -121,6 +122,9 @@ import {
   type GundemKaynagi,
   type GundemNotu,
   type SepetParcasi,
+  type MuhasebeAnlasmasi,
+  type MuhasebeKapanisi,
+  type MuhasebeTanimi,
 } from "./veri";
 import {
   adimYapabilir,
@@ -177,6 +181,8 @@ import {
   gundemGorebilir,
   kisitliKisi,
   yonetimdeMi,
+  muhasebeGorebilir,
+  canliSonucIsaretleyebilir,
 } from "./yetki";
 
 /**
@@ -5449,5 +5455,118 @@ export const ozelHazirlikIsaretle = (ben: Kisi, ozelId: string, maddeId: string,
   const m = ozelBul(d, ozelId)?.hazirlik.find((x) => x.id === maddeId);
   if (!m || !ozelDuzenler(ben) || m.tamam === tamam) return false;
   kaydet(ozelGuncelle(d, ozelId, (o) => ({ ...o, hazirlik: o.hazirlik.map((x) => (x.id === maddeId ? { ...x, tamam } : x)), iz: [...(o.iz ?? []), izYaz(ben, "durum", { durum: tamam ? "tamam" : "acik", not: m.metin })] })));
+  return true;
+};
+
+/* --- Muhasebe (muhasebe.ts). Hareket yazılmaz: hareket kaydını herkes okuyor, anlaşma bilgisi gizli. --- */
+
+const muhasebeYaz = (ben: Kisi, f: (d: Durum) => Durum | null): boolean => {
+  if (!muhasebeGorebilir(ben)) return false;
+  const d = getir();
+  const y = f(d);
+  if (!y) return false;
+  kaydet(y);
+  return true;
+};
+
+export const muhasebeTanimKaydet = (ben: Kisi, t: Omit<MuhasebeTanimi, "id"> & { id?: string }) =>
+  muhasebeYaz(ben, (d) => {
+    const ad = t.ad.trim();
+    if (!ad) return null;
+    const l = d.muhasebeTanimlari ?? [];
+    if (l.some((x) => x.tur === t.tur && x.id !== t.id && x.ad.trim().toLocaleLowerCase("tr") === ad.toLocaleLowerCase("tr"))) return null;
+    const yeni: MuhasebeTanimi = { id: t.id ?? kimlik("mt"), tur: t.tur, ad, ...(t.tur === "fiyat" ? { isler: t.isler ?? [] } : {}) };
+    return { ...d, muhasebeTanimlari: t.id ? l.map((x) => (x.id === t.id ? yeni : x)) : [...l, yeni] };
+  });
+
+export const muhasebeTanimSil = (ben: Kisi, id: string) =>
+  muhasebeYaz(ben, (d) => ((d.muhasebeTanimlari ?? []).some((x) => x.id === id) ? { ...d, muhasebeTanimlari: d.muhasebeTanimlari!.filter((x) => x.id !== id) } : null));
+
+export const muhasebeAnlasmaKaydet = (ben: Kisi, a: MuhasebeAnlasmasi) =>
+  muhasebeYaz(ben, (d) => {
+    const l = d.muhasebeAnlasmalari ?? [];
+    const yeni: MuhasebeAnlasmasi = { ...a, degisti: { kisiId: ben.id, zaman: simdi() } };
+    return { ...d, muhasebeAnlasmalari: l.some((x) => x.id === a.id) ? l.map((x) => (x.id === a.id ? yeni : x)) : [...l, yeni] };
+  });
+
+export const muhasebeAnlasmaSil = (ben: Kisi, kisiId: string) =>
+  muhasebeYaz(ben, (d) => ((d.muhasebeAnlasmalari ?? []).some((x) => x.id === kisiId) ? { ...d, muhasebeAnlasmalari: d.muhasebeAnlasmalari!.filter((x) => x.id !== kisiId) } : null));
+
+/** Ayın kapanışı: o aya özel kota, onay ya da ödendi işareti (null kaldırır). */
+export const muhasebeKapanisKaydet = (
+  ben: Kisi,
+  ayi: string,
+  kisiId: string,
+  degisiklik: { kotaPaket?: number | null; kotaCanli?: number | null; onay?: boolean; odendi?: boolean },
+) =>
+  muhasebeYaz(ben, (d) => {
+    const id = kapanisKimligi(ayi, kisiId);
+    const l = d.muhasebeKapanislari ?? [];
+    const eski = l.find((x) => x.id === id) ?? { id, ay: ayi, kisiId };
+    const iz = { kisiId: ben.id, zaman: simdi() };
+    const yeni: MuhasebeKapanisi = { ...eski };
+    for (const k of ["kotaPaket", "kotaCanli"] as const)
+      if (degisiklik[k] !== undefined) {
+        if (degisiklik[k] === null) delete yeni[k];
+        else yeni[k] = degisiklik[k]!;
+      }
+    for (const k of ["onay", "odendi"] as const)
+      if (degisiklik[k] !== undefined) {
+        if (degisiklik[k]) yeni[k] = iz;
+        else delete yeni[k];
+      }
+    // Ödendi onaydan sonra; onay kalkınca ödendi de kalkar.
+    if (yeni.odendi && !yeni.onay) yeni.onay = iz;
+    if (degisiklik.onay === false) delete yeni.odendi;
+    return { ...d, muhasebeKapanislari: l.some((x) => x.id === id) ? l.map((x) => (x.id === id ? yeni : x)) : [...l, yeni] };
+  });
+
+/** İlk kurulum: Excel'den eşlenen satırlar anlaşma olur; listede olmayan para birimi ve ödeme aracı tanım olarak eklenir. */
+export const muhasebeIceAktar = (ben: Kisi, satirlar: AnlasmaSatiri[]): number => {
+  let n = 0;
+  muhasebeYaz(ben, (d) => {
+    let tanim = [...(d.muhasebeTanimlari ?? [])];
+    const tanimAdi = (tur: "para" | "odeme", ad?: string) => {
+      const x = ad?.trim();
+      if (!x) return undefined;
+      const var_ = tanim.find((t) => t.tur === tur && t.ad.toLocaleLowerCase("tr") === x.toLocaleLowerCase("tr"));
+      if (var_) return var_.ad;
+      tanim = [...tanim, { id: kimlik("mt"), tur, ad: x }];
+      return x;
+    };
+    const l = [...(d.muhasebeAnlasmalari ?? [])];
+    for (const s of satirlar) {
+      if (!s.kisiId || !s.tur) continue;
+      const eski = l.find((a) => a.id === s.kisiId);
+      const yeni: MuhasebeAnlasmasi = {
+        ...eski,
+        id: s.kisiId,
+        tur: s.tur,
+        ...(s.tutar !== undefined && { tutar: s.tutar }),
+        ...(s.kotaPaket !== undefined && { kotaPaket: s.kotaPaket }),
+        ...(s.kotaCanli !== undefined && { kotaCanli: s.kotaCanli }),
+        ...(s.para && { para: tanimAdi("para", s.para) }),
+        ...(s.odeme && { odeme: tanimAdi("odeme", s.odeme) }),
+        degisti: { kisiId: ben.id, zaman: simdi() },
+      };
+      if (eski) l[l.indexOf(eski)] = yeni;
+      else l.push(yeni);
+      n++;
+    }
+    return n ? { ...d, muhasebeAnlasmalari: l, muhasebeTanimlari: tanim } : null;
+  });
+  return n;
+};
+
+/** Newsdesk canlı yayının yapılıp yapılmadığını işaretler (null kaldırır); muhasebe yapılanı sayar. */
+export const canliSonuc = (ben: Kisi, canliId: string, durum: "yapildi" | "yapilmadi" | null): boolean => {
+  if (!canliSonucIsaretleyebilir(ben)) return false;
+  const d = getir();
+  const c = d.canliYayinlar.find((x) => x.id === canliId);
+  if (!c || (c.sonuc?.durum ?? null) === durum) return false;
+  const yeni = { ...c };
+  if (durum) yeni.sonuc = { durum, kisiId: ben.id, zaman: simdi() };
+  else delete yeni.sonuc;
+  kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === canliId ? yeni : x)) });
   return true;
 };

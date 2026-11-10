@@ -62,6 +62,8 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   // Dil denetmeninin sayfası DilDenetimi; birimin yöneticisi dil kuyruğunu görür.
   scriptEditor: ["genIslerim", "ouDil", "ouSon"],
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
+  // Muhasebenin sayfası kendi ekranı (Muhasebe.tsx); birim kartı yok.
+  muhasebe: [],
   yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
   panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
 };

@@ -43,9 +43,23 @@ export const DIZI_ALANLARI = [
   "gundemKaynaklari",
   "gundemArsivi",
   "takvimAdaylari",
+  "muhasebeTanimlari",
+  "muhasebeAnlasmalari",
+  "muhasebeKapanislari",
   "yapilar",
 ] as const satisfies readonly (keyof Durum)[];
 export type DiziAlani = (typeof DIZI_ALANLARI)[number];
+
+/*
+ * Muhasebenin koleksiyonları: kural yalnız muhasebe birimine ve yönetime
+ * okutuyor (firestore.rules → muhasebeci). Öbür kişinin tarayıcısı onları hiç
+ * dinlemiyor; dinleseydi yetki reddi bütün dinlemeyi durdururdu.
+ */
+export const MUHASEBE_ALANLARI = ["muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"] as const satisfies readonly DiziAlani[];
+/* Kuraldaki "yönetim": kademedeki varsayılan düğümler ve eski Yönetim birimi (yapi.ts); kurumun açtığı kademeye muhasebe hesap yetkisi verilir. */
+export const YONETIM_DUGUMLERI = ["yonetim", "kHaberMerkezi", "bInput", "bOutput", "bProgram"] as const;
+export const muhasebeOkur = (k: { birim?: string; rol?: string; hesapYoneticisi?: boolean; yetkiler?: readonly string[] }) =>
+  k.birim === "muhasebe" || !!k.hesapYoneticisi || !!k.yetkiler?.includes("muhasebe") || (k.rol === "yonetici" && (YONETIM_DUGUMLERI as readonly string[]).includes(k.birim ?? ""));
 
 /*
  * Fark okunan koleksiyonlar: belgede sunucu zamanı (`z`) var, silinen belge

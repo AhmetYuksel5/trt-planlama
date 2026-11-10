@@ -48,6 +48,7 @@ export const BIRIM_ADI: Record<Birim, Anahtar> = {
   program: "biProgram",
   ekonomi: "biEkonomi",
   spor: "biSpor",
+  muhasebe: "biMuhasebe",
   output: "biOutput",
   scriptEditor: "biScriptEditor",
   media: "biMedia",
@@ -70,6 +71,7 @@ export const GOREV_ADI: Record<Gorev, Anahtar> = {
   inputMuduru: "goInputMuduru",
   programMuduru: "goProgramMuduru",
   stokTakip: "goStokTakip",
+  muhasebeci: "goMuhasebeci",
 };
 
 export const EKIP_GOREV_ADI: Record<EkipGorevi, Anahtar> = {

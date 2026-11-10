@@ -209,6 +209,17 @@ service cloud.firestore {
       allow write: if hesapYoneticisi() && alan in ["yapilar", "yapiTaslaklari"];
     }
 
+    // Muhasebe (anlaşmalar, ücretler, ödemeler): öbür birimlerden gizli. Yalnız Muhasebe birimi, tam yönetici,
+    // muhasebe hesap yetkisi verilen ve kademedeki müdürler (koordinatör, Input, Output, Program; kurumun
+    // açtığı kademeye yetki verilir). src/depo/fark.ts → muhasebeOkur aynı kural: tarayıcı başkasında dinlemiyor.
+    function muhasebeci() {
+      return etkin() && !kisitli() && (get(kisiYolu()).data.get("birim", "") == "muhasebe" || yetkiVar("muhasebe")
+        || (get(kisiYolu()).data.get("rol", "") == "yonetici" && get(kisiYolu()).data.get("birim", "") in ["yonetim", "kHaberMerkezi", "bInput", "bOutput", "bProgram"]));
+    }
+    match /{alan}/{belge} {
+      allow read, write: if alan in ["muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"] && muhasebeci();
+    }
+
     // Kısıtlı kişinin yazdığı içerik: durumu yalnız kendi yapabildiği geçişlerle değişir, kaydı yalnız
     // kendi adıyla açar. Yoksa muhabir paketini "tamamlandı", önerisini "plana eklendi" yazıp onayı atlıyor,
     // hareket kaydına başkasının adıyla bildirim yazabiliyordu. Program durumu j'de tutuyor; kural metinden okur.
@@ -253,10 +264,10 @@ service cloud.firestore {
     // (src/depo/fark.ts → erisimListesi). Kişiye bağlı ayarlarda (bildirim okundu, ana sayfa, görünüm,
     // workspace) yalnız kendi belgesi; genel ayarı okur, yazamaz.
     match /{alan}/{belge} {
-      allow read: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli();
+      allow read: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
       // Gündem paylaşımı genel ayar belgesinde; herkes sayacı yazıyor, paylaşımı yalnız tam yönetici
       // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi).
-      allow write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari"]) && !kisitli()
+      allow write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
         && (!(alan == "ayar" && belge == "genel") || hesapYoneticisi()
             || request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null)));
       allow read: if etkin() && kisitli()

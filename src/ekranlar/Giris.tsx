@@ -18,7 +18,7 @@ import Logo from "../bilesenler/Logo";
  * kişiyle dene" adımları da bunlara bağlanıyor).
  */
 
-export const DEMO_KISILERI = ["pl1", "pl2", "mu1", "nd1", "nd2", "ng1", "pr1", "ek1", "ou5", "ou2", "me2", "yo1", "yo2"];
+export const DEMO_KISILERI = ["pl1", "pl2", "mu1", "nd1", "nd2", "ng1", "pr1", "ek1", "ou5", "ou2", "me2", "yo1", "yo2", "mh1"];
 
 export default function Giris() {
   const { t, ad } = useDil();

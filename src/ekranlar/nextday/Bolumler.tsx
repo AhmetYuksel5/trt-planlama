@@ -1,11 +1,11 @@
-import { yapabilir } from "../../yetki";
+import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { ArrowRightLeft, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { baslikEkle, canliSil, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -369,8 +369,20 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                   <small>
                     {c.tarih !== plan.tarih && <Rozet ton="uyari">{tarihYaz(c.tarih, dil, "kisa")}</Rozet>}
                     {c.muhabirId && <span>{ad(kisiBul(v, c.muhabirId))}</span>}
+                    {c.sonuc && (
+                      <Rozet ton={c.sonuc.durum === "yapildi" ? "iyi" : "uyari"}>
+                        <span data-canli-sonuc={c.sonuc.durum}>{t(c.sonuc.durum === "yapildi" ? "csYapildi" : "csYapilmadi")}</span>
+                      </Rozet>
+                    )}
                   </small>
                 </div>
+                {/* Yapıldı mı (Newsdesk; muhasebe yapılanı sayar): plan kilitli olsa da işaretlenir. */}
+                {ben && c.muhabirId && canliSonucIsaretleyebilir(ben) && (
+                  <div className="islemler canli-sonuc">
+                    <IkonDugme ikon={<Check size={15} />} etiket={t(c.sonuc?.durum === "yapildi" ? "csKaldir" : "csYapildi")} onClick={() => canliSonuc(ben, c.id, c.sonuc?.durum === "yapildi" ? null : "yapildi")} />
+                    <IkonDugme ikon={<X size={15} />} etiket={t(c.sonuc?.durum === "yapilmadi" ? "csKaldir" : "csYapilmadi")} onClick={() => canliSonuc(ben, c.id, c.sonuc?.durum === "yapilmadi" ? null : "yapilmadi")} />
+                  </div>
+                )}
                 {duzenler && (
                   <div className="islemler">
                     {c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}

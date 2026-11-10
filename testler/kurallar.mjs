@@ -17,6 +17,11 @@ const KISILER = {
   muy: kisi("muy", { birim: "muhabir", rol: "personel", gorev: "muhabir", oncekiKimlik: "hs" }, { oncekiKimlik: "hs" }),
   // Geçişi tamamlanmış: eski hesapsız kaydı tam yönetici silmiş, önceki kimlik kişide duruyor.
   muz: kisi("muz", { birim: "muhabir", rol: "personel", gorev: "muhabir", oncekiKimlik: "silinen" }, { oncekiKimlik: "silinen" }),
+  // Muhasebe: birimin kendisi, kademe müdürü, muhasebe yetkisi verilen; öbür birim görmez.
+  mh: kisi("mh", { birim: "muhasebe", rol: "personel", gorev: "muhasebeci" }),
+  ky: kisi("ky", { birim: "bInput", rol: "yonetici", gorev: "inputMuduru" }),
+  ym: kisi("ym", { birim: "bYeni", rol: "yonetici", gorev: "creative", yetkiler: ["muhasebe"] }, { yetkiler: ["muhasebe"] }),
+  nd: kisi("nd", { birim: "newsdesk", rol: "yonetici", gorev: "yonetici" }),
   // Düz pozisyon alanı olmayan eski belge
   eski: { s: 0, j: JSON.stringify({ id: "eski", birim: "planlama", rol: "personel", gorev: "planlamaci", telefon: "1" }), eposta: "eski@x.test", pasif: false, hesapYoneticisi: false, kisitli: false },
 };
@@ -29,6 +34,7 @@ await env.withSecurityRulesDisabled(async (c) => {
   await setDoc(doc(db, "oneriler", "o4"), { s: 0, j: JSON.stringify({ id: "o4", durum: "yeni", muhabirId: "hs" }), m: ["hs"] });
   await setDoc(doc(db, "paketler", "p1"), { s: 0, j: JSON.stringify({ id: "p1", durum: "onaylandi", muhabirId: "mu" }), m: ["mu"] });
   await setDoc(doc(db, "paketler", "p2"), { s: 0, j: JSON.stringify({ id: "p2", durum: "onaylandi", muhabirId: "mu", ozelId: "oz1" }), m: ["mu"] });
+  await setDoc(doc(db, "muhasebeAnlasmalari", "mu"), { s: 0, j: JSON.stringify({ id: "mu", tur: "sabit", tutar: 1 }) });
   await setDoc(doc(db, "hareketler", "h0"), { s: 0, j: JSON.stringify({ id: "h0", kisiId: "adm", tip: "x", veri: { kime: "mu" } }), m: ["mu"] });
 });
 const db = (uid) => env.authenticatedContext(uid, { email: uid + "@x.test", email_verified: true }).firestore();
@@ -90,6 +96,18 @@ await t("yönetici gündemi paylaşır", true, setDoc(doc(db("adm"), "ayar", "ge
 await t("personel sayacı yazar, paylaşım aynı", true, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 2, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
 await t("personel kendini paylaşıma ekleyemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3, gundemPaylasim: { birimler: ["planlama"], kisiler: ["dv"] } }));
 await t("personel paylaşımı silemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3 }));
+// 5. Muhasebe gizli: yalnız muhasebe, tam yönetici, kademe müdürü ve muhasebe yetkilisi.
+const anl = (u) => getDoc(doc(db(u), "muhasebeAnlasmalari", "mu"));
+await t("muhasebe anlaşmayı okur", true, anl("mh"));
+await t("muhasebe anlaşma yazar", true, setDoc(doc(db("mh"), "muhasebeAnlasmalari", "mu2"), { s: 0, j: JSON.stringify({ id: "mu2", tur: "parca" }) }));
+await t("tam yönetici okur", true, anl("adm"));
+await t("kademe müdürü (Input) okur", true, anl("ky"));
+await t("muhasebe yetkisi verilen okur", true, anl("ym"));
+await t("Newsdesk yöneticisi okuyamaz", false, anl("nd"));
+await t("planlamacı okuyamaz", false, anl("pl"));
+await t("planlamacı yazamaz", false, setDoc(doc(db("pl"), "muhasebeKapanislari", "x"), { s: 0, j: "{}" }));
+await t("muhabir okuyamaz", false, anl("mu"));
+await t("planlamacı tanımları da okuyamaz", false, getDocs(collection(db("pl"), "muhasebeTanimlari")));
 console.log(`\n${gec} geçti, ${kal} kaldı`);
 await env.cleanup();
 process.exit(kal ? 1 : 0);

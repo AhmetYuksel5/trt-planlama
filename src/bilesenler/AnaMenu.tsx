@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { kisininIsleri } from "../gorevler";
@@ -10,7 +10,7 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { dilDenetmeniMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
+import { dilDenetmeniMi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
 import { GERCEK } from "../kip";
 import { okunmamisSayisi } from "../postaOkuma";
 import Logo from "./Logo";
@@ -146,7 +146,8 @@ export const MENU: Grup[] = [
   {
     ad: "mgDiger",
     maddeler: [
-      { sayfa: "ucretler", ad: "mUcretler", kisa: "kaUcretler", ikon: Wallet },
+      // Muhabir ücretleri örnek sayfası yerine Muhasebe (anlaşmalar, aylık döküm; gizli).
+      { sayfa: "muhasebe", ad: "mMuhasebe", kisa: "kaMuhasebe", ikon: Calculator },
       { sayfa: "raporlar", ad: "mRaporlar", kisa: "kaRaporlar", ikon: ChartColumn },
       { sayfa: "plan", ad: "mProjePlani", kisa: "kaProjePlani", ikon: BookOpen },
       { sayfa: "organizasyon", ad: "mOrganizasyon", kisa: "kaOrganizasyon", ikon: Building2, say: (d, ben) => onayBekleyenler(d.kisiler, ben).length },
@@ -250,7 +251,8 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   // Yeni tasarımda menü açık zeminde: lacivert yazılı logo.
   const yeniTasarim = useYeniTasarim();
   const muhabir = ben.birim === "muhabir";
-  const dilci = dilDenetmeniMi(ben);
+  // Sade ekranlılar (dil denetmeni, muhasebe): kendi sayfası ve Ayarlar.
+  const dilci = sadeEkranMi(ben);
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -293,7 +295,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
       {dilci && (
         <>
           <div className="menu-grup" data-dil-menusu>
-            {muhabirMaddeleri(ben, ["ana"]).map((m) => (
+            {muhabirMaddeleri(ben, dilDenetmeniMi(ben) ? ["ana"] : ["muhasebe"]).map((m) => (
               <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
             ))}
           </div>

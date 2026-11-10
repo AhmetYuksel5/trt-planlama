@@ -35,7 +35,7 @@ import type { Yapi } from "./yapi";
  * toplantıdan önce bakıyor (ön inceleme). Üretim akışında masası yok;
  * ekonomi paketini Planlama'nın feature/stok ekibi yürütüyor (akis.ts).
  */
-export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "spor", "output", "scriptEditor", "media", "muhabir", "yonetim"] as const;
+export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "spor", "output", "scriptEditor", "media", "muhabir", "yonetim", "muhasebe"] as const;
 export type Birim = (typeof BIRIMLER)[number];
 /** Yerleşik birim ya da yöneticinin açtığı birim (yapi.ts). */
 export type BirimId = Birim | (string & {});
@@ -60,6 +60,8 @@ export const GOREVLER = [
   "programMuduru",
   /* Planlama'nın feature/stok ekibi: zamana bağlı olmayan paketin üretimini yürütüyor. */
   "stokTakip",
+  /* News Gathering'in alt birimi Muhasebe: muhabir anlaşmaları ve aylık döküm. */
+  "muhasebeci",
 ] as const;
 export type Gorev = (typeof GOREVLER)[number];
 /** Yerleşik ünvan ya da yöneticinin açtığı ünvan (yapi.ts). */
@@ -244,7 +246,7 @@ export type PlanAdi = "ad" | "soyad";
  * öneri silme. Bütün yetki tam yöneticide; o kişi kişi dağıtır. Planlama'nın
  * günlük kararları (ret, takip, plana ekleme…) yetki değil, birim işi.
  */
-export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil", "paketOnayi", "geriAlma", "baskaMuhabire", "arsivdenCikarma", "oneriSilme"] as const;
+export const HESAP_YETKILERI = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil", "paketOnayi", "geriAlma", "baskaMuhabire", "arsivdenCikarma", "oneriSilme", "muhasebe"] as const;
 export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
@@ -394,6 +396,53 @@ export interface CanliYayin {
    */
   oneriId?: string;
   haftalikKalemId?: string;
+  /*
+   * Yayının yapılıp yapılmadığı (kullanıcı: Newsdesk işaretlesin). Muhasebe
+   * muhabirin canlılarını bundan sayıyor; planlanmış canlı yapılmış sayılmaz.
+   */
+  sonuc?: { durum: "yapildi" | "yapilmadi"; kisiId: string; zaman: string };
+}
+
+/* --- Muhasebe (News Gathering'in alt birimi; muhasebe.ts) --- */
+
+/** Anlaşma türü: sabit maaş (retainer, minimum kota), parça başı (freelance), aylık anlaşma (kota, aşımda ek ödeme). */
+export const ANLASMA_TURLERI = ["sabit", "parca", "aylik"] as const;
+export type AnlasmaTuru = (typeof ANLASMA_TURLERI)[number];
+/** Muhasebenin saydığı iş türü: paketin haber türü ya da canlı yayın. */
+export type MuhasebeIs = Bicim | "canli";
+/** Muhasebenin kendi tanımları: fiyat türü (hangi işleri kapsadığıyla), ödeme aracı, para birimi. */
+export interface MuhasebeTanimi {
+  id: string;
+  tur: "fiyat" | "odeme" | "para";
+  ad: string;
+  isler?: MuhasebeIs[];
+}
+/** Muhabirin anlaşması; kimliği muhabirin kimliği. Tutarlar anlaşmanın para biriminde. */
+export interface MuhasebeAnlasmasi {
+  id: string;
+  tur: AnlasmaTuru;
+  /** Sabit ve aylık anlaşmada aylık tutar. */
+  tutar?: number;
+  para?: string;
+  odeme?: string;
+  /** Aylık kota (sabitte minimum, aylıkta ücrete dahil olan iş sayısı); ayın kapanışında o aya özel değişebilir. */
+  kotaPaket?: number;
+  kotaCanli?: number;
+  /** Fiyat türü (MuhasebeTanimi.id) → iş başına ücret. */
+  fiyatlar?: Record<string, number>;
+  not?: string;
+  degisti?: { kisiId: string; zaman: string };
+}
+/** Bir muhabirin bir ayı: o aya özel kota, onay ve ödeme işareti. Kimlik "ay~kişi". */
+export interface MuhasebeKapanisi {
+  id: string;
+  ay: string;
+  kisiId: string;
+  kotaPaket?: number;
+  kotaCanli?: number;
+  onay?: { kisiId: string; zaman: string };
+  odendi?: { kisiId: string; zaman: string };
+  not?: string;
 }
 
 /* --- Muhabir hareketleri: görevlendirme, seyahat, izin. Planlar bunlara bağlantı tutar. --- */
@@ -1619,6 +1668,10 @@ export interface Durum {
   okundu: Record<string, string>;
   /** Kişinin posta okundu bilgisi (kişi → taban, grup, iplik başına son bakış; postaOkuma.ts). */
   postaOkunan?: Record<string, import("./postaOkuma").PostaOkuma>;
+  /** Muhasebe: tanımlar, anlaşmalar, aylık kapanışlar. Gerçek kipte yalnız muhasebe ve yönetim okur (firestore.rules). */
+  muhasebeTanimlari?: MuhasebeTanimi[];
+  muhasebeAnlasmalari?: MuhasebeAnlasmasi[];
+  muhasebeKapanislari?: MuhasebeKapanisi[];
   /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
   anaSayfa?: Record<string, string[]>;
   /** Kişinin plan ekranlarındaki öneri görünümü (kişi → kart ya da liste); yoksa kart. */

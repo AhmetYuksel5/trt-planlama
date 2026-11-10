@@ -24,7 +24,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const kisi = (v, id) => v.kisiler.find((k) => k.id === id);
   ok(kisi(v0, "yo1").birim === "bInput" && kisi(v0, "yo2").birim === "bProgram" && kisi(v0, "yo3").birim === "kHaberMerkezi", "örnekte müdürler ve koordinatör ağaçtaki yerinde");
   ok((await p.locator(".birim-kartlari").count()) === 1, "Input müdürünün ana sayfası yönetici paneli");
-  ok(JSON.stringify(await panelBirimleri()) === JSON.stringify(["ekonomi", "muhabir", "newsdesk", "newsgathering", "planlama"]), "Input müdürü Input'un altındakilerden ve muhabirlerden sorumlu: " + (await panelBirimleri()));
+  ok(JSON.stringify(await panelBirimleri()) === JSON.stringify(["ekonomi", "muhabir", "muhasebe", "newsdesk", "newsgathering", "planlama"]), "Input müdürü Input'un altındakilerden ve muhabirlerden sorumlu: " + (await panelBirimleri()));
   await oturum("yo2");
   await git("#/");
   ok(JSON.stringify(await panelBirimleri()) === JSON.stringify(["program"]), "Program müdürü Program'dan sorumlu");

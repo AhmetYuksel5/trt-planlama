@@ -17,6 +17,7 @@ import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import Gundem from "./ekranlar/Gundem";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
+import { Muhasebe } from "./ekranlar/Muhasebe";
 import Cikti from "./ekranlar/nextday/Cikti";
 import TakdirBildirimi from "./ekranlar/nextday/Takdir";
 import NextDayBelge from "./ekranlar/belge/NextDayBelge";
@@ -74,6 +75,7 @@ import {
   sayfaGorebilir,
   yapabilir,
   dilDenetmeniMi,
+  muhasebeciMi,
 } from "./yetki";
 import { GOMULU, useYol } from "./yol";
 
@@ -245,7 +247,7 @@ export default function App() {
   } else {
     switch (sayfa) {
       case "ana":
-        icerik = dilDenetmeniMi(ben) ? <DilDenetimi ben={ben} /> : <AnaSayfa ben={ben} />;
+        icerik = dilDenetmeniMi(ben) ? <DilDenetimi ben={ben} /> : muhasebeciMi(ben) ? <Muhasebe ben={ben} sekme="" /> : <AnaSayfa ben={ben} />;
         break;
       case "ortam":
         icerik = GOMULU ? (
@@ -380,6 +382,9 @@ export default function App() {
         break;
       case "ucretler":
         icerik = <Ucretler ben={ben} />;
+        break;
+      case "muhasebe":
+        icerik = <Muhasebe ben={ben} sekme={yol.id ?? ""} />;
         break;
       case "raporlar":
         icerik = <Raporlar ben={ben} />;

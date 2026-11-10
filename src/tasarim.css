@@ -580,6 +580,52 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
 .posta-eslesme { background: var(--vurgu-sis); color: var(--vurgu); }
 .posta-liste-arac { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); margin-block-end: var(--ara-2); }
 .posta-okunmamis-nokta { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--vurgu); vertical-align: middle; }
+/* Muhasebe (Muhasebe.tsx): ay, özet, muhabir satırları (ayrıntı katlanır), tanımlar */
+.muhasebe-sekmeler { margin-block-end: var(--ara-3); }
+.muhasebe-ust { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin-block-end: var(--ara-2); }
+.muhasebe-ay { display: flex; align-items: center; gap: var(--ara-1); }
+.muhasebe-ay strong { min-inline-size: 9em; text-align: center; }
+.muhasebe-ara { flex: 1 1 14em; display: flex; align-items: center; gap: var(--ara-1); padding: 0 var(--ara-2); border: 1px solid var(--cizgi); border-radius: 8px; background: var(--yuzey); }
+.muhasebe-ara input { flex: 1; min-inline-size: 0; border: 0; background: transparent; box-shadow: none; outline: none; padding: 6px 2px; }
+.muhasebe-ozet { display: flex; flex-wrap: wrap; gap: var(--ara-2) var(--ara-4); margin-block-end: var(--ara-3); color: var(--sonuk); }
+.muhasebe-ozet b { color: var(--murekkep); }
+.uyari-yazi { color: var(--kotu); }
+.muhasebe-liste { display: grid; gap: var(--ara-2); }
+.muhasebe-satir { border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); }
+.muhasebe-satir.kota-alti { border-inline-start: 3px solid var(--kotu); }
+.muhasebe-satir > summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: minmax(10em, 1.2fr) minmax(0, 2fr) auto auto; gap: var(--ara-2) var(--ara-3); align-items: center; padding: var(--ara-2) var(--ara-3); }
+.muhasebe-satir > summary::-webkit-details-marker { display: none; }
+.muhasebe-sayilar { display: flex; flex-wrap: wrap; gap: var(--ara-1) var(--ara-3); }
+.muhasebe-sayilar small { color: var(--sonuk); }
+.muhasebe-odeme { display: grid; justify-items: end; text-align: end; font-variant-numeric: tabular-nums; }
+.muhasebe-ayrinti { border-block-start: 1px solid var(--cizgi); padding: var(--ara-2) var(--ara-3) var(--ara-3); display: grid; gap: var(--ara-3); }
+.muhasebe-isler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
+.muhasebe-isler li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--ara-2); }
+.muhasebe-isler small { color: var(--sonuk); min-inline-size: 6em; font-variant-numeric: tabular-nums; }
+.muhasebe-kapanis { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--ara-3); }
+.muhasebe-ay-kota { display: flex; flex-wrap: wrap; align-items: end; gap: var(--ara-2); }
+.muhasebe-ay-kota small { inline-size: 100%; color: var(--sonuk); }
+.muhasebe-ay-kota label { display: grid; gap: 2px; font-size: var(--punto-mini); }
+.muhasebe-ay-kota input { inline-size: 6em; }
+.muhasebe-tanimlar { display: grid; gap: var(--ara-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
+.muhasebe-tanim-listesi { list-style: none; margin: 0 0 var(--ara-2); padding: 0; display: grid; gap: var(--ara-1); }
+.muhasebe-tanim-listesi li { display: flex; justify-content: space-between; align-items: center; gap: var(--ara-2); }
+.muhasebe-tanim-listesi li > span:first-child { display: grid; min-inline-size: 0; }
+.satir-alani { display: flex; gap: var(--ara-2); align-items: center; }
+.satir-alani input { flex: 1; min-inline-size: 0; }
+.ikili-alan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--ara-2); }
+.muhasebe-fiyatlar, .muhasebe-isturleri { border: 1px solid var(--cizgi); border-radius: 8px; padding: var(--ara-2) var(--ara-3); display: grid; gap: var(--ara-2); }
+.muhasebe-form { display: grid; gap: var(--ara-3); }
+.muhasebe-form label { display: grid; gap: 4px; }
+.muhasebe-form :is(input:not([type="checkbox"]), select, textarea) { inline-size: 100%; }
+.muhasebe-form .kutu-satiri { display: flex; }
+.kutu-satiri { display: flex; align-items: center; gap: var(--ara-2); }
+.canli-sonuc { opacity: 0.85; }
+@media (max-width: 760px) {
+  .muhasebe-satir > summary { grid-template-columns: minmax(0, 1fr) auto; }
+  .muhasebe-sayilar { grid-column: 1 / -1; order: 3; }
+}
+
 /* Geçici iNEWS denemesi (InewsDenemesi.tsx) */
 .inews-liste { list-style: none; margin: var(--ara-3) 0; padding: 0; display: grid; gap: var(--ara-2); }
 .inews-satir { display: grid; gap: var(--ara-1); padding: var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }

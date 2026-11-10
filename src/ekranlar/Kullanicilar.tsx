@@ -69,6 +69,7 @@ const YETKI_ADI: Record<HesapYetkisi, Anahtar> = {
   baskaMuhabire: "hyBaskaMuhabire",
   arsivdenCikarma: "hyArsivdenCikarma",
   oneriSilme: "hyOneriSilme",
+  muhasebe: "hyMuhasebe",
 };
 
 /* Üç yazımlı ad; boş bırakılan dil öbüründen. Ekranda Arapçası okunuyor, Latin yazım arama ve baş harf için. */

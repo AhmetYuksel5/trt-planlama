@@ -22,6 +22,7 @@ import {
 } from "./yapi";
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
+import { muhasebeOkur } from "./depo/fark";
 import {
   BIRIMLER,
   ICERIK_TURLERI,
@@ -758,7 +759,8 @@ export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
 
 /* --- Sayfalar --- */
 
-const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir");
+/* Muhasebenin sayfası yalnız kendisi (kullanıcı: tamamen kendilerine özel); masa sayfaları ona açık değil. */
+const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir" && b !== "muhasebe");
 /* Her birime açık sayfa; yöneticinin sonradan açtığı birime de (listede adı olmasa da). */
 const HERKES: readonly BirimId[] = ["*"];
 
@@ -800,6 +802,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   metinkontrol: ["output", "scriptEditor", "newsdesk", "planlama", "yonetim"],
   video: ["newsdesk", "media", "planlama", "yonetim"],
   ucretler: ["newsdesk", "yonetim"],
+  // Muhasebe: route ayrıca muhasebeGorebilir soruyor (kuraldaki kişiler).
+  muhasebe: ["muhasebe", "yonetim"],
   raporlar: [
     "planlama",
     "newsdesk",
@@ -823,6 +827,9 @@ export const yapiDuzenleyebilir = (k: Kisi | undefined) => !!k?.hesapYoneticisi;
 export const hesapYetkisi = (k: Kisi | undefined, y: HesapYetkisi) =>
   !!k && (!!k.hesapYoneticisi || !!k.yetkiler?.includes(y));
 
+/* Hesaplar sayfasını açan yetkiler: muhasebe yetkisi hesap işi değil (yalnız Muhasebe sayfasını açar). */
+const hesapIsiYetkisi = (k: Kisi) => !!k.yetkiler?.some((y) => y !== "muhasebe");
+
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */
 export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
   !!k &&
@@ -830,13 +837,15 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
     ? !!kapsam(k)
     : // Hesaplar yalnız gerçek kipte ve hesap yetkisi olanda: demoda davet edilecek kimse yok.
       sayfa === "kullanicilar"
-      ? GERCEK && (!!k.hesapYoneticisi || !!k.yetkiler?.length)
+      ? GERCEK && (!!k.hesapYoneticisi || hesapIsiYetkisi(k))
+      : sayfa === "muhasebe"
+        ? muhasebeGorebilir(k)
       : sayfa === "gundem"
         ? gundemGorebilir(anlik(), k)
         : sayfa === "organizasyon"
           ? yapiDuzenleyebilir(k) ||
             hesapYetkisi(k, "kisiDuzenle") ||
-            (GERCEK && !!k.yetkiler?.length)
+            (GERCEK && hesapIsiYetkisi(k))
           : SAYFA_IZNI[sayfa] === HERKES ||
             !!SAYFA_IZNI[sayfa]?.includes(izinBirimi(k.birim)));
 
@@ -968,6 +977,20 @@ export const takipEkleyebilir = (k: Kisi | undefined): boolean =>
  * göndermek. Ana sayfası, menüsü ve çubukları o işe indirgenmiş sade düzen
  * (muhabirinki gibi); Output'un öbür personeli ve yöneticisi bunun dışında.
  */
+/*
+ * Muhasebe (News Gathering'in alt birimi): anlaşmaları, aylık dökümü ve
+ * ödemeleri görür. Kayıtları gizli (firestore.rules → muhasebeci): yalnız
+ * birimin kendisi, tam yönetici, muhasebe hesap yetkisi verilen ve kademedeki
+ * müdürler. Kural ve tarayıcı aynı kuralı soruyor (depo/fark.ts → muhasebeOkur).
+ */
+export const muhasebeGorebilir = (k: Kisi | undefined): boolean => !!k && !kisitliKisi(k) && muhasebeOkur(k);
+/* Muhasebe çalışanının ekranı en sade hali (dil denetmeni gibi): ana sayfası Muhasebe, menüde yalnız o ve Ayarlar. */
+export const muhasebeciMi = (k: Kisi): boolean => k.birim === "muhasebe" && !k.hesapYoneticisi;
+/* Sade ekranlılar: kendi sayfası ve Ayarlar; sekme, kısayol, birim kartı yok. */
+export const sadeEkranMi = (k: Kisi): boolean => dilDenetmeniMi(k) || muhasebeciMi(k);
+/* Canlı yayının yapıldığını Newsdesk işaretler (kullanıcı); muhasebe onu sayar. */
+export const canliSonucIsaretleyebilir = (k: Kisi | undefined): boolean => !!k && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "newsdesk");
+
 export const dilDenetmeniMi = (k: Kisi): boolean => k.gorev === "dilDenetmeni" && k.rol !== "yonetici" && !k.hesapYoneticisi;
 
 /** Dil denetmeninin sırası: dil durağındaki, yapabileceği metinler (sayfası ve menü sayısı aynı kuraldan). */

@@ -43,7 +43,7 @@ import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayi
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
-import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
+import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, MUHASEBE_ALANLARI, muhasebeOkur, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
  * Gerçek kipin Firebase katmanı: oturum (Auth), davet ve etkinleştirme
@@ -245,7 +245,8 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
 
   // Kişinin kısıtı değişirse (tayin, onay) okuduğu kayıt da değişiyor: sayfa yeniden açılır.
   const kendimDegisti = (id: string, v: OgeBelgesi) => {
-    if (id === uid && kisitliJson(v.j) !== kisitli) location.reload();
+    // Muhasebeyi okuma hakkı da öyle: kalkınca o koleksiyonun reddi bütün dinlemeyi durdururdu.
+    if (id === uid && (kisitliJson(v.j) !== kisitli || muhasebeOkur(v) !== muhasebeOkur(kendi))) location.reload();
   };
 
   const diziKur = (alan: string) => {
@@ -371,7 +372,9 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   };
 
   if (!kisitli) {
-    for (const alan of DIZI_ALANLARI) diziDinle(alan, farkAlaniMi(alan) ? "fark" : "tam");
+    // Muhasebenin koleksiyonları yalnız okuyabilene: kuralın reddi bütün dinlemeyi durdururdu.
+    const muhasebe = muhasebeOkur(kendi);
+    for (const alan of DIZI_ALANLARI) if (muhasebe || !(MUHASEBE_ALANLARI as readonly string[]).includes(alan)) diziDinle(alan, farkAlaniMi(alan) ? "fark" : "tam");
     for (const alan of HARITA_ALANLARI) haritaDinle(alan);
   } else {
     for (const alan of KISITLI_OKUR) diziDinle(alan, "suz");

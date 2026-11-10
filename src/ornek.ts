@@ -136,6 +136,8 @@ const KISILER: KisiSatiri[] = [
   ["yo3", "Selma Korkmaz", "سلمى كوركماز", "kHaberMerkezi", "yonetici", "koordinator", "istanbul", { hesapYoneticisi: true }],
   // Haber merkezinde çalışıp göreve giden iç muhabir: muhabir seçimlerinde dış muhabirlerle birlikte, ayrı grupta. Kurgusal; sona eklendi.
   ["ng6", "Tarik Nadir", "طارق نادر", "newsgathering", "personel", "muhabir", "istanbul"],
+  // Muhasebe (News Gathering'in alt birimi): anlaşmalar ve aylık döküm. Kurgusal; sona eklendi.
+  ["mh1", "Leyla Aydemir", "ليلى آيدمير", "muhasebe", "yonetici", "yonetici", "istanbul"],
 ];
 
 const ALAN_KODU: Partial<Record<Sehir, string>> = {
@@ -2481,7 +2483,8 @@ export const ORNEK = (): Durum => {
     basliklar: BASLIKLAR,
     planlar,
     gelismeler,
-    canliYayinlar: CANLILAR(planId, gun),
+    // Günü geçen canlıyı Newsdesk "yapıldı" işaretlemiş: muhasebe onları sayıyor.
+    canliYayinlar: CANLILAR(planId, gun).map((c) => (c.muhabirId && c.tarih < B ? { ...c, sonuc: { durum: "yapildi" as const, kisiId: "nd1", zaman: zaman(c.tarih, "20:00") } } : c)),
     gorevlendirmeler: [
       ...GOREVLENDIRMELER(gun),
       // Gelecek haftanın seçimleri için ekip: haftalık çıktıda tek satır ("YER / ad - ad …").
@@ -2774,6 +2777,22 @@ export const ORNEK = (): Durum => {
       { id: "is-2", baslik: "Ankara muhabirinin görevlendirmesini netleştir", etiketler: ["Türkiye"], gorevId: "gv-turkiye", kisiler: ["pl5"], sonTarih: gunEkle(B, -1), durum: "suruyor", olusturan: "pl1", zaman: zaman(gunEkle(B, -2), "11:30") },
       { id: "is-3", baslik: "Yeni muhabirlerin iletişim bilgilerini kontrol et", etiketler: ["Muhabir"], gorevId: "gv-muhabir", kisiler: ["pl4"], durum: "bitti", olusturan: "pl1", zaman: zaman(gunEkle(B, -3), "09:00") },
     ],
+    // Muhasebenin örnek tanımları ve anlaşmaları (kurgusal tutarlar).
+    muhasebeTanimlari: [
+      { id: "mt-paket", tur: "fiyat", ad: "Paket", isler: ["pkg", "voxpop", "feature", "derinlemesine", "ozelRoportaj", "hikayem", "videowall"] },
+      { id: "mt-walk", tur: "fiyat", ad: "Walk & Talk", isler: ["walktalk"] },
+      { id: "mt-canli", tur: "fiyat", ad: "Canlı yayın", isler: ["canli"] },
+      { id: "mt-havale", tur: "odeme", ad: "Banka havalesi" },
+      { id: "mt-wu", tur: "odeme", ad: "Western Union" },
+      { id: "mt-usd", tur: "para", ad: "USD" },
+      { id: "mt-eur", tur: "para", ad: "EUR" },
+    ],
+    muhasebeAnlasmalari: [
+      { id: "mu1", tur: "sabit", tutar: 2500, para: "USD", odeme: "Banka havalesi", kotaPaket: 8, kotaCanli: 10 },
+      { id: "mu2", tur: "aylik", tutar: 1200, para: "USD", odeme: "Banka havalesi", kotaPaket: 4, kotaCanli: 4, fiyatlar: { "mt-paket": 250, "mt-walk": 150, "mt-canli": 100 } },
+      { id: "mu3", tur: "parca", para: "USD", odeme: "Western Union", fiyatlar: { "mt-paket": 300, "mt-walk": 180, "mt-canli": 120 } },
+    ],
+    muhasebeKapanislari: [],
     yapilar: [],
     okundu: {},
     sayac,
