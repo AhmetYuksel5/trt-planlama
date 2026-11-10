@@ -1,6 +1,6 @@
 import { metin, yaz, type Anahtar } from "./dil";
 import { anlik, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
-import { ESKI_AKIS, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
+import { ESKI_AKIS, birimAdi, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
  * İş akışı: bir paket önerisinin plandan yayına kadar izlediği yol.
@@ -133,7 +133,10 @@ export const adimAdi = (adim: string | undefined, p: AkisPaketi): string => {
   if (d?.ad) return yaz(d.ad);
   const tur = (d?.tur ?? adim) as UretimAdimi | "is";
   if (tur === "is") return adim;
-  const anahtar = (kolSahibi(p.tur) === "planlama" && d?.sorumlu.tur === "kol" && STOK_ADIM_ADI[tur]) || ADIM_ADI[tur];
+  const sahip = kolSahibi(p.tur);
+  // Masa kolunda (ekonomi, program, spor) kolun durağı masanın: "Newsdesk devraldı" yazmasın.
+  if (d?.sorumlu.tur === "kol" && sahip !== "newsdesk" && sahip !== "planlama" && tur === "newsdesk") return metin("adMasaGorev", undefined, { birim: birimAdi(sahip) });
+  const anahtar = (sahip !== "newsdesk" && d?.sorumlu.tur === "kol" && STOK_ADIM_ADI[tur]) || ADIM_ADI[tur];
   return anahtar ? metin(anahtar) : adim;
 };
 
@@ -241,6 +244,26 @@ export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !masaPaketi(p
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
 export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
+
+/*
+ * Masa paketinin (ekonomi, program, spor) yolu: Planlama'dan sonra iş doğrudan
+ * masaya gidiyor (kullanıcı). Beş sabit aşama (News Gathering, Newsdesk…) bu
+ * pakete hiç uğramayacak birimleri "sırada" gösteriyordu; burada Planlama,
+ * masanın üretime alması, akışın durakları ve tamamlanma.
+ */
+export interface GorunenAsama {
+  ad: string;
+  durum: "" | "gecti" | "simdi" | "gecikti";
+}
+export const masaYolu = (p: Paket): GorunenAsama[] | null => {
+  if (!masaPaketi(p) || p.durum === "iptal") return null;
+  const yol = uretimYolu(p);
+  const adlar = [metin("asPlanlama"), metin("asMasaUretimeAlma", undefined, { birim: birimAdi(kolSahibi(p.tur)) }), ...yol.map((a) => adimAdi(a, p)), metin("pdTamamlandi")];
+  const simdi =
+    p.durum === "tamamlandi" ? adlar.length : p.durum === "uretimde" && p.adim ? 2 + Math.max(0, yol.indexOf(p.adim)) : p.durum === "onaylandi" ? 1 : 0;
+  const gec = geciktiMi(p);
+  return adlar.map((ad, i) => ({ ad, durum: i < simdi ? "gecti" : i === simdi ? (gec ? "gecikti" : "simdi") : "" }));
+};
 
 /* --- Stok haberleri --- */
 

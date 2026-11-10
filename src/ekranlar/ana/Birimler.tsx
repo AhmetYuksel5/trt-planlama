@@ -343,7 +343,7 @@ function EkonomiSayaclari({ ben }: { ben: Kisi }) {
   return (
     <div className="sayaclar">
       <Sayac ikon={<ClipboardCheck size={22} />} ton={bekleyen ? "uyari" : ""} etiket={t("onIncelemeBekleyen")} deger={bekleyen} />
-      <Sayac href="#/feature" ikon={<CirclePlay size={22} />} renk="renk-haftalik" etiket={t("ekonomiPaketleri")} deger={aktif.length} alt={t("sDevamEden")} />
+      <Sayac href="#/ekonomi" ikon={<CirclePlay size={22} />} renk="renk-haftalik" etiket={t("ekonomiPaketleri")} deger={aktif.length} alt={t("sDevamEden")} />
       <Sayac
         href={gelecek ? `#/haftalik/${gelecek.id}` : "#/haftalik"}
         ikon={<CalendarRange size={22} />}
@@ -380,7 +380,7 @@ function EkonomiPaketleri() {
   const { t } = useDil();
   const { v, paketler } = useEkonomi();
   return (
-    <Kart baslik={t("ekonomiPaketleri")} ikon={<CirclePlay size={18} />} sagUc={<Tumu href="#/feature" />}>
+    <Kart baslik={t("ekonomiPaketleri")} ikon={<CirclePlay size={18} />} sagUc={<Tumu href="#/ekonomi" />}>
       <PaketTablosu paketler={paketler} d={v} sutunlar={["baslik", "muhabir", "plan", "asama", "kimde"]} bosMetin={t("kayitYok")} />
     </Kart>
   );
@@ -573,7 +573,7 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "ekOnInceleme", ad: "onIncelemeBekleyen", genis: true, grup: "ekonomi", sayfa: "haftalik", Bilesen: OnIncelemeKarti },
   { id: "ekGelecek", ad: "haftalikEkonomiKalemleri", ek: "gelecekHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiGelecek },
   { id: "ekBuHafta", ad: "haftalikEkonomiKalemleri", ek: "buHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiBuHafta },
-  { id: "ekPaketler", ad: "ekonomiPaketleri", genis: true, grup: "ekonomi", sayfa: "feature", Bilesen: EkonomiPaketleri },
+  { id: "ekPaketler", ad: "ekonomiPaketleri", genis: true, grup: "ekonomi", sayfa: "ekonomi", Bilesen: EkonomiPaketleri },
   { id: "ekMasa", ad: "ekMasa", genis: true, grup: "ekonomi", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <MasaPaketleri ben={ben} kol="ekonomi" baslik="ekMasa" /> },
   { id: "prMasa", ad: "prMasa", genis: true, grup: "program", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <MasaPaketleri ben={ben} kol="program" baslik="prMasa" /> },
   { id: "spMasa", ad: "spMasa", genis: true, grup: "spor", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <MasaPaketleri ben={ben} kol="spor" baslik="spMasa" /> },

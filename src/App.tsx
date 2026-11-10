@@ -352,6 +352,7 @@ export default function App() {
         } else icerik = ben.birim === "muhabir" ? <MuhabirHaberlerim ben={ben} /> : <Paketler ben={ben} sayfa="paketler" />;
         break;
       case "feature":
+      case "ekonomi":
       case "programlar":
         icerik = <Paketler ben={ben} sayfa={sayfa} />;
         break;

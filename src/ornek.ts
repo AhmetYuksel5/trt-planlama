@@ -1,4 +1,4 @@
-import { KOL_SAHIBI, adimSahibi, uretimYolu, type UretimAdimi } from "./akis";
+import { KOL_SAHIBI, adimSahibi, akisDamgasi, uretimYolu, type UretimAdimi } from "./akis";
 import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_ADRESI } from "./eposta";
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
@@ -31,7 +31,7 @@ import type {
   Yanit,
   PostaMesaji,
 } from "./veri";
-import { paketBicimi } from "./veri";
+import { masaPaketi, paketBicimi } from "./veri";
 
 /**
  * Örnek veri.
@@ -701,8 +701,7 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "مشاريع جديدة وتحوّل الطاقة.",
     tur: "ekonomi",
     durum: "uretimde",
-    adim: "kontrol",
-    stok: true,
+    adim: "videoKontrol",
   },
   {
     id: "p-sahaf",
@@ -1838,6 +1837,8 @@ export const ORNEK = (): Durum => {
       ucret: t.ucret,
       oncelikli: t.oncelikli,
       stok: t.stok,
+      // Masa paketi (ekonomi…) yeni yolla: damgasız üretimdeki paket eski yoldan (Output, Media) geçiyor sayılırdı.
+      ...(masaPaketi({ tur }) && t.durum === "uretimde" && { akis: akisDamgasi({ tur }) }),
       notlar: [],
       olusturma: zaman(gunEkle(tarih, -1), "12:00"),
       guncelleme: zaman(gunEkle(tarih, -1), "12:00"),

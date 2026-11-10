@@ -1,6 +1,6 @@
 import { ArrowRight, CalendarRange, Check, ChevronDown, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, sadeAkis, sadeSira, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
+import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, masaYolu, sadeAkis, sadeSira, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
 import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
@@ -400,6 +400,15 @@ export function AsamaCubugu({ paket }: { paket: Paket }) {
         ))}
       </span>
     );
+  const masa = masaYolu(paket);
+  if (masa)
+    return (
+      <span className="asama" title={(masa.find((a) => a.durum === "simdi" || a.durum === "gecikti") ?? masa[masa.length - 1]).ad} data-masa-asama>
+        {masa.map((a, i) => (
+          <i key={i} className={a.durum} />
+        ))}
+      </span>
+    );
   const simdi = asamaBul(paket);
   const gecikti = geciktiMi(paket);
   return (
@@ -435,6 +444,20 @@ export function AsamaBuyuk({ paket }: { paket: Paket }) {
             </div>
           );
         })}
+      </div>
+    );
+  // Masa paketi (ekonomi, program, spor): Planlama'dan sonra doğrudan masaya; adımlar da bu sırada.
+  const masa = masaYolu(paket);
+  if (masa)
+    return (
+      <div className="asama-buyuk" data-masa-asama>
+        {masa.map((a, i) => (
+          <div key={i} className={a.durum}>
+            <span className="no">{i + 1}</span>
+            <b>{a.ad}</b>
+            <small>{t(a.durum === "gecti" ? "asamaGecti" : a.durum === "simdi" ? "asamaSimdi" : a.durum === "gecikti" ? "gecikti" : "asamaBekliyor")}</small>
+          </div>
+        ))}
       </div>
     );
   const simdi = asamaBul(paket);

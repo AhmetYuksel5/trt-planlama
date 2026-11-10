@@ -88,9 +88,20 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await kim("yo3"); await git("#/organizasyon/birimler");
   ok((await p.getByText("Spor", { exact: true }).count()) > 0, "Organizasyon'da Spor birimi");
 
+  // Ekonomi ayrı sayfa; ekonomi paketinde aşamalar Planlama'dan sonra doğrudan masaya
+  await kim("ek1"); await git("#/ekonomi");
+  ok((await p.locator('.menu a[href="#/ekonomi"]').count()) === 1, "menüde ayrı Ekonomi sayfası");
+  ok((await p.locator('a[href="#/paketler/p-hidrojen"]').count()) > 0, "ekonomi paketi Ekonomi sayfasında");
+  await git("#/paketler/p-hidrojen");
+  const asamalar = await p.locator("[data-masa-asama] > div b").allInnerTexts();
+  ok(asamalar[1]?.includes("Ekonomi") && !asamalar.some((x) => /News Gathering|Newsdesk|Media/.test(x)), "ekonomi paketinde Planlama → Ekonomi, Newsdesk ve Media yok: " + asamalar.join(" | "));
+  await git("#/feature");
+  ok((await p.locator('[data-paket="p-hidrojen"], a[href="#/paketler/p-hidrojen"]').count()) === 0, "Feature / stok sayfasında ekonomi paketi yok");
+
   // 390px taşma (Ekonomi masası, Stok)
+
   await p.setViewportSize({ width: 390, height: 840 });
-  for (const [k, h] of [["ek1", "#/"], ["pl6", "#/stok"]]) {
+  for (const [k, h] of [["ek1", "#/"], ["ek1", "#/ekonomi"], ["ek1", "#/paketler/p-hidrojen"], ["pl6", "#/stok"]]) {
     await kim(k); await git(h);
     const t = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(t <= 1, `390px taşma yok (${k} ${h}): ${t}`);

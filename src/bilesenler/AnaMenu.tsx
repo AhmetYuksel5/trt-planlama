@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Workflow, type LucideIcon } from "lucide-react";
+import { Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { kisininIsleri } from "../gorevler";
@@ -122,6 +122,7 @@ export const MENU: Grup[] = [
       { sayfa: "basliklar", ad: "mBasliklar", kisa: "kaBasliklar", ikon: Newspaper },
       { sayfa: "paketler", ad: "mPaketler", adMuhabir: "mPaketlerim", kisa: "kaPaketler", kisaMuhabir: "kaPaketlerim", ikon: Package },
       { sayfa: "feature", ad: "mFeature", kisa: "kaFeature", ikon: TrendingUp },
+      { sayfa: "ekonomi", ad: "mEkonomi", kisa: "kaEkonomi", ikon: Landmark },
       { sayfa: "programlar", ad: "mProgramlar", kisa: "kaProgramlar", ikon: Clapperboard },
       // Sayı: kişinin üretime alabileceği paketler (Planlama'da feature/stok ekibi).
       { sayfa: "stok", ad: "mStok", kisa: "kaStok", ikon: Layers, say: (d, ben) => d.paketler.filter((p) => uretimeAlabilir(ben, p)).length },

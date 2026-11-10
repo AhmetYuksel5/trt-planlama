@@ -897,6 +897,8 @@ a.rozet-plan { text-decoration: none; }
 .asama.iptal i { background: var(--yuzey-3); }
 
 .asama-buyuk { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ara-2); }
+/* Masa paketinin yolu akışın durak sayısı kadar: sabit beş sütun taşırdı. */
+.asama-buyuk[data-masa-asama] { grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr)); }
 .asama-buyuk > div { border-radius: var(--yaricap); padding: var(--ara-3); background: var(--yuzey-2); color: var(--sonuk); border: 1px solid transparent; min-width: 0; }
 .asama-buyuk > div b { display: block; font-size: var(--punto-kucuk); color: var(--murekkep); }
 .asama-buyuk > div small { display: block; font-size: var(--punto-mini); }
@@ -1834,7 +1836,7 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
   .sayfa-basi h1 { font-size: var(--punto-buyuk); }
   .sayfa-basi .ikon-kutu { width: 42px; height: 42px; }
   .sayfa-basi .sag-uc { margin-inline-start: 0; width: 100%; }
-  .asama-buyuk { grid-template-columns: minmax(0, 1fr); }
+  .asama-buyuk, .asama-buyuk[data-masa-asama] { grid-template-columns: minmax(0, 1fr); }
   .akis-kutulari { grid-template-columns: minmax(0, 1fr); }
   .cikti { padding: 24px 20px; }
   .cikti-sarici { padding: var(--ara-2); }

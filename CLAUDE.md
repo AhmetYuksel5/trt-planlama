@@ -1879,6 +1879,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   stok paketi masasına geçer (`eylemler.ts → masaPaketleriniStoktanAyir`,
   sistemin açılış işi); bitmiş olan stokta kalır. Muhabir kılavuzunda `kl7d`.
   Test `testler/masa-stok.cjs`.
+  - Ekonomi menüde ayrı sayfa (`#/ekonomi`, `Listeler.tsx → ICERIK_SAYFASI`;
+    kullanıcı: ekonomi ayrı birim, "Feature / ekonomi" tek sayfaydı);
+    "Feature / stok" yalnız feature.
+  - Masa paketinin aşamaları beş sabit aşama değil, kendi yolu (`akis.ts →
+    masaYolu`, `Parcalar.tsx → AsamaCubugu`, `AsamaBuyuk`, `data-masa-asama`):
+    Planlama → "<masa> · üretime alma" → akışın durakları → Tamamlandı
+    (kullanıcı: işin Planlama'dan sonra doğrudan masaya gittiği görünmüyordu,
+    News Gathering ve Newsdesk "sırada" duruyordu). Kolun "newsdesk" türlü
+    durağının adı "<masa> görev verecek" (`adMasaGorev`), yükleme durağı stok
+    kolundaki gibi. Örnek veride üretimdeki masa paketi yeni yolun damgasıyla.
   - Kolun Planlama'ya düşen adımlarını (görev verme, Media'ya iletme,
     montaj kontrolü ve yükleme) yalnız feature/stok ekibi (`stokTakip`)
     ve Planlama yöneticisi yapar (`yetki.ts → adimYapabilir`).

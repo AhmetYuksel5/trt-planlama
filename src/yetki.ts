@@ -792,6 +792,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   basliklar: ["planlama", "newsdesk", "program", "yonetim"],
   paketler: HERKES,
   feature: MASA,
+  // Ekonomi masasının paketleri (önce feature ile tek sayfadaydı; kullanıcı: ekonomi ayrı birim).
+  ekonomi: ["ekonomi", "planlama", "yonetim"],
   programlar: ["planlama", "program", "yonetim"],
   stok: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
   saha: ["newsgathering", "planlama", "yonetim", "muhabir"],

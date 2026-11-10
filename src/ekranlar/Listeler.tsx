@@ -1,6 +1,6 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
 import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
-import { CirclePlay, Clapperboard, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
+import { CirclePlay, Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
@@ -22,7 +22,8 @@ import { SayfaBasi } from "./ana/Planlama";
 
 const ICERIK_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: ReactNode; turler?: IcerikTuru[] }> = {
   paketler: { baslik: "mPaketler", alt: "paketlerAlt", ikon: <Package size={26} /> },
-  feature: { baslik: "mFeature", alt: "featureAlt", ikon: <TrendingUp size={26} />, turler: ["feature", "ekonomi"] },
+  feature: { baslik: "mFeature", alt: "featureAlt", ikon: <TrendingUp size={26} />, turler: ["feature"] },
+  ekonomi: { baslik: "mEkonomi", alt: "ekonomiAlt", ikon: <Landmark size={26} />, turler: ["ekonomi"] },
   programlar: { baslik: "mProgramlar", alt: "programlarAlt", ikon: <Clapperboard size={26} />, turler: ["program"] },
 };
 
