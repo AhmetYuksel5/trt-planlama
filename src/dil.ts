@@ -2640,6 +2640,7 @@ const M = {
   orgSilinemez: m("Silinemez: {kisi} kişi, {durak} durak bağlı. Gizleyebilirsiniz.", "لا يمكن الحذف: مرتبط بـ {kisi} شخص و{durak} محطة. يمكنك الإخفاء.", "Cannot delete: {kisi} people and {durak} steps linked. You can hide it."),
   orgSilinsinMi: m("{ad} silinsin mi?", "هل تريد حذف {ad}؟", "Delete {ad}?"),
   orgBirimEkle: m("Birim ekle", "إضافة وحدة", "Add unit"),
+  orgAltBirimEkle: m("Alt birim ekle", "إضافة وحدة فرعية", "Add sub-unit"),
   orgUnvanEkle: m("Ünvan ekle", "إضافة مسمى", "Add title"),
   orgBirimlerde: m("Birimler", "الوحدات", "Units"),
   orgHerBirim: m("Her birim", "كل الوحدات", "All units"),

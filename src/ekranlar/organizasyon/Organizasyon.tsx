@@ -15,6 +15,7 @@ import {
   Upload,
   UserCog,
   X,
+  FolderPlus,
 } from "lucide-react";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import {
@@ -344,7 +345,8 @@ function TaslakCubugu({ ben }: { ben: Kisi }) {
 function BirimlerSekmesi({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const { taslak } = useTaslak(ben);
-  const [acik, setAcik] = useState<BirimTanimi | "yeni" | null>(null);
+  // "yeni": üstteki düğme; { ust }: kartın "Alt birim ekle"si (kullanıcı: alt birim eklemenin yolu bulunmuyordu, üst birim yalnız pencerenin seçimindeydi).
+  const [acik, setAcik] = useState<BirimTanimi | "yeni" | { ust: BirimId } | null>(null);
   return (
     <Kart
       baslik={t("orgBirimler")}
@@ -359,15 +361,15 @@ function BirimlerSekmesi({ ben }: { ben: Kisi }) {
       <div className="org-birimler" data-birim-tablosu>
         {birimAgaci(taslak).map(({ id, derinlik }) => {
           const b = taslak.birimler.find((x) => x.id === id)!;
-          return <BirimKarti key={id} ben={ben} birim={b} derinlik={derinlik} duzenle={() => setAcik(b)} />;
+          return <BirimKarti key={id} ben={ben} birim={b} derinlik={derinlik} duzenle={() => setAcik(b)} altEkle={() => setAcik({ ust: b.id })} />;
         })}
       </div>
-      {acik && <BirimPenceresi ben={ben} birim={acik === "yeni" ? null : acik} kapat={() => setAcik(null)} />}
+      {acik && <BirimPenceresi ben={ben} birim={acik === "yeni" || "ust" in acik ? null : acik} ustBirim={acik !== "yeni" && "ust" in acik ? acik.ust : undefined} kapat={() => setAcik(null)} />}
     </Kart>
   );
 }
 
-function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: BirimTanimi; derinlik: number; duzenle: () => void }) {
+function BirimKarti({ ben, birim: b, derinlik, duzenle, altEkle }: { ben: Kisi; birim: BirimTanimi; derinlik: number; duzenle: () => void; altEkle: () => void }) {
   const { t } = useDil();
   const { v, taslak, degistir } = useTaslak(ben);
   const [yeni, setYeni] = useState("");
@@ -417,6 +419,9 @@ function BirimKarti({ ben, birim: b, derinlik, duzenle }: { ben: Kisi; birim: Bi
           </button>
           <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => degistir((y) => birimSiraTasi(y, b.id, 1))} title={t("asagi")} aria-label={t("asagi")} data-birim-asagi={b.id}>
             <ArrowDown size={15} />
+          </button>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={altEkle} title={t("orgAltBirimEkle")} aria-label={t("orgAltBirimEkle")} data-alt-birim-ekle={b.id}>
+            <FolderPlus size={15} />
           </button>
           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={duzenle} data-birim-duzenle={b.id}>
             <Pencil size={14} /> {t("duzenle")}
@@ -520,13 +525,16 @@ const gorevAdiDilde = (id: string, d: "tr" | "ar" | "en", y: Yapi) => {
   return yerlesikGorev(id) ? metin(GOREV_ADI[id as Gorev], d) : id;
 };
 
-function BirimPenceresi({ ben, birim, kapat }: { ben: Kisi; birim: BirimTanimi | null; kapat: () => void }) {
+function BirimPenceresi({ ben, birim, ustBirim, kapat }: { ben: Kisi; birim: BirimTanimi | null; ustBirim?: BirimId; kapat: () => void }) {
   const { t } = useDil();
   const { taslak, degistir } = useTaslak(ben);
   const yerlesik = !!birim && yerlesikBirim(birim.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(birim?.ad) ? birim.ad : undefined);
-  const [ornek, setOrnek] = useState<Birim | "">(birim?.ornek ?? "");
-  const [ust, setUst] = useState<BirimId>(birim?.ust ?? KOK_MERKEZ);
+  // Alt birim üstü gibi çalışarak açılır (Planlama'nın alt birimi Planlama gibi); seçim değişebilir.
+  const ust0 = ustBirim ? taslak.birimler.find((x) => x.id === ustBirim) : undefined;
+  const ustunOrnegi: Birim | "" = ust0 ? (yerlesikBirim(ust0.id) ? (ust0.id as Birim) : (ust0.ornek ?? "")) : "";
+  const [ornek, setOrnek] = useState<Birim | "">(birim?.ornek ?? ustunOrnegi);
+  const [ust, setUst] = useState<BirimId>(birim?.ust ?? ustBirim ?? KOK_MERKEZ);
   const temiz = adTemizle(ad);
   const hazir = yerlesik || !!temiz;
   // Üst birim seçiminde kendisi ve altındakiler yok: birim kendi altına taşınamaz.
@@ -552,7 +560,7 @@ function BirimPenceresi({ ben, birim, kapat }: { ben: Kisi; birim: BirimTanimi |
   const varsayilan = yerlesik ? dilde(BIRIM_ADI[birim.id as Birim]) : undefined;
   return (
     <Pencere
-      baslik={birim ? birimAdi(birim.id) : t("orgBirimEkle")}
+      baslik={birim ? birimAdi(birim.id) : t(ustBirim ? "orgAltBirimEkle" : "orgBirimEkle")}
       kapat={kapat}
       altBilgi={
         <button className="dugme" disabled={!hazir} onClick={kaydet} data-birim-kaydet>

@@ -585,7 +585,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     denetmenlerini sistemin işi taşır (`eylemler.ts → dilDenetmenleriniTasi`,
     açılışta ve gerçek kipte tam yöneticinin tarayıcısında). Grup düğümünün
     ünvanı yalnız yöneticisininki (aşağıda). Birim penceresinde üst birim seçilir, oklar kardeşler arasında
-    sıralar; altında birim olan silinmez (`orgAltBirimVar`). Yardımcılar
+    sıralar; her kartta "Alt birim ekle" (`data-alt-birim-ekle`; kullanıcı:
+    alt birim eklemenin yolu bulunmuyordu, yalnız pencerenin seçimindeydi):
+    pencere o birim üst seçili, çalışma biçimi üstünün (yerleşikse kendisi,
+    değilse örneği) gibi açılır, ikisi de değişir. Test `testler/alt-birim.cjs`; altında birim olan silinmez (`orgAltBirimVar`). Yardımcılar
     `birimAgaci`, `ustBirimler`, `altindaMi`, `disMuhabirMi`. Eski yayın
     okunurken `tamamla` ağacı ve ekip görevlerini varsayılandan doldurur.
   - Yönetim kademesi (kullanıcı: kurumda Yönetim ayrı birim değil; en üstte
