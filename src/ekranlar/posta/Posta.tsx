@@ -1,12 +1,13 @@
-import { ArrowLeft, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
-import { postaGidenEkle, postaSil, postaEtiketsizleriGruba } from "../../eylemler";
+import { postaGidenEkle, postaSil, postaEtiketsizleriGruba, postaHepsiOkundu, postaOkumaBaslat, postaOkundu, postaOkunmadi } from "../../eylemler";
 import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, yeniMetin, type KomutTuru } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
-import { GERCEK } from "../../kip";
+import { GERCEK, useSunucuyaEsit } from "../../kip";
+import { gorunenPostalar, okunmamisMi } from "../../postaOkuma";
 import { postaEkiGetir, postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
 import { sozcuklerUyar } from "../../arama";
@@ -374,7 +375,7 @@ function SohbetGovdesi({ sohbet, bulunan, simdi }: { sohbet: Sohbet; bulunan?: S
  * ve oklarla aralarında gezilir; en yeni eşleşmeden başlar. Enter sonraki
  * (daha eski), Shift+Enter önceki, Esc kapatır.
  */
-function useSohbetAramasi(sohbet: Sohbet | undefined) {
+function useSohbetAramasi(sohbet: Sohbet | undefined, onSorgu: string) {
   const { ad } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState(false);
@@ -382,9 +383,11 @@ function useSohbetAramasi(sohbet: Sohbet | undefined) {
   const [sira, setSira] = useState(0);
   const anahtar = sohbet?.konuKimligi ?? "";
   // Başka sohbete geçince arama kapanır: eski sorgu yeni sohbette boş sonuç gösterirdi.
+  // Genel aramadan açılan sohbette aynı sorgu açık gelir, eşleşen mesaja kayar.
   useEffect(() => {
-    setAcik(false);
-    setSorgu("");
+    setAcik(!!onSorgu.trim());
+    setSorgu(onSorgu.trim() ? onSorgu : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anahtar]);
   const sorguVar = acik && !!sorgu.trim();
   const eslesen = !sohbet || !sorguVar
@@ -780,17 +783,84 @@ function YeniPosta({ ben, grup, kapat, acildi }: { ben: Kisi; grup: string; kapa
   );
 }
 
+/*
+ * Bütün postalarda arama (kullanıcı: sohbet içi değil, bütün postalarda):
+ * konu, balonda görünen metin, gönderen ve ek adları. Sohbet içi aramayla aynı
+ * metin (balonIcerigi); her mesajın metni bir kez kurulur, her tuşta değil.
+ */
+function useGenelArama(sohbetler: Sohbet[]) {
+  const { ad } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const [sorgu, setSorgu] = useState("");
+  const dizin = useMemo(() => {
+    const x = new Map<string, { metin: string; govde: string; gad: string }>();
+    for (const s of sohbetler)
+      for (const m of s.mesajlar) {
+        const b = balonIcerigi(v, m, ad);
+        x.set(m.id, { metin: [b.govde, b.gad, ...b.ekler].join(" "), govde: b.govde || b.ekler.join(" · "), gad: b.gad });
+      }
+    return x;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v.postaMesajlari, ad]);
+  const sorguVar = acik && !!sorgu.trim();
+  // Sohbet → eşleşen mesajlar (en yenisi önce); yalnız konusu uyan sohbet de çıkar.
+  const sonuc = new Map<string, PostaMesaji[]>();
+  if (sorguVar)
+    for (const s of sohbetler) {
+      const l = s.mesajlar.filter((m) => sozcuklerUyar(dizin.get(m.id)?.metin ?? "", sorgu)).reverse();
+      if (l.length || sozcuklerUyar(s.baslik, sorgu)) sonuc.set(s.konuKimligi, l);
+    }
+  return {
+    acik,
+    ac: () => setAcik(true),
+    kapat: () => {
+      setAcik(false);
+      setSorgu("");
+    },
+    sorgu,
+    setSorgu,
+    sorguVar,
+    sonuc,
+    ozet: (m: PostaMesaji) => dizin.get(m.id),
+  };
+}
+
 export function Posta({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
+  const esit = useSunucuyaEsit();
   // Kişi yalnız kendi grubunun sohbetini görür (gerçek kipte): biri kendi
   // hesabıyla çekince başka birimin postası ona karışmasın. Demoda süzme yok.
   const [grup, setGrup] = useState("");
-  const sohbetler = sohbetleriKur((v.postaMesajlari ?? []).filter((m) => !GERCEK || (!!grup && m.grup === grup)));
+  const sohbetler = sohbetleriKur(gorunenPostalar(v, grup));
   const [secili, setSecili] = useState("");
   const [yeni, setYeni] = useState(false);
+  const [yalnizOkunmamis, setYalnizOkunmamis] = useState(false);
   const secik = sohbetler.find((s) => s.konuKimligi === secili);
-  const arama = useSohbetAramasi(secik);
+  const genel = useGenelArama(sohbetler);
+  const arama = useSohbetAramasi(secik, genel.sorguVar ? genel.sorgu : "");
+  const okuma = v.postaOkunan?.[ben.id];
+  const okunmamis = (s: Sohbet) => s.mesajlar.filter((m) => okunmamisMi(okuma, m)).length;
+  const toplamOkunmamis = sohbetler.reduce((n, s) => n + okunmamis(s), 0);
+  const gorunen = sohbetler.filter((s) => (!genel.sorguVar || genel.sonuc.has(s.konuKimligi)) && (!yalnizOkunmamis || s.konuKimligi === secili || okunmamis(s) > 0));
+  // Okundu bilgisi: ilk açılışta taban kurulur; grup kapıdan gelince (gerçek kipte) yazılır, menü sayısı onu süzer.
+  useEffect(() => {
+    if (!GERCEK || grup) postaOkumaBaslat(ben, grup);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grup, esit]);
+  // Açık sohbet okunmuş sayılır; açıkken yeni posta gelirse o da.
+  const sonZaman = secik?.son.zaman ?? "";
+  useEffect(() => {
+    if (secik && okuma) postaOkundu(ben, secik.kimlikler, sonZaman);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secili, sonZaman, esit, !!okuma]);
+  const sonGelen = secik ? [...secik.mesajlar].reverse().find((m) => !m.giden) : undefined;
+  const okunmadiYap = () => {
+    if (!secik || !sonGelen) return;
+    postaOkunmadi(ben, secik.kimlikler, sonGelen.zaman);
+    setSecili("");
+  };
   const sil = (konuKimligi: string) => {
     const kimlikler = sohbetler.find((x) => x.konuKimligi === konuKimligi)?.kimlikler ?? [konuKimligi];
     if (!confirm(t("postaSilOnay"))) return;
@@ -847,35 +917,110 @@ export function Posta({ ben }: { ben: Kisi }) {
         <div className="iz posta-liste-sutun">
           <Kart
             baslik={t("postaSohbetler")}
-            ek={String(sohbetler.length)}
+            ek={genel.sorguVar ? `${gorunen.length}/${sohbetler.length}` : String(sohbetler.length)}
             sagUc={
-              <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setYeni(true)} title={t("postaYeni")} aria-label={t("postaYeni")} data-posta-yeni-ac>
-                <Plus size={18} />
-              </button>
+              <>
+                <button type="button" className={`dugme dugme-sade dugme-ikon${genel.acik ? " secili" : ""}`} onClick={genel.acik ? genel.kapat : genel.ac} aria-pressed={genel.acik} title={t("postaTumunuAra")} aria-label={t("postaTumunuAra")} data-posta-genel-ac>
+                  <Search size={16} />
+                </button>
+                <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setYeni(true)} title={t("postaYeni")} aria-label={t("postaYeni")} data-posta-yeni-ac>
+                  <Plus size={18} />
+                </button>
+              </>
             }
           >
+            {genel.acik && (
+              <div className="posta-ara" role="search" data-posta-genel>
+                <Search size={16} className="sonuk" aria-hidden="true" />
+                <input
+                  type="text"
+                  dir="auto"
+                  autoFocus
+                  value={genel.sorgu}
+                  onChange={(e) => genel.setSorgu(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      genel.kapat();
+                    } else if (e.key === "Enter" && gorunen[0]) {
+                      e.preventDefault();
+                      setSecili(gorunen[0].konuKimligi);
+                    }
+                  }}
+                  placeholder={t("postaTumunuAra")}
+                  aria-label={t("postaTumunuAra")}
+                  data-posta-genel-girdi
+                />
+                {genel.sorguVar && gorunen.length === 0 && (
+                  <small className="posta-ara-sayi yok" aria-live="polite">
+                    {t("postaAramaYok")}
+                  </small>
+                )}
+                <button type="button" className="dugme dugme-sade dugme-ikon" onClick={genel.kapat} title={t("kapat")} aria-label={t("kapat")} data-posta-genel-kapat>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+            {(toplamOkunmamis > 0 || yalnizOkunmamis) && (
+              <div className="posta-liste-arac">
+                <button type="button" className={`cip cip-dugme${yalnizOkunmamis ? " secili" : ""}`} onClick={() => setYalnizOkunmamis((x) => !x)} aria-pressed={yalnizOkunmamis} data-posta-okunmamis-suz>
+                  <span className="posta-okunmamis-nokta" aria-hidden="true" /> {t("postaOkunmamis", { n: toplamOkunmamis })}
+                </button>
+                {toplamOkunmamis > 0 && (
+                  <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => postaHepsiOkundu(ben)} title={t("postaHepsiOkundu")} aria-label={t("postaHepsiOkundu")} data-posta-hepsi-okundu>
+                    <CheckCheck size={16} />
+                  </button>
+                )}
+              </div>
+            )}
             {sohbetler.length === 0 ? (
               <Bos kucuk metin={t("postaMesajYok")} />
             ) : (
               <ol className="posta-sohbetler" data-posta-liste>
-                {sohbetler.map((s) => (
-                  <li key={s.konuKimligi}>
-                    <button type="button" className={`posta-sohbet${s.konuKimligi === secili ? " secili" : ""}`} onClick={() => setSecili(s.konuKimligi)} data-posta-sohbet-bag={s.konuKimligi}>
-                      <span className="posta-sohbet-avatar" style={{ ["--ton" as string]: sohbetTonu(s.konuKimligi) }} aria-hidden="true">
-                        {ilkHarf(s.baslik)}
-                      </span>
-                      <span className="posta-sohbet-govde">
-                        <span className="posta-sohbet-bas">
-                          <Icerik>{s.baslik}</Icerik>
-                          <small className="sonuk ince">{saatYaz(s.son.zaman, dil)}</small>
+                {gorunen.map((s) => {
+                  const n = okunmamis(s);
+                  const bulunan = genel.sorguVar ? genel.sonuc.get(s.konuKimligi) : undefined;
+                  const ornek = bulunan?.[0] ? genel.ozet(bulunan[0]) : undefined;
+                  return (
+                    <li key={s.konuKimligi}>
+                      <button
+                        type="button"
+                        className={`posta-sohbet${s.konuKimligi === secili ? " secili" : ""}${n ? " okunmamis" : ""}`}
+                        onClick={() => setSecili(s.konuKimligi)}
+                        data-posta-sohbet-bag={s.konuKimligi}
+                        data-okunmamis={n || undefined}
+                      >
+                        <span className="posta-sohbet-avatar" style={{ ["--ton" as string]: sohbetTonu(s.konuKimligi) }} aria-hidden="true">
+                          {ilkHarf(s.baslik)}
                         </span>
-                        <small className="sonuk posta-sohbet-alt">
-                          <GonderenEtiketi m={s.son} /> · {t("postaMesajSayisi", { n: s.mesajlar.length })}
-                        </small>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                        <span className="posta-sohbet-govde">
+                          <span className="posta-sohbet-bas">
+                            <Icerik>{s.baslik}</Icerik>
+                            <small className="sonuk ince">{saatYaz(s.son.zaman, dil)}</small>
+                          </span>
+                          {ornek ? (
+                            <small className="sonuk posta-sohbet-alt" data-posta-genel-ornek>
+                              {ornek.gad}: <bdi>{ornek.govde.replace(/\s+/g, " ").slice(0, 140)}</bdi>
+                            </small>
+                          ) : (
+                            <small className="sonuk posta-sohbet-alt">
+                              <GonderenEtiketi m={s.son} /> · {t("postaMesajSayisi", { n: s.mesajlar.length })}
+                            </small>
+                          )}
+                        </span>
+                        {bulunan && bulunan.length > 0 ? (
+                          <span className="posta-eslesme" title={t("postaEslesme", { n: bulunan.length })}>
+                            {bulunan.length}
+                          </span>
+                        ) : n > 0 ? (
+                          <span className="posta-okunmamis-say" title={t("postaOkunmamisIpucu", { n })} aria-label={t("postaOkunmamisIpucu", { n })} data-posta-okunmamis-say>
+                            {n}
+                          </span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
               </ol>
             )}
           </Kart>
@@ -894,6 +1039,11 @@ export function Posta({ ben }: { ben: Kisi }) {
                     <button type="button" className={`dugme dugme-sade dugme-ikon${arama.acik ? " secili" : ""}`} onClick={arama.acik ? arama.kapat : arama.ac} aria-pressed={arama.acik} title={t("postaSohbetAra")} aria-label={t("postaSohbetAra")} data-posta-ara-ac>
                       <Search size={16} />
                     </button>
+                    {sonGelen && (
+                      <button type="button" className="dugme dugme-sade dugme-ikon" onClick={okunmadiYap} title={t("postaOkunmadiYap")} aria-label={t("postaOkunmadiYap")} data-posta-okunmadi>
+                        <MailOpen size={16} />
+                      </button>
+                    )}
                     <button className="dugme dugme-sade dugme-kucuk" onClick={() => sil(secik.konuKimligi)} title={t("postaSohbetSil")} data-posta-sil>
                       <Trash2 size={14} /> {t("sil")}
                     </button>

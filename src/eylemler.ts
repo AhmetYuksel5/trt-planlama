@@ -3,7 +3,9 @@ import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
-import { GERCEK } from "./kip";
+import { GERCEK, sunucuyaEsitMi } from "./kip";
+import { izlemede } from "./izleme";
+import { ILK_TABAN_SAAT, budanmis, okunduYap, okunmadiYap, type PostaOkuma } from "./postaOkuma";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { bosAlan } from "./epostaEslestir";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
@@ -3412,6 +3414,33 @@ export const postaEtiketsizleriGruba = (ben: Kisi, grup: string): number => {
 
 /* Sohbeti izleriyle siler (Planlama temizliği); çağrı ve öneri akışına dokunmaz. */
 // Ekranda birleşmiş sohbet birden çok iplik kimliğinden oluşabiliyor (Posta.tsx → sohbetleriKur); hepsi gider.
+/*
+ * Posta okundu bilgisi (postaOkuma.ts). Sohbete bakmak kendiliğinden yazıyor:
+ * izlemede ya da eşitlenmeden yazılamıyorsa sessizce geçilir, her tıklamada
+ * "kaydedilmedi" bildirimi çıkmasın.
+ */
+const postaOkumaYaz = (ben: Kisi, f: (o: PostaOkuma, d: Durum) => PostaOkuma | null) => {
+  if (izlemede() || (GERCEK && !sunucuyaEsitMi())) return;
+  const d = getir();
+  const eski = d.postaOkunan?.[ben.id];
+  const taban = new Date(Date.now() - ILK_TABAN_SAAT * 3600_000).toISOString();
+  const yeni = f(eski ?? { taban, k: {} }, d);
+  const sonuc = yeni ?? (eski ? null : { taban, k: {} });
+  if (!sonuc || sonuc === eski) return;
+  kaydet({ ...d, postaOkunan: { ...d.postaOkunan, [ben.id]: budanmis(sonuc, d.postaMesajlari ?? []) } });
+};
+
+/** Posta ekranı açılınca: ilk kez açana taban kurulur, grup değiştiyse yazılır (menü sayısı onu kullanıyor). */
+export const postaOkumaBaslat = (ben: Kisi, grup: string) =>
+  postaOkumaYaz(ben, (o) => ((o.grup ?? "") === grup ? null : { ...o, grup: grup || undefined }));
+
+export const postaOkundu = (ben: Kisi, kimlikler: string[], zaman: string) => postaOkumaYaz(ben, (o) => okunduYap(o, kimlikler, zaman));
+
+export const postaOkunmadi = (ben: Kisi, kimlikler: string[], sonGelen: string) => postaOkumaYaz(ben, (o) => okunmadiYap(o, kimlikler, sonGelen));
+
+/** Hepsini okundu say: taban şimdi, iplik başına anlar gereksiz. */
+export const postaHepsiOkundu = (ben: Kisi) => postaOkumaYaz(ben, (o) => ({ ...o, taban: simdi(), k: {} }));
+
 export const postaSil = (ben: Kisi, konuKimligi: string | string[]): boolean => {
   if (!yapabilir(ben, "cagriHazirla")) return false;
   const d = getir();
@@ -3884,6 +3913,7 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
         oneriGorunumu: anahtarlariAt(d.oneriGorunumu, kendi),
         ortamlar: anahtarlariAt(d.ortamlar, kendi),
         kisayollar: anahtarlariAt(d.kisayollar, kendi),
+        postaOkunan: anahtarlariAt(d.postaOkunan, kendi),
       },
       { kisiId: ben.id, tip: "kisiSilindi", veri: { ad } },
     ),

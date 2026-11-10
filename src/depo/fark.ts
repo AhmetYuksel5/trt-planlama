@@ -113,7 +113,7 @@ export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
   return [...new Set(l.filter((x): x is string => !!x))].sort();
 };
 
-export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari", "gundemSepetleri"] as const satisfies readonly (keyof Durum)[];
+export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari", "gundemSepetleri", "postaOkunan"] as const satisfies readonly (keyof Durum)[];
 export type HaritaAlani = (typeof HARITA_ALANLARI)[number];
 
 /** Tekil değerler (paket kodu sayacı) tek belgede. */

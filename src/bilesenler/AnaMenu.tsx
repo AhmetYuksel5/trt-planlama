@@ -12,6 +12,7 @@ import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { dilDenetmeniMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
 import { GERCEK } from "../kip";
+import { okunmamisSayisi } from "../postaOkuma";
 import Logo from "./Logo";
 
 /**
@@ -109,7 +110,7 @@ export const MENU: Grup[] = [
         say: (d) => d.oneriler.filter((o) => o.durum === "yeni" && !oneriArsivde(o)).length,
       },
       // Gelen posta sohbeti: planlama kutusuna düşen postalar (yetki.ts → SAYFA_IZNI.posta).
-      { sayfa: "posta", ad: "mPosta", kisa: "kaPosta", ikon: Mail },
+      { sayfa: "posta", ad: "mPosta", kisa: "kaPosta", ikon: Mail, say: (d, ben) => okunmamisSayisi(d, ben.id) },
       {
         sayfa: "takipler",
         ad: "mMuhabirTakipleri",

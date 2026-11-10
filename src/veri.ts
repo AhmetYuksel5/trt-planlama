@@ -1617,6 +1617,8 @@ export interface Durum {
   yapiTaslaklari?: Record<string, Yapi>;
   /** Kişi başına son bildirim bakışı; okunmamış sayısı buradan çıkıyor. */
   okundu: Record<string, string>;
+  /** Kişinin posta okundu bilgisi (kişi → taban, grup, iplik başına son bakış; postaOkuma.ts). */
+  postaOkunan?: Record<string, import("./postaOkuma").PostaOkuma>;
   /** Kişinin kendi ana sayfa düzeni ("kişi:düzen" → alan sırası); yoksa birimin varsayılanı. */
   anaSayfa?: Record<string, string[]>;
   /** Kişinin plan ekranlarındaki öneri görünümü (kişi → kart ya da liste); yoksa kart. */

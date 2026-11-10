@@ -1212,6 +1212,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   işaretlemesin diye ham metin değil). Eşleşen balon çerçeveli, gezilen dolu;
   en yeni eşleşmeden başlar, sayaç "1/n", oklar ve Enter/Shift+Enter gezer,
   Esc kapatır; başka sohbete geçince kapanır.
+  Bütün postalarda arama (kullanıcı: sohbet içi değil, hepsinde; "Sohbetler"
+  kartının başlığında "+"nın hemen solunda 🔍, `Posta.tsx → useGenelArama`):
+  konu, balonun metni, gönderen ve ek adları; liste eşleşen sohbetlere süzülür,
+  satırda eşleşen son mesaj ve eşleşme sayısı; açılan sohbette aynı sorgu sohbet
+  içi aramada açık gelir (`useSohbetAramasi(…, onSorgu)`).
+  Okunmamış (kullanıcı: hangisi okunmuş görünmüyordu; kurallar `postaOkuma.ts`):
+  kişiye bağlı harita `Durum.postaOkunan` (`HARITA_ALANLARI`, kuralda
+  `kendiAyari`): taban, grup ve iplik başına son bakış; ondan yeni gelen posta
+  okunmamış, giden sayılmaz. İlk açılışta taban dün (`ILK_TABAN_SAAT`): eski
+  postalar birden okunmamış görünmesin. Açılan sohbet okunmuş sayılır; sohbette
+  "Okunmadı yap", listede "Okunmamış · n" süzgeci ve "Hepsini okundu say".
+  Okunmamış sohbet kalın, kenarı vurgulu, sayılı; menüde Posta'nın sayısı
+  (`okunmamisSayisi`, grubu kayıttan: kapıyı beklemesin). Bakış kendiliğinden
+  yazıldığı için izlemede ve eşitlenmeden sessizce yazılmaz
+  (`eylemler.ts → postaOkumaYaz`). Test `testler/posta-okuma.cjs`.
   Basit mesaj mantığı (kullanıcı: "karmaşık olmasın, ama kim kime yazdı
   bilinsin"):
   - Yanıtta (`Yazma`, `.posta-yaz-alani`) alıcılar metne yazılır (kullanıcı):
