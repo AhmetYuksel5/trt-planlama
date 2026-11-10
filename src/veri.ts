@@ -157,6 +157,17 @@ export type Bicim = (typeof BICIMLER)[number];
  * bu yüzden BICIMLER'e girmiyor.
  */
 export const TAKIP_BICIMI = "takip";
+
+/*
+ * Muhabirin öneri formundaki alanların sınırı (karakter, boşluklar dahil;
+ * kurumun istediği: strap kısa başlık, gelişme ~70–85, işleme fikri ~100–120,
+ * görsel işleme ~70–85 sözcük). Form yazarken aşmaz; e-postadan gelen öneri
+ * kesilmiyor, sayaç aşımı gösteriyor (Planlama kısaltır).
+ */
+export const ONERI_SINIRI = { paketBasligi: 100, gelisme: 500, islemeFikri: 700, gorselIsleme: 500 } as const;
+export type OneriSinirAlani = keyof typeof ONERI_SINIRI;
+export const oneriSinirIcinde = (g: Partial<Record<OneriSinirAlani, string>>) =>
+  (Object.keys(ONERI_SINIRI) as OneriSinirAlani[]).every((k) => (g[k] ?? "").trim().length <= ONERI_SINIRI[k]);
 export type OneriBicimi = Bicim | typeof TAKIP_BICIMI;
 /** Paket ve haftalık kalem gerçek biçim taşıyor; takip oraya biçim olarak geçmiyor. */
 export const paketBicimi = (b?: OneriBicimi): Bicim | undefined => (b === TAKIP_BICIMI ? undefined : b);
@@ -448,6 +459,10 @@ export interface Oneri {
   haberBasligi: string;
   gelisme: string;
   paketBasligi?: string;
+  /** Paketin editoryal yaklaşımı, ele alınacak konular, röportaj önerileri (فكرة المعالجة). */
+  islemeFikri?: string;
+  /** Saha görüntüsü, arşiv, harita, grafik gibi görsel unsurlar (المعالجة البصرية). */
+  gorselIsleme?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;

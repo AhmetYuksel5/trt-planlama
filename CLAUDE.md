@@ -998,9 +998,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 
   Önerinin haber başlığının ekrandaki adı "Header", önerilen paket
   başlığınınki "Strap" (Arapçada العنوان الإخباري, عنوان التقرير المقترح).
-  Muhabirin kendi önerisinde header, gelişme ve strap zorunlu (formda
-  `oneriFormuGecerli(f, true)`, eylemde `oneriGonder`/`oneriYenidenGonder`);
-  Planlama'nın elle girdiğinde strap isteğe bağlı.
+  Muhabirin formu kurumun dört alanı (`OneriFormu.tsx → OneriMetinAlanlari`,
+  sayaçlı alan `bilesenler/SayacliAlan.tsx`; başlıklar her arayüz dilinde
+  Arapça, `dil.ts → of*`): عنوان التقرير المقترح (strap, 100), تفاصيل
+  التطور (gelişme, 500), فكرة المعالجة (`Oneri.islemeFikri`, 700), المعالجة
+  البصرية (`Oneri.gorselIsleme`, 500); sınırlar `veri.ts → ONERI_SINIRI`,
+  karakter boşluklarla, altta "n/sınır" sayacı, `maxLength` aşmaz. Header
+  sorulmuyor, 1. alandan (`oneriFormuGirdisi`). Strap ve gelişme zorunlu,
+  3 ve 4 isteğe bağlı; takipte yalnız 1 ve 2 (1. alan takibin başlığı).
+  Eylem de sorar (`oneriGonder`/`oneriYenidenGonder`: `oneriSinirIcinde`).
+  "Düzelt ve yeniden gönder" aynı dört alan (`KisaOneriFormu strapGerekli`;
+  eski öneride Header strap'ten ayrıysa korunur). Planlama'nın elle girdiği
+  ve düzenlediği formda Header kalır, strap isteğe bağlı, dört alan aynı
+  sayaçlı alanlar. E-postadan gelen öneri kesilmez (metin gelişmeye girer):
+  sınırı aşan metinde sayaç kırmızı, alan yalnız kısalır (`maxLength` şimdiki
+  uzunluk), Planlama kaydedebilir; sınır yalnız muhabirin kendi yazışında.
+  İşleme fikri ve görsel işleme ayrıntıda ve pencerede
+  (`OneriIslemeMetinleri`). Test `testler/oneri-formu.cjs`.
 
   Öneri formunda ülke sorulmaz, muhabirin şehrinden gelir; yalnız "Saha
   görevlendirmesi gerekiyor" işaretlenince (ve muhabiri olmayan kaynakta)

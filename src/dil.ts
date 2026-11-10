@@ -741,6 +741,11 @@ const M = {
   gelismeAciklama: m("Gelişme / açıklama", "التطور / الوصف", "Development / description"),
   gelismeIpucu: m("Ne oldu, ne bekleniyor, kimle görüşülebilir?", "ماذا حدث، وما المتوقع، ومن يمكن مقابلته؟", "What happened, what is expected, who can be interviewed?"),
   onerilenPaketBasligi: m("Strap", "عنوان التقرير المقترح", "Strap"),
+  // Öneri formunun dört alanı: başlıklar her arayüz dilinde Arapça (kurumun formu).
+  ofStrap: m("عنوان التقرير المقترح", "عنوان التقرير المقترح", "عنوان التقرير المقترح"),
+  ofGelisme: m("تفاصيل التطور", "تفاصيل التطور", "تفاصيل التطور"),
+  ofIsleme: m("فكرة المعالجة", "فكرة المعالجة", "فكرة المعالجة"),
+  ofGorsel: m("المعالجة البصرية", "المعالجة البصرية", "المعالجة البصرية"),
   hedefPlan: m("Hangi günün planı için", "لخطة أي يوم", "For which day's plan"),
   oneriOrijinal: m("Muhabirin gönderdiği haliyle", "كما أرسله المراسل", "As sent by the reporter"),
   degerlendirme: m("Değerlendirme", "التقييم", "Review"),

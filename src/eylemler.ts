@@ -112,6 +112,7 @@ import {
   baslikBul,
   gelismeMuhabirleri,
   TAKIP_BICIMI,
+  oneriSinirIcinde,
   type OneriBicimi,
   type GundemKaynagi,
   type GundemNotu,
@@ -291,6 +292,8 @@ export interface OneriGirdisi {
   haberBasligi: string;
   gelisme: string;
   paketBasligi?: string;
+  islemeFikri?: string;
+  gorselIsleme?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   /** "Takip" türünde muhabirin takibine giden tür; boşsa "diğer". */
@@ -314,7 +317,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   const muhabir = ben.birim === "muhabir";
   const takip = g.bicim === TAKIP_BICIMI;
   // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı); takipte paket önerilmiyor.
-  if (muhabir && (!g.haberBasligi?.trim() || !g.gelisme?.trim() || (!takip && !g.paketBasligi?.trim()))) return null;
+  // Formda Header sorulmuyor (1. alan strap; takipte takibin başlığı), Header ondan; sınırlar formdakiyle aynı.
+  if (muhabir && (!(g.haberBasligi?.trim() || g.paketBasligi?.trim()) || !g.gelisme?.trim() || (!takip && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g))) return null;
   /*
    * Muhabir yalnız kendi adına gönderir. Planlama sistem dışından geleni
    * elle girer: ya bir muhabir adına (telefon, mesaj) ya da muhabir dışı
@@ -347,9 +351,11 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     kaynakAdi: kaynakTuru ? g.kaynakAdi?.trim() || undefined : undefined,
     giren: muhabir ? undefined : ben.id,
     ulke: g.ulke,
-    haberBasligi: g.haberBasligi,
+    haberBasligi: g.haberBasligi.trim() || g.paketBasligi?.trim() || "",
     gelisme: g.gelisme,
     paketBasligi: g.paketBasligi || undefined,
+    ...(!takip && g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
+    ...(!takip && g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -457,14 +463,19 @@ export const oneriDuzeltmeIste = (ben: Kisi, id: string, not: string) => {
 export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) => {
   let d = getir();
   const o = oneriBul(d, id);
-  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || (g.bicim !== TAKIP_BICIMI && !g.paketBasligi?.trim())) return false;
+  const takipte = g.bicim === TAKIP_BICIMI;
+  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || (!takipte && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g)) return false;
   const onceki: Record<string, string> = { haberBasligi: o.haberBasligi, gelisme: o.gelisme };
   if (o.paketBasligi) onceki.paketBasligi = o.paketBasligi;
+  if (o.islemeFikri) onceki.islemeFikri = o.islemeFikri;
+  if (o.gorselIsleme) onceki.gorselIsleme = o.gorselIsleme;
   let yeni: Oneri = {
     ...o,
     haberBasligi: g.haberBasligi.trim(),
     gelisme: g.gelisme.trim(),
     paketBasligi: g.paketBasligi?.trim() || undefined,
+    islemeFikri: (!takipte && g.islemeFikri?.trim()) || undefined,
+    gorselIsleme: (!takipte && g.gorselIsleme?.trim()) || undefined,
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -3412,6 +3423,8 @@ export interface YanitOneriGirdisi {
   haberBasligi: string;
   gelisme: string;
   paketBasligi?: string;
+  islemeFikri?: string;
+  gorselIsleme?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;
@@ -3430,6 +3443,8 @@ export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi):
     haberBasligi: g.haberBasligi.trim(),
     gelisme: g.gelisme.trim(),
     paketBasligi: g.paketBasligi?.trim() || undefined,
+    ...(g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
+    ...(g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -3458,6 +3473,9 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     haberBasligi: g.haberBasligi.trim(),
     gelisme: g.gelisme.trim(),
     paketBasligi: g.paketBasligi?.trim() || undefined,
+    // Alan formda yoksa (eski çağıran) dokunulmuyor; takipte işleme sorulmuyor.
+    ...(g.islemeFikri !== undefined && { islemeFikri: (g.bicim !== TAKIP_BICIMI && g.islemeFikri.trim()) || undefined }),
+    ...(g.gorselIsleme !== undefined && { gorselIsleme: (g.bicim !== TAKIP_BICIMI && g.gorselIsleme.trim()) || undefined }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,

@@ -1,13 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { muhabirinBenzerOnerileri } from "../../oneriPlanlari";
-import type { Durum } from "../../veri";
+import type { Durum, Oneri } from "../../veri";
 import { metin, useDil } from "../../dil";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
-import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, TAKIP_BICIMI, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
+import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, ONERI_SINIRI, TAKIP_BICIMI, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { YzBicimle } from "../../bilesenler/YzOneri";
+import { SayacliAlan } from "../../bilesenler/SayacliAlan";
 
 /*
  * Önerinin alanları tek yerde: öneri sayfası (#/oneriler/yeni) ile plan
@@ -29,6 +30,8 @@ export interface OneriFormDurumu {
   haberBasligi: string;
   gelisme: string;
   paketBasligi: string;
+  islemeFikri: string;
+  gorselIsleme: string;
   tur: IcerikTuru;
   bicim: OneriBicimi;
   /** Tür "Takip" seçilince muhabirin takibine giden tür. */
@@ -48,6 +51,8 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
     haberBasligi: "",
     gelisme: "",
     paketBasligi: "",
+    islemeFikri: "",
+    gorselIsleme: "",
     tur: "haber",
     bicim: "pkg",
     takipTuru: "olay",
@@ -56,12 +61,21 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
 };
 
 /*
- * Muhabir kendi önerisinde header, gelişme ve strap'i boş bırakamıyor; Planlama'nın elle girdiğinde strap isteğe bağlı.
- * Takipte paket önerilmiyor, strap sorulmuyor; takip muhabire bağlı olduğundan muhabir dışı kaynakta seçilemiyor.
+ * Muhabirin formu dört alan (kurumun formu): strap, gelişme, işleme fikri,
+ * görsel işleme; Header sorulmuyor, strap'ten (takipte 1. alan takibin
+ * başlığı). Strap ve gelişme zorunlu, sınırlar aşılmaz. Planlama'nın elle
+ * girdiğinde Header var, strap isteğe bağlı. Takipte paket önerilmiyor;
+ * takip muhabire bağlı olduğundan muhabir dışı kaynakta seçilemiyor.
  */
 export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) => {
   const takip = f.bicim === TAKIP_BICIMI;
-  return (f.kaynak === "baska" ? !takip : !!f.muhabirId) && !!f.haberBasligi.trim() && !!f.gelisme.trim() && (!strapGerekli || takip || !!f.paketBasligi.trim());
+  return (
+    (f.kaynak === "baska" ? !takip : !!f.muhabirId) &&
+    !!(f.haberBasligi.trim() || f.paketBasligi.trim()) &&
+    !!f.gelisme.trim() &&
+    (!strapGerekli || takip || !!f.paketBasligi.trim()) &&
+    (!strapGerekli || oneriSinirIcinde(f))
+  );
 };
 
 /** Formdan eyleme: seçilmeyen kaynağın alanları gitmiyor, yoksa muhabir adına girilen öneri ajans gibi de görünürdü. */
@@ -71,9 +85,11 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
   kaynakAdi: f.kaynak === "baska" ? f.kaynakAdi.trim() : undefined,
   kanal: f.kanal,
   ulke: f.ulke,
-  haberBasligi: f.haberBasligi.trim(),
+  // Muhabirin formunda Header yok: 1. alan (strap; takipte takibin başlığı) Header da olur.
+  haberBasligi: f.haberBasligi.trim() || f.paketBasligi.trim(),
   gelisme: f.gelisme.trim(),
   paketBasligi: f.bicim === TAKIP_BICIMI ? undefined : f.paketBasligi.trim() || undefined,
+  ...(f.bicim !== TAKIP_BICIMI && { islemeFikri: f.islemeFikri.trim() || undefined, gorselIsleme: f.gorselIsleme.trim() || undefined }),
   tur: f.tur,
   bicim: f.bicim,
   ...(f.bicim === TAKIP_BICIMI && { takipTuru: f.takipTuru }),
@@ -198,21 +214,14 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
           </label>
         )}
       </div>
-      <label>
-        {t("haberBasligi")}
-        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} data-oneri-header />
-      </label>
-      {!muhabir && f.kaynak === "muhabir" && <EsUyarisi v={v} muhabirId={f.muhabirId} header={f.haberBasligi} />}
-      <label>
-        {t("gelismeAciklama")}
-        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} placeholder={metin("gelismeIpucu", "ar")} data-oneri-gelisme />
-      </label>
-      {!takip && (
+      {!muhabir && (
         <label>
-          {t("onerilenPaketBasligi")} {ben.birim !== "muhabir" && <span className="ipucu">{t("varsa")}</span>}
-          <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} required={ben.birim === "muhabir"} data-oneri-strap />
+          {t("haberBasligi")}
+          <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} placeholder={metin("haberBasligiIpucu", "ar")} data-oneri-header />
         </label>
       )}
+      {!muhabir && f.kaynak === "muhabir" && <EsUyarisi v={v} muhabirId={f.muhabirId} header={f.haberBasligi} />}
+      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabir || !takip} islemeli={!takip} strapIstege={!muhabir} />
       <YzBicimle
         deger={f}
         muhabirId={muhabir ? ben.id : f.kaynak === "muhabir" ? f.muhabirId : undefined}
@@ -233,6 +242,61 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         {t("sahaGerekli")}
       </label>
       {f.sahaGerekli && !baskaKaynak && ulkeSecici}
+    </>
+  );
+}
+
+/*
+ * Dört sınırlı alan, kurumun formundaki sırayla (OneriAlanlari ve
+ * KisaOneriFormu ortak). Takipte yalnız ilk ikisi.
+ */
+export function OneriMetinAlanlari({
+  f,
+  setF,
+  strapli,
+  islemeli,
+  strapIstege,
+}: {
+  f: { paketBasligi?: string; gelisme: string; islemeFikri?: string; gorselIsleme?: string };
+  setF: (p: Partial<Record<OneriSinirAlani, string>>) => void;
+  strapli: boolean;
+  islemeli: boolean;
+  /** Planlama'nın girdiğinde strap zorunlu değil. */
+  strapIstege?: boolean;
+}) {
+  const { t } = useDil();
+  return (
+    <>
+      {strapli && (
+        <SayacliAlan etiket="ofStrap" deger={f.paketBasligi ?? ""} degistir={(x) => setF({ paketBasligi: x })} sinir={ONERI_SINIRI.paketBasligi} satir={2} veri="oneri-strap" ek={strapIstege && <span className="ipucu">{t("varsa")}</span>} />
+      )}
+      <SayacliAlan etiket="ofGelisme" deger={f.gelisme} degistir={(x) => setF({ gelisme: x })} sinir={ONERI_SINIRI.gelisme} satir={5} veri="oneri-gelisme" />
+      {islemeli && (
+        <>
+          <SayacliAlan etiket="ofIsleme" deger={f.islemeFikri ?? ""} degistir={(x) => setF({ islemeFikri: x })} sinir={ONERI_SINIRI.islemeFikri} satir={6} veri="oneri-isleme" />
+          <SayacliAlan etiket="ofGorsel" deger={f.gorselIsleme ?? ""} degistir={(x) => setF({ gorselIsleme: x })} sinir={ONERI_SINIRI.gorselIsleme} satir={5} veri="oneri-gorsel" />
+        </>
+      )}
+    </>
+  );
+}
+
+/* Önerinin işleme fikri ve görsel işlemesi: ayrıntıda ve pencerede, yazılmışsa. */
+export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "gorselIsleme"> }) {
+  return (
+    <>
+      {([["ofIsleme", o.islemeFikri, "isleme"], ["ofGorsel", o.gorselIsleme, "gorsel"]] as const).map(([k, x, ad]) =>
+        x ? (
+          <div className="ara-ust-2" key={k} data-oneri-metni={ad}>
+            <div className="alan-etiket">
+              <Icerik>{metin(k, "ar")}</Icerik>
+            </div>
+            <div className="metin-kutu">
+              <Icerik blok>{x}</Icerik>
+            </div>
+          </div>
+        ) : null,
+      )}
     </>
   );
 }

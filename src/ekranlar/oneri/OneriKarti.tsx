@@ -15,6 +15,7 @@ import { useBen } from "../../oturum";
 import { OneriYazismasi } from "./Yazisma";
 import { GeriBildirimBolumu } from "./GeriBildirim";
 import { KisaOneriFormu } from "./Eposta";
+import { OneriIslemeMetinleri } from "./OneriFormu";
 import { YzGorusRozeti, YzHaberDegeri } from "../../bilesenler/YzOneri";
 
 /*
@@ -276,7 +277,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
             <KisaOneriFormu
               takip={!!o.muhabirId && !o.yon}
               muhabirId={o.muhabirId}
-              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
+              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
               kaydet={(g) => {
                 const ok = oneriDuzenle(ben, o.id, g);
                 if (ok) bildir(t("bKaydedildi"));
@@ -306,6 +307,7 @@ export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { one
           <Icerik blok>{o.gelisme}</Icerik>
         </div>
       </div>
+      <OneriIslemeMetinleri o={o} />
       <div className="alanlar">
         <div className="alan">
           <small>{t("kaynak")}</small>

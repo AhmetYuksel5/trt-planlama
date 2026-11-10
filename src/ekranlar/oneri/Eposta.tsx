@@ -6,13 +6,14 @@ import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOne
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { ICERIK_TURLERI, TAKIP_BICIMI, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
+import { ICERIK_TURLERI, TAKIP_BICIMI, oneriSinirIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { indir } from "../../bilesenler/indir";
 import { YzBicimle } from "../../bilesenler/YzOneri";
+import { OneriMetinAlanlari } from "./OneriFormu";
 
 /**
  * Öneri çağrısı ve gelen yanıtlar.
@@ -616,24 +617,38 @@ export function KisaOneriFormu({
   muhabirId?: string;
 }) {
   const { t } = useDil();
-  const [f, setF] = useState<YanitOneriGirdisi & { bicim: OneriBicimi }>({ ...ilk, bicim: ilk.bicim ?? "pkg" });
+  /*
+   * Muhabirin yeniden gönderdiği (strapGerekli) formu yeni öneri formuyla aynı:
+   * Header yok, 1. alan strap (takipte takibin başlığı). Eski öneride Header
+   * strap'ten ayrı yazılmışsa Header korunur, yalnız aynıysa birlikte değişir.
+   */
+  const muhabirFormu = strapGerekli;
+  const [f, setF] = useState<YanitOneriGirdisi & { bicim: OneriBicimi }>({
+    ...ilk,
+    bicim: ilk.bicim ?? "pkg",
+    ...(muhabirFormu && { paketBasligi: ilk.paketBasligi || ilk.haberBasligi }),
+    islemeFikri: ilk.islemeFikri ?? "",
+    gorselIsleme: ilk.gorselIsleme ?? "",
+  });
   const takipte = f.bicim === TAKIP_BICIMI;
+  const birinci = (f.paketBasligi ?? "").trim();
+  const ayriHeader = !!ilk.haberBasligi && !!ilk.paketBasligi && ilk.haberBasligi !== ilk.paketBasligi;
+  const sonHal = (): YanitOneriGirdisi => {
+    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "" } : f;
+    return muhabirFormu ? { ...g, haberBasligi: takipte || !ayriHeader ? birinci : ilk.haberBasligi } : g;
+  };
+  const gecerli = muhabirFormu
+    ? !!birinci && !!f.gelisme.trim() && oneriSinirIcinde(sonHal())
+    : !!f.haberBasligi.trim() && (!gelismeGerekli || !!f.gelisme.trim());
   return (
     <div className="form form-kutu ara-ust-2">
-      <label>
-        {t("haberBasligi")}
-        <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} data-kisa-header />
-      </label>
-      <label>
-        {t("gelismeAciklama")}
-        <textarea {...icerikAlani} value={f.gelisme} onChange={(e) => setF({ ...f, gelisme: e.target.value })} data-kisa-gelisme />
-      </label>
-      {!takipte && (
+      {!muhabirFormu && (
         <label>
-          {t("onerilenPaketBasligi")} {!strapGerekli && <span className="ipucu">{t("varsa")}</span>}
-          <input {...icerikAlani} value={f.paketBasligi ?? ""} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kisa-strap />
+          {t("haberBasligi")}
+          <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} data-kisa-header />
         </label>
       )}
+      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabirFormu || !takipte} islemeli={!takipte} strapIstege={!muhabirFormu} />
       <YzBicimle deger={f} muhabirId={muhabirId} strapli={!takipte} uygula={(p) => setF({ ...f, ...p, bicim: p.bicim ?? f.bicim })} />
       <div className="satir">
         <label>
@@ -663,7 +678,7 @@ export function KisaOneriFormu({
         <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-kucuk" disabled={!f.haberBasligi.trim() || (gelismeGerekli && !f.gelisme.trim()) || (strapGerekli && !takipte && !f.paketBasligi?.trim())} onClick={() => kaydet(takipte ? { ...f, paketBasligi: undefined } : f) && kapat()} data-kisa-kaydet>
+        <button className="dugme dugme-kucuk" disabled={!gecerli} onClick={() => kaydet(sonHal()) && kapat()} data-kisa-kaydet>
           {kaydetMetni ?? t("kaydet")}
         </button>
       </div>

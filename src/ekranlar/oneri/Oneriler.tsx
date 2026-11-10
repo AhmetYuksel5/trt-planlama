@@ -17,7 +17,7 @@ import { git } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
-import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
+import { OneriAlanlari, OneriIslemeMetinleri, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
 import { DuzeltmeFormu, GorunumSecici, OneriKarti, PaketEkleDugmesi, PlandanCikarDugmesi, useOneriGorunumu } from "./OneriKarti";
 import PlanaEkle from "./PlanaEkle";
 import { GeriBildirimBolumu } from "./GeriBildirim";
@@ -600,7 +600,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
             <KisaOneriFormu
               takip={!!oneri.muhabirId && !oneri.yon}
               muhabirId={oneri.muhabirId}
-              ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
+              ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, islemeFikri: oneri.islemeFikri, gorselIsleme: oneri.gorselIsleme, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
               kaydet={(g) => {
                 const ok = confirm(t("eminMisin")) && oneriYenidenGonder(ben, oneri.id, g);
                 if (ok) bildir(t("bYenidenGonderildi"));
@@ -636,7 +636,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                 <KisaOneriFormu
                   takip={!!oneri.muhabirId && !oneri.yon}
               muhabirId={oneri.muhabirId}
-                  ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
+                  ilk={{ haberBasligi: oneri.haberBasligi, gelisme: oneri.gelisme, paketBasligi: oneri.paketBasligi, islemeFikri: oneri.islemeFikri, gorselIsleme: oneri.gorselIsleme, tur: oneri.tur, bicim: oneri.bicim, sahaGerekli: oneri.sahaGerekli }}
                   kaydet={(g) => {
                     const ok = oneriDuzenle(ben, oneri.id, g);
                     if (ok) bildir(t("bKaydedildi"));
@@ -699,6 +699,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
                 </div>
               </div>
             )}
+            <OneriIslemeMetinleri o={oneri} />
             {oneri.ilkHali && (
               <details className="ara-ust-2 ilk-hal" data-oneri-ilk-hali>
                 <summary>{t("oneriIlkHali")}</summary>

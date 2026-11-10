@@ -554,6 +554,15 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
   transition: box-shadow 0.3s;
 }
 .posta-balon.ilk { margin-block-start: var(--ara-2); }
+/*
+ * Öneri formunun sayaçlı alanı: başlık Arapça, sağa yaslı; sayaç alanın
+ * altında, sınırı aşan (e-postadan gelen) metinde kırmızı.
+ */
+.sayacli-alan { display: flex; flex-direction: column; gap: 4px; }
+.sayacli-bas { display: flex; align-items: baseline; gap: var(--ara-2); justify-content: flex-start; direction: rtl; font-weight: 600; }
+.sayacli-alan textarea { resize: vertical; min-block-size: 44px; }
+.alan-sayaci { align-self: flex-end; color: var(--sonuk); font-size: var(--punto-kucuk); font-variant-numeric: tabular-nums; }
+.alan-sayaci.asti { color: var(--kotu); font-weight: 600; }
 .posta-balon.vurgulu { box-shadow: 0 0 0 3px hsl(var(--ton) 60% 70%); }
 /* Sohbet içi arama: eşleşen balon ince çerçeveli, gezilen kalın. */
 .posta-balon.bulundu { box-shadow: 0 0 0 2px var(--vurgu); }
