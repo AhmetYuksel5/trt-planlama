@@ -1881,6 +1881,33 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`yetki.ts → ozelPaketDagitabilir`; kullanıcı: özel yayın paketlerini stok
   ekibi takip etsin; önce Output'un yöneticisiydi, `ouOzel` Output'un
   varsayılanından kalktı).
+- Plansız paket görevi (kullanıcı: planlamacı muhabire bir plana eklemeden
+  paket görevi verebilsin; `bilesenler/PaketGorevi.tsx`, eylemler
+  `eylemler.ts → paketGorevVer`, `gorevTalebiGonder`, `gorevTalebiKarar`,
+  `gorevTalebiGeriCek`). "Görevlendir" düğmesi Paketler (Ekonomi ve Programlar
+  da), Stok ve muhabirin profilinde (`GorevlendirDugmesi`): muhabir, gün,
+  haber türü, Strap, açıklama, not. Yetki `yetki.ts → paketGorevVerebilir`
+  (izin `paketGorevVer`: Planlama, Newsdesk; tam yönetici); Newsdesk yalnız o
+  güne, Planlama ileri tarihe de (`ileriGorevVerebilir`, `gorevTarihiUygun`).
+  Paket `stok`, onaylı, plansız, `Paket.gorev` (veren), gün `sonTarih`;
+  muhabire `paketGorevVerildi`. Stokta "üretimde" (`stokDurumu`), "Üretime
+  al" yok, sahibi muhabir (`paketSahibi`); muhabir "Yapıldı / Yapılmadı"yla
+  kapatır, Newsdesk sistemdeyken de (`paketTamamlayabilir`, `sadeAkis`);
+  onaylanınca stokta, Next Day "Hazır paketler"den seçilir. Masa kolundan
+  olsa da masa akışına girmez (`masaPaketi`).
+  - Görev talebi: Ekonomi, Program, Spor (izin `gorevTalebi`,
+    `gorevTalebiVerebilir`) aynı formla "Görev talebi"; paket taslak,
+    `Paket.gorevTalebi` (talep eden, birimi), kol talep edenin masası.
+    Planlama'ya `gorevTalebiGeldi`. Yalnız Planlama (ve tam yönetici) karar
+    verir (`gorevTalebiKarariVerebilir`): "Göreve çevir" (günü değişebilir)
+    ya da gerekçeyle "Reddet" (iptal, `gorevTalebi.red`, talep edene
+    `gorevTalebiReddedildi`); talep eden kararsızken geri çeker. "Görev
+    talepleri" kartı (`GorevTalepleri`) Stok'ta ve Paketler'de: Planlama'ya
+    bekleyenler, talep edene kendi bekleyenleri ve bir haftada reddedilenler.
+  - Onaya dek muhabir talebi görmez: `paketGorebilir`, gerçek kipte erişim
+    listesinde de (`depo/fark.ts → erisimListesi`, `talepte`; talebin
+    hareketi de). Paket sayfasında künye (`GorevKunyesi`). Test
+    `testler/paket-gorevi.cjs`.
 - Masalar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da programı
   için üretimi Newsdesk gibi takip ediyor; `veri.ts → MASA_KOLLARI`,
   `masaPaketi`): kolun sahibi kendi birimi (`akis.ts → KOL_SAHIBI`, yapıda

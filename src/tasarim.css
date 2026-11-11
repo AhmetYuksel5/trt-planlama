@@ -2598,6 +2598,10 @@ tr.soluk > td { opacity: .5; }
 .konuk-adi { flex: 1; min-width: 0; display: grid; }
 .konuk-adi .icerik { font-weight: 600; }
 .konuk-adi small .icerik { font-weight: 400; color: var(--sonuk); font-size: var(--punto-kucuk); }
+.satir-form { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; margin-block-start: var(--ara-2); }
+.satir-form > .girdi { flex: 1 1 12rem; min-width: 0; }
+/* Görev talebi satırında gün kutusu başlığı ezmesin. */
+[data-gorev-talepleri] > li > input[type="date"] { flex: 0 0 auto; inline-size: auto; }
 .konuk-ekle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--ara-2); align-items: center; }
 .ozel-not-satiri .anma-girdisi > input, .ozel-not-satiri .anma-girdisi > textarea {
   min-height: 36px; padding: 7px var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey);

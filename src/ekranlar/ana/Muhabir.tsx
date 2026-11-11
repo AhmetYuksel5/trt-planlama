@@ -252,6 +252,7 @@ function PaketSatiri({ ben, paketId }: { ben: Kisi; paketId: string }) {
           {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
           {p.ozelId &&
             ` · ${t("ozel")}${p.ozelAd ? `: ${p.ozelAd}` : ""}${p.sonTarih ? ` · ${t("oySonTarih")}: ${tarihYaz(p.sonTarih, dil, "kisa")}` : ""}`}
+          {p.gorev && p.sonTarih && ` · ${t("gvGun")}: ${tarihYaz(p.sonTarih, dil, "kisa")}`}
         </small>
         <KararNotlari kalem={p} />
       </div>

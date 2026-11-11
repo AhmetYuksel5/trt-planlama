@@ -260,7 +260,9 @@ export type IcerikTuru = (typeof ICERIK_TURLERI)[number];
  * işaretiyle değil, akışla biter. Stok yalnız feature ve özel yayın dosyası.
  */
 export const MASA_KOLLARI: readonly IcerikTuru[] = ["ekonomi", "program", "spor"];
-export const masaPaketi = (p: { tur: IcerikTuru; ozelId?: string }) => !p.ozelId && MASA_KOLLARI.includes(p.tur);
+// Plansız görev paketi masanın değil Planlama'nın stoğunda (kullanıcı): ekonomi kolundan olsa da masa akışına girmez.
+export const masaPaketi = (p: { tur: IcerikTuru; ozelId?: string; gorev?: unknown; gorevTalebi?: unknown }) =>
+  !p.ozelId && !p.gorev && !p.gorevTalebi && MASA_KOLLARI.includes(p.tur);
 
 /* --- Merkezi haber başlıkları --- */
 
@@ -951,6 +953,18 @@ export interface Paket {
    * seçilip plan Newsdesk'e devredilince yayınlanmış sayılıyor.
    */
   stok?: boolean;
+  /*
+   * Plansız görev (kullanıcı): Planlama (ileri tarihe de) ya da Newsdesk
+   * (yalnız o gün) muhabire bir plana eklemeden paket görevi veriyor. Stokta
+   * takip ediliyor; muhabir "Yapıldı"yla kapatıyor, bitince stokta. Gün
+   * `sonTarih`'te. Masa akışına ve "Üretime al"a girmiyor.
+   */
+  gorev?: { veren: string; zaman: string };
+  /*
+   * Ekonomi, Program, Spor görev talep ediyor; Planlama onaylayınca göreve
+   * dönüyor (taslak → onaylı, `gorev`). Onaya dek muhabir görmüyor.
+   */
+  gorevTalebi?: { kisiId: string; birim: BirimId; zaman: string; red?: { kisiId: string; zaman: string; gerekce?: string } };
   /** Paketin süresi: 3:20. */
   sure?: string;
   /** Yayına çıktığı Next Day planı ya da (dosya paketi) özel yayın. */
@@ -1495,6 +1509,10 @@ export const HAREKET_TIPLERI = [
   "takipSatiriEklendi",
   "oneriAsamayaDondu",
   "paketReddedildi",
+  "paketGorevVerildi",
+  "gorevTalebiGeldi",
+  "gorevTalebiReddedildi",
+  "gorevTalebiGeriCekildi",
   "paketBaskaMuhabire",
   "takdirBildirildi",
   "gecisUygulandi",

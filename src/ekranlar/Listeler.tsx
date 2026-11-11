@@ -6,6 +6,7 @@ import { type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { OzelTalepAlani } from "./OzelYayin";
+import { GorevTalepleri, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, yaz, type Anahtar } from "../dil";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
@@ -51,7 +52,8 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} />
+      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} sagUc={<GorevlendirDugmesi ben={ben} />} />
+      <GorevTalepleri ben={ben} />
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">
@@ -193,7 +195,7 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
   const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdUretilmis", yayinlandi: "sdYayinlanan" };
   return (
     <>
-      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} />
+      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <div className="sayaclar">
         {STOK_DURUMLARI.map((s) => (
           <Sayac key={s} ikon={<Layers size={22} />} ton={s === "bekliyor" && bekleyen.length ? "uyari" : ""} renk="renk-haftalik" etiket={t(STOK_DURUM_ADI[s])} deger={durumda(s).length} />
@@ -201,6 +203,8 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
       </div>
       {/* Özel yayının dosya paketlerini stok ekibi dağıtıyor ve izliyor (önce Output'taydı). */}
       <OzelTalepAlani ben={ben} />
+      {/* Plansız görev talepleri: Planlama burada göreve çeviriyor; görev paketi stokta "üretimde"de izleniyor. */}
+      <GorevTalepleri ben={ben} />
       {bekleyen.length > 0 && (
         <Kart baslik={t("uretimeAlinacaklar")} ikon={<CirclePlay size={18} />} ek={String(bekleyen.length)}>
           <ul className="liste">

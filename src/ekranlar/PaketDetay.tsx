@@ -19,6 +19,7 @@ import { adimYapabilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTam
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
+import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -57,6 +58,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
             {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} />{" "}
             {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />} {paket.haftalikKalemId && <HaftalikRozeti />}
           </p>
+          <GorevKunyesi p={paket} />
         </div>
       </header>
 

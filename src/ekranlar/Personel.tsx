@@ -12,7 +12,8 @@ import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKE
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, CALISMA_BICIMLERI, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
-import { gorevlendirmeGorebilir, hesapYetkisi, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
+import { GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
+import { gorevTalebiVerebilir, paketGorevVerebilir, gorevlendirmeGorebilir, hesapYetkisi, muhabireOneriGonderebilir, performansGorebilir, profilDuzenler, yapabilir } from "../yetki";
 import { EslestirPenceresi } from "./Kullanicilar";
 import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { ProfilTakipleri } from "./Takipler";
@@ -491,8 +492,9 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
             </Rozet>
           </p>
         </div>
-        {((profilDuzenler(ben, kisi) && !duzen) || (muhabir && muhabireOneriGonderebilir(ben, v))) && (
+        {((profilDuzenler(ben, kisi) && !duzen) || (muhabir && (muhabireOneriGonderebilir(ben, v) || paketGorevVerebilir(ben) || gorevTalebiVerebilir(ben)))) && (
           <div className="sag-uc">
+            {muhabir && !kisi.pasif && <GorevlendirDugmesi ben={ben} muhabirId={kisi.id} />}
             {muhabir && muhabireOneriGonderebilir(ben, v) && (
               <button className="dugme" onClick={() => setOner(true)} data-muhabire-oner>
                 <Send size={15} className="yon" /> {t("muhabireHaberOner")}

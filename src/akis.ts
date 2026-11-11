@@ -225,6 +225,8 @@ export const paketSahibi = (p: Paket): BirimId | null => {
   if (p.durum === "uretimde" && p.adim) return durakSahibi(p, p.adim);
   // Özel yayın talebi: dış muhabirdeyse muhabirde, in-house ise Planlama'nın stok ekibinde (dağıtıyor; önce Output'taydı).
   if (p.ozelId && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "planlama";
+  // Plansız görev muhabirin işi; "Üretime al" beklemiyor.
+  if (p.gorev && p.durum === "onaylandi") return "muhabir";
   // Masa paketi (ekonomi, program, spor) Next Day'den de gelse masasında üretime alınmayı bekliyor.
   if (p.durum === "onaylandi" && (!p.planId || masaPaketi(p))) return kolSahibi(p.tur);
   if (p.durum === "taslak" || p.durum === "degerlendiriliyor" || p.durum === "onaylandi") return "planlama";
@@ -240,7 +242,8 @@ export const paketSahibi = (p: Paket): BirimId | null => {
  * kendi yolunu gösteriyor.
  */
 export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTamam"];
-export const sadeAkis = (p: Paket) => !anlik()?.newsdeskDevrede && !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
+// Plansız görev Newsdesk sistemdeyken de sade akışla (muhabirin işaretiyle) kapanıyor.
+export const sadeAkis = (p: Paket) => (!anlik()?.newsdeskDevrede || !!p.gorev) && !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
 export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
@@ -281,7 +284,8 @@ export const stokDurumu = (p: Paket): StokDurumu | null => {
   if (p.yayinlandi) return "yayinlandi";
   if (p.durum === "tamamlandi") return "stokta";
   // Özel yayın paketi "Üretime al"la değil kendi görevlendirmesiyle ilerliyor: onaylıysa üretimde sayılır.
-  return p.durum === "uretimde" || p.ozelId ? "uretimde" : "bekliyor";
+  // Plansız görev de muhabire verildiği an üretimde (kendi görevlendirmesi var).
+  return p.durum === "uretimde" || p.ozelId || p.gorev ? "uretimde" : "bekliyor";
 };
 
 /*

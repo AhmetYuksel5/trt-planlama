@@ -22,6 +22,7 @@ import {
 } from "./yapi";
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
+import { bugun } from "./tarih";
 import { muhasebeOkur } from "./depo/fark";
 import {
   BIRIMLER,
@@ -82,6 +83,10 @@ export const IZINLER = {
   baslikYonet: { ad: "yBaslikYonet", birimler: ["planlama"] },
   planDuzenle: { ad: "yPlanDuzenle", birimler: ["planlama"] },
   geriDonus: { ad: "yGeriDonus", birimler: ["planlama"] },
+  /* Plansız paket görevi: Planlama ileri tarihe de, Newsdesk yalnız o güne (gorevTarihiUygun). */
+  paketGorevVer: { ad: "yPaketGorevVer", birimler: ["planlama", "newsdesk"] },
+  /* Masalar görev talep ediyor; göreve Planlama'nın onayıyla dönüyor. */
+  gorevTalebi: { ad: "yGorevTalebi", birimler: ["ekonomi", "program", "spor"] },
   operasyon: { ad: "yOperasyon", birimler: ["newsdesk"] },
   paketDegerlendir: { ad: "yPaketDegerlendir", birimler: ["planlama"] },
   ucretGor: { ad: "yUcretGor", birimler: ["newsdesk", "yonetim"] },
@@ -367,6 +372,7 @@ export const uretimeAlabilir = (k: Kisi | undefined, p: Paket): boolean =>
   p.durum === "onaylandi" &&
   (!p.planId || masaPaketi(p)) &&
   !p.ozelId &&
+  !p.gorev &&
   paketSahibi(p) === k.birim &&
   ekipte(k);
 
@@ -382,6 +388,8 @@ export const paketGorebilir = (
   if (k.birim !== "muhabir") return true;
   // Özel yayının planlamadaki paketi muhabire onayla birlikte görev olarak düşüyor; öncesinde plan değişebilir.
   if (p.ozelId && (p.durum === "taslak" || p.ozelGorevBekliyor)) return false;
+  // Görev talebi Planlama'nın onayına dek muhabire görev değil.
+  if (p.gorevTalebi && p.durum !== "onaylandi" && !p.gorev) return false;
   return p.muhabirId === k.id || oneriBul(d, p.oneriId)?.muhabirId === k.id;
 };
 
@@ -411,6 +419,28 @@ export const muhabireOneriGonderebilir = (
   !!k &&
   k.birim !== "muhabir" &&
   (!!k.hesapYoneticisi || muhabireOneriBirimleri(d).includes(k.birim));
+
+/*
+ * Plansız paket görevi (kullanıcı): Planlama ve Newsdesk muhabire bir plana
+ * eklemeden paket görevi verir; Newsdesk yalnız o gün için, Planlama ileri
+ * tarihlere de. Masalar (ekonomi, program, spor) talep eder, talep yalnız
+ * Planlama'nın onayıyla göreve döner.
+ */
+export const paketGorevVerebilir = (k: Kisi | undefined): boolean =>
+  !!k && !k.pasif && !kisitliKisi(k) && (!!k.hesapYoneticisi || yapabilir(k, "paketGorevVer"));
+/** İleri tarihe görev: Planlama ve tam yönetici; Newsdesk yalnız bugüne. */
+export const ileriGorevVerebilir = (k: Kisi | undefined): boolean =>
+  !!k && paketGorevVerebilir(k) && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "planlama");
+export const gorevTarihiUygun = (k: Kisi | undefined, tarih: string): boolean =>
+  !!tarih && tarih >= bugun() && (tarih === bugun() || ileriGorevVerebilir(k));
+export const gorevTalebiVerebilir = (k: Kisi | undefined): boolean =>
+  !!k && !k.pasif && !kisitliKisi(k) && !paketGorevVerebilir(k) && yapabilir(k, "gorevTalebi");
+/** Talebi göreve çeviren ya da reddeden yalnız Planlama (ve tam yönetici). */
+export const gorevTalebiKarariVerebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!p.gorevTalebi && !p.gorev && p.durum === "taslak" && ileriGorevVerebilir(k);
+/** Talep eden, karar verilmeden talebini geri çeker. */
+export const gorevTalebiGeriCekebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && p.gorevTalebi?.kisiId === k.id && !p.gorev && p.durum === "taslak";
 
 /*
  * Muhabire gönderilen teklifte karar planlamacıda: muhabir reddedemez,
@@ -526,7 +556,8 @@ export const paketTamamlayabilir = (
   p.ozelId
     ? ozelPaketTeslimEdebilir(k, p)
     : !!k &&
-      yalnizPlanlama(d) &&
+      // Plansız görev Newsdesk sistemdeyken de muhabirin işaretiyle kapanıyor (üretim akışına girmiyor).
+      (yalnizPlanlama(d) || !!p.gorev) &&
       // Masa paketi (ekonomi, program, spor) muhabirin işaretiyle değil masanın akışıyla biter.
       !masaPaketi(p) &&
       p.durum === "onaylandi" &&
@@ -628,6 +659,7 @@ const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = [
   "paketOncelikli",
   "paketIptal",
   "paketReddedildi",
+  "paketGorevVerildi",
   "paketBaskaMuhabire",
   "paketIsaretOnaylandi",
   "paketIsaretGeriCevrildi",
