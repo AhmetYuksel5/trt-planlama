@@ -1,7 +1,8 @@
 import { birimAdi } from "../../yapi";
+import { GeriBag } from "../../bilesenler/GeriBag";
 import { ONERI_ETIKETLERI, baglanabilirKayitlar, esAsili, esCiftleri, esOneriler, acikGundemde, takibinOnerisi, oneriArsivde, oneriEtiketleri, oneriGeriHedefleri, oneriYeri, type OneriEtiketi, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { MuhabireOneriPenceresi, OneriYazismasi, TeklifNotu } from "./Yazisma";
-import { Archive, ArchiveRestore, ArrowLeft, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
+import { Archive, ArchiveRestore, Ban, Clock, Copy, Inbox, Lightbulb, Megaphone, Pencil, Search, Send, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, KatlanirKartlar, NotKutu, Pencere, Rozet, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -567,9 +568,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
     </p>
   ) : (
     <>
-      <a className="geri-bag" href="#/oneriler">
-        <ArrowLeft size={14} className="yon" /> {t(ben.birim === "muhabir" ? "mOnerilerim" : "mOneriler")}
-      </a>
+      <GeriBag href="#/oneriler" metin={t(ben.birim === "muhabir" ? "mOnerilerim" : "mOneriler")} />
       <header className="sayfa-basi">
         <OneriAvatari oneri={oneri} d={v} boy="buyuk" />
         <div>
@@ -901,9 +900,7 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   };
   return (
     <>
-      <a className="geri-bag" href="#/oneriler">
-        <ArrowLeft size={14} className="yon" /> {t(muhabir ? "mOnerilerim" : "mOneriler")}
-      </a>
+      <GeriBag href="#/oneriler" metin={t(muhabir ? "mOnerilerim" : "mOneriler")} />
       {cagri && (
         <NotKutu ton="vurgu" ikon={<Megaphone size={18} />}>
           {t("acikCagri", { tarih: tarihYaz(cagri.tarih, dil, "uzun") })} · {t("acikCagriAciklama", { saat: cagri.sonSaat })}

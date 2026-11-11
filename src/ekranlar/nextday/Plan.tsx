@@ -1,5 +1,5 @@
+import { GeriBag } from "../../bilesenler/GeriBag";
 import {
-  ArrowLeft,
   MoreHorizontal,
   PanelRight,
   X,
@@ -246,9 +246,7 @@ function YeniPlan({
   return (
     <div className={`yeni-plan${sutunlu ? " sutunlu" : ""}`} data-yeni-plan>
       <header className="yp-ust">
-        <a className="geri-bag" href="#/nextday">
-          <ArrowLeft size={14} className="yon" /> {t("nextdayPlanlari")}
-        </a>
+        <GeriBag href="#/nextday" metin={t("nextdayPlanlari")} />
         <h1 className="sayfa-adi-tekrar">
           {t("nextday")} · {tarihYaz(plan.tarih, dil, "tam")}
         </h1>
@@ -628,9 +626,7 @@ function PlanBasi({
     <>
       <PlanBasiKalibi
         geri={
-          <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/nextday" title={t("nextdayPlanlari")} aria-label={t("nextdayPlanlari")}>
-            <ArrowLeft size={18} className="yon" />
-          </a>
+          <GeriBag ikon href="#/nextday" metin={t("nextdayPlanlari")} />
         }
         baslik={`${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")} ${kisaGunAdi(plan.tarih, dil)}`}
         uc={

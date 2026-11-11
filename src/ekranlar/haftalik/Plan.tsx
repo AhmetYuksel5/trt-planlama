@@ -1,6 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
+import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowLeft, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -76,9 +77,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       {/* Üst kısım Next Day'in kalıbıyla (bilesenler/PlanBasi): başlık, ↶ ⋯, "Sıradaki" kartı, künye ve takipler. */}
       <PlanBasiKalibi
         geri={
-          <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/haftalik" title={t("haftalikPlanlar")} aria-label={t("haftalikPlanlar")}>
-            <ArrowLeft size={18} className="yon" />
-          </a>
+          <GeriBag ikon href="#/haftalik" metin={t("haftalikPlanlar")} />
         }
         baslik={`${t("mHaftalik")} · ${aralikYaz(bas, haftaSonu(bas), dil)}`}
         uc={

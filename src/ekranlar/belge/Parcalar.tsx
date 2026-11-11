@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowLeft, ArrowUp, Check, ClipboardCopy, FileDown, Pencil, Plus, Printer, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ClipboardCopy, FileDown, Pencil, Plus, Printer, X } from "lucide-react";
+import { GeriBag } from "../../bilesenler/GeriBag";
 import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { epostaHtml, wordIndir, zenginKopyala } from "../../bilesenler/indir";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -205,9 +206,7 @@ export function CiktiAraclari({
   };
   return (
     <div className="dugmeler yazdirma-gizle">
-      <a className="geri-bag" href={geri.href}>
-        <ArrowLeft size={14} className="yon" /> {geri.metin}
-      </a>
+      <GeriBag href={geri.href} metin={geri.metin} />
       <span className="bosluk-esnek" />
       {ek}
       <button className="dugme dugme-ikincil" onClick={kopyala}>

@@ -2376,6 +2376,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   pencereyi açıp başlığı ekran dışına itiyordu). Öneri liste satırında alt
   satır kırılır, karar düğmeleri dar yerde yazının altına iner. Telefon
   denetimi kart ve liste görünümünün ikisinde de yapılır (`oneriGorunumu`).
+- Geri (kullanıcı: "geri"ye basınca bazen geldiği yere dönmüyor, başka yerden
+  çıkıyordu; `yol.ts`, sonundaki "Geri" bölümü): her tarayıcı geçmişi adımı
+  damgalı (`history.state`: kimlik `pf`, uygulama içindeki derinlik `d`).
+  Damgasız adım yeni açılmıştır, başa sarılır; damgalıya geri/ileri
+  gelinmiştir, bırakılan kaydırma yerine döner (her adımın yeri bellekte;
+  içerik geç çizilirse birkaç kare yeniden denenir). Sayfadaki "←" bağlantısı
+  `bilesenler/GeriBag.tsx`: uygulamanın içinden gelindiyse adı "Geri",
+  `history.back()` (bölmede `bolmeGeri`); doğrudan açılan sayfada sabit
+  listeye (`href`) gider, siteden dışarı atmaz. Önce sabit listeye gidiyordu
+  (pakete Ekonomi'den gelinse de paket listesine). `yerineGit` derinliği
+  artırmaz, `yerindeDegistir` damgayı korur. Belli bir sayfaya dönen adlı
+  düğmeler ("Plana dön", "Panele dön") sabit kalır. Test `testler/geri.cjs`.
 - Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
   hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
   dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede

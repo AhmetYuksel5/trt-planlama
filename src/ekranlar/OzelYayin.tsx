@@ -1,4 +1,5 @@
-import { AlertTriangle, ArrowLeft, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
@@ -611,9 +612,7 @@ function OzelBasi({ ben, o, duzen, kunyeAc }: { ben: Kisi; o: OzelYayin; duzen: 
   return (
     <PlanBasiKalibi
       geri={
-        <a className="dugme dugme-sade dugme-ikon pb-geri yazdirma-gizle" href="#/ozel" title={t("ozel")} aria-label={t("ozel")}>
-          <ArrowLeft size={18} className="yon" />
-        </a>
+        <GeriBag ikon href="#/ozel" metin={t("ozel")} />
       }
       baslik={<Icerik>{o.ad}</Icerik>}
       baslikTekrar={false}

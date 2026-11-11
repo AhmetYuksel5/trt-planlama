@@ -1,4 +1,5 @@
-import { ArrowLeft, Check, Newspaper, Pencil, Pin, PinOff, Plus, X } from "lucide-react";
+import { Check, Newspaper, Pencil, Pin, PinOff, Plus, X } from "lucide-react";
+import { GeriBag } from "../bilesenler/GeriBag";
 import { useState } from "react";
 import { Bos, Icerik, Kart, Rozet, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../dil";
@@ -218,9 +219,7 @@ export function BaslikSayfasi({ ben, id }: { ben: Kisi; id: string }) {
     .slice(0, 10);
   return (
     <>
-      <a className="geri-bag" href="#/basliklar">
-        <ArrowLeft size={14} className="yon" /> {t("mBasliklar")}
-      </a>
+      <GeriBag href="#/basliklar" metin={t("mBasliklar")} />
       <header className="sayfa-basi">
         <span className="ikon-kutu">
           <Newspaper size={26} />

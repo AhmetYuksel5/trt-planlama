@@ -1,6 +1,7 @@
 import { birimAdi } from "../yapi";
+import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { ArrowLeft, Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
+import { Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { adimAdi, adimKutusu, adimTuru, parcaliMi, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
@@ -43,9 +44,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
 
   return (
     <>
-      <a className="geri-bag" href="#/paketler">
-        <ArrowLeft size={14} className="yon" /> {t(ben.birim === "muhabir" ? "mPaketlerim" : "mPaketler")}
-      </a>
+      <GeriBag href="#/paketler" metin={t(ben.birim === "muhabir" ? "mPaketlerim" : "mPaketler")} />
       <header className="sayfa-basi">
         <span className="ikon-kutu">
           <Workflow size={26} />

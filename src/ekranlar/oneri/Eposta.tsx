@@ -1,4 +1,5 @@
-import { ArrowLeft, ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Scissors, Smartphone, Upload } from "lucide-react";
+import { ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Scissors, Smartphone, Upload } from "lucide-react";
+import { GeriBag } from "../../bilesenler/GeriBag";
 import { useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -202,9 +203,7 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
 
   return (
     <>
-      <a className="geri-bag" href="#/oneriler">
-        <ArrowLeft size={14} className="yon" /> {t("mOneriler")}
-      </a>
+      <GeriBag href="#/oneriler" metin={t("mOneriler")} />
       <SayfaBasi
         ikon={<Megaphone size={26} />}
         baslik={t("oneriCagrisi")}
@@ -490,9 +489,7 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
   };
   return (
     <>
-      <a className="geri-bag" href="#/oneriler">
-        <ArrowLeft size={14} className="yon" /> {t("mOneriler")}
-      </a>
+      <GeriBag href="#/oneriler" metin={t("mOneriler")} />
       <SayfaBasi
         ikon={<Inbox size={26} />}
         baslik={t("gelenYanitlar")}

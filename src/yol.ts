@@ -26,10 +26,8 @@ const cozumle = (): Yol => {
 export function useYol(): Yol {
   const [yol, ayarla] = useState<Yol>(cozumle);
   useEffect(() => {
-    const dinle = () => {
-      ayarla(cozumle());
-      window.scrollTo(0, 0);
-    };
+    // Kaydırma burada değil (aşağıda, "Geri"): geri tuşunda sayfa bırakılan yerine dönmeli.
+    const dinle = () => ayarla(cozumle());
     window.addEventListener("hashchange", dinle);
     return () => window.removeEventListener("hashchange", dinle);
   }, []);
@@ -105,6 +103,8 @@ if (GOMULU) {
     else {
       yigin.push(oncekiHash);
       if (yigin.length > YIGIN_EN_COK) yigin.shift();
+      // Bölmede yeni sayfa başından açılsın (üst pencerede bunu aşağıdaki geçmiş damgası yapıyor).
+      window.scrollTo(0, 0);
     }
     oncekiHash = location.hash;
     bildirUste();
@@ -169,7 +169,11 @@ export const git = (yol: string) => {
  * workspace'ten çıkış. Tarayıcının Geri tuşu yarım kalmış seçime ya da
  * artık olmayan workspace'e dönmesin.
  */
-export const yerineGit = (yol: string) => location.replace(`#/${yol}`);
+export const yerineGit = (yol: string) => {
+  // Yerine geçen adım derinliği artırmaz: yoksa "←" uygulamanın dışına geri giderdi.
+  yerineGeciyor = true;
+  location.replace(`#/${yol}`);
+};
 
 /**
  * Sayfayı yeniden çizmeden adresi günceller (takvimin görünümü ve günü):
@@ -178,7 +182,94 @@ export const yerineGit = (yol: string) => location.replace(`#/${yol}`);
  * çıkarmıyor.
  */
 export const yerindeDegistir = (yol: string) => {
-  history.replaceState(null, "", `#/${yol}`);
+  // Adımın damgası kalsın (derinlik, kaydırma yeri); yoksa yeni adım sanılır.
+  history.replaceState(history.state, "", `#/${yol}`);
   if (GOMULU) oncekiHash = location.hash;
   window.dispatchEvent(new Event("trt-yol"));
+};
+
+/* --- Geri: tarayıcı geçmişi ve kaydırma yeri --- */
+
+/*
+ * Kullanıcı: "geri"ye basınca bazen geldiği yere dönmüyordu. İki neden:
+ * sayfadaki "←" bağlantıları sabit listeye gidiyordu (pakete Next Day'den
+ * gelinse de paket listesine), ve her adres değişiminde sayfa başa
+ * sarılıyordu (geri tuşunda uzun planın başına düşülüyordu). Her geçmiş
+ * adımına damga konuyor (`history.state`): kimlik (kaydırma yeri onunla) ve
+ * uygulamanın içindeki derinlik. Damgasız adım yeni açılmıştır (başa sar),
+ * damgalı adıma geri ya da ileri gelinmiştir (yerine dön).
+ */
+interface Damga {
+  pf: number;
+  d: number;
+}
+const damga = (): Damga | null => {
+  const s = history.state as Partial<Damga> | null;
+  return s && typeof s.pf === "number" && typeof s.d === "number" ? (s as Damga) : null;
+};
+let sayac = Date.now();
+let derinlik = 0;
+let yerineGeciyor = false;
+const kaydirma = new Map<number, number>();
+
+const damgala = (d: number) => {
+  const yeni = { pf: ++sayac, d };
+  history.replaceState({ ...(history.state as object | null), ...yeni }, "");
+  derinlik = d;
+};
+
+/* İçerik geç çiziliyor (kayıt, pencere): yer tutana dek birkaç kare yeniden dene. */
+const kaydirYerine = (y: number) => {
+  const bas = performance.now();
+  const dene = () => {
+    window.scrollTo(0, y);
+    if (Math.abs(window.scrollY - y) > 2 && performance.now() - bas < 1500) requestAnimationFrame(dene);
+  };
+  requestAnimationFrame(dene);
+};
+
+if (!GOMULU) {
+  const ilk = damga();
+  if (ilk) derinlik = ilk.d;
+  else damgala(0);
+  let kare = 0;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (kare) return;
+      kare = requestAnimationFrame(() => {
+        kare = 0;
+        const s = damga();
+        if (s) kaydirma.set(s.pf, window.scrollY);
+      });
+    },
+    { passive: true },
+  );
+  window.addEventListener("hashchange", () => {
+    const s = damga();
+    if (s) {
+      derinlik = s.d;
+      const y = kaydirma.get(s.pf);
+      if (y !== undefined) kaydirYerine(y);
+      return;
+    }
+    damgala(yerineGeciyor ? derinlik : derinlik + 1);
+    yerineGeciyor = false;
+    window.scrollTo(0, 0);
+  });
+}
+
+/** Uygulamanın içinden mi gelindi: "←" o zaman bir önceki sayfaya döner. */
+export const geriVarMi = () => (GOMULU ? yigin.length > 0 : derinlik > 0);
+
+/**
+ * Sayfadaki "←" bağlantısının tıklaması: uygulamanın içinden gelindiyse
+ * geldiği yere döner, bağlantıyla doğrudan açılmış sayfada `href`'e
+ * (sabit listeye) gider. Yeni sekme ve değiştirici tuşlar tarayıcıda kalır.
+ */
+export const geriTikla = (e: { button: number; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; preventDefault: () => void }) => {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !geriVarMi()) return;
+  e.preventDefault();
+  if (GOMULU) bolmeGeri();
+  else history.back();
 };

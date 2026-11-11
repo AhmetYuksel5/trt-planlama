@@ -1,6 +1,7 @@
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
+import { GeriBag } from "../bilesenler/GeriBag";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { ArrowLeft, AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
+import { AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -471,9 +472,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
   return (
     <>
       {!kendisi && (
-        <a className="geri-bag" href={muhabir ? "#/muhabirler" : "#/personel"}>
-          <ArrowLeft size={14} className="yon" /> {t(muhabir ? "mMuhabirler" : "mPersonel")}
-        </a>
+        <GeriBag href={muhabir ? "#/muhabirler" : "#/personel"} metin={t(muhabir ? "mMuhabirler" : "mPersonel")} />
       )}
       <header className="sayfa-basi profil-bas">
         <ProfilFoto ben={ben} kisi={kisi} />
