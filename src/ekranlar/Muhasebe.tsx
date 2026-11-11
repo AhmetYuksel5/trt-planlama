@@ -10,7 +10,7 @@ import { anlasmaBul, anlasmaTaslaklari, ayKaydir, aylikDokum, muhabirAylari, isa
 import { sozcuklerUyar as aramaUyar } from "../arama";
 import { bugun } from "../tarih";
 import { ANLASMA_TURLERI, BICIMLER, useVeri, type AnlasmaTuru, type Kisi, type MuhasebeAnlasmasi, type MuhasebeIs, type MuhasebeTanimi } from "../veri";
-import { git } from "../yol";
+import { git, useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -61,8 +61,8 @@ export function Muhasebe({ ben, sekme, kisiId }: { ben: Kisi; sekme: string; kis
 function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
-  const [ay, setAy] = useState(bugun().slice(0, 7));
-  const [ara, setAra] = useState("");
+  const [ay, setAy] = useAdimDurumu("muhasebe:ay", () => bugun().slice(0, 7));
+  const [ara, setAra] = useAdimDurumu("muhasebe:ara", "");
   const satirlar = muhasebeKisileri(v)
     .map((k) => aylikDokum(v, k, ay))
     .filter((x) => x.anlasma || x.isler.length)
@@ -274,8 +274,8 @@ function MuhabirSayfasi({ ben, kisiId }: { ben: Kisi; kisiId?: string }) {
   const kisiler = [...muhasebeKisileri(v)].sort((a, b) => ad(a).localeCompare(ad(b), "ar"));
   const kisi = kisiId ? v.kisiler.find((k) => k.id === kisiId) : undefined;
   const buAy = bugun().slice(0, 7);
-  const [secili, setSecili] = useState(buAy);
-  const [tur, setTur] = useState<MuhasebeIs | "">("");
+  const [secili, setSecili] = useAdimDurumu("muhasebeMuhabir:ay", buAy);
+  const [tur, setTur] = useAdimDurumu<MuhasebeIs | "">("muhasebeMuhabir:tur", "");
   const [duzen, setDuzen] = useState(false);
   const secim = (
     <label className="muhasebe-kisi-secimi">
@@ -406,7 +406,7 @@ function MuhabirSayfasi({ ben, kisiId }: { ben: Kisi; kisiId?: string }) {
 function Anlasmalar({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [ara, setAra] = useState("");
+  const [ara, setAra] = useAdimDurumu("muhasebeAnlasma:ara", "");
   const [duzen, setDuzen] = useState<Kisi | null>(null);
   const [aktar, setAktar] = useState(false);
   const kisiler = muhasebeKisileri(v)

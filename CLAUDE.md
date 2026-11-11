@@ -2401,7 +2401,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   listeye (`href`) gider, siteden dışarı atmaz. Önce sabit listeye gidiyordu
   (pakete Ekonomi'den gelinse de paket listesine). `yerineGit` derinliği
   artırmaz, `yerindeDegistir` damgayı korur. Belli bir sayfaya dönen adlı
-  düğmeler ("Plana dön", "Panele dön") sabit kalır. Test `testler/geri.cjs`.
+  düğmeler ("Plana dön", "Panele dön") sabit kalır.
+  - Açık pencere (kullanıcı: telefonda geri tuşu pencereyi kapatmıyor,
+    sayfadan çıkıyordu): `Pencere` açılınca geçmişe aynı adresli adım ekler
+    (`yol.ts → pencereAdimi`, damga kopyalanır); geri tuşu o adımı alınca
+    pencere kapanır. ×, Esc ya da kaydetle kapanan pencere kendi adımını
+    geri alır, geçmişte boş adım kalmaz; pencereden başka sayfaya gidildiyse
+    adıma dokunulmaz. İç içe pencere yığın gibi; bölmede eklenmez. Arama
+    penceresi (Ctrl+K) bunun dışında.
+  - Sayfadaki seçimler (kullanıcı: sekme, süzgeç, ay geri dönünce
+    sıfırlanıyordu): `yol.ts → useAdimDurumu(anahtar, varsayılan)` seçimi o
+    geçmiş adımının durumuna yazar (`history.state.s`); geri/ileri gelinince
+    sayfa bırakıldığı gibi, menüden yeni girişte varsayılanla açılır. Anahtar
+    sayfaya özgü ("paketler:durum"; aynı bileşeni kullanan sayfalarda
+    sayfanın adıyla). Paketler/Feature/Ekonomi/Programlar, Stok, Öneriler,
+    Personel ve Dış muhabirler, Görevler, Özel yayın sekmesi, panelin plan
+    sekmesi, Aylık, Gündem arşivi, Organizasyon kişileri ve iş akışı seçimi,
+    Next Day yan paneli, Posta'da açık sohbet, takvim araması ve süzgeci,
+    Muhasebe. Pencere içindeki seçim bununla tutulmaz. Yeni liste sayfasının
+    süzgeci de bununla yazılır. Test `testler/geri.cjs`.
 - Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
   hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
   dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede

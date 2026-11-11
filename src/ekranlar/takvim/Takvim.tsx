@@ -20,7 +20,7 @@ import {
 import { ayEkle, bugun, gunEkle } from "../../tarih";
 import { BIRIMLER, BOLGELER, FAALIYET_DURUMLARI, FAALIYET_TURLERI, ONCELIKLER, POTANSIYELLER, ULKELER, faaliyetBul, getir, muhabirler, useVeri, type Durum, type Kisi } from "../../veri";
 import { faaliyetGorebilir, yapabilir } from "../../yetki";
-import { yerindeDegistir, type Yol } from "../../yol";
+import { yerindeDegistir, type Yol, useAdimDurumu } from "../../yol";
 import { Yetkisiz } from "../Ayarlar";
 import { SayfaBasi } from "../ana/Planlama";
 import { FaaliyetAyrintisi, type AcikFaaliyet } from "./Ayrinti";
@@ -87,8 +87,8 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
   const [tarih, setTarih] = useState(ilk.tarih);
   const [acik, setAcik] = useState<AcikFaaliyet | null>(ilk.acik);
   const [yeni, setYeni] = useState<string | null>(null);
-  const [sorgu, setSorgu] = useState("");
-  const [suzgec, setSuzgec] = useState<Suzgec>({});
+  const [sorgu, setSorgu] = useAdimDurumu("takvim:ara", "");
+  const [suzgec, setSuzgec] = useAdimDurumu<Suzgec>("takvim:suzgec", {});
   const fare = useMedya("(hover: hover) and (pointer: fine)");
   const duzenler = yapabilir(ben, "takvimDuzenle");
   const muhabir = ben.birim === "muhabir";

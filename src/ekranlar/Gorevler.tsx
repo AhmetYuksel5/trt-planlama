@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ClipboardList, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { useAdimDurumu } from "../yol";
 import { AnildigimNotlar } from "../bilesenler/Anma";
 import { useState } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -102,7 +103,7 @@ function GorevTanimlari({ ben, tarih }: { ben: Kisi; tarih: string }) {
   const v = useVeri();
   const adi = useGorevAdi();
   const duzenler = gorevleriDuzenler(ben);
-  const [etiket, setEtiket] = useState("");
+  const [etiket, setEtiket] = useAdimDurumu("gorevler:etiket", "");
   const [acik, setAcik] = useState<GorevTanimi | null>(null);
   const tumu = etiketler(v);
   const liste = gorevListesi(v).filter((g) => !etiket || g.etiketler.includes(etiket));
@@ -362,8 +363,8 @@ function Isler({ ben }: { ben: Kisi }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const adi = useGorevAdi();
-  const [suzgec, setSuzgec] = useState<"acik" | "bitti" | "hepsi">("acik");
-  const [etiket, setEtiket] = useState("");
+  const [suzgec, setSuzgec] = useAdimDurumu<"acik" | "bitti" | "hepsi">("isler:suzgec", "acik");
+  const [etiket, setEtiket] = useAdimDurumu("isler:etiket", "");
   const [form, setForm] = useState<Is | null>(null);
   const tumu = etiketler(v);
   const liste = isListesi(v)

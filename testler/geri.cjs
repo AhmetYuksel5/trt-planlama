@@ -72,6 +72,51 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     ok((await hash()) === "#/oneriler", "öneri ayrıntısından \"←\" öneriler sayfasına (" + oneriYolu + ")");
   }
 
+  // 5. Seçimler geçmiş adımında: süzgeç ve arama, pakete girip geri dönünce yerinde; menüden yeni girişte varsayılan
+  await git("#/paketler");
+  const gorunurPaket = () => p.locator('a[href^="#/paketler/"]').filter({ visible: true });
+  let sonucu = null;
+  for (const x of await p.locator("[data-paket-sonucu]").evaluateAll((l) => l.map((e) => e.getAttribute("data-paket-sonucu")))) {
+    await p.locator(`[data-paket-sonucu="${x}"]`).click();
+    await p.waitForTimeout(200);
+    if (await gorunurPaket().count()) { sonucu = x; break; }
+  }
+  ok(!!sonucu, "paketi olan süzgeç seçildi: " + sonucu);
+  await gorunurPaket().first().click();
+  await p.waitForTimeout(500);
+  await p.goBack();
+  await p.waitForTimeout(700);
+  ok((await p.locator(`[data-paket-sonucu="${sonucu}"].acik`).count()) === 1, "geri dönünce süzgeç yerinde");
+  await p.locator('input[type="search"]').first().fill("zzz");
+  await git("#/ana");
+  await p.goBack();
+  await p.waitForTimeout(700);
+  ok((await p.locator('input[type="search"]').first().inputValue()) === "zzz", "geri dönünce arama yerinde");
+  await git("#/ana");
+  await git("#/paketler");
+  ok((await p.locator(`[data-paket-sonucu="${sonucu}"].acik`).count()) === 0 && (await p.locator('input[type="search"]').first().inputValue()) === "", "menüden yeni girişte varsayılan");
+
+  // 6. Açık pencere: geri tuşu pencereyi kapatır, sayfada kalır; kendi kapanan pencere boş adım bırakmaz
+  await p.evaluate(() => { localStorage.setItem("trt-planlama-oturum", "yo3"); });
+  await p.reload();
+  await p.waitForTimeout(800);
+  await git("#/ana");
+  await git("#/organizasyon/birimler");
+  await p.locator('[data-birim-duzenle="planlama"]').click();
+  await p.waitForTimeout(300);
+  ok((await p.locator("dialog[open]").count()) === 1, "pencere açıldı");
+  await p.goBack();
+  await p.waitForTimeout(500);
+  ok((await p.locator("dialog[open]").count()) === 0 && (await hash()) === "#/organizasyon/birimler", "geri tuşu pencereyi kapattı, sayfada kaldı");
+  await p.locator('[data-birim-duzenle="planlama"]').click();
+  await p.waitForTimeout(300);
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(500);
+  ok((await p.locator("dialog[open]").count()) === 0 && (await hash()) === "#/organizasyon/birimler", "Esc pencereyi kapattı");
+  await p.goBack();
+  await p.waitForTimeout(500);
+  ok((await hash()) === "#/ana", "pencereden sonra geri tuşu bir önceki sayfaya (boş adım yok): " + (await hash()));
+
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);

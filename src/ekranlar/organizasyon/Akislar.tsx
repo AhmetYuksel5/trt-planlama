@@ -7,6 +7,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { useAdimDurumu } from "../../yol";
 import { useState } from "react";
 import { Kart, Pencere, Rozet } from "../../bilesenler/Parcalar";
 import {
@@ -61,7 +62,7 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
   const v = useVeri();
   const taslak = yapiTaslagi(v, ben);
   const degistir = (f: (y: Yapi) => Yapi) => yapiTaslagiDegistir(ben, f);
-  const [secili, setSecili] = useState(taslak.akislar[0]?.id);
+  const [secili, setSecili] = useAdimDurumu("akislar:secili", taslak.akislar[0]?.id);
   const akis = taslak.akislar.find((a) => a.id === secili) ?? taslak.akislar[0];
   const [durak, setDurak] = useState<{ d: Durak | null; sira: number } | null>(
     null,

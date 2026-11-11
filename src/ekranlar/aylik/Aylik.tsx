@@ -1,4 +1,5 @@
 import { Calendar, CalendarCheck, Check, ChevronLeft, ChevronRight, ClipboardCopy, FileDown, Plus, Printer, Trash2, Undo2 } from "lucide-react";
+import { useAdimDurumu } from "../../yol";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { wordIndir } from "../../bilesenler/indir";
@@ -29,7 +30,7 @@ export function Aylik({ ben, planId }: { ben: Kisi; planId?: string }) {
   const v = useVeri();
   const buAy = bugun().slice(0, 7);
   const [ay, setAy] = useState(() => v.aylik.find((a) => a.id === planId)?.ay ?? buAy);
-  const [gorunum, setGorunum] = useState<"plan" | "cikti">("plan");
+  const [gorunum, setGorunum] = useAdimDurumu<"plan" | "cikti">("aylik:gorunum", "plan");
   const [form, setForm] = useState<Form | null>(null);
   const belge = useRef<HTMLElement>(null);
   const plan = v.aylik.find((a) => a.ay === ay);

@@ -1,4 +1,5 @@
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
+import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
 import { AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
@@ -47,11 +48,11 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const v = useVeri();
   const ayar = PERSONEL_SAYFASI[sayfa] ?? PERSONEL_SAYFASI.personel;
   const muhabirSayfasi = sayfa === "muhabirler";
-  const [aranan, setAranan] = useState("");
-  const [birim, setBirim] = useState<BirimId>("");
-  const [unvan, setUnvan] = useState("");
-  const [ulke, setUlke] = useState<Ulke | "">("");
-  const [bicim, setBicim] = useState<Bicim | "">("");
+  const [aranan, setAranan] = useAdimDurumu(`${sayfa}:ara`, "");
+  const [birim, setBirim] = useAdimDurumu<BirimId>(`${sayfa}:birim`, "");
+  const [unvan, setUnvan] = useAdimDurumu(`${sayfa}:unvan`, "");
+  const [ulke, setUlke] = useAdimDurumu<Ulke | "">(`${sayfa}:ulke`, "");
+  const [bicim, setBicim] = useAdimDurumu<Bicim | "">(`${sayfa}:bicim`, "");
   const q = aranan.trim().toLocaleLowerCase();
   const tum = v.kisiler.filter(ayar.suz);
   const liste = tum

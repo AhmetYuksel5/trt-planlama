@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Adres çubuğundaki `#/nextday/nd-yarin/cikti` ile açık sayfayı eşler.
@@ -273,3 +273,82 @@ export const geriTikla = (e: { button: number; metaKey: boolean; ctrlKey: boolea
   if (GOMULU) bolmeGeri();
   else history.back();
 };
+
+/* --- Açık pencere ve geri tuşu --- */
+
+/*
+ * Kullanıcı: telefonda pencere açıkken geri tuşu pencereyi kapatmıyor,
+ * sayfadan çıkıyordu. Pencere açılınca geçmişe adım eklenir (aynı adres,
+ * damgası kopyalanır); geri tuşu o adımı alınca pencere kapanır. Pencere
+ * ×, Esc ya da kaydetle kapanırsa kendi adımını geri alır, geçmişte boş
+ * adım kalmaz. İç içe pencere yığın gibi. Bölmede geçmiş üst pencereyle
+ * ortak, eklenmez.
+ */
+interface AcikPencere {
+  no: number;
+  kapat: () => void;
+}
+const acikPencereler: AcikPencere[] = [];
+let pencereSayac = 0;
+let gormezdenGel = 0;
+
+export const pencereAdimi = (kapat: () => void): (() => void) => {
+  if (GOMULU) return () => undefined;
+  const no = ++pencereSayac;
+  history.pushState({ ...(history.state as object | null), pencere: no }, "");
+  acikPencereler.push({ no, kapat });
+  return () => {
+    const i = acikPencereler.findIndex((p) => p.no === no);
+    if (i < 0) return; // geri tuşuyla kapandı, adımı zaten gitti
+    acikPencereler.splice(i, 1);
+    // Pencereden başka sayfaya gidildiyse adım arkada kaldı; dokunulmaz.
+    if ((history.state as { pencere?: number } | null)?.pencere === no) {
+      gormezdenGel++;
+      history.back();
+    }
+  };
+};
+
+if (!GOMULU)
+  window.addEventListener("popstate", () => {
+    if (gormezdenGel) {
+      gormezdenGel--;
+      return;
+    }
+    const ust = (history.state as { pencere?: number } | null)?.pencere ?? 0;
+    while (acikPencereler.length && acikPencereler[acikPencereler.length - 1].no > ust) acikPencereler.pop()!.kapat();
+  });
+
+/* --- Sayfadaki seçimler geçmiş adımında --- */
+
+/*
+ * Kullanıcı: sekme, süzgeç, ay seçimi geri dönünce varsayılana
+ * sıfırlanıyordu. Seçim o geçmiş adımının durumuna yazılır
+ * (`history.state.s`): geri ya da ileri gelinince sayfa bırakıldığı
+ * seçimlerle açılır, menüden yeniden girilince (yeni adım) varsayılanla.
+ * Anahtar sayfaya özgü olmalı ("paketler:durum").
+ */
+type Secimler = Record<string, unknown>;
+const secimler = (): Secimler => ((history.state as { s?: Secimler } | null)?.s ?? {});
+
+export function useAdimDurumu<T>(anahtar: string, varsayilan: T | (() => T)): [T, (v: T | ((eski: T) => T)) => void] {
+  const [deger, setDeger] = useState<T>(() => {
+    const s = secimler();
+    return anahtar in s ? (s[anahtar] as T) : typeof varsayilan === "function" ? (varsayilan as () => T)() : varsayilan;
+  });
+  const yaz = useCallback(
+    (v: T | ((eski: T) => T)) =>
+      setDeger((eski) => {
+        const yeni = typeof v === "function" ? (v as (e: T) => T)(eski) : v;
+        try {
+          const st = (history.state as { s?: Secimler } | null) ?? {};
+          history.replaceState({ ...st, s: { ...st.s, [anahtar]: yeni } }, "");
+        } catch {
+          /* saklanamayan değer (çok büyük) seçimi yalnız ekranda tutar */
+        }
+        return yeni;
+      }),
+    [anahtar],
+  );
+  return [deger, yaz];
+}

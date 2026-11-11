@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
@@ -655,7 +656,7 @@ export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
   const { t } = useDil();
   const v = useVeri();
   const [kunye, setKunye] = useState(false);
-  const [sekme, setSekme] = useState<OzelSekme>("genel");
+  const [sekme, setSekme] = useAdimDurumu<OzelSekme>("ozel:sekme", "genel");
   const o = v.ozel.find((x) => x.id === id);
   if (!o) return <Bos metin={t("oyYok")} />;
   const duzen = ozelDuzenler(ben);

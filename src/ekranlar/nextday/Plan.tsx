@@ -37,7 +37,7 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { kayipBaslikGeriGetir, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
 import { takdirPaketleri } from "../../takdir";
-import { git } from "../../yol";
+import { git, useAdimDurumu } from "../../yol";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
 import {
@@ -211,7 +211,7 @@ function YeniPlan({
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const [pencere, setPencere] = useState<NdPencere | null>(null);
-  const [sekme, setSekme] = useState<YanSekme>("oneri");
+  const [sekme, setSekme] = useAdimDurumu<YanSekme>("ndYan:sekme", "oneri");
   // Klasiğin başlık kartı (paket kararları, LIVE/TBC, muhabire not, başlık menüsü, 🔗…) yan panelde: yeni görünümde özellik eksilmesin.
   const [baslikPanel, setBaslikPanel] = useState<string | null>(null);
   const [hedef, setHedef] = useState<string | null>(null);

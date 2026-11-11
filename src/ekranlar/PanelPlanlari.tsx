@@ -1,4 +1,5 @@
 import { gecikti, ozelAsamasi, ozelOzeti, yapilacaklar, OZEL_ASAMA_ADI } from "../ozel";
+import { useAdimDurumu } from "../yol";
 import { CalendarDays, CalendarRange, ChevronRight, Circle, ClipboardList, MapPinned, Printer, Tv } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { geciktiMi } from "../akis";
@@ -259,7 +260,7 @@ const SAHA_TONU: Record<GorevlendirmeDurum, string> = { talep: "uyari", onayli: 
 export default function PanelPlanlari() {
   const { t, ad, dil } = useDil();
   const v = useVeri();
-  const [sekme, setSekme] = useState<Sekme>("gunluk");
+  const [sekme, setSekme] = useAdimDurumu<Sekme>("panelPlan:sekme", "gunluk");
   const [secim, setSecim] = useState<Secim>(null);
   const B = bugun();
 

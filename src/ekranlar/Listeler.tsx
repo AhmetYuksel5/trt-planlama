@@ -1,7 +1,8 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
+import { useAdimDurumu } from "../yol";
 import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
 import { CirclePlay, Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { OzelTalepAlani } from "./OzelYayin";
@@ -33,9 +34,9 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ayar = ICERIK_SAYFASI[sayfa] ?? ICERIK_SAYFASI.paketler;
-  const [durum, setDurum] = useState<PaketDurum | "hepsi" | "aktif" | PaketSonucu>("aktif");
-  const [tur, setTur] = useState<IcerikTuru | "">("");
-  const [aranan, setAranan] = useState("");
+  const [durum, setDurum] = useAdimDurumu<PaketDurum | "hepsi" | "aktif" | PaketSonucu>(`${sayfa}:durum`, "aktif");
+  const [tur, setTur] = useAdimDurumu<IcerikTuru | "">(`${sayfa}:tur`, "");
+  const [aranan, setAranan] = useAdimDurumu(`${sayfa}:ara`, "");
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.paketler.filter((p) => paketGorebilir(ben, p, v) && (!ayar.turler || ayar.turler.includes(p.tur)));
   const q = aranan.trim().toLocaleLowerCase();
@@ -180,7 +181,7 @@ const STOK_SEKMELERI: StokSekme[] = ["uretimde", "stokta", "yayinlandi"];
 export function StokHaberler({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [sekme, setSekme] = useState<StokSekme>("stokta");
+  const [sekme, setSekme] = useAdimDurumu<StokSekme>("stok:sekme", "stokta");
   const durumda = (s: StokDurumu) => v.paketler.filter((p) => stokDurumu(p) === s);
   const bekleyen = durumda("bekliyor");
   const listeler: Record<StokSekme, Paket[]> = {

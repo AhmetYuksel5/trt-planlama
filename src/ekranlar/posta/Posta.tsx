@@ -1,4 +1,5 @@
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { useAdimDurumu } from "../../yol";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
@@ -834,7 +835,7 @@ export function Posta({ ben }: { ben: Kisi }) {
   // hesabıyla çekince başka birimin postası ona karışmasın. Demoda süzme yok.
   const [grup, setGrup] = useState("");
   const sohbetler = sohbetleriKur(gorunenPostalar(v, grup));
-  const [secili, setSecili] = useState("");
+  const [secili, setSecili] = useAdimDurumu("posta:sohbet", "");
   const [yeni, setYeni] = useState(false);
   const [yalnizOkunmamis, setYalnizOkunmamis] = useState(false);
   const secik = sohbetler.find((s) => s.konuKimligi === secili);

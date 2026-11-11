@@ -85,7 +85,7 @@ import {
   type Kisi,
   type Ulke,
 } from "../veri";
-import { git, yerineGit } from "../yol";
+import { git, yerineGit, useAdimDurumu } from "../yol";
 import { gundemAkislari, gundemMakale, type Makale } from "../yz";
 import { acikGunPlanlari, oneriArsivde } from "../oneriPlanlari";
 import { gundemGorebilir, kisitliKisi, oneriSatiriEkleyebilir } from "../yetki";
@@ -1472,7 +1472,7 @@ function ArsivPenceresi({
 function Arsiv({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const [ara, setAra] = useState("");
+  const [ara, setAra] = useAdimDurumu("gundemArsiv:ara", "");
   const liste = (v.gundemArsivi ?? [])
     .filter((n) => n.kisiId === ben.id)
     .filter(

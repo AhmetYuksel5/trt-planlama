@@ -4,6 +4,7 @@ import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, masa
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
 import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
+import { pencereAdimi } from "../yol";
 
 /* Ekranların ortak parçaları: kendi başına veri okumuyor, ne verilirse onu çiziyor. */
 
@@ -268,10 +269,17 @@ export function Pencere({
   const { t } = useDil();
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
+  // Geri tuşu pencereyi kapatsın (yol.ts → pencereAdimi); kapat her çizimde değişebilir, son hali çağrılır.
+  const kapatRef = useRef(kapat);
+  kapatRef.current = kapat;
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
-    return () => d?.close();
+    const birak = pencereAdimi(() => kapatRef.current());
+    return () => {
+      d?.close();
+      birak();
+    };
   }, []);
   // React close olayını üstteki pencerelere de iletiyor; içteki pencere kapanınca dıştaki kapanmasın.
   return (

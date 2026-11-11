@@ -1,4 +1,5 @@
 import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
+import { useAdimDurumu } from "../../yol";
 import {
   ArrowDown,
   ArrowUp,
@@ -755,7 +756,7 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
 function KisilerSekmesi({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [aranan, setAranan] = useState("");
+  const [aranan, setAranan] = useAdimDurumu("orgKisiler:ara", "");
   const [tayin, setTayin] = useState<Kisi | null>(null);
   const tayinEder = hesapYetkisi(ben, "kisiDuzenle");
   const ara = aranan.trim().toLocaleLowerCase();

@@ -14,7 +14,7 @@ import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
 import { oneriBirlestirebilir, arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
-import { git } from "../../yol";
+import { git, useAdimDurumu } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { EpostaKaynagi, KisaOneriFormu } from "./Eposta";
@@ -42,12 +42,14 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const { t } = useDil();
   const v = useVeri();
   const kaynakMetni = useKaynakMetni();
-  const [durum, setDurum] = useState<OneriDurum | "hepsi">("hepsi");
-  const [tur, setTur] = useState<IcerikTuru | "">("");
-  const [ulke, setUlke] = useState<Ulke | "">("");
-  const [aranan, setAranan] = useState("");
+  // Seçimler geçmiş adımında: geri dönünce bırakıldığı gibi (yol.ts → useAdimDurumu).
+  const on = arsiv ? "oneriArsiv" : "oneriler";
+  const [durum, setDurum] = useAdimDurumu<OneriDurum | "hepsi">(`${on}:durum`, "hepsi");
+  const [tur, setTur] = useAdimDurumu<IcerikTuru | "">(`${on}:tur`, "");
+  const [ulke, setUlke] = useAdimDurumu<Ulke | "">(`${on}:ulke`, "");
+  const [aranan, setAranan] = useAdimDurumu(`${on}:ara`, "");
   // Plan etiketi: günlük ya da haftalık çalışan yalnız kendi planına düşen önerileri görsün.
-  const [planEtiketi, setPlanEtiketi] = useState<OneriEtiketi | "yok" | "">("");
+  const [planEtiketi, setPlanEtiketi] = useAdimDurumu<OneriEtiketi | "yok" | "">(`${on}:plan`, "");
   /* Görünüm plan ekranlarıyla ortak kişisel seçim; kartta karar yok, kararlar ayrıntı sayfasında. */
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [acikId, setAcikId] = useState<string | null>(null);
