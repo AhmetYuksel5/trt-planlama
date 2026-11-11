@@ -2395,7 +2395,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   damgalı (`history.state`: kimlik `pf`, uygulama içindeki derinlik `d`).
   Damgasız adım yeni açılmıştır, başa sarılır; damgalıya geri/ileri
   gelinmiştir, bırakılan kaydırma yerine döner (her adımın yeri bellekte;
-  içerik geç çizilirse birkaç kare yeniden denenir). Sayfadaki "←" bağlantısı
+  içerik geç çizilirse birkaç kare yeniden denenir). Açık katlanır satırlar
+  (`main details`) da adımın parçası: çıkarken hangileri açıksa sırasıyla
+  saklanır, dönünce önce onlar açılır, sonra kaydırılır (kullanıcı:
+  Organizasyon › Kişiler'de kişiye girip dönünce birimler kapalı açılıyor,
+  sayfa kısalıp başa düşüyordu). Sayfadaki "←" bağlantısı
   `bilesenler/GeriBag.tsx`: uygulamanın içinden gelindiyse adı "Geri",
   `history.back()` (bölmede `bolmeGeri`); doğrudan açılan sayfada sabit
   listeye (`href`) gider, siteden dışarı atmaz. Önce sabit listeye gidiyordu

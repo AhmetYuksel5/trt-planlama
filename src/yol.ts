@@ -209,19 +209,33 @@ const damga = (): Damga | null => {
 };
 let sayac = Date.now();
 let derinlik = 0;
+let simdikiPf = 0;
 let yerineGeciyor = false;
 const kaydirma = new Map<number, number>();
+/*
+ * Açık katlanır satırlar da adımın parçası (kullanıcı: Organizasyon ›
+ * Kişiler'de kişiye girip dönünce birim ve ünvan satırları kapalı açılıyor,
+ * sayfa kısalıp başa düşüyordu). Sayfadan çıkarken sayfadaki `<details>`'in
+ * hangileri açıksa sırasıyla saklanır, dönünce önce onlar açılır.
+ */
+const acikSatirlar = new Map<number, number[]>();
+const satirlar = () => Array.from(document.querySelectorAll<HTMLDetailsElement>("main details"));
 
 const damgala = (d: number) => {
   const yeni = { pf: ++sayac, d };
   history.replaceState({ ...(history.state as object | null), ...yeni }, "");
   derinlik = d;
+  simdikiPf = yeni.pf;
 };
 
 /* İçerik geç çiziliyor (kayıt, pencere): yer tutana dek birkaç kare yeniden dene. */
-const kaydirYerine = (y: number) => {
+const kaydirYerine = (y: number, acik?: number[]) => {
   const bas = performance.now();
   const dene = () => {
+    if (acik) {
+      const l = satirlar();
+      for (const i of acik) if (l[i] && !l[i].open) l[i].open = true;
+    }
     window.scrollTo(0, y);
     if (Math.abs(window.scrollY - y) > 2 && performance.now() - bas < 1500) requestAnimationFrame(dene);
   };
@@ -230,8 +244,10 @@ const kaydirYerine = (y: number) => {
 
 if (!GOMULU) {
   const ilk = damga();
-  if (ilk) derinlik = ilk.d;
-  else damgala(0);
+  if (ilk) {
+    derinlik = ilk.d;
+    simdikiPf = ilk.pf;
+  } else damgala(0);
   let kare = 0;
   window.addEventListener(
     "scroll",
@@ -246,11 +262,14 @@ if (!GOMULU) {
     { passive: true },
   );
   window.addEventListener("hashchange", () => {
+    // Ekran henüz çıkılan sayfa (React yeni sayfayı sonra çiziyor): açık satırları onun adımına yaz.
+    if (simdikiPf) acikSatirlar.set(simdikiPf, satirlar().flatMap((d, i) => (d.open ? [i] : [])));
     const s = damga();
     if (s) {
       derinlik = s.d;
+      simdikiPf = s.pf;
       const y = kaydirma.get(s.pf);
-      if (y !== undefined) kaydirYerine(y);
+      if (y !== undefined) kaydirYerine(y, acikSatirlar.get(s.pf));
       return;
     }
     damgala(yerineGeciyor ? derinlik : derinlik + 1);

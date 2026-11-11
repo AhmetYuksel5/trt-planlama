@@ -117,6 +117,26 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(500);
   ok((await hash()) === "#/ana", "pencereden sonra geri tuşu bir önceki sayfaya (boş adım yok): " + (await hash()));
 
+  // 7. Katlanır satırlar da adımın parçası: Organizasyon › Kişiler'de açılan birimler geri dönünce açık, yer aynı
+  await git("#/organizasyon/kisiler");
+  const kapali = p.locator("main details:not([open]) > summary");
+  for (let i = 0; i < 3 && (await kapali.count()); i++) {
+    await kapali.nth(Math.min(2, (await kapali.count()) - 1)).click();
+    await p.waitForTimeout(150);
+  }
+  const acikOnce = await p.locator("main details[open]").count();
+  const kisiler = p.locator('main a[href^="#/personel/"]').filter({ visible: true });
+  const kisi = kisiler.nth(Math.max(0, (await kisiler.count()) - 1));
+  await kisi.scrollIntoViewIfNeeded();
+  await p.waitForTimeout(300);
+  const yerOnce = await p.evaluate(() => window.scrollY);
+  await kisi.click();
+  await p.waitForTimeout(600);
+  await p.goBack();
+  await p.waitForTimeout(1000);
+  const yerSonra = await p.evaluate(() => window.scrollY);
+  ok((await p.locator("main details[open]").count()) === acikOnce && yerOnce > 100 && Math.abs(yerSonra - yerOnce) <= 3, `kişiden dönünce açık satırlar (${acikOnce}) ve yer yerinde (${yerOnce} → ${yerSonra})`);
+
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);
