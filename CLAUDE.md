@@ -1924,14 +1924,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     görevi olmayan; "yeni" öneri "değerlendiriliyor"a geçer), masaya
     `oneriMasayaIletildi` (`sahip`). Tek açık soru; almayan masadan sonra
     başka masaya sorulur, geçmiş kartta.
-  - Masa (`masaYanitlar`, birimi ya da "gibi" çalıştığı birim) notla "Alırız" /
-    "Almayız"; Planlama'ya `masaOneriyiAldi` / `masaOneriyiAlmadi`. Masa
+  - Masa (`masaYanitlar`, birimi ya da "gibi" çalıştığı birim) notla "Uygundur" /
+    "Uygun değildir" (kullanıcı: "Alırız / Almayız" profesyonel durmadı; kart
+    "Birim görüşü", düğme "Birimin görüşüne sun"); Planlama'ya `masaOneriyiAldi` / `masaOneriyiAlmadi`. Masa
     öneriyi sorulduğundan görevlendirilene dek düzenler (`oneriDuzenleyebilir`
     → `masaOneriyiDuzenler`). Öneriler sayfası masanın menüsünde yok; yalnız
     sorulan önerinin sayfası açık (`App.tsx`, `masaOneriyiGorur`). Masanın
-    listesi "Planlama'dan gelen öneriler" (`MasaOnerileri`) ana sayfadaki masa
+    listesi "Görüşünüze sunulan öneriler" (`MasaOnerileri`) ana sayfadaki masa
     kartının üstünde ve Paketler/Ekonomi/Programlar'da; Planlama'nınki
-    "Masalardaki öneriler" (`MasalardakiOneriler`) öneriler sayfasında.
+    "Birim görüşündeki öneriler" (`MasalardakiOneriler`) öneriler sayfasında.
   - Alınan öneride Planlama "Muhabiri görevlendir" (`oneriGorevlendirebilir`,
     gün ileri tarih de): plansız görev paketi (yukarıda), öneriye bağlı
     (`oneriId`, öneri "plana eklendi", `oneriPlansizKabul`), kolu masanın,

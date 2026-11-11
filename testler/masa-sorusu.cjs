@@ -64,7 +64,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   ok((await p.locator("[data-masa-al], [data-oneri-duzenle]").count()) === 0, "başka masa bu öneriye erişemiyor");
   await gir(muhabirId, oneriYolu);
   const metin = await p.locator("main").innerText();
-  ok((await p.locator("[data-masa-sorulari]").count()) === 0 && !metin.includes("زاوية اقتصادية") && !/masasına iletti|öneriyi aldı/.test(metin), "muhabir masa kartını, notu ve hareketleri görmüyor");
+  ok((await p.locator("[data-masa-sorulari]").count()) === 0 && !metin.includes("زاوية اقتصادية") && !/görüşüne sundu|uygun buldu/.test(metin), "muhabir masa kartını, notu ve hareketleri görmüyor");
 
   // 5. Planlama muhabiri görevlendirir: görev paketi, öneriye bağlı, ekonomi kolunda, stokta
   await gir("pl1", oneriYolu);
