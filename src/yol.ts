@@ -184,6 +184,7 @@ export const yerineGit = (yol: string) => {
 export const yerindeDegistir = (yol: string) => {
   // Adımın damgası kalsın (derinlik, kaydırma yeri); yoksa yeni adım sanılır.
   history.replaceState(history.state, "", `#/${yol}`);
+  simdikiHash = location.hash;
   if (GOMULU) oncekiHash = location.hash;
   window.dispatchEvent(new Event("trt-yol"));
 };
@@ -210,6 +211,8 @@ const damga = (): Damga | null => {
 let sayac = Date.now();
 let derinlik = 0;
 let simdikiPf = 0;
+/* Ekrandaki adımın adresi: geçiş sırasında (adres değişmiş, ekran henüz değil) gelen kaydırma yazılmasın. */
+let simdikiHash = "";
 let yerineGeciyor = false;
 const kaydirma = new Map<number, number>();
 /*
@@ -226,6 +229,7 @@ const damgala = (d: number) => {
   history.replaceState({ ...(history.state as object | null), ...yeni }, "");
   derinlik = d;
   simdikiPf = yeni.pf;
+  simdikiHash = location.hash;
 };
 
 /* İçerik geç çiziliyor (kayıt, pencere): yer tutana dek birkaç kare yeniden dene. */
@@ -247,7 +251,14 @@ if (!GOMULU) {
   if (ilk) {
     derinlik = ilk.d;
     simdikiPf = ilk.pf;
+    simdikiHash = location.hash;
   } else damgala(0);
+  // Kaydırmayı biz geri getiriyoruz; tarayıcının kendi düzeltmesi geri tuşunda eski sayfada kaydırıp yanlış yeri yazdırıyordu.
+  try {
+    history.scrollRestoration = "manual";
+  } catch {
+    /* desteklemeyen tarayıcı */
+  }
   let kare = 0;
   window.addEventListener(
     "scroll",
@@ -255,8 +266,9 @@ if (!GOMULU) {
       if (kare) return;
       kare = requestAnimationFrame(() => {
         kare = 0;
-        const s = damga();
-        if (s) kaydirma.set(s.pf, window.scrollY);
+        // Yalnız ekrandaki adımın adresindeyken yaz: bağlantıda ve geri tuşunda adres önce değişiyor,
+        // tarayıcı o arada sayfayı kaydırıyor; o kaydırma çıkılan ya da dönülen adımın yerini ezerdi.
+        if (simdikiPf && location.hash === simdikiHash) kaydirma.set(simdikiPf, window.scrollY);
       });
     },
     { passive: true },
@@ -268,6 +280,7 @@ if (!GOMULU) {
     if (s) {
       derinlik = s.d;
       simdikiPf = s.pf;
+      simdikiHash = location.hash;
       const y = kaydirma.get(s.pf);
       if (y !== undefined) kaydirYerine(y, acikSatirlar.get(s.pf));
       return;

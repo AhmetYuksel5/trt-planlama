@@ -2399,7 +2399,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`main details`) da adımın parçası: çıkarken hangileri açıksa sırasıyla
   saklanır, dönünce önce onlar açılır, sonra kaydırılır (kullanıcı:
   Organizasyon › Kişiler'de kişiye girip dönünce birimler kapalı açılıyor,
-  sayfa kısalıp başa düşüyordu). Sayfadaki "←" bağlantısı
+  sayfa kısalıp başa düşüyordu). Kaydırma yeri yalnız adres ekrandaki adımın
+  adresiyken (`simdikiHash`) ve o adıma (`simdikiPf`) yazılır; tarayıcının
+  kendi kaydırma düzeltmesi kapalı (`scrollRestoration = "manual"`): bağlantıda
+  ve geri tuşunda adres ekrandan önce değişiyor, o arada gelen kaydırma (başa
+  sarma, kısa sayfada kırpma) çıkılan ya da dönülen adımın yerini eziyordu.
+  Sayfadaki "←" bağlantısı
   `bilesenler/GeriBag.tsx`: uygulamanın içinden gelindiyse adı "Geri",
   `history.back()` (bölmede `bolmeGeri`); doğrudan açılan sayfada sabit
   listeye (`href`) gider, siteden dışarı atmaz. Önce sabit listeye gidiyordu
