@@ -1908,6 +1908,35 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     listesinde de (`depo/fark.ts → erisimListesi`, `talepte`; talebin
     hareketi de). Paket sayfasında künye (`GorevKunyesi`). Test
     `testler/paket-gorevi.cjs`.
+- Önerinin masaya sorulması (kullanıcı: ekonomi ya da programla ilgili
+  öneriyi Planlama o birime iletir, "alırız" derlerse notlarıyla ya da öneriyi
+  kendileri düzenleyerek, muhabiri Planlama görevlendirir; başka öneriyi de
+  "işinize yarar mı" diye sorar). Kurallar `masaSorusu.ts`, kart
+  `oneri/MasaSorusu.tsx → MasaKarti` (önerinin sayfasında ve penceresinde),
+  eylemler `eylemler.ts → oneriMasayaSor`, `masaSorusunuYanitla`,
+  `oneriGorevlendir`. Soru öneriden ayrı kayıtta (`Durum.masaSorulari`,
+  `MasaSorusu`; yapay zeka görüşü gibi): masanın notu muhabire gitmesin;
+  kısıtlı kişi koleksiyonu dinlemiyor, kural okutmuyor, soru hareketleri
+  (`MASA_HAREKETLERI`) muhabirin erişim listesine ve öneri geçmişine girmez.
+  - Planlama (öneri değerlendiren, tam yönetici) karar aşamasındaki muhabir
+    önerisini (`SORULABILIR_DURUM`) Ekonomi, Program ya da Spor'a
+    (`SORU_MASALARI`) notla iletir (`masayaSorabilir`; açık sorusu ya da
+    görevi olmayan; "yeni" öneri "değerlendiriliyor"a geçer), masaya
+    `oneriMasayaIletildi` (`sahip`). Tek açık soru; almayan masadan sonra
+    başka masaya sorulur, geçmiş kartta.
+  - Masa (`masaYanitlar`, birimi ya da "gibi" çalıştığı birim) notla "Alırız" /
+    "Almayız"; Planlama'ya `masaOneriyiAldi` / `masaOneriyiAlmadi`. Masa
+    öneriyi sorulduğundan görevlendirilene dek düzenler (`oneriDuzenleyebilir`
+    → `masaOneriyiDuzenler`). Öneriler sayfası masanın menüsünde yok; yalnız
+    sorulan önerinin sayfası açık (`App.tsx`, `masaOneriyiGorur`). Masanın
+    listesi "Planlama'dan gelen öneriler" (`MasaOnerileri`) ana sayfadaki masa
+    kartının üstünde ve Paketler/Ekonomi/Programlar'da; Planlama'nınki
+    "Masalardaki öneriler" (`MasalardakiOneriler`) öneriler sayfasında.
+  - Alınan öneride Planlama "Muhabiri görevlendir" (`oneriGorevlendirebilir`,
+    gün ileri tarih de): plansız görev paketi (yukarıda), öneriye bağlı
+    (`oneriId`, öneri "plana eklendi", `oneriPlansizKabul`), kolu masanın,
+    Strap önerinin; muhabire ve masaya tek `paketGorevVerildi`. Test
+    `testler/masa-sorusu.cjs`.
 - Masalar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da programı
   için üretimi Newsdesk gibi takip ediyor; `veri.ts → MASA_KOLLARI`,
   `masaPaketi`): kolun sahibi kendi birimi (`akis.ts → KOL_SAHIBI`, yapıda

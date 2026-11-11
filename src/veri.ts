@@ -710,6 +710,23 @@ export interface SepetParcasi {
   baglanti: string;
   zaman: string;
 }
+/*
+ * Planlama öneriyi masaya (Ekonomi, Program, Spor) soruyor (kullanıcı: "siz
+ * bunu alabilir misiniz, işinize yarar mı"); masa notuyla alır ya da almaz,
+ * isterse öneriyi düzenler, kabul edilen öneride muhabiri Planlama
+ * görevlendirir. Öneriden ayrı kayıtta: masanın iç notu muhabire gitmesin
+ * (muhabirin tarayıcısı bu koleksiyonu dinlemiyor).
+ */
+export interface MasaSorusu {
+  id: string;
+  oneriId: string;
+  birim: BirimId;
+  soran: string;
+  zaman: string;
+  not?: string;
+  cevap?: { kabul: boolean; kisiId: string; zaman: string; not?: string };
+}
+
 export interface YzGorus {
   id: string;
   oneriId: string;
@@ -1513,6 +1530,9 @@ export const HAREKET_TIPLERI = [
   "gorevTalebiGeldi",
   "gorevTalebiReddedildi",
   "gorevTalebiGeriCekildi",
+  "oneriMasayaIletildi",
+  "masaOneriyiAldi",
+  "masaOneriyiAlmadi",
   "paketBaskaMuhabire",
   "takdirBildirildi",
   "gecisUygulandi",
@@ -1663,6 +1683,7 @@ export interface Durum {
   geriBildirimSablonlari: GeriBildirimSablonu[];
   /** Yapay zekanın haber değeri görüşleri; eski kayıtta yok. */
   yzGorusleri?: YzGorus[];
+  masaSorulari?: MasaSorusu[];
   /** Yerleşik listede olmayan, sonradan eklenen şehirler. */
   sehirler?: SehirTanimi[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
@@ -1818,6 +1839,7 @@ export const bosDurum = (): Durum => ({
   takipler: [],
   geriBildirimSablonlari: [],
   yzGorusleri: [],
+  masaSorulari: [],
   sehirler: [],
   gorevler: [],
   isler: [],

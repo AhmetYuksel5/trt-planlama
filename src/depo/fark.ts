@@ -1,4 +1,5 @@
 import type { Durum } from "../veri";
+import { MASA_HAREKETLERI } from "../masaSorusu";
 
 /**
  * Gerçek kipte kayıt Firestore'da kayıt kayıt duruyor: `Durum`'un her dizi
@@ -36,6 +37,7 @@ export const DIZI_ALANLARI = [
   "takipler",
   "geriBildirimSablonlari",
   "yzGorusleri",
+  "masaSorulari",
   "sehirler",
   "gorevler",
   "isler",
@@ -116,10 +118,12 @@ export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
     const v = o.veri ?? {};
     // Çağrı hareketi çağrıyı tarih ve türle buluyor (yetki.ts → muhabirBildirimi).
     const cagri = (oge as { tip?: string }).tip === "cagriHazirlandi" ? ((d.cagrilar ?? []) as unknown as Kayit[]).find((c) => c.tarih === v.tarih && (c.tur === "haftalik") === !!v.hafta) : undefined;
+    // Masaya sorma Planlama ile masa arasında: önerinin muhabirine gitmesin.
+    const masa = (MASA_HAREKETLERI as readonly string[]).includes((oge as { tip?: string }).tip ?? "");
     l = [
       o.kisiId,
       ...(v.kime ? v.kime.split(",") : []),
-      oneriMuhabiri(o.oneriId),
+      masa ? undefined : oneriMuhabiri(o.oneriId),
       ...paketMuhabirleri(o.paketId),
       bul(d, "takipler", v.takipId)?.muhabirId,
       bul(d, "faaliyetler", v.faaliyetId)?.muhabirId,

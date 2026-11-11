@@ -89,6 +89,7 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oneri,
+  type MasaSorusu,
   type OneriGorunumu,
   type Paket,
   type MetinParcasi,
@@ -188,7 +189,11 @@ import {
   gorevTalebiVerebilir,
   gorevTalebiKarariVerebilir,
   gorevTalebiGeriCekebilir,
+  masayaSorabilir,
+  masaYanitlar,
+  oneriGorevlendirebilir,
 } from "./yetki";
+import { acikSoru, kabulSoru } from "./masaSorusu";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -2791,6 +2796,63 @@ export const gorevTalebiGeriCek = (ben: Kisi, id: string) => {
   return true;
 };
 
+/*
+ * Öneriyi masaya sorma (kullanıcı): Planlama ekonomi, program ya da sporla
+ * ilgili öneriyi o masaya iletir; masa notuyla alır ya da almaz (öneriyi
+ * düzenleyebilir, oneriDuzenleyebilir); alınan öneride muhabiri Planlama
+ * görevlendirir. Soru öneriden ayrı kayıtta (veri.ts → MasaSorusu).
+ */
+export const oneriMasayaSor = (ben: Kisi, oneriId: string, birim: BirimId, not = ""): boolean => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  if (!o || !masayaSorabilir(ben, o, d) || !(MASA_KOLLARI as readonly string[]).includes(birim)) return false;
+  const soru: MasaSorusu = { id: kimlik("ms"), oneriId, birim, soran: ben.id, zaman: simdi(), ...(not.trim() && { not: not.trim() }) };
+  d = { ...d, masaSorulari: [...(d.masaSorulari ?? []), soru] };
+  // Planlama'nın dokunduğu öneri "değerlendiriliyor"a geçer: muhabir artık geri çekemez.
+  if (o.durum === "yeni") d = { ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? { ...x, durum: "degerlendiriliyor" as const } : x)) };
+  d = hareketYaz(d, { kisiId: ben.id, tip: "oneriMasayaIletildi", oneriId, veri: { sahip: birim, birim } });
+  if (soru.not) d = bahset(d, ben, soru.not, { yol: `#/oneriler/${oneriId}`, baslik: o.haberBasligi });
+  kaydet(d);
+  return true;
+};
+
+export const masaSorusunuYanitla = (ben: Kisi, oneriId: string, kabul: boolean, not = ""): boolean => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  const s = acikSoru(d, oneriId);
+  if (!o || !s || !masaYanitlar(ben, o, d)) return false;
+  const cevap = { kabul, kisiId: ben.id, zaman: simdi(), ...(not.trim() && { not: not.trim() }) };
+  d = { ...d, masaSorulari: (d.masaSorulari ?? []).map((x) => (x.id === s.id ? { ...x, cevap } : x)) };
+  d = hareketYaz(d, { kisiId: ben.id, tip: kabul ? "masaOneriyiAldi" : "masaOneriyiAlmadi", oneriId, veri: { kime: s.soran, birim: s.birim } });
+  if (cevap.not) d = bahset(d, ben, cevap.not, { yol: `#/oneriler/${oneriId}`, baslik: o.haberBasligi });
+  kaydet(d);
+  return true;
+};
+
+/** Masanın aldığı öneride muhabire görev: plansız görev paketi (stokta), masanın kolunda, öneriye bağlı. */
+export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string): string | null => {
+  let d = getir();
+  const o = oneriBul(d, oneriId);
+  const s = kabulSoru(d, oneriId);
+  if (!o || !s || !o.muhabirId || !oneriGorevlendirebilir(ben, o, d) || !gorevTarihiUygun(ben, tarih)) return null;
+  const z = simdi();
+  const k = gorevPaketi(d, ben, { muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, aciklama: o.gelisme, bicim: o.bicim && o.bicim !== TAKIP_BICIMI ? o.bicim : undefined, tarih }, {
+    durum: "onaylandi",
+    gorev: { veren: ben.id, zaman: z },
+    gorevZamani: z,
+    oneriId,
+    tur: s.birim as IcerikTuru,
+    sahaGerekli: o.sahaGerekli,
+  });
+  if (!k) return null;
+  const [p, yeni] = k;
+  d = { ...yeni, oneriler: yeni.oneriler.map((x) => (x.id === oneriId ? { ...x, durum: "planaEklendi" as const, paketId: p.id } : x)) };
+  // Muhabire görev, masaya "görevlendirildi" (sahip): ikisi de bu tek hareketten.
+  d = hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, veri: { kime: o.muhabirId, muhabir: o.muhabirId, tarih, sahip: s.birim } });
+  kaydet(d);
+  return p.id;
+};
+
 /* --- Üretim adımları (rapor 4-10. kutular) --- */
 
 export interface AdimGirdisi {
@@ -3614,7 +3676,7 @@ export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi):
 export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) => {
   let d = getir();
   const o = oneriBul(d, oneriId);
-  if (!o || !oneriDuzenleyebilir(ben, o) || !g.haberBasligi.trim()) return false;
+  if (!o || !oneriDuzenleyebilir(ben, o, d) || !g.haberBasligi.trim()) return false;
   let yeni: Oneri = {
     ...o,
     ilkHali: o.ilkHali ?? { haberBasligi: o.haberBasligi, gelisme: o.gelisme, ...(o.paketBasligi && { paketBasligi: o.paketBasligi }) },

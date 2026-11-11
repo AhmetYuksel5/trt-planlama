@@ -23,6 +23,7 @@ import {
 import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
 import { bugun } from "./tarih";
+import { SORULABILIR_DURUM, acikSoru, kabulSoru, oneriGorevPaketi, oneriSorulari, sonSoru } from "./masaSorusu";
 import { muhasebeOkur } from "./depo/fark";
 import {
   BIRIMLER,
@@ -730,8 +731,37 @@ export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean =>
   (!!ben.hesapYoneticisi ||
     (ben.birim === "planlama" && ben.rol === "yonetici"));
 /** Planlama öneriyi her aşamada düzeltebiliyor (plana eklendikten sonra da); muhabire gönderilmiş teklif muhabirin. */
-export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri): boolean =>
-  !!ben && yapabilir(ben, "oneriDegerlendir") && o.durum !== "teklif";
+export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri, d: Durum | null = anlik()): boolean =>
+  !!ben && o.durum !== "teklif" && (yapabilir(ben, "oneriDegerlendir") || (!!d && masaOneriyiDuzenler(ben, o, d)));
+
+/* --- Önerinin masaya sorulması (masaSorusu.ts) --- */
+
+/** Masanın üyesi: birimi (ya da "gibi" çalıştığı birim) o masa; tam yönetici her masa adına. */
+const masaUyesi = (ben: Kisi, birim: BirimId) => !kisitliKisi(ben) && !ben.pasif && (!!ben.hesapYoneticisi || izinBirimi(ben.birim) === birim);
+
+/** Planlama karar aşamasındaki muhabir önerisini masaya sorar; açık sorusu ya da görevi olmayanı. */
+export const masayaSorabilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
+  !!ben && (yapabilir(ben, "oneriDegerlendir") || !!ben.hesapYoneticisi) && !!o.muhabirId && !o.talimatVeren && SORULABILIR_DURUM.includes(o.durum) && !acikSoru(d, o.id) && !oneriGorevPaketi(d, o.id);
+
+/** Açık soruyu masanın üyesi yanıtlar. */
+export const masaYanitlar = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean => {
+  const s = acikSoru(d, o.id);
+  return !!ben && !!s && SORULABILIR_DURUM.includes(o.durum) && masaUyesi(ben, s.birim);
+};
+
+/** Masa öneriyi sorulduğundan görevlendirilene dek düzenler (kullanıcı: "öneriye bizzat kendileri editleyerek"). */
+export const masaOneriyiDuzenler = (ben: Kisi, o: Oneri, d: Durum): boolean => {
+  const s = sonSoru(d, o.id);
+  return !!s && (!s.cevap || s.cevap.kabul) && SORULABILIR_DURUM.includes(o.durum) && !oneriGorevPaketi(d, o.id) && masaUyesi(ben, s.birim);
+};
+
+/** Masanın aldığı öneride muhabiri Planlama görevlendirir (ileri tarihe de). */
+export const oneriGorevlendirebilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
+  ileriGorevVerebilir(ben) && !!o.muhabirId && SORULABILIR_DURUM.includes(o.durum) && !!kabulSoru(d, o.id) && !oneriGorevPaketi(d, o.id);
+
+/** Masaya sorulmuş öneri, öneriler sayfası menüsünde olmayan masaya da açık. */
+export const masaOneriyiGorur = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
+  !!ben && oneriSorulari(d, o.id).some((s) => masaUyesi(ben, s.birim));
 /** Planlama görevlerini ve iş taksimini Planlama yöneticisi ve tam yönetici düzenliyor; iş ekleme görevleri gören herkeste. */
 export const gorevleriDuzenler = (ben: Kisi | undefined): boolean =>
   !!ben &&

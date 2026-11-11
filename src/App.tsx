@@ -76,6 +76,7 @@ import {
   yapabilir,
   dilDenetmeniMi,
   muhasebeciMi,
+  masaOneriyiGorur,
 } from "./yetki";
 import { GOMULU, useYol } from "./yol";
 
@@ -242,7 +243,10 @@ export default function App() {
 
   const sayfa = yol.sayfa;
   let icerik: ReactNode;
-  if (!sayfaGorebilir(ben, sayfa)) {
+  // Masaya sorulan öneri, öneriler sayfası menüsünde olmayan masaya da açık (yalnız o önerinin sayfası).
+  const masaninOnerisi = sayfa === "oneriler" && yol.id ? oneriBul(v, yol.id) : undefined;
+  const masaOnerisi = !!masaninOnerisi && masaOneriyiGorur(ben, masaninOnerisi, v);
+  if (!sayfaGorebilir(ben, sayfa) && !masaOnerisi) {
     icerik = <Yetkisiz />;
   } else {
     switch (sayfa) {

@@ -7,6 +7,7 @@ import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, so
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { OzelTalepAlani } from "./OzelYayin";
 import { GorevTalepleri, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
+import { MasaOnerileri } from "./oneri/MasaSorusu";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, yaz, type Anahtar } from "../dil";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
@@ -54,6 +55,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     <>
       <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <GorevTalepleri ben={ben} />
+      <MasaOnerileri ben={ben} />
       <Kart>
         <div className="suzgec">
           <label className="arama arama-kutu">

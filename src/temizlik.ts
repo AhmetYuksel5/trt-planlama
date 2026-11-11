@@ -152,6 +152,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     mesajlar: d.mesajlar.filter((m) => !mesajlar.has(m.id)),
     // Görüş önerinin izi; sayılmıyor, öneriyle gidiyor.
     ...(d.yzGorusleri?.some((g) => oneriler.has(g.oneriId)) ? { yzGorusleri: d.yzGorusleri.filter((g) => !oneriler.has(g.oneriId)) } : {}),
+    ...(d.masaSorulari?.some((m) => oneriler.has(m.oneriId)) ? { masaSorulari: d.masaSorulari.filter((m) => !oneriler.has(m.oneriId)) } : {}),
     hareketler: d.hareketler.filter((h) => !hareketler.has(h.id)),
   };
 

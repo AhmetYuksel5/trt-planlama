@@ -13,7 +13,9 @@ import { KANAL_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, sehirAdi, ulkeAd
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, baslikBul, kisiBul, paketBul, planBul, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
 import { temizle } from "../../temizlik";
-import { oneriBirlestirebilir, arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
+import { MASA_HAREKETLERI } from "../../masaSorusu";
+import { MasaKarti, MasalardakiOneriler } from "./MasaSorusu";
+import { kisitliKisi, oneriBirlestirebilir, arsivdenCikarabilir, geriAlabilir, oneriSilebilir, oneriSatiriEkleyebilir, muhabireOneriGonderebilir, oneriGeriCekebilir, teklifKarariVerebilir, oneriDuzenleyebilir, oneriDuzeltmeyeGider, oneriGorebilir, oneriYenidenGonderebilir, yapabilir } from "../../yetki";
 import { git, useAdimDurumu } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -109,6 +111,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
       />
       {muhabireOner && <MuhabireOneriPenceresi ben={ben} kapat={() => setMuhabireOner(false)} />}
       {!arsiv && !muhabir && <EsCiftleri ben={ben} />}
+      {!arsiv && !muhabir && <MasalardakiOneriler ben={ben} />}
       <Kart>
         <div className="sekmeler ara-alt-2" role="tablist" data-oneri-arsiv-sekmesi>
           <a href="#/oneriler" role="tab" aria-selected={!arsiv} className={arsiv ? "" : "acik"} data-oneri-guncel>
@@ -555,7 +558,8 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
   const yer = oneriYeri(v, oneri);
   const haftaPlani = yer?.hafta ?? (oneri.hafta ? v.haftalik.find((h) => h.baslangic === oneri.hafta) : undefined);
   const degerlendirir = yapabilir(ben, "oneriDegerlendir") && oneri.durum !== "planaEklendi" && oneri.durum !== "teklif" && oneri.durum !== "geriCekildi" && !yer;
-  const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id);
+  // Masaya sorma Planlama ile masa arasında; muhabir kendi önerisinin geçmişinde görmez.
+  const hareketler = v.hareketler.filter((h) => h.oneriId === oneri.id && !(kisitliKisi(ben) && MASA_HAREKETLERI.includes(h.tip)));
   /* E-postayla geldiyse kaynağı; muhabir de kendi yanıtını görüyor. */
   const yanit = v.yanitlar.find((y) => y.id === oneri.yanitId);
   // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
@@ -710,6 +714,7 @@ export function OneriDetay({ ben, oneri, pencerede = false }: { ben: Kisi; oneri
               </details>
             )}
           </Kart>
+          <MasaKarti ben={ben} oneri={oneri} />
           <TakipSatirlari ben={ben} oneri={oneri} />
           <OneriYazismasi ben={ben} oneri={oneri} />
           {/* Pencerede orijinal e-posta (gelişmenin tekrarı) ve geçmiş kapalı satır: pencere aşağı doğru çok uzuyordu. */}
