@@ -194,6 +194,7 @@ import {
   oneriGorevlendirebilir,
 } from "./yetki";
 import { acikSoru, kabulSoru } from "./masaSorusu";
+import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -628,6 +629,7 @@ export const oneriPlanaEkle = (
       muhabirId,
       notlar: "",
       oneriId: o.id,
+      ekleyen: { kisiId: ben.id, zaman: simdi() },
     };
     d = { ...d, canliYayinlar: [...d.canliYayinlar, canli] };
   }
@@ -1492,6 +1494,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       notlar: "",
       oneriId: k.oneriId,
       haftalikKalemId: k.id,
+      ...(kisiId !== SISTEM && { ekleyen: { kisiId, zaman: simdi() } }),
     };
     if (!d.canliYayinlar.some((c) => c.id === canli.id)) d = { ...d, canliYayinlar: [...d.canliYayinlar, canli] };
   }
@@ -1525,7 +1528,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       olusturma: simdi(),
       guncelleme: simdi(),
     };
-    d = { ...d, paketler: [paket, ...d.paketler] };
+    // Görev haftalığın kesinleşmesiyle gidiyor; sistemin sonradan yaptığı aktarımda (SISTEM) künyeye yazılmaz.
+    d = { ...d, paketler: [kunyeYaz(paket, "gorevlendiren", kisiId, simdi()), ...d.paketler] };
   }
   // Paket ancak günlük plan açılınca da doğabiliyor (kesinleşmeden sonra); muhabir o an haberdar oluyor. Kimlik plandan: iki tarayıcı tek bildirim.
   if (paketId && muhabirId) d = hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
@@ -1562,7 +1566,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     olusturma: simdi(),
     guncelleme: simdi(),
   };
-  d = { ...d, paketler: [paket, ...d.paketler] };
+  d = { ...d, paketler: [kunyeYaz(paket, "gorevlendiren", ben.id, simdi()), ...d.paketler] };
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
   // Muhabire de: onaylanan haber sayfasına ve zile düşüyor.
@@ -1832,7 +1836,8 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     d = planGuncelle(d, planId, (p) => ({ ...p, ekip: p.ekip.map(sade), oncekiHareketler: undefined, basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map(sade) })) }));
     d = { ...d, gelismeler: d.gelismeler.map((g) => (g.planId === planId ? sade(g) : g)), canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId ? sade(c) : c)) };
     for (const p of paketler.filter((x) => x.durum === "taslak" || x.durum === "degerlendiriliyor")) {
-      d = paketGuncelle(d, p.id, (x) => ({ ...x, durum: "onaylandi" }));
+      // Kararsız paket onayla kabul sayılıyor: muhabire görev planı onaylayandan.
+      d = paketGuncelle(d, p.id, (x) => kunyeYaz({ ...x, durum: "onaylandi" }, "gorevlendiren", ben.id, simdi()));
       d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { toplanti: "1" } });
     }
     /*
@@ -2351,7 +2356,7 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   if (c.id) {
     kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {
-    kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy") }] });
+    kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy"), ekleyen: { kisiId: ben.id, zaman: simdi() } }] });
   }
   return true;
 };
@@ -2463,7 +2468,12 @@ export const paketTamamla = (ben: Kisi, id: string) => {
   if (!p || !p.ozelId || !paketTamamlayabilir(ben, p, d)) return false;
   const z = simdi();
   const muhabirKendisi = ben.id === p.muhabirId;
-  let yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) }));
+  // Künye: işi yapan değil de Planlama kapattıysa onu teslim alan onaylayan.
+  const yapanKendisi = ben.id === (p.muhabirId ?? p.hazirlayanId);
+  let yeni = paketGuncelle(d, id, (x) => {
+    const y: Paket = { ...x, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(muhabirKendisi && !x.muhabirTeslimi ? { muhabirTeslimi: z } : {}) };
+    return yapanKendisi ? y : kunyeYaz(y, "onaylayan", ben.id, z);
+  });
   // Özel yayın talebi: teslimi Planlama izliyor; işi yapan değil de Planlama kapattıysa işi yapana haber.
   if (p.ozelId) {
     const yapan = p.muhabirId ?? p.hazirlayanId;
@@ -2491,7 +2501,7 @@ const isaretUygula = (d: Durum, ben: Kisi, p: Paket, kabul: boolean): Durum => {
     const { isaret: _, ...y } = x;
     if (!kabul) return { ...y, guncelleme: z };
     if (i.tur === "yapilmadi") return { ...y, durum: "iptal", adim: undefined, yapilmadi: { sebep: i.sebep ?? "", zaman: i.zaman, kisiId: i.kisiId, onaylayan: ben.id }, guncelleme: z };
-    return { ...y, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(i.kisiId === x.muhabirId && !x.muhabirTeslimi ? { muhabirTeslimi: i.zaman } : {}) };
+    return kunyeYaz({ ...y, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(i.kisiId === x.muhabirId && !x.muhabirTeslimi ? { muhabirTeslimi: i.zaman } : {}) }, "onaylayan", ben.id, z);
   });
   return hareketYaz(yeni, { kisiId: ben.id, tip: kabul ? "paketIsaretOnaylandi" : "paketIsaretGeriCevrildi", paketId: p.id, planId: p.planId, veri: { tur: i.tur, ...(p.muhabirId && { kime: p.muhabirId }) } });
 };
@@ -2653,7 +2663,8 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
   // İptalde bekleyen işaret de gidiyor: kuyrukta kalıp onaylanınca iptal paketi "tamamlandı"ya çeviriyordu.
   d = paketGuncelle(d, id, (x) => {
     const { isaret: _i, ...kalan } = x;
-    return yeni === "iptal" ? { ...kalan, durum: yeni, adim: undefined } : { ...x, durum: yeni };
+    // Toplantıda "Kabul et": muhabire görev o an gidiyor, görevlendiren kabul eden.
+    return yeni === "iptal" ? { ...kalan, durum: yeni, adim: undefined } : yeni === "onaylandi" ? kunyeYaz({ ...x, durum: yeni }, "gorevlendiren", ben.id, simdi()) : { ...x, durum: yeni };
   });
   const tip = yeni === "degerlendiriliyor" ? "paketDegerlendirmede" : yeni === "onaylandi" ? "paketOnaylandi" : "paketIptal";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, paketId: id, planId: p.planId }));
@@ -2906,7 +2917,9 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
     ...(adim === "video" || parcali ? { muhabirTeslimi: simdi(), videoIade: undefined } : {}),
     ...(sonraki === "tamam" ? { durum: "tamamlandi", adim: undefined } : { adim: sonraki }),
   };
-  d = paketGuncelle(d, paketId, () => yeni);
+  // Künye: adımı yapan adıyla pakete (hareket kaydı sınırlı, eski paketin künyesi oradan kurulamaz).
+  const rol = ADIM_ROLU[adim as UretimAdimi];
+  d = paketGuncelle(d, paketId, () => (rol ? kunyeYaz(yeni, rol, ben.id, simdi()) : yeni));
   if (g.not?.trim()) d = bahset(d, ben, g.not, { yol: `#/paketler/${paketId}`, baslik: p.baslik });
   const veri: Record<string, string> = { adim: sonraki, sahip: paketSahibi(yeni) ?? "" };
   // Stok paketi son adımda yayına değil stoğa giriyor; hareket cümlesi ona göre.
@@ -2944,7 +2957,7 @@ export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: 
   const eski = p?.parcalar?.find((x) => x.id === parcaId);
   if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !metin.trim()) return false;
   const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "dil" };
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), guncelleme: simdi() }));
+  d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), guncelleme: simdi() }, "metin", ben.id, simdi()));
   kaydet(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, "scriptEditor"));
   return true;
 };
@@ -2974,7 +2987,7 @@ export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: 
   const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "tamam" };
   const parcalar = p.parcalar!.map((y) => (y.id === parcaId ? parca : y));
   const hazir = parcalarHazir({ parcalar });
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }));
+  d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }, "dil", ben.id, simdi()));
   kaydet(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""));
   return true;
 };
@@ -5180,6 +5193,26 @@ export const oneriyeSatirlarEkle = (ben: Kisi, oneriId: string, metinler: string
  * henüz üretime alınmamış masa paketinin stok işareti kalkar, masasına
  * geçer. Bitmiş (stokta) paket yerinde kalır, Next Day'den yine seçilir.
  */
+/*
+ * Künyeden önce bitmiş paketin künyesi hareket kaydından (kunye.ts →
+ * hareketlerdenKunye): yalnız izi hâlâ duran yakın tarihli paket; sistemin
+ * açılış işi, yalnız bir şey bulunca yazar.
+ */
+export const kunyeleriDoldur = (): number => {
+  let d = getir();
+  const izli = new Set(d.hareketler.map((h) => h.paketId).filter(Boolean));
+  let n = 0;
+  for (const p of d.paketler) {
+    if (p.durum !== "tamamlandi" || p.kunye || !izli.has(p.id)) continue;
+    const y = hareketlerdenKunye(d, p);
+    if (y === p) continue;
+    d = paketGuncelle(d, p.id, () => y);
+    n++;
+  }
+  if (n) kaydet(d);
+  return n;
+};
+
 export const masaPaketleriniStoktanAyir = (): number => {
   let d = getir();
   const tasinacak = d.paketler.filter((p) => p.stok && masaPaketi(p) && p.durum === "onaylandi" && !p.adim);
@@ -5579,7 +5612,7 @@ export const ozelPaketGorevVer = (ben: Kisi, paketId: string, ver: boolean) => {
   if (!p || !ozelGorevVerebilir(ben, p, ver)) return false;
   d = paketGuncelle(d, paketId, (x) => {
     const { ozelGorevBekliyor: _, ...kalan } = x;
-    return ver ? { ...kalan, guncelleme: simdi() } : { ...kalan, ozelGorevBekliyor: true as const, guncelleme: simdi() };
+    return ver ? kunyeYaz({ ...kalan, guncelleme: simdi() }, "gorevlendiren", ben.id, simdi()) : { ...kalan, ozelGorevBekliyor: true as const, guncelleme: simdi() };
   });
   const o = ozelBul(d, p.ozelId!);
   if (o?.paketOnerileri?.some((x) => x.paketId === p.id))
@@ -5595,7 +5628,7 @@ export const ozelPaketAta = (ben: Kisi, paketId: string, kisiId: string) => {
   const p = paketBul(d, paketId);
   const k = kisiBul(d, kisiId);
   if (!p || !k || k.pasif || !ozelPaketDagitabilir(ben, p) || p.hazirlayanId === kisiId) return false;
-  d = paketOnerisiIzi(paketGuncelle(d, paketId, (x) => ({ ...x, hazirlayanId: kisiId, guncelleme: simdi() })), ben, p, "gorevli");
+  d = paketOnerisiIzi(paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, hazirlayanId: kisiId, guncelleme: simdi() }, "gorevlendiren", ben.id, simdi())), ben, p, "gorevli");
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "ozelPaketAtandi", paketId, ozelId: p.ozelId, veri: { kime: kisiId, ...(p.ozelAd ? { ad: p.ozelAd } : {}), ...(p.sonTarih ? { tarih: p.sonTarih } : {}) } }));
   return true;
 };

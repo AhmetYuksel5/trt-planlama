@@ -612,7 +612,19 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
 .muhasebe-aylar .dugme-metin { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: start; }
 .muhasebe-turler { margin-block-end: var(--ara-2); }
 .muhasebe-isler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
-.muhasebe-isler li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--ara-2); }
+.muhasebe-isler li { display: block; }
+.muhasebe-is > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--ara-2); cursor: pointer; }
+.muhasebe-is > .kunye { margin-block: var(--ara-2); margin-inline-start: var(--ara-4); }
+/* Künye: biten işin kimlik kartı (bilesenler/Kunye.tsx); kısa, iki sütunlu satırlar. */
+.kunye { display: grid; gap: var(--ara-1); margin: 0; }
+.kunye-satir { display: grid; grid-template-columns: minmax(7em, max-content) minmax(0, 1fr); gap: var(--ara-3); align-items: baseline; }
+.kunye-satir dt { color: var(--sonuk); font-size: var(--punto-kucuk); }
+.kunye-satir dd { margin: 0; display: flex; flex-wrap: wrap; gap: var(--ara-1) var(--ara-3); }
+.kunye-kisi { display: inline-flex; gap: var(--ara-1); align-items: baseline; }
+.kunye-kisi small { color: var(--sonuk); font-variant-numeric: tabular-nums; }
+.kunye-ac { margin-block-start: var(--ara-1); }
+.kunye-ac > summary { cursor: pointer; color: var(--sonuk); font-size: var(--punto-kucuk); display: inline-flex; gap: var(--ara-1); align-items: center; }
+.kunye-ac > .kunye { margin-block-start: var(--ara-2); }
 .muhasebe-isler small { color: var(--sonuk); min-inline-size: 6em; font-variant-numeric: tabular-nums; }
 .muhasebe-kapanis { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--ara-3); }
 .muhasebe-ay-kota { display: flex; flex-wrap: wrap; align-items: end; gap: var(--ara-2); }

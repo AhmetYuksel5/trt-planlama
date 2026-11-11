@@ -1,4 +1,5 @@
 import { Calculator, ChevronLeft, ChevronRight, Download, FileSpreadsheet, ListChecks, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { IsKunyesi } from "../bilesenler/Kunye";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Kart, KisiHucre, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { indir } from "../bilesenler/indir";
@@ -206,9 +207,15 @@ function DokumAyrintisi({ x, ay, ben, tur }: { x: AylikDokum; ay: string; ben: K
         <ol className="muhasebe-isler" data-mh-isler>
           {isler.map((i) => (
             <li key={i.id}>
-              <small>{tarihYaz(i.tarih, dil)}</small>
-              <Rozet>{t(BICIM_ADI(i.tur))}</Rozet>
-              <Icerik>{i.baslik}</Icerik>
+              {/* Künye satırın içinde: muhasebeci paket sayfasını açamıyor. */}
+              <details className="muhasebe-is" data-mh-is={i.id}>
+                <summary>
+                  <small>{tarihYaz(i.tarih, dil)}</small>
+                  <Rozet>{t(BICIM_ADI(i.tur))}</Rozet>
+                  <Icerik>{i.baslik}</Icerik>
+                </summary>
+                <IsKunyesi kaynak={i.kaynak} id={i.id} />
+              </details>
             </li>
           ))}
         </ol>

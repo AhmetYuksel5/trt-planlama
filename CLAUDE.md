@@ -1938,6 +1938,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriId`, öneri "plana eklendi", `oneriPlansizKabul`), kolu masanın,
     Strap önerinin; muhabire ve masaya tek `paketGorevVerildi`. Test
     `testler/masa-sorusu.cjs`.
+- Künye (kullanıcı: biten paketin ve canlının kimlik kartı, kısa; "direkt kim
+  yaptıysa onun adı", birim değil; Muhasebe'ye de gitsin). Kurallar
+  `kunye.ts`, kart `bilesenler/Kunye.tsx`. Adım yapıldığı an pakete yazılır
+  (`Paket.kunye`, `KUNYE_ROLLERI`, `kunyeYaz`): hareket kaydı son 2000'le
+  sınırlı (`EN_COK_HAREKET`), eski paketin künyesi oradan kurulsa boşalırdı.
+  - Roller: görevlendiren (tek, son veren: Newsdesk/görevlendirme adımı,
+    toplantıda "Kabul et", plan onayı, haftalığın kesinleşmesi, özel yayın
+    görevi ve ataması; plansız görevde `Paket.gorev`), metni düzelten (kontrol
+    adımı, `parcaDuzelt`), dil denetimi (dil adımı, `parcaSonHal`), video
+    kontrolü, sisteme yükleyen (media, inews), onaylayan (tek: "Yapıldı"nın
+    onayı `isaretUygula`, özel yayında teslimi alan); metin ve dil parça
+    parça başka kişilere düşebildiği için liste. Adım rolü `ADIM_ROLU`;
+    muhabirin kendi adımları ve iletim girmez, sistemin işi (`SISTEM`) yazılmaz.
+    Öneren ve muhabir (teslim saatiyle) kayıttan okunur (`paketKunyesi`).
+  - Canlı: `CanliYayin.ekleyen` (`canliKaydet`, öneriden ve haftalıktan açılan),
+    muhabir, yapıldı işaretleyen (`sonuc`; `canliKunyesi`).
+  - Görünür: paket sayfasında biten pakette kart (`PaketKunyeKarti`), plan
+    ekranında yapılmış canlının satırında katlanır (`CanliKunyesi`), Muhasebe
+    dökümünde ve muhabir sekmesinde iş satırı açılınca (`IsKunyesi`;
+    muhasebeci paket sayfasını açamıyor, kart satırın içinde). Ücret yok, yalnız
+    ad ve saat; muhabir kendi paketininkini görür. Boş rol çizilmez.
+  - Künyeden önce bitmiş paketi sistemin açılış işi bir kez hareket kaydından
+    doldurur (`eylemler.ts → kunyeleriDoldur`, `hareketlerdenKunye`); izi
+    silinmiş eski pakette yalnız bilinen satırlar. Test `testler/kunye.cjs`.
 - Masalar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da programı
   için üretimi Newsdesk gibi takip ediyor; `veri.ts → MASA_KOLLARI`,
   `masaPaketi`): kolun sahibi kendi birimi (`akis.ts → KOL_SAHIBI`, yapıda

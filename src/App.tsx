@@ -63,7 +63,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
+import { demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
 import { izlemede } from "./izleme";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
 import { otoHataMetni } from "./ekranlar/posta/OtoCagri";
@@ -155,7 +155,7 @@ export default function App() {
        * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
        * sayfa çalışıyor; hata konsolda.
        */
-      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari]) {
+      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, kunyeleriDoldur]) {
         try {
           is();
         } catch (hata) {

@@ -20,6 +20,7 @@ import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/Tamamlam
 import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
+import { PaketKunyeKarti } from "../bilesenler/Kunye";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -118,6 +119,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           </Kart>
         </div>
         <div className="iz">
+          <PaketKunyeKarti p={paket} />
           <Kart baslik={t("bilgiler")}>
             <div className="alanlar">
               <div className="alan">

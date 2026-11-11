@@ -403,7 +403,23 @@ export interface CanliYayin {
    * muhabirin canlılarını bundan sayıyor; planlanmış canlı yapılmış sayılmaz.
    */
   sonuc?: { durum: "yapildi" | "yapilmadi"; kisiId: string; zaman: string };
+  /** Canlıyı plana koyan (künye; kunye.ts). Eski kayıtta yok. */
+  ekleyen?: KunyeIzi;
 }
+
+/*
+ * Künye (kullanıcı: biten paketin ve canlının kimlik kartı; işi kim
+ * görevlendirdi, metni kim düzeltti, dil denetimini, video kontrolünü kim
+ * yaptı, kim yükledi, kim onayladı; "direkt kim yaptıysa onun adı"). Adım
+ * yapıldığı an pakete yazılıyor: hareket kaydı sınırlı (son 2000), eski
+ * paketin künyesi oradan kurulsa boşalırdı. Kurallar kunye.ts.
+ */
+export interface KunyeIzi {
+  kisiId: string;
+  zaman: string;
+}
+export const KUNYE_ROLLERI = ["gorevlendiren", "metin", "dil", "videoKontrol", "yukleyen", "onaylayan"] as const;
+export type KunyeRolu = (typeof KUNYE_ROLLERI)[number];
 
 /* --- Muhasebe (News Gathering'in alt birimi; muhasebe.ts) --- */
 
@@ -970,6 +986,8 @@ export interface Paket {
    * seçilip plan Newsdesk'e devredilince yayınlanmış sayılıyor.
    */
   stok?: boolean;
+  /** Künye: adımı yapanlar (kunye.ts). Parçalı metinde bir rolde birden çok kişi olabilir. */
+  kunye?: Partial<Record<KunyeRolu, KunyeIzi[]>>;
   /*
    * Plansız görev (kullanıcı): Planlama (ileri tarihe de) ya da Newsdesk
    * (yalnız o gün) muhabire bir plana eklemeden paket görevi veriyor. Stokta

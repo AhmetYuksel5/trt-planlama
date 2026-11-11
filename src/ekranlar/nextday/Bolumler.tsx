@@ -1,4 +1,5 @@
 import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
+import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { ArrowRightLeft, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -375,6 +376,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                       </Rozet>
                     )}
                   </small>
+                  <CanliKunyesi c={c} />
                 </div>
                 {/* Yapıldı mı (Newsdesk; muhasebe yapılanı sayar): plan kilitli olsa da işaretlenir. */}
                 {ben && c.muhabirId && canliSonucIsaretleyebilir(ben) && (
