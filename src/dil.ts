@@ -2746,6 +2746,8 @@ const M = {
   orgEtkiCikacak: m("{n} kişi görevden çıkacak", "سيخرج {n} من المهمة", "{n} will leave the role"),
   orgEtkiYeniUnvan: m("Yeni ünvan plan ekibine de eklensin mi?", "هل يُضاف المسمى الجديد إلى فريق الخطة؟", "Add the new title to the plan team too?"),
   orgEtkiUnvanGoreve: m("{unvan} → {gorev}", "{unvan} ← {gorev}", "{unvan} → {gorev}"),
+  orgAkistaPaket: m("şu an {n} paket bu akışta", "{n} تقارير في هذا المسار الآن", "{n} packages in this workflow now"),
+  orgEskiTurler: m("Eski yolun işleri", "مهام المسار القديم", "Old path steps"),
   orgAltBirimEkle: m("Alt birim ekle", "إضافة وحدة فرعية", "Add sub-unit"),
   orgUnvanEkle: m("Ünvan ekle", "إضافة مسمى", "Add title"),
   orgBirimlerde: m("Birimler", "الوحدات", "Units"),

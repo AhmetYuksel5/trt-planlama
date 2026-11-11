@@ -700,6 +700,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     varsa söylenir). Durak: tür (programın bildiği iş ya da genel iş "Tamamla ve
     geç"), sorumlu (kolun sahibi, birim, ünvan [birimde], kişiler), birlikte
     çalışan birimler, "yalnız sahada", "geri gönderebilir", aşama.
+    Kullanıcı sayfanın bir şeye bağlı mı eski mi olduğunu anlamadı: her
+    akışın sekmesinde ve başlığında şu an kaç üretimdeki paketin o akışla
+    ilerlediği (`paketAkisi`; durakta "n paket bu durakta" önceden vardı);
+    "Aşama" seçimi ve rozeti yalnız haber kolunu taşıyan akışta (masa paketi
+    kendi durak sırasını gösteriyor, `masaYolu`); durak türünde varsayılan
+    yolun türleri ve genel iş önde, eski yolunkiler (Output metin kontrolü,
+    Media'ya iletme, saha görevlendirmesi…) "Eski yolun işleri" grubunda
+    (`Akislar.tsx → GUNCEL_TURLER`). Test `testler/akislar.cjs`.
   - Varsayılan paket yolu (akış kimliği `yol`, `yapi.ts → VARSAYILAN_DURAKLAR`):
     Newsdesk görev verir → parçalı metin (muhabir) → video kontrolü (Newsdesk,
     revizyona iade: `geriHedefi` video durağına, yoksa metin durağına;

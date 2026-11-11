@@ -15,6 +15,7 @@ import {
   ASAMALAR,
   ASAMA_ADI,
   URETIM_ADIMLARI,
+  paketAkisi,
   type Asama,
 } from "../../akis";
 import { useDil, yaz, type Metin } from "../../dil";
@@ -56,6 +57,14 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
  */
 
 const DURAK_TURLERI: DurakTuru[] = [...URETIM_ADIMLARI, "is"];
+/*
+ * Varsayılan yolun durak türleri (yapi.ts → VARSAYILAN_DURAKLAR) ve genel iş
+ * önde; eski yolun türleri (Output metin kontrolü, Media'ya iletme, saha
+ * görevlendirmesi…) seçilebilir ama ayrı grupta (kullanıcı: sayfa eski
+ * şeylerden kalmış gibi duruyordu).
+ */
+const GUNCEL_TURLER: DurakTuru[] = ["newsdesk", "metin", "videoKontrol", "inews", "is"];
+const ESKI_TURLER = DURAK_TURLERI.filter((x) => !GUNCEL_TURLER.includes(x));
 
 export function AkislarSekmesi({ ben }: { ben: Kisi }) {
   const { t } = useDil();
@@ -64,6 +73,10 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
   const degistir = (f: (y: Yapi) => Yapi) => yapiTaslagiDegistir(ben, f);
   const [secili, setSecili] = useAdimDurumu("akislar:secili", taslak.akislar[0]?.id);
   const akis = taslak.akislar.find((a) => a.id === secili) ?? taslak.akislar[0];
+  // Akışın bugün bağlı olduğu iş: üretimde, bu akışla ilerleyen paketler (kullanıcı: sayfa bir şeye bağlı mı görünmüyordu).
+  const uretimde = v.paketler.filter((p) => p.durum === "uretimde");
+  const akistaki = (id: string) => uretimde.filter((p) => paketAkisi(p).id === id);
+  const buAkista = akistaki(akis.id);
   const [durak, setDurak] = useState<{ d: Durak | null; sira: number } | null>(
     null,
   );
@@ -140,7 +153,9 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
             data-akis={a.id}
           >
             {akisAdiYaz(a, t)}
-            <em>{a.duraklar.length}</em>
+            <em title={t("orgAkistaPaket", { n: akistaki(a.id).length })} data-akis-paket={akistaki(a.id).length}>
+              {akistaki(a.id).length}
+            </em>
           </button>
         ))}
         <button type="button" onClick={() => setAkisAdi("yeni")} data-akis-ekle>
@@ -150,7 +165,7 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
 
       <Kart
         baslik={akisAdiYaz(akis, t)}
-        ek={akis.kollar.map((k) => t(TUR_ADI[k])).join(", ") || t("orgKolsuz")}
+        ek={`${akis.kollar.map((k) => t(TUR_ADI[k])).join(", ") || t("orgKolsuz")} · ${t("orgAkistaPaket", { n: buAkista.length })}`}
         sagUc={
           <div className="dugmeler">
             <button
@@ -209,7 +224,8 @@ export function AkislarSekmesi({ ben }: { ben: Kisi }) {
                   <Rozet>
                     {d.tur === "is" ? t("orgGenelIs") : t("orgHazirIs")}
                   </Rozet>
-                  <Rozet>{t(ASAMA_ADI[d.asama])}</Rozet>
+                  {/* Aşama yalnız haber kolunun beş kutulu görünümünde işe yarıyor; masa paketi kendi durak sırasını gösteriyor. */}
+                  {akis.kollar.includes("haber") && <Rozet>{t(ASAMA_ADI[d.asama])}</Rozet>}
                   {d.kosul === "saha" && (
                     <Rozet ton="vurgu">{t("orgYalnizSaha")}</Rozet>
                   )}
@@ -531,11 +547,18 @@ function DurakPenceresi({
             onChange={(e) => setF({ ...f, tur: e.target.value as DurakTuru })}
             data-durak-tur
           >
-            {DURAK_TURLERI.map((x) => (
+            {GUNCEL_TURLER.map((x) => (
               <option key={x} value={x}>
                 {x === "is" ? t("orgGenelIsUzun") : t(ADIM_ADI[x])}
               </option>
             ))}
+            <optgroup label={t("orgEskiTurler")} data-durak-eski-turler>
+              {ESKI_TURLER.map((x) => (
+                <option key={x} value={x}>
+                  {t(ADIM_ADI[x as Exclude<DurakTuru, "is">])}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </label>
         <AdAlanlari
@@ -718,7 +741,7 @@ function DurakPenceresi({
           />
           {t("orgGeriGonderir")}
         </label>
-        <label>
+        {akis.kollar.includes("haber") && <label>
           {t("orgAsama")}
           <select
             value={f.asama}
@@ -731,7 +754,7 @@ function DurakPenceresi({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
       </div>
     </Pencere>
   );
