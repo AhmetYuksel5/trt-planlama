@@ -17,7 +17,7 @@ import {
   X,
   FolderPlus,
 } from "lucide-react";
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import {
   Avatar,
   Bos,
@@ -48,8 +48,10 @@ import {
 } from "../../eylemler";
 import { GERCEK } from "../../kip";
 import { yerelGun } from "../../tarih";
+import { ekipEtkisi, etkiVarMi, unvanlariGoreveEkle, type EkipEtkisi, type UnvanOnerisi } from "../../yapiEtkisi";
 import {
   BIRIMLER,
+  getir,
   kimlik,
   kisiBul,
   useVeri,
@@ -194,13 +196,26 @@ export default function Organizasyon({
       {acik === "planlar" && <PlanYetkileriSekmesi ben={ben} />}
       {acik === "surumler" && <SurumlerSekmesi ben={ben} />}
       {acik === "hesaplar" && <Kullanicilar ben={ben} gomulu />}
+      <EkipEtkisiPenceresi ben={ben} />
     </>
   );
 }
 
 /* --- Taslak ve yayın --- */
 
-export function useTaslak(ben: Kisi) {
+/*
+ * Birim ve ünvan değişikliğinin Plan ekibine etkisi (yapiEtkisi.ts):
+ * değişiklik yapıldıktan sonra sorulur, "Geri al" önceki taslağa döner.
+ * Pencere sayfanın kökünde; değişikliği yapan kart ya da pencere kapanmış
+ * olabilir.
+ */
+interface EtkiSorusu {
+  once: Yapi;
+  etki: EkipEtkisi;
+}
+let etkiGoster: ((s: EtkiSorusu) => void) | null = null;
+
+export function useTaslak(ben: Kisi, etkiSor = false) {
   const v = useVeri();
   const yayindaki = guncelYapi(v);
   const taslak = yapiTaslagi(v, ben);
@@ -210,8 +225,97 @@ export function useTaslak(ben: Kisi) {
     yayindaki,
     taslak,
     farklar,
-    degistir: (f: (y: Yapi) => Yapi) => yapiTaslagiDegistir(ben, f),
+    degistir: (f: (y: Yapi) => Yapi) => {
+      const once = yapiTaslagi(getir(), ben);
+      const sonuc = yapiTaslagiDegistir(ben, f);
+      if (sonuc && etkiSor && etkiGoster) {
+        const d = getir();
+        const etki = ekipEtkisi(once, yapiTaslagi(d, ben), d.kisiler);
+        if (etkiVarMi(etki)) etkiGoster({ once, etki });
+      }
+      return sonuc;
+    },
   };
+}
+
+function EkipEtkisiPenceresi({ ben }: { ben: Kisi }) {
+  const { t, ad } = useDil();
+  const [soru, setSoru] = useState<EtkiSorusu | null>(null);
+  const [secilen, setSecilen] = useState<UnvanOnerisi[]>([]);
+  useEffect(() => {
+    etkiGoster = (s) => {
+      setSoru(s);
+      setSecilen([]);
+    };
+    return () => {
+      etkiGoster = null;
+    };
+  }, []);
+  if (!soru) return null;
+  const { once, etki } = soru;
+  const kapat = () => setSoru(null);
+  const anahtar = (o: UnvanOnerisi) => `${o.gorev}~${o.unvan}`;
+  const secili = (o: UnvanOnerisi) => secilen.some((s) => anahtar(s) === anahtar(o));
+  const adlar = (l: Kisi[]) => l.map((k) => ad(k)).join("، ");
+  const uygula = () => {
+    if (secilen.length) yapiTaslagiDegistir(ben, (y) => unvanlariGoreveEkle(y, secilen));
+    kapat();
+  };
+  const geriAl = () => {
+    yapiTaslagiDegistir(ben, () => once);
+    kapat();
+  };
+  return (
+    <Pencere
+      baslik={t("orgEtkiBaslik")}
+      kapat={kapat}
+      altBilgi={
+        <>
+          <button type="button" className="dugme dugme-ikincil" onClick={geriAl} data-etki-geri-al>
+            <Undo2 size={16} /> {t("orgEtkiGeriAl")}
+          </button>
+          <button type="button" className="dugme" onClick={uygula} data-etki-tamam>
+            {t(secilen.length ? "orgEtkiUygula" : "orgEtkiKalsin")}
+          </button>
+        </>
+      }
+    >
+      <div className="org-etki" data-ekip-etkisi>
+        {etki.kapsam.map((k) => (
+          <div key={k.gorev} className="org-etki-satir" data-etki-gorev={k.gorev}>
+            <b>
+              <bdi>{ekipGorevAdi(k.gorev)}</bdi>
+            </b>
+            {k.eklenen.length > 0 && (
+              <small>
+                + {t("orgEtkiGirecek", { n: k.eklenen.length })}: <bdi>{adlar(k.eklenen)}</bdi>
+              </small>
+            )}
+            {k.cikan.length > 0 && (
+              <small className="kotu-yazi">
+                − {t("orgEtkiCikacak", { n: k.cikan.length })}: <bdi>{adlar(k.cikan)}</bdi>
+              </small>
+            )}
+          </div>
+        ))}
+        {etki.yeniUnvan.length > 0 && (
+          <fieldset className="org-etki-unvan">
+            <legend>{t("orgEtkiYeniUnvan")}</legend>
+            {etki.yeniUnvan.map((o) => (
+              <label key={anahtar(o)} className="secim" data-etki-unvan={anahtar(o)}>
+                <input
+                  type="checkbox"
+                  checked={secili(o)}
+                  onChange={(e) => setSecilen((l) => (e.target.checked ? [...l, o] : l.filter((s) => anahtar(s) !== anahtar(o))))}
+                />
+                {t("orgEtkiUnvanGoreve", { unvan: gorevAdi(o.unvan), gorev: ekipGorevAdi(o.gorev) })}
+              </label>
+            ))}
+          </fieldset>
+        )}
+      </div>
+    </Pencere>
+  );
 }
 
 function DegisiklikAdi({
@@ -346,7 +450,8 @@ function BirimlerSekmesi({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const { taslak } = useTaslak(ben);
   // "yeni": üstteki düğme; { ust }: kartın "Alt birim ekle"si (kullanıcı: alt birim eklemenin yolu bulunmuyordu, üst birim yalnız pencerenin seçimindeydi).
-  const [acik, setAcik] = useState<BirimTanimi | "yeni" | { ust: BirimId } | null>(null);
+  // Alt birim ekleme ayrı işaretle: birim kaydının da `ust` alanı var, `"ust" in acik` alt birimin "Düzenle"sini alt birim eklemeye çeviriyordu.
+  const [acik, setAcik] = useState<BirimTanimi | "yeni" | { altBirimUst: BirimId } | null>(null);
   return (
     <Kart
       baslik={t("orgBirimler")}
@@ -361,17 +466,17 @@ function BirimlerSekmesi({ ben }: { ben: Kisi }) {
       <div className="org-birimler" data-birim-tablosu>
         {birimAgaci(taslak).map(({ id, derinlik }) => {
           const b = taslak.birimler.find((x) => x.id === id)!;
-          return <BirimKarti key={id} ben={ben} birim={b} derinlik={derinlik} duzenle={() => setAcik(b)} altEkle={() => setAcik({ ust: b.id })} />;
+          return <BirimKarti key={id} ben={ben} birim={b} derinlik={derinlik} duzenle={() => setAcik(b)} altEkle={() => setAcik({ altBirimUst: b.id })} />;
         })}
       </div>
-      {acik && <BirimPenceresi ben={ben} birim={acik === "yeni" || "ust" in acik ? null : acik} ustBirim={acik !== "yeni" && "ust" in acik ? acik.ust : undefined} kapat={() => setAcik(null)} />}
+      {acik && <BirimPenceresi ben={ben} birim={acik === "yeni" || "altBirimUst" in acik ? null : acik} ustBirim={acik !== "yeni" && "altBirimUst" in acik ? acik.altBirimUst : undefined} kapat={() => setAcik(null)} />}
     </Kart>
   );
 }
 
 function BirimKarti({ ben, birim: b, derinlik, duzenle, altEkle }: { ben: Kisi; birim: BirimTanimi; derinlik: number; duzenle: () => void; altEkle: () => void }) {
   const { t } = useDil();
-  const { v, taslak, degistir } = useTaslak(ben);
+  const { v, taslak, degistir } = useTaslak(ben, true);
   const [yeni, setYeni] = useState("");
   const [unvan, setUnvan] = useState<UnvanTanimi | null>(null);
   const etki = birimEtkisi(taslak, v.kisiler, b.id);
@@ -527,7 +632,7 @@ const gorevAdiDilde = (id: string, d: "tr" | "ar" | "en", y: Yapi) => {
 
 function BirimPenceresi({ ben, birim, ustBirim, kapat }: { ben: Kisi; birim: BirimTanimi | null; ustBirim?: BirimId; kapat: () => void }) {
   const { t } = useDil();
-  const { taslak, degistir } = useTaslak(ben);
+  const { taslak, degistir } = useTaslak(ben, true);
   const yerlesik = !!birim && yerlesikBirim(birim.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(birim?.ad) ? birim.ad : undefined);
   // Alt birim üstü gibi çalışarak açılır (Planlama'nın alt birimi Planlama gibi); seçim değişebilir.
@@ -602,7 +707,7 @@ function BirimPenceresi({ ben, birim, ustBirim, kapat }: { ben: Kisi; birim: Bir
 /* Ünvanın adı (üç dilde) ve plandaki ekip görevi. Ünvan birden fazla birimdeyse ad hepsinde değişir. */
 function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; kapat: () => void }) {
   const { t } = useDil();
-  const { degistir } = useTaslak(ben);
+  const { degistir } = useTaslak(ben, true);
   const yerlesik = yerlesikGorev(unvan.id);
   const [ad, setAd] = useState<Metin | undefined>(metinMi(unvan.ad) ? unvan.ad : undefined);
   const [muhabir, setMuhabir] = useState(unvanMuhabirMi(unvan.id));

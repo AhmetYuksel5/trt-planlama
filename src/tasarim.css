@@ -3250,3 +3250,8 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
  */
 .baslik-govde { direction: rtl; }
 :root[dir="ltr"] .baslik-govde > * { direction: ltr; }
+
+/* Organizasyon değişikliğinin Plan ekibine etkisi (Organizasyon.tsx → EkipEtkisiPenceresi). */
+.org-etki { display: grid; gap: var(--ara-3); }
+.org-etki-satir { display: grid; gap: var(--ara-1); }
+.org-etki-unvan { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); display: grid; gap: var(--ara-1); }

@@ -615,6 +615,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `tamamla` sürüm 0'ı ayrıca geçmez): değişiklikten önce kaydedilmiş taslak
     Organizasyon ekranında eski hali gösteriyordu, kullanıcı "bende hiçbir şey
     değişmedi" dedi. Test `testler/yonetim-kademe.cjs`.
+  - Birim kartındaki "Düzenle" birimin kendisini açar; alt birim eklemenin
+    işareti ayrı (`{ altBirimUst }`): birim kaydının da `ust` alanı olduğu için
+    alt birimin (Muhasebe, Planlama…) "Düzenle"si "Alt birim ekle" açıyordu.
+  - Değişikliğin Plan ekibine etkisi (kullanıcı: burada yapılan değişiklik
+    plan ekibi gibi başka yerleri de etkileyebilir, sonra sorup teyit al;
+    kurallar `yapiEtkisi.ts`, pencere `Organizasyon.tsx →
+    EkipEtkisiPenceresi`, `useTaslak(ben, true)`: birim kartı, birim ve ünvan
+    penceresi): değişiklikten sonra her ekip görevinin kapsadığı kişiler
+    önceki ve sonraki taslakla karşılaştırılır ("n kişi göreve girecek /
+    çıkacak", adlarıyla); birime yeni giren ünvan, o birimin ünvanlarını
+    tek tek seçmiş göreve eklensin mi diye işaretlenir. "Böyle kalsın" /
+    "Seçilenleri ekle" ya da "Değişikliği geri al" (önceki taslağa döner).
+    Etkisiz değişiklikte sorulmaz; Plan ekibi sekmesindeki düzenleme sormaz.
+    Test `testler/org-etki.cjs`.
   - Plan ekibi (`organizasyon/EkipSekmesi.tsx`, `Yapi.ekipGorevleri`): Next
     Day ekibindeki görevler (منتج تنفيذي…) ve kuralları. Görev adı Arapça
     zorunlu; kural birim + ünvan seçimi (boşsa hepsi; birim seçimi altını da
