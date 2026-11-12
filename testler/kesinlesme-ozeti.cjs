@@ -1,13 +1,10 @@
-// Weekly kesinleştirme sonucu sayıyla soruyor; gündeme alınmamış öneri "İptal"le açık kalıyor, kabul edilince reddediliyor
+// Weekly kesinleştirme gözden geçirme penceresinden: sonuç sayıyla yazılı; gündeme alınmamış öneri kutu kaldırılınca açık kalıyor, işaretliyken reddediliyor
 const { chromium } = require(process.env.PW);
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   p.on("pageerror", (e) => console.log("HATA", String(e)));
   const B = "http://localhost:4173/"; let kal = 0;
   const dene = async (acikKabul) => {
-    const mesajlar = [];
-    p.removeAllListeners("dialog");
-    p.on("dialog", (x) => { mesajlar.push(x.message()); return mesajlar.length === 1 || acikKabul ? x.accept() : x.dismiss(); });
     await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "yo3"); });
     await p.goto("about:blank"); await p.goto(B + "#/haftalik"); await p.waitForTimeout(1200);
     const hid = await p.evaluate(() => {
@@ -19,12 +16,17 @@ const { chromium } = require(process.env.PW);
       localStorage.setItem(k, JSON.stringify(d)); return h.id;
     });
     await p.goto("about:blank"); await p.goto(B + "#/haftalik/" + hid); await p.waitForTimeout(1200);
-    await p.getByRole("button", { name: /Planı kesinleştir/ }).click(); await p.waitForTimeout(500);
+    await p.locator("[data-gozden-ac]").click(); await p.waitForTimeout(400);
+    const ozet = await p.locator("[data-gozden-ozet]").innerText();
+    const kutu = p.locator("[data-acik-reddet] input");
+    const kutuVar = (await kutu.count()) === 1 && (await kutu.isChecked());
+    if (!acikKabul) await kutu.uncheck();
+    await p.locator("[data-gozden-kesinlestir]").click(); await p.waitForTimeout(500);
     const s = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); return d.oneriler.find((o) => o.id === "o-acik-test").durum; });
-    const ok = /haber Next Day'e geçecek/.test(mesajlar[0] ?? "") && /Gündeme alınmamış \d+/.test(mesajlar[1] ?? "") && s === (acikKabul ? "reddedildi" : "yeni");
-    console.log(acikKabul ? "reddet" : "açık kalsın", JSON.stringify(mesajlar), s, ok ? "tamam" : "YANLIŞ");
-    if (!ok) kal++;
+    const ok = /haber Next Day'e geçecek/.test(ozet) && kutuVar && s === (acikKabul ? "reddedildi" : "yeni");
+    console.log(acikKabul ? "reddet" : "açık kalsın", ozet, s, ok ? "tamam" : "YANLIŞ");
+    if (!ok) { kal++; console.log("✗ " + (acikKabul ? "reddet" : "açık kalsın")); }
   };
   await dene(false); await dene(true);
-  await b.close(); process.exit(kal ? 1 : 0);
+  await b.close(); console.log(`\n${2 - kal} geçti, ${kal} kaldı`); process.exit(kal ? 1 : 0);
 })();

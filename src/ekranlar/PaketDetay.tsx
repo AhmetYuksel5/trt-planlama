@@ -11,6 +11,7 @@ import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
+import { sartliBekleyen } from "../haftalik";
 import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
@@ -62,6 +63,14 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           <GorevKunyesi p={paket} />
         </div>
       </header>
+      {/* Haftalıkta şartlı kabul: muhabire ön bilgi, Planlama'ya bekleyen karar. Kabul ya da retle konu kapanıyor. */}
+      {sartliBekleyen(paket) && (
+        <NotKutu>
+          <span data-paket-kosul>
+            <b>{t("krSartli")}:</b> <span dir="auto">{paket.kosul}</span>
+          </span>
+        </NotKutu>
+      )}
 
       <Kart baslik={t("asamalar")}>
         <AsamaBuyuk paket={paket} />

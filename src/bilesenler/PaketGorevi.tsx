@@ -1,14 +1,16 @@
-import { Check, ClipboardList, Send, Undo2, X } from "lucide-react";
+import { Check, ClipboardList, Hourglass, Send, Undo2, X } from "lucide-react";
 import { useState } from "react";
 import { AnmaGirdisi } from "./Anma";
 import { Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "./Parcalar";
 import { metin, tarihYaz, useDil } from "../dil";
-import { gorevTalebiGeriCek, gorevTalebiGonder, gorevTalebiKarar, paketGorevVer } from "../eylemler";
+import { gorevTalebiGeriCek, gorevTalebiGonder, gorevTalebiKarar, paketDurum, paketGorevVer, paketReddet } from "../eylemler";
+import { sartliBekleyen } from "../haftalik";
 import { kisiBul, useVeri, type Bicim, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
 import { bugun, gunFarki } from "../tarih";
 import {
   gorevTalebiGeriCekebilir,
+  yapabilir,
   gorevTalebiKarariVerebilir,
   gorevTalebiVerebilir,
   ileriGorevVerebilir,
@@ -215,5 +217,52 @@ export function GorevKunyesi({ p }: { p: Paket }) {
       )}
       {p.sonTarih && <small>{t("gvGun")}: {tarihYaz(p.sonTarih, dil, "kisa")}</small>}
     </p>
+  );
+}
+
+/*
+ * Haftalık toplantıda şartlı kabul edilen paketler: koşul gerçekleşince
+ * Planlama onaylıyor (görev muhabire o an), gerçekleşmezse reddediyor. Next
+ * Day'e geçen de burada: plan onayı onu kendiliğinden kabul etmiyor.
+ */
+export function SartliPaketler({ ben }: { ben: Kisi }) {
+  const { t, ad, dil } = useDil();
+  const v = useVeri();
+  if (!yapabilir(ben, "paketDegerlendir")) return null;
+  const liste = v.paketler.filter((p) => sartliBekleyen(p) && !p.ozelId).sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
+  if (!liste.length) return null;
+  return (
+    <Kart baslik={t("sartliBekleyenler")} ikon={<Hourglass size={18} />} ek={String(liste.length)}>
+      <ul className="liste" data-sartli-paketler>
+        {liste.map((p) => {
+          const plan = v.planlar.find((x) => x.id === p.planId);
+          return (
+            <li key={p.id} data-sartli-paket={p.id}>
+              <div className="ad">
+                <a href={`#/paketler/${p.id}`}>
+                  <Icerik blok>{p.baslik}</Icerik>
+                </a>
+                <small>
+                  <bdi>{ad(kisiBul(v, p.muhabirId))}</bdi>
+                  {plan && (
+                    <>
+                      {" "}
+                      · <bdi>{tarihYaz(plan.tarih, dil, "kisa")}</bdi>
+                    </>
+                  )}{" "}
+                  · <span dir="auto">{p.kosul}</span>
+                </small>
+              </div>
+              <button className="dugme dugme-kucuk dugme-iyi" onClick={() => confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} data-sartli-kabul>
+                <Check size={14} /> {t("kabulEt")}
+              </button>
+              <button className="dugme dugme-kucuk dugme-kotu" onClick={() => confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} data-sartli-ret>
+                <X size={14} /> {t("reddet")}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </Kart>
   );
 }

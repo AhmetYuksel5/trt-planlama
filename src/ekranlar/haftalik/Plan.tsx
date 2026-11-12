@@ -17,13 +17,12 @@ import {
   anaKonuSil,
   anaKonuTasi,
   haftalikDurum,
-  haftalikKesinlestir,
   kalanlariKabulEt,
   oneriGundemeEkle,
   onIncelemeyeGonder,
 } from "../../eylemler";
 import { etiketUret } from "../../eposta";
-import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, kesinlesmeOzeti, topluKabulAdaylari } from "../../haftalik";
+import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
@@ -39,6 +38,7 @@ import { OneriListesi } from "../oneri/OneriGovde";
 import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
+import { GozdenGecirme } from "./GozdenGecirme";
 
 /**
  * Haftalık plan ekranı: Perşembe toplantısına giden planın hazırlandığı
@@ -60,12 +60,8 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const bekleyen = kararBekleyenler(hafta).length;
   const topluKabul = topluKabulAdaylari(hafta).length;
   // Sonucu onay penceresinde sayıyla söylüyor; gündeme alınmamış öneriler için ayrıca soruyor.
-  const kesinlestir = () => {
-    const oz = kesinlesmeOzeti(v, hafta);
-    if (!confirm(t("kesinlesmeOnay", { n: oz.nextDay, p: oz.paket, r: oz.ret }))) return;
-    const acikReddet = oz.acik > 0 ? confirm(t("acikOnerilerReddedilsin", { n: oz.acik })) : true;
-    haftalikKesinlestir(ben, hafta.id, acikReddet) && bildir(t("bHaftalikKesinlesti"));
-  };
+  // Kesinleştirme gözden geçirme penceresinden: kararlar gruplu, değiştirilebilir, onay en altta.
+  const [gozden, setGozden] = useState(false);
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
   // Günü geçmiş kalem artık aktarılmaz; yalnız bugün ve sonrası "bekliyor".
@@ -136,7 +132,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               </button>
             )}
             {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfKesinlestir") && (
-              <button type="button" className="dugme" disabled={bekleyen > 0} onClick={kesinlestir}>
+              <button type="button" className="dugme" disabled={bekleyen > 0} onClick={() => setGozden(true)} data-gozden-ac>
                 <Check size={16} /> {t("kesinlestir")}
               </button>
             )}
@@ -153,6 +149,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         }
       />
 
+      {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (
         <Pencere genis baslik={t("mtAcikTakipler")} alt={aralikYaz(bas, haftaSonu(bas), dil)} kapat={() => setTakipler(false)}>

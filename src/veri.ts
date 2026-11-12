@@ -941,6 +941,8 @@ export interface Paket {
   parcalar?: MetinParcasi[];
   /** Newsdesk'in video kontrolünde revizyon gerekçesi; muhabir yeni videoyu gönderince kalkar. */
   videoIade?: string;
+  /** Haftalıkta şartlı kabul edildi: taslakta bu koşulla bekliyor, Next Day onayı kendiliğinden kabul etmiyor. */
+  kosul?: string;
   klipKodu?: string;
   ucret?: Ucret;
   /** Tamamlanan pakete Newsdesk'in verdiği nitelik puanı (1–5); ölçütü birimle netleşecek. */
@@ -1022,7 +1024,7 @@ export const HAFTA_DURUMLARI = ["hazirlik", "toplantida", "kesinlesti"] as const
 export type HaftaDurum = (typeof HAFTA_DURUMLARI)[number];
 
 /** Toplantı kararı. "bilgi": çıktıda yer alır ama takip edilmez (لا نتابع). */
-export const KARARLAR = ["bekliyor", "kabul", "bilgi", "ret"] as const;
+export const KARARLAR = ["bekliyor", "kabul", "sartli", "bilgi", "ret"] as const;
 export type Karar = (typeof KARARLAR)[number];
 
 /** Haftanın ana dosyası (أهم ملفات الأسبوع): başlık ve bir paragraf durum özeti. */
@@ -1080,6 +1082,12 @@ export interface HaftalikKalem {
    */
   kararNotu?: string;
   ekTalep?: string;
+  /*
+   * Şartlı kabulün koşulu ("teyit gelirse", "konuk bulunursa"): toplantıda
+   * karar o an verilemiyor. Kesinleşince paket taslak ve bu koşulla açılıyor;
+   * muhabir ön bilgi alıyor, görev ancak Planlama onaylayınca.
+   */
+  kosul?: string;
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;
@@ -1544,6 +1552,7 @@ export const HAREKET_TIPLERI = [
   "takipSatiriEklendi",
   "oneriAsamayaDondu",
   "paketReddedildi",
+  "paketSartliKabul",
   "paketGorevVerildi",
   "gorevTalebiGeldi",
   "gorevTalebiReddedildi",

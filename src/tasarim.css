@@ -988,6 +988,11 @@ a.rozet-plan { text-decoration: none; }
 .dugme-iyi:hover { background: var(--iyi); filter: brightness(.92); border-color: var(--iyi); }
 .dugme-kotu { background: var(--yuzey); color: var(--kotu); border-color: var(--kotu-sis); }
 .dugme-kotu:hover { background: var(--kotu-sis); border-color: var(--kotu); }
+.dugme-uyari { background: var(--uyari-sis); color: var(--uyari); border-color: var(--uyari); }
+.dugme-uyari:hover { filter: brightness(.96); }
+/* Weekly gözden geçirme penceresi: kalemler karar gruplarında. */
+.gozden-grup h3 { margin-block: var(--ara-3) var(--ara-2); font-size: var(--punto-orta); }
+.gozden-grup .liste select { inline-size: auto; max-inline-size: 11rem; }
 .dugme-sade { background: transparent; border-color: transparent; color: var(--sonuk); padding: 0 var(--ara-2); }
 .dugme-sade:hover { background: var(--yuzey-2); color: var(--murekkep); border-color: transparent; }
 .dugme-kucuk { height: 28px; padding: 0 var(--ara-3); font-size: var(--punto-mini); }

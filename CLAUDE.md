@@ -1777,10 +1777,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yalnız düzenlerken). Kesinleşince pakete geçer (`toplantidan`), muhabire
     "paketOnaylandi" bildirimi gider (paket doğduğu an: kesinleşmede ya da
     günlük plan açılınca). Ret notu öneriye gerekçe olur.
-  - Kesinleştirme onayı sonucu sayıyla söyler (`haftalik.ts → kesinlesmeOzeti`:
-    Next Day'e geçecek haber, açılacak paket, reddedilecek öneri); gündeme
-    alınmamış açık haftalık öneri varsa ayrıca sorulur, "İptal" açık bırakır
-    (`haftalikKesinlestir(…, acikReddet)`). "Kalanları kabul et" ön
+  - Şartlı kabul (kullanıcı: toplantıda paket bazen o an onaylanmıyor,
+    "duruma göre onaylayalım" deniyor; karar `sartli`, `HaftalikKalem.kosul`,
+    `haftalik.ts → kabulMu`): kalem kartında ve belgede "Şartlı kabul" koşul
+    formunu açar (`Kalem.tsx → KosulFormu`), koşulsuz verilmez (eylem de
+    sorar). Kesinleşince iş kabul gibi doğar ama paket taslakta ve koşullu
+    (`Paket.kosul`; `eylemler.ts → kalemPaketDurumu`): günü belli haber Next
+    Day'e "PKG PROPOSAL" olarak geçer, gerisi plansız taslak; görevlendiren
+    künyeye yazılmaz, muhabire ön bilgi (`paketSartliKabul`, koşul notta;
+    paket sayfasında koşul satırı). Next Day onayı şartlı paketi kabul saymaz
+    (`planDurum`, onay sorusunun sayısı da). Kararı Planlama verir: Paketler ve
+    Stok'ta "Şartlı kabul bekleyenler" (`PaketGorevi.tsx → SartliPaketler`,
+    `sartliBekleyen`; Kabul et `paketDurum`, Reddet `paketReddet`), paket
+    sayfasında ve Next Day'in PKG satırında da. Koşul karar verilene dek
+    paketin not ekinde (`paketNotEki`: "مشروط: …"), Weekly çıktısında sarı
+    notta "(مشروط) …". Test `testler/sartli-kabul.cjs`.
+  - Kesinleştirme gözden geçirme penceresinden (`haftalik/GozdenGecirme.tsx`;
+    kullanıcı: toplantıdan sonra gözden geçirip plana son hali verilsin; önce
+    iki ardışık onay sorusuydu, kararlar görünmüyordu): kalemler kararlarına
+    göre gruplu, notları ve koşuluyla; karar burada da değişir (yeni şartlı
+    kabul kalemin kartından); özet satırı (`kesinlesmeOzeti`: Next Day'e
+    geçecek haber, açılacak paket, şartlı, reddedilecek öneri); "Tutanağı
+    kopyala" düz metin; gündeme alınmamış açık haftalık öneri varsa işaretli
+    kutu, kaldırılırsa açık kalır (`haftalikKesinlestir(…, acikReddet)`);
+    "Planı kesinleştir" en altta. "Kalanları kabul et" ön
     incelemedeki kalemi almaz (`topluKabulAdaylari`), onay sorar. Next Day'de
     toplantıya götürme ve onay da sorar; onay kararsız paket sayısını ve görev
     gidecek muhabiri yazar. Özel yayının onayı birlikte onaylanacak nafize ve

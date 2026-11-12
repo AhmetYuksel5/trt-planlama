@@ -6,7 +6,7 @@ import { type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
 import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { OzelTalepAlani } from "./OzelYayin";
-import { GorevTalepleri, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
+import { GorevTalepleri, SartliPaketler, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
 import { MasaOnerileri } from "./oneri/MasaSorusu";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, yaz, type Anahtar } from "../dil";
@@ -55,6 +55,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
     <>
       <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <GorevTalepleri ben={ben} />
+      <SartliPaketler ben={ben} />
       <MasaOnerileri ben={ben} />
       <Kart>
         <div className="suzgec">
@@ -207,6 +208,7 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
       <OzelTalepAlani ben={ben} />
       {/* Plansız görev talepleri: Planlama burada göreve çeviriyor; görev paketi stokta "üretimde"de izleniyor. */}
       <GorevTalepleri ben={ben} />
+      <SartliPaketler ben={ben} />
       {bekleyen.length > 0 && (
         <Kart baslik={t("uretimeAlinacaklar")} ikon={<CirclePlay size={18} />} ek={String(bekleyen.length)}>
           <ul className="liste">

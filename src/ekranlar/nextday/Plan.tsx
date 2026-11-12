@@ -944,7 +944,9 @@ function usePlanAkisi(ben: Kisi, plan: NextDayPlan) {
   const kararsiz = v.paketler.filter(
     (p) =>
       p.planId === plan.id &&
-      (p.durum === "taslak" || p.durum === "degerlendiriliyor"),
+      (p.durum === "taslak" || p.durum === "degerlendiriliyor") &&
+      // Şartlı kabul edilen paket onayla kabul sayılmıyor; kararı Planlama'nın.
+      !p.kosul,
   );
   const gorevli = new Set(kararsiz.map((p) => p.muhabirId).filter(Boolean))
     .size;

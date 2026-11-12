@@ -2,7 +2,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
+import { gundemde, kabulMu, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -1363,12 +1363,14 @@ export const onIncelemeReddet = (ben: Kisi, haftaId: string, kalemId: string, ge
 
 /* --- Toplantı kararı ve kesinleştirme --- */
 
-export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: Karar) => {
+// Şartlı kabul koşulsuz verilmez: koşul kesinleşince pakete ve muhabirin ön bilgisine gidiyor. Başka karar koşulu siler.
+export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: Karar, kosul?: string) => {
   const d = getir();
   const h = haftaBul(d, haftaId);
   const k = h?.kalemler.find((x) => x.id === kalemId);
   if (!h || !k || !gundemde(k) || !kararVerebilir(ben, h)) return false;
-  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar })));
+  if (karar === "sartli" && !kosul?.trim()) return false;
+  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar, kosul: karar === "sartli" ? kosul!.trim() : undefined })));
   return true;
 };
 
@@ -1419,6 +1421,14 @@ const kalemPaketBasligi = (d: Durum, k: HaftalikKalem) => kalemStrapi(d, k) || k
 const kalemPaketYeri = (k: HaftalikKalem, sehir: Sehir) => (k.yer?.trim() && k.yer.trim() !== sehirAr(sehir) ? { yer: k.yer.trim() } : {});
 
 const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.kararNotu } : {}), ...(k.ekTalep ? { ekTalep: k.ekTalep } : {}) });
+
+/*
+ * Şartlı kabulde paket taslakta ve koşullu doğuyor (Next Day'de "PKG
+ * PROPOSAL"); görev ve künyenin görevlendireni ancak Planlama onaylayınca.
+ * Muhabire ön bilgi koşuluyla gidiyor, iş olarak değil.
+ */
+const sartliMi = (k: HaftalikKalem) => k.karar === "sartli";
+const kalemPaketDurumu = (k: HaftalikKalem) => (sartliMi(k) ? { durum: "taslak" as const, kosul: k.kosul || "—" } : { durum: "onaylandi" as const });
 
 const planAktarimaAcik = (p: NextDayPlan) => p.durum === "taslak" || p.durum === "toplantida" || p.durum === "onayli";
 
@@ -1520,7 +1530,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       aciklama: k.metin,
       tur: k.tur,
       bicim,
-      durum: "onaylandi",
+      ...kalemPaketDurumu(k),
       sahaGerekli: false,
       oneriId: k.oneriId,
       haftalikKalemId: k.id,
@@ -1529,10 +1539,13 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       guncelleme: simdi(),
     };
     // Görev haftalığın kesinleşmesiyle gidiyor; sistemin sonradan yaptığı aktarımda (SISTEM) künyeye yazılmaz.
-    d = { ...d, paketler: [kunyeYaz(paket, "gorevlendiren", kisiId, simdi()), ...d.paketler] };
+    d = { ...d, paketler: [sartliMi(k) ? paket : kunyeYaz(paket, "gorevlendiren", kisiId, simdi()), ...d.paketler] };
   }
   // Paket ancak günlük plan açılınca da doğabiliyor (kesinleşmeden sonra); muhabir o an haberdar oluyor. Kimlik plandan: iki tarayıcı tek bildirim.
-  if (paketId && muhabirId) d = hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
+  if (paketId && muhabirId)
+    d = sartliMi(k)
+      ? hareketYaz(d, { kisiId, tip: "paketSartliKabul", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId, not: k.kosul ?? "" } }, `po-${turet(plan.id, k.id)}`)
+      : hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { planId: plan.id, paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, planId: plan.id, planTarihi: plan.tarih, paketId: paketId ?? o.paketId } : o)) };
   return hareketYaz(d, { kisiId, tip: "haftaliktanAktarildi", haftaId, planId: plan.id, paketId, veri: { tarih: plan.tarih, kalem: k.id } }, `h-${turet(plan.id, k.id)}`);
@@ -1556,7 +1569,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     aciklama: k.metin,
     tur: k.tur,
     bicim: k.bicimler[0],
-    durum: "onaylandi",
+    ...kalemPaketDurumu(k),
     sahaGerekli: false,
     // Masa kolları (ekonomi, program, spor) kendi birimine gidiyor; gerisi (feature, günü olmayan haber) bitince stokta bekliyor.
     stok: !MASA_KOLLARI.includes(k.tur) || undefined,
@@ -1566,9 +1579,11 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     olusturma: simdi(),
     guncelleme: simdi(),
   };
-  d = { ...d, paketler: [kunyeYaz(paket, "gorevlendiren", ben.id, simdi()), ...d.paketler] };
+  d = { ...d, paketler: [sartliMi(k) ? paket : kunyeYaz(paket, "gorevlendiren", ben.id, simdi()), ...d.paketler] };
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
+  // Şartlıda kararı Planlama veriyor (Paketler'deki "Şartlı kabul bekleyenler"); muhabire yalnız ön bilgi.
+  if (sartliMi(k)) return hareketYaz(d, { kisiId: ben.id, tip: "paketSartliKabul", paketId, haftaId, veri: { not: k.kosul ?? "", ...(muhabirId ? { kime: muhabirId } : {}) } });
   // Muhabire de: onaylanan haber sayfasına ve zile düşüyor.
   return hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId, haftaId, veri: { hafta: "1", sahip: kolSahibi(k.tur), ...(muhabirId ? { kime: muhabirId } : {}) } });
 };
@@ -1585,7 +1600,7 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = tru
   const h = haftaBul(d, haftaId);
   if (!h || h.durum !== "toplantida" || !planAdimiYapabilir(ben, "hfKesinlestir") || kararBekleyenler(h).length) return false;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti" }));
-  for (const k of h.kalemler.filter((x) => gundemde(x) && x.karar === "kabul")) {
+  for (const k of h.kalemler.filter((x) => gundemde(x) && kabulMu(x))) {
     if (k.tur === "haber" && k.tarih) {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
       // Plan henüz yoksa sistem açınca çekiyor (yarinPlaniniAc). Onaylı plana da giriyor (önce kayboluyordu); devredilmiş gün geçmişte kaldı.
@@ -1835,7 +1850,8 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
     const sade = <T extends { onceki?: true }>(x: T): T => (x.onceki ? { ...x, onceki: undefined } : x);
     d = planGuncelle(d, planId, (p) => ({ ...p, ekip: p.ekip.map(sade), oncekiHareketler: undefined, basliklar: p.basliklar.map((b) => ({ ...b, muhabirler: b.muhabirler.map(sade) })) }));
     d = { ...d, gelismeler: d.gelismeler.map((g) => (g.planId === planId ? sade(g) : g)), canliYayinlar: d.canliYayinlar.map((c) => (c.planId === planId ? sade(c) : c)) };
-    for (const p of paketler.filter((x) => x.durum === "taslak" || x.durum === "degerlendiriliyor")) {
+    // Şartlı paket hariç: koşulu Planlama'nın teyidini bekliyor, plan onayı onu kendiliğinden görev yapmasın.
+    for (const p of paketler.filter((x) => (x.durum === "taslak" || x.durum === "degerlendiriliyor") && !x.kosul)) {
       // Kararsız paket onayla kabul sayılıyor: muhabire görev planı onaylayandan.
       d = paketGuncelle(d, p.id, (x) => kunyeYaz({ ...x, durum: "onaylandi" }, "gorevlendiren", ben.id, simdi()));
       d = hareketYaz(d, { kisiId: ben.id, tip: "paketOnaylandi", paketId: p.id, planId, veri: { toplanti: "1" } });

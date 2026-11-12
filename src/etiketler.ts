@@ -168,6 +168,7 @@ export const HAFTA_DURUM_TONU: Record<HaftaDurum, string> = {
 export const KARAR_ADI: Record<Karar, Anahtar> = {
   bekliyor: "krBekliyor",
   kabul: "krKabul",
+  sartli: "krSartli",
   bilgi: "krBilgi",
   ret: "krRet",
 };
@@ -175,6 +176,7 @@ export const KARAR_ADI: Record<Karar, Anahtar> = {
 export const KARAR_TONU: Record<Karar, string> = {
   bekliyor: "",
   kabul: "iyi",
+  sartli: "uyari",
   bilgi: "vurgu",
   ret: "kotu",
 };
@@ -340,8 +342,10 @@ export const gelismeBicimEki = (d: Durum, g: { oneriId?: string }) => {
 };
 
 /* Pakete eklenen notlar planda satırın sonunda parantez içinde: plan metni paketin son halini de söylesin. */
-export const paketNotEki = (p: { notlar?: { metin: string }[] }) => {
-  const n = (p.notlar ?? []).map((x) => x.metin.trim()).filter(Boolean);
+// Şartlı kabul edilen paketin koşulu, karar verilene dek notların başında (plan ekranı, belge, çıktı): kağıtta da "henüz kesin değil".
+export const paketNotEki = (p: { notlar?: { metin: string }[]; kosul?: string; durum?: string }) => {
+  const sartli = p.kosul && (p.durum === "taslak" || p.durum === "degerlendiriliyor") ? [`مشروط: ${p.kosul}`] : [];
+  const n = [...sartli, ...(p.notlar ?? []).map((x) => x.metin.trim()).filter(Boolean)];
   return n.length ? ` (${n.join(" - ")})` : "";
 };
 

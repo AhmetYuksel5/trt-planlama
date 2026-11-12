@@ -1,4 +1,4 @@
-import { Ban, Check, Eye, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
+import { Ban, Check, Eye, Hourglass, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
@@ -208,6 +208,7 @@ export function KalemFormu({
 
 const KARAR_DUGMELERI: { karar: Karar; ad: Anahtar; ikon: typeof Check; sinif: string }[] = [
   { karar: "kabul", ad: "krKabul", ikon: Check, sinif: "dugme-iyi" },
+  { karar: "sartli", ad: "krSartli", ikon: Hourglass, sinif: "dugme-uyari" },
   { karar: "bilgi", ad: "krBilgi", ikon: Eye, sinif: "dugme-ikincil" },
   { karar: "ret", ad: "krRet", ikon: Ban, sinif: "dugme-kotu" },
 ];
@@ -218,6 +219,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
   const kaynakMetni = useKaynakMetni();
   const [duzenle, setDuzenle] = useState(false);
   const [notFormu, setNotFormu] = useState(false);
+  const [kosulFormu, setKosulFormu] = useState(false);
   const duzenler = haftalikDuzenler(ben, hafta);
   const karar = kararVerebilir(ben, hafta) && gundemde(kalem);
   const plan = planBul(v, kalem.aktarim?.planId);
@@ -226,7 +228,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
   const oneri = oneriBul(v, kalem.oneriId);
   if (duzenle) return <KalemFormu ben={ben} hafta={hafta} mevcut={kalem} kapat={() => setDuzenle(false)} />;
   return (
-    <div className={`kayit kalem ${gundemde(kalem) ? "" : "dusmus"}`} data-karar={kalem.karar}>
+    <div className={`kayit kalem ${gundemde(kalem) ? "" : "dusmus"}`} data-karar={kalem.karar} data-kalem={kalem.id}>
       <div className="kayit-bas">
         <div>
           {dosyaGoster && dosya && (
@@ -335,7 +337,9 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
                   key={k.karar}
                   className={`dugme dugme-kucuk ${secili ? k.sinif : "dugme-sade"}`}
                   aria-pressed={secili}
-                  onClick={() => kalemKarar(ben, hafta.id, kalem.id, secili ? "bekliyor" : k.karar)}
+                  data-karar-dugme={k.karar}
+                  // Şartlı kabul koşulsuz verilmiyor: önce koşulun formu.
+                  onClick={() => (!secili && k.karar === "sartli" ? setKosulFormu(true) : kalemKarar(ben, hafta.id, kalem.id, secili ? "bekliyor" : k.karar))}
                 >
                   <Ikon size={14} /> {t(k.ad)}
                 </button>
@@ -353,17 +357,23 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
           )}
         </div>
       )}
+      {kosulFormu && <KosulFormu ben={ben} hafta={hafta} kalem={kalem} kapat={() => setKosulFormu(false)} />}
       {notFormu && <KararNotuFormu ben={ben} hafta={hafta} kalem={kalem} kapat={() => setNotFormu(false)} />}
     </div>
   );
 }
 
 /* Toplantının karar notu ve ek talebi; kartta, kalemin altında. */
-export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu" | "ekTalep"> }) {
+export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu" | "ekTalep" | "kosul"> }) {
   const { t } = useDil();
-  if (!kalem.kararNotu && !kalem.ekTalep) return null;
+  if (!kalem.kararNotu && !kalem.ekTalep && !kalem.kosul) return null;
   return (
     <div className="karar-notlari" data-karar-notlari>
+      {kalem.kosul && (
+        <p data-kosul>
+          <b>{t("kosul")}:</b> <span dir="auto">{kalem.kosul}</span>
+        </p>
+      )}
       {kalem.kararNotu && (
         <p>
           <b>{t("kararNotu")}:</b> <span dir="auto">{kalem.kararNotu}</span>
@@ -393,6 +403,21 @@ function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: Haftal
         <AnmaGirdisi cokSatir rows={2} deger={f.ekTalep} degistir={(x) => setF({ ...f, ekTalep: x })} data-ek-talep />
       </label>
       <FormAlt kapat={kapat} kaydet={() => kalemKararNotu(ben, hafta.id, kalem.id, f) && (bildir(t("bKaydedildi")), kapat())} />
+    </div>
+  );
+}
+
+/* Şartlı kabulün koşulu: toplantıda o an, kalemin bütün formunu açmadan. Kaydedince karar "şartlı" olur. */
+export function KosulFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; kapat: () => void }) {
+  const { t } = useDil();
+  const [kosul, setKosul] = useState(kalem.kosul ?? "");
+  return (
+    <div className="form form-kutu ara-ust" data-kosul-formu>
+      <label>
+        {t("kosul")}
+        <textarea rows={2} value={kosul} onChange={(e) => setKosul(e.target.value)} dir="auto" autoFocus data-kosul-girdi />
+      </label>
+      <FormAlt kapat={kapat} devre={!kosul.trim()} kaydet={() => kalemKarar(ben, hafta.id, kalem.id, "sartli", kosul) && kapat()} />
     </div>
   );
 }

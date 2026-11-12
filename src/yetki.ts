@@ -660,6 +660,7 @@ const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = [
   "paketOncelikli",
   "paketIptal",
   "paketReddedildi",
+  "paketSartliKabul",
   "paketGorevVerildi",
   "paketBaskaMuhabire",
   "paketIsaretOnaylandi",

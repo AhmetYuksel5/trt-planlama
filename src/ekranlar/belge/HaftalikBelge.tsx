@@ -1,4 +1,4 @@
-import { Ban, Check, Eye, Printer } from "lucide-react";
+import { Ban, Check, Eye, Hourglass, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
@@ -9,7 +9,7 @@ import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kale
 import { ciktida, gundemde, haftaGunleri, haftaSonu } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
-import { KalemFormu } from "../haftalik/Kalem";
+import { KalemFormu, KosulFormu } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
@@ -82,6 +82,7 @@ const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi 
 
 const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
   { karar: "kabul", ad: "krKabul", ikon: <Check size={15} /> },
+  { karar: "sartli", ad: "krSartli", ikon: <Hourglass size={15} /> },
   { karar: "bilgi", ad: "krBilgi", ikon: <Eye size={15} /> },
   { karar: "ret", ad: "krRet", ikon: <Ban size={15} /> },
 ];
@@ -93,8 +94,10 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
   const ben = duzen?.ben;
   const yaz = (g: Partial<KalemGirdisi>) => ben && kalemKaydet(ben, hafta.id, kalemGirdisi(k, g));
-  const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.not ?? ""].filter(Boolean);
+  // Şartlı kabulün koşulu çıktıda sarı notta: toplantının kararı kağıtta da "henüz kesin değil" görünsün.
+  const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.karar === "sartli" && k.kosul ? `${c("mesrut")} ${k.kosul}` : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
+  const [kosulAcik, setKosulAcik] = useState(false);
 
   return (
     <BelgeSatiri
@@ -115,7 +118,13 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
                 <KararRozeti kalem={k} />
                 {duzen.karar &&
                   KARARLAR.map((x) => (
-                    <IkonDugme key={x.karar} ikon={x.ikon} etiket={t(x.ad)} ton={k.karar === x.karar ? "secili" : ""} onClick={() => kalemKarar(ben, hafta.id, k.id, x.karar)} />
+                    <IkonDugme
+                      key={x.karar}
+                      ikon={x.ikon}
+                      etiket={t(x.ad)}
+                      ton={k.karar === x.karar ? "secili" : ""}
+                      onClick={() => (x.karar === "sartli" ? setKosulAcik(true) : kalemKarar(ben, hafta.id, k.id, x.karar))}
+                    />
                   ))}
               </>
             }
@@ -187,7 +196,8 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
         {/* Boş not satır kaplamıyor (Next Day belgesi gibi); not "Düzenle" penceresinden giriliyor. */}
         {duzen && k.not ? (
           <p>
-            {k.karar === "bilgi" && <mark>{c("laNutabi")}</mark>}{" "}
+            {k.karar === "bilgi" && <mark>{c("laNutabi")}</mark>}
+            {k.karar === "sartli" && k.kosul && <mark>{`${c("mesrut")} ${k.kosul}`}</mark>}{" "}
             <mark>
               <YerindeMetin acik deger={k.not} etiket={t("kalemNotu")} kaydet={(x) => yaz({ not: x })} />
             </mark>
@@ -202,6 +212,11 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
         {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız düzenlerken ekranda. */}
         {duzen && <KararNotlari kalem={k} />}
       </div>
+      {kosulAcik && ben && (
+        <Pencere baslik={t("krSartli")} kapat={() => setKosulAcik(false)}>
+          <KosulFormu ben={ben} hafta={hafta} kalem={k} kapat={() => setKosulAcik(false)} />
+        </Pencere>
+      )}
     </BelgeSatiri>
   );
 }

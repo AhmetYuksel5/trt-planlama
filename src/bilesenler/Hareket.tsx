@@ -50,6 +50,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   takipSatiriEklendi: "hrTakipSatiriEklendi",
   oneriAsamayaDondu: "hrOneriAsamayaDondu",
   paketReddedildi: "hrPaketReddedildi",
+  paketSartliKabul: "hrPaketSartliKabul",
   paketGorevVerildi: "hrPaketGorevVerildi",
   gorevTalebiGeldi: "hrGorevTalebiGeldi",
   gorevTalebiReddedildi: "hrGorevTalebiReddedildi",
