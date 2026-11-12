@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { muhabirinBenzerOnerileri } from "../../oneriPlanlari";
 import type { Durum, Oneri } from "../../veri";
-import { metin, useDil } from "../../dil";
+import { gunAdi, metin, tarihYaz, useDil } from "../../dil";
+import { gunEkle } from "../../tarih";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
 import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, ONERI_SINIRI, TAKIP_BICIMI, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
@@ -346,12 +347,22 @@ export function ElleOneriFormu({
   kaydet: (id: string, hemen: boolean) => void;
   kapat: () => void;
 }) {
-  const { t } = useDil();
+  const { t, dil } = useDil();
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "telefon"));
-  const gecerli = oneriFormuGecerli(f);
+  /*
+   * Weekly'den girilen öneride gün soruluyor (kullanıcı: öneri hangi günün,
+   * belli olmuyordu; yalnız haftaya bağlanıyordu). Gün seçilirse öneri o günü
+   * taşır, hafta günden çıkar; "zamana bağlı değil" eskisi gibi yalnız hafta.
+   */
+  const gunler = hafta ? Array.from({ length: 7 }, (_, i) => gunEkle(hafta, i)) : [];
+  const [gun, setGun] = useState("");
+  const [bitis, setBitis] = useState("");
+  const gecerli = oneriFormuGecerli(f) && (!hafta || !!gun);
   const gonder = (hemen: boolean) => {
     if (!confirm(t("eminMisin"))) return;
-    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, hafta });
+    const tarihli = !!hafta && gun !== "yok";
+    const zaman = !hafta ? { hedefTarih, hafta } : tarihli ? { hedefTarih: gun, bitisTarih: bitis > gun ? bitis : undefined } : { hafta };
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), ...zaman });
     if (id && f.bicim === TAKIP_BICIMI) {
       bildir(t("bTakipKaydedildi"));
       kapat();
@@ -362,6 +373,46 @@ export function ElleOneriFormu({
   };
   return (
     <div className="form form-kutu ara-alt-2 elle-oneri">
+      {hafta && (
+        <div className="satir">
+          <label>
+            {t("gun")}
+            <select
+              value={gun}
+              onChange={(e) => {
+                setGun(e.target.value);
+                if (bitis && bitis <= e.target.value) setBitis("");
+              }}
+              data-elle-oneri-gun
+            >
+              <option value="" disabled>
+                {t("hfGunSec")}
+              </option>
+              {gunler.map((g) => (
+                <option key={g} value={g}>
+                  {gunAdi(g, dil)} {tarihYaz(g, dil, "kisa")}
+                </option>
+              ))}
+              <option value="yok">{t("zamanaBagliDegil")}</option>
+            </select>
+          </label>
+          {gun && gun !== "yok" && (
+            <label>
+              {t("bitis")}
+              <select value={bitis} onChange={(e) => setBitis(e.target.value)} data-elle-oneri-bitis>
+                <option value="">—</option>
+                {gunler
+                  .filter((g) => g > gun)
+                  .map((g) => (
+                    <option key={g} value={g}>
+                      {gunAdi(g, dil)} {tarihYaz(g, dil, "kisa")}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
       <OneriAlanlari ben={ben} f={f} setF={setF} />
       <div className="form-alt">
         <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>

@@ -1760,9 +1760,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     dosya olan başlık seçilemez. Eski kayıttaki havuzda olmayan başlık
     "yeni"de yazısıyla gelir. Belgede başlık yazıyla değişmez, "Düzenle"
     penceresinden; durum özeti yerinde.
-  - Haftalık ekrandan ve haftalık çağrı e-postasından gelen öneri `Oneri.hafta`
-    taşır, Next Day ekranlarına karışmaz; günü olan öneri haftasıyla kesişen
-    haftalık plana da düşer (yukarıda, öneri etiketleri).
+  - Haftalık çağrı e-postasından gelen öneri `Oneri.hafta` taşır, Next Day
+    ekranlarına karışmaz; günü olan öneri haftasıyla kesişen haftalık plana da
+    düşer (yukarıda, öneri etiketleri). "Bu haftaya gelen öneriler"deki "Öneri
+    ekle"de (`OneriFormu.tsx → ElleOneriFormu hafta`) gün sorulur (kullanıcı:
+    önerinin hangi günün olduğu belli olmuyordu): haftanın yedi günü ve
+    "Zamana bağlı değil", seçilmeden kaydedilmez, istenirse bitiş günü.
+    Seçilen gün `hedefTarih`/`bitisTarih` olur (hafta günden), "Gündeme ekle"
+    o günle açılır; "Zamana bağlı değil" eskisi gibi yalnız `hafta`. Kartın
+    bilgi satırında günsüz haftalık öneride `haftaGunu` ya da "Zamana bağlı
+    değil" (`useKisaGun`). Test `testler/haftalik-oneri-gun.cjs`.
   - Toplantıda karar düğmelerinin yanında "Not / ek talep" (`Kalem.tsx →
     KararNotuFormu`, `eylemler.ts → kalemKararNotu`, yetki `kararNotuYazabilir`;
     kalem formunda da, belgede "Düzenle" penceresinden): `HaftalikKalem.kararNotu`

@@ -95,7 +95,8 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
 export function useKisaGun() {
   const { t, dil } = useDil();
   return (o: Oneri) => {
-    if (o.hafta && !o.hedefTarih) return t("haftalik");
+    // Günü olmayan haftalık öneri: haftanın günü girildiyse o gün, değilse "zamana bağlı değil".
+    if (o.hafta && !o.hedefTarih) return o.haftaGunu ? tarihYaz(o.haftaGunu, dil, "kisa") : t("zamanaBagliDegil");
     const a = oneriAraligi(o);
     if (!a) return "";
     return a[0] === a[1] ? tarihYaz(a[0], dil, "kisa") : `${tarihYaz(a[0], dil, "kisa")} – ${tarihYaz(a[1], dil, "kisa")}`;

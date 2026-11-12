@@ -89,6 +89,7 @@ const M = {
   sec: m("Seç", "اختيار", "Select"),
   seciniz: m("Seçiniz…", "اختر…", "Select…"),
   zamanaBagliDegil: m("Zamana bağlı değil", "غير مرتبط بموعد", "Not tied to a date"),
+  hfGunSec: m("Gün seç", "اختر اليوم", "Choose a day"),
   gonder: m("Gönder", "إرسال", "Send"),
   olustur: m("Oluştur", "إنشاء", "Create"),
   ac: m("Aç", "فتح", "Open"),
