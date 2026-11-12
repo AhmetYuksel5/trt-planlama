@@ -1810,14 +1810,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kullanıcı: toplantıda anlık not alıp paketleri onaylayacağı, sonra gözden
     geçirip son hali vereceği arayüz): toplantıdaki planın "Sıradaki"
     kartında ve ⋯'de "Toplantı görünümü" (karar verebilen ya da notları
-    gören). Solda gündem kalem kalem (`toplantiSirasi`: günler, sonra zamana
-    bağlı olmayanlar; karar rozetiyle), ortada seçili kalemin kartı
-    (`KalemKarti kisayol`: karar, şartlı kabulün koşulu, karar notu ve ek
-    talep, plan ekranınınkiyle aynı), sağda genel notlar. Klavye (yazı alanı
-    ve açık pencere dışında): ↑/↓ (j/k) kalem, 1 kabul, 2 şartlı (koşul
-    formu), 3 bilgi, 4 ret, 0 kararı kaldırır, N karar notu; karar verince
-    sonraki kaleme geçer. Üstte ilerleme ("n/m"), Hepsi / Karar bekleyen
-    süzgeci (`useAdimDurumu`), "Planı kesinleştir" gözden geçirme penceresini
+    gören). Ortada planın tam metni (kullanıcı: yalnız karar bekleyen liste
+    yetmedi, toplantı ana dosyalar dahil bütün metinden takip edilsin):
+    `HaftalikBelgesi toplanti` (hareketler, ana dosyalar, günler, dosyalar,
+    zamana bağlı olmayanlar; reddedilen de görünür, karar geri alınsın);
+    kalem tıklanınca seçilir (`ToplantiSecimi` bağlamı, `data-toplanti-kalem`,
+    `.toplanti-kalem.secili`), altında karar rozeti ve notları. Sağda yapışkan
+    sütunda seçili kalemin kartı (`KalemKarti kisayol`: karar, şartlı kabulün
+    koşulu, karar notu ve ek talep, plan ekranınınkiyle aynı) ve genel notlar;
+    1100 pikselden darda kalem dokununca kart pencerede. Klavye (yazı alanı ve
+    açık pencere dışında): ↑/↓ (j/k) belgedeki sırayla kalem, 1 kabul, 2
+    şartlı (koşul formu), 3 bilgi, 4 ret, 0 kararı kaldırır, N karar notu;
+    karar verince sonraki kaleme geçer. Üstte ilerleme ("n/m"), Hepsi / Karar
+    bekleyen (`useAdimDurumu`; belge yerinde kalır, kararı verilmiş kalem soluk
+    ve gezinmede atlanır), "Planı kesinleştir" gözden geçirme penceresini
     açar. Test `testler/toplanti.cjs`.
   - Toplantı notları (kaleme bağlı olmayan, o an alınan not; kullanıcı:
     Planlama ve yöneticiler görsün, muhabir görmesin): ayrı kayıtta

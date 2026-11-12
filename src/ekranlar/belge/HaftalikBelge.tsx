@@ -1,6 +1,6 @@
 import { Ban, Check, Eye, Hourglass, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
-import { useRef, useState, type ReactNode, type Ref } from "react";
+import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import trtArabi from "../../varliklar/trt-arabi.svg";
 import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
@@ -91,6 +91,13 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
 ];
 
 /** Bir kalem: "YER - OLAY / metin", muhabirler, biçim, not; bilgi kaleminde "(لا نتابع)". */
+/*
+ * Toplantı görünümü belgenin tamamını okur (kullanıcı: planlamacı toplantıyı
+ * metnin bütününden, ana dosyalar dahil takip etsin); kalem tıklanınca seçilir,
+ * kararı yan panelde verilir. Belge içinden Dosyalar'a geçirmemek için bağlam.
+ */
+export const ToplantiSecimi = createContext<{ secili?: string; sec: (id: string) => void } | null>(null);
+
 function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
   const { t } = useDil();
   const v = useVeri();
@@ -100,12 +107,13 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
   // Şartlı kabulün koşulu çıktıda sarı notta: toplantının kararı kağıtta da "henüz kesin değil" görünsün.
   const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.karar === "sartli" && k.kosul ? `${c("mesrut")} ${k.kosul}` : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
+  const ts = useContext(ToplantiSecimi);
   const [kosulAcik, setKosulAcik] = useState(false);
 
   return (
     <BelgeSatiri
       duzen={!!duzen}
-      soluk={bekliyor}
+      soluk={bekliyor && !ts}
       serit={
         duzen &&
         ben && (
@@ -136,7 +144,18 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
         )
       }
     >
-      <div className="cikti-kalem">
+      <div
+        className={`cikti-kalem${ts ? " toplanti-kalem" : ""}${ts?.secili === k.id ? " secili" : ""}`}
+        {...(ts && {
+          "data-toplanti-kalem": k.id,
+          "data-karar": k.karar,
+          role: "button",
+          tabIndex: 0,
+          "aria-current": ts.secili === k.id || undefined,
+          onClick: () => ts.sec(k.id),
+          onKeyDown: (e: React.KeyboardEvent) => e.key === "Enter" && ts.sec(k.id),
+        })}
+      >
         {duzen ? (
           <Satir
             yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}
@@ -213,7 +232,12 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
           )
         )}
         {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız düzenlerken ekranda. */}
-        {duzen && <KararNotlari kalem={k} />}
+        {(duzen || ts) && <KararNotlari kalem={k} />}
+        {ts && (
+          <p className="toplanti-karar-satiri">
+            <KararRozeti kalem={k} />
+          </p>
+        )}
       </div>
       {kosulAcik && ben && (
         <Pencere baslik={t("krSartli")} kapat={() => setKosulAcik(false)}>
@@ -262,7 +286,19 @@ function Dosyalar({ liste, hafta, duzen }: { liste: HaftalikKalem[]; hafta: Haft
 }
 
 // baski: Next Day'in baskı tasarımları (belge/Baski.tsx); verilmezse kurumun düzeni.
-export function HaftalikBelgesi({ hafta, duzen, belgeRef, baski }: { hafta: HaftalikPlan; duzen?: HfDuzen; belgeRef?: Ref<HTMLElement>; baski?: Baski }) {
+export function HaftalikBelgesi({
+  hafta,
+  duzen,
+  belgeRef,
+  baski,
+  toplanti,
+}: {
+  hafta: HaftalikPlan;
+  duzen?: HfDuzen;
+  belgeRef?: Ref<HTMLElement>;
+  baski?: Baski;
+  toplanti?: { secili?: string; sec: (id: string) => void };
+}) {
   const { t } = useDil();
   const v = useVeri();
   const ben = duzen?.ben;
@@ -275,7 +311,8 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef, baski }: { hafta: Haft
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
   /* Aynı yere aynı süreyle giden ekip tek satırda, kurumun belgesindeki gibi: "YER / ad - ad - ad في مهمة حتى …". */
   const hareketSatirlari = [...hareketler.reduce((m, g) => m.set(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`, [...(m.get(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`) ?? []), g]), new Map<string, typeof hareketler>()).values()];
-  const kalemler = duzen || hafta.durum !== "kesinlesti" ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
+  // Toplantıda reddedilen de görünür: karar geri alınabilsin.
+  const kalemler = toplanti ? hafta.kalemler.filter(gundemde) : duzen || hafta.durum !== "kesinlesti" ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
   const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g));
   const stok = kalemler.filter((k) => !k.tarih);
 
@@ -379,7 +416,8 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef, baski }: { hafta: Haft
   );
 
   return (
-    <article className={`cikti hf${baski ? ` baski-${baski}` : ""}`} ref={belgeRef} dir="rtl" lang="ar">
+    <ToplantiSecimi.Provider value={toplanti ?? null}>
+    <article className={`cikti hf${baski ? ` baski-${baski}` : ""}${toplanti ? " toplanti-belgesi" : ""}`} ref={belgeRef} dir="rtl" lang="ar">
       {baski && baski !== 2 && (
         <div className="baski-logo">
           <img src={trtArabi} alt="TRT عربي" />
@@ -413,6 +451,7 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef, baski }: { hafta: Haft
         </>
       )}
     </article>
+    </ToplantiSecimi.Provider>
   );
 }
 

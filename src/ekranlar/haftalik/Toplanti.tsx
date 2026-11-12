@@ -2,19 +2,20 @@ import { Check, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { GeriBag } from "../../bilesenler/GeriBag";
-import { KararRozeti } from "../../bilesenler/Haftalik";
-import { Avatar, Icerik, Kart, bildir } from "../../bilesenler/Parcalar";
-import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../../dil";
+import { Avatar, Kart, Pencere, bildir } from "../../bilesenler/Parcalar";
+import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
 import { kalemKarar, toplantiNotuEkle, toplantiNotuSil, toplantiNotuSilebilir } from "../../eylemler";
-import { gundemde, haftaSonu, kalemAdi, kararBekleyenler } from "../../haftalik";
+import { gundemde, haftaSonu, kararBekleyenler } from "../../haftalik";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { yerelGun } from "../../tarih";
-import { baslikBul, kisiBul, useVeri, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
+import { kisiBul, useVeri, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
 import { useAdimDurumu } from "../../yol";
 import { kararVerebilir, planAdimiYapabilir, toplantiNotuGorur } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { GozdenGecirme } from "./GozdenGecirme";
 import { KalemKarti } from "./Kalem";
+import { HaftalikBelgesi } from "../belge/HaftalikBelge";
+import { useMedya } from "../takvim/ortak";
 
 /*
  * Weekly toplantısının çalışma ekranı (kullanıcı: toplantıda anlık not alıp
@@ -43,46 +44,55 @@ const yaziAlaninda = (e: KeyboardEvent) => {
 
 export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const { t, dil } = useDil();
-  const v = useVeri();
   const bas = hafta.baslangic;
   useSekmeAdi(`${t("mHaftalik")} · ${t("toplantiGorunumu")}`);
   const [suzgec, setSuzgec] = useAdimDurumu<"hepsi" | "bekleyen">("toplanti:suzgec", "hepsi");
   const [gozden, setGozden] = useState(false);
+  // Dar ekranda belge tam genişlikte; kaleme dokununca karar kartı pencerede.
+  const dar = useMedya("(max-width: 1099px)");
+  const [pencere, setPencere] = useState(false);
   const sira = toplantiSirasi(hafta);
-  const liste = suzgec === "bekleyen" ? sira.filter((k) => k.karar === "bekliyor") : sira;
-  const [seciliId, setSeciliId] = useState<string | undefined>(liste[0]?.id);
-  const secili = liste.find((k) => k.id === seciliId) ?? liste[0];
+  const [seciliId, setSeciliId] = useState<string | undefined>(() => (sira.find((k) => k.karar === "bekliyor") ?? sira[0])?.id);
+  const secili = sira.find((k) => k.id === seciliId);
   const karar = kararVerebilir(ben, hafta);
   const bekleyen = kararBekleyenler(hafta).length;
   const ayrinti = useRef<HTMLDivElement>(null);
-  const satirlar = useRef<HTMLUListElement>(null);
+  const belge = useRef<HTMLDivElement>(null);
 
-  // Seçili satır listede görünür kalsın (klavyeyle inerken).
+  // Gezinme belgedeki sırayla (günler, dosyalar, zamana bağlı olmayanlar); "Karar bekleyen"de yalnız onlar.
+  const belgeSirasi = () =>
+    [...(belge.current?.querySelectorAll<HTMLElement>("[data-toplanti-kalem]") ?? [])]
+      .filter((e) => suzgec === "hepsi" || e.dataset.karar === "bekliyor" || e.dataset.toplantiKalem === secili?.id)
+      .map((e) => e.dataset.toplantiKalem!);
+  const sec = (id: string | undefined, pencereAc = false) => {
+    if (!id) return;
+    setSeciliId(id);
+    if (pencereAc && dar) setPencere(true);
+  };
+
+  // Seçili kalem belgede görünür kalsın (klavyeyle inerken).
   useEffect(() => {
-    satirlar.current?.querySelector(`[data-toplanti-kalem="${secili?.id}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [secili?.id]);
+    belge.current?.querySelector(`[data-toplanti-kalem="${seciliId}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [seciliId]);
 
   // Klavye: yazı alanında ve açık pencerede çalışmaz.
   useEffect(() => {
     const dinle = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || yaziAlaninda(e) || document.querySelector("dialog[open]")) return;
-      const i = secili ? liste.findIndex((k) => k.id === secili.id) : -1;
-      const git = (j: number) => liste[j] && setSeciliId(liste[j].id);
+      const liste = belgeSirasi();
+      const i = secili ? liste.indexOf(secili.id) : -1;
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
-        git(Math.min(i + 1, liste.length - 1));
+        sec(liste[Math.min(i + 1, liste.length - 1)]);
       } else if (e.key === "ArrowUp" || e.key === "k") {
         e.preventDefault();
-        git(Math.max(i - 1, 0));
+        sec(liste[Math.max(i - 1, 0)]);
       } else if (secili && karar && TUS_KARAR[e.key]) {
         e.preventDefault();
         const yeni = TUS_KARAR[e.key];
         if (!kalemKarar(ben, hafta.id, secili.id, yeni)) return;
-        // Kararla sıradaki kaleme: "bekleyen" süzgecinde karar verilen listeden düşüyor, aynı sıradaki gelir.
-        if (yeni !== "bekliyor") {
-          const sonraki = suzgec === "bekleyen" ? liste.filter((k) => k.id !== secili.id)[i] : liste[i + 1];
-          if (sonraki) setSeciliId(sonraki.id);
-        }
+        // Kararla belgedeki sıradaki kaleme; "Karar bekleyen"de sıradaki karar bekleyene.
+        if (yeni !== "bekliyor") sec(liste.slice(i + 1).find((id) => suzgec === "hepsi" || sira.find((k) => k.id === id)?.karar === "bekliyor"));
       } else if (secili && karar && e.key === "2") {
         e.preventDefault();
         ayrinti.current?.querySelector<HTMLButtonElement>("[data-karar-dugme='sartli']")?.click();
@@ -96,9 +106,23 @@ export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: Haf
   });
 
   const karariVerilen = sira.length - sira.filter((k) => k.karar === "bekliyor").length;
+  const komsu = (yon: 1 | -1) => {
+    const liste = belgeSirasi();
+    const i = secili ? liste.indexOf(secili.id) : -1;
+    return liste[i + yon];
+  };
+  const kalemKarti = secili ? (
+    <div className="toplanti-ayrinti" ref={ayrinti} data-toplanti-ayrinti>
+      <div className="toplanti-gezinti">
+        <IkonDugme ikon={<ChevronUp size={16} />} etiket={t("onceki")} onClick={() => sec(komsu(-1))} />
+        <IkonDugme ikon={<ChevronDown size={16} />} etiket={t("sonraki")} onClick={() => sec(komsu(1))} />
+      </div>
+      <KalemKarti key={secili.id} ben={ben} hafta={hafta} kalem={secili} dosyaGoster kisayol={karar} />
+    </div>
+  ) : null;
 
   return (
-    <div className="toplanti" data-toplanti>
+    <div className={`toplanti${suzgec === "bekleyen" ? " yalniz-bekleyen" : ""}`} data-toplanti>
       <div className="toplanti-ust">
         <GeriBag href={`#/haftalik/${hafta.id}`} metin={t("haftalikPlanaDon")} />
         <h1 className="toplanti-baslik">
@@ -128,49 +152,22 @@ export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: Haf
       </div>
 
       <div className="toplanti-duzen">
-        <ul className="toplanti-liste" ref={satirlar} aria-label={t("toplantiGorunumu")}>
-          {liste.map((k) => (
-            <li key={k.id}>
-              <button type="button" className={`toplanti-satir${k.id === secili?.id ? " secili" : ""}`} aria-current={k.id === secili?.id || undefined} onClick={() => setSeciliId(k.id)} data-toplanti-kalem={k.id}>
-                <span className="toplanti-no">{sira.indexOf(k) + 1}</span>
-                <span className="toplanti-satir-govde">
-                  <Icerik blok>{kalemAdi(k)}</Icerik>
-                  <small>
-                    <bdi>{k.tarih ? `${gunAdi(k.tarih, dil)} ${tarihYaz(k.tarih, dil, "kisa")}` : t("zamanaBagliDegil")}</bdi>
-                    {k.baslikId && (
-                      <>
-                        {" · "}
-                        <Icerik>{baslikBul(v, k.baslikId)?.ad ?? ""}</Icerik>
-                      </>
-                    )}
-                  </small>
-                </span>
-                <KararRozeti kalem={k} />
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        <div className="toplanti-ayrinti" ref={ayrinti} data-toplanti-ayrinti>
-          {secili ? (
-            <>
-              <div className="toplanti-gezinti">
-                <IkonDugme ikon={<ChevronUp size={16} />} etiket={t("onceki")} onClick={() => liste[liste.indexOf(secili) - 1] && setSeciliId(liste[liste.indexOf(secili) - 1].id)} />
-                <IkonDugme ikon={<ChevronDown size={16} />} etiket={t("sonraki")} onClick={() => liste[liste.indexOf(secili) + 1] && setSeciliId(liste[liste.indexOf(secili) + 1].id)} />
-              </div>
-              <KalemKarti key={secili.id} ben={ben} hafta={hafta} kalem={secili} dosyaGoster kisayol={karar} />
-            </>
-          ) : (
-            <p className="bos-kucuk">{t(suzgec === "bekleyen" ? "kararBekleyenYok" : "kalemYok")}</p>
-          )}
-        </div>
-
-        {toplantiNotuGorur(ben) && (
-          <div className="toplanti-notlar">
-            <ToplantiNotlari ben={ben} hafta={hafta} />
+        {/* Planın tam metni: hareketler, ana dosyalar, günler ve dosyalar; kalem tıklanınca seçilir. */}
+        <div className="toplanti-belge" ref={belge}>
+          <div className="cikti-sarici">
+            <HaftalikBelgesi hafta={hafta} toplanti={{ secili: seciliId, sec: (id) => sec(id, true) }} />
           </div>
-        )}
+        </div>
+        <div className="toplanti-yan">
+          {!dar && (kalemKarti ?? <p className="bos-kucuk">{t("kalemYok")}</p>)}
+          {toplantiNotuGorur(ben) && <ToplantiNotlari ben={ben} hafta={hafta} />}
+        </div>
       </div>
+      {dar && pencere && kalemKarti && (
+        <Pencere baslik={t("toplantiGorunumu")} kapat={() => setPencere(false)}>
+          {kalemKarti}
+        </Pencere>
+      )}
       {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
     </div>
   );

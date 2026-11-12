@@ -1,5 +1,5 @@
 // Weekly toplantı görünümü (kullanıcı: toplantıda anlık not alıp paketleri onaylayacağı, sonra gözden geçirip son hali
-// vereceği arayüz): kalem kalem liste, klavyeyle karar (1 kabul, 2 şartlı, 3 bilgi, 4 ret, 0 kaldır) ve sonrakine geçiş,
+// vereceği arayüz; toplantı planın tam metninden, ana dosyalar dahil takip edilsin): ortada planın belgesi, klavyeyle karar (1 kabul, 2 şartlı, 3 bilgi, 4 ret, 0 kaldır) ve sonrakine geçiş,
 // N ile karar notu, süzgeç, genel toplantı notları (yalnız Planlama ve yöneticiler; ayrı kayıt), tutanakta notlar.
 const { chromium } = require(process.env.PW || "playwright");
 const B = "http://localhost:4173/";
@@ -28,14 +28,16 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     return h.id;
   });
   const kalem = async (id) => (await veri()).haftalik.find((x) => x.id === hid).kalemler.find((x) => x.id === id);
-  const secili = () => p.locator(".toplanti-satir.secili").getAttribute("data-toplanti-kalem");
+  const secili = () => p.locator("[data-toplanti-kalem].secili").getAttribute("data-toplanti-kalem");
 
   // 1. Plan ekranından giriş
   await git("#/haftalik/" + hid);
   await p.locator("[data-toplanti-ac]").click(); await p.waitForTimeout(900);
   ok((await p.evaluate(() => location.hash)).endsWith("/toplanti"), "plan ekranından toplantı görünümüne");
   const ids = await p.locator("[data-toplanti-kalem]").evaluateAll((l) => l.map((x) => x.getAttribute("data-toplanti-kalem")));
-  ok(ids.length > 3 && (await secili()) === ids[0], "gündem listesi, ilk kalem seçili");
+  ok(ids.length > 3 && (await secili()) === ids[0], "belgedeki kalemler, ilk karar bekleyen seçili");
+  const metin = await p.locator("[data-toplanti] .toplanti-belge").innerText();
+  ok(metin.includes("أهم ملفات الأسبوع") && metin.includes("تحركات المراسلين") && metin.includes("الأجندة اليومية"), "planın tam metni: hareketler, ana dosyalar, günler");
 
   // 2. Klavyeyle karar ve sonrakine geçiş
   await p.keyboard.press("1"); await p.waitForTimeout(300);
@@ -61,10 +63,12 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-toplanti-ayrinti] [data-karar-notu-formu]").count()) === 1, "N → karar notu formu");
   await p.keyboard.press("Escape");
 
-  // 4. Süzgeç: yalnız karar bekleyenler
+  // 4. "Karar bekleyen": belge yerinde kalır, kararı verilmiş kalem soluk ve gezinmede atlanır
   await p.locator("[data-toplanti-suzgec='bekleyen']").click(); await p.waitForTimeout(300);
-  const bek = (await veri()).haftalik.find((x) => x.id === hid).kalemler.filter((x) => x.karar === "bekliyor" && x.onInceleme?.durum !== "reddedildi").length;
-  ok((await p.locator("[data-toplanti-kalem]").count()) === bek, `süzgeçte ${bek} karar bekleyen`);
+  ok((await p.locator(".yalniz-bekleyen [data-toplanti-kalem]").count()) === ids.length, "süzgeçte belge tam kaldı");
+  await p.keyboard.press("ArrowDown"); await p.waitForTimeout(200);
+  const sonraki = await secili();
+  ok((await kalem(sonraki)).karar === "bekliyor", "↓ karar bekleyene gitti (kararı verilenler atlandı)");
 
   // 5. Genel toplantı notu: Ctrl+Enter ile eklenir, ayrı kayıtta
   await p.locator("[data-toplanti-not-girdi]").fill("نتابع ملف الانتخابات مع المكتب");
@@ -102,6 +106,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await git(`#/haftalik/${hid}/toplanti`);
     const t = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     ok(t <= 1, `390px taşma yok (${dil}): ${t}`);
+    await p.locator("[data-toplanti-kalem]").nth(1).click(); await p.waitForTimeout(400);
+    ok((await p.locator("dialog[open] [data-toplanti-ayrinti]").count()) === 1, `telefonda kaleme dokununca karar kartı pencerede (${dil})`);
   }
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
   await b.close();
