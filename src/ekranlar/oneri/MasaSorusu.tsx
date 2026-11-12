@@ -1,13 +1,14 @@
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
-import { Check, ClipboardList, Send, Share2, X } from "lucide-react";
+import { Check, ClipboardList, Radio, Send, Share2, X } from "lucide-react";
+import { MasaYayinDugmeleri } from "../../bilesenler/PaketSonucu";
 import { useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { Icerik, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { masaSorusunuYanitla, oneriGorevlendir, oneriMasayaSor } from "../../eylemler";
 import { SORU_MASALARI, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSoru } from "../../masaSorusu";
-import { bugun, yerelGun } from "../../tarih";
-import { kisiBul, oneriBul, useVeri, type BirimId, type Kisi, type MasaSorusu, type Oneri } from "../../veri";
+import { bugun, gunEkle, yerelGun } from "../../tarih";
+import { kisiBul, oneriBul, useVeri, type BirimId, type Kisi, type MasaSorusu, type Oneri, type Paket } from "../../veri";
 import { birimAdi, izinBirimi } from "../../yapi";
 import { kisitliKisi, masaYanitlar, oneriGorevlendirebilir, yapabilir } from "../../yetki";
 
@@ -196,6 +197,78 @@ export function MasaOnerileri({ ben }: { ben: Kisi }) {
           <OzetSatiri key={s.id} s={s} />
         ))}
       </ul>
+    </Kart>
+  );
+}
+
+/*
+ * Masanın takibindeki paketler (kullanıcı: Programlar'a sorulup görevlendirilen
+ * paket Planlama'nın planına girmiyor, onu masa yayınlıyor ve takip ediyor):
+ * açıklar teslim durumuyla ve "Yayınlandı / Yayınlanmadı" düğmeleriyle, altta
+ * son bir haftada kapananlar. Masanın ana sayfasında ve sayfasında.
+ */
+const KAPANAN_GUN = 7;
+export function MasaTakibi({ ben }: { ben: Kisi }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const birim = izinBirimi(ben.birim);
+  if (!SORU_MASALARI.includes(birim) || kisitliKisi(ben)) return null;
+  const masanin = v.paketler.filter((p) => p.masaTakibi === birim);
+  const acik = masanin.filter((p) => p.durum === "onaylandi").sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
+  const sinir = gunEkle(bugun(), -KAPANAN_GUN);
+  const kapanan = masanin
+    .filter((p) => (p.durum === "tamamlandi" || p.durum === "iptal") && yerelGun(p.guncelleme) >= sinir)
+    .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  if (!acik.length && !kapanan.length) return null;
+  const durum = (p: Paket) =>
+    p.isaret ? (
+      <Rozet ton={p.isaret.tur === "yapildi" ? "iyi" : "uyari"}>{t(p.isaret.tur === "yapildi" ? "mtTeslimEdildi" : "mtYapilmadiDedi")}</Rozet>
+    ) : (
+      <Rozet>{t("mtMuhabirde")}</Rozet>
+    );
+  return (
+    <Kart baslik={t("mtTakibimdeki")} ikon={<Radio size={18} />} ek={String(acik.length)}>
+      <ul className="liste" data-masa-takibi>
+        {acik.map((p) => (
+          <li key={p.id} data-masa-takip={p.id}>
+            <div className="ad">
+              <a href={`#/paketler/${p.id}`}>
+                <Icerik blok>{p.baslik}</Icerik>
+              </a>
+              <small>
+                {p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}
+                {p.sonTarih && ` · ${tarihYaz(p.sonTarih)}`}
+                {p.isaret?.sebep && ` · ${p.isaret.sebep}`}
+              </small>
+            </div>
+            {durum(p)}
+            <MasaYayinDugmeleri ben={ben} paket={p} kucuk />
+          </li>
+        ))}
+      </ul>
+      {kapanan.length > 0 && (
+        <>
+          <div className="alan-etiket ara-ust-2">
+            {t("mtSonuclananlar")} <em>{kapanan.length}</em>
+          </div>
+          <ul className="liste" data-masa-kapanan>
+            {kapanan.map((p) => (
+              <li key={p.id}>
+                <div className="ad">
+                  <a href={`#/paketler/${p.id}`}>
+                    <Icerik blok>{p.baslik}</Icerik>
+                  </a>
+                  <small>
+                    {p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}
+                    {p.yayinlanmadi?.sebep && ` · ${p.yayinlanmadi.sebep}`}
+                  </small>
+                </div>
+                <Rozet ton={p.yayinlanmadi ? "kotu" : "iyi"}>{t(p.yayinlanmadi ? "mtYayinlanmadi" : "mtYayinlandi")}</Rozet>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </Kart>
   );
 }

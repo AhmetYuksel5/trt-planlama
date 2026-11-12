@@ -1,6 +1,6 @@
 import { OzelTalepAlani } from "../OzelYayin";
 import { MasaPaketleri } from "../Listeler";
-import { MasaOnerileri } from "../oneri/MasaSorusu";
+import { MasaOnerileri, MasaTakibi } from "../oneri/MasaSorusu";
 import { oneriArsivde } from "../../oneriPlanlari";
 import {
   AlertTriangle,
@@ -575,9 +575,9 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "ekGelecek", ad: "haftalikEkonomiKalemleri", ek: "gelecekHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiGelecek },
   { id: "ekBuHafta", ad: "haftalikEkonomiKalemleri", ek: "buHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiBuHafta },
   { id: "ekPaketler", ad: "ekonomiPaketleri", genis: true, grup: "ekonomi", sayfa: "ekonomi", Bilesen: EkonomiPaketleri },
-  { id: "ekMasa", ad: "ekMasa", genis: true, grup: "ekonomi", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaPaketleri ben={ben} kol="ekonomi" baslik="ekMasa" /></> },
-  { id: "prMasa", ad: "prMasa", genis: true, grup: "program", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaPaketleri ben={ben} kol="program" baslik="prMasa" /></> },
-  { id: "spMasa", ad: "spMasa", genis: true, grup: "spor", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaPaketleri ben={ben} kol="spor" baslik="spMasa" /></> },
+  { id: "ekMasa", ad: "ekMasa", genis: true, grup: "ekonomi", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="ekonomi" baslik="ekMasa" /></> },
+  { id: "prMasa", ad: "prMasa", genis: true, grup: "program", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="program" baslik="prMasa" /></> },
+  { id: "spMasa", ad: "spMasa", genis: true, grup: "spor", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="spor" baslik="spMasa" /></> },
   { id: "prHafta", ad: "haftalikProgramPlani", grup: "program", sayfa: "programlar", Bilesen: ProgramHafta },
   { id: "prUretim", ad: "programUretimDurumu", grup: "program", sayfa: "programlar", Bilesen: ProgramUretim },
   { id: "prOneri", ad: "programOnerileri", grup: "program", sayfa: "programlar", Bilesen: ProgramOnerileri },

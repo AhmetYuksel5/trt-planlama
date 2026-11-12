@@ -78,7 +78,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   const metin = await p.locator("main").innerText();
   ok((await p.locator("[data-masa-sorulari]").count()) === 0 && !metin.includes("زاوية اقتصادية") && !/görüşüne sundu|uygun buldu/.test(metin), "muhabir masa kartını, notu ve hareketleri görmüyor");
 
-  // 5. Planlama muhabiri görevlendirir: görev paketi, öneriye bağlı, ekonomi kolunda, stokta
+  // 5. Planlama muhabiri görevlendirir: görev paketi, öneriye bağlı, ekonomi kolunda, masanın takibinde
   await gir("pl1", oneriYolu);
   ok((await p.locator("[data-oneri-gorevlendir]").count()) === 1, "Planlama'da \"Muhabiri görevlendir\"");
   await p.locator("[data-oneri-gorevlendir-formu] input[type=date]").fill(gunEkle(2));
@@ -86,7 +86,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   d = await durum();
   const pk = d.paketler.find((x) => x.oneriId === oneriId && x.gorev);
   const o2 = d.oneriler.find((o) => o.id === oneriId);
-  ok(!!pk && pk.durum === "onaylandi" && pk.tur === "ekonomi" && pk.stok && pk.sonTarih === gunEkle(2) && pk.muhabirId === muhabirId, "görev paketi: onaylı, ekonomi kolunda, stokta, günüyle");
+  ok(!!pk && pk.durum === "onaylandi" && pk.tur === "ekonomi" && !pk.stok && pk.masaTakibi === "ekonomi" && pk.sonTarih === gunEkle(2) && pk.muhabirId === muhabirId, "görev paketi: onaylı, ekonomi kolunda, masanın takibinde (stokta değil), günüyle");
   ok(o2.durum === "planaEklendi" && o2.paketId === pk?.id, "öneri görevlendirildi (plana eklendi, paketine bağlı)");
   ok((await p.locator("[data-masa-paket]").count()) === 1 && (await p.locator("[data-oneri-gorevlendir]").count()) === 0, "kartta \"Görevlendirildi\", düğme kalktı");
   await gir("ek2", "#/ekonomi");

@@ -2150,6 +2150,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriId`, öneri "plana eklendi", `oneriPlansizKabul`), kolu masanın,
     Strap önerinin; muhabire ve masaya tek `paketGorevVerildi`. Test
     `testler/masa-sorusu.cjs`.
+  - Paket masanın takibine geçer (kullanıcı: masanın paketi Planlama'nın
+    günlük ve haftalık planına girmiyor, masa yayınlıyor ve takip ediyor;
+    `Paket.masaTakibi`, stok değil): Planlama'nın Stok'unda, Next Day "Hazır
+    paketler"inde ve onay kuyruğunda yok, Planlama onun adına işaret de
+    vermez. Muhabir "Yapıldı / Yapılmadı"yla teslim eder (işaret masaya,
+    `sahip`), onaya gitmez (`paketIsaretOnaylayabilir(k, p)`). Masa
+    (`masaYayinKarariVerebilir`: masanın üyesi ya da tam yönetici) teslimi
+    beklemeden de "Yayınlandı" ya da sebebiyle "Yayınlanmadı" der
+    (`eylemler.ts → masaYayinKarari`, `PaketSonucu.tsx → MasaYayinDugmeleri`;
+    hareket `masaYayinladi`/`masaYayinlamadi`, muhabire bildirim). Yayınlandı:
+    tamamlandı, `yayinlandi.masa`. Yayınlanmadı: muhabir teslim ettiyse paket
+    tamamlanmış sayılır, Muhasebe sayar (kullanıcı kararı; `yayinlanmadi`),
+    etmediyse iptal (`yapilmadi`). "Tamamlamayı geri al" masada da (yayın izi
+    silinir). Masanın ana sayfasında ve sayfasında "Takibimizdeki paketler"
+    (`MasaSorusu.tsx → MasaTakibi`: açıklar teslim durumuyla, son bir haftada
+    kapananlar). Bu kuraldan önce görevlendirilmiş paketi sistemin açılış işi
+    takibe alır (`masaGorevleriniTakibeAl`). Test `testler/masa-takibi.cjs`.
 - Künye (kullanıcı: biten paketin ve canlının kimlik kartı, kısa; "direkt kim
   yaptıysa onun adı", birim değil; Muhasebe'ye de gitsin). Kurallar
   `kunye.ts`, kart `bilesenler/Kunye.tsx`. Adım yapıldığı an pakete yazılır

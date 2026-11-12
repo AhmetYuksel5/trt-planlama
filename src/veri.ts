@@ -1027,8 +1027,18 @@ export interface Paket {
   gorevTalebi?: { kisiId: string; birim: BirimId; zaman: string; red?: { kisiId: string; zaman: string; gerekce?: string } };
   /** Paketin süresi: 3:20. */
   sure?: string;
-  /** Yayına çıktığı Next Day planı ya da (dosya paketi) özel yayın. */
-  yayinlandi?: { planId?: string; ozelId?: string; tarih: string };
+  /** Yayına çıktığı Next Day planı ya da (dosya paketi) özel yayın; masanın takibindeki pakette yayınlayan masa. */
+  yayinlandi?: { planId?: string; ozelId?: string; tarih: string; masa?: BirimId; kisiId?: string };
+  /*
+   * Masanın takibi (kullanıcı): Planlama'nın masaya (Ekonomi, Program, Spor)
+   * sorduğu, masanın "Uygundur" dediği öneride görevlendirilen paket masanın
+   * kendi yayını için. Planlama'nın planlarına, stoğuna ve onay kuyruğuna
+   * girmiyor; muhabir teslim ediyor ("Yapıldı"), masa "Yayınlandı" ya da
+   * sebebiyle "Yayınlanmadı" diye kapatıyor (masaTakibi.ts).
+   */
+  masaTakibi?: BirimId;
+  /** Masa yayınlamadı: muhabir teslim ettiyse paket tamamlanmış sayılır (Muhasebe sayar), etmediyse iptal. */
+  yayinlanmadi?: { sebep: string; zaman: string; kisiId: string };
   notlar: Not[];
   olusturma: string;
   guncelleme: string;
@@ -1583,6 +1593,8 @@ export const HAREKET_TIPLERI = [
   "paketReddedildi",
   "paketSartliKabul",
   "paketGorevVerildi",
+  "masaYayinladi",
+  "masaYayinlamadi",
   "gorevTalebiGeldi",
   "gorevTalebiReddedildi",
   "gorevTalebiGeriCekildi",

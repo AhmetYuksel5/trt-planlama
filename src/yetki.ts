@@ -563,7 +563,8 @@ export const paketTamamlayabilir = (
       !masaPaketi(p) &&
       p.durum === "onaylandi" &&
       ((k.birim === "muhabir" && p.muhabirId === k.id) ||
-        yapabilir(k, "paketDegerlendir"));
+        // Masanın takibindeki paket Planlama'nın gözetiminden çıktı: onun adına masa kapatıyor (masaYayinKarari).
+        (!p.masaTakibi && yapabilir(k, "paketDegerlendir")));
 
 /*
  * Newsdesk yokken onaylı paketin sonucu muhabirden: "yapıldı" ya da
@@ -576,9 +577,17 @@ export const paketIsaretleyebilir = (
   p: Paket,
   d: Durum,
 ): boolean => !p.ozelId && !p.isaret && paketTamamlayabilir(k, p, d);
-/* İşaretin onayı yetkiyle: tam yönetici ya da ona "paket onayı" verdiği kişi. */
-export const paketIsaretOnaylayabilir = (k: Kisi | undefined): boolean =>
-  !!k && !k.pasif && hesapYetkisi(k, "paketOnayi");
+/*
+ * İşaretin onayı yetkiyle: tam yönetici ya da ona "paket onayı" verdiği kişi.
+ * Masanın takibindeki paketin işareti onaya gitmiyor; masa yayın kararıyla
+ * kapatıyor (`masaYayinKarariVerebilir`).
+ */
+export const paketIsaretOnaylayabilir = (k: Kisi | undefined, p?: Paket): boolean =>
+  !!k && !k.pasif && !p?.masaTakibi && hesapYetkisi(k, "paketOnayi");
+
+/** Masanın takibindeki onaylı paketi masa (ya da tam yönetici) "Yayınlandı / Yayınlanmadı" diye kapatır. */
+export const masaYayinKarariVerebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && !!p.masaTakibi && p.durum === "onaylandi" && masaUyesi(k, p.masaTakibi);
 
 /** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
 /*
@@ -677,6 +686,8 @@ const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = [
   "paketBaskaMuhabire",
   "paketIsaretOnaylandi",
   "paketIsaretGeriCevrildi",
+  "masaYayinladi",
+  "masaYayinlamadi",
   "paketOnaylandi",
   "tamamlandi",
   "tamamlamaGeriAlindi",
@@ -750,7 +761,7 @@ export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri, d: Durum | 
 /* --- Önerinin masaya sorulması (masaSorusu.ts) --- */
 
 /** Masanın üyesi: birimi (ya da "gibi" çalıştığı birim) o masa; tam yönetici her masa adına. */
-const masaUyesi = (ben: Kisi, birim: BirimId) => !kisitliKisi(ben) && !ben.pasif && (!!ben.hesapYoneticisi || izinBirimi(ben.birim) === birim);
+export const masaUyesi = (ben: Kisi, birim: BirimId) => !kisitliKisi(ben) && !ben.pasif && (!!ben.hesapYoneticisi || izinBirimi(ben.birim) === birim);
 
 /** Planlama karar aşamasındaki muhabir önerisini masaya sorar; açık sorusu ya da görevi olmayanı. */
 export const masayaSorabilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
@@ -815,8 +826,7 @@ export const tamamlamaGeriAlabilir = (
   !!ben &&
   p.durum === "tamamlandi" &&
   !p.ozelId &&
-  yalnizPlanlama(d) &&
-  paketIsaretOnaylayabilir(ben);
+  (p.masaTakibi ? masaUyesi(ben, p.masaTakibi) : yalnizPlanlama(d) && paketIsaretOnaylayabilir(ben));
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
 export const profilDuzenler = (k: Kisi | undefined, kisi: Kisi): boolean =>

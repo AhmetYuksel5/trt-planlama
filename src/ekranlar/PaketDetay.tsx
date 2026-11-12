@@ -17,7 +17,7 @@ import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
@@ -295,7 +295,12 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
   }
 
   // Newsdesk yokken onaylı paketin sonucu muhabirden (hesapsızsa Planlama onun adına): yapıldı ya da yapılmadı, yetkili onaylıyor.
-  if (!paket.ozelId && ((paket.isaret && paket.durum === "onaylandi") || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben))) {
+  // Masanın takibindeki pakette yayın kararı masada (Yayınlandı / Yayınlanmadı).
+  if (
+    !paket.ozelId &&
+    (masaYayinKarariVerebilir(ben, paket) ||
+      (((paket.isaret && paket.durum === "onaylandi") || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben, paket))))
+  ) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <PaketSonucDugmeleri ben={ben} paket={paket} />

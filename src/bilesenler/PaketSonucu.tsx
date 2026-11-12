@@ -1,11 +1,11 @@
 import { CheckCircle, CircleSlash, Undo2, UserRoundCog } from "lucide-react";
 import { useState } from "react";
 import { useDil } from "../dil";
-import { paketBaskaMuhabireVer, paketIsaretKarar, paketIsaretle } from "../eylemler";
+import { masaYayinKarari, paketBaskaMuhabireVer, paketIsaretKarar, paketIsaretle } from "../eylemler";
 import { MuhabirSecici } from "../ekranlar/nextday/Formlar";
 import { git } from "../yol";
 import { kisiBul, useVeri, type Kisi, type Paket } from "../veri";
-import { baskaMuhabireVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir } from "../yetki";
+import { baskaMuhabireVerebilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir } from "../yetki";
 import { Icerik, Kart, Rozet, bildir } from "./Parcalar";
 
 /*
@@ -23,14 +23,15 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
     return (
       <div className="dugmeler" data-paket-isaret={p.id}>
         <Rozet ton="uyari">
-          {t("isaretOnayBekliyor")} · {t(i.tur === "yapildi" ? "yapildi" : "yapilmadi")}
+          {p.masaTakibi ? t(i.tur === "yapildi" ? "mtTeslimEdildi" : "mtYapilmadiDedi") : `${t("isaretOnayBekliyor")} · ${t(i.tur === "yapildi" ? "yapildi" : "yapilmadi")}`}
         </Rozet>
         {i.sebep && (
           <span dir="auto" className="soluk">
             {ad(kisiBul(v, i.kisiId))}: {i.sebep}
           </span>
         )}
-        {paketIsaretOnaylayabilir(ben) && (
+        <MasaYayinDugmeleri ben={ben} paket={p} kucuk={kucuk} />
+        {paketIsaretOnaylayabilir(ben, p) && (
           <>
             <button type="button" className={`dugme dugme-iyi${k}`} onClick={() => confirm(t("isaretOnayOnay")) && paketIsaretKarar(ben, p.id, true) && bildir(t("bKaydedildi"))} data-isaret-onayla>
               <CheckCircle size={14} /> {t("isaretOnayla")}
@@ -43,7 +44,7 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
       </div>
     );
   }
-  if (!paketIsaretleyebilir(ben, p, v)) return null;
+  if (!paketIsaretleyebilir(ben, p, v)) return <MasaYayinDugmeleri ben={ben} paket={p} kucuk={kucuk} />;
   if (sebep !== null)
     return (
       <div className="form form-kutu" data-yapilmadi-formu={p.id}>
@@ -88,7 +89,8 @@ export function OnayKuyrugu({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   if (!paketIsaretOnaylayabilir(ben)) return null;
-  const liste = v.paketler.filter((p) => p.isaret && p.durum === "onaylandi").sort((a, b) => a.isaret!.zaman.localeCompare(b.isaret!.zaman));
+  // Masanın takibindeki paketin teslimi masanın kartında (MasaTakibi), Planlama'nın kuyruğunda değil.
+  const liste = v.paketler.filter((p) => p.isaret && p.durum === "onaylandi" && !p.masaTakibi).sort((a, b) => a.isaret!.zaman.localeCompare(b.isaret!.zaman));
   if (!liste.length) return null;
   return (
     <Kart baslik={t("psOnayBekleyen")} ikon={<CheckCircle size={18} />} ek={String(liste.length)}>
@@ -149,5 +151,50 @@ export function BaskaMuhabireVer({ ben, paket: p }: { ben: Kisi; paket: Paket })
         <UserRoundCog size={14} /> {t("baskaMuhabireVer")}
       </button>
     </div>
+  );
+}
+
+/*
+ * Masanın takibindeki paketin sonu: "Yayınlandı" ya da sebebiyle
+ * "Yayınlanmadı" (eylemler.ts → masaYayinKarari). Muhabirin teslimini
+ * beklemeden de verilir.
+ */
+export function MasaYayinDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kisi; paket: Paket; kucuk?: boolean }) {
+  const { t } = useDil();
+  const [sebep, setSebep] = useState<string | null>(null);
+  if (!masaYayinKarariVerebilir(ben, p)) return null;
+  const k = kucuk ? " dugme-kucuk" : "";
+  if (sebep !== null)
+    return (
+      <div className="form form-kutu" data-yayinlanmadi-formu={p.id}>
+        <label>
+          {t("mtSebep")}
+          <textarea dir="auto" rows={2} value={sebep} onChange={(e) => setSebep(e.target.value)} autoFocus data-yayinlanmadi-sebep />
+        </label>
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setSebep(null)}>
+            {t("iptal")}
+          </button>
+          <button
+            type="button"
+            className="dugme dugme-kotu dugme-kucuk"
+            disabled={!sebep.trim()}
+            onClick={() => confirm(t("mtYayinlanmadiOnay")) && masaYayinKarari(ben, p.id, false, sebep) && (setSebep(null), bildir(t("bKaydedildi")))}
+            data-yayinlanmadi-gonder
+          >
+            {t("mtYayinlanmadi")}
+          </button>
+        </div>
+      </div>
+    );
+  return (
+    <span className="dugmeler" data-masa-yayin={p.id}>
+      <button type="button" className={`dugme dugme-iyi${k}`} onClick={() => confirm(t("mtYayinlandiOnay")) && masaYayinKarari(ben, p.id, true) && bildir(t("bKaydedildi"))} data-masa-yayinlandi={p.id}>
+        <CheckCircle size={14} /> {t("mtYayinlandi")}
+      </button>
+      <button type="button" className={`dugme dugme-ikincil${k}`} onClick={() => setSebep("")} data-masa-yayinlanmadi={p.id}>
+        <CircleSlash size={14} /> {t("mtYayinlanmadi")}
+      </button>
+    </span>
   );
 }
