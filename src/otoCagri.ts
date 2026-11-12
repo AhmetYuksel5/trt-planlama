@@ -1,3 +1,4 @@
+import { postaAdresi } from "./girisKodu";
 import { HAFTALIK_TABLO, cagriGovdesi, cagriKonusu, etiketUret, govdeHtml, haftaAraligiAr, haftalikGovde } from "./eposta";
 import { otoCagrilariKaydet } from "./eylemler";
 import { postaKimlikGetir } from "./posta-kapi";
@@ -81,8 +82,8 @@ export const otoCagriKalemleri = (gun: string, grup: string, pencere = OTO_PENCE
 
 /* BCC: izinde olmayan, kurumsal adresi olan muhabirler (elle çağrının varsayılanı). */
 export const otoBcc = (d: Durum) => {
-  const liste = muhabirler(d).filter((k) => k.durum !== "izinli" && k.eposta);
-  return { bcc: liste.map((k) => k.eposta!.toLowerCase()), bccIdler: liste.map((k) => k.id) };
+  const liste = muhabirler(d).filter((k) => k.durum !== "izinli" && postaAdresi(k));
+  return { bcc: liste.map((k) => postaAdresi(k)), bccIdler: liste.map((k) => k.id) };
 };
 
 /* Kapıya bırakılan paket. Kayıtta çağrısı olan (elle gönderilmiş) etiket ikinci kez gitmesin. */

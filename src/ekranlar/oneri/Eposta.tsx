@@ -1,3 +1,4 @@
+import { postaAdresi } from "../../girisKodu";
 import { ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Scissors, Smartphone, Upload } from "lucide-react";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { useState, type DragEvent } from "react";
@@ -40,7 +41,7 @@ export const panoya = async (metin: string, t: (k: Anahtar) => string) => {
 
 /** Outlook'a ";" ile, telefona "," ile; ikisi de çoğu istemcide geçiyor, Outlook'un alışkanlığı ";". */
 export const adresler = (v: ReturnType<typeof useVeri>, kimlikler: string[]) =>
-  kimlikler.map((id) => kisiBul(v, id)?.eposta).filter((a): a is string => !!a);
+  kimlikler.map((id) => postaAdresi(kisiBul(v, id))).filter((a): a is string => !!a);
 
 /**
  * Giden e-postayı açan düğmeler; açmak çağrıyı da kaydediyor ki yanıtlar
@@ -481,7 +482,7 @@ export function Yanitlar({ ben, cagriId }: { ben: Kisi; cagriId?: string }) {
   const haftalik = !!cagri && cagriTuru(cagri) === "haftalik";
   const hatirlatma: GidenEposta | undefined = cagri && {
     kime: cagri.kime,
-    bcc: vermeyen.map((s) => s.kisi.eposta),
+    bcc: vermeyen.map((s) => postaAdresi(s.kisi)).filter(Boolean),
     konu: `${metinAr("hatirlatmaOnEki")}: ${cagriKonusu(cagri.tarih, cagriTuru(cagri))}`,
     govde: haftalik
       ? metinAr("hatirlatmaHaftalik", { aralik: haftaAraligiAr(cagri.tarih), adres: cagri.kime })

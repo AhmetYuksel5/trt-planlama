@@ -14,6 +14,7 @@ import Tanitim from "./ekranlar/Tanitim";
 import Takipler from "./ekranlar/Takipler";
 import Gorevler from "./ekranlar/Gorevler";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
+import KodlaGiris from "./ekranlar/KodlaGiris";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import Gundem from "./ekranlar/Gundem";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
@@ -64,7 +65,7 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
-import { demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
+import { demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, kesinlesmisRetleriCikar, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
 import { izlemede } from "./izleme";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
 import { otoHataMetni } from "./ekranlar/posta/OtoCagri";
@@ -156,7 +157,7 @@ export default function App() {
        * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
        * sayfa çalışıyor; hata konsolda.
        */
-      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, kunyeleriDoldur, stokPaketleriniHazirlaraAl]) {
+      for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, kunyeleriDoldur, stokPaketleriniHazirlaraAl, kesinlesmisRetleriCikar]) {
         try {
           is();
         } catch (hata) {
@@ -197,6 +198,8 @@ export default function App() {
   if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;
   // Kayıt bağlantısı (hesap yöneticisinin paylaştığı); demo açıkken de, bölmede değil.
   if (yol.sayfa === "kayit" && !GOMULU && !BAGLANTI_DONUSU) return <KayitSayfasi kod={yol.id ?? ""} />;
+  // Giriş kodu (yöneticinin verdiği, e-postasız hesap): kayıt bağlantısı gibi demo açıkken de.
+  if (yol.sayfa === "kod" && !GOMULU && !BAGLANTI_DONUSU) return <KodlaGiris kod={yol.id ?? ""} />;
   // Gerçek giriş (tanıtımdaki "Giriş") ve e-posta bağlantısının dönüşü; bölmede açılmıyor.
   if (yol.sayfa === "gercek-giris" || BAGLANTI_DONUSU)
     return GOMULU ? (

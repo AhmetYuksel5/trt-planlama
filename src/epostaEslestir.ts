@@ -63,7 +63,7 @@ export const bosAlan = (k: Kisi, kurumsalYazilir: boolean, alinan: Set<EpostaAla
  */
 export const epostaListesiniEslestir = (adresler: string[], adaylar: Kisi[], herkes: Kisi[], kurumsalYazilir: (k: Kisi) => boolean): EslesmeSatiri[] => {
   const sahip = new Map<string, string>();
-  for (const k of herkes) for (const a of [k.eposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
+  for (const k of herkes) for (const a of [k.eposta, k.kurumEposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
   const parcalar = new Map(adaylar.map((k) => [k.id, adParcalari(k)]));
   // Aynı listede iki adres aynı kişiye düşerse ikincisi öbür alana.
   const alinan = new Map<string, Set<EpostaAlani>>();

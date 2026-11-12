@@ -161,6 +161,32 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     OnayBekleyenHesaplar`), menüde Organizasyon'un sayısı; önce yalnız
     Hesaplar listesinde rozetti, yönetici bekleyen kişiyi görmüyordu. Kural `kayitGecerli` (açık,
     süresi geçmemiş, e-posta doğrulanmış, yöneticisiz).
+  - Giriş kodu (kullanıcı: kurum postası kayboluyor, kişiler özel adres
+    vermiyor; `girisKodu.ts`): e-postasız hesap. Yönetici Kullanıcılar'da
+    "Giriş kodu" sekmesinden (davet yetkisi; hesapsız kişide "Hesaba bağla"da
+    da) kullanıcı adı (Latin addan önerilir) ve ad girer; `depo/firebase.ts →
+    kodlaDavetEt` ikinci örnekte hesabı `<ad>@giris.plannersflow.net` sahte
+    adresiyle, şifresi koddan (`kodSifresi`) açar, daveti (kod, `bitis` 48
+    saat) ve kodun okuma belgesini (`girisKodlari/<kod>`: adres, kullanıcı adı,
+    süre) yazar. Pencerede kod (XXXX-XXXX), kullanıcı adı, süre; "Mesajı
+    kopyala" ve WhatsApp (kod gömülü `#/kod/<kod>` bağlantısıyla). Kişi
+    `#/kod`'da (`ekranlar/KodlaGiris.tsx`; girişte "Giriş kodum var") kodu
+    girer, koddan girilir, kayıt davetten kurulur (`ilkKayit`; kod davetinde
+    e-posta doğrulaması yok), kendi şifresini belirler, kod belgesi silinir:
+    kod tek kullanımlık, şifre değişince girmez. Sonra kullanıcı adı ve
+    şifreyle (`girisAdresi`: "@" yoksa sahte adres). Şifre sıfırlama e-postası
+    yok ("Şifremi unuttum" nedenini yazar): yönetici satırdaki "Yeni kod"la
+    yeni kullanıcı adıyla (ali.kaya → ali.kaya2) yeni hesap açar, eski kayıt
+    `yeniEposta` işaretlenir, kişi yeni kodla girince kaydı `hesabaGecir`'le
+    taşınır (başkasının şifresi tarayıcıdan değişmiyor). Kullanılmamış kodun
+    yenisi `kodYenile` (eski kodla girip şifreyi yeni koda çevirir).
+    Kurallar: `girisKodlari` herkes `get`, liste yok, yalnız davet yetkilisi
+    yalnız giriş adresine yazar, sahibi siler; davetle kayıt `bitis`'ten
+    sonra kurulmaz. Kod hesabında kayıttaki `eposta` giriş adresi: posta
+    gönderen her yer `postaAdresi` (kurum adresi `Kisi.kurumEposta`;
+    hesaba bağlanan hesapsızın eski adresi oraya geçer, "Düzenle" ve profil
+    formundaki e-posta onu değiştirir). Testler `testler/kurallar.mjs`,
+    emülatörle uçtan uca `testler/giris-kodu.mjs` (`belgeler/gercek-kip.md`).
   - Hesapsız kişi (pilot; sistemi kullanmayan personel): yalnız adı var
     (`Kisi.hesapsiz`), her seçimde görünür, giriş yapamaz; işini Planlama
     onun adına görür. Kullanıcılar'daki "Kişi ekle" kartından
@@ -1843,7 +1869,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     geçecek haber, açılacak paket, şartlı, reddedilecek öneri); "Tutanağı
     kopyala" düz metin; gündeme alınmamış açık haftalık öneri varsa işaretli
     kutu, kaldırılırsa açık kalır (`haftalikKesinlestir(…, acikReddet)`);
-    "Planı kesinleştir" en altta. "Kalanları kabul et" ön
+    "Planı kesinleştir" en altta. Kesinleşince toplantıda reddedilen kalem
+    plandan çıkar (kullanıcı: ret kalemi kesinleşen planda durmasın;
+    `haftalikKesinlestir`, özette "n reddedilen plandan çıkacak"); öneriden
+    geldiyse öneri reddedilir, karar notu gerekçesi olur. Önceden kesinleşmiş
+    haftalarda kalanları sistemin açılış işi siler (`kesinlesmisRetleriCikar`).
+    Test `testler/ret-cikar.cjs`. "Kalanları kabul et" ön
     incelemedeki kalemi almaz (`topluKabulAdaylari`), onay sorar. Next Day'de
     toplantıya götürme ve onay da sorar; onay kararsız paket sayısını ve görev
     gidecek muhabiri yazar. Özel yayının onayı birlikte onaylanacak nafize ve

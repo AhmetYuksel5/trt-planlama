@@ -1,3 +1,4 @@
+import { postaAdresi } from "./girisKodu";
 import { ciktiTarihi } from "./dil";
 import { kisiAr, paketYeri } from "./etiketler";
 import { TAKDIR_SABLONU, adresler } from "./geriBildirim";
@@ -34,7 +35,7 @@ export const takdirPaketleri = (d: Pick<Durum, "paketler">, planId: string): Pak
   d.paketler.filter((p) => p.planId === planId && !p.ozelId && !!p.muhabirId && !p.muhabirTbc && (p.durum === "onaylandi" || p.durum === "uretimde"));
 
 /* Muhabirin adresi: kurumsal, yoksa kişisel (Excel'den gelenin çoğunda yalnız biri var). */
-export const takdirAdresi = (k?: Kisi) => (k?.eposta || k?.kisiselEposta || "").trim().toLowerCase();
+export const takdirAdresi = (k?: Kisi) => (postaAdresi(k) || k?.kisiselEposta || "").trim().toLowerCase();
 
 const alanlar = (d: Durum, p: Paket, gonderen?: Kisi): Record<string, string> => {
   const plan = planBul(d, p.planId);

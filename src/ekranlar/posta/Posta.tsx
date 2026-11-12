@@ -1,3 +1,4 @@
+import { postaAdresi } from "../../girisKodu";
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { useAdimDurumu } from "../../yol";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -113,7 +114,7 @@ const useAdresOnerileri = (): AdresOnerisi[] => {
   const v = useVeri();
   const { ad } = useDil();
   const adresler = new Set<string>();
-  for (const k of v.kisiler) if (k.eposta && ADRES.test(kucuk(k.eposta))) adresler.add(kucuk(k.eposta));
+  for (const k of v.kisiler) if (postaAdresi(k) && ADRES.test(postaAdresi(k))) adresler.add(postaAdresi(k));
   for (const m of v.postaMesajlari ?? []) for (const a of [m.kimden, ...(m.kime ?? []), ...(m.cc ?? [])]) if (a && ADRES.test(kucuk(a))) adresler.add(kucuk(a));
   return [...adresler].map((a) => {
     const kisi = gondereniBul(v, a);
@@ -521,7 +522,7 @@ function SohbetDosyalari({ sohbet }: { sohbet: Sohbet }) {
  * alıcıları. Kimse kalmazsa kapı grubu Kime yapar.
  */
 const yanitAlicilari = (sohbet: Sohbet, ben: Kisi, grup: string): { kime: string[]; cc: string[] } => {
-  const benim = new Set([ben.eposta, ben.kisiselEposta].filter((a): a is string => !!a).map(kucuk));
+  const benim = new Set([ben.eposta, ben.kurumEposta, ben.kisiselEposta].filter((a): a is string => !!a).map(kucuk));
   const disla = (a: string) => benim.has(a) || (!!grup && a === kucuk(grup));
   const temel = [...sohbet.mesajlar].reverse().find((m) => !m.giden) ?? sohbet.son;
   let kime = tekil(temel.giden ? temel.kime ?? [] : [temel.kimden, ...(temel.kime ?? [])]).filter((a) => !disla(a));

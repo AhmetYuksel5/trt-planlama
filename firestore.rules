@@ -125,6 +125,20 @@ service cloud.firestore {
       allow list, create, update, delete: if yetkiVar("kayitBaglantisi");
     }
 
+    // Giriş kodu (src/girisKodu.ts): kodu bilen (oturumsuz da) yalnız o kodu okuyabiliyor; hangi kod hesabına
+    // ait olduğunu öğreniyor (şifre koddan, kodu bilmeyen giremiyor). Yalnız posta almayan giriş adresine
+    // gösterilebilir. Davet yetkilisi yazar; şifresini belirleyen kişi kendi kodunu siler.
+    match /girisKodlari/{kod} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if yetkiVar("davet")
+        && request.resource.data.keys().hasOnly(["eposta", "kullanici", "bitis"])
+        && request.resource.data.eposta is string
+        && request.resource.data.eposta.matches('[a-z0-9._-]+@giris[.]plannersflow[.]net')
+        && request.resource.data.bitis is int;
+      allow delete: if yetkiVar("davet") || (oturum() && eposta() == resource.data.eposta);
+    }
+
     // Kayıt başvurusu (src/depo/firebase.ts → basvuruKaydet): formu dolduran, açık bağlantının koduyla yazar;
     // kişi yalnız kendi adresininkini okur. Kişi kaydını kurmak yine e-postanın doğrulanmasını istiyor.
     match /kayitBasvurulari/{adres} {
@@ -157,6 +171,8 @@ service cloud.firestore {
             // Yetkiler yalnız davetten (e-posta değişikliğinde kişinin yetkileri taşınıyor); öbür yollarda yetkisiz.
             && ((exists(davetYolu())
                  && get(davetYolu()).data.durum == "bekliyor"
+                 // Kod davetinin süresi (src/girisKodu.ts): unutulan kod açık kalmasın.
+                 && request.time.toMillis() < get(davetYolu()).data.get("bitis", request.time.toMillis() + 1)
                  && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi
                  && request.resource.data.get("yetkiler", []) == get(davetYolu()).data.get("yetkiler", [])
                  && request.resource.data.get("oncekiKimlik", "") == get(davetYolu()).data.get("kisiId", "")
@@ -264,10 +280,10 @@ service cloud.firestore {
     // (src/depo/fark.ts → erisimListesi). Kişiye bağlı ayarlarda (bildirim okundu, ana sayfa, görünüm,
     // workspace) yalnız kendi belgesi; genel ayarı okur, yazamaz.
     match /{alan}/{belge} {
-      allow read: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
+      allow read: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
       // Gündem paylaşımı genel ayar belgesinde; herkes sayacı yazıyor, paylaşımı yalnız tam yönetici
       // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi).
-      allow write: if etkin() && !(alan in ["kisiler", "davetler", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
+      allow write: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
         && (!(alan == "ayar" && belge == "genel") || hesapYoneticisi()
             || request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null)));
       allow read: if etkin() && kisitli()

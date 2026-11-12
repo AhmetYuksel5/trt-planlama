@@ -231,7 +231,7 @@ export const anlasmaTaslaklari = (satirlar: string[][], kisiler: Kisi[]): Anlasm
       const eposta = al(s, "eposta").toLowerCase();
       if (!ad && !eposta) return null;
       const kisi =
-        (eposta && kisiler.find((k) => [k.eposta, k.kisiselEposta].some((e) => e?.toLowerCase() === eposta))) ||
+        (eposta && kisiler.find((k) => [k.eposta, k.kurumEposta, k.kisiselEposta].some((e) => e?.toLowerCase() === eposta))) ||
         (ad && kisiler.find((k) => adlar(k).includes(sade(ad))));
       return {
         satir: bi + i + 2,

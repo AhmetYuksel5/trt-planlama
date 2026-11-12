@@ -1,3 +1,4 @@
+import { girisAdi, postaAdresi } from "../girisKodu";
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
@@ -344,7 +345,8 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
   const { t } = useDil();
   const [f, setF] = useState<Required<Omit<ProfilGirdisi, "foto">>>({
     telefon: kisi.telefon,
-    eposta: kisi.eposta,
+    // Kod hesabında giriş adresi gösterilmiyor; alan kurum adresi (girisKodu.ts).
+    eposta: girisAdi(kisi.eposta) ? (kisi.kurumEposta ?? "") : kisi.eposta,
     kisiselEposta: kisi.kisiselEposta ?? "",
     irtibat: kisi.irtibat ?? "",
     kisaltma: kisi.kisaltma,
@@ -605,7 +607,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                 <Mail size={16} className="sonuk-yazi" />
                 <div className="ad">
                   <small>{t("kurumsalEposta")}</small>
-                  <b dir="ltr">{kisi.eposta}</b>
+                  <b dir="ltr">{postaAdresi(kisi) || "—"}</b>
                 </div>
               </li>
               {kisi.kisiselEposta && (

@@ -1,12 +1,13 @@
 import { OnayBekleyenHesaplar } from "../bilesenler/HesapOnayi";
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
 import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, icMuhabirMi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
-import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, Plus, RotateCcw, Send, Trash2, UserCog, UserPlus, X } from "lucide-react";
+import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, MessageCircle, Plus, RotateCcw, Send, Ticket, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
-import type { Davet, KayitBaglantisi } from "../depo/firebase";
+import type { Davet, GirisKodu, KayitBaglantisi } from "../depo/firebase";
+import { girisAdi, kodYaz, kullaniciAdiGecerli, kullaniciAdiOner, kullaniciAdresi } from "../girisKodu";
 import { sehirAdi } from "../etiketler";
 import { epostaListesiUygula, hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
@@ -55,6 +56,7 @@ const BOS_FORM = {
   gorev: "planlamaci" as GorevId,
   hesapYoneticisi: false,
   telefon: "",
+  kullanici: "",
 };
 
 const YETKI_ADI: Record<HesapYetkisi, Anahtar> = {
@@ -84,6 +86,7 @@ const adKur = (tr0: string, ar0: string, en0: string, yedek: string) => {
  */
 const gonderimHatasi = (x: unknown) => {
   const kod = hataKodu(x);
+  if (kod.startsWith("kod/")) return metin(hataAnahtari(x));
   if (kod === "auth/quota-exceeded") return metin("ghGunlukSinirDavet");
   console.error(x);
   // Tanınan hata kendi mesajıyla (yetki yok, ağ…); tanınmayan kodu yazılı, neden bulunsun.
@@ -100,7 +103,9 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   const [davetler, setDavetler] = useState<Davet[] | null>(null);
   const [baglantilar, setBaglantilar] = useState<KayitBaglantisi[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
-  const [tur, setTur] = useState<"davet" | "hesapsiz">(davetYetkisi ? "davet" : "hesapsiz");
+  const [tur, setTur] = useState<"davet" | "kod" | "hesapsiz">(davetYetkisi ? "davet" : "hesapsiz");
+  const [kodSonucu, setKodSonucu] = useState<KodSonucu | null>(null);
+  const [kodVerilen, setKodVerilen] = useState<Kisi | null>(null);
   const [form, setForm] = useState(BOS_FORM);
   const [bekle, setBekle] = useState(false);
   const [duzenlenen, setDuzenlenen] = useState<Kisi | null>(null);
@@ -143,6 +148,20 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
       }
       return;
     }
+    if (tur === "kod") {
+      const kullanici = form.kullanici.trim().toLowerCase() || kodOnerisi;
+      if (!kullaniciAdiGecerli(kullanici) || alinmis.has(kullanici)) return bildir(t(alinmis.has(kullanici) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
+      setBekle(true);
+      firebaseYukle()
+        .then((f) => f.kodlaDavetEt({ kullanici, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }))
+        .then((k) => {
+          setKodSonucu({ ...k, ad: adi.ar });
+          setForm(BOS_FORM);
+        })
+        .catch((x) => bildir(gonderimHatasi(x)))
+        .finally(() => setBekle(false));
+      return;
+    }
     setBekle(true);
     firebaseYukle()
       .then((f) =>
@@ -162,6 +181,14 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
       .then(() => bildir(t("davetGonderildi", { eposta })))
       .catch((x) => bildir(gonderimHatasi(x)));
   const iptalEt = (eposta: string) => firebaseYukle().then((f) => f.davetIptal(eposta));
+  const kodYenile = (d: Davet) =>
+    firebaseYukle()
+      .then((f) => f.kodYenile(d.eposta))
+      .then((k) => setKodSonucu({ ...k, ad: ad({ ad: d.ad }) }))
+      .catch((x) => bildir(gonderimHatasi(x)));
+  // Alınmış kullanıcı adları: kayıtta ve davetlerde. Firebase'de kalan eskiler kodlaDavetEt'te ayrıca yakalanıyor.
+  const alinmis = alinmisKullanicilar(v.kisiler, davetler);
+  const kodOnerisi = kullaniciAdiOner(form.adTr || form.adEn, alinmis);
 
   const baglantiAc = () =>
     firebaseYukle()
@@ -186,6 +213,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
   const kapatabilir = (k: Kisi) => k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
   const ekleyebilir = davetYetkisi || hesapsizYetkisi;
   const hesapsizTur = tur === "hesapsiz";
+  const kodTur = tur === "kod";
 
   return (
     <>
@@ -213,21 +241,41 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
           }
         >
           <form className="form" onSubmit={ekle} data-davet-formu>
-            {davetYetkisi && hesapsizYetkisi && (
+            {davetYetkisi && (
               <div className="sekmeler" role="tablist" aria-label={t("kisiEkle")}>
                 <button type="button" role="tab" aria-selected={!hesapsizTur} className={!hesapsizTur ? "acik" : ""} onClick={() => setTur("davet")} data-tur-davet>
                   {t("davetEt")}
                 </button>
-                <button type="button" role="tab" aria-selected={hesapsizTur} className={hesapsizTur ? "acik" : ""} onClick={() => setTur("hesapsiz")} data-tur-hesapsiz>
-                  {t("hesapsizKisi")}
+                <button type="button" role="tab" aria-selected={kodTur} className={kodTur ? "acik" : ""} onClick={() => setTur("kod")} data-tur-kod>
+                  {t("girisKodu")}
                 </button>
+                {hesapsizYetkisi && (
+                  <button type="button" role="tab" aria-selected={hesapsizTur} className={hesapsizTur ? "acik" : ""} onClick={() => setTur("hesapsiz")} data-tur-hesapsiz>
+                    {t("hesapsizKisi")}
+                  </button>
+                )}
               </div>
             )}
             <div className="satir">
-              <label>
-                {t("eposta")}
-                <input type="email" dir="ltr" value={form.eposta} onChange={(e) => alan("eposta", e.target.value)} required={!hesapsizTur} data-davet-eposta />
-              </label>
+              {kodTur ? (
+                <label>
+                  {t("kullaniciAdi")}
+                  <input
+                    dir="ltr"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={form.kullanici}
+                    placeholder={kodOnerisi}
+                    onChange={(e) => alan("kullanici", e.target.value.toLowerCase())}
+                    data-kod-kullanici-adi
+                  />
+                </label>
+              ) : (
+                <label>
+                  {t("eposta")}
+                  <input type="email" dir="ltr" value={form.eposta} onChange={(e) => alan("eposta", e.target.value)} required={!hesapsizTur} data-davet-eposta />
+                </label>
+              )}
               {hesapsizTur && (
                 <label>
                   {t("telefon")}
@@ -275,6 +323,10 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
               {hesapsizTur ? (
                 <button className="dugme" disabled={!gorev} data-hesapsiz-ekle>
                   <UserPlus size={16} /> {t("hesapsizKisiEkle")}
+                </button>
+              ) : kodTur ? (
+                <button className="dugme" disabled={bekle || !gorev} data-kod-olustur>
+                  <Ticket size={16} /> {t("kodOlustur")}
                 </button>
               ) : (
                 <button className="dugme" disabled={bekle || !gorev} data-davet-gonder>
@@ -342,7 +394,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                 {davetler.map((d) => (
                   <tr key={d.eposta} data-davet={d.eposta}>
                     <td className="birincil">
-                      <bdi>{d.eposta}</bdi>
+                      {d.kod ? <KullaniciAdi eposta={d.eposta} /> : <bdi>{d.eposta}</bdi>}
                     </td>
                     <td data-etiket={t("ad")}>{ad({ ad: d.ad })}</td>
                     <td data-etiket={t("birim")}>
@@ -354,9 +406,27 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                     <td className="islem-hucre">
                       {d.durum === "bekliyor" && (
                         <>
-                          <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => yenidenGonder(d.eposta)}>
-                            <RotateCcw size={14} /> {t("yenidenGonder")}
-                          </button>
+                          {d.kod ? (
+                            <>
+                              {!!d.bitis && Date.now() < d.bitis && (
+                                <button
+                                  type="button"
+                                  className="dugme dugme-sade dugme-kucuk"
+                                  onClick={() => setKodSonucu({ kod: d.kod!, kullanici: d.kullanici ?? girisAdi(d.eposta), eposta: d.eposta, bitis: d.bitis!, ad: ad({ ad: d.ad }) })}
+                                  data-kod-goster
+                                >
+                                  <Ticket size={14} /> {t("koduGoster")}
+                                </button>
+                              )}
+                              <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => kodYenile(d)} data-kod-yenile>
+                                <RotateCcw size={14} /> {t("yeniKodVer")}
+                              </button>
+                            </>
+                          ) : (
+                            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => yenidenGonder(d.eposta)}>
+                              <RotateCcw size={14} /> {t("yenidenGonder")}
+                            </button>
+                          )}
                           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => iptalEt(d.eposta)} data-davet-iptal>
                             <X size={14} /> {t("davetiIptalEt")}
                           </button>
@@ -392,7 +462,19 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                   </span>
                 </td>
                 <td data-etiket={t("eposta")}>
-                  <bdi>{k.eposta || "—"}</bdi>
+                  {girisAdi(k.eposta) ? (
+                    <>
+                      <KullaniciAdi eposta={k.eposta} />
+                      {k.kurumEposta && (
+                        <>
+                          {" "}
+                          <bdi className="soluk">{k.kurumEposta}</bdi>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <bdi>{k.eposta || "—"}</bdi>
+                  )}
                 </td>
                 <td data-etiket={t("birim")}>
                   {birimAdi(k.birim)} · {gorevAdi(k.gorev)}
@@ -431,7 +513,7 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                   )}{" "}
                   {k.yeniEposta && (
                     <span data-eposta-bekliyor>
-                      <Rozet ton="uyari">{t("epostaBekliyor", { eposta: k.yeniEposta })}</Rozet>
+                      <Rozet ton="uyari">{girisAdi(k.yeniEposta) ? t("kodBekliyor", { kullanici: girisAdi(k.yeniEposta) }) : t("epostaBekliyor", { eposta: k.yeniEposta })}</Rozet>
                     </span>
                   )}{" "}
                   {k.kontrolBekliyor && (
@@ -445,6 +527,12 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
                   {hesapYetkisi(ben, "kisiDuzenle") && (
                     <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenlenen(k)} data-pozisyon-duzenle>
                       {t("duzenle")}
+                    </button>
+                  )}
+                  {/* Şifresini unutan kod hesabına yeni kod: e-postayla sıfırlama yok (adres posta almıyor). */}
+                  {girisAdi(k.eposta) && davetYetkisi && epostaDegistirebilir(ben, k) && k.id !== ben.id && !k.pasif && (
+                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setKodVerilen(k)} data-yeni-kod>
+                      <Ticket size={14} /> {t("yeniKodVer")}
                     </button>
                   )}
                   {k.hesapsiz && davetYetkisi && (
@@ -482,7 +570,9 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
         </table>
       </Kart>
       {duzenlenen && <PozisyonPenceresi ben={ben} kisi={duzenlenen} kapat={() => setDuzenlenen(null)} />}
-      {baglanan && <BaglaPenceresi ben={ben} kisi={baglanan} kapat={() => setBaglanan(null)} />}
+      {baglanan && <BaglaPenceresi ben={ben} kisi={baglanan} alinmis={alinmis} kodVerildi={setKodSonucu} kapat={() => setBaglanan(null)} />}
+      {kodVerilen && <YeniKodPenceresi ben={ben} kisi={kodVerilen} alinmis={alinmis} kodVerildi={setKodSonucu} kapat={() => setKodVerilen(null)} />}
+      {kodSonucu && <KodPenceresi sonuc={kodSonucu} kapat={() => setKodSonucu(null)} />}
       {yetkiVerilen && <YetkiPenceresi ben={ben} kisi={yetkiVerilen} kapat={() => setYetkiVerilen(null)} />}
       {aktar && <AktarPenceresi ben={ben} kapat={() => setAktar(false)} />}
       {eslestir && <EslestirPenceresi ben={ben} kapat={() => setEslestir(false)} />}
@@ -784,21 +874,32 @@ export function EslestirPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void
   );
 }
 
-/* Hesapsız kişiyi davet eder; etkinleşince kaydı ve geçmişi hesabına geçer (davetteki kisiId). */
-function BaglaPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () => void }) {
+/* Hesapsız kişiyi davet eder ya da giriş kodu verir; etkinleşince kaydı ve geçmişi hesabına geçer (davetteki kisiId). */
+function BaglaPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi; kisi: Kisi; alinmis: Set<string>; kodVerildi: (k: KodSonucu) => void; kapat: () => void }) {
   const { t, ad, dil } = useDil();
+  const [kodla, setKodla] = useState(false);
   const [eposta, setEposta] = useState(kisi.eposta);
+  const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+  const oneri = kullaniciAdiOner(adi.tr || adi.en, alinmis);
+  const [kullanici, setKullanici] = useState("");
   const [bekle, setBekle] = useState(false);
   const gonder = (e: FormEvent) => {
     e.preventDefault();
+    const ka = kullanici.trim().toLowerCase() || oneri;
+    if (kodla && (!kullaniciAdiGecerli(ka) || alinmis.has(ka))) return bildir(t(alinmis.has(ka) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
     if (!confirm(t("eminMisin"))) return;
     const adres = eposta.trim().toLowerCase();
     setBekle(true);
-    const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+    const temel = { ad: adi, birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol, hesapYoneticisi: false, davetEden: ben.id, kisiId: kisi.id };
     firebaseYukle()
-      .then((f) => f.davetEt({ eposta: adres, ad: adi, birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol, hesapYoneticisi: false, davetEden: ben.id, kisiId: kisi.id }, dil))
-      .then(() => {
-        bildir(t("davetGonderildi", { eposta: adres }));
+      .then(async (f) => {
+        if (kodla) {
+          const k = await f.kodlaDavetEt({ ...temel, kullanici: ka });
+          kodVerildi({ ...k, ad: adi.ar });
+        } else {
+          await f.davetEt({ ...temel, eposta: adres }, dil);
+          bildir(t("davetGonderildi", { eposta: adres }));
+        }
         kapat();
       })
       .catch((x) => bildir(gonderimHatasi(x)))
@@ -807,19 +908,153 @@ function BaglaPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: ()
   return (
     <Pencere baslik={t("hesabaBagla")} alt={ad(kisi)} kapat={kapat}>
       <form className="form" onSubmit={gonder} data-bagla-formu>
-        <label>
-          {t("eposta")}
-          <input type="email" dir="ltr" value={eposta} onChange={(e) => setEposta(e.target.value)} required data-bagla-eposta />
-        </label>
+        <div className="sekmeler" role="tablist" aria-label={t("hesabaBagla")}>
+          <button type="button" role="tab" aria-selected={!kodla} className={!kodla ? "acik" : ""} onClick={() => setKodla(false)}>
+            {t("eposta")}
+          </button>
+          <button type="button" role="tab" aria-selected={kodla} className={kodla ? "acik" : ""} onClick={() => setKodla(true)} data-bagla-kod>
+            {t("girisKodu")}
+          </button>
+        </div>
+        {kodla ? (
+          <label>
+            {t("kullaniciAdi")}
+            <input dir="ltr" autoCapitalize="none" spellCheck={false} value={kullanici} placeholder={oneri} onChange={(e) => setKullanici(e.target.value.toLowerCase())} data-bagla-kullanici />
+          </label>
+        ) : (
+          <label>
+            {t("eposta")}
+            <input type="email" dir="ltr" value={eposta} onChange={(e) => setEposta(e.target.value)} required data-bagla-eposta />
+          </label>
+        )}
         <div className="form-alt">
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}
           </button>
           <button className="dugme dugme-kucuk" disabled={bekle} data-bagla-gonder>
-            <Mail size={14} /> {t("davetGonder")}
+            {kodla ? <Ticket size={14} /> : <Mail size={14} />} {t(kodla ? "kodOlustur" : "davetGonder")}
           </button>
         </div>
       </form>
+    </Pencere>
+  );
+}
+
+/*
+ * Şifresini unutan kod hesabına yeni kod. Başkasının şifresi tarayıcıdan
+ * değiştirilemiyor: yeni kullanıcı adıyla yeni hesap açılıyor, eski kayıt
+ * e-posta değişikliğindeki gibi "yeni adres" işaretleniyor; kişi yeni kodla
+ * girince kaydı, yetkileri ve geçmişi yeni hesaba geçiyor (eylemler.ts →
+ * hesabaGecir). Eski kullanıcı adı o zamana kadar çalışıyor.
+ */
+function YeniKodPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi; kisi: Kisi; alinmis: Set<string>; kodVerildi: (k: KodSonucu) => void; kapat: () => void }) {
+  const { t, ad } = useDil();
+  const oneri = kullaniciAdiOner(girisAdi(kisi.eposta), alinmis);
+  const [kullanici, setKullanici] = useState("");
+  const [bekle, setBekle] = useState(false);
+  const gonder = (e: FormEvent) => {
+    e.preventDefault();
+    const ka = kullanici.trim().toLowerCase() || oneri;
+    if (!kullaniciAdiGecerli(ka) || alinmis.has(ka)) return bildir(t(alinmis.has(ka) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
+    if (!confirm(t("eminMisin"))) return;
+    setBekle(true);
+    const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
+    firebaseYukle()
+      .then(async (f) => {
+        const k = await f.kodlaDavetEt({
+          kullanici: ka,
+          ad: adi,
+          birim: kisi.birim,
+          gorev: kisi.gorev,
+          rol: kisi.rol,
+          hesapYoneticisi: !!kisi.hesapYoneticisi,
+          yetkiler: kisi.yetkiler,
+          davetEden: ben.id,
+          kisiId: kisi.id,
+        });
+        // Hesap açıldıktan sonra işaret: kural davetin adresini kişinin "yeni adres"iyle karşılaştırıyor.
+        if (kisiEpostasi(ben, kisi.id, kullaniciAdresi(ka)) !== "aktivasyon") throw { code: "permission-denied" };
+        kodVerildi({ ...k, ad: adi.ar });
+        kapat();
+      })
+      .catch((x) => bildir(gonderimHatasi(x)))
+      .finally(() => setBekle(false));
+  };
+  return (
+    <Pencere baslik={t("yeniKodVer")} alt={ad(kisi)} kapat={kapat}>
+      <form className="form" onSubmit={gonder} data-yeni-kod-formu>
+        <label>
+          {t("kullaniciAdi")}
+          <input dir="ltr" autoCapitalize="none" spellCheck={false} value={kullanici} placeholder={oneri} onChange={(e) => setKullanici(e.target.value.toLowerCase())} data-yeni-kod-kullanici />
+        </label>
+        <div className="form-alt">
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
+            {t("iptal")}
+          </button>
+          <button className="dugme dugme-kucuk" disabled={bekle} data-yeni-kod-olustur>
+            <Ticket size={14} /> {t("kodOlustur")}
+          </button>
+        </div>
+      </form>
+    </Pencere>
+  );
+}
+
+export type KodSonucu = GirisKodu & { kod: string; ad: string };
+
+const kodAdresi = (kod: string) => `${location.origin}${location.pathname}#/kod/${kod}`;
+
+/* Kayıtta ve davetlerde geçen kullanıcı adları (yeni kod önerisi bunlardan kaçınıyor). */
+const alinmisKullanicilar = (kisiler: Kisi[], davetler: Davet[] | null) =>
+  new Set([...kisiler.flatMap((k) => [girisAdi(k.eposta), girisAdi(k.yeniEposta)]), ...(davetler ?? []).map((d) => girisAdi(d.eposta))].filter(Boolean));
+
+export function KullaniciAdi({ eposta }: { eposta?: string }) {
+  const { t } = useDil();
+  return (
+    <span className="kod-hesap" title={t("girisKodu")} data-kod-hesap>
+      <Ticket size={12} /> <bdi dir="ltr">{girisAdi(eposta)}</bdi>
+    </span>
+  );
+}
+
+/*
+ * Verilen kod: yönetici kişiye yüz yüze okur ya da mesajla gönderir. Mesaj
+ * kodu, kullanıcı adını ve kodu içine alan bağlantıyı taşıyor; bağlantı kod
+ * girilmiş halde açılıyor (KodlaGiris).
+ */
+function KodPenceresi({ sonuc, kapat }: { sonuc: KodSonucu; kapat: () => void }) {
+  const { t } = useDil();
+  const mesaj = t("kodMesaji", { ad: sonuc.ad, kod: kodYaz(sonuc.kod), kullanici: sonuc.kullanici, tarih: tarihYaz(new Date(sonuc.bitis).toISOString()), adres: kodAdresi(sonuc.kod) });
+  const kopyala = () =>
+    navigator.clipboard
+      .writeText(mesaj)
+      .then(() => bildir(t("bKopyalandi")))
+      .catch(() => bildir(t("kopyalanamadi")));
+  return (
+    <Pencere baslik={t("girisKodu")} alt={sonuc.ad} kapat={kapat}>
+      <div className="kod-sonucu" data-kod-sonucu>
+        <output className="kod-buyuk" dir="ltr" data-kod={sonuc.kod}>
+          {kodYaz(sonuc.kod)}
+        </output>
+        <dl className="kod-kunye">
+          <dt>{t("kullaniciAdi")}</dt>
+          <dd>
+            <bdi dir="ltr" data-kod-sonuc-kullanici>
+              {sonuc.kullanici}
+            </bdi>
+          </dd>
+          <dt>{t("kodSonGecerlilik")}</dt>
+          <dd>{tarihYaz(new Date(sonuc.bitis).toISOString())}</dd>
+        </dl>
+        <div className="dugmeler">
+          <button type="button" className="dugme dugme-kucuk" onClick={kopyala} data-kod-kopyala>
+            <Copy size={14} /> {t("kodMesajiniKopyala")}
+          </button>
+          <a className="dugme dugme-ikincil dugme-kucuk" href={`https://wa.me/?text=${encodeURIComponent(mesaj)}`} target="_blank" rel="noopener noreferrer" data-kod-whatsapp>
+            <MessageCircle size={14} /> WhatsApp
+          </a>
+        </div>
+      </div>
     </Pencere>
   );
 }
@@ -875,7 +1110,9 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
   const [p, setP] = useState({ birim: kisi.birim, gorev: kisi.gorev, kadin: !!kisi.kadin, ...ilk });
   const [sehir, setSehir] = useState<Sehir>(kisi.sehir);
   const [yeniSehir, setYeniSehir] = useState<YeniSehir | null>(null);
-  const [eposta, setEposta] = useState(kisi.yeniEposta ?? kisi.eposta ?? "");
+  // Kod hesabında giriş kullanıcı adıyla; alan kurum adresini değiştiriyor (girisKodu.ts).
+  const kodHesabi = !!girisAdi(kisi.eposta);
+  const [eposta, setEposta] = useState(kodHesabi ? (kisi.kurumEposta ?? "") : (kisi.yeniEposta ?? kisi.eposta ?? ""));
   const [bekle, setBekle] = useState(false);
   const epostaAcik = epostaDegistirebilir(ben, kisi);
   const disMuhabir = disMuhabirMi({ birim: p.birim });
@@ -890,11 +1127,15 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
    */
   const epostaKaydet = async (): Promise<boolean> => {
     const adres = eposta.trim().toLowerCase();
-    const simdiki = (kisi.yeniEposta ?? kisi.eposta ?? "").toLowerCase();
+    const simdiki = (kodHesabi ? (kisi.kurumEposta ?? "") : (kisi.yeniEposta ?? kisi.eposta ?? "")).toLowerCase();
     if (!epostaAcik || adres === simdiki) return true;
-    if (adres && v.kisiler.some((x) => x.id !== kisi.id && (x.eposta ?? "").toLowerCase() === adres)) {
+    if (adres && v.kisiler.some((x) => x.id !== kisi.id && ((x.eposta ?? "").toLowerCase() === adres || (x.kurumEposta ?? "").toLowerCase() === adres))) {
       bildir(t("epostaKayitli"));
       return false;
+    }
+    if (kodHesabi) {
+      if (girisAdi(adres)) return false;
+      return !!kisiEpostasi(ben, kisi.id, adres);
     }
     if (!GERCEK || kisi.hesapsiz) return !!kisiEpostasi(ben, kisi.id, adres);
     if (!adres) return false;
@@ -926,7 +1167,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
     }
   };
   return (
-    <Pencere baslik={ad(kisi)} alt={kisi.eposta} kapat={kapat}>
+    <Pencere baslik={ad(kisi)} alt={girisAdi(kisi.eposta) || kisi.eposta} kapat={kapat}>
       <div className="form" data-pozisyon-formu>
         <label>
           {t("adArapca")}
@@ -957,7 +1198,7 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
           />
           {kisi.yeniEposta && (
             <small data-pozisyon-eposta-bekliyor>
-              {t("epostaBekliyor", { eposta: kisi.yeniEposta })}
+              {girisAdi(kisi.yeniEposta) ? t("kodBekliyor", { kullanici: girisAdi(kisi.yeniEposta) }) : t("epostaBekliyor", { eposta: kisi.yeniEposta })}
             </small>
           )}
         </label>

@@ -47,7 +47,8 @@ export const kesinlesmeOzeti = (d: Durum, h: HaftalikPlan) => {
     nextDay: kabul.filter((k) => k.tur === "haber" && k.tarih).length,
     paket: kabul.filter((k) => !(k.tur === "haber" && k.tarih)).length,
     sartli: kabul.filter((k) => k.karar === "sartli").length,
-    ret: h.kalemler.filter((k) => k.karar === "ret" && k.oneriId).length,
+    // Reddedilen kalem kesinleşince plandan çıkıyor (eylemler.ts → haftalikKesinlestir).
+    ret: h.kalemler.filter((k) => k.karar === "ret").length,
     acik: d.oneriler.filter((o) => o.hafta === h.baslangic && !kalemli.has(o.id) && (o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme")).length,
   };
 };

@@ -58,6 +58,11 @@ const HATALAR: Record<string, Anahtar> = {
   "deadline-exceeded": "ghAgYok",
   "auth/requires-recent-login": "ghYenidenGir",
   "permission-denied": "ghYetkiYok",
+  // Giriş kodu (girisKodu.ts, KodlaGiris.tsx).
+  "kod/gecersiz": "kodGecersiz",
+  "kod/kullanilmis": "kodKullanilmis",
+  "kod/kullanici-var": "kodKullaniciVar",
+  "kod/hesap": "ggKodHesabiSifre",
 };
 export const hataKodu = (e: unknown): string =>
   e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : e instanceof Error ? e.name : "";
@@ -167,9 +172,16 @@ export default function GercekGiris() {
   };
 
   const epostaGerekli = () => {
-    if (eposta.trim()) return true;
-    setHata("ghEpostaGecersiz");
-    return false;
+    if (!eposta.trim()) {
+      setHata("ghEpostaGecersiz");
+      return false;
+    }
+    // Kullanıcı adı kod hesabı: adresi posta almıyor, şifreyi yeni kodla yönetici yeniliyor.
+    if (!eposta.includes("@")) {
+      setHata("ggKodHesabiSifre");
+      return false;
+    }
+    return true;
   };
 
   const sifreUnuttum = () =>
@@ -206,8 +218,8 @@ export default function GercekGiris() {
 
   const epostaAlani = (
     <label>
-      {t("eposta")}
-      <input type="email" dir="ltr" autoComplete="email" value={eposta} onChange={(e) => setEposta(e.target.value)} required data-gg-eposta />
+      {adim === "giris" ? t("ggEpostaYaKullanici") : t("eposta")}
+      <input type={adim === "giris" ? "text" : "email"} dir="ltr" autoComplete="username" autoCapitalize="none" spellCheck={false} value={eposta} onChange={(e) => setEposta(e.target.value)} required data-gg-eposta />
     </label>
   );
 
@@ -286,6 +298,9 @@ export default function GercekGiris() {
           <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={baglantiIste} disabled={bekle} data-gg-baglanti-iste>
             {t("ggBaglantiIste")}
           </button>
+          <a className="dugme dugme-sade dugme-kucuk" href="#/kod" data-gg-kod>
+            <KeyRound size={14} /> {t("girisKodumVar")}
+          </a>
         </div>
       </form>
     );

@@ -1,3 +1,4 @@
+import { girisAdi, postaAdresi } from "./girisKodu";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
@@ -1601,7 +1602,10 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = tru
   let d = getir();
   const h = haftaBul(d, haftaId);
   if (!h || h.durum !== "toplantida" || !planAdimiYapabilir(ben, "hfKesinlestir") || kararBekleyenler(h).length) return false;
-  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti" }));
+  // Toplantıda reddedilen kalem plandan çıkıyor (kullanıcı: kesinleşen planda ret durmasın). Öneriden geldiyse
+  // öneri aşağıda reddedilir, toplantının notu gerekçesi olur; iz önerinin kendisinde kalıyor.
+  const cikan = h.kalemler.filter((k) => k.karar === "ret").length;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti", kalemler: x.kalemler.filter((k) => k.karar !== "ret") }));
   for (const k of h.kalemler.filter((x) => gundemde(x) && kabulMu(x))) {
     if (k.tur === "haber" && k.tarih) {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
@@ -1624,8 +1628,21 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = tru
       return acikReddet && (o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme") ? { ...o, durum: "reddedildi" } : o;
     }),
   };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic } }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic, ...(cikan ? { cikan: String(cikan) } : {}) } }));
   return true;
+};
+
+/*
+ * Sistemin açılış işi: bu kuraldan önce kesinleşmiş haftalarda kalan reddedilmiş
+ * kalemler de plandan çıkıyor. Öneri zaten kesinleşmede reddedilmişti; dokunulmuyor.
+ */
+export const kesinlesmisRetleriCikar = (): number => {
+  const d = getir();
+  const hedef = d.haftalik.filter((h) => h.durum === "kesinlesti" && h.kalemler.some((k) => k.karar === "ret"));
+  if (!hedef.length) return 0;
+  const idler = new Set(hedef.map((h) => h.id));
+  kaydet({ ...d, haftalik: d.haftalik.map((h) => (idler.has(h.id) ? { ...h, kalemler: h.kalemler.filter((k) => k.karar !== "ret") } : h)) });
+  return hedef.length;
 };
 
 /* --- Merkezi başlık havuzu --- */
@@ -3389,8 +3406,13 @@ export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi, yeni
   }
   /* Kişi kendi çalışma biçimini değiştiremez: sözleşme Planlama ve Yönetim'in kaydı. */
   const izinli = ben.id === kisiId && !yapabilir(ben, "profilDuzenle") ? { ...g, calisma: undefined } : g;
-  const temiz = Object.fromEntries(Object.entries(izinli).filter(([, x]) => x !== undefined)) as ProfilGirdisi;
+  const temiz = Object.fromEntries(Object.entries(izinli).filter(([, x]) => x !== undefined)) as ProfilGirdisi & Pick<Kisi, "kurumEposta">;
   if ("foto" in g && g.foto === undefined) temiz.foto = undefined;
+  // Kod hesabında giriş adresi değişmez (kural da yazdırmıyor); formdaki kurumsal adres kurum adresidir.
+  if (girisAdi(kisi.eposta) && temiz.eposta !== undefined) {
+    if (!girisAdi(temiz.eposta)) temiz.kurumEposta = temiz.eposta.trim().toLowerCase();
+    delete temiz.eposta;
+  }
   d = { ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? yerUnvaniUygula({ ...k, ...temiz }) : k)) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "profilGuncellendi", veri: { muhabir: kisiId } }));
   return true;
@@ -3620,7 +3642,7 @@ export const postaGidenEkle = (
   const mesaj: PostaMesaji = {
     id: kimlik("pm"),
     konuKimligi,
-    kimden: ben.eposta ?? "",
+    kimden: postaAdresi(ben) || (ben.eposta ?? ""),
     konu,
     metin,
     tamMetin: metin,
@@ -3938,8 +3960,13 @@ export const kisiEpostasi = (ben: Kisi, kisiId: string, eposta: string): "degist
   const k = d.kisiler.find((x) => x.id === kisiId);
   const adres = eposta.trim().toLowerCase();
   if (!k || !epostaDegistirebilir(ben, k)) return false;
+  if (adres && d.kisiler.some((x) => x.id !== kisiId && ((x.eposta ?? "").toLowerCase() === adres || (x.kurumEposta ?? "").toLowerCase() === adres))) return false;
+  // Kod hesabında (girisKodu.ts) giriş kullanıcı adıyla; buradaki adres kurumun adresi, girişe dokunmuyor.
+  if (girisAdi(k.eposta) && !girisAdi(adres)) {
+    kaydet({ ...d, kisiler: d.kisiler.map((x) => (x.id === kisiId ? { ...x, kurumEposta: adres } : x)) });
+    return "degisti";
+  }
   const dogrudan = !GERCEK || !!k.hesapsiz;
-  if (adres && d.kisiler.some((x) => x.id !== kisiId && (x.eposta ?? "").toLowerCase() === adres)) return false;
   const sonuc = dogrudan ? "degisti" : adres === (k.eposta ?? "").toLowerCase() ? "geriAlindi" : "aktivasyon";
   if (!dogrudan && !adres) return false;
   kaydet({
@@ -4198,7 +4225,7 @@ export const epostaListesiUygula = (ben: Kisi, satirlar: { kisiId: string; adres
   if (!ben.hesapYoneticisi && !hesapYetkisi(ben, "kisiDuzenle")) return null;
   const d = getir();
   const sahip = new Map<string, string>();
-  for (const k of d.kisiler) for (const a of [k.eposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
+  for (const k of d.kisiler) for (const a of [k.eposta, k.kurumEposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
   const degisen = new Map<string, Kisi>();
   let yazilan = 0;
   let atlanan = 0;
@@ -4242,7 +4269,7 @@ export const postaKisileriUygula = (ben: Kisi, satirlar: PostaKisiKaydi[]): { ek
   if (!duzenler && !ekler) return null;
   let d = getir();
   const sahip = new Map<string, string>();
-  for (const k of d.kisiler) for (const a of [k.eposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
+  for (const k of d.kisiler) for (const a of [k.eposta, k.kurumEposta, k.kisiselEposta]) if (a) sahip.set(a.toLowerCase(), k.id);
   const gecerli = (b: BirimId, g: GorevId) => !!b && !grupMu(b) && unvanListesi(b).includes(g);
   const degisen = new Map<string, Kisi>();
   const tayinler: { eski: Kisi; yeni: Kisi }[] = [];
@@ -4389,7 +4416,9 @@ export const hesabaGecir = (benId: string) => {
   if (!ben || !eski || !eskiKisi) return false;
   const { hesapsiz: _, kontrolBekliyor: __, yeniEposta: ___, pasif: ____, ...profil } = eskiKisi;
   // Profil (şehir, telefon, diller, kısaltma…) eski kayıttan; hesap alanları yeni hesaptan.
-  const birlesik: Kisi = { ...profil, id: ben.id, ad: ben.ad, birim: ben.birim, gorev: ben.gorev, rol: ben.rol, eposta: ben.eposta, oncekiKimlik: eski, ...(ben.hesapYoneticisi ? { hesapYoneticisi: true } : {}), ...(ben.yetkiler ? { yetkiler: ben.yetkiler } : {}) };
+  // Kod hesabına geçende eski kaydın gerçek adresi kurum adresi olarak kalıyor: çağrı ve bildirim postası ona gitsin.
+  const kurumAdresi = girisAdi(ben.eposta) ? postaAdresi(eskiKisi) : "";
+  const birlesik: Kisi = { ...profil, id: ben.id, ad: ben.ad, birim: ben.birim, gorev: ben.gorev, rol: ben.rol, eposta: ben.eposta, oncekiKimlik: eski, ...(kurumAdresi ? { kurumEposta: kurumAdresi } : {}), ...(ben.hesapYoneticisi ? { hesapYoneticisi: true } : {}), ...(ben.yetkiler ? { yetkiler: ben.yetkiler } : {}) };
   const yeni = kimligiTasi(d, eski, ben.id);
   yeni.kisiler = d.kisiler.filter((k) => k.id !== eski).map((k) => (k.id === ben.id ? birlesik : kimlikDegistir(k, eski, ben.id)));
   kaydet(yeni);

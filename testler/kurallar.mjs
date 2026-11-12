@@ -1,7 +1,7 @@
 // Firestore kuralları: güvenlik incelemesindeki saldırılar reddediliyor, programın olağan yazışları geçiyor.
 // Çalıştırma belgeler/gercek-kip.md'de (emülatör, @firebase/rules-unit-testing).
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
-import { doc, setDoc, getDoc, updateDoc, getDocs, query, collection, where } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, getDocs, deleteDoc, query, collection, where } from "firebase/firestore";
 import fs from "node:fs";
 const env = await initializeTestEnvironment({ projectId: "demo-trt", firestore: { rules: fs.readFileSync(new URL("../firestore.rules", import.meta.url), "utf8"), host: "127.0.0.1", port: 8080 } });
 const kisi = (id, o, duz = {}) => ({ s: 0, j: JSON.stringify({ id, ad: { tr: id, ar: id, en: id }, telefon: "1", ...o }), eposta: id + "@x.test", pasif: false, hesapYoneticisi: !!o.hesapYoneticisi, kisitli: o.birim === "muhabir", ...(o.birim ? { birim: o.birim, rol: o.rol, gorev: o.gorev } : {}), ...duz });
@@ -108,6 +108,29 @@ await t("planlamacı okuyamaz", false, anl("pl"));
 await t("planlamacı yazamaz", false, setDoc(doc(db("pl"), "muhasebeKapanislari", "x"), { s: 0, j: "{}" }));
 await t("muhabir okuyamaz", false, anl("mu"));
 await t("planlamacı tanımları da okuyamaz", false, getDocs(collection(db("pl"), "muhasebeTanimlari")));
+// 6. Giriş kodu (src/girisKodu.ts): kodu bilen okur, listelenmez; davet yetkilisi yalnız giriş adresine yazar.
+const KA = "ali.kaya@giris.plannersflow.net";
+const kodYaz = (u, kod, v) => setDoc(doc(db(u), "girisKodlari", kod), v);
+const bitis = Date.now() + 3600_000;
+await t("davet yetkilisi kod yazar", true, kodYaz("dv", "ABCD2345", { eposta: KA, kullanici: "ali.kaya", bitis }));
+await t("personel kod yazamaz", false, kodYaz("pl", "ABCD2346", { eposta: KA, kullanici: "ali.kaya", bitis }));
+await t("kod gerçek adrese gösterilemez", false, kodYaz("dv", "ABCD2347", { eposta: "mu@x.test", kullanici: "mu", bitis }));
+await t("koda fazladan alan yazılamaz", false, kodYaz("dv", "ABCD2348", { eposta: KA, kullanici: "ali.kaya", bitis, yetkiler: ["davet"] }));
+const anonim = env.unauthenticatedContext().firestore();
+await t("oturumsuz kodu okur", true, getDoc(doc(anonim, "girisKodlari", "ABCD2345")));
+await t("oturumsuz kodları listeleyemez", false, getDocs(collection(anonim, "girisKodlari")));
+await t("etkin personel kodları listeleyemez", false, getDocs(collection(db("pl"), "girisKodlari")));
+// Kod hesabı ilk girişte kişi kaydını davetten kuruyor; süresi geçmiş davetle kuramıyor.
+const kodDb = (uid, eposta) => env.authenticatedContext(uid, { email: eposta, email_verified: false }).firestore();
+const davetYaz = (adres, ek) => env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), "davetler", adres), { eposta: adres, durum: "bekliyor", birim: "planlama", gorev: "planlamaci", rol: "personel", hesapYoneticisi: false, ...ek }));
+const kodKisi = (uid, eposta) => kisi(uid, { birim: "planlama", rol: "personel", gorev: "planlamaci" }, { eposta });
+await davetYaz(KA, { kod: "ABCD2345", bitis });
+await t("kod hesabı kaydını kurar (doğrulamasız)", true, setDoc(doc(kodDb("ka1", KA), "kisiler", "ka1"), kodKisi("ka1", KA)));
+const KB = "veli@giris.plannersflow.net";
+await davetYaz(KB, { kod: "ABCD2349", bitis: Date.now() - 1000 });
+await t("süresi geçmiş kodla kayıt kurulamaz", false, setDoc(doc(kodDb("kb1", KB), "kisiler", "kb1"), kodKisi("kb1", KB)));
+await t("başkası kodu silemez", false, deleteDoc(doc(db("pl"), "girisKodlari", "ABCD2345")));
+await t("kod sahibi kodunu siler", true, deleteDoc(doc(kodDb("ka1", KA), "girisKodlari", "ABCD2345")));
 console.log(`\n${gec} geçti, ${kal} kaldı`);
 await env.cleanup();
 process.exit(kal ? 1 : 0);

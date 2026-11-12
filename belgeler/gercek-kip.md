@@ -41,6 +41,17 @@ Davetin yanında ikinci yol:
 
 Kurallar bağlantının açık ve süresinin geçmemiş olmasını, e-postanın bağlantıyla doğrulanmasını ve hesabın yönetici olmamasını denetler (`firestore.rules → kayitGecerli`). Bağlantı Firestore'da `kayitBaglantilari` koleksiyonunda; kodu bilen yalnız o belgeyi okuyabilir.
 
+### Giriş kodu (e-postasız hesap)
+
+Kurum postası ulaşmıyorsa ya da kişi özel adres vermek istemiyorsa:
+
+1. Hesap yöneticisi (davet yetkisi olan) *Kullanıcılar › Kişi ekle › Giriş kodu* der: kullanıcı adı (Latin addan önerilir; küçük harf, rakam, nokta, tire), ad, birim, görev. Hesapsız kişide satırdaki **Hesaba bağla › Giriş kodu** da aynısı.
+2. Pencerede kod (XXXX-XXXX), kullanıcı adı ve son geçerlilik (48 saat) çıkar. **Mesajı kopyala** ya da **WhatsApp** ile kişiye gönderilir ya da yüz yüze okunur. Mesajdaki bağlantı (`…/#/kod/<kod>`) kodu girilmiş açar.
+3. Kişi kodla girer (girişte "Giriş kodum var"), kendi şifresini belirler. Kod tek kullanımlıktır; sonraki girişler kullanıcı adı ve şifreyle.
+4. Kod ulaşmadıysa ya da süresi geçtiyse Davetler listesinde **Yeni kod**. Şifresini unutana e-posta gitmez: Hesaplar satırındaki **Yeni kod** yeni kullanıcı adıyla (ör. ali.kaya2) yeni kod verir; kişi onunla girince kaydı, yetkileri ve geçmişi yeni hesaba geçer.
+
+Firebase arkada kullanıcı adını posta almayan `<kullanıcı adı>@giris.plannersflow.net` adresine çevirir; kişi bunu görmez. Kurum adresi varsa **Düzenle**'deki e-posta alanına yazılır, çağrı ve bildirim postası oraya gider. Kod Firestore'da `girisKodlari` koleksiyonunda; kodu bilen yalnız o belgeyi okur, liste okunamaz.
+
 ### Hesapsız kişi (pilot)
 
 Sistemi henüz kullanmayan personel yalnız adıyla kayıtta durur:
@@ -156,6 +167,17 @@ mkdir -p /tmp/kt && cd /tmp/kt && npm i firebase-tools@13 @firebase/rules-unit-t
 cp <depo>/testler/kurallar.mjs <depo>/firestore.rules . && sed -i 's|new URL("../firestore.rules", import.meta.url)|"firestore.rules"|' kurallar.mjs
 echo '{"firestore":{"rules":"firestore.rules"}}' > firebase.json
 npx firebase emulators:exec --only firestore --project demo-trt "node kurallar.mjs"
+```
+
+Giriş kodunun uçtan uca testi (`testler/giris-kodu.mjs`): yönetici kod verir,
+kişi kodla girip şifresini belirler, kullanıcı adıyla yeniden girer, kullanılmış
+kod reddedilir, yeni kodla kayıt yeni hesaba taşınır. Önizleme açıkken
+(`npx vite preview --port 4173`), aynı klasörde auth emülatörüyle:
+
+```
+cp <depo>/testler/giris-kodu.mjs .
+echo '{"firestore":{"rules":"firestore.rules"},"emulators":{"auth":{"host":"127.0.0.1","port":9099},"firestore":{"host":"127.0.0.1","port":8080},"ui":{"enabled":false}}}' > firebase.json
+npx firebase emulators:exec --only auth,firestore --project demo-trt "node giris-kodu.mjs"
 ```
 
 ## Yayın: Firebase Hosting

@@ -190,8 +190,10 @@ export interface Kisi {
   sehir: Sehir;
   diller: string[];
   telefon: string;
-  /** Kurumsal e-posta. */
+  /** Kurumsal e-posta; giriş koduyla açılan hesapta posta almayan giriş adresi (girisKodu.ts). */
   eposta: string;
+  /** Kod hesabında kurumun adresi: çağrı ve bildirim postası buraya (girisKodu.ts → postaAdresi). */
+  kurumEposta?: string;
   kisiselEposta?: string;
   /** Uydu ya da yapım şirketi irtibatı: canlı bağlantıda aranacak masa. */
   irtibat?: string;

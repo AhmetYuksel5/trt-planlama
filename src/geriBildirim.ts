@@ -1,3 +1,4 @@
+import { postaAdresi } from "./girisKodu";
 import { ciktiTarihi } from "./dil";
 import type { GidenEposta } from "./eposta";
 import { kisiAr } from "./etiketler";
@@ -83,7 +84,7 @@ export const sablonDoldur = (metin: string, d: Durum, o: Oneri, not = "") => {
 };
 
 export const geriBildirimEpostasi = (s: GeriBildirimSablonu, d: Durum, o: Oneri, not = ""): GidenEposta => ({
-  kime: kisiBul(d, o.muhabirId)?.eposta ?? "",
+  kime: postaAdresi(kisiBul(d, o.muhabirId)),
   cc: adresler(s.cc),
   bcc: adresler(s.bcc),
   konu: sablonDoldur(s.konu, d, o),

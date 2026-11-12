@@ -531,7 +531,7 @@ const kucuk = (s?: string) => (s ?? "").trim().toLowerCase();
 
 /** Gönderen adresi muhabirin kurumsal ya da kişisel adresiyle eşleşiyor mu. */
 export const gondereniBul = (d: Durum, adres: string): Kisi | undefined =>
-  d.kisiler.find((k) => kucuk(k.eposta) === kucuk(adres) || kucuk(k.kisiselEposta) === kucuk(adres));
+  d.kisiler.find((k) => kucuk(k.eposta) === kucuk(adres) || kucuk(k.kurumEposta) === kucuk(adres) || kucuk(k.kisiselEposta) === kucuk(adres));
 
 /** Önce konudaki etiket; etiket silinmişse muhabirin e-postadan önceki son çağrısı. */
 export const cagriyiBul = (d: Durum, konu: string, zaman: string, kisi?: Kisi): Cagri | undefined => {
