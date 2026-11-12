@@ -1,7 +1,7 @@
+import { ProgramMasasi } from "../program/ProgramMasasi";
 import { OzelTalepAlani } from "../OzelYayin";
 import { MasaPaketleri } from "../Listeler";
 import { MasaOnerileri, MasaTakibi } from "../oneri/MasaSorusu";
-import { oneriArsivde } from "../../oneriPlanlari";
 import {
   AlertTriangle,
   Building,
@@ -15,7 +15,6 @@ import {
   Clock,
   History,
   Inbox,
-  Lightbulb,
   ListChecks,
   MapPin,
   MapPinned,
@@ -33,7 +32,7 @@ import { planDurum } from "../../eylemler";
 import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
 import { HareketAkisi } from "../../bilesenler/Hareket";
 import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
-import { OneriTablosu, PaketTablosu } from "../../bilesenler/Tablolar";
+import { PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { gorusBekleyenler, gundemde } from "../../haftalik";
@@ -391,51 +390,13 @@ function EkonomiPaketleri() {
 
 export function ProgramAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
   const { t } = useDil();
+  // Programlar'ın sayfası kutucuklarla (ProgramMasasi); eski kartlar (masa, haftalık plan, öneriler, konuk) kalktı, düzen çizilmiyor.
   return (
     <>
-      <SayfaBasi sekme={!kisisel} ikon={<Clapperboard size={26} />} baslik={t("biProgram")} sagUc={<TaslakEtiketi />} />
-      <CalismaAlani ben={ben} duzen="program" kisisel={kisisel} />
+      <SayfaBasi sekme={!kisisel} ikon={<Clapperboard size={26} />} baslik={t("biProgram")} />
+      <BanaVerilenIsler ben={ben} />
+      <ProgramMasasi ben={ben} />
     </>
-  );
-}
-
-function ProgramHafta() {
-  const { t } = useDil();
-  const v = useVeri();
-  const hafta = v.haftalik.find((h) => h.baslangic === planlananHafta(bugun()));
-  return (
-    <Kart baslik={t("haftalikProgramPlani")} ikon={<CalendarRange size={18} />} sagUc={<Tumu href={hafta ? `#/haftalik/${hafta.id}` : "#/haftalik"} />}>
-      <KalemListesi kalemler={hafta?.kalemler.filter((k) => k.tur === "program" && gundemde(k)) ?? []} />
-    </Kart>
-  );
-}
-
-function ProgramUretim() {
-  const { t } = useDil();
-  const v = useVeri();
-  return (
-    <Kart baslik={t("programUretimDurumu")} ikon={<CirclePlay size={18} />} sagUc={<Tumu href="#/programlar" />}>
-      <PaketTablosu paketler={v.paketler.filter((p) => p.tur === "program")} d={v} sutunlar={["baslik", "muhabir", "asama", "kimde"]} bosMetin={t("kayitYok")} />
-    </Kart>
-  );
-}
-
-function ProgramOnerileri() {
-  const { t } = useDil();
-  const v = useVeri();
-  return (
-    <Kart baslik={t("programOnerileri")} ikon={<Lightbulb size={18} />}>
-      <OneriTablosu oneriler={v.oneriler.filter((o) => o.tur === "program" && !oneriArsivde(o))} d={v} kisa />
-    </Kart>
-  );
-}
-
-function KonukOrganizasyonu() {
-  const { t } = useDil();
-  return (
-    <Kart baslik={t("konukOrganizasyonu")} ikon={<Users size={18} />} sagUc={<TaslakEtiketi />}>
-      <Bos metin={t("konukTaslak")} />
-    </Kart>
   );
 }
 
@@ -576,12 +537,8 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "ekBuHafta", ad: "haftalikEkonomiKalemleri", ek: "buHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiBuHafta },
   { id: "ekPaketler", ad: "ekonomiPaketleri", genis: true, grup: "ekonomi", sayfa: "ekonomi", Bilesen: EkonomiPaketleri },
   { id: "ekMasa", ad: "ekMasa", genis: true, grup: "ekonomi", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="ekonomi" baslik="ekMasa" /></> },
-  { id: "prMasa", ad: "prMasa", genis: true, grup: "program", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="program" baslik="prMasa" /></> },
+  { id: "prSayfa", ad: "pmProgramlar", genis: true, grup: "program", sayfa: "programlar", Bilesen: ({ ben }: { ben: Kisi }) => <ProgramMasasi ben={ben} /> },
   { id: "spMasa", ad: "spMasa", genis: true, grup: "spor", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="spor" baslik="spMasa" /></> },
-  { id: "prHafta", ad: "haftalikProgramPlani", grup: "program", sayfa: "programlar", Bilesen: ProgramHafta },
-  { id: "prUretim", ad: "programUretimDurumu", grup: "program", sayfa: "programlar", Bilesen: ProgramUretim },
-  { id: "prOneri", ad: "programOnerileri", grup: "program", sayfa: "programlar", Bilesen: ProgramOnerileri },
-  { id: "prKonuk", ad: "konukOrganizasyonu", grup: "program", sayfa: "programlar", Bilesen: KonukOrganizasyonu },
   { id: "ouOzel", ad: "ozelPaketTalepleri", grup: "output", sayfa: "ozel", Bilesen: OzelTalepAlani },
   { id: "ouSayac", ad: "alOzetSayilar", genis: true, grup: "output", sayfa: "metinkontrol", Bilesen: OutputSayaclari },
   { id: "ouKontrol", ad: "metinKontrolKuyrugu", grup: "output", sayfa: "metinkontrol", Bilesen: KontrolKuyrugu },

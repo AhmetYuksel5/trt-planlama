@@ -65,6 +65,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   paketIsaretOnaylandi: "hrPaketYapildiOnay",
   paketIsaretGeriCevrildi: "hrPaketIsaretGeriCevrildi",
   masaYayinladi: "hrMasaYayinladi",
+  programaAktarildi: "hrProgramaAktarildi",
   masaYayinlamadi: "hrMasaYayinlamadi",
   oneriKopyalandi: "hrOneriKopyalandi",
   onerilerBirlestirildi: "hrOnerilerBirlestirildi",

@@ -1,4 +1,4 @@
-import { Binoculars, CalendarDays, ClipboardList, House, Lightbulb, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
+import { Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import type { Kisi } from "../veri";
 import { izinBirimi } from "../yapi";
@@ -34,6 +34,14 @@ const MUHABIR_SEKMELERI: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = [
   { yol: "paketler", ad: "abPaketlerim", ikon: Package },
 ];
 
+/* Programlar'ın sekmeleri: sayfanın kutucukları (ekranlar/program/ProgramMasasi.tsx). */
+const PROGRAM_SEKMELERI: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = [
+  { yol: "ana", ad: "abAna", ikon: House },
+  { yol: "programlar/icerikler", ad: "pmIcerikler", ikon: Clapperboard },
+  { yol: "programlar/oneriler", ad: "pmOneriler", ikon: Lightbulb },
+  { yol: "programlar/programlar", ad: "pmProgramlar", ikon: Tv },
+];
+
 export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; acik: string; menuAcik: boolean; onMenu: () => void }) {
   const { t } = useDil();
   const muhabir = ben.birim === "muhabir";
@@ -43,8 +51,11 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
     ? []
     : muhabir
     ? MUHABIR_SEKMELERI
+    : izinBirimi(ben.birim) === "program"
+    ? PROGRAM_SEKMELERI
     : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);
-  const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : acik === y && !(y === "oneriler" && yeni));
+  const hash = typeof location !== "undefined" ? location.hash : "";
+  const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : y.includes("/") ? hash.startsWith(`#/${y}`) : acik === y && !(y === "oneriler" && yeni));
   return (
     <nav className="alt-cubuk" aria-label={t("abMenu")}>
       {sekmeler.map((s) => {

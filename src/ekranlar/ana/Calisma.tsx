@@ -55,7 +55,7 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   // Ekonomi, Program ve Spor'un masası Newsdesk'inki gibi: kendi paketlerinin üretimi (MasaPaketleri).
   ekonomi: ["genIslerim", "ekMasa", "ekSayac", "ekOnInceleme", "ekGelecek", "ekBuHafta"],
-  program: ["genIslerim", "prMasa", "prHafta", "prOneri", "prKonuk"],
+  program: ["genIslerim", "prSayfa"],
   spor: ["genIslerim", "spMasa", "genSiram"],
   // Özel yayın paketlerini artık Planlama'nın stok ekibi takip ediyor (Stok sayfası).
   output: ["genIslerim", "ouSayac", "ouKontrol", "ouDil", "ouSon"],

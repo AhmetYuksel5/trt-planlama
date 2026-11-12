@@ -1,3 +1,5 @@
+import { Clapperboard } from "lucide-react";
+import { SayfaBasi } from "./ekranlar/ana/Planlama";
 import { useEffect, type ReactNode } from "react";
 import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
@@ -66,6 +68,8 @@ import {
   yarinPlani,
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
+import { ProgramMasasi } from "./ekranlar/program/ProgramMasasi";
+import { PROGRAM_BOLUMLERI, type ProgramBolumu } from "./programMasasi";
 import { demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, muhabirUnvanlariniEsitle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
 import { izlemede } from "./izleme";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
@@ -365,8 +369,16 @@ export default function App() {
         break;
       case "feature":
       case "ekonomi":
-      case "programlar":
         icerik = <Paketler ben={ben} sayfa={sayfa} />;
+        break;
+      // Programlar kutucuklu sayfa (ProgramMasasi); "#/programlar/<bölüm>" o kutucukla açılır (telefonda alt çubuk).
+      case "programlar":
+        icerik = (
+          <>
+            <SayfaBasi ikon={<Clapperboard size={26} />} baslik={t("mProgramlar")} />
+            <ProgramMasasi key={yol.id ?? ""} ben={ben} ilk={(PROGRAM_BOLUMLERI as readonly string[]).includes(yol.id ?? "") ? (yol.id as ProgramBolumu) : undefined} />
+          </>
+        );
         break;
       case "stok":
         icerik = <StokHaberler ben={ben} />;

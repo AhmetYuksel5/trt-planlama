@@ -53,18 +53,20 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await gir("pl1", "#/paketler/mt-2");
   ok((await p.locator("[data-masa-yayinlandi], [data-isaret-onayla]").count()) === 0, "Planlama paket sayfasında karar veremiyor");
 
-  // Masa: kartta açıklar, teslim durumu, karar.
-  await gir("pr2", "#/programlar");
-  const kart = p.locator("[data-masa-takibi]");
-  ok((await kart.locator("[data-masa-takip]").count()) >= 4, "Programlar'ın kartında takibindeki paketler");
-  ok(/Teslim edildi/.test(await kart.locator('[data-masa-takip="mt-2"]').innerText()), "teslim edileni gösteriyor");
-  await kart.locator('[data-masa-yayinlandi="mt-1"]').click();
-  await p.waitForTimeout(300);
-  await kart.locator('[data-masa-yayinlanmadi="mt-2"]').click();
+  // Masa: Programlar'da İçerikler (Ekonomi ve Spor'da "Takibimizdeki paketler" kartı); teslim durumu, karar.
+  await gir("pr2", "#/programlar/icerikler");
+  await p.click('[data-prg-alan="uretimde"]');
+  ok((await p.locator("[data-prg-icerik]").count()) >= 3, "Programlar'ın İçerikler'inde takibindeki paketler");
+  await p.click('[data-prg-alan="hazir"]');
+  ok(/Teslim edildi/.test(await p.locator('[data-prg-icerik="mt-2"]').innerText()), "teslim edileni gösteriyor");
+  await p.click('[data-prg-icerik="mt-2"] [data-masa-yayinlanmadi]');
   await p.fill("[data-yayinlanmadi-sebep]", "البرنامج تأجل");
   await p.click("[data-yayinlanmadi-gonder]");
   await p.waitForTimeout(300);
-  await kart.locator('[data-masa-yayinlanmadi="mt-3"]').click();
+  await p.click('[data-prg-alan="uretimde"]');
+  await p.click('[data-prg-icerik="mt-1"] [data-masa-yayinlandi]');
+  await p.waitForTimeout(300);
+  await p.click('[data-prg-icerik="mt-3"] [data-masa-yayinlanmadi]');
   await p.fill("[data-yayinlanmadi-sebep]", "لم يصل التقرير");
   await p.click("[data-yayinlanmadi-gonder]");
   await p.waitForTimeout(400);
@@ -74,7 +76,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(pk("mt-2").durum === "tamamlandi" && pk("mt-2").yayinlanmadi?.sebep === "البرنامج تأجل" && !pk("mt-2").yapilmadi && !!pk("mt-2").muhabirTeslimi, "teslim edilip yayınlanmayan tamamlanmış sayılıyor");
   ok(pk("mt-3").durum === "iptal" && !!pk("mt-3").yapilmadi && !!pk("mt-3").yayinlanmadi, "teslimsiz yayınlanmayan iptal");
   ok(d.hareketler.some((h) => h.tip === "masaYayinladi" && h.paketId === "mt-1" && h.veri?.kime === muhabir.id), "muhabire bildirim");
-  ok((await p.locator("[data-masa-kapanan] li").count()) >= 3, "son kapananlar listesinde");
+  await p.click('[data-prg-alan="arsiv"]');
+  ok((await p.locator('[data-prg-icerik="mt-1"], [data-prg-icerik="mt-2"], [data-prg-icerik="mt-3"]').count()) === 3, "kapananlar arşivde");
 
   // Muhabir: teslim edebiliyor (mt-eski), işaret Planlama'ya değil masaya.
   await gir(muhabir.id, "#/paketler/mt-eski");
@@ -87,7 +90,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 844 });
     await p.evaluate((x) => localStorage.setItem("trt-planlama-dil", x), dil);
-    await gir("pr2", "#/programlar");
+    await gir("pr2", "#/programlar/icerikler");
     ok((await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, `390px taşma yok (${dil})`);
   }
   await b.close();

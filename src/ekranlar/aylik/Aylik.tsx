@@ -264,7 +264,7 @@ const AYRAC = "—----------------";
  * kutusu, açıklama, ** önemi, önerilen kapsam: süre ve gün gün satırlar,
  * ekip, bağlantı, not); 3. görevlendirme tablosu.
  */
-function AylikBelgesi({ plan, d, belgeRef }: { plan: AylikPlan; d: Durum; belgeRef: RefObject<HTMLElement | null> }) {
+export function AylikBelgesi({ plan, d, belgeRef }: { plan: AylikPlan; d: Durum; belgeRef?: RefObject<HTMLElement | null> }) {
   const ol = olaylar(plan);
   const ana = ol.filter((o) => o.anaKapsam);
   const gorev = gorevler(plan);

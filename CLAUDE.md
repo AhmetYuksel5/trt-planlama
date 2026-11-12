@@ -2163,10 +2163,49 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tamamlandı, `yayinlandi.masa`. Yayınlanmadı: muhabir teslim ettiyse paket
     tamamlanmış sayılır, Muhasebe sayar (kullanıcı kararı; `yayinlanmadi`),
     etmediyse iptal (`yapilmadi`). "Tamamlamayı geri al" masada da (yayın izi
-    silinir). Masanın ana sayfasında ve sayfasında "Takibimizdeki paketler"
-    (`MasaSorusu.tsx → MasaTakibi`: açıklar teslim durumuyla, son bir haftada
-    kapananlar). Bu kuraldan önce görevlendirilmiş paketi sistemin açılış işi
+    silinir). Ekonomi ve Spor'un ana sayfasında ve sayfasında "Takibimizdeki
+    paketler" (`MasaSorusu.tsx → MasaTakibi`: açıklar teslim durumuyla, son bir
+    haftada kapananlar); Programlar'da İçerikler'in alanlarında (aşağıda). Bu kuraldan önce görevlendirilmiş paketi sistemin açılış işi
     takibe alır (`masaGorevleriniTakibeAl`). Test `testler/masa-takibi.cjs`.
+- Programlar'ın sayfası (kullanıcı: program programlamaya uygun, masaüstü ve
+  telefona uygun; taslak görselleriyle konuşuldu; `ekranlar/program/
+  ProgramMasasi.tsx`, kurallar `programMasasi.ts`): Programlar biriminin ana
+  sayfası ve `#/programlar` (`#/programlar/<bölüm>` o kutucukla açılır; menüde
+  "Program içerikleri"). Dört kutucuk (`data-prg-kutu`, seçim `useAdimDurumu`),
+  altında "Bugün yayında" şeridi ve seçilenin alanı:
+  - Yayın planları: Next Day, Weekly, Aylık, Özel yayın; her birinin yalnız son
+    onaylanan çıktısı salt okunur (`sonNextDay` onaylı ya da devredilmiş,
+    `sonWeekly` kesinleşmiş, `sonAylik` onaylı, `sonOzel` onaydan sonraki);
+    kağıtlar planlarınkiyle aynı bileşen (`NextDayBelgesi`, `HaftalikBelgesi`,
+    `AylikBelgesi`, `OzelCikti.tsx → OzelBelgesi`).
+  - İçerikler: masanın paketleri (`masaIcerikleri`: masanın takibindeki ve kolu
+    masaya ait; karar bekleyen görev talebi öneri sayılır) dört alanda
+    (`icerikDurumAlani`): Planlamada (talep, taslak, üretime alınmamış), Üretimde
+    (akışta ya da muhabirde), Yayına hazır (teslim edilmiş ya da masanın akışında
+    bitmiş, yayın kararı bekleyen), Arşiv (yayınlanan, yayınlanmayan, iptal).
+    Kartta tür, yer, gün, durum, muhabir; "Programa aktar" ve masanın yayın
+    kararı (`MasaYayinDugmeleri`; masa paketinin tamamlanmış halinde de,
+    `masaYayinKarariVerebilir`, `paketinMasasi`). "Yayınlanmadı" denen masa
+    paketi Next Day'in hazır paketlerinden de düşer.
+  - Öneriler: Planlama'dan (masaya sorulan, "Uygundur / Uygun değildir" notla,
+    `masaSorusunuYanitla`), Bizim önerilerimiz (masanın görev talepleri, karar
+    Planlama'da; "+" düğmesi görev talebi), Arşiv (yanıtlanan sorular ve
+    sonuçlanan talepler). Görev talebi kabul edilince paket masanın takibine
+    geçer (`gorevTalebiKarar`, `masaTakibi`; eskileri `masaGorevleriniTakibeAl`).
+  - Programlar (`Durum.programlar`, `ProgramTanimi`, koleksiyon `programlar`):
+    ad (Arapça), yayın saati (24 saat), süre, yayın günleri (Cumartesi 0);
+    `eylemler.ts → programKaydet`, `programKaldir` (pasif), yetki
+    `programDuzenler` (Programlar birimi, tam yönetici). Bölüm kayıt değil,
+    günlerden açılır (`haftaninBolumleri`), içerik pakete yazılır
+    (`Paket.programBolumu`, `icerikProgramaAktar`, hareket `programaAktarildi`;
+    `icerikAktarabilir`). Hafta ‹ › ile değişir; bölümde içerikler, "+ İçerik
+    aktar" ve bölümden çıkarma.
+  Eski kartlar (program masası, haftalık program planı, program önerileri,
+  konuk organizasyonu, üretim durumu) kalktı; ana sayfa düzen çizmiyor
+  (`ProgramAna`: bana verilen işler ve sayfa), katalogda yalnız `prSayfa`.
+  Telefonda alt çubuk Ana sayfa, İçerikler, Öneriler, Programlar, Menü
+  (`AltCubuk.tsx → PROGRAM_SEKMELERI`). Demoda kurgusal üç program. Test
+  `testler/programlar.cjs`.
 - Künye (kullanıcı: biten paketin ve canlının kimlik kartı, kısa; "direkt kim
   yaptıysa onun adı", birim değil; Muhasebe'ye de gitsin). Kurallar
   `kunye.ts`, kart `bilesenler/Kunye.tsx`. Adım yapıldığı an pakete yazılır

@@ -2480,6 +2480,12 @@ export const ORNEK = (): Durum => {
 
   return {
     surum: 18,
+    // Programlar biriminin kurgusal programları (programMasasi.ts); gün 0 Cumartesi.
+    programlar: [
+      { id: "prg-pencere", ad: "نافذة على العالم", saat: "19:00", sure: 45, gunler: [1, 3, 5], olusturan: "pr1", olusturma: zaman(gun(-20), "10:00") },
+      { id: "prg-hikaye", ad: "حكايات", saat: "21:30", sure: 30, gunler: [0], olusturan: "pr1", olusturma: zaman(gun(-20), "10:00") },
+      { id: "prg-saha", ad: "ملعب", saat: "22:00", sure: 25, gunler: [2, 6], olusturan: "pr1", olusturma: zaman(gun(-20), "10:00") },
+    ],
     kisiler: kisiListesi,
     basliklar: BASLIKLAR,
     planlar,

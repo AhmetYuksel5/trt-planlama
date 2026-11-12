@@ -585,9 +585,24 @@ export const paketIsaretleyebilir = (
 export const paketIsaretOnaylayabilir = (k: Kisi | undefined, p?: Paket): boolean =>
   !!k && !k.pasif && !p?.masaTakibi && hesapYetkisi(k, "paketOnayi");
 
-/** Masanın takibindeki onaylı paketi masa (ya da tam yönetici) "Yayınlandı / Yayınlanmadı" diye kapatır. */
-export const masaYayinKarariVerebilir = (k: Kisi | undefined, p: Paket): boolean =>
-  !!k && !!p.masaTakibi && p.durum === "onaylandi" && masaUyesi(k, p.masaTakibi);
+/* Paketi takip eden masa: masanın takibindeki ya da kolu masaya ait (ekonomi, program, spor) masa paketi. */
+export const paketinMasasi = (p: Paket): BirimId | undefined => p.masaTakibi ?? (masaPaketi(p) ? kolSahibi(p.tur) : undefined);
+
+/*
+ * Masa yayın kararı ("Yayınlandı / Yayınlanmadı"): masanın takibindeki onaylı
+ * paket ve masanın akışında tamamlanıp yayın kararı verilmemiş masa paketi;
+ * masanın üyesi ya da tam yönetici.
+ */
+export const masaYayinKarariVerebilir = (k: Kisi | undefined, p: Paket): boolean => {
+  const birim = paketinMasasi(p);
+  if (!k || !birim || p.ozelId) return false;
+  const acik = p.masaTakibi ? p.durum === "onaylandi" : p.durum === "tamamlandi" && !p.yayinlandi && !p.yayinlanmadi;
+  return acik && masaUyesi(k, birim);
+};
+
+/** Programlar'ın programlarını açar, düzenler, kaldırır; içeriği bölüme aktarır. */
+export const programDuzenler = (k: Kisi | undefined): boolean => !!k && masaUyesi(k, "program");
+export const icerikAktarabilir = (k: Kisi | undefined, p: Paket): boolean => !!k && paketinMasasi(p) === "program" && p.durum !== "iptal" && masaUyesi(k, "program");
 
 /** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
 /*

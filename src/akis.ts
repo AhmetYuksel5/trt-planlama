@@ -293,7 +293,8 @@ export const stokDurumu = (p: Paket): StokDurumu | null => {
  * (ekonomi, program, spor) bitirip henüz yayına çıkmamış paketi (kullanıcı:
  * masaların paketi de Next Day'den seçilsin).
  */
-export const hazirSecilebilir = (p: Paket) => stokDurumu(p) === "stokta" || (masaPaketi(p) && p.durum === "tamamlandi" && !p.yayinlandi);
+// Masanın "Yayınlanmadı" dediği paket de yayına çıkmış sayılmaz ama masa kapattı: seçilmez.
+export const hazirSecilebilir = (p: Paket) => stokDurumu(p) === "stokta" || (masaPaketi(p) && p.durum === "tamamlandi" && !p.yayinlandi && !p.yayinlanmadi);
 
 /** Teslim zamanı geçmiş ve henüz bitmemiş iş. */
 export const geciktiMi = (p: Paket, an = Date.now()) =>

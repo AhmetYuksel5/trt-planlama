@@ -196,8 +196,12 @@ import {
   masaYanitlar,
   oneriGorevlendirebilir,
   masaYayinKarariVerebilir,
+  paketinMasasi,
+  programDuzenler,
+  icerikAktarabilir,
 } from "./yetki";
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
+import { programGunuMu } from "./programMasasi";
 import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
 
 /**
@@ -2629,16 +2633,68 @@ export const masaYayinKarari = (ben: Kisi, id: string, yayinlandi: boolean, sebe
   const z = simdi();
   const i = p.isaret;
   const teslim = i?.tur === "yapildi" && i.kisiId === p.muhabirId ? i.zaman : undefined;
+  const birim = paketinMasasi(p);
+  // Masanın akışında tamamlanmış masa paketi: iş bitti, yalnız yayın kararı yazılıyor.
+  const tamam = p.durum === "tamamlandi";
   const yeni = paketGuncelle(d, id, (x) => {
+    if (tamam)
+      return yayinlandi
+        ? { ...x, guncelleme: z, yayinlandi: { tarih: bugun(), masa: birim, kisiId: ben.id } }
+        : { ...x, guncelleme: z, yayinlanmadi: { sebep: sebep.trim(), zaman: z, kisiId: ben.id } };
     const { isaret: _, ...y } = x;
     const ortak = { ...y, adim: undefined, guncelleme: z, ...(teslim && !x.muhabirTeslimi ? { muhabirTeslimi: teslim } : {}) };
-    if (yayinlandi) return kunyeYaz({ ...ortak, durum: "tamamlandi", yayinlandi: { tarih: bugun(), masa: p.masaTakibi, kisiId: ben.id } }, "onaylayan", ben.id, z);
+    if (yayinlandi) return kunyeYaz({ ...ortak, durum: "tamamlandi", yayinlandi: { tarih: bugun(), masa: birim, kisiId: ben.id } }, "onaylayan", ben.id, z);
     const iz = { sebep: sebep.trim(), zaman: z, kisiId: ben.id };
     return teslim
       ? kunyeYaz({ ...ortak, durum: "tamamlandi", yayinlanmadi: iz }, "onaylayan", ben.id, z)
       : { ...ortak, durum: "iptal", yayinlanmadi: iz, yapilmadi: { ...iz, onaylayan: ben.id } };
   });
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: yayinlandi ? "masaYayinladi" : "masaYayinlamadi", paketId: id, veri: { ...(p.muhabirId && { kime: p.muhabirId }), ...(!yayinlandi && { sebep: sebep.trim() }) } }));
+  return true;
+};
+
+/*
+ * Programlar'ın programları (programMasasi.ts): aç, düzenle, kaldır (pasif;
+ * aktarılmış içerik izini korur). Ad Arapça ve en az bir yayın günü zorunlu.
+ */
+export const programKaydet = (ben: Kisi, g: { id?: string; ad: string; saat?: string; sure?: number; gunler: number[] }): string | null => {
+  if (!programDuzenler(ben) || !g.ad.trim() || !g.gunler.length) return null;
+  const d = getir();
+  const gunler = [...new Set(g.gunler.filter((x) => x >= 0 && x <= 6))].sort();
+  const alanlar = { ad: g.ad.trim(), saat: g.saat || undefined, sure: g.sure && g.sure > 0 ? Math.round(g.sure) : undefined, gunler };
+  const liste = d.programlar ?? [];
+  if (g.id) {
+    if (!liste.some((p) => p.id === g.id)) return null;
+    kaydet({ ...d, programlar: liste.map((p) => (p.id === g.id ? { ...p, ...alanlar } : p)) });
+    return g.id;
+  }
+  const id = kimlik("prg");
+  kaydet({ ...d, programlar: [...liste, { id, ...alanlar, olusturan: ben.id, olusturma: simdi() }] });
+  return id;
+};
+
+export const programKaldir = (ben: Kisi, id: string) => {
+  const d = getir();
+  if (!programDuzenler(ben) || !d.programlar?.some((p) => p.id === id)) return false;
+  kaydet({ ...d, programlar: d.programlar.map((p) => (p.id === id ? { ...p, pasif: true } : p)) });
+  return true;
+};
+
+/* İçeriği programın bir bölümüne aktarır ya da (programId boş) bölümden çıkarır. Bölüm programın yayın günlerinden biri olmalı. */
+export const icerikProgramaAktar = (ben: Kisi, paketId: string, programId: string | null, tarih?: string) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !icerikAktarabilir(ben, p)) return false;
+  if (!programId) {
+    if (!p.programBolumu) return false;
+    const { programBolumu: _, ...y } = p;
+    kaydet(paketGuncelle(d, paketId, () => ({ ...y, guncelleme: simdi() })));
+    return true;
+  }
+  const prg = d.programlar?.find((x) => x.id === programId && !x.pasif);
+  if (!prg || !tarih || !programGunuMu(prg, tarih)) return false;
+  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, programBolumu: { programId, tarih }, guncelleme: simdi() }));
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "programaAktarildi", paketId, veri: { program: prg.ad, tarih, sahip: "program" } }));
   return true;
 };
 
@@ -2651,9 +2707,10 @@ export const masaGorevleriniTakibeAl = (): number => {
   const d = getir();
   const hedef = new Map<string, BirimId>();
   for (const p of d.paketler) {
-    if (p.masaTakibi || !p.gorev || !p.oneriId || p.planId || p.ozelId) continue;
-    const s = kabulSoru(d, p.oneriId);
-    if (s && (SORU_MASALARI as readonly string[]).includes(s.birim)) hedef.set(p.id, s.birim);
+    if (p.masaTakibi || !p.gorev || p.planId || p.ozelId) continue;
+    // Masanın "Uygundur" dediği öneriden ya da masanın görev talebinden doğan görev.
+    const birim = (p.oneriId && kabulSoru(d, p.oneriId)?.birim) || p.gorevTalebi?.birim;
+    if (birim && (SORU_MASALARI as readonly string[]).includes(birim)) hedef.set(p.id, birim);
   }
   if (!hedef.size) return 0;
   kaydet({
@@ -2926,7 +2983,14 @@ export const gorevTalebiKarar = (ben: Kisi, id: string, kabul: boolean, ek: { ta
   if (kabul) {
     const tarih = ek.tarih || p.sonTarih || bugun();
     if (!gorevTarihiUygun(ben, tarih)) return false;
-    let yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "onaylandi", sonTarih: tarih, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, guncelleme: z }));
+    // Masanın talebi masanın takibine geçiyor (kullanıcı: masanın paketi Planlama'nın stoğuna ve onay kuyruğuna girmez).
+    const masa = (SORU_MASALARI as readonly string[]).includes(p.gorevTalebi.birim) ? p.gorevTalebi.birim : undefined;
+    let yeni = paketGuncelle(d, id, (x) => {
+      const y = { ...x, durum: "onaylandi" as const, sonTarih: tarih, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, guncelleme: z };
+      if (!masa) return y;
+      const { stok: _s, ...m } = y;
+      return { ...m, masaTakibi: masa };
+    });
     yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: id, veri: { kime: [p.muhabirId, p.gorevTalebi.kisiId].filter(Boolean).join(","), muhabir: p.muhabirId ?? "", tarih } });
     kaydet(yeni);
     return true;

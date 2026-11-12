@@ -1037,6 +1037,8 @@ export interface Paket {
    * sebebiyle "Yayınlanmadı" diye kapatıyor (masaTakibi.ts).
    */
   masaTakibi?: BirimId;
+  /** Programlar'ın bir programının bölümüne aktarıldı (programMasasi.ts): program ve bölümün günü. */
+  programBolumu?: { programId: string; tarih: string };
   /** Masa yayınlamadı: muhabir teslim ettiyse paket tamamlanmış sayılır (Muhasebe sayar), etmediyse iptal. */
   yayinlanmadi?: { sebep: string; zaman: string; kisiId: string };
   notlar: Not[];
@@ -1228,6 +1230,27 @@ export interface AylikOlay {
   baglantilar?: string[];
   /** Özel yayın olarak açıldıysa o yayın. */
   ozelId?: string;
+}
+
+/*
+ * Programlar biriminin programları (kullanıcı: programa yeni program eklensin,
+ * günleri girilsin, yapılan paketler bu programlara aktarılsın). Bölüm ayrı
+ * kayıt değil: program günlerinden açılıyor (programMasasi.ts → haftaninBolumleri),
+ * içerik pakete yazılıyor (`Paket.programBolumu`).
+ */
+export interface ProgramTanimi {
+  id: string;
+  /** Programın adı, Arapça (içerik). */
+  ad: string;
+  /** Yayın saati "SS:DD", 24 saat. */
+  saat?: string;
+  /** Süre, dakika. */
+  sure?: number;
+  /** Yayın günleri: haftanın Cumartesi'den sırası (0 Cumartesi … 6 Cuma). */
+  gunler: number[];
+  pasif?: boolean;
+  olusturan: string;
+  olusturma: string;
 }
 
 export interface AylikPlan {
@@ -1594,6 +1617,7 @@ export const HAREKET_TIPLERI = [
   "paketSartliKabul",
   "paketGorevVerildi",
   "masaYayinladi",
+  "programaAktarildi",
   "masaYayinlamadi",
   "gorevTalebiGeldi",
   "gorevTalebiReddedildi",
@@ -1753,6 +1777,8 @@ export interface Durum {
   yzGorusleri?: YzGorus[];
   masaSorulari?: MasaSorusu[];
   toplantiNotlari?: ToplantiNotu[];
+  /** Programlar biriminin programları; eski kayıtta yok. */
+  programlar?: ProgramTanimi[];
   /** Yerleşik listede olmayan, sonradan eklenen şehirler. */
   sehirler?: SehirTanimi[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
@@ -1909,6 +1935,7 @@ export const bosDurum = (): Durum => ({
   geriBildirimSablonlari: [],
   yzGorusleri: [],
   masaSorulari: [],
+  programlar: [],
   toplantiNotlari: [],
   sehirler: [],
   gorevler: [],

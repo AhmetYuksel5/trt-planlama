@@ -3403,3 +3403,78 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 .tarih-saat-girdisi > .tarih-girdisi { flex: 1 1 auto; }
 .tarih-saat-girdisi > .saat-girdisi { flex: 0 0 6rem; }
 @media (max-width: 760px) { .tarih-gun { block-size: 2.6rem; } }
+
+/* Programlar'ın sayfası (ekranlar/program/ProgramMasasi.tsx): kutucuklar ve seçilen alan; programın rengi --saha. */
+.prg-masa { --prg: var(--saha); --prg-sis: var(--saha-sis); display: grid; gap: var(--ara-4); }
+.prg-kutular { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ara-3); }
+.prg-kutu {
+  position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--ara-3); row-gap: 2px;
+  align-items: center; text-align: start; padding: var(--ara-4); min-height: var(--dokunma);
+  background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); color: var(--murekkep); font: inherit; cursor: pointer;
+}
+.prg-kutu:hover { border-color: var(--silik); }
+.prg-kutu.secili { border-color: var(--prg); box-shadow: 0 0 0 3px var(--prg-sis); }
+.prg-kutu-ik { grid-row: span 2; width: 44px; height: 44px; border-radius: var(--yaricap); display: grid; place-items: center; }
+.prg-kutu b { font-size: var(--punto-orta); }
+.prg-kutu small { color: var(--sonuk); font-size: var(--punto-kucuk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prg-say { position: absolute; inset-block-start: var(--ara-3); inset-inline-end: var(--ara-3); font-style: normal; font-weight: 700; font-size: var(--punto-kucuk); background: var(--yuzey-2); border-radius: var(--yaricap-hap); padding: 0 var(--ara-2); min-width: 22px; text-align: center; }
+.prg-kutu.secili .prg-say { background: var(--prg); color: #fff; }
+.prg-k-planlar .prg-kutu-ik { background: var(--nextday-sis); color: var(--nextday); }
+.prg-k-icerikler .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
+.prg-k-oneriler .prg-kutu-ik { background: var(--aylik-sis); color: var(--aylik); }
+.prg-k-programlar .prg-kutu-ik { background: var(--haftalik-sis); color: var(--haftalik); }
+.prg-bugun { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
+.prg-bugun-bas { font-weight: 700; font-size: var(--punto-kucuk); color: var(--sonuk); margin-inline-end: var(--ara-2); }
+.prg-bugun-oge { display: inline-flex; align-items: center; gap: var(--ara-2); background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-1) var(--ara-3); }
+.prg-bugun-oge small { color: var(--sonuk); }
+.prg-arac { display: inline-flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.prg-arac .arama-kutu input { min-width: 0; width: 12rem; }
+.prg-seg { display: flex; gap: var(--ara-2); flex-wrap: wrap; margin-block-end: var(--ara-3); }
+.prg-seg button { min-height: 36px; padding: 0 var(--ara-3); border-radius: var(--yaricap-hap); border: 1px solid var(--cizgi); background: var(--yuzey); color: var(--sonuk); font: inherit; font-size: var(--punto-kucuk); cursor: pointer; white-space: nowrap; }
+.prg-seg button em { font-style: normal; font-weight: 700; color: var(--murekkep); margin-inline-start: var(--ara-1); }
+.prg-seg button.acik { background: var(--prg); border-color: var(--prg); color: #fff; }
+.prg-seg button.acik em { color: #fff; }
+.prg-icerikler { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: var(--ara-3); }
+.prg-icerik, .prg-oneri { display: grid; gap: var(--ara-2); padding: var(--ara-3) var(--ara-4); border: 1px solid var(--cizgi); border-inline-start: 4px solid var(--prg); border-radius: var(--yaricap); background: var(--yuzey); min-width: 0; }
+.prg-oneri { border-inline-start-color: var(--aylik); }
+.prg-icerik-ust, .prg-icerik-alt { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; font-size: var(--punto-kucuk); min-width: 0; }
+.prg-icerik-baslik, .prg-oneri > a { color: var(--murekkep); text-decoration: none; font-weight: 600; font-size: var(--punto-orta); }
+.prg-icerik-baslik:hover, .prg-oneri > a:hover { text-decoration: underline; }
+.prg-oneriler { display: grid; gap: var(--ara-3); }
+.soluk-kart { opacity: .8; }
+.prg-plan-sec { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ara-2); margin-block-end: var(--ara-3); }
+.prg-plan-sec button { display: grid; gap: 2px; text-align: start; padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); font: inherit; cursor: pointer; min-height: var(--dokunma); min-width: 0; }
+.prg-plan-sec button small { color: var(--sonuk); font-size: var(--punto-kucuk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prg-plan-sec button.acik { border-color: var(--renk, var(--nextday)); background: var(--sis, var(--nextday-sis)); }
+.prg-plan-sec .renk-nextday { --renk: var(--nextday); --sis: var(--nextday-sis); }
+.prg-plan-sec .renk-haftalik { --renk: var(--haftalik); --sis: var(--haftalik-sis); }
+.prg-plan-sec .renk-aylik { --renk: var(--aylik); --sis: var(--aylik-sis); }
+.prg-plan-sec .renk-ozel { --renk: var(--ozel); --sis: var(--ozel-sis); }
+.prg-cikti { max-height: 70vh; overflow: auto; pointer-events: auto; }
+.prg-hafta { display: inline-flex; align-items: center; gap: var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); white-space: nowrap; }
+.prg-hafta > span { display: inline-flex; align-items: center; gap: var(--ara-1); padding-inline: var(--ara-1); }
+.prg-programlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: var(--ara-3); }
+.prg-program { display: grid; gap: var(--ara-2); align-content: start; padding: var(--ara-3) var(--ara-4); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); min-width: 0; }
+.prg-program-ad { display: flex; align-items: center; gap: var(--ara-2); font-weight: 700; font-size: var(--punto-orta); min-width: 0; }
+.prg-gunler { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.prg-gunler span { text-align: center; font-size: var(--punto-mini); font-weight: 600; padding: 3px 0; border-radius: 6px; background: var(--yuzey-2); color: var(--silik); overflow: hidden; white-space: nowrap; }
+.prg-gunler span.var { background: var(--haftalik-sis); color: var(--haftalik); }
+.prg-bolum { display: grid; gap: var(--ara-1); background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); font-size: var(--punto-kucuk); }
+.prg-bolum.bugun { box-shadow: inset 0 0 0 1px var(--prg); }
+.prg-bolum-bas, .prg-bolum-oge { display: flex; align-items: center; gap: var(--ara-2); min-width: 0; }
+.prg-bolum-oge a { color: var(--murekkep); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prg-yuva { border: 1.5px dashed var(--silik); border-radius: var(--yaricap); background: none; color: var(--sonuk); font: inherit; font-size: var(--punto-kucuk); padding: var(--ara-1) var(--ara-2); min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--ara-1); }
+.prg-yuva:hover { border-color: var(--prg); color: var(--prg); }
+.prg-gun-secimi { display: flex; flex-wrap: wrap; gap: var(--ara-2); border: 0; padding: 0; margin: 0; }
+.prg-gun-secimi legend { font-weight: 600; margin-block-end: var(--ara-2); padding: 0; }
+.prg-gun-secimi label { display: inline-flex; align-items: center; gap: var(--ara-1); padding: var(--ara-1) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-hap); min-height: 36px; cursor: pointer; }
+.prg-gun-secimi label.secili { border-color: var(--haftalik); background: var(--haftalik-sis); color: var(--haftalik); }
+@media (max-width: 1100px) { .prg-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .prg-kutu { grid-template-columns: minmax(0, 1fr); padding: var(--ara-3); }
+  .prg-kutu-ik { grid-row: auto; width: 38px; height: 38px; }
+  .prg-plan-sec { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prg-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .prg-arac .arama-kutu input { width: 100%; }
+  .prg-icerik, .prg-oneri, .prg-program { padding: var(--ara-3); }
+}
