@@ -1,15 +1,24 @@
-import { CalendarRange, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
+import { Archive, CalendarRange, CirclePlay, Landmark, Trophy, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { GorevlendirDugmesi } from "../../bilesenler/PaketGorevi";
 import { MasaYayinDugmeleri } from "../../bilesenler/PaketSonucu";
 import { Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { kisaGunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { gorevTalebiGeriCek, icerikProgramaAktar, masaSorusunuYanitla, programKaldir, programKaydet } from "../../eylemler";
+import { gorevTalebiGeriCek, icerikProgramaAktar, uretimeAl, masaSorusunuYanitla, programKaldir, programKaydet } from "../../eylemler";
 import { BICIM_ADI, paketYeri } from "../../etiketler";
-import { masaninSorulari, oneriGorevPaketi } from "../../masaSorusu";
+import { masaninSorulari } from "../../masaSorusu";
 import {
-  ICERIK_ALANLARI,
+  AKTIF_ALANLAR,
+  ARSIV_SUZGECLERI,
+  MASA_YOLU,
+  arsivSuzgeceUyar,
+  masaArsivi,
+  masaBolumleri,
+  masaKararlari,
+  type ArsivKaydi,
+  type ArsivSuzgeci,
+  type MasaBirimi,
   bolumIcerikleri,
   bugunkuProgramlar,
   etkinProgramlar,
@@ -27,7 +36,10 @@ import {
 } from "../../programMasasi";
 import { bugun, gunEkle, haftaBasi } from "../../tarih";
 import { kisiBul, oneriBul, useVeri, type Kisi, type Paket, type ProgramTanimi } from "../../veri";
-import { gorevTalebiGeriCekebilir, icerikAktarabilir, masaYanitlar, programDuzenler } from "../../yetki";
+import { gorevTalebiGeriCekebilir, icerikAktarabilir, masaUyesi, uretimeAlabilir, masaYanitlar, programDuzenler } from "../../yetki";
+import { WhatsAppDugmesi } from "../../bilesenler/WhatsApp";
+import { IsPostasi } from "../posta/Posta";
+import { sozcuklerUyar } from "../../arama";
 import { useAdimDurumu } from "../../yol";
 import { AylikBelgesi } from "../aylik/Aylik";
 import { HaftalikBelgesi } from "../belge/HaftalikBelge";
@@ -44,58 +56,100 @@ import { OzelBelgesi } from "../OzelCikti";
  * program önerileri, konuk organizasyonu) kalktı.
  */
 
-const BOLUM_ADI: Record<ProgramBolumu, Anahtar> = { planlar: "pmPlanlar", icerikler: "pmIcerikler", oneriler: "pmOneriler", programlar: "pmProgramlar" };
+const BOLUM_ADI: Record<ProgramBolumu, Anahtar> = { planlar: "pmPlanlar", icerikler: "pmIcerikler", oneriler: "pmOneriler", programlar: "pmProgramlar", arsiv: "pmArsiv" };
 const BOLUM_IKONU: Record<ProgramBolumu, ReactNode> = {
   planlar: <FileText size={20} />,
   icerikler: <Clapperboard size={20} />,
   oneriler: <Lightbulb size={20} />,
   programlar: <Tv size={20} />,
+  arsiv: <Archive size={20} />,
 };
 const ALAN_ADI: Record<IcerikAlani, Anahtar> = { planlamada: "pmAlanPlanlamada", uretimde: "pmAlanUretimde", hazir: "pmAlanHazir", arsiv: "pmAlanArsiv" };
 
-export function ProgramMasasi({ ben, ilk = "icerikler" }: { ben: Kisi; ilk?: ProgramBolumu }) {
+export const MASA_ADI: Record<MasaBirimi, Anahtar> = { program: "biProgram", ekonomi: "biEkonomi", spor: "biSpor" };
+export const MASA_IKONU: Record<MasaBirimi, ReactNode> = { program: <Clapperboard size={26} />, ekonomi: <Landmark size={26} />, spor: <Trophy size={26} /> };
+
+/** Programlar'ın sayfası (eski ad; ana sayfa katalogu ve testler). */
+export const ProgramMasasi = ({ ben, ilk }: { ben: Kisi; ilk?: ProgramBolumu }) => <MasaSayfasi ben={ben} birim="program" ilk={ilk} />;
+
+/*
+ * Masanın sayfası: kutucuklar bağlantı (menü ve telefondaki alt çubuk adresten
+ * vurgulanıyor; kutucuk adres değiştirmeseydi menüde başka bölüm yanardı).
+ * Ana sayfada (ozet) kutucukların üstünde masanın önündeki kararlar.
+ */
+export function MasaSayfasi({ ben, birim, ilk = "icerikler", ozet }: { ben: Kisi; birim: MasaBirimi; ilk?: ProgramBolumu; ozet?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
-  const [bolum, setBolum] = useAdimDurumu<ProgramBolumu>("programlar:bolum", ilk);
+  const bolumler = masaBolumleri(birim);
+  const bolum = bolumler.includes(ilk) ? ilk : "icerikler";
   const B = bugun();
-  const icerikler = masaIcerikleri(v, "program");
+  const yol = MASA_YOLU[birim];
+  const icerikler = masaIcerikleri(v, birim);
   const aktif = icerikler.filter((p) => icerikDurumAlani(p) !== "arsiv").length;
-  const sorular = masaninSorulari(v, "program").filter((s) => !s.cevap).length;
-  const talepler = masaTalepleri(v, "program").filter(talepBekliyor).length;
+  const sorular = masaninSorulari(v, birim).filter((s) => !s.cevap).length;
+  const talepler = masaTalepleri(v, birim).filter(talepBekliyor).length;
   const planSayisi = [sonNextDay(v), sonWeekly(v), sonAylik(v), sonOzel(v)].filter(Boolean).length;
   const programlar = etkinProgramlar(v);
-  const bugunku = bugunkuProgramlar(v, B);
-  const kutular: { b: ProgramBolumu; alt: string; say: number }[] = [
-    { b: "planlar", alt: t("pmPlanlarAlt"), say: planSayisi },
-    { b: "icerikler", alt: t("pmIceriklerAlt", { n: aktif }), say: aktif },
-    { b: "oneriler", alt: t("pmOnerilerAlt", { n: sorular + talepler }), say: sorular + talepler },
-    { b: "programlar", alt: t("pmProgramlarAlt", { n: programlar.length, m: bugunku.length }), say: programlar.length },
-  ];
+  const bugunku = birim === "program" ? bugunkuProgramlar(v, B) : [];
+  const arsiv = icerikler.length - aktif;
+  const bilgi: Record<ProgramBolumu, { alt: string; say: number }> = {
+    planlar: { alt: t("pmPlanlarAlt"), say: planSayisi },
+    icerikler: { alt: t("pmIceriklerAlt", { n: aktif }), say: aktif },
+    oneriler: { alt: t("pmOnerilerAlt", { n: sorular + talepler }), say: sorular + talepler },
+    programlar: { alt: t("pmProgramlarAlt", { n: programlar.length, m: bugunku.length }), say: programlar.length },
+    arsiv: { alt: t("pmArsivAlt", { n: arsiv }), say: 0 },
+  };
   return (
-    <div className="prg-masa" data-program-masasi>
-      <div className="prg-kutular" role="tablist">
-        {kutular.map((k) => (
-          <button
-            key={k.b}
-            type="button"
+    <div className={`prg-masa masa-${birim}`} data-program-masasi data-masa-sayfasi={birim}>
+      {ozet && <KararOzeti birim={birim} />}
+      <div className={`prg-kutular kutu-${bolumler.length}`} role="tablist">
+        {bolumler.map((b) => (
+          <a
+            key={b}
+            href={`#/${yol}/${b}`}
             role="tab"
-            aria-selected={bolum === k.b}
-            className={`prg-kutu prg-k-${k.b}${bolum === k.b ? " secili" : ""}`}
-            onClick={() => setBolum(k.b)}
-            data-prg-kutu={k.b}
+            aria-selected={bolum === b}
+            className={`prg-kutu prg-k-${b}${bolum === b ? " secili" : ""}`}
+            data-prg-kutu={b}
           >
-            <span className="prg-kutu-ik">{BOLUM_IKONU[k.b]}</span>
-            <b>{t(BOLUM_ADI[k.b])}</b>
-            <small>{k.alt}</small>
-            {k.say > 0 && <em className="prg-say">{k.say}</em>}
-          </button>
+            <span className="prg-kutu-ik">{BOLUM_IKONU[b]}</span>
+            <b>{t(BOLUM_ADI[b])}</b>
+            <small>{bilgi[b].alt}</small>
+            {bilgi[b].say > 0 && <em className="prg-say">{bilgi[b].say}</em>}
+          </a>
         ))}
       </div>
       {bugunku.length > 0 && <BugunYayinda programlar={bugunku} />}
-      {bolum === "planlar" && <YayinPlanlari />}
-      {bolum === "icerikler" && <Icerikler ben={ben} />}
-      {bolum === "oneriler" && <Oneriler ben={ben} />}
+      {bolum === "planlar" && <YayinPlanlari birim={birim} />}
+      {bolum === "icerikler" && <Icerikler ben={ben} birim={birim} />}
+      {bolum === "oneriler" && <Oneriler ben={ben} birim={birim} />}
       {bolum === "programlar" && <Programlar ben={ben} />}
+      {bolum === "arsiv" && <Arsiv birim={birim} />}
+    </div>
+  );
+}
+
+/* Ana sayfanın başı: bugün karar verilecekler; yoksa çizilmez. */
+function KararOzeti({ birim }: { birim: MasaBirimi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const k = masaKararlari(v, birim);
+  const yol = MASA_YOLU[birim];
+  const adaylar: { n: number; ad: Anahtar; href: string; o: string }[] = [
+    { n: k.yayin, ad: "pmKararYayin", href: `#/${yol}/icerikler`, o: "yayin" },
+    { n: k.soru, ad: "pmKararSoru", href: `#/${yol}/oneriler`, o: "soru" },
+    { n: k.programsiz, ad: "pmKararProgramsiz", href: `#/${yol}/icerikler`, o: "programsiz" },
+  ];
+  const satirlar = adaylar.filter((x) => x.n > 0);
+  if (!satirlar.length) return null;
+  return (
+    <div className="prg-ozet" data-prg-ozet>
+      <span className="prg-bugun-bas">{t("pmKararlarim")}</span>
+      {satirlar.map((x) => (
+        <a key={x.o} href={x.href} className="prg-ozet-oge" data-prg-ozet-oge={x.o}>
+          <b>{x.n}</b> {t(x.ad)}
+        </a>
+      ))}
     </div>
   );
 }
@@ -124,7 +178,7 @@ function BugunYayinda({ programlar }: { programlar: ProgramTanimi[] }) {
 /* --- Yayın planları: son onaylanan çıktılar, salt okunur --- */
 
 type PlanTuru = "nextday" | "haftalik" | "aylik" | "ozel";
-function YayinPlanlari() {
+function YayinPlanlari({ birim }: { birim: MasaBirimi }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const planlar: { tur: PlanTuru; ad: Anahtar; alt?: string; href?: string; var: boolean }[] = [];
@@ -136,7 +190,7 @@ function YayinPlanlari() {
   planlar.push({ tur: "haftalik", ad: "pmWeekly", alt: hf && `${tarihYaz(hf.baslangic, dil)} – ${tarihYaz(gunEkle(hf.baslangic, 6), dil)}`, href: hf && `#/haftalik/${hf.id}`, var: !!hf });
   planlar.push({ tur: "aylik", ad: "pmAylik", alt: ay && tarihYaz(ay.ay + "-01", dil, "ay"), href: ay && `#/aylik/${ay.id}`, var: !!ay });
   planlar.push({ tur: "ozel", ad: "pmOzel", alt: oz?.ad, href: oz && `#/ozel/${oz.id}`, var: !!oz });
-  const [secim, setSecim] = useAdimDurumu<PlanTuru>("programlar:plan", "nextday");
+  const [secim, setSecim] = useAdimDurumu<PlanTuru>(`${birim}:plan`, "nextday");
   const s = planlar.find((p) => p.tur === secim) ?? planlar[0];
   return (
     <Kart baslik={t("pmPlanlar")} ikon={<FileText size={18} />}>
@@ -164,18 +218,18 @@ function YayinPlanlari() {
 
 /* --- İçerikler --- */
 
-function Icerikler({ ben }: { ben: Kisi }) {
+function Icerikler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [alan, setAlan] = useAdimDurumu<IcerikAlani>("programlar:alan", "uretimde");
-  const [aranan, setAranan] = useAdimDurumu("programlar:ara", "");
+  const [alan, setAlan] = useAdimDurumu<IcerikAlani>(`${birim}:alan`, "uretimde");
+  const [aranan, setAranan] = useAdimDurumu(`${birim}:ara`, "");
   const [aktar, setAktar] = useState<Paket | null>(null);
   const q = aranan.trim().toLocaleLowerCase();
-  const hepsi = masaIcerikleri(v, "program").filter((p) => !q || `${p.baslik} ${p.kod} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q));
+  const hepsi = masaIcerikleri(v, birim).filter((p) => !q || `${p.baslik} ${p.kod} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q));
   const sayi = (a: IcerikAlani) => hepsi.filter((p) => icerikDurumAlani(p) === a).length;
   const liste = hepsi
     .filter((p) => icerikDurumAlani(p) === alan)
-    .sort((a, b) => (alan === "arsiv" ? b.guncelleme.localeCompare(a.guncelleme) : (a.sonTarih ?? "~").localeCompare(b.sonTarih ?? "~")));
+    .sort((a, b) => (a.sonTarih ?? "~").localeCompare(b.sonTarih ?? "~"));
   return (
     <Kart
       baslik={t("pmIcerikler")}
@@ -191,7 +245,7 @@ function Icerikler({ ben }: { ben: Kisi }) {
       }
     >
       <div className="prg-seg" role="tablist" data-prg-alanlar>
-        {ICERIK_ALANLARI.map((a) => (
+        {AKTIF_ALANLAR.map((a) => (
           <button key={a} type="button" role="tab" aria-selected={a === alan} className={a === alan ? "acik" : ""} onClick={() => setAlan(a)} data-prg-alan={a}>
             {t(ALAN_ADI[a])} <em>{sayi(a)}</em>
           </button>
@@ -202,7 +256,7 @@ function Icerikler({ ben }: { ben: Kisi }) {
       ) : (
         <div className="prg-icerikler">
           {liste.map((p) => (
-            <IcerikKarti key={p.id} ben={ben} p={p} aktar={() => setAktar(p)} />
+            <IcerikKarti key={p.id} ben={ben} birim={birim} p={p} aktar={() => setAktar(p)} />
           ))}
         </div>
       )}
@@ -223,15 +277,16 @@ function IcerikDurumu({ p }: { p: Paket }) {
   return <Rozet>{t("pmAlanPlanlamada")}</Rozet>;
 }
 
-function IcerikKarti({ ben, p, aktar }: { ben: Kisi; p: Paket; aktar: () => void }) {
+function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p: Paket; aktar: () => void }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
+  const muhabir = p.muhabirId ? kisiBul(v, p.muhabirId) : undefined;
   const prg = p.programBolumu && v.programlar?.find((x) => x.id === p.programBolumu!.programId);
   const arsiv = icerikDurumAlani(p) === "arsiv";
   return (
     <div className="prg-icerik" data-prg-icerik={p.id}>
       <div className="prg-icerik-ust">
-        <Rozet ton="tur-program">{t(BICIM_ADI(p.bicim ?? "pkg"))}</Rozet>
+        <Rozet ton="masa">{t(BICIM_ADI(p.bicim ?? "pkg"))}</Rozet>
         <Icerik>{paketYeri(p)}</Icerik>
         {p.sonTarih && <span className="soluk">· {tarihYaz(p.sonTarih, dil)}</span>}
         <span className="bosluk-esnek" />
@@ -241,7 +296,14 @@ function IcerikKarti({ ben, p, aktar }: { ben: Kisi; p: Paket; aktar: () => void
         <Icerik blok>{p.baslik}</Icerik>
       </a>
       <div className="prg-icerik-alt">
-        <span className="soluk">{p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}</span>
+        <span className="soluk">{muhabir ? ad(muhabir) : t("atanmadi")}</span>
+        {/* İşin muhabirine ulaşma (kullanıcı: bütün muhabir listesi değil, iş bazında). */}
+        {muhabir && !arsiv && masaUyesi(ben, birim) && (
+          <span className="prg-iletisim" data-prg-iletisim={p.id}>
+            <WhatsAppDugmesi telefon={muhabir.telefon} />
+            <IsPostasi ben={ben} kisi={muhabir} konu={p.baslik} />
+          </span>
+        )}
         <span className="bosluk-esnek" />
         {prg ? (
           <Rozet ton="iyi">
@@ -249,11 +311,18 @@ function IcerikKarti({ ben, p, aktar }: { ben: Kisi; p: Paket; aktar: () => void
           </Rozet>
         ) : (
           !arsiv &&
+          birim === "program" &&
           icerikAktarabilir(ben, p) && (
             <button type="button" className="dugme dugme-yumusak dugme-kucuk" onClick={aktar} data-prg-aktar={p.id}>
               <Tv size={14} /> {t("pmProgramaAktar")}
             </button>
           )
+        )}
+        {/* Masanın paketi üretime masada alınıyor (eski masa kartındaki gibi kartın üstünden). */}
+        {uretimeAlabilir(ben, p) && (
+          <button type="button" className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
+            <CirclePlay size={14} /> {t("uretimeAl")}
+          </button>
         )}
         <MasaYayinDugmeleri ben={ben} paket={p} kucuk />
       </div>
@@ -321,21 +390,17 @@ function AktarPenceresi({ ben, paket, kapat, programId }: { ben: Kisi; paket?: P
 
 /* --- Öneriler --- */
 
-type OneriSekmesi = "planlamadan" | "bizim" | "arsiv";
-function Oneriler({ ben }: { ben: Kisi }) {
+/* Yanıtlanan sorular ve sonuçlanan talepler Arşiv bölümünde. */
+type OneriSekmesi = "planlamadan" | "bizim";
+function Oneriler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
-  const [sekme, setSekme] = useAdimDurumu<OneriSekmesi>("programlar:oneri", "planlamadan");
-  const sorular = (v.masaSorulari ?? []).filter((s) => s.birim === "program");
-  const acikSorular = masaninSorulari(v, "program").filter((s) => !s.cevap);
-  const cevaplanan = sorular.filter((s) => s.cevap).sort((a, b) => b.cevap!.zaman.localeCompare(a.cevap!.zaman));
-  const talepler = masaTalepleri(v, "program");
-  const bekleyen = talepler.filter(talepBekliyor);
-  const sonuclanan = talepler.filter((p) => !talepBekliyor(p)).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  const [sekme, setSekme] = useAdimDurumu<OneriSekmesi>(`${birim}:oneri`, "planlamadan");
+  const acikSorular = masaninSorulari(v, birim).filter((s) => !s.cevap);
+  const bekleyen = masaTalepleri(v, birim).filter(talepBekliyor);
   const sekmeler: { s: OneriSekmesi; ad: Anahtar; n?: number }[] = [
     { s: "planlamadan", ad: "pmPlanlamadan", n: acikSorular.length },
     { s: "bizim", ad: "pmBizim", n: bekleyen.length },
-    { s: "arsiv", ad: "pmAlanArsiv" },
   ];
   return (
     <Kart baslik={t("pmOneriler")} ikon={<Lightbulb size={18} />} sagUc={<GorevlendirDugmesi ben={ben} />}>
@@ -373,39 +438,6 @@ function Oneriler({ ben }: { ben: Kisi }) {
             ))
           ) : (
             <Bos metin={t("kayitYok")} />
-          ))}
-        {sekme === "arsiv" &&
-          (cevaplanan.length + sonuclanan.length === 0 ? (
-            <Bos metin={t("kayitYok")} />
-          ) : (
-            <>
-              {cevaplanan.map((s) => {
-                const o = oneriBul(v, s.oneriId);
-                if (!o) return null;
-                const gorev = oneriGorevPaketi(v, o.id);
-                return (
-                  <div key={s.id} className="prg-oneri soluk-kart" data-prg-arsiv={o.id}>
-                    <div className="prg-icerik-ust">
-                      <Rozet ton={s.cevap!.kabul ? "iyi" : "kotu"}>{t(s.cevap!.kabul ? "msAldi" : "msAlmadi")}</Rozet>
-                      {s.cevap!.kabul && <span className="soluk">· {t(gorev ? "pmIcerigeGecti" : "pmGorevBekleniyor")}</span>}
-                    </div>
-                    <a href={`#/oneriler/${o.id}`}>
-                      <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
-                    </a>
-                  </div>
-                );
-              })}
-              {sonuclanan.map((p) => (
-                <div key={p.id} className="prg-oneri soluk-kart">
-                  <div className="prg-icerik-ust">
-                    <Rozet ton={p.gorev ? "iyi" : "kotu"}>{t(p.gorev ? "pmTalepKabul" : "gvReddedildi")}</Rozet>
-                  </div>
-                  <a href={`#/paketler/${p.id}`}>
-                    <Icerik blok>{p.baslik}</Icerik>
-                  </a>
-                </div>
-              ))}
-            </>
           ))}
       </div>
     </Kart>
@@ -690,3 +722,126 @@ function ProgramFormu({ ben, p, kapat }: { ben: Kisi; p?: ProgramTanimi; kapat: 
   );
 }
 
+
+/* --- Arşiv --- */
+
+/*
+ * Kapanan işler tek listede (kullanıcı: bilgi yığını değil kullanışlı, aranır):
+ * arama (başlık, kod, muhabir, program), süzgeç (yayınlanan, yayınlanmayan,
+ * öneri), programda program seçimi; aylara bölünür, en yenisi önce, 40'ar.
+ */
+const ARSIV_SUZGEC_ADI: Record<ArsivSuzgeci, Anahtar> = { hepsi: "pmArsivHepsi", yayinlandi: "pmArsivYayinlanan", yayinlanmadi: "pmArsivYayinlanmayan", oneri: "pmArsivOneri" };
+const SAYFA = 40;
+function Arsiv({ birim }: { birim: MasaBirimi }) {
+  const { t, ad, dil } = useDil();
+  const v = useVeri();
+  const [aranan, setAranan] = useAdimDurumu(`${birim}:arsivAra`, "");
+  const [suzgec, setSuzgec] = useAdimDurumu<ArsivSuzgeci>(`${birim}:arsivSuzgec`, "hepsi");
+  const [program, setProgram] = useAdimDurumu(`${birim}:arsivProgram`, "");
+  const [kac, setKac] = useState(SAYFA);
+  const prgAdi = (id?: string) => (id ? v.programlar?.find((x) => x.id === id)?.ad ?? "" : "");
+  const hepsi = masaArsivi(v, birim);
+  const aramali = hepsi.filter((k) => {
+    if (program && k.programId !== program) return false;
+    if (!aranan.trim()) return true;
+    const m = k.muhabirId ? kisiBul(v, k.muhabirId) : undefined;
+    return sozcuklerUyar([k.baslik, k.paket?.kod ?? "", m ? (typeof m.ad === "string" ? m.ad : Object.values(m.ad).join(" ")) : "", prgAdi(k.programId)].join(" "), aranan);
+  });
+  const liste = aramali.filter((k) => arsivSuzgeceUyar(k, suzgec));
+  const gorunen = liste.slice(0, kac);
+  // Arşivde geçen programlar (kaldırılmış olanlar da): seçim yalnız işe yarayanlar.
+  const programlar = birim === "program" ? [...new Set(hepsi.map((k) => k.programId).filter((x): x is string => !!x))] : [];
+  const aylar: { ay: string; kayitlar: ArsivKaydi[] }[] = [];
+  for (const k of gorunen) {
+    const ay = k.tarih.slice(0, 7);
+    const son = aylar[aylar.length - 1];
+    if (son?.ay === ay) son.kayitlar.push(k);
+    else aylar.push({ ay, kayitlar: [k] });
+  }
+  return (
+    <Kart
+      baslik={t("pmArsiv")}
+      ikon={<Archive size={18} />}
+      sagUc={
+        <span className="prg-arac">
+          {programlar.length > 0 && (
+            <select value={program} onChange={(e) => setProgram(e.target.value)} aria-label={t("pmProgram")} data-prg-arsiv-program>
+              <option value="">{t("pmTumProgramlar")}</option>
+              {programlar.map((id) => (
+                <option key={id} value={id}>
+                  {prgAdi(id)}
+                </option>
+              ))}
+            </select>
+          )}
+          <label className="arama arama-kutu">
+            <Search size={15} />
+            <input type="search" value={aranan} onChange={(e) => (setAranan(e.target.value), setKac(SAYFA))} placeholder={t("pmArsivAra")} aria-label={t("pmArsivAra")} data-prg-arsiv-ara />
+          </label>
+        </span>
+      }
+    >
+      <div className="prg-seg" role="tablist">
+        {ARSIV_SUZGECLERI.map((x) => (
+          <button key={x} type="button" role="tab" aria-selected={x === suzgec} className={x === suzgec ? "acik" : ""} onClick={() => (setSuzgec(x), setKac(SAYFA))} data-prg-arsiv-suzgec={x}>
+            {t(ARSIV_SUZGEC_ADI[x])} <em>{aramali.filter((k) => arsivSuzgeceUyar(k, x)).length}</em>
+          </button>
+        ))}
+      </div>
+      {liste.length === 0 ? (
+        <Bos metin={t("kayitYok")} />
+      ) : (
+        <div className="prg-arsiv">
+          {aylar.map((a) => (
+            <section key={a.ay} className="prg-arsiv-ay">
+              <h3>{a.ay ? tarihYaz(a.ay + "-01", dil, "ay") : "—"}</h3>
+              <ul>
+                {a.kayitlar.map((k) => (
+                  <ArsivSatiri key={k.tur + k.id} k={k} programAdi={prgAdi(k.programId)} muhabir={k.muhabirId ? ad(kisiBul(v, k.muhabirId)) : ""} />
+                ))}
+              </ul>
+            </section>
+          ))}
+          {liste.length > kac && (
+            <button type="button" className="dugme dugme-ikincil" onClick={() => setKac(kac + SAYFA)} data-prg-arsiv-daha>
+              {t("pmDahaFazla", { n: liste.length - kac })}
+            </button>
+          )}
+        </div>
+      )}
+    </Kart>
+  );
+}
+
+function ArsivSatiri({ k, programAdi, muhabir }: { k: ArsivKaydi; programAdi: string; muhabir: string }) {
+  const { t, dil } = useDil();
+  const rozet =
+    k.tur === "yayinlandi" ? <Rozet ton="iyi">{t("mtYayinlandi")}</Rozet>
+    : k.tur === "yayinlanmadi" ? <Rozet ton="kotu">{t("mtYayinlanmadi")}</Rozet>
+    : k.tur === "iptal" ? <Rozet>{t("pmIptal")}</Rozet>
+    : k.tur === "soru" ? <Rozet ton={k.kabul ? "iyi" : "kotu"}>{t(k.kabul ? "msAldi" : "msAlmadi")}</Rozet>
+    : <Rozet ton="kotu">{t("pmTalepSonuc")}</Rozet>;
+  const href = k.oneriId ? `#/oneriler/${k.oneriId}` : `#/paketler/${k.id}`;
+  return (
+    <li className="prg-arsiv-satir" data-prg-arsiv={k.oneriId ?? k.id}>
+      <span className="prg-arsiv-gun">{tarihYaz(k.tarih, dil)}</span>
+      <a href={href}>
+        <Icerik>{k.baslik}</Icerik>
+      </a>
+      <span className="prg-arsiv-alt">
+        {rozet}
+        {programAdi && (
+          <span className="soluk">
+            <Tv size={12} /> <Icerik>{programAdi}</Icerik>
+          </span>
+        )}
+        {muhabir && <span className="soluk">{muhabir}</span>}
+        {k.paket?.gorevTalebi?.red?.gerekce && (
+          <span className="soluk" dir="auto">
+            {k.paket.gorevTalebi.red.gerekce}
+          </span>
+        )}
+      </span>
+    </li>
+  );
+}

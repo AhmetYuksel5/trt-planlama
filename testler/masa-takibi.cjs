@@ -76,8 +76,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(pk("mt-2").durum === "tamamlandi" && pk("mt-2").yayinlanmadi?.sebep === "البرنامج تأجل" && !pk("mt-2").yapilmadi && !!pk("mt-2").muhabirTeslimi, "teslim edilip yayınlanmayan tamamlanmış sayılıyor");
   ok(pk("mt-3").durum === "iptal" && !!pk("mt-3").yapilmadi && !!pk("mt-3").yayinlanmadi, "teslimsiz yayınlanmayan iptal");
   ok(d.hareketler.some((h) => h.tip === "masaYayinladi" && h.paketId === "mt-1" && h.veri?.kime === muhabir.id), "muhabire bildirim");
-  await p.click('[data-prg-alan="arsiv"]');
-  ok((await p.locator('[data-prg-icerik="mt-1"], [data-prg-icerik="mt-2"], [data-prg-icerik="mt-3"]').count()) === 3, "kapananlar arşivde");
+  await gir("pr2", "#/programlar/arsiv");
+  ok((await p.locator('[data-prg-arsiv="mt-1"], [data-prg-arsiv="mt-2"], [data-prg-arsiv="mt-3"]').count()) === 3, "kapananlar arşivde");
 
   // Muhabir: teslim edebiliyor (mt-eski), işaret Planlama'ya değil masaya.
   await gir(muhabir.id, "#/paketler/mt-eski");

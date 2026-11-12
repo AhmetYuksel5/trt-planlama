@@ -1,7 +1,6 @@
-import { ProgramMasasi } from "../program/ProgramMasasi";
+import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "../program/ProgramMasasi";
+import type { MasaBirimi } from "../../programMasasi";
 import { OzelTalepAlani } from "../OzelYayin";
-import { MasaPaketleri } from "../Listeler";
-import { MasaOnerileri, MasaTakibi } from "../oneri/MasaSorusu";
 import {
   AlertTriangle,
   Building,
@@ -11,7 +10,6 @@ import {
   CheckCircle,
   CirclePlay,
   ClipboardCheck,
-  Clapperboard,
   Clock,
   History,
   Inbox,
@@ -21,7 +19,6 @@ import {
   MonitorPlay,
   Route,
   SpellCheck,
-  TrendingUp,
   Upload,
   Users,
   Wallet,
@@ -35,7 +32,7 @@ import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } 
 import { PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
-import { gorusBekleyenler, gundemde } from "../../haftalik";
+import { gorusBekleyenler, gundemde, onIncelemeBekleyenler } from "../../haftalik";
 import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
 import { adimYapabilir, planAdimiYapabilir } from "../../yetki";
@@ -306,22 +303,6 @@ function GorevlendirmeTakvimi() {
 
 /* --- Ekonomi --- */
 
-/**
- * Ekonomi birimi: üretimde masası yok (ekonomi paketini Planlama'nın
- * feature/stok ekibi yürütüyor), içerikten sorumlu. Haftalık planda
- * ekonomi kolunun stok önerilerine toplantıdan önce bakıyor; ana sayfası
- * bu ön inceleme, haftanın ekonomi kalemleri ve ekonomi paketleri.
- */
-export function EkonomiAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
-  const { t } = useDil();
-  return (
-    <>
-      <SayfaBasi sekme={!kisisel} ikon={<TrendingUp size={26} />} baslik={t("biEkonomi")} />
-      <CalismaAlani ben={ben} duzen="ekonomi" kisisel={kisisel} />
-    </>
-  );
-}
-
 function useEkonomi() {
   const v = useVeri();
   const B = bugun();
@@ -388,14 +369,20 @@ function EkonomiPaketleri() {
 
 /* --- Programlar --- */
 
-export function ProgramAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: boolean }) {
+/*
+ * Masanın ana sayfası (Programlar, Ekonomi, Spor aynı düzen; kullanıcı: Spor ve
+ * Ekonomi de Programlar'ın mantığıyla): bana verilen işler, Ekonomi'de Weekly ön
+ * incelemesi bekliyorsa onun kartı, bugünkü kararlar ve masanın kutucukları.
+ */
+export function MasaAna({ ben, birim, kisisel = true }: { ben: Kisi; birim: MasaBirimi; kisisel?: boolean }) {
   const { t } = useDil();
-  // Programlar'ın sayfası kutucuklarla (ProgramMasasi); eski kartlar (masa, haftalık plan, öneriler, konuk) kalktı, düzen çizilmiyor.
+  const v = useVeri();
   return (
     <>
-      <SayfaBasi sekme={!kisisel} ikon={<Clapperboard size={26} />} baslik={t("biProgram")} />
+      <SayfaBasi sekme={!kisisel} ikon={MASA_IKONU[birim]} baslik={t(MASA_ADI[birim])} />
       <BanaVerilenIsler ben={ben} />
-      <ProgramMasasi ben={ben} />
+      {onIncelemeBekleyenler(v, ben).length > 0 && <OnIncelemeKarti ben={ben} />}
+      <MasaSayfasi ben={ben} birim={birim} ozet />
     </>
   );
 }
@@ -536,9 +523,10 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "ekGelecek", ad: "haftalikEkonomiKalemleri", ek: "gelecekHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiGelecek },
   { id: "ekBuHafta", ad: "haftalikEkonomiKalemleri", ek: "buHafta", grup: "ekonomi", sayfa: "haftalik", Bilesen: EkonomiBuHafta },
   { id: "ekPaketler", ad: "ekonomiPaketleri", genis: true, grup: "ekonomi", sayfa: "ekonomi", Bilesen: EkonomiPaketleri },
-  { id: "ekMasa", ad: "ekMasa", genis: true, grup: "ekonomi", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="ekonomi" baslik="ekMasa" /></> },
-  { id: "prSayfa", ad: "pmProgramlar", genis: true, grup: "program", sayfa: "programlar", Bilesen: ({ ben }: { ben: Kisi }) => <ProgramMasasi ben={ben} /> },
-  { id: "spMasa", ad: "spMasa", genis: true, grup: "spor", sayfa: "paketler", Bilesen: ({ ben }: { ben: Kisi }) => <><MasaOnerileri ben={ben} /><MasaTakibi ben={ben} /><MasaPaketleri ben={ben} kol="spor" baslik="spMasa" /></> },
+  // Masaların sayfası (müdür birime inince de): kararlar ve kutucuklar.
+  { id: "ekSayfa", ad: "biEkonomi", genis: true, grup: "ekonomi", sayfa: "ekonomi", Bilesen: ({ ben }: { ben: Kisi }) => <MasaSayfasi ben={ben} birim="ekonomi" ozet /> },
+  { id: "prSayfa", ad: "pmProgramlar", genis: true, grup: "program", sayfa: "programlar", Bilesen: ({ ben }: { ben: Kisi }) => <MasaSayfasi ben={ben} birim="program" ozet /> },
+  { id: "spSayfa", ad: "biSpor", genis: true, grup: "spor", sayfa: "spor", Bilesen: ({ ben }: { ben: Kisi }) => <MasaSayfasi ben={ben} birim="spor" ozet /> },
   { id: "ouOzel", ad: "ozelPaketTalepleri", grup: "output", sayfa: "ozel", Bilesen: OzelTalepAlani },
   { id: "ouSayac", ad: "alOzetSayilar", genis: true, grup: "output", sayfa: "metinkontrol", Bilesen: OutputSayaclari },
   { id: "ouKontrol", ad: "metinKontrolKuyrugu", grup: "output", sayfa: "metinkontrol", Bilesen: KontrolKuyrugu },

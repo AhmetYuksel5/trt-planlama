@@ -46,9 +46,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(!d1.paketler.find((x) => x.id === "t-ek-eski").stok, "eski ekonomi stok paketinin stok işareti kalktı");
 
   // Ekonomi masası: Next Day'den gelen ekonomi paketi üretime alınacaklarda, "Üretime al" masada
-  await kim("ek1"); await git("#/");
-  const masa = p.locator('[data-masa="ekonomi"]');
-  ok((await masa.count()) === 1, "Ekonomi ana sayfasında masa kartı");
+  await kim("ek1"); await git("#/ekonomi/icerikler");
+  await p.click('[data-prg-alan="planlamada"]');
+  const masa = p.locator('[data-masa-sayfasi="ekonomi"]');
+  ok((await masa.count()) === 1, "Ekonomi'nin masa sayfası (İçerikler › Planlamada)");
   ok((await masa.locator('[data-uretime-al="t-ek-nd"]').count()) === 1, "Next Day'den gelen ekonomi paketi masada, Üretime al düğmesi");
   ok((await masa.locator('[data-uretime-al="t-ek-eski"]').count()) === 1, "stoktan ayrılan eski paket de masada");
   await masa.locator('[data-uretime-al="t-ek-nd"]').click(); await p.waitForTimeout(400);
@@ -83,19 +84,22 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await durum()).planlar.find((x) => x.id === ids.plan).hazirPaketler.includes("t-sp-hazir"), "spor paketi planın hazır paketlerinde");
 
   // Spor: Output'un altında yeni birim, masası var
-  await kim("ek3"); await git("#/");
-  ok((await p.locator('[data-masa="spor"]').count()) === 1, "Spor biriminin ana sayfasında Spor masası");
+  await kim("sp2"); await git("#/");
+  ok((await p.locator('[data-masa-sayfasi="spor"]').count()) === 1, "Spor biriminin ana sayfasında Spor masası");
   await kim("yo3"); await git("#/organizasyon/birimler");
   ok((await p.getByText("Spor", { exact: true }).count()) > 0, "Organizasyon'da Spor birimi");
 
   // Ekonomi ayrı sayfa; ekonomi paketinde aşamalar Planlama'dan sonra doğrudan masaya
   await kim("ek1"); await git("#/ekonomi");
-  ok((await p.locator('.menu a[href="#/ekonomi"]').count()) === 1, "menüde ayrı Ekonomi sayfası");
-  ok((await p.locator('a[href="#/paketler/p-hidrojen"]').count()) > 0, "ekonomi paketi Ekonomi sayfasında");
+  ok((await p.locator('.menu a[href="#/ekonomi/icerikler"]').count()) === 1, "menüde Ekonomi'nin İçerikler'i");
+  const alanlar = ["planlamada", "uretimde", "hazir"];
+  let bulundu = false;
+  for (const a of alanlar) { await p.click(`[data-prg-alan="${a}"]`); if (await p.locator('a[href="#/paketler/p-hidrojen"]').count()) bulundu = true; }
+  ok(bulundu, "ekonomi paketi Ekonomi sayfasında");
   await git("#/paketler/p-hidrojen");
   const asamalar = await p.locator("[data-masa-asama] > div b").allInnerTexts();
   ok(asamalar[1]?.includes("Ekonomi") && !asamalar.some((x) => /News Gathering|Newsdesk|Media/.test(x)), "ekonomi paketinde Planlama → Ekonomi, Newsdesk ve Media yok: " + asamalar.join(" | "));
-  await git("#/feature");
+  await kim("pl1"); await git("#/feature");
   ok((await p.locator('[data-paket="p-hidrojen"], a[href="#/paketler/p-hidrojen"]').count()) === 0, "Feature / stok sayfasında ekonomi paketi yok");
 
   // 390px taşma (Ekonomi masası, Stok)

@@ -8,8 +8,8 @@ import { oturumdanCik } from "../oturum";
 import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
-import { dilDenetmeniMi, sadeEkranMi } from "../yetki";
-import { MENU, MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, maddeGorunur, muhabirMaddeleri } from "./AnaMenu";
+import { dilDenetmeniMi, masaBirimi, sadeEkranMi } from "../yetki";
+import { MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, menuGruplari, muhabirMaddeleri } from "./AnaMenu";
 
 /**
  * Telefonda "Menü"nün açtığı panel: kişi, kısayollar (renkli plan
@@ -104,16 +104,16 @@ export default function MobilMenu({
             );
           })}
         </nav>
-      ) : (
+      ) : masaBirimi(ben) ? null : (
         <>
           <h3>{t("kisayollarim")}</h3>
           <KisayolKutulari ben={ben} sec={onKapat} />
         </>
       )}
 
-      {!muhabir && MENU.map((g, i) => {
-        const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
-        if (!maddeler.length) return null;
+      {/* Masada (Programlar, Ekonomi, Spor) kendi menüsü (AnaMenu → masaMenusu). */}
+      {!muhabir && menuGruplari(ben).map((g, i) => {
+        const maddeler = g.maddeler;
         return (
           <section key={i}>
             {g.ad && <h3>{t(g.ad)}</h3>}
@@ -124,7 +124,7 @@ export default function MobilMenu({
                   <a
                     key={m.sayfa}
                     href={`#/${m.sayfa}`}
-                    className={acik === m.sayfa ? "acik" : ""}
+                    className={acik === m.sayfa || (m.sayfa.includes("/") && location.hash.startsWith(`#/${m.sayfa}`)) ? "acik" : ""}
                   >
                     <Ikon size={18} />
                     {t(maddeAdi(ben, m))}

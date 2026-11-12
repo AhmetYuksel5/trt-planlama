@@ -15,7 +15,7 @@ import { oneriArsivde } from "../oneriPlanlari";
 import { ULKELER, muhabirler, paketBul, useVeri, type Birim, type Durum, type Kisi, type Oneri, type Paket, type Ulke } from "../veri";
 import { isEkleyebilir, kapsam, paketKapsamda, talimatVerebilir } from "../yetki";
 import { GorevVerFormu, VerdigimGorevler } from "./GorevVer";
-import { EkonomiAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
+import { MasaAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna } from "./ana/Birimler";
 import PlanlamaAna, { BugununTakvimi, SayfaBasi } from "./ana/Planlama";
 import { Yetkisiz } from "./Ayarlar";
 import { FormAlt } from "./nextday/Formlar";
@@ -303,8 +303,9 @@ function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
     planlama: <PlanlamaAna ben={ben} kisisel={false} />,
     newsdesk: <NewsdeskAna ben={ben} kisisel={false} />,
     newsgathering: <NewsGatheringAna ben={ben} kisisel={false} />,
-    program: <ProgramAna ben={ben} kisisel={false} />,
-    ekonomi: <EkonomiAna ben={ben} kisisel={false} />,
+    program: <MasaAna ben={ben} birim="program" kisisel={false} />,
+    ekonomi: <MasaAna ben={ben} birim="ekonomi" kisisel={false} />,
+    spor: <MasaAna ben={ben} birim="spor" kisisel={false} />,
     output: <OutputAna ben={ben} kisisel={false} />,
     media: <MediaAna ben={ben} kisisel={false} />,
   };

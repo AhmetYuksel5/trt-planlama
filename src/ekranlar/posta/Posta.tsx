@@ -717,13 +717,13 @@ function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string 
  * geri gelince sunucudaki yazışma kimliği öğrenilip iplik ona taşınır
  * (eylemler.ts → postaIsle), sonraki yanıtlar aynı sohbete düşer.
  */
-function YeniPosta({ ben, grup, kapat, acildi }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void }) {
+function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string } }) {
   const { t } = useDil();
-  const [kime, setKime] = useState<string[]>([]);
+  const [kime, setKime] = useState<string[]>(ilk?.kime ?? []);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>([]);
   const [bccAcik, setBccAcik] = useState(false);
-  const [konu, setKonu] = useState("");
+  const [konu, setKonu] = useState(ilk?.konu ?? "");
   const [metin, setMetin] = useState("");
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const hazir = kime.length > 0 && !!konu.trim() && !!metin.trim() && !gonderiliyor;
@@ -782,6 +782,31 @@ function YeniPosta({ ben, grup, kapat, acildi }: { ben: Kisi; grup: string; kapa
         </label>
       </div>
     </Pencere>
+  );
+}
+
+/*
+ * İşin muhabirine posta (kullanıcı: masa bütün muhabirlere ulaşmasın, çalıştığı
+ * muhabire iş bazında, paketin yapımında pratikçe ulaşsın): Kime muhabirin
+ * adresi, konu paketin başlığı; yazışma kişinin grubunda sohbet olarak kalır.
+ */
+export function IsPostasi({ ben, kisi, konu }: { ben: Kisi; kisi: Kisi; konu: string }) {
+  const { t } = useDil();
+  const [acik, setAcik] = useState(false);
+  const [grup, setGrup] = useState("");
+  const adres = postaAdresi(kisi);
+  if (!adres) return null;
+  const ac = () => {
+    setAcik(true);
+    if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
+  };
+  return (
+    <>
+      <button type="button" className="ikon-dugme" onClick={ac} title={t("postaYeni")} aria-label={t("postaYeni")} data-is-postasi>
+        <Mail size={17} />
+      </button>
+      {acik && <YeniPosta ben={ben} grup={grup} kapat={() => setAcik(false)} acildi={() => undefined} ilk={{ kime: [adres], konu }} />}
+    </>
   );
 }
 

@@ -1,7 +1,7 @@
 import type { Kisi } from "../veri";
 import YoneticiPaneli from "./YoneticiPaneli";
-import { yonetimdeMi } from "../yetki";
-import { EkonomiAna, GenelAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna, ProgramAna } from "./ana/Birimler";
+import { masaBirimi, yonetimdeMi } from "../yetki";
+import { GenelAna, MasaAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna } from "./ana/Birimler";
 import MuhabirAna from "./ana/Muhabir";
 import PlanlamaAna from "./ana/Planlama";
 
@@ -13,6 +13,9 @@ import PlanlamaAna from "./ana/Planlama";
 export default function AnaSayfa({ ben }: { ben: Kisi }) {
   // Kademedeki müdür (Input, Output… düğümünde) ve koordinatör de Yönetim gibi: masası yönetici paneli.
   if (yonetimdeMi(ben)) return <YoneticiPaneli ben={ben} ana />;
+  // Programlar, Ekonomi, Spor (ve onlar "gibi" çalışan birim): masanın sayfası.
+  const masa = masaBirimi(ben);
+  if (masa) return <MasaAna ben={ben} birim={masa} />;
   switch (ben.birim) {
     case "planlama":
       return <PlanlamaAna ben={ben} />;
@@ -22,10 +25,6 @@ export default function AnaSayfa({ ben }: { ben: Kisi }) {
       return <NewsdeskAna ben={ben} />;
     case "newsgathering":
       return <NewsGatheringAna ben={ben} />;
-    case "program":
-      return <ProgramAna ben={ben} />;
-    case "ekonomi":
-      return <EkonomiAna ben={ben} />;
     case "output":
       return <OutputAna ben={ben} />;
     case "scriptEditor":

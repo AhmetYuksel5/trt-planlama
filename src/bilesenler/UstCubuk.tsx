@@ -22,7 +22,7 @@ import { oturumdanCik } from "../oturum";
 import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
-import { bildirimMi, sadeEkranMi } from "../yetki";
+import { bildirimMi, masaBirimi, sadeEkranMi } from "../yetki";
 import type { BolmeAramasi } from "../yol";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
@@ -161,8 +161,8 @@ export default function UstCubuk({
         <Logo />
       </a>
       <UstSekmeler ben={ben} />
-      {/* Muhabirin kısayolları menüsünün aynısıydı (işleri az): çubukta yalnız sayfanın adı. */}
-      {ben.birim !== "muhabir" && !sadeEkranMi(ben) && <UstKisayollar ben={ben} />}
+      {/* Muhabirin kısayolları menüsünün aynısıydı (işleri az): çubukta yalnız sayfanın adı. Masada da (menüsü kendi işi, planlar salt okunur). */}
+      {ben.birim !== "muhabir" && !sadeEkranMi(ben) && !masaBirimi(ben) && <UstKisayollar ben={ben} />}
       {/*
        * Prototip uyarısı demonun her sayfasında görünmeli (örnek veri gerçek
        * kurum verisi sanılmasın, kalıcılığın sınırı söylensin); bir satır

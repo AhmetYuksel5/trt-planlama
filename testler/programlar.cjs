@@ -22,7 +22,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); });
   await gir("pr1", "#/");
-  ok((await p.locator("[data-prg-kutu]").count()) === 4, "ana sayfada dört kutucuk");
+  ok((await p.locator("[data-prg-kutu]").count()) === 5, "ana sayfada beş kutucuk (Arşiv dahil)");
   ok((await p.locator('[data-masa="program"], [data-masa-takibi]').count()) === 0, "eski program masası kartı yok");
 
   // Hazırlık: teslim edilmiş masa paketi ve Planlama'nın açık sorusu.
@@ -68,8 +68,15 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.click('[data-prg-alan="hazir"]');
   await p.click('[data-prg-icerik="prg-test"] [data-masa-yayinlandi]');
   await p.waitForTimeout(400);
-  await p.click('[data-prg-alan="arsiv"]');
-  ok((await p.locator('[data-prg-icerik="prg-test"]').count()) === 1, "yayınlanan arşivde");
+  await gir("pr1", "#/programlar/arsiv");
+  ok((await p.locator('[data-prg-arsiv="prg-test"]').count()) === 1, "yayınlanan arşivde");
+  await p.fill("[data-prg-arsiv-ara]", "اختبار البرنامج");
+  ok((await p.locator("[data-prg-arsiv]").count()) === 1, "arşivde arama");
+  await p.selectOption("[data-prg-arsiv-program]", prg.id);
+  ok((await p.locator('[data-prg-arsiv="prg-test"]').count()) === 1, "arşivde program süzgeci");
+  await p.fill("[data-prg-arsiv-ara]", "");
+  await p.click('[data-prg-arsiv-suzgec="yayinlanmadi"]');
+  ok((await p.locator('[data-prg-arsiv="prg-test"]').count()) === 0, "yayınlanmayanlar süzgecinde yok");
 
   // Öneriler: Planlama'dan gelen soruya "Uygundur" → arşivde.
   await gir("pr1", "#/programlar/oneriler");
@@ -81,7 +88,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   d = await durum();
   ok(d.masaSorulari.find((s) => s.id === "ms-prg").cevap?.kabul === true, "yanıt kaydedildi");
   ok((await p.locator(`[data-prg-soru="${oneri.id}"]`).count()) === 0, "yanıtlanan soru listeden kalktı");
-  await p.click('[data-prg-oneri-sekme="arsiv"]');
+  await gir("pr1", "#/programlar/arsiv");
+  await p.click('[data-prg-arsiv-suzgec="oneri"]');
   ok((await p.locator(`[data-prg-arsiv="${oneri.id}"]`).count()) === 1, "yanıtlanan öneri arşivde");
 
   // Yayın planları: son onaylanan Next Day'in çıktısı, salt okunur.
@@ -93,7 +101,31 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
 
   // Planlama da sayfayı açar ama içerik kararı veremez.
   await gir("pl1", "#/programlar/icerikler");
-  ok((await p.locator("[data-prg-kutu]").count()) === 4 && (await p.locator("[data-masa-yayinlandi], [data-prg-aktar]").count()) === 0, "Planlama görür, karar veremez");
+  ok((await p.locator("[data-prg-kutu]").count()) === 5 && (await p.locator("[data-masa-yayinlandi], [data-prg-aktar], [data-prg-iletisim]").count()) === 0, "Planlama görür, karar veremez, muhabire ulaşma düğmesi yok");
+
+  // Menü masaya özel: muhabir listesi, stok, feature yok; Üretim panosu var; adresle girilemiyor.
+  await gir("pr2", "#/programlar/icerikler");
+  ok((await p.locator("[data-masa-menusu=program]").count()) === 1, "Programlar'ın kendi menüsü");
+  const menu = await p.locator("nav.menu").innerText();
+  ok((await p.locator('nav.menu a[href="#/uretim"]').count()) === 1 && (await p.locator('nav.menu a[href="#/muhabirler"], nav.menu a[href="#/stok"], nav.menu a[href="#/feature"], nav.menu a[href="#/nextday"]').count()) === 0, "menüde Üretim panosu var; muhabirler, stok, feature, Next Day yok: " + menu.replace(/\n/g, " | "));
+  await gir("pr2", "#/muhabirler");
+  ok((await p.locator("main .bos h2").count()) === 1 && (await p.locator("main table").count()) === 0, "muhabir listesine adresle girilemiyor");
+  // İçerik kartında işin muhabirine WhatsApp ve posta.
+  await gir("pr2", "#/programlar/icerikler");
+  await p.click('[data-prg-alan="uretimde"]');
+  const ilet = p.locator("[data-prg-iletisim]").first();
+  ok((await ilet.locator("[data-whatsapp]").count()) + (await ilet.locator("[data-is-postasi]").count()) >= 1, "içerik kartında muhabire ulaşma");
+  if (await ilet.locator("[data-is-postasi]").count()) {
+    await ilet.locator("[data-is-postasi]").click();
+    ok((await p.locator("[data-posta-yeni-konu]").inputValue()).length > 0, "posta penceresi konuyla açıldı");
+  }
+
+  // Spor ve Ekonomi aynı sayfa: kendi rengi, programsız (dört kutucuk).
+  for (const [kim, yol, birim] of [["sp2", "#/spor", "spor"], ["ek2", "#/ekonomi", "ekonomi"]]) {
+    await gir(kim, yol);
+    ok((await p.locator(`[data-masa-sayfasi=${birim}]`).count()) === 1 && (await p.locator("[data-prg-kutu]").count()) === 4 && (await p.locator('[data-prg-kutu="programlar"]').count()) === 0, `${birim}: masa sayfası, programlar bölümü yok`);
+    ok((await p.locator(`[data-masa-menusu=${birim}]`).count()) === 1, `${birim}: kendi menüsü`);
+  }
 
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 844 });

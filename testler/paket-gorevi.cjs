@@ -63,7 +63,9 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   await formuDoldur("mu2", "طلب تكليف من الاقتصاد", gunEkle(2));
   const t1 = (await paketler()).find((x) => x.baslik === "طلب تكليف من الاقتصاد");
   ok(!!t1 && t1.durum === "taslak" && t1.gorevTalebi?.kisiId === "ek2" && !t1.gorev && t1.tur === "ekonomi", "talep: taslak, Planlama'nın onayını bekliyor");
-  ok((await p.locator(`[data-gorev-talebi="${t1?.id}"]`).count()) === 1, "talep eden kendi talebini görüyor");
+  await gir("ek2", "#/ekonomi/oneriler");
+  await p.click('[data-prg-oneri-sekme="bizim"]');
+  ok((await p.locator(`[data-prg-talep="${t1?.id}"]`).count()) === 1, "talep eden kendi talebini görüyor (Öneriler › Bizim önerilerimiz)");
   await gir("mu2", "#/oneriler");
   ok((await p.locator(`[data-paket="${t1?.id}"]`).count()) === 0 && (await p.locator(`[data-paket="${g1?.id}"]`).count()) === 1, "muhabir görevi \"Senin sıran\"da görüyor, talebi görmüyor");
 
@@ -91,8 +93,8 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   await p.locator("[data-gorev-red-onay]").click(); await p.waitForTimeout(400);
   const r2 = (await paketler()).find((x) => x.id === r1?.id);
   ok(r2?.durum === "iptal" && r2.gorevTalebi?.red?.gerekce === "لا حاجة", "talep gerekçeyle reddedildi");
-  await gir("ek2", "#/ekonomi");
-  ok((await p.locator(`[data-gorev-talebi="${r1?.id}"]`).innerText()).includes("لا حاجة"), "talep eden reddi gerekçesiyle görüyor");
+  await gir("ek2", "#/ekonomi/arsiv");
+  ok((await p.locator(`[data-prg-arsiv="${r1?.id}"]`).innerText()).includes("لا حاجة"), "talep eden reddi gerekçesiyle arşivde görüyor");
 
   // 8. 390 pikselde taşma yok (talep kartı ve pencere açıkken)
   await gir("ek2", "#/ekonomi");

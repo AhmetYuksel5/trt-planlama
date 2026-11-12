@@ -61,6 +61,17 @@
   --ozel-sis: #fce5e8;
   --saha: #6a42c9;
   --saha-sis: #eee8fb;
+  /* Masaların renk konsepti (kullanıcı: program mor, spor yeşil, ekonomi lacivert). */
+  --masa-program: #6a42c9;
+  --masa-program-sis: #eee8fb;
+  --masa-spor: #1b8a4b;
+  --masa-spor-sis: #e1f4e8;
+  --masa-ekonomi: #1d3c78;
+  --masa-ekonomi-sis: #e4eaf5;
+  /* Koyu menüde okunsun diye açık tonları. */
+  --masa-program-acik: #a98bf0;
+  --masa-spor-acik: #4cc27f;
+  --masa-ekonomi-acik: #7c9fe0;
 
   /* Durumlar: renk tek başına anlam taşımıyor, yanında hep yazı var. */
   --iyi: #12825a;
@@ -3406,7 +3417,36 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 
 /* Programlar'ın sayfası (ekranlar/program/ProgramMasasi.tsx): kutucuklar ve seçilen alan; programın rengi --saha. */
 .prg-masa { --prg: var(--saha); --prg-sis: var(--saha-sis); display: grid; gap: var(--ara-4); }
+.masa-program { --prg: var(--masa-program); --prg-sis: var(--masa-program-sis); }
+.masa-spor { --prg: var(--masa-spor); --prg-sis: var(--masa-spor-sis); }
+.masa-ekonomi { --prg: var(--masa-ekonomi); --prg-sis: var(--masa-ekonomi-sis); }
 .prg-kutular { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ara-3); }
+.prg-kutular.kutu-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+a.prg-kutu { text-decoration: none; }
+.prg-k-arsiv .prg-kutu-ik { background: var(--yuzey-2); color: var(--sonuk); }
+.rozet.rozet-masa { background: var(--prg-sis); color: var(--prg); }
+.prg-ozet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); background: var(--prg-sis); border: 1px solid var(--prg); border-radius: var(--yaricap-kart); }
+.prg-ozet-oge { display: inline-flex; align-items: center; gap: var(--ara-1); background: var(--yuzey); border-radius: var(--yaricap-hap); padding: var(--ara-1) var(--ara-3); color: var(--murekkep); text-decoration: none; font-size: var(--punto-kucuk); min-height: 36px; }
+.prg-ozet-oge b { color: var(--prg); }
+.prg-iletisim { display: inline-flex; align-items: center; gap: 2px; }
+.prg-arsiv { display: grid; gap: var(--ara-4); }
+.prg-arsiv-ay h3 { font-size: var(--punto-kucuk); color: var(--sonuk); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 var(--ara-2); }
+.prg-arsiv-ay ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); }
+.prg-arsiv-satir { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--ara-3); padding: var(--ara-2) var(--ara-3); border-block-end: 1px solid var(--cizgi); min-width: 0; }
+.prg-arsiv-satir:last-child { border-block-end: 0; }
+.prg-arsiv-satir > a { color: var(--murekkep); text-decoration: none; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prg-arsiv-satir > a:hover { text-decoration: underline; }
+.prg-arsiv-gun { color: var(--sonuk); font-size: var(--punto-kucuk); white-space: nowrap; }
+.prg-arsiv-alt { display: inline-flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; font-size: var(--punto-kucuk); justify-content: end; }
+/* Masanın menüsü: gruplar katlanmıyor (az madde), etkin madde masanın renginde. */
+.menu-grup-ad { font-size: var(--punto-mini); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--lacivert-silik); padding: var(--ara-2) var(--ara-3) var(--ara-1); }
+.menu.masa-program { --masa-menu: var(--masa-program-acik); }
+.menu.masa-spor { --masa-menu: var(--masa-spor-acik); }
+.menu.masa-ekonomi { --masa-menu: var(--masa-ekonomi-acik); }
+.menu[class*="masa-"] a.acik { border-inline-start-color: var(--masa-menu); }
+.menu[class*="masa-"] .birim-kutusu svg { color: var(--masa-menu); }
+.alt-cubuk .hap { position: relative; }
+.alt-cubuk .hap .say { position: absolute; inset-block-start: -4px; inset-inline-end: 4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ozel); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
 .prg-kutu {
   position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--ara-3); row-gap: 2px;
   align-items: center; text-align: start; padding: var(--ara-4); min-height: var(--dokunma);
@@ -3469,7 +3509,7 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 .prg-gun-secimi legend { font-weight: 600; margin-block-end: var(--ara-2); padding: 0; }
 .prg-gun-secimi label { display: inline-flex; align-items: center; gap: var(--ara-1); padding: var(--ara-1) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-hap); min-height: 36px; cursor: pointer; }
 .prg-gun-secimi label.secili { border-color: var(--haftalik); background: var(--haftalik-sis); color: var(--haftalik); }
-@media (max-width: 1100px) { .prg-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .prg-kutular, .prg-kutular.kutu-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
   .prg-kutu { grid-template-columns: minmax(0, 1fr); padding: var(--ara-3); }
   .prg-kutu-ik { grid-row: auto; width: 38px; height: 38px; }
@@ -3477,4 +3517,6 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
   .prg-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .prg-arac .arama-kutu input { width: 100%; }
   .prg-icerik, .prg-oneri, .prg-program { padding: var(--ara-3); }
+  .prg-arsiv-satir { grid-template-columns: minmax(0, 1fr); gap: var(--ara-1); }
+  .prg-arsiv-alt { justify-content: start; }
 }

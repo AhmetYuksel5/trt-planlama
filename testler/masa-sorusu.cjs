@@ -58,10 +58,10 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
 
   // 3. Ekonomi: ana sayfasında ve Ekonomi sayfasında görür, önerinin sayfasına girer, düzenler, notuyla alır
   await gir("ek2", "#/ana");
-  ok((await p.locator(`[data-masa-onerileri] [data-masa-oneri="${oneriId}"]`).count()) === 1, "Ekonomi ana sayfasında Planlama'dan gelen öneri");
-  await gir("ek2", "#/ekonomi");
-  ok((await p.locator(`[data-masa-onerileri] [data-masa-oneri="${oneriId}"]`).count()) === 1, "Ekonomi sayfasında da");
-  await p.locator(`[data-masa-oneri="${oneriId}"] a`).first().click(); await p.waitForTimeout(600);
+  ok((await p.locator('[data-prg-ozet-oge="soru"]').count()) === 1, "Ekonomi ana sayfasında görüş bekleyen öneri kararlarda");
+  await gir("ek2", "#/ekonomi/oneriler");
+  ok((await p.locator(`[data-prg-soru="${oneriId}"]`).count()) === 1, "Ekonomi'nin Öneriler bölümünde Planlama'dan gelen öneri");
+  await p.locator(`[data-prg-soru="${oneriId}"] a`).first().click(); await p.waitForTimeout(600);
   ok((await p.locator("[data-masa-al]").count()) === 1, "Ekonomi önerinin sayfasına girdi, yanıt düğmeleri var");
   ok((await p.locator("[data-oneri-duzenle]").count()) === 1, "Ekonomi öneriyi düzenleyebiliyor");
   await p.locator("[data-masa-yanit-notu]").fill("نعم مع زاوية اقتصادية");
@@ -89,8 +89,8 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   ok(!!pk && pk.durum === "onaylandi" && pk.tur === "ekonomi" && !pk.stok && pk.masaTakibi === "ekonomi" && pk.sonTarih === gunEkle(2) && pk.muhabirId === muhabirId, "görev paketi: onaylı, ekonomi kolunda, masanın takibinde (stokta değil), günüyle");
   ok(o2.durum === "planaEklendi" && o2.paketId === pk?.id, "öneri görevlendirildi (plana eklendi, paketine bağlı)");
   ok((await p.locator("[data-masa-paket]").count()) === 1 && (await p.locator("[data-oneri-gorevlendir]").count()) === 0, "kartta \"Görevlendirildi\", düğme kalktı");
-  await gir("ek2", "#/ekonomi");
-  ok((await p.locator(`[data-masa-oneri="${oneriId}"]`).count()) === 0, "görevlendirilen öneri masanın bekleyen listesinden düştü");
+  await gir("ek2", "#/ekonomi/oneriler");
+  ok((await p.locator(`[data-prg-soru="${oneriId}"]`).count()) === 0, "görevlendirilen öneri masanın bekleyen listesinden düştü");
   await gir(muhabirId, "#/oneriler");
   ok((await p.locator(`[data-paket="${pk?.id}"]`).count()) === 1, "muhabirin \"Senin sıran\"ında görev");
 

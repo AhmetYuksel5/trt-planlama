@@ -1,3 +1,4 @@
+import type { MasaBirimi } from "./programMasasi";
 import {
   ADIM_ADI,
   adimTuru,
@@ -861,6 +862,14 @@ export const performansGorebilir = (k: Kisi | undefined, kisi: Kisi): boolean =>
 
 /* Muhasebenin sayfası yalnız kendisi (kullanıcı: tamamen kendilerine özel); masa sayfaları ona açık değil. */
 const MASA: Birim[] = BIRIMLER.filter((b) => b !== "muhabir" && b !== "muhasebe");
+/*
+ * Program, Ekonomi ve Spor masaları kendi sayfalarıyla çalışıyor (kullanıcı:
+ * menüleri kendi işlerine özel; bütün muhabirlere ulaşmasınlar, çalıştıkları
+ * muhabire iş kartından ulaşsınlar). Haber merkezinin havuzları (muhabir ve
+ * personel listesi, feature, stok, başlıklar) onlara kapalı.
+ */
+const MASA_SAYFALI: Birim[] = ["program", "ekonomi", "spor"];
+const HABER_MERKEZI: Birim[] = MASA.filter((b) => !MASA_SAYFALI.includes(b));
 /* Her birime açık sayfa; yöneticinin sonradan açtığı birime de (listede adı olmasa da). */
 const HERKES: readonly BirimId[] = ["*"];
 
@@ -878,9 +887,9 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
     "output",
     "yonetim",
   ],
-  muhabirler: MASA,
-  editorler: MASA,
-  personel: MASA,
+  muhabirler: HABER_MERKEZI,
+  editorler: HABER_MERKEZI,
+  personel: HABER_MERKEZI,
   izinler: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
   oneriler: ["planlama", "yonetim", "muhabir"],
   // Muhabirin takipleri: muhabir kendisininkini, Planlama ve Yönetim hepsini.
@@ -889,13 +898,14 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   gorevler: ["planlama", "yonetim"],
   // Gelen posta sohbeti: dış muhabirler hariç haber merkezi (route postaGorebilir soruyor).
   posta: MASA,
-  basliklar: ["planlama", "newsdesk", "program", "yonetim"],
+  basliklar: ["planlama", "newsdesk", "yonetim"],
   paketler: HERKES,
-  feature: MASA,
+  feature: HABER_MERKEZI,
   // Ekonomi masasının paketleri (önce feature ile tek sayfadaydı; kullanıcı: ekonomi ayrı birim).
   ekonomi: ["ekonomi", "planlama", "yonetim"],
   programlar: ["planlama", "program", "yonetim"],
-  stok: ["planlama", "newsdesk", "program", "ekonomi", "yonetim"],
+  spor: ["spor", "planlama", "yonetim"],
+  stok: ["planlama", "newsdesk", "yonetim"],
   saha: ["newsgathering", "planlama", "yonetim", "muhabir"],
   seyahat: ["newsgathering", "planlama", "yonetim"],
   talepler: ["newsgathering", "planlama", "yonetim"],
@@ -1068,6 +1078,16 @@ export const gundemGorebilir = (d: Durum | null | undefined, k: Kisi | undefined
 
 export const kisitliKisi = (k: Kisi): boolean =>
   k.birim === "muhabir" || !!k.kontrolBekliyor;
+
+/*
+ * Kişinin masası (Program, Ekonomi, Spor): menüsü ve ana sayfası masanın
+ * sayfası. Tam yönetici ve kademedeki müdür (izinlerde "yonetim") geniş menüde.
+ */
+export const masaBirimi = (k: Kisi): MasaBirimi | undefined => {
+  if (k.hesapYoneticisi || kisitliKisi(k)) return undefined;
+  const b = izinBirimi(k.birim);
+  return b === "program" || b === "ekonomi" || b === "spor" ? (b as MasaBirimi) : undefined;
+};
 /* Gelen posta: dış muhabirler (ve onay bekleyen) hariç haber merkezinin herkesi;
    her birim kendi grup adresiyle kendi yazışmalarını görür (worker da aynı kuralla). */
 export const postaGorebilir = (k: Kisi | undefined): boolean => !!k && !kisitliKisi(k);

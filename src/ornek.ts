@@ -138,6 +138,9 @@ const KISILER: KisiSatiri[] = [
   ["ng6", "Tarik Nadir", "طارق نادر", "newsgathering", "personel", "muhabir", "istanbul"],
   // Muhasebe (News Gathering'in alt birimi): anlaşmalar ve aylık döküm. Kurgusal; sona eklendi.
   ["mh1", "Leyla Aydemir", "ليلى آيدمير", "muhasebe", "yonetici", "yonetici", "istanbul"],
+  // Spor masası: kendi sayfası ve menüsü demoda denensin. Kurgusal; sona eklendi.
+  ["sp1", "Emre Doğan", "إمره دوغان", "spor", "yonetici", "yonetici", "istanbul"],
+  ["sp2", "Rami Saleh", "رامي صالح", "spor", "personel", "editor", "istanbul"],
 ];
 
 const ALAN_KODU: Partial<Record<Sehir, string>> = {

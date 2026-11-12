@@ -2,15 +2,16 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Workflow, type LucideIcon } from "lucide-react";
+import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
+import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
 import { kisininIsleri } from "../gorevler";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { dilDenetmeniMi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
+import { dilDenetmeniMi, masaBirimi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
 import { GERCEK } from "../kip";
 import { okunmamisSayisi } from "../postaOkuma";
 import Logo from "./Logo";
@@ -124,6 +125,7 @@ export const MENU: Grup[] = [
       { sayfa: "feature", ad: "mFeature", kisa: "kaFeature", ikon: TrendingUp },
       { sayfa: "ekonomi", ad: "mEkonomi", kisa: "kaEkonomi", ikon: Landmark },
       { sayfa: "programlar", ad: "mProgramlar", kisa: "kaProgramlar", ikon: Clapperboard },
+      { sayfa: "spor", ad: "mSpor", kisa: "kaSpor", ikon: Trophy },
       // Sayı: kişinin üretime alabileceği paketler (Planlama'da feature/stok ekibi).
       { sayfa: "stok", ad: "mStok", kisa: "kaStok", ikon: Layers, say: (d, ben) => d.paketler.filter((p) => uretimeAlabilir(ben, p)).length },
     ],
@@ -178,6 +180,45 @@ export const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
 /* Muhabirde Önerilerim'in sayısı önündeki iş: düzeltme istenen ve Planlama'nın ona önerdiği. */
 const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif") && !oneriArsivde(o)).length;
 
+/*
+ * Masaların menüsü (Programlar, Ekonomi, Spor; kullanıcı: kendi çalışma
+ * alanlarına ve görevlerine özel). Masam: masanın sayfasının bölümleri ve
+ * Üretim panosu; Planlar: son onaylı planlar (salt okunur), takvim, Weekly
+ * yalnız ön inceleme yapana (yönetici, Ekonomi); İletişim: posta ve izinler.
+ * Muhabir listesi yok: işin muhabirine iş kartından ulaşılıyor. Sayılar
+ * masanın önündeki karar (yayın kararı, yanıt bekleyen soru).
+ */
+export const masaMenusu = (ben: Kisi, birim: MasaBirimi): Grup[] => {
+  const y = MASA_YOLU[birim];
+  const tablodan = (s: string) => MENU.flatMap((g) => g.maddeler).find((m) => m.sayfa === s);
+  const grup = (ad: Anahtar | undefined, maddeler: (Madde | false | undefined)[]): Grup => ({
+    ad,
+    maddeler: maddeler.filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa.split("/")[0]) && (m.goster?.(ben) ?? true)),
+  });
+  return [
+    grup(undefined, [tablodan("ana")]),
+    grup("mgMasam", [
+      { sayfa: `${y}/icerikler`, ad: "pmIcerikler", kisa: "pmIcerikler", ikon: Clapperboard, say: (d) => masaKararlari(d, birim).yayin },
+      { sayfa: `${y}/oneriler`, ad: "pmOneriler", kisa: "pmOneriler", ikon: Lightbulb, say: (d) => masaKararlari(d, birim).soru },
+      birim === "program" && { sayfa: `${y}/programlar`, ad: "kaProgramlar", kisa: "kaProgramlar", ikon: Tv },
+      { sayfa: `${y}/arsiv`, ad: "pmArsiv", kisa: "pmArsiv", ikon: Archive },
+      tablodan("uretim"),
+    ]),
+    grup("mgYayinPlanlari", [
+      { sayfa: `${y}/planlar`, ad: "pmPlanlar", kisa: "pmPlanlar", ikon: FileText },
+      (ben.rol === "yonetici" || birim === "ekonomi") && tablodan("haftalik"),
+      tablodan("takvim"),
+    ]),
+    grup("mgIletisim", [tablodan("posta"), tablodan("izinler")]),
+  ].filter((g) => g.maddeler.length > 0);
+};
+
+/** Kişinin menü grupları: masada masanın menüsü, öbürlerinde tablonun görünür maddeleri (telefondaki panel de). */
+export const menuGruplari = (ben: Kisi): Grup[] => {
+  const masa = masaBirimi(ben);
+  return masa ? masaMenusu(ben, masa) : MENU.map((g) => ({ ad: g.ad, maddeler: g.maddeler.filter((m) => maddeGorunur(ben, m)) })).filter((g) => g.maddeler.length > 0);
+};
+
 /** Maddenin kişiye göre adı: muhabirin menüsü kendi işine daralıyor ("İşlerim", "Önerilerim"). */
 export const maddeAdi = (ben: Kisi, m: Madde): Anahtar => (ben.birim === "muhabir" && m.adMuhabir ? m.adMuhabir : m.ad);
 
@@ -227,7 +268,12 @@ function MenuBagi({ m, ben, acik }: { m: Madde; ben: Kisi; acik: string }) {
   const Ikon = m.ikon;
   // "Öneri gönder" Önerilerim'in alt adresi: ikisi aynı anda vurgulanmasın.
   const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
-  const etkin = m.sayfa === ONERI_GONDER.sayfa ? yeni : acik === m.sayfa && !(m.sayfa === "oneriler" && yeni);
+  // Masanın bölümleri alt adres ("#/programlar/arsiv"); çıplak masa adresi İçerikler'i açıyor.
+  const hash = typeof location !== "undefined" ? location.hash : "";
+  const etkin =
+    m.sayfa === ONERI_GONDER.sayfa ? yeni
+    : m.sayfa.includes("/") ? hash.startsWith(`#/${m.sayfa}`) || (m.sayfa.endsWith("/icerikler") && hash === `#/${m.sayfa.split("/")[0]}`)
+    : acik === m.sayfa && !(m.sayfa === "oneriler" && yeni);
   return (
     <a href={`#/${m.sayfa}`} className={etkin ? "acik" : ""} aria-current={etkin ? "page" : undefined}>
       <Ikon size={18} />
@@ -254,6 +300,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const muhabir = ben.birim === "muhabir";
   // Sade ekranlılar (dil denetmeni, muhasebe): kendi sayfası ve Ayarlar.
   const dilci = sadeEkranMi(ben);
+  const masa = masaBirimi(ben);
   const v = useVeri();
   const [acikGruplar, setAcikGruplar] = useState<string[]>(acikGruplariOku);
 
@@ -266,7 +313,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
   const degistir = (g: string) => setAcikGruplar((x) => (x.includes(g) ? x.filter((y) => y !== g) : [...x, g]));
 
   return (
-    <nav className="menu" id="ana-menu" aria-label={t("anaMenu")}>
+    <nav className={`menu${masa ? ` masa-${masa}` : ""}`} id="ana-menu" aria-label={t("anaMenu")}>
       <a className="marka" href="#/" aria-label={t("uygulama")}>
         <Logo koyu={!yeniTasarim} />
       </a>
@@ -307,7 +354,24 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
           </div>
         </>
       )}
-      {!muhabir && !dilci && MENU.map((g, i) => {
+      {masa && (
+        <>
+          {masaMenusu(ben, masa).map((g, i) => (
+            <div className="menu-grup" key={i} data-masa-menusu={i === 0 ? masa : undefined}>
+              {g.ad && <div className="menu-grup-ad">{t(g.ad)}</div>}
+              {g.maddeler.map((m) => (
+                <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+              ))}
+            </div>
+          ))}
+          <div className="menu-grup menu-alta">
+            {muhabirMaddeleri(ben, MUHABIR_ALT).map((m) => (
+              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
+            ))}
+          </div>
+        </>
+      )}
+      {!muhabir && !dilci && !masa && MENU.map((g, i) => {
         const maddeler = g.maddeler.filter((m) => maddeGorunur(ben, m));
         if (!maddeler.length) return null;
         if (!g.ad || maddeler.length === 1) {
