@@ -1552,6 +1552,10 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .gorunum-secici { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--yaricap); background: var(--yuzey-2); }
 .gorunum-secici .dugme { color: var(--sonuk); }
 .gorunum-secici .dugme.secili { background: var(--yuzey); color: var(--vurgu); box-shadow: var(--golge-kart); }
+/* Öneriler sayfasının gün grupları: önce bugünün işi (oneriSekmeleri.ts). */
+.oneri-gun-grubu + .oneri-gun-grubu { margin-block-start: var(--ara-5); }
+.oneri-gun-basi { font-size: var(--punto); font-weight: 600; color: var(--sonuk); margin: 0 0 var(--ara-2); }
+.oneri-gun-basi em { font-style: normal; font-weight: 500; color: var(--silik); }
 .oneri-kartlari { display: grid; gap: var(--ara-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); align-items: stretch; }
 /* Kol rengi yalnız şeritte ve kol rozetinde; kartın geri kalanı sakin. */
 .oneri-karti {

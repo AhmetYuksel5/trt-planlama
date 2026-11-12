@@ -1164,9 +1164,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yetkisi `arsivdenCikarma`) günü o andan saydırır
   (`arsivdenCikti`), reddedilen/geri çekileni değerlendirmeye açar.
   Düğmeler öneri ayrıntısında (`Oneriler.tsx → OneriKapiDugmeleri`), onay
-  sorularak; ret, plana ve gündeme ekleme de onaylı. Öneriler sayfasında "Güncel" / "Arşiv" sekmeleri
-  (`#/oneriler/arsiv`; muhabirde kendi ekranı, aşağıda; kılavuzda `kl4g`). Planlama ana sayfası,
+  sorularak; ret, plana ve gündeme ekleme de onaylı. Planlama ana sayfası,
   menü ve yönetici paneli sayıları, "Önerilerden al" arşivi saymaz.
+
+  Öneriler sayfası (kullanıcı: karışıktı, plana giren öneri günü geçene dek
+  "güncel"de duruyordu, on durum çipi vardı; altı ajanla incelendi, birinci
+  aşama; `Oneriler.tsx → OnerilerListe`, kurallar `oneriSekmeleri.ts`): dört
+  sekme, varsayılan "Karar bekleyen" (yeni, değerlendiriliyor); "Sırası
+  başkasında" (muhabire teklif, düzeltme, birimin görüşündeki: `acikSoru`);
+  "Planda / gündemde" (`oneriYeri` ya da "plana eklendi": gündemdeki öneri
+  durumda "değerlendiriliyor" olsa da karar listesinden hemen kalkar); "Arşiv"
+  (`oneriArsivde`, kural aynı; `#/oneriler/arsiv` bu sekmeyle açılır). Takip
+  öneri sayfasında yok, ⋯'de "Muhabir takipleri · n". Durum çipleri ve
+  Güncel/Arşiv sekmeleri kalktı. Sayılar (sekme ve plan çipi) arama, masa ve
+  ülke süzgeçlerinden geçmiş listeden; boş sekme ve plan çipi çizilmez (karar
+  bekleyen ve seçili olan hep). Liste gün gruplarında (Bugün, başlamış çok
+  günlü dahil; Yarın; İleri günler; Zamana bağlı değil; `oneriGunGrubu`),
+  bekleyen talimat önde, sonra gün sırası; arşiv yalnız yenisi önce. Üstte tek
+  birincil "Öneri gir"; Gelen yanıtlar, Öneri çağrısı, Muhabire haber öner ⋯
+  menüsünde. Kol süzgecinin adı "Tüm masalar". Muhabir kendi ekranında
+  (aşağıda; kılavuzda `kl4g`). Test `testler/oneri-sekmeleri.cjs`.
 
   Planlama öneriyi her aşamada düzeltir, plana eklendikten sonra da
   (`eylemler.ts → oneriDuzenle`, yetki `oneriDuzenleyebilir`; muhabire

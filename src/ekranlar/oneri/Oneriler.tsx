@@ -1,15 +1,17 @@
 import { GeriBag } from "../../bilesenler/GeriBag";
-import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriArsivde, oneriEtiketleri, type OneriEtiketi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPlanGunu, type OneriEtiketi } from "../../oneriPlanlari";
+import { GUN_GRUPLARI, ONERI_SEKMELERI, oneriGunGrubu, oneriSekmesi, type GunGrubu, type OneriSekmesi } from "../../oneriSekmeleri";
+import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { MuhabireOneriPenceresi } from "./Yazisma";
-import { Inbox, Lightbulb, Megaphone, Search, Send } from "lucide-react";
+import { Eye, Inbox, Lightbulb, Megaphone, Plus, Search, Send } from "lucide-react";
 import { useState } from "react";
 import { Bos, Icerik, Kart, NotKutu, Pencere, bildir } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
-import { tarihYaz, useDil } from "../../dil";
+import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { oneriGonder } from "../../eylemler";
-import { ONERI_DURUM_ADI, ONERI_ETIKET_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
+import { ONERI_ETIKET_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { ICERIK_TURLERI, ONERI_DURUMLARI, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type OneriDurum, type Ulke } from "../../veri";
+import { ICERIK_TURLERI, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
 import { MasalardakiOneriler } from "./MasaSorusu";
 import { oneriBirlestirebilir, muhabireOneriGonderebilir, oneriGorebilir, yapabilir } from "../../yetki";
 import { git, useAdimDurumu } from "../../yol";
@@ -29,9 +31,11 @@ import { OneriAyrinti, esBirlestirSor } from "./OneriGovde";
  */
 
 /*
- * `arsiv`: günü geçmiş öneriler (oneriPlanlari.ts → oneriArsivde). Güncel
- * listeden kalkıyorlar, Planlama'nın listesinde eski öneri birikmesin;
- * muhabirde "Geçmiş önerilerim".
+ * Planlama'nın öneri listesi (muhabirin kendi ekranı MuhabirOnerilerim). Dört
+ * sekme (oneriSekmeleri.ts): karar bekleyen (varsayılan), sırası başkasında,
+ * planda / gündemde, arşiv. `arsiv` yalnız açılış sekmesi (#/oneriler/arsiv).
+ * Sayılar öbür süzgeçlerle süzülmüş listeden: çip "12" deyip liste 3
+ * göstermesin. Karar listesi gün gruplarında, önce bugünün işi.
  */
 export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boolean }) {
   const { t } = useDil();
@@ -39,80 +43,107 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const kaynakMetni = useKaynakMetni();
   // Seçimler geçmiş adımında: geri dönünce bırakıldığı gibi (yol.ts → useAdimDurumu).
   const on = arsiv ? "oneriArsiv" : "oneriler";
-  const [durum, setDurum] = useAdimDurumu<OneriDurum | "hepsi">(`${on}:durum`, "hepsi");
+  const [sekme, setSekme] = useAdimDurumu<OneriSekmesi>(`${on}:sekme`, arsiv ? "arsiv" : "karar");
   const [tur, setTur] = useAdimDurumu<IcerikTuru | "">(`${on}:tur`, "");
   const [ulke, setUlke] = useAdimDurumu<Ulke | "">(`${on}:ulke`, "");
   const [aranan, setAranan] = useAdimDurumu(`${on}:ara`, "");
   // Plan etiketi: günlük ya da haftalık çalışan yalnız kendi planına düşen önerileri görsün.
   const [planEtiketi, setPlanEtiketi] = useAdimDurumu<OneriEtiketi | "yok" | "">(`${on}:plan`, "");
-  /* Görünüm plan ekranlarıyla ortak kişisel seçim; kartta karar yok, kararlar ayrıntı sayfasında. */
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [acikId, setAcikId] = useState<string | null>(null);
   const [muhabireOner, setMuhabireOner] = useState(false);
   const acik = acikId ? v.oneriler.find((o) => o.id === acikId) : undefined;
-  const muhabir = ben.birim === "muhabir";
   const B = bugun();
   const kendi = v.oneriler.filter((o) => oneriGorebilir(ben, o) && !takibinOnerisi(v, o));
-  const arsivdekiler = kendi.filter((o) => oneriArsivde(o, B));
-  const gorunen = arsiv ? arsivdekiler : kendi.filter((o) => !oneriArsivde(o, B));
+  const sekmesi = new Map(kendi.map((o) => [o.id, oneriSekmesi(v, o, B)]));
+  const takipSayisi = kendi.filter((o) => sekmesi.get(o.id) === null).length;
   const q = aranan.trim().toLocaleLowerCase();
-  const etiketler = new Map(gorunen.map((o) => [o.id, oneriEtiketleri(v, o)]));
+  const etiketler = new Map(kendi.map((o) => [o.id, oneriEtiketleri(v, o)]));
   const etiketli = (o: Oneri, e: OneriEtiketi | "yok" | "") => !e || (e === "yok" ? !etiketler.get(o.id)!.length : etiketler.get(o.id)!.includes(e));
-  const liste = gorunen
-    .filter(
-      (o) =>
-        etiketli(o, planEtiketi) &&
-        (durum === "hepsi" || o.durum === durum) &&
-        (!tur || o.tur === tur) &&
-        (!ulke || o.ulke === ulke) &&
-        (!q || `${o.haberBasligi} ${o.gelisme} ${kaynakMetni(o, v)}`.toLocaleLowerCase().includes(q)),
-    )
-    .sort((a, b) => b.zaman.localeCompare(a.zaman))
-    // Bekleyen yönetici talimatı Planlama'nın önünde en üstte.
-    .sort((a, b) => Number(!!b.talimatVeren && b.durum !== "planaEklendi") - Number(!!a.talimatVeren && a.durum !== "planaEklendi"));
+  // Plan etiketi dışındaki süzgeçler; sekme ve çip sayıları da bunlardan.
+  const suzulmus = kendi.filter(
+    (o) => (!tur || o.tur === tur) && (!ulke || o.ulke === ulke) && (!q || `${o.haberBasligi} ${o.gelisme} ${kaynakMetni(o, v)}`.toLocaleLowerCase().includes(q)),
+  );
+  const sekmeSayisi = (s: OneriSekmesi) => suzulmus.filter((o) => sekmesi.get(o.id) === s && etiketli(o, planEtiketi)).length;
+  const sekmede = suzulmus.filter((o) => sekmesi.get(o.id) === sekme);
+  // Bekleyen yönetici talimatı Planlama'nın önünde en üstte; sonra gün, aynı günde yenisi önce.
+  const talimat = (o: Oneri) => Number(!!o.talimatVeren && o.durum !== "planaEklendi");
+  const liste = sekmede
+    .filter((o) => etiketli(o, planEtiketi))
+    .sort((a, b) =>
+      sekme === "arsiv"
+        ? b.zaman.localeCompare(a.zaman)
+        : talimat(b) - talimat(a) || (oneriPlanGunu(a) ?? "~").localeCompare(oneriPlanGunu(b) ?? "~") || b.zaman.localeCompare(a.zaman),
+    );
+  const gruplar: [GunGrubu | null, Oneri[]][] =
+    sekme === "arsiv" ? [[null, liste]] : GUN_GRUPLARI.map((g): [GunGrubu, Oneri[]] => [g, liste.filter((o) => oneriGunGrubu(o, B) === g)]).filter(([, l]) => l.length);
+  const cagri = yapabilir(ben, "cagriHazirla");
+  const oner = muhabireOneriGonderebilir(ben, v);
+  const listeyiCiz = (l: Oneri[]) =>
+    gorunum === "liste" ? (
+      <OneriTablosu oneriler={l} d={v} />
+    ) : (
+      <div className="oneri-kartlari">
+        {l.map((o) => (
+          <OneriKarti key={o.id} oneri={o} d={v} ac={() => setAcikId(o.id)} />
+        ))}
+      </div>
+    );
 
   return (
     <>
       <SayfaBasi
         ikon={<Lightbulb size={26} />}
-        baslik={t(arsiv ? (muhabir ? "gecmisOnerilerim" : "oneriArsivi") : muhabir ? "mOnerilerim" : "mOneriler")}
-       
+        baslik={t("mOneriler")}
         sagUc={
           <>
-            {yapabilir(ben, "cagriHazirla") && (
-              <>
-                <a className="dugme dugme-ikincil" href="#/oneriler/yanitlar">
-                  <Inbox size={16} /> {t("gelenYanitlar")}
-                </a>
-                <a className="dugme dugme-ikincil" href="#/oneriler/cagri">
-                  <Megaphone size={16} /> {t("oneriCagrisi")}
-                </a>
-              </>
-            )}
-            {muhabireOneriGonderebilir(ben, v) && (
-              <button type="button" className="dugme dugme-ikincil" onClick={() => setMuhabireOner(true)} data-muhabire-oner>
-                <Send size={16} className="yon" /> {t("muhabireHaberOner")}
-              </button>
+            {(cagri || oner || takipSayisi > 0) && (
+              <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
+                {cagri && (
+                  <>
+                    <a role="menuitem" className="acilir-satir" href="#/oneriler/yanitlar" data-oneri-menu="yanitlar">
+                      <Inbox size={16} /> {t("gelenYanitlar")}
+                    </a>
+                    <a role="menuitem" className="acilir-satir" href="#/oneriler/cagri" data-oneri-menu="cagri">
+                      <Megaphone size={16} /> {t("oneriCagrisi")}
+                    </a>
+                  </>
+                )}
+                {oner && (
+                  <button type="button" role="menuitem" className="acilir-satir" onClick={() => setMuhabireOner(true)} data-muhabire-oner>
+                    <Send size={16} className="yon" /> {t("muhabireHaberOner")}
+                  </button>
+                )}
+                {takipSayisi > 0 && (
+                  <a role="menuitem" className="acilir-satir" href="#/takipler" data-oneri-menu="takipler">
+                    <Eye size={16} /> {t("mMuhabirTakipleri")} <em>{takipSayisi}</em>
+                  </a>
+                )}
+              </IslemMenusu>
             )}
             {yapabilir(ben, "oneriGonder") && (
-              <a className="dugme" href="#/oneriler/yeni">
-                <Send size={16} className="yon" /> {t(muhabir ? "yeniOneriGonder" : "oneriKaydet")}
+              <a className="dugme" href="#/oneriler/yeni" data-oneri-gir>
+                <Plus size={16} /> {t("oneriGir")}
               </a>
             )}
           </>
         }
       />
       {muhabireOner && <MuhabireOneriPenceresi ben={ben} kapat={() => setMuhabireOner(false)} />}
-      {!arsiv && !muhabir && <EsCiftleri ben={ben} />}
-      {!arsiv && !muhabir && <MasalardakiOneriler ben={ben} />}
+      <EsCiftleri ben={ben} />
+      <MasalardakiOneriler ben={ben} />
       <Kart>
-        <div className="sekmeler ara-alt-2" role="tablist" data-oneri-arsiv-sekmesi>
-          <a href="#/oneriler" role="tab" aria-selected={!arsiv} className={arsiv ? "" : "acik"} data-oneri-guncel>
-            {t("guncelOneriler")} <em>{kendi.length - arsivdekiler.length}</em>
-          </a>
-          <a href="#/oneriler/arsiv" role="tab" aria-selected={arsiv} className={arsiv ? "acik" : ""} data-oneri-arsiv>
-            {t(muhabir ? "gecmisOnerilerim" : "oneriArsivi")} <em>{arsivdekiler.length}</em>
-          </a>
+        <div className="sekmeler ara-alt-2" role="tablist" data-oneri-sekmeleri>
+          {ONERI_SEKMELERI.map((s) => {
+            const n = sekmeSayisi(s);
+            // Boş sekme yer kaplamasın; karar bekleyen ve seçili olan hep görünür.
+            if (!n && s !== sekme && s !== "karar") return null;
+            return (
+              <button key={s} type="button" role="tab" aria-selected={s === sekme} className={s === sekme ? "acik" : ""} onClick={() => setSekme(s)} data-oneri-sekme={s}>
+                {t(SEKME_ADI[s])} <em>{n}</em>
+              </button>
+            );
+          })}
         </div>
         <div className="suzgec">
           <label className="arama arama-kutu">
@@ -138,9 +169,11 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
           <span className="bosluk-esnek" />
           <GorunumSecici deger={gorunum} degistir={setGorunum} />
         </div>
-        {!muhabir && (
-          <div className="cipler ara-alt-2" data-plan-suzgec>
-            {(["", ...ONERI_ETIKETLERI, "yok"] as const).map((e) => (
+        <div className="cipler ara-alt-2" data-plan-suzgec>
+          {(["", ...ONERI_ETIKETLERI, "yok"] as const).map((e) => {
+            const n = sekmede.filter((o) => etiketli(o, e)).length;
+            if (e && !n && planEtiketi !== e) return null;
+            return (
               <button
                 key={e || "hepsi"}
                 type="button"
@@ -149,31 +182,26 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
                 onClick={() => setPlanEtiketi(e)}
                 data-plan-suzgec-etiketi={e || "hepsi"}
               >
-                {t(e === "" ? "tumPlanlar" : e === "yok" ? "plansiz" : ONERI_ETIKET_ADI[e])} <em>{gorunen.filter((o) => etiketli(o, e)).length}</em>
+                {t(e === "" ? "tumPlanlar" : e === "yok" ? "plansiz" : ONERI_ETIKET_ADI[e])} <em>{n}</em>
               </button>
-            ))}
-          </div>
-        )}
-        <div className="sekmeler suzgec">
-          <button className={durum === "hepsi" ? "acik" : ""} onClick={() => setDurum("hepsi")}>
-            {t("hepsi")} <em>{gorunen.length}</em>
-          </button>
-          {ONERI_DURUMLARI.map((d) => (
-            <button key={d} className={durum === d ? "acik" : ""} onClick={() => setDurum(d)}>
-              {t(ONERI_DURUM_ADI[d])} <em>{gorunen.filter((o) => o.durum === d).length}</em>
-            </button>
-          ))}
+            );
+          })}
         </div>
-        {gorunum === "liste" ? (
-          <OneriTablosu oneriler={liste} d={v} />
-        ) : liste.length === 0 ? (
+        {liste.length === 0 ? (
           <Bos metin={t("oneriYok")} />
         ) : (
-          <div className="oneri-kartlari">
-            {liste.map((o) => (
-              <OneriKarti key={o.id} oneri={o} d={v} ac={() => setAcikId(o.id)} />
-            ))}
-          </div>
+          gruplar.map(([g, l]) =>
+            g ? (
+              <section key={g} className="oneri-gun-grubu" data-oneri-gun={g}>
+                <h3 className="oneri-gun-basi">
+                  {t(GUN_GRUBU_ADI[g])} <em>{l.length}</em>
+                </h3>
+                {listeyiCiz(l)}
+              </section>
+            ) : (
+              <div key="hepsi">{listeyiCiz(l)}</div>
+            ),
+          )
         )}
         {/* Karta basınca önerinin bütün ayrıntısı pencerede: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
         {acik && <OneriAyrinti key={acik.id} ben={ben} oneri={acik} kapat={() => setAcikId(null)} />}
@@ -181,6 +209,9 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
     </>
   );
 }
+
+const SEKME_ADI: Record<OneriSekmesi, Anahtar> = { karar: "kararBekleyen", baskasinda: "oneriSirasiBaskasinda", planda: "oneriPlandaGundemde", arsiv: "oneriArsivi" };
+const GUN_GRUBU_ADI: Record<GunGrubu, Anahtar> = { bugun: "bugun", yarin: "yarin", ileri: "ileriGunler", gunsuz: "zamanaBagliDegil" };
 
 /* Öneriler sayfasında eş çiftlerinin toplu görünümü: elle girilip takılmış eski çiftler buradan bulunur. */
 function EsCiftleri({ ben }: { ben: Kisi }) {

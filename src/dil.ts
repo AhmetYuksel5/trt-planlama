@@ -223,7 +223,7 @@ const M = {
   turEkonomi: m("Ekonomi", "اقتصاد", "Economy"),
   turSpor: m("Spor", "رياضة", "Sports"),
   turProgram: m("Program", "برنامج", "Programme"),
-  tumTurler: m("Tüm kollar", "كل المسارات", "All strands"),
+  tumTurler: m("Tüm masalar", "كل المكاتب", "All desks"),
   tumUlkeler: m("Tüm ülkeler", "كل البلدان", "All countries"),
   tumBirimler: m("Tüm birimler", "كل الوحدات", "All units"),
 
@@ -698,6 +698,10 @@ const M = {
   planaDon: m("Plana dön", "العودة إلى الخطة", "Back to plan"),
 
   /* Öneriler */
+  oneriGir: m("Öneri gir", "إدخال مقترح", "Add proposal"),
+  oneriSirasiBaskasinda: m("Sırası başkasında", "بانتظار طرف آخر", "Waiting on others"),
+  oneriPlandaGundemde: m("Planda / gündemde", "في الخطة / الأجندة", "In plan / agenda"),
+  ileriGunler: m("İleri günler", "الأيام القادمة", "Later days"),
   oneriKaydet: m("Öneri kaydet", "تسجيل مقترح", "Log a proposal"),
   oneriEkle: m("Öneri ekle", "إضافة مقترح", "Add proposal"),
   kaynak: m("Kaynak", "المصدر", "Source"),
