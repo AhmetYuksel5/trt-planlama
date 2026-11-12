@@ -1491,7 +1491,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Weekly paketi "Sıradaki" kartında "Weekly · n paketin postası gitmedi"
   (`bildirilmemisHaftalik`, `data-haftalik-takdir`), basınca planın bildirim
   sayfası. Reddedilene posta yok; muhabir önerisinin sayfasında görür.
-  Test `testler/haftalik-takdir.cjs`.
+  Test `testler/haftalik-takdir.cjs`. Kesinleşmiş haftanın toplantı
+  görünümünde de (kullanıcı: geri bildirim orada da olsun, e-posta ikonu,
+  basınca onaylansın gitsin): kabul edilen paketin satırının solunda zarf
+  (`haftalik/Takdir.tsx → KalemPostaDugmesi`, `.kalem-posta`; belge sağdan
+  sola, satırın sonu boş): onay sorulur, tek posta aynı şablonla gider,
+  kalemi seçmez; gönderilmişse yeşil işaret, ipucunda saat; adresi yoksa pasif.
+  Test `testler/toplanti-posta.cjs`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.
@@ -1873,7 +1879,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Planlama, kademe, rolü yönetici olan. `AnmaGirdisi` (Ctrl/⌘+Enter
     ekler, `bahset`). Toplantı görünümünde ve plan ekranında "Toplantı
     notları" bölümü; gözden geçirmenin tutanağının sonunda. Kayıt
-    temizliğinde haftalık planla gider.
+    temizliğinde haftalık planla gider. Notlar kesinleşmeden sonra da
+    düzenlenir (kullanıcı: toplantı görünümünde kalsın, çıktıda görünmesin):
+    kalemin karar notu ve ek talebi (`yetki.ts → kararNotuYazabilir`,
+    kesinleşmişte haftalık düzenleyen ya da karar yetkilisi; karar düğmeleri
+    yok), genel not kalemle (`eylemler.ts → toplantiNotuDuzenle`, silmenin
+    yetkisi). Sonraki düzeltme doğmuş pakete gitmez; çıktılara hiç girmez.
+    Test `testler/toplanti-notu-sonra.cjs`.
   - Kesinleştirme gözden geçirme penceresinden (`haftalik/GozdenGecirme.tsx`;
     kullanıcı: toplantıdan sonra gözden geçirip plana son hali verilsin; önce
     iki ardışık onay sorusuydu, kararlar görünmüyordu): kalemler kararlarına

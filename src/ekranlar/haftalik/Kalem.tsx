@@ -9,7 +9,7 @@ import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, seh
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
-import { haftalikDuzenler, kararVerebilir } from "../../yetki";
+import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
@@ -223,6 +223,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
   const [kosulFormu, setKosulFormu] = useState(false);
   const duzenler = haftalikDuzenler(ben, hafta);
   const karar = kararVerebilir(ben, hafta) && gundemde(kalem);
+  const notYazar = kararNotuYazabilir(ben, hafta) && gundemde(kalem);
   const plan = planBul(v, kalem.aktarim?.planId);
   const paket = paketBul(v, kalem.aktarim?.paketId);
   const dosya = baslikBul(v, kalem.baslikId);
@@ -327,7 +328,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
         )}
       </div>
       <Gorusler kalem={kalem} d={v} />
-      {(karar || (duzenler && onIncelemeyeGidebilir(kalem))) && (
+      {(karar || notYazar || (duzenler && onIncelemeyeGidebilir(kalem))) && (
         <div className="dugmeler ara-ust">
           {karar &&
             KARAR_DUGMELERI.map((k, i) => {
@@ -352,7 +353,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
               <Send size={14} className="yon" /> {t("onIncelemeyeGonder")}
             </button>
           )}
-          {karar && !notFormu && (
+          {notYazar && !notFormu && (
             <button className="dugme dugme-sade dugme-kucuk" onClick={() => setNotFormu(true)} data-karar-notu-ac>
               <MessageSquarePlus size={14} /> {t("kararNotuEkTalep")}
             </button>

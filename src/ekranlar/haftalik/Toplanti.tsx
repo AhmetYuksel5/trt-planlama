@@ -1,10 +1,10 @@
-import { Check, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { Avatar, Kart, Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
-import { kalemKarar, toplantiNotuEkle, toplantiNotuSil, toplantiNotuSilebilir } from "../../eylemler";
+import { kalemKarar, toplantiNotuDuzenle, toplantiNotuEkle, toplantiNotuSil, toplantiNotuSilebilir } from "../../eylemler";
 import { gundemde, haftaSonu, kararBekleyenler } from "../../haftalik";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { yerelGun } from "../../tarih";
@@ -178,7 +178,9 @@ export function ToplantiNotlari({ ben, hafta, kartsiz = false }: { ben: Kisi; ha
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [metin, setMetin] = useState("");
+  const [duzenlenen, setDuzenlenen] = useState<{ id: string; metin: string } | null>(null);
   if (!toplantiNotuGorur(ben)) return null;
+  const duzeltmeyiKaydet = () => duzenlenen && toplantiNotuDuzenle(ben, duzenlenen.id, duzenlenen.metin) && setDuzenlenen(null);
   const notlar = (v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).sort((a, b) => a.zaman.localeCompare(b.zaman));
   const ekle = () => toplantiNotuEkle(ben, hafta.id, metin) && setMetin("");
   const icerik = (
@@ -191,9 +193,41 @@ export function ToplantiNotlari({ ben, hafta, kartsiz = false }: { ben: Kisi; ha
               <small>
                 <bdi>{ad(kisiBul(v, n.kisiId))}</bdi> · <bdi>{yerelGun(n.zaman) === yerelGun(new Date().toISOString()) ? saatYaz(n.zaman, dil) : `${tarihYaz(yerelGun(n.zaman), dil, "kisa")} ${saatYaz(n.zaman, dil)}`}</bdi>
               </small>
-              <p dir="auto">{n.metin}</p>
+              {duzenlenen?.id === n.id ? (
+                <div className="toplanti-not-yaz" data-toplanti-not-duzen>
+                  <AnmaGirdisi
+                    cokSatir
+                    rows={2}
+                    deger={duzenlenen.metin}
+                    degistir={(x) => setDuzenlenen({ id: n.id, metin: x })}
+                    aria-label={t("duzenle")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        duzeltmeyiKaydet();
+                      } else if (e.key === "Escape") setDuzenlenen(null);
+                    }}
+                    data-toplanti-not-duzen-girdi
+                  />
+                  <span className="dugmeler">
+                    <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setDuzenlenen(null)}>
+                      {t("iptal")}
+                    </button>
+                    <button type="button" className="dugme dugme-kucuk" disabled={!duzenlenen.metin.trim()} onClick={duzeltmeyiKaydet} data-toplanti-not-kaydet>
+                      {t("kaydet")}
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <p dir="auto">{n.metin}</p>
+              )}
             </div>
-            {toplantiNotuSilebilir(ben, n) && <IkonDugme ikon={<Trash2 size={14} />} etiket={t("sil")} onClick={() => confirm(t("silinsinMi")) && toplantiNotuSil(ben, n.id)} />}
+            {toplantiNotuSilebilir(ben, n) && duzenlenen?.id !== n.id && (
+              <span className="dugmeler">
+                <IkonDugme ikon={<Pencil size={14} />} etiket={t("duzenle")} onClick={() => setDuzenlenen({ id: n.id, metin: n.metin })} />
+                <IkonDugme ikon={<Trash2 size={14} />} etiket={t("sil")} onClick={() => confirm(t("silinsinMi")) && toplantiNotuSil(ben, n.id)} />
+              </span>
+            )}
           </li>
         ))}
       </ul>

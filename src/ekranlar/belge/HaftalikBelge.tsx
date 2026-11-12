@@ -17,6 +17,7 @@ import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { KararNotlari } from "../haftalik/Kalem";
+import { KalemPostaDugmesi } from "../haftalik/Takdir";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
@@ -156,6 +157,8 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
           onKeyDown: (e: React.KeyboardEvent) => e.key === "Enter" && ts.sec(k.id),
         })}
       >
+        {/* Kesinleşen haftada kabul edilen paketin görevlendirme postası satırın solunda. */}
+        {ts && hafta.durum === "kesinlesti" && <KalemPostaDugmesi hafta={hafta} kalem={k} />}
         {duzen ? (
           <Satir
             yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}

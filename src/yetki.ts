@@ -591,7 +591,12 @@ export const toplantiNotuGorur = (k: Kisi | undefined): boolean =>
 export const kararNotuYazabilir = (
   k: Kisi | undefined,
   h: HaftalikPlan,
-): boolean => !!k && (kararVerebilir(k, h) || haftalikDuzenler(k, h));
+): boolean =>
+  !!k &&
+  (kararVerebilir(k, h) ||
+    haftalikDuzenler(k, h) ||
+    // Kesinleşince de (kullanıcı: notlar toplantı görünümünde düzenlenebilsin); çıktıya ve doğmuş pakete gitmiyor.
+    (h.durum === "kesinlesti" && (yapabilir(k, "haftalikDuzenle") || planAdimiYapabilir(k, "hfKarar"))));
 
 /** Düzeltme isteğini yalnız önerinin muhabiri karşılıyor. */
 export const oneriYenidenGonderebilir = (

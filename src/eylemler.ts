@@ -3100,6 +3100,16 @@ export const toplantiNotuEkle = (ben: Kisi, planId: string, metin: string): bool
 export const toplantiNotuSilebilir = (ben: Kisi | undefined, n: ToplantiNotu) =>
   !!ben && toplantiNotuGorur(ben) && (n.kisiId === ben.id || !!ben.hesapYoneticisi || (izinBirimi(ben.birim) === "planlama" && ben.rol === "yonetici"));
 
+/* Not sonradan da düzeltiliyor (kullanıcı: kesinleştikten sonra da); yetki silmeninki. */
+export const toplantiNotuDuzenle = (ben: Kisi, id: string, metin: string): boolean => {
+  const d = getir();
+  const n = (d.toplantiNotlari ?? []).find((x) => x.id === id);
+  if (!n || !metin.trim() || !toplantiNotuSilebilir(ben, n)) return false;
+  const yd = { ...d, toplantiNotlari: (d.toplantiNotlari ?? []).map((x) => (x === n ? { ...x, metin: metin.trim() } : x)) };
+  kaydet(bahset(yd, ben, metin, { yol: `#/haftalik/${n.planId}/toplanti` }, n.metin));
+  return true;
+};
+
 export const toplantiNotuSil = (ben: Kisi, id: string): boolean => {
   const d = getir();
   const n = (d.toplantiNotlari ?? []).find((x) => x.id === id);

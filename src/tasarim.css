@@ -1009,6 +1009,20 @@ a.rozet-plan { text-decoration: none; }
 .toplanti-kalem.secili { outline-color: var(--vurgu); background: var(--vurgu-sis); }
 .toplanti-kalem:focus-visible { outline-color: var(--vurgu); }
 .yalniz-bekleyen .toplanti-kalem:not([data-karar="bekliyor"]):not(.secili) { opacity: .45; }
+/* Toplantıda kalemin posta zarfı: belge sağdan sola, satırın sonu (sol) boş kalıyor. */
+.toplanti-kalem:has(.kalem-posta) { position: relative; padding-inline-end: 40px; }
+.kalem-posta {
+  position: absolute; inset-inline-end: 4px; inset-block-start: 4px; inline-size: 32px; block-size: 32px;
+  display: grid; place-items: center; border: 1px solid var(--cizgi); border-radius: var(--yaricap);
+  background: var(--yuzey); color: var(--vurgu); cursor: pointer;
+}
+.kalem-posta:hover { background: var(--vurgu-sis); }
+.kalem-posta[aria-disabled] { color: var(--sonuk); cursor: default; }
+.kalem-posta.gitti { color: var(--iyi); cursor: default; border-color: transparent; background: transparent; }
+@media (max-width: 760px) {
+  .toplanti-kalem:has(.kalem-posta) { padding-inline-end: 52px; }
+  .kalem-posta { inline-size: 44px; block-size: 44px; }
+}
 .toplanti-karar-satiri { margin-block-start: 2px; text-align: start; }
 .toplanti-ayrinti { display: grid; gap: var(--ara-2); min-inline-size: 0; }
 .toplanti-gezinti { display: flex; justify-content: flex-end; gap: var(--ara-1); }
