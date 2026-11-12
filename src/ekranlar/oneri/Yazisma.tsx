@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { Lightbulb, MessageSquare, Send } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
@@ -144,7 +145,7 @@ export function MuhabireOneriPenceresi({ ben, muhabirId, kapat }: { ben: Kisi; m
           )}
           <label>
             {t("hedefPlan")}
-            <input type="date" value={f.hedefTarih} min={bugun()} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} />
+            <TarihGirdisi value={f.hedefTarih} min={bugun()} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} />
           </label>
           <label>
             {t("tur")}

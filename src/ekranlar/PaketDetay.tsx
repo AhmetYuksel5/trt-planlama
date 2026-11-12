@@ -1,3 +1,4 @@
+import { TarihSaatGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi } from "../yapi";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
@@ -400,7 +401,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
               </label>
               <label>
                 {t("teslim")}
-                <input type="datetime-local" value={teslim} onChange={(e) => setTeslim(e.target.value)} />
+                <TarihSaatGirdisi value={teslim} onChange={(e) => setTeslim(e.target.value)} />
               </label>
             </div>
             <div className="form-alt">

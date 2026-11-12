@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { Eraser, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Kart, bildir } from "../bilesenler/Parcalar";
@@ -54,11 +55,11 @@ export function KayitTemizligi({ ben }: { ben: Kisi }) {
         <div className="satir">
           <label>
             {t("baslangic")}
-            <input type="date" value={bas} max={bit || undefined} onChange={(e) => setBas(e.target.value)} data-kt-bas />
+            <TarihGirdisi value={bas} max={bit || undefined} onChange={(e) => setBas(e.target.value)} data-kt-bas />
           </label>
           <label>
             {t("bitis")}
-            <input type="date" value={bit} min={bas || undefined} onChange={(e) => setBit(e.target.value)} data-kt-bit />
+            <TarihGirdisi value={bit} min={bas || undefined} onChange={(e) => setBit(e.target.value)} data-kt-bit />
           </label>
         </div>
         <ul className="liste temizlik-turleri">

@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ClipboardList, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { useAdimDurumu } from "../yol";
 import { AnildigimNotlar } from "../bilesenler/Anma";
@@ -272,7 +273,7 @@ function GorevPenceresi({ ben, gorev, kapat }: { ben: Kisi; gorev: GorevTanimi; 
               </label>
               <label>
                 {t("gvIlkSira")}
-                <input type="date" value={g.dagilim.baslangic} onChange={(e) => g.dagilim.tur === "sirali" && setG({ ...g, dagilim: { ...g.dagilim, baslangic: e.target.value || bugun() } })} data-gv-baslangic />
+                <TarihGirdisi value={g.dagilim.baslangic} onChange={(e) => g.dagilim.tur === "sirali" && setG({ ...g, dagilim: { ...g.dagilim, baslangic: e.target.value || bugun() } })} data-gv-baslangic />
                 {g.dagilim.periyot === "hafta" && (
                   <small className="sonuk" data-gv-baslangic-hafta>
                     {aralikYaz(haftaBasi(g.dagilim.baslangic), gunEkle(haftaBasi(g.dagilim.baslangic), 6), dil)}
@@ -501,7 +502,7 @@ function IsFormu({ ben, is, kapat }: { ben: Kisi; is: Is; kapat: () => void }) {
         </label>
         <label>
           {t("gvSonTarih")}
-          <input type="date" value={f.sonTarih ?? ""} onChange={(e) => setF({ ...f, sonTarih: e.target.value || undefined })} data-is-son />
+          <TarihGirdisi value={f.sonTarih ?? ""} onChange={(e) => setF({ ...f, sonTarih: e.target.value || undefined })} data-is-son />
         </label>
       </div>
       <label>

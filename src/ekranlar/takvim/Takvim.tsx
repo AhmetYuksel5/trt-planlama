@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { birimAdi } from "../../yapi";
 import { Bell, CalendarCheck, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Link2, Plus, Search, SlidersHorizontal, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -264,11 +265,11 @@ function Suzgecler({ ben, suzgec, degistir }: { ben: Kisi; suzgec: Suzgec; degis
             )}
           <label>
             {t("tarihten")}
-            <input type="date" value={suzgec.bas ?? ""} onChange={(e) => ayarla("bas", e.target.value)} />
+            <TarihGirdisi value={suzgec.bas ?? ""} onChange={(e) => ayarla("bas", e.target.value)} />
           </label>
           <label>
             {t("tarihe")}
-            <input type="date" value={suzgec.bit ?? ""} min={suzgec.bas} onChange={(e) => ayarla("bit", e.target.value)} />
+            <TarihGirdisi value={suzgec.bit ?? ""} min={suzgec.bas} onChange={(e) => ayarla("bit", e.target.value)} />
           </label>
         </div>
         {sayi > 0 && (

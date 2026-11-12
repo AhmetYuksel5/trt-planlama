@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import {
   Bookmark,
   BookmarkCheck,
@@ -1113,8 +1114,8 @@ function OneriyeCevir({
           </label>
           <label>
             {t("tarih")}
-            <input
-              type="date"
+            <TarihGirdisi
+             
               value={g.hedefTarih}
               min={gunEkle(bugun(), -1)}
               onChange={(e) => setG({ ...g, hedefTarih: e.target.value })}

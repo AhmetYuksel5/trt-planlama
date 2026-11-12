@@ -1,3 +1,4 @@
+import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { useBen } from "../../oturum";
 import { takdirEpostasi, takdirPaketleri } from "../../takdir";
 import { KararNotlari } from "../haftalik/Kalem";
@@ -2152,8 +2153,8 @@ function EkipUyesi({
         </label>
         <label>
           {t("vardiyaGmt")}
-          <input
-            type="time"
+          <SaatGirdisi
+           
             value={e.vardiya}
             onChange={(x) =>
               ekipGuncelle(ben, plan.id, kisiId, { vardiya: x.target.value })
@@ -2210,8 +2211,8 @@ function MuhabirAyari({
       <div className="satir">
         <label>
           {t("canliSaati")}
-          <input
-            type="time"
+          <SaatGirdisi
+           
             value={f.saat}
             onChange={(e) => setF({ ...f, saat: e.target.value })}
           />

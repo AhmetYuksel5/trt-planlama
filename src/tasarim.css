@@ -3367,3 +3367,39 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
 .org-etki { display: grid; gap: var(--ara-3); }
 .org-etki-satir { display: grid; gap: var(--ara-1); }
 .org-etki-unvan { border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); display: grid; gap: var(--ara-1); }
+
+/* Tarih ve saat alanları (bilesenler/TarihSaat.tsx): tarayıcının kendi kutusu arayüzün dilini izlemiyordu. */
+.tarih-girdisi { position: relative; display: inline-flex; inline-size: 100%; min-inline-size: 0; }
+.tarih-dugmesi { display: inline-flex; align-items: center; gap: var(--ara-2); text-align: start; cursor: pointer; white-space: nowrap; overflow: hidden; }
+.tarih-dugmesi > span { overflow: hidden; text-overflow: ellipsis; }
+.tarih-dugmesi .soluk { color: var(--silik); }
+/* Yerleşik alan değeri ve data-* için yerinde; görünmez, tıklanmaz (testler ona yazıyor). */
+html body .tarih-girdisi > input.tarih-gizli.tarih-gizli {
+  position: absolute; inset-block-end: 0; inset-inline-start: 0; inline-size: 1px; block-size: 1px; min-height: 0;
+  padding: 0; border: 0; opacity: 0; pointer-events: none;
+}
+.tarih-kutusu {
+  position: fixed; inset: auto; margin: 0; inline-size: 17.5rem; max-inline-size: calc(100vw - 16px);
+  padding: var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart);
+  background: var(--yuzey); color: var(--murekkep); box-shadow: var(--golge-acilir);
+}
+.tarih-kutusu-bas { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); margin-block-end: var(--ara-2); }
+.tarih-izgara { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.tarih-gun-adi { font-size: var(--punto-mini); color: var(--silik); text-align: center; overflow: hidden; white-space: nowrap; text-overflow: clip; padding-block: 2px; }
+.tarih-gun {
+  block-size: 2.25rem; border: 0; border-radius: var(--yaricap); background: none; color: inherit;
+  font: inherit; font-size: var(--punto); cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.tarih-gun:hover:not(:disabled) { background: var(--yuzey-2); }
+.tarih-gun.baska-ay { color: var(--silik); }
+.tarih-gun.bugun { box-shadow: inset 0 0 0 1px var(--vurgu); }
+.tarih-gun.secili { background: var(--vurgu); color: var(--vurgu-yazi); }
+.tarih-gun:disabled { opacity: .35; cursor: default; }
+.tarih-kutusu-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; margin-block-start: var(--ara-2); }
+.tarih-kutusu-alt:empty { display: none; }
+.saat-girdisi { font-variant-numeric: tabular-nums; }
+input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
+.tarih-saat-girdisi { display: flex; gap: var(--ara-2); inline-size: 100%; }
+.tarih-saat-girdisi > .tarih-girdisi { flex: 1 1 auto; }
+.tarih-saat-girdisi > .saat-girdisi { flex: 0 0 6rem; }
+@media (max-width: 760px) { .tarih-gun { block-size: 2.6rem; } }

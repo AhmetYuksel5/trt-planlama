@@ -1,3 +1,4 @@
+import { SaatGirdisi, TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { postaAdresi } from "../../girisKodu";
 import { ClipboardCopy, Inbox, Link2, Mail, MailCheck, MailMinus, MailQuestion, MailX, Megaphone, Paperclip, Scissors, Smartphone, Upload } from "lucide-react";
 import { GeriBag } from "../../bilesenler/GeriBag";
@@ -221,8 +222,8 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
             <div className="satir">
               <label>
                 {t("hedefPlan")}
-                <input
-                  type="date"
+                <TarihGirdisi
+                 
                   value={hedef}
                   min={B}
                   onChange={(e) => {
@@ -233,8 +234,8 @@ export function Cagri({ ben, tarih }: { ben: Kisi; tarih?: string }) {
               </label>
               <label>
                 {t("sonSaatGmt")}
-                <input
-                  type="time"
+                <SaatGirdisi
+                 
                   value={sonSaat}
                   onChange={(e) => {
                     setSonSaat(e.target.value);

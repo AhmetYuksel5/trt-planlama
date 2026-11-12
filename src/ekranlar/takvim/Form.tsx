@@ -1,3 +1,4 @@
+import { SaatGirdisi, TarihGirdisi, TarihSaatGirdisi } from "../../bilesenler/TarihSaat";
 import { birimAdi } from "../../yapi";
 import { useState } from "react";
 import { Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -125,8 +126,8 @@ export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }:
         <div className="satir">
           <label>
             {t("baslangic")}
-            <input
-              type="date"
+            <TarihGirdisi
+             
               value={f.baslangic}
               onChange={(e) => {
                 const b = e.target.value;
@@ -136,11 +137,11 @@ export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }:
           </label>
           <label>
             {t("bitis")}
-            <input type="date" value={f.bitis} min={f.baslangic} onChange={(e) => ayarla("bitis", e.target.value)} />
+            <TarihGirdisi value={f.bitis} min={f.baslangic} onChange={(e) => ayarla("bitis", e.target.value)} />
           </label>
           <label>
             {t("saat")} <span className="ipucu">{t("varsa")}</span>
-            <input type="time" value={f.saat} onChange={(e) => ayarla("saat", e.target.value)} />
+            <SaatGirdisi value={f.saat} onChange={(e) => ayarla("saat", e.target.value)} />
           </label>
         </div>
         <div className="satir">
@@ -235,7 +236,7 @@ export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }:
               </label>
               <label>
                 {t("bitisSaati")}
-                <input type="time" value={f.bitisSaati} onChange={(e) => ayarla("bitisSaati", e.target.value)} />
+                <SaatGirdisi value={f.bitisSaati} onChange={(e) => ayarla("bitisSaati", e.target.value)} />
               </label>
             </div>
             <div className="satir">
@@ -261,7 +262,7 @@ export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }:
               {f.hatirlatma === "ozel" && (
                 <label>
                   {t("ozelZaman")}
-                  <input type="datetime-local" value={f.hatirlatmaZamani} onChange={(e) => ayarla("hatirlatmaZamani", e.target.value)} />
+                  <TarihSaatGirdisi value={f.hatirlatmaZamani} onChange={(e) => ayarla("hatirlatmaZamani", e.target.value)} />
                 </label>
               )}
               <label>
@@ -278,7 +279,7 @@ export function FaaliyetFormu({ ben, mevcut, tarih, taslak, kapat, kaydedildi }:
               {f.tekrar && (
                 <label>
                   {t("tekrarBitis")} <span className="ipucu">{t("varsa")}</span>
-                  <input type="date" value={f.tekrarBitis} min={f.baslangic} onChange={(e) => ayarla("tekrarBitis", e.target.value)} />
+                  <TarihGirdisi value={f.tekrarBitis} min={f.baslangic} onChange={(e) => ayarla("tekrarBitis", e.target.value)} />
                 </label>
               )}
             </div>

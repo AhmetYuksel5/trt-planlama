@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPlanGunu, type OneriEtiketi } from "../../oneriPlanlari";
 import { GUN_GRUPLARI, ONERI_SEKMELERI, oneriGunGrubu, oneriSekmesi, type GunGrubu, type OneriSekmesi } from "../../oneriSekmeleri";
@@ -310,8 +311,8 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
               <>
                 <label>
                   {t("tarih")}
-                  <input
-                    type="date"
+                  <TarihGirdisi
+                   
                     value={hedefTarih}
                     min={B}
                     onChange={(e) => {
@@ -323,7 +324,7 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
                 </label>
                 <label>
                   {t("oneriBitis")} <span className="ipucu">{t("varsa")}</span>
-                  <input type="date" value={bitisTarih} min={hedefTarih || B} onChange={(e) => setBitisTarih(e.target.value)} data-oneri-bitis />
+                  <TarihGirdisi value={bitisTarih} min={hedefTarih || B} onChange={(e) => setBitisTarih(e.target.value)} data-oneri-bitis />
                 </label>
               </>
             }

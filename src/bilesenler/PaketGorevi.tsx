@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "./TarihSaat";
 import { Check, ClipboardList, Hourglass, Send, Undo2, X } from "lucide-react";
 import { useState } from "react";
 import { AnmaGirdisi } from "./Anma";
@@ -77,7 +78,7 @@ function GorevPenceresi({ ben, muhabirId, talep, kapat }: { ben: Kisi; muhabirId
           )}
           <label>
             {t("gvGun")}
-            <input type="date" value={f.tarih} min={B} max={ileri ? undefined : B} disabled={!ileri} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-gorev-tarih />
+            <TarihGirdisi value={f.tarih} min={B} max={ileri ? undefined : B} disabled={!ileri} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-gorev-tarih />
           </label>
           <label>
             {t("haberTuru")}
@@ -169,7 +170,7 @@ function TalepSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
         <Rozet ton="kotu">{t("gvReddedildi")}</Rozet>
       ) : karar ? (
         <>
-          <input type="date" className="girdi" value={tarih} min={bugun()} onChange={(e) => setTarih(e.target.value)} aria-label={t("gvGun")} />
+          <TarihGirdisi className="girdi" value={tarih} min={bugun()} onChange={(e) => setTarih(e.target.value)} aria-label={t("gvGun")} />
           <button
             className="dugme dugme-kucuk dugme-iyi"
             onClick={() => confirm(t("eminMisin")) && gorevTalebiKarar(ben, p.id, true, { tarih }) && bildir(t("gvVerildi"))}

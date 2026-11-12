@@ -1,3 +1,4 @@
+import { SaatGirdisi, TarihGirdisi } from "../bilesenler/TarihSaat";
 import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
@@ -340,11 +341,11 @@ function KunyePenceresi({ ben, o, kapat }: { ben: Kisi; o?: OzelYayin; kapat: ()
         <div className="satir">
           <label>
             {t("oyTarih")}
-            <input type="date" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-ozel-tarih />
+            <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-ozel-tarih />
           </label>
           <label>
             {t("oyBitis")}
-            <input type="date" value={f.bitis ?? ""} min={f.tarih} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
+            <TarihGirdisi value={f.bitis ?? ""} min={f.tarih} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
           </label>
         </div>
         <label>
@@ -1110,7 +1111,7 @@ function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n
         <div className="satir">
           <label>
             {t("oyTarih")}
-            <input type="date" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+            <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
           </label>
           <label>
             {t("oyYer")}
@@ -1118,7 +1119,7 @@ function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n
           </label>
           <label>
             {t("oySaat")}
-            <input type="time" value={f.saat} onChange={(e) => setF({ ...f, saat: e.target.value })} data-nafize-saat />
+            <SaatGirdisi value={f.saat} onChange={(e) => setF({ ...f, saat: e.target.value })} data-nafize-saat />
           </label>
         </div>
         <label>
@@ -1327,7 +1328,7 @@ function PaketOneriPenceresi({ ben, o, s, kapat }: { ben: Kisi; o: OzelYayin; s?
           )}
           <label>
             {t("oySonTarih")}
-            <input type="date" value={f.sonTarih} onChange={(e) => setF({ ...f, sonTarih: e.target.value })} data-ozel-son-tarih />
+            <TarihGirdisi value={f.sonTarih} onChange={(e) => setF({ ...f, sonTarih: e.target.value })} data-ozel-son-tarih />
           </label>
           <label>
             {t("tur")}
@@ -1464,7 +1465,7 @@ function TalepPenceresi({ ben, o, x, kapat }: { ben: Kisi; o: OzelYayin; x?: Oze
           </label>
           <label>
             {t("oySonTarih")}
-            <input type="date" value={f.sonTarih} onChange={(e) => setF({ ...f, sonTarih: e.target.value })} />
+            <TarihGirdisi value={f.sonTarih} onChange={(e) => setF({ ...f, sonTarih: e.target.value })} />
           </label>
         </div>
         <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
@@ -1559,11 +1560,11 @@ function GorevPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: () 
         <div className="satir">
           <label>
             {t("baslangic")}
-            <input type="date" value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
+            <TarihGirdisi value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
           </label>
           <label>
             {t("bitis")}
-            <input type="date" value={f.bitis} min={f.baslangic} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
+            <TarihGirdisi value={f.bitis} min={f.baslangic} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
           </label>
         </div>
         <label>

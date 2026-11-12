@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi, gorevAdi } from "../yapi";
 import { AlertTriangle, ArrowLeft, CheckCircle, CirclePlay, ClipboardCheck, ClipboardList, Eye, Flag, Gauge, PenLine } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -253,7 +254,7 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
         </label>
         <label>
           {t("hedefGun")}
-          <input type="date" min={B} value={f.hedefTarih} onChange={(e) => setF({ ...f, hedefTarih: e.target.value || gunEkle(B, 1) })} />
+          <TarihGirdisi min={B} value={f.hedefTarih} onChange={(e) => setF({ ...f, hedefTarih: e.target.value || gunEkle(B, 1) })} />
         </label>
       </div>
       <div className="sekmeler">

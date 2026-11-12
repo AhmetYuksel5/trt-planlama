@@ -1,3 +1,4 @@
+import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
@@ -160,7 +161,7 @@ export function EkipEkleFormu({ plan, gorev: ilkGorev, kapat }: { plan: NextDayP
         </label>
         <label>
           {t("vardiyaGmt")}
-          <input type="time" value={vardiya} onChange={(e) => setVardiya(e.target.value)} />
+          <SaatGirdisi value={vardiya} onChange={(e) => setVardiya(e.target.value)} />
         </label>
       </div>
       <div className="form-alt">
@@ -215,9 +216,9 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
                     {duzenler ? (
                       <>
                         {k && <PlanAdiSecici kisi={k} sinif="girdi ad-secici" />}
-                        <input
+                        <SaatGirdisi
                           className="girdi vardiya-girdi"
-                          type="time"
+                         
                           value={e.vardiya}
                           aria-label={t("vardiya")}
                           onChange={(x) => ben && ekipGuncelle(ben, plan.id, e.kisiId, { vardiya: x.target.value })}

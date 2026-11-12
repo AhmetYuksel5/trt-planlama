@@ -2741,6 +2741,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   açık kalan sayfa: tarayıcıda kalan kayıt bozuk bir yola giriyordu). Açılışta
   sistemin işleri (`App.tsx → yokla`) tek tek korumada; biri hata verirse
   atlanır, konsola yazılır.
+- Tarih ve saat alanları (`bilesenler/TarihSaat.tsx`; kullanıcı: muhabirin
+  öneri formundaki takvim hep Türkçe, plandaki saatler AM/PM): tarayıcının
+  kendi `date`/`time`/`datetime-local` kutusu sayfanın dilini değil
+  bilgisayarın dil ve bölge ayarını izliyor, ekranlarda kullanılmaz.
+  `TarihGirdisi` arayüzün dilinde gün yazan düğme ve üst katmanda açılan ay
+  takvimi (hafta Cumartesi başlar; ay ve gün adları `dil.ts`'in biçimiyle,
+  Arapçada tek harflik gün adı; `min`/`max` dışı gün pasif; "Bugün",
+  zorunlu değilse "Temizle"); yerleşik alan görünmez biçimde yerinde kalır,
+  değer, `data-*` ve aria onda (testler ona yazar). `SaatGirdisi` her dilde
+  24 saatlik yazı alanı ("SS:DD"; "1430", "9", Arapça rakam `saatCoz`'la
+  tamamlanır, geçersizi eski değere döner; yazarken yalnız tam saat
+  kaydedilir). `TarihSaatGirdisi` ikisi yan yana. Değer biçimi ve
+  `onChange(e.target.value)` yerleşik alanla aynı. Yeni tarih ya da saat
+  alanı da bunlarla yazılır. Test `testler/tarih-saat.cjs`.
 - Özel yayında konuk listesi: ad kalın, unvan altında sönük, durum rozet gibi
   hap seçici (`.durum-secimi`), ekleme satırı `girdi` alanlarıyla
   (`.konuk-ekle`, telefonda alt alta).

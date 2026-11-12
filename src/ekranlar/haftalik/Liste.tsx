@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { CalendarRange, FilePlus2, Printer } from "lucide-react";
 import { useState } from "react";
 import { Bos, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
@@ -63,7 +64,7 @@ export default function HaftalikListe({ ben }: { ben: Kisi }) {
           <div className="satir">
             <label>
               {t("haftaninBirGunu")}
-              <input type="date" value={gun} onChange={(e) => setGun(e.target.value || planlananHafta(bugun()))} />
+              <TarihGirdisi value={gun} onChange={(e) => setGun(e.target.value || planlananHafta(bugun()))} />
             </label>
           </div>
           <p className="ipucu">{t("haftaAraligi", { aralik: aralikYaz(bas, haftaSonu(bas), dil) })}</p>

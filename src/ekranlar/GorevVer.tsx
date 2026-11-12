@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { ClipboardList, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Kart, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -97,7 +98,7 @@ export function GorevVerFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) 
       </div>
       <label>
         {t("gvSonTarih")}
-        <input type="date" min={bugun()} value={sonTarih} onChange={(e) => setSonTarih(e.target.value)} data-gorev-ver-son />
+        <TarihGirdisi min={bugun()} value={sonTarih} onChange={(e) => setSonTarih(e.target.value)} data-gorev-ver-son />
       </label>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!gecerli} kaydetMetni={t("gvGorevVer")} />
     </div>

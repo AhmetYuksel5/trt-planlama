@@ -1,3 +1,4 @@
+import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
 import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
 import { useState } from "react";
@@ -253,9 +254,9 @@ export default function BaslikKarti({
                     />
                   )}
                   {icerik ? (
-                    <input
+                    <SaatGirdisi
                       className="girdi vardiya-girdi"
-                      type="time"
+                     
                       value={m.saat ?? ""}
                       title={t("canliSaati")}
                       aria-label={t("canliSaati")}

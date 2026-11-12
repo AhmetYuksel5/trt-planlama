@@ -1,3 +1,4 @@
+import { SaatGirdisi, TarihGirdisi, TarihSaatGirdisi } from "../../bilesenler/TarihSaat";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useState } from "react";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -191,7 +192,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       <div className="satir">
         <label>
           {t("tarih")}
-          <input type="datetime-local" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+          <TarihSaatGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
         </label>
         <label>
           {t("onerenMuhabir")}
@@ -267,7 +268,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
         <div className="form" data-program>
           {f.program.map((x, i) => (
             <div key={i} className="satir">
-              <input type="time" value={x.saat} aria-label={t("saat")} onChange={(e) => programDegis(i, "saat", e.target.value)} />
+              <SaatGirdisi value={x.saat} aria-label={t("saat")} onChange={(e) => programDegis(i, "saat", e.target.value)} />
               <input {...icerikAlani} value={x.olay} aria-label={t("programOlay")} onChange={(e) => programDegis(i, "olay", e.target.value)} />
               <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, program: y.program.length > 1 ? y.program.filter((_, j) => j !== i) : [{ saat: "", olay: "" }] }))} title={t("cikar")} aria-label={t("cikar")}>
                 ×
@@ -394,7 +395,7 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
       <div className="satir">
         <label>
           {t("tarih")}
-          <input type="date" value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+          <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
         </label>
         <label>
           {t("saatGmt")}
@@ -554,11 +555,11 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
       <div className="satir">
         <label>
           {t("teslim")}
-          <input type="datetime-local" value={f.teslim} onChange={(e) => setF({ ...f, teslim: e.target.value })} />
+          <TarihSaatGirdisi value={f.teslim} onChange={(e) => setF({ ...f, teslim: e.target.value })} />
         </label>
         <label>
           {t("yayinSaati")}
-          <input type="time" value={f.yayin} onChange={(e) => setF({ ...f, yayin: e.target.value })} />
+          <SaatGirdisi value={f.yayin} onChange={(e) => setF({ ...f, yayin: e.target.value })} />
         </label>
         <label>
           {t("slug")}
@@ -608,11 +609,11 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
       <div className="satir">
         <label>
           {t("baslangic")}
-          <input type="date" value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
+          <TarihGirdisi value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
         </label>
         <label>
           {t("bitis")}
-          <input type="date" value={f.bitis} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
+          <TarihGirdisi value={f.bitis} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
         </label>
       </div>
       <label>

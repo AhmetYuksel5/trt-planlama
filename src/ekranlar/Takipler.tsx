@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { Binoculars, Plus } from "lucide-react";
 import { useState } from "react";
 import { Bos, Kart, bildir, icerikAlani } from "../bilesenler/Parcalar";
@@ -77,7 +78,7 @@ function TakipFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
           </label>
           <label>
             {t("mtTarih")} <span className="ipucu">{t("varsa")}</span>
-            <input type="date" value={f.tarih} min={bugun()} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-takip-tarih />
+            <TarihGirdisi value={f.tarih} min={bugun()} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-takip-tarih />
           </label>
         </div>
         <label>
@@ -198,7 +199,7 @@ function OneriyeCevirFormu({ ben, oneri: o, kapat }: { ben: Kisi; oneri: Oneri; 
         </label>
         <label>
           {t("gun")}
-          <input type="date" value={f.hedefTarih} min={bugun()} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} data-cevir-gun />
+          <TarihGirdisi value={f.hedefTarih} min={bugun()} onChange={(e) => setF({ ...f, hedefTarih: e.target.value })} data-cevir-gun />
         </label>
       </div>
       <div className="form-alt">

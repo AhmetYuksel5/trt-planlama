@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
 import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { useState } from "react";
@@ -218,7 +219,7 @@ function GunNotuAyari({ ben }: { ben: Kisi }) {
     <Kart baslik={t("gunNotu")} ikon={<Sparkles size={18} />}>
       <label className="alan">
         <span>{t("gnSayimBaslangici")}</span>
-        <input type="date" value={v.sayimBaslangici ?? ""} onChange={(e) => sayimBaslangiciKaydet(ben, e.target.value) && bildir(t("bKaydedildi"))} data-sayim-baslangici />
+        <TarihGirdisi value={v.sayimBaslangici ?? ""} onChange={(e) => sayimBaslangiciKaydet(ben, e.target.value) && bildir(t("bKaydedildi"))} data-sayim-baslangici />
       </label>
     </Kart>
   );

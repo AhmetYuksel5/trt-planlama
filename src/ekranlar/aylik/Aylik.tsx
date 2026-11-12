@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { Calendar, CalendarCheck, Check, ChevronLeft, ChevronRight, ClipboardCopy, FileDown, Plus, Printer, Trash2, Undo2 } from "lucide-react";
 import { useAdimDurumu } from "../../yol";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
@@ -518,12 +519,12 @@ function OlayDuzenle({ ben, ay, olay, yeni, kapat }: { ben: Kisi; ay: string; ol
             )}
             <label>
               {t("ayBas")}
-              <input type="date" data-ay-tarih value={f.tarih} min={ay + "-01"} onChange={(e) => setF({ ...f, tarih: e.target.value, bitis: f.bitis && f.bitis < e.target.value ? undefined : f.bitis })} />
+              <TarihGirdisi data-ay-tarih value={f.tarih} min={ay + "-01"} onChange={(e) => setF({ ...f, tarih: e.target.value, bitis: f.bitis && f.bitis < e.target.value ? undefined : f.bitis })} />
             </label>
             {!gunMu && (
               <label>
                 {t("ayBitis")}
-                <input type="date" value={f.bitis ?? ""} min={f.tarih || undefined} onChange={(e) => setF({ ...f, bitis: e.target.value || undefined })} />
+                <TarihGirdisi value={f.bitis ?? ""} min={f.tarih || undefined} onChange={(e) => setF({ ...f, bitis: e.target.value || undefined })} />
               </label>
             )}
           </div>
@@ -567,11 +568,11 @@ function OlayDuzenle({ ben, ay, olay, yeni, kapat }: { ben: Kisi; ay: string; ol
               <div className="satir">
                 <label>
                   {t("ayKapsamSuresi")} · {t("ayBas")}
-                  <input type="date" value={f.kapsamBas ?? ""} onChange={(e) => setF({ ...f, kapsamBas: e.target.value || undefined })} />
+                  <TarihGirdisi value={f.kapsamBas ?? ""} onChange={(e) => setF({ ...f, kapsamBas: e.target.value || undefined })} />
                 </label>
                 <label>
                   {t("ayKapsamSuresi")} · {t("ayBitis")}
-                  <input type="date" value={f.kapsamBit ?? ""} min={f.kapsamBas || f.tarih || undefined} onChange={(e) => setF({ ...f, kapsamBit: e.target.value || undefined })} />
+                  <TarihGirdisi value={f.kapsamBit ?? ""} min={f.kapsamBas || f.tarih || undefined} onChange={(e) => setF({ ...f, kapsamBit: e.target.value || undefined })} />
                 </label>
               </div>
               {gunler.map((g) => (
@@ -653,11 +654,11 @@ function OlayDuzenle({ ben, ay, olay, yeni, kapat }: { ben: Kisi; ay: string; ol
               <div className="satir">
                 <label>
                   {t("ayGidis")}
-                  <input type="date" data-ay-gidis value={f.gorev?.gidis ?? ""} onChange={(e) => setF({ ...f, gorev: { ...f.gorev, gidis: e.target.value || undefined } })} />
+                  <TarihGirdisi data-ay-gidis value={f.gorev?.gidis ?? ""} onChange={(e) => setF({ ...f, gorev: { ...f.gorev, gidis: e.target.value || undefined } })} />
                 </label>
                 <label>
                   {t("ayDonus")}
-                  <input type="date" value={f.gorev?.donus ?? ""} onChange={(e) => setF({ ...f, gorev: { ...f.gorev, donus: e.target.value || undefined } })} />
+                  <TarihGirdisi value={f.gorev?.donus ?? ""} onChange={(e) => setF({ ...f, gorev: { ...f.gorev, donus: e.target.value || undefined } })} />
                 </label>
                 <button
                   type="button"

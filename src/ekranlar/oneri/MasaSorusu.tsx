@@ -1,3 +1,4 @@
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { Check, ClipboardList, Send, Share2, X } from "lucide-react";
 import { useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
@@ -164,7 +165,7 @@ function GorevlendirFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
   return (
     <div className="satir-form" data-oneri-gorevlendir-formu>
-      <input type="date" className="girdi" value={tarih} min={B} onChange={(e) => setTarih(e.target.value)} aria-label={t("gvGun")} />
+      <TarihGirdisi className="girdi" value={tarih} min={B} onChange={(e) => setTarih(e.target.value)} aria-label={t("gvGun")} />
       <button
         type="button"
         className="dugme"

@@ -698,6 +698,8 @@ const M = {
   planaDon: m("Plana dön", "العودة إلى الخطة", "Back to plan"),
 
   /* Öneriler */
+  gunSec: m("Gün seç", "اختر اليوم", "Pick a date"),
+  temizle: m("Temizle", "مسح", "Clear"),
   oneriGir: m("Öneri gir", "إدخال مقترح", "Add proposal"),
   oneriSirasiBaskasinda: m("Sırası başkasında", "بانتظار طرف آخر", "Waiting on others"),
   oneriPlandaGundemde: m("Planda / gündemde", "في الخطة / الأجندة", "In plan / agenda"),
