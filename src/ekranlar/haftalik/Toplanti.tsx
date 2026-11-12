@@ -160,7 +160,7 @@ export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: Haf
         </div>
         <div className="toplanti-yan">
           {!dar && (kalemKarti ?? <p className="bos-kucuk">{t("kalemYok")}</p>)}
-          {toplantiNotuGorur(ben) && <ToplantiNotlari ben={ben} hafta={hafta} />}
+          {toplantiNotuGorur(ben) && <ToplantiNotlari ben={ben} planId={hafta.id} />}
         </div>
       </div>
       {dar && pencere && kalemKarti && (
@@ -174,15 +174,15 @@ export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: Haf
 }
 
 /* Toplantının genel notları: kaleme bağlı olmayan, o an alınan not. Plan ekranında da (Bolum içinde) aynı parça. */
-export function ToplantiNotlari({ ben, hafta, kartsiz = false }: { ben: Kisi; hafta: HaftalikPlan; kartsiz?: boolean }) {
+export function ToplantiNotlari({ ben, planId, kartsiz = false }: { ben: Kisi; planId: string; kartsiz?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [metin, setMetin] = useState("");
   const [duzenlenen, setDuzenlenen] = useState<{ id: string; metin: string } | null>(null);
   if (!toplantiNotuGorur(ben)) return null;
   const duzeltmeyiKaydet = () => duzenlenen && toplantiNotuDuzenle(ben, duzenlenen.id, duzenlenen.metin) && setDuzenlenen(null);
-  const notlar = (v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).sort((a, b) => a.zaman.localeCompare(b.zaman));
-  const ekle = () => toplantiNotuEkle(ben, hafta.id, metin) && setMetin("");
+  const notlar = (v.toplantiNotlari ?? []).filter((n) => n.planId === planId).sort((a, b) => a.zaman.localeCompare(b.zaman));
+  const ekle = () => toplantiNotuEkle(ben, planId, metin) && setMetin("");
   const icerik = (
     <>
       <ul className="toplanti-not-listesi" data-toplanti-notlari>

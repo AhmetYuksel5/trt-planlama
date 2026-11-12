@@ -1,3 +1,7 @@
+import { useBen } from "../../oturum";
+import { takdirEpostasi, takdirPaketleri } from "../../takdir";
+import { KararNotlari } from "../haftalik/Kalem";
+import { ZarfDugmesi } from "../haftalik/Takdir";
 import {
   ArrowRightLeft,
   ExternalLink,
@@ -14,6 +18,7 @@ import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { Fragment, useRef, useState, type ReactNode, type Ref } from "react";
 import {
   LiveKutusu,
+  PaketDurumRozeti,
   Pencere,
   TbcKutusu,
   bildir,
@@ -35,6 +40,7 @@ import {
   sehirAr,
 } from "../../etiketler";
 import {
+  takdirBildirildi,
   baslikDuzenle,
   canliKaydet,
   canliSil,
@@ -306,14 +312,53 @@ const paketGirdisi = (p: Paket, baslik: string) => ({
  * az değişen bölümleri (ekip, hareketler, canlı, hazır, متابعات) dar sütunda; çıktı,
  * baskı ve Word tek sütunda kurumun sırasıyla kalır.
  */
+/* Toplantıdaki PKG'nin kararı: kararı bekleyen "PKG PROPOSAL", gerisi kabul (ret plandan çıkıyor). */
+export const paketKarari = (p: Paket) => (p.durum === "taslak" || p.durum === "degerlendiriliyor" ? "bekliyor" : "kabul");
+
+function ToplantiPaketi({ plan, paket: p, toplanti, children }: { plan: NextDayPlan; paket: Paket; toplanti?: { secili?: string; sec: (id: string) => void }; children: ReactNode }) {
+  const v = useVeri();
+  const ben = useBen();
+  if (!toplanti) return <>{children}</>;
+  // Onaydan sonra kabul edilen paketin görevlendirme postası satırın solunda (Weekly'deki gibi).
+  const zarf = (plan.durum === "onayli" || plan.durum === "devralindi") && !!ben && yapabilir(ben, "planDuzenle") && takdirPaketleri(v, plan.id).some((x) => x.id === p.id);
+  return (
+    <div
+      className={`toplanti-kalem${toplanti.secili === p.id ? " secili" : ""}`}
+      data-toplanti-kalem={p.id}
+      data-karar={paketKarari(p)}
+      role="button"
+      tabIndex={0}
+      aria-current={toplanti.secili === p.id || undefined}
+      onClick={() => toplanti.sec(p.id)}
+      onKeyDown={(e) => e.key === "Enter" && toplanti.sec(p.id)}
+    >
+      {zarf && (
+        <ZarfDugmesi gitti={p.takdirBildirimi} muhabirId={p.muhabirId} eposta={(d, g) => takdirEpostasi(d, paketBul(d, p.id) ?? p, g)} isaretle={(b) => takdirBildirildi(b, p.id)} />
+      )}
+      {children}
+      {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız toplantı görünümünde. */}
+      <KararNotlari kalem={p} />
+      <p className="toplanti-karar-satiri">
+        <PaketDurumRozeti paket={p} />
+      </p>
+    </div>
+  );
+}
+
 export function NextDayBelgesi({
   plan,
   duzen,
   belgeRef,
   sutunlu,
   baski,
+  toplanti,
 }: {
   plan: NextDayPlan;
+  /*
+   * Toplantı görünümü (nextday/Toplanti.tsx): PKG satırı tıklanınca seçilir,
+   * kararı ve notu yan kartta; onaydan sonra kabul edilen paketin solunda zarf.
+   */
+  toplanti?: { secili?: string; sec: (id: string) => void };
   duzen?: NdDuzen;
   belgeRef?: Ref<HTMLElement>;
   sutunlu?: boolean;
@@ -441,6 +486,7 @@ export function NextDayBelgesi({
                                     />
                                   }
                                 >
+                                  <ToplantiPaketi plan={plan} paket={p} toplanti={toplanti}>
                                   <Satir yer={paketYeri(p)}>
                                     {ic && acikPaket ? (
                                       <YerindeMetin
@@ -482,6 +528,7 @@ export function NextDayBelgesi({
                                       <bdi>{p.slug}</bdi>
                                     </p>
                                   )}
+                                  </ToplantiPaketi>
                                 </BelgeSatiri>
                               );
                             };

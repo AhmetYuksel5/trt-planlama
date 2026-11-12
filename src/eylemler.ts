@@ -1407,6 +1407,19 @@ export const kalemKararNotu = (ben: Kisi, haftaId: string, kalemId: string, g: {
   return true;
 };
 
+/*
+ * Next Day toplantısında paketin karar notu ve ek talebi (Weekly kalemindeki
+ * gibi): yalnız toplantı görünümünde, çıktıya girmez. Onaydan sonra da düzelir.
+ */
+export const paketKararNotu = (ben: Kisi, paketId: string, g: { kararNotu: string; ekTalep: string }) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !p.planId || !(yapabilir(ben, "planDuzenle") || yapabilir(ben, "paketDegerlendir"))) return false;
+  const yd = paketGuncelle(d, paketId, (x) => ({ ...x, kararNotu: g.kararNotu.trim() || undefined, ekTalep: g.ekTalep.trim() || undefined }));
+  kaydet(bahset(yd, ben, `${g.kararNotu}\n${g.ekTalep}`, { yol: `#/nextday/${p.planId}/toplanti`, baslik: p.baslik }, `${p.kararNotu ?? ""}\n${p.ekTalep ?? ""}`));
+  return true;
+};
+
 /** Toplantının sonunda kalan kalemlerin hepsine kabul. */
 export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
   const d = getir();
@@ -3086,13 +3099,16 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
  */
 /* --- Toplantı notları (Weekly toplantısı) --- */
 
+/* Haftalık ya da Next Day planının toplantısı (kullanıcı: Weekly için yapılanlar Next Day'de de). */
 export const toplantiNotuEkle = (ben: Kisi, planId: string, metin: string): boolean => {
   let d = getir();
   const h = haftaBul(d, planId);
-  if (!h || !metin.trim() || !toplantiNotuGorur(ben)) return false;
+  const nd = h ? undefined : planBul(d, planId);
+  if ((!h && !nd) || !metin.trim() || !toplantiNotuGorur(ben)) return false;
   const not: ToplantiNotu = { id: kimlik("tn"), planId, kisiId: ben.id, zaman: simdi(), metin: metin.trim() };
   d = { ...d, toplantiNotlari: [...(d.toplantiNotlari ?? []), not] };
-  kaydet(bahset(d, ben, metin, { yol: `#/haftalik/${planId}/toplanti`, baslik: `Weekly ${h.baslangic}` }));
+  const baglam = h ? { yol: `#/haftalik/${planId}/toplanti`, baslik: `Weekly ${h.baslangic}` } : { yol: `#/nextday/${planId}/toplanti`, baslik: `Next Day ${nd!.tarih}` };
+  kaydet(bahset(d, ben, metin, baglam));
   return true;
 };
 
@@ -3106,7 +3122,7 @@ export const toplantiNotuDuzenle = (ben: Kisi, id: string, metin: string): boole
   const n = (d.toplantiNotlari ?? []).find((x) => x.id === id);
   if (!n || !metin.trim() || !toplantiNotuSilebilir(ben, n)) return false;
   const yd = { ...d, toplantiNotlari: (d.toplantiNotlari ?? []).map((x) => (x === n ? { ...x, metin: metin.trim() } : x)) };
-  kaydet(bahset(yd, ben, metin, { yol: `#/haftalik/${n.planId}/toplanti` }, n.metin));
+  kaydet(bahset(yd, ben, metin, { yol: `#/${haftaBul(d, n.planId) ? "haftalik" : "nextday"}/${n.planId}/toplanti` }, n.metin));
   return true;
 };
 

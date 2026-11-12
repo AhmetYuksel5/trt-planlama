@@ -1831,6 +1831,8 @@ const M = {
   baslikPkgAltinda: m("Başlığın PKG bölümünde", "ضمن تقارير العنوان", "In the headline's PKG section"),
   gelismeyePkgEkle: m("Bu gelişmeye PKG ekle", "إضافة تقرير لهذا التطور", "Add a PKG to this development"),
   toplantiGorunumu: m("Toplantı görünümü", "عرض الاجتماع", "Meeting view"),
+  ndPlanaDon: m("Plana dön", "العودة إلى الخطة", "Back to plan"),
+  ndToplantiPaketYok: m("Planda PKG yok", "لا تقارير في الخطة", "No packages in the plan"),
   toplantiNotlari: m("Toplantı notları", "ملاحظات الاجتماع", "Meeting notes"),
   kararVerilen: m("{n}/{m} kalemde karar verildi", "تقرر في {n} من {m} بنود", "Decided {n} of {m} items"),
   onceki: m("Önceki", "السابق", "Previous"),

@@ -902,6 +902,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     aktar, onayı geri al (`data-onay-geri`), Klasik/Yeni/Sütunlu seçimi.
   - Akış adımları tek kancada (`usePlanAkisi`): kart ve yeni görünümün durum
     sekmesi (`PlanDurumKarti`) aynı eylemi aynı soruyla çağırır.
+  - Toplantı görünümü (kullanıcı: Weekly için yapılanlar Next Day'de de;
+    `nextday/Toplanti.tsx`, `#/nextday/:id/toplanti`): toplantıdaki planın
+    "Sıradaki" kartında (`data-toplanti-ac`) ve ⋯'de (taslak dışında).
+    Ortada planın tam belgesi (`NextDayBelgesi toplanti`): PKG satırı
+    (`paketSatiri` → `ToplantiPaketi`, `data-toplanti-kalem`, `data-karar`
+    bekliyor/kabul, `paketKarari`) tıklanınca seçilir, altında durum rozeti
+    ve notları; yanda seçili paketin kartı (`PaketKarari`: Kabul et / Reddet
+    onay sorularak, toplantıda ve `paketDegerlendir`; "Not / ek talep"
+    `Paket.kararNotu`/`ekTalep`, `eylemler.ts → paketKararNotu`, onaydan
+    sonra da) ve toplantı notları (`ToplantiNotlari planId`; `toplantiNotuEkle`
+    Next Day planını da tanır, kayıt temizliğinde planla gider). Klavye ↑/↓
+    (j/k), 1 kabul, 4 ret, N not; kararla sonraki pakete. Üstte ilerleme
+    (belgede çizilen PKG'lerden), Hepsi / Karar bekleyen, "Planı onayla"
+    (`usePlanAkisi`). Reddedilen paket iptal olduğu için belgeden çıkar.
+    Onaydan sonra kabul edilen paketin solunda zarf (`haftalik/Takdir.tsx →
+    ZarfDugmesi`, Weekly'yle ortak; `takdirPaketleri`, `takdirBildirildi`);
+    ⋯'de "Kabul edilen paketler" planın bildirim sayfasını açar. Notlar
+    çıktıya girmez. Şartlı kabul Next Day'de yok. Test `testler/nd-toplanti.cjs`.
   - Başlığa gelişme muhabir önerisinden ve takibinden de eklenir: "Gelişme ekle"nin
     sağında ve gelişme formunun sağ üstünde "Öneri ve takiplerden al" (sayısıyla;
     `Formlar.tsx → OneridenAl`), `Pencere`de öneri kartları, her birinde

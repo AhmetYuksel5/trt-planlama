@@ -15,6 +15,7 @@ import Takipler from "./ekranlar/Takipler";
 import Gorevler from "./ekranlar/Gorevler";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import KodlaGiris from "./ekranlar/KodlaGiris";
+import NdToplanti from "./ekranlar/nextday/Toplanti";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import Gundem from "./ekranlar/Gundem";
 import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
@@ -276,6 +277,7 @@ export default function App() {
         if (yol.id && yol.id !== "yarin" && !plan) icerik = <Yetkisiz />;
         else if (plan && yol.alt === "cikti") icerik = <Cikti plan={plan} />;
         else if (plan && yol.alt === "takdir") icerik = <TakdirBildirimi ben={ben} plan={plan} />;
+        else if (plan && yol.alt === "toplanti") icerik = <NdToplanti ben={ben} plan={plan} />;
         else if (plan && yol.alt === "belge")
           icerik = <NextDayBelge ben={ben} plan={plan} />;
         else if (plan) icerik = <PlanEkrani ben={ben} plan={plan} />;

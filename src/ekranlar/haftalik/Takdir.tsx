@@ -7,8 +7,8 @@ import { kalemAdi } from "../../haftalik";
 import { GERCEK } from "../../kip";
 import { useBen } from "../../oturum";
 import { postaGonder } from "../../posta-kapi";
-import { haftalikTakdirKalemleri, kalemBildirimi, kalemTakdirEpostasi, takdirAdresi } from "../../takdir";
-import { getir, kisiBul, useVeri, type HaftalikKalem, type HaftalikPlan, type Kisi } from "../../veri";
+import { haftalikTakdirKalemleri, kalemBildirimi, kalemTakdirEpostasi, takdirAdresi, type TakdirEpostasi } from "../../takdir";
+import { getir, kisiBul, useVeri, type Durum, type HaftalikKalem, type HaftalikPlan, type Kisi } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { TakdirListesi, type TakdirSatiri } from "../nextday/Takdir";
 
@@ -39,17 +39,28 @@ export function HaftalikTakdirPenceresi({ ben, hafta, kapat }: { ben: Kisi; haft
 }
 
 /*
- * Kesinleşmiş haftanın toplantı görünümünde kabul edilen paketin satırındaki
- * zarf (kullanıcı: geri bildirim orada da olsun, basınca onaylansın gitsin).
- * Tek posta, listedekiyle aynı şablon ve iz; gönderilmişse saatiyle onay işareti.
+ * Toplantı görünümünde kabul edilen paketin satırındaki zarf (kullanıcı: geri
+ * bildirim orada da olsun, basınca onaylansın gitsin). Weekly'nin kalemi ve
+ * Next Day'in paketi aynı düğmeyi kullanıyor; tek posta, listedekiyle aynı
+ * şablon ve iz; gönderilmişse saatiyle onay işareti.
  */
-export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem: HaftalikKalem }) {
+export function ZarfDugmesi({
+  gitti,
+  muhabirId,
+  eposta,
+  isaretle,
+}: {
+  gitti?: { zaman: string };
+  muhabirId?: string;
+  /** Gönderim anında en taze kayıttan. */
+  eposta: (d: Durum, gonderen: Kisi) => TakdirEpostasi;
+  isaretle: (ben: Kisi) => boolean;
+}) {
   const { t, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
   const [mesgul, setMesgul] = useState(false);
-  if (!ben || !yapabilir(ben, "haftalikDuzenle") || !haftalikTakdirKalemleri(hafta).some((k) => k.id === kalem.id)) return null;
-  const gitti = kalemBildirimi(v, kalem);
+  if (!ben) return null;
   if (gitti) {
     const etiket = `${t("tkGitti")} · ${saatYaz(gitti.zaman, dil)}`;
     return (
@@ -58,7 +69,7 @@ export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem
       </span>
     );
   }
-  const adres = takdirAdresi(kisiBul(v, kalem.muhabirler[0]));
+  const adres = takdirAdresi(kisiBul(v, muhabirId));
   const etiket = adres ? `${t("tkGonder", { n: "1" })} · ${adres}` : t("tkAdresYok");
   const gonder = async (e: React.MouseEvent) => {
     // Kalemi seçmesin: satırın kendisi toplantıda seçim düğmesi.
@@ -66,12 +77,10 @@ export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem
     if (!adres) return bildir(t("tkAdresYok"));
     if (mesgul || !confirm(t("tkGonderOnay", { n: "1" }))) return;
     setMesgul(true);
-    const d = getir();
-    const guncel = d.haftalik.find((h) => h.id === hafta.id)?.kalemler.find((x) => x.id === kalem.id) ?? kalem;
-    const p = kalemTakdirEpostasi(d, guncel, ben);
+    const p = eposta(getir(), ben);
     const r = GERCEK ? await postaGonder({ kime: p.kime, cc: p.cc, bcc: p.bcc, konu: p.konu, metin: p.metin }) : { tamam: true as const };
     setMesgul(false);
-    if (r.tamam && haftalikTakdirBildirildi(ben, hafta.id, kalem.id)) bildir(t("tkGonderildi", { n: "1" }));
+    if (r.tamam && isaretle(ben)) bildir(t("tkGonderildi", { n: "1" }));
     else if (!r.tamam) bildir(`${t("tkGonderilemedi")} (${r.ayrinti ?? r.hata})`);
   };
   return (
@@ -87,5 +96,20 @@ export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem
     >
       <Mail size={16} />
     </button>
+  );
+}
+
+/* Kesinleşmiş haftanın kabul edilen kalemi. */
+export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem: HaftalikKalem }) {
+  const v = useVeri();
+  const ben = useBen();
+  if (!ben || !yapabilir(ben, "haftalikDuzenle") || !haftalikTakdirKalemleri(hafta).some((k) => k.id === kalem.id)) return null;
+  return (
+    <ZarfDugmesi
+      gitti={kalemBildirimi(v, kalem)}
+      muhabirId={kalem.muhabirler[0]}
+      eposta={(d, g) => kalemTakdirEpostasi(d, d.haftalik.find((h) => h.id === hafta.id)?.kalemler.find((x) => x.id === kalem.id) ?? kalem, g)}
+      isaretle={(b) => haftalikTakdirBildirildi(b, hafta.id, kalem.id)}
+    />
   );
 }

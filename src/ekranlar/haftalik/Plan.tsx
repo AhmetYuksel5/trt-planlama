@@ -194,7 +194,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       <StokDosyasi ben={ben} hafta={hafta} />
       {toplantiNotuGorur(ben) && (hafta.durum !== "hazirlik" || (v.toplantiNotlari ?? []).some((n) => n.planId === hafta.id)) && (
         <Bolum no="✎" baslik={t("toplantiNotlari")} ek={String((v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).length || "")}>
-          <ToplantiNotlari ben={ben} hafta={hafta} kartsiz />
+          <ToplantiNotlari ben={ben} planId={hafta.id} kartsiz />
         </Bolum>
       )}
       <Bolum no="↺" baslik={t("hareketGecmisi")}>

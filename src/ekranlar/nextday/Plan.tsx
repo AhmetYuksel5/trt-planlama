@@ -12,6 +12,7 @@ import {
   MailCheck,
   Megaphone,
   Plus,
+  Presentation,
   Printer,
   Send,
   Undo2,
@@ -52,6 +53,7 @@ import {
 } from "../../veri";
 import {
   planAdimiYapabilir,
+  toplantiNotuGorur,
   planIcerikDuzenler,
   planOperasyonDuzenler,
   yalnizPlanlama,
@@ -685,6 +687,17 @@ function PlanMenusu({
       <button type="button" role="menuitem" className="acilir-satir" onClick={onizle} data-arac="cikti">
         <Printer size={16} /> {t("ciktiOnizleme")}
       </button>
+      {/* Weekly'deki gibi: toplantının çalışma ekranı ve kabul edilen paketlerin postası. */}
+      {(toplantiNotuGorur(ben) || yapabilir(ben, "paketDegerlendir")) && plan.durum !== "taslak" && (
+        <a role="menuitem" className="acilir-satir" href={`#/nextday/${plan.id}/toplanti`} data-arac="toplanti">
+          <Presentation size={16} /> {t("toplantiGorunumu")}
+        </a>
+      )}
+      {a.takdirSayisi > 0 && yapabilir(ben, "planDuzenle") && (
+        <a role="menuitem" className="acilir-satir" href={`#/nextday/${plan.id}/takdir`} data-arac="kabul-paketler">
+          <MailCheck size={16} /> {t("kabulEdilenPaketler")}
+        </a>
+      )}
       {(icerik || operasyon) && (
         <a role="menuitem" className="acilir-satir" href={`#/nextday/${plan.id}/belge`} data-arac="belge">
           <FilePen size={16} /> {t("belgedeDuzenle")}
@@ -747,6 +760,10 @@ function useSiradakiIs(ben: Kisi, plan: NextDayPlan): { metin: ReactNode; dugmel
     dugmeler = (
       <>
         {haftalik}
+        {/* Toplantı sürerken asıl çalışma yeri toplantı görünümü (Weekly'deki gibi). */}
+        <a className="dugme dugme-yumusak" href={`#/nextday/${plan.id}/toplanti`} data-toplanti-ac>
+          <Presentation size={16} /> {t("toplantiGorunumu")}
+        </a>
         {a.taslagaAlir && (
           <button type="button" className="dugme dugme-sade" onClick={a.taslagaAl}>
             <Undo2 size={16} /> {t("taslagaGeriAl")}
@@ -948,7 +965,7 @@ function KayipGrupSatiri({
  * devral) tek yerde: üstteki "Sıradaki" kartı (klasik) ve yeni görünümün
  * durum sekmesi aynı eylemi aynı soruyla çağırıyor.
  */
-function usePlanAkisi(ben: Kisi, plan: NextDayPlan) {
+export function usePlanAkisi(ben: Kisi, plan: NextDayPlan) {
   const { t } = useDil();
   const v = useVeri();
   // Onay kararsız paketleri kabul sayıyor (planDurum); onay penceresi kaç paketin kabul edileceğini, kaç muhabire görev gideceğini söylüyor.
