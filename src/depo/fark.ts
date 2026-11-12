@@ -38,6 +38,7 @@ export const DIZI_ALANLARI = [
   "geriBildirimSablonlari",
   "yzGorusleri",
   "masaSorulari",
+  "toplantiNotlari",
   "sehirler",
   "gorevler",
   "isler",

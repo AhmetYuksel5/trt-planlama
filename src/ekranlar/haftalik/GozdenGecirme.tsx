@@ -6,8 +6,8 @@ import { aralikYaz, useDil } from "../../dil";
 import { KARAR_ADI } from "../../etiketler";
 import { haftalikKesinlestir, kalemKarar } from "../../eylemler";
 import { gundemde, haftaSonu, kalemAdi, kesinlesmeOzeti } from "../../haftalik";
-import { useVeri, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
-import { kararVerebilir } from "../../yetki";
+import { kisiBul, useVeri, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
+import { kararVerebilir, toplantiNotuGorur } from "../../yetki";
 import { KararNotlari } from "./Kalem";
 
 /*
@@ -19,8 +19,9 @@ import { KararNotlari } from "./Kalem";
 const SIRA: Karar[] = ["kabul", "sartli", "bilgi", "ret"];
 
 export function GozdenGecirme({ ben, hafta, kapat }: { ben: Kisi; hafta: HaftalikPlan; kapat: () => void }) {
-  const { t, dil } = useDil();
+  const { t, dil, ad } = useDil();
   const v = useVeri();
+  const notlar = toplantiNotuGorur(ben) ? (v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).sort((a, b) => a.zaman.localeCompare(b.zaman)) : [];
   // Pencere açıkken kayıt değişebiliyor (karar burada da değişiyor): haftanın taze hali.
   const h = v.haftalik.find((x) => x.id === hafta.id) ?? hafta;
   const oz = kesinlesmeOzeti(v, h);
@@ -37,6 +38,8 @@ export function GozdenGecirme({ ben, hafta, kapat }: { ben: Kisi; hafta: Haftali
         `${t(KARAR_ADI[k])} (${l.length})`,
         ...l.map((x) => [`- ${kalemAdi(x)}`, ...[x.kosul && `${t("kosul")}: ${x.kosul}`, x.kararNotu && `${t("kararNotu")}: ${x.kararNotu}`, x.ekTalep && `${t("ekTalep")}: ${x.ekTalep}`].filter(Boolean).map((s) => `  ${s}`)].join("\n")),
       ]),
+      // Toplantının genel notları tutanağın sonunda (yalnız görebilene).
+      ...(notlar.length ? ["", t("toplantiNotlari"), ...notlar.map((n) => `- ${ad(kisiBul(v, n.kisiId))}: ${n.metin}`)] : []),
     ].join("\n");
 
   const kesinlestir = () => haftalikKesinlestir(ben, h.id, acikReddet) && (bildir(t("bHaftalikKesinlesti")), kapat());

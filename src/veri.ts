@@ -733,6 +733,21 @@ export interface SepetParcasi {
  * görevlendirir. Öneriden ayrı kayıtta: masanın iç notu muhabire gitmesin
  * (muhabirin tarayıcısı bu koleksiyonu dinlemiyor).
  */
+/*
+ * Toplantının genel notu (Weekly toplantısında o an alınan, kaleme bağlı
+ * olmayan not; kullanıcı: Planlama ve yöneticiler görsün, muhabir görmesin).
+ * Plandan ayrı kayıtta: muhabirin tarayıcısı bu koleksiyonu dinlemiyor, kural
+ * kısıtlı kişiye okutmuyor; iki kişi aynı anda yazınca plan belgesi ezilmesin.
+ */
+export interface ToplantiNotu {
+  id: string;
+  /** Notun alındığı plan (haftalık planın kimliği). */
+  planId: string;
+  kisiId: string;
+  zaman: string;
+  metin: string;
+}
+
 export interface MasaSorusu {
   id: string;
   oneriId: string;
@@ -1717,6 +1732,7 @@ export interface Durum {
   /** Yapay zekanın haber değeri görüşleri; eski kayıtta yok. */
   yzGorusleri?: YzGorus[];
   masaSorulari?: MasaSorusu[];
+  toplantiNotlari?: ToplantiNotu[];
   /** Yerleşik listede olmayan, sonradan eklenen şehirler. */
   sehirler?: SehirTanimi[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */
@@ -1873,6 +1889,7 @@ export const bosDurum = (): Durum => ({
   geriBildirimSablonlari: [],
   yzGorusleri: [],
   masaSorulari: [],
+  toplantiNotlari: [],
   sehirler: [],
   gorevler: [],
   isler: [],

@@ -1806,6 +1806,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sayfasında ve Next Day'in PKG satırında da. Koşul karar verilene dek
     paketin not ekinde (`paketNotEki`: "مشروط: …"), Weekly çıktısında sarı
     notta "(مشروط) …". Test `testler/sartli-kabul.cjs`.
+  - Toplantı görünümü (`haftalik/Toplanti.tsx`, `#/haftalik/:id/toplanti`;
+    kullanıcı: toplantıda anlık not alıp paketleri onaylayacağı, sonra gözden
+    geçirip son hali vereceği arayüz): toplantıdaki planın "Sıradaki"
+    kartında ve ⋯'de "Toplantı görünümü" (karar verebilen ya da notları
+    gören). Solda gündem kalem kalem (`toplantiSirasi`: günler, sonra zamana
+    bağlı olmayanlar; karar rozetiyle), ortada seçili kalemin kartı
+    (`KalemKarti kisayol`: karar, şartlı kabulün koşulu, karar notu ve ek
+    talep, plan ekranınınkiyle aynı), sağda genel notlar. Klavye (yazı alanı
+    ve açık pencere dışında): ↑/↓ (j/k) kalem, 1 kabul, 2 şartlı (koşul
+    formu), 3 bilgi, 4 ret, 0 kararı kaldırır, N karar notu; karar verince
+    sonraki kaleme geçer. Üstte ilerleme ("n/m"), Hepsi / Karar bekleyen
+    süzgeci (`useAdimDurumu`), "Planı kesinleştir" gözden geçirme penceresini
+    açar. Test `testler/toplanti.cjs`.
+  - Toplantı notları (kaleme bağlı olmayan, o an alınan not; kullanıcı:
+    Planlama ve yöneticiler görsün, muhabir görmesin): ayrı kayıtta
+    (`Durum.toplantiNotlari`, `ToplantiNotu`, koleksiyon `toplantiNotlari`;
+    kısıtlı kişi dinlemiyor, kural okutmuyor), `eylemler.ts →
+    toplantiNotuEkle`, `toplantiNotuSil` (yazan, Planlama yöneticisi, tam
+    yönetici). Görür ve yazar `yetki.ts → toplantiNotuGorur`: tam yönetici,
+    Planlama, kademe, rolü yönetici olan. `AnmaGirdisi` (Ctrl/⌘+Enter
+    ekler, `bahset`). Toplantı görünümünde ve plan ekranında "Toplantı
+    notları" bölümü; gözden geçirmenin tutanağının sonunda. Kayıt
+    temizliğinde haftalık planla gider.
   - Kesinleştirme gözden geçirme penceresinden (`haftalik/GozdenGecirme.tsx`;
     kullanıcı: toplantıdan sonra gözden geçirip plana son hali verilsin; önce
     iki ardışık onay sorusuydu, kararlar görünmüyordu): kalemler kararlarına

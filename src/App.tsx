@@ -44,6 +44,7 @@ import HaftalikCagri from "./ekranlar/haftalik/Cagri";
 import HaftalikCikti from "./ekranlar/haftalik/Cikti";
 import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
+import HaftalikToplanti from "./ekranlar/haftalik/Toplanti";
 import ProjePlani from "./ekranlar/ProjePlani";
 import OrtamSayfasi from "./ekranlar/ortam/Ortam";
 import YeniOrtam from "./ekranlar/ortam/YeniOrtam";
@@ -285,6 +286,8 @@ export default function App() {
           icerik = <HaftalikCikti hafta={hafta} />;
         else if (hafta && yol.alt === "belge")
           icerik = <HaftalikBelge ben={ben} hafta={hafta} />;
+        else if (hafta && yol.alt === "toplanti")
+          icerik = <HaftalikToplanti ben={ben} hafta={hafta} />;
         else if (hafta && yol.alt === "cagri")
           icerik = yapabilir(ben, "cagriHazirla") ? (
             <HaftalikCagri ben={ben} hafta={hafta} />

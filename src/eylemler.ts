@@ -90,6 +90,7 @@ import {
   type NextDayPlan,
   type Oneri,
   type MasaSorusu,
+  type ToplantiNotu,
   type OneriGorunumu,
   type Paket,
   type MetinParcasi,
@@ -174,6 +175,7 @@ import {
   oneriDuzenleyebilir,
   yzGorusuGorur,
   kararNotuYazabilir,
+  toplantiNotuGorur,
   paketTamamlayabilir,
   planAdimiYapabilir,
   ozelDuzenler,
@@ -3047,6 +3049,30 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
  * Anılana kayıt (işler listesinde) ve bildirim; düzenlenen notta yalnız
  * yeni anılanlar. Kendini anan ve pasif kişi düşüyor.
  */
+/* --- Toplantı notları (Weekly toplantısı) --- */
+
+export const toplantiNotuEkle = (ben: Kisi, planId: string, metin: string): boolean => {
+  let d = getir();
+  const h = haftaBul(d, planId);
+  if (!h || !metin.trim() || !toplantiNotuGorur(ben)) return false;
+  const not: ToplantiNotu = { id: kimlik("tn"), planId, kisiId: ben.id, zaman: simdi(), metin: metin.trim() };
+  d = { ...d, toplantiNotlari: [...(d.toplantiNotlari ?? []), not] };
+  kaydet(bahset(d, ben, metin, { yol: `#/haftalik/${planId}/toplanti`, baslik: `Weekly ${h.baslangic}` }));
+  return true;
+};
+
+/* Not yazanın; Planlama yöneticisi ve tam yönetici başkasınınkini de siler (yanlış yere yazılmış not). */
+export const toplantiNotuSilebilir = (ben: Kisi | undefined, n: ToplantiNotu) =>
+  !!ben && toplantiNotuGorur(ben) && (n.kisiId === ben.id || !!ben.hesapYoneticisi || (izinBirimi(ben.birim) === "planlama" && ben.rol === "yonetici"));
+
+export const toplantiNotuSil = (ben: Kisi, id: string): boolean => {
+  const d = getir();
+  const n = (d.toplantiNotlari ?? []).find((x) => x.id === id);
+  if (!n || !toplantiNotuSilebilir(ben, n)) return false;
+  kaydet({ ...d, toplantiNotlari: (d.toplantiNotlari ?? []).filter((x) => x.id !== id) });
+  return true;
+};
+
 export const bahset = (d: Durum, ben: Kisi, metin: string, baglam: { yol: string; baslik?: string }, eski = ""): Durum => {
   const ids = yeniAnilanlar(metin, eski, d.kisiler).filter((id) => id !== ben.id);
   if (!ids.length) return d;

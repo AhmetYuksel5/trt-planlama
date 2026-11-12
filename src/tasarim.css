@@ -993,6 +993,33 @@ a.rozet-plan { text-decoration: none; }
 /* Gelişmeye bağlı PKG plan ekranında gelişmenin hemen altında, içeriden. */
 .gelisme-alti { display: grid; gap: var(--ara-2); margin-block-start: var(--ara-2); margin-inline-start: var(--ara-4); }
 .gelisme-alti:empty { display: none; }
+/* Weekly toplantı görünümü (haftalik/Toplanti.tsx): liste, seçili kalem, genel notlar. */
+.toplanti { display: grid; gap: var(--ara-4); }
+.toplanti-ust { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-3); }
+.toplanti-baslik { font-size: var(--punto-orta); margin: 0; margin-inline-end: auto; }
+.toplanti-ilerleme { display: inline-flex; align-items: center; gap: var(--ara-2); font-size: var(--punto-kucuk); }
+.toplanti-cubuk { inline-size: 120px; block-size: 6px; border-radius: 3px; background: var(--yuzey-3); overflow: hidden; }
+.toplanti-cubuk > span { display: block; block-size: 100%; background: var(--iyi); }
+.toplanti-duzen { display: grid; gap: var(--ara-4); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1100px) { .toplanti-duzen { grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 300px); } .toplanti-liste, .toplanti-notlar { position: sticky; inset-block-start: calc(var(--ust-yukseklik) + var(--ara-3)); } }
+@media (min-width: 761px) and (max-width: 1099px) { .toplanti-duzen { grid-template-columns: minmax(0, 280px) minmax(0, 1fr); } .toplanti-notlar { grid-column: 1 / -1; } }
+.toplanti-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); max-block-size: calc(100vh - var(--ust-yukseklik) - 140px); overflow: auto; }
+@media (max-width: 760px) { .toplanti-liste { max-block-size: 40vh; } }
+.toplanti-satir { inline-size: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ara-2); align-items: start; text-align: start; padding: var(--ara-2) var(--ara-3); min-block-size: 44px; border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); color: inherit; font: inherit; cursor: pointer; }
+.toplanti-satir:hover { border-color: var(--silik); }
+.toplanti-satir.secili { border-color: var(--vurgu); border-inline-start-width: 3px; background: var(--vurgu-sis); }
+.toplanti-no { font-weight: 700; color: var(--sonuk); font-size: var(--punto-kucuk); min-inline-size: 1.5em; }
+.toplanti-satir-govde { display: grid; gap: 2px; min-inline-size: 0; }
+.toplanti-satir-govde small { color: var(--sonuk); }
+.toplanti-ayrinti { display: grid; gap: var(--ara-2); min-inline-size: 0; }
+.toplanti-gezinti { display: flex; justify-content: flex-end; gap: var(--ara-1); }
+.toplanti-ayrinti kbd, .kalem kbd { font: inherit; font-size: 11px; font-weight: 700; padding: 0 5px; border: 1px solid currentColor; border-radius: 4px; opacity: .7; margin-inline-start: var(--ara-1); }
+.toplanti-not-listesi { list-style: none; margin: 0 0 var(--ara-3); padding: 0; display: grid; gap: var(--ara-2); }
+.toplanti-not-listesi li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ara-2); align-items: start; }
+.toplanti-not-listesi p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.toplanti-not-listesi small { color: var(--sonuk); }
+.toplanti-not-yaz { display: grid; gap: var(--ara-2); justify-items: end; }
+.toplanti-not-yaz textarea { inline-size: 100%; }
 /* Weekly gözden geçirme penceresi: kalemler karar gruplarında. */
 .gozden-grup h3 { margin-block: var(--ara-3) var(--ara-2); font-size: var(--punto-orta); }
 .gozden-grup .liste select { inline-size: auto; max-inline-size: 11rem; }

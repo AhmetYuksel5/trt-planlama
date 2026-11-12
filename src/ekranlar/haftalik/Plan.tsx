@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -26,7 +26,7 @@ import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler,
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
-import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, yapabilir } from "../../yetki";
+import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
@@ -40,6 +40,7 @@ import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
 import { GozdenGecirme } from "./GozdenGecirme";
 import { HaftalikCiktiOnizleme } from "./Cikti";
+import { ToplantiNotlari } from "./Toplanti";
 
 /**
  * Haftalık plan ekranı: Perşembe toplantısına giden planın hazırlandığı
@@ -83,6 +84,11 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           <>
             {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
             <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
+              {(kararVerebilir(ben, hafta) || toplantiNotuGorur(ben)) && (
+                <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/toplanti`} data-arac="toplanti">
+                  <Presentation size={16} /> {t("toplantiGorunumu")}
+                </a>
+              )}
               {/* Next Day'deki gibi önizleme penceresi: baskı tasarımı seçilir, tam sayfa ya da yazdır. */}
               <button type="button" role="menuitem" className="acilir-satir" onClick={() => setOnizleme(true)} data-arac="cikti">
                 <Printer size={16} /> {t("ciktiOnizleme")}
@@ -123,6 +129,12 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               <button type="button" className="dugme dugme-yumusak" onClick={() => durumDegistir("toplantida", "bHaftalikToplantida")}>
                 <Send size={16} className="yon" /> {t("haftalikToplantiyaGotur")}
               </button>
+            )}
+            {/* Toplantı sürerken asıl çalışma yeri toplantı görünümü (kalem kalem karar, not, klavye). */}
+            {hafta.durum === "toplantida" && (kararVerebilir(ben, hafta) || toplantiNotuGorur(ben)) && (
+              <a className="dugme dugme-yumusak" href={`#/haftalik/${hafta.id}/toplanti`} data-toplanti-ac>
+                <Presentation size={16} /> {t("toplantiGorunumu")}
+              </a>
             )}
             {hafta.durum === "toplantida" && planAdimiYapabilir(ben, "hfToplanti") && (
               <button type="button" className="dugme dugme-sade" onClick={() => durumDegistir("hazirlik", "bHazirligaAlindi")}>
@@ -167,6 +179,11 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       <AnaDosyalar ben={ben} hafta={hafta} />
       <GunlukGundem ben={ben} hafta={hafta} />
       <StokDosyasi ben={ben} hafta={hafta} />
+      {toplantiNotuGorur(ben) && (hafta.durum !== "hazirlik" || (v.toplantiNotlari ?? []).some((n) => n.planId === hafta.id)) && (
+        <Bolum no="✎" baslik={t("toplantiNotlari")} ek={String((v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).length || "")}>
+          <ToplantiNotlari ben={ben} hafta={hafta} kartsiz />
+        </Bolum>
+      )}
       <Bolum no="↺" baslik={t("hareketGecmisi")}>
         <HareketGecmisi hareketler={v.hareketler.filter((h) => h.haftaId === hafta.id)} d={v} />
       </Bolum>

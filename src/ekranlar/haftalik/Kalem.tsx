@@ -213,7 +213,8 @@ const KARAR_DUGMELERI: { karar: Karar; ad: Anahtar; ikon: typeof Check; sinif: s
   { karar: "ret", ad: "krRet", ikon: Ban, sinif: "dugme-kotu" },
 ];
 
-export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; dosyaGoster?: boolean }) {
+// kisayol: toplantı görünümünde karar düğmelerinde klavye rakamı (1 kabul, 2 şartlı, 3 bilgi, 4 ret).
+export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = false }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; dosyaGoster?: boolean; kisayol?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const kaynakMetni = useKaynakMetni();
@@ -329,7 +330,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
       {(karar || (duzenler && onIncelemeyeGidebilir(kalem))) && (
         <div className="dugmeler ara-ust">
           {karar &&
-            KARAR_DUGMELERI.map((k) => {
+            KARAR_DUGMELERI.map((k, i) => {
               const Ikon = k.ikon;
               const secili = kalem.karar === k.karar;
               return (
@@ -342,6 +343,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
                   onClick={() => (!secili && k.karar === "sartli" ? setKosulFormu(true) : kalemKarar(ben, hafta.id, kalem.id, secili ? "bekliyor" : k.karar))}
                 >
                   <Ikon size={14} /> {t(k.ad)}
+                  {kisayol && <kbd>{i + 1}</kbd>}
                 </button>
               );
             })}

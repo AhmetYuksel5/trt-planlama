@@ -581,6 +581,13 @@ export const paketIsaretOnaylayabilir = (k: Kisi | undefined): boolean =>
   !!k && !k.pasif && hesapYetkisi(k, "paketOnayi");
 
 /** Toplantıda kararın notu ve ek talebi: karar verebilen ya da kesinleşmeden önce planı düzenleyebilen. */
+/*
+ * Toplantının genel notları Planlama'ya ve yöneticilere (tam yönetici, kademe,
+ * birim yöneticisi); muhabir ve onay bekleyen görmez (kullanıcı kararı).
+ */
+export const toplantiNotuGorur = (k: Kisi | undefined): boolean =>
+  !!k && !kisitliKisi(k) && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "planlama" || yonetimdeMi(k) || k.rol === "yonetici");
+
 export const kararNotuYazabilir = (
   k: Kisi | undefined,
   h: HaftalikPlan,
