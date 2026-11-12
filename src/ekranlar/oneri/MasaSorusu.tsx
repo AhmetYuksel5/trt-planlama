@@ -8,7 +8,7 @@ import { SORU_MASALARI, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSor
 import { bugun, yerelGun } from "../../tarih";
 import { kisiBul, oneriBul, useVeri, type BirimId, type Kisi, type MasaSorusu, type Oneri } from "../../veri";
 import { birimAdi, izinBirimi } from "../../yapi";
-import { kisitliKisi, masaYanitlar, masayaSorabilir, oneriGorevlendirebilir, yapabilir } from "../../yetki";
+import { kisitliKisi, masaYanitlar, oneriGorevlendirebilir, yapabilir } from "../../yetki";
 
 /*
  * Önerinin masaya sorulması (kullanıcı: ekonomi ya da programla ilgili öneriyi
@@ -18,25 +18,43 @@ import { kisitliKisi, masaYanitlar, masayaSorabilir, oneriGorevlendirebilir, yap
  * kartı görmez: masanın notu iç yazışma.
  */
 
-export function MasaKarti({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+/*
+ * Pencerede birim görüşü üç parça (kullanıcı: kart çok yer kaplıyordu,
+ * Next Day ve Weekly'de de olsun): bilgi satırında tek rozet (MasaRozeti),
+ * Değerlendirme bölümünde soru geçmişi ve yanıt (MasaBolumu), sorma formu
+ * ⋯ menüsünden (MasayaSorFormu).
+ */
+export function MasaRozeti({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   const { t } = useDil();
   const v = useVeri();
-  const sorular = oneriSorulari(v, oneri.id);
-  const sorar = masayaSorabilir(ben, oneri, v);
-  if (kisitliKisi(ben) || (!sorar && !sorular.length)) return null;
+  const s = sonSoru(v, oneri.id);
+  if (!s || kisitliKisi(ben)) return null;
+  const paket = oneriGorevPaketi(v, oneri.id);
+  const [ton, ad] = paket ? (["iyi", "msGorevlendirildi"] as const) : !s.cevap ? (["uyari", "msYanitBekliyor"] as const) : s.cevap.kabul ? (["iyi", "msAldi"] as const) : (["kotu", "msAlmadi"] as const);
   return (
-    <Kart baslik={t("msKart")} ikon={<Share2 size={18} />}>
-      {sorular.length > 0 && (
-        <ul className="liste" data-masa-sorulari>
-          {sorular.map((s) => (
-            <SoruSatiri key={s.id} s={s} />
-          ))}
-        </ul>
-      )}
+    <span data-masa-rozeti={s.birim}>
+      <Rozet ton={ton}>
+        {birimAdi(s.birim)} · {t(ad)}
+      </Rozet>
+    </span>
+  );
+}
+
+/** Değerlendirme bölümünde: soruların geçmişi, masanın yanıtı, Planlama'nın görevlendirmesi. */
+export function MasaBolumu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+  const v = useVeri();
+  const sorular = oneriSorulari(v, oneri.id);
+  if (kisitliKisi(ben) || !sorular.length) return null;
+  return (
+    <div className="ara-ust-2" data-masa-bolumu>
+      <ul className="liste" data-masa-sorulari>
+        {sorular.map((s) => (
+          <SoruSatiri key={s.id} s={s} />
+        ))}
+      </ul>
       {masaYanitlar(ben, oneri, v) && <YanitFormu ben={ben} oneri={oneri} />}
       {oneriGorevlendirebilir(ben, oneri, v) && <GorevlendirFormu ben={ben} oneri={oneri} />}
-      {sorar && <SorFormu ben={ben} oneri={oneri} />}
-    </Kart>
+    </div>
   );
 }
 
@@ -83,13 +101,13 @@ function SoruSatiri({ s }: { s: MasaSorusu }) {
   );
 }
 
-function SorFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+export function MasayaSorFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
   const { t } = useDil();
   // Önerinin kolu masaysa o önce seçili; yoksa ilk masa.
   const [birim, setBirim] = useState<BirimId>(SORU_MASALARI.includes(oneri.tur) ? oneri.tur : SORU_MASALARI[0]);
   const [not, setNot] = useState("");
   return (
-    <div className="form ara-ust-2" data-masaya-sor>
+    <div className="form form-kutu" data-masaya-sor>
       <div className="satir">
         <label>
           {t("birim")}
@@ -106,8 +124,11 @@ function SorFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
         {t("not")}
         <AnmaGirdisi cokSatir rows={2} deger={not} degistir={setNot} data-masa-sor-notu />
       </label>
-      <div>
-        <button type="button" className="dugme" onClick={() => oneriMasayaSor(ben, oneri.id, birim, not) && (setNot(""), bildir(t("msIletildi")))} data-masaya-ilet>
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button type="button" className="dugme" onClick={() => oneriMasayaSor(ben, oneri.id, birim, not) && (bildir(t("msIletildi")), kapat())} data-masaya-ilet>
           <Send size={15} className="yon" /> {t("msMasayaIlet")}
         </button>
       </div>

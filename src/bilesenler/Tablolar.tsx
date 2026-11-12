@@ -151,7 +151,11 @@ function StokYeri({ p, d }: { p: Paket; d: Durum }) {
   return <Rozet ton="vurgu">{t("planaSecildi", { tarih: secildi.map((x) => tarihYaz(x.tarih, dil, "kisa")).join(", ") })}</Rozet>;
 }
 
-export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
+/*
+ * `planaGizle`: kart ve pencerenin bilgi satırı plana girdiğini zaten
+ * gösteriyor ("✓ Next Day · gün · başlık"); düz "plana eklendi" rozeti tekrar.
+ */
+export function OneriDurumRozeti({ oneri, planaGizle = false }: { oneri: Oneri; planaGizle?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
   // Plana giren önerinin haberi bitince öneri de "tamamlandı" görünsün; "plana eklendi"de kalıyordu.
@@ -165,6 +169,7 @@ export function OneriDurumRozeti({ oneri }: { oneri: Oneri }) {
   // görünüyor, ret hiçbir yerde yazmıyordu. Başka geçerli paketi yoksa ret yanında yazılı.
   const pk = v.paketler.filter((p) => p.oneriId === oneri.id);
   const paketRet = oneri.durum === "planaEklendi" && pk.some((p) => p.reddedildi) && !pk.some((p) => p.durum !== "iptal");
+  if (planaGizle && oneri.durum === "planaEklendi" && !paketRet) return null;
   return (
     <>
       <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>
@@ -216,7 +221,7 @@ export function KaynakRozeti({ oneri }: { oneri: Oneri }) {
 }
 
 /** Satır içinde kaynak; hücre biçiminde avatar ve altında giren. */
-export function OneriKaynagi({ oneri, d, hucre = false }: { oneri: Oneri; d: Durum; hucre?: boolean }) {
+export function OneriKaynagi({ oneri, d, hucre = false, girensiz = false }: { oneri: Oneri; d: Durum; hucre?: boolean; girensiz?: boolean }) {
   const { t, ad } = useDil();
   const muhabir = kisiBul(d, oneri.muhabirId);
   const giren = kisiBul(d, oneri.giren);
@@ -230,7 +235,8 @@ export function OneriKaynagi({ oneri, d, hucre = false }: { oneri: Oneri; d: Dur
     <span>{t("atanmadi")}</span>
   );
   // Planlama'nın muhabire önerdiği haberde gönderen "önerdi", elle girilende "girdi".
-  const girdi = giren && t(oneri.yon ? "onerdi" : "girdi", { kisi: ad(giren) });
+  // Kartta giren yok (karar için gerekmiyor); pencerenin Plan & Öneri bölümünde.
+  const girdi = !girensiz && giren && t(oneri.yon ? "onerdi" : "girdi", { kisi: ad(giren) });
   if (!hucre)
     return (
       <>

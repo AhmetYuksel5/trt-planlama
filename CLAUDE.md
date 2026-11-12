@@ -429,7 +429,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     örnekten, eğitimsiz.
   - **"Haber değeri"** (`YzHaberDegeri`): öneri penceresinde ve ayrıntının
     değerlendirme kartında ölçüt başına 1–5 puan, gerekçe (isteyenin arayüz
-    dilinde) ve genel kanaat; kartta rozet (`YzGorusRozeti`). Yalnız tavsiye,
+    dilinde) ve genel kanaat; öneri kartında rozet yok (kullanıcı: kararı
+    yönlendiriyordu, kart kalabalıktı). Yalnız tavsiye,
     kararı değiştirmez. Görüş öneriden ayrı kayıtta (`Durum.yzGorusleri`,
     öneri başına bir, `eylemler.ts → yzGorusKaydet`), ekibin hepsi görür,
     muhabir görmez (`yetki.ts → yzGorusuGorur`); öneri silinince izi gider.
@@ -1621,14 +1622,41 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sorusunda bunu söyler (`takipPaketsizOnay`). Muhabir dışı kaynakta
   "Takip" yok.
 - Plan ekranlarında (Next Day, haftalık) gelen öneri müstakil kart
-  (`oneri/OneriKarti.tsx → OneriListesi`):
-  - kartta kol, haber türü, ülke, durum; başlık önerilen paket
-    (`paketBasligi`, yoksa `haberBasligi`), altında arka plan haberi,
-    kısa gelişme, kaynak ve zaman. Renk yalnız kolda.
-  - Karta basınca `Pencere`de bütün öneri: tam gelişme, kaynak, hedef plan,
-    süreç, yazışma ve hareket geçmişi (ayrıntı sayfasına gitmek gerekmiyor).
-    Plana/gündeme ekleme ve ret pencerede açılır, ızgarada form açılmaz;
-    değerlendirmeye alma ve erteleme kartta.
+  (`oneri/OneriGovde.tsx → OneriListesi`, kart `OneriKarti.tsx`).
+  Kullanıcı kartı ve pencereyi karışık, yer kaplayan buldu, örnek verdi;
+  iki planlamacı ve iki tasarımcı ajanla tekrarlar ayıklandı:
+  - Kart üç satır: başlık (önerilen paket, yoksa Header; iki satırda kesilir)
+    ve tek durum rozeti; bilgi satırı (`OneriMetaSatiri`: kısa gün, plan
+    etiketi, ülke, haber türü, saha, birim görüşü rozeti; plana girmişse
+    etiket ve gün yerine yeşil "Plana eklendi · plan gün · başlık",
+    "plana eklendi" rozeti o zaman çizilmez, `OneriDurumRozeti planaGizle`);
+    avatar, kaynak (giren yok, `OneriKaynagi girensiz`), geçen süre ve
+    hızlı karar: "Plana ekle" / "Gündeme ekle" ve ret simgesi
+    (`data-oneri-ekle`, `data-oneri-hizli-ret`; kullanıcı ikisini istedi).
+    Kol rengi yalnız şeritte, adı ipucunda. Gelişme, arka plan haberi,
+    gerekçe, yapay zeka rozeti ve silme kartta yok (kullanıcı kararı).
+    Liste görünümü (`OneriSatiri`) aynı bilgi tek satırlık başlıkla.
+  - Karta basınca tek pencere (`OneriAyrinti`; ayrıntı sayfası ve öneriler
+    sayfasının penceresi de aynısı, önce plan ekranındaki ayrı ve eksikti:
+    birim görüşü, takip satırları, eş öneri yoktu): başlık ve rozet, altında
+    bilgi satırı; katlanır bölümler (`data-oneri-bolum`): Özet (açık; şimdiki
+    düzeltme notu ya da gerekçe, "Düzenle", Header, gelişme, takip
+    satırları), Plan ve öneri (gün ve etiketler, plan, dosya, paket, kol,
+    saha, kaynak, giren, kanal ve geliş; eş, bağlı ve plandakine bağla;
+    bunlardan biri varsa açık), Materyal (işleme fikri, görsel işleme, ilk
+    hali, orijinal e-posta), Değerlendirme (yapay zeka, birim görüşü,
+    önceki düzeltme, gerekçe, geri bildirim, arşiv), Yazışma · n, Hareket
+    geçmişi · n. Boş bölüm çizilmez (CSS `:has`). Ayrıntı sayfasında
+    bölümler açık. Altta (`data-oneri-alt`; sayfada başlığın altında)
+    kişi (ad, "Muhabir · şehir"), ⋯ menüsü, "Plandan çıkar", "Paket önerisi
+    ekle", "Reddet" ve "Plana ekle". ⋯: birimin görüşüne sun, teklifte
+    değerlendirmeye/takibe al, değerlendirmeye al (Next Day'de), düzeltmeye
+    gönder, takip olarak kalsın, Weekly'de değerlendir, başka plana ekle,
+    aşamayı geri al, geri çek, arşive gönder/çıkar, sil. Seçilen kararın
+    formu bölümlerin üstünde (`data-oneri-mod`); karttaki hızlı düğmeyle
+    açılan form bitince pencere kapanır. Ayrı muhabir kartı ve süreç
+    çizgisi kalktı (durum rozetinin ve adın tekrarı). Plan ekranı kendi
+    ekleme formunu verir (`ekleFormu`).
   - Next Day'de başlık seçenekleri bütün havuz değil (`baslikSecimi.ts →
     ndBaslikSecenekleri`): planın kendi başlıkları ve bir önceki günün
     planlarındakiler ("Plana ekle" formu, plandaki "Başlık ekle"; Plana
@@ -1698,13 +1726,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     tarayıcıda başka biri girince kendi seçimini görür, seçmeyen kart görür.
   - Öneri penceresi kısa (kullanıcı: aşağı çok uzuyordu): satırsız öneride
     "Gelişmeler" kartı yerine "Gelişme ekle" düğmesi, boş yazışmada "mesaj
-    yok" satırı yok, pencerede orijinal e-posta ve hareket geçmişi katlanır
-    satır (`KatlanirKartlar`), alanlar dar sütunda (`dialog.pencere .alanlar`).
+    yok" satırı yok, bölümler katlanır, alanlar dar sütunda
+    (`dialog.pencere .alanlar`).
   - Öneriler sayfası (`oneri/Oneriler.tsx → OnerilerListe`) da aynı seçimi
-    izler: kartta karta basınca geniş pencerede ayrıntı sayfasının tamamı
-    (`OneriDetay pencerede`: kararlar, yazışma, geçmiş), listede bugünkü
-    tablo. Başlık kartındaki küçük liste bu
-    kalıba girmez.
+    izler: kartta karta basınca aynı pencere (`OneriAyrinti`), listede
+    bugünkü tablo. Başlık kartındaki küçük liste bu kalıba girmez.
 - Haftalık plan (`ekranlar/haftalik/`): Cumartesi–Cuma, Perşembe
   toplantısı. Hazırlık → haftalık toplantıda → kesinleşti.
   - Üst kısım `PlanBasiKalibi` (Next Day'deki gibi): "Weekly · aralık", ↶ ve
@@ -1911,8 +1937,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Önerinin masaya sorulması (kullanıcı: ekonomi ya da programla ilgili
   öneriyi Planlama o birime iletir, "alırız" derlerse notlarıyla ya da öneriyi
   kendileri düzenleyerek, muhabiri Planlama görevlendirir; başka öneriyi de
-  "işinize yarar mı" diye sorar). Kurallar `masaSorusu.ts`, kart
-  `oneri/MasaSorusu.tsx → MasaKarti` (önerinin sayfasında ve penceresinde),
+  "işinize yarar mı" diye sorar). Kurallar `masaSorusu.ts`, ekran
+  `oneri/MasaSorusu.tsx`: sorma formu önerinin ⋯ menüsünde ("Birimin
+  görüşüne sun", `MasayaSorFormu`, `data-masaya-sor-ac`), durum bilgi
+  satırında tek rozet (`MasaRozeti`: "Ekonomi · görüş bekleniyor"), soru
+  geçmişi, yanıt ve görevlendirme Değerlendirme bölümünde (`MasaBolumu`).
+  Kullanıcı: büyük kart yer kaplıyordu, Next Day ve Weekly'de çalışırken de
+  yönlendirilsin; tek pencere olduğu için plan ekranlarında da var,
   eylemler `eylemler.ts → oneriMasayaSor`, `masaSorusunuYanitla`,
   `oneriGorevlendir`. Soru öneriden ayrı kayıtta (`Durum.masaSorulari`,
   `MasaSorusu`; yapay zeka görüşü gibi): masanın notu muhabire gitmesin;

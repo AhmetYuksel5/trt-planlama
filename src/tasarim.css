@@ -1503,32 +1503,43 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .oneri-karti:hover { border-color: var(--vurgu); border-inline-start-color: var(--renk, var(--vurgu)); }
 .oneri-karti.talimat { border-inline-start-color: var(--lacivert); }
 .oneri-karti.sonuk-kart { opacity: .6; }
-.ok-ust { display: flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; }
-.ok-ulke { display: inline-flex; align-items: center; gap: 3px; color: var(--sonuk); font-size: var(--punto-mini); font-weight: 600; }
-.ok-baslik { display: block; width: 100%; border: 0; background: none; padding: 0; color: var(--murekkep); font: inherit; font-size: var(--punto-orta); font-weight: 700; line-height: 1.45; cursor: pointer; }
+/* Kart üç satır (kullanıcı: kart karışık, yer kaplıyor): başlık ve tek rozet, bilgi satırı, kaynak ve hızlı karar. */
+.oneri-karti { gap: var(--ara-1); padding: var(--ara-2) var(--ara-3); }
+.ok-bas { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--ara-2); align-items: start; }
+.ok-baslik { display: block; width: 100%; border: 0; background: none; padding: 0; color: var(--murekkep); font: inherit; font-size: var(--punto); font-weight: 700; line-height: 1.45; cursor: pointer; }
 .ok-baslik:hover, .ok-baslik:focus-visible { color: var(--vurgu); }
-.ok-baslik .icerik, .ok-metin { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.ok-baslik .icerik { -webkit-line-clamp: 2; }
-.ok-metin { -webkit-line-clamp: 3; color: var(--sonuk); font-size: var(--punto-kucuk); line-height: 1.6; }
-.ok-arka { display: flex; align-items: center; gap: var(--ara-1); justify-content: flex-end; color: var(--sonuk); font-size: var(--punto-kucuk); min-width: 0; }
-.ok-arka svg { flex: none; }
-.ok-arka .icerik { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ok-baslik .icerik { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; }
+.ok-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--ara-2); min-width: 0; color: var(--sonuk); font-size: var(--punto-mini); font-weight: 600; }
+.ok-meta > * { min-width: 0; overflow-wrap: anywhere; }
+.ok-gun { color: var(--murekkep); }
+.ok-saha { display: inline-grid; place-items: center; color: var(--vurgu); }
 .ok-alt { display: flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; margin-top: auto; font-size: var(--punto-kucuk); color: var(--murekkep); }
 .ok-kaynak { display: inline-flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; min-width: 0; }
-.ok-saha { display: inline-grid; place-items: center; color: var(--vurgu); margin-inline-start: auto; }
-/* Plana eklenen öneri listede kalıyor; altında yeşil not. */
-.ok-plana-eklendi { display: flex; align-items: center; gap: var(--ara-1); margin: var(--ara-2) 0 0; color: var(--iyi); font-size: var(--punto-kucuk); font-weight: 600; }
-.ok-gerekce { color: var(--sonuk); font-size: var(--punto-kucuk); }
-.ok-eylem { display: flex; gap: var(--ara-1); flex-wrap: wrap; padding-top: var(--ara-2); border-top: 1px solid var(--cizgi); }
+.ok-hizli { display: flex; align-items: center; gap: var(--ara-1); margin-inline-start: auto; }
+/* Plana eklenen öneri listede kalıyor; bilgi satırında girdiği plan yeşil. */
+.ok-plana-eklendi { display: inline-flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; overflow-wrap: anywhere; color: var(--iyi); font-weight: 600; }
 .oneri-satiri .ok-baslik { font-size: var(--punto-kucuk); text-align: inherit; }
-.oneri-satiri .satir-tek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Liste satırının alt satırı dar ekranda kırılsın: rozetler ve uzun Latin ad (giren) taşmasın. */
+.oneri-satiri .ok-baslik .icerik { -webkit-line-clamp: 1; }
+.oneri-satiri small { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--ara-2); }
 .oneri-satiri small > *, .oneri-satiri small .rozet { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
-.ok-plana-eklendi { flex-wrap: wrap; overflow-wrap: anywhere; }
 /* Karar düğmeleri dar yerde yazının altına iniyor; yanında kalınca yazıyı harf harf sıkıştırıyordu. */
 .oneri-satiri .kayit-bas { flex-wrap: wrap; }
-.oneri-satiri .kayit-bas > div:not(.islemler) { flex: 1 1 220px; }
-.oneri-satiri .kayit-bas > .islemler { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-inline-start: auto; }
+.oneri-satiri .kayit-bas > div:not(.islemler) { flex: 1 1 220px; min-width: 0; }
+.oneri-satiri .kayit-bas > .islemler { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-inline-start: auto; align-items: center; }
+/* Önerinin ayrıntısı (OneriGovde.tsx): katlanır bölümler; içindeki kartlar çerçevesiz, boş bölüm çizilmez. */
+.oneri-bolum .katlanir-govde { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-2); }
+.oneri-bolum .kart { border: 0; box-shadow: none; padding: 0; background: none; }
+.oneri-bolum:has(> .katlanir-govde:empty) { display: none; }
+.oneri-duzenle { justify-content: flex-end; }
+.pencere > header h2 .rozet { vertical-align: middle; font-size: var(--punto-mini); }
+.pencere > header .ok-meta { margin-top: var(--ara-1); }
+.pencere > footer { align-items: center; }
+.oneri-kisi { margin-inline-end: auto; min-width: 0; }
+.oneri-kisi small { display: block; }
+.oneri-alt { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--ara-2); }
+.oneri-sayfa .oneri-alt { padding: var(--ara-3) var(--ara-4); margin-block-end: var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
+.oneri-sayfa .oneri-govde { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-3); max-inline-size: 960px; }
+.oneri-sayfa .sayfa-basi .ok-meta { font-size: var(--punto-kucuk); }
 .pencere .op-arka { font-weight: 600; }
 /* Kaynak dar sütunda: uzun talimat rozeti sığmazsa satır kırsın, yandaki alanın üstüne binmesin. */
 .pencere .alan, .pencere .kisi-hucre > span { min-width: 0; }

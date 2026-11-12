@@ -20,6 +20,16 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
     await p.goto("about:blank"); await p.goto(B + yol); await p.waitForTimeout(900);
   };
   const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24") || "{}"));
+  // "Birimin görüşüne sun" önerinin ⋯ menüsünde (kullanıcı: kart yer kaplıyordu); menü açılmadan madde yok.
+  const menu = (kap = "[data-oneri-alt]") => p.locator(`${kap} button[aria-haspopup="menu"]`).first();
+  const sorulabilir = async (kap) => {
+    if (!(await menu(kap).count())) return false;
+    await menu(kap).click(); await p.waitForTimeout(150);
+    const n = await p.locator("[data-masaya-sor-ac]").count();
+    await menu(kap).click(); await p.waitForTimeout(100);
+    return n > 0;
+  };
+  const sorAc = async (kap) => { await menu(kap).click(); await p.waitForTimeout(150); await p.locator("[data-masaya-sor-ac]").click(); await p.waitForTimeout(200); };
 
   // 1. Planlama'nın karar vereceği bir muhabir önerisi bul; masaya iletilebiliyor
   await gir("pl1", "#/oneriler");
@@ -27,17 +37,19 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   let oneriYolu = null;
   for (const y of yollar) {
     await gir("pl1", y);
-    if (await p.locator("[data-masaya-ilet]").count()) { oneriYolu = y; break; }
+    if (await sorulabilir()) { oneriYolu = y; break; }
   }
   ok(!!oneriYolu, "masaya iletilebilen öneri bulundu: " + oneriYolu);
   const oneriId = oneriYolu.split("/").pop();
+  await sorAc();
   await p.locator("[data-masa-birim]").selectOption("ekonomi");
   await p.locator("[data-masa-sor-notu]").fill("هل يناسبكم؟");
   await p.locator("[data-masaya-ilet]").click(); await p.waitForTimeout(400);
   let d = await durum();
   const soru = d.masaSorulari.find((m) => m.oneriId === oneriId);
   ok(!!soru && soru.birim === "ekonomi" && !soru.cevap && soru.soran === "pl1", "soru kaydı açıldı (ekonomi, yanıt bekliyor)");
-  ok((await p.locator("[data-masaya-ilet]").count()) === 0, "açık soru varken ikinci kez iletilmiyor");
+  ok(!(await sorulabilir()), "açık soru varken ikinci kez iletilmiyor");
+  ok((await p.locator('[data-oneri-meta] [data-masa-rozeti="ekonomi"]').count()) >= 1, "bilgi satırında birim rozeti (Ekonomi · görüş bekleniyor)");
   const muhabirId = d.oneriler.find((o) => o.id === oneriId).muhabirId;
 
   // 2. Planlama'nın öneriler sayfasında "Masalardaki öneriler"
@@ -87,8 +99,9 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   let ikinci = null;
   for (const y of yollar.filter((y) => y !== oneriYolu)) {
     await gir("pl1", y);
-    if (await p.locator("[data-masaya-ilet]").count()) { ikinci = y; break; }
+    if (await sorulabilir()) { ikinci = y; break; }
   }
+  await sorAc();
   await p.locator("[data-masa-birim]").selectOption("program");
   await p.locator("[data-masaya-ilet]").click(); await p.waitForTimeout(400);
   await gir("pr2", ikinci);
@@ -97,7 +110,28 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   const s3 = d.masaSorulari.filter((m) => m.oneriId === ikinci.split("/").pop()).at(-1);
   ok(s3?.cevap?.kabul === false, "Program almadı");
   await gir("pl1", ikinci);
-  ok((await p.locator("[data-masaya-ilet]").count()) === 1 && (await p.locator("[data-oneri-gorevlendir]").count()) === 0, "reddedilen öneri başka masaya iletilebiliyor, görevlendirilemiyor");
+  ok((await sorulabilir()) && (await p.locator("[data-oneri-gorevlendir]").count()) === 0, "reddedilen öneri başka masaya iletilebiliyor, görevlendirilemiyor");
+
+  // 6b. Next Day'de çalışırken de: plan ekranının öneri penceresinden birim görüşüne sunulur
+  await gir("pl1", "#/nextday/yarin");
+  await p.getByRole("button", { name: /^Öneri/ }).first().click(); await p.waitForTimeout(500);
+  const kart = p.locator("dialog[open] [data-oneri]").first();
+  ok((await kart.locator("[data-oneri-ekle]").count()) + (await kart.locator("[data-oneri-hizli-ret]").count()) >= 1, "kartta hızlı karar (Plana ekle / Reddet)");
+  let ndSordu = false;
+  for (const k of await p.locator("dialog[open] [data-oneri] .ok-baslik").all()) {
+    await k.click(); await p.waitForTimeout(400);
+    const kap = "dialog[open] > footer";
+    if (await sorulabilir(kap)) {
+      ok((await p.locator("dialog[open] [data-oneri-bolum]").count()) >= 3, "pencerede katlanır bölümler");
+      await sorAc(kap);
+      await p.locator("dialog[open] [data-masa-birim]").last().selectOption("spor");
+      await p.locator("dialog[open] [data-masaya-ilet]").last().click(); await p.waitForTimeout(400);
+      ndSordu = (await durum()).masaSorulari.some((m) => m.birim === "spor");
+      break;
+    }
+    await p.locator("dialog[open] > header button[aria-label='Kapat']").last().click(); await p.waitForTimeout(200);
+  }
+  ok(ndSordu, "Next Day penceresinden birimin görüşüne sunuldu (Spor)");
 
   // 7. 390 pikselde taşma yok
   for (const dil of ["tr", "ar"]) {

@@ -4,7 +4,6 @@ import { gecenSure, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, sehirAr } from "../etiketler";
 import { yzGorusKaydet } from "../eylemler";
 import { baslikBul, kisiBul, useVeri, type Durum, type Kisi, type Oneri, type OneriBicimi, type YzGenel } from "../veri";
-import { useBen } from "../oturum";
 import { yzGorusuGorur } from "../yetki";
 import { useYz, yzHataMetni, yzIste, type YzBicimSonucu, type YzOneriGirdisi } from "../yz";
 import { Icerik, Rozet, bildir } from "./Parcalar";
@@ -244,18 +243,5 @@ export function YzHaberDegeri({ ben, oneri: o, ulkeAdi }: { ben: Kisi; oneri: On
         </button>
       )}
     </div>
-  );
-}
-
-/** Kartta küçük rozet: görüş alınmışsa genel kanaat. */
-export function YzGorusRozeti({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
-  const { t } = useDil();
-  const ben = useBen();
-  const gorus = d.yzGorusleri?.find((g) => g.oneriId === o.id);
-  if (!gorus || !yzGorusuGorur(ben)) return null;
-  return (
-    <Rozet ton={GENEL_TONU[gorus.genel]} title={`${t("yzGorus")}: ${t(GENEL_ADI[gorus.genel])}`}>
-      <Sparkles size={11} /> {t(GENEL_ADI[gorus.genel])}
-    </Rozet>
   );
 }

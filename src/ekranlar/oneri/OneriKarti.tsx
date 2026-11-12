@@ -1,36 +1,27 @@
-import { Ban, CircleCheck, Clock, FolderOpen, LayoutGrid, Lightbulb, List, MapPin, MapPinned, Pencil, Plus, Undo2, X } from "lucide-react";
+import { CircleCheck, LayoutGrid, List, MapPinned, Plus, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { BicimRozeti, Bos, DurumCizgisi, Icerik, NotKutu, PaketDurumRozeti, Pencere, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { EpostaOneriSil, OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri, useOneriGunu } from "../../bilesenler/Tablolar";
-import { gecenSure, saatYaz, tarihYaz, useDil } from "../../dil";
-import { BICIM_ADI, KANAL_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriDuzeltmeIste, oneriDurum, oneriDuzenle, oneriGorunumuKaydet, oneriPlandanCikar, oneriyePaketEkle, oneriyePaketEklenebilir } from "../../eylemler";
-import { oneriYeri } from "../../oneriPlanlari";
-import { yerelGun } from "../../tarih";
-import { paketBul, useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
-import { haftalikDuzenler, oneriDuzenleyebilir, oneriDuzeltmeyeGider, planIcerikDuzenler, yapabilir } from "../../yetki";
+import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri } from "../../bilesenler/Tablolar";
+import { gecenSure, tarihYaz, useDil } from "../../dil";
+import { BICIM_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
+import { oneriDuzeltmeIste, oneriDurum, oneriGorunumuKaydet, oneriPlandanCikar, oneriyePaketEkle, oneriyePaketEklenebilir } from "../../eylemler";
+import { oneriAraligi, oneriYeri } from "../../oneriPlanlari";
+import { useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
+import { haftalikDuzenler, planIcerikDuzenler, yapabilir } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
-import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { useBen } from "../../oturum";
-import { OneriYazismasi } from "./Yazisma";
-import { GeriBildirimBolumu } from "./GeriBildirim";
-import { KisaOneriFormu } from "./Eposta";
-import { OneriIslemeMetinleri } from "./OneriFormu";
-import { YzGorusRozeti, YzHaberDegeri } from "../../bilesenler/YzOneri";
+import { MasaRozeti } from "./MasaSorusu";
 
 /*
  * Plan hazırlanırken gelen öneri: müstakil kart, basınca pencerede bütün
- * öneri. Haber odalarının öneri (pitch) kartlarındaki sıra: üstte
- * sınıflama (kol, haber türü, ülke), ortada başlık ve arkasındaki haber,
- * altında kısa gelişme, en altta kim, ne zaman, durum. Renk yalnız kolda.
- * Kararlar (plana ekle, ret) pencerede veriliyor; ızgara form açılınca
- * dağılmıyor.
+ * öneri (OneriGovde.tsx). Kararlar pencerede; kartta yalnız hızlı "ekle" ve
+ * "reddet", ızgara form açılınca dağılmıyor.
  */
 
 /** Kartın başlığı önerilen paket; muhabir paket önermediyse haberin kendisi. */
-const baslikOf = (o: Oneri) => o.paketBasligi || o.haberBasligi;
+export const baslikOf = (o: Oneri) => o.paketBasligi || o.haberBasligi;
 /** Arka plan haberi yalnız başlıktan farklıysa ayrı satır. */
-const arkaPlan = (o: Oneri) => (o.paketBasligi && o.paketBasligi !== o.haberBasligi ? o.haberBasligi : undefined);
+export const arkaPlan = (o: Oneri) => (o.paketBasligi && o.paketBasligi !== o.haberBasligi ? o.haberBasligi : undefined);
 
 export type Gorunum = OneriGorunumu;
 export type PencereDurumu = { id: string; mod: "goster" | "ekle" | "ret" | "duzelt" } | null;
@@ -59,13 +50,20 @@ export function GorunumSecici({ deger, degistir }: { deger: Gorunum; degistir: (
 /** Sürüklenen önerinin veri türü: yeni Next Day görünümünde başlığa bırakılır. */
 export const ONERI_TURU = "application/x-plannersflow-oneri";
 
+/*
+ * Kart yalnız taramak için (kullanıcı: kart karışık, yer kaplıyor; tıklayınca
+ * ayrıntı): üç satır. Başlık ve tek durum rozeti; bilgi satırı (gün, plan,
+ * ülke, haber türü, saha, birim görüşü); kaynak, geçen süre ve hızlı karar.
+ * Kol rengi yalnız şeritte, adı ipucunda. Gelişme, gerekçe, yapay zeka
+ * rozeti ve silme pencerede.
+ */
 export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Durum; ac: () => void; eylemler?: ReactNode }) {
   const { t, dil } = useDil();
-  const arka = arkaPlan(o);
   return (
     <article
       className={`oneri-karti tur-${o.tur} ${o.talimatVeren ? "talimat" : ""} ${o.durum === "reddedildi" || o.durum === "geriCekildi" ? "sonuk-kart" : ""}`}
       data-oneri={o.id}
+      title={t(TUR_ADI[o.tur])}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData(ONERI_TURU, o.id);
@@ -74,50 +72,60 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
       // Kartın boş yerine basmak da açıyor; düğme ve bağlantılar kendi işini yapsın.
       onClick={(e) => !(e.target as HTMLElement).closest("button, a") && ac()}
     >
-      <div className="ok-ust">
-        <TurRozeti tur={o.tur} />
-        {o.bicim && <BicimRozeti bicim={o.bicim} />}
-        <OneriPlanEtiketleri oneri={o} d={d} />
-        <span className="ok-ulke">
-          <MapPin size={13} /> {t(ulkeAdi(o.ulke))}
-        </span>
-        <span className="bosluk-esnek" />
-        <YzGorusRozeti oneri={o} d={d} />
-        <OneriDurumRozeti oneri={o} />
-        <EpostaOneriSil oneri={o} ikon />
+      <div className="ok-bas">
+        <button type="button" className="ok-baslik" onClick={ac} aria-label={`${t("oneriyiAc")}: ${baslikOf(o)}`}>
+          <Icerik blok>{baslikOf(o)}</Icerik>
+        </button>
+        <OneriDurumRozeti oneri={o} planaGizle />
       </div>
-      <button type="button" className="ok-baslik" onClick={ac} aria-label={`${t("oneriyiAc")}: ${baslikOf(o)}`}>
-        <Icerik blok>{baslikOf(o)}</Icerik>
-      </button>
-      {arka && (
-        <div className="ok-arka" title={t("arkaPlanHaber")}>
-          <FolderOpen size={13} />
-          <Icerik>{arka}</Icerik>
-        </div>
-      )}
-      <Icerik blok className="ok-metin">
-        {o.gelisme}
-      </Icerik>
+      <OneriMetaSatiri oneri={o} d={d} />
       <div className="ok-alt">
         <OneriAvatari oneri={o} d={d} />
         <span className="ok-kaynak">
-          <OneriKaynagi oneri={o} d={d} />
+          <OneriKaynagi oneri={o} d={d} girensiz />
         </span>
         <span className="sonuk">· {gecenSure(o.zaman, dil)}</span>
-        {o.sahaGerekli && (
-          <span className="ok-saha" title={t("sahaGerekli")} aria-label={t("sahaGerekli")}>
-            <MapPinned size={14} />
-          </span>
-        )}
+        {eylemler && <div className="ok-hizli">{eylemler}</div>}
       </div>
-      {o.gerekce && (
-        <p className="ok-gerekce" dir="auto">
-          {o.gerekce}
-        </p>
-      )}
-      <PlanaEklendiNotu oneri={o} d={d} />
-      {eylemler && <div className="ok-eylem">{eylemler}</div>}
     </article>
+  );
+}
+
+/** Önerinin günü kısa yazımla (bilgi satırı); eski haftalık öneride "Weekly". */
+export function useKisaGun() {
+  const { t, dil } = useDil();
+  return (o: Oneri) => {
+    if (o.hafta && !o.hedefTarih) return t("haftalik");
+    const a = oneriAraligi(o);
+    if (!a) return "";
+    return a[0] === a[1] ? tarihYaz(a[0], dil, "kisa") : `${tarihYaz(a[0], dil, "kisa")} – ${tarihYaz(a[1], dil, "kisa")}`;
+  };
+}
+
+/**
+ * Kartın, liste satırının ve pencerenin bilgi satırı: aynı bilgi bir kez.
+ * Plana girmiş öneride plan etiketi yerine girdiği plan ve başlık (yeşil);
+ * birim görüşü sorulduysa birimi ve durumu. `bagli`: etikete basınca plan açılır.
+ */
+export function OneriMetaSatiri({ oneri: o, d, bagli = false }: { oneri: Oneri; d: Durum; bagli?: boolean }) {
+  const { t } = useDil();
+  const ben = useBen();
+  const gun = useKisaGun()(o);
+  const yer = oneriYeri(d, o);
+  return (
+    <span className="ok-meta" data-oneri-meta>
+      {/* Plana girmişse gün planın notunda; iki kez yazılmasın. */}
+      {gun && !yer && <span className="ok-gun">{gun}</span>}
+      {yer ? <PlanaEklendiNotu oneri={o} d={d} /> : <OneriPlanEtiketleri oneri={o} d={d} bagli={bagli} />}
+      <span>{t(ulkeAdi(o.ulke))}</span>
+      {o.bicim && <span>{t(BICIM_ADI(o.bicim))}</span>}
+      {o.sahaGerekli && (
+        <span className="ok-saha" title={t("sahaGerekli")} aria-label={t("sahaGerekli")}>
+          <MapPinned size={14} />
+        </span>
+      )}
+      {ben && <MasaRozeti ben={ben} oneri={o} />}
+    </span>
   );
 }
 
@@ -126,7 +134,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
  * girdiği plan ve başlık. İki plana düşen öneride hangisine girdiği
  * buradan okunuyor.
  */
-function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
+export function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
   const { t, dil } = useDil();
   const yer = oneriYeri(d, o);
   if (!yer) return null;
@@ -134,7 +142,7 @@ function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
   const baslik = baslikId ? d.basliklar.find((b) => b.id === baslikId)?.ad : undefined;
   const gun = yer.planda ? yer.plan?.tarih : yer.kalem?.tarih;
   return (
-    <p className="ok-plana-eklendi" data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
+    <span className="ok-plana-eklendi" data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
       <CircleCheck size={14} /> {t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi")} · {t(yer.planda ? "mNextday" : "mHaftalik")}
       {gun && ` ${tarihYaz(gun, dil, "kisa")}`}
       {baslik && (
@@ -143,12 +151,12 @@ function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
           <Icerik>{baslik}</Icerik>
         </>
       )}
-    </p>
+    </span>
   );
 }
 
 /** Düğme çizilecek mi: şeritte boş yer kalmasın diye çizimden önce de soruluyor. */
-const plandanCikarabilir = (ben: Kisi, d: Durum, o: Oneri) => {
+export const plandanCikarabilir = (ben: Kisi, d: Durum, o: Oneri) => {
   const yer = oneriYeri(d, o);
   if (!yer || !yapabilir(ben, "oneriDegerlendir")) return null;
   return (yer.planda ? !!yer.plan && planIcerikDuzenler(ben, yer.plan) : !!yer.hafta && yer.hafta.durum !== "kesinlesti" && haftalikDuzenler(ben, yer.hafta)) ? yer : null;
@@ -180,9 +188,10 @@ export function PlandanCikarDugmesi({ ben, oneri: o, d, sonra }: { ben: Kisi; on
 }
 
 /* Plana paketsiz girmiş öneriye sonradan PKG; strap önerinin strap'i, yoksa Header. */
-export function PaketEkleDugmesi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri; d: Durum }) {
+export function PaketEkleDugmesi({ ben, oneri: o, d, acikBasla = false, kapat }: { ben: Kisi; oneri: Oneri; d: Durum; acikBasla?: boolean; kapat?: () => void }) {
   const { t } = useDil();
-  const [acik, setAcik] = useState(false);
+  const [acik, setAcikIc] = useState(acikBasla);
+  const setAcik = (x: boolean) => (x ? setAcikIc(true) : kapat ? kapat() : setAcikIc(false));
   const [strap, setStrap] = useState(o.paketBasligi || o.haberBasligi);
   if (!oneriyePaketEklenebilir(ben, d, o)) return null;
   if (!acik)
@@ -221,150 +230,32 @@ export function PaketEkleDugmesi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri
   );
 }
 
-/** Liste görünümü: çok öneriyi hızlı taramak için tek satır. */
+/** Liste görünümü: çok öneriyi hızlı taramak için; başlık ve bilgi satırı, gelişme pencerede. */
 export function OneriSatiri({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Durum; ac: () => void; eylemler?: ReactNode }) {
   const { t, dil } = useDil();
   return (
-    <div className={`kayit oneri-satiri ${o.talimatVeren ? "kayit-talimat" : ""}`} data-oneri={o.id}>
+    <div className={`kayit oneri-satiri tur-${o.tur} ${o.talimatVeren ? "kayit-talimat" : ""}`} data-oneri={o.id}>
       <div className="kayit-bas">
         <OneriAvatari oneri={o} d={d} />
         <div>
           <button type="button" className="ok-baslik" onClick={ac} aria-label={`${t("oneriyiAc")}: ${baslikOf(o)}`}>
             <Icerik blok>{baslikOf(o)}</Icerik>
           </button>
-          <Icerik blok className="kayit-metin satir-tek">
-            {o.gelisme}
-          </Icerik>
           <small>
-            <OneriDurumRozeti oneri={o} />
-            {o.bicim && <BicimRozeti bicim={o.bicim} />}
-            <OneriKaynagi oneri={o} d={d} />
-            <span>
-              · {t(KANAL_ADI[o.kanal])} · {gecenSure(o.zaman, dil)}
+            <OneriDurumRozeti oneri={o} planaGizle />
+            <OneriMetaSatiri oneri={o} d={d} />
+            <span className="sonuk">
+              <OneriKaynagi oneri={o} d={d} girensiz /> · {gecenSure(o.zaman, dil)}
             </span>
-            {o.gerekce && <span dir="auto">· {o.gerekce}</span>}
           </small>
-          <PlanaEklendiNotu oneri={o} d={d} />
         </div>
-        <EpostaOneriSil oneri={o} ikon />
         {eylemler && <div className="islemler">{eylemler}</div>}
       </div>
     </div>
   );
 }
 
-/* Süreç çizgisinin adımları: ret, erteleme ve düzeltme isteği çizgide değil, notuyla ayrı gösteriliyor. */
-const SUREC: Partial<Record<Oneri["durum"], number>> = { yeni: 0, degerlendiriliyor: 1, planaEklendi: 2 };
-
-/** Bütün öneri: içerik, kaynak, hedef, süreç ve ayrıntı bağlantısı; karar formu altta. */
-export function OneriPenceresi({ oneri: o, d, kapat, altBilgi, children }: { oneri: Oneri; d: Durum; kapat: () => void; altBilgi?: ReactNode; children?: ReactNode }) {
-  const { t, dil } = useDil();
-  const oneriGunu = useOneriGunu();
-  const ben = useBen();
-  // Planlama plan ekranından da düzeltiyor; plana eklenmiş önerinin gelişmesi ve paketi eylemde güncelleniyor.
-  const [duzenle, setDuzenle] = useState(false);
-  const arka = arkaPlan(o);
-  const paket = paketBul(d, o.paketId);
-  const gecmis = d.hareketler.filter((h) => h.oneriId === o.id);
-  const siniflama = [t(TUR_ADI[o.tur]), o.bicim ? t(BICIM_ADI(o.bicim)) : "", t(ulkeAdi(o.ulke))].filter(Boolean).join(" · ");
-  const hedef = oneriGunu(o);
-  return (
-    <Pencere baslik={<Icerik>{baslikOf(o)}</Icerik>} alt={siniflama} kapat={kapat} altBilgi={altBilgi}>
-      <EpostaOneriSil oneri={o} sonra={kapat} />
-      {ben && oneriDuzenleyebilir(ben, o) &&
-        (duzenle ? (
-          <div data-oneri-duzenle-formu>
-            <KisaOneriFormu
-              takip={!!o.muhabirId && !o.yon}
-              muhabirId={o.muhabirId}
-              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
-              kaydet={(g) => {
-                const ok = oneriDuzenle(ben, o.id, g);
-                if (ok) bildir(t("bKaydedildi"));
-                return ok;
-              }}
-              kapat={() => setDuzenle(false)}
-            />
-          </div>
-        ) : (
-          <div className="dugmeler">
-            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenle(true)} data-oneri-duzenle>
-              <Pencil size={14} /> {t("duzenle")}
-            </button>
-          </div>
-        ))}
-      {arka && (
-        <div>
-          <div className="alan-etiket">{t("arkaPlanHaber")}</div>
-          <Icerik blok className="op-arka">
-            {arka}
-          </Icerik>
-        </div>
-      )}
-      <div>
-        <div className="alan-etiket">{t("gelismeAciklama")}</div>
-        <div className="metin-kutu">
-          <Icerik blok>{o.gelisme}</Icerik>
-        </div>
-      </div>
-      <OneriIslemeMetinleri o={o} />
-      <div className="alanlar">
-        <div className="alan">
-          <small>{t("kaynak")}</small>
-          <OneriKaynagi oneri={o} d={d} hucre />
-        </div>
-        <div className="alan">
-          <small>{t("kanal")}</small>
-          <b>
-            {t(KANAL_ADI[o.kanal])} · {tarihYaz(yerelGun(o.zaman), dil, "kisa")} {saatYaz(o.zaman, dil)}
-          </b>
-        </div>
-        <div className="alan">
-          <small>{t("hedefPlan")}</small>
-          <b>{hedef}</b>
-        </div>
-        <div className="alan">
-          <small>{t("saha")}</small>
-          <b>{t(o.sahaGerekli ? "evet" : "hayir")}</b>
-        </div>
-      </div>
-      <div>
-        <div className="alan-etiket">{t("surec")}</div>
-        {o.durum === "reddedildi" || o.durum === "sonra" || o.durum === "duzeltme" || o.durum === "teklif" || o.durum === "geriCekildi" ? (
-          <NotKutu ton="uyari">
-            <OneriDurumRozeti oneri={o} />{" "}
-            {(o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce) && <span dir="auto">{o.durum === "duzeltme" ? o.duzeltmeNotu : o.gerekce}</span>}
-          </NotKutu>
-        ) : (
-          <DurumCizgisi
-            asamalar={[t("odGeldi"), t("odDegerlendiriliyor"), t("odPlanaEklendi")]}
-            simdi={SUREC[o.durum] ?? 0}
-            bitti={o.durum === "planaEklendi"}
-            etiket={t("surec")}
-          />
-        )}
-        {paket && (
-          <p className="ara-ust">
-            <a href={`#/paketler/${paket.id}`}>{paket.kod}</a> <PaketDurumRozeti paket={paket} />
-          </p>
-        )}
-      </div>
-      {ben && <YzHaberDegeri ben={ben} oneri={o} ulkeAdi={t(ulkeAdi(o.ulke))} />}
-      {ben && <GeriBildirimBolumu ben={ben} oneri={o} />}
-      {/* Yazışma ve geçmiş pencerenin içinde: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
-      {ben && <OneriYazismasi ben={ben} oneri={o} />}
-      {gecmis.length > 0 && (
-        <div>
-          <div className="alan-etiket">{t("hareketGecmisi")}</div>
-          <HareketGecmisi hareketler={gecmis} d={d} />
-        </div>
-      )}
-      {children}
-    </Pencere>
-  );
-}
-
-function RetFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
+export function RetFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
   const { t } = useDil();
   const [gerekce, setGerekce] = useState("");
   return (
@@ -398,93 +289,5 @@ export function DuzeltmeFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; 
       </label>
       <FormAlt kapat={kapat} kaydet={gonder} devre={!not.trim()} kaydetMetni={t("duzeltmeyeGonder")} />
     </div>
-  );
-}
-
-/**
- * Plan ekranının öneri listesi: kart ızgarası ya da satırlar, tek pencere.
- * Ekranlar yalnız ekleme formunu veriyor (Next Day'de plana, haftalıkta
- * gündeme); değerlendirmeye alma ve erteleme yalnız Next Day'de.
- */
-export function OneriListesi({
-  ben,
-  d,
-  oneriler,
-  gorunum,
-  pencere,
-  setPencere,
-  ekleMetni,
-  ekleFormu,
-  ertelenebilir = false,
-}: {
-  ben: Kisi;
-  d: Durum;
-  oneriler: Oneri[];
-  gorunum: Gorunum;
-  pencere: PencereDurumu;
-  setPencere: (p: PencereDurumu) => void;
-  ekleMetni: string;
-  ekleFormu: (o: Oneri, kapat: () => void) => ReactNode;
-  ertelenebilir?: boolean;
-}) {
-  const { t } = useDil();
-  const kapat = () => setPencere(null);
-  // Pencere listeden değil bütün öneriler içinden: plana eklenen öneri listeden düşse de pencere kapanana kadar dursun.
-  const acik = pencere ? d.oneriler.find((o) => o.id === pencere.id) : undefined;
-
-  const eylemler = (o: Oneri, tam = false) => {
-    // Yönetici talimatı reddedilmez ve ertelenmez; eylem de aynı kuralı soruyor.
-    const talimat = !!o.talimatVeren;
-    // Muhabire önerilen haberde sıra muhabirde; kabul edene kadar karar yok.
-    // Gündeme alınmış öneri de karar almış sayılıyor: iki plana düşen öneri ikincisine de eklenmesin.
-    const kararAcik = o.durum !== "reddedildi" && o.durum !== "planaEklendi" && o.durum !== "teklif" && o.durum !== "geriCekildi" && !oneriYeri(d, o);
-    // Düzeltmedeki öneride sıra muhabirde; Planlama yalnız vazgeçip reddedebiliyor.
-    const muhabirde = o.durum === "duzeltme";
-    const ikonlu = (ikon: ReactNode, ad: string, sinif: string, f: () => void) => (
-      <button key={ad} type="button" className={`dugme ${sinif} dugme-kucuk`} onClick={f} title={ad} aria-label={tam ? undefined : ad}>
-        {ikon}
-        {tam && ` ${ad}`}
-      </button>
-    );
-    const dugmeler = [
-      kararAcik && !muhabirde && (
-        <button key="ekle" type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })} data-oneri-ekle>
-          {ekleMetni}
-        </button>
-      ),
-      ertelenebilir && o.durum === "yeni" && ikonlu(<Clock size={14} />, t("degerlendirmeyeAl"), "dugme-ikincil", () => oneriDurum(ben, o.id, "degerlendiriliyor")),
-      kararAcik && oneriDuzeltmeyeGider(ben, o) && ikonlu(<Undo2 size={14} />, t("duzeltmeyeGonder"), "dugme-ikincil", () => setPencere({ id: o.id, mod: "duzelt" })),
-      // "Sonra değerlendirilecek" kalktı, takibe katıldı: muhabirin süren haberi olarak izlenir, planlamacı istediğinde plana alır.
-      ertelenebilir && kararAcik && !muhabirde && !talimat && !!o.muhabirId && o.durum !== "takip" &&
-        ikonlu(<Lightbulb size={14} />, t("takipOlarakKalsin"), "dugme-ikincil", () => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi"))),
-      kararAcik && !talimat && ikonlu(<Ban size={14} />, t("reddet"), "dugme-kotu", () => setPencere({ id: o.id, mod: "ret" })),
-      tam && plandanCikarabilir(ben, d, o) && <PlandanCikarDugmesi key="cikar" ben={ben} oneri={o} d={d} />,
-      tam && oneriyePaketEklenebilir(ben, d, o) && <PaketEkleDugmesi key="pkg" ben={ben} oneri={o} d={d} />,
-    ].filter(Boolean);
-    // Karar kalmadıysa (reddedilmiş ya da plana girmiş) kartta da pencerede de boş şerit çizilmesin.
-    return dugmeler.length ? <>{dugmeler}</> : undefined;
-  };
-
-  return (
-    <>
-      {oneriler.length === 0 ? (
-        <Bos kucuk metin={t("oneriYok")} />
-      ) : gorunum === "kart" ? (
-        <div className="oneri-kartlari">
-          {oneriler.map((o) => (
-            <OneriKarti key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={eylemler(o)} />
-          ))}
-        </div>
-      ) : (
-        oneriler.map((o) => <OneriSatiri key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={eylemler(o)} />)
-      )}
-      {acik && (
-        <OneriPenceresi key={acik.id} oneri={acik} d={d} kapat={kapat} altBilgi={pencere?.mod === "goster" ? eylemler(acik, true) : undefined}>
-          {pencere?.mod === "ekle" && ekleFormu(acik, kapat)}
-          {pencere?.mod === "ret" && <RetFormu ben={ben} oneri={acik} kapat={kapat} />}
-          {pencere?.mod === "duzelt" && <DuzeltmeFormu ben={ben} oneri={acik} kapat={kapat} />}
-        </OneriPenceresi>
-      )}
-    </>
   );
 }

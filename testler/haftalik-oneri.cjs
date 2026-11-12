@@ -23,7 +23,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   d.oneriler.unshift({ id: "o-hf-test", muhabirId: m.id, ulke: "filistin", haberBasligi: "اختبار الأسبوع", gelisme: "تفاصيل", paketBasligi: "عنوان", tur: "haber", bicim: "pkg", sahaGerekli: false, zaman: new Date().toISOString(), kanal: "sistem", durum: "yeni", hedefTarih: gun(1), bitisTarih: gun(2), hafta: gun(-7) });
   await yaz(d);
   await git("#/haftalik/" + h.id);
-  ok((await p.locator("text=اختبار الأسبوع").count()) > 0, "öneri haftanın listesinde");
+  // Kartın başlığı Strap; Header kartta yok (kullanıcı: kart sade), öneri kimliğiyle aranıyor.
+  ok((await p.locator('[data-oneri="o-hf-test"]').count()) > 0, "öneri haftanın listesinde");
   await git("#/oneriler/o-hf-test");
   const e = p.locator('[data-oneri-etiketi="haftalik"]');
   ok((await e.count()) === 1, "Weekly etiketi var");

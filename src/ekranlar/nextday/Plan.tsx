@@ -60,10 +60,10 @@ import {
 import {
   GorunumSecici,
   ONERI_TURU,
-  OneriListesi,
   useOneriGorunumu,
   type PencereDurumu,
 } from "../oneri/OneriKarti";
+import { OneriListesi } from "../oneri/OneriGovde";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { plandakiFaaliyetler } from "../../takvim";
