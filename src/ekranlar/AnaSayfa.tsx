@@ -4,6 +4,9 @@ import { masaBirimi, yonetimdeMi } from "../yetki";
 import { GenelAna, MasaAna, MediaAna, NewsGatheringAna, NewsdeskAna, OutputAna } from "./ana/Birimler";
 import MuhabirAna from "./ana/Muhabir";
 import PlanlamaAna from "./ana/Planlama";
+import YeniPlanlamaAna from "./yeni/PlanlamaAna";
+import { planlamaYeniMi } from "../bilesenler/AnaMenu";
+import { useYeniTasarim } from "../tasarimSecimi";
 
 /**
  * Ana sayfa sabit bir ekran değil, kişinin birimine göre şekillenen bir
@@ -11,11 +14,14 @@ import PlanlamaAna from "./ana/Planlama";
  * birim yöneticileri ona menüden ulaşıyor, kendi masaları değişmiyor.
  */
 export default function AnaSayfa({ ben }: { ben: Kisi }) {
+  const yeniTasarim = useYeniTasarim();
   // Kademedeki müdür (Input, Output… düğümünde) ve koordinatör de Yönetim gibi: masası yönetici paneli.
   if (yonetimdeMi(ben)) return <YoneticiPaneli ben={ben} ana />;
   // Programlar, Ekonomi, Spor (ve onlar "gibi" çalışan birim): masanın sayfası.
   const masa = masaBirimi(ben);
   if (masa) return <MasaAna ben={ben} birim={masa} />;
+  // Yeni tasarımda Planlama (ve onun "gibi" çalışan birim): kutulu ana sayfa (belgeler/planlama-yeni-mimari.md).
+  if (planlamaYeniMi(ben, yeniTasarim)) return <YeniPlanlamaAna ben={ben} />;
   switch (ben.birim) {
     case "planlama":
       return <PlanlamaAna ben={ben} />;

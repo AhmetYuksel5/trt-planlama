@@ -29,6 +29,7 @@ import { MASA_HAREKETLERI } from "../../masaSorusu";
 import { acikGundemde, baglanabilirKayitlar, esAsili, esOneriler, oneriArsivde, oneriGeriHedefleri, oneriYeri, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { bugun, yerelGun } from "../../tarih";
 import { temizle } from "../../temizlik";
+import { KisiIletisim } from "../../bilesenler/KisiCipi";
 import { baslikBul, kisiBul, paketBul, planBul, useVeri, type Durum, type Kisi, type Oneri } from "../../veri";
 import { birimAdi } from "../../yapi";
 import {
@@ -98,7 +99,7 @@ function Bolum({ ad, baslik, ek, acik, children }: { ad: string; baslik: ReactNo
 }
 
 /* Alttaki kişi: muhabir ya da talimat veren adıyla, yoksa kaynağın kendisi. */
-function OneriKisisi({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
+function OneriKisisi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri; d: Durum }) {
   const { t, ad } = useDil();
   const k = kisiBul(d, o.muhabirId ?? o.talimatVeren);
   return (
@@ -113,6 +114,8 @@ function OneriKisisi({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
           </small>
         )}
       </span>
+      {/* Muhabire öneriden çıkmadan ulaşma; posta konusu önerinin başlığı. */}
+      {k && !o.talimatVeren && <KisiIletisim ben={ben} kisi={k} konu={o.haberBasligi} />}
     </span>
   );
 }
@@ -237,7 +240,7 @@ export function OneriAyrinti({
 
   const alt = (
     <>
-      <OneriKisisi oneri={o} d={v} />
+      <OneriKisisi ben={ben} oneri={o} d={v} />
       {menu.length > 0 && (
         <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
           {menu}

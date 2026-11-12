@@ -2572,6 +2572,45 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   öneri kartı. Sonraki adımlar sayfa sayfa (durum dairesi, grup + sütun
   tablosu, Liste/Pano görünümü, klavye). Beğenilirse token'lar `:root`'a
   taşınır, eski blok ve anahtar kalkar. Test `testler/yeni-tasarim.cjs`.
+  - Planlama'nın yeni mimarisi bu anahtarın arkasında (kullanıcı: ana sayfa
+    çok işlevsel olsun, planların iç akışı sürsün ve iyileşsin, muhabirle
+    iletişim ve raporlama pratikleşsin; iki tur ajan görüşü, brifing ve ham
+    notlar `belgeler/planlama-yeni-mimari.md`, aşamaları orada). Kapsam
+    `AnaMenu.tsx → planlamaYeniMi`: anahtar açık, izinlerde Planlama (onun
+    "gibi" çalışan birim de), tam yönetici değil; kademedeki müdür panelinde.
+    1. aşama:
+    - Sayıların tek kaynağı `planlamaKararlari.ts` (`kararlariGetir`: kayıt
+      nesnesine bağlı önbellek, menü, alt çubuk ve ana sayfa aynı sonucu
+      okuyor). Menüdeki öneri sayısı artık her düzende Öneriler'in "Karar
+      bekleyen" sekmesinin kuralı (önce yalnız "yeni"yi sayıyordu).
+    - Menü `planlamaMenusu` (`birimMenusu`, masaların menüsüyle aynı çizim,
+      `data-birim-menusu`): Planlar, Gelenler, Paketler (Üretim panosu
+      yönetici ve stok ekibinde), Ekip, Yönetim (yöneticide); katlanmaz,
+      sayı yalnız kararda. Kalkan sayfalar aramada ve adresle. Rengi
+      camgöbeği (`--masa-planlama`), yalnız birimin kabuğunda. Telefonda alt
+      çubuk Ana sayfa, Öneriler, Next Day, Muhabirler; Menü panelinde kısayol
+      kutuları yok. Üst çubuk kısayolları şimdilik yerinde.
+    - Ana sayfa `ekranlar/yeni/PlanlamaAna.tsx`: kutular (başlık, büyük sayı,
+      tek satır durum; yeri sabit, boşken sönük). Kısa karar kutuları
+      (karar bekleyen öneriler, paket kararları [onay kuyruğu, şartlı, görev
+      talebi], birim görüşleri, görevlerim, anmalar, günün notu, muhabirler,
+      hesap onayı) sağdan açılan pencerede (yeni tasarımda `Pencere` zaten
+      sağdan), içinde var olan bileşenler; öneri kartına basınca önerinin
+      penceresi üstüne açılır, kapatınca panele dönülür, geri tuşu paneli
+      kapatır; altta "Sayfayı aç". Uzun işler (Next Day, Weekly, Aylık, Özel,
+      Posta) kendi sayfasına götürür. Kullanıcı modal düzeni sordu: kısa
+      kararlar için uygun, uzun işler için değil (iç içe pencere, dar alan).
+    - Kişi çipi `bilesenler/KisiCipi.tsx` (her düzende): ada basınca kart
+      (şehir, ünvan, bugünkü durum, açık işler, WhatsApp, posta, kişinin
+      sayfası); `KisiIletisim` yalnız düğmeler. Öneri penceresinin kişi
+      satırı, paket sayfası, onay kuyruğu, masaların içerik kartı. Kısıtlı
+      kişi yalnız adı görür. Kurallar `muhabirIletisim.ts`: tek adres kuralı
+      `muhabirAdresi` (kurumsal, yoksa kişisel; PKG geri bildirimi, muhabire
+      geri bildirim ve iş postası onu kullanıyor), `kisiBugunDurumu` (onaylı
+      izin ve saha kaydı kişideki sabit alandan önce), `kisiOzeti`. Posta
+      penceresi `posta/Posta.tsx → IsPostasiPenceresi` (açılır kart kapanınca
+      gitmesin diye ayrı). WhatsApp'a basış kaydedilmez.
+    Test `testler/yeni-planlama.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

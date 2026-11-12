@@ -4,6 +4,9 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
 import { izinBirimi } from "../yapi";
 import { masaBirimi, sadeEkranMi, sayfaGorebilir } from "../yetki";
+import { kararlariGetir } from "../planlamaKararlari";
+import { planlamaYeniMi } from "./AnaMenu";
+import { useYeniTasarim } from "../tasarimSecimi";
 
 /**
  * Telefonda alttaki sekme çubuğu.
@@ -43,6 +46,14 @@ const masaSekmeleri = (b: MasaBirimi): { yol: string; ad: Anahtar; ikon: LucideI
   b === "program" ? { yol: "programlar/programlar", ad: "pmProgramlar", ikon: Tv } : { yol: `${MASA_YOLU[b]}/arsiv`, ad: "pmArsiv", ikon: Archive },
 ];
 
+/* Yeni tasarımda Planlama: ana sayfa (kararlar orada), karar bekleyen öneriler, Next Day, muhabirler. */
+const planlamaSekmeleri = (): { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum, ben: Kisi) => number }[] => [
+  { yol: "ana", ad: "abAna", ikon: House },
+  { yol: "oneriler", ad: "abOneriler", ikon: Lightbulb, say: (d, ben) => kararlariGetir(d, ben).oneri },
+  { yol: "nextday", ad: "abNextday", ikon: CalendarDays },
+  { yol: "muhabirler", ad: "abMuhabirler", ikon: Users },
+];
+
 export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; acik: string; menuAcik: boolean; onMenu: () => void }) {
   const { t } = useDil();
   const muhabir = ben.birim === "muhabir";
@@ -50,12 +61,15 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
   const yeni = typeof location !== "undefined" && location.hash.startsWith("#/oneriler/yeni");
   const v = useVeri();
   const masa = masaBirimi(ben);
-  const sekmeler: { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum) => number }[] = sadeEkranMi(ben)
+  const yeniTasarim = useYeniTasarim();
+  const sekmeler: { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum, ben: Kisi) => number }[] = sadeEkranMi(ben)
     ? []
     : muhabir
     ? MUHABIR_SEKMELERI
     : masa
     ? masaSekmeleri(masa)
+    : planlamaYeniMi(ben, yeniTasarim)
+    ? planlamaSekmeleri()
     : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);
   const hash = typeof location !== "undefined" ? location.hash : "";
   const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : y.includes("/") ? hash.startsWith(`#/${y}`) || (y.endsWith("/icerikler") && hash === `#/${y.split("/")[0]}`) : acik === y && !(y === "oneriler" && yeni));
@@ -67,7 +81,7 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
           <a key={s.yol} href={s.yol === "ana" ? "#/" : `#/${s.yol}`} className={!menuAcik && etkin(s.yol) ? "acik" : ""}>
             <span className="hap">
               <Ikon size={21} />
-              {!!s.say?.(v) && <span className="say">{s.say(v)}</span>}
+              {!!s.say?.(v, ben) && <span className="say">{s.say(v, ben)}</span>}
             </span>
             {t(s.ad)}
           </a>

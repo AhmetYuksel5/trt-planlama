@@ -1,3 +1,4 @@
+import { KisiCipi } from "../bilesenler/KisiCipi";
 import { TarihSaatGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi } from "../yapi";
 import { GeriBag } from "../bilesenler/GeriBag";
@@ -135,9 +136,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
               <div className="alan">
                 <small>{t("muhabir")}</small>
                 {muhabir ? (
-                  <span className="kisi-hucre">
-                    <Avatar kisi={muhabir} boy="kucuk" /> {ad(muhabir)}
-                  </span>
+                  <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} />
                 ) : (
                   <b>{t("atanmadi")}</b>
                 )}

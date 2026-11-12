@@ -1,3 +1,4 @@
+import { KisiCipi } from "./KisiCipi";
 import { CheckCircle, CircleSlash, Undo2, UserRoundCog } from "lucide-react";
 import { useState } from "react";
 import { useDil } from "../dil";
@@ -86,7 +87,7 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
  * bağımsız, kaçırılmasın). Her satırda onay ve geri çevirme.
  */
 export function OnayKuyrugu({ ben }: { ben: Kisi }) {
-  const { t, ad } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   if (!paketIsaretOnaylayabilir(ben)) return null;
   // Masanın takibindeki paketin teslimi masanın kartında (MasaTakibi), Planlama'nın kuyruğunda değil.
@@ -101,10 +102,9 @@ export function OnayKuyrugu({ ben }: { ben: Kisi }) {
               <a href={`#/paketler/${p.id}`}>
                 <Icerik blok>{p.baslik}</Icerik>
               </a>
-              <small>
-                {p.kod} · {ad(kisiBul(v, p.isaret!.kisiId))}
-              </small>
+              <small>{p.kod}</small>
             </div>
+            <KisiCipi ben={ben} kisi={kisiBul(v, p.muhabirId ?? p.isaret!.kisiId)} konu={p.baslik} />
             <PaketSonucDugmeleri ben={ben} paket={p} kucuk />
           </li>
         ))}

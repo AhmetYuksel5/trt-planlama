@@ -1,4 +1,5 @@
 import { postaAdresi } from "../../girisKodu";
+import { muhabirAdresi } from "../../muhabirIletisim";
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { useAdimDurumu } from "../../yol";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -793,21 +794,24 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string;
 export function IsPostasi({ ben, kisi, konu }: { ben: Kisi; kisi: Kisi; konu: string }) {
   const { t } = useDil();
   const [acik, setAcik] = useState(false);
-  const [grup, setGrup] = useState("");
-  const adres = postaAdresi(kisi);
-  if (!adres) return null;
-  const ac = () => {
-    setAcik(true);
-    if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
-  };
+  if (!muhabirAdresi(kisi)) return null;
   return (
     <>
-      <button type="button" className="ikon-dugme" onClick={ac} title={t("postaYeni")} aria-label={t("postaYeni")} data-is-postasi>
+      <button type="button" className="ikon-dugme" onClick={() => setAcik(true)} title={t("postaYeni")} aria-label={t("postaYeni")} data-is-postasi>
         <Mail size={17} />
       </button>
-      {acik && <YeniPosta ben={ben} grup={grup} kapat={() => setAcik(false)} acildi={() => undefined} ilk={{ kime: [adres], konu }} />}
+      {acik && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} kapat={() => setAcik(false)} />}
     </>
   );
+}
+
+/* Pencerenin kendisi: düğmesi açılır kartın içinde kalan yerler (kişi çipi) pencereyi kartın dışında tutsun, kart kapanınca gitmesin. */
+export function IsPostasiPenceresi({ ben, kisi, konu, kapat }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void }) {
+  const [grup, setGrup] = useState("");
+  useEffect(() => {
+    if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
+  }, []);
+  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={{ kime: [muhabirAdresi(kisi)], konu }} />;
 }
 
 /*

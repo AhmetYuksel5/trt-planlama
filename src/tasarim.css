@@ -68,10 +68,14 @@
   --masa-spor-sis: #e1f4e8;
   --masa-ekonomi: #1d3c78;
   --masa-ekonomi-sis: #e4eaf5;
+  /* Planlama bütün planların sahibi: hiçbir planın rengini almıyor (camgöbeği), yalnız kendi kabuğunda. */
+  --masa-planlama: #0e7490;
+  --masa-planlama-sis: #e0f2f5;
   /* Koyu menüde okunsun diye açık tonları. */
   --masa-program-acik: #a98bf0;
   --masa-spor-acik: #4cc27f;
   --masa-ekonomi-acik: #7c9fe0;
+  --masa-planlama-acik: #4fc3d9;
 
   /* Durumlar: renk tek başına anlam taşımıyor, yanında hep yazı var. */
   --iyi: #12825a;
@@ -3443,6 +3447,8 @@ a.prg-kutu { text-decoration: none; }
 .menu.masa-program { --masa-menu: var(--masa-program-acik); }
 .menu.masa-spor { --masa-menu: var(--masa-spor-acik); }
 .menu.masa-ekonomi { --masa-menu: var(--masa-ekonomi-acik); }
+.menu.masa-planlama { --masa-menu: var(--masa-planlama-acik); }
+html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); }
 .menu[class*="masa-"] a.acik { border-inline-start-color: var(--masa-menu); }
 .menu[class*="masa-"] .birim-kutusu svg { color: var(--masa-menu); }
 .alt-cubuk .hap { position: relative; }
@@ -3519,4 +3525,55 @@ a.prg-kutu { text-decoration: none; }
   .prg-icerik, .prg-oneri, .prg-program { padding: var(--ara-3); }
   .prg-arsiv-satir { grid-template-columns: minmax(0, 1fr); gap: var(--ara-1); }
   .prg-arsiv-alt { justify-content: start; }
+}
+
+/* Kişi çipi (bilesenler/KisiCipi.tsx): ada basınca iletişim kartı. Renk yalnız durum hapında. */
+.kisi-cipi-kap { display: inline-flex; max-width: 100%; }
+.kisi-cipi-kap .acilir-kap { max-width: 100%; }
+.kisi-cipi { display: inline-flex; align-items: center; gap: var(--ara-2); min-height: var(--dokunma); padding: 0 var(--ara-2); margin-inline-start: calc(-1 * var(--ara-2)); border: 0; border-radius: var(--yaricap); background: none; color: var(--murekkep); font: inherit; font-weight: 600; cursor: pointer; max-width: 100%; }
+.kisi-cipi bdi { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.kisi-cipi .avatar { flex: none; }
+.kisi-cipi:hover { background: var(--yuzey-2); }
+.kisi-cipi.izinli bdi { color: var(--sonuk); }
+.kisi-cipi.duz { min-height: 0; cursor: default; }
+.kisi-karti { min-width: 260px; max-width: min(320px, calc(100vw - 32px)); padding: var(--ara-3) !important; display: grid; gap: var(--ara-3); }
+.kisi-karti-bas { display: flex; gap: var(--ara-3); align-items: center; min-width: 0; }
+.kisi-karti-bas > div { display: grid; gap: 2px; min-width: 0; }
+.kisi-karti-bas small { color: var(--sonuk); font-size: var(--punto-kucuk); }
+.kisi-karti-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); font-size: var(--punto-kucuk); }
+.kisi-karti-eylem { border-block-start: 1px solid var(--cizgi); padding-block-start: var(--ara-2); }
+.kisi-iletisim { display: inline-flex; align-items: center; gap: var(--ara-1); flex: none; }
+.ikon-dugme.pasif, .ikon-dugme[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.durum-hap { display: inline-flex; align-items: center; padding: 2px var(--ara-2); border-radius: var(--yaricap-hap); font-size: var(--punto-kucuk); font-weight: 600; background: var(--yuzey-2); color: var(--sonuk); }
+.durum-hap.kd-gorevde { background: var(--iyi-sis); color: var(--iyi); }
+.durum-hap.kd-sahada { background: var(--saha-sis); color: var(--saha); }
+.durum-hap.kd-yolda { background: var(--nextday-sis); color: var(--nextday); }
+.durum-hap.kd-izinli { background: var(--aylik-sis); color: var(--aylik); }
+.oneri-kisi { flex-wrap: wrap; }
+
+/* Planlama'nın yeni ana sayfası (ekranlar/yeni/PlanlamaAna.tsx): kutular; kısa kararlar sağdan panelde, planlar kendi sayfasında. */
+.py-ana { display: grid; gap: var(--ara-4); }
+.py-kutular { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--ara-3); }
+.py-kutu { position: relative; display: grid; align-content: start; gap: var(--ara-1); min-height: 112px; padding: var(--ara-3) var(--ara-4); text-align: start; border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); color: var(--murekkep); font: inherit; text-decoration: none; cursor: pointer; min-width: 0; }
+.py-kutu:hover { border-color: var(--silik); }
+.py-kutu:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+.py-kutu.genis { grid-column: span 2; }
+.py-kutu-bas { display: flex; align-items: center; gap: var(--ara-2); font-size: var(--punto-kucuk); color: var(--sonuk); min-width: 0; }
+.py-kutu-bas b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.py-kutu-bas svg { flex: none; color: var(--masa-planlama); }
+.py-sayi { font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.py-kutu small { color: var(--sonuk); font-size: var(--punto-kucuk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.py-kutu.vurgu { border-color: var(--masa-planlama); box-shadow: inset 0 0 0 1px var(--masa-planlama); }
+.py-kutu.vurgu .py-sayi { color: var(--masa-planlama); }
+.py-kutu.sonuk { background: var(--yuzey-2); cursor: default; }
+.py-kutu.sonuk .py-sayi, .py-kutu.sonuk b { color: var(--silik); }
+.py-panel { display: grid; gap: var(--ara-3); min-width: 0; }
+.py-panel > .kart { box-shadow: none; }
+.py-oneriler { display: grid; gap: var(--ara-2); }
+.py-muhabirler li { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
+@media (max-width: 760px) {
+  .py-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+  .py-kutu { min-height: 96px; padding: var(--ara-3); }
+  .py-kutu.genis { grid-column: 1 / -1; }
+  .py-sayi { font-size: 24px; }
 }

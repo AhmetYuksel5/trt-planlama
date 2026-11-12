@@ -9,7 +9,8 @@ import type { Kisi } from "../veri";
 import DilSecici from "./DilSecici";
 import { Avatar } from "./Parcalar";
 import { dilDenetmeniMi, masaBirimi, sadeEkranMi } from "../yetki";
-import { MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, menuGruplari, muhabirMaddeleri } from "./AnaMenu";
+import { MUHABIR_ALT, MUHABIR_MENUSU, maddeAdi, menuGruplari, muhabirMaddeleri, planlamaYeniMi } from "./AnaMenu";
+import { useYeniTasarim } from "../tasarimSecimi";
 
 /**
  * Telefonda "Menü"nün açtığı panel: kişi, kısayollar (renkli plan
@@ -31,6 +32,7 @@ export default function MobilMenu({
   // Dil denetmeni de muhabir gibi sade: tek sayfası ve Ayarlar.
   const dilci = sadeEkranMi(ben);
   const muhabir = ben.birim === "muhabir" || dilci;
+  const yeniTasarim = useYeniTasarim();
 
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
@@ -104,7 +106,7 @@ export default function MobilMenu({
             );
           })}
         </nav>
-      ) : masaBirimi(ben) ? null : (
+      ) : masaBirimi(ben) || planlamaYeniMi(ben, yeniTasarim) ? null : (
         <>
           <h3>{t("kisayollarim")}</h3>
           <KisayolKutulari ben={ben} sec={onKapat} />
@@ -112,7 +114,7 @@ export default function MobilMenu({
       )}
 
       {/* Masada (Programlar, Ekonomi, Spor) kendi menüsü (AnaMenu → masaMenusu). */}
-      {!muhabir && menuGruplari(ben).map((g, i) => {
+      {!muhabir && menuGruplari(ben, yeniTasarim).map((g, i) => {
         const maddeler = g.maddeler;
         return (
           <section key={i}>

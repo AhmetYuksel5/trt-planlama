@@ -158,7 +158,7 @@ const NOT_METNI: Record<NotTuru, Anahtar> = {
 const NOT_ROZETI = { kotu: "kotu", uyari: "uyari", bilgi: "vurgu" } as const;
 
 /* Günün notu: kayıttan kurallarla çıkan bekleyen ve gözden kaçan işler (gununNotu.ts); her satır işin sayfasına gider. */
-function GununNotu({ ben }: { ben: Kisi }) {
+export function GununNotu({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const notlar = gununNotu(v, ben, bugun());
@@ -192,7 +192,7 @@ function GununNotu({ ben }: { ben: Kisi }) {
 }
 
 /* Prodüsörün bugünkü görevleri (iş taksiminden) ve açık işleri; iş buradan bitirilebiliyor. */
-function BugunkuGorevlerim({ ben }: { ben: Kisi }) {
+export function BugunkuGorevlerim({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const gorevler = kisininGorevleri(v, ben.id, bugun());

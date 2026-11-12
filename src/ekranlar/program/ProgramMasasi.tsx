@@ -37,8 +37,7 @@ import {
 import { bugun, gunEkle, haftaBasi } from "../../tarih";
 import { kisiBul, oneriBul, useVeri, type Kisi, type Paket, type ProgramTanimi } from "../../veri";
 import { gorevTalebiGeriCekebilir, icerikAktarabilir, masaUyesi, uretimeAlabilir, masaYanitlar, programDuzenler } from "../../yetki";
-import { WhatsAppDugmesi } from "../../bilesenler/WhatsApp";
-import { IsPostasi } from "../posta/Posta";
+import { KisiIletisim } from "../../bilesenler/KisiCipi";
 import { sozcuklerUyar } from "../../arama";
 import { useAdimDurumu } from "../../yol";
 import { AylikBelgesi } from "../aylik/Aylik";
@@ -300,8 +299,7 @@ function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p
         {/* İşin muhabirine ulaşma (kullanıcı: bütün muhabir listesi değil, iş bazında). */}
         {muhabir && !arsiv && masaUyesi(ben, birim) && (
           <span className="prg-iletisim" data-prg-iletisim={p.id}>
-            <WhatsAppDugmesi telefon={muhabir.telefon} />
-            <IsPostasi ben={ben} kisi={muhabir} konu={p.baslik} />
+            <KisiIletisim ben={ben} kisi={muhabir} konu={p.baslik} />
           </span>
         )}
         <span className="bosluk-esnek" />
