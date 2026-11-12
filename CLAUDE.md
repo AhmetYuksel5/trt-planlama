@@ -1653,8 +1653,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     değerlendirmeye/takibe al, değerlendirmeye al (Next Day'de), düzeltmeye
     gönder, takip olarak kalsın, Weekly'de değerlendir, başka plana ekle,
     aşamayı geri al, geri çek, arşive gönder/çıkar, sil. Seçilen kararın
-    formu bölümlerin üstünde (`data-oneri-mod`); karttaki hızlı düğmeyle
-    açılan form bitince pencere kapanır. Ayrı muhabir kartı ve süreç
+    formu bölümlerin üstünde (`data-oneri-mod`); açılınca forma kayılır
+    (kullanıcı: telefonda "Gündeme ekle"ye basınca form yukarıda, görünmeden
+    açılıyordu), fareli cihazda ilk alana odaklanılır, form açıkken alttaki
+    karar düğmeleri gizlenir. Karttaki hızlı düğmeyle açılan form bitince
+    pencere kapanır. Ayrı muhabir kartı ve süreç
     çizgisi kalktı (durum rozetinin ve adın tekrarı). Plan ekranı kendi
     ekleme formunu verir (`ekleFormu`).
   - Next Day'de başlık seçenekleri bütün havuz değil (`baslikSecimi.ts →
@@ -1805,7 +1808,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kesinleşen planın çıktısında yalnız kabul ve bilgi; kesinleşmeden
     önizleme karar bekleyenleri de basar (yoksa hazırlıktaki iş görünmüyordu).
     Kalem: "YER / metin", olayın adı yazılmışsa "YER - OLAY / metin";
-    sonra muhabirler, biçim, not. Dosyasız kalemler bölümün (günün, zamana
+    sonra muhabirler, biçim, not. Muhabirler Next Day'deki gibi
+    (kullanıcı: ikinci muhabir paket satırının yanına yazılıyordu): pakette
+    tek muhabir "YER / strap / ad"; birden çoksa paket satırı "YER / strap",
+    altında unvan (`etiketler.ts → muhabirUnvani`: المراسل, المراسلة,
+    المراسلون) ve her muhabir kendi satırında "YER / ad"; paketsiz kalemde de
+    unvan ve "YER / ad" (önce "ad / YER"di). Plan ekranının kalemi de aynı
+    (`Kalem.tsx`). Test `testler/haftalik-muhabir.cjs`. Dosyasız kalemler bölümün (günün, zamana
     bağlı olmayanların) en altında yeşil, kalın "متابعات" başlığıyla
     (`HaftalikBelge.tsx → Dosyalar`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.

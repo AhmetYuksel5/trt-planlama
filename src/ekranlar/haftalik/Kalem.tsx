@@ -5,7 +5,7 @@ import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenl
 import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
+import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
@@ -239,12 +239,27 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false }: { ben: Ki
             {kalem.metin}
           </Icerik>
           {/* Paket önerisi Next Day'deki gibi: "YER / strap / muhabir". */}
+          {/* Birden çok muhabirde paket satırı "YER / strap", muhabirler altta unvanla (çıktıdaki gibi). */}
           {kalemPaketli(kalem) && (
             <div data-kalem-pkg>
               <Icerik blok className="kalem-satiri">
                 <b>PKG · </b>
-                {satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}
+                {kalem.muhabirler.length > 1
+                  ? satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi)
+                  : satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}
               </Icerik>
+              {kalem.muhabirler.length > 1 && (
+                <>
+                  <Icerik blok className="kalem-satiri">
+                    <b>{muhabirUnvani(kalem.muhabirler.map((id) => kisiBul(v, id)))}</b>
+                  </Icerik>
+                  {kalem.muhabirler.map((id) => (
+                    <Icerik key={id} blok className="kalem-satiri">
+                      {satir(sehirAr(kisiBul(v, id)?.sehir), kisiAr(kisiBul(v, id)))}
+                    </Icerik>
+                  ))}
+                </>
+              )}
             </div>
           )}
           {!kalemPaketli(kalem) && !kalem.muhabirler.length && kalem.muhabirTbc && (

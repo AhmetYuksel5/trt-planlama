@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
 import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
-import { TBC, kisiAr, muhabirYeri, sehirAr } from "../../etiketler";
+import { TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, haftaSonu } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
@@ -137,29 +137,45 @@ function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: Haftali
             {k.metin}
           </Satir>
         )}
-        {kalemPaketli(k) ? (
+        {/*
+          Muhabirler Next Day'deki gibi (kullanıcı: ikinci muhabir satırın yanına
+          yazılıyordu): pakette tek muhabir "YER / strap / ad"; birden çoksa paket
+          satırı "YER / strap", altında unvan (المراسلون) ve her muhabir "YER / ad".
+        */}
+        {kalemPaketli(k) && (
           <>
             <p className="alt-baslik">
               <bdi>PKG</bdi>
             </p>
             <p data-kalem-pkg>
-              {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi} / <b>{muhabirYeri(k.muhabirler.map(kisiAdi), k.muhabirTbc)}</b>
+              {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi}
+              {k.muhabirler.length < 2 && (
+                <>
+                  {" / "}
+                  <b>{muhabirYeri(k.muhabirler.map(kisiAdi), k.muhabirTbc)}</b>
+                </>
+              )}
             </p>
           </>
-        ) : !k.muhabirler.length && k.muhabirTbc ? (
+        )}
+        {!kalemPaketli(k) && !k.muhabirler.length && k.muhabirTbc ? (
           <>
             <p className="alt-baslik">{c("ciktiMuhabir")}</p>
             <p data-tbc-satir>{TBC}</p>
           </>
-        ) : k.muhabirler.length > 0 && (
-          <>
-            <p className="alt-baslik">{c(k.muhabirler.length > 1 ? "ciktiMuhabirler" : "ciktiMuhabir")}</p>
-            {k.muhabirler.map((id) => (
-              <p key={id}>
-                {kisiAdi(id)} / {sehirAr(kisiBul(v, id)?.sehir)}
+        ) : (
+          k.muhabirler.length > (kalemPaketli(k) ? 1 : 0) && (
+            <>
+              <p className="alt-baslik" data-kalem-muhabir-unvani>
+                {muhabirUnvani(k.muhabirler.map((id) => kisiBul(v, id)))}
               </p>
-            ))}
-          </>
+              {k.muhabirler.map((id) => (
+                <Satir key={id} yer={sehirAr(kisiBul(v, id)?.sehir)}>
+                  {kisiAdi(id)}
+                </Satir>
+              ))}
+            </>
+          )
         )}
         {bicimSatiri(k) && (
           <p>

@@ -1,5 +1,5 @@
 import { Archive, ArchiveRestore, Ban, ChevronDown, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -141,6 +141,20 @@ export function OneriAyrinti({
   const oneriGunu = useOneriGunu();
   const [mod, setMod] = useState<Mod>(ilkMod);
   const [yenile, setYenile] = useState(false);
+  /*
+   * Karar formu bölümlerin üstünde açılıyor; alttaki düğmeye basan kişi
+   * pencereyi aşağı kaydırmışsa form görünmüyordu (kullanıcı: telefonda
+   * "Gündeme ekle" hiçbir şey yapmamış gibi). Açılınca forma kayılır, ilk
+   * alana odaklanılır.
+   */
+  const formRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const f = formRef.current;
+    if (!mod || !f) return;
+    f.scrollIntoView({ block: "start", behavior: "smooth" });
+    // Telefonda odak klavyeyi açıp formu kapatırdı; yalnız fareli cihazda.
+    if (matchMedia("(hover: hover)").matches) f.querySelector<HTMLElement>("input:not([type=hidden]):not([disabled]), select, textarea")?.focus({ preventScroll: true });
+  }, [mod]);
   const sayfa = !kapat;
   // Karttaki hızlı düğmeyle açılan form bitince pencere de kapanıyor; pencerede seçilen form yalnız kendini kapatıyor.
   const formKapat = () => (ilkMod && kapat ? kapat() : setMod(null));
@@ -235,12 +249,13 @@ export function OneriAyrinti({
           <Plus size={14} /> {t("paketOnerisiEkle")}
         </button>
       )}
-      {reddeder && (
+      {/* Form açıkken kararın düğmesi formda; altta ikinci kez durmasın. */}
+      {reddeder && !mod && (
         <button type="button" className="dugme dugme-ikincil kotu-yazi" onClick={() => setMod("ret")} data-oneri-reddet>
           <Ban size={15} /> {t("reddet")}
         </button>
       )}
-      {ekler && (
+      {ekler && !mod && (
         <button type="button" className="dugme dugme-iyi" onClick={() => setMod("ekle")} data-oneri-plana-ekle>
           {ekleMetni ?? t(o.hedefTarih ? "planaEkle" : "gundemeEkle")}
         </button>
@@ -313,7 +328,7 @@ export function OneriAyrinti({
         </div>
       )}
       {form && (
-        <div className="oneri-form" data-oneri-mod={mod}>
+        <div className="oneri-form" data-oneri-mod={mod} ref={formRef}>
           {form}
         </div>
       )}

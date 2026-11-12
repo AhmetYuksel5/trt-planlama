@@ -1531,6 +1531,8 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .oneri-bolum .kart { border: 0; box-shadow: none; padding: 0; background: none; }
 .oneri-bolum:has(> .katlanir-govde:empty) { display: none; }
 .oneri-duzenle { justify-content: flex-end; }
+/* Karar formuna kayınca sayfada üst çubuğun altında kalmasın. */
+.oneri-form { scroll-margin-block-start: calc(var(--ust-yukseklik) + var(--ara-3)); }
 .pencere > header h2 .rozet { vertical-align: middle; font-size: var(--punto-mini); }
 .pencere > header .ok-meta { margin-top: var(--ara-1); }
 .pencere > footer { align-items: center; }
