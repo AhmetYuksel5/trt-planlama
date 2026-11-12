@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -40,6 +40,8 @@ import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
 import { GozdenGecirme } from "./GozdenGecirme";
 import { HaftalikCiktiOnizleme } from "./Cikti";
+import { HaftalikTakdirPenceresi } from "./Takdir";
+import { haftalikTakdirKalemleri, kalemBildirimi } from "../../takdir";
 import { ToplantiNotlari } from "./Toplanti";
 
 /**
@@ -65,6 +67,9 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   // Kesinleştirme gözden geçirme penceresinden: kararlar gruplu, değiştirilebilir, onay en altta.
   const [gozden, setGozden] = useState(false);
   const [onizleme, setOnizleme] = useState(false);
+  const [takdir, setTakdir] = useState(false);
+  const takdirKalemleri = haftalikTakdirKalemleri(hafta);
+  const takdirBekleyen = takdirKalemleri.filter((k) => !kalemBildirimi(v, k)).length;
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
   // Günü geçmiş kalem artık aktarılmaz; yalnız bugün ve sonrası "bekliyor".
@@ -93,6 +98,13 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
               <button type="button" role="menuitem" className="acilir-satir" onClick={() => setOnizleme(true)} data-arac="cikti">
                 <Printer size={16} /> {t("ciktiOnizleme")}
               </button>
+              {/* Kesinleşen haftanın kabul edilen paketleri: dilediğine görevlendirme postası. */}
+              {takdirKalemleri.length > 0 && yapabilir(ben, "haftalikDuzenle") && (
+                <button type="button" role="menuitem" className="acilir-satir" onClick={() => setTakdir(true)} data-arac="kabul-paketler">
+                  <MailCheck size={16} /> {t("kabulEdilenPaketler")}
+                  {takdirBekleyen > 0 && <em className="dugme-sayi">{takdirBekleyen}</em>}
+                </button>
+              )}
               {duzenler && (
                 <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/belge`} data-arac="belge">
                   <FilePen size={16} /> {t("belgedeDuzenle")}
@@ -165,6 +177,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       />
 
       {onizleme && <HaftalikCiktiOnizleme hafta={hafta} kapat={() => setOnizleme(false)} />}
+      {takdir && <HaftalikTakdirPenceresi ben={ben} hafta={hafta} kapat={() => setTakdir(false)} />}
       {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (

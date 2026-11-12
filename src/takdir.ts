@@ -1,8 +1,9 @@
 import { postaAdresi } from "./girisKodu";
 import { ciktiTarihi } from "./dil";
-import { kisiAr, paketYeri } from "./etiketler";
+import { kisiAr, paketYeri, sehirAr } from "./etiketler";
 import { TAKDIR_SABLONU, adresler } from "./geriBildirim";
-import { baslikBul, kisiBul, planBul, type Durum, type GeriBildirimSablonu, type Kisi, type Paket } from "./veri";
+import { baslikBul, kisiBul, oneriBul, planBul, type Durum, type GeriBildirimSablonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Paket } from "./veri";
+import { gundemde } from "./haftalik";
 
 /*
  * Takdir bildirimi (kullanıcı: plan onaylanınca kabul edilen paketin
@@ -85,3 +86,53 @@ export const takdirEpostasi = (d: Durum, p: Paket, gonderen?: Kisi, s: GeriBildi
     metin: takdirDoldur(s.govde, a),
   };
 };
+
+/*
+ * Weekly'nin kabul edilen paketleri (kullanıcı: kesinleşen haftanın ⋯ menüsünde
+ * "Kabul edilen paketler", dilediğine posta; gönderilmeyen Next Day hazırlanırken
+ * karşısına çıksın). Paket doğuracak kalem: kabul (şartlı değil), muhabiri belli,
+ * yalnız canlı değil. Muhabir kalemin ilki: doğan paketin muhabiri de o.
+ * Reddedilenlere posta yok; muhabir önerisinin sayfasında görüyor.
+ */
+export const haftalikTakdirKalemleri = (h: HaftalikPlan): HaftalikKalem[] =>
+  h.durum !== "kesinlesti"
+    ? []
+    : h.kalemler.filter((k) => gundemde(k) && k.karar === "kabul" && !!k.muhabirler[0] && !k.muhabirTbc && (k.tur !== "haber" || !k.bicimler.length || k.bicimler.some((b) => b !== "canli")));
+
+/** Postası gitti mi: kalemde ya da doğan pakette (Next Day'den gönderilmiş de olabilir). */
+export const kalemBildirimi = (d: Pick<Durum, "paketler">, k: HaftalikKalem) =>
+  k.takdirBildirimi ?? d.paketler.find((p) => p.haftalikKalemId === k.id && p.takdirBildirimi)?.takdirBildirimi;
+
+const kalemStrapi = (d: Durum, k: HaftalikKalem) =>
+  k.paketBasligi || oneriBul(d, k.oneriId)?.paketBasligi || k.baslik || (k.baslikId ? baslikBul(d, k.baslikId)?.ad : undefined) || k.metin;
+
+const kalemAlanlari = (d: Durum, k: HaftalikKalem, gonderen?: Kisi): Record<string, string> => {
+  const m = kisiBul(d, k.muhabirler[0]);
+  const yer = k.yer?.trim() || sehirAr(m?.sehir);
+  return {
+    muhabir: kisiAr(m),
+    gun: k.tarih ? ciktiTarihi(k.tarih, "ar") : "",
+    sehir: yer,
+    strap: kalemStrapi(d, k).trim(),
+    baslik: baslikBul(d, k.baslikId)?.ad ?? "",
+    aciklama: k.metin.trim(),
+    yer,
+    not: [k.kararNotu, k.ekTalep, k.not].map((x) => x?.trim()).filter(Boolean).join(" - "),
+    gonderen: kisiAr(gonderen),
+  };
+};
+
+export const kalemTakdirEpostasi = (d: Durum, k: HaftalikKalem, gonderen?: Kisi, s: GeriBildirimSablonu = takdirSablonu(d)): TakdirEpostasi => {
+  const a = kalemAlanlari(d, k, gonderen);
+  const adres = takdirAdresi(kisiBul(d, k.muhabirler[0]));
+  return {
+    kime: adres ? [adres] : [],
+    cc: adresler(s.cc),
+    bcc: adresler(s.bcc),
+    konu: takdirDoldur(s.konu, a).replace(/\s*\n\s*/g, " "),
+    metin: takdirDoldur(s.govde, a),
+  };
+};
+
+/** Next Day'de bu planın, postası gitmemiş Weekly paketleri (Sıradaki kartında hatırlatılıyor). */
+export const bildirilmemisHaftalik = (d: Pick<Durum, "paketler">, planId: string) => takdirPaketleri(d, planId).filter((p) => p.haftalikKalemId && !p.takdirBildirimi);

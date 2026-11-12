@@ -1029,6 +1029,22 @@ export const takdirBildirildi = (ben: Kisi, paketId: string) => {
   return true;
 };
 
+/*
+ * Weekly'nin kabul edilen paketine görevlendirme postası gitti: iz kalemde ve
+ * (doğmuşsa) paketlerinde. Next Day'in bildirim sayfası aynı paketi bir daha önermesin.
+ */
+export const haftalikTakdirBildirildi = (ben: Kisi, haftaId: string, kalemId: string) => {
+  let d = getir();
+  const k = haftaBul(d, haftaId)?.kalemler.find((x) => x.id === kalemId);
+  if (!k || !yapabilir(ben, "haftalikDuzenle")) return false;
+  const iz = { zaman: simdi(), kisiId: ben.id };
+  d = kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, takdirBildirimi: iz }));
+  if (d.paketler.some((p) => p.haftalikKalemId === kalemId))
+    d = { ...d, paketler: d.paketler.map((p) => (p.haftalikKalemId === kalemId ? { ...p, takdirBildirimi: iz } : p)) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takdirBildirildi", haftaId, ...(k.oneriId && { oneriId: k.oneriId }) }));
+  return true;
+};
+
 /* --- Haftalık plan --- */
 
 const haftaGuncelle = (d: Durum, id: string, f: (h: HaftalikPlan) => HaftalikPlan): Durum => ({
@@ -1537,6 +1553,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       sahaGerekli: false,
       oneriId: k.oneriId,
       haftalikKalemId: k.id,
+      ...(k.takdirBildirimi ? { takdirBildirimi: k.takdirBildirimi } : {}),
       notlar: [],
       olusturma: simdi(),
       guncelleme: simdi(),
@@ -1578,6 +1595,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     stok: !MASA_KOLLARI.includes(k.tur) || undefined,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
+    ...(k.takdirBildirimi ? { takdirBildirimi: k.takdirBildirimi } : {}),
     notlar: [],
     olusturma: simdi(),
     guncelleme: simdi(),

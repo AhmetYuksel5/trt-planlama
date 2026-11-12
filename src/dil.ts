@@ -2889,6 +2889,8 @@ const M = {
   kayitBaglantisiYok: m("Açık bağlantı yok.", "لا روابط مفتوحة.", "No open links."),
   sonGecerlilik: m("Son geçerlilik: {tarih}", "صالح حتى: {tarih}", "Valid until: {tarih}"),
   girisKodu: m("Giriş kodu", "رمز الدخول", "Sign-in code"),
+  kabulEdilenPaketler: m("Kabul edilen paketler", "التقارير المقبولة", "Accepted packages"),
+  skHaftalikPosta: m("Weekly · {n} paketin postası gitmedi", "Weekly · {n} تقرير لم يُرسل بريده", "Weekly · {n} packages not emailed"),
   girisKodumVar: m("Giriş kodum var", "لديّ رمز دخول", "I have a sign-in code"),
   kodlaGirisBaslik: m("Giriş koduyla gir", "الدخول برمز", "Sign in with a code"),
   kodlaDevam: m("Devam", "متابعة", "Continue"),

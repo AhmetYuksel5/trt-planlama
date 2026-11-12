@@ -1120,6 +1120,12 @@ export interface HaftalikKalem {
   onInceleme?: OnInceleme;
   /** Kabul edilip aktarılınca: Next Day planı ve doğan paket. */
   aktarim?: { planId?: string; paketId?: string };
+  /*
+   * Görevlendirme postası gönderildi (takdir.ts, Weekly ⋯ › Kabul edilen paketler).
+   * Paket henüz doğmamış olabiliyor (günü gelince Next Day'e geçiyor): iz kalemde,
+   * doğan pakete de taşınıyor; Next Day'in bildirim sayfası onu "gönderildi" görür.
+   */
+  takdirBildirimi?: { zaman: string; kisiId: string };
 }
 
 export interface HaftalikPlan {

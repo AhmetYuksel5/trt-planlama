@@ -36,7 +36,7 @@ import { kisaGunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { kayipBaslikGeriGetir, planDurum } from "../../eylemler";
 import { kayipBasliklar, type KayipGrup } from "../../kayipKayitlar";
-import { takdirPaketleri } from "../../takdir";
+import { bildirilmemisHaftalik, takdirPaketleri } from "../../takdir";
 import { git, useAdimDurumu } from "../../yol";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { PLAN_DURUM_ADI, PLAN_DURUM_TONU } from "../../etiketler";
@@ -726,16 +726,27 @@ function useSiradakiIs(ben: Kisi, plan: NextDayPlan): { metin: ReactNode; dugmel
   let metin: ReactNode = null;
   let dugmeler: ReactNode = null;
   // Dünden gelenler için ayrı iş yok (kullanıcı: renkli duruyorlar, yeter); taslakta sıradaki iş toplantı.
+  const haftalik = a.haftalikHatirlatir && (
+    <a className="dugme dugme-sade" href={`#/nextday/${plan.id}/takdir`} data-haftalik-takdir>
+      <MailCheck size={16} /> {t("skHaftalikPosta", { n: a.haftalikBildirilmemis })}
+    </a>
+  );
   if (plan.durum === "taslak") {
-    dugmeler = a.toplantiyaGoturur && (
-      <button type="button" className="dugme dugme-yumusak" onClick={a.toplantiyaGotur}>
-        <Send size={16} className="yon" /> {t("toplantiyaGotur")}
-      </button>
+    dugmeler = (
+      <>
+        {haftalik}
+        {a.toplantiyaGoturur && (
+          <button type="button" className="dugme dugme-yumusak" onClick={a.toplantiyaGotur}>
+            <Send size={16} className="yon" /> {t("toplantiyaGotur")}
+          </button>
+        )}
+      </>
     );
   } else if (plan.durum === "toplantida") {
     metin = a.kararsiz ? t("skKararsiz", { n: a.kararsiz, m: a.gorevli }) : t("skKararYok");
     dugmeler = (
       <>
+        {haftalik}
         {a.taslagaAlir && (
           <button type="button" className="dugme dugme-sade" onClick={a.taslagaAl}>
             <Undo2 size={16} /> {t("taslagaGeriAl")}
@@ -956,7 +967,11 @@ function usePlanAkisi(ben: Kisi, plan: NextDayPlan) {
     return true;
   };
   const takdirSayisi = takdirPaketleri(v, plan.id).length;
+  // Weekly'de postası gönderilmemiş paketler Next Day hazırlanırken hatırlatılıyor (kullanıcı isteği).
+  const haftalikBildirilmemis = bildirilmemisHaftalik(v, plan.id).length;
   return {
+    haftalikBildirilmemis,
+    haftalikHatirlatir: (plan.durum === "taslak" || plan.durum === "toplantida") && haftalikBildirilmemis > 0 && yapabilir(ben, "planDuzenle"),
     kararsiz: kararsiz.length,
     gorevli,
     takdirSayisi,
@@ -1019,9 +1034,9 @@ function PlanDurumKarti({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) {
             <Undo2 size={16} /> {t("onayiGeriAl")}
           </button>
         )}
-        {a.takdirAcar && (
+        {(a.takdirAcar || a.haftalikHatirlatir) && (
           <a className="dugme dugme-ikincil" href={`#/nextday/${plan.id}/takdir`} data-takdir-ac>
-            <MailCheck size={16} /> {t("tkBildir")}
+            <MailCheck size={16} /> {a.takdirAcar ? t("tkBildir") : t("skHaftalikPosta", { n: a.haftalikBildirilmemis })}
           </a>
         )}
         {a.devralir && (

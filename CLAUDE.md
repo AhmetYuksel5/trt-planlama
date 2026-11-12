@@ -1479,6 +1479,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`), o listede görünmez, onlar
   yazılırken düşmez. Değeri boş alanın satırı düşer (notsuz "ملاحظة:" yok).
   Test `testler/takdir.cjs`.
+  Weekly'de de (kullanıcı: kesinleşen haftanın ⋯ menüsünde "Kabul edilen
+  paketler", dilediğine posta; gönderilmeyen Next Day hazırlanırken karşıma
+  çıksın; `haftalik/Takdir.tsx → HaftalikTakdirPenceresi`): kabul edilen
+  (şartlı değil), muhabiri belli, yalnız canlı olmayan kalemler gün sırasıyla
+  (`takdir.ts → haftalikTakdirKalemleri`), aynı şablon ve liste
+  (`nextday/Takdir.tsx → TakdirListesi`, iki sayfa ortak). Paket henüz
+  doğmamış olabildiği için iz kalemde (`HaftalikKalem.takdirBildirimi`,
+  `eylemler.ts → haftalikTakdirBildirildi`; doğmuş paketine de yazılır, sonra
+  doğan pakete taşınır). Next Day taslak ve toplantıdayken postası gitmemiş
+  Weekly paketi "Sıradaki" kartında "Weekly · n paketin postası gitmedi"
+  (`bildirilmemisHaftalik`, `data-haftalik-takdir`), basınca planın bildirim
+  sayfası. Reddedilene posta yok; muhabir önerisinin sayfasında görür.
+  Test `testler/haftalik-takdir.cjs`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.
