@@ -2,6 +2,9 @@ import { Ban, Check, Eye, Hourglass, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
+import trtArabi from "../../varliklar/trt-arabi.svg";
+import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
+import type { Baski } from "./Baski";
 import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
 import { TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
@@ -258,7 +261,8 @@ function Dosyalar({ liste, hafta, duzen }: { liste: HaftalikKalem[]; hafta: Haft
   );
 }
 
-export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPlan; duzen?: HfDuzen; belgeRef?: Ref<HTMLElement> }) {
+// baski: Next Day'in baskı tasarımları (belge/Baski.tsx); verilmezse kurumun düzeni.
+export function HaftalikBelgesi({ hafta, duzen, belgeRef, baski }: { hafta: HaftalikPlan; duzen?: HfDuzen; belgeRef?: Ref<HTMLElement>; baski?: Baski }) {
   const { t } = useDil();
   const v = useVeri();
   const ben = duzen?.ben;
@@ -275,14 +279,10 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
   const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g));
   const stok = kalemler.filter((k) => !k.tarih);
 
-  return (
-    <article className="cikti" ref={belgeRef} dir="rtl" lang="ar">
-      <h1>
-        {c("haftalikCiktiBaslik")} {aralikYaz(bas, bit, "ar")}
-      </h1>
-
+  const hareketBolumu = (
+    <>
       {hareketSatirlari.length > 0 && (
-        <section>
+        <section data-bolum="hareket">
           <h2 className="yesil">{c("ciktiHareketler")}</h2>
           {hareketSatirlari.map((grup) => {
             const g = grup[0];
@@ -295,9 +295,12 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
           })}
         </section>
       )}
-
+    </>
+  );
+  const anaBolum = (
+    <>
       {(hafta.anaKonular.length > 0 || duzen) && (
-        <section>
+        <section data-bolum="ana">
           <h2 className="kirmizi ortali">{c("haftaninAnaDosyalari")}</h2>
           {hafta.anaKonular.map((a, i) => (
             <div key={a.id} className="cikti-baslik">
@@ -337,7 +340,10 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
           )}
         </section>
       )}
-
+    </>
+  );
+  const gunlukBolum = (
+    <>
       {gunler.length > 0 && (
         <section>
           <h2 className="kirmizi ortali">{c("gunlukGundem")}</h2>
@@ -354,7 +360,10 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
           ))}
         </section>
       )}
-
+    </>
+  );
+  const stokBolum = (
+    <>
       {(stok.length > 0 || duzen) && (
         <section>
           <h2 className="yesil">{c("zamanaBagliOlmayan")}</h2>
@@ -366,7 +375,75 @@ export function HaftalikBelgesi({ hafta, duzen, belgeRef }: { hafta: HaftalikPla
           )}
         </section>
       )}
+    </>
+  );
+
+  return (
+    <article className={`cikti hf${baski ? ` baski-${baski}` : ""}`} ref={belgeRef} dir="rtl" lang="ar">
+      {baski && baski !== 2 && (
+        <div className="baski-logo">
+          <img src={trtArabi} alt="TRT عربي" />
+        </div>
+      )}
+      {baski === 2 ? (
+        <HaftaManset hafta={hafta} kalemler={kalemler} />
+      ) : (
+        <h1>
+          {c("haftalikCiktiBaslik")} {aralikYaz(bas, bit, "ar")}
+        </h1>
+      )}
+      {/* 2. tasarımda Next Day'deki gibi iki sütun: sağda hareketler ve zamana bağlı olmayanlar, solda dosyalar ve günler. */}
+      {baski === 2 ? (
+        <div className="nd-sutunlar">
+          <div className="nd-ana">
+            {anaBolum}
+            {gunlukBolum}
+          </div>
+          <div className="nd-yan">
+            {hareketBolumu}
+            {stokBolum}
+          </div>
+        </div>
+      ) : (
+        <>
+          {hareketBolumu}
+          {anaBolum}
+          {gunlukBolum}
+          {stokBolum}
+        </>
+      )}
     </article>
+  );
+}
+
+/* 2. tasarımın manşeti: haftanın günleri büyük, belgenin adı, haftanın sayıları (dosya, PKG, canlı). */
+function HaftaManset({ hafta, kalemler }: { hafta: HaftalikPlan; kalemler: HaftalikKalem[] }) {
+  const bas = hafta.baslangic;
+  const bit = haftaSonu(bas);
+  const dosya = new Set([...hafta.anaKonular.map((a) => a.baslikId ?? a.id), ...kalemler.map((k) => k.baslikId).filter(Boolean)]).size;
+  return (
+    <header className="baski-manset">
+      <img className="bm-logo" src={trtArabiBeyaz} alt="TRT عربي" />
+      <span className="bm-gun">
+        {bas.split("-")[2]}–{bit.split("-")[2]}
+      </span>
+      <span className="bm-ad">
+        {c("haftalikCiktiBaslik")}
+        <small>{aralikYaz(bas, bit, "ar")}</small>
+      </span>
+      <span className="bm-sayilar">
+        <span>
+          <b>{dosya}</b>
+          {c("bmDosya")}
+        </span>
+        <span>
+          <b>{kalemler.filter(kalemPaketli).length}</b>PKG
+        </span>
+        <span>
+          <b>{kalemler.filter((k) => k.bicimler.includes("canli")).length}</b>LIVE
+        </span>
+      </span>
+    </header>
   );
 }
 

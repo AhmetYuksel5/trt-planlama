@@ -39,6 +39,7 @@ import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
 import { GozdenGecirme } from "./GozdenGecirme";
+import { HaftalikCiktiOnizleme } from "./Cikti";
 
 /**
  * Haftalık plan ekranı: Perşembe toplantısına giden planın hazırlandığı
@@ -62,6 +63,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   // Sonucu onay penceresinde sayıyla söylüyor; gündeme alınmamış öneriler için ayrıca soruyor.
   // Kesinleştirme gözden geçirme penceresinden: kararlar gruplu, değiştirilebilir, onay en altta.
   const [gozden, setGozden] = useState(false);
+  const [onizleme, setOnizleme] = useState(false);
   const gundem = hafta.kalemler.filter(gundemde);
   const cagri = v.cagrilar.find((c) => c.etiket === etiketUret(bas, "haftalik"));
   // Günü geçmiş kalem artık aktarılmaz; yalnız bugün ve sonrası "bekliyor".
@@ -81,9 +83,10 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
           <>
             {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
             <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
-              <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/cikti`} data-arac="cikti">
+              {/* Next Day'deki gibi önizleme penceresi: baskı tasarımı seçilir, tam sayfa ya da yazdır. */}
+              <button type="button" role="menuitem" className="acilir-satir" onClick={() => setOnizleme(true)} data-arac="cikti">
                 <Printer size={16} /> {t("ciktiOnizleme")}
-              </a>
+              </button>
               {duzenler && (
                 <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/belge`} data-arac="belge">
                   <FilePen size={16} /> {t("belgedeDuzenle")}
@@ -149,6 +152,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         }
       />
 
+      {onizleme && <HaftalikCiktiOnizleme hafta={hafta} kapat={() => setOnizleme(false)} />}
       {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (

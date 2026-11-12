@@ -2,8 +2,8 @@ import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
-import { ArrowRightLeft, Check, ChevronDown, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
@@ -565,7 +565,22 @@ export function BaslikEkleFormu({ plan, sonra, kapat }: { plan: NextDayPlan; son
 
 /* --- Gelişme satırı: başlık altında da takiplerde de aynı --- */
 
-export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { plan: NextDayPlan; gelismeler: Gelisme[]; duzenler: boolean; planBaslikId?: string }) {
+// gelismeAlti: gelişmeye bağlı PKG'ler ve onların formu (başlık kartı verir); paketEkle: gelişmenin satırında "Bu gelişmeye PKG ekle".
+export function GelismeListesi({
+  plan,
+  gelismeler,
+  duzenler,
+  planBaslikId,
+  gelismeAlti,
+  paketEkle,
+}: {
+  plan: NextDayPlan;
+  gelismeler: Gelisme[];
+  duzenler: boolean;
+  planBaslikId?: string;
+  gelismeAlti?: (g: Gelisme) => ReactNode;
+  paketEkle?: (g: Gelisme) => void;
+}) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
@@ -579,7 +594,8 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
         form === g.id ? (
           <GelismeFormu key={g.id} plan={plan} planBaslikId={planBaslikId} mevcut={g} kapat={() => setForm("")} />
         ) : (
-          <div key={g.id} data-gelisme className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
+          <Fragment key={g.id}>
+          <div data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
                 <Icerik blok className="kayit-metin">
@@ -599,18 +615,25 @@ export function GelismeListesi({ plan, gelismeler, duzenler, planBaslikId }: { p
                   </span>
                 </small>
               </div>
-              {duzenler && (
+              {(duzenler || paketEkle) && (
                 <div className="islemler">
-                  {g.onceki && <OncekiDugmesi planId={plan.id} hedef={{ gelisme: g.id }} />}
-                  <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(g.id)} />
-                  {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !g.planBaslikId)) && (
-                    <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => setTasinan(g)} />
+                  {paketEkle && <IkonDugme ikon={<Package size={15} />} etiket={t("gelismeyePkgEkle")} onClick={() => paketEkle(g)} />}
+                  {duzenler && (
+                    <>
+                      {g.onceki && <OncekiDugmesi planId={plan.id} hedef={{ gelisme: g.id }} />}
+                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(g.id)} />
+                      {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !g.planBaslikId)) && (
+                        <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => setTasinan(g)} />
+                      )}
+                      {(!g.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />}
+                    </>
                   )}
-                  {(!g.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && gelismeSil(ben, g.id)} />}
                 </div>
               )}
             </div>
           </div>
+          {gelismeAlti && <div className="gelisme-alti">{gelismeAlti(g)}</div>}
+          </Fragment>
         ),
       )}
       {duzenler && form === "yeni" && <GelismeFormu plan={plan} planBaslikId={planBaslikId} kapat={() => setForm("")} />}

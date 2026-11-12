@@ -74,6 +74,76 @@ export default function BaslikKarti({
   );
   const degerlendirir = yapabilir(ben, "paketDegerlendir");
   const cikabilir = !paketler.some((p) => p.durum !== "iptal");
+  /*
+   * Gelişmeye bağlı PKG (başlığın içindeki daha özel konu) o gelişmenin hemen
+   * altında; başlığın PKG bölümünde yalnız öbürleri. Gelişmesi bu başlıkta
+   * olmayan paket (gelişme silindi, taşındı) başlıkta kalır.
+   */
+  const gelismeAltinda = (p: Paket) => !!p.gelismeId && gelismeler.some((g) => g.id === p.gelismeId);
+  const basPaketleri = [...paketler].filter((p) => !gelismeAltinda(p)).sort(oncelikliOnce);
+  const paketSatiri = (p: Paket) =>
+            paketForm === p.id && p.durum === "onaylandi" ? (
+              <PaketMetniFormu key={p.id} ben={ben!} paket={p} kapat={() => setPaketForm("")} />
+            ) : paketForm === p.id ? (
+              <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
+            ) : (
+              <div key={p.id} className="kayit">
+                <div className="kayit-bas">
+                  <div>
+                    <a href={`#/paketler/${p.id}`} className="kalin-bag">
+                      <Icerik blok>{satir(paketYeri(p), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}</Icerik>
+                    </a>
+                    {p.slug && (
+                      <span dir="ltr" className="slug" data-paket-kodu>
+                        {p.slug}
+                      </span>
+                    )}
+                    <small>
+                      {p.oncelikli && <OncelikRozeti />}
+                      {p.haftalikKalemId && <HaftalikRozeti />}
+                      <PaketDurumRozeti paket={p} />
+                      <span>{p.kod}</span>
+                      {p.yayin && <span>· {t("yayin")} {saatYaz(p.yayin, dil)}</span>}
+                      {p.sahaGerekli && <Rozet ton="uyari">{t("saha")}</Rozet>}
+                    </small>
+                  </div>
+                  <div className="islemler">
+                    <PaketOneriBagi ben={ben} paket={p} />
+                    {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
+                    )}
+                    {paketMetniDuzenlenebilir(ben, v, p) && (
+                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
+                    )}
+                    {degerlendirir && p.durum === "taslak" && (
+                      <IkonDugme ikon={<Hourglass size={15} />} etiket={t("degerlendirmeyeAl")} onClick={() => ben && paketDurum(ben, p.id, "degerlendiriliyor")} />
+                    )}
+                    {/* Toplantıda paket başına karar: kabul muhabire görev, ret paketi iz olarak bırakır. */}
+                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("kabulEt")} onClick={() => ben && confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} />
+                    )}
+                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<Ban size={15} />} etiket={t("reddet")} onClick={() => ben && confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} />
+                    )}
+                    {degerlendirir && !["tamamlandi", "iptal", "taslak", "degerlendiriliyor"].includes(p.durum) && (
+                      <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
+                    )}
+                    {icerik && paketStogaAlinabilir(p) && (
+                      <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
+                    )}
+                    {icerik && paketPlandanSilinir(p) && (
+                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+  const gelismeAlti = (g: { id: string }) => (
+    <>
+      {[...paketler].filter((p) => p.gelismeId === g.id).sort(oncelikliOnce).map(paketSatiri)}
+      {icerik && paketForm === `yeni:${g.id}` && <PaketFormu plan={plan} planBaslikId={pb.id} gelismeId={g.id} kapat={() => setPaketForm("")} />}
+    </>
+  );
 
   return (
     <>
@@ -154,7 +224,7 @@ export default function BaslikKarti({
           <h4>
             <Newspaper size={14} /> {t("gelismeler")}
           </h4>
-          <GelismeListesi plan={plan} gelismeler={gelismeler} duzenler={operasyon} planBaslikId={pb.id} />
+          <GelismeListesi plan={plan} gelismeler={gelismeler} duzenler={operasyon} planBaslikId={pb.id} gelismeAlti={gelismeAlti} paketEkle={icerik ? (g) => setPaketForm(`yeni:${g.id}`) : undefined} />
         </section>
 
         <section className="alt-alan">
@@ -246,65 +316,8 @@ export default function BaslikKarti({
           <h4>
             <Package size={14} /> {t("paketOnerileri")} (PKG)
           </h4>
-          {paketler.length === 0 && paketForm !== "yeni" && <p className="bos-kucuk">{t("paketOnerisiYok")}</p>}
-          {[...paketler].sort(oncelikliOnce).map((p) =>
-            paketForm === p.id && p.durum === "onaylandi" ? (
-              <PaketMetniFormu key={p.id} ben={ben!} paket={p} kapat={() => setPaketForm("")} />
-            ) : paketForm === p.id ? (
-              <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
-            ) : (
-              <div key={p.id} className="kayit">
-                <div className="kayit-bas">
-                  <div>
-                    <a href={`#/paketler/${p.id}`} className="kalin-bag">
-                      <Icerik blok>{satir(paketYeri(p), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}</Icerik>
-                    </a>
-                    {p.slug && (
-                      <span dir="ltr" className="slug" data-paket-kodu>
-                        {p.slug}
-                      </span>
-                    )}
-                    <small>
-                      {p.oncelikli && <OncelikRozeti />}
-                      {p.haftalikKalemId && <HaftalikRozeti />}
-                      <PaketDurumRozeti paket={p} />
-                      <span>{p.kod}</span>
-                      {p.yayin && <span>· {t("yayin")} {saatYaz(p.yayin, dil)}</span>}
-                      {p.sahaGerekli && <Rozet ton="uyari">{t("saha")}</Rozet>}
-                    </small>
-                  </div>
-                  <div className="islemler">
-                    <PaketOneriBagi ben={ben} paket={p} />
-                    {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
-                    )}
-                    {paketMetniDuzenlenebilir(ben, v, p) && (
-                      <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
-                    )}
-                    {degerlendirir && p.durum === "taslak" && (
-                      <IkonDugme ikon={<Hourglass size={15} />} etiket={t("degerlendirmeyeAl")} onClick={() => ben && paketDurum(ben, p.id, "degerlendiriliyor")} />
-                    )}
-                    {/* Toplantıda paket başına karar: kabul muhabire görev, ret paketi iz olarak bırakır. */}
-                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("kabulEt")} onClick={() => ben && confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} />
-                    )}
-                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<Ban size={15} />} etiket={t("reddet")} onClick={() => ben && confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} />
-                    )}
-                    {degerlendirir && !["tamamlandi", "iptal", "taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
-                    )}
-                    {icerik && paketStogaAlinabilir(p) && (
-                      <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
-                    )}
-                    {icerik && paketPlandanSilinir(p) && (
-                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
-                    )}
-                  </div>
-                </div>
-              </div>
-            ),
-          )}
+          {basPaketleri.length === 0 && paketForm !== "yeni" && <p className="bos-kucuk">{t("paketOnerisiYok")}</p>}
+          {basPaketleri.map(paketSatiri)}
           {icerik && paketForm === "yeni" && <PaketFormu plan={plan} planBaslikId={pb.id} kapat={() => setPaketForm("")} />}
           {icerik && !paketForm && (
             <div className="ara-ust-2">

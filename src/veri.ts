@@ -890,6 +890,12 @@ export interface Paket {
   kod: string;
   planId?: string;
   planBaslikId?: string;
+  /*
+   * Başlığın içindeki daha özel konunun paketi (kullanıcı: başlık genel
+   * kalıyor, PKG başlığın en altında değil o gelişmenin hemen altında
+   * görünsün). Gelişme başlıkta yoksa paket başlığın PKG'sinde görünür.
+   */
+  gelismeId?: string;
   baslik: string;
   sehir: Sehir;
   /*

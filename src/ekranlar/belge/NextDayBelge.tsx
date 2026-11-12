@@ -1,10 +1,12 @@
 import {
   ArrowRightLeft,
   ExternalLink,
+  Package,
   PackageCheck,
   Printer,
 } from "lucide-react";
 // Kurumun logosu yalnız baskı tasarımlarında; kurumun düz çıktısı ve Word'de yok.
+import type { Baski } from "./Baski";
 import trtArabi from "../../varliklar/trt-arabi.svg";
 import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
@@ -138,7 +140,7 @@ export type NdPencere =
   | { tur: "gelismeTasi"; gelisme: Gelisme }
   | { tur: "muhabirEkle"; pbId: string; sonra?: string }
   | { tur: "muhabir"; pbId: string; kisiId: string }
-  | { tur: "paket"; pbId: string; mevcut?: Paket; sonra?: string };
+  | { tur: "paket"; pbId: string; mevcut?: Paket; sonra?: string; gelismeId?: string };
 
 export interface NdDuzen {
   ben: Kisi;
@@ -296,6 +298,7 @@ const paketGirdisi = (p: Paket, baslik: string) => ({
   sahaGerekli: p.sahaGerekli,
   slug: p.slug,
   muhabirTbc: p.muhabirTbc,
+  gelismeId: p.gelismeId,
 });
 
 /*
@@ -348,8 +351,10 @@ export function NextDayBelgesi({
     (p) => p.planId === plan.id && p.durum !== "iptal",
   );
   // Hazır paketlere alınan beklenenlerde ikinci kez basılmaz; başlığın altında kalması planlamacının seçimi.
+  // Stoka alınmış (yapılmış) paket hazırdan çıkarılsa da "beklenen" değil.
+  const stokta = (p: Paket) => !!p.stok && p.durum === "tamamlandi";
   const beklenenler = paketler.filter(
-    (p) => !plan.hazirPaketler.includes(p.id),
+    (p) => !plan.hazirPaketler.includes(p.id) && !stokta(p),
   );
   const takipler = v.gelismeler.filter(
     (g) => g.planId === plan.id && !g.planBaslikId,
@@ -358,8 +363,128 @@ export function NextDayBelgesi({
   const dosyasizPaketler = paketler.filter(
     (p) =>
       !plan.basliklar.some((pb) => pb.id === p.planBaslikId) &&
-      !plan.hazirPaketler.includes(p.id),
+      !plan.hazirPaketler.includes(p.id) &&
+      !stokta(p),
   );
+
+  // Gelişmesi bu başlıkta duran paket gelişmenin altında çizilir; gelişme gittiyse başlığın PKG'sinde kalır.
+  const gelismeAltinda = (p: Paket, gelismeler: Gelisme[]) =>
+    !!p.gelismeId && gelismeler.some((g) => g.id === p.gelismeId);
+
+  /* PKG satırı: başlığın PKG bölümünde de gelişmenin altında da aynı. */
+  const paketSatiri = (pbId: string, grup: Paket[]) => (p: Paket, j: number) => {
+                              // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
+                              const acikPaket =
+                                p.durum === "taslak" ||
+                                p.durum === "degerlendiriliyor";
+                              return (
+                                <BelgeSatiri
+                                  key={p.id}
+                                  duzen={ic}
+                                  serit={
+                                    <SatirSeridi
+                                      yukari={yukari(
+                                        j,
+                                        () => ben && paketTasi(ben, p.id, -1),
+                                      )}
+                                      asagi={asagi(
+                                        j,
+                                        grup.length,
+                                        () => ben && paketTasi(ben, p.id, 1),
+                                      )}
+                                      ekle={() =>
+                                        ac({
+                                          tur: "paket",
+                                          pbId,
+                                          sonra: p.id,
+                                          gelismeId: p.gelismeId,
+                                        })
+                                      }
+                                      ekleEtiket={t("paketOnerisiEkle")}
+                                      duzenle={
+                                        acikPaket
+                                          ? () =>
+                                              ac({
+                                                tur: "paket",
+                                                pbId,
+                                                mevcut: p,
+                                              })
+                                          : undefined
+                                      }
+                                      ek={
+                                        <>
+                                          <PaketBaglantisi id={p.id} />
+                                          {paketStogaAlinabilir(p) && (
+                                            <IkonDugme
+                                              ikon={<PackageCheck size={15} />}
+                                              etiket={t("stokPaketOlarakEkle")}
+                                              onClick={() =>
+                                                ben &&
+                                                confirm(t("stokPaketOnay")) &&
+                                                paketStogaAl(
+                                                  ben,
+                                                  p.id,
+                                                  confirm(t("stokBaslikta")),
+                                                )
+                                              }
+                                            />
+                                          )}
+                                        </>
+                                      }
+                                      cikar={
+                                        paketPlandanSilinir(p)
+                                          ? sil(
+                                              () => ben && paketSil(ben, p.id),
+                                            )
+                                          : undefined
+                                      }
+                                    />
+                                  }
+                                >
+                                  <Satir yer={paketYeri(p)}>
+                                    {ic && acikPaket ? (
+                                      <YerindeMetin
+                                        acik
+                                        deger={p.baslik}
+                                        etiket={t("paketBasligi")}
+                                        kaydet={(x) =>
+                                          x &&
+                                          ben &&
+                                          paketKaydet(ben, paketGirdisi(p, x))
+                                        }
+                                      />
+                                    ) : (
+                                      p.baslik
+                                    )}{" "}
+                                    /{" "}
+                                    <b>
+                                      {muhabirYeri(
+                                        [
+                                          p.muhabirId
+                                            ? kisiAdi(p.muhabirId)
+                                            : "",
+                                        ],
+                                        p.muhabirTbc,
+                                      )}
+                                    </b>
+                                    {bicimEki(p.bicim) && (
+                                      <b data-bicim-eki> {bicimEki(p.bicim)}</b>
+                                    )}
+                                    {paketNotEki(p) && (
+                                      <span data-paket-notu>
+                                        {paketNotEki(p)}
+                                      </span>
+                                    )}
+                                  </Satir>
+                                  {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
+                                  {p.slug && (
+                                    <p className="cikti-slug" data-paket-kodu>
+                                      <bdi>{p.slug}</bdi>
+                                    </p>
+                                  )}
+                                </BelgeSatiri>
+                              );
+                            };
 
   /* Gelişme satırı: başlığın altında da takiplerde de aynı; başlıkta yer yoksa öneren muhabirin şehri. */
   const gelismeSatiri = (
@@ -370,9 +495,15 @@ export function NextDayBelgesi({
   ) => {
     const varsayilanYer =
       planBaslikId && g.onerenId ? sehir(g.onerenId) : undefined;
+    // Gelişmeye bağlı PKG'ler (başlığın içindeki daha özel konu) gelişmenin hemen altında, PKG / PKG PROPOSAL alt başlığıyla.
+    const altPaketler = planBaslikId
+      ? paketler.filter(
+          (p) => p.planBaslikId === planBaslikId && p.gelismeId === g.id,
+        )
+      : [];
     return (
+      <Fragment key={g.id}>
       <BelgeSatiri
-        key={g.id}
         duzen={op}
         onceki={g.onceki}
         serit={
@@ -393,6 +524,15 @@ export function NextDayBelgesi({
             }
             ek={
               <>
+                {ic && planBaslikId && (
+                  <IkonDugme
+                    ikon={<Package size={15} />}
+                    etiket={t("gelismeyePkgEkle")}
+                    onClick={() =>
+                      ac({ tur: "paket", pbId: planBaslikId, gelismeId: g.id })
+                    }
+                  />
+                )}
                 {(plan.basliklar.length > 1 ||
                   (plan.basliklar.length === 1 && !planBaslikId)) && (
                   <IkonDugme
@@ -491,6 +631,16 @@ export function NextDayBelgesi({
           </>
         )}
       </BelgeSatiri>
+      {planBaslikId &&
+        pkgGruplari(altPaketler).map(([ad, grup]) => (
+          <Fragment key={ad}>
+            <p className="alt-baslik" data-pkg-grubu={ad} data-gelisme-pkg>
+              <bdi>{ad}</bdi>
+            </p>
+            {grup.map(paketSatiri(planBaslikId, grup))}
+          </Fragment>
+        ))}
+      </Fragment>
     );
   };
 
@@ -585,7 +735,9 @@ export function NextDayBelgesi({
                       (g) => g.planBaslikId === pb.id,
                     );
                     const pkg = paketler.filter(
-                      (p) => p.planBaslikId === pb.id,
+                      (p) =>
+                        p.planBaslikId === pb.id &&
+                        !gelismeAltinda(p, gelismeler),
                     );
                     // Başlığa bağlı canlı yayın üstteki "مباشر"da ve başlığın altında da; okuyan haberle birlikte görsün.
                     const pbCanli = canlilar.filter(
@@ -856,118 +1008,7 @@ export function NextDayBelgesi({
                             <p className="alt-baslik" data-pkg-grubu={ad}>
                               <bdi>{ad}</bdi>
                             </p>
-                            {grup.map((p, j) => {
-                              // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
-                              const acikPaket =
-                                p.durum === "taslak" ||
-                                p.durum === "degerlendiriliyor";
-                              return (
-                                <BelgeSatiri
-                                  key={p.id}
-                                  duzen={ic}
-                                  serit={
-                                    <SatirSeridi
-                                      yukari={yukari(
-                                        j,
-                                        () => ben && paketTasi(ben, p.id, -1),
-                                      )}
-                                      asagi={asagi(
-                                        j,
-                                        grup.length,
-                                        () => ben && paketTasi(ben, p.id, 1),
-                                      )}
-                                      ekle={() =>
-                                        ac({
-                                          tur: "paket",
-                                          pbId: pb.id,
-                                          sonra: p.id,
-                                        })
-                                      }
-                                      ekleEtiket={t("paketOnerisiEkle")}
-                                      duzenle={
-                                        acikPaket
-                                          ? () =>
-                                              ac({
-                                                tur: "paket",
-                                                pbId: pb.id,
-                                                mevcut: p,
-                                              })
-                                          : undefined
-                                      }
-                                      ek={
-                                        <>
-                                          <PaketBaglantisi id={p.id} />
-                                          {paketStogaAlinabilir(p) && (
-                                            <IkonDugme
-                                              ikon={<PackageCheck size={15} />}
-                                              etiket={t("stokPaketOlarakEkle")}
-                                              onClick={() =>
-                                                ben &&
-                                                confirm(t("stokPaketOnay")) &&
-                                                paketStogaAl(
-                                                  ben,
-                                                  p.id,
-                                                  confirm(t("stokBaslikta")),
-                                                )
-                                              }
-                                            />
-                                          )}
-                                        </>
-                                      }
-                                      cikar={
-                                        paketPlandanSilinir(p)
-                                          ? sil(
-                                              () => ben && paketSil(ben, p.id),
-                                            )
-                                          : undefined
-                                      }
-                                    />
-                                  }
-                                >
-                                  <Satir yer={paketYeri(p)}>
-                                    {ic && acikPaket ? (
-                                      <YerindeMetin
-                                        acik
-                                        deger={p.baslik}
-                                        etiket={t("paketBasligi")}
-                                        kaydet={(x) =>
-                                          x &&
-                                          ben &&
-                                          paketKaydet(ben, paketGirdisi(p, x))
-                                        }
-                                      />
-                                    ) : (
-                                      p.baslik
-                                    )}{" "}
-                                    /{" "}
-                                    <b>
-                                      {muhabirYeri(
-                                        [
-                                          p.muhabirId
-                                            ? kisiAdi(p.muhabirId)
-                                            : "",
-                                        ],
-                                        p.muhabirTbc,
-                                      )}
-                                    </b>
-                                    {bicimEki(p.bicim) && (
-                                      <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                                    )}
-                                    {paketNotEki(p) && (
-                                      <span data-paket-notu>
-                                        {paketNotEki(p)}
-                                      </span>
-                                    )}
-                                  </Satir>
-                                  {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
-                                  {p.slug && (
-                                    <p className="cikti-slug" data-paket-kodu>
-                                      <bdi>{p.slug}</bdi>
-                                    </p>
-                                  )}
-                                </BelgeSatiri>
-                              );
-                            })}
+                            {grup.map(paketSatiri(pb.id, grup))}
                           </Fragment>
                         ))}
                         {(ic || op) && (
@@ -1612,7 +1653,10 @@ export function NextDayBelgesi({
                 const gelismeler = v.gelismeler.filter(
                   (g) => g.planBaslikId === pb.id,
                 );
-                const pkg = paketler.filter((p) => p.planBaslikId === pb.id);
+                const pkg = paketler.filter(
+                  (p) =>
+                    p.planBaslikId === pb.id && !gelismeAltinda(p, gelismeler),
+                );
                 // Başlığa bağlı canlı yayın üstteki "مباشر"da ve başlığın altında da; okuyan haberle birlikte görsün.
                 const pbCanli = canlilar.filter(
                   (x) => x.planBaslikId === pb.id,
@@ -1869,110 +1913,7 @@ export function NextDayBelgesi({
                         <p className="alt-baslik" data-pkg-grubu={ad}>
                           <bdi>{ad}</bdi>
                         </p>
-                        {grup.map((p, j) => {
-                          // Değerlendirmeden ileri gitmiş paket burada değişmiyor; ayrıntısı paket sayfasında.
-                          const acikPaket =
-                            p.durum === "taslak" ||
-                            p.durum === "degerlendiriliyor";
-                          return (
-                            <BelgeSatiri
-                              key={p.id}
-                              duzen={ic}
-                              serit={
-                                <SatirSeridi
-                                  yukari={yukari(
-                                    j,
-                                    () => ben && paketTasi(ben, p.id, -1),
-                                  )}
-                                  asagi={asagi(
-                                    j,
-                                    grup.length,
-                                    () => ben && paketTasi(ben, p.id, 1),
-                                  )}
-                                  ekle={() =>
-                                    ac({
-                                      tur: "paket",
-                                      pbId: pb.id,
-                                      sonra: p.id,
-                                    })
-                                  }
-                                  ekleEtiket={t("paketOnerisiEkle")}
-                                  duzenle={
-                                    acikPaket
-                                      ? () =>
-                                          ac({
-                                            tur: "paket",
-                                            pbId: pb.id,
-                                            mevcut: p,
-                                          })
-                                      : undefined
-                                  }
-                                  ek={
-                                    <>
-                                      <PaketBaglantisi id={p.id} />
-                                      {paketStogaAlinabilir(p) && (
-                                        <IkonDugme
-                                          ikon={<PackageCheck size={15} />}
-                                          etiket={t("stokPaketOlarakEkle")}
-                                          onClick={() =>
-                                            ben &&
-                                            confirm(t("stokPaketOnay")) &&
-                                            paketStogaAl(
-                                              ben,
-                                              p.id,
-                                              confirm(t("stokBaslikta")),
-                                            )
-                                          }
-                                        />
-                                      )}
-                                    </>
-                                  }
-                                  cikar={
-                                    paketPlandanSilinir(p)
-                                      ? sil(() => ben && paketSil(ben, p.id))
-                                      : undefined
-                                  }
-                                />
-                              }
-                            >
-                              <Satir yer={paketYeri(p)}>
-                                {ic && acikPaket ? (
-                                  <YerindeMetin
-                                    acik
-                                    deger={p.baslik}
-                                    etiket={t("paketBasligi")}
-                                    kaydet={(x) =>
-                                      x &&
-                                      ben &&
-                                      paketKaydet(ben, paketGirdisi(p, x))
-                                    }
-                                  />
-                                ) : (
-                                  p.baslik
-                                )}{" "}
-                                /{" "}
-                                <b>
-                                  {muhabirYeri(
-                                    [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                                    p.muhabirTbc,
-                                  )}
-                                </b>
-                                {bicimEki(p.bicim) && (
-                                  <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                                )}
-                                {paketNotEki(p) && (
-                                  <span data-paket-notu>{paketNotEki(p)}</span>
-                                )}
-                              </Satir>
-                              {/* Paketin kodu (slug) satırın hemen altında, hazır paketlerdeki gibi. */}
-                              {p.slug && (
-                                <p className="cikti-slug" data-paket-kodu>
-                                  <bdi>{p.slug}</bdi>
-                                </p>
-                              )}
-                            </BelgeSatiri>
-                          );
-                        })}
+                        {grup.map(paketSatiri(pb.id, grup))}
                       </Fragment>
                     ))}
                     {(ic || op) && (
@@ -2051,7 +1992,7 @@ export function NextDayBelgesi({
   );
 }
 
-export type Baski = 1 | 2 | 3 | 4;
+export type { Baski };
 
 /* 2. baskının manşeti: günün tarihi büyük, belgenin adı, günün sayıları (başlık, PKG, canlı). */
 function Manset({ plan }: { plan: NextDayPlan }) {
@@ -2413,6 +2354,7 @@ export function NdPencereIcerik({
           planBaslikId={p.pbId}
           mevcut={p.mevcut}
           sonra={p.sonra}
+          gelismeId={p.gelismeId}
           kapat={kapat}
         />,
       );

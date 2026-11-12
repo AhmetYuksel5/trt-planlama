@@ -429,7 +429,7 @@ export function CanliFormu({ plan, planBaslikId, mevcut, kapat }: { plan: NextDa
 /* Şehir listesinde "Diğer": Sehir değerlerinden biri olamayacak bir değer. */
 const DIGER = "__diger";
 
-export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; sonra?: string; kapat: () => void }) {
+export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat }: { plan: NextDayPlan; planBaslikId: string; mevcut?: Paket; sonra?: string; gelismeId?: string; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const ben = useBen();
@@ -449,7 +449,10 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
     slug: mevcut?.slug ?? "",
     muhabirTbc: !!mevcut?.muhabirTbc,
     not: mevcut ? (mevcut.notlar ?? []).find((n) => n.id === formNotuKimligi(mevcut.id))?.metin ?? "" : "",
+    gelismeId: mevcut ? mevcut.gelismeId ?? "" : gelismeId ?? "",
   });
+  // Paketin yeri: başlığın PKG'si ya da başlığın içindeki daha özel konunun (gelişmenin) hemen altı.
+  const gelismeler = v.gelismeler.filter((g) => g.planId === plan.id && g.planBaslikId === planBaslikId);
   /* Muhabir seçilince şehir onun şehrine geliyor; çıktıdaki "ŞEHİR /" çoğu zaman muhabirin yeri. TBC kalkıyor. */
   const muhabirSec = (id: string) => {
     const k = v.kisiler.find((x) => x.id === id);
@@ -474,6 +477,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
       sahaGerekli: f.sahaGerekli,
       slug: f.slug.trim() || undefined,
       muhabirTbc: f.muhabirTbc,
+      gelismeId: gelismeler.some((g) => g.id === f.gelismeId) ? f.gelismeId : undefined,
       not: f.not,
     }, sonra);
     if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
@@ -530,6 +534,19 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { plan:
         {t("kisaAciklama")}
         <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
       </label>
+      {gelismeler.length > 0 && (
+        <label>
+          {t("paketinYeri")}
+          <select value={f.gelismeId} onChange={(e) => setF({ ...f, gelismeId: e.target.value })} data-paket-gelisme>
+            <option value="">{t("baslikPkgAltinda")}</option>
+            {gelismeler.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.metin.length > 70 ? `${g.metin.slice(0, 70)}…` : g.metin}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         {t("not")}
         <input dir="auto" value={f.not} onChange={(e) => setF({ ...f, not: e.target.value })} data-paket-form-notu />

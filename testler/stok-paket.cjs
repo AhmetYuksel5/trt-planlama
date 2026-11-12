@@ -1,4 +1,4 @@
-// PKG "Stok paket olarak ekle": Stok'un "Üretilmiş paketler"ine düşer (kullanıcı), başlıktan ayrılır; plana "Stoktan seç"le girer, açıklama ve kod altında
+// PKG "Stok paket olarak ekle": planın hazır paketlerine girer (التقارير الجاهزة) ve Stok'un "Üretilmiş paketler"inde durur, başlıktan ayrılır; beklenenlerde basılmaz, açıklama ve kod altında
 const BASLIKTA = false;
 const { chromium } = require(process.env.PW || "playwright");
 let gec = 0, kal = 0;
@@ -31,22 +31,19 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   }, id);
   const s1 = await durum();
   ok(s1.durum === "tamamlandi" && s1.stok, "stok paketi oldu, tamamlandı");
-  ok(!s1.hazir, "planın hazır paketlerine kendiliğinden girmedi");
+  // Kullanıcı: işaretlenen paket hazır paketlerde görünmeli; bir süre yalnız Stok'a gidip التقارير المتوقعة'da basılıyordu.
+  ok(s1.hazir, "planın hazır paketlerine girdi");
   ok(BASLIKTA ? s1.baslik !== null : s1.baslik === null, BASLIKTA ? "başlığın altında kaldı" : "başlıktan ayrıldı");
   // Stok › Üretilmiş paketler
   await p.goto("about:blank"); await p.goto(B + "#/stok"); await p.waitForTimeout(800);
   ok((await p.locator('[role="tab"][aria-selected="true"]').innerText()).includes("Üretilmiş paketler"), "Stok'ta açık sekme Üretilmiş paketler");
   ok((await p.locator(`a[href="#/paketler/${id}"]`).count()) > 0, "paket Üretilmiş paketler'de");
-  // İstenen planda "Stoktan seç"
-  await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  await ac(); await p.waitForTimeout(300);
-  await p.getByRole("button", { name: "Stoktan seç" }).first().click(); await p.waitForTimeout(300);
-  await p.locator(`[data-hazir-sec="${id}"]`).click(); await p.waitForTimeout(400);
-  ok((await durum()).hazir, "Stoktan seç ile planın hazır paketlerine girdi");
   await p.goto(B + "#/nextday/yarin/cikti"); await p.waitForTimeout(1000);
   const metin = await p.locator("article.cikti").first().innerText();
   const hazirBolum = metin.split("التقارير الجاهزة")[1] ?? "";
   ok(hazirBolum.includes("شرح التقرير الجاهز") && hazirBolum.includes("TEST-STOK-PKG"), "çıktının hazır bölümünde açıklama ve kod");
+  const beklenenBolum = (metin.split("التقارير المتوقعة")[1] ?? "").split("الأحداث الإخبارية")[0];
+  ok(!beklenenBolum.includes(s1.ad), "beklenen paketlerde basılmadı");
   const kez = metin.split(s1.ad).length - 1;
   ok(kez === (BASLIKTA ? 2 : 1), "çıktıda " + (BASLIKTA ? "iki" : "bir") + " kez: " + kez);
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));

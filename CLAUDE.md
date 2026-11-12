@@ -971,6 +971,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Başlığın altındaki paketler iki alt başlıkta (`etiketler.ts →
     pkgGruplari`; belge ve çıktı): kabul edilenler "PKG", karar bekleyenler
     (taslak, değerlendirmede) "PKG PROPOSAL"; boş grup yazılmaz.
+  - Gelişmeye bağlı PKG (kullanıcı: başlık bazen genel, altında daha özel
+    konular var; PKG başlığın en altında değil o gelişmenin altında görünsün;
+    `Paket.gelismeId`): gelişmenin satırında "Bu gelişmeye PKG ekle" (plan
+    ekranı ve belgede şerit), paket formunda "Planda yeri" (başlığın PKG
+    bölümü ya da başlığın gelişmelerinden biri, `data-paket-gelisme`). Plan
+    ekranında gelişmenin hemen altında (`GelismeListesi gelismeAlti`,
+    `BaslikKarti → paketSatiri`, `.gelisme-alti`), belgede ve çıktıda
+    paragrafın (schedule, muhabir, teams) ardından "PKG"/"PKG PROPOSAL" alt
+    başlığıyla (`NextDayBelge.tsx → gelismeSatiri`, ortak `paketSatiri`);
+    başlığın PKG bölümünde yalnız öbürleri. Gelişme silinince paket başlığın
+    PKG'sine iner (`gelismeSil`), başka başlığa taşınınca onunla gider
+    (`gelismeBasligaTasi`); sıralama aynı yerdeki paketler arasında
+    (`paketTasi`). Beklenen paketler (التقارير المتوقعة) listesinde her PKG
+    yine var. Test `testler/gelisme-pkg.cjs`.
   - Gelişmeye isteğe bağlı "Schedule" (`Gelisme.program`, saat + olay
     satırları; gelişme formunda kutu işaretlenince açılır): ziyaret, zirve
     gibi olayın saat saat programı. Plan ekranında, belgede ve çıktıda
@@ -1894,6 +1908,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`.word-kaynagi`, gizli). Bölümler `data-bolum` (ekip, hareket, canlı) ile seçilir.
   Baskılarda kurumun logosu TRT عربي (`varliklar/trt-arabi.svg`, manşette
   `trt-arabi-beyaz.svg`); kurum düzeninde ve Word'de yok. Test `testler/baski.cjs`.
+  Weekly de aynı seçeneklerle (kullanıcı: Next Day'in çıktı seçenekleri
+  Weekly'de de olsun): seçim, önizleme penceresi ("Tam sayfa" ve "Yazdır"
+  pencereyi kapatmadan gider: kapanan pencere geçmiş adımını geri alıp gidişi
+  iptal ediyordu, `baski.cjs` bu yüzden kırıktı), `@page` ve hemen yazdır
+  ortak parçada (`belge/Baski.tsx`: `BaskiSecimi`, `useBaski`, `BaskiOnizleme`,
+  `useHemenYazdir`; seçim iki planda aynı), Weekly'nin ⋯ › "Çıktı önizleme"
+  pencere açar (`haftalik/Cikti.tsx → HaftalikCiktiOnizleme`).
+  `HaftalikBelgesi baski` (`.cikti.hf.baski-N`): 2'de manşet (`HaftaManset`:
+  haftanın günleri, dosya, PKG, LIVE sayısı) ve iki sütun (sağda hareketler
+  ve zamana bağlı olmayanlar); numara yalnız ana dosyalarda (`data-bolum="ana"`); 3 ve 4'te günler sütunlara akar; hareketler `data-bolum`.
+  Test `testler/haftalik-baski.cjs`.
 - Belge görünümü (`ekranlar/belge/`, `#/nextday/:id/belge`,
   `#/haftalik/:id/belge`): plan çıktı belgesinin üzerinde düzenleniyor;
   girişi çıktı önizlemesinde ve plan başlığında "Belgede düzenle".
@@ -2073,11 +2098,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Planın beklenen paketi (PKG) yapılmışsa satırındaki "Stok paket olarak
     ekle" (plan ekranında ve belgede; `eylemler.ts → paketStogaAl`,
     `paketStogaAlinabilir`: plan içeriğini düzenleyen, üretimde, iptal ve özel
-    yayın paketi değil) onu stok paketi yapar (`tamamlandi`), Stok'un "Üretilmiş
-    paketler"ine düşer (kullanıcı; önce bu planın hazır paketlerine giriyordu),
-    istenen planda "Stoktan seç"le hazır paketlere girer; hareket
-    `paketStogaAlindi`. Beklenen paketlerde (التقارير المتوقعة) artık
-    basılmaz; başlığın altında kalıp kalmayacağı sorulur (`stokBaslikta`,
+    yayın paketi değil) onu stok paketi yapar (`tamamlandi`): bu planın hazır
+    paketlerine (التقارير الجاهزة) girer ve Stok'un "Üretilmiş paketler"inde
+    durur, plan devredilince yayınlandı; başka planda "Stoktan seç"le de
+    seçilir; hareket `paketStogaAlindi`. Bir süre (10–12 Kasım) yalnız Stok'a
+    gidiyordu: hazır listesinde olmayan paket "beklenen" sayılıp التقارير
+    المتوقعة'da basılıyordu (kullanıcı: hazır paketlerde görünmeli); o arada
+    alınanları sistemin açılış işi kendi planının hazırına koyar
+    (`stokPaketleriniHazirlaraAl`, bugün ve sonrası, açık plan). Stoktaki
+    paket hazırdan çıkarılsa da beklenenlerde ve متابعات'ta basılmaz. Beklenen
+    paketlerde (التقارير المتوقعة) basılmaz; başlığın altında kalıp kalmayacağı sorulur (`stokBaslikta`,
     `paketStogaAl(…, baslikta)`), hayırsa başlıktan ayrılır. Hazır pakette açıklama ve kod (slug) satırın hemen
     altında; PKG satırında da kod altında.
 - Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş

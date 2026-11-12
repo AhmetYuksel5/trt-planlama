@@ -990,6 +990,9 @@ a.rozet-plan { text-decoration: none; }
 .dugme-kotu:hover { background: var(--kotu-sis); border-color: var(--kotu); }
 .dugme-uyari { background: var(--uyari-sis); color: var(--uyari); border-color: var(--uyari); }
 .dugme-uyari:hover { filter: brightness(.96); }
+/* Gelişmeye bağlı PKG plan ekranında gelişmenin hemen altında, içeriden. */
+.gelisme-alti { display: grid; gap: var(--ara-2); margin-block-start: var(--ara-2); margin-inline-start: var(--ara-4); }
+.gelisme-alti:empty { display: none; }
 /* Weekly gözden geçirme penceresi: kalemler karar gruplarında. */
 .gozden-grup h3 { margin-block: var(--ara-3) var(--ara-2); font-size: var(--punto-orta); }
 .gozden-grup .liste select { inline-size: auto; max-inline-size: 11rem; }
@@ -3271,6 +3274,25 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
 
 /* Çıktı önizlemesi (plan ekranındaki "Çıktı"): kağıt küçültülmüş, gri masada; üstte tasarım seçimi. */
 .onizleme-ust { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; }
+/*
+ * Weekly'nin baskısı (HaftalikBelgesi baski, .cikti.hf): Next Day'in tasarımları;
+ * gün başlığı tasarımın bölüm diliyle, numara yalnız haftanın ana dosyalarında
+ * (günlerin ve zamana bağlı olmayanların dosyaları ayrı liste, sayıyı sürdürmesin), 3 ve 4'te
+ * günler sütunlara akar, 4'ün künye kutusu tek kutu (hareketler) tam genişlik.
+ */
+.cikti.hf[class*="baski-"] h4.gun { font-family: "Noto Kufi Arabic", Inter; font-weight: 800; font-size: 14px; color: #9b1b1b; margin: 12px 0 4px; padding-bottom: 3px; border-bottom: .7px solid #d0d0d0; break-after: avoid; }
+.cikti.hf.baski-2 h4.gun, .cikti.hf.baski-4 h4.gun { color: #13274a; }
+.cikti.hf.baski-3 h4.gun { color: #111; border-bottom: .5px solid #111; }
+.cikti.hf[class*="baski-"] section:not([data-bolum="ana"]) .cikti-baslik { counter-increment: none; }
+.cikti.hf[class*="baski-"] section:not([data-bolum="ana"]) .cikti-baslik h3::before { content: none; }
+.cikti.hf.baski-2 section:not([data-bolum="ana"]) .cikti-baslik { display: block; padding: 8px 0; }
+.cikti.hf.baski-2 section:not([data-bolum="ana"]) .cikti-baslik::before { content: none; }
+.cikti.hf.baski-2 section:not([data-bolum="ana"]) .cikti-baslik h3 { font-size: 15px; }
+.cikti.hf.baski-3 section:has(> .cikti-gun) { columns: 2; column-gap: 26px; column-rule: .5px solid #bbb; }
+.cikti.hf.baski-4 section:has(> .cikti-gun) { columns: 3; column-gap: 18px; column-rule: .5px solid #c8ccd3; }
+.cikti.hf.baski-3 section:has(> .cikti-gun) > h2, .cikti.hf.baski-4 section:has(> .cikti-gun) > h2 { column-span: all; font-size: 15px; }
+.cikti.hf.baski-4 > [data-bolum="hareket"] { width: 100%; min-height: 0; margin-inline-end: 0; }
+@media (max-width: 760px) { .cikti.hf.baski-3 section:has(> .cikti-gun), .cikti.hf.baski-4 section:has(> .cikti-gun) { columns: 1; } }
 .baski-secimi button { min-width: 36px; font-weight: 700; }
 .baski-onizleme { background: var(--yuzey-3); border-radius: var(--yaricap); padding: var(--ara-5); max-height: 70vh; overflow: auto; }
 .onizleme-kagit { zoom: .62; }
