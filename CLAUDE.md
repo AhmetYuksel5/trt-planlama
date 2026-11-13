@@ -2933,6 +2933,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   bağlantıyı çalıştırıyordu. Posta yanıtı sohbete bağlı taslak
   (`sessionStorage`, `trt-planlama-posta-taslak:<konu>`), gönderince silinir.
   Test `testler/mobil-geri.cjs`.
+  3. adım, ölçek ve dokunma: yeni tasarımın puntoları rem (tarayıcının yazı
+  büyütmesi uyar; piksel puntolar büyümüyordu); telefonda roller bir basamak
+  büyür (gövde 15, meta 13, satır başlığı 17; ölçek kimliğin aynı 12·13·15·
+  17·20·28), Arapça içerik en az 16, Arapça arayüz yazısı en az 13; iç içe
+  `small` küçülmez. Avatar nötr (`--yuzey-3`/`--sonuk`, harf en az 11;
+  kişi başına ton durum renkleriyle karışıyordu). Dokunma kuralları
+  `(pointer: coarse)` için de (yatay telefon ve tablet tablet düzeni
+  alıyordu): düğme ve ikon düğmesi 44, onay kutusu ve radyo 24, geri
+  bağlantısı 44; Organizasyon'da kişinin satırı bağlantının dokunma alanı.
+  Test `testler/mobil-olcek.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda

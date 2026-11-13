@@ -1962,6 +1962,27 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
   .dil-secici button { padding: 0 7px; }
 }
 
+/*
+ * Dokunmatik cihazda (yatay telefon, tablet) dokunma kuralları: yerleşim
+ * genişliğe bağlı kalır, dokunma işaretçiye. Yatay telefon tablet düzeni
+ * alıyor, Next Day'de 291 hedef 44 pikselin altındaydı (mobil denetim).
+ */
+@media (pointer: coarse) {
+  .dugme, .dugme-kucuk { min-height: var(--dokunma); }
+  .dugme-ikon, .ikon-dugme { min-width: var(--dokunma); min-height: var(--dokunma); }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea, .girdi { font-size: 16px; min-height: var(--dokunma); }
+  .sekmeler button, .sekmeler > a { min-height: var(--dokunma); }
+  .menu a { min-height: var(--dokunma); }
+  /* Görünüm aynı, dokunma alanı büyük: onay kutusu 13, geri bağlantısı 18 pikseldi. */
+  html input[type="checkbox"], html input[type="radio"] { inline-size: 24px; block-size: 24px; }
+  label.satir-kutu { display: flex; align-items: center; gap: var(--ara-2); min-block-size: var(--dokunma); }
+  .geri-bag, tr.tiklanir a.kalin { display: inline-flex; align-items: center; min-block-size: var(--dokunma); }
+  /* Organizasyon'da kişinin adı: dokunma alanı satırın tamamı (bağlantı 23 piksel boyundaydı). */
+  li[data-org-kisi] { position: relative; min-block-size: var(--dokunma); }
+  li[data-org-kisi] .ad > a::after { content: ""; position: absolute; inset: 0; }
+  li[data-org-kisi] :is(button, .dugme) { position: relative; z-index: 1; }
+}
+
 /* --- Telefon: masaüstünün küçültülmüşü değil, ayrı düzen --- */
 
 @media (max-width: 760px) {
@@ -1994,9 +2015,9 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
   input:not([type="checkbox"]):not([type="radio"]), select, textarea,
   .form input:not([type="checkbox"]):not([type="radio"]), .form select, .form textarea, .girdi { font-size: 16px; min-height: var(--dokunma); }
   .form .secim { min-height: var(--dokunma); }
-  .form .secim input { width: 20px; height: 20px; }
+  .form .secim input { width: 24px; height: 24px; }
   .sekmeler { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .sekmeler button, .sekmeler > a { min-height: 38px; white-space: nowrap; }
+  .sekmeler button, .sekmeler > a { min-height: var(--dokunma); white-space: nowrap; }
   .form-alt .dugme { flex: 1; }
   .cip button { width: 32px; height: 32px; }
 
@@ -3123,13 +3144,16 @@ html.yeni-tasarim {
   --yaricap-kart: 8px;
   --golge-kart: none;
   --golge-acilir: 0 8px 30px rgba(16, 24, 40, .14);
-  /* Tam punto ölçeği: 12 · 13 · 15 · 17 · 20 · 28. */
-  --punto-mini: 12px;
-  --punto-kucuk: 12px;
-  --punto: 13px;
-  --punto-orta: 15px;
-  --punto-buyuk: 20px;
-  --punto-dev: 28px;
+  /*
+   * Tam punto ölçeği: 12 · 13 · 15 · 17 · 20 · 28; rem: tarayıcının yazı
+   * büyütme ayarına uysun (piksel puntolar büyümüyordu, mobil denetim).
+   */
+  --punto-mini: .75rem;
+  --punto-kucuk: .75rem;
+  --punto: .8125rem;
+  --punto-orta: .9375rem;
+  --punto-buyuk: 1.25rem;
+  --punto-dev: 1.75rem;
   /* Arapça içerik kendi ailesiyle: metin Naskh, başlık Kufi. */
   --yazi-arapca: "Noto Naskh Arabic", "Noto Sans Arabic", serif;
   --yazi-baslik-arapca: "Noto Kufi Arabic", "Noto Sans Arabic", sans-serif;
@@ -3140,6 +3164,23 @@ html.yeni-tasarim:lang(ar) body { font-family: "Noto Sans Arabic", var(--yazi); 
 html.yeni-tasarim .icerik, html.yeni-tasarim input[lang="ar"], html.yeni-tasarim textarea[lang="ar"] { font-family: var(--yazi-arapca); font-size: 1.08em; }
 html.yeni-tasarim body { line-height: 1.5; }
 html.yeni-tasarim h1 { letter-spacing: -.01em; }
+
+/*
+ * Telefon ölçeği (mobil denetim, 3. adım): ölçek aynı, roller bir basamak
+ * büyür: gövde 15, meta 13, satır başlığı 17 (telefonda gövde 13 kalıyor,
+ * iç içe <small> 10 piksele iniyordu). Arapça arayüz yazısı en az 13.
+ */
+@media (max-width: 760px) {
+  html.yeni-tasarim { --punto-kucuk: .8125rem; --punto: .9375rem; --punto-orta: 1.0625rem; }
+  html.yeni-tasarim body { font-size: var(--punto); }
+  html.yeni-tasarim .icerik { font-size: max(1.08em, 1rem); }
+}
+html.yeni-tasarim:lang(ar) { --punto-mini: .8125rem; }
+html.yeni-tasarim small { font-size: max(var(--punto-mini), .86em); }
+html.yeni-tasarim small small { font-size: inherit; }
+html.yeni-tasarim .dugme-sayi, html.yeni-tasarim .durum-cizgisi span i { font-size: var(--punto-mini); }
+/* Avatar nötr: kişi başına ton durum renkleriyle karışıyordu, beyaz harf 2,9–3,5:1'di; adı zaten yanında. */
+html.yeni-tasarim .avatar:not(.fotolu):not(.avatar-fazla) { background: var(--yuzey-3); color: var(--sonuk); font-weight: 600; font-size: max(11px, calc(var(--boy) * .38)); }
 
 /* Kabuk: menü açık zeminde, ince çizgiyle ayrılır; seçili madde yalnız hafif zeminle. */
 /* Menünün zemini yalnız menü sabitken: telefonda, tablette ve menü gizliyken 244 piksellik iki tonlu zemin kalıyordu. */
