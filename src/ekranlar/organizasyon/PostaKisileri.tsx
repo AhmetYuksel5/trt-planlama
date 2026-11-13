@@ -2,7 +2,7 @@ import { Mail, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { BirimSecenekleri, UnvanSecenekleri } from "../../bilesenler/BirimSecimi";
 import { Bos, Pencere, Rozet, bildir } from "../../bilesenler/Parcalar";
-import { tarihYaz, useDil, type Anahtar } from "../../dil";
+import { tarihYaz, useDil, oburAd, type Anahtar } from "../../dil";
 import { postaKisileriUygula, type PostaKisiKaydi } from "../../eylemler";
 import { ORNEK_PLANLAMA_ADRESI } from "../../eposta";
 import { GERCEK, firebaseYukle } from "../../kip";
@@ -36,7 +36,7 @@ interface Satir extends PostaKisisi {
 const kumesi = (s: PostaKisisi): Kume => (s.durum === "yeni" ? "yeni" : s.durum === "belirsiz" ? "secilecek" : s.eksik.length ? "eksik" : "kayitli");
 
 export function PostaKisileriPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
-  const { t, ad } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const duzenler = hesapYetkisi(ben, "kisiDuzenle");
   const ekler = hesapYetkisi(ben, "hesapsizKisi");
@@ -109,7 +109,8 @@ export function PostaKisileriPenceresi({ ben, kapat }: { ben: Kisi; kapat: () =>
     kapat();
   };
 
-  const latinAd = (k: Kisi) => (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.en || "");
+  // Eşleşen adayın iki yazımı: ad arayüzün dilinde, yanında öbürü (aynı ad iki kişide olabilir).
+  const ikiYazim = (k: Kisi) => [ad(k), oburAd(k.ad, dil)].filter(Boolean).join(" · ");
   const tumKisiler = [...v.kisiler].filter((k) => !k.pasif).sort((a, b) => ad(a).localeCompare(ad(b)));
 
   return (
@@ -207,7 +208,7 @@ export function PostaKisileriPenceresi({ ben, kapat }: { ben: Kisi; kapat: () =>
                                 <optgroup label={t("eslestirAdaylar")}>
                                   {adaylar.map((x) => (
                                     <option key={x.id} value={x.id}>
-                                      {ad(x)} · {latinAd(x)}
+                                      {ikiYazim(x)}
                                     </option>
                                   ))}
                                 </optgroup>
@@ -215,7 +216,7 @@ export function PostaKisileriPenceresi({ ben, kapat }: { ben: Kisi; kapat: () =>
                               <optgroup label={t("orgKisiler")}>
                                 {tumKisiler.map((x) => (
                                   <option key={x.id} value={x.id}>
-                                    {ad(x)} · {latinAd(x)}
+                                    {ikiYazim(x)}
                                   </option>
                                 ))}
                               </optgroup>

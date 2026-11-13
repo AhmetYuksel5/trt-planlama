@@ -74,9 +74,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     dilinde çıktıdaki Arapçasıyla, form seçiminde de.
   - Planın "ŞEHİR / BAŞLIK / MUHABİR" satırı çıktıdaki gibi baştan sona
     Arapça (`satir`, `sehirAr`, `kisiAr`, `etiketler.ts`).
-  - Kişi adı her arayüz dilinde Arapça yazımıyla (`useDil().ad`; kurum
-    kararı). Latin yazım aramada, avatarın baş harfinde ve profilde adın
-    altında. Kişi formlarında (davet, hesapsız, kayıt, düzenle) Arapça ad
+  - Kişi adı arayüzde arayüzün dilinde (`useDil().ad`, `dil.ts →
+    kisiAdiDilde`; kullanıcı: önce her dilde Arapçaydı): Türkçede Türkçe,
+    İngilizcede İngilizce (yoksa Türkçe) yazım, Arapçada Arapça; o dilde
+    yazımı yoksa Arapçası. Plan metninde (çıktı, belge, "YER / ad" satırları)
+    ve posta şablonlarında her zaman Arapça (`etiketler.ts → kisiAr`). Profilde
+    ve kişi kartında adın altında öbür yazımı (`oburAd`). Avatarın baş harfi
+    Latin yazımdan. Kişi formlarında (davet, hesapsız, kayıt, düzenle) Arapça ad
     önde ve zorunlu. Notlar ve gerekçeler yazıldığı dilde (`dir="auto"`).
 - Marka Plannersflow (`bilesenler/Logo.tsx`; dosyalar `src/varliklar/
   logo-plannersflow*.png`). Her dilde aynı, aynalanmaz. Yatay düzen (işaret

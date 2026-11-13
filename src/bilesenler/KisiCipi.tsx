@@ -1,6 +1,6 @@
 import { FolderOpen, Mail, MessageCircle } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useDil } from "../dil";
+import { oburAd, useDil } from "../dil";
 import { KISI_DURUM_ADI, sehirAdi } from "../etiketler";
 import { kisiBugunDurumu, kisiOzeti, muhabirAdresi } from "../muhabirIletisim";
 import { useVeri, type Kisi } from "../veri";
@@ -66,7 +66,7 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: 
  * biçimiyle ("YER / ad") yazılı, çip onu tekrar etmesin.
  */
 export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi; kisi?: Kisi; konu?: string; ek?: ReactNode; sade?: boolean }) {
-  const { t, ad } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const [posta, setPosta] = useState(false);
   if (!kisi) return null;
@@ -82,7 +82,7 @@ export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi
     );
   const durum = kisiBugunDurumu(v, kisi);
   const oz = kisiOzeti(v, kisi.id);
-  const latin = typeof kisi.ad === "string" ? "" : kisi.ad.tr;
+  const obur = oburAd(kisi.ad, dil);
   return (
     <span className="kisi-cipi-kap" data-kisi-cipi={kisi.id}>
       <IslemMenusu
@@ -104,7 +104,7 @@ export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi
             <b>
               <bdi>{adi}</bdi>
             </b>
-            {latin && <small dir="ltr">{latin}</small>}
+            {obur && <small><bdi>{obur}</bdi></small>}
             <small>
               {[kisi.sehir && sehirAdi(kisi.sehir), disMuhabirMi(kisi) ? gorevAdi(kisi.gorev) : birimAdi(kisi.birim)].filter(Boolean).join(" · ")}
             </small>

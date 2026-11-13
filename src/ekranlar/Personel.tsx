@@ -11,7 +11,7 @@ import { AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, Map
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
-import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
+import { tarihYaz, useDil, oburAd, yaz, type Anahtar } from "../dil";
 import { profilGuncelle, type ProfilGirdisi, type YeniSehir } from "../eylemler";
 import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, kisiAr, satir, sehirAdi, sehirUlkesi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
@@ -68,7 +68,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
         (!unvan || k.gorev === unvan) &&
         (!ulke || ulkeleri(k).includes(ulke)) &&
         (!bicim || k.bicimler.includes(bicim)) &&
-        (!q || `${ad(k)} ${yaz(k.ad, "ar")} ${k.kisaltma} ${sehirAdi(k.sehir)}`.toLocaleLowerCase().includes(q)),
+        (!q || `${ad(k)} ${yaz(k.ad, "ar")} ${yaz(k.ad, "tr")} ${yaz(k.ad, "en")} ${k.kisaltma} ${sehirAdi(k.sehir)}`.toLocaleLowerCase().includes(q)),
     )
     .sort((a, b) => ad(a).localeCompare(ad(b)));
   const perfGorur = muhabirSayfasi && tum.some((k) => performansGorebilir(ben, k) && k.id !== ben.id);
@@ -493,8 +493,8 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
   const oneriler = v.oneriler.filter((o) => o.muhabirId === kisi.id).sort((a, b) => b.zaman.localeCompare(a.zaman));
   const gorevler = v.gorevlendirmeler.filter((g) => g.kisiId === kisi.id);
   const kendisi = ben.id === kisi.id;
-  /* Ad her dilde Arapça; altında Latin yazımı (Arapça arayüzde Türkçesi), rehberde ikisi de aranıyor. */
-  const obur = yaz(kisi.ad, dil === "ar" ? "tr" : dil);
+  /* Ad arayüzün dilinde; altında öbür yazımı (Latin arayüzde Arapçası), rehberde ikisi de aranıyor. */
+  const obur = oburAd(kisi.ad, dil);
   return (
     <>
       {!kendisi && (
@@ -504,7 +504,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
         <ProfilFoto ben={ben} kisi={kisi} />
         <div>
           <h1>{ad(kisi)}</h1>
-          {obur !== ad(kisi) && <p className="obur-ad">{obur}</p>}
+          {obur && <p className="obur-ad"><bdi>{obur}</bdi></p>}
           <p>
             {birimAdi(kisi.birim)} · {gorevAdi(kisi.gorev)} · {sehirAdi(kisi.sehir)}
           </p>

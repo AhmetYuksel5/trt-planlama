@@ -90,7 +90,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     v.cagrilar.push({ id: "gn-c", tur: "nextday", tarih: gun(1), metin: "x", sonSaat: "15:00", olusturan: "pl1", zaman: new Date().toISOString(), kime: "planning@ornek.local", bcc: [m.id], etiket: "ND-TEST" });
     localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
     localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
-    return m.ad.ar;
+    return m.ad.tr || m.ad.ar; // arayüz Türkçe: ad arayüzün dilinde
   });
   await git("#/");
   ok((await satir("sessizMuhabir").count()) === 1 && (await satir("sessizMuhabir").innerText()).includes(sessiz), "çağrıya yanıt vermeyen, önerisi kabul edilen muhabir: " + sessiz);

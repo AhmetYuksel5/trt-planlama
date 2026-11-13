@@ -3688,6 +3688,21 @@ export const dilSimdi = (): Dil => dil;
 /** Düz metinse olduğu gibi, üç dilliyse seçili dil. */
 export const yaz = (x: Yazi | undefined, d: Dil = dil): string => (x === undefined ? "" : typeof x === "string" ? x : x[d] || x.tr);
 
+/*
+ * Kişi adı arayüzün dilinde: Türkçede Türkçe, İngilizcede İngilizce (yoksa Türkçe)
+ * Latin yazım, Arapçada Arapça; kayıtta o yazım yoksa Arapçası kalır. Plan metni
+ * ve şablonlar bunu değil `kisiAr`'ı kullanır: çıktı her zaman Arapça.
+ */
+export const kisiAdiDilde = (x: Yazi, d: Dil): string =>
+  typeof x === "string" ? x : (d === "ar" ? x.ar || x.tr || x.en : x[d] || x.tr || x.en || x.ar) || "";
+
+/* Adın öbür yazımı (profilde ve kişi kartında adın altında): Latin arayüzde Arapçası, Arapçada Latin yazımı; aynıysa boş. */
+export const oburAd = (x: Yazi, d: Dil): string => {
+  if (typeof x === "string") return "";
+  const o = d === "ar" ? x.tr || x.en || "" : x.ar || "";
+  return o && o !== kisiAdiDilde(x, d) ? o : "";
+};
+
 export function useDil() {
   const simdiki = useSyncExternalStore(
     (d) => {
@@ -3699,8 +3714,8 @@ export function useDil() {
   return {
     dil: simdiki,
     t: (k: Anahtar, p?: Degisken) => metin(k, simdiki, p),
-    // Kişi adı her arayüz dilinde Arapça yazımıyla (kurum kararı); Arapçası yoksa yaz öbürüne düşüyor.
-    ad: (k: { ad: Yazi } | undefined) => (k ? yaz(k.ad, "ar") : ""),
+    // Kişi adı arayüzün dilinde (kullanıcı); o dilde yazımı yoksa Arapçası. Plan metninde ve postada Arapça (etiketler.ts → kisiAr).
+    ad: (k: { ad: Yazi } | undefined) => (k ? kisiAdiDilde(k.ad, simdiki) : ""),
   };
 }
 

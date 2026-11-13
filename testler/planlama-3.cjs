@@ -55,7 +55,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.click("[data-toplu-posta]");
   await p.waitForTimeout(400);
   const posta = await p.locator("dialog[open] [data-posta-yeni]").innerText();
-  const adlar = idler.map((i) => d.kisiler.find((k) => k.id === i).ad.ar ?? d.kisiler.find((k) => k.id === i).ad);
+  const adlar = idler.map((i) => { const a = d.kisiler.find((k) => k.id === i).ad; return typeof a === "string" ? a : a.tr || a.ar; });
   ok(adlar.every((a) => posta.includes(a)), "seçilenler postada BCC'de");
   await p.keyboard.press("Escape");
   await p.waitForTimeout(300);

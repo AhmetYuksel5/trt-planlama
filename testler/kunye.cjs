@@ -44,7 +44,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   for (const r of ["gorevlendiren", "muhabir", "onaylayan"]) ok((await rol("[data-kunye]", r).count()) === 1, `künyede ${r} satırı`);
   ok((await rol("[data-kunye]", "metin").count()) === 0, "boş rol (metin düzelten) çizilmiyor");
   const adlar = await p.locator("[data-kunye]").innerText();
-  const kisi = (id) => p.evaluate((i) => JSON.parse(localStorage.getItem("trt-planlama-v24")).kisiler.find((k) => k.id === i).ad.ar, id);
+  const kisi = (id) => p.evaluate((i) => JSON.parse(localStorage.getItem("trt-planlama-v24")).kisiler.find((k) => k.id === i).ad, id).then((a) => a.tr || a.ar);
   ok(adlar.includes(await kisi("pl1")) && adlar.includes(await kisi("yo3")), "satırlarda kişinin kendi adı (birim değil)");
 
   // 3. Muhabir kendi paketinin künyesini görüyor

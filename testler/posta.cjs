@@ -33,7 +33,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const muhabirler = v0.kisiler.filter((k) => k.birim === "muhabir");
   const kucuk = (a) => String(a || "").toLowerCase();
   const m1 = muhabirler[0], m2 = muhabirler[1];
-  const arAd = (k) => (typeof k.ad === "string" ? k.ad : k.ad.ar);
+  // Arayüz Türkçe: alıcı çipinde ad arayüzün dilinde (Latin yazım, yoksa Arapça).
+  const arAd = (k) => (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.ar);
   const trAd = (k) => (typeof k.ad === "string" ? k.ad : k.ad.tr);
 
   // Kim kime yazdı: her balonun altında alıcı satırı

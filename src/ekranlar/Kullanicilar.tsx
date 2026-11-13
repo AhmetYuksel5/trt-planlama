@@ -4,7 +4,7 @@ import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, icMuhabirMi, otomat
 import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, MessageCircle, Plus, RotateCcw, Send, Ticket, Trash2, UserCog, UserPlus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
-import { metin, tarihYaz, useDil, type Anahtar } from "../dil";
+import { metin, tarihYaz, useDil, oburAd, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, GirisKodu, KayitBaglantisi } from "../depo/firebase";
 import { girisAdi, kodYaz, kullaniciAdiGecerli, kullaniciAdiOner, kullaniciAdresi } from "../girisKodu";
@@ -724,13 +724,14 @@ function AktarPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
 type EslestirSatiri = EslesmeSatiri & { sec: boolean };
 
 export function EslestirPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
-  const { t, ad } = useDil();
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const [metin, setMetin] = useState("");
   const [satirlar, setSatirlar] = useState<EslestirSatiri[] | null>(null);
   const kurumsalYazilir = (k: Kisi) => !GERCEK || !!k.hesapsiz;
   const muhabirler = v.kisiler.filter((k) => !k.pasif && (k.birim === "muhabir" || icMuhabirMi(k))).sort((a, b) => ad(a).localeCompare(ad(b)));
-  const latinAd = (k: Kisi) => (typeof k.ad === "string" ? k.ad : k.ad.tr || k.ad.en || "");
+  // Eşleşen adayın iki yazımı: ad arayüzün dilinde, yanında öbürü (aynı ad iki kişide olabilir).
+  const ikiYazim = (k: Kisi) => [ad(k), oburAd(k.ad, dil)].filter(Boolean).join(" · ");
   const kisi = (id?: string) => v.kisiler.find((k) => k.id === id);
   const eslestir = () =>
     setSatirlar(
@@ -820,7 +821,7 @@ export function EslestirPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void
                                 <optgroup label={t("eslestirAdaylar")}>
                                   {adayKisiler.map((x) => (
                                     <option key={x.id} value={x.id}>
-                                      {ad(x)} · {latinAd(x)}
+                                      {ikiYazim(x)}
                                     </option>
                                   ))}
                                 </optgroup>
@@ -828,7 +829,7 @@ export function EslestirPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void
                               <optgroup label={t("muhabir")}>
                                 {muhabirler.map((x) => (
                                   <option key={x.id} value={x.id}>
-                                    {ad(x)} · {latinAd(x)}
+                                    {ikiYazim(x)}
                                   </option>
                                 ))}
                               </optgroup>
