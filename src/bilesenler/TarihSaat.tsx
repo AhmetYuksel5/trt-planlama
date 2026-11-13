@@ -57,7 +57,9 @@ export function TarihGirdisi({ value, onChange, min, max, required, disabled, cl
       const rtl = getComputedStyle(d).direction === "rtl";
       const sol = rtl ? r.right - g : r.left;
       k.style.left = `${Math.min(Math.max(sol, 8), innerWidth - g - 8)}px`;
-      k.style.top = `${r.bottom + 4 + y > innerHeight && r.top - 4 - y > 0 ? r.top - 4 - y : r.bottom + 4}px`;
+      // Altta da üstte de yer yoksa ekranın içine sabitlenir (M-23): iPhone'da "Bugün" ve son hafta kesiliyordu.
+      const ust = r.bottom + 4 + y <= innerHeight ? r.bottom + 4 : r.top - 4 - y >= 0 ? r.top - 4 - y : Math.max(8, innerHeight - y - 8);
+      k.style.top = `${ust}px`;
     };
     yerlestir();
     const kapat = (e: Event) => {

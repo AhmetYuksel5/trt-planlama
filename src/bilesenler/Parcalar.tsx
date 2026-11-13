@@ -275,8 +275,12 @@ export function Pencere({
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
+    // Açılıştan sonraki an gövde dokunuş almaz (M-59): kutuya çift dokunuşun ikincisi pencerenin ilk kartını açıyordu.
+    d?.setAttribute("data-yeni-acildi", "");
+    const zaman = setTimeout(() => d?.removeAttribute("data-yeni-acildi"), 350);
     const birak = pencereAdimi(() => kapatRef.current());
     return () => {
+      clearTimeout(zaman);
       d?.close();
       birak();
     };

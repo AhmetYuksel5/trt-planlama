@@ -799,7 +799,8 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
           <textarea {...icerikAlani} rows={2} value={metin} onChange={(e) => setMetin(e.target.value)} data-takip-satiri />
           <div className="form-alt">
             <button type="button" className="dugme dugme-kucuk" disabled={!metin.trim()} onClick={ekle} data-takip-satiri-ekle>
-              {t("tsEkle")}
+              {/* Açan düğmeyle aynı adı taşımasın (M-46): ardışık iki "Gelişme ekle" vardı. */}
+              {t("ekle")}
             </button>
           </div>
         </div>

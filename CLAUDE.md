@@ -2972,6 +2972,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Önerilerim'i tek kart, grup başlıklı (`.muhabir-gruplari`, `.grup-basligi`):
   "Senin sıran" ilk grup, sayısı lacivert dolu; boş grup çizilmez, hepsi boşsa
   tek "öneri yok". Test `testler/mobil-form.cjs`.
+  Üçüncü parti: telefonda yazı alanı odaktayken (klavye açık) alt çubuk gizli;
+  `--alt-cubuk` sıfırlanmaz (düğmeye dokununca önce odak gidip çubuk geri
+  geliyor, yapışık Gönder kayıp dokunuş boşa düşüyordu); tarih seçici
+  altta da üstte de sığmazsa ekranın içine sabitlenir; öneri kartının yol
+  şeridi dokunmatikte (`pointer: coarse`) aynı özetin meta metni
+  (`.oy-metin`; ipucu orada görünmüyor); takibe satır ekleyen düğme "Ekle"
+  (açan "Gelişme ekle"yle aynı addı); muhabirin takibi açıkken alt çubukta
+  Takiplerim vurgulu; `Pencere` açıldıktan sonraki 350 ms gövdesi dokunuş
+  almaz (`data-yeni-acildi`; kutuya çift dokunuş panelin ilk önerisini
+  açıyordu); Raporlar'da soluk satır opaklıkla değil renkle; az hareket
+  tercihinde geçiş ve kaydırma yumuşatması yok. Kısayolun "Special Coverage"
+  adı bilinçli (Next Day, Weekly gibi kurumun terimi). Test
+  `testler/mobil-ince.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda

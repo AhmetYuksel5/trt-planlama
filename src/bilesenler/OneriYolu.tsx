@@ -46,12 +46,16 @@ export function OneriYolu({ oneri: o, d, ince = false, kapat }: { oneri: Oneri; 
 
   if (ince) {
     const ozet = [simdi ? adi(simdi.adim) : t(y.bitti ? "oyBitti" : "oyGeldi"), kimAdi, sure].filter(Boolean).join(" · ");
+    // Dokunmatikte ipucu görünmüyor (M-39): şeridin yerine aynı özet meta metni olarak (CSS seçer).
     return (
+      <>
+      <small className="oy-metin" data-oneri-yolu-metin>{ozet}</small>
       <span className="oy-serit" data-oneri-yolu="ince" data-yol-simdi={simdi?.adim ?? ""} title={ozet} aria-label={`${t("oyBaslik")}: ${ozet}`} role="img">
         {y.adimlar.map((a) => (
           <i key={a.adim} className={`oy-${a.durum}`} />
         ))}
       </span>
+      </>
     );
   }
 

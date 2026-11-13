@@ -81,7 +81,10 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
     ? planlamaSekmeleri()
     : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);
   const hash = typeof location !== "undefined" ? location.hash : "";
-  const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : y.includes("/") ? hash.startsWith(`#/${y}`) || (y.endsWith("/icerikler") && hash === `#/${y.split("/")[0]}`) : acik === y && !(y === "oneriler" && yeni));
+  // Muhabirin takibi de öneri sayfasında açılıyor; o zaman vurgulu sekme Takiplerim (M-58), Önerilerim değil.
+  const acilan = muhabir ? /^#\/oneriler\/([^/?]+)$/.exec(hash)?.[1] : undefined;
+  const acikYol = acilan && acilan !== "yeni" && v.oneriler.find((o) => o.id === acilan)?.durum === "takip" ? "takipler" : acik;
+  const etkin = (y: string) => (y === "oneriler/yeni" ? yeni : y.includes("/") ? hash.startsWith(`#/${y}`) || (y.endsWith("/icerikler") && hash === `#/${y.split("/")[0]}`) : acikYol === y && !(y === "oneriler" && yeni));
   return (
     <nav className="alt-cubuk" aria-label={t("abMenu")}>
       {sekmeler.map((s) => {

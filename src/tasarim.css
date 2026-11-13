@@ -2473,7 +2473,7 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 .org-agac > details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: var(--ara-2); }
 .org-unvan { padding-inline-start: var(--ara-4); margin-block: var(--ara-2); }
 .org-unvan h4 { margin: 0 0 var(--ara-1); font-size: var(--punto-kucuk); color: var(--sonuk); font-weight: 600; }
-tr.soluk > td { opacity: .5; }
+tr.soluk > td { color: var(--sonuk); background: var(--yuzey-2); }
 .durak-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); counter-reset: none; }
 .durak-karti {
   display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-2) var(--ara-3);
@@ -3712,6 +3712,11 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 }
 
 /* Önerinin yolu (oneriYolu.ts): geçti iyi, şimdiki vurgu, sırada gri, kesildi kırmızı. */
+.oy-metin { display: none; }
+@media (pointer: coarse) {
+  .oy-serit { display: none !important; }
+  .oy-metin { display: block; margin-block-start: var(--ara-1); color: var(--sonuk); font-size: var(--punto-kucuk); }
+}
 .oy-serit { display: flex; gap: 3px; margin-block-start: var(--ara-2); }
 .oy-serit i { flex: 1; block-size: 3px; border-radius: var(--yaricap-hap); background: var(--cizgi); }
 .oy-serit i.oy-gecti, .oneri-yolu li.oy-gecti::before { background: var(--iyi); }
@@ -3752,7 +3757,8 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .mr-sirala { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; min-block-size: 32px; }
 .mr-sirala.secili { color: var(--vurgu); }
 .mr-sirala:focus-visible { outline: 2px solid var(--vurgu); }
-.mr-tablo tr.soluk td { opacity: .55; }
+/* Opaklık değil renk (M-48): opaklıkla 2,6–4,0:1 kalıyordu. */
+.mr-tablo tr.soluk td { color: var(--sonuk); background: var(--yuzey-2); }
 .mr-tablo td.birincil small { display: block; }
 .mr-tablo td.birincil { min-inline-size: 200px; }
 .mr-tablo .kisi-cipi-kap, .mr-tablo .kisi-cipi { max-inline-size: none; }
@@ -3769,3 +3775,13 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 html.yeni-tasarim .rozet-plan { background: none; border: 0; padding: 0; min-height: 0; color: var(--sonuk); font-weight: 600; }
 html.yeni-tasarim a.rozet-plan { text-decoration: underline; text-decoration-color: var(--cizgi); text-underline-offset: 3px; }
 html.yeni-tasarim .plan-etiketleri > .rozet-plan + .rozet-plan::before { content: "· "; color: var(--sonuk); }
+/* Telefonda klavye açıkken (yazı alanı odakta) alt çubuk gizli (M-22): odaklı alanın ve sohbetin üstüne biniyordu.
+   --alt-cubuk sıfırlanmaz: düğmeye dokununca önce odak gidip çubuk geri geliyor, yapışık Gönder 64 piksel kayıp dokunuş boşa düşüyordu. */
+@media (max-width: 760px) {
+  html:has(:is(textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not([type="range"]), [contenteditable="true"]):focus) .alt-cubuk { visibility: hidden; }
+}
+/* Az hareket tercihi (M-64): geçişler ve kaydırma yumuşatması kapanır. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
