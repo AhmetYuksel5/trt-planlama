@@ -15,7 +15,7 @@ import { bugun, gunEkle } from "../../tarih";
 import { ICERIK_TURLERI, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
 import { MasalardakiOneriler } from "./MasaSorusu";
 import { oneriBirlestirebilir, muhabireOneriGonderebilir, oneriGorebilir, yapabilir } from "../../yetki";
-import { git, useAdimDurumu } from "../../yol";
+import { useAdimDurumu, yerineGit } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
@@ -286,11 +286,12 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
     if (id && f.bicim === TAKIP_BICIMI) {
       // Takip Takip aşamasında öneri; muhabir onu Takiplerim'de izliyor.
+      // Gönderilen form geçmişte kalmasın: geri tuşu boş forma dönüyordu (mobil denetim).
       bildir(t("bTakipKaydedildi"));
-      git("takipler");
+      yerineGit("takipler");
     } else if (id) {
       bildir(t(muhabir ? "bOneriGonderildi" : "bOneriKaydedildi"));
-      git(`oneriler/${id}`);
+      yerineGit(`oneriler/${id}`);
     }
   };
   return (

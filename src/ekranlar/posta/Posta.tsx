@@ -1,7 +1,7 @@
 import { postaAdresi } from "../../girisKodu";
 import { muhabirAdresi } from "../../muhabirIletisim";
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
-import { useAdimDurumu } from "../../yol";
+import { GOMULU, useAdimDurumu, useGeriKapatir } from "../../yol";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
@@ -575,7 +575,26 @@ function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string 
   const v = useVeri();
   const oneriler = useAdresOnerileri();
   const alan = useRef<HTMLTextAreaElement>(null);
-  const [metin, setMetin] = useState("");
+  /*
+   * Yazılan yanıt sohbete bağlı taslak (sekmede): geri tuşu ya da başka
+   * sohbete geçiş yazılanı uyarısız siliyordu (mobil denetim). Gönderince silinir.
+   */
+  const taslakAnahtari = `trt-planlama-posta-taslak:${sohbet.konuKimligi}`;
+  const [metin, setMetin] = useState(() => {
+    try {
+      return sessionStorage.getItem(taslakAnahtari) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  useEffect(() => {
+    try {
+      if (metin) sessionStorage.setItem(taslakAnahtari, metin);
+      else sessionStorage.removeItem(taslakAnahtari);
+    } catch {
+      /* saklanamazsa yalnız ekranda */
+    }
+  }, [metin, taslakAnahtari]);
   const [imlec, setImlec] = useState(0);
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const varsayilan = yanitAlicilari(sohbet, ben, grup);
@@ -876,6 +895,9 @@ export function Posta({ ben }: { ben: Kisi }) {
   const [grup, setGrup] = useState("");
   const sohbetler = sohbetleriKur(gorunenPostalar(v, grup));
   const [secili, setSecili] = useAdimDurumu("posta:sohbet", "");
+  /* Telefonda açık sohbet tek ekran: geri tuşu sohbeti kapatıp listeye döner (Posta'dan çıkarıyordu). */
+  const telefon = !GOMULU && typeof matchMedia !== "undefined" && matchMedia("(max-width: 760px)").matches;
+  useGeriKapatir(!!secili && telefon, () => setSecili(""));
   const [yeni, setYeni] = useState(false);
   const [yalnizOkunmamis, setYalnizOkunmamis] = useState(false);
   const secik = sohbetler.find((s) => s.konuKimligi === secili);
@@ -1069,7 +1091,8 @@ export function Posta({ ben }: { ben: Kisi }) {
         <div className="posta-sohbet-sutun">
           {secik ? (
             <>
-              <button className="geri-bag yalniz-telefon" onClick={() => setSecili("")}>
+              {/* Geri tuşuyla aynı yol: adım geri alınınca sohbet kapanır, önceki adımın seçimi de temizlenir. */}
+              <button className="geri-bag yalniz-telefon" onClick={() => (telefon ? history.back() : setSecili(""))}>
                 <ArrowLeft size={14} className="yon" /> {t("postaSohbetler")}
               </button>
               <Kart

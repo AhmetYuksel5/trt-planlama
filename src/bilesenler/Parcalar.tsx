@@ -281,9 +281,18 @@ export function Pencere({
       birak();
     };
   }, []);
+  /*
+   * Arka plana basınca kapanır, ama pencerenin kendi boş alanına basınca
+   * değil: tam boy pencerede (telefon, yeni tasarım) içeriğin altındaki
+   * boşluk da <dialog>'un kendisi, yarım form dokununca kapanıyordu.
+   */
+  const disarida = (e: { clientX: number; clientY: number }) => {
+    const r = ref.current!.getBoundingClientRect();
+    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+  };
   // React close olayını üstteki pencerelere de iletiyor; içteki pencere kapanınca dıştaki kapanmasın.
   return (
-    <dialog ref={ref} className={`pencere${genis ? " genis" : ""}`} aria-labelledby={id} onClose={(e) => e.target === ref.current && kapat()} onClick={(e) => e.target === ref.current && kapat()}>
+    <dialog ref={ref} className={`pencere${genis ? " genis" : ""}`} aria-labelledby={id} onClose={(e) => e.target === ref.current && kapat()} onClick={(e) => e.target === ref.current && disarida(e) && kapat()}>
       <header>
         <div>
           <h2 id={id}>{baslik}</h2>

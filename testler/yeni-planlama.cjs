@@ -91,7 +91,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await p.evaluate((x) => localStorage.setItem("trt-planlama-dil", x), dil);
     await gir("pl2", "#/");
     ok((await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, `390px taşma yok (${dil})`);
-    ok((await p.locator('.alt-cubuk a[href="#/nextday"]').count()) === 1, `telefonda alt çubukta Next Day (${dil})`);
+    ok((await p.locator('.alt-cubuk a[href="#/nextday/yarin"]').count()) === 1 && (await p.locator('.alt-cubuk a[href="#/posta"]').count()) === 1, `telefonda alt çubukta yarının planı ve Posta (${dil})`);
   }
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);

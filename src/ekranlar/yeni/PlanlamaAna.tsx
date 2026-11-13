@@ -15,8 +15,9 @@ import { bugun, gunFarki } from "../../tarih";
 import { muhabirler, useVeri, type Kisi } from "../../veri";
 import { BugunkuGorevlerim, GununNotu } from "../ana/Planlama";
 import { MasalardakiOneriler } from "../oneri/MasaSorusu";
-import { OneriAyrinti } from "../oneri/OneriGovde";
-import { OneriKarti } from "../oneri/OneriKarti";
+import { OneriListesi } from "../oneri/OneriGovde";
+import type { PencereDurumu } from "../oneri/OneriKarti";
+import { penceredenGit } from "../../yol";
 
 /*
  * Planlama'nın ana sayfası, yeni tasarımda (belgeler/planlama-yeni-mimari.md).
@@ -165,7 +166,7 @@ function KararPaneli({ ben, tur, kapat }: { ben: Kisi; tur: PanelTuru; kapat: ()
       kapat={kapat}
       altBilgi={
         sayfa && (
-          <a className="dugme dugme-ikincil" href={sayfa} onClick={kapat} data-py-sayfa>
+          <a className="dugme dugme-ikincil" href={sayfa} onClick={(e) => penceredenGit(e, kapat, sayfa)} data-py-sayfa>
             {t("pySayfayiAc")}
           </a>
         )
@@ -196,24 +197,21 @@ function OneriPaneli({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const b = bugun();
-  const [acik, setAcik] = useState<string | null>(null);
+  const [pencere, setPencere] = useState<PencereDurumu>(null);
   const liste = v.oneriler
     .filter((o) => oneriSekmesi(v, o, b) === "karar")
     .sort((x, y) => Math.abs(gunFarki(b, x.hedefTarih ?? "9999-12-31")) - Math.abs(gunFarki(b, y.hedefTarih ?? "9999-12-31")) || y.zaman.localeCompare(x.zaman));
-  const o = acik ? v.oneriler.find((x) => x.id === acik) : undefined;
-  return (
-    <>
-      {liste.length === 0 ? (
-        <Bos metin={t("pyTemiz")} />
-      ) : (
-        <div className="py-oneriler">
-          {liste.map((x) => (
-            <OneriKarti key={x.id} oneri={x} d={v} ac={() => setAcik(x.id)} />
-          ))}
-        </div>
-      )}
-      {o && <OneriAyrinti key={o.id} ben={ben} oneri={o} kapat={() => setAcik(null)} />}
-    </>
+  /*
+   * Plan ekranlarının listesi: kartta "Plana ekle" ve ret simgesi, karar
+   * pencere açmadan verilir (mobil denetim, akış önerisi: 5 dokunma 3'e).
+   * "Plana ekle" önerinin günlerine düşen planları sorar (öneriler sayfası gibi).
+   */
+  return liste.length === 0 ? (
+    <Bos metin={t("pyTemiz")} />
+  ) : (
+    <div className="py-oneriler">
+      <OneriListesi ben={ben} d={v} oneriler={liste} gorunum="kart" pencere={pencere} setPencere={setPencere} ekleMetni={t("planaEkle")} ertelenebilir />
+    </div>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 /**
  * Adres çubuğundaki `#/nextday/nd-yarin/cikti` ile açık sayfayı eşler.
@@ -323,6 +323,23 @@ interface AcikPencere {
 const acikPencereler: AcikPencere[] = [];
 let pencereSayac = 0;
 let gormezdenGel = 0;
+let bekleyenGidis: string | null = null;
+
+/*
+ * Pencerenin içinden başka sayfaya giden bağlantı ("Sayfayı aç"): bağlantı
+ * yeni adresi geçmişe yazarken pencere kapanıp kendi adımını geri alıyordu;
+ * geri adımı yeni sayfayı silip eski adrese dönüyordu (ana sayfada kalınıyor,
+ * geçmiş bozuluyordu). Önce pencere kapanır, geri adımı bitince gidilir.
+ */
+export const penceredenGit = (e: { preventDefault: () => void }, kapat: () => void, hash: string) => {
+  e.preventDefault();
+  kapat();
+  // Pencerenin kapanış etkisi (adımı geri alma) çizimden sonra çalışıyor.
+  setTimeout(() => {
+    if (gormezdenGel) bekleyenGidis = hash;
+    else location.hash = hash;
+  }, 0);
+};
 
 export const pencereAdimi = (kapat: () => void): (() => void) => {
   if (GOMULU) return () => undefined;
@@ -345,11 +362,39 @@ if (!GOMULU)
   window.addEventListener("popstate", () => {
     if (gormezdenGel) {
       gormezdenGel--;
+      if (!gormezdenGel && bekleyenGidis) {
+        const h = bekleyenGidis;
+        bekleyenGidis = null;
+        location.hash = h;
+      }
       return;
     }
     const ust = (history.state as { pencere?: number } | null)?.pencere ?? 0;
     while (acikPencereler.length && acikPencereler[acikPencereler.length - 1].no > ust) acikPencereler.pop()!.kapat();
   });
+
+/*
+ * Geri tuşunun tek kuralı (mobil denetim, 2. adım): üstte açılan her şey
+ * (menü paneli, zil ve avatar panelleri, arama, telefonda açık Posta
+ * sohbeti) pencere gibi bir geçmiş adımıdır, geri tuşu onu kapatır; önce
+ * yalnız <Pencere> böyleydi, menü paneli açıkken geri tuşu sayfadan (ya da
+ * siteden) çıkarıyordu. Bölmede eklenmez (pencereAdimi).
+ */
+export function useGeriKapatir(acik: boolean, kapat: () => void) {
+  const ref = useRef(kapat);
+  ref.current = kapat;
+  useEffect(() => {
+    if (!acik) return;
+    return pencereAdimi(() => ref.current());
+  }, [acik]);
+}
+
+/* Katmanın içindeki uygulama bağlantısı: önce katman kapanır (adımı geri alınır), sonra gidilir; geçmişte boş adım kalmaz. */
+export const katmanBaglantisi = (e: ReactMouseEvent, kapat: () => void) => {
+  const a = (e.target as Element).closest?.('a[href^="#/"]');
+  if (!a || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  penceredenGit(e, kapat, a.getAttribute("href")!);
+};
 
 /* --- Sayfadaki seçimler geçmiş adımında --- */
 

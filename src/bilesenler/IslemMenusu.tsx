@@ -50,6 +50,38 @@ export function IslemMenusu({
     };
   }, [acik]);
 
+  /*
+   * Ekranın (ya da kırpan kutunun, ör. pencere) altındaki düğmede menü aşağı
+   * açılıp kesiliyordu: telefonda öneri penceresinin ⋯'sinde hiçbir madde
+   * görünmüyor, kararlar verilemiyordu. Altta yer yoksa ve üstte daha çoksa
+   * yukarı açılır; iki yönde de sığmazsa yüksekliği kısılıp kayar.
+   */
+  useLayoutEffect(() => {
+    const m = menu.current;
+    const d = dugme.current;
+    if (!acik || katman || !m || !d) return;
+    m.classList.remove("yukari");
+    m.style.maxHeight = "";
+    const r = d.getBoundingClientRect();
+    let ust = 0;
+    let alt = window.visualViewport?.height ?? innerHeight;
+    for (let e = d.parentElement; e && e !== document.body; e = e.parentElement) {
+      if (/auto|scroll|hidden|clip/.test(getComputedStyle(e).overflowY)) {
+        const b = e.getBoundingClientRect();
+        ust = Math.max(ust, b.top);
+        alt = Math.min(alt, b.bottom);
+      }
+    }
+    const asagi = alt - r.bottom - 2 * ARA;
+    const yukari = r.top - ust - 2 * ARA;
+    const boy = m.scrollHeight;
+    if (boy <= asagi) return;
+    if (yukari > asagi) {
+      m.classList.add("yukari");
+      if (boy > yukari) m.style.maxHeight = `${yukari}px`;
+    } else m.style.maxHeight = `${Math.max(asagi, 120)}px`;
+  }, [acik, katman]);
+
   // Katmandaki menü sayfanın akışında değil: yeri düğmeden ölçülüyor, ekrandan taşmıyor.
   useLayoutEffect(() => {
     const m = menu.current;
@@ -61,7 +93,9 @@ export function IslemMenusu({
       const genislik = m.offsetWidth;
       // Arapçada menü düğmenin sağ kenarından sola açılıyor; ölçü ekran koordinatında olduğu için fiziksel.
       const bas = getComputedStyle(d).direction === "rtl" ? r.right - genislik : r.left;
-      m.style.top = `${r.bottom + ARA}px`;
+      // Altta yer yoksa düğmenin üstüne açılır.
+      const boy = m.offsetHeight;
+      m.style.top = `${r.bottom + ARA + boy > innerHeight - ARA && r.top - ARA - boy >= ARA ? r.top - ARA - boy : r.bottom + ARA}px`;
       m.style.left = `${Math.min(Math.max(bas, ARA), innerWidth - genislik - ARA)}px`;
     };
     yerlestir();

@@ -1,10 +1,11 @@
-import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
+import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, Mail, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
 import { izinBirimi } from "../yapi";
 import { masaBirimi, sadeEkranMi, sayfaGorebilir } from "../yetki";
 import { kararlariGetir } from "../planlamaKararlari";
+import { okunmamisSayisi } from "../postaOkuma";
 import { planlamaYeniMi } from "./AnaMenu";
 import { useYeniTasarim } from "../tasarimSecimi";
 
@@ -46,13 +47,21 @@ const masaSekmeleri = (b: MasaBirimi): { yol: string; ad: Anahtar; ikon: LucideI
   b === "program" ? { yol: "programlar/programlar", ad: "pmProgramlar", ikon: Tv } : { yol: `${MASA_YOLU[b]}/arsiv`, ad: "pmArsiv", ikon: Archive },
 ];
 
-/* Yeni tasarımda Planlama: ana sayfa (kararlar orada), karar bekleyen öneriler, Next Day, muhabirler. */
+/*
+ * Yeni tasarımda Planlama: ana sayfa (kararlar orada), karar bekleyen
+ * öneriler, Next Day, Posta. Posta gün içinde en sık dönülen yerdi ama iki
+ * dokunma uzaktaydı (mobil denetim); muhabirler kişi çipinden ve aramadan
+ * açılıyor, Menü'de de duruyor.
+ */
 const planlamaSekmeleri = (): { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum, ben: Kisi) => number }[] => [
   { yol: "ana", ad: "abAna", ikon: House },
   { yol: "oneriler", ad: "abOneriler", ikon: Lightbulb, say: (d, ben) => kararlariGetir(d, ben).oneri },
   { yol: "nextday", ad: "abNextday", ikon: CalendarDays },
-  { yol: "muhabirler", ad: "abMuhabirler", ikon: Users },
+  { yol: "posta", ad: "kaPosta", ikon: Mail, say: (d, ben) => okunmamisSayisi(d, ben.id) },
 ];
+
+/* Next Day sekmesi doğrudan yarının planını açar: liste sayfasından 19 piksellik bağlantıya basmak gerekiyordu. */
+const sekmeAdresi = (yol: string) => (yol === "ana" ? "#/" : yol === "nextday" ? "#/nextday/yarin" : `#/${yol}`);
 
 export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; acik: string; menuAcik: boolean; onMenu: () => void }) {
   const { t } = useDil();
@@ -78,7 +87,7 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
       {sekmeler.map((s) => {
         const Ikon = s.ikon;
         return (
-          <a key={s.yol} href={s.yol === "ana" ? "#/" : `#/${s.yol}`} className={!menuAcik && etkin(s.yol) ? "acik" : ""}>
+          <a key={s.yol} href={sekmeAdresi(s.yol)} className={!menuAcik && etkin(s.yol) ? "acik" : ""}>
             <span className="hap">
               <Ikon size={21} />
               {!!s.say?.(v, ben) && <span className="say">{s.say(v, ben)}</span>}

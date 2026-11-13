@@ -7,6 +7,7 @@ import { useOrtamGorunumu } from "../ekranlar/ortam/gorunum";
 import { useOrtamEtiketi } from "../ekranlar/ortam/Sekmeler";
 import { kisininKisayollari } from "../kisayol";
 import { kisininOrtamlari, yolSayfasi } from "../ortam";
+import { penceredenGit, useGeriKapatir } from "../yol";
 import { useVeri, type Kisi } from "../veri";
 import { MENU, maddeAdi, maddeGorunur, sayfaMaddesi } from "./AnaMenu";
 import { Bos, Icerik } from "./Parcalar";
@@ -49,6 +50,8 @@ export function KomutPaleti({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
     if (d && !d.open) d.showModal();
     return () => d?.close();
   }, []);
+  // Geri tuşu aramayı kapatır; açıkken arkadaki sayfayı değiştiriyordu.
+  useGeriKapatir(true, kapat);
 
   const q = sorgu.trim();
   const ortamlar = kisininOrtamlari(v, ben.id);
@@ -109,10 +112,8 @@ export function KomutPaleti({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
     if (secili >= 0) document.getElementById(secenekKimligi(duz[secili]))?.scrollIntoView({ block: "nearest" });
   });
 
-  const ac = (s: Secenek) => {
-    location.hash = s.href;
-    kapat();
-  };
+  // Önce arama kapanır (geçmiş adımı geri alınır), sonra gidilir.
+  const ac = (s: Secenek) => penceredenGit({ preventDefault: () => undefined }, kapat, s.href);
 
   return (
     <dialog ref={ref} className="palet" aria-label={t("ara")} data-palet onClose={kapat} onClick={(e) => e.target === ref.current && kapat()}>
@@ -172,7 +173,7 @@ export function KomutPaleti({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
                     href={s.href}
                     data-palet-secenek={s.id}
                     onMouseMove={() => i !== secili && setSira(i)}
-                    onClick={kapat}
+                    onClick={(e) => (e.ctrlKey || e.metaKey ? kapat() : penceredenGit(e, kapat, s.href))}
                   >
                     {s.ikon}
                     <span className="palet-metin">

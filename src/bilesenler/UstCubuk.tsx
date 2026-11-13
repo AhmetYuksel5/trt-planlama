@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useBildirimSesi } from "./Ses";
 import { bildirimleriOku } from "../eylemler";
 import { useDil } from "../dil";
@@ -23,7 +24,7 @@ import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
 import { bildirimMi, masaBirimi, sadeEkranMi } from "../yetki";
-import type { BolmeAramasi } from "../yol";
+import { katmanBaglantisi, useGeriKapatir, type BolmeAramasi } from "../yol";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { KomutPaleti } from "./KomutPaleti";
@@ -71,6 +72,8 @@ export default function UstCubuk({
 
   useEffect(() => {
     const kapat = (e: MouseEvent) => {
+      // Telefonda perdeye basış perdenin kendi işi (alttaki öğeye geçmesin).
+      if ((e.target as Element).closest?.(".ust-perde")) return;
       if (kap.current && !kap.current.contains(e.target as Node)) setAcik("");
     };
     const tus = (e: KeyboardEvent) => {
@@ -124,6 +127,13 @@ export default function UstCubuk({
     setAcik(acik === n ? "" : n);
     if (n === "bildirim" && acik !== n && okunmamis) bildirimleriOku(ben);
   };
+  /*
+   * Telefonda zil, avatar ve prototip panelleri geri tuşuyla kapanır;
+   * dışarı ilk dokunuş yalnız kapatır (saydam perde): alttaki bağlantıyı da
+   * çalıştırıyordu. Paneldeki bağlantı önce paneli kapatır, sonra gider.
+   */
+  const telefon = typeof matchMedia !== "undefined" && matchMedia("(max-width: 760px)").matches;
+  useGeriKapatir(!!acik && telefon, () => setAcik(""));
   const araAdi = t("araTus", { tus: mac ? "⌘K" : "Ctrl K" });
   // Pencere odağı açanın üstüne bırakıyor; açan yoksa (kısayol tuşu, seçimle gezinme) odak boşta kalmasın.
   const paletiKapat = () => {
@@ -135,7 +145,8 @@ export default function UstCubuk({
   };
 
   return (
-    <header className="ust" ref={kap}>
+    <header className="ust" ref={kap} onClick={(e) => telefon && acik && katmanBaglantisi(e, () => setAcik(""))}>
+      {telefon && acik && createPortal(<div className="ust-perde" onClick={() => setAcik("")} aria-hidden="true" />, document.body)}
       <button
         className="ikon-dugme menu-dugme"
         onClick={onMenu}

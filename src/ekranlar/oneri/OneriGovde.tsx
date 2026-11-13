@@ -31,7 +31,7 @@ import { bugun, yerelGun } from "../../tarih";
 import { temizle } from "../../temizlik";
 import { KisiIletisim } from "../../bilesenler/KisiCipi";
 import { OneriYolu } from "../../bilesenler/OneriYolu";
-import { baslikBul, kisiBul, paketBul, planBul, useVeri, type Durum, type Kisi, type Oneri } from "../../veri";
+import { baslikBul, getir, kisiBul, paketBul, planBul, useVeri, type Durum, type Kisi, type Oneri } from "../../veri";
 import { birimAdi } from "../../yapi";
 import {
   arsivdenCikarabilir,
@@ -161,8 +161,24 @@ export function OneriAyrinti({
     if (matchMedia("(hover: hover)").matches) f.querySelector<HTMLElement>("input:not([type=hidden]):not([disabled]), select, textarea")?.focus({ preventScroll: true });
   }, [mod]);
   const sayfa = !kapat;
-  // Karttaki hızlı düğmeyle açılan form bitince pencere de kapanıyor; pencerede seçilen form yalnız kendini kapatıyor.
-  const formKapat = () => (ilkMod && kapat ? kapat() : setMod(null));
+  /*
+   * Karttaki hızlı düğmeyle açılan form bitince pencere de kapanıyor.
+   * Pencerede seçilen karar formu (plana ekle, reddet, düzeltmeye gönder)
+   * karar verildiyse pencereyi de kapatıyor: kullanıcı ayrıca kapatıyordu
+   * (mobil denetim, akış önerisi). Vazgeçilen form yalnız kendini kapatır;
+   * kararın izi önerinin durumu ve plandaki yeri.
+   */
+  const kararIzi = (x: Oneri | undefined, d: Durum) => (x ? `${x.durum}|${oneriYeri(d, x) ? 1 : 0}|${x.planId ?? ""}|${x.paketId ?? ""}` : "");
+  const izRef = useRef("");
+  const kararModu = mod === "ekle" || mod === "ret" || mod === "duzelt";
+  useEffect(() => {
+    if (kararModu) izRef.current = kararIzi(o, getir());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod]);
+  const formKapat = () => {
+    if (kapat && (ilkMod || (kararModu && kararIzi(getir().oneriler.find((x) => x.id === o.id), getir()) !== izRef.current))) return kapat();
+    setMod(null);
+  };
 
   const yer = oneriYeri(v, o);
   const plan = planBul(v, o.planId);
@@ -567,7 +583,7 @@ export function OneriListesi({
   pencere: PencereDurumu;
   setPencere: (p: PencereDurumu) => void;
   ekleMetni: string;
-  ekleFormu: (o: Oneri, kapat: () => void) => ReactNode;
+  ekleFormu?: (o: Oneri, kapat: () => void) => ReactNode;
   ertelenebilir?: boolean;
 }) {
   const { t } = useDil();

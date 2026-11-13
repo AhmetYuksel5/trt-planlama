@@ -12,7 +12,7 @@ import { anlasmaBul, anlasmaTaslaklari, ayKaydir, aylikDokum, muhabirAylari, isa
 import { sozcuklerUyar as aramaUyar } from "../arama";
 import { bugun } from "../tarih";
 import { ANLASMA_TURLERI, BICIMLER, useVeri, type AnlasmaTuru, type Kisi, type MuhasebeAnlasmasi, type MuhasebeIs, type MuhasebeTanimi } from "../veri";
-import { git, useAdimDurumu } from "../yol";
+import { git, penceredenGit, useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 
 /*
@@ -618,7 +618,7 @@ function AnlasmaFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =
             {fiyatTurleri.length === 0 ? (
               <p className="sonuk">
                 {t("mhFiyatTuruYok")}{" "}
-                <a href="#/muhasebe/tanimlar" onClick={kapat}>
+                <a href="#/muhasebe/tanimlar" onClick={(e) => penceredenGit(e, kapat, "#/muhasebe/tanimlar")}>
                   {t("mhTanimlar")}
                 </a>
               </p>

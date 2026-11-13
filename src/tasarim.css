@@ -345,6 +345,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-radius: var(--yaricap-kart); box-shadow: var(--golge-acilir); padding: var(--ara-2);
   max-height: 70vh; overflow-y: auto;
 }
+/* Ekranın altındaki düğmede menü yukarı açılır (IslemMenusu ölçüyor). */
+.acilir.yukari { top: auto; bottom: calc(100% + 8px); }
 .acilir h4 { font-size: var(--punto-kucuk); color: var(--sonuk); padding: var(--ara-2) var(--ara-3); display: flex; align-items: center; gap: var(--ara-2); }
 .acilir h4 button { margin-inline-start: auto; border: 0; background: none; color: var(--vurgu); font-weight: 600; font-size: var(--punto-kucuk); }
 .acilir-satir { display: flex; gap: var(--ara-3); padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap); align-items: flex-start; width: 100%; border: 0; background: none; text-align: start; }
@@ -500,6 +502,7 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 @media (min-width: 761px) { .plan-araclari .dugme-ikon, .dugmeler .dugme-ikon { width: 36px; height: 36px; } }
 .geri-bag { display: inline-flex; align-items: center; gap: var(--ara-1); color: var(--sonuk); font-weight: 600; font-size: var(--punto-kucuk); }
 .geri-bag:hover { color: var(--vurgu); }
+button.geri-bag { appearance: none; border: 0; background: none; padding: 0; min-height: 44px; font-family: inherit; cursor: pointer; }
 .tarih-kart { display: flex; align-items: center; gap: var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); padding: var(--ara-2) var(--ara-4); }
 .tarih-kart b { display: block; font-size: var(--punto-orta); }
 .tarih-kart small { color: var(--sonuk); }
@@ -1484,6 +1487,8 @@ dialog.pencere::backdrop { background: rgba(15, 31, 58, .45); }
  */
 .pencere-govde { padding: var(--ara-4) var(--ara-5); overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-3); }
 .pencere-govde > * { min-width: 0; }
+/* Tam boy pencerede (yeni tasarım, telefon) alt satır içerik kısa olsa da dipte kalsın. */
+dialog.pencere[open] > .pencere-govde { flex: 1 1 auto; min-block-size: 0; }
 .pencere > footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--ara-2); padding: var(--ara-3) var(--ara-5); border-top: 1px solid var(--cizgi); background: var(--zemin); }
 
 /* --- Haftalık plan --- */
@@ -1925,6 +1930,8 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
    * telefonda çubuğa göre, iki yanda boşlukla.
    */
   .ust .acilir-kap { position: static; }
+  /* Panel açıkken saydam perde: dışarı ilk dokunuş yalnız kapatır. */
+  .ust-perde { position: fixed; inset: 0; z-index: 19; background: transparent; }
   .ust .acilir-kap > .acilir { inset-inline: var(--ara-4); width: auto; }
   /* E-posta tablosunun önizlemesi telefonda sütun adlarının listesi; boş satırlar yalnız e-postada. */
   .eposta-tablosu tbody { display: none; }
@@ -1960,6 +1967,8 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
 @media (max-width: 760px) {
   body { font-size: var(--punto-orta); }
   .uygulama, [dir="rtl"] .uygulama { padding-bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom)); }
+  /* Bildirim alt çubuğun üstüne biniyor, 2–3 saniye sekmelere dokunulamıyordu. */
+  .bildiri { bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom) + var(--ara-2)); inset-inline: var(--ara-4); max-width: none; }
 
   /* Sol menü ve çekmece yok; yerini alt çubuk ve menü paneli alıyor. */
   .menu, .menu-acik .perde { display: none; }
@@ -2345,7 +2354,7 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 .izleme-serit { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0; padding: var(--ara-2) var(--ara-4); background: var(--lacivert); color: var(--vurgu-yazi); font-size: var(--punto-kucuk); font-weight: 600; }
 .izleme-serit span { flex: 1 1 12rem; min-width: 0; }
 .muhabir-adi { margin: 0; padding-block: var(--ara-1); padding-inline: var(--ara-4); font-size: var(--punto-mini); color: var(--sonuk); border-block-end: 1px solid var(--cizgi); background: var(--yuzey); }
-.demo-serit { align-items: center; gap: var(--ara-2); background: var(--uyari-sis); color: var(--uyari); font-size: var(--punto-mini); font-weight: 600; }
+.demo-serit { align-items: center; gap: var(--ara-2); background: var(--yuzey-2); color: var(--sonuk); font-size: 12px; font-weight: 500; border-bottom: 1px solid var(--cizgi); }
 .demo-serit svg { flex: none; }
 .kisayollar { display: grid; gap: var(--ara-3); }
 .kisayol {
@@ -3039,6 +3048,12 @@ input[aria-invalid="true"] {
 .yeni-plan .yp-islem:hover { background: var(--yuzey-2); color: var(--murekkep); }
 
 /* Yeni görünüm: hızlı ekleme satırı ve öneri bırakma hedefi. */
+/* Klasik başlık kartında telefonda tek satırlık gelişme (BaslikKarti → HizliGelisme). */
+.hizli-gelisme { gap: var(--ara-2); margin-block-start: var(--ara-2); }
+.hizli-gelisme.yalniz-telefon { display: none; }
+@media (max-width: 760px) { .hizli-gelisme.yalniz-telefon { display: flex; } }
+.hizli-gelisme input { flex: 1; min-width: 0; min-height: 44px; border: 1px dashed var(--cizgi-girdi, var(--cizgi)); border-radius: var(--yaricap); padding-inline: var(--ara-3); background: var(--yuzey); color: var(--murekkep); }
+.hizli-gelisme .dugme { min-width: 44px; min-height: 44px; }
 .yeni-plan .hizli-ekle { position: relative; margin-block-start: var(--ara-1); }
 .yeni-plan .hizli-ekle input { inline-size: 100%; box-sizing: border-box; border: 1px dashed transparent; background: transparent; padding: var(--ara-1) var(--ara-2); font: inherit; color: var(--murekkep); border-radius: var(--yaricap); }
 .yeni-plan .hizli-ekle input::placeholder { color: var(--silik); }
@@ -3127,8 +3142,12 @@ html.yeni-tasarim body { line-height: 1.5; }
 html.yeni-tasarim h1 { letter-spacing: -.01em; }
 
 /* Kabuk: menü açık zeminde, ince çizgiyle ayrılır; seçili madde yalnız hafif zeminle. */
-html.yeni-tasarim .uygulama { background: linear-gradient(to right, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
-html.yeni-tasarim[dir="rtl"] .uygulama, html.yeni-tasarim [dir="rtl"] .uygulama { background: linear-gradient(to left, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+/* Menünün zemini yalnız menü sabitken: telefonda, tablette ve menü gizliyken 244 piksellik iki tonlu zemin kalıyordu. */
+html.yeni-tasarim .uygulama { background: var(--zemin); }
+@media (min-width: 961px) {
+  html.yeni-tasarim .uygulama:not(.menu-gizli) { background: linear-gradient(to right, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+  html.yeni-tasarim[dir="rtl"] .uygulama:not(.menu-gizli), html.yeni-tasarim [dir="rtl"] .uygulama:not(.menu-gizli) { background: linear-gradient(to left, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+}
 html.yeni-tasarim .menu {
   background: var(--yuzey); color: var(--sonuk); border-inline-end: 1px solid var(--cizgi);
   scrollbar-color: var(--yuzey-3) transparent; gap: 0; padding-inline: var(--ara-2);
@@ -3180,9 +3199,15 @@ html.yeni-tasarim .dugme-kotu { background: var(--yuzey); color: var(--kotu); bo
 html.yeni-tasarim .dugme-kotu:hover { background: var(--kotu-sis); border-color: var(--kotu-sis); }
 html.yeni-tasarim .dugme-iyi { background: var(--iyi); border-color: var(--iyi); }
 html.yeni-tasarim .dugme-kucuk { height: 28px; font-size: var(--punto-mini); }
+/* Yumuşak düğme (planın sıradaki rutin işi): yukarıdaki .dugme lacivert zemini onu eziyor, yazı 1,72:1 kalıyordu. */
+html.yeni-tasarim .dugme-yumusak { background: var(--vurgu-sis); color: var(--vurgu-koyu); border-color: transparent; }
+html.yeni-tasarim .dugme-yumusak:hover { background: var(--vurgu-sis); color: var(--vurgu-koyu); border-color: var(--vurgu); }
 
-/* Form: sakin alanlar, odakta tek mavi çizgi. */
+/* Form: sakin alanlar, odakta tek mavi çizgi. Alan kenarı kartın çizgisinden koyu: --cizgi beyazda 1,24:1, bileşen sınırı 3:1 istiyor. */
+html.yeni-tasarim { --cizgi-girdi: #868fa0; }
+html.yeni-tasarim .form input:not([type="checkbox"]):not([type="radio"]), html.yeni-tasarim .form select, html.yeni-tasarim .form textarea, html.yeni-tasarim .girdi, html.yeni-tasarim input[type="checkbox"] { border-color: var(--cizgi-girdi); }
 html.yeni-tasarim .form label, html.yeni-tasarim .alan-etiket { font-weight: 500; }
+html.yeni-tasarim .form input:focus, html.yeni-tasarim .form select:focus, html.yeni-tasarim .form textarea:focus, html.yeni-tasarim .girdi:focus { border-color: var(--vurgu); }
 html.yeni-tasarim .form input:focus, html.yeni-tasarim .form select:focus, html.yeni-tasarim .form textarea:focus, html.yeni-tasarim .girdi:focus { box-shadow: 0 0 0 1px var(--vurgu); }
 html.yeni-tasarim .form-kutu { background: var(--yuzey-2); border-color: transparent; }
 

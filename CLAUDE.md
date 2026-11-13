@@ -2606,8 +2606,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       yönetici ve stok ekibinde), Ekip, Yönetim (yöneticide); katlanmaz,
       sayı yalnız kararda. Kalkan sayfalar aramada ve adresle. Rengi
       camgöbeği (`--masa-planlama`), yalnız birimin kabuğunda. Telefonda alt
-      çubuk Ana sayfa, Öneriler, Next Day, Muhabirler; Menü panelinde kısayol
-      kutuları yok. Üst çubuk kısayolları şimdilik yerinde.
+      çubuk Ana sayfa, Öneriler, Next Day (doğrudan `#/nextday/yarin`), Posta
+      (okunmamış sayısıyla; kullanıcı onayladı: gün içinde en sık dönülen yer,
+      Muhabirler Menü'de ve kişi çipinden); Menü panelinde kısayol kutuları
+      yok, Ayarlar satırı var (birimin menüsünde Ayarlar alttaki ayrı satırda,
+      panelde hiç yoktu). Üst çubuk kısayolları şimdilik yerinde.
     - Ana sayfa `ekranlar/yeni/PlanlamaAna.tsx`: kutular (başlık, büyük sayı,
       tek satır durum; yeri sabit, boşken sönük). Kısa karar kutuları
       (karar bekleyen öneriler, paket kararları [onay kuyruğu, şartlı, görev
@@ -2801,7 +2804,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önce prototip yazısı, sonra satırdaki kısayollar ★'a çekilir.
   - Prototip etiketi her sayfada: örnek veri gerçek sanılmasın. Tam cümle
     (`demoSerit`) ipucunda ve basınca; telefonda çubukta etiket yok, tam
-    cümle çubuğun altında şerit (`Kabuk → .demo-serit`).
+    cümle çubuğun altında şerit (`Kabuk → .demo-serit`); şerit nötr renkte ve
+    12 piksel (kullanıcı onayı; sarı ve kalındı, ilk ekranı kaplıyordu).
   - Arama penceresi (`bilesenler/KomutPaleti.tsx`, kurallar `arama.ts`):
     - açılış: 🔍, Ctrl/⌘+K ya da yazı alanı dışında "/" (tuş `e.code` ile,
       Arapça klavyede de);
@@ -2894,6 +2898,41 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - "Menü" (`MobilMenu`) kişiyi, aynı renkli kutuları, bütün sayfaları ve
     dili bir panelde topluyor. Workspace telefonda yok (bağlantıyla açılan
     çalışır); kısayol düzenleme masaüstünde
+- Mobil denetim (kullanıcı: altı uzman ajanla kapsamlı denetim, yeni tasarım
+  üzerinden; birleşik rapor `belgeler/mobil-denetim.md`, M-01…M-69, Konsept
+  A "Sakin liste" onaylandı, yol haritası beş adım). 1. adım: yeni
+  tasarımda `.dugme-yumusak` açıkça tanımlı (lacivert `.dugme` onu eziyor,
+  "Sıradaki" düğmesi 1,72:1 okunmuyordu); menünün zemini (gradyan) yalnız
+  961 pikselden genişte ve menü açıkken (telefonda 244 piksellik iki tonlu
+  zemin kalıyordu); girdi kenarı `--cizgi-girdi` #868fa0 (3,26:1; `--cizgi`
+  1,24:1); ⋯ menüsü (`IslemMenusu`) altta yer yoksa yukarı açılır, iki
+  yönde de sığmazsa kısalıp kayar (öneri penceresinin ⋯'si Pixel 7'de
+  ekranın altında kalıyordu, kararlar verilemiyordu); tam boy pencerede
+  gövde alanı doldurur, alt satır dipte; telefonda bildirim alt çubuğun
+  üstünde; gönderilen öneri formu geçmişte kalmaz (`yerineGit`); Posta'nın
+  "← Sohbetler" düğmesi biçimli ve 44 piksel. Test `testler/mobil-1.cjs`
+  (iPhone 13 ve Pixel 7, Türkçe ve Arapça).
+  Akış önerileri (kullanıcı onayladı): ana sayfanın "Karar bekleyen" paneli
+  plan ekranlarının listesi (`OneriListesi`, `ekleFormu`'suz: "Plana ekle"
+  önerinin günlerine düşen planları sorar), kartta "Plana ekle" ve ret
+  simgesi; pencerede verilen karar (plana ekle, reddet, düzeltmeye gönder)
+  pencereyi de kapatır, vazgeçilen form kapatmaz (`OneriGovde.tsx →
+  kararIzi`: önerinin durumu, plandaki yeri, planı ve paketi); telefonda
+  klasik Next Day başlık kartında tek satırlık gelişme (`BaslikKarti.tsx →
+  HizliGelisme`, "YER / metin", Enter ya da ➤; Yeni görünümün hızlı
+  satırıyla aynı kural). Test `testler/mobil-akis.cjs`.
+  2. adım, geri tuşunun tek kuralı: üstte açılan her şey geçmiş adımı,
+  geri tuşu onu kapatır (`yol.ts → useGeriKapatir`, pencerenin
+  `pencereAdimi`'si): Menü paneli (açıkken sayfa `inert`, odak panelde),
+  telefonda zil, avatar ve prototip panelleri, arama, telefonda Posta'da
+  açık sohbet ("← Sohbetler" de `history.back()`). Katmandaki bağlantı
+  `katmanBaglantisi`/`penceredenGit` ile: önce katman kapanır, sonra
+  gidilir, geçmişte boş adım kalmaz. Telefonda üst çubuk paneli açıkken
+  saydam perde (`.ust-perde`, body'de: çubuk CSS kapsayıcısı, içindeki
+  sabit öğe ekranı kaplamıyor): dışarı ilk dokunuş yalnız kapatır, alttaki
+  bağlantıyı çalıştırıyordu. Posta yanıtı sohbete bağlı taslak
+  (`sessionStorage`, `trt-planlama-posta-taslak:<konu>`), gönderince silinir.
+  Test `testler/mobil-geri.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
@@ -2940,7 +2979,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     pencere kapanır. ×, Esc ya da kaydetle kapanan pencere kendi adımını
     geri alır, geçmişte boş adım kalmaz; pencereden başka sayfaya gidildiyse
     adıma dokunulmaz. İç içe pencere yığın gibi; bölmede eklenmez. Arama
-    penceresi (Ctrl+K) bunun dışında.
+    penceresi (Ctrl+K) bunun dışında. Pencerenin içinden başka sayfaya giden
+    bağlantı `yol.ts → penceredenGit` ile: önce pencere kapanır, geri adımı
+    bitince gidilir (bağlantının yeni adresini pencerenin geri adımı siliyor,
+    "Sayfayı aç" ana sayfada kalıyordu). Pencere yalnız arka plana
+    basınca kapanır, kendi boş alanına değil (`Parcalar.tsx → disarida`):
+    tam boy pencerede içeriğin altındaki boşluk da `<dialog>`'un kendisi.
   - Sayfadaki seçimler (kullanıcı: sekme, süzgeç, ay geri dönünce
     sıfırlanıyordu): `yol.ts → useAdimDurumu(anahtar, varsayılan)` seçimi o
     geçmiş adımının durumuna yazar (`history.state.s`); geri/ileri gelinince

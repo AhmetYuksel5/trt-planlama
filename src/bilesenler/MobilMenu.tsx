@@ -1,6 +1,7 @@
 import { birimAdi, gorevAdi } from "../yapi";
-import { BookOpen, FlaskConical, Info, LogIn, LogOut, X } from "lucide-react";
-import { useEffect } from "react";
+import { BookOpen, FlaskConical, Info, LogIn, LogOut, Settings, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { katmanBaglantisi, useGeriKapatir } from "../yol";
 import { useDil } from "../dil";
 import { KisayolKutulari } from "../ekranlar/ortam/Kisayollar";
 import { GERCEK, demoyuAc, girisiAc } from "../kip";
@@ -34,6 +35,15 @@ export default function MobilMenu({
   const muhabir = ben.birim === "muhabir" || dilci;
   const yeniTasarim = useYeniTasarim();
 
+  // Geri tuşu paneli kapatır (sayfadan çıkarıyordu); odak panele girer, arkadaki sayfa etkisiz.
+  useGeriKapatir(true, onKapat);
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const ana = document.querySelector(".uygulama > .ana");
+    ana?.setAttribute("inert", "");
+    panel.current?.querySelector<HTMLElement>(".mobil-menu-ust button")?.focus({ preventScroll: true });
+    return () => ana?.removeAttribute("inert");
+  }, []);
   // Panel açıkken arkadaki sayfa kaymasın; Escape kapatsın.
   useEffect(() => {
     const onceki = document.body.style.overflow;
@@ -48,10 +58,12 @@ export default function MobilMenu({
 
   return (
     <div
+      ref={panel}
       className="mobil-menu"
       role="dialog"
       aria-modal="true"
       aria-label={t("abMenu")}
+      onClick={(e) => katmanBaglantisi(e, onKapat)}
     >
       <div className="mobil-menu-ust">
         <strong>{t("abMenu")}</strong>
@@ -137,6 +149,16 @@ export default function MobilMenu({
           </section>
         );
       })}
+
+      {/* Birimin menüsünde (yeni tasarımda Planlama, masa) Ayarlar menünün altındaki ayrı satırda; panelde hiç yoktu, yalnız avatar menüsündeydi. */}
+      {!muhabir && !menuGruplari(ben, yeniTasarim).some((g) => g.maddeler.some((m) => m.sayfa === "ayarlar")) && (
+        <nav className="mobil-kayitlar" data-mobil-ayarlar>
+          <a href="#/ayarlar" className={acik === "ayarlar" ? "acik" : ""}>
+            <Settings size={18} />
+            {t("mAyarlar")}
+          </a>
+        </nav>
+      )}
 
       <h3>{t("tercihler")}</h3>
       <div className="mobil-tercih">

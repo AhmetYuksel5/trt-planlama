@@ -2,7 +2,7 @@ import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { OneriyiAc } from "../oneri/OneriyiAc";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { useYeniTasarim } from "../../tasarimSecimi";
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, Send, StickyNote } from "lucide-react";
 import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
 import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
@@ -232,6 +232,7 @@ export default function BaslikKarti({
             <Newspaper size={14} /> {t("gelismeler")}
           </h4>
           <GelismeListesi plan={plan} gelismeler={gelismeler} duzenler={operasyon} planBaslikId={pb.id} gelismeAlti={gelismeAlti} paketEkle={icerik ? (g) => setPaketForm(`yeni:${g.id}`) : undefined} />
+          {operasyon && ben && <HizliGelisme ben={ben} planId={plan.id} pbId={pb.id} />}
         </section>
 
         <section className="alt-alan">
@@ -520,5 +521,41 @@ export function MuhabirNotuFormu({ ilk, kaydet, kapat }: { ilk: string; kaydet: 
         </button>
       </div>
     </div>
+  );
+}
+
+/*
+ * Telefonda başlığın altında tek satırlık gelişme: yazıp Enter (ya da ➤).
+ * "YER / metin" yazılırsa yer ayrılır, kaynak ajans; ayrıntı sonradan
+ * gelişmenin kaleminden. Gelişme formu 10–12 alanlı, Kaydet 950 piksel
+ * aşağıdaydı (mobil denetim, akış önerisi; Yeni görünümün hızlı satırıyla
+ * aynı kural).
+ */
+function HizliGelisme({ ben, planId, pbId }: { ben: Kisi; planId: string; pbId: string }) {
+  const { t } = useDil();
+  const [yazi, setYazi] = useState("");
+  const ekle = () => {
+    const ham = yazi.trim();
+    if (!ham) return;
+    const i = ham.indexOf(" / ");
+    const yer = i > 0 && i < 30 ? ham.slice(0, i).trim() : undefined;
+    const govde = yer ? ham.slice(i + 3).trim() : ham;
+    if (!govde) return;
+    if (gelismeKaydet(ben, { planId, planBaslikId: pbId, yer, metin: govde, kaynakTuru: "ajans", kaynakAdi: "", tarih: simdi() })) setYazi("");
+  };
+  return (
+    <form
+      className="hizli-gelisme yalniz-telefon"
+      onSubmit={(e) => {
+        e.preventDefault();
+        ekle();
+      }}
+      data-hizli-gelisme={pbId}
+    >
+      <input {...icerikAlani} value={yazi} onChange={(e) => setYazi(e.target.value)} placeholder="بغداد / …" aria-label={t("gelismeEkle")} enterKeyHint="send" />
+      <button type="submit" className="dugme dugme-ikincil dugme-ikon" aria-label={t("gelismeEkle")} title={t("gelismeEkle")} aria-disabled={!yazi.trim() || undefined}>
+        <Send size={16} className="yon" />
+      </button>
+    </form>
   );
 }
