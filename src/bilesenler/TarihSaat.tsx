@@ -1,6 +1,6 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type InputHTMLAttributes } from "react";
-import { ayAdi, kisaGunAdi, tarihYaz, useDil } from "../dil";
+import { ayAdi, darGunAdi, tarihYaz, useDil } from "../dil";
 import { ayBasi, ayEkle, bugun, gunEkle, haftaBasi, saatCoz } from "../tarih";
 
 /*
@@ -121,7 +121,7 @@ export function TarihGirdisi({ value, onChange, min, max, required, disabled, cl
           <div className="tarih-izgara" role="grid">
             {gunler.slice(0, 7).map((g) => (
               <span key={"b" + g} className="tarih-gun-adi" aria-hidden>
-                {dil === "ar" ? new Intl.DateTimeFormat("ar", { weekday: "narrow" }).format(new Date(g + "T12:00:00")) : kisaGunAdi(g, dil)}
+                {darGunAdi(g, dil)}
               </span>
             ))}
             {gunler.map((g) => (

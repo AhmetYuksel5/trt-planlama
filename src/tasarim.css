@@ -971,6 +971,8 @@ a.rozet-plan { text-decoration: none; }
 .gecmis li { display: grid; grid-template-columns: 92px 20px minmax(0, 1fr); gap: var(--ara-2); }
 .gecmis time { color: var(--sonuk); font-size: var(--punto-mini); text-align: end; padding-top: 6px; font-variant-numeric: tabular-nums; }
 .gecmis time b { display: block; color: var(--murekkep); font-size: var(--punto-kucuk); }
+/* Uzun durum rozeti ("Newsdesk devraldı, görev verilecek") dar ekranda satıra kırılır, sütundan taşmaz. */
+.gecmis .rozet { white-space: normal; max-width: 100%; }
 .gecmis .cizgi-kol { position: relative; display: flex; justify-content: center; }
 .gecmis .cizgi-kol::before { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: var(--cizgi); }
 .gecmis li:first-child .cizgi-kol::before { top: 10px; }
@@ -1069,7 +1071,8 @@ a.rozet-plan { text-decoration: none; }
 
 /* --- Form --- */
 
-.form { display: grid; gap: var(--ara-3); }
+/* Sütun minmax(0, 1fr): uzun içerik (Arapça metin kutusu, uzun düğme) formu kartın dışına genişletmesin. */
+.form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-3); }
 /* Muhabirin öneri formu: içerik alanları önde; gün, masa, tür ve saha ardında. */
 .muhabir-formu .oneri-meta-satir { order: 1; }
 .muhabir-formu .oneri-saha-secimi { order: 2; }
@@ -1131,6 +1134,8 @@ a.rozet-plan { text-decoration: none; }
 }
 .suzgec .girdi { width: auto; min-width: 160px; height: 34px; min-height: 34px; padding-block: 0; font-size: var(--punto-kucuk); }
 .suzgec .arama-kutu { flex: 1; min-width: 200px; }
+/* Telefonun tek satırında arama daralabilsin: 200 piksellik alt sınır 320 pikselde Süzgeç düğmesini ekran dışına itiyordu (M-42). */
+.suzgec-telefon .arama-kutu { min-width: 0; }
 
 /* --- Akordeon: plan bölümleri ve başlık kartları --- */
 
@@ -1374,10 +1379,12 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
 .yol-haritasi li.simdi { border-color: var(--vurgu); background: var(--vurgu-sis); }
 .yol-haritasi li.simdi::before { background: var(--vurgu); color: #fff; }
 .yol-haritasi li p { font-size: var(--punto-kucuk); color: var(--sonuk); margin-top: 2px; }
-.dene-adimlari { display: grid; gap: var(--ara-2); }
+.dene-adimlari { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-2); }
 .dene-adimlari li { display: flex; gap: var(--ara-3); align-items: center; background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-2) var(--ara-3); }
 .dene-adimlari li > span:first-child { width: 26px; height: 26px; border-radius: 50%; background: var(--lacivert); color: #fff; font-weight: 700; display: grid; place-items: center; flex: none; font-size: var(--punto-kucuk); }
-.dene-adimlari li p { flex: 1; font-size: var(--punto-kucuk); }
+.dene-adimlari li p { flex: 1; min-width: 0; font-size: var(--punto-kucuk); }
+/* Dar ekranda adımın düğmesi metnin altına iner, satırı kartın dışına itmez. */
+@media (max-width: 760px) { .dene-adimlari li { flex-wrap: wrap; } .dene-adimlari li .dugme { margin-inline-start: auto; white-space: normal; } }
 .dene-adimlari li p small { display: block; color: var(--sonuk); }
 
 .baslik-gunleri { display: grid; gap: var(--ara-4); }
@@ -2051,7 +2058,7 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
   .form .secim input { width: 24px; height: 24px; }
   .sekmeler { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .sekmeler button, .sekmeler > a { min-height: var(--dokunma); white-space: nowrap; }
-  .form-alt .dugme { flex: 1; }
+  .form-alt .dugme { flex: 1; white-space: normal; text-align: center; }
   .cip button { width: 32px; height: 32px; }
 
   /* Belgede üzerine gelme yok: şerit her satırın altında hep açık, düğmeler 44 piksel. */
@@ -2135,7 +2142,10 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
   .mobil-menu section { margin-top: var(--ara-4); }
   .sayfa-basi .tarih-kart { display: none; }
   .belge-ust { gap: var(--ara-2); }
-  .belge-ust .dugme { width: var(--dokunma); padding: 0; }
+  .belge-ust .dugme { width: var(--dokunma); padding: 0; flex: none; }
+  /* Logo daralabilsin (oranı korunur): 320 pikselde dil seçici ve düğmeyle sığmıyordu. */
+  .belge-ust .marka { min-width: 0; flex: 0 1 auto; display: flex; }
+  .belge-ust .logo { max-width: 100%; width: auto; object-fit: contain; object-position: left center; }
 }
 
 /* --- Planlama takvimi telefonda: ay noktalı ve seçili gün altta, hafta alt alta, süzgeç tam genişlik --- */
@@ -3279,6 +3289,8 @@ html.yeni-tasarim details.kart.katlanir { padding-block: 0; }
 html.yeni-tasarim details.kart.katlanir > summary.kart-bas { min-block-size: 48px; margin: 0; }
 html.yeni-tasarim .tumu { background: transparent; color: var(--vurgu); padding: 0; }
 html.yeni-tasarim .tumu:hover { background: transparent; color: var(--vurgu-koyu); }
+/* Kart başındaki "Tümü" bağlantısı da dokunma hedefi: tek satırda 20 piksele iniyordu. */
+@media (pointer: coarse) { .tumu { min-height: 44px; } }
 html.yeni-tasarim .sayfa { gap: var(--ara-4); }
 html.yeni-tasarim .sayfa-basi h1 { font-size: var(--punto-buyuk); }
 
@@ -3643,6 +3655,11 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
   .prg-plan-sec { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .prg-seg { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .prg-arac .arama-kutu input { width: 100%; }
+  /* İç içe kaydırma yok: yayın planının kağıdı sayfayla akar (M-65). */
+  .prg-cikti { max-height: none; overflow: visible; }
+  /* Kart başının araçları sığmayınca alta iner: hafta gezgini 320 pikselde kartın dışına taşıyordu. */
+  .kart-bas { flex-wrap: wrap; }
+  .kart-bas .sag-uc { flex-wrap: wrap; max-width: 100%; }
   .prg-icerik, .prg-oneri, .prg-program { padding: var(--ara-3); }
   .prg-arsiv-satir { grid-template-columns: minmax(0, 1fr); gap: var(--ara-1); }
   .prg-arsiv-alt { justify-content: start; }

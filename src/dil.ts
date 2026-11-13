@@ -3714,6 +3714,9 @@ export const ayAdi = (iso: string, d: Dil = dil, bicim: "uzun" | "kisa" | "yil" 
 
 /** Takvim sütun başı: "Cmt", "السبت", "Sat". */
 export const kisaGunAdi = (iso: string, d: Dil = dil) => new Intl.DateTimeFormat(YEREL[d], { weekday: "short" }).format(gunTarihi(iso));
+// Dar sütunda gün adı: Arapçanın kısa adı ("الأربعاء" gibi) tam addır, yedili ızgarada kesiliyordu; orada tek harf.
+export const darGunAdi = (iso: string, d: Dil = dil) => (d === "ar" ? new Intl.DateTimeFormat(YEREL.ar, { weekday: "narrow" }).format(gunTarihi(iso)) : kisaGunAdi(iso, d));
+export const uzunGunAdi = (iso: string, d: Dil = dil) => new Intl.DateTimeFormat(YEREL[d], { weekday: "long" }).format(gunTarihi(iso));
 
 export const saatYaz = (isoZaman: string, d: Dil = dil) =>
   new Intl.DateTimeFormat(YEREL[d], { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(isoZaman));

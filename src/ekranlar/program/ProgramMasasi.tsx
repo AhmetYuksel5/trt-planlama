@@ -4,7 +4,7 @@ import { GorevlendirDugmesi } from "../../bilesenler/PaketGorevi";
 import { MasaYayinDugmeleri } from "../../bilesenler/PaketSonucu";
 import { Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
-import { kisaGunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
+import { darGunAdi, kisaGunAdi, saatYaz, uzunGunAdi, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { gorevTalebiGeriCek, icerikProgramaAktar, uretimeAl, masaSorusunuYanitla, programKaldir, programKaydet } from "../../eylemler";
 import { BICIM_ADI, paketYeri } from "../../etiketler";
 import { masaninSorulari } from "../../masaSorusu";
@@ -584,8 +584,8 @@ function ProgramKarti({ ben, p, hafta, duzenle, aktar }: { ben: Kisi; p: Program
       </div>
       <div className="prg-gunler" aria-label={t("pmYayinGunleri")}>
         {[0, 1, 2, 3, 4, 5, 6].map((g) => (
-          <span key={g} className={p.gunler.includes(g) ? "var" : ""}>
-            {kisaGunAdi(gunEkle(bas, g), dil)}
+          <span key={g} className={p.gunler.includes(g) ? "var" : ""} title={uzunGunAdi(gunEkle(bas, g), dil)}>
+            {darGunAdi(gunEkle(bas, g), dil)}
           </span>
         ))}
       </div>

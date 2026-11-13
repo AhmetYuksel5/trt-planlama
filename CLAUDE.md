@@ -2985,6 +2985,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   tercihinde geçiş ve kaydırma yumuşatması yok. Kısayolun "Special Coverage"
   adı bilinçli (Next Day, Weekly gibi kurumun terimi). Test
   `testler/mobil-ince.cjs`.
+  Dördüncü parti, 320 piksel (yazısı büyütülmüş telefon): Öneriler'in arama +
+  Süzgeç satırında arama daralır (`.suzgec-telefon .arama-kutu`); `.form` ve
+  proje planının adım listesi `minmax(0, 1fr)` sütunlu, telefonda formun alt
+  düğmeleri ve adım düğmesi satıra kırılır; paket geçmişinin rozeti kırılır;
+  kart başının araçları sığmayınca alta iner (Programlar'ın hafta gezgini);
+  proje planının üst satırında logo daralır. Programlar'da Arapça gün adı tek
+  harf (`dil.ts → darGunAdi`, tam adı ipucunda `uzunGunAdi`; tarih seçici de
+  onu kullanıyor; kısa ad Arapçada tam addı, yedili ızgarada kesiliyordu,
+  M-66); yayın planının kağıdı telefonda iç içe kaymaz (M-65). Test
+  `testler/mobil-dar.cjs` (isMobile'sız: Chrome sayfayı sığdırıp taşmayı
+  gizliyor).
   Planlama ana sayfasının kutuları aralarında delik bırakmadan dolar
   (kullanıcı: boş kutu tek satıra iniyor, yanında ve geniş kutudan önce boşluk
   kalıyordu, "düzensiz"; satır listesi denendi, istenmedi: kutular kalsın):
