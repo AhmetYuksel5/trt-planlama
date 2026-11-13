@@ -61,6 +61,15 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await gir("pl1", "#/");
   ok((await p.locator('.menu a[href="#/raporlar"]').count()) === 1, "yöneticide Yönetim grubu");
 
+  // Tam yönetici de yeni düzende; eski menüdeki kendi sayfaları (Muhasebe, Organizasyon…) kaybolmuyor.
+  await gir("yo3", "#/", false);
+  const eskiMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
+  await gir("yo3", "#/");
+  ok((await p.locator('[data-birim-menusu="planlama"]').count()) === 1 && (await p.locator("[data-py-kutu]").count()) >= 12, "tam yönetici yeni menü ve kutulu ana sayfa");
+  const yeniMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
+  const eksik = eskiMenu.filter((h) => !yeniMenu.includes(h));
+  ok(eksik.length === 0, `tam yöneticinin hiçbir sayfası menüden düşmedi (${eksik.join(",")})`);
+
   // Kişi çipi: paket sayfasında, posta konusu paketin başlığı.
   const d = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
   const pk = d.paketler.find((x) => x.muhabirId && x.durum === "onaylandi" && d.kisiler.find((k) => k.id === x.muhabirId)?.eposta);

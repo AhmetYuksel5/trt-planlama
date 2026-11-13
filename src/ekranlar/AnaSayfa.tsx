@@ -15,6 +15,8 @@ import { useYeniTasarim } from "../tasarimSecimi";
  */
 export default function AnaSayfa({ ben }: { ben: Kisi }) {
   const yeniTasarim = useYeniTasarim();
+  // Tam yönetici yeni tasarımda Planlama'nın kutulu ana sayfasında (kullanıcı isteği); yönetici paneli menüde.
+  if (ben.hesapYoneticisi && planlamaYeniMi(ben, yeniTasarim)) return <YeniPlanlamaAna ben={ben} />;
   // Kademedeki müdür (Input, Output… düğümünde) ve koordinatör de Yönetim gibi: masası yönetici paneli.
   if (yonetimdeMi(ben)) return <YoneticiPaneli ben={ben} ana />;
   // Programlar, Ekonomi, Spor (ve onlar "gibi" çalışan birim): masanın sayfası.

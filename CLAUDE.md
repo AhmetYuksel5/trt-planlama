@@ -2577,7 +2577,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     iletişim ve raporlama pratikleşsin; iki tur ajan görüşü, brifing ve ham
     notlar `belgeler/planlama-yeni-mimari.md`, aşamaları orada). Kapsam
     `AnaMenu.tsx → planlamaYeniMi`: anahtar açık, izinlerde Planlama (onun
-    "gibi" çalışan birim de), tam yönetici değil; kademedeki müdür panelinde.
+    "gibi" çalışan birim de) ya da tam yönetici (kullanıcı isteği; önce eski
+    menüde kalıyordu); kademedeki müdür panelinde. Tam yöneticinin ana sayfası
+    kademede dursa da kutulu sayfa (`AnaSayfa.tsx`), yönetici paneli menüde;
+    eski menüde görüp Planlama menüsünde olmayan sayfaları (Muhasebe, proje
+    planı, masalar, başlıklar…) Yönetim grubunun sonunda (`planlamaMenusu`).
     1. aşama:
     - Sayıların tek kaynağı `planlamaKararlari.ts` (`kararlariGetir`: kayıt
       nesnesine bağlı önbellek, menü, alt çubuk ve ana sayfa aynı sonucu

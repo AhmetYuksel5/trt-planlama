@@ -234,8 +234,8 @@ export const planlamaMenusu = (ben: Kisi): Grup[] => {
     ad,
     maddeler: maddeler.filter((m): m is Madde => !!m && maddeGorunur(ben, m)),
   });
-  const yonetici = ben.rol === "yonetici";
-  return [
+  const yonetici = ben.rol === "yonetici" || !!ben.hesapYoneticisi;
+  const gruplar = [
     grup(undefined, [tablodan("ana"), yonetici && MENU[0].maddeler.find((m) => m.sayfa === "panel")]),
     grup("mgYayinPlanlari", [tablodan("nextday"), tablodan("haftalik"), tablodan("aylik"), tablodan("ozel"), tablodan("takvim")]),
     grup("mgGelenler", [tablodan("oneriler", { say: k((x) => x.oneri) }), tablodan("takipler"), tablodan("posta", { say: k((x) => x.posta) })]),
@@ -247,11 +247,23 @@ export const planlamaMenusu = (ben: Kisi): Grup[] => {
     ]),
     grup("mgEkip", [tablodan("gorevler", { say: k((x) => x.isler) }), tablodan("muhabirler"), tablodan("izinler")]),
     grup("mgYonetim", yonetici ? [tablodan("raporlar"), tablodan("gundem"), tablodan("organizasyon", { say: k((x) => x.hesapOnayi) })] : []),
-  ].filter((g) => g.maddeler.length > 0);
+  ];
+  /*
+   * Tam yönetici (kullanıcı: yeni düzen ona da açılsın) Planlama'nın menüsünde
+   * kendi sayfalarını (Muhasebe, proje planı, masalar, başlıklar…) kaybetmesin:
+   * eski menüde gördüğü, burada olmayan maddeler Yönetim grubunun sonunda.
+   */
+  if (ben.hesapYoneticisi) {
+    const var_ = new Set(gruplar.flatMap((g) => g.maddeler.map((m) => m.sayfa)));
+    const kalan = MENU.flatMap((g) => g.maddeler).filter((m) => !var_.has(m.sayfa) && !MUHABIR_ALT.includes(m.sayfa) && maddeGorunur(ben, m));
+    const yon = gruplar.find((g) => g.ad === "mgYonetim");
+    if (yon) yon.maddeler.push(...kalan);
+  }
+  return gruplar.filter((g) => g.maddeler.length > 0);
 };
 
-/** Yeni tasarımda Planlama'nın kendi menüsü: Planlama (ve onun "gibi" çalışan birim); tam yönetici bugünkü tam menüde. */
-export const planlamaYeniMi = (ben: Kisi, yeni: boolean) => yeni && !ben.hesapYoneticisi && !kisitliKisi(ben) && izinBirimi(ben.birim) === "planlama";
+/* Yeni tasarımda Planlama'nın kendi menüsü ve ana sayfası: Planlama (ve onun "gibi" çalışan birim) ve tam yönetici (kullanıcı isteği; önce tam yönetici eski menüde kalıyordu). */
+export const planlamaYeniMi = (ben: Kisi, yeni: boolean) => yeni && !kisitliKisi(ben) && (!!ben.hesapYoneticisi || izinBirimi(ben.birim) === "planlama");
 
 /** Birime özel menü (masa ya da yeni tasarımda Planlama); yoksa tablonun kendisi. */
 export const birimMenusu = (ben: Kisi, yeni: boolean): { tur: string; gruplar: Grup[] } | undefined => {
