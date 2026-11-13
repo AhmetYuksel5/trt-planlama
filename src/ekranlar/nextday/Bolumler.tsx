@@ -14,6 +14,7 @@ import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { OneriyiAc, useOneriSimgesi } from "../oneri/OneriyiAc";
+import { useTelefon } from "../takvim/ortak";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
 
 /**
@@ -197,6 +198,10 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
   const v = useVeri();
   const ben = useBen();
   const [ekle, setEkle] = useState(false);
+  // Telefonda ekip okunacak liste (M-37): çipte denetimler satır satır form gibi çiziliyordu, açık planın üçte biri.
+  const telefon = useTelefon();
+  const [secili, setSecili] = useState<string | null>(null);
+  const seciliUye = secili ? plan.ekip.find((e) => e.kisiId === secili) : undefined;
 
   return (
     <Bolum ar no={1} baslik={metin("calismaEkibi", "ar")} ek={t("kisiSayisi", { n: plan.ekip.length })}>
@@ -210,6 +215,20 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
             <div className="cipler ara-ust">
               {uyeler.map((e) => {
                 const k = kisiBul(v, e.kisiId);
+                if (telefon)
+                  return duzenler ? (
+                    <button key={e.kisiId} type="button" className={oncekiSinif(e.onceki, "cip ekip-oku")} data-ekip-uye={e.kisiId} onClick={() => setSecili(e.kisiId)} aria-label={`${k ? ekipAdi(k) : "?"} · ${t("duzenle")}`}>
+                      <Avatar kisi={k} boy="kucuk" />
+                      {k ? <Icerik>{ekipAdi(k)}</Icerik> : "?"}
+                      <Rozet>{vardiyaYaz(e.vardiya)}</Rozet>
+                    </button>
+                  ) : (
+                    <span key={e.kisiId} className={oncekiSinif(e.onceki, "cip ekip-oku")}>
+                      <Avatar kisi={k} boy="kucuk" />
+                      {k ? <Icerik>{ekipAdi(k)}</Icerik> : "?"}
+                      <Rozet>{vardiyaYaz(e.vardiya)}</Rozet>
+                    </span>
+                  );
                 return (
                   <span key={e.kisiId} className={oncekiSinif(e.onceki, "cip")} title={e.onceki ? t("oncekiGunden") : undefined}>
                     <Avatar kisi={k} boy="kucuk" />
@@ -245,6 +264,9 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
           </div>
         );
       })}
+      {seciliUye && duzenler && (
+        <EkipUyesiPenceresi plan={plan} uye={seciliUye} kapat={() => setSecili(null)} />
+      )}
       {duzenler &&
         (ekle ? (
           <EkipEkleFormu plan={plan} kapat={() => setEkle(false)} />
@@ -254,6 +276,53 @@ export function EkipBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler: bo
           </div>
         ))}
     </Bolum>
+  );
+}
+
+/** Telefonda ekip üyesinin düzenlemesi: masaüstünde çipin içindeki denetimler. Her değişiklik hemen kaydedilir. */
+function EkipUyesiPenceresi({ plan, uye, kapat }: { plan: NextDayPlan; uye: NextDayPlan["ekip"][number]; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const k = kisiBul(v, uye.kisiId);
+  return (
+    <Pencere baslik={k ? <Icerik>{ekipAdi(k)}</Icerik> : "?"} alt={ekipGorevAdi(uye.gorev)} kapat={kapat}>
+      <div className="form" data-ekip-penceresi>
+        {k && adParcalari(kisiAr(k)).length > 1 && (
+          <label>
+            {t("planAdi")}
+            <PlanAdiSecici kisi={k} sinif="girdi" />
+          </label>
+        )}
+        <label>
+          {t("vardiya")}
+          <SaatGirdisi className="girdi" value={uye.vardiya} onChange={(x) => ben && ekipGuncelle(ben, plan.id, uye.kisiId, { vardiya: x.target.value })} />
+        </label>
+        <label>
+          {t("gorev")}
+          <select className="girdi" value={uye.gorev} onChange={(x) => ben && ekipGuncelle(ben, plan.id, uye.kisiId, { gorev: x.target.value })}>
+            {ekipGorevListesi(uye.gorev).map((x) => (
+              <option key={x} value={x}>
+                {ekipGorevAdi(x)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="form-alt">
+          <button
+            type="button"
+            className="dugme dugme-ikincil"
+            data-ekip-cikar
+            onClick={() => {
+              if (ben) ekipCikar(ben, plan.id, uye.kisiId);
+              kapat();
+            }}
+          >
+            <X size={15} /> {t("cikar")}
+          </button>
+        </div>
+      </div>
+    </Pencere>
   );
 }
 

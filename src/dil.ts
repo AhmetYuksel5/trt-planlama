@@ -725,6 +725,7 @@ const M = {
   oneriGirildigiHal: m("Girildiği haliyle", "كما أُدخل", "As logged"),
   elleGirilen: m("Elle girilen", "أُدخل يدويا", "Logged by hand"),
   eksikAlan: m("Eksik: {alanlar}", "ناقص: {alanlar}", "Missing: {alanlar}"),
+  digerAyrintilar: m("Diğer ayrıntılar", "تفاصيل أخرى", "More details"),
   suzgecDugmesi: m("Süzgeç", "تصفية", "Filter"),
   suzgecKaldir: m("Süzgeci kaldır", "إزالة التصفية", "Remove filter"),
   nOneriGoster: m("{n} öneriyi göster", "عرض {n} مقترحات", "Show {n} proposals"),

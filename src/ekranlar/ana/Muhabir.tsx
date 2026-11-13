@@ -137,55 +137,62 @@ export function MuhabirOnerilerim({
         </a>
       </nav>
       {!arsiv && <AnildigimNotlar ben={ben} />}
-      {!arsiv && bende.length + siram.length + plandaki.length + ozel.length > 0 && (
-        <div data-senin-siran>
-          <Kart baslik={t("seninSiran")}>
-            <ul className="liste">
-              {bende.map((o) => (
-                <OneriSatiri
-                  key={o.id}
-                  o={o}
-                  not={o.durum === "duzeltme" ? o.duzeltmeNotu : undefined}
-                />
-              ))}
-              {siram.map((p) => (
-                <PaketSatiri key={p.id} ben={ben} paketId={p.id} />
-              ))}
-              {plandaki.map((o) => (
-                <li key={o.id} data-plandaki={o.id}>
-                  <div className="ad">
-                    <a href={`#/oneriler/${o.id}`}>
-                      <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
-                    </a>
-                    <small>
-                      {t("muPlanda", { tarih: tarihYaz(planGunu(o), dil, "kisa") })}
-                      {paketler.some((p) => p.id === o.paketId || p.oneriId === o.id) && ` · ${t("muPkgOnayBekliyor")}`}
-                    </small>
-                  </div>
-                </li>
-              ))}
-              <OzelGorevSatirlari paketler={ozel} />
-            </ul>
-          </Kart>
-        </div>
-      )}
-      {bolumler.map((b) => {
-        const l = liste(b);
-        // Önerisiz paket (plana doğrudan girmiş) arşivde öneri gibi: kapanınca muhabirin hiçbir listesinde kalmıyordu.
-        const pk = arsiv ? onerisizPaketler.filter((p) => (b === "tamamlanan" ? p.durum === "tamamlandi" : p.durum === "iptal")) : [];
+      {/*
+        * Tek liste yüzeyi, grup başlıklı (mobil denetim M-40): her grup ayrı karttı,
+        * boş gruplar "öneri yok" kartı olarak çiziliyor, "Senin sıran" öbürlerinden
+        * ayrışmıyordu. Boş grup çizilmez; sırası muhabirde olanın sayısı dolu.
+        */}
+      {(() => {
+        const sira = arsiv ? 0 : bende.length + siram.length + plandaki.length + ozel.length;
+        const gruplar = bolumler
+          .map((b) => ({ b, l: liste(b), pk: arsiv ? onerisizPaketler.filter((p) => (b === "tamamlanan" ? p.durum === "tamamlandi" : p.durum === "iptal")) : [] }))
+          .filter((g) => g.l.length + g.pk.length > 0);
+        if (!sira && !gruplar.length)
+          return (
+            <Kart>
+              <Bos kucuk metin={t("oneriYok")} />
+            </Kart>
+          );
         return (
-          <div key={b} data-muhabir-bolumu={b}>
-            <Kart baslik={t(BOLUM_ADI[b])} ek={String(l.length + pk.length)}>
-              {l.length + pk.length === 0 ? (
-                <Bos kucuk metin={t("oneriYok")} />
-              ) : (
+          <Kart className="muhabir-gruplari">
+            {sira > 0 && (
+              <section data-senin-siran>
+                <h2 className="grup-basligi">
+                  {t("seninSiran")} <span className="sayi-rozet">{sira}</span>
+                </h2>
+                <ul className="liste">
+                  {bende.map((o) => (
+                    <OneriSatiri key={o.id} o={o} not={o.durum === "duzeltme" ? o.duzeltmeNotu : undefined} />
+                  ))}
+                  {siram.map((p) => (
+                    <PaketSatiri key={p.id} ben={ben} paketId={p.id} />
+                  ))}
+                  {plandaki.map((o) => (
+                    <li key={o.id} data-plandaki={o.id}>
+                      <div className="ad">
+                        <a href={`#/oneriler/${o.id}`}>
+                          <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
+                        </a>
+                        <small>
+                          {t("muPlanda", { tarih: tarihYaz(planGunu(o), dil, "kisa") })}
+                          {paketler.some((p) => p.id === o.paketId || p.oneriId === o.id) && ` · ${t("muPkgOnayBekliyor")}`}
+                        </small>
+                      </div>
+                    </li>
+                  ))}
+                  <OzelGorevSatirlari paketler={ozel} />
+                </ul>
+              </section>
+            )}
+            {gruplar.map(({ b, l, pk }) => (
+              // Önerisiz paket (plana doğrudan girmiş) arşivde öneri gibi: kapanınca muhabirin hiçbir listesinde kalmıyordu.
+              <section key={b} data-muhabir-bolumu={b}>
+                <h2 className="grup-basligi">
+                  {t(BOLUM_ADI[b])} <span className="grup-sayi">{l.length + pk.length}</span>
+                </h2>
                 <ul className="liste">
                   {l.map((o) => (
-                    <OneriSatiri
-                      key={o.id}
-                      o={o}
-                      not={b === "kabulEdilmeyen" ? o.gerekce : undefined}
-                    />
+                    <OneriSatiri key={o.id} o={o} not={b === "kabulEdilmeyen" ? o.gerekce : undefined} />
                   ))}
                   {pk.map((p) => (
                     <li key={p.id} data-onerisiz-paket={p.id}>
@@ -202,11 +209,11 @@ export function MuhabirOnerilerim({
                     </li>
                   ))}
                 </ul>
-              )}
-            </Kart>
-          </div>
+              </section>
+            ))}
+          </Kart>
         );
-      })}
+      })()}
     </>
   );
 }

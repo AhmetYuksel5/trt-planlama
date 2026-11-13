@@ -1,6 +1,7 @@
 import { SaatGirdisi, TarihGirdisi, TarihSaatGirdisi } from "../../bilesenler/TarihSaat";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTelefon } from "../takvim/ortak";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
@@ -41,6 +42,34 @@ import { yapabilir } from "../../yetki";
  * her arayüz dilinde sağdan sola ve örnekleri Arapça; yazılan metin
  * denetlenmiyor, Latin harfli özel isim serbest.
  */
+
+/*
+ * Telefonda satır içi formlar (mobil denetim M-10): gelişme ve PKG formu 10–12
+ * alanlıydı, asıl alan dördüncü sıradaydı, Kaydet ~950 piksel aşağıdaydı.
+ * Telefonda asıl alanlar önde, isteğe bağlılar bu katlı bölümde; masaüstünde
+ * katlanmaz, alanlar yerinde. Doldurulmuş isteğe bağlı alan varsa açık gelir:
+ * düzenlenen kayıtta bilgi gizli kalmasın.
+ */
+export function FormAyrintilari({ telefon, acik, children }: { telefon: boolean; acik: boolean; children: ReactNode }) {
+  const { t } = useDil();
+  if (!telefon) return <>{children}</>;
+  return (
+    <details className="form-ayrintilari" open={acik} data-form-ayrintilari>
+      <summary>{t("digerAyrintilar")}</summary>
+      <div className="form">{children}</div>
+    </details>
+  );
+}
+
+/* Telefonda açılan form ekrana kayar: başlık kartının altında açılıp görünmeden kalıyordu. Pencerede gerek yok. */
+function useFormaKay(telefon: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const e = ref.current;
+    if (telefon && e && !e.closest("dialog")) e.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [telefon]);
+  return ref;
+}
 
 export function FormAlt({ kapat, kaydet, devre = false, kaydetMetni }: { kapat: () => void; kaydet: () => void; devre?: boolean; kaydetMetni?: string }) {
   const { t } = useDil();
@@ -138,6 +167,8 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
   });
   const program = f.schedule ? f.program.map((x) => ({ saat: x.saat, olay: x.olay.trim() })).filter((x) => x.olay) : [];
   const programDegis = (i: number, alan: "saat" | "olay", deger: string) => setF((x) => ({ ...x, program: x.program.map((y, j) => (j === i ? { ...y, [alan]: deger } : y)) }));
+  const telefon = useTelefon();
+  const ref = useFormaKay(telefon);
   const kaydet = () => {
     if (!ben || !f.metin.trim()) return;
     gelismeKaydet(ben, {
@@ -157,38 +188,62 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     }, sonra);
     kapat();
   };
+  const yerAlani = (
+    <label>
+      {t("yer")}
+      <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
+    </label>
+  );
+  const kaynakAlanlari = (
+    <>
+      <label>
+        {t("kaynakTuru")}
+        <select value={f.kaynakTuru} onChange={(e) => setF({ ...f, kaynakTuru: e.target.value as KaynakTuru })}>
+          {KAYNAK_TURLERI.map((k) => (
+            <option key={k} value={k}>
+              {t(KAYNAK_ADI[k])}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        {t("kaynakAdi")}
+        <input {...icerikAlani} value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
+      </label>
+    </>
+  );
+  const metinAlani = (
+    <>
+      <label>
+        {t("gelismeMetni")}
+        <textarea {...icerikAlani} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} data-gelisme-metni />
+      </label>
+      <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
+    </>
+  );
   return (
-    <div className="form form-kutu">
+    <div className="form form-kutu" ref={ref}>
       {!mevcut && planBaslikId && (
         <div className="form-ust-uc">
           <OneridenAl plan={plan} planBaslikId={planBaslikId} eklendi={kapat} />
         </div>
       )}
-      <div className="satir">
-        <label>
-          {t("yer")}
-          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
-        </label>
-        <label>
-          {t("kaynakTuru")}
-          <select value={f.kaynakTuru} onChange={(e) => setF({ ...f, kaynakTuru: e.target.value as KaynakTuru })}>
-            {KAYNAK_TURLERI.map((k) => (
-              <option key={k} value={k}>
-                {t(KAYNAK_ADI[k])}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t("kaynakAdi")}
-          <input {...icerikAlani} value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
-        </label>
-      </div>
-      <label>
-        {t("gelismeMetni")}
-        <textarea {...icerikAlani} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} />
-      </label>
-      <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
+      {telefon ? (
+        <>
+          {metinAlani}
+          {yerAlani}
+        </>
+      ) : (
+        <>
+          <div className="satir">
+            {yerAlani}
+            {kaynakAlanlari}
+          </div>
+          {metinAlani}
+        </>
+      )}
+      <FormAyrintilari telefon={telefon} acik={!!(f.kaynakAdi || f.onerenId || f.muhabirler.length || f.teams.length || f.schedule)}>
+        {telefon && <div className="satir">{kaynakAlanlari}</div>}
       <div className="satir">
         <label>
           {t("tarih")}
@@ -280,6 +335,7 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
           </button>
         </div>
       )}
+      </FormAyrintilari>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
     </div>
   );
@@ -460,6 +516,8 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
     setF({ ...f, muhabirId: id, sehir: k?.sehir ?? f.sehir, muhabirTbc: id ? false : f.muhabirTbc });
   };
   const yer = f.diger ? f.yer.trim() : "";
+  const telefon = useTelefon();
+  const ref = useFormaKay(telefon);
   const kaydet = () => {
     if (!ben || !f.baslik.trim() || (f.diger && !yer)) return;
     const id = paketKaydet(ben, {
@@ -484,14 +542,8 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
     if (id) bildir(t(mevcut ? "bKaydedildi" : "bPaketEklendi"));
     kapat();
   };
-  return (
-    <div className="form form-kutu">
-      <label>
-        {t("paketBasligi")}
-        <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} />
-      </label>
-      <div className="satir">
-        {/* TBC muhabir sütununda, seçimin altında: satırın öbür alanlarını kaydırmasın. */}
+  // TBC muhabir sütununda, seçimin altında: satırın öbür alanlarını kaydırmasın.
+  const muhabirAlani = (
         <div className="muhabir-sutunu">
           <label>
             {t("muhabir")}
@@ -499,6 +551,9 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
           </label>
           {!f.muhabirId && <TbcKutusu secili={f.muhabirTbc} degistir={(x) => setF({ ...f, muhabirTbc: x })} />}
         </div>
+  );
+  const ozellikAlanlari = (
+    <>
         <label>
           {t("sehirUlke")}
           <select value={f.diger ? DIGER : f.sehir} onChange={(e) => setF(e.target.value === DIGER ? { ...f, diger: true } : { ...f, diger: false, sehir: e.target.value as Sehir })} data-paket-sehir>
@@ -530,7 +585,24 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
           {t("haberTuru")}
           <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
         </label>
-      </div>
+    </>
+  );
+  return (
+    <div className="form form-kutu" ref={ref}>
+      <label>
+        {t("paketBasligi")}
+        <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} data-paket-strap />
+      </label>
+      {telefon ? (
+        muhabirAlani
+      ) : (
+        <div className="satir">
+          {muhabirAlani}
+          {ozellikAlanlari}
+        </div>
+      )}
+      <FormAyrintilari telefon={telefon} acik={!!(f.diger || f.aciklama || f.not || f.teslim || f.yayin || f.slug || f.sahaGerekli || (f.gelismeId && !gelismeId))}>
+        {telefon && <div className="satir">{ozellikAlanlari}</div>}
       <label>
         {t("kisaAciklama")}
         <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
@@ -570,6 +642,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
         <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
         {t("sahaGerekli")}
       </label>
+      </FormAyrintilari>
       <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.baslik.trim() || (f.diger && !yer)} />
     </div>
   );

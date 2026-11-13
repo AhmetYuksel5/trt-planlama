@@ -817,6 +817,10 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
 
 /* --- Liste satırları --- */
 
+/* Muhabirin Önerilerim'i: tek kart, grup başlıklı (M-40). */
+.muhabir-gruplari { display: grid; gap: var(--ara-4); }
+.grup-basligi { display: flex; align-items: center; gap: var(--ara-2); margin: 0 0 var(--ara-2); font-size: var(--punto-kucuk); font-weight: 600; color: var(--sonuk); text-transform: none; }
+.grup-sayi { color: var(--sonuk); font-weight: 500; font-variant-numeric: tabular-nums; }
 .liste > li { display: flex; align-items: center; gap: var(--ara-3); padding: var(--ara-2) 0; border-top: 1px solid var(--cizgi); min-width: 0; }
 .liste > li:first-child { border-top: 0; padding-top: 0; }
 .liste .ad { flex: 1; min-width: 0; }
@@ -1090,6 +1094,14 @@ a.rozet-plan { text-decoration: none; }
 .secim-satiri { display: flex; flex-wrap: wrap; gap: var(--ara-2) var(--ara-4); }
 .form .ipucu { font-weight: 400; color: var(--silik); font-size: var(--punto-mini); }
 .form-kutu { background: var(--zemin); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-4); }
+/* Telefonda satır içi formun isteğe bağlı alanları katlı (M-10); Kaydet satırı yapışık, sayfada alt çubuğun üstünde. */
+.form-ayrintilari > summary { min-height: 48px; display: flex; align-items: center; gap: var(--ara-2); cursor: pointer; font-weight: 600; color: var(--sonuk); border-block-start: 1px solid var(--cizgi); }
+.form-ayrintilari > .form { padding-block-start: var(--ara-2); }
+@media (max-width: 760px) {
+  .form-kutu { scroll-margin-block-start: calc(var(--ust-yukseklik) + var(--ara-2)); }
+  .form-kutu > .form-alt { position: sticky; bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom)); z-index: 5; background: inherit; margin-inline: calc(-1 * var(--ara-4)); margin-block-end: calc(-1 * var(--ara-4)); padding: var(--ara-2) var(--ara-4); border-block-start: 1px solid var(--cizgi); border-end-start-radius: var(--yaricap); border-end-end-radius: var(--yaricap); }
+  dialog .form-kutu > .form-alt { bottom: 0; }
+}
 .form-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; flex-wrap: wrap; }
 
 /* Otomatik çağrının sıradaki gönderimi: konu solda (içerik sağa yaslı), "Bunu gönderme" kenarda; dar ekranda alta iner. */
@@ -2622,6 +2634,8 @@ tr.soluk > td { opacity: .5; }
 /* Alt birim üstünün altında girintili (--derinlik satırın kendisinde, yapi.ts → birimAgaci). */
 .org-birimler { grid-template-columns: minmax(0, 1fr); }
 .org-birim, .org-agac > details, .secim-listesi .secim { margin-inline-start: calc(var(--derinlik, 0) * var(--ara-5)); }
+/* Telefonda Next Day ekibi salt okunur çip; düzenleyende dokununca pencere (M-37). */
+button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit; cursor: pointer; }
 .ekip-gorevleri { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
 .ekip-gorevleri > li { display: flex; align-items: center; gap: var(--ara-2); padding: var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
 .ekip-gorevleri > li.soluk { opacity: .6; }
@@ -3751,3 +3765,7 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .toplu-wa-liste li { display: flex; align-items: center; gap: var(--ara-2); min-block-size: 44px; padding-inline: var(--ara-2); border-radius: var(--yaricap); }
 .toplu-wa-liste li bdi { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toplu-wa-liste li.basildi { background: var(--iyi-sis); }
+/* Yeni tasarımda plan adı meta metni, çerçeveli kutu değil (mobil denetim M-15): öneri kartının en koyu öğesi içerik değil plan adıydı; kimlik "planlar renkli kutu taşımaz". */
+html.yeni-tasarim .rozet-plan { background: none; border: 0; padding: 0; min-height: 0; color: var(--sonuk); font-weight: 600; }
+html.yeni-tasarim a.rozet-plan { text-decoration: underline; text-decoration-color: var(--cizgi); text-underline-offset: 3px; }
+html.yeni-tasarim .plan-etiketleri > .rozet-plan + .rozet-plan::before { content: "· "; color: var(--sonuk); }

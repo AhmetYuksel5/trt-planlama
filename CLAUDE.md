@@ -2959,6 +2959,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kartında sıfır sayaç çizilmez (sayacın adı ipucunda), telefonda sırala ve
   çıkar ⋯ menüsünde (`.telefon-satiri`); Weekly listesinin anlatım kartları
   kalktı (ekranda kullanım anlatımı yok). Test `testler/mobil-sayfa.cjs`.
+  İkinci parti: Next Day'in gelişme ve PKG formu telefonda asıl alanla başlar
+  (gelişmede metin ve yer, PKG'de Strap ve muhabir), öbürleri "Diğer
+  ayrıntılar"da katlı (`Formlar.tsx → FormAyrintilari`; doldurulmuş isteğe bağlı
+  alan varsa açık, masaüstünde katlanmaz), form açılınca ekrana kayar
+  (`useFormaKay`, pencerede değil), `.form-kutu`'nun İptal/Kaydet satırı
+  telefonda yapışık (sayfada alt çubuğun üstünde, pencerede dipte). Ekip
+  telefonda salt okunur çip (ad, vardiya); düzenleyende dokununca pencere
+  (`Bolumler.tsx → EkipUyesiPenceresi`: plandaki ad, vardiya, görev, çıkar;
+  her değişiklik hemen kaydedilir). Yeni tasarımda plan adı (`.rozet-plan`)
+  çerçevesiz meta metni (kimlik: planlar renkli kutu taşımaz). Muhabirin
+  Önerilerim'i tek kart, grup başlıklı (`.muhabir-gruplari`, `.grup-basligi`):
+  "Senin sıran" ilk grup, sayısı lacivert dolu; boş grup çizilmez, hepsi boşsa
+  tek "öneri yok". Test `testler/mobil-form.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
