@@ -24,7 +24,7 @@ import { planCiftleriniBirlestir } from "./planCiftleri";
 import { kisiAr, satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
-import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
+import { oneriBekleyenGorevPaketi, oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
@@ -195,6 +195,7 @@ import {
   masayaSorabilir,
   masaYanitlar,
   oneriGorevlendirebilir,
+  oneriDogrudanGorevlendirebilir,
   masaYayinKarariVerebilir,
   paketinMasasi,
   programDuzenler,
@@ -545,10 +546,13 @@ export const oneriPlanaEkle = (
   const o = oneriBul(d, oneriId);
   const plan = planBul(d, g.planId);
   if (!o || !plan || !yapabilir(ben, "oneriDegerlendir") || !planIcerikDuzenler(ben, plan)) return false;
+  // Doğrudan görevlendirilmiş öneri "plana eklendi"de bekliyor (plansız kabul); plana girince görev paketi o başlığa yerleşir.
+  const gorevli = oneriBekleyenGorevPaketi(d, o);
+  if (gorevli && oneriPlanKaydi(d, o)) return false;
   if (!plandaKarara(o)) return false;
   // Haftalık gündemdeki öneri Next Day'e ayrıca girmez: kesinleşince haftalıktan aktarılıyor, iki kez düşerdi.
   // Kesinleşmiş haftanın kalemi yalnız kayıt: Next Day'den çıkarılan öneri yeniden eklenebiliyor.
-  if (o.durum === "planaEklendi" || d.haftalik.some((h) => h.durum !== "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id))) return false;
+  if ((o.durum === "planaEklendi" && !gorevli) || d.haftalik.some((h) => h.durum !== "kesinlesti" && h.kalemler.some((k) => k.oneriId === o.id))) return false;
   // Talimatın ve muhabir dışı kaynağın muhabiri yok; Planlama burada atıyor. Önerinin kendisi değişmiyor.
   const muhabirId = o.muhabirId ?? (g.muhabirId || undefined);
 
@@ -597,7 +601,18 @@ export const oneriPlanaEkle = (
   d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
 
   let paketId: string | undefined;
-  if (paketli) {
+  if (gorevli) {
+    // Görev paketi yeni PKG açılmadan planın başlığına onaylı olarak girer; stoktan çıkar (planın paketi).
+    paketId = gorevli.id;
+    d = {
+      ...d,
+      paketler: d.paketler.map((x) => {
+        if (x.id !== gorevli.id) return x;
+        const { stok: _stok, ...y } = x;
+        return { ...y, planId: plan.id, planBaslikId: pbId, guncelleme: simdi() };
+      }),
+    };
+  } else if (paketli) {
     const muhabir = kisiBul(d, muhabirId);
     let kod: string;
     [kod, d] = yeniKod(d);
@@ -657,7 +672,7 @@ export const oneriPlanaEkle = (
       planId: plan.id,
       // Talimat plana girince talimatı veren yönetici haberdar oluyor.
       // Paketsiz giren muhabir haberi: muhabire "takip olarak plana eklendi" (paket beklenmiyor) bildirimi.
-      veri: { ...(o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih }), ...(oneriPaketsizGirer(o, { paketli, canli: canliAc, muhabirId }) && { takip: "1" }) },
+      veri: { ...(o.talimatVeren ? { tarih: plan.tarih, kime: o.talimatVeren } : { tarih: plan.tarih }), ...(oneriPaketsizGirer(o, { paketli: paketli || !!gorevli, canli: canliAc, muhabirId }) && { takip: "1" }) },
     }),
   );
   return true;
@@ -3049,6 +3064,28 @@ export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string): str
   let d = getir();
   const o = oneriBul(d, oneriId);
   const s = kabulSoru(d, oneriId);
+  if (o && !s && o.muhabirId && oneriDogrudanGorevlendirebilir(ben, o, d) && gorevTarihiUygun(ben, tarih)) {
+    /*
+     * Doğrudan görev (kullanıcı: plana eklemeden görevlendirilsin): plansız
+     * onaylı görev paketi, kolu önerinin, stokta "üretimde". Öneri plansız
+     * kabul (`oneriPlansizKabul`); sonra plana eklenince bu paket o başlığa
+     * onaylı PKG olarak yerleşir (`oneriPlanaEkle`).
+     */
+    const z = simdi();
+    const k = gorevPaketi(d, ben, { muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, aciklama: o.gelisme, bicim: o.bicim && o.bicim !== TAKIP_BICIMI ? o.bicim : undefined, tarih }, {
+      durum: "onaylandi",
+      gorev: { veren: ben.id, zaman: z },
+      gorevZamani: z,
+      oneriId,
+      tur: o.tur,
+      sahaGerekli: o.sahaGerekli,
+    });
+    if (!k) return null;
+    const [p, yeni] = k;
+    d = { ...yeni, oneriler: yeni.oneriler.map((x) => (x.id === oneriId ? { ...x, durum: "planaEklendi" as const, paketId: p.id } : x)) };
+    kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, oneriId, veri: { kime: o.muhabirId, muhabir: o.muhabirId, tarih } }));
+    return p.id;
+  }
   if (!o || !s || !o.muhabirId || !oneriGorevlendirebilir(ben, o, d) || !gorevTarihiUygun(ben, tarih)) return null;
   const z = simdi();
   const k = gorevPaketi(d, ben, { muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, aciklama: o.gelisme, bicim: o.bicim && o.bicim !== TAKIP_BICIMI ? o.bicim : undefined, tarih }, {

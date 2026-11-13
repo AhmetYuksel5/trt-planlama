@@ -25,6 +25,7 @@ import type { Anahtar } from "./dil";
 import { GERCEK } from "./kip";
 import { bugun } from "./tarih";
 import { SORULABILIR_DURUM, acikSoru, kabulSoru, oneriGorevPaketi, oneriSorulari, sonSoru } from "./masaSorusu";
+import { acikGundemde, oneriPlanKaydi } from "./oneriPlanlari";
 import { muhasebeOkur } from "./depo/fark";
 import {
   BIRIMLER,
@@ -798,6 +799,25 @@ export const masaOneriyiDuzenler = (ben: Kisi, o: Oneri, d: Durum): boolean => {
 /** Masanın aldığı öneride muhabiri Planlama görevlendirir (ileri tarihe de). */
 export const oneriGorevlendirebilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
   ileriGorevVerebilir(ben) && !!o.muhabirId && SORULABILIR_DURUM.includes(o.durum) && !!kabulSoru(d, o.id) && !oneriGorevPaketi(d, o.id);
+
+/*
+ * Muhabirin önerisinden plana eklemeden doğrudan görev (kullanıcı): karar
+ * aşamasında, masaya sorulmamış, planda ve açık haftanın gündeminde olmayan
+ * öneri. Canlı ve takip paket değil. Paket plansız onaylı görev paketi;
+ * öneri plana eklenince o paket onaylı PKG olarak plana girer.
+ */
+export const oneriDogrudanGorevlendirebilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
+  ileriGorevVerebilir(ben) &&
+  yapabilir(ben!, "oneriDegerlendir") &&
+  !!o.muhabirId &&
+  SORULABILIR_DURUM.includes(o.durum) &&
+  o.bicim !== "canli" &&
+  o.bicim !== TAKIP_BICIMI &&
+  !oneriGorevPaketi(d, o.id) &&
+  !acikSoru(d, o.id) &&
+  !kabulSoru(d, o.id) &&
+  !oneriPlanKaydi(d, o) &&
+  !acikGundemde(d, o);
 
 /** Masaya sorulmuş öneri, öneriler sayfası menüsünde olmayan masaya da açık. */
 export const masaOneriyiGorur = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>

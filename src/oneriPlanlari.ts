@@ -402,3 +402,12 @@ export const oneriGeriHedefleri = (d: Durum, o: Oneri): OneriGeriHedefi[] => {
   if (o.durum === "takip" || o.durum === "duzeltme") return ["degerlendiriliyor"];
   return [];
 };
+
+/*
+ * Öneriden doğrudan görevlendirilmiş paket (kullanıcı: plana eklemeden
+ * muhabire görev; sonra plana eklenince onaylı paket olarak girsin): plansız,
+ * görevli, masanın takibinde değil. Plana eklenince aynı paket o başlığa
+ * yerleşir (`oneriPlanaEkle`), yeni PKG açılmaz.
+ */
+export const oneriBekleyenGorevPaketi = (d: Pick<Durum, "paketler">, o: Oneri): Paket | undefined =>
+  d.paketler.find((p) => p.oneriId === o.id && !p.planId && !!p.gorev && !p.masaTakibi && p.durum !== "iptal");

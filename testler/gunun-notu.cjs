@@ -12,6 +12,15 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl1"); });
   await git("#/");
+  // Günün notu varsayılan düzende yok (kullanıcı); kişi "Sayfayı düzenle"den ekliyor, burada kaydına yazılıyor.
+  ok((await p.locator("[data-gun-notu]").count()) === 0 && (await p.getByText(/Günün notu/).count()) === 0, "varsayılan ana sayfada Günün notu yok");
+  await p.evaluate(() => {
+    const x = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    x.anaSayfa = { ...(x.anaSayfa ?? {}), "pl1:planlama": ["plGunNotu", "plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"] };
+    localStorage.setItem("trt-planlama-v24", JSON.stringify(x));
+    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+  });
+  await git("#/");
   ok((await p.locator(".gun-notu, [data-gun-notu]").count()) >= 0 && (await p.getByText(/Günün notu/).count()) >= 1, "Planlama ana sayfasında Günün notu kartı");
 
   const sayi = async (t) => ((await p.locator(`[data-gun-notu="${t}"]`).count()) ? Number(await p.locator(`[data-gun-notu="${t}"] .rozet, [data-gun-notu="${t}"] [class*=rozet]`).last().innerText()) : 0);

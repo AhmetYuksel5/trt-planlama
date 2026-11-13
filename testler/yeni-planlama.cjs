@@ -38,7 +38,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
 
   // Kutular ve panel.
   await gir("pl2", "#/");
-  ok((await p.locator("[data-py-kutu]").count()) >= 12, "kutular");
+  ok((await p.locator("[data-py-kutu]").count()) >= 11 && (await p.locator('[data-py-kutu="gunNotu"]').count()) === 0, "kutular");
   ok((await p.locator('a[data-py-kutu="nextday"]').getAttribute("href")).startsWith("#/nextday"), "Next Day kutusu planın sayfasına götürüyor");
   await p.click('[data-py-kutu="oneri"]');
   await p.waitForTimeout(400);
@@ -65,7 +65,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await gir("yo3", "#/", false);
   const eskiMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
   await gir("yo3", "#/");
-  ok((await p.locator('[data-birim-menusu="planlama"]').count()) === 1 && (await p.locator("[data-py-kutu]").count()) >= 12, "tam yönetici yeni menü ve kutulu ana sayfa");
+  ok((await p.locator('[data-birim-menusu="planlama"]').count()) === 1 && (await p.locator("[data-py-kutu]").count()) >= 11 && (await p.locator('[data-py-kutu="gunNotu"]').count()) === 0, "tam yönetici yeni menü ve kutulu ana sayfa");
   const yeniMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
   const eksik = eskiMenu.filter((h) => !yeniMenu.includes(h));
   ok(eksik.length === 0, `tam yöneticinin hiçbir sayfası menüden düşmedi (${eksik.join(",")})`);

@@ -2691,6 +2691,8 @@ const M = {
   tiSec: m("Seç", "تحديد", "Select"),
   kosulSon: m("Koşulun son günü", "آخر موعد للشرط", "Condition deadline"),
   kosulSonKisa: m("son gün {gun}", "آخر موعد {gun}", "due {gun}"),
+  peGorevliPaket: m("Görevli paket onaylı PKG olarak girer", "تدخل الحزمة المكلّف بها كـ PKG معتمد", "Assigned package goes in as approved PKG"),
+  ogDogrudanGorevlendir: m("Muhabiri görevlendir", "تكليف المراسل", "Assign the reporter"),
   oyBaslik: m("Önerinin yolu", "مسار المقترح", "Proposal path"),
   oyGeldi: m("Geldi", "وصل", "Received"),
   oyDegerlendirme: m("Değerlendirme", "التقييم", "Review"),

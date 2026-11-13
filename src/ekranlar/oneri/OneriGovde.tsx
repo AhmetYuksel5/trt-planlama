@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, Ban, ChevronDown, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
+import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
@@ -26,7 +26,7 @@ import {
   takipSatiriEkle,
 } from "../../eylemler";
 import { MASA_HAREKETLERI } from "../../masaSorusu";
-import { acikGundemde, baglanabilirKayitlar, esAsili, esOneriler, oneriArsivde, oneriGeriHedefleri, oneriYeri, type OneriGeriHedefi } from "../../oneriPlanlari";
+import { oneriBekleyenGorevPaketi, oneriPlanKaydi, acikGundemde, baglanabilirKayitlar, esAsili, esOneriler, oneriArsivde, oneriGeriHedefleri, oneriYeri, type OneriGeriHedefi } from "../../oneriPlanlari";
 import { bugun, yerelGun } from "../../tarih";
 import { temizle } from "../../temizlik";
 import { KisiIletisim } from "../../bilesenler/KisiCipi";
@@ -39,6 +39,7 @@ import {
   kisitliKisi,
   masayaSorabilir,
   oneriBirlestirebilir,
+  oneriDogrudanGorevlendirebilir,
   oneriDuzenleyebilir,
   oneriDuzeltmeyeGider,
   oneriGeriCekebilir,
@@ -51,7 +52,7 @@ import {
 import { git } from "../../yol";
 import { KisaOneriFormu, EpostaKaynagi } from "./Eposta";
 import { GeriBildirimBolumu } from "./GeriBildirim";
-import { MasaBolumu, MasayaSorFormu } from "./MasaSorusu";
+import { GorevlendirFormu, MasaBolumu, MasayaSorFormu } from "./MasaSorusu";
 import { OneriIslemeMetinleri } from "./OneriFormu";
 import {
   DuzeltmeFormu,
@@ -80,7 +81,7 @@ import { OneriYazismasi, TeklifNotu } from "./Yazisma";
  * üstünde açılıyor.
  */
 
-type Mod = "ekle" | "ret" | "duzelt" | "duzenle" | "masa" | "geriAl" | "paket" | null;
+type Mod = "ekle" | "ret" | "duzelt" | "duzenle" | "masa" | "geriAl" | "paket" | "gorev" | null;
 
 /* Katlanır bölüm; açık başlaması ilk çizimde belli, sonra kişinin elinde. */
 function Bolum({ ad, baslik, ek, acik, children }: { ad: string; baslik: ReactNode; ek?: ReactNode; acik: boolean; children: ReactNode }) {
@@ -182,7 +183,9 @@ export function OneriAyrinti({
   // Açık haftanın gündemindeki önerinin kararı toplantıda: ret, düzeltme ve takip önce "Gündemden çıkar" ister.
   const gundemde = acikGundemde(v, o);
   const degerlendirir = yapabilir(ben, "oneriDegerlendir") && !["planaEklendi", "teklif", "geriCekildi", "reddedildi"].includes(o.durum) && !yer;
-  const ekler = degerlendirir && !muhabirde && (!!ekleFormu || !!o.hedefTarih || (!!haftaPlani && !haftaPlani.kalemler.some((k) => k.oneriId === o.id)));
+  // Doğrudan görevlendirilmiş öneri ("plana eklendi" ama planda kaydı yok) yine plana eklenir; görev paketi onaylı PKG olarak girer.
+  const gorevli = yapabilir(ben, "oneriDegerlendir") && !!oneriBekleyenGorevPaketi(v, o) && !oneriPlanKaydi(v, o);
+  const ekler = (degerlendirir && !muhabirde && (!!ekleFormu || !!o.hedefTarih || (!!haftaPlani && !haftaPlani.kalemler.some((k) => k.oneriId === o.id)))) || (gorevli && (!!ekleFormu || !!o.hedefTarih));
   const reddeder = degerlendirir && !gundemde && !talimat;
   const duzeltir = degerlendirir && !gundemde && oneriDuzeltmeyeGider(ben, o);
   const takibeAlir = ertelenebilir && degerlendirir && !gundemde && !talimat && !muhabirde && !!o.muhabirId && o.durum !== "takip";
@@ -218,6 +221,7 @@ export function OneriAyrinti({
     </button>
   );
   const menu = [
+    oneriDogrudanGorevlendirebilir(ben, o, v) && madde("gorev", <ClipboardList size={16} />, t("ogDogrudanGorevlendir"), () => setMod("gorev"), "data-oneri-dogrudan-gorev"),
     masayaSorabilir(ben, o, v) && madde("masa", <Share2 size={16} />, t("msMasayaIlet"), () => setMod("masa"), "data-masaya-sor-ac"),
     teklifKarariVerebilir(ben, o) && madde("tdeg", <Clock size={16} />, t("degerlendirmeyeAl"), () => oneriDurum(ben, o.id, "degerlendiriliyor"), "data-teklif-degerlendir"),
     teklifKarariVerebilir(ben, o) && madde("ttkp", <Lightbulb size={16} />, t("takibeAl"), () => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi")), "data-teklif-takip"),
@@ -274,6 +278,10 @@ export function OneriAyrinti({
       <RetFormu ben={ben} oneri={o} kapat={formKapat} />
     ) : mod === "duzelt" ? (
       <DuzeltmeFormu ben={ben} oneri={o} kapat={formKapat} />
+    ) : mod === "gorev" ? (
+      <div className="form-kutu" data-oneri-gorev-formu>
+        <GorevlendirFormu ben={ben} oneri={o} kapat={formKapat} />
+      </div>
     ) : mod === "masa" ? (
       <MasayaSorFormu ben={ben} oneri={o} kapat={formKapat} />
     ) : mod === "paket" ? (

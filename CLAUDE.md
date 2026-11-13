@@ -788,8 +788,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   için açılışta okunursa döngüde tanımsız kalır.
 - Günün notu (kullanıcı: sitenin işleyişinden öğrenip öneri yapan asistan
   istedi; ilk adım yapay zekasız, ücretsiz katman): Planlama ana sayfasının
-  ilk alanı (`plGunNotu`, `Planlama.tsx → GununNotu`; kayıtlı düzeni olan
-  "Sayfayı düzenle"den ekler). Kurallar `gununNotu.ts`, saklanmaz: günü bugün
+  alanı (`plGunNotu`, `Planlama.tsx → GununNotu`); varsayılan düzende ve yeni
+  tasarımın kutularında yok (kullanıcı), isteyen "Sayfayı düzenle"den ekler. Kurallar `gununNotu.ts`, saklanmaz: günü bugün
   ya da yarın olup karar verilmemiş öneri; bir günden (`CEVAPSIZ_SAAT`) uzun
   yanıt bekleyen öneri (öncekinde sayılan tekrar edilmez); çalışılan planda
   (yarınınki, yoksa bugününki) en az `DURGUN_GUN` gündür aynı gelişmelerle
@@ -2150,6 +2150,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriId`, öneri "plana eklendi", `oneriPlansizKabul`), kolu masanın,
     Strap önerinin; muhabire ve masaya tek `paketGorevVerildi`. Test
     `testler/masa-sorusu.cjs`.
+  - Doğrudan görev (kullanıcı: masaya sormadan da, plana eklemeden muhabire
+    görev; sonra plana eklenince onaylı paket olarak girsin): önerinin ⋯
+    menüsünde "Muhabiri görevlendir" (`data-oneri-dogrudan-gorev`, form
+    `MasaSorusu.tsx → GorevlendirFormu`, eylem yine `oneriGorevlendir`: masa
+    sorusu yoksa doğrudan yol). Yetki `yetki.ts →
+    oneriDogrudanGorevlendirebilir`: ileri tarihe görev verebilen (Planlama,
+    tam yönetici), karar aşamasındaki muhabir önerisi, masaya sorulmamış,
+    planda ve açık haftanın gündeminde değil, canlı ve takip değil. Paket
+    plansız onaylı görev paketi (stok, kolu önerinin), öneri "plana eklendi"
+    (plansız kabul). Plana eklenince (`oneriPlanaEkle`, `oneriPlanlari.ts →
+    oneriBekleyenGorevPaketi`) yeni PKG açılmaz: aynı paket başlığa onaylı
+    girer, stoktan çıkar; formda PKG sorusu yerine görevli paketin satırı
+    (`data-pe-gorevli`), öneri penceresinde "Plana ekle" o zamana dek durur.
+    Test `testler/dogrudan-gorev.cjs`.
   - Paket masanın takibine geçer (kullanıcı: masanın paketi Planlama'nın
     günlük ve haftalık planına girmiyor, masa yayınlıyor ve takip ediyor;
     `Paket.masaTakibi`, stok değil): Planlama'nın Stok'unda, Next Day "Hazır
@@ -2597,7 +2611,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Ana sayfa `ekranlar/yeni/PlanlamaAna.tsx`: kutular (başlık, büyük sayı,
       tek satır durum; yeri sabit, boşken sönük). Kısa karar kutuları
       (karar bekleyen öneriler, paket kararları [onay kuyruğu, şartlı, görev
-      talebi], birim görüşleri, görevlerim, anmalar, günün notu, muhabirler,
+      talebi], birim görüşleri, görevlerim, anmalar, muhabirler,
       hesap onayı) sağdan açılan pencerede (yeni tasarımda `Pencere` zaten
       sağdan), içinde var olan bileşenler; öneri kartına basınca önerinin
       penceresi üstüne açılır, kapatınca panele dönülür, geri tuşu paneli

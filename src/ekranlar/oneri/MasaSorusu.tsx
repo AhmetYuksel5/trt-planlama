@@ -160,7 +160,8 @@ function YanitFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
   );
 }
 
-function GorevlendirFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
+/** Öneriden görev: masanın aldığı öneride ve (öneri penceresinin ⋯'sinden) doğrudan; eylem ikisini ayırıyor. */
+export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat?: () => void }) {
   const { t } = useDil();
   const B = bugun();
   const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
@@ -170,7 +171,7 @@ function GorevlendirFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
       <button
         type="button"
         className="dugme"
-        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih) && bildir(t("gvVerildi"))}
+        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih) && (bildir(t("gvVerildi")), kapat?.())}
         data-oneri-gorevlendir
       >
         <ClipboardList size={15} /> {t("msGorevlendir")}

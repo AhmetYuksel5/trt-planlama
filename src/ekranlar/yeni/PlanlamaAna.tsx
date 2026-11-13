@@ -1,4 +1,4 @@
-import { AtSign, Building2, CalendarDays, CalendarRange, CheckCircle, ClipboardList, Lightbulb, Mail, Share2, Sparkles, Tv, Users, Calendar, type LucideIcon } from "lucide-react";
+import { AtSign, Building2, CalendarDays, CalendarRange, CheckCircle, ClipboardList, Lightbulb, Mail, Share2, Tv, Users, Calendar, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
@@ -65,7 +65,7 @@ export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
     { id: "birim", ad: "pyBirimGorusu", ikon: Share2, sayi: k.birimGorusu + k.birimYanitladi, alt: k.birimYanitladi ? t("pyYanitladi", { n: k.birimYanitladi }) : k.birimGorusu ? t("pyBekliyor", { n: k.birimGorusu }) : t("pyTemiz"), panel: "birim", vurgu: k.birimYanitladi > 0 },
     { id: "gorev", ad: "pyGorevlerim", ikon: ClipboardList, sayi: k.isler, alt: k.isler ? t("pyAcikIs") : t("pyTemiz"), panel: "gorev", vurgu: k.isler > 0, hep: true },
     { id: "anma", ad: "pyAnmalar", ikon: AtSign, sayi: k.anma, alt: k.anma ? t("pyGorulmedi") : t("pyTemiz"), panel: "anma", vurgu: k.anma > 0 },
-    { id: "gunNotu", ad: "gunNotu", ikon: Sparkles, sayi: k.gununNotu, alt: k.gununNotu ? t("pyDikkat") : t("pyTemiz"), panel: "gunNotu", vurgu: k.gununNotu > 0 },
+    // Günün notu kutusu kalktı (kullanıcı: ana sayfanın varsayılanlarında olmasın).
     { id: "muhabir", ad: "pyMuhabirler", ikon: Users, sayi: muh.length, alt: t("pySahadaIzinde", { s: sahada, i: izinde }), panel: "muhabir", hep: true },
     { id: "posta", ad: "mPosta", ikon: Mail, sayi: k.posta, alt: k.posta ? t("pyOkunmamis") : t("pyTemiz"), href: "#/posta", vurgu: k.posta > 0, hep: true },
     ...(k.hesapOnayi ? [{ id: "hesap", ad: "pyHesapOnayi" as Anahtar, ikon: Building2, sayi: k.hesapOnayi, alt: t("pyBekliyor", { n: k.hesapOnayi }), panel: "hesap" as const, vurgu: true }] : []),
