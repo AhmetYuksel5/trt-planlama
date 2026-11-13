@@ -1,4 +1,5 @@
 import { girisAdi, postaAdresi } from "../girisKodu";
+import { KisiDurumRozeti, MuhabirSimdi } from "../bilesenler/MuhabirSimdi";
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
@@ -9,7 +10,7 @@ import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac,
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
 import { tarihYaz, useDil, yaz, type Anahtar } from "../dil";
 import { profilGuncelle, type ProfilGirdisi, type YeniSehir } from "../eylemler";
-import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, KISI_DURUM_ADI, kisiAr, satir, sehirAdi, sehirUlkesi, ulkeAdi } from "../etiketler";
+import { BICIM_ACIKLAMA, BICIM_ADI, CALISMA_ADI, GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, kisiAr, satir, sehirAdi, sehirUlkesi, ulkeAdi } from "../etiketler";
 import { performans } from "../performans";
 import { bugun, yerelGun } from "../tarih";
 import { BICIMLER, CALISMA_BICIMLERI, ULKELER, kisiBul, sahaGorevi, useVeri, type Bicim, type BirimId, type Gorevlendirme, type Kisi, type Sehir, type Ulke } from "../veri";
@@ -186,7 +187,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                       )}
                       {pf && <td data-etiket={t("zamanindaTeslim")}>{yuzde(pf.zamaninda)}</td>}
                       <td data-etiket={t("durum")}>
-                        <Rozet ton={k.durum === "sahada" ? "vurgu" : k.durum === "izinli" ? "" : k.durum === "yolda" ? "uyari" : "iyi"}>{t(KISI_DURUM_ADI[k.durum])}</Rozet>
+                        <KisiDurumRozeti kisi={k} />
                       </td>
                     </tr>
                   );
@@ -225,7 +226,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                     </td>
                     <td data-etiket={t("konum")}>{sehirAdi(k.sehir)}</td>
                     <td data-etiket={t("durum")}>
-                      <Rozet ton={k.durum === "sahada" ? "vurgu" : k.durum === "izinli" ? "" : k.durum === "yolda" ? "uyari" : "iyi"}>{t(KISI_DURUM_ADI[k.durum])}</Rozet>
+                      <KisiDurumRozeti kisi={k} />
                     </td>
                     <td className="sonuk" data-etiket={t("diller")}>
                       <bdi>{k.diller.join(" · ").toUpperCase()}</bdi>
@@ -487,7 +488,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
             {birimAdi(kisi.birim)} · {gorevAdi(kisi.gorev)} · {sehirAdi(kisi.sehir)}
           </p>
           <p className="rozetler">
-            <Rozet ton={kisi.durum === "sahada" ? "vurgu" : kisi.durum === "yolda" ? "uyari" : kisi.durum === "izinli" ? "" : "iyi"}>{t(KISI_DURUM_ADI[kisi.durum])}</Rozet>
+            <KisiDurumRozeti kisi={kisi} />
             <Rozet>{t(CALISMA_ADI[kisi.calisma])}</Rozet>
             <Rozet>
               <bdi>{kisi.kisaltma}</bdi>
@@ -513,6 +514,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
       {oner && <MuhabireOneriPenceresi ben={ben} muhabirId={kisi.id} kapat={() => setOner(false)} />}
       <div className="iz iz-ana-yan">
         <div className="iz">
+          {muhabir && !kendisi && <MuhabirSimdi ben={ben} kisi={kisi} />}
           {muhabir && performansGorebilir(ben, kisi) && <PerformansKarti kisi={kisi} />}
           {muhabir && (
             <>

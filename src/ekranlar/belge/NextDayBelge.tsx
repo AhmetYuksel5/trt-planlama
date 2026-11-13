@@ -1,4 +1,5 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
+import { OneriyiAc } from "../oneri/OneriyiAc";
 import { useBen } from "../../oturum";
 import { takdirEpostasi, takdirPaketleri } from "../../takdir";
 import { KararNotlari } from "../haftalik/Kalem";
@@ -459,6 +460,7 @@ export function NextDayBelgesi({
                                       }
                                       ek={
                                         <>
+                                          <OneriyiAc oneriId={p.oneriId} />
                                           <PaketBaglantisi id={p.id} />
                                           {paketStogaAlinabilir(p) && (
                                             <IkonDugme
@@ -572,6 +574,7 @@ export function NextDayBelgesi({
             }
             ek={
               <>
+                <OneriyiAc oneriId={g.oneriId} />
                 {ic && planBaslikId && (
                   <IkonDugme
                     ikon={<Package size={15} />}

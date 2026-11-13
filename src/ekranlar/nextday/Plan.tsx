@@ -1,4 +1,5 @@
 import { GeriBag } from "../../bilesenler/GeriBag";
+import { useHedefBaslik } from "../../bilesenler/baslikaGit";
 import {
   MoreHorizontal,
   PanelRight,
@@ -130,6 +131,7 @@ export default function PlanEkrani({
   plan: NextDayPlan;
 }) {
   const [gorunum, setGorunum] = useState(kayitliGorunum);
+  useHedefBaslik(plan.id);
   const degistir = (g: NdGorunum) => {
     setGorunum(g);
     try {

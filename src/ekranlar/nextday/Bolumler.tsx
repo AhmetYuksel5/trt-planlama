@@ -13,6 +13,7 @@ import { hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
+import { OneriyiAc, useOneriSimgesi } from "../oneri/OneriyiAc";
 import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
 
 /**
@@ -346,6 +347,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
 /* --- 3. Canlı yayınlar ve etkinlikler (başlığa bağlı olmayanlar) --- */
 
 export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan: NextDayPlan; canlilar: CanliYayin[]; duzenler: boolean; planBaslikId?: string }) {
+  const oneriSimgesi = useOneriSimgesi();
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
@@ -386,11 +388,12 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                     <IkonDugme ikon={<X size={15} />} etiket={t(c.sonuc?.durum === "yapilmadi" ? "csKaldir" : "csYapilmadi")} onClick={() => canliSonuc(ben, c.id, c.sonuc?.durum === "yapilmadi" ? null : "yapilmadi")} />
                   </div>
                 )}
-                {duzenler && (
+                {(duzenler || (oneriSimgesi && c.oneriId)) && (
                   <div className="islemler">
-                    {c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}
-                    <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(c.id)} />
-                    {(!c.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />}
+                    <OneriyiAc oneriId={c.oneriId} />
+                    {duzenler && c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}
+                    {duzenler && <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(c.id)} />}
+                    {duzenler && (!c.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />}
                   </div>
                 )}
               </div>
@@ -587,6 +590,7 @@ export function GelismeListesi({
   const ben = useBen();
   const [form, setForm] = useState("");
   const [tasinan, setTasinan] = useState<Gelisme | null>(null);
+  const oneriSimgesi = useOneriSimgesi();
   return (
     <>
       {tasinan && <BaslikaTasiPenceresi plan={plan} gelisme={tasinan} kapat={() => setTasinan(null)} />}
@@ -616,8 +620,9 @@ export function GelismeListesi({
                   </span>
                 </small>
               </div>
-              {(duzenler || paketEkle) && (
+              {(duzenler || paketEkle || (oneriSimgesi && g.oneriId)) && (
                 <div className="islemler">
+                  <OneriyiAc oneriId={g.oneriId} />
                   {paketEkle && <IkonDugme ikon={<Package size={15} />} etiket={t("gelismeyePkgEkle")} onClick={() => paketEkle(g)} />}
                   {duzenler && (
                     <>

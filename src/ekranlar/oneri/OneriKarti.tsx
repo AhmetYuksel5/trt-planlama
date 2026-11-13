@@ -1,6 +1,9 @@
 import { CircleCheck, LayoutGrid, List, MapPinned, Plus, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { OneriYolu } from "../../bilesenler/OneriYolu";
+import { baslikaGit } from "../../bilesenler/baslikaGit";
+import { oneriYolu } from "../../oneriYolu";
 import { OneriAvatari, OneriDurumRozeti, OneriKaynagi, OneriPlanEtiketleri } from "../../bilesenler/Tablolar";
 import { gecenSure, tarihYaz, useDil } from "../../dil";
 import { BICIM_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
@@ -87,6 +90,7 @@ export function OneriKarti({ oneri: o, d, ac, eylemler }: { oneri: Oneri; d: Dur
         <span className="sonuk">· {gecenSure(o.zaman, dil)}</span>
         {eylemler && <div className="ok-hizli">{eylemler}</div>}
       </div>
+      <OneriYolu oneri={o} d={d} ince />
     </article>
   );
 }
@@ -108,7 +112,7 @@ export function useKisaGun() {
  * Plana girmiş öneride plan etiketi yerine girdiği plan ve başlık (yeşil);
  * birim görüşü sorulduysa birimi ve durumu. `bagli`: etikete basınca plan açılır.
  */
-export function OneriMetaSatiri({ oneri: o, d, bagli = false }: { oneri: Oneri; d: Durum; bagli?: boolean }) {
+export function OneriMetaSatiri({ oneri: o, d, bagli = false, kapat }: { oneri: Oneri; d: Durum; bagli?: boolean; kapat?: () => void }) {
   const { t } = useDil();
   const ben = useBen();
   const gun = useKisaGun()(o);
@@ -117,7 +121,7 @@ export function OneriMetaSatiri({ oneri: o, d, bagli = false }: { oneri: Oneri; 
     <span className="ok-meta" data-oneri-meta>
       {/* Plana girmişse gün planın notunda; iki kez yazılmasın. */}
       {gun && !yer && <span className="ok-gun">{gun}</span>}
-      {yer ? <PlanaEklendiNotu oneri={o} d={d} /> : <OneriPlanEtiketleri oneri={o} d={d} bagli={bagli} />}
+      {yer ? <PlanaEklendiNotu oneri={o} d={d} bagli={bagli} kapat={kapat} /> : <OneriPlanEtiketleri oneri={o} d={d} bagli={bagli} />}
       <span>{t(ulkeAdi(o.ulke))}</span>
       {o.bicim && <span>{t(BICIM_ADI(o.bicim))}</span>}
       {o.sahaGerekli && (
@@ -135,15 +139,15 @@ export function OneriMetaSatiri({ oneri: o, d, bagli = false }: { oneri: Oneri; 
  * girdiği plan ve başlık. İki plana düşen öneride hangisine girdiği
  * buradan okunuyor.
  */
-export function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
+export function PlanaEklendiNotu({ oneri: o, d, bagli = false, kapat }: { oneri: Oneri; d: Durum; bagli?: boolean; kapat?: () => void }) {
   const { t, dil } = useDil();
   const yer = oneriYeri(d, o);
   if (!yer) return null;
   const baslikId = yer.planda ? o.baslikId : (yer.kalem?.baslikId ?? o.baslikId);
   const baslik = baslikId ? d.basliklar.find((b) => b.id === baslikId)?.ad : undefined;
   const gun = yer.planda ? yer.plan?.tarih : yer.kalem?.tarih;
-  return (
-    <span className="ok-plana-eklendi" data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
+  const icerik = (
+    <>
       <CircleCheck size={14} /> {t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi")} · {t(yer.planda ? "mNextday" : "mHaftalik")}
       {gun && ` ${tarihYaz(gun, dil, "kisa")}`}
       {baslik && (
@@ -152,6 +156,21 @@ export function PlanaEklendiNotu({ oneri: o, d }: { oneri: Oneri; d: Durum }) {
           <Icerik>{baslik}</Icerik>
         </>
       )}
+    </>
+  );
+  // Pencerede plana götürür: Next Day'de önerinin girdiği başlığa kayıp onu vurgular.
+  const git = !bagli ? undefined : yer.planda && yer.plan ? () => {
+    const pb = oneriYolu(d, o).planBaslikId;
+    kapat?.();
+    baslikaGit(yer.plan!.id, pb);
+  } : yer.hafta ? () => (kapat?.(), (location.hash = `#/haftalik/${yer.hafta!.id}`)) : undefined;
+  return git ? (
+    <button type="button" className="ok-plana-eklendi bag" onClick={git} data-plana-eklendi={yer.planda ? "nextday" : "haftalik"} data-plana-git>
+      {icerik}
+    </button>
+  ) : (
+    <span className="ok-plana-eklendi" data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
+      {icerik}
     </span>
   );
 }

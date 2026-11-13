@@ -61,7 +61,11 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: 
   );
 }
 
-export function KisiCipi({ ben, kisi, konu = "", ek }: { ben: Kisi; kisi?: Kisi; konu?: string; ek?: ReactNode }) {
+/**
+ * `sade`: yalnız avatar (ad ipucunda); plan satırlarında ad zaten çıktının
+ * biçimiyle ("YER / ad") yazılı, çip onu tekrar etmesin.
+ */
+export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi; kisi?: Kisi; konu?: string; ek?: ReactNode; sade?: boolean }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const [posta, setPosta] = useState(false);
@@ -69,7 +73,9 @@ export function KisiCipi({ ben, kisi, konu = "", ek }: { ben: Kisi; kisi?: Kisi;
   const adi = ad(kisi);
   // Muhabir başka muhabiri ve iletişim kartını görmüyor: yalnız ad.
   if (kisitliKisi(ben))
-    return (
+    return sade ? (
+      <Avatar kisi={kisi} boy="kucuk" />
+    ) : (
       <span className="kisi-cipi duz">
         <Avatar kisi={kisi} boy="kucuk" /> <bdi>{adi}</bdi>
       </span>
@@ -81,13 +87,13 @@ export function KisiCipi({ ben, kisi, konu = "", ek }: { ben: Kisi; kisi?: Kisi;
     <span className="kisi-cipi-kap" data-kisi-cipi={kisi.id}>
       <IslemMenusu
         etiket={adi}
-        dugmeSinifi={`kisi-cipi${durum === "izinli" ? " izinli" : ""}`}
+        dugmeSinifi={`kisi-cipi${sade ? " sade" : ""}${durum === "izinli" ? " izinli" : ""}`}
         menuSinifi="kisi-karti"
         katman
         ikon={
           <>
             <Avatar kisi={kisi} boy="kucuk" />
-            <bdi>{adi}</bdi>
+            {!sade && <bdi>{adi}</bdi>}
             {ek}
           </>
         }

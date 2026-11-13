@@ -13,6 +13,8 @@ import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetk
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
+import { KisiCipi } from "../../bilesenler/KisiCipi";
+import { useYeniTasarim } from "../../tasarimSecimi";
 
 /*
  * Haftalık gündemin kalemi: kurumun çıktısındaki satır ("ad - YER /
@@ -218,6 +220,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const kaynakMetni = useKaynakMetni();
+  const yeni = useYeniTasarim();
   const [duzenle, setDuzenle] = useState(false);
   const [notFormu, setNotFormu] = useState(false);
   const [kosulFormu, setKosulFormu] = useState(false);
@@ -293,6 +296,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
             </Icerik>
           )}
           <small>
+            {yeni && kalem.muhabirler.map((id) => <KisiCipi key={id} ben={ben} kisi={kisiBul(v, id)} konu={kalem.paketBasligi || kalem.metin} sade />)}
             <TurRozeti tur={kalem.tur} />
             {bicimSatiri(kalem) && <bdi dir="ltr">{bicimSatiri(kalem)}</bdi>}
             <KararRozeti kalem={kalem} />

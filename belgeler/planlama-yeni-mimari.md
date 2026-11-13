@@ -108,10 +108,10 @@ satıra basınca muhabir dosyası; ortak `csv.ts`.
 
 ## 3. Aşamalar
 
-1. Sayıların tek kaynağı, Planlama menüsü (yeni tasarımda), ortak adres
-   kuralı ve muhabir çipi, sağ panel ve ana sayfa kutuları.
-2. Öneri yolu ve plan satırından öneriye geçiş; muhabir dosyası; durum
-   rozetinin kayıttan türemesi.
+1. (Yapıldı) Sayıların tek kaynağı, Planlama menüsü (yeni tasarımda), ortak
+   adres kuralı ve muhabir çipi, sağ panel ve ana sayfa kutuları.
+2. (Yapıldı) Öneri yolu ve plan satırından öneriye geçiş; muhabir dosyası;
+   durum rozetinin kayıttan türemesi.
 3. Raporlar; toplu iletişim (seçilenlere posta, WhatsApp hazır metin);
    Weekly/Aylık/Özel iyileştirmeleri (Aylık → Özel geçişte ekip ve satırlar,
    çok günlü olay, şartlı kabule son tarih).

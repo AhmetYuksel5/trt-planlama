@@ -337,6 +337,7 @@ function AktarPenceresi({ ben, paket, kapat, programId }: { ben: Kisi; paket?: P
   const p = programlar.find((x) => x.id === prg);
   const B = bugun();
   const gunler = p ? [0, 7, 14, 21].flatMap((n) => haftaninBolumleri(p, gunEkle(B, n))).filter((g) => g >= B) : [];
+  // Program değişince gün yeni programın ilk bölümüne döner: önceki programın günü yeni programda da varsa (ileriki hafta) kalıyor, içerik bu haftanın bölümü yerine oraya gidiyordu.
   const [tarih, setTarih] = useState(gunler[0] ?? "");
   const gecerliTarih = gunler.includes(tarih) ? tarih : gunler[0] ?? "";
   const aktar = () => paket && icerikProgramaAktar(ben, paket.id, prg, gecerliTarih) && (bildir(t("bKaydedildi")), kapat());
@@ -353,7 +354,7 @@ function AktarPenceresi({ ben, paket, kapat, programId }: { ben: Kisi; paket?: P
           )}
           <label>
             {t("pmProgram")}
-            <select value={prg} onChange={(e) => setPrg(e.target.value)} data-prg-aktar-program>
+            <select value={prg} onChange={(e) => (setPrg(e.target.value), setTarih(""))} data-prg-aktar-program>
               {programlar.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.ad}

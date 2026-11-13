@@ -1,4 +1,7 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
+import { OneriyiAc } from "../oneri/OneriyiAc";
+import { KisiCipi } from "../../bilesenler/KisiCipi";
+import { useYeniTasarim } from "../../tasarimSecimi";
 import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, StickyNote } from "lucide-react";
 import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
 import { useState } from "react";
@@ -49,6 +52,7 @@ export default function BaslikKarti({
   const { t, dil } = useDil();
   const v = useVeri();
   const ben = useBen();
+  const yeni = useYeniTasarim();
   const [paketForm, setPaketForm] = useState("");
   const [muhabirEkle, setMuhabirEkle] = useState(false);
   const [oneriAcik, setOneriAcik] = useState("");
@@ -100,6 +104,7 @@ export default function BaslikKarti({
                       </span>
                     )}
                     <small>
+                      {yeni && ben && p.muhabirId && <KisiCipi ben={ben} kisi={kisiBul(v, p.muhabirId)} konu={p.baslik} sade />}
                       {p.oncelikli && <OncelikRozeti />}
                       {p.haftalikKalemId && <HaftalikRozeti />}
                       <PaketDurumRozeti paket={p} />
@@ -109,6 +114,7 @@ export default function BaslikKarti({
                     </small>
                   </div>
                   <div className="islemler">
+                    <OneriyiAc oneriId={p.oneriId} />
                     <PaketOneriBagi ben={ben} paket={p} />
                     {icerik && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
                       <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
@@ -237,7 +243,8 @@ export default function BaslikKarti({
               const k = kisiBul(v, m.kisiId);
               return (
                 <span key={m.kisiId} className={oncekiSinif(m.onceki, "cip")} title={m.onceki ? t("oncekiGunden") : undefined}>
-                  <Avatar kisi={k} boy="kucuk" />
+                  {/* Yeni tasarımda avatara basınca muhabirin kartı: durumu, işleri, WhatsApp, posta (konu başlığın adı). */}
+                  {yeni && ben && k ? <KisiCipi ben={ben} kisi={k} konu={baslik?.ad ?? ""} sade /> : <Avatar kisi={k} boy="kucuk" />}
                   <Icerik>{satir(m.yer || sehirAr(k?.sehir), kisiAr(k) || "?")}</Icerik>
                   {icerik && (
                     // Muhabir o gün şehrinden başka yerdeyse plandaki yeri burada değişiyor; çıkınca yazılıyor, her harfte değil.

@@ -30,6 +30,7 @@ import { acikGundemde, baglanabilirKayitlar, esAsili, esOneriler, oneriArsivde, 
 import { bugun, yerelGun } from "../../tarih";
 import { temizle } from "../../temizlik";
 import { KisiIletisim } from "../../bilesenler/KisiCipi";
+import { OneriYolu } from "../../bilesenler/OneriYolu";
 import { baslikBul, kisiBul, paketBul, planBul, useVeri, type Durum, type Kisi, type Oneri } from "../../veri";
 import { birimAdi } from "../../yapi";
 import {
@@ -301,6 +302,7 @@ export function OneriAyrinti({
 
   const govde = (
     <>
+      <OneriYolu oneri={o} d={v} kapat={kapat} />
       <TeklifNotu ben={ben} oneri={o} />
       {oneriYenidenGonderebilir(ben, o) && (
         <div className="duzeltme-istegi" data-duzeltme-istegi>
@@ -475,7 +477,7 @@ export function OneriAyrinti({
 
   if (kapat)
     return (
-      <Pencere baslik={baslik} alt={<OneriMetaSatiri oneri={o} d={v} bagli />} kapat={kapat} altBilgi={alt}>
+      <Pencere baslik={baslik} alt={<OneriMetaSatiri oneri={o} d={v} bagli kapat={kapat} />} kapat={kapat} altBilgi={alt}>
         {govde}
       </Pencere>
     );

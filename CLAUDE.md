@@ -2611,6 +2611,36 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       penceresi `posta/Posta.tsx → IsPostasiPenceresi` (açılır kart kapanınca
       gitmesin diye ayrı). WhatsApp'a basış kaydedilmez.
     Test `testler/yeni-planlama.cjs`.
+    2. aşama (kişi çipinden sonrakiler de yalnız yeni tasarımda, kısıtlı
+    olmayan kişide):
+    - Önerinin yolu (`oneriYolu.ts`, saf): geldi → değerlendirme → plan ya da
+      gündem → PKG → muhabirde → sonuç; plandaki kayıt ve paket doğru kaynak,
+      önerinin durumu yalnız karar aşamasında. Paketsiz plana giren öneri
+      planla biter. "Kimde" (Planlama, masa sorusundaki birim, teklif ve
+      düzeltmede muhabir, paketin `gorunenSahip`'i) ve "ne zamandan beri"
+      (öneriye ya da paketine düşen son hareket). Ekranda
+      `bilesenler/OneriYolu.tsx`: kartta etiketsiz şerit (ipucunda adım,
+      kimde, süre), pencerede adlı çizgi (`data-yol-adim`, `data-yol-durum`),
+      plan adımı başlığa, PKG ve sonuç paketin sayfasına; altında kimde
+      satırı (kişiyse `KisiCipi`).
+    - Öneriden başlığa (`bilesenler/baslikaGit.ts`): plan açılır, başlık ve
+      üstündeki kapalı bölümler açılıp kayılır, bir an vurgulanır
+      (`.hedef-vurgu`); hedef sekmede (hash sorgu taşımıyor), plan zaten
+      açıksa olayla. Yolun plan adımı ve pencerenin "Plana eklendi" notu
+      (`PlanaEklendiNotu bagli`) bunu kullanır, pencereyi kapatarak.
+    - Plandan öneriye (`oneri/OneriyiAc.tsx`): Next Day'de `oneriId`'li
+      gelişme, PKG ve canlı satırında öneri simgesi (`data-plan-oneri`; plan
+      ekranı ve belge), basınca önerinin penceresi.
+    - Kişi çipi `sade` (yalnız avatar; satırda ad zaten "YER / ad"): Next Day
+      başlığının muhabirleri, PKG satırı, Weekly kalemi. Çıktıda yok.
+    - Muhabirin "Şimdi"si (`muhabirDosyasi.ts`, `bilesenler/MuhabirSimdi.tsx`;
+      profilin başında, kendisi hariç): sırası bizde, sırası onda (yoldan;
+      önerisiz paket de), bugün ve yarın planda (başlığa götürür), takipleri;
+      başlıkta önümüzdeki 7 güne düşen izin ve son yazışma.
+    - Durum rozeti her düzende kayıttan (`KisiDurumRozeti`, `kisiBugunDurumu`):
+      personel ve muhabir listesi, profil. Önce kişideki alan, izindeki
+      muhabir "görevde" görünüyordu.
+    Test `testler/oneri-yolu.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

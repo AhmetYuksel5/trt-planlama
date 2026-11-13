@@ -1597,6 +1597,8 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .ok-hizli { display: flex; align-items: center; gap: var(--ara-1); margin-inline-start: auto; }
 /* Plana eklenen öneri listede kalıyor; bilgi satırında girdiği plan yeşil. */
 .ok-plana-eklendi { display: inline-flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; overflow-wrap: anywhere; color: var(--iyi); font-weight: 600; }
+button.ok-plana-eklendi.bag { all: unset; display: inline-flex; align-items: center; gap: var(--ara-1); flex-wrap: wrap; color: var(--iyi); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
 .oneri-satiri .ok-baslik { font-size: var(--punto-kucuk); text-align: inherit; }
 .oneri-satiri .ok-baslik .icerik { -webkit-line-clamp: 1; }
 .oneri-satiri small { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--ara-2); }
@@ -3536,6 +3538,8 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .kisi-cipi:hover { background: var(--yuzey-2); }
 .kisi-cipi.izinli bdi { color: var(--sonuk); }
 .kisi-cipi.duz { min-height: 0; cursor: default; }
+.kisi-cipi.sade { padding: 0; margin: 0; min-width: var(--dokunma); justify-content: center; border-radius: var(--yaricap-hap); }
+.kisi-cipi.izinli.sade .avatar { opacity: .55; }
 .kisi-karti { min-width: 260px; max-width: min(320px, calc(100vw - 32px)); padding: var(--ara-3) !important; display: grid; gap: var(--ara-3); }
 .kisi-karti-bas { display: flex; gap: var(--ara-3); align-items: center; min-width: 0; }
 .kisi-karti-bas > div { display: grid; gap: 2px; min-width: 0; }
@@ -3577,3 +3581,31 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
   .py-kutu.genis { grid-column: 1 / -1; }
   .py-sayi { font-size: 24px; }
 }
+
+/* Önerinin yolu (oneriYolu.ts): geçti iyi, şimdiki vurgu, sırada gri, kesildi kırmızı. */
+.oy-serit { display: flex; gap: 3px; margin-block-start: var(--ara-2); }
+.oy-serit i { flex: 1; block-size: 3px; border-radius: var(--yaricap-hap); background: var(--cizgi); }
+.oy-serit i.oy-gecti, .oneri-yolu li.oy-gecti::before { background: var(--iyi); }
+.oy-serit i.oy-simdi, .oneri-yolu li.oy-simdi::before { background: var(--vurgu); }
+.oy-serit i.oy-ret, .oneri-yolu li.oy-ret::before { background: var(--kotu); }
+.oneri-yolu { display: grid; gap: var(--ara-1); margin-block-end: var(--ara-3); }
+.oneri-yolu ol { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin: 0; padding: 0; list-style: none; }
+.oneri-yolu li { display: grid; gap: 4px; min-width: 0; font-size: 12px; color: var(--sonuk); }
+.oneri-yolu li::before { content: ""; block-size: 4px; border-radius: var(--yaricap-hap); background: var(--cizgi); }
+.oneri-yolu li.oy-simdi { color: var(--vurgu); font-weight: 600; }
+.oneri-yolu li.oy-ret { color: var(--kotu); }
+.oneri-yolu li > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oy-bag { all: unset; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; min-block-size: 24px; }
+.oy-bag:focus-visible { outline: 2px solid var(--vurgu); }
+.oy-kimde { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-1); font-size: 13px; }
+.hedef-vurgu { outline: 3px solid var(--vurgu); outline-offset: 2px; transition: outline-color 1s; scroll-margin-block-start: 80px; }
+
+/* Muhabirin "Şimdi"si (muhabirDosyasi.ts): dört kısa liste, dar ekranda alt alta. */
+.md-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: var(--ara-3); }
+.md-bolum h4 { margin: 0 0 var(--ara-1); font-size: 13px; }
+.md-liste { display: grid; gap: var(--ara-1); margin: 0; padding: 0; list-style: none; }
+.md-liste li { display: grid; gap: 2px; min-width: 0; }
+.md-liste li > a, .md-bag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-bag { all: unset; cursor: pointer; color: var(--vurgu); }
+.md-bag:focus-visible { outline: 2px solid var(--vurgu); }
+.md-ust { display: inline-flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; font-weight: 400; }
