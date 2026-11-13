@@ -88,6 +88,7 @@ import {
   type Karar,
   type HesapYetkisi,
   type Kisi,
+  type Rol,
   type NextDayPlan,
   type Oneri,
   type MasaSorusu,
@@ -4122,7 +4123,8 @@ export const kisiYetkileri = (ben: Kisi, kisiId: string, yetkiler: HesapYetkisi[
  * girdiklerine yönetici böyle bakıyor; kaydedince "kontrol bekliyor"
  * kalkıyor. Hesap alanları (pasif, yöneticilik, yetkiler) burada değişmiyor.
  */
-export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; ad?: Yazi; kadin?: boolean }) => {
+/* `rol` yalnız tayinin geri alınmasında: önceki rol ünvandan çıkmayabilir (kurucu planlamacı ama yönetici). */
+export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; gorev: GorevId; ad?: Yazi; kadin?: boolean; rol?: Rol }) => {
   // Demoda hesap yetkisi yalnız örnek yöneticide; tayini Organizasyon'da o deniyor.
   if (!hesapYetkisi(ben, "kisiDuzenle")) return false;
   const d = getir();
@@ -4136,7 +4138,7 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
       const kadin = p.kadin === undefined ? eskiKadin : p.kadin || undefined;
       // Dış muhabirde ünvan seçilmiyor, şehirden geliyor.
       const yeniK = yerUnvaniUygula({ ...kalan, ...(kadin ? { kadin: true as const } : {}), birim: p.birim, gorev: p.gorev, ...(p.ad ? { ad: p.ad } : {}) });
-      return { ...yeniK, rol: unvandanRol(yeniK.gorev, k) };
+      return { ...yeniK, rol: p.rol ?? unvandanRol(yeniK.gorev, k) };
     }),
   };
   const sonra = yeni.kisiler.find((k) => k.id === kisiId)!;

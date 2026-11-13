@@ -63,7 +63,7 @@ yerinde; alt birim eklemek 2 tık.
 
 ## Öneri: üç parti (önce görünümü değiştirmeyenler)
 
-**1. parti, güvenlik ve bulma** (görünüm aynı):
+**1. parti, güvenlik ve bulma** (görünüm aynı; yapıldı, `testler/org-bulma.cjs`):
 - Tayinde görev kendiliğinden yönetici olmasın: birim değişince yönetici olmayan
   ilk ünvan; rol yöneticiye çıkıyorsa onay sorusu. Tayinden sonra bildirimde
   "Geri al" (O-04).

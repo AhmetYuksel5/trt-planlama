@@ -721,6 +721,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`planDuzenle`, `haftalikDuzenle`) ayrı, değişmedi.
   - Kişiler: birim ağacı → ünvan (sayılar alt birimleri de toplar), "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
+  - Bulma ve güvenli tayin (kullanıcı: Organizasyon karmaşık, isim bulmak ve işlem
+    yapmak zor; üç yönetici ajanıyla incelendi, `belgeler/organizasyon-brifing.md`,
+    1. parti): Kişiler araması `arama.ts → kisiUyar` (ad üç dilde, e-postalar,
+    birim, ünvan, şehir; hemze ve hareke fark etmez, Latin sözcük sonunda t/d aynı:
+    Ahmet/Ahmed); arama varken ağaç yerine düz liste (`data-org-sonuclar`, satırda
+    "Birim › Ünvan · Şehir", onay bekleyen rozetli). Birimler ve ünvanlar'da arama
+    (birim ve ünvan adı üç dilde, `yapi.ts → birimAdiDilde`, `gorevAdiDilde`;
+    yalnız uyan kartlar, uyan ünvan `.eslesti`). Kişi formlarında aynı adlı birim
+    üstüyle ("Output › Output", `ayirtEdiciBirimAdi`). Birim değişince görev
+    birimin yönetici olmayan ilk ünvanı (`birimeUygunUnvan`; ilk ünvan çoğu birimde
+    "Birim yöneticisi", muhabir Spor'a tayinde sorulmadan yönetici oluyordu);
+    yöneticiye çıkış onay sorar, tayin hemen geçerli olduğu için bildirimde "Geri
+    al" (önceki birim, ünvan ve rol, `kisiPozisyonu(…, { rol })`). Kökü, alt birimi
+    ya da kişisi olan birimi gizlemek onaylı; taslağın ilk değişikliği "Taslağa
+    eklendi, henüz yayınlanmadı" bildirir, taslak yokken sekmelerde "Yayında ·
+    Sürüm n". Test `testler/org-bulma.cjs`.
   - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir
     akışı (yeni akış seçilenin kopyasıyla açılır, kol tek akışta). Durak kartı
     taşınır (oklar, sürükle), eklenir, silinir (son durak değil; bekleyen paket

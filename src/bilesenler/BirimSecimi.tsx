@@ -1,6 +1,6 @@
 import { useDil } from "../dil";
 import type { BirimId, GorevId } from "../veri";
-import { birimAdi, gorevAdi, kisiBirimSecenekleri, unvanListesi } from "../yapi";
+import { ayirtEdiciBirimAdi, gorevAdi, kisiBirimSecenekleri, unvanListesi } from "../yapi";
 
 /*
  * Kişi formlarının (davet, hesapsız kişi, düzenle/tayin, kayıt bağlantısı)
@@ -14,7 +14,7 @@ export function BirimSecenekleri({ dahil }: { dahil?: BirimId }) {
       {kisiBirimSecenekleri(dahil).map((s) => (
         <option key={s.id} value={s.id} disabled={s.grup}>
           {"   ".repeat(s.derinlik)}
-          {birimAdi(s.id)}
+          {ayirtEdiciBirimAdi(s.id)}
         </option>
       ))}
     </>

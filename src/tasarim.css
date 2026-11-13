@@ -2468,8 +2468,11 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
   position: sticky; top: var(--ara-2); z-index: 2;
 }
 .taslak-cubugu .dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+/* Taslak yokken yalnız durum satırı: sarı çubuk değil, yapışkan da değil. */
+.taslak-cubugu.yayinda { background: none; border: 0; padding: 0; position: static; justify-content: flex-start; color: var(--sonuk); font-size: var(--punto-kucuk); margin: 0; }
 .sekmeler > a { display: inline-flex; align-items: center; text-decoration: none; }
 .org-agac { display: grid; gap: var(--ara-2); }
+.org-sonuclar .ad small[data-org-kisi-yeri] { display: block; }
 /* Postadan kişiler: üstte toplu atama çubuğu, satırda birim ve ünvan seçimi. */
 .pk-ust-dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); justify-content: flex-end; }
 .pk-toplu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--zemin); }
@@ -2517,6 +2520,8 @@ tr.soluk > td { color: var(--sonuk); background: var(--yuzey-2); }
 .unvan-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .unvan-listesi > li { display: flex; align-items: center; gap: var(--ara-2); padding: 2px var(--ara-1); border-radius: var(--yaricap); }
 .unvan-listesi > li:hover { background: var(--zemin); }
+/* Aramada uyan ünvan: kartın içinde aranan satır görünsün. */
+.unvan-listesi > li.eslesti { background: var(--vurgu-sis); }
 .unvan-listesi .kidem { min-width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--zemin); font-size: var(--punto-kucuk); font-weight: 700; color: var(--sonuk); }
 .unvan-adi { flex: 1; min-width: 0; display: grid; }
 .unvan-adi b { font-weight: 600; overflow-wrap: anywhere; }

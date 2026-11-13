@@ -481,6 +481,19 @@ export const yapiSurumu = (surum: number | undefined): Yapi => {
 export const yerlesikBirim = (id: BirimId): id is (typeof BIRIMLER)[number] => (BIRIMLER as readonly string[]).includes(id);
 export const yerlesikGorev = (id: GorevId): boolean => (GOREVLER as readonly string[]).includes(id);
 
+/* Bir dildeki ad: arama üç dilde bakıyor ("Sunucu" Arapça arayüzde de bulunsun), ünvan eklerken adla eşleştirme de. */
+export const birimAdiDilde = (id: BirimId, d: Dil, y: Yapi = yapi()): string => {
+  const t = y.birimler.find((b) => b.id === id);
+  if (t?.ad) return yaz(t.ad, d);
+  return yerlesikBirim(id) ? metin(BIRIM_ADI[id], d) : id;
+};
+export const gorevAdiDilde = (id: GorevId, d: Dil, y: Yapi = yapi()): string => {
+  if (id.startsWith(SEHIR_UNVANI)) return metin("yerMuhabiri", d, { yer: sehirAdi(id.slice(SEHIR_UNVANI.length), d) });
+  const u = y.unvanlar.find((x) => x.id === id);
+  if (u?.ad) return yaz(u.ad, d);
+  return yerlesikGorev(id) ? metin(GOREV_ADI[id as Gorev], d) : id;
+};
+
 /** Birimin ekrandaki adı: yöneticinin verdiği ad, yoksa dil tablosundaki. */
 export const birimAdi = (id: BirimId | undefined, y: Yapi = yapi()): string => {
   if (!id) return "";
@@ -523,10 +536,14 @@ export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi())
   return dahil && !l.includes(dahil) ? [...l, dahil] : l;
 };
 
-/** Seçili görev birimde yoksa birimin ilk ünvanı (ünvansız birimde boş): form birim değişince eski görevle kalmasın. */
+/**
+ * Seçili görev birimde yoksa birimin yönetici olmayan ilk ünvanı (hepsi yöneticiyse ilki, ünvansız birimde
+ * boş): form birim değişince eski görevle kalmasın. İlk ünvan çoğu birimde "Birim yöneticisi"; muhabir Spor'a
+ * tayin edilince sorulmadan yönetici oluyordu.
+ */
 export const birimeUygunUnvan = (birim: BirimId, gorev: GorevId, y: Yapi = yapi()): GorevId => {
   const l = unvanListesi(birim, undefined, y);
-  return l.includes(gorev) ? gorev : (l[0] ?? "");
+  return l.includes(gorev) ? gorev : (l.find((g) => !unvanYoneticiMi(g, y)) ?? l[0] ?? "");
 };
 
 /* --- Ağaç --- */
@@ -583,6 +600,17 @@ export const kisiBirimSecenekleri = (dahil?: BirimId, y: Yapi = yapi()): (AgacSa
   const l = birimAgaci(y, false).map((s) => ({ ...s, grup: grupMu(s.id, y) }));
   if (dahil && !l.some((s) => s.id === dahil) && y.birimler.some((b) => b.id === dahil)) l.push({ id: dahil, derinlik: 0, grup: false });
   return l;
+};
+
+/**
+ * Seçimdeki ad: başka birimle aynı adı taşıyan birim üstünün adıyla ("Output › Output"); iki "Output"
+ * (kademe ve birim) yalnız girintiden ayrılıyordu, kişi yanlışına tayin ediliyordu.
+ */
+export const ayirtEdiciBirimAdi = (id: BirimId, y: Yapi = yapi()): string => {
+  const ad = birimAdi(id, y);
+  const ust = ustBirim(id, y);
+  const ayni = y.birimler.some((b) => b.id !== id && !b.gizli && birimAdi(b.id, y) === ad);
+  return ayni && ust ? `${birimAdi(ust, y)} › ${ad}` : ad;
 };
 
 /** Seçimdeki girintili ad: alt birim üstünün altında okunsun. */

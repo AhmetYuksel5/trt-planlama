@@ -1,4 +1,5 @@
-import { birimAdi } from "./yapi";
+import { birimAdi, birimAdiDilde, gorevAdiDilde, type Yapi } from "./yapi";
+import { sehirAdi } from "./etiketler";
 import { DILLER, metin, yaz, type Anahtar, type Dil } from "./dil";
 import type { Durum, Kisi } from "./veri";
 import { oneriGorebilir, paketGorebilir } from "./yetki";
@@ -73,3 +74,29 @@ export function kayitAra(d: Durum, ben: Kisi, sorgu: string, dil: Dil): KayitSon
           .map((k): KayitSonucu => ({ id: k.id, tur: "kisi", ust: birimAdi(k.birim), metin: yaz(k.ad, "ar"), icerik: false, href: `#/muhabirler/${k.id}` }))),
   ];
 }
+
+/*
+ * Kişi araması (Organizasyon › Kişiler): ad üç dilde, e-postalar, birim, ünvan ve şehir, aramanın
+ * normalleştirmesiyle ("احمد" "أحمد"i buluyor). Önce yalnız ad ve e-posta, büyük-küçük harfle
+ * aranıyordu: hemzesiz yazım, "planlama", "Kahire" boş dönüyordu.
+ */
+export const kisiAramaMetni = (k: Kisi, d: Durum | null, y?: Yapi) =>
+  [
+    ...DILLER.map((x) => yaz(k.ad, x)),
+    k.eposta,
+    k.kurumEposta,
+    ...DILLER.map((x) => birimAdiDilde(k.birim, x, y)),
+    ...DILLER.map((x) => gorevAdiDilde(k.gorev, x, y)),
+    ...(k.sehir ? DILLER.map((x) => sehirAdi(k.sehir, x, d)) : []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+/* Latin yazımda sözcük sonundaki t/d aynı sayılıyor: kurum adları iki türlü yazıyor (Ahmet/Ahmed, Mehmet/Mehmed). */
+const latinYakin = (s: string) => sade(s).replace(/t(?![\p{L}\p{N}])/gu, "d");
+
+export const kisiUyar = (k: Kisi, sorgu: string, d: Durum | null, y?: Yapi) => {
+  const sozcukler = latinYakin(sorgu).split(/\s+/).filter(Boolean);
+  const metinSade = latinYakin(kisiAramaMetni(k, d, y));
+  return sozcukler.every((s) => metinSade.includes(s));
+};

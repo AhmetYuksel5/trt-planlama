@@ -14,7 +14,7 @@ import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { bosAlan, epostaListesiniEslestir, listedenAdresler, type EpostaAlani, type EslesmeSatiri } from "../epostaEslestir";
 import { izlemeBaslat } from "../izleme";
 import { GERCEK, firebaseYukle } from "../kip";
-import { HESAP_YETKILERI, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
+import { HESAP_YETKILERI, getir, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
 import { epostaDegistirebilir, hesapYetkisi, profilDuzenler } from "../yetki";
 import { SatirSehirSecimi, SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
 import type { YeniSehir } from "../eylemler";
@@ -1152,12 +1152,18 @@ export function PozisyonPenceresi({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi;
 
   const kaydet = async () => {
     const tr = p.tr.trim() || p.en.trim() || ad(kisi);
+    // Rol ünvandan geliyor; yöneticiye çıkış sessiz olmasın (muhabir başka birime tayinde sorulmadan yönetici oluyordu).
+    if (!disMuhabir && kisi.rol !== "yonetici" && unvandanRol(p.gorev, kisi) === "yonetici" && !confirm(t("orgYoneticiOlacak", { ad: ad(kisi), unvan: gorevAdi(p.gorev) }))) return;
+    const once = { birim: kisi.birim, gorev: kisi.gorev, rol: kisi.rol };
     if (!kisiPozisyonu(ben, kisi.id, { birim: p.birim, gorev: p.gorev, kadin: p.kadin, ad: { tr, ar: p.ar.trim() || tr, en: p.en.trim() || tr } })) return;
+    const sonra = getir().kisiler.find((x) => x.id === kisi.id);
+    // Tayin hemen geçerli (taslağa girmiyor); yanlış tayin bildirimden geri alınsın.
+    const geri = sonra && (sonra.birim !== once.birim || sonra.gorev !== once.gorev) ? { ad: t("geriAl"), f: () => kisiPozisyonu(ben, kisi.id, once) } : undefined;
     if (disMuhabir && (yeniSehir || sehir !== kisi.sehir) && !kisiSehri(ben, kisi.id, yeniSehir ?? sehir)) return;
     setBekle(true);
     try {
       if (await epostaKaydet()) {
-        bildir(t("bKaydedildi"));
+        bildir(t("bKaydedildi"), geri);
         kapat();
       }
     } catch (x) {
