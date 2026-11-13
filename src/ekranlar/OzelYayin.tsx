@@ -212,6 +212,7 @@ function AylikOzelOnerileri({ ben }: { ben: Kisi }) {
             {ozelDuzenler(ben) && (
               <button
                 className="dugme dugme-ikincil dugme-kucuk"
+                data-aylik-ozel-ac={olay.id}
                 onClick={() => {
                   if (!confirm(t("ayOzelAcOnay", { ad: olay.baslik }))) return;
                   const id = aylikOlaydanOzel(ben, olay.id);

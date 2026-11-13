@@ -14,14 +14,14 @@ import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
-import { metin, yaz, type Yazi } from "./dil";
+import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import { izinBirimi, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
 import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
-import { satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
+import { kisiAr, satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
@@ -30,7 +30,7 @@ import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
 import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
 import { oncesi, siradaki } from "./ozel";
-import { olayAyi, olayBaglantilari, olayBicimleri } from "./aylik";
+import { olayAyi, olayBaglantilari, olayBicimleri, olaydanOzele } from "./aylik";
 import { yeniAnilanlar } from "./bahsetme";
 import {
   ORTAM_DUZENLERI,
@@ -1393,13 +1393,13 @@ export const onIncelemeReddet = (ben: Kisi, haftaId: string, kalemId: string, ge
 /* --- Toplantı kararı ve kesinleştirme --- */
 
 // Şartlı kabul koşulsuz verilmez: koşul kesinleşince pakete ve muhabirin ön bilgisine gidiyor. Başka karar koşulu siler.
-export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: Karar, kosul?: string) => {
+export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: Karar, kosul?: string, kosulSon?: string) => {
   const d = getir();
   const h = haftaBul(d, haftaId);
   const k = h?.kalemler.find((x) => x.id === kalemId);
   if (!h || !k || !gundemde(k) || !kararVerebilir(ben, h)) return false;
   if (karar === "sartli" && !kosul?.trim()) return false;
-  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar, kosul: karar === "sartli" ? kosul!.trim() : undefined })));
+  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar, kosul: karar === "sartli" ? kosul!.trim() : undefined, kosulSon: karar === "sartli" && kosulSon ? kosulSon : undefined })));
   return true;
 };
 
@@ -1470,7 +1470,7 @@ const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.ka
  * Muhabire ön bilgi koşuluyla gidiyor, iş olarak değil.
  */
 const sartliMi = (k: HaftalikKalem) => k.karar === "sartli";
-const kalemPaketDurumu = (k: HaftalikKalem) => (sartliMi(k) ? { durum: "taslak" as const, kosul: k.kosul || "—" } : { durum: "onaylandi" as const });
+const kalemPaketDurumu = (k: HaftalikKalem) => (sartliMi(k) ? { durum: "taslak" as const, kosul: k.kosul || "—", ...(k.kosulSon ? { kosulSon: k.kosulSon } : {}) } : { durum: "onaylandi" as const });
 
 const planAktarimaAcik = (p: NextDayPlan) => p.durum === "taslak" || p.durum === "toplantida" || p.durum === "onayli";
 
@@ -4981,19 +4981,33 @@ export const aylikOlayiGundemeEkle = (ben: Kisi, haftaId: string, olayId: string
   const olay = d.aylik.flatMap((a) => a.olaylar ?? []).find((o) => o.id === olayId);
   if (!h || !olay || h.kalemler.some((k) => k.aylikOlayId === olayId)) return null;
   const muhabirler = olay.ekip.filter((e) => e.gorev === "muhabir" && e.kisiId).map((e) => e.kisiId!);
-  return kalemKaydet(ben, haftaId, {
-    tarih,
-    baslik: olay.baslik,
-    yer: olay.yer,
-    metin: (olay.aciklama || olay.baslik).trim(),
-    tur: olay.etiketler.includes("ekonomi") ? "ekonomi" : "haber",
-    bicimler: olayBicimleri(olay),
-    paketBasligi: olay.gunler.flatMap((g) => g.satirlar).find((s) => s.tur === "pkg" && s.metin.trim())?.metin,
-    muhabirler,
-    muhabirTbc: !muhabirler.length && olay.ekip.some((e) => e.gorev === "muhabir" && e.tbc),
-    not: olay.not,
-    aylikOlayId: olayId,
-  });
+  /*
+   * Çok günlü olay (yeni mimari, 3. aşama): haftaya düşen her kapsam günü kendi
+   * kalemi, o günün satırlarıyla (PKG başlığı, biçimler). Önce tek kalem
+   * açılıyordu, öbür günlerin paketleri ve canlıları toplantıda görünmüyordu.
+   * Satırsız olayda ya da tek günde eskisi gibi tek kalem.
+   */
+  const bas = h.baslangic, bit = haftaSonu(h.baslangic);
+  const gunler = olay.gunler.filter((g) => g.tarih >= bas && g.tarih <= bit && g.satirlar.length).sort((a, b) => a.tarih.localeCompare(b.tarih));
+  const parcalar = gunler.length > 1 ? gunler.map((g) => ({ tarih: g.tarih, olay: { ...olay, gunler: [g] } })) : [{ tarih, olay }];
+  let ilk: string | null = null;
+  for (const x of parcalar) {
+    const id = kalemKaydet(ben, haftaId, {
+      tarih: x.tarih,
+      baslik: olay.baslik,
+      yer: olay.yer,
+      metin: (olay.aciklama || olay.baslik).trim(),
+      tur: olay.etiketler.includes("ekonomi") ? "ekonomi" : "haber",
+      bicimler: olayBicimleri(x.olay),
+      paketBasligi: x.olay.gunler.flatMap((g) => g.satirlar).find((s) => s.tur === "pkg" && s.metin.trim())?.metin,
+      muhabirler,
+      muhabirTbc: !muhabirler.length && olay.ekip.some((e) => e.gorev === "muhabir" && e.tbc),
+      not: olay.not,
+      aylikOlayId: olayId,
+    });
+    ilk ??= id;
+  }
+  return ilk;
 };
 
 /** Aylık plandaki özel yayın önerisi Özel yayın bölümünde açılır; yayın kendi onayına (ozOnay) tabi. */
@@ -5003,7 +5017,13 @@ export const aylikOlaydanOzel = (ben: Kisi, olayId: string): string | null => {
   const ozelId = ozelOlustur(ben, { ad: olay.baslik, tarih: olay.tarih, bitis: olay.bitis, aciklama: [olay.aciklama, olay.onem].filter(Boolean).join("\n") });
   if (!ozelId) return null;
   const d = getir();
-  kaydet({ ...d, aylik: d.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.map((o) => (o.id === olayId ? { ...o, ozelId } : o)) } : a)) });
+  // Kapsam satırları, ekip ve görevlendirme yayının içine (aylik.ts → olaydanOzele); tek yazış.
+  const g = olaydanOzele(olay, (e) => (e.kisiId ? kisiAr(kisiBul(d, e.kisiId)) : e.ad ?? ""), (x) => metin(`ayEkip_${x}` as Anahtar, "ar"));
+  const nafizeler: Nafize[] = g.nafizeler.map((n) => ({ id: kimlik("nf"), konu: n.konu, tarih: n.tarih, ...(n.yer ? { yer: n.yer } : {}), ...(n.muhabirId ? { muhabirId: n.muhabirId } : { muhabirTbc: true as const }), konuklar: [], durum: "planlandi", iz: [izYaz(ben, "eklendi")] }));
+  const paketOnerileri: OzelPaketOnerisi[] = g.paketler.map((p) => ({ id: kimlik("po"), baslik: p.baslik, aciklama: "", kaynak: p.muhabirId && !p.tbc ? "dis" : "inhouse", ...(p.muhabirId && !p.tbc ? { muhabirId: p.muhabirId } : {}), sonTarih: p.sonTarih, tur: "haber", bicim: p.bicim, durum: "oneri", iz: [izYaz(ben, "eklendi")] }));
+  const hazirlik = g.hazirlik.map((m) => ({ id: kimlik("oz"), metin: m, tamam: false }));
+  const d2 = ozelGuncelle(d, ozelId, (o) => ({ ...o, nafizeler: [...(o.nafizeler ?? []), ...nafizeler], paketOnerileri: [...(o.paketOnerileri ?? []), ...paketOnerileri], hazirlik: [...o.hazirlik, ...hazirlik] }));
+  kaydet({ ...d2, aylik: d2.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.map((o) => (o.id === olayId ? { ...o, ozelId } : o)) } : a)) });
   return ozelId;
 };
 

@@ -2641,6 +2641,40 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       personel ve muhabir listesi, profil. Önce kişideki alan, izindeki
       muhabir "görevde" görünüyordu.
     Test `testler/oneri-yolu.cjs`.
+    3. aşama:
+    - Muhabir raporu (`muhabirRaporu.ts`, `ekranlar/yeni/MuhabirRaporu.tsx`;
+      yeni tasarımda Raporlar'ın ilk sekmesi, "Genel" eski rapor): ay seçici
+      (`useAdimDurumu`), bir önceki ayla fark (▲▼), başlığa basınca sıralanan
+      tablo (öneri, kabul oranı, verilen, biten, yapılmayan, çağrıya yanıt,
+      son iş). Dış ve iç muhabirler, işi olmayan soluk; ada basınca kişi
+      kartı. Biten iş Muhasebe'nin kuralıyla (`muhasebe.ts → muhabirIsleri`:
+      paket, "yapıldı" canlı, nafize), iki sayfa ayrışmasın; kabul oranı
+      kabul / (kabul + ret), takip sayılmaz. CSV ekrandaki tablo, sırasıyla.
+      CSV ortak `csv.ts → csvMetni` (BOM; Türkçede noktalı virgül): Raporlar
+      ve Muhasebe kullanıyor, Muhasebe önce her dilde virgül yazıyordu.
+    - Toplu iletişim (`bilesenler/TopluIletisim.tsx`): Dış muhabirler
+      listesinde seçim kutuları (`data-toplu-sec`, "hepsini seç"), yapışık
+      çubukta "Posta · n" ve WhatsApp. Posta adresleri BCC'de
+      (`posta/Posta.tsx → TopluPostaPenceresi`; Kime boş kalabilir, kapı
+      grubu Kime'ye yazar), en çok 49 adres. WhatsApp tarayıcıdan toplu
+      gitmez: metin bir kez yazılır, her kişinin düğmesi sohbeti metin yazılı
+      açar (`WhatsAppDugmesi metin`, `whatsappAdresi(telefon, metin)`);
+      basılanlar yalnız pencerede işaretli, kaydedilmez.
+    - Şartlı kabule isteğe bağlı son gün (`HaftalikKalem.kosulSon`,
+      `Paket.kosulSon`; koşul formunda, `kalemKarar(…, kosulSon)`,
+      kesinleşince pakete): "Şartlı kabul bekleyenler" son günü yakın olanı
+      önce gösterir, geçeni kırmızı (`data-kosul-son`). Kendiliğinden karar
+      vermez.
+    - Aylık olaydan özel yayın (`aylik.ts → olaydanOzele`,
+      `eylemler.ts → aylikOlaydanOzel`): PKG ve Walk & Talk satırı onaysız
+      paket önerisi (olayın muhabiri varsa dış muhabir, yoksa in-house; son
+      tarih satırın günü), LIVE ve نافذة nafize (o gün), öbür satırlar, ekip
+      ve görevlendirme hazırlık maddesi. Önce yalnız ad, gün ve açıklama
+      geçiyordu.
+    - Çok günlü aylık olay Weekly'de gün gün (`aylikOlayiGundemeEkle`): haftaya
+      düşen, satırı olan her kapsam günü kendi kalemi, o günün satırlarıyla;
+      tek günde eskisi gibi tek kalem.
+    Test `testler/planlama-3.cjs`; şartlı kabulün son günü `sartli-kabul.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

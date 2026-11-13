@@ -14,6 +14,8 @@ import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
+import { bugun } from "../../tarih";
 import { useYeniTasarim } from "../../tasarimSecimi";
 
 /*
@@ -371,14 +373,15 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
 }
 
 /* Toplantının karar notu ve ek talebi; kartta, kalemin altında. */
-export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu" | "ekTalep" | "kosul"> }) {
-  const { t } = useDil();
+export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu" | "ekTalep" | "kosul" | "kosulSon"> }) {
+  const { t, dil } = useDil();
   if (!kalem.kararNotu && !kalem.ekTalep && !kalem.kosul) return null;
   return (
     <div className="karar-notlari" data-karar-notlari>
       {kalem.kosul && (
         <p data-kosul>
           <b>{t("kosul")}:</b> <span dir="auto">{kalem.kosul}</span>
+          {kalem.kosulSon && <span className="sonuk"> · {t("kosulSonKisa", { gun: tarihYaz(kalem.kosulSon, dil, "kisa") })}</span>}
         </p>
       )}
       {kalem.kararNotu && (
@@ -418,13 +421,18 @@ function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: Haftal
 export function KosulFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; kapat: () => void }) {
   const { t } = useDil();
   const [kosul, setKosul] = useState(kalem.kosul ?? "");
+  const [son, setSon] = useState(kalem.kosulSon ?? "");
   return (
     <div className="form form-kutu ara-ust" data-kosul-formu>
       <label>
         {t("kosul")}
         <textarea rows={2} value={kosul} onChange={(e) => setKosul(e.target.value)} dir="auto" autoFocus data-kosul-girdi />
       </label>
-      <FormAlt kapat={kapat} devre={!kosul.trim()} kaydet={() => kalemKarar(ben, hafta.id, kalem.id, "sartli", kosul) && kapat()} />
+      <label>
+        {t("kosulSon")}
+        <TarihGirdisi value={son} onChange={(e) => setSon(e.target.value)} min={bugun()} data-kosul-son />
+      </label>
+      <FormAlt kapat={kapat} devre={!kosul.trim()} kaydet={() => kalemKarar(ben, hafta.id, kalem.id, "sartli", kosul, son || undefined) && kapat()} />
     </div>
   );
 }

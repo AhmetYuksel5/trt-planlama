@@ -80,3 +80,36 @@ export const olayBicimleri = (o: AylikOlay) => {
   const t = new Set(o.gunler.flatMap((g) => g.satirlar.map((s) => s.tur)));
   return [...(t.has("pkg") ? (["pkg"] as const) : []), ...(t.has("live") ? (["canli"] as const) : []), ...(t.has("walktalk") ? (["walktalk"] as const) : [])];
 };
+
+/*
+ * Aylık olaydan özel yayına geçişte olayın kapsamı da gelir (yeni mimari, 3.
+ * aşama; önce yalnız ad, gün ve açıklama geçiyordu, kapsam satırları, ekip ve
+ * görevlendirme yeniden yazılıyordu). Saf; eylem (`aylikOlaydanOzel`) yazar.
+ * - PKG ve Walk & Talk satırı paket önerisi (onaysız; olayın muhabiri varsa
+ *   dış muhabir paketi, yoksa in-house), son tarihi satırın günü;
+ * - LIVE ve نافذة satırı nafize (planlandı), günü satırın günü;
+ * - öbür satırlar (konuk, grafik, tekrar yayın, diğer), ekip ve görevlendirme
+ *   hazırlık maddesi, kurumun Arapça adlarıyla.
+ * Öneriler planın onayıyla onaylanır, özel yayının kendi akışı değişmez.
+ */
+export interface OzeleGecenler {
+  paketler: { baslik: string; muhabirId?: string; sonTarih: string; bicim: "pkg" | "walktalk"; tbc: boolean }[];
+  nafizeler: { konu: string; tarih: string; yer?: string; muhabirId?: string; tbc: boolean }[];
+  hazirlik: string[];
+}
+
+export function olaydanOzele(o: AylikOlay, ekipAdi: (e: AylikOlay["ekip"][number]) => string, gorevAdi: (g: AylikOlay["ekip"][number]["gorev"]) => string): OzeleGecenler {
+  const muhabirId = o.ekip.find((e) => e.gorev === "muhabir" && e.kisiId)?.kisiId;
+  const g: OzeleGecenler = { paketler: [], nafizeler: [], hazirlik: [] };
+  for (const gun of [...o.gunler].sort((a, b) => a.tarih.localeCompare(b.tarih)))
+    for (const s of gun.satirlar) {
+      const metin = s.metin.trim();
+      if (s.tur === "pkg" || s.tur === "walktalk")
+        g.paketler.push({ baslik: metin || o.baslik, muhabirId, sonTarih: gun.tarih, bicim: s.tur, tbc: !!s.tbc });
+      else if (s.tur === "live" || s.tur === "nafize") g.nafizeler.push({ konu: metin || o.baslik, tarih: gun.tarih, yer: o.yer, muhabirId: s.tbc ? undefined : muhabirId, tbc: !!s.tbc || !muhabirId });
+      else g.hazirlik.push([gun.tarih, SATIR_KODU[s.tur], metin].filter(Boolean).join(" · "));
+    }
+  for (const e of o.ekip) g.hazirlik.push(`${gorevAdi(e.gorev)}: ${e.tbc ? "TBC" : ekipAdi(e)}`);
+  if (o.gorev?.gidis || o.gorev?.donus) g.hazirlik.push(`DEPLOYMENT: ${o.gorev.gidis ?? "?"} – ${o.gorev.donus ?? "?"}`);
+  return g;
+}

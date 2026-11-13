@@ -718,16 +718,17 @@ function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string 
  * geri gelince sunucudaki yazışma kimliği öğrenilip iplik ona taşınır
  * (eylemler.ts → postaIsle), sonraki yanıtlar aynı sohbete düşer.
  */
-function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string } }) {
+function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string; bcc?: string[] } }) {
   const { t } = useDil();
   const [kime, setKime] = useState<string[]>(ilk?.kime ?? []);
   const [cc, setCc] = useState<string[]>([]);
-  const [bcc, setBcc] = useState<string[]>([]);
-  const [bccAcik, setBccAcik] = useState(false);
+  const [bcc, setBcc] = useState<string[]>(ilk?.bcc ?? []);
+  const [bccAcik, setBccAcik] = useState(!!ilk?.bcc?.length);
   const [konu, setKonu] = useState(ilk?.konu ?? "");
   const [metin, setMetin] = useState("");
   const [gonderiliyor, setGonderiliyor] = useState(false);
-  const hazir = kime.length > 0 && !!konu.trim() && !!metin.trim() && !gonderiliyor;
+  // Toplu postada alıcılar BCC'de (muhabirler birbirinin adresini görmesin), Kime boş: kapı grubu Kime'ye yazar.
+  const hazir = (kime.length > 0 || bcc.length > 0) && !!konu.trim() && !!metin.trim() && !gonderiliyor;
   const gonder = async () => {
     if (!hazir) return;
     setGonderiliyor(true);
@@ -806,6 +807,15 @@ export function IsPostasi({ ben, kisi, konu }: { ben: Kisi; kisi: Kisi; konu: st
 }
 
 /* Pencerenin kendisi: düğmesi açılır kartın içinde kalan yerler (kişi çipi) pencereyi kartın dışında tutsun, kart kapanınca gitmesin. */
+/** Seçilen muhabirlere tek posta, adresleri BCC'de (toplu iletişim). */
+export function TopluPostaPenceresi({ ben, adresler, kapat }: { ben: Kisi; adresler: string[]; kapat: () => void }) {
+  const [grup, setGrup] = useState("");
+  useEffect(() => {
+    if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
+  }, []);
+  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={{ kime: [], konu: "", bcc: adresler }} />;
+}
+
 export function IsPostasiPenceresi({ ben, kisi, konu, kapat }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void }) {
   const [grup, setGrup] = useState("");
   useEffect(() => {

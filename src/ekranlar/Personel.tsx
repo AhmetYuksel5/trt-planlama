@@ -1,4 +1,7 @@
 import { girisAdi, postaAdresi } from "../girisKodu";
+import { TopluCubuk } from "../bilesenler/TopluIletisim";
+import { useYeniTasarim } from "../tasarimSecimi";
+import { kisitliKisi } from "../yetki";
 import { KisiDurumRozeti, MuhabirSimdi } from "../bilesenler/MuhabirSimdi";
 import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from "../yapi";
 import { useAdimDurumu } from "../yol";
@@ -72,6 +75,13 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   // Çağrının CC'sindeki adresleri muhabirlere toplu yazmak (epostaEslestir.ts).
   const [eslestir, setEslestir] = useState(false);
   const eslestirebilir = muhabirSayfasi && hesapYetkisi(ben, "kisiDuzenle");
+  // Toplu iletişim (yeni tasarımda): seçim sayfada, kayda girmez.
+  const yeniTasarim = useYeniTasarim();
+  const toplu = muhabirSayfasi && yeniTasarim && !kisitliKisi(ben);
+  const [secili, setSecili] = useState<Set<string>>(new Set());
+  const seciliKisiler = liste.filter((k) => secili.has(k.id));
+  const hepsi = liste.length > 0 && seciliKisiler.length === liste.length;
+  const sec = (id: string) => setSecili((x) => { const y = new Set(x); if (y.has(id)) y.delete(id); else y.add(id); return y; });
 
   return (
     <>
@@ -146,11 +156,17 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
           )}
           <span className="bos-kucuk">{t("kisiSayisi", { n: liste.length })}</span>
         </div>
+        {toplu && <TopluCubuk ben={ben} kisiler={seciliKisiler} temizle={() => setSecili(new Set())} />}
         <div className="tablo-sar">
           {muhabirSayfasi ? (
             <table className="tablo kartli">
               <thead>
                 <tr>
+                  {toplu && (
+                    <th className="sec-sutun">
+                      <input type="checkbox" checked={hepsi} onChange={() => setSecili(hepsi ? new Set() : new Set(liste.map((k) => k.id)))} aria-label={t("tiHepsiniSec")} title={t("tiHepsiniSec")} data-toplu-hepsi />
+                    </th>
+                  )}
                   <th>{t("muhabir")}</th>
                   <th>{t("anaGorevBolgesi")}</th>
                   {perfGorur && <th>{t("verilenTamamlanan")}</th>}
@@ -163,6 +179,11 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                   const pf = perfGorur ? performans(v, k.id) : null;
                   return (
                     <tr key={k.id}>
+                      {toplu && (
+                        <td className="sec-sutun" data-etiket={t("tiSec")}>
+                          <input type="checkbox" checked={secili.has(k.id)} onChange={() => sec(k.id)} aria-label={`${t("tiSec")}: ${ad(k)}`} data-toplu-sec={k.id} />
+                        </td>
+                      )}
                       <td className="birincil">
                         <span className="kisi-whatsapp">
                           <a className="kisi-hucre kalin" href={`#/muhabirler/${k.id}`}>

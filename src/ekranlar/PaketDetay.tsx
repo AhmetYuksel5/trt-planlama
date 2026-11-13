@@ -70,6 +70,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
         <NotKutu>
           <span data-paket-kosul>
             <b>{t("krSartli")}:</b> <span dir="auto">{paket.kosul}</span>
+            {paket.kosulSon && <span className={paket.kosulSon < bugun() ? "kotu-yazi" : "sonuk"}> · {t("kosulSonKisa", { gun: tarihYaz(paket.kosulSon, dil, "kisa") })}</span>}
           </span>
         </NotKutu>
       )}

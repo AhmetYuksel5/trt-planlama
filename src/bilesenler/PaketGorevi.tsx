@@ -120,7 +120,7 @@ export function GorevTalepleri({ ben }: { ben: Kisi }) {
       if (p.durum === "taslak") return gorevTalebiKarariVerebilir(ben, p) || p.gorevTalebi.kisiId === ben.id;
       return !!p.gorevTalebi.red && p.gorevTalebi.kisiId === ben.id && gunFarki(p.gorevTalebi.red.zaman.slice(0, 10), B) <= RED_GUNU;
     })
-    .sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
+    .sort((a, b) => Number(!a.kosulSon) - Number(!b.kosulSon) || (a.kosulSon ?? "").localeCompare(b.kosulSon ?? "") || (a.sonTarih ?? "").localeCompare(b.sonTarih ?? "")); // son günü yakın olan önce
   if (!liste.length) return null;
   const bekleyen = liste.filter((p) => p.durum === "taslak").length;
   return (
@@ -230,7 +230,10 @@ export function SartliPaketler({ ben }: { ben: Kisi }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   if (!yapabilir(ben, "paketDegerlendir")) return null;
-  const liste = v.paketler.filter((p) => sartliBekleyen(p) && !p.ozelId).sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
+  // Koşulun son günü yakın olan önce (son günü olmayan sonda), sonra paketin günü.
+  const liste = v.paketler
+    .filter((p) => sartliBekleyen(p) && !p.ozelId)
+    .sort((a, b) => Number(!a.kosulSon) - Number(!b.kosulSon) || (a.kosulSon ?? "").localeCompare(b.kosulSon ?? "") || (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
   if (!liste.length) return null;
   return (
     <Kart baslik={t("sartliBekleyenler")} ikon={<Hourglass size={18} />} ek={String(liste.length)}>
@@ -252,6 +255,12 @@ export function SartliPaketler({ ben }: { ben: Kisi }) {
                     </>
                   )}{" "}
                   · <span dir="auto">{p.kosul}</span>
+                  {p.kosulSon && (
+                    <span className={p.kosulSon < bugun() ? "kotu-yazi" : ""} data-kosul-son={p.kosulSon < bugun() ? "gecti" : "var"}>
+                      {" "}
+                      · {t("kosulSonKisa", { gun: tarihYaz(p.kosulSon, dil, "kisa") })}
+                    </span>
+                  )}
                 </small>
               </div>
               <button className="dugme dugme-kucuk dugme-iyi" onClick={() => confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} data-sartli-kabul>

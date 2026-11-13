@@ -1,7 +1,11 @@
 import { birimAdi } from "../yapi";
 import { ChartColumn, FileDown, Printer } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { useYeniTasarim } from "../tasarimSecimi";
+import { useAdimDurumu } from "../yol";
+import MuhabirRaporu from "./yeni/MuhabirRaporu";
 import { indir } from "../bilesenler/indir";
+import { csvMetni } from "../csv";
 import { Bos, Ilerleme, Kart, KisiHucre, Sayac } from "../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, KANAL_ADI, TUR_ADI } from "../etiketler";
@@ -23,7 +27,7 @@ import { SayfaBasi } from "./ana/Planlama";
 
 const DONEM_ADI: Record<Donem, Anahtar> = { 1: "bugun", 7: "rpYedi", 30: "rpOtuz" };
 
-export default function Raporlar({ ben }: { ben: Kisi }) {
+function GenelRapor({ ben, sekmeler }: { ben: Kisi; sekmeler?: ReactNode }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [gun, setGun] = useState<Donem>(7);
@@ -60,11 +64,6 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
    * ondalık sayıyor; diğer dillerde virgül.
    */
   const csvIndir = () => {
-    const ayirac = dil === "tr" ? ";" : ",";
-    const hucre = (x: string | number) => {
-      const s = String(x);
-      return /[";,\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
     const satirlar: (string | number)[][] = [
       [t("mRaporlar"), donemYazisi, kapsamYazisi],
       [],
@@ -92,7 +91,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
         p.puan === null ? "—" : p.puan.toFixed(1),
       ]),
     ];
-    const csv = "﻿" + satirlar.map((s) => s.map(hucre).join(ayirac)).join("\r\n");
+    const csv = csvMetni(satirlar, dil);
     indir(`rapor-${bugun()}-${gun}g.csv`, csv, "text/csv;charset=utf-8");
   };
 
@@ -113,6 +112,7 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
           </>
         }
       />
+      {sekmeler}
       {/* Yazdırırken sayfa başı gizli; raporun kendisi ne olduğunu söylesin. */}
       <div className="yalniz-yazdir">
         <h1>{t("mRaporlar")}</h1>
@@ -254,6 +254,34 @@ export default function Raporlar({ ben }: { ben: Kisi }) {
           </div>
         )}
       </Kart>
+    </>
+  );
+}
+
+/*
+ * Yeni tasarımda iki sekme: muhabir raporu (ay ay, karşılaştırmalı; önce
+ * açılan) ve genel rapor (eskisi). Eski tasarımda yalnız genel rapor.
+ */
+export default function Raporlar({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const yeni = useYeniTasarim();
+  const [sekme, setSekme] = useAdimDurumu<"muhabir" | "genel">("raporlar:sekme", "muhabir");
+  if (!yeni) return <GenelRapor ben={ben} />;
+  const sekmeler = (
+    <div className="sekmeler yazdirma-gizle" role="tablist" data-rapor-sekmeleri>
+      {(["muhabir", "genel"] as const).map((x) => (
+        <button key={x} role="tab" aria-selected={sekme === x} className={sekme === x ? "acik" : ""} onClick={() => setSekme(x)} data-rapor-sekme={x}>
+          {t(x === "muhabir" ? "mrSekme" : "rpGenel")}
+        </button>
+      ))}
+    </div>
+  );
+  if (sekme === "genel") return <GenelRapor ben={ben} sekmeler={sekmeler} />;
+  return (
+    <>
+      <SayfaBasi ikon={<ChartColumn size={26} />} baslik={t("mRaporlar")} />
+      {sekmeler}
+      <MuhabirRaporu ben={ben} />
     </>
   );
 }

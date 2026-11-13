@@ -20,10 +20,12 @@ export const whatsappNumarasi = (telefon: string) => {
 const telefondaMi = () =>
   typeof window !== "undefined" && (window.matchMedia?.("(pointer: coarse)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
 
-export const whatsappAdresi = (telefon: string) => {
+/* metin: toplu iletişimde hazır metin sohbet kutusuna yazılı gelir; kişi kendisi gönderir. */
+export const whatsappAdresi = (telefon: string, metin = "") => {
   const n = whatsappNumarasi(telefon);
   if (!n) return "";
-  return telefondaMi() ? `https://wa.me/${n}` : `https://web.whatsapp.com/send?phone=${n}`;
+  const m = metin.trim() ? encodeURIComponent(metin.trim()) : "";
+  return telefondaMi() ? `https://wa.me/${n}${m ? `?text=${m}` : ""}` : `https://web.whatsapp.com/send?phone=${n}${m ? `&text=${m}` : ""}`;
 };
 
 /* Bilgisayarda hangi WhatsApp: kişiye değil bilgisayara bağlı (dil gibi), kayıtta değil. */
@@ -57,7 +59,7 @@ export const whatsappYoluKaydet = (y: WhatsappYolu) => {
  */
 const UYGULAMA_BEKLE = 1500;
 
-const uygulamadaAc = (numara: string, olmazsa?: () => void) => {
+const uygulamadaAc = (numara: string, olmazsa?: () => void, metin = "") => {
   let gitti = false;
   const odakGitti = () => {
     gitti = true;
@@ -67,7 +69,7 @@ const uygulamadaAc = (numara: string, olmazsa?: () => void) => {
   const a = document.createElement("a");
   // WhatsApp'ın kendi wa.me sayfasının uygulamaya verdiği biçim: düz "send?phone=" telefonda kayıtlı
   // olmayan numarada "kayıtlı değil" diyordu; type=phone_number numarayla sohbet açtırıyor.
-  a.href = `whatsapp://send/?phone=${numara}&text&type=phone_number&app_absent=0`;
+  a.href = `whatsapp://send/?phone=${numara}&text=${encodeURIComponent(metin.trim())}&type=phone_number&app_absent=0`;
   a.click();
   setTimeout(() => {
     window.removeEventListener("blur", odakGitti);
@@ -84,16 +86,16 @@ const uygulamadaAc = (numara: string, olmazsa?: () => void) => {
  */
 const PENCERE = "plannersflow-whatsapp";
 
-export function WhatsAppDugmesi({ telefon }: { telefon: string }) {
+export function WhatsAppDugmesi({ telefon, metin = "" }: { telefon: string; metin?: string }) {
   const { t } = useDil();
-  const adres = whatsappAdresi(telefon);
+  const adres = whatsappAdresi(telefon, metin);
   if (!adres) return null;
   const ac = (e: MouseEvent<HTMLAnchorElement>) => {
     const yol = whatsappYolu();
     // Telefonda wa.me zaten uygulamayı açıyor; Web seçiliyse bağlantının kendisi.
     if (telefondaMi() || yol === "web") return;
     e.preventDefault();
-    uygulamadaAc(whatsappNumarasi(telefon), yol === "otomatik" ? () => window.open(adres, PENCERE) : undefined);
+    uygulamadaAc(whatsappNumarasi(telefon), yol === "otomatik" ? () => window.open(adres, PENCERE) : undefined, metin);
   };
   return (
     <a className="ikon-dugme whatsapp" href={adres} target={PENCERE} onClick={ac} title={t("whatsapp")} aria-label={t("whatsapp")} data-whatsapp>

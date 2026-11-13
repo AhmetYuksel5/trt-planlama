@@ -3609,3 +3609,30 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .md-bag { all: unset; cursor: pointer; color: var(--vurgu); }
 .md-bag:focus-visible { outline: 2px solid var(--vurgu); }
 .md-ust { display: inline-flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; font-weight: 400; }
+
+/* Muhabir raporu (muhabirRaporu.ts). */
+.mr { display: grid; gap: var(--ara-3); }
+.mr-ust { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; justify-content: space-between; }
+.mr-ust .ay-secici { display: inline-flex; align-items: center; gap: var(--ara-2); }
+.mr-ozet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--ara-2); }
+.mr-ozet-kutu { display: grid; gap: 2px; padding: var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); }
+.mr-ozet-kutu b { font-size: 22px; display: inline-flex; align-items: baseline; gap: var(--ara-1); }
+.mr-fark { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; margin-inline-start: 4px; }
+.mr-fark.artti { color: var(--iyi); }
+.mr-fark.azaldi { color: var(--kotu); }
+.mr-sirala { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; min-block-size: 32px; }
+.mr-sirala.secili { color: var(--vurgu); }
+.mr-sirala:focus-visible { outline: 2px solid var(--vurgu); }
+.mr-tablo tr.soluk td { opacity: .55; }
+.mr-tablo td.birincil small { display: block; }
+.mr-tablo td.birincil { min-inline-size: 200px; }
+.mr-tablo .kisi-cipi-kap, .mr-tablo .kisi-cipi { max-inline-size: none; }
+
+/* Toplu iletişim (TopluIletisim.tsx). */
+.toplu-cubuk { position: sticky; inset-block-start: var(--ara-2); z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); margin-block-end: var(--ara-2); border: 1px solid var(--vurgu); border-radius: var(--yaricap); background: var(--yuzey); }
+.sec-sutun { inline-size: 44px; text-align: center; }
+.sec-sutun input { inline-size: 20px; block-size: 20px; }
+.toplu-wa-liste { display: grid; gap: var(--ara-1); margin: 0; padding: 0; list-style: none; }
+.toplu-wa-liste li { display: flex; align-items: center; gap: var(--ara-2); min-block-size: 44px; padding-inline: var(--ara-2); border-radius: var(--yaricap); }
+.toplu-wa-liste li bdi { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toplu-wa-liste li.basildi { background: var(--iyi-sis); }

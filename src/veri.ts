@@ -966,6 +966,8 @@ export interface Paket {
   videoIade?: string;
   /** Haftalıkta şartlı kabul edildi: taslakta bu koşulla bekliyor, Next Day onayı kendiliğinden kabul etmiyor. */
   kosul?: string;
+  /** Koşulun son günü (kalemden): geçince bekleyenler listesinde kırmızı. */
+  kosulSon?: string;
   klipKodu?: string;
   ucret?: Ucret;
   /** Tamamlanan pakete Newsdesk'in verdiği nitelik puanı (1–5); ölçütü birimle netleşecek. */
@@ -1123,6 +1125,12 @@ export interface HaftalikKalem {
    * muhabir ön bilgi alıyor, görev ancak Planlama onaylayınca.
    */
   kosul?: string;
+  /*
+   * Koşulun son günü (isteğe bağlı; kullanıcı ajanı: şartlı kabul unutulup
+   * haftalarca taslakta kalıyordu). Kendiliğinden karar vermez, yalnız
+   * bekleyenler listesinde sıralar ve geçince kırmızı gösterir.
+   */
+  kosulSon?: string;
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;

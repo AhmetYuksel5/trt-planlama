@@ -48,11 +48,18 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     const form = kart.locator("[data-kosul-formu]");
     ok((await form.count()) === 1 && (await form.locator(".form-alt button").last().isDisabled()), `${id}: koşul formu açıldı, boşken kaydedilemiyor`);
     await form.locator("[data-kosul-girdi]").fill(kosul);
+    // Koşulun son günü (isteğe bağlı): yalnız birine.
+    if (id === "sk-haber")
+      await form.locator("input[data-kosul-son]").evaluate((el) => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, new Date().toLocaleDateString("sv"));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      });
     await form.locator(".form-alt button").last().click(); await p.waitForTimeout(400);
   }
   const h1 = (await veri()).haftalik.find((x) => x.id === kur.hid);
   ok(["sk-haber", "sk-feature"].every((id) => { const k = h1.kalemler.find((x) => x.id === id); return k.karar === "sartli" && k.kosul; }), "iki kalem şartlı ve koşullu");
   ok((await p.locator(`[data-kalem="sk-haber"] [data-kosul]`).count()) === 1, "kalemin kartında koşul yazılı");
+  ok(h1.kalemler.find((x) => x.id === "sk-haber").kosulSon && !h1.kalemler.find((x) => x.id === "sk-feature").kosulSon, "son gün yalnız girilen kalemde");
 
   // 2. Gözden geçirme: gruplu, özet şartlıyı sayıyor, tutanak kopyalanıyor, karar burada değişiyor
   await p.locator("[data-gozden-ac]").click(); await p.waitForTimeout(400);
@@ -101,6 +108,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await oturum("pl1");
   await git("#/paketler");
   ok((await p.locator("[data-sartli-paket]").count()) === 2, "Paketler'de 'Şartlı kabul bekleyenler' iki paket");
+  ok((await p.locator(`[data-sartli-paket="${pk.id}"] [data-kosul-son="var"]`).count()) === 1 && (await p.locator("[data-sartli-paket]").first().getAttribute("data-sartli-paket")) === pk.id, "son günü olan pakete geçti, listede önce");
   await p.locator(`[data-sartli-paket="${pk.id}"] [data-sartli-kabul]`).click(); await p.waitForTimeout(400);
   await p.locator(`[data-sartli-paket="${pf.id}"] [data-sartli-ret]`).click(); await p.waitForTimeout(400);
   d = await veri();

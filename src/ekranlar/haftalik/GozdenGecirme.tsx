@@ -94,7 +94,7 @@ function GozdenSatiri({ ben, hafta, kalem }: { ben: Kisi; hafta: HaftalikPlan; k
         <KararNotlari kalem={kalem} />
       </div>
       {kararVerebilir(ben, hafta) ? (
-        <select className="girdi" value={kalem.karar} aria-label={t("krKarar")} onChange={(e) => kalemKarar(ben, hafta.id, kalem.id, e.target.value as Karar, kalem.kosul)} data-gozden-karar>
+        <select className="girdi" value={kalem.karar} aria-label={t("krKarar")} onChange={(e) => kalemKarar(ben, hafta.id, kalem.id, e.target.value as Karar, kalem.kosul, kalem.kosulSon)} data-gozden-karar>
           {secenekler.map((k) => (
             <option key={k} value={k}>
               {t(KARAR_ADI[k])}

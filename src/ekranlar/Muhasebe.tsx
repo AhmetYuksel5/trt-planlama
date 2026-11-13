@@ -1,4 +1,5 @@
 import { Calculator, ChevronLeft, ChevronRight, Download, FileSpreadsheet, ListChecks, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { csvMetni } from "../csv";
 import { IsKunyesi } from "../bilesenler/Kunye";
 import { useState, type ReactNode } from "react";
 import { Bos, Icerik, Kart, KisiHucre, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
@@ -79,7 +80,6 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
   const odenen = satirlar.filter((x) => x.kapanis?.odendi).length;
 
   const excel = () => {
-    const kac = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const bas = [t("mhMuhabir"), t("mhUlke"), t("mhAnlasma"), "PKG", t("mhDigerIs"), t("mhCanli"), t("mhKota"), t("mhOdeme"), t("mhPara"), t("mhOdemeAraci"), t("mhOnay"), t("mhOdendi")];
     const satir = (x: AylikDokum) => [
       ad(x.kisi),
@@ -95,7 +95,7 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
       x.kapanis?.onay ? "✓" : "",
       x.kapanis?.odendi ? "✓" : "",
     ];
-    indir(`muhasebe-${ay}.csv`, "﻿" + [bas, ...satirlar.map(satir)].map((r) => r.map(kac).join(",")).join("\r\n"), "text/csv;charset=utf-8");
+    indir(`muhasebe-${ay}.csv`, csvMetni([bas, ...satirlar.map(satir)], dil), "text/csv;charset=utf-8");
   };
 
   return (
