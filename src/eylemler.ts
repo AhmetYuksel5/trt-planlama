@@ -15,7 +15,7 @@ import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
-import { izinBirimi, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -5198,7 +5198,9 @@ const taslakUygula = (d: Durum, ben: Kisi, plan: NextDayPlan, t: PlanTaslagi, do
 const ekipKisisi = (gorev: EkipGoreviId, y: Yapi): { birim: BirimId; gorev: GorevId } => {
   const g = ekipGorevleri(y).find((x) => x.id === gorev);
   const birim = g?.birimler[0] ?? "newsdesk";
-  return { birim, gorev: g?.unvanlar[0] ?? unvanListesi(birim, undefined, y)[0] ?? "koordinator" };
+  // Kural ünvan vermiyorsa birimin yönetici olmayan ilk ünvanı: ilk ünvan çoğu birimde "Birim yöneticisi",
+  // geçmiş planlardan açılan ekip üyeleri yönetici ünvanıyla kaydediliyordu.
+  return { birim, gorev: g?.unvanlar[0] ?? (birimeUygunUnvan(birim, "", y) || "koordinator") };
 };
 
 export interface GecmisYukleme {

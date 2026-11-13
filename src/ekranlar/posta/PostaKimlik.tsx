@@ -1,4 +1,5 @@
 import { Loader2, Plug, UserCog } from "lucide-react";
+import { kapiHatasi } from "../../yz";
 import { useEffect, useState } from "react";
 import { Kart, bildir } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
@@ -18,7 +19,7 @@ export function PostaKimlikKart() {
   const [deneniyor, setDeneniyor] = useState(false);
 
   useEffect(() => {
-    void postaKimlikGetir().then((r) => (r.tamam ? setKimlik(r.veri) : setHata(`${t("postaKapiYok")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`)));
+    void postaKimlikGetir().then((r) => (r.tamam ? setKimlik(r.veri) : setHata(kapiHatasi(r))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -33,7 +34,7 @@ export function PostaKimlikKart() {
   const alan = (k: "kullanici" | "grupAdresi", v: string) => setKimlik({ ...kimlik, [k]: v });
   const kaydet = async () => {
     const r = await postaKimlikKaydet({ kullanici: kimlik.kullanici, grupAdresi: kimlik.grupAdresi, ...(parola ? { parola } : {}) });
-    if (!r.tamam) return bildir(`${t("postaKapiYok")} [${r.hata}]${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    if (!r.tamam) return bildir(kapiHatasi(r, `${t("postaKapiYok")} [${r.hata}]`));
     setKimlik(r.veri);
     setParola("");
     bildir(t("bKaydedildi"));

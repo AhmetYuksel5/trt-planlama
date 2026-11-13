@@ -192,6 +192,34 @@ const kisiOku = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): 
 };
 
 /*
+ * Kişi kaydı önbellekte: her istekte Firestore'dan okumak, ücretsiz planın günlük 50.000 okuması
+ * dolunca (429 Quota exceeded) postayı ve yapay zekayı bütünüyle kilitliyordu. 10 dakika taze sayılıyor
+ * (hesabı kapatılan ya da birimi değişen kişi en geç o kadar eski haliyle geçer); Firestore kota ya da
+ * kendi hatasıyla yanıt vermezse son 24 saatte okunmuş kayıt kullanılıyor. Oturum belgesi yine her
+ * istekte doğrulanıyor; anahtar doğrulanmış uid'den, başkasının kaydı okunamaz.
+ */
+const KISI_TAZE = 10 * 60_000;
+const KISI_YEDEK_SANIYE = 24 * 3600;
+const kisiAnahtari = (uid: string) => `kisi:${uid}`;
+
+const kisiGetir = async (belge: string, kimlik: Kimlik, env: Env, d: Bagimlilik): Promise<Kisi | string> => {
+  const onceki = await d.onbellek
+    ?.get(kisiAnahtari(kimlik.uid))
+    .then((x) => (x ? (JSON.parse(x) as { kisi: Kisi; zaman: number }) : null))
+    .catch(() => null);
+  if (onceki && d.simdi() - onceki.zaman < KISI_TAZE) return { ...onceki.kisi, kimlik };
+  const kisi = await kisiOku(belge, kimlik, env, d).catch((e: unknown) => `istisna ${String(e)}`.slice(0, 300));
+  if (typeof kisi !== "string") {
+    await d.onbellek?.put(kisiAnahtari(kimlik.uid), JSON.stringify({ kisi, zaman: d.simdi() }), KISI_YEDEK_SANIYE).catch(() => {});
+    return kisi;
+  }
+  // Firestore yanıt vermediyse (kota, sunucu, bağlantı) eski kayıt; kişi "pasif" ya da yoksa önbellek kullanılmaz.
+  const gecici = /^firestore (429|5\d\d)|^istisna/.test(kisi);
+  if (gecici && onceki) return { ...onceki.kisi, kimlik };
+  return kisi;
+};
+
+/*
  * Tam yönetici gündemi birime ya da kişiye paylaşabiliyor (genel ayar belgesi, gundemPaylasim).
  * Belgeyi kişinin kendi oturumuyla okuyoruz; paylaşımı kural yalnız tam yöneticiye yazdırıyor.
  */
@@ -237,8 +265,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
   const belge = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
   const kimlik = belge ? await oturumuDogrula(belge, env.FIREBASE_PROJE, d.anahtarBul, d.simdi()).catch(() => null) : null;
   if (!kimlik) return yanit({ hata: "oturum" }, 401);
-  const kisi = await kisiOku(belge, kimlik, env, d).catch((e: unknown) => `istisna ${String(e)}`.slice(0, 300));
-  if (typeof kisi === "string") return yanit({ hata: "kisi", ayrinti: kisi }, 403);
+  const kisi = await kisiGetir(belge, kimlik, env, d);
+  // Kota ayrı hata: ekran "kapıya ulaşılamadı" yerine kotanın dolduğunu ve ne zaman yenileneceğini yazsın.
+  if (typeof kisi === "string") return kisi.startsWith("firestore 429") ? yanit({ hata: "kota", ayrinti: kisi }, 503) : yanit({ hata: "kisi", ayrinti: kisi }, 403);
 
   const yol = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
   const bugun = gun(d.simdi());

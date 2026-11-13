@@ -312,6 +312,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
     Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
     yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
+    Günlük okuma kotası (50.000) kurum tam kullanmadan doldu, posta ve yapay
+    zeka durdu (kullanıcı): kişiye bağlı ayarlar (`HARITA_ALANLARI`, fark
+    sorgusu yok) her açılışta herkesinkiyle baştan okunuyordu; artık kişi
+    yalnız kendi belgesini (ana sayfa düzeninde `<uid>:` önekli belgeleri)
+    dinler, tam yönetici hepsini (kayıt temizliği ve hesap geçişi
+    başkalarınınkine bakıyor). Posta mesajları yalnız postayı kullanan sekmede
+    (`depo/firebase.ts → postaDinle`; bu tarayıcıda Posta ya da Postadan
+    kişiler açıldıysa açılıştan, `trt-planlama-posta-kullanir`); sayfa
+    çekmeden önce listenin sunucudan gelmesini bekler (yarım listeyle aynı
+    posta ikinci kez eklenirdi). Ayarlar › "Okuma sayacı" (tam yönetici,
+    gerçek kip; `okumaSayilari`): bu sekmenin sunucudan aldığı belgeler,
+    koleksiyon başına; faturanın birebiri değil, tüketeni gösteriyor.
     Sistemin yazışları (`App.tsx → yokla`: yarının planı, aktarımlar, çift
     plan toplama) "hazır"da değil, bütün koleksiyonlar sunucudan bir kez
     teyit edilince başlar (`depo/firebase.ts → sunucuGeldi`, `kip.ts →
@@ -412,6 +424,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Sağlayıcıyı çağırır (`saglayici.ts`): Claude resmî SDK'yla (düşük
       effort, destekleyen modelde `fallbacks: "default"`), öbürleri OpenAI
       uyumlu uçla.
+  - Kişi kaydı kapıda önbellekte (`index.ts → kisiGetir`, Cache API, 10 dakika
+    taze): her istekte Firestore'dan okuyordu, ücretsiz planın günlük okuma kotası
+    dolunca (429) posta ve yapay zeka bütünüyle kilitleniyordu. Firestore kota,
+    sunucu ya da bağlantı yüzünden yanıt vermezse son 24 saatte okunmuş kayıt
+    kullanılır; "pasif" ve bulunamayan kişi önbelleğe girmez. Önbellekte kaydı
+    olmayan kişiye kotada `hata: "kota"` (503); ekran "kapıya ulaşılamadı" yerine
+    kotanın dolduğunu ve yenilenme saatini yazar (`yz.ts → kapiHatasi`,
+    `dil.ts → kapiKota`; kota ABD Pasifik gece yarısı, İstanbul 11:00/yazın 10:00).
   - **Ayar kapının KV deposunda, Firestore'da değil:** sağlayıcılar,
     anahtarlar, uç nokta adresleri, özellikler (açık, sağlayıcı, birimler,
     kişi başına günlük sınır).
@@ -731,7 +751,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yalnız uyan kartlar, uyan ünvan `.eslesti`). Kişi formlarında aynı adlı birim
     üstüyle ("Output › Output", `ayirtEdiciBirimAdi`). Birim değişince görev
     birimin yönetici olmayan ilk ünvanı (`birimeUygunUnvan`; ilk ünvan çoğu birimde
-    "Birim yöneticisi", muhabir Spor'a tayinde sorulmadan yönetici oluyordu);
+    "Birim yöneticisi", muhabir Spor'a tayinde sorulmadan yönetici oluyordu; davet,
+    hesapsız kişi, kayıt bağlantısı ve postadan kişiler formları da birim seçilince
+    ona geçtiği için kurumda gerçek kipte kişiler "rastgele" yönetici görünüyordu;
+    geçmiş plan yüklemesinin açtığı ekip üyesi de, `eylemler.ts → ekipKisisi`);
     yöneticiye çıkış onay sorar, tayin hemen geçerli olduğu için bildirimde "Geri
     al" (önceki birim, ünvan ve rol, `kisiPozisyonu(…, { rol })`). Kökü, alt birimi
     ya da kişisi olan birimi gizlemek onaylı; taslağın ilk değişikliği "Taslağa

@@ -1,4 +1,5 @@
 import { postaAdresi } from "../../girisKodu";
+import { kapiHatasi } from "../../yz";
 import { muhabirAdresi } from "../../muhabirIletisim";
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { GOMULU, useAdimDurumu, useGeriKapatir } from "../../yol";
@@ -9,7 +10,7 @@ import { postaGidenEkle, postaSil, postaEtiketsizleriGruba, postaHepsiOkundu, po
 import { gizliEkMi, gondereniBul, komutSatiri, postaAlintiMetni, postaKomutlari, postaKonuBasligi, postaKonuCekirdegi, postaMetniSadelestir, yeniMetin, type KomutTuru } from "../../eposta";
 import { useVeri, type Kisi, type PostaMesaji } from "../../veri";
 import { yerelGun } from "../../tarih";
-import { GERCEK, useSunucuyaEsit } from "../../kip";
+import { GERCEK, firebaseYukle, useSunucuyaEsit } from "../../kip";
 import { gorunenPostalar, okunmamisMi } from "../../postaOkuma";
 import { postaEkiGetir, postalariCek, postaGonder, postaKimlikGetir } from "../../posta-kapi";
 import { SayfaBasi } from "../ana/Planlama";
@@ -295,7 +296,7 @@ const useEkIndir = () => {
     setSuren(anahtar);
     const r = await postaEkiGetir(m.mesajKimligi, ad);
     setSuren("");
-    if (!r.tamam) return bildir(r.hata === "ekYok" ? t("postaEkYok") : r.hata === "ekBuyuk" ? t("postaEkBuyuk") : `${t("postaEkHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    if (!r.tamam) return bildir(r.hata === "ekYok" ? t("postaEkYok") : r.hata === "ekBuyuk" ? t("postaEkBuyuk") : kapiHatasi(r, t("postaEkHata")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(r.veri);
     a.download = ad;
@@ -533,7 +534,7 @@ const yanitAlicilari = (sohbet: Sohbet, ben: Kisi, grup: string): { kime: string
 };
 
 const gonderimHatasi = (r: { hata: string; ayrinti?: string }, t: ReturnType<typeof useDil>["t"]) =>
-  r.hata === "eksikKimlik" ? t("bPostaCekKimlikYok") : r.hata === "kapali" ? t("bPostaCekKapali") : `${t("bPostaGonderHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
+  r.hata === "eksikKimlik" ? t("bPostaCekKimlikYok") : r.hata === "kapali" ? t("bPostaCekKapali") : kapiHatasi(r, t("bPostaGonderHata"));
 
 /*
  * Alıcı satırındaki adı adrese çevirir: adres ise kendisi; değilse tam ad
@@ -932,6 +933,7 @@ export function Posta({ ben }: { ben: Kisi }) {
   const [cekiliyor, setCekiliyor] = useState(false);
   const cek = async (g = grup) => {
     setCekiliyor(true);
+    if (GERCEK) await (await firebaseYukle()).postaDinle();
     const r = await postalariCek(ben, 25, g);
     setCekiliyor(false);
     if ("hata" in r) {
@@ -939,7 +941,7 @@ export function Posta({ ben }: { ben: Kisi }) {
       // bağlantı hatasında kapının verdiği ayrıntıyı göster.
       const ozel = r.hata === "eksikKimlik" ? "bPostaCekKimlikYok" : r.hata === "kapali" ? "bPostaCekKapali" : r.hata === "eksikSunucu" ? "bPostaCekSunucuYok" : "";
       if (ozel) bildir(t(ozel as Parameters<typeof t>[0]));
-      else bildir(`${t("bPostaCekHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+      else bildir(kapiHatasi(r, t("bPostaCekHata")));
     } else {
       const sonuc = r.oneri ? t("bPostaCekildiOneri", { n: String(r.eklenen), o: String(r.oneri) }) : r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok");
       bildir(r.uyari ? `${sonuc} · ${t("bPostaCekKismi")} (${r.uyari})` : sonuc);
@@ -951,7 +953,8 @@ export function Posta({ ben }: { ben: Kisi }) {
   useEffect(() => {
     if (!GERCEK || ilk.current) return;
     ilk.current = true;
-    void postaKimlikGetir().then((r) => {
+    // Posta yalnız onu kullanan sekmede dinleniyor (depo/firebase.ts → postaDinle): liste gelmeden çekilirse aynı posta ikinci kez eklenirdi.
+    void Promise.all([postaKimlikGetir(), firebaseYukle().then((f) => f.postaDinle())]).then(([r]) => {
       if (!r.tamam) return; // kapıya ulaşılamadı: sessiz, "Postaları çek" nedeni gösterir
       const g = (r.veri.grupAdresi || "").trim().toLowerCase();
       setGrup(g);

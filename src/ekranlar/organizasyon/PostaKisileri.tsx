@@ -5,7 +5,7 @@ import { Bos, Pencere, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { postaKisileriUygula, type PostaKisiKaydi } from "../../eylemler";
 import { ORNEK_PLANLAMA_ADRESI } from "../../eposta";
-import { GERCEK } from "../../kip";
+import { GERCEK, firebaseYukle } from "../../kip";
 import { DEMO_ALANI, KURUM_ALANLARI, birimGecerli, postaKisileri, type PostaKisisi } from "../../postaKisileri";
 import { useVeri, type BirimId, type GorevId, type Kisi } from "../../veri";
 import { birimAdi, birimeUygunUnvan, gorevAdi } from "../../yapi";
@@ -264,7 +264,7 @@ export function PostaKisileriDugmesi({ ben }: { ben: Kisi }) {
   if (!hesapYetkisi(ben, "kisiDuzenle") && !hesapYetkisi(ben, "hesapsizKisi")) return null;
   return (
     <>
-      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} data-pk-ac>
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => (GERCEK ? void firebaseYukle().then((f) => f.postaDinle()).then(() => setAcik(true)) : setAcik(true))} data-pk-ac>
         <Mail size={14} /> {t("pkBaslik")}
       </button>
       {acik && <PostaKisileriPenceresi ben={ben} kapat={() => setAcik(false)} />}

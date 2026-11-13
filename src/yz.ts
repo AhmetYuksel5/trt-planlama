@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Anahtar } from "./dil";
+import { metin, type Anahtar } from "./dil";
 import { izlemede } from "./izleme";
 import { GERCEK, firebaseYukle } from "./kip";
 import type { Bicim, YzGenel } from "./veri";
@@ -84,6 +84,13 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
   if (!r.ok || !j) return { tamam: false, hata: j?.hata ?? "baglanti", ...(j?.ayrinti ? { ayrinti: j.ayrinti } : !j ? { ayrinti: `HTTP ${r.status}` } : {}) };
   return { tamam: true, veri: j };
 };
+
+/*
+ * Firestore'un günlük okuma kotası dolunca kapı kişiyi tanıyamıyor ("kota"): bu "kapıya ulaşılamadı"
+ * değil, kota yenilenince kendiliğinden düzeliyor; ekran bunu söylesin. Öbür hatalar eski biçimde.
+ */
+export const kapiHatasi = (r: { hata: string; ayrinti?: string }, onEk: string = metin("postaKapiYok")) =>
+  r.hata === "kota" || r.ayrinti?.startsWith("firestore 429") ? metin("kapiKota") : `${onEk}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
 
 /* Kapıdan dosya (posta eki): yanıt JSON değil, dosyanın kendisi; hata yine JSON. */
 export const kapiDosya = async (yol: string, govde: unknown): Promise<YzSonuc<Blob>> => {

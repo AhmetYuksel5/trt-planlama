@@ -21,6 +21,7 @@ import {
   connectFirestoreEmulator,
   deleteDoc,
   doc,
+  documentId,
   getDoc,
   getDocsFromCache,
   initializeFirestore,
@@ -173,6 +174,49 @@ interface Onbellek {
  * yalnız değişen öğelerle yeniden çiziliyor: değişmeyen öğenin nesnesi
  * aynı kalıyor, fark da nesne kimliğiyle çıktığı için.
  */
+/*
+ * Bu sekmenin sunucudan aldığı belgeler, koleksiyon başına (Ayarlar › Okuma sayacı, tam yönetici). Firestore
+ * faturasının birebir aynısı değil (uzun kopukluktan sonra sorgunun tamamı faturalanıyor, burada yalnız
+ * değişenler sayılıyor) ama kotayı neyin tükettiğini gösteriyor; günlük okuma kotası posta açılmadan doluyordu.
+ */
+const okumalar = new Map<string, number>();
+const okumaBasi = Date.now();
+const okumaSay = (alan: string, n: number) => {
+  if (!n) return;
+  okumalar.set(alan, (okumalar.get(alan) ?? 0) + n);
+  window.dispatchEvent(new Event("trt-okuma"));
+};
+export const okumaSayilari = () => ({ bas: okumaBasi, liste: [...okumalar].sort((a, b) => b[1] - a[1]) });
+
+/*
+ * Posta mesajları yalnız postayı kullanan sekmede dinleniyor: bu tarayıcıda Posta sayfası (ya da Postadan
+ * kişiler) açılmışsa açılıştan, değilse açıldığı an (postaDinle). Her gelen posta postayı hiç açmayan bütün
+ * sekmelerde de okuma harcıyordu. Sayfa çekmeden önce dinlemenin sunucudan gelmesini bekliyor: yarım listeyle
+ * postaIsle aynı postayı ikinci kez eklerdi.
+ */
+const POSTA_KULLANIR = "trt-planlama-posta-kullanir";
+let postaBaslat: (() => void) | null = null;
+let postaGeldi = false;
+const postaBekleyenler: (() => void)[] = [];
+const postaKullaniyor = () => {
+  try {
+    return localStorage.getItem(POSTA_KULLANIR) === "1";
+  } catch {
+    return false;
+  }
+};
+export const postaDinle = (): Promise<void> => {
+  try {
+    localStorage.setItem(POSTA_KULLANIR, "1");
+  } catch {
+    /* tarayıcı saklamaya izin vermiyor: yalnız bu açılışta dinlenir */
+  }
+  // Dinlenmeyen kişide (kısıtlı, kayıt bağlı değil) beklenecek bir şey yok.
+  if (!postaBaslat) return Promise.resolve();
+  postaBaslat();
+  return postaGeldi ? Promise.resolve() : new Promise((r) => postaBekleyenler.push(r));
+};
+
 const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() => void) => {
   const uid = auth.currentUser?.uid ?? "";
   // Kısıtlı kişi (muhabir, onay bekleyen kayıt) yalnız erişim listesinde adı geçen belgeleri istiyor; kural da yalnız onları veriyor.
@@ -196,7 +240,12 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   };
   // Her dinlenenin son görüntüsü önbellekten mi: biri bile öyleyse bağlantı canlı sayılmaz (kip.ts → baglantiCanli).
   const onbellekte = new Set<string>();
-  const sunucuGeldi = (k: string, snap: { metadata: { fromCache: boolean } }) => {
+  const sunucuGeldi = (k: string, snap: { metadata: { fromCache: boolean }; docChanges?: () => unknown[] }) => {
+    if (!snap.metadata.fromCache) okumaSay(k.split("/")[0], snap.docChanges ? snap.docChanges().length : 1);
+    if (k === "postaMesajlari" && !snap.metadata.fromCache && !postaGeldi) {
+      postaGeldi = true;
+      postaBekleyenler.splice(0).forEach((f) => f());
+    }
     if (snap.metadata.fromCache) onbellekte.add(k);
     else onbellekte.delete(k);
     baglantiCanli(onbellekte.size === 0);
@@ -350,12 +399,12 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   const haritaKur = (alan: string) => {
     d = { ...d, [alan]: Object.fromEntries([...onbellek[alan].entries()].map(([k, x]) => [k, x.o])) };
   };
-  const haritaDinle = (alan: string) => {
+  const haritaDinle = (alan: string, onEk?: string) => {
     onbellek[alan] ??= new Map();
     bekle(alan);
     iptal.push(
       onSnapshot(
-        collection(db, alan),
+        onEk ? query(collection(db, alan), where(documentId(), ">=", onEk), where(documentId(), "<", `${onEk}\uf8ff`)) : collection(db, alan),
         { includeMetadataChanges: true },
         (snap) => {
           let degisti = false;
@@ -376,8 +425,29 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   if (!kisitli) {
     // Muhasebenin koleksiyonları yalnız okuyabilene: kuralın reddi bütün dinlemeyi durdururdu.
     const muhasebe = muhasebeOkur(kendi);
-    for (const alan of DIZI_ALANLARI) if (muhasebe || !(MUHASEBE_ALANLARI as readonly string[]).includes(alan)) diziDinle(alan, farkAlaniMi(alan) ? "fark" : "tam");
-    for (const alan of HARITA_ALANLARI) haritaDinle(alan);
+    for (const alan of DIZI_ALANLARI) if (alan !== "postaMesajlari" && (muhasebe || !(MUHASEBE_ALANLARI as readonly string[]).includes(alan))) diziDinle(alan, farkAlaniMi(alan) ? "fark" : "tam");
+    let postaAcik = false;
+    postaBaslat = () => {
+      if (postaAcik || durdu) return;
+      postaAcik = true;
+      diziDinle("postaMesajlari", "fark");
+    };
+    if (postaKullaniyor()) postaBaslat();
+    /*
+     * Kişiye bağlı ayarlar (ana sayfa düzeni, kısayollar, okundu, posta okuma izi…) yalnız kişinin kendisininki:
+     * bu koleksiyonlarda fark sorgusu yok, her sekme her açılışta herkesinkini baştan okuyordu (50 kişide
+     * açılış başına ~400 okuma); ücretsiz planın günlük 50.000 okuması posta açılmadan doluyordu. Tam yönetici
+     * hepsini okuyor: kayıt temizliği herkesin başlık kısayoluna, hesap geçişi eski kimliğin ayarlarına bakıyor.
+     */
+    if (kendi.hesapYoneticisi) for (const alan of HARITA_ALANLARI) haritaDinle(alan);
+    else
+      for (const alan of HARITA_ALANLARI) {
+        if (alan === "anaSayfa") haritaDinle(alan, `${belgeKimligi(uid)}:`);
+        else {
+          onbellek[alan] = new Map();
+          belgeDinle(alan, uid, () => haritaKur(alan));
+        }
+      }
   } else {
     for (const alan of KISITLI_OKUR) diziDinle(alan, "suz");
     // Yapı (birim ve ünvan adları, akış) herkese açık.
@@ -508,6 +578,8 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   return () => {
     // Önbellekten sonra açılan fark dinleyicisi kapanıştan sonra kurulmasın.
     durdu = true;
+    postaBaslat = null;
+    postaGeldi = false;
     iptal.forEach((f) => f());
   };
 };

@@ -26,6 +26,7 @@ const belge = async (uid: string, o: { anahtar?: CryptoKey; aud?: string; exp?: 
 };
 
 const GENEL_BIRIMLER: string[] = [];
+let FIRESTORE_DURUM = 200;
 const KISILER: Record<string, { birim: string; yonetici?: boolean; pasif?: boolean }> = {
   yon: { birim: "planlama", yonetici: true },
   pl: { birim: "planlama" },
@@ -48,6 +49,7 @@ const kur = () => {
     if (url.endsWith("/documents/ayar/genel"))
       return Response.json({ fields: { gundemPaylasim: { mapValue: { fields: { birimler: { arrayValue: { values: GENEL_BIRIMLER.map((b) => ({ stringValue: b })) } }, kisiler: { arrayValue: {} } } } } } });
     if (url.startsWith("https://firestore.googleapis.com/")) {
+      if (FIRESTORE_DURUM !== 200) return Response.json({ error: { message: "Quota exceeded." } }, { status: FIRESTORE_DURUM });
       const uid = decodeURIComponent(url.split("/").pop()!);
       const k = KISILER[uid];
       if (!k) return new Response("{}", { status: 404 });
@@ -534,4 +536,28 @@ test("makale: tam metin paragrafları, menü ve yan sütun atılır, Google Habe
     assert.ok(j.makale.paragraflar[0].startsWith("الفقرة الأولى"));
   }
   assert.equal((await t.cagir("/makale", "yon", { adres: "http://haber.test/makale" })).status, 400);
+});
+
+test("Firestore kotası dolunca kişi kaydı önbellekten; önbellekte yoksa 'kota' hatası", async () => {
+  const t = kur();
+  let firestore = 0;
+  const asil = t.d.fetch;
+  t.d.fetch = (async (g: RequestInfo | URL, i?: RequestInit) => {
+    if (new Request(g as RequestInfo, i).url.startsWith("https://firestore.googleapis.com/")) firestore++;
+    return asil(g, i);
+  }) as typeof fetch;
+  assert.equal((await t.cagir("/durum", "pl")).status, 200);
+  assert.equal((await t.cagir("/durum", "pl")).status, 200);
+  assert.equal(firestore, 1, "10 dakika içinde ikinci istek Firestore'a gitmiyor");
+  t.d.simdi = () => SIMDI + 11 * 60_000;
+  FIRESTORE_DURUM = 429;
+  try {
+    assert.equal((await t.cagir("/durum", "pl")).status, 200, "kota dolunca eski kayıt");
+    const r = await t.cagir("/durum", "nd");
+    assert.equal(r.status, 503);
+    assert.equal(((await r.json()) as { hata: string }).hata, "kota");
+  } finally {
+    FIRESTORE_DURUM = 200;
+  }
+  assert.equal((await t.cagir("/durum", "pas")).status, 403, "pasif kişi önbelleğe girmiyor");
 });

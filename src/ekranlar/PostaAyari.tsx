@@ -1,4 +1,5 @@
 import { Loader2, Mail } from "lucide-react";
+import { kapiHatasi } from "../yz";
 import { useEffect, useState } from "react";
 import { Kart, bildir } from "../bilesenler/Parcalar";
 import { useDil } from "../dil";
@@ -18,7 +19,7 @@ export function PostaAyari() {
 
   useEffect(() => {
     if (!GERCEK) return;
-    void postaAyariGetir().then((r) => (r.tamam ? setAyar(r.veri) : setHata(`${t("postaKapiYok")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`)));
+    void postaAyariGetir().then((r) => (r.tamam ? setAyar(r.veri) : setHata(kapiHatasi(r))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -40,7 +41,7 @@ export function PostaAyari() {
   const alan = (k: keyof PostaAyarGorunum, v: string | boolean) => setAyar({ ...ayar, [k]: v });
   const kaydet = async () => {
     const r = await postaAyariKaydet({ acik: ayar.acik, sunucu: ayar.sunucu, alan: ayar.alan });
-    if (!r.tamam) return bildir(`${t("postaKapiYok")} [${r.hata}]${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    if (!r.tamam) return bildir(kapiHatasi(r, `${t("postaKapiYok")} [${r.hata}]`));
     setAyar(r.veri);
     bildir(t("bKaydedildi"));
   };

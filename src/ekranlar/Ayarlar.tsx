@@ -1,12 +1,12 @@
 import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
-import { Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
-import { useState } from "react";
+import { Activity, Database, Lock, RotateCcw, Send, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { useEffect, useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu } from "../bilesenler/WhatsApp";
 import { KatlanirKartlar, Kart, bildir } from "../bilesenler/Parcalar";
 import { gunAdi, useDil, type Anahtar } from "../dil";
-import { GERCEK } from "../kip";
+import { GERCEK, firebaseYukle } from "../kip";
 import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet, sayimBaslangiciKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri, postaGorebilir, yapabilir } from "../yetki";
@@ -60,6 +60,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}
         {GERCEK && postaGorebilir(ben) && yapabilir(ben, "cagriHazirla") && <OtoCagriKart />}
         {/* Geçici: iNEWS kopyala-yapıştır denemesi; işe yararsa FTP aktarımına geçilip silinecek. */}
+        {GERCEK && ben.hesapYoneticisi && <OkumaSayaci />}
         {ben.hesapYoneticisi && <InewsDenemesi />}
         {kayitTemizleyebilir(ben) && <KayitYedegi />}
         {kayitTemizleyebilir(ben) && <YeniDuzenGecisi ben={ben} />}
@@ -263,5 +264,44 @@ export function Yetkisiz() {
         {t("anaSayfayaDon")}
       </a>
     </div>
+  );
+}
+
+/*
+ * Bu sekmenin Firestore'dan okuduğu belgeler, koleksiyon başına (depo/firebase.ts → okumaSayilari): ücretsiz
+ * planın günlük okuma kotası doluyordu, neyin tükettiği tahminle değil ölçerek bulunsun.
+ */
+function OkumaSayaci() {
+  const { t, dil } = useDil();
+  const [s, setS] = useState<{ bas: number; liste: [string, number][] } | null>(null);
+  useEffect(() => {
+    let acik = true;
+    const tazele = () => void firebaseYukle().then((f) => acik && setS(f.okumaSayilari()));
+    tazele();
+    window.addEventListener("trt-okuma", tazele);
+    return () => {
+      acik = false;
+      window.removeEventListener("trt-okuma", tazele);
+    };
+  }, []);
+  const toplam = s?.liste.reduce((a, [, n]) => a + n, 0) ?? 0;
+  return (
+    <Kart baslik={t("okumaSayaci")} ikon={<Activity size={18} />} ek={String(toplam)}>
+      {s && (
+        <>
+          <p className="sonuk-yazi" data-okuma-toplam>
+            {t("okumaSayaciOzet", { n: String(toplam), saat: new Date(s.bas).toLocaleTimeString(dil, { hour: "2-digit", minute: "2-digit" }) })}
+          </p>
+          <ul className="liste" data-okuma-sayaci>
+            {s.liste.map(([alan, n]) => (
+              <li key={alan}>
+                <span className="ad">{alan}</span>
+                <b>{n}</b>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Kart>
   );
 }

@@ -1,4 +1,5 @@
 import { CalendarClock, Check, Loader2, X } from "lucide-react";
+import { kapiHatasi } from "../../yz";
 import { useEffect, useState } from "react";
 import { Icerik, Kart, bildir } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -30,7 +31,7 @@ export function OtoCagriKart() {
   const [mesgul, setMesgul] = useState(false);
 
   useEffect(() => {
-    void otoCagriGetir().then((r) => (r.tamam ? setD(r.veri) : setHata(`${t("postaKapiYok")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`)));
+    void otoCagriGetir().then((r) => (r.tamam ? setD(r.veri) : setHata(kapiHatasi(r))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -43,7 +44,7 @@ export function OtoCagriKart() {
 
   const sonuc = (r: Awaited<ReturnType<typeof otoCagriYaz>> | { tamam: false; hata: string } | null) => {
     if (!r) return;
-    if (!r.tamam) return bildir(r.hata === "kimlik" ? t("otoHataKimlik") : `${t("postaKapiYok")} [${r.hata}]`);
+    if (!r.tamam) return bildir(r.hata === "kimlik" ? t("otoHataKimlik") : kapiHatasi({ hata: r.hata }, `${t("postaKapiYok")} [${r.hata}]`));
     setD(r.veri);
     bildir(t("bKaydedildi"));
   };
