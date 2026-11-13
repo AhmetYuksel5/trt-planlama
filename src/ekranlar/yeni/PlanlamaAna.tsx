@@ -119,7 +119,10 @@ export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
               {x.alt && !sonuk && <small>{x.alt}</small>}
             </>
           );
-          const sinif = `py-kutu${x.genis ? " genis" : ""}${x.vurgu ? " vurgu" : ""}${sonuk ? " sonuk" : ""}`;
+          // Telefonda iki sütun: tek kutuların sayısı tekse sonuncusu tek kalıp yanında delik bırakmasın, satırı doldursun.
+          const tekler = kutular.filter((y) => !y.genis);
+          const sonTek = !x.genis && tekler.length % 2 === 1 && tekler[tekler.length - 1] === x;
+          const sinif = `py-kutu${x.genis ? " genis" : ""}${sonTek ? " son-tek" : ""}${x.vurgu ? " vurgu" : ""}${sonuk ? " sonuk" : ""}`;
           return x.href ? (
             <a key={x.id} href={x.href} className={sinif} data-py-kutu={x.id}>
               {ic}

@@ -44,10 +44,17 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     if (await ekle.count()) ok(!(await ekle.getAttribute("class")).includes("dugme-iyi"), `${dil}: "Plana ekle" birincil, yeşil değil`);
     await p.keyboard.press("Escape");
 
-    // Planlama ana sayfası: boş kutu tek satır, vurgu çerçevesiz.
+    // Planlama ana sayfası: kutular delik bırakmadan dolar, vurgu çerçevesiz.
     await gir("pl2", "#/");
-    const bos = await p.locator(".py-kutu.sonuk").first().boundingBox();
-    ok(bos && bos.height <= 60, `${dil}: boş kutu tek satır (${bos && Math.round(bos.height)})`);
+    // Kutular delik bırakmadan dolar: bir satırdaki kutular aynı yükseklikte, iki sütun arasında boş hücre yok.
+    const delik = await p.evaluate(() => {
+      const k = [...document.querySelectorAll(".py-kutular > .py-kutu")].map((e) => e.getBoundingClientRect());
+      const satirlar = new Map();
+      for (const r of k) { const y = Math.round(r.top); satirlar.set(y, [...(satirlar.get(y) ?? []), r]); }
+      const genislik = document.querySelector(".py-kutular").getBoundingClientRect().width;
+      return [...satirlar.values()].filter((s) => s.reduce((t, r) => t + r.width, 0) < genislik * 0.9 || new Set(s.map((r) => Math.round(r.height))).size > 1).length;
+    });
+    ok(delik === 0, `${dil}: kutular arasında delik yok (${delik} satır)`);
     ok((await p.locator(".py-kutu.sonuk small").count()) === 0, `${dil}: boş kutuda "Bekleyen yok" yazısı yok`);
     ok((await p.evaluate(() => getComputedStyle(document.querySelector(".py-kutu.vurgu")).boxShadow)) === "none", `${dil}: vurgu çerçeve değil`);
 

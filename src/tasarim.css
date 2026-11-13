@@ -3704,24 +3704,17 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .py-oneriler { display: grid; gap: var(--ara-2); }
 .py-muhabirler li { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
 /*
- * Telefonda kutular tek kartta ayraçlı satırlar (kullanıcı: iki sütunda yükseklikler farklı, boş kutunun yanında
- * delik kalıyor, "düzensiz"): solda ikon ve ad, altında durum, sağda sayı. Yeri sabit, boş satır soluk.
+ * Kutular aralarında delik bırakmadan dolar (kullanıcı: "düzensiz"; boş kutu tek satıra iniyor, yanında ve geniş
+ * kutudan önce boşluk kalıyordu): satırdaki kutular aynı yükseklikte, boş kutu da; tek kalan yer sonraki tek kutuyla dolar.
  */
+.py-kutular { grid-auto-flow: dense; }
+.py-kutular > .py-kutu.sonuk { align-self: stretch; }
 @media (max-width: 760px) {
-  .py-kutular { grid-template-columns: minmax(0, 1fr); gap: 0; border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); overflow: hidden; }
-  .py-kutular > .py-kutu, .py-kutular > .py-kutu.sonuk {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "bas sayi" "alt sayi"; align-items: center; column-gap: var(--ara-3); row-gap: 2px;
-    min-height: 56px; padding: var(--ara-2) var(--ara-4); border: 0; border-block-end: 1px solid var(--cizgi); border-radius: 0; background: transparent; align-self: stretch;
-  }
-  .py-kutular > .py-kutu:last-child { border-block-end: 0; }
-  .py-kutu.genis { grid-column: auto; }
-  .py-kutu .py-kutu-bas { grid-area: bas; font-size: var(--punto); color: var(--murekkep); }
-  .py-kutu .py-kutu-bas b { -webkit-line-clamp: 1; }
-  .py-kutu small { grid-area: alt; }
-  .py-sayi { grid-area: sayi; font-size: 22px; }
-  .py-kutu.sonuk .py-kutu-bas { color: var(--silik); }
-  .py-kutular > .py-kutu.sonuk { grid-template-areas: "bas sayi"; }
-  .py-kutular > .py-kutu { align-content: center; }
+  .py-kutular { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+  .py-kutu, .py-kutular > .py-kutu.sonuk { min-height: 96px; padding: var(--ara-3); }
+  .py-kutular > .py-kutu.sonuk { display: grid; align-content: start; }
+  .py-kutu.genis, .py-kutu.son-tek { grid-column: 1 / -1; }
+  .py-sayi { font-size: 24px; }
 }
 
 /* Önerinin yolu (oneriYolu.ts): geçti iyi, şimdiki vurgu, sırada gri, kesildi kırmızı. */

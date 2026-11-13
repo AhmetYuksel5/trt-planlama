@@ -2949,7 +2949,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yapışkan (ilk öneri 565 pikselden ~400'e); telefonda sayfa başlığının ikon
   karosu yok; birincil "Plana ekle" lacivert (yeşil yalnız durum); yeni
   tasarımda kapalı katlanır kart 48 piksel; Planlama ana sayfasında boş kutu
-  (Görevlerim ve Posta da) tek satır, adı ve kesik çizgi, vurgu yalnız
+  (Görevlerim ve Posta da) adı ve kesik çizgi (aşağıda, delik bırakmadan), vurgu yalnız
   sayıda, başlık iki satıra kırılır; masa sayfasının bölüm adresinde
   (`#/programlar/oneriler`…) telefonda kutucuklar yok (alt çubuğu
   tekrarlıyordu); muhabirin öneri formunda içerik alanları önde (CSS
@@ -2985,10 +2985,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   tercihinde geçiş ve kaydırma yumuşatması yok. Kısayolun "Special Coverage"
   adı bilinçli (Next Day, Weekly gibi kurumun terimi). Test
   `testler/mobil-ince.cjs`.
-  Planlama ana sayfası telefonda tek kartta ayraçlı satırlar (kullanıcı: iki
-  sütunlu kutularda yükseklikler farklıydı, boş kutunun yanında delik
-  kalıyordu, "düzensiz"): solda ikon ve ad, altında durum, sağda sayı; yeri
-  sabit, boş satır soluk ve aynı satır düzeninde. Masaüstünde kutular aynı.
+  Planlama ana sayfasının kutuları aralarında delik bırakmadan dolar
+  (kullanıcı: boş kutu tek satıra iniyor, yanında ve geniş kutudan önce boşluk
+  kalıyordu, "düzensiz"; satır listesi denendi, istenmedi: kutular kalsın):
+  boş kutu da öbürleriyle aynı yükseklikte, soluk ve kesik çizgili; tek kalan
+  yeri sonraki tek kutu doldurur (`grid-auto-flow: dense`).
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
