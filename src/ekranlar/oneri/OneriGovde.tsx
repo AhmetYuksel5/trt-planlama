@@ -280,7 +280,7 @@ export function OneriAyrinti({
         </button>
       )}
       {ekler && !mod && (
-        <button type="button" className="dugme dugme-iyi" onClick={() => setMod("ekle")} data-oneri-plana-ekle>
+        <button type="button" className="dugme" onClick={() => setMod("ekle")} data-oneri-plana-ekle>
           {ekleMetni ?? t(o.hedefTarih ? "planaEkle" : "gundemeEkle")}
         </button>
       )}
@@ -608,7 +608,7 @@ export function OneriListesi({
           </button>
         )}
         {ekle && (
-          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })} data-oneri-ekle>
+          <button type="button" className="dugme dugme-kucuk" onClick={() => setPencere({ id: o.id, mod: "ekle" })} data-oneri-ekle>
             {ekleMetni}
           </button>
         )}

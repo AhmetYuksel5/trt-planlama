@@ -4,7 +4,8 @@ import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPla
 import { GUN_GRUPLARI, ONERI_SEKMELERI, oneriGunGrubu, oneriSekmesi, type GunGrubu, type OneriSekmesi } from "../../oneriSekmeleri";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { MuhabireOneriPenceresi } from "./Yazisma";
-import { Eye, Inbox, Lightbulb, Megaphone, Plus, Search, Send } from "lucide-react";
+import { Eye, Inbox, Lightbulb, Megaphone, Plus, Search, Send, SlidersHorizontal, X } from "lucide-react";
+import { useTelefon } from "../takvim/ortak";
 import { useState } from "react";
 import { Bos, Icerik, Kart, NotKutu, Pencere, bildir } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni } from "../../bilesenler/Tablolar";
@@ -80,6 +81,65 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
     sekme === "arsiv" ? [[null, liste]] : GUN_GRUPLARI.map((g): [GunGrubu, Oneri[]] => [g, liste.filter((o) => oneriGunGrubu(o, B) === g)]).filter(([, l]) => l.length);
   const cagri = yapabilir(ben, "cagriHazirla");
   const oner = muhabireOneriGonderebilir(ben, v);
+  /*
+   * Telefonda (Konsept A, mobil denetim): ilk öneri 565 pikselde başlıyordu,
+   * önünde altı kontrol satırı vardı. Arama ve "Süzgeç · n" tek satırda;
+   * masa, ülke, plan ve görünüm pencerede; etkin süzgeçler kaldırılabilen çip.
+   */
+  const telefon = useTelefon();
+  const [suzgecAcik, setSuzgecAcik] = useState(false);
+  const etkinSayi = Number(!!tur) + Number(!!ulke) + Number(!!planEtiketi);
+  const aramaKutusu = (
+    <label className="arama arama-kutu">
+      <Search size={16} />
+      <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("oneriAra")} aria-label={t("oneriAra")} />
+    </label>
+  );
+  const turSecimi = (
+    <select className="girdi" value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru | "")} aria-label={t("tur")}>
+      <option value="">{t("tumTurler")}</option>
+      {ICERIK_TURLERI.map((x) => (
+        <option key={x} value={x}>
+          {t(TUR_ADI[x])}
+        </option>
+      ))}
+    </select>
+  );
+  const ulkeSecimi = (
+    <select className="girdi" value={ulke} onChange={(e) => setUlke(e.target.value as Ulke | "")} aria-label={t("ulke")}>
+      <option value="">{t("tumUlkeler")}</option>
+      {ULKELER.map((x) => (
+        <option key={x} value={x}>
+          {t(ulkeAdi(x))}
+        </option>
+      ))}
+    </select>
+  );
+  const planCipleri = (
+    <div className="cipler ara-alt-2" data-plan-suzgec>
+      {(["", ...ONERI_ETIKETLERI, "yok"] as const).map((e) => {
+        const n = sekmede.filter((o) => etiketli(o, e)).length;
+        if (e && !n && planEtiketi !== e) return null;
+        return (
+          <button
+            key={e || "hepsi"}
+            type="button"
+            className={`cip cip-dugme${planEtiketi === e ? " secili" : ""}${e && e !== "yok" ? ` renk-${e}` : ""}`}
+            aria-pressed={planEtiketi === e}
+            onClick={() => setPlanEtiketi(e)}
+            data-plan-suzgec-etiketi={e || "hepsi"}
+          >
+            {t(e === "" ? "tumPlanlar" : e === "yok" ? "plansiz" : ONERI_ETIKET_ADI[e])} <em>{n}</em>
+          </button>
+        );
+      })}
+    </div>
+  );
+  const etkinCip = (ad: string, kaldir: () => void, k: string) => (
+    <button key={k} type="button" className="cip cip-dugme secili" onClick={kaldir} aria-label={`${t("suzgecKaldir")}: ${ad}`} data-etkin-suzgec={k}>
+      {ad} <X size={14} />
+    </button>
+  );
   const listeyiCiz = (l: Oneri[]) =>
     gorunum === "liste" ? (
       <OneriTablosu oneriler={l} d={v} />
@@ -146,48 +206,65 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
             );
           })}
         </div>
-        <div className="suzgec">
-          <label className="arama arama-kutu">
-            <Search size={16} />
-            <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("oneriAra")} aria-label={t("oneriAra")} />
-          </label>
-          <select className="girdi" value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru | "")} aria-label={t("tur")}>
-            <option value="">{t("tumTurler")}</option>
-            {ICERIK_TURLERI.map((x) => (
-              <option key={x} value={x}>
-                {t(TUR_ADI[x])}
-              </option>
-            ))}
-          </select>
-          <select className="girdi" value={ulke} onChange={(e) => setUlke(e.target.value as Ulke | "")} aria-label={t("ulke")}>
-            <option value="">{t("tumUlkeler")}</option>
-            {ULKELER.map((x) => (
-              <option key={x} value={x}>
-                {t(ulkeAdi(x))}
-              </option>
-            ))}
-          </select>
-          <span className="bosluk-esnek" />
-          <GorunumSecici deger={gorunum} degistir={setGorunum} />
-        </div>
-        <div className="cipler ara-alt-2" data-plan-suzgec>
-          {(["", ...ONERI_ETIKETLERI, "yok"] as const).map((e) => {
-            const n = sekmede.filter((o) => etiketli(o, e)).length;
-            if (e && !n && planEtiketi !== e) return null;
-            return (
-              <button
-                key={e || "hepsi"}
-                type="button"
-                className={`cip cip-dugme${planEtiketi === e ? " secili" : ""}${e && e !== "yok" ? ` renk-${e}` : ""}`}
-                aria-pressed={planEtiketi === e}
-                onClick={() => setPlanEtiketi(e)}
-                data-plan-suzgec-etiketi={e || "hepsi"}
-              >
-                {t(e === "" ? "tumPlanlar" : e === "yok" ? "plansiz" : ONERI_ETIKET_ADI[e])} <em>{n}</em>
+        {telefon ? (
+          <>
+            <div className="suzgec suzgec-telefon">
+              {aramaKutusu}
+              <button type="button" className="dugme dugme-ikincil" onClick={() => setSuzgecAcik(true)} data-suzgec-ac>
+                <SlidersHorizontal size={16} /> {t("suzgecDugmesi")}
+                {etkinSayi > 0 && <em className="sayi-rozet">{etkinSayi}</em>}
               </button>
-            );
-          })}
-        </div>
+            </div>
+            {etkinSayi > 0 && (
+              <div className="cipler ara-alt-2">
+                {tur && etkinCip(t(TUR_ADI[tur]), () => setTur(""), "tur")}
+                {ulke && etkinCip(t(ulkeAdi(ulke)), () => setUlke(""), "ulke")}
+                {planEtiketi && etkinCip(t(planEtiketi === "yok" ? "plansiz" : ONERI_ETIKET_ADI[planEtiketi]), () => setPlanEtiketi(""), "plan")}
+              </div>
+            )}
+            {suzgecAcik && (
+              <Pencere
+                baslik={t("suzgecDugmesi")}
+                kapat={() => setSuzgecAcik(false)}
+                altBilgi={
+                  <button type="button" className="dugme" onClick={() => setSuzgecAcik(false)} data-suzgec-goster>
+                    {t("nOneriGoster", { n: liste.length })}
+                  </button>
+                }
+              >
+                <div className="form" data-suzgec-penceresi>
+                  <label>
+                    {t("tur")}
+                    {turSecimi}
+                  </label>
+                  <label>
+                    {t("ulke")}
+                    {ulkeSecimi}
+                  </label>
+                  <div>
+                    <div className="alan-etiket">{t("plan")}</div>
+                    {planCipleri}
+                  </div>
+                  <div>
+                    <div className="alan-etiket">{t("gorunum")}</div>
+                    <GorunumSecici deger={gorunum} degistir={setGorunum} />
+                  </div>
+                </div>
+              </Pencere>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="suzgec">
+              {aramaKutusu}
+              {turSecimi}
+              {ulkeSecimi}
+              <span className="bosluk-esnek" />
+              <GorunumSecici deger={gorunum} degistir={setGorunum} />
+            </div>
+            {planCipleri}
+          </>
+        )}
         {liste.length === 0 ? (
           <Bos metin={t("oneriYok")} />
         ) : (
@@ -281,6 +358,21 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
   const onizleme = { id: "", hedefTarih, ...(bitisTarih > hedefTarih && { bitisTarih }) } as Oneri;
   // Sayfanın başlığı yok, doğrudan form; adı sekmede.
   useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
+  /*
+   * Pasif Gönder'in nedeni görünür ve basınca ilk eksik alana gidilir:
+   * muhabir neden gönderemediğini bilmiyordu (mobil denetim). Kural
+   * oneriFormuGecerli'nin muhabir kısmı: strap ve gelişme.
+   */
+  const takipFormu = f.bicim === TAKIP_BICIMI;
+  const eksikler = [
+    !takipFormu && !f.paketBasligi.trim() ? { ad: "ofStrap" as const, alan: "oneri-strap" } : null,
+    !f.gelisme.trim() ? { ad: "ofGelisme" as const, alan: "oneri-gelisme" } : null,
+  ].filter((x): x is { ad: "ofStrap" | "ofGelisme"; alan: string } => !!x);
+  const eksigeGit = () => {
+    const a = eksikler[0] && document.querySelector<HTMLElement>(`[data-${eksikler[0].alan}]`);
+    a?.scrollIntoView({ block: "center" });
+    a?.focus({ preventScroll: true });
+  };
   const gonder = () => {
     if (!gecerli || !confirm(t("eminMisin"))) return;
     const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
@@ -303,7 +395,8 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
         </NotKutu>
       )}
       <Kart>
-        <div className="form">
+        {/* Muhabirde içerik alanları önde, gün ve tür ardında; telefonda Gönder yapışık (mobil denetim). */}
+        <div className={`form${muhabir ? " muhabir-formu" : ""}`}>
           <OneriAlanlari
             ben={ben}
             f={f}
@@ -333,11 +426,16 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
           <div className="cipler" data-oneri-plan-onizleme>
             <OneriPlanEtiketleri oneri={onizleme} d={v} />
           </div>
-          <div className="form-alt">
+          <div className="form-alt oneri-gonder-alt">
+            {muhabir && !gecerli && eksikler.length > 0 && (
+              <p className="oneri-eksik" role="status" data-oneri-eksik>
+                {t("eksikAlan", { alanlar: eksikler.map((x) => t(x.ad)).join(" · ") })}
+              </p>
+            )}
             <a className="dugme dugme-ikincil" href="#/oneriler">
               {t("iptal")}
             </a>
-            <button className="dugme" onClick={gonder} disabled={!gecerli}>
+            <button className="dugme" onClick={() => (gecerli ? gonder() : eksigeGit())} aria-disabled={!gecerli || undefined} data-oneri-gonder>
               <Send size={16} className="yon" /> {t(muhabir ? "gonder" : "kaydet")}
             </button>
           </div>

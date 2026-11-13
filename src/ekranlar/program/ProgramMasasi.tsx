@@ -99,7 +99,8 @@ export function MasaSayfasi({ ben, birim, ilk = "icerikler", ozet }: { ben: Kisi
     arsiv: { alt: t("pmArsivAlt", { n: arsiv }), say: 0 },
   };
   return (
-    <div className={`prg-masa masa-${birim}`} data-program-masasi data-masa-sayfasi={birim}>
+    // Bölüm adresinde (alt çubuktan İçerikler, Öneriler…) telefonda kutucuklar gizli: alt çubuğu tekrarlıyor, içerik 650 pikselden sonra başlıyordu.
+    <div className={`prg-masa masa-${birim}${!ozet && ilk ? " bolumde" : ""}`} data-program-masasi data-masa-sayfasi={birim}>
       {ozet && <KararOzeti birim={birim} />}
       <div className={`prg-kutular kutu-${bolumler.length}`} role="tablist">
         {bolumler.map((b) => (

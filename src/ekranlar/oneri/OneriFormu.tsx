@@ -186,7 +186,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
           </div>
         </>
       )}
-      <div className="satir">
+      <div className="satir oneri-meta-satir">
         {hedef}
         <label>
           {t("tur")}
@@ -229,7 +229,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         strapli={!takip}
         uygula={(p) => setF({ ...f, ...p, paketBasligi: p.paketBasligi ?? f.paketBasligi, bicim: p.bicim ?? f.bicim })}
       />
-      <label className="secim">
+      <label className="secim oneri-saha-secimi">
         <input
           type="checkbox"
           checked={f.sahaGerekli}
@@ -422,7 +422,7 @@ export function ElleOneriFormu({
           {t("kaydet")}
         </button>
         {hemenMetni && (
-          <button type="button" className="dugme dugme-iyi dugme-kucuk" onClick={() => gonder(true)} disabled={!gecerli}>
+          <button type="button" className="dugme dugme-kucuk" onClick={() => gonder(true)} disabled={!gecerli}>
             {hemenMetni}
           </button>
         )}

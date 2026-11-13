@@ -159,7 +159,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
         {toplu && <TopluCubuk ben={ben} kisiler={seciliKisiler} temizle={() => setSecili(new Set())} />}
         <div className="tablo-sar">
           {muhabirSayfasi ? (
-            <table className="tablo kartli">
+            <table className={`tablo kartli muhabir-tablosu${toplu ? " secimli" : ""}`}>
               <thead>
                 <tr>
                   {toplu && (
@@ -198,16 +198,16 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
                           <WhatsAppDugmesi telefon={k.telefon} />
                         </span>
                       </td>
-                      <td data-etiket={t("anaGorevBolgesi")}>
+                      <td className="mt-yer" data-etiket={t("anaGorevBolgesi")}>
                         {sehirAdi(k.sehir)} <small className="sonuk">· {t(ulkeAdi(sehirUlkesi(k.sehir)))}</small>
                       </td>
                       {pf && (
-                        <td data-etiket={t("verilenTamamlanan")}>
+                        <td className="mt-perf" data-etiket={t("verilenTamamlanan")}>
                           <b>{pf.verilen}</b> / {pf.tamamlanan}
                         </td>
                       )}
-                      {pf && <td data-etiket={t("zamanindaTeslim")}>{yuzde(pf.zamaninda)}</td>}
-                      <td data-etiket={t("durum")}>
+                      {pf && <td className="mt-perf" data-etiket={t("zamanindaTeslim")}>{yuzde(pf.zamaninda)}</td>}
+                      <td className="mt-durum" data-etiket={t("durum")}>
                         <KisiDurumRozeti kisi={k} />
                       </td>
                     </tr>

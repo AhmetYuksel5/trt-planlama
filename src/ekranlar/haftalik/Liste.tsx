@@ -21,13 +21,7 @@ import { FormAlt } from "../nextday/Formlar";
  * yuvarlanıyor; aynı hafta için ikinci plan açılmıyor, var olan açılıyor.
  */
 
-const EVRELER = [
-  ["hevOneri", "hevOneriGun"],
-  ["hevPlan", "hevPlanGun"],
-  ["hevOnInceleme", "hevOnIncelemeGun"],
-  ["hevToplanti", "hevToplantiGun"],
-  ["hevGeriDonus", "hevGeriDonusGun"],
-] as const;
+/* Haftanın akışını ve kolları anlatan kartlar kalktı: ekranda kullanım anlatımı yok (kurum kuralı), telefonda ~1000 piksel tutuyordu. */
 
 export default function HaftalikListe({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
@@ -127,32 +121,6 @@ export default function HaftalikListe({ ben }: { ben: Kisi }) {
         )}
       </Kart>
 
-      <Kart baslik={t("haftalikAkis")}>
-        <div className="kollar">
-          {EVRELER.map(([a, g]) => (
-            <div key={a} className="kol renk-haftalik">
-              <b>{t(a)}</b>
-              <p>{t(g)}</p>
-            </div>
-          ))}
-        </div>
-      </Kart>
-      <Kart baslik={t("kollar")}>
-        <div className="kollar">
-          <div className="kol renk-nextday">
-            <b>{t("kolHaber")}</b>
-            <p>{t("kolHaberA")}</p>
-          </div>
-          <div className="kol renk-haftalik">
-            <b>{t("kolFeature")}</b>
-            <p>{t("kolFeatureA")}</p>
-          </div>
-          <div className="kol renk-saha">
-            <b>{t("kolProgram")}</b>
-            <p>{t("kolProgramA")}</p>
-          </div>
-        </div>
-      </Kart>
     </>
   );
 }

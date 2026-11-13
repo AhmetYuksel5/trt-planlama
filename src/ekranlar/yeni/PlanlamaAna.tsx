@@ -64,11 +64,11 @@ export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
     { id: "oneri", ad: "pyOneriler", ikon: Lightbulb, sayi: k.oneri, alt: k.oneriYakin ? t("pyYakin", { n: k.oneriYakin }) : t("pyTemiz"), panel: "oneri", vurgu: k.oneri > 0 },
     { id: "paket", ad: "pyPaketKararlari", ikon: CheckCircle, sayi: k.onay + k.sartli + k.gorevTalebi, alt: [k.onay && t("pyOnay", { n: k.onay }), k.sartli && t("pySartli", { n: k.sartli }), k.gorevTalebi && t("pyTalep", { n: k.gorevTalebi })].filter(Boolean).join(" · ") || t("pyTemiz"), panel: "paket", vurgu: k.onay + k.sartli + k.gorevTalebi > 0 },
     { id: "birim", ad: "pyBirimGorusu", ikon: Share2, sayi: k.birimGorusu + k.birimYanitladi, alt: k.birimYanitladi ? t("pyYanitladi", { n: k.birimYanitladi }) : k.birimGorusu ? t("pyBekliyor", { n: k.birimGorusu }) : t("pyTemiz"), panel: "birim", vurgu: k.birimYanitladi > 0 },
-    { id: "gorev", ad: "pyGorevlerim", ikon: ClipboardList, sayi: k.isler, alt: k.isler ? t("pyAcikIs") : t("pyTemiz"), panel: "gorev", vurgu: k.isler > 0, hep: true },
+    { id: "gorev", ad: "pyGorevlerim", ikon: ClipboardList, sayi: k.isler, alt: k.isler ? t("pyAcikIs") : t("pyTemiz"), panel: "gorev", vurgu: k.isler > 0 },
     { id: "anma", ad: "pyAnmalar", ikon: AtSign, sayi: k.anma, alt: k.anma ? t("pyGorulmedi") : t("pyTemiz"), panel: "anma", vurgu: k.anma > 0 },
     // Günün notu kutusu kalktı (kullanıcı: ana sayfanın varsayılanlarında olmasın).
     { id: "muhabir", ad: "pyMuhabirler", ikon: Users, sayi: muh.length, alt: t("pySahadaIzinde", { s: sahada, i: izinde }), panel: "muhabir", hep: true },
-    { id: "posta", ad: "mPosta", ikon: Mail, sayi: k.posta, alt: k.posta ? t("pyOkunmamis") : t("pyTemiz"), href: "#/posta", vurgu: k.posta > 0, hep: true },
+    { id: "posta", ad: "mPosta", ikon: Mail, sayi: k.posta, alt: k.posta ? t("pyOkunmamis") : t("pyTemiz"), href: "#/posta", vurgu: k.posta > 0 },
     ...(k.hesapOnayi ? [{ id: "hesap", ad: "pyHesapOnayi" as Anahtar, ikon: Building2, sayi: k.hesapOnayi, alt: t("pyBekliyor", { n: k.hesapOnayi }), panel: "hesap" as const, vurgu: true }] : []),
     {
       id: "nextday",
@@ -116,7 +116,7 @@ export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
                 <b>{t(x.ad)}</b>
               </span>
               {(x.sayi > 0 || x.hep) && <span className="py-sayi">{x.sayi}</span>}
-              {x.alt && <small>{x.alt}</small>}
+              {x.alt && !sonuk && <small>{x.alt}</small>}
             </>
           );
           const sinif = `py-kutu${x.genis ? " genis" : ""}${x.vurgu ? " vurgu" : ""}${sonuk ? " sonuk" : ""}`;

@@ -56,7 +56,7 @@ const oran = (a, b) => { const [x, y] = [parlaklik(a), parlaklik(b)].sort((m, n)
       await p.keyboard.press("Escape");
       // M-20: pencerenin kendi boşluğuna dokunmak kapatmaz; alt satır dipte.
       await gir("pl2", "#/", dil);
-      await p.locator('[data-py-kutu="gorev"]').tap();
+      await p.locator('[data-py-kutu="muhabir"]').tap();
       await p.waitForTimeout(400);
       const pen = await p.locator("dialog.pencere[open]").boundingBox();
       const alt = await p.locator("dialog.pencere[open] > footer").boundingBox();
@@ -68,7 +68,7 @@ const oran = (a, b) => { const [x, y] = [parlaklik(a), parlaklik(b)].sort((m, n)
       // M-03: "Sayfayı aç" sayfayı açar, geri tuşu ana sayfaya döner.
       await p.locator("[data-py-sayfa]").tap();
       await p.waitForTimeout(600);
-      ok(p.url().endsWith("#/gorevler") && (await p.locator("dialog.pencere[open]").count()) === 0, `${k}: "Sayfayı aç" sayfayı açıyor (${p.url().split("#")[1]})`);
+      ok(p.url().endsWith("#/muhabirler") && (await p.locator("dialog.pencere[open]").count()) === 0, `${k}: "Sayfayı aç" sayfayı açıyor (${p.url().split("#")[1]})`);
       await p.goBack();
       await p.waitForTimeout(500);
       ok(/#\/$/.test(p.url()), `${k}: geri tuşu ana sayfaya dönüyor (${p.url().split("#")[1]})`);

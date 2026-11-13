@@ -241,7 +241,7 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
         <button className="dugme dugme-ikincil" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button className="dugme dugme-iyi" onClick={ekle} disabled={baslikId === "yeni" && !yeniBaslik.trim()} data-pe-ekle>
+        <button className="dugme" onClick={ekle} disabled={baslikId === "yeni" && !yeniBaslik.trim()} data-pe-ekle>
           {t("planaEkle")}
         </button>
       </div>

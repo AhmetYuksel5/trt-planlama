@@ -184,19 +184,22 @@ export default function BaslikKarti({
         <h3>
           <Icerik>{baslik?.ad}</Icerik>
         </h3>
+        {/* Sıfır sayaç çizilmez; sayacın adı ipucunda ve ekran okuyucuda (mobil denetim). */}
         <span className="sayimlar">
-          <span>
-            <Newspaper size={12} /> {gelismeler.length}
-          </span>
-          <span>
-            <Users size={12} /> {pb.muhabirler.length}
-          </span>
-          <span>
-            <Package size={12} /> {paketler.filter((p) => p.durum !== "iptal").length}
-          </span>
-          <span>
-            <Radio size={12} /> {canlilar.length}
-          </span>
+          {(
+            [
+              [Newspaper, gelismeler.length, t("gelismeler")],
+              [Users, pb.muhabirler.length, t("muhabirler")],
+              [Package, paketler.filter((p) => p.durum !== "iptal").length, t("mPaketler")],
+              [Radio, canlilar.length, t("canliYayinlar")],
+            ] as const
+          )
+            .filter(([, n]) => n > 0)
+            .map(([Ikon, n, ad]) => (
+              <span key={ad} title={ad} aria-label={`${ad}: ${n}`}>
+                <Ikon size={12} aria-hidden="true" /> {n}
+              </span>
+            ))}
           {oneriler.length > 0 && <Rozet ton="vurgu">{t("yeniOneriSayisi", { n: oneriler.length })}</Rozet>}
         </span>
         {icerik && (
@@ -210,7 +213,28 @@ export default function BaslikKarti({
                   <Search size={16} /> {t("yzTakipMetni")}
                 </button>
               )}
+              {/* Telefonda sırala ve çıkar bu menüde: kalıcı dört simge Arapça başlığa ~150 piksel bırakıyordu. */}
+              <button type="button" role="menuitem" className="acilir-satir telefon-satiri" disabled={sira === 0} onClick={() => ben && planBaslikTasi(ben, plan.id, pb.id, -1)} data-baslik-yukari>
+                <ArrowUp size={16} /> {t("yukariTasi")}
+              </button>
+              <button type="button" role="menuitem" className="acilir-satir telefon-satiri" disabled={sira >= toplam - 1} onClick={() => ben && planBaslikTasi(ben, plan.id, pb.id, 1)} data-baslik-asagi>
+                <ArrowDown size={16} /> {t("asagiTasi")}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="acilir-satir telefon-satiri kotu-yazi"
+                onClick={() => {
+                  if (!ben) return;
+                  if (!cikabilir) return bildir(t("paketliBaslikCikmaz"));
+                  if (confirm(t("baslikCikarilsinMi"))) planBaslikCikar(ben, plan.id, pb.id);
+                }}
+                data-baslik-cikar
+              >
+                <Trash2 size={16} /> {t("plandanCikar")}
+              </button>
             </IslemMenusu>
+            <span className="telefonda-gizli baslik-sira-dugmeleri">
             <IkonDugme ikon={<ArrowUp size={15} />} etiket={t("yukariTasi")} onClick={() => ben && sira > 0 && planBaslikTasi(ben, plan.id, pb.id, -1)} />
             <IkonDugme ikon={<ArrowDown size={15} />} etiket={t("asagiTasi")} onClick={() => ben && sira < toplam - 1 && planBaslikTasi(ben, plan.id, pb.id, 1)} />
             <IkonDugme
@@ -222,6 +246,7 @@ export default function BaslikKarti({
                 if (confirm(t("baslikCikarilsinMi"))) planBaslikCikar(ben, plan.id, pb.id);
               }}
             />
+            </span>
           </span>
         )}
       </summary>

@@ -2943,6 +2943,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   alıyordu): düğme ve ikon düğmesi 44, onay kutusu ve radyo 24, geri
   bağlantısı 44; Organizasyon'da kişinin satırı bağlantının dokunma alanı.
   Test `testler/mobil-olcek.cjs`.
+  4. adım, Konsept A sayfa yerleşimleri (ilk parti): Öneriler telefonda
+  arama ve "Süzgeç · n" tek satır (`Oneriler.tsx → useTelefon`), masa,
+  ülke, plan ve görünüm pencerede, etkin süzgeç kaldırılabilen çip, sekmeler
+  yapışkan (ilk öneri 565 pikselden ~400'e); telefonda sayfa başlığının ikon
+  karosu yok; birincil "Plana ekle" lacivert (yeşil yalnız durum); yeni
+  tasarımda kapalı katlanır kart 48 piksel; Planlama ana sayfasında boş kutu
+  (Görevlerim ve Posta da) tek satır, adı ve kesik çizgi, vurgu yalnız
+  sayıda, başlık iki satıra kırılır; masa sayfasının bölüm adresinde
+  (`#/programlar/oneriler`…) telefonda kutucuklar yok (alt çubuğu
+  tekrarlıyordu); muhabirin öneri formunda içerik alanları önde (CSS
+  `order`), telefonda Gönder yapışık, pasifken eksik alanlar yazılı, basınca
+  ilk eksiğe gider; Dış muhabirler telefonda iki satırlık satır (263 → 85
+  piksel; performans sayıları profilde), WhatsApp ikincil; Next Day başlık
+  kartında sıfır sayaç çizilmez (sayacın adı ipucunda), telefonda sırala ve
+  çıkar ⋯ menüsünde (`.telefon-satiri`); Weekly listesinin anlatım kartları
+  kalktı (ekranda kullanım anlatımı yok). Test `testler/mobil-sayfa.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
