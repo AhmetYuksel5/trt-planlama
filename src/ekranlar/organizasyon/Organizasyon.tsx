@@ -49,6 +49,8 @@ import {
   yapiYayinla,
   muhabirlereUlkeUnvaniVer,
   ulkeUnvaniBekleyenler,
+  kisilerPozisyonu,
+  yoneticiligiKaldir,
 } from "../../eylemler";
 import { GERCEK } from "../../kip";
 import { yerelGun } from "../../tarih";
@@ -73,6 +75,7 @@ import {
   birimTasi,
   unvanMuhabirMi,
   unvanYoneticiMi,
+  kademeDisiYonetici,
   birimAdi,
   birimEtkisi,
   birimGuncelle,
@@ -792,8 +795,11 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
   const [aranan, setAranan] = useAdimDurumu("orgKisiler:ara", "");
   const [tayin, setTayin] = useState<Kisi | null>(null);
   const tayinEder = hesapYetkisi(ben, "kisiDuzenle");
+  const [yoneticiler, setYoneticiler] = useAdimDurumu("orgKisiler:yoneticiler", false);
   const ara = aranan.trim();
-  const kisiler = ara ? v.kisiler.filter((k) => kisiUyar(k, ara, v)) : v.kisiler;
+  const yoneticiMi = (k: Kisi) => k.rol === "yonetici" || unvanYoneticiMi(k.gorev) || !!k.hesapYoneticisi;
+  const kisiler = (ara ? v.kisiler.filter((k) => kisiUyar(k, ara, v)) : v.kisiler).filter((k) => !yoneticiler || yoneticiMi(k));
+  const yoneticiSayisi = v.kisiler.filter(yoneticiMi).length;
   /*
    * Ağaç sırasıyla (Haber Merkezi › Input › Planlama…): kendisinde ya da
    * altında kişi olan birimler, derinliğine göre girintili; sayı alt
@@ -813,6 +819,15 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
       ek={String(kisiler.length)}
       sagUc={
         <span className="pk-ust-dugmeler">
+          <button
+            type="button"
+            className={`dugme dugme-kucuk ${yoneticiler ? "" : "dugme-ikincil"}`}
+            aria-pressed={yoneticiler}
+            onClick={() => setYoneticiler(!yoneticiler)}
+            data-org-yoneticiler
+          >
+            <UserCog size={14} /> {t("orgYoneticiler")} · {yoneticiSayisi}
+          </button>
           <PostaKisileriDugmesi ben={ben} />
           {yapiDuzenleyebilir(ben) && ulkeBekleyen.length > 0 && (
             <button
@@ -840,7 +855,9 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
       </label>
       {!kisiler.length && <Bos kucuk metin={t("kisiYok")} />}
       {/* Aramada sonucun kendisi: ağaçta tek kişi 4–5 kat içeride, telefonda ekranın dibinde kalıyordu. */}
-      {ara ? (
+      {yoneticiler ? (
+        <YoneticiListesi ben={ben} kisiler={kisiler} tayin={tayinEder ? setTayin : undefined} />
+      ) : ara ? (
         <ul className="liste org-sonuclar" data-org-sonuclar>
           {kisiler.map((k) => (
             <KisiSatiri key={k.id} ben={ben} kisi={k} tayin={tayinEder ? () => setTayin(k) : undefined} yer />
@@ -897,11 +914,68 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
   );
 }
 
+/*
+ * Yöneticiler süzgeci (kullanıcı: kurumda yönetici yalnız koordinatör, müdürler ve tam
+ * yöneticinin yetki verdiği kişi): kademe dışındakiler işaretli gelir, toplu personele
+ * çevrilir. Kendiliğinden çevrilmez: gerçek bir birim yöneticisi de olabilir.
+ */
+function YoneticiListesi({ ben, kisiler, tayin }: { ben: Kisi; kisiler: Kisi[]; tayin?: (k: Kisi) => void }) {
+  const { t } = useDil();
+  const disarida = kisiler.filter((k) => kademeDisiYonetici(k));
+  const [secili, setSecili] = useState<string[]>(() => disarida.map((k) => k.id));
+  const sirali = [...disarida, ...kisiler.filter((k) => !disarida.includes(k))];
+  const cevir = () => {
+    if (!confirm(t("orgPersoneleCevirSoru", { n: secili.length }))) return;
+    const once = yoneticiligiKaldir(ben, secili);
+    if (!once) return;
+    setSecili([]);
+    bildir(t("orgPersoneleCevrildi", { n: once.length }), { ad: t("geriAl"), f: () => kisilerPozisyonu(ben, once) });
+  };
+  return (
+    <>
+      {tayin && disarida.length > 0 && (
+        <p className="org-yonetici-cubugu ara-alt-2">
+          <Rozet ton="uyari">{t("orgKademeDisi", { n: disarida.length })}</Rozet>
+          <button
+            type="button"
+            className="dugme dugme-kucuk"
+            aria-disabled={!secili.length}
+            title={secili.length ? undefined : t("orgSecimYok")}
+            onClick={() => secili.length && cevir()}
+            data-org-personele-cevir
+          >
+            {t("orgPersoneleCevir")} · {secili.length}
+          </button>
+        </p>
+      )}
+      <ul className="liste org-sonuclar" data-org-yonetici-listesi>
+        {sirali.map((k) => (
+          <KisiSatiri
+            key={k.id}
+            ben={ben}
+            kisi={k}
+            tayin={tayin ? () => tayin(k) : undefined}
+            yer
+            sec={
+              tayin && disarida.includes(k)
+                ? { secili: secili.includes(k.id), degistir: (x: boolean) => setSecili(x ? [...secili, k.id] : secili.filter((y) => y !== k.id)) }
+                : undefined
+            }
+          />
+        ))}
+      </ul>
+    </>
+  );
+}
+
 /* Kişinin satırı; aramada altında yeri ("Birim › Ünvan · Şehir"), ağaçta birim ve ünvan zaten başlıkta. */
-function KisiSatiri({ ben, kisi: k, tayin, yer }: { ben: Kisi; kisi: Kisi; tayin?: () => void; yer?: boolean }) {
+function KisiSatiri({ ben, kisi: k, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; tayin?: () => void; yer?: boolean; sec?: { secili: boolean; degistir: (x: boolean) => void } }) {
   const { t, ad } = useDil();
   return (
     <li data-org-kisi={k.id}>
+      {sec && (
+        <input type="checkbox" checked={sec.secili} onChange={(e) => sec.degistir(e.target.checked)} aria-label={t("orgSec")} data-org-yonetici-sec={k.id} />
+      )}
       <Avatar kisi={k} boy="kucuk" />
       <div className="ad">
         <a href={`#/personel/${k.id}`}>{ad(k)}</a>

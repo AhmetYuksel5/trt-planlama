@@ -760,6 +760,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ya da kişisi olan birimi gizlemek onaylı; taslağın ilk değişikliği "Taslağa
     eklendi, henüz yayınlanmadı" bildirir, taslak yokken sekmelerde "Yayında ·
     Sürüm n". Test `testler/org-bulma.cjs`.
+  - Yöneticiler süzgeci (kullanıcı: kurumda yönetici yalnız koordinatör, müdürler ve
+    tam yöneticinin yetki verdiği kişi; eski formlar birim seçilince "Birim yöneticisi"
+    veriyordu): Kişiler'in başlığında "Yöneticiler · n" (`data-org-yoneticiler`,
+    `useAdimDurumu`), yönetici rolü, yönetici ünvanı ya da tam yöneticiliği olanlar düz
+    listede; kademe dışındakiler (`yapi.ts → kademeDisiYonetici`: kademede değil, eski
+    Yönetim'de değil, tam yönetici değil) önde ve işaretli, "Personele çevir" onayla
+    (`eylemler.ts → yoneticiligiKaldir`: rol personel, yönetici ünvanındaysa birimin
+    yönetici olmayan ilk ünvanı; tek yazış `kisilerPozisyonu`), bildirimde "Geri al".
+    Kendiliğinden çevrilmez. Test `testler/org-yoneticiler.cjs`.
   - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir
     akışı (yeni akış seçilenin kopyasıyla açılır, kol tek akışta). Durak kartı
     taşınır (oklar, sürükle), eklenir, silinir (son durak değil; bekleyen paket

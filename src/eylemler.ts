@@ -15,7 +15,7 @@ import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
-import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, unvanYoneticiMi, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -4147,6 +4147,39 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
     yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "kisiTayinEdildi", veri: { ad: yaz(eski.ad), kime: kisiId, birim: sonra.birim, gorev: sonra.gorev, eskiBirim: eski.birim, eskiGorev: eski.gorev } });
   kaydet(yeni);
   return true;
+};
+
+/*
+ * Birden çok kişinin pozisyonu tek yazışta: "Yöneticiler" süzgecinde yanlış
+ * yöneticileri personele çevirmek ve bunun "Geri al"ı. Kişi başına ayrı
+ * yazış her biri için bütün kişi listesini yeniden yazardı.
+ */
+export const kisilerPozisyonu = (ben: Kisi, liste: { id: string; birim: BirimId; gorev: GorevId; rol: Rol }[]) => {
+  if (!hesapYetkisi(ben, "kisiDuzenle") || !liste.length) return false;
+  const d = getir();
+  let yeni: Durum = {
+    ...d,
+    kisiler: d.kisiler.map((k) => {
+      const p = liste.find((x) => x.id === k.id);
+      return p && (p.birim !== k.birim || p.gorev !== k.gorev || p.rol !== k.rol) ? { ...k, birim: p.birim, gorev: p.gorev, rol: p.rol } : k;
+    }),
+  };
+  for (const p of liste) {
+    const eski = d.kisiler.find((k) => k.id === p.id);
+    if (eski && (eski.birim !== p.birim || eski.gorev !== p.gorev))
+      yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "kisiTayinEdildi", veri: { ad: yaz(eski.ad), kime: p.id, birim: p.birim, gorev: p.gorev, eskiBirim: eski.birim, eskiGorev: eski.gorev } });
+  }
+  kaydet(yeni);
+  return true;
+};
+
+/** Kademe dışındaki yöneticiyi personele çevirir: yönetici ünvanındaysa birimin yönetici olmayan ilk ünvanına. */
+export const yoneticiligiKaldir = (ben: Kisi, ids: string[]) => {
+  const d = getir();
+  const y = guncelYapi(d);
+  const once = d.kisiler.filter((k) => ids.includes(k.id)).map((k) => ({ id: k.id, birim: k.birim, gorev: k.gorev, rol: k.rol }));
+  const sonra = once.map((k) => ({ ...k, gorev: unvanYoneticiMi(k.gorev, y) ? birimeUygunUnvan(k.birim, "", y) || k.gorev : k.gorev, rol: "personel" as Rol }));
+  return kisilerPozisyonu(ben, sonra) ? once : false;
 };
 
 /**

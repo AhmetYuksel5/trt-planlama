@@ -2473,6 +2473,7 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 .sekmeler > a { display: inline-flex; align-items: center; text-decoration: none; }
 .org-agac { display: grid; gap: var(--ara-2); }
 .org-sonuclar .ad small[data-org-kisi-yeri] { display: block; }
+.org-yonetici-cubugu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
 /* Postadan kişiler: üstte toplu atama çubuğu, satırda birim ve ünvan seçimi. */
 .pk-ust-dugmeler { display: flex; flex-wrap: wrap; gap: var(--ara-2); justify-content: flex-end; }
 .pk-toplu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--zemin); }

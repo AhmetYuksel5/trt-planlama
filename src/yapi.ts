@@ -714,6 +714,16 @@ export const ekipAdayi = (k: { birim: BirimId; gorev: GorevId }, id: EkipGoreviI
  */
 export const kademeMi = (id: BirimId, y: Yapi = yapi()) => !yerlesikBirim(id) && y.birimler.some((b) => b.ust === id && b.id !== id);
 
+/*
+ * Kurumda yönetici kademede durur (koordinatör, Input/Output/Program
+ * müdürleri) ya da tam yöneticidir (tam yöneticinin kendisi yetki verdi).
+ * Bunun dışındaki yönetici, eski formların birim seçilince birimin ilk
+ * ünvanını ("Birim yöneticisi") vermesinden kalmış olabilir; Kişiler'deki
+ * "Yöneticiler" süzgeci bunları işaretli getirir, kendiliğinden değiştirmez.
+ */
+export const kademeDisiYonetici = (k: { birim: BirimId; gorev: GorevId; rol: Rol; hesapYoneticisi?: boolean }, y: Yapi = yapi()) =>
+  (k.rol === "yonetici" || unvanYoneticiMi(k.gorev, y)) && !k.hesapYoneticisi && !kademeMi(k.birim, y) && k.birim !== "yonetim";
+
 export const izinBirimi = (id: BirimId, y: Yapi = yapi()): BirimId => {
   if (yerlesikBirim(id)) return id;
   const b = y.birimler.find((x) => x.id === id);
