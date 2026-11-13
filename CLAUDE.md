@@ -2985,6 +2985,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   tercihinde geçiş ve kaydırma yumuşatması yok. Kısayolun "Special Coverage"
   adı bilinçli (Next Day, Weekly gibi kurumun terimi). Test
   `testler/mobil-ince.cjs`.
+  Planlama ana sayfası telefonda tek kartta ayraçlı satırlar (kullanıcı: iki
+  sütunlu kutularda yükseklikler farklıydı, boş kutunun yanında delik
+  kalıyordu, "düzensiz"): solda ikon ve ad, altında durum, sağda sayı; yeri
+  sabit, boş satır soluk ve aynı satır düzeninde. Masaüstünde kutular aynı.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
