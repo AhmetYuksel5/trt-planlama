@@ -951,11 +951,6 @@ a.rozet-plan { text-decoration: none; }
 .asama-buyuk > div.gecikti small { color: var(--kotu); font-weight: 600; }
 .asama-buyuk .no { font-size: var(--punto-mini); font-weight: 700; color: var(--silik); }
 
-.adim-seridi { display: flex; flex-wrap: wrap; gap: var(--ara-1); margin-top: var(--ara-3); }
-.adim-seridi span { font-size: var(--punto-mini); padding: 3px 8px; border-radius: var(--yaricap-hap); background: var(--yuzey-2); color: var(--sonuk); display: inline-flex; gap: 4px; align-items: center; }
-.adim-seridi span.gecti { background: var(--iyi-sis); color: var(--iyi); }
-.adim-seridi span.simdi { background: var(--vurgu); color: #fff; }
-.adim-seridi span.gecikti { background: var(--kotu); color: #fff; }
 
 .simdi-kimde { display: flex; gap: var(--ara-4); flex-wrap: wrap; align-items: center; padding: var(--ara-3) var(--ara-4); border-radius: var(--yaricap); background: var(--zemin); margin-top: var(--ara-3); }
 .simdi-kimde div small { display: block; color: var(--sonuk); font-size: var(--punto-mini); text-transform: uppercase; letter-spacing: .05em; }

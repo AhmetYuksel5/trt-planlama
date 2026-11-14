@@ -59,6 +59,12 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(x.durum === "uretimde" && x.adim === "newsdesk" && x.uretim?.yol.editoryal === "newsdesk" && x.uretim?.parca.gfx, `üretim başladı (${x.durum}, ${x.adim})`);
   ok((d.uretimSablonlari || []).length === 7, "şablonlar kayıtta");
   ok((await p.locator("[data-uretim-ozet] li").count()) >= 6, "paket sayfasında üretim yolu kartı");
+  {
+    const asamalar = await p.locator(".asama-buyuk").innerText();
+    ok(/Görevlendirme/.test(asamalar) && !/News Gathering|Teknik/.test(asamalar), "aşamalar balondaki yol, eski beş aşama yok");
+    const rozet = await p.locator(".sayfa-basi").innerText();
+    ok(!/devraldı/.test(rozet), "durum rozetinde eski 'Newsdesk devraldı' adı yok");
+  }
 
   // Newsdesk görev verir.
   await kim("nd1", "#/paketler/" + pk.id);

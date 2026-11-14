@@ -5,7 +5,7 @@ import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
 import { Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimKutusu, adimTuru, parcaliMi, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
+import { adimAdi, adimTuru, parcaliMi, geriHedefi, durakSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
 import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
@@ -90,16 +90,13 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           {paket.adim && (
             <div>
               <small>{t("buAdim")}</small>
-              <b>
-                {adimAdi(paket.adim, paket)}
-                {adimKutusu(paket, paket.adim!) !== undefined && ` · ${t("raporKutusu", { n: adimKutusu(paket, paket.adim!)! })}`}
-              </b>
+              <b>{adimAdi(paket.adim, paket)}</b>
             </div>
           )}
           {sonraki && (
             <div>
               <small>{t("sirada")}</small>
-              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${adimAdi(sonraki, paket)} · ${birimAdi(adimSahibi(sonraki, paket.tur))}`}</b>
+              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${adimAdi(sonraki, paket)} · ${birimAdi(durakSahibi(paket, sonraki))}`}</b>
             </div>
           )}
           {paket.teslim && (

@@ -262,12 +262,29 @@ export interface GorunenAsama {
   ad: string;
   durum: "" | "gecti" | "simdi" | "gecikti";
 }
-export const masaYolu = (p: Paket): GorunenAsama[] | null => {
-  if (!masaPaketi(p) || p.durum === "iptal") return null;
+export const masaYolu = (p: Paket): GorunenAsama[] | null => (masaPaketi(p) && p.durum !== "iptal" ? paketYolu(p) : null);
+
+/*
+ * Paketin ekranda görünen yolu: Planlama, (masa paketinde masanın üretime
+ * alması), paketin kendi durakları (balonla başlamışsa balondaki yol),
+ * Tamamlandı. Eski beş sabit aşama (News Gathering, Newsdesk, Teknik…)
+ * kalktı: balonla Newsdesk ya da saha hiç yolda olmayabiliyor, paket orada
+ * "sırada" görünüyordu.
+ */
+export const paketYolu = (p: Paket): GorunenAsama[] => {
   const yol = uretimYolu(p);
-  const adlar = [metin("asPlanlama"), metin("asMasaUretimeAlma", undefined, { birim: birimAdi(kolSahibi(p.tur)) }), ...yol.map((a) => adimAdi(a, p)), metin("pdTamamlandi")];
+  const masa = masaPaketi(p);
+  const bas = [metin("asPlanlama"), ...(masa ? [metin("asMasaUretimeAlma", undefined, { birim: birimAdi(kolSahibi(p.tur)) })] : [])];
+  const adlar = [...bas, ...yol.map((a) => adimAdi(a, p)), metin("pdTamamlandi")];
+  if (p.durum === "iptal") return adlar.map((ad) => ({ ad, durum: "" }));
   const simdi =
-    p.durum === "tamamlandi" ? adlar.length : p.durum === "uretimde" && p.adim ? 2 + Math.max(0, yol.indexOf(p.adim)) : p.durum === "onaylandi" ? 1 : 0;
+    p.durum === "tamamlandi"
+      ? adlar.length
+      : p.durum === "uretimde" && p.adim
+        ? bas.length + Math.max(0, yol.indexOf(p.adim))
+        : p.durum === "onaylandi" && masa
+          ? 1
+          : 0;
   const gec = geciktiMi(p);
   return adlar.map((ad, i) => ({ ad, durum: i < simdi ? "gecti" : i === simdi ? (gec ? "gecikti" : "simdi") : "" }));
 };

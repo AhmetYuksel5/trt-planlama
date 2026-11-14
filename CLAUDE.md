@@ -807,7 +807,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`yeniDurak`), hareket `uretimYoluDegisti`. Paket sayfasında "Üretim
     yolu" kartı (`UretimYoluKarti`: aşama, masa, yapıldı/şimdi/atlandı,
     istisna). Listelerdeki ve masa sayfasındaki "Üretime al" balonu açar
-    (`UretimeAlDugmesi`). Paketin parça adı formunda Metin/Stand/Gfx
+    (`UretimeAlDugmesi`). Paket sayfasının "Aşamalar"ı, durum rozeti ve
+    listedeki çubuk (`AsamaCubugu`) paketin kendi yolu (`akis.ts → paketYolu`:
+    Planlama, masa paketinde masanın üretime alması, durakların balondaki
+    adları, Tamamlandı); eski beş sabit aşama (News Gathering, Newsdesk,
+    Teknik), "Newsdesk devraldı" adları ve "akış kutusu" kalktı, sıradakinin
+    birimi `durakSahibi`'nden. Paketin parça adı formunda Metin/Stand/Gfx
     önerileri. Balonsuz onaylı paket eskisi gibi muhabirin "Yapıldı"sıyla
     kapanır; üretimdeki eski paket kolun akışıyla biter.
   - Üretim şablonları (`organizasyon/UretimSablonlari.tsx`,

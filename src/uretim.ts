@@ -125,10 +125,10 @@ export const URETIM_AKISI = "balon";
 export const uretimAkisi = (u: UretimYolu): Akis => {
   const birim = (a: UretimAsamasi) => ({ tur: "birim" as const, birim: u.yol[a] as BirimId });
   const duraklar: Durak[] = [
-    ...(u.yol.gorev !== "atla" ? [{ id: "newsdesk", tur: "newsdesk" as const, sorumlu: birim("gorev"), asama: "newsdesk" as const }] : []),
-    { id: "metin", tur: "metin", sorumlu: { tur: "birim", birim: "muhabir" }, parcali: true, asama: "uretim" },
-    ...(u.yol.video !== "atla" ? [{ id: "videoKontrol", tur: "videoKontrol" as const, sorumlu: birim("video"), geriGonderir: true, asama: "uretim" as const }] : []),
-    ...(u.yol.yukleme !== "atla" ? [{ id: "inews", tur: "inews" as const, sorumlu: birim("yukleme"), asama: "teknik" as const }] : []),
+    ...(u.yol.gorev !== "atla" ? [{ id: "newsdesk", tur: "newsdesk" as const, ad: dilde("urGorev"), sorumlu: birim("gorev"), asama: "newsdesk" as const }] : []),
+    { id: "metin", tur: "metin", ad: dilde("urMetinDuragi"), sorumlu: { tur: "birim", birim: "muhabir" }, parcali: true, asama: "uretim" },
+    ...(u.yol.video !== "atla" ? [{ id: "videoKontrol", tur: "videoKontrol" as const, ad: dilde("urVideo"), sorumlu: birim("video"), geriGonderir: true, asama: "uretim" as const }] : []),
+    ...(u.yol.yukleme !== "atla" ? [{ id: "inews", tur: "inews" as const, ad: dilde("urYuklemeDuragi"), sorumlu: birim("yukleme"), asama: "teknik" as const }] : []),
     ...(u.yol.yayin !== "atla" ? [{ id: "yayin", tur: "is" as const, ad: dilde("urYayin"), sorumlu: birim("yayin"), asama: "teknik" as const }] : []),
   ];
   return { id: URETIM_AKISI, kollar: [], duraklar };

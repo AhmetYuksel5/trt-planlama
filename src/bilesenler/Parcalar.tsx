@@ -1,6 +1,6 @@
 import { ArrowRight, CalendarRange, Check, ChevronDown, Construction, Flag, Inbox, Info, Lock, PenLine, X } from "lucide-react";
 import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ASAMALAR, ASAMA_ADI, SADE_ASAMA_ADI, adimAdi, asamaBul, geciktiMi, masaYolu, sadeAkis, sadeSira, stokDurumu, uretimYolu, type UretimAdimi } from "../akis";
+import { SADE_ASAMA_ADI, adimAdi, type UretimAdimi, geciktiMi, paketYolu, sadeAkis, sadeSira, stokDurumu } from "../akis";
 import { useDil } from "../dil";
 import { BICIM_ACIKLAMA, BICIM_ADI, PAKET_DURUM_ADI, STOK_DURUM_ADI, STOK_DURUM_TONU, TBC, TUR_ADI } from "../etiketler";
 import type { OneriBicimi, IcerikTuru, Kisi, Oneri, Paket } from "../veri";
@@ -421,35 +421,22 @@ export function AsamaCubugu({ paket }: { paket: Paket }) {
         ))}
       </span>
     );
-  const masa = masaYolu(paket);
-  if (masa)
-    return (
-      <span className="asama" title={(masa.find((a) => a.durum === "simdi" || a.durum === "gecikti") ?? masa[masa.length - 1]).ad} data-masa-asama>
-        {masa.map((a, i) => (
-          <i key={i} className={a.durum} />
-        ))}
-      </span>
-    );
-  const simdi = asamaBul(paket);
-  const gecikti = geciktiMi(paket);
+  const yol = paketYolu(paket);
+  const iptal = paket.durum === "iptal";
   return (
     <span
-      className={`asama ${simdi === null ? "iptal" : ""}`}
-      title={simdi === null ? t("pdIptal") : simdi >= ASAMALAR.length ? t("pdTamamlandi") : t(ASAMA_ADI[ASAMALAR[simdi]])}
+      className={`asama ${iptal ? "iptal" : ""}`}
+      title={iptal ? t("pdIptal") : (yol.find((a) => a.durum === "simdi" || a.durum === "gecikti") ?? yol[yol.length - 1]).ad}
+      data-masa-asama
     >
-      {ASAMALAR.map((a, i) => (
-        <i
-          key={a}
-          className={
-            simdi === null ? "" : i < simdi ? "gecti" : i === simdi ? (gecikti ? "gecikti" : paket.durum === "tamamlandi" ? "gecti" : "simdi") : ""
-          }
-        />
+      {yol.map((a, i) => (
+        <i key={i} className={a.durum} />
       ))}
     </span>
   );
 }
 
-/** Detay ekranındaki büyük gösterim: beş aşama kutusu ve altında üretim adımları. */
+/** Detay ekranındaki büyük gösterim: paketin yolu, adım adım. */
 export function AsamaBuyuk({ paket }: { paket: Paket }) {
   const { t } = useDil();
   if (sadeAkis(paket))
@@ -467,60 +454,17 @@ export function AsamaBuyuk({ paket }: { paket: Paket }) {
         })}
       </div>
     );
-  // Masa paketi (ekonomi, program, spor): Planlama'dan sonra doğrudan masaya; adımlar da bu sırada.
-  const masa = masaYolu(paket);
-  if (masa)
-    return (
-      <div className="asama-buyuk" data-masa-asama>
-        {masa.map((a, i) => (
-          <div key={i} className={a.durum}>
-            <span className="no">{i + 1}</span>
-            <b>{a.ad}</b>
-            <small>{t(a.durum === "gecti" ? "asamaGecti" : a.durum === "simdi" ? "asamaSimdi" : a.durum === "gecikti" ? "gecikti" : "asamaBekliyor")}</small>
-          </div>
-        ))}
-      </div>
-    );
-  const simdi = asamaBul(paket);
-  const gecikti = geciktiMi(paket);
-  const yol = uretimYolu(paket);
-  const adimSirasi = paket.adim ? yol.indexOf(paket.adim as UretimAdimi) : paket.durum === "tamamlandi" ? yol.length : -1;
+  // Paketin kendi yolu: masa paketinde masanın üretime alması, balonla başlamışsa balondaki duraklar.
   return (
-    <>
-      <div className="asama-buyuk">
-        {ASAMALAR.map((a, i) => {
-          const durum =
-            simdi === null ? "" : i < simdi || paket.durum === "tamamlandi" ? "gecti" : i === simdi ? (gecikti ? "gecikti" : "simdi") : "";
-          const atlandi = a === "newsgathering" && !paket.sahaGerekli;
-          return (
-            <div key={a} className={atlandi ? "" : durum}>
-              <span className="no">{i + 1}</span>
-              <b>{t(ASAMA_ADI[a])}</b>
-              <small>
-                {atlandi
-                  ? t("asamaAtlandi")
-                  : durum === "gecti"
-                    ? t("asamaGecti")
-                    : durum === "simdi"
-                      ? t("asamaSimdi")
-                      : durum === "gecikti"
-                        ? t("gecikti")
-                        : t("asamaBekliyor")}
-              </small>
-            </div>
-          );
-        })}
-      </div>
-      {(paket.durum === "uretimde" || paket.durum === "tamamlandi") && (
-        <div className="adim-seridi">
-          {yol.map((a, i) => (
-            <span key={a} className={i < adimSirasi ? "gecti" : i === adimSirasi ? (gecikti ? "gecikti" : "simdi") : ""}>
-              {adimAdi(a, paket)}
-            </span>
-          ))}
+    <div className="asama-buyuk" data-masa-asama>
+      {paketYolu(paket).map((a, i) => (
+        <div key={i} className={a.durum}>
+          <span className="no">{i + 1}</span>
+          <b>{a.ad}</b>
+          <small>{t(a.durum === "gecti" ? "asamaGecti" : a.durum === "simdi" ? "asamaSimdi" : a.durum === "gecikti" ? "gecikti" : "asamaBekliyor")}</small>
         </div>
-      )}
-    </>
+      ))}
+    </div>
   );
 }
 
