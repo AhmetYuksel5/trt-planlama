@@ -36,7 +36,12 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const hedefY = Math.min(600, yukseklik);
   await p.evaluate((y) => window.scrollTo(0, y), hedefY);
   await p.waitForTimeout(300);
-  const link = p.locator('a[href^="#/paketler/"]').filter({ visible: true }).nth(3);
+  // Paket şeridi kapalı gelir; sayfa bağlantısı şerit açılınca.
+  const serit = p.locator("[data-paket-serit]").nth(3);
+  await serit.scrollIntoViewIfNeeded();
+  await serit.locator(".bp-bas").click();
+  await p.waitForTimeout(200);
+  const link = serit.locator(".bp-sayfa");
   await link.scrollIntoViewIfNeeded();
   await p.waitForTimeout(200);
   const once = await p.evaluate(() => window.scrollY);

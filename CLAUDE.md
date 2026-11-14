@@ -945,9 +945,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     "Sayfayı aç". Görünürlük `bitmisGorunum`: süre Planlama, kademe ve tam
     yöneticide hepsi, masada yalnız kendi aşaması; ekip notu `asamaNotuGorur`;
     muhabir süre ve not görmez; muhasebeci yalnız yapanlar. Paket sayfasında
-    aşama kutularının yerinde aynı içerik ve tam künye; Paketler'in Yapılan /
-    Yapılmayan / Tamamlandı sekmelerinde ve muhabirin Haberlerim'inde tablo
-    yerine şerit listesi. Test `testler/bitmis-paket.cjs`.
+    aşama kutularının yerinde aynı içerik ve tam künye; muhabirin
+    Haberlerim'inde şerit listesi. Paketler sayfasının her sekmesi de şerit
+    (kullanıcı: paketler dağınık durmasın, yalnız başlık, gün, muhabir;
+    öneriden ayırt edilsin, muhabire ve güne göre sıralansın; `PaketSeridi`,
+    `PaketListesi`): her paket ayrı kutu, kenarı ve paket simgesi durumunun
+    renginde (`paketSeritTuru`: süren mavi, yayın yeşil, stok gri, yapılmadı
+    ve iptal kırmızı), altında ince aşama çizgisi; gün `paketGunu` (biten
+    pakette bittiği gün, sürende teslim günü, yoksa planın günü). Açılınca
+    süren pakette şimdiki aşama ve kimde, sıradakiler sönük. "Sırala"
+    (`data-paket-sira`, `useAdimDurumu`): güne (gruplu; Aktif'te yakından
+    uzağa, öbür sekmelerde yeniden eskiye), muhabire, aşamaya (gruplu),
+    başlığa, son değişene. Tablo kalktı. Test `testler/bitmis-paket.cjs`.
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam

@@ -38,6 +38,19 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator(`[data-bitmis-ic="${pk.id}"]`).count()) === 1, "sayfada yapım aşamaları");
   ok((await p.locator("[data-kunye]").count()) === 1, "sayfada künye");
 
+  // 2a. Aktif sekme de tablo değil şerit (kullanıcı: paketler öneriden ayrı, yalnız başlık, gün, muhabir); sıralanır.
+  await gir("pl1", "#/paketler");
+  ok((await p.locator('[data-paket-listesi="gun"] [data-serit-tur="aktif"]').count()) > 0, "aktif paketler güne göre gruplu şeritte");
+  ok((await p.locator("main table").count()) === 0, "Paketler'de tablo yok");
+  const aktif = p.locator('[data-serit-tur="aktif"]').filter({ has: p.locator(".bp-bar") }).first();
+  await aktif.locator(".bp-bas").click(); await p.waitForTimeout(200);
+  ok((await aktif.locator('[data-bp-durum="simdi"]').count()) === 1, "süren pakette şimdiki aşama belli");
+  await p.locator("[data-paket-sira]").selectOption("muhabir"); await p.waitForTimeout(200);
+  ok((await p.locator('[data-paket-listesi="muhabir"] [data-paket-grup]').count()) > 1, "muhabire göre gruplu");
+  await p.locator("[data-paket-sira]").selectOption("baslik"); await p.waitForTimeout(200);
+  ok((await p.locator('[data-paket-listesi="baslik"]').count()) === 1 && (await p.locator("[data-paket-grup]").count()) === 0, "başlığa göre düz liste");
+  await p.locator("[data-paket-sira]").selectOption("gun");
+
   // 2. Paketler › Yapılan: tablo değil şerit, kapalı; basınca açılır
   await gir("pl1", "#/paketler");
   await p.locator('[data-paket-sonucu="yapildi"]').click();

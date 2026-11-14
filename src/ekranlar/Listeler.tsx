@@ -1,5 +1,5 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
-import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
+import { PAKET_SIRALARI, PaketListesi, type PaketSirasi } from "../bilesenler/BitmisPaket";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { useAdimDurumu } from "../yol";
 import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
@@ -40,6 +40,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
   const [durum, setDurum] = useAdimDurumu<PaketDurum | "hepsi" | "aktif" | PaketSonucu>(`${sayfa}:durum`, "aktif");
   const [tur, setTur] = useAdimDurumu<IcerikTuru | "">(`${sayfa}:tur`, "");
   const [aranan, setAranan] = useAdimDurumu(`${sayfa}:ara`, "");
+  const [sira, setSira] = useAdimDurumu<PaketSirasi>(`${sayfa}:sira`, "gun");
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.paketler.filter((p) => paketGorebilir(ben, p, v) && (!ayar.turler || ayar.turler.includes(p.tur)));
   const q = aranan.trim().toLocaleLowerCase();
@@ -75,6 +76,13 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
               ))}
             </select>
           )}
+          <select className="girdi" value={sira} onChange={(e) => setSira(e.target.value as PaketSirasi)} aria-label={t("psSirala")} title={t("psSirala")} data-paket-sira>
+            {PAKET_SIRALARI.map((x) => (
+              <option key={x.id} value={x.id}>
+                {t(x.ad)}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="sekmeler suzgec">
           <button className={durum === "aktif" ? "acik" : ""} onClick={() => setDurum("aktif")}>
@@ -95,20 +103,8 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
             {t("hepsi")} <em>{gorunen.length}</em>
           </button>
         </div>
-        {/* Biten paketlerin sekmesinde tablo yerine ince şeritler (kullanıcı): basınca yapım aşamaları. */}
-        {durum === "yapildi" || durum === "yapilmadi" || durum === "tamamlandi" ? (
-          liste.length ? (
-            <div className="bp-liste" data-bitmis-liste>
-              {liste.map((p) => (
-                <BitmisPaketSeridi key={p.id} ben={ben} paket={p} />
-              ))}
-            </div>
-          ) : (
-            <Bos metin={t("kayitYok")} />
-          )
-        ) : (
-          <PaketTablosu paketler={liste} d={v} sutunlar={["kod", "baslik", "muhabir", "tur", "plan", "asama", "kimde", "teslim"]} />
-        )}
+        {/* Her sekmede tablo yerine paket şeritleri (kullanıcı): yalnız başlık, muhabir, gün; basınca yapım aşamaları. */}
+        {liste.length ? <PaketListesi ben={ben} paketler={liste} sira={sira} artan={durum === "aktif"} /> : <Bos metin={t("kayitYok")} />}
       </Kart>
     </>
   );
