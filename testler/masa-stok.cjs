@@ -52,7 +52,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await masa.count()) === 1, "Ekonomi'nin masa sayfası (İçerikler › Planlamada)");
   ok((await masa.locator('[data-uretime-al="t-ek-nd"]').count()) === 1, "Next Day'den gelen ekonomi paketi masada, Üretime al düğmesi");
   ok((await masa.locator('[data-uretime-al="t-ek-eski"]').count()) === 1, "stoktan ayrılan eski paket de masada");
-  await masa.locator('[data-uretime-al="t-ek-nd"]').click(); await p.waitForTimeout(400);
+  // "Üretime al" üretim balonunu açıyor (uretim.ts): ekonomi paketi Ekonomi masası şablonuyla, başlatınca üretimde.
+  await masa.locator('[data-uretime-al="t-ek-nd"]').click(); await p.waitForTimeout(300);
+  ok((await p.locator('[data-uretim-sablon="u-ekonomi"][aria-pressed="true"]').count()) === 1, "balon Ekonomi masası şablonuyla açıldı");
+  await p.click("[data-uretim-gonder]"); await p.waitForTimeout(400);
   const pk = (await durum()).paketler.find((x) => x.id === "t-ek-nd");
   ok(pk.durum === "uretimde" && !!pk.adim, "Ekonomi üretime aldı: " + pk.durum + " " + pk.adim);
   await git("#/paketler/t-ek-nd");

@@ -107,7 +107,7 @@ import { SayfaBasi } from "../ana/Planlama";
 import { EkipSekmesi } from "./EkipSekmesi";
 import { PostaKisileriDugmesi } from "./PostaKisileri";
 import Kullanicilar, { IzleDugmesi, PozisyonPenceresi } from "../Kullanicilar";
-import { AkislarSekmesi } from "./Akislar";
+import { UretimSablonlari } from "./UretimSablonlari";
 import { PLAN_ADIMI_ADI, PlanYetkileriSekmesi } from "./PlanYetkileri";
 import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
 
@@ -123,7 +123,8 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
  *   kaldırılamıyor, nedeni düğmenin ipucunda.
  * - Plan ekibi (EkipSekmesi.tsx): plandaki ekip görevleri, adları, sırası
  *   ve kime yazılabileceği (birim ve ünvan kuralı).
- * - İş akışları (Akislar.tsx): durakların sırası, sorumlusu, koşulu.
+ * - Üretim şablonları (UretimSablonlari.tsx): üretim balonunun hazır yolları;
+ *   eski "İş akışları" sekmesinin yerinde (yol artık paketin onayında seçiliyor).
  * - Plan yetkileri (PlanYetkileri.tsx): planları kim toplantıya götürür,
  *   kim onaylar, kim kesinleştirir.
  * - Sürümler: yayınlanan her düzen; eskisi taslağa alınıp geri getirilebiliyor.
@@ -134,7 +135,7 @@ type Sekme =
   | "kisiler"
   | "birimler"
   | "ekip"
-  | "akislar"
+  | "uretim"
   | "planlar"
   | "surumler"
   | "hesaplar";
@@ -143,20 +144,20 @@ const SEKME_ADI: Record<Sekme, Anahtar> = {
   kisiler: "orgKisiler",
   birimler: "orgBirimler",
   ekip: "orgPlanEkibi",
-  akislar: "orgAkislar",
+  uretim: "urSablonlar",
   planlar: "orgPlanYetkileri",
   surumler: "orgSurumler",
   hesaplar: "orgHesaplar",
 };
 
 /* Taslak üzerinde çalışan sekmeler: üstlerinde yayın çubuğu. */
-const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "akislar", "planlar"];
+const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "planlar"];
 
 export const orgSekmeleri = (ben: Kisi): Sekme[] => {
   const yapi = yapiDuzenleyebilir(ben);
   return [
     ...(yapi || hesapYetkisi(ben, "kisiDuzenle") ? (["kisiler"] as const) : []),
-    ...(yapi ? (["birimler", "ekip", "akislar", "planlar", "surumler"] as const) : []),
+    ...(yapi ? (["birimler", "ekip", "uretim", "planlar", "surumler"] as const) : []),
     ...(GERCEK && (ben.hesapYoneticisi || ben.yetkiler?.length)
       ? (["hesaplar"] as const)
       : []),
@@ -172,8 +173,10 @@ export default function Organizasyon({
 }) {
   const { t } = useDil();
   const sekmeler = orgSekmeleri(ben);
+  // Eski "İş akışları" adresi yerine geçen üretim şablonlarını açar.
+  const istenen = sekme === "akislar" ? "uretim" : sekme;
   const acik = (
-    sekmeler.includes(sekme as Sekme) ? sekme : sekmeler[0]
+    sekmeler.includes(istenen as Sekme) ? istenen : sekmeler[0]
   ) as Sekme;
   return (
     <>
@@ -202,7 +205,7 @@ export default function Organizasyon({
       {acik === "kisiler" && <KisilerSekmesi ben={ben} />}
       {acik === "birimler" && <BirimlerSekmesi ben={ben} />}
       {acik === "ekip" && <EkipSekmesi ben={ben} />}
-      {acik === "akislar" && <AkislarSekmesi ben={ben} />}
+      {acik === "uretim" && <UretimSablonlari ben={ben} />}
       {acik === "planlar" && <PlanYetkileriSekmesi ben={ben} />}
       {acik === "surumler" && <SurumlerSekmesi ben={ben} />}
       {acik === "hesaplar" && <Kullanicilar ben={ben} gomulu />}

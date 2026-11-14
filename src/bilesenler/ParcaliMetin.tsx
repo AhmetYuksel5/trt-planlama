@@ -5,6 +5,8 @@ import { metin as dilMetni, useDil, type Anahtar } from "../dil";
 import { adimIlerle, parcaDuzelt, parcaGonder, parcaIade, parcaSonHal } from "../eylemler";
 import type { Kisi, MetinParcasi, Paket } from "../veri";
 import { parcaYapabilir } from "../yetki";
+import { birimAdi } from "../yapi";
+import { URETIM_PARCALARI, PARCA_ADI } from "../uretim";
 import { Icerik, Kart, NotKutu, Rozet, bildir, icerikAlani } from "./Parcalar";
 
 const ASAMA_ROZETI: Record<MetinParcasi["asama"], [Anahtar, string]> = {
@@ -13,6 +15,12 @@ const ASAMA_ROZETI: Record<MetinParcasi["asama"], [Anahtar, string]> = {
   dil: ["pa_dil", ""],
   tamam: ["pa_tamam", "iyi"],
 };
+
+/* Balonla yürüyen pakette editoryal kontrol ve dil denetimi seçilen masada: rozet aşamayı ve masayı söyler. */
+const rozetAdi = (t: ReturnType<typeof useDil>["t"], paket: Paket, asama: MetinParcasi["asama"], ad: Anahtar) =>
+  paket.uretim && (asama === "newsdesk" || asama === "dil")
+    ? `${t(asama === "newsdesk" ? "urEditoryal" : "urDil")} · ${birimAdi(asama === "newsdesk" ? paket.uretim.yol.editoryal : paket.uretim.yol.dil)}`
+    : t(ad);
 
 /*
  * Parçalı metin durağı: parçaların hepsi herkese görünür (kayıtlı süreç);
@@ -74,7 +82,7 @@ function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: Me
         <b>
           <Icerik>{parca.ad}</Icerik>
         </b>
-        <Rozet ton={rozet || undefined}>{t(ad)}</Rozet>
+        <Rozet ton={rozet || undefined}>{rozetAdi(t, paket, parca.asama, ad)}</Rozet>
       </div>
       {parca.iade && parca.asama === "muhabir" && <NotKutu>{parca.iade}</NotKutu>}
       {elde && parca.asama !== "muhabir" ? (
@@ -147,6 +155,16 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
         {t("parcaAdi")}
         <input value={ad} onChange={(e) => setAd(e.target.value)} dir="auto" placeholder="INTRO" data-parca-adi />
       </label>
+      {/* Balonda seçilen parçalar (metin, stand, gfx) tek dokunuşla ad olur; ad yine serbest. */}
+      {paket.uretim && !parca && (
+        <div className="dugmeler" data-parca-onerileri>
+          {URETIM_PARCALARI.filter((x) => x === "metin" || paket.uretim!.parca[x]).map((x) => (
+            <button key={x} type="button" className="dugme dugme-ikincil dugme-kucuk" aria-pressed={ad === t(PARCA_ADI[x])} onClick={() => setAd(t(PARCA_ADI[x]))}>
+              {t(PARCA_ADI[x])}
+            </button>
+          ))}
+        </div>
+      )}
       <textarea {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} placeholder={dilMetni("metinIpucu", "ar")} aria-label={t("parcaAdi")} data-parca-metni />
       <div className="form-alt">
         <button className="dugme dugme-ikincil" onClick={kapat}>

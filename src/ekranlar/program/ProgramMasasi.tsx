@@ -1,11 +1,12 @@
-import { Archive, CalendarRange, CirclePlay, Landmark, Trophy, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
+import { Archive, CalendarRange, Landmark, Trophy, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
+import { UretimeAlDugmesi } from "../../bilesenler/UretimBalonu";
 import { useState, type ReactNode } from "react";
 import { GorevlendirDugmesi } from "../../bilesenler/PaketGorevi";
 import { MasaYayinDugmeleri } from "../../bilesenler/PaketSonucu";
 import { Bos, Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { darGunAdi, kisaGunAdi, saatYaz, uzunGunAdi, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { gorevTalebiGeriCek, icerikProgramaAktar, uretimeAl, masaSorusunuYanitla, programKaldir, programKaydet } from "../../eylemler";
+import { gorevTalebiGeriCek, icerikProgramaAktar, masaSorusunuYanitla, programKaldir, programKaydet } from "../../eylemler";
 import { BICIM_ADI, paketYeri } from "../../etiketler";
 import { masaninSorulari } from "../../masaSorusu";
 import {
@@ -318,11 +319,7 @@ function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p
           )
         )}
         {/* Masanın paketi üretime masada alınıyor (eski masa kartındaki gibi kartın üstünden). */}
-        {uretimeAlabilir(ben, p) && (
-          <button type="button" className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
-            <CirclePlay size={14} /> {t("uretimeAl")}
-          </button>
-        )}
+        {uretimeAlabilir(ben, p) && <UretimeAlDugmesi ben={ben} paket={p} />}
         <MasaYayinDugmeleri ben={ben} paket={p} kucuk />
       </div>
     </div>

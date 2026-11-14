@@ -1,17 +1,17 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
+import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { useAdimDurumu } from "../yol";
 import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
 import { CirclePlay, Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
-import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
+import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti } from "../bilesenler/Parcalar";
 import { OzelTalepAlani } from "./OzelYayin";
 import { GorevTalepleri, SartliPaketler, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
 import { MasaOnerileri, MasaTakibi } from "./oneri/MasaSorusu";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { useDil, yaz, type Anahtar } from "../dil";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
-import { uretimeAl } from "../eylemler";
 import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
@@ -225,11 +225,7 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
                 </div>
                 {p.haftalikKalemId && <HaftalikRozeti />}
                 <TurRozeti tur={p.tur} />
-                {uretimeAlabilir(ben, p) && (
-                  <button className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
-                    <CirclePlay size={14} /> {t("uretimeAl")}
-                  </button>
-                )}
+                {uretimeAlabilir(ben, p) && <UretimeAlDugmesi ben={ben} paket={p} />}
               </li>
             ))}
           </ul>
@@ -291,11 +287,7 @@ export function MasaPaketleri({ ben, kol, baslik }: { ben: Kisi; kol: IcerikTuru
                   </small>
                 </div>
                 {p.haftalikKalemId && <HaftalikRozeti />}
-                {uretimeAlabilir(ben, p) && (
-                  <button className="dugme dugme-kucuk" onClick={() => uretimeAl(ben, p.id) && bildir(t("bUretimeAlindi"))} data-uretime-al={p.id}>
-                    <CirclePlay size={14} /> {t("uretimeAl")}
-                  </button>
-                )}
+                {uretimeAlabilir(ben, p) && <UretimeAlDugmesi ben={ben} paket={p} />}
               </li>
             ))}
           </ul>

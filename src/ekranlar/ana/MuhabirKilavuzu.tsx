@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { BookOpen, FileDown } from "lucide-react";
 import Logo from "../../bilesenler/Logo";
 import { useDil, type Anahtar } from "../../dil";
-import { useVeri } from "../../veri";
 
 /**
  * Muhabirin kılavuzu: İşlerim'in üstünde katlanır kart, PDF olarak da.
@@ -30,7 +29,6 @@ const okuAcik = () => {
 type Bolum = { baslik: Anahtar; maddeler: Anahtar[]; durumlar?: [Anahtar, Anahtar][] };
 
 function useBolumler(): Bolum[] {
-  const v = useVeri();
   return [
     { baslik: "kl1", maddeler: ["kl1a", "kl1b", "kl1c", "kl1d", "kl1e"] },
     { baslik: "kl2", maddeler: ["kl2a", "kl2b"] },
@@ -56,7 +54,7 @@ function useBolumler(): Bolum[] {
     { baslik: "kl6", maddeler: ["kl6a"] },
     // Newsdesk devredeyken muhabir paketi kapatmıyor, sırası gelen adımı yapıyor.
     // Ekonomi, program ve spor paketi masasında, akışla ilerliyor (kl7d); "Yapıldı" yalnız haber ve feature'da.
-    { baslik: "kl7", maddeler: ["kl7a", v.newsdeskDevrede ? "kl7bNewsdesk" : "kl7b", "kl7c", ...(v.newsdeskDevrede ? [] : ["kl7d" as const])] },
+    { baslik: "kl7", maddeler: ["kl7a", "kl7b", "kl7c", "kl7d"] },
     { baslik: "kl8", maddeler: ["kl8a"] },
     { baslik: "kl9", maddeler: ["kl9a", "kl9b", "kl9c"] },
   ];

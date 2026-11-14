@@ -3,7 +3,7 @@ import { TarihSaatGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi } from "../yapi";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Ban, CirclePlay, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
+import { Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { adimAdi, adimKutusu, adimTuru, parcaliMi, geriHedefi, adimSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
@@ -12,13 +12,15 @@ import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kil
 import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla, uretimeAl } from "../eylemler";
+import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla } from "../eylemler";
 import { sartliBekleyen } from "../haftalik";
 import { KararNotlari } from "./haftalik/Kalem";
 import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimYoluBelirleyebilir, yapabilir } from "../yetki";
+import { UretimBalonuDugmesi, UretimYoluKarti } from "../bilesenler/UretimBalonu";
+import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
@@ -114,6 +116,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
       <div className="iz iz-ana-yan">
         <div className="iz">
           <EylemKarti ben={ben} paket={paket} />
+          <UretimYoluKarti ben={ben} paket={paket} />
           {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
           <BaskaMuhabireVer ben={ben} paket={paket} />
           <PaketMetniKarti ben={ben} paket={paket} />
@@ -304,11 +307,10 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <PaketSonucDugmeleri ben={ben} paket={paket} />
-        {uretimeAlabilir(ben, paket) && !paket.isaret && (
+        {/* Onaylı paketin üretimi balonla da başlatılabilir (Newsdesk sistemde olsun olmasın; uretim.ts). */}
+        {uretimYoluBelirleyebilir(ben, paket) && (
           <div className="dugmeler ara-ust-2">
-            <button className="dugme dugme-ikincil" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
-              <CirclePlay size={15} /> {t("uretimeAl")}
-            </button>
+            <UretimBalonuDugmesi ben={ben} paket={paket} />
           </div>
         )}
       </Kart>
@@ -322,23 +324,17 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
             {/* Muhabir kendi işini söylüyor; Planlama onun adına işaretliyor. */}
             <CircleCheck size={15} /> {t(ben.id === paket.muhabirId ? "haberTamamlandi" : "haberTeslimEdildi")}
           </button>
-          {uretimeAlabilir(ben, paket) && (
-            <button className="dugme dugme-ikincil" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
-              <CirclePlay size={15} /> {t("uretimeAl")}
-            </button>
-          )}
+          <UretimBalonuDugmesi ben={ben} paket={paket} />
         </div>
       </Kart>
     );
   }
 
-  if (paket.durum === "onaylandi" && uretimeAlabilir(ben, paket)) {
+  if (paket.durum === "onaylandi" && uretimYoluBelirleyebilir(ben, paket)) {
     return (
       <Kart baslik={t("seninIslemin")}>
         <div className="dugmeler">
-          <button className="dugme" onClick={() => uretimeAl(ben, paket.id) && bildir(t("bUretimeAlindi"))}>
-            <CirclePlay size={15} /> {t("uretimeAl")}
-          </button>
+          <UretimBalonuDugmesi ben={ben} paket={paket} />
         </div>
       </Kart>
     );
@@ -524,7 +520,8 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
               </label>
             )}
             <div className="form-alt">
-              <button className="dugme dugme-iyi" onClick={() => ilerle(paket.stok ? {} : { klipKodu: kod.trim() || undefined })} data-sistem-yukle>
+              {/* Gfx'li pakette yükleme grafiği bekliyor (montajda ekleniyor). */}
+              <button className="dugme dugme-iyi" disabled={gfxBekliyor(paket)} title={gfxBekliyor(paket) ? t("urGfxBekleniyor") : undefined} onClick={() => ilerle(paket.stok ? {} : { klipKodu: kod.trim() || undefined })} data-sistem-yukle>
                 <CircleCheck size={15} /> {t(paket.stok ? "stogaAl" : "sistemeYuklendi")}
               </button>
             </div>

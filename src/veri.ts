@@ -1,4 +1,5 @@
 import type { TakvimAdayi } from "./takvimBotu";
+import type { UretimSablonu, UretimYolu } from "./uretim";
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
 import { izlemede } from "./izleme";
@@ -35,7 +36,7 @@ import type { Yapi } from "./yapi";
  * toplantıdan önce bakıyor (ön inceleme). Üretim akışında masası yok;
  * ekonomi paketini Planlama'nın feature/stok ekibi yürütüyor (akis.ts).
  */
-export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "spor", "output", "scriptEditor", "media", "muhabir", "yonetim", "muhasebe"] as const;
+export const BIRIMLER = ["planlama", "newsdesk", "newsgathering", "program", "ekonomi", "spor", "output", "scriptEditor", "media", "muhabir", "yonetim", "muhasebe", "grafik"] as const;
 export type Birim = (typeof BIRIMLER)[number];
 /** Yerleşik birim ya da yöneticinin açtığı birim (yapi.ts). */
 export type BirimId = Birim | (string & {});
@@ -62,6 +63,9 @@ export const GOREVLER = [
   "stokTakip",
   /* News Gathering'in alt birimi Muhasebe: muhabir anlaşmaları ve aylık döküm. */
   "muhasebeci",
+  /* Grafik müdürlüğü (kademe) ve altındaki grafik ekibi: paketin gfx'ini hazırlıyor. */
+  "grafikMuduru",
+  "grafiker",
 ] as const;
 export type Gorev = (typeof GOREVLER)[number];
 /** Yerleşik ünvan ya da yöneticinin açtığı ünvan (yapi.ts). */
@@ -962,6 +966,11 @@ export interface Paket {
   video?: string;
   /** Parçalı metin durağında metnin bölümleri (yeni yol). */
   parcalar?: MetinParcasi[];
+  /*
+   * Üretim balonunda seçilen yol (uretim.ts): her aşamanın masası, editoryal
+   * parçalar, gfx'in bitişi. Varsa akış kolun akışı yerine bundan kurulur.
+   */
+  uretim?: UretimYolu;
   /** Newsdesk'in video kontrolünde revizyon gerekçesi; muhabir yeni videoyu gönderince kalkar. */
   videoIade?: string;
   /** Haftalıkta şartlı kabul edildi: taslakta bu koşulla bekliyor, Next Day onayı kendiliğinden kabul etmiyor. */
@@ -1679,6 +1688,9 @@ export const HAREKET_TIPLERI = [
   "parcaDuzeltildi",
   "parcaIade",
   "parcaTamam",
+  "gfxHazir",
+  "gfxSirada",
+  "uretimYoluDegisti",
   "videoOnaylandi",
   "mediayaGonderildi",
   "klipKodu",
@@ -1787,6 +1799,8 @@ export interface Durum {
   toplantiNotlari?: ToplantiNotu[];
   /** Programlar biriminin programları; eski kayıtta yok. */
   programlar?: ProgramTanimi[];
+  /** Üretim balonunun şablonları (uretim.ts); boşsa yerleşikler. */
+  uretimSablonlari?: UretimSablonu[];
   /** Yerleşik listede olmayan, sonradan eklenen şehirler. */
   sehirler?: SehirTanimi[];
   /** Planlama görevleri ve iş taksimi; eski kayıtta yok, boşsa varsayılan temel görevler (gorevler.ts). */

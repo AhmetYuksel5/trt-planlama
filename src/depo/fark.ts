@@ -40,6 +40,7 @@ export const DIZI_ALANLARI = [
   "masaSorulari",
   "toplantiNotlari",
   "programlar",
+  "uretimSablonlari",
   "sehirler",
   "gorevler",
   "isler",

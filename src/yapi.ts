@@ -241,6 +241,7 @@ const VARSAYILAN_UNVANLAR: Record<Birim, GorevId[]> = {
   yonetim: ["inputMuduru", "programMuduru", "koordinator"],
   muhabir: ["muhabir"],
   muhasebe: ["yonetici", "muhasebeci"],
+  grafik: ["yonetici", "grafiker"],
 };
 
 /* Yerleşik ünvanların plandaki ekip görevi (etiketler.ts → varsayilanEkipGorevi'nin birime bakmayan kısmı). */
@@ -266,6 +267,8 @@ const VARSAYILAN_GRUPLAR: { id: BirimId; ad: Anahtar; ust?: BirimId }[] = [
   { id: "bInput", ad: "orgBolumInput", ust: KOK_MERKEZ },
   { id: "bOutput", ad: "orgBolumOutput", ust: KOK_MERKEZ },
   { id: "bProgram", ad: "orgBolumProgram", ust: KOK_MERKEZ },
+  // Grafik de kendi müdürlüğü olan bir bölüm (kullanıcı: Input, Output, Program gibi).
+  { id: "bGrafik", ad: "orgBolumGrafik", ust: KOK_MERKEZ },
   { id: KOK_DIS, ad: "orgKokDis" },
 ];
 /*
@@ -278,6 +281,7 @@ const KADEME_UNVANLARI: Partial<Record<BirimId, GorevId[]>> = {
   kHaberMerkezi: ["koordinator"],
   bInput: ["inputMuduru"],
   bProgram: ["programMuduru"],
+  bGrafik: ["grafikMuduru"],
 };
 
 const VARSAYILAN_UST: Record<Birim, BirimId> = {
@@ -294,6 +298,7 @@ const VARSAYILAN_UST: Record<Birim, BirimId> = {
   muhabir: KOK_DIS,
   // Muhasebe News Gathering'in alt birimi (kullanıcı).
   muhasebe: "newsgathering",
+  grafik: "bGrafik",
 };
 
 const dilde = (k: Anahtar): Metin => ({ tr: metin(k, "tr"), ar: metin(k, "ar"), en: metin(k, "en") });
@@ -341,7 +346,7 @@ export const varsayilanYapi = (): Yapi => {
 const tamamlanan = new WeakMap<Yapi, Yapi>();
 export const tamamla = (y: Yapi): Yapi => {
   // Sürüm 0'a (varsayılan) ayrıca bakılmıyor: varsayılandan açılmış taslak da sürüm 0 taşıyor, eski düzende kaydedilmişse tamamlanmalı.
-  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && y.birimler.some((b) => b.id === "spor") && y.birimler.some((b) => b.id === "muhasebe") && !yonetimGecisiGerekli(y)) return y;
+  if (y.ekipGorevleri && y.birimler.some((b) => b.ust) && y.birimler.some((b) => b.id === "scriptEditor") && y.akislar.some((a) => a.id === YENI_AKIS) && y.birimler.some((b) => b.id === "spor") && y.birimler.some((b) => b.id === "muhasebe") && y.birimler.some((b) => b.id === "grafik") && !yonetimGecisiGerekli(y)) return y;
   const hazir = tamamlanan.get(y);
   if (hazir) return hazir;
   let birimler = y.birimler;
@@ -351,7 +356,7 @@ export const tamamla = (y: Yapi): Yapi => {
     // Kurumun eski yayında açtığı birim örnek aldığı birimin kadrosuna: muhabir gibi çalışan dış muhabirlere, öbürü haber merkezine.
     birimler = [...gruplar, ...birimler.map((b) => ({ ...b, ust: yerlesikBirim(b.id) ? VARSAYILAN_UST[b.id] : b.ornek === "muhabir" ? KOK_DIS : KOK_MERKEZ }))];
   }
-  const t = muhasebeyiKur(masalariKur(yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) })))));
+  const t = grafigiKur(muhasebeyiKur(masalariKur(yonetimiKademeyeKur(yeniYoluKur(scriptEditoruKur({ ...y, birimler, ekipGorevleri: y.ekipGorevleri ?? ekipKurallari(y.unvanlar) }))))));
   tamamlanan.set(y, t);
   return t;
 };
@@ -445,6 +450,21 @@ const muhasebeyiKur = (y: Yapi): Yapi =>
   y.birimler.some((b) => b.id === "muhasebe")
     ? y
     : { ...y, birimler: [...y.birimler, { id: "muhasebe", unvanlar: VARSAYILAN_UNVANLAR.muhasebe, ust: y.birimler.some((b) => b.id === "newsgathering") ? "newsgathering" : KOK_MERKEZ }] };
+
+/*
+ * Grafik sonradan yerleşik oldu (kullanıcı: paketin gfx'i grafik ekibine
+ * gidiyor, Grafik kendi müdürlüğü olan bir bölüm). Onsuz yayınlanmış yapıda
+ * okurken haber merkezinin altına "Grafik" kademesi (müdürüyle) ve içine
+ * grafik ekibi eklenir.
+ */
+const grafigiKur = (y: Yapi): Yapi => {
+  if (y.birimler.some((b) => b.id === "grafik")) return y;
+  const kok = y.birimler.some((b) => b.id === KOK_MERKEZ) ? KOK_MERKEZ : undefined;
+  const grup = y.birimler.some((b) => b.id === "bGrafik")
+    ? []
+    : [{ id: "bGrafik", ad: dilde("orgBolumGrafik"), unvanlar: KADEME_UNVANLARI.bGrafik ?? [], ...(kok && { ust: kok }) }];
+  return { ...y, birimler: [...y.birimler, ...grup, { id: "grafik", unvanlar: VARSAYILAN_UNVANLAR.grafik, ust: "bGrafik" }] };
+};
 
 /* --- Okuma --- */
 
@@ -652,7 +672,7 @@ export const muhabirYerUnvani = (k: { sehir: Sehir }): UnvanTanimi => yerUnvani(
 export const yerUnvaniUygula = <K extends { birim: BirimId; gorev: GorevId; sehir: Sehir }>(k: K, y: Yapi = yapi()): K =>
   disMuhabirMi(k, y) && otomatikMuhabirUnvaniMi(k.gorev) && k.gorev !== sehirMuhabirUnvaniId(k.sehir) ? { ...k, gorev: sehirMuhabirUnvaniId(k.sehir) } : k;
 
-const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru"];
+const YONETICI_UNVANLARI: GorevId[] = ["yonetici", "inputMuduru", "programMuduru", "grafikMuduru"];
 
 /** Ünvan yönetici rolü veriyor mu (Organizasyon'da işaretlenir; yerleşik yönetici ve müdürler işaretli). */
 export const unvanYoneticiMi = (id: GorevId, y: Yapi = yapi()) => y.unvanlar.find((u) => u.id === id)?.yonetici ?? YONETICI_UNVANLARI.includes(id);

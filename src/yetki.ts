@@ -27,6 +27,7 @@ import { bugun } from "./tarih";
 import { SORULABILIR_DURUM, acikSoru, kabulSoru, oneriGorevPaketi, oneriSorulari, sonSoru } from "./masaSorusu";
 import { acikGundemde, oneriPlanKaydi } from "./oneriPlanlari";
 import { muhasebeOkur } from "./depo/fark";
+import { gfxAcik } from "./uretim";
 import {
   BIRIMLER,
   ICERIK_TURLERI,
@@ -535,12 +536,15 @@ export const yzGorusuGorur = (k: Kisi | undefined): boolean =>
   !!k && k.birim !== "muhabir";
 
 /*
- * Newsdesk sistemde değilken iş Planlama'da bitiyor: onaylı paketi muhabiri
- * kendisi "Tamamlandı" diye kapatıyor; hesapsız muhabir giremediği için
- * Planlama da onun adına kapatabiliyor. Newsdesk devreye girince devral ve
- * üretim akışı geçerli, bu kapanış yok.
+ * Onaylı paketi muhabiri kendisi "Tamamlandı" diye kapatıyor; hesapsız
+ * muhabir giremediği için Planlama da onun adına kapatabiliyor. Eskiden
+ * "Newsdesk sistemde" anahtarı açılınca bu kapanış kalkıyor, plan
+ * devriyle bütün paketler Newsdesk'in akışına giriyordu. Anahtar kalktı
+ * (kullanıcı: Newsdesk aktif değil diye bütün düzeni dondurmaya gerek
+ * yok): paketin Newsdesk'ten geçip geçmeyeceği üretim balonunda (uretim.ts)
+ * paket paket seçiliyor. Kayıttaki eski `newsdeskDevrede` okunmuyor.
  */
-export const yalnizPlanlama = (d: Durum) => !d.newsdeskDevrede;
+export const yalnizPlanlama = (_d: Durum) => true;
 /*
  * Plandan silinebilen paket: henüz karar verilmemiş paket önerisi, bir de
  * Weekly'den onaylı gelen ama üretime girmemiş paket. Weekly'nin kabulü
@@ -1148,10 +1152,31 @@ export const parcaYapabilir = (k: Kisi | undefined, p: Paket, asama: MetinParcas
   if (!k || p.durum !== "uretimde" || adimTuru(p) !== "metin" || !parcaliMi(p)) return false;
   const d = durakBul(p, p.adim);
   if (asama === "muhabir") return !!d && sorumluMu(k, p, d.sorumlu);
-  if (asama === "newsdesk") return sorumluMu(k, p, { tur: "kol" });
-  if (asama === "dil") return sorumluMu(k, p, { tur: "birim", birim: "scriptEditor" });
+  // Üretim balonunda editoryal kontrolün ve dil denetiminin masası seçiliyor (uretim.ts).
+  if (asama === "newsdesk") return sorumluMu(k, p, p.uretim ? { tur: "birim", birim: p.uretim.yol.editoryal } : { tur: "kol" });
+  if (asama === "dil") return sorumluMu(k, p, { tur: "birim", birim: p.uretim?.yol.dil ?? "scriptEditor" });
   return false;
 };
+
+/*
+ * Üretim balonu: onaylı paketin yolunu Planlama (paket değerlendiren) ve tam
+ * yönetici belirler; plansız paketi üretime alabilen masa da (bugünkü
+ * "Üretime al"ın yerinde). Özel yayın paketi kendi aşamalarıyla, masanın
+ * takibindeki paket masanın kararıyla ilerliyor: balona girmez. Üretimdeki
+ * paketin yolunu (kalan aşamalar) yalnız Planlama ve tam yönetici değiştirir.
+ */
+export const uretimYoluBelirleyebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k &&
+  !kisitliKisi(k) &&
+  !p.ozelId &&
+  !p.masaTakibi &&
+  !p.isaret &&
+  ((p.durum === "onaylandi" && (k.hesapYoneticisi || yapabilir(k, "paketDegerlendir") || uretimeAlabilir(k, p))) ||
+    (p.durum === "uretimde" && !!p.uretim && (!!k.hesapYoneticisi || yapabilir(k, "paketDegerlendir"))));
+
+/** Gfx'i yolda grafiği yapan masa bitirir; sırası gelince (gfxAcik). */
+export const gfxYapabilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && !!p.uretim && gfxAcik(p) && sorumluMu(k, p, { tur: "birim", birim: p.uretim.yol.grafik as BirimId });
 
 /** Script Editor'ün sırası: dil aşamasındaki parçalar (yeni yol) ve eski yolda dil durağındaki paketler. */
 export const dilParcaSirasi = (d: Durum, k: Kisi): { p: Paket; parca: MetinParcasi }[] =>

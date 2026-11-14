@@ -7,7 +7,7 @@ import { WHATSAPP_YOLLARI, whatsappYolu, whatsappYoluKaydet, type WhatsappYolu }
 import { KatlanirKartlar, Kart, bildir } from "../bilesenler/Parcalar";
 import { gunAdi, useDil, type Anahtar } from "../dil";
 import { GERCEK, firebaseYukle } from "../kip";
-import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, newsdeskDevredeKaydet, sayimBaslangiciKaydet } from "../eylemler";
+import { kisiCalismaGunleri, muhabireOneriBirimleriKaydet, sayimBaslangiciKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, muhabireOneriBirimleri, postaGorebilir, yapabilir } from "../yetki";
 import { GeriBildirimAyarlari, TakdirAyari } from "./GeriBildirimSablonlari";
@@ -51,7 +51,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {ben.birim !== "muhabir" && <WhatsappAyari />}
         <SesAyari />
         {ben.hesapYoneticisi && <MuhabireOneriAyari ben={ben} />}
-        {ben.hesapYoneticisi && <IsAkisiAyari ben={ben} />}
+        {ben.hesapYoneticisi && <IsAkisiAyari />}
         {ben.hesapYoneticisi && <GunNotuAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <TakdirAyari ben={ben} />}
@@ -227,26 +227,21 @@ function GunNotuAyari({ ben }: { ben: Kisi }) {
 }
 
 /*
- * Newsdesk sistemde değilken (şimdilik) onaylı paketi muhabir "Tamamlandı"
- * diye kapatıyor; açılınca devral ve üretim akışı (Organizasyon › İş
- * akışları). Yalnız tam yönetici.
+ * İş akışı: planların onay ve kesinleştirme yetkileri ve paketlerin üretim
+ * şablonları Organizasyon'da. "Newsdesk sistemde" anahtarı kalktı: paketin
+ * hangi masalardan geçeceği üretim balonunda paket paket seçiliyor.
  */
-function IsAkisiAyari({ ben }: { ben: Kisi }) {
+function IsAkisiAyari() {
   const { t } = useDil();
-  const v = useVeri();
   return (
     <Kart baslik={t("isAkisiBicimi")} ikon={<Workflow size={18} />}>
-      <label className="secim">
-        <input type="checkbox" checked={!!v.newsdeskDevrede} onChange={(e) => newsdeskDevredeKaydet(ben, e.target.checked) && bildir(t("bKaydedildi"))} data-newsdesk-devrede />
-        {t("newsdeskDevrede")}
-      </label>
-      <div className="dugmeler ara-ust-2">
+      <div className="dugmeler">
         {/* Planların onay ve kesinleştirme yetkileri kurum yapısında: taslak, yayın ve sürümleriyle. */}
         <a className="dugme dugme-ikincil dugme-kucuk" href="#/organizasyon/planlar" data-plan-yetkileri-bag>
           <ShieldCheck size={14} /> {t("orgPlanYetkileri")}
         </a>
-        <a className="dugme dugme-ikincil dugme-kucuk" href="#/organizasyon/akislar">
-          <Workflow size={14} /> {t("orgAkislar")}
+        <a className="dugme dugme-ikincil dugme-kucuk" href="#/organizasyon/uretim" data-uretim-sablonlari-bag>
+          <Workflow size={14} /> {t("urSablonlar")}
         </a>
       </div>
     </Kart>

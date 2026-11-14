@@ -1,7 +1,7 @@
 import { girisAdi, postaAdresi } from "./girisKodu";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
-import { adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
+import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, kabulMu, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
@@ -133,6 +133,8 @@ import {
 import {
   adimYapabilir,
   parcaYapabilir,
+  uretimYoluBelirleyebilir,
+  gfxYapabilir,
   haftalikDuzenler,
   hesapYetkisi,
   epostaDegistirebilir,
@@ -205,6 +207,7 @@ import {
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
 import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
+import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, yeniDurak, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, uretimAkisi, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -2915,6 +2918,96 @@ export const uretimeAl = (ben: Kisi, paketId: string) => {
   return true;
 };
 
+/* --- Üretim balonu (uretim.ts) --- */
+
+export interface UretimSecimi {
+  sablon?: string;
+  yol: UretimYolHaritasi;
+  parca: UretimParcalari;
+}
+
+const yolGecerli = (y: UretimYolHaritasi) => URETIM_ASAMALARI.every((a) => typeof y[a] === "string" && !!y[a]);
+
+/**
+ * Onaylı paketin üretimi seçilen yolla başlar: yol pakete yazılır, ilk
+ * durak açılır, sorumlusuna haber gider. Plansız paketin "Üretime al"ı ve
+ * planlı paketin (Newsdesk sistemde olsun olmasın) üretimi aynı kapıdan.
+ */
+export const uretimiBaslat = (ben: Kisi, paketId: string, g: UretimSecimi) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || p.durum !== "onaylandi" || !uretimYoluBelirleyebilir(ben, p) || !yolGecerli(g.yol)) return false;
+  const uretim: UretimYolu = { ...(g.sablon && { sablon: g.sablon }), yol: { ...g.yol }, parca: { ...g.parca } };
+  const adim = uretimAkisi(uretim).duraklar[0].id;
+  const akis = { ...akisDamgasi(p), id: "balon" };
+  const yeni: Paket = { ...p, durum: "uretimde", adim, akis, uretim, guncelleme: simdi() };
+  d = paketGuncelle(d, paketId, () => yeni);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimeAlindi", paketId, planId: p.planId, veri: { adim, sahip: paketSahibi(yeni) ?? "" } }));
+  return true;
+};
+
+/**
+ * Üretimdeki paketin kalan aşamalarının yolu değişir; geçmiş aşamalar ve
+ * editoryal parçalar metin durağı geçildiyse eskisi gibi kalır. Bulunduğu
+ * durak artık yolda değilse iş yolda kalan bir sonraki durağa geçer.
+ */
+export const uretimYoluDegistir = (ben: Kisi, paketId: string, g: UretimSecimi) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || p.durum !== "uretimde" || !p.uretim || !uretimYoluBelirleyebilir(ben, p) || !yolGecerli(g.yol)) return false;
+  const gecen = gecenAsamalar(p);
+  const yol = Object.fromEntries(URETIM_ASAMALARI.map((a) => [a, gecen.includes(a) ? p.uretim!.yol[a] : g.yol[a]])) as UretimYolHaritasi;
+  // Parçalar metin durağı geçilince değişmez (editoryal kontrol yapıldı).
+  const parca = gecen.includes("editoryal") ? p.uretim.parca : { ...g.parca };
+  const uretim: UretimYolu = { ...p.uretim, ...(g.sablon && { sablon: g.sablon }), yol, parca };
+  if (JSON.stringify(uretim) === JSON.stringify(p.uretim)) return true;
+  const adim = yeniDurak(p, uretim);
+  const yeni: Paket = adim ? { ...p, uretim, adim, guncelleme: simdi() } : { ...p, uretim, durum: "tamamlandi", adim: undefined, guncelleme: simdi() };
+  d = paketGuncelle(d, paketId, () => yeni);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimYoluDegisti", paketId, planId: p.planId, veri: { adim: adim ?? "tamam", sahip: paketSahibi(yeni) ?? "" } }));
+  return true;
+};
+
+/** Grafik ekibi gfx'i bitirdi: yükleme açılır (yükleme durağı onu bekliyordu). */
+export const gfxTamamla = (ben: Kisi, paketId: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !gfxYapabilir(ben, p)) return false;
+  d = paketGuncelle(d, paketId, (x) => ({ ...x, uretim: { ...x.uretim!, gfxTamam: { kisiId: ben.id, zaman: simdi() } }, guncelleme: simdi() }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "gfxHazir", paketId, planId: p.planId, veri: { sahip: paketSahibi(p) ?? "" } }));
+  return true;
+};
+
+/* Şablonları Planlama (paket değerlendiren) ve tam yönetici yönetir. */
+export const uretimSablonuDuzenler = (k: Kisi) => !!k.hesapYoneticisi || yapabilir(k, "paketDegerlendir");
+
+/** Yeni şablon: ilk kayıtta yerleşikler de kayda geçer (liste boşken yerleşikler gösteriliyordu). */
+export const uretimSablonuKaydet = (ben: Kisi, g: UretimSecimi & { ad: string }): string | null => {
+  const d = getir();
+  if (!uretimSablonuDuzenler(ben) || !g.ad.trim() || !yolGecerli(g.yol)) return null;
+  const s: UretimSablonu = { id: kimlik("us"), ad: g.ad.trim(), yol: { ...g.yol }, parca: { ...g.parca }, olusturan: ben.id, zaman: simdi() };
+  kaydet({ ...d, uretimSablonlari: [...(d.uretimSablonlari?.length ? d.uretimSablonlari : VARSAYILAN_URETIM_SABLONLARI), s] });
+  return s.id;
+};
+
+export const uretimSablonuGuncelle = (ben: Kisi, id: string, f: (s: UretimSablonu) => UretimSablonu) => {
+  const d = getir();
+  if (!uretimSablonuDuzenler(ben)) return false;
+  const l = d.uretimSablonlari?.length ? d.uretimSablonlari : VARSAYILAN_URETIM_SABLONLARI;
+  if (!l.some((s) => s.id === id)) return false;
+  kaydet({ ...d, uretimSablonlari: l.map((s) => (s.id === id ? f(s) : s)) });
+  return true;
+};
+
+/** Şablon silinir; onunla başlamış paketler yollarını kendi kayıtlarında taşıyor. Son şablon silinmez. */
+export const uretimSablonuSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const l = d.uretimSablonlari?.length ? d.uretimSablonlari : VARSAYILAN_URETIM_SABLONLARI;
+  if (!uretimSablonuDuzenler(ben) || l.length <= 1 || !l.some((s) => s.id === id)) return false;
+  kaydet({ ...d, uretimSablonlari: l.filter((s) => s.id !== id) });
+  return true;
+};
+
 /*
  * Plansız görev (kullanıcı): Planlama (ileri tarihe de) ve Newsdesk (yalnız
  * o gün) muhabire bir plana eklemeden paket görevi verir; paket stokta
@@ -3146,6 +3239,8 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   const parcali = adim === "metin" && parcaliMi(p);
   if (adim === "gorevlendirme" && !(g.muhabirId || p.muhabirId)) return false;
   if (parcali && (!g.video?.trim() || !parcalarHazir(p))) return false;
+  // Yükleme gfx'i bekliyor: grafik montajda ekleniyor (kullanıcının çizimi).
+  if (adim === "inews" && gfxBekliyor(p)) return false;
   if (adim === "metin" && !parcali && !g.metin?.trim()) return false;
   if (adim === "video" && !g.video?.trim()) return false;
   if (adim === "media" && !g.klipKodu?.trim()) return false;
@@ -3172,7 +3267,7 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   if (sonraki === "tamam" && p.stok) veri.stok = "1";
   if (g.klipKodu) veri.kod = g.klipKodu;
   if (g.muhabirId) veri.muhabir = g.muhabirId;
-  if (adim === "is") veri.durak = p.adim ?? "";
+  if (adim === "is") veri.durak = adimAdi(p.adim, p);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : parcali ? "videoGeldi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
   return true;
 };
@@ -3189,12 +3284,37 @@ export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: st
   if (!p || !parcaYapabilir(ben, p, "muhabir") || !g.ad.trim() || !g.metin.trim()) return false;
   const eski = g.id ? p.parcalar?.find((x) => x.id === g.id) : undefined;
   if (g.id && eski?.asama !== "muhabir") return false;
-  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: "newsdesk" };
+  // Üretim balonunda editoryal kontrol ya da dil atlanabiliyor: parça yolda kalan ilk aşamaya gider.
+  const ilk = parcaIlkAsama(p);
+  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: ilk };
   const parcalar = eski ? p.parcalar!.map((x) => (x === eski ? parca : x)) : [...(p.parcalar ?? []), parca];
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar, guncelleme: simdi() }));
-  kaydet(parcaHareketi(d, ben, p, "parcaGeldi", parca, kolSahibi(p.tur)));
+  d = paketGuncelle(d, paketId, (x) => parcalariYaz(x, parcalar));
+  kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaGeldi", parca, parcaSahibi(p, ilk)), ben, p));
   return true;
 };
+
+/* Parçanın sıradaki aşamasının birimi: editoryal kontrol (balonda seçilen masa, yoksa kolun sahibi), dil, hazırsa muhabir (montaj). */
+const parcaSahibi = (p: Paket, asama: MetinParcasi["asama"]): string =>
+  asama === "newsdesk" ? (p.uretim?.yol.editoryal ?? kolSahibi(p.tur)) : asama === "dil" ? (p.uretim?.yol.dil ?? "scriptEditor") : asama === "tamam" ? "muhabir" : "muhabir";
+
+/*
+ * Bütün parçalar bu yazışla hazır olduysa ve paket gfx'liyse grafik ekibinin
+ * sırası açılır (dil denetiminden sonra, video kontrolüyle yan yana): ona
+ * ayrı haber gider, çünkü parçanın hareketi işi muhabire (montaj) veriyor.
+ */
+const gfxSirasiHaberi = (d: Durum, ben: Kisi, eski: Paket): Durum => {
+  const p = d.paketler.find((x) => x.id === eski.id);
+  if (!p || parcalarHazir(eski) || !parcalarHazir(p) || !gfxBekliyor(p)) return d;
+  return hareketYaz(d, { kisiId: ben.id, tip: "gfxSirada", paketId: p.id, planId: p.planId, veri: { sahip: p.uretim!.yol.grafik } });
+};
+
+/* Parçalar yazılınca hepsi hazırsa metin birleşir (montaja geçiyor). */
+const parcalariYaz = (x: Paket, parcalar: MetinParcasi[]): Paket => ({
+  ...x,
+  parcalar,
+  ...(parcalarHazir({ parcalar }) && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }),
+  guncelleme: simdi(),
+});
 
 /** Newsdesk parçayı düzeltip Script Editor'e geçiriyor. */
 export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: string) => {
@@ -3202,9 +3322,10 @@ export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: 
   const p = paketBul(d, paketId);
   const eski = p?.parcalar?.find((x) => x.id === parcaId);
   if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !metin.trim()) return false;
-  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "dil" };
-  d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), guncelleme: simdi() }, "metin", ben.id, simdi()));
-  kaydet(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, "scriptEditor"));
+  const sonra = parcaDilSonrasi(p);
+  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: sonra };
+  d = paketGuncelle(d, paketId, (x) => kunyeYaz(parcalariYaz(x, x.parcalar!.map((y) => (y.id === parcaId ? parca : y))), "metin", ben.id, simdi()));
+  kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, parcaSahibi(p, sonra)), ben, p));
   return true;
 };
 
@@ -3234,7 +3355,7 @@ export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: 
   const parcalar = p.parcalar!.map((y) => (y.id === parcaId ? parca : y));
   const hazir = parcalarHazir({ parcalar });
   d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }, "dil", ben.id, simdi()));
-  kaydet(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""));
+  kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""), ben, p));
   return true;
 };
 

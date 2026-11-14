@@ -65,6 +65,8 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   media: ["genIslerim", "meKuyruk", "meYaklasan", "meSon"],
   // Muhasebenin sayfası kendi ekranı (Muhasebe.tsx); birim kartı yok.
   muhasebe: [],
+  // Grafik ekibi: sırası gelen gfx işleri (Sıradaki işlerim) ve verilen işler.
+  grafik: ["genIslerim", "genSiram"],
   yonetim: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
   panel: ["ypSayac", "ypOnInceleme", "ypBirimler", "ypPlanlar", "ypTalimat", "ypTakvim", "ypHafta"],
 };

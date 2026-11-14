@@ -35,7 +35,7 @@ import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_T
 import { gorusBekleyenler, gundemde, onIncelemeBekleyenler } from "../../haftalik";
 import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
-import { adimYapabilir, planAdimiYapabilir } from "../../yetki";
+import { adimYapabilir, gfxYapabilir, planAdimiYapabilir } from "../../yetki";
 import { BanaVerilenIsler } from "./Islerim";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
@@ -139,7 +139,8 @@ function KontrolBekleyen({ ben }: { ben: Kisi }) {
 function SiradakiIsler({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
-  const benim = uretimdeki(v).filter((p) => adimYapabilir(ben, p));
+  // Grafik ekibinin gfx işi durak değil yan iş: sırası geldiyse o da burada.
+  const benim = uretimdeki(v).filter((p) => adimYapabilir(ben, p) || gfxYapabilir(ben, p));
   return (
     <Kart baslik={t("siradakiIslerim")} ikon={<ListChecks size={18} />} ek={String(benim.length)}>
       <PaketTablosu paketler={benim} d={v} sutunlar={["baslik", "asama", "teslim"]} bosMetin={t("siraBos")} />

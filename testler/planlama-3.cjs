@@ -74,7 +74,10 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   // 3. Aylık olaydan özel yayın: kapsam satırları, ekip ve görevlendirme gelir
   await p.evaluate(() => {
     const x = JSON.parse(localStorage.getItem("trt-planlama-v24"));
-    for (const a of x.aylik) for (const o of a.olaylar ?? []) if (o.id === "ao-zirve") o.etiketler.push("ozel");
+    let ilk = "";
+    for (const a of x.aylik) for (const o of a.olaylar ?? []) if (o.id === "ao-zirve") (o.etiketler.push("ozel"), (ilk = o.gunler.map((g) => g.tarih).sort()[0]));
+    // Demo haftaları bugüne göre kuruluyor; olayın haftası kesinleşmiş olabiliyor (günü Cumartesi'ye denk gelince): açık olsun.
+    for (const w of x.haftalik) if (w.baslangic <= ilk && ilk < new Date(new Date(w.baslangic + "T12:00:00").getTime() + 7 * 864e5).toISOString().slice(0, 10)) w.durum = "hazirlik";
     localStorage.setItem("trt-planlama-v24", JSON.stringify(x));
     localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
   });
@@ -99,7 +102,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.waitForTimeout(500);
   const kalemler = (await veri()).haftalik.find((x) => x.id === h.id).kalemler.filter((k) => k.aylikOlayId === "ao-zirve");
   ok(kalemler.length === 2 && new Set(kalemler.map((k) => k.tarih)).size === 2, "iki kapsam günü iki kalem");
-  ok(kalemler.find((k) => k.tarih === "2026-11-17")?.bicimler.join() === "canli", "ikinci günün kalemi yalnız kendi satırlarıyla");
+  const ikinciGun = [...kalemler].sort((a, c) => a.tarih.localeCompare(c.tarih))[1];
+  ok(ikinciGun?.bicimler.join() === "canli", "ikinci günün kalemi yalnız kendi satırlarıyla: " + JSON.stringify(kalemler.map((k) => [k.tarih, k.bicimler])));
 
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 844 });

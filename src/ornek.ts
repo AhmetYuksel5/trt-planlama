@@ -141,6 +141,8 @@ const KISILER: KisiSatiri[] = [
   // Spor masası: kendi sayfası ve menüsü demoda denensin. Kurgusal; sona eklendi.
   ["sp1", "Emre Doğan", "إمره دوغان", "spor", "yonetici", "yonetici", "istanbul"],
   ["sp2", "Rami Saleh", "رامي صالح", "spor", "personel", "editor", "istanbul"],
+  // Grafik ekibi: üretim balonunda gfx'i hazırlayan masa demoda denensin. Kurgusal; sona eklendi.
+  ["gr1", "Deniz Aksoy", "دنيز آكسوي", "grafik", "personel", "grafiker", "istanbul"],
 ];
 
 const ALAN_KODU: Partial<Record<Sehir, string>> = {

@@ -628,7 +628,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Birimler ağaç (`BirimTanimi.ust`, derinlik serbest): iki kök, "Haber
     merkezi" (`KOK_MERKEZ`) ve "Dış muhabirler" (`KOK_DIS`); varsayılanda
     Input (Planlama, Newsdesk, News Gathering, Ekonomi), Output (Output,
-    Script Editor, Media, Spor), Program, Yönetim ve Dış muhabirler › Muhabir.
+    Script Editor, Media, Spor), Program, Grafik (grafik ekibi, yerleşik birim
+    `grafik`, ünvanlar yönetici ve grafiker; kullanıcı: Input, Output gibi kendi
+    müdürlüğü olan bölüm; onsuz yayınlanmış yapıda okurken eklenir, `yapi.ts →
+    grafigiKur`; demoda kurgusal `gr1`), Yönetim ve Dış muhabirler › Muhabir.
     Script Editor dil denetmenlerinin birimi; dil durağının sorumlusu o.
     Sonradan yerleşik oldu: onsuz yayınlanmış yapıda okurken birim Output'un
     yanına, dil denetmeni ünvanı ve Output'a verilmiş dil durağı ona geçer
@@ -650,7 +653,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`izinBirimi`; izin listeleri, plan yetkileri, ana sayfa [yönetici
     paneli], menü bu adla kaldı, `yetki.ts → yonetimdeMi`). Düğümün kendi
     ünvanı müdürünki: Haber merkezi koordinatör, Input Input müdürü, Program
-    Program müdürü (`KADEME_UNVANLARI`); kademeye eklenen ünvan yönetici
+    Program müdürü, Grafik Grafik müdürü (`KADEME_UNVANLARI`); kademeye eklenen ünvan yönetici
     ünvanı, Output ve Creative'in müdür ünvanını kurum ekler. Ünvanı olan
     düğüm `grupMu` değil, kişi formlarında seçilir (yalnız kendi ünvanıyla).
     Sorumluluk ağaçtan (`yetki.ts → kademeKapsami`): altındaki bütün birimler,
@@ -773,20 +776,52 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`eylemler.ts → yoneticiligiKaldir`: rol personel, yönetici ünvanındaysa birimin
     yönetici olmayan ilk ünvanı; tek yazış `kisilerPozisyonu`), bildirimde "Geri al".
     Kendiliğinden çevrilmez. Test `testler/org-yoneticiler.cjs`.
-  - İş akışları (`organizasyon/Akislar.tsx`): kolların sahibi; her kolun bir
-    akışı (yeni akış seçilenin kopyasıyla açılır, kol tek akışta). Durak kartı
-    taşınır (oklar, sürükle), eklenir, silinir (son durak değil; bekleyen paket
-    varsa söylenir). Durak: tür (programın bildiği iş ya da genel iş "Tamamla ve
-    geç"), sorumlu (kolun sahibi, birim, ünvan [birimde], kişiler), birlikte
-    çalışan birimler, "yalnız sahada", "geri gönderebilir", aşama.
-    Kullanıcı sayfanın bir şeye bağlı mı eski mi olduğunu anlamadı: her
-    akışın sekmesinde ve başlığında şu an kaç üretimdeki paketin o akışla
-    ilerlediği (`paketAkisi`; durakta "n paket bu durakta" önceden vardı);
-    "Aşama" seçimi ve rozeti yalnız haber kolunu taşıyan akışta (masa paketi
-    kendi durak sırasını gösteriyor, `masaYolu`); durak türünde varsayılan
-    yolun türleri ve genel iş önde, eski yolunkiler (Output metin kontrolü,
-    Media'ya iletme, saha görevlendirmesi…) "Eski yolun işleri" grubunda
-    (`Akislar.tsx → GUNCEL_TURLER`). Test `testler/akislar.cjs`.
+  - Üretim balonu (kullanıcı: paketin onayından sonra üretimin her aşamasını
+    hangi masanın yapacağı tiklerle seçilsin, tekrarlanan düzen bir kez şablon
+    olsun; "İş akışları" havada kalıyordu, kullanıcının çizimi; kurallar
+    `uretim.ts`, ekran `bilesenler/UretimBalonu.tsx`). Aşamalar: görevlendirme,
+    editoryal kontrol (parçalar: metin hep, stand ve gfx "varsa"), dil
+    denetimi, gfx hazırlama (gfx varsa; dil denetiminden sonra video
+    kontrolüyle yan yana), video kontrolü, yükleme (grafik montajda; gfx'i
+    bekler), yayın kararı. Masalar (`URETIM_MASALARI`): Planlama, Newsdesk,
+    Program, Ekonomi, Spor, Script Editor, Grafik ya da "Atla". Balon
+    (`Pencere`, aşama × masa tik tablosu `UretimTablosu`) paketin şablonuyla
+    açılır (`paketSablonu`: stok paketi stok şablonu, öbürü kolunun şablonu);
+    şablondan farklı satır sarı "istisna" (`istisnaAsamalari`); "Şablon olarak
+    kaydet" (`uretimSablonuKaydet`; ilk kayıtta yerleşikler de kayda geçer).
+    "Üretime başlat" (`eylemler.ts → uretimiBaslat`, yetki `yetki.ts →
+    uretimYoluBelirleyebilir`: onaylı paket, Planlama [paket değerlendiren],
+    tam yönetici ya da plansızı üretime alabilen masa; özel yayın ve masanın
+    takibindeki paket değil) yolu pakete yazar (`Paket.uretim`: şablon, yol,
+    parçalar, `gfxTamam`), ilk durağı açar. Akış motoru yolu kolun akışı
+    yerine okur (`akis.ts → paketAkisi` → `uretimAkisi`: görev, parçalı metin,
+    video kontrolü, yükleme, "Yayın kararı" genel işi; atlanan durak yok).
+    Editoryal kontrol ve dil denetimi parçalı metnin aşamaları: tetkikçi ve
+    dilci yoldan (`parcaYapabilir`), atlanan aşamayı parça geçer
+    (`parcaIlkAsama`, `parcaDilSonrasi`). Gfx yan iş: bütün parçalar hazır
+    olunca Grafik'e haber (`gfxSirada`), paket sayfasındaki yol kartında "Gfx
+    hazır" (`gfxTamamla`, `gfxYapabilir`), "Sıradaki işlerim"de de; yükleme
+    düğmesi o zamana dek pasif (`gfxBekliyor`, eylem de reddeder). Üretimdeki
+    pakette "Yolu düzenle" (`uretimYoluDegistir`): geçmiş aşamalar kilitli
+    (`gecenAsamalar`), bulunduğu durak yoldan çıkarsa sonrakine
+    (`yeniDurak`), hareket `uretimYoluDegisti`. Paket sayfasında "Üretim
+    yolu" kartı (`UretimYoluKarti`: aşama, masa, yapıldı/şimdi/atlandı,
+    istisna). Listelerdeki ve masa sayfasındaki "Üretime al" balonu açar
+    (`UretimeAlDugmesi`). Paketin parça adı formunda Metin/Stand/Gfx
+    önerileri. Balonsuz onaylı paket eskisi gibi muhabirin "Yapıldı"sıyla
+    kapanır; üretimdeki eski paket kolun akışıyla biter.
+  - Üretim şablonları (`organizasyon/UretimSablonlari.tsx`,
+    `#/organizasyon/uretim`; eski "İş akışları" sekmesinin ve
+    `#/organizasyon/akislar` adresinin yerinde, `Akislar.tsx` silindi):
+    kayıtta (`Durum.uretimSablonlari`, koleksiyon `uretimSablonlari`; boşsa
+    yerleşik altısı `VARSAYILAN_URETIM_SABLONLARI`: Günlük haber · Newsdesk,
+    Günlük haber · Planlama, Stok · Planlama [tetkik Newsdesk, yükleme
+    Planlama], Ekonomi, Program, Spor masası). Satırda aşamalar ve masaları;
+    "Düzenle" adı, tikleri ve balonun hangi kol ya da stok pakette bu şablonla
+    açılacağını değiştirir (`uretimSablonuGuncelle`), silinir (son şablon
+    değil). Şablonu Planlama ve tam yönetici yönetir
+    (`uretimSablonuDuzenler`); şablonla başlamış paketin yolu kendi kaydında.
+    Test `testler/uretim-balonu.cjs`.
   - Varsayılan paket yolu (akış kimliği `yol`, `yapi.ts → VARSAYILAN_DURAKLAR`):
     Newsdesk görev verir → parçalı metin (muhabir) → video kontrolü (Newsdesk,
     revizyona iade: `geriHedefi` video durağına, yoksa metin durağına;
@@ -2392,9 +2427,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     paketlerde (التقارير المتوقعة) basılmaz; başlığın altında kalıp kalmayacağı sorulur (`stokBaslikta`,
     `paketStogaAl(…, baslikta)`), hayırsa başlıktan ayrılır. Hazır pakette açıklama ve kod (slug) satırın hemen
     altında; PKG satırında da kod altında.
-- Newsdesk sistemde değilken (`Durum.newsdeskDevrede` yok; Ayarlar › İş
-  akışı, tam yönetici, gerçek kipte genel ayar belgesinde) iş Planlama'da
-  biter (tasarım belgesi 3. aşama, paketin aşamaları):
+- Onaylı paketin kapanışı (tasarım belgesi 3. aşama). "Newsdesk sistemde"
+  anahtarı (`Durum.newsdeskDevrede`) kalktı (kullanıcı: Newsdesk aktif değil
+  diye bütün düzeni dondurmaya gerek yok; paketin Newsdesk'ten geçip
+  geçmeyeceği üretim balonunda seçiliyor): `yetki.ts → yalnizPlanlama` hep
+  doğru, kayıttaki eski değer okunmuyor, Ayarlar'daki kutu yok. Aşağıdaki
+  "Newsdesk sistemde değilken" kuralları her zaman geçerli:
   - Toplantıda paket başına karar: plan ekranında ve paket sayfasında
     "Kabul et" (`paketDurum(…, "onaylandi")`, muhabire görev) ve "Reddet"
     (`eylemler.ts → paketReddet`: paket iptal, `Paket.reddedildi` izi, haber
@@ -2423,13 +2461,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     onaylı paket yeni muhabire teklif olarak gider (`Oneri.kaynakPaketId`,
     teklif akışı); eski paket iptal, `Paket.devredildi` iziyle eski muhabirin
     geçmişinde; iki muhabire bildirim.
-  - Plan devri ("Planı Newsdesk olarak devral") anahtar kapalıyken yok:
+  - Plan devri ("Planı Newsdesk olarak devral") yok (anahtar kalktı):
     düğme (`nextday/Plan.tsx`) ve eylem (`planDurum`, `yalnizPlanlama`)
     kapalı. Devredilen planın onaylı paketleri üretim akışına düşüyor, Newsdesk
-    sistemde olmadığı için orada sahipsiz kalıyordu. İş akışları (Organizasyon)
-    o zaman "Üretime al"la giren paketlere (feature, ekonomi, program, spor;
-    masa paketi Next Day'den de) işliyor; sayfanın başında bunu söyleyen durum satırı (`Akislar.tsx`,
-    `akisNewsdeskKapali`).
+    sistemde olmadığı için orada sahipsiz kalıyordu. Paket üretime yalnız
+    üretim balonuyla girer (yolu paket paket seçiliyor).
   - Özel yayın paketi kendi teslimiyle (`paketTamamla`). Hesapsız muhabir
     için Planlama paket
   ayrıntısından onun adına kapatır. Anahtar açılınca bu kapanış kalkar,

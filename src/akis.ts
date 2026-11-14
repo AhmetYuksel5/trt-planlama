@@ -1,5 +1,6 @@
 import { metin, yaz, type Anahtar } from "./dil";
 import { anlik, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
+import { uretimAkisi } from "./uretim";
 import { ESKI_AKIS, birimAdi, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
@@ -58,7 +59,7 @@ export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
 
 export const kolSahibi = (tur: IcerikTuru, y: Yapi = yapi()): BirimId => y.kolSahibi[tur] ?? KOL_SAHIBI[tur];
 
-type AkisPaketi = Pick<Paket, "tur" | "sahaGerekli"> & Partial<Pick<Paket, "akis" | "durum">>;
+type AkisPaketi = Pick<Paket, "tur" | "sahaGerekli"> & Partial<Pick<Paket, "akis" | "durum" | "uretim">>;
 
 /** Kolun yeni paketlerde izleyeceği akış. */
 export const akisSec = (tur: IcerikTuru, y: Yapi = yapi()): Akis => y.akislar.find((a) => a.kollar.includes(tur)) ?? y.akislar[0];
@@ -69,6 +70,8 @@ export const akisSec = (tur: IcerikTuru, y: Yapi = yapi()): Akis => y.akislar.fi
  * başlangıç düzeniyle (sürüm 0) sürüyor.
  */
 export const paketAkisi = (p: AkisPaketi): Akis => {
+  // Üretim balonunda yolu seçilmiş paket kendi yoluyla yürüyor (uretim.ts).
+  if (p.uretim) return uretimAkisi(p.uretim);
   // Damgasız üretimdeki paket yeni yoldan önce girmiş: eski akışla bitiyor.
   if (!p.akis) return p.durum === "uretimde" ? (yapiSurumu(0).akislar.find((a) => a.id === ESKI_AKIS) ?? akisSec(p.tur, yapiSurumu(0))) : akisSec(p.tur);
   const y = yapiSurumu(p.akis.surum);
@@ -243,7 +246,8 @@ export const paketSahibi = (p: Paket): BirimId | null => {
  */
 export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTamam"];
 // Plansız görev Newsdesk sistemdeyken de sade akışla (muhabirin işaretiyle) kapanıyor.
-export const sadeAkis = (p: Paket) => (!anlik()?.newsdeskDevrede || !!p.gorev) && !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
+// "Newsdesk sistemde" anahtarı kalktı (yetki.ts → yalnizPlanlama): üretime girmemiş onaylı paket muhabirin işaretiyle kapanır.
+export const sadeAkis = (p: Paket) => !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
 export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));

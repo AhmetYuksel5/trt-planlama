@@ -71,6 +71,10 @@
   /* Planlama bütün planların sahibi: hiçbir planın rengini almıyor (camgöbeği), yalnız kendi kabuğunda. */
   --masa-planlama: #0e7490;
   --masa-planlama-sis: #e0f2f5;
+  /* Üretim balonunun öbür masaları (uretim.ts → URETIM_MASALARI): Newsdesk mavi, Script Editor gül, Grafik turuncu. */
+  --masa-newsdesk: #1d5bd8;
+  --masa-scriptEditor: #a83f73;
+  --masa-grafik: #c2561d;
   /* Koyu menüde okunsun diye açık tonları. */
   --masa-program-acik: #a98bf0;
   --masa-spor-acik: #4cc27f;
@@ -2789,6 +2793,44 @@ button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit;
 .durum-secimi.ton-iyi { color: var(--iyi); background-color: var(--iyi-sis); }
 .durum-secimi.ton-vurgu { color: var(--vurgu); background-color: var(--vurgu-sis); }
 .durum-secimi.ton-uyari { color: var(--uyari); background-color: var(--uyari-sis); }
+/* Üretim balonu (bilesenler/UretimBalonu.tsx): şablon hapları, aşama × masa tik tablosu, paket sayfasında yol özeti. */
+.uretim-sablonlar { display: flex; flex-wrap: wrap; gap: var(--ara-1); }
+.secim-hap { font: inherit; font-size: 0.875rem; border: 1px solid var(--cizgi-girdi, var(--cizgi)); background: var(--yuzey); color: var(--metin); border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
+.secim-hap[aria-pressed="true"] { background: var(--lacivert); border-color: var(--lacivert); color: #fff; }
+.uretim-kaydet { display: flex; flex-wrap: wrap; gap: var(--ara-1); align-items: center; }
+.uretim-kaydet input { flex: 1 1 200px; min-inline-size: 0; }
+.uretim-tablo-kap { overflow-x: auto; border: 1px solid var(--cizgi); border-radius: var(--yaricap, 8px); }
+.uretim-tablo { border-collapse: collapse; inline-size: 100%; min-inline-size: 760px; font-size: 0.875rem; }
+.uretim-tablo th, .uretim-tablo td { padding: 6px; text-align: center; border-block-end: 1px solid var(--cizgi); vertical-align: middle; }
+.uretim-tablo thead th { font-size: 0.75rem; font-weight: 600; color: var(--sonuk); background: var(--zemin, #f4f6fa); }
+.uretim-tablo thead th i { display: block; inline-size: 18px; block-size: 4px; border-radius: 2px; margin: 0 auto 4px; }
+.uretim-tablo tbody th { text-align: start; font-weight: 500; }
+.uretim-tablo tbody tr:last-child > * { border-block-end: 0; }
+.uretim-tablo tr.istisna { background: var(--uyari-sis); }
+.uretim-tablo tr.gecti, .uretim-tablo tr.kapali { opacity: 0.55; }
+.uretim-asama-adi { white-space: nowrap; }
+.uretim-etiket { font-size: 0.6875rem; font-weight: 600; margin-inline-start: 6px; color: var(--uyari); }
+.uretim-tablo tr.gecti .uretim-etiket { color: var(--iyi); }
+.uretim-tablo tr.kapali .uretim-etiket { color: var(--sonuk); }
+.uretim-parcalar { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-block-start: 4px; font-size: 0.75rem; font-weight: 400; color: var(--sonuk); }
+.uretim-parcalar label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+.uretim-tablo tbody th small { display: block; font-weight: 400; }
+.uretim-tik { inline-size: 30px; block-size: 30px; border-radius: 6px; border: 1.5px solid var(--cizgi-girdi, var(--cizgi)); background: var(--yuzey); color: transparent; cursor: pointer; display: inline-grid; place-items: center; padding: 0; }
+.uretim-tik:hover:not(:disabled) { border-color: var(--vurgu); }
+.uretim-tik[aria-checked="true"] { background: var(--renk); border-color: var(--renk); color: #fff; }
+.uretim-tik:disabled { cursor: not-allowed; }
+.uretim-alt { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; justify-content: space-between; inline-size: 100%; }
+.uretim-ozet { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.uretim-ozet li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; gap: var(--ara-2); align-items: center; padding: 6px 4px; border-radius: 6px; }
+.uretim-ozet li.simdi { background: var(--vurgu-sis); }
+.uretim-ozet li.gecti, .uretim-ozet li.atla { color: var(--sonuk); }
+.uretim-ozet li.atla b { font-weight: 400; }
+.uretim-sablon-yolu { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.uretim-varsayilan { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--ara-1) var(--ara-3); }
+.uretim-varsayilan legend { font-weight: 600; margin-block-end: var(--ara-1); }
+.uretim-nokta { inline-size: 10px; block-size: 10px; border-radius: 50%; background: var(--renk); }
+.uretim-ozet li.gecti .uretim-nokta { box-shadow: inset 0 0 0 10px var(--renk); opacity: 0.5; }
+.uretim-ozet li.atla .uretim-nokta { background: transparent; border: 1px dashed var(--sonuk); }
 .durum-secimi.ton-kotu { color: var(--kotu); background-color: var(--kotu-sis); }
 .ozel-konuklar { display: grid; gap: var(--ara-2); }
 .ozel-konuklar .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); }

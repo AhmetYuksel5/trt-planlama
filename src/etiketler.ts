@@ -54,6 +54,7 @@ export const BIRIM_ADI: Record<Birim, Anahtar> = {
   media: "biMedia",
   muhabir: "biMuhabir",
   yonetim: "biYonetim",
+  grafik: "biGrafik",
 };
 
 export const GOREV_ADI: Record<Gorev, Anahtar> = {
@@ -72,6 +73,8 @@ export const GOREV_ADI: Record<Gorev, Anahtar> = {
   programMuduru: "goProgramMuduru",
   stokTakip: "goStokTakip",
   muhasebeci: "goMuhasebeci",
+  grafikMuduru: "goGrafikMuduru",
+  grafiker: "goGrafiker",
 };
 
 export const EKIP_GOREV_ADI: Record<EkipGorevi, Anahtar> = {
