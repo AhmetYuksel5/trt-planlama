@@ -16,7 +16,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(1100); };
   const ac = () => p.locator("details:not([open]) > summary").evaluateAll((s) => s.forEach((x) => x.click()));
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await git("#/nextday/yarin"); await ac(); await p.waitForTimeout(300);
 
   // Birden çok gelişmesi olan bir başlığın ilk gelişmesi
@@ -66,7 +66,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // 4. Gelişme silinince paket kalır, başlığın PKG'sine iner
   await p.evaluate(([pid, gid]) => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     d.paketler.find((x) => x.id === pid).gelismeId = gid;
     localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));
   }, [pk.id, g.id]);

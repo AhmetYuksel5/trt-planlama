@@ -10,7 +10,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const kim = (id) => p.evaluate((x) => localStorage.setItem("trt-planlama-oturum", x), id);
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); });

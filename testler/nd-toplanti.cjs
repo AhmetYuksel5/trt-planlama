@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   p.on("pageerror", (e) => console.log("HATA", String(e)));
   p.on("dialog", (d) => d.accept());
   const B = "http://localhost:4173/";
-  const K = "trt-planlama-v24";
+  const K = "trt-planlama-v25";
   let gec = 0;
   let kal = 0;
   const ok = (k, ad) => (k ? gec++ : (kal++, console.log("✗", ad)));

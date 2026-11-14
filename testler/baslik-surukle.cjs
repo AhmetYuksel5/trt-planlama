@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   const B = "http://localhost:4173/";
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  const oku = () => p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); const pl = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0]; return pl.basliklar.map((x) => x.id); });
+  const oku = () => p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v25")); const pl = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0]; return pl.basliklar.map((x) => x.id); });
   const once = await oku();
   // HTML5 sürükle-bırak: ilk başlığı üçüncüsünün üstüne bırak
   await p.evaluate(([a, c]) => {

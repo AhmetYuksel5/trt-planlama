@@ -1,8 +1,11 @@
-import { KOL_SAHIBI, adimSahibi, akisDamgasi, uretimYolu, type UretimAdimi } from "./akis";
+import { KOL_SAHIBI, adimSahibi, akisDamgasi, durakSahibi, uretimYolu, type UretimAdimi } from "./akis";
+import { URETIM_AKISI, VARSAYILAN_URETIM_SABLONLARI, uretimAkisi, type UretimYolu } from "./uretim";
 import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_ADRESI } from "./eposta";
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
+  BirimId,
+  ParcaAsamasi,
   Mesaj,
   Takip,
   Baslik,
@@ -418,6 +421,12 @@ interface PaketTanimi {
   oncelikli?: boolean;
   /** Stok paketi: feature/stok ekibi üretiyor, bitince stokta bekliyor. */
   stok?: boolean;
+  /** Üretim balonundaki şablon (yoksa kolunun ya da stok şablonu). */
+  sablon?: string;
+  /** Balonda işaretli parçalar: stand ve gfx "varsa". */
+  parca?: { stand?: boolean; gfx?: boolean };
+  /** Grafik ekibi gfx'i bitirdi mi. */
+  gfxTamam?: boolean;
 }
 
 /* Kolun varsayılan biçimi: feature kolu insan hikâyesi, program derinlemesine, gerisi PKG. */
@@ -440,6 +449,8 @@ const PAKETLER: PaketTanimi[] = [
     durum: "uretimde",
     adim: "media",
     saha: true,
+    sablon: "u-gunluk",
+    parca: { stand: true },
     oneriId: "o-gazze",
     saat: "19:00",
     teslimDk: 50,
@@ -456,6 +467,8 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "مقابلات مع تجار البلدة القديمة والمصلين؛ الإجراءات الجديدة على الأبواب.",
     durum: "uretimde",
     adim: "dil",
+    sablon: "u-gunluk",
+    parca: { stand: true },
     oneriId: "o-kudus",
     saat: "16:00",
     teslimDk: 95,
@@ -470,6 +483,7 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "توقعات الدول المانحة وتقييم الأضرار في الجنوب.",
     durum: "uretimde",
     adim: "metin",
+    sablon: "u-gunluk-pl",
     oneriId: "o-beyrut",
     saat: "19:00",
     teslimDk: -40,
@@ -486,6 +500,7 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "خطة البلدية لمواجهة السيول، وجولة مع فرق الإنقاذ في الأحياء المعرضة للخطر.",
     durum: "uretimde",
     adim: "metin",
+    sablon: "u-gunluk-pl",
     oneriId: "o-talimat-2",
     saat: "20:00",
     teslimDk: 150,
@@ -515,6 +530,8 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "صور من المنتدى ومقابلات مع رجال أعمال والاتفاقيات الموقعة.",
     durum: "uretimde",
     adim: "video",
+    sablon: "u-gunluk",
+    parca: { gfx: true },
     saat: "18:00",
     teslimDk: 140,
   },
@@ -528,6 +545,7 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "صور من البازار الكبير ومقابلة قصيرة مع خبيرين اقتصاديين.",
     durum: "uretimde",
     adim: "kontrol",
+    sablon: "u-gunluk",
     saat: "14:00",
     teslimDk: 30,
   },
@@ -553,6 +571,9 @@ const PAKETLER: PaketTanimi[] = [
     aciklama: "خطاب الافتتاح وبنود الأجندة التي تهم العالم العربي.",
     durum: "uretimde",
     adim: "inews",
+    sablon: "u-gunluk",
+    parca: { gfx: true },
+    gfxTamam: true,
     saat: "15:00",
   },
   {
@@ -1509,6 +1530,76 @@ const ADIM_HAREKETI: Record<UretimAdimi, HareketTipi> = {
   inews: "tamamlandi",
 };
 
+/*
+ * Eski düzendeki duraktan balonun yerine (kullanıcı: demo çalışan sistemle
+ * aynı görünsün; üretim artık yalnız balonla başlıyor). Metin durağında
+ * parçalar Newsdesk'te, dil denetiminde ya da hazır (video bekleniyor).
+ */
+const BALON_YERI: Record<string, { adim: string; parca?: ParcaAsamasi }> = {
+  newsdesk: { adim: "newsdesk" },
+  gorevlendirme: { adim: "newsdesk" },
+  metin: { adim: "metin" },
+  kontrol: { adim: "metin", parca: "newsdesk" },
+  dil: { adim: "metin", parca: "dil" },
+  video: { adim: "metin", parca: "tamam" },
+  videoKontrol: { adim: "videoKontrol" },
+  iletim: { adim: "videoKontrol" },
+  media: { adim: "videoKontrol" },
+  inews: { adim: "inews" },
+};
+const MASA_KISISI: Partial<Record<BirimId, string>> = { newsdesk: "nd3", planlama: "pl6", ekonomi: "ek1", program: "pr2", scriptEditor: "ou2" };
+const BALON_DURAKLARI = ["newsdesk", "metin", "videoKontrol", "inews", "yayin"];
+
+function balonlaKur(p: Paket, t: PaketTanimi, bas: string, son: number, h: (k: string, tip: HareketTipi, z: string, ek?: Partial<Hareket>) => void) {
+  const sablon =
+    VARSAYILAN_URETIM_SABLONLARI.find((x) => x.id === t.sablon) ??
+    (t.stok ? VARSAYILAN_URETIM_SABLONLARI.find((x) => x.stok) : VARSAYILAN_URETIM_SABLONLARI.find((x) => x.kollar?.includes(p.tur)))!;
+  const uretim: UretimYolu = {
+    sablon: sablon.id,
+    yol: { ...sablon.yol },
+    parca: { ...(t.parca ?? {}) },
+    ...(t.gfxTamam && { gfxTamam: { kisiId: "gr1", zaman: new Date(son - 20 * DAKIKA).toISOString() } }),
+  };
+  const yer = BALON_YERI[t.adim ?? "newsdesk"];
+  const duraklar = uretimAkisi(uretim).duraklar.map((d) => d.id);
+  const adim = duraklar.includes(yer.adim) ? yer.adim : BALON_DURAKLARI.slice(BALON_DURAKLARI.indexOf(yer.adim)).find((x) => duraklar.includes(x))!;
+  const gecen = duraklar.slice(0, duraklar.indexOf(adim));
+  const metin = t.metin ?? `${t.baslik}.\n${t.aciklama}`;
+  // Parçalı metin: muhabir gönderdiyse metin ve (balonda varsa) stand.
+  const parcaAsama: ParcaAsamasi | undefined = gecen.includes("metin") ? "tamam" : adim === "metin" ? yer.parca : undefined;
+  if (parcaAsama)
+    p.parcalar = [
+      { id: `${p.id}-metin`, ad: "Metin", metin, asama: parcaAsama },
+      ...(uretim.parca.stand ? [{ id: `${p.id}-stand`, ad: "Stand", metin: t.aciklama, asama: parcaAsama }] : []),
+    ];
+  p.uretim = uretim;
+  p.adim = adim;
+  p.akis = { ...akisDamgasi(p), id: URETIM_AKISI };
+  p.metin = parcaAsama === "tamam" ? metin : undefined;
+  p.video = gecen.includes("metin") ? `https://video.ornek.local/${p.kod}` : undefined;
+  p.klipKodu = undefined;
+
+  /* Hareketler: balonun açılışı, geçilen duraklar; tarihler başla son arasında. */
+  const kisi = (b: BirimId | "atla") => MASA_KISISI[b as BirimId] ?? "pl6";
+  const adimlar: [string, HareketTipi, string, string][] = [];
+  if (gecen.includes("newsdesk")) adimlar.push([kisi(uretim.yol.gorev), "gorevVerildi", "metin", "muhabir"]);
+  if (parcaAsama && parcaAsama !== "muhabir") adimlar.push([p.muhabirId!, "metinGeldi", "metin", "muhabir"]);
+  if (parcaAsama === "dil" || parcaAsama === "tamam") adimlar.push([kisi(uretim.yol.editoryal), "kontrolEdildi", "metin", "muhabir"]);
+  if (parcaAsama === "tamam") adimlar.push(["ou2", "sonScript", "metin", "muhabir"]);
+  if (gecen.includes("metin")) adimlar.push([p.muhabirId!, "videoGeldi", duraklar[duraklar.indexOf("metin") + 1], ""]);
+  if (gecen.includes("videoKontrol")) adimlar.push([kisi(uretim.yol.video), "videoOnaylandi", duraklar[duraklar.indexOf("videoKontrol") + 1], ""]);
+  const zamanlar = dizi(new Date(bas).getTime(), son, adimlar.length + 1);
+  h(p.planId ? "pl1" : kisi(uretim.yol.gorev), "uretimeAlindi", zamanlar[0], { paketId: p.id, planId: p.planId, veri: { adim: duraklar[0], sahip: durakSahibi(p, duraklar[0]) } });
+  adimlar.forEach(([k, tip, sonraki, sahip], j) => {
+    const z = zamanlar[j + 1];
+    if (tip === "gorevVerildi") p.gorevZamani = z;
+    if (tip === "videoGeldi") p.muhabirTeslimi = z;
+    h(k, tip, z, { paketId: p.id, planId: p.planId, veri: { adim: sonraki, sahip: sahip || durakSahibi(p, sonraki) } });
+  });
+  if (uretim.gfxTamam) h("gr1", "gfxHazir", uretim.gfxTamam.zaman, { paketId: p.id, planId: p.planId, veri: { sahip: durakSahibi(p, adim) } });
+  p.guncelleme = zamanlar[zamanlar.length - 1];
+}
+
 /* Adımı kimin attığı: o birimin örnek kişisi; muhabir adımında paketin muhabiri. */
 const ADIM_KISISI: Record<string, string> = {
   newsgathering: "ng2",
@@ -1864,8 +1955,14 @@ export const ORNEK = (): Durum => {
       h("pl1", "paketOnaylandi", zaman(gunEkle(haftaBasi(B), -2), "12:30"), { paketId: p.id, haftaId: "hf-bu", veri: { hafta: "1", sahip: KOL_SAHIBI[tur] } });
     }
 
-    /* Üretim adımları. */
-    if (t.durum === "uretimde" || bitti) {
+    /* Üretimdeki paket üretim balonuyla başlamış: yolu, parçaları ve geçtiği duraklar. */
+    if (t.durum === "uretimde") {
+      balonlaKur(p, t, plan ? zaman(plan.tarih === B ? gunEkle(B, -1) : plan.tarih, "18:10") : zaman(gun(-2), "10:00"), an - (5 + i * 3) * DAKIKA, h);
+      return p;
+    }
+
+    /* Üretim adımları (biten paketler eski kayıtta kolun akışıyla bitmiş). */
+    if (bitti) {
       const devir = plan?.id === planId("dun") ? devirDun : plan ? devirBugun : zaman(gun(-2), "10:00");
       const ilk = yol[0];
       // Next Day paketini planın devri, plansız paketi kolun sahibi üretime alıyor.

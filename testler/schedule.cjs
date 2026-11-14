@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
   await p.evaluate(() => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const g = d.gelismeler.find((x) => x.planId === plan.id && x.planBaslikId);
     g.program = [{ saat: "14:00", olay: "مؤتمر صحفي مشترك" }, { saat: "10:30", olay: "وصول الرئيس إلى المطار" }];

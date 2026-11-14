@@ -16,14 +16,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (d) => d.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(1000); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const oturum = (id) => p.evaluate((id) => localStorage.setItem("trt-planlama-oturum", id), id);
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "yo3"); });
   await git("#/haftalik");
 
   const kur = await p.evaluate(() => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const h = d.haftalik.find((x) => x.durum !== "kesinlesti");
     // Haftanın ilk gününe toplantıdaki boş bir Next Day planı: haber oraya geçsin.
     const ornek = d.planlar.find((x) => x.durum === "taslak") || d.planlar[0];
@@ -120,7 +120,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await oturum("yo3");
   // 8. 390 pikselde gözden geçirme penceresi taşmıyor
   await p.evaluate((hid) => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const h = d.haftalik.find((x) => x.id === hid); h.durum = "toplantida"; h.kalemler.forEach((x) => (x.karar = "kabul"));
     h.kalemler[0].karar = "sartli"; h.kalemler[0].kosul = "شرط طويل نسبياً للتأكد من أن النافذة لا تتجاوز عرض الشاشة";
     localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));

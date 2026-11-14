@@ -12,7 +12,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
   // İlk açık PKG'ye kod ve açıklama ver
   const id = await p.evaluate(() => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const pk = d.paketler.find((x) => x.planId === plan.id && x.planBaslikId && ["taslak", "degerlendiriliyor", "onaylandi"].includes(x.durum) && !x.ozelId);
     pk.slug = "TEST-STOK-PKG"; pk.aciklama = "شرح التقرير الجاهز"; localStorage.setItem(k, JSON.stringify(d)); return pk.id;
@@ -24,7 +24,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const kart = p.locator(`.kayit:has(a[href="#/paketler/${id}"])`).first();
   await kart.locator('button[aria-label="Stok paket olarak ekle"]').click(); await p.waitForTimeout(500);
   const durum = () => p.evaluate((id) => {
-    const d = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const pk = d.paketler.find((x) => x.id === id);
     return { hazir: plan.hazirPaketler.includes(id), durum: pk.durum, stok: pk.stok, baslik: pk.planBaslikId ?? null, ad: pk.baslik };

@@ -3,14 +3,14 @@ const { chromium } = require(process.env.PW);
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1280, height: 1000 } });
   let hata = 0; p.on("pageerror", (e) => { hata++; console.log("HATA", String(e)); }); p.on("dialog", (d) => d.accept());
-  const B = "http://localhost:4173/", K = "trt-planlama-v24";
+  const B = "http://localhost:4173/", K = "trt-planlama-v25";
   const sonuc = {};
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/"); await p.waitForTimeout(1200);
   const k = await p.evaluate((K) => {
     const d = JSON.parse(localStorage.getItem(K));
     const pk = d.paketler.find((x) => x.tur === "haber" && x.muhabirId && d.kisiler.find((y) => y.id === x.muhabirId && y.birim === "muhabir"));
-    Object.assign(pk, { durum: "uretimde", adim: "metin", akis: { id: "yol", surum: 0 }, parcalar: [], video: undefined, metin: undefined });
+    Object.assign(pk, { durum: "uretimde", adim: "metin", akis: { id: "yol", surum: 0 }, parcalar: [], uretim: undefined, video: undefined, metin: undefined });
     localStorage.setItem(K, JSON.stringify(d));
     const nd = d.kisiler.find((y) => y.birim === "newsdesk" && y.rol !== "yonetici" && !y.pasif);
     const dd = d.kisiler.find((y) => y.gorev === "dilDenetmeni" && y.rol !== "yonetici" && !y.pasif);

@@ -16,8 +16,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await p.goto(B + yol);
     await p.waitForTimeout(800);
   };
-  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
-  const yaz = (d) => p.evaluate((x) => { localStorage.setItem("trt-planlama-v24", JSON.stringify(x)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); }, d);
+  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
+  const yaz = (d) => p.evaluate((x) => { localStorage.setItem("trt-planlama-v25", JSON.stringify(x)); localStorage.setItem("trt-planlama-v25-iz", String(Date.now())); }, d);
 
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); });

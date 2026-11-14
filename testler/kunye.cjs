@@ -17,7 +17,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.evaluate((k) => localStorage.setItem("trt-planlama-oturum", k), kim);
     await p.goto("about:blank"); await p.goto(B + yol); await p.waitForTimeout(900);
   };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24") || "{}"));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25") || "{}"));
   const rol = (kap, r) => p.locator(`${kap} [data-kunye-rol="${r}"]`);
 
   // 1. Planlama görev verir, muhabir "Yapıldı" der, tam yönetici onaylar
@@ -44,7 +44,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   for (const r of ["gorevlendiren", "muhabir", "onaylayan"]) ok((await rol("[data-kunye]", r).count()) === 1, `künyede ${r} satırı`);
   ok((await rol("[data-kunye]", "metin").count()) === 0, "boş rol (metin düzelten) çizilmiyor");
   const adlar = await p.locator("[data-kunye]").innerText();
-  const kisi = (id) => p.evaluate((i) => JSON.parse(localStorage.getItem("trt-planlama-v24")).kisiler.find((k) => k.id === i).ad, id).then((a) => a.tr || a.ar);
+  const kisi = (id) => p.evaluate((i) => JSON.parse(localStorage.getItem("trt-planlama-v25")).kisiler.find((k) => k.id === i).ad, id).then((a) => a.tr || a.ar);
   ok(adlar.includes(await kisi("pl1")) && adlar.includes(await kisi("yo3")), "satırlarda kişinin kendi adı (birim değil)");
 
   // 3. Muhabir kendi paketinin künyesini görüyor

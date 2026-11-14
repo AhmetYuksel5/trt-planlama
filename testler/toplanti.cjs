@@ -15,13 +15,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (d) => d.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(1100); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const oturum = (id) => p.evaluate((id) => localStorage.setItem("trt-planlama-oturum", id), id);
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await git("#/haftalik");
   const hid = await p.evaluate(() => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const h = [...d.haftalik].sort((a, c) => c.baslangic.localeCompare(a.baslangic))[0];
     h.durum = "toplantida"; h.kalemler.forEach((x) => { x.karar = "bekliyor"; delete x.onInceleme; delete x.kosul; });
     localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));
@@ -80,7 +80,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // 6. Tutanakta notlar (gözden geçirme, tam yönetici)
   await p.evaluate((hid) => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     d.haftalik.find((x) => x.id === hid).kalemler.forEach((x) => { if (x.karar === "bekliyor") x.karar = "kabul"; });
     localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));
   }, hid);

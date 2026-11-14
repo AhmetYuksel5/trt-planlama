@@ -10,7 +10,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(700); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const oturum = (id) => p.evaluate((x) => localStorage.setItem("trt-planlama-oturum", x), id);
   await p.goto(B);
   await p.evaluate(() => localStorage.clear());
@@ -59,11 +59,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(v2.takvimAdaylari.find((a) => a.id === ziyaret.id).durum === "ilgisiz", "ilgisiz denen geri gelmedi");
   // Eski kuralın bekleyen adayı (geçmiş tarihi ertesi yıla atan ilk sürüm) listeden düşer
   await p.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const d = new Date(); d.setFullYear(d.getFullYear() + 1);
     v.takvimAdaylari.push({ id: "ta-eski", kural: 2, baslik: "Inside the election probe", tarih: d.toLocaleDateString("sv-SE"), tur: "secim", kaynak: "K", baglanti: "https://ornek.test/eski", haberSayisi: 1, bulundu: new Date().toISOString(), durum: "yeni" });
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await oturum("pl1");
   await git("#/takvim");

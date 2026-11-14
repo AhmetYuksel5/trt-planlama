@@ -10,7 +10,7 @@ const { chromium } = require(process.env.PW);
     await p.evaluate((k) => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", k); }, kim);
     await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
     await p.evaluate(() => {
-      const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+      const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
       const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
       plan.durum = "onayli"; localStorage.setItem(k, JSON.stringify(d));
     });
@@ -19,7 +19,7 @@ const { chromium } = require(process.env.PW);
     if (await p.locator(".pb-uc button[aria-haspopup]").count()) { await p.locator(".pb-uc button[aria-haspopup]").click(); await p.waitForTimeout(200); }
     const dugme = await p.locator("[data-onay-geri]").count();
     if (dugme) { await p.locator("[data-onay-geri]").click(); await p.waitForTimeout(400); }
-    const durum = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); return [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0].durum; });
+    const durum = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v25")); return [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0].durum; });
     const ok = bekle ? dugme && durum === "toplantida" : !dugme && durum === "onayli";
     console.log(kim, "düğme", dugme, "durum", durum, ok ? "✓" : "✗"); if (!ok) kal++;
   };

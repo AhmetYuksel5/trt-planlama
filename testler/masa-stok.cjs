@@ -14,17 +14,17 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("dialog", (d) => d.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(700); };
   const kim = async (id) => { await p.goto(B); await p.evaluate((k) => { localStorage.setItem("trt-planlama-oturum", k); localStorage.setItem("trt-planlama-dil", "tr"); }, id); };
-  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
 
   // Örnek kayıtla aç, sonra deneme paketlerini kayda yaz
   await p.goto(B); await p.evaluate(() => localStorage.clear());
   await kim("pl1"); await git("#/");
   const ids = await p.evaluate(() => {
-    const k = "trt-planlama-v24", d = JSON.parse(localStorage.getItem(k));
+    const k = "trt-planlama-v25", d = JSON.parse(localStorage.getItem(k));
     const plan = [...d.planlar].sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     const ornek = d.paketler.find((x) => !x.ozelId);
     const muhabir = d.kisiler.find((x) => x.birim === "muhabir");
-    const yap = (id, ek) => ({ ...ornek, id, kod: id, baslik: "اختبار " + id, notlar: [], adim: undefined, akis: undefined, stok: undefined, isaret: undefined, yayinlandi: undefined, haftalikKalemId: undefined, oneriId: undefined, ozelId: undefined, muhabirId: muhabir.id, ...ek });
+    const yap = (id, ek) => ({ ...ornek, id, kod: id, baslik: "اختبار " + id, notlar: [], adim: undefined, akis: undefined, uretim: undefined, parcalar: undefined, stok: undefined, isaret: undefined, yayinlandi: undefined, haftalikKalemId: undefined, oneriId: undefined, ozelId: undefined, muhabirId: muhabir.id, ...ek });
     const ozel = d.ozel?.[0];
     d.paketler.unshift(
       yap("t-ek-nd", { tur: "ekonomi", durum: "onaylandi", planId: plan.id, planBaslikId: plan.basliklar[0]?.id }),

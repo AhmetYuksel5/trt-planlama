@@ -19,7 +19,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
       await p.goto(B + yol);
       await p.waitForTimeout(900);
     };
-    const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+    const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
     const acikPencere = () => p.locator("dialog.pencere[open]").count();
 
     // Panelde hızlı karar.

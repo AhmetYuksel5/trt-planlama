@@ -19,7 +19,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
     await p.evaluate((k) => localStorage.setItem("trt-planlama-oturum", k), kim);
     await p.goto("about:blank"); await p.goto(B + yol); await p.waitForTimeout(900);
   };
-  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24") || "{}"));
+  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25") || "{}"));
   // "Birimin görüşüne sun" önerinin ⋯ menüsünde (kullanıcı: kart yer kaplıyordu); menü açılmadan madde yok.
   const menu = (kap = "[data-oneri-alt]") => p.locator(`${kap} button[aria-haspopup="menu"]`).first();
   const sorulabilir = async (kap) => {

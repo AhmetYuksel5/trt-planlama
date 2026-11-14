@@ -15,7 +15,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(1100); };
   await git("#/haftalik");
   const hid = await p.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     return [...d.haftalik].sort((a, c) => c.baslangic.localeCompare(a.baslangic))[0].id;
   });
 

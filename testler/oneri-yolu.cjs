@@ -25,7 +25,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   const kart = await p.locator(".oneri-karti").count();
   ok(kart > 0 && (await p.locator('.oneri-karti [data-oneri-yolu="ince"]').count()) === kart, "her kartta yol şeridi");
 
-  const d = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const d = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   // PKG kararı bekleyen öneri: yol PKG'de, sıra Planlama'da.
   const bek = d.paketler.find((x) => x.oneriId && x.planId && (x.durum === "taslak" || x.durum === "degerlendiriliyor"));
   await gir("pl2", "#/oneriler/" + bek.oneriId);
@@ -70,11 +70,11 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok((await p.locator(`[data-md="bizde"] [data-md-is="${bek.oneriId}"]`).count()) === 1, "Şimdi: sırası bizde olan öneri");
   const bugun = await p.evaluate(() => new Date().toLocaleDateString("sv"));
   await p.evaluate(([m, g]) => {
-    const x = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const x = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     x.kisiler.find((k) => k.id === m).durum = "gorevde";
     x.gorevlendirmeler.push({ id: "test-izin", kisiId: m, tur: "izin", durum: "onayli", baslangic: g, bitis: g, ulke: "TR", sehir: "istanbul", aciklama: "" });
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(x));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(x));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, [muh, bugun]);
   await gir("pl2", "#/muhabirler/" + muh);
   ok((await p.locator(".profil-bas [data-kisi-durum]").getAttribute("data-kisi-durum")) === "izinli", "profilde durum izin kaydından");

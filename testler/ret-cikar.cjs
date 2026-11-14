@@ -6,7 +6,7 @@ const { chromium } = require(process.env.PW);
   const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
   p.on("pageerror", (e) => console.log("HATA", String(e)));
   const B = "http://localhost:4173/";
-  const K = "trt-planlama-v24";
+  const K = "trt-planlama-v25";
   let gec = 0;
   let kal = 0;
   const ok = (k, ad) => (k ? gec++ : (kal++, console.log("✗", ad)));

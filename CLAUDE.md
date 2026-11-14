@@ -92,13 +92,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Live, Vox Pop…) kol'dan (haber, feature/ekonomi,
   program) ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını.
-- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v24`;
+- Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v25`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek
   kipte (aşağıda) kayıt Firestore'da; ekranlar ve eylemler aynı
   `useVeri`/`getir`/`kaydet`'i kullanıyor, fark yalnız `veri.ts`'in
   yükle/kaydet kısmında.
   - Aynı kaydı birden çok kopya paylaşıyor (workspace bölmeleri, sekmeler).
-    Her yazış bir iz bırakır (`trt-planlama-v24-iz`); `getir` iz
+    Her yazış bir iz bırakır (`trt-planlama-v25-iz`); `getir` iz
     değişmişse kaydı yeniden okur, yani her eylem en taze kayıttan başlar.
   - `storage` olayı öbür kopyaları yeniden çizer; dil ve oturum da öyle.
   - Eylem kaydı yazarken temeli `getir()`'den alır; ekrandaki `useVeri`
@@ -812,7 +812,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Planlama, masa paketinde masanın üretime alması, durakların balondaki
     adları, Tamamlandı); eski beş sabit aşama (News Gathering, Newsdesk,
     Teknik), "Newsdesk devraldı" adları ve "akış kutusu" kalktı, sıradakinin
-    birimi `durakSahibi`'nden. Paketin parça adı formunda Metin/Stand/Gfx
+    birimi `durakSahibi`'nden. Demoda üretimdeki örnek paketler de balonla
+    başlamış (`ornek.ts → balonlaKur`, `BALON_YERI`: eski durak balonun
+    yerine, şablon `PaketTanimi.sablon`, parçalar ve hareketler ondan); kayıt
+    anahtarı bunun için v25 oldu, eski demo kaydı yeni örnekle açılır.
+    Paketin parça adı formunda Metin/Stand/Gfx
     önerileri. Balonsuz onaylı paket eskisi gibi muhabirin "Yapıldı"sıyla
     kapanır; üretimdeki eski paket kolun akışıyla biter.
   - Üretim şablonları (`organizasyon/UretimSablonlari.tsx`,

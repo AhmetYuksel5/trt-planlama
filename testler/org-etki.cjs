@@ -11,7 +11,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.goto(B); await p.evaluate((d) => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "yo3"); localStorage.setItem("trt-planlama-dil", d); }, dil);
     await p.goto("about:blank"); await p.goto(B + "#/organizasyon/birimler"); await p.waitForTimeout(900);
   };
-  const taslak = () => p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); return Object.values(d.yapiTaslaklari ?? {})[0] ?? null; });
+  const taslak = () => p.evaluate(() => { const d = JSON.parse(localStorage.getItem("trt-planlama-v25")); return Object.values(d.yapiTaslaklari ?? {})[0] ?? null; });
   await ac();
 
   // 1. Alt birimin "Düzenle"si kendisini açar

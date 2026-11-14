@@ -16,7 +16,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await p.goto(B + yol);
     await p.waitForTimeout(900);
   };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); });
   await gir("pl1", "#/oneriler");

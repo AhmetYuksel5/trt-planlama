@@ -12,7 +12,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("dialog", (d) => d.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
   const kim = async (id, dil = "tr") => { await p.goto(B); await p.evaluate(([k, d]) => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", k); localStorage.setItem("trt-planlama-dil", d); }, [id, dil]); };
-  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const durum = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
 
   await kim("mu1");
   await git("#/oneriler/yeni");
@@ -60,10 +60,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await kim("pl1");
   await git("#/oneriler");
   const uzun = await p.evaluate(() => {
-    const d = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const o = d.oneriler.find((x) => x.muhabirId && x.durum === "yeni");
     o.gelisme = "ط".repeat(620);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(d));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(d));
     return o.id;
   });
   await git("#/oneriler/" + uzun);

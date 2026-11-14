@@ -1876,7 +1876,7 @@ export interface Durum {
  * notları, özel yayının paket önerileri; v23: notta anılanlar, özel yayın
  * paketinde ayrı görevlendirme).
  */
-const SAKLA = "trt-planlama-v24";
+const SAKLA = "trt-planlama-v25";
 
 /*
  * Workspace'in her bölmesi uygulamanın ayrı bir kopyası (iframe) ve aynı

@@ -15,7 +15,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.goto("about:blank");
   await p.goto(B + "#/organizasyon/kisiler");
   await p.waitForTimeout(800);
-  const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.click("[data-org-yoneticiler]");
   await p.waitForTimeout(200);
   const satirlar = await p.locator("[data-org-yonetici-listesi] [data-org-kisi]").count();

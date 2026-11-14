@@ -18,7 +18,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await p.goto("about:blank");
     await p.goto(B + "#/nextday/yarin");
     await p.waitForTimeout(900);
-    const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+    const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
     const kart = p.locator(".baslik-karti").first();
     await p.evaluate(() => document.querySelectorAll("main details:not([data-form-ayrintilari])").forEach((d) => (d.open = true)));
     await p.waitForTimeout(200);

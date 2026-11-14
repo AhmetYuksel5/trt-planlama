@@ -43,7 +43,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     ok((await p.evaluate(() => getComputedStyle(document.querySelector(".alt-cubuk a")).transitionDuration)).split(",").every((x) => parseFloat(x) < 0.01), `${dil}: az harekette geçiş yok`);
 
     // M-58: muhabirin takibi açıkken alt çubukta Takiplerim.
-    const takip = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")).oneriler.find((o) => o.durum === "takip" && o.muhabirId === "mu1")?.id);
+    const takip = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")).oneriler.find((o) => o.durum === "takip" && o.muhabirId === "mu1")?.id);
     if (takip) {
       await p.goto(B + "#/oneriler/" + takip);
       await p.waitForTimeout(700);

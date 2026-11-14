@@ -11,7 +11,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
   const kim = async (id, dil = "tr") => { await p.goto(B); await p.evaluate(([k, d]) => { localStorage.setItem("trt-planlama-oturum", k); localStorage.setItem("trt-planlama-dil", d); }, [id, dil]); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => localStorage.clear());
 
@@ -117,15 +117,15 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   // Ek filtresi: gerçek dosya görünür, imza/logo görseli gizli
   await p.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
       id: "pm-ek-test", konuKimligi: "ek-test-konu", kimden: "ekli@ornek.local",
       kimdenAd: "Ekli Gönderen", konu: "Ekli posta", metin: "Rapor ektedir.", tamMetin: "Rapor ektedir.",
       zaman: new Date().toISOString(), ekler: ["rapor.pdf", "image001.png", "logo.png", "imza-banner.jpg", "trtlogo_fa524c36-bb0d-49e9-9a6b-04762f995512.png", "facebook_13f4222f-a2aa-44fb-93ad-116e2eecf20a.png"],
       kaynak: "iceAktarma",
     }]);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await git("#/posta");
   await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Ekli posta" }).first().click();
@@ -136,14 +136,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // İmza/isim bloğu silinir, içerik kalır
   const imzali = "رجاء مراجعة التقرير المرفق قبل الغد.\n\nمحمد صفا\nمراسل TRT عربي\nجوال: +90 555 111 2233\nmehmet@trt.net.tr\nمع التحية";
   await p.evaluate((metin) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
       id: "pm-imza-test", konuKimligi: "imza-test-konu", kimden: "muhammed@trt.net.tr",
       kimdenAd: "Muhammed Ali", konu: "İmza testi", metin, tamMetin: metin,
       zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
     }]);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, imzali);
   await git("#/posta");
   await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "İmza testi" }).first().click();
@@ -155,14 +155,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Ana metindeki bağlantı korunur; imza bağlantısı ve isim gider
   const linkli = "الخبر مهم، التفاصيل هنا https://example.com/haber\nنرجو المتابعة اليوم\nمحمد صفا\nمراسل TRT عربي\nhttps://trtarabi.com";
   await p.evaluate((metin) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
       id: "pm-link-test", konuKimligi: "link-test-konu", kimden: "selim@ornek.local",
       kimdenAd: "Selim", konu: "Link testi", metin, tamMetin: metin,
       zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
     }]);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, linkli);
   await git("#/posta");
   await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Link testi" }).first().click();
@@ -174,14 +174,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Gövde tümüyle imza (içerik yok): ham imza dökülmez, "yalnızca imza" işareti
   const yalnizImza = "https://www.trt.net.tr/>>\n<https://www.trtarabi.com/>\nShafık SAHLI\n\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+";
   await p.evaluate((metin) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
       id: "pm-imzaonly-test", konuKimligi: "imzaonly-konu", kimden: "sahli@ornek.local",
       kimdenAd: "Shafık SAHLI", konu: "Yalnız imza testi", metin, tamMetin: metin,
       zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
     }]);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, yalnizImza);
   await git("#/posta");
   await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Yalnız imza testi" }).first().click();
@@ -193,7 +193,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Yeni metin yoksa, düzeltilip dönen alıntı metni gösterilir
   const duzeltilmis = "Shafık SAHLI\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+\n\nFrom: Planlama <planning@trt.net.tr>\nSent: Monday\nTo: Shafık\nSubject: للتدقيق\n\nتَبْدُو فَرَنْسَا أَمَامَ حَالَةٍ مِنَ الِانْسِدَادِ.\nوَبَيْنَ احْتِجَاجَاتٍ تَتَوَاصَلُ.\n\nMehmet Safa\nمراسل TRT عربي";
   await p.evaluate((tamMetin) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     // metin: yeniMetin'in yaptığı gibi alıntı kesilmiş hali (yalnız imza kalır)
     const metin = "Shafık SAHLI\nSenior Script Editor\nTRT Arabi Kanal\n00 30 326 (212) 90+";
     v.postaMesajlari = (v.postaMesajlari || []).concat([{
@@ -201,8 +201,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       kimdenAd: "Shafık SAHLI", konu: "Düzeltme testi", metin, tamMetin,
       zaman: new Date().toISOString(), ekler: [], kaynak: "iceAktarma",
     }]);
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, duzeltilmis);
   await git("#/posta");
   await p.locator('[data-posta-sohbet-bag]').filter({ hasText: "Düzeltme testi" }).first().click();

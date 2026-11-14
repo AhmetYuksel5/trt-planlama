@@ -10,7 +10,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => localStorage.clear());
   await p.goto(B);
@@ -20,10 +20,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const v0 = await veri();
   const muh = v0.kisiler.filter((k) => k.birim === "muhabir").slice(0, 3);
   await p.evaluate((ids) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     v.kisiler = v.kisiler.map((k) => (ids.includes(k.id) ? { ...k, eposta: "", kisiselEposta: undefined } : k));
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, muh.map((k) => k.id));
   await git("#/muhabirler");
   const tr = (k) => (typeof k.ad === "string" ? k.ad : k.ad.tr);

@@ -16,7 +16,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await p.goto(B + yol);
     await p.waitForTimeout(900);
   };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); });
 
@@ -73,13 +73,13 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
 
   // 3. Aylık olaydan özel yayın: kapsam satırları, ekip ve görevlendirme gelir
   await p.evaluate(() => {
-    const x = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const x = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     let ilk = "";
     for (const a of x.aylik) for (const o of a.olaylar ?? []) if (o.id === "ao-zirve") (o.etiketler.push("ozel"), (ilk = o.gunler.map((g) => g.tarih).sort()[0]));
     // Demo haftaları bugüne göre kuruluyor; olayın haftası kesinleşmiş olabiliyor (günü Cumartesi'ye denk gelince): açık olsun.
     for (const w of x.haftalik) if (w.baslangic <= ilk && ilk < new Date(new Date(w.baslangic + "T12:00:00").getTime() + 7 * 864e5).toISOString().slice(0, 10)) w.durum = "hazirlik";
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(x));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(x));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await gir("pl1", "#/ozel");
   await p.click('[data-aylik-ozel-ac="ao-zirve"]');

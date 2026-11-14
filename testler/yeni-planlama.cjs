@@ -71,7 +71,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(eksik.length === 0, `tam yöneticinin hiçbir sayfası menüden düşmedi (${eksik.join(",")})`);
 
   // Kişi çipi: paket sayfasında, posta konusu paketin başlığı.
-  const d = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const d = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const pk = d.paketler.find((x) => x.muhabirId && x.durum === "onaylandi" && d.kisiler.find((k) => k.id === x.muhabirId)?.eposta);
   await gir("pl2", "#/paketler/" + pk.id);
   await p.locator(`[data-kisi-cipi="${pk.muhabirId}"] button`).first().click();

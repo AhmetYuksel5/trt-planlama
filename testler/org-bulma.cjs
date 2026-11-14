@@ -18,7 +18,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.goto("about:blank");
   await p.goto(B + "#/organizasyon/kisiler");
   await p.waitForTimeout(800);
-  const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const kayit = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   const sonuc = async (q) => {
     await p.fill("[data-org-ara]", q);
     await p.waitForTimeout(150);

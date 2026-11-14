@@ -15,10 +15,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Günün notu varsayılan düzende yok (kullanıcı); kişi "Sayfayı düzenle"den ekliyor, burada kaydına yazılıyor.
   ok((await p.locator("[data-gun-notu]").count()) === 0 && (await p.getByText(/Günün notu/).count()) === 0, "varsayılan ana sayfada Günün notu yok");
   await p.evaluate(() => {
-    const x = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const x = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     x.anaSayfa = { ...(x.anaSayfa ?? {}), "pl1:planlama": ["plGunNotu", "plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"] };
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(x));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(x));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await git("#/");
   ok((await p.locator(".gun-notu, [data-gun-notu]").count()) >= 0 && (await p.getByText(/Günün notu/).count()) >= 1, "Planlama ana sayfasında Günün notu kartı");
@@ -28,7 +28,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Kurgusal durum: eski cevapsız öneri, günü yarın kararsız öneri, üç gündür aynı gelişmeli başlık,
   // günü geçmiş sonuçsuz paket, bugün plansız faaliyet.
   await p.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const gun = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString("sv-SE"); };
     const o0 = v.oneriler.find((o) => o.muhabirId && !o.takipId && o.bicim !== "takip" && !o.yon);
     const temel = { ...o0, planId: undefined, paketId: undefined, baslikId: undefined, cagriId: undefined, arsiv: undefined, satirlar: undefined, bitisTarih: undefined, planTarihi: undefined, takipId: undefined, kopyaKaynagi: undefined, hafta: undefined };
@@ -52,8 +52,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     v.paketler.push({ ...pk0, id: "gn-pk", baslik: "اختبار تقرير بلا نتيجة", durum: "onaylandi", planId: dun.id, isaret: undefined, ozelId: undefined, stok: false, adim: undefined, teslim: undefined });
     const f0 = v.faaliyetler[0];
     v.faaliyetler.push({ ...f0, id: "gn-f", baslik: "اختبار فعالية اليوم", baslangic: gun(0), bitis: gun(0), tekrar: undefined, durum: "planlandi", baglantilar: [] });
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await git("#/");
   const satir = (t) => p.locator(`[data-gun-notu="${t}"]`);
@@ -65,17 +65,17 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await satir("plansizFaaliyet").innerText()).includes("اختبار فعالية اليوم"), "bugün plana girmemiş faaliyet");
   // Başlığa yeni gelişme eklenince durgunluk biter.
   await p.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const g = v.gelismeler.filter((x) => x.id.startsWith("gn-g-")).sort((a, b) => b.tarih.localeCompare(a.tarih))[0];
     v.gelismeler.push({ ...g, id: "gn-g-yeni", metin: "تطور جديد" });
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   });
   await git("#/");
   ok(!((await satir("durganBaslik").count()) && (await satir("durganBaslik").innerText()).includes("اختبار عنوان راكد")), "yeni gelişme eklenince başlık durgun değil");
   // Açık çağrıya yanıt vermeyen, önerisi genelde kabul edilen muhabir
   const sessiz = await p.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const gun = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toLocaleDateString("sv-SE"); };
     const yanitli = new Set(v.oneriler.map((o) => o.muhabirId));
     const m = v.kisiler.find((k) => k.birim === "muhabir" && !k.pasif && !yanitli.has(k.id)) ?? v.kisiler.find((k) => k.birim === "muhabir" && !k.pasif);
@@ -88,8 +88,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       v.gelismeler.push({ id: "gn-mg" + i, planId: pl.id, metin: "x" + i, kaynakTuru: "muhabir", kaynakAdi: "", tarih: pl.tarih, oneriId: "gn-m" + i });
     }
     v.cagrilar.push({ id: "gn-c", tur: "nextday", tarih: gun(1), metin: "x", sonSaat: "15:00", olusturan: "pl1", zaman: new Date().toISOString(), kime: "planning@ornek.local", bcc: [m.id], etiket: "ND-TEST" });
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
     return m.ad.tr || m.ad.ar; // arayüz Türkçe: ad arayüzün dilinde
   });
   await git("#/");
@@ -102,14 +102,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const bugunStr = await p.evaluate(() => new Date().toLocaleDateString("sv-SE"));
   await p.locator("[data-sayim-baslangici]").fill(bugunStr);
   await p.waitForTimeout(300);
-  ok((await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")).sayimBaslangici)) === bugunStr, "sayım başlangıcı kayda yazıldı");
+  ok((await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")).sayimBaslangici)) === bugunStr, "sayım başlangıcı kayda yazıldı");
   await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "pl1"));
   await git("#/");
   ok((await satir("cevapsizOneri").count()) === 0, "başlangıçtan önceki cevapsız öneriler sayılmıyor");
   ok((await satir("sonucBekleyen").count()) === 0, "başlangıçtan önceki plandaki paket sayılmıyor");
   ok((await satir("sessizMuhabir").count()) === 0, "kabul oranı başlangıçtan önceki önerilerden hesaplanmıyor");
   ok((await satir("plansizFaaliyet").count()) === 1, "takvim uyarısı başlangıçtan etkilenmiyor");
-  await p.evaluate(() => { const v = JSON.parse(localStorage.getItem("trt-planlama-v24")); delete v.sayimBaslangici; localStorage.setItem("trt-planlama-v24", JSON.stringify(v)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); });
+  await p.evaluate(() => { const v = JSON.parse(localStorage.getItem("trt-planlama-v25")); delete v.sayimBaslangici; localStorage.setItem("trt-planlama-v25", JSON.stringify(v)); localStorage.setItem("trt-planlama-v25-iz", String(Date.now())); });
   await git("#/");
   // Satır işin sayfasına gider
   await satir("cevapsizOneri").locator("a").click();

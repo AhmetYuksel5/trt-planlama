@@ -16,12 +16,12 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/oneriler");
   // Bir paketli kalemi muhabir sayısıyla kur.
   const kur = (n) => p.evaluate((n) => {
-    const d = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const ms = d.kisiler.filter((k) => k.birim === "muhabir").slice(0, n).map((k) => k.id);
     const h = d.haftalik.filter((x) => x.durum !== "kesinlesti").sort((a, c) => c.baslangic.localeCompare(a.baslangic))[0];
     const k = h.kalemler.find((x) => x.id === "hm-test") || h.kalemler[0];
     k.id = "hm-test"; k.paketBasligi = "زيارة اختبارية"; k.bicimler = ["pkg"]; k.muhabirler = ms; k.karar = "kabul"; k.yer = "";
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(d)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(d)); localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
     return { hid: h.id, adlar: ms.map((id) => d.kisiler.find((k) => k.id === id).ad.ar) };
   }, n);
 

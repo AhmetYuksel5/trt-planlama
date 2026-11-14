@@ -11,7 +11,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => localStorage.clear());
   await p.goto(B);
@@ -21,15 +21,15 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const v0 = await veri();
   const kayitli = v0.kisiler.find((k) => k.birim === "newsdesk" && k.eposta);
   await p.evaluate((kid) => {
-    const v = JSON.parse(localStorage.getItem("trt-planlama-v24"));
+    const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     const k = v.kisiler.find((x) => x.id === kid);
     k.telefon = "";
     const z = new Date().toISOString();
     v.postaMesajlari.push(
       { id: "pk-t1", konuKimligi: "pk-t1", kimden: k.eposta, kimdenAd: "Kayitli Kisi", konu: "x", metin: "tamam", tamMetin: "tamam\n\nBest regards\nNewsdesk Editor\nMobile: +90 555 000 00 01", zaman: z, ekler: [], kaynak: "posta", kime: ["planning@ornek.local"], cc: ["zeynep.kurt@ornek.local", "newsdesk@ornek.local", "dis@baska.example"] },
     );
-    localStorage.setItem("trt-planlama-v24", JSON.stringify(v));
-    localStorage.setItem("trt-planlama-v24-iz", String(Date.now()));
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+    localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
   }, kayitli.id);
   await git("#/organizasyon/kisiler");
   ok((await p.locator("[data-pk-ac]").count()) === 1, "Kişiler sekmesinde 'Postadan kişiler' düğmesi");

@@ -19,7 +19,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
     await p.evaluate((k) => localStorage.setItem("trt-planlama-oturum", k), kim);
     await p.goto("about:blank"); await p.goto(B + yol); await p.waitForTimeout(900);
   };
-  const paketler = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24") || "{}").paketler ?? []);
+  const paketler = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25") || "{}").paketler ?? []);
   const formuDoldur = async (muhabir, strap, tarih) => {
     if (muhabir) await p.locator("[data-gorev-formu] select").first().selectOption(muhabir);
     await p.locator("[data-gorev-baslik]").fill(strap);

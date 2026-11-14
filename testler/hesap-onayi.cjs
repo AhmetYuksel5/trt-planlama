@@ -3,7 +3,7 @@ const { chromium } = require(process.env.PW);
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
   let hata = 0; p.on("pageerror", (e) => { hata++; console.log("HATA", String(e)); }); p.on("dialog", (d) => d.accept());
-  const B = "http://localhost:4173/", K = "trt-planlama-v24";
+  const B = "http://localhost:4173/", K = "trt-planlama-v25";
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "yo3"); });
   await p.goto("about:blank"); await p.goto(B + "#/"); await p.waitForTimeout(1200);
   const id = await p.evaluate((K) => {

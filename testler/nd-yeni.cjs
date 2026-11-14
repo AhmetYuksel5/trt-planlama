@@ -39,7 +39,7 @@ const { chromium } = require(process.env.PW);
     const hedefPb = await p.locator(".yp-belge [data-nd-baslik]").nth(1).getAttribute("data-nd-baslik");
     await kart.dragTo(p.locator(".yp-belge [data-nd-baslik]").nth(1)); await p.waitForTimeout(500);
     const secilen = await p.locator("dialog.pencere[open] [data-pe-baslik]").inputValue().catch(() => "");
-    const beklenen = await p.evaluate((id) => { const d = JSON.parse(localStorage.getItem("trt-planlama-v24")); for (const pl of d.planlar) for (const pb of pl.basliklar) if (pb.id === id) return pb.baslikId; }, hedefPb);
+    const beklenen = await p.evaluate((id) => { const d = JSON.parse(localStorage.getItem("trt-planlama-v25")); for (const pl of d.planlar) for (const pb of pl.basliklar) if (pb.id === id) return pb.baslikId; }, hedefPb);
     s.birakma = !!secilen && secilen === beklenen;
     await p.keyboard.press("Escape"); await p.waitForTimeout(200);
   } else s.birakma = "kart yok";

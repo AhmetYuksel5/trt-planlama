@@ -8,7 +8,7 @@ const { chromium } = require(process.env.PW);
   let soruldu = 0;
   p.on("dialog", (d) => (soruldu++, d.accept()));
   const B = "http://localhost:4173/";
-  const K = "trt-planlama-v24";
+  const K = "trt-planlama-v25";
   let gec = 0;
   let kal = 0;
   const ok = (k, ad) => (k ? gec++ : (kal++, console.log("✗", ad)));

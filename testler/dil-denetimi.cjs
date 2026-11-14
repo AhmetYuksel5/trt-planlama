@@ -10,7 +10,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   p.on("dialog", (x) => x.accept());
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(500); };
-  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")));
+  const veri = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")));
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "ou2"); localStorage.setItem("trt-planlama-dil", "tr"); });
   await git("#/");
@@ -24,8 +24,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await kartlar.first().locator("[data-dd-gonder]").click();
   await p.waitForTimeout(300);
   const d = await veri();
+  // Balonla üretilen pakette dil denetimi parça parça: kart parçanın kimliğini taşıyor.
   const pk = d.paketler.find((x) => x.id === id);
-  ok(pk.metin === "نص مدقق للاختبار" && pk.adim !== "dil", "düzeltilmiş metin pakete yazıldı, iş sonraki durağa geçti: " + pk.adim);
+  const parca = pk ? null : d.paketler.flatMap((x) => x.parcalar ?? []).find((x) => x.id === id);
+  if (pk) ok(pk.metin === "نص مدقق للاختبار" && pk.adim !== "dil", "düzeltilmiş metin pakete yazıldı, iş sonraki durağa geçti: " + pk.adim);
+  else ok(parca && parca.metin === "نص مدقق للاختبار" && parca.asama === "tamam", "düzeltilmiş parça yazıldı, parça hazır: " + parca?.asama);
   ok((await p.locator("[data-dd-metin]").count()) === n - 1, "gönderilen metin listeden kalktı");
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 900 });
@@ -54,8 +57,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => localStorage.setItem("trt-planlama-oturum", "ou3"));
   e.kisiler.find((k) => k.id === "ou3").birim = "output";
   const dp = e.paketler.find((x) => x.durum === "uretimde");
-  Object.assign(dp, { adim: "dil", akis: undefined });
-  await p.evaluate((x) => { localStorage.setItem("trt-planlama-v24", JSON.stringify(x)); localStorage.setItem("trt-planlama-v24-iz", String(Date.now())); }, e);
+  Object.assign(dp, { adim: "dil", akis: undefined, uretim: undefined, parcalar: undefined });
+  await p.evaluate((x) => { localStorage.setItem("trt-planlama-v25", JSON.stringify(x)); localStorage.setItem("trt-planlama-v25-iz", String(Date.now())); }, e);
   await git("#/");
   await p.waitForTimeout(500);
   e = await veri();

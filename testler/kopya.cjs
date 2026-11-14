@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PW);
   const B = "http://localhost:4173/", s = {};
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
-  const id = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v24")).planlar.sort((a, b) => b.tarih.localeCompare(a.tarih))[0].id);
+  const id = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")).planlar.sort((a, b) => b.tarih.localeCompare(a.tarih))[0].id);
   for (const baski of ["", "3"]) {
     await p.evaluate((x) => localStorage.setItem("trt-planlama-baski", x), baski);
     await p.goto(B + "#/nextday/" + id + "/cikti"); await p.waitForTimeout(1000);
