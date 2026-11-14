@@ -56,7 +56,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.waitForTimeout(400);
   d = await veri();
   let x = d.paketler.find((y) => y.id === pk.id);
-  ok(x.durum === "uretimde" && x.adim === "newsdesk" && x.uretim?.yol.editoryal === "newsdesk" && x.uretim?.parca.gfx, `üretim başladı (${x.durum}, ${x.adim})`);
+  ok(x.durum === "uretimde" && x.adim === "metin" && !!x.gorevZamani && x.uretim?.yol.editoryal === "newsdesk" && x.uretim?.parca.gfx, `üretim başladı, görev kabulde verildiği için metin durağında (${x.durum}, ${x.adim})`);
   ok((d.uretimSablonlari || []).length === 7, "şablonlar kayıtta");
   // Üretim yolu ayrı kartta değil: şablon ve istisnalar Planlama kutusunda, aşamalar kutu listesinde.
   await p.locator('[data-asama-kutu="planlama"] button').click(); await p.waitForTimeout(200);
@@ -69,11 +69,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     ok(!/devraldı/.test(rozet), "durum rozetinde eski 'Newsdesk devraldı' adı yok");
   }
 
-  // Newsdesk görev verir.
-  await kim("nd1", "#/paketler/" + pk.id);
-  await p.locator("button", { hasText: "Muhabire görev ver" }).click();
-  await p.waitForTimeout(300);
-  ok((await veri()).paketler.find((y) => y.id === pk.id).adim === "metin", "görev verildi, metin durağında");
+  // Görevlendirme kutusu geçmiş, görevlendiren künyede (kabulde yazıldı).
+  ok((await p.locator('[data-asama-kutu="newsdesk"][data-asama-durum="gecti"]').count()) === 1, "görevlendirme kutusu geçti");
 
   // Muhabir parçaları gönderir: Metin ve Gfx önerileri.
   await kim("mu1", "#/paketler/" + pk.id);

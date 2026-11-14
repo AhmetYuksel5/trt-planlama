@@ -818,7 +818,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     uretimYoluBelirleyebilir`: onaylı paket, Planlama [paket değerlendiren],
     tam yönetici ya da plansızı üretime alabilen masa; özel yayın ve masanın
     takibindeki paket değil) yolu pakete yazar (`Paket.uretim`: şablon, yol,
-    parçalar, `gfxTamam`), ilk durağı açar. Akış motoru yolu kolun akışı
+    parçalar, `gfxTamam`), ilk durağı açar. Muhabiri belli (TBC değil)
+    paketin görevi kabulde verildi (künyede görevlendiren, muhabire bildirim):
+    üretim görev durağını geçip metin durağıyla, sıra muhabirde başlar
+    (`uretim.ts → gorevVerilmis`, `ilkDurak`; kullanıcı: kabul edilmiş paket
+    üretime başlatınca görevlendirmede havada kalıyordu); muhabir TBC ya da
+    boşsa görev durağında atanır. Görev durağında kalmış eskileri sistemin
+    açılış işi geçirir (`eylemler.ts → gorevDuragindaKalanlariGecir`). Akış motoru yolu kolun akışı
     yerine okur (`akis.ts → paketAkisi` → `uretimAkisi`: görev, parçalı metin,
     video kontrolü, yükleme, "Yayın kararı" genel işi; atlanan durak yok).
     Editoryal kontrol ve dil denetimi parçalı metnin aşamaları: tetkikçi ve

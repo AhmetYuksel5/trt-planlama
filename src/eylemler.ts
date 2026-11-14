@@ -209,7 +209,7 @@ import {
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
 import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
-import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, yeniDurak, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, uretimAkisi, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
+import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, gorevVerilmis, ilkDurak, yeniDurak, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -2773,6 +2773,27 @@ export const masaGorevleriniTakibeAl = (): number => {
 };
 
 /*
+ * Görev durağında bekleyen, görevi zaten verilmiş paket (kullanıcı: kabul edilmiş
+ * paket üretime başlatınca görevlendirmede kalıyordu): sistemin açılış işi onu
+ * metin durağına geçirir, sıra muhabire geçer (hareket muhabire düşer).
+ */
+export const gorevDuragindaKalanlariGecir = (): number => {
+  let d = getir();
+  const l = d.paketler.filter((p) => p.durum === "uretimde" && p.akis?.id === "balon" && p.uretim && p.adim === "newsdesk" && gorevVerilmis(p));
+  if (!l.length) return 0;
+  const z = simdi();
+  for (const p of l) {
+    const adim = ilkDurak(p.uretim!, p);
+    if (adim === "newsdesk") continue;
+    d = paketGuncelle(d, p.id, (x) => ({ ...x, adim, gorevZamani: x.gorevZamani ?? z, guncelleme: z }));
+    const y = paketBul(d, p.id)!;
+    d = hareketYaz(d, { kisiId: SISTEM, tip: "uretimeAlindi", paketId: p.id, planId: p.planId, veri: { adim, sahip: paketSahibi(y) ?? "" } });
+  }
+  kaydet(d);
+  return l.length;
+};
+
+/*
  * Onaylı paketi başka muhabire verme (yetki "baskaMuhabire"): paket yeni
  * muhabire planlamacının teklifi olarak gider ve teklif akışına girer;
  * eski paket iptal, `devredildi` iziyle eski muhabirin geçmişinde kalır.
@@ -2966,9 +2987,10 @@ export const uretimiBaslat = (ben: Kisi, paketId: string, g: UretimSecimi) => {
   const p = paketBul(d, paketId);
   if (!p || p.durum !== "onaylandi" || !uretimYoluBelirleyebilir(ben, p) || !yolGecerli(g.yol)) return false;
   const uretim: UretimYolu = { ...(g.sablon && { sablon: g.sablon }), yol: { ...g.yol }, parca: { ...g.parca } };
-  const adim = uretimAkisi(uretim).duraklar[0].id;
+  // Muhabiri belli paketin görevi kabulde verildi: üretim metin durağıyla başlar.
+  const adim = ilkDurak(uretim, p);
   const akis = { ...akisDamgasi(p), id: "balon" };
-  const yeni: Paket = { ...p, durum: "uretimde", adim, akis, uretim, guncelleme: simdi() };
+  const yeni: Paket = { ...p, durum: "uretimde", adim, akis, uretim, ...(adim !== "newsdesk" && !p.gorevZamani && gorevVerilmis(p) ? { gorevZamani: simdi() } : {}), guncelleme: simdi() };
   d = paketGuncelle(d, paketId, () => yeni);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimeAlindi", paketId, planId: p.planId, veri: { adim, sahip: paketSahibi(yeni) ?? "" } }));
   return true;

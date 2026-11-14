@@ -22,6 +22,14 @@ const { chromium } = require(process.env.PW);
   await kim("nd1");
   await git("#/paketler");
   // Görevlendirmede bekleyen balonlu paket; görevi şablona göre Newsdesk ya da Planlama veriyor.
+  // Muhabiri belli paket görev durağını geçiyor (görev kabulde verildi); görevde bekleyen ancak muhabiri TBC olan.
+  await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const x = d.paketler.find((x) => x.id === "p-sam");
+    Object.assign(x, { adim: "newsdesk", muhabirTbc: true });
+    localStorage.setItem(k, JSON.stringify(d));
+  }, K);
+  await git("#/paketler");
   const [pid, kisi] = await p.evaluate((k) => {
     const x = JSON.parse(localStorage.getItem(k)).paketler.find((x) => x.durum === "uretimde" && x.uretim && x.adim === "newsdesk");
     return [x?.id, x?.uretim?.yol?.gorev === "planlama" ? "pl1" : "nd1"];

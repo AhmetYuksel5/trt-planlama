@@ -134,6 +134,20 @@ export const uretimAkisi = (u: UretimYolu): Akis => {
   return { id: URETIM_AKISI, kollar: [], duraklar };
 };
 
+/*
+ * Görev verilmiş mi (kullanıcı: paket Planlama'da kabul edilince muhabire görev
+ * zaten gidiyor; üretime başlatınca görev durağında yeniden bekliyordu): muhabiri
+ * belli, TBC değil. Öyleyse üretim görev durağını geçip metin durağıyla başlar;
+ * muhabir belli değilse görev durağında atanır.
+ */
+export const gorevVerilmis = (p: Pick<Paket, "muhabirId" | "muhabirTbc">): boolean => !!p.muhabirId && !p.muhabirTbc;
+
+/** Üretimin ilk durağı: görev verilmiş pakette görev durağı atlanır. */
+export const ilkDurak = (u: UretimYolu, p: Pick<Paket, "muhabirId" | "muhabirTbc">): string => {
+  const l = uretimAkisi(u).duraklar.map((x) => x.id);
+  return l[0] === "newsdesk" && gorevVerilmis(p) && l[1] ? l[1] : l[0];
+};
+
 /** Parçanın muhabirden sonra gideceği aşama: editoryal kontrol, o atlanıyorsa dil, o da atlanıyorsa hazır. */
 export const parcaIlkAsama = (p: Pick<Paket, "uretim">): "newsdesk" | "dil" | "tamam" =>
   !p.uretim || p.uretim.yol.editoryal !== "atla" ? "newsdesk" : p.uretim.yol.dil !== "atla" ? "dil" : "tamam";

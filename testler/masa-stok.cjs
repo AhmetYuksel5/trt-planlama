@@ -60,7 +60,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(pk.durum === "uretimde" && !!pk.adim, "Ekonomi üretime aldı: " + pk.durum + " " + pk.adim);
   await git("#/paketler/t-ek-nd");
   const kimde = await p.locator("[data-asama-kimde]").first().innerText();
-  ok(kimde.includes("Ekonomi"), "üretimdeki ilk durak Ekonomi'de: " + kimde.replace(/\n/g, " "));
+  // Muhabiri belli paketin görevi kabulde verildi: üretim görev durağını geçip muhabirde başlar.
+  ok(pk.adim === "metin" && /Muhabir/.test(kimde), "görev durağı geçildi, sıra muhabirde: " + kimde.replace(/\n/g, " "));
 
   // Muhabirin "Yapıldı / Yapılmadı"sı masa paketinde yok
   await kim("pl1"); await git("#/paketler/t-hb-nd");

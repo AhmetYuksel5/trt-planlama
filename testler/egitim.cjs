@@ -50,11 +50,10 @@ const { chromium } = require(process.env.PW);
   ok(await vurgulu("pl1", "[data-uretim-sablon='u-gunluk']"), "balonda Newsdesk şablonu vurgulu");
   await pl.locator("[data-uretim-sablon=u-gunluk]").click();
   await pl.locator("[data-uretim-gonder]").click();
-  ok(await bekle("egGorev"), "üretim başlayınca görev adımı");
-  ok((await p.locator('[data-egitim-bolme="nd1"][data-egitim-aktif]').count()) === 1, "Newsdesk bölmesi etkin");
+  // Görev kabulde verildi: üretim görev durağını geçip doğrudan muhabirde başlar.
+  ok(await bekle("egParca"), "üretim başlayınca sıra muhabirde (görev durağı geçildi)");
+  ok((await p.locator('[data-egitim-bolme="mu1"][data-egitim-aktif]').count()) === 1, "muhabirin bölmesi etkin");
   ok((await p.locator("[data-egitim-adim]").count()) > 6, "üretim aşamaları listede");
-  await bolme("nd1").locator("[data-durak-gorev]").click();
-  ok(await bekle("egParca"), "görevden sonra muhabir parça gönderir");
   await mu.locator("[data-parca-ekle]").click();
   await mu.locator("[data-parca-adi]").fill("Metin");
   await mu.locator("[data-parca-metni]").fill("نص التقرير الأول");
