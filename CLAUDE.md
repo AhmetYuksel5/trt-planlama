@@ -853,6 +853,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kart (`bilesenler/ParcaliMetin.tsx`) paket sayfasında herkese açık, düğme
     sırası gelende; dil denetmeninin sayfasında parça başına kart
     (`dilParcaSirasi`).
+  - Aşama kutuları (kullanıcı: kutular yalnız aşamayı göstermesin, iş kutunun
+    içinde olsun, ilerleyince iş hangi kutudaysa oraya gidilsin; on iki ajanla
+    brifing `belgeler/asama-kutulari-brifing.md`, 1. parti; `bilesenler/
+    AsamaKutulari.tsx`): paket sayfasının "Aşamalar"ı dikey liste
+    (`asamaListesi`: balonlu, masa ve üretimdeki pakette `paketYolu`, balonsuz
+    onaylıda sade akışın üç adımı; `GorunenAsama.id`, `masa`), tek kutu açık.
+    Masaüstünde (961+) liste solda, içerik sağda; telefonda içerik açık kutunun
+    içinde, açık kutuya basınca kapanır. Şimdiki kutuda kimde satırı, teslim ve
+    sayfanın işlem kartı (`EylemKarti`, çerçevesiz); geçmiş kutuda adımı yapanlar
+    (künye satırları adımın türünden, `TUR_ROLLERI`), yoksa "Yapıldı"; gelecekte
+    "<birim> yapacak". Seçim geçmiş adımında (`paket:<id>:asama`); seçim yokken
+    şimdiki kutu açık, iş ilerleyince yeni kutuya kayılır. Eski `AsamaBuyuk` ve
+    "Şimdi kimde" bloğu kalktı. Test `testler/asama-kutu.cjs`.
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam

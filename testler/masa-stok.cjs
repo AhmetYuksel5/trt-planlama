@@ -59,7 +59,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const pk = (await durum()).paketler.find((x) => x.id === "t-ek-nd");
   ok(pk.durum === "uretimde" && !!pk.adim, "Ekonomi üretime aldı: " + pk.durum + " " + pk.adim);
   await git("#/paketler/t-ek-nd");
-  const kimde = await p.locator(".simdi-kimde").first().innerText();
+  const kimde = await p.locator("[data-asama-kimde]").first().innerText();
   ok(kimde.includes("Ekonomi"), "üretimdeki ilk durak Ekonomi'de: " + kimde.replace(/\n/g, " "));
 
   // Muhabirin "Yapıldı / Yapılmadı"sı masa paketinde yok
@@ -100,7 +100,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   for (const a of alanlar) { await p.click(`[data-prg-alan="${a}"]`); if (await p.locator('a[href="#/paketler/p-hidrojen"]').count()) bulundu = true; }
   ok(bulundu, "ekonomi paketi Ekonomi sayfasında");
   await git("#/paketler/p-hidrojen");
-  const asamalar = await p.locator("[data-masa-asama] > div b").allInnerTexts();
+  const asamalar = await p.locator("[data-asama-listesi] .asama-ad").allInnerTexts();
   ok(asamalar[1]?.includes("Ekonomi") && !asamalar.some((x) => /News Gathering|Newsdesk|Media/.test(x)), "ekonomi paketinde Planlama → Ekonomi, Newsdesk ve Media yok: " + asamalar.join(" | "));
   await kim("pl1"); await git("#/feature");
   ok((await p.locator('[data-paket="p-hidrojen"], a[href="#/paketler/p-hidrojen"]').count()) === 0, "Feature / stok sayfasında ekonomi paketi yok");

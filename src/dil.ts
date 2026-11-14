@@ -530,6 +530,9 @@ const M = {
   paketimYok: m("Henüz sana bağlı paket yok.", "لا توجد تقارير مرتبطة بك بعد.", "No packages linked to you yet."),
   onerilerim: m("Önerilerim", "مقترحاتي", "My proposals"),
   gorevlendirmelerim: m("Görevlendirmelerim", "تكليفاتي", "My assignments"),
+  akYapildi: m("Yapıldı", "تمّ", "Done"),
+  akYapacak: m("{birim} yapacak", "ستقوم به: {birim}", "{birim} will do this"),
+  akSirada: m("Henüz sırası gelmedi", "لم يحن دوره بعد", "Not reached yet"),
   simdiKimdeKisa: m("Şimdi: {birim}", "الآن لدى: {birim}", "Now with: {birim}"),
   siradaKisa: m("sırada: {adim}", "التالي: {adim}", "next: {adim}"),
 

@@ -938,24 +938,9 @@ a.rozet-plan { text-decoration: none; }
 .asama i.gecikti { background: var(--kotu); }
 .asama.iptal i { background: var(--yuzey-3); }
 
-.asama-buyuk { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ara-2); }
 /* Masa paketinin yolu akışın durak sayısı kadar: sabit beş sütun taşırdı. */
-.asama-buyuk[data-masa-asama] { grid-template-columns: repeat(auto-fit, minmax(7.5em, 1fr)); }
-.asama-buyuk > div { border-radius: var(--yaricap); padding: var(--ara-3); background: var(--yuzey-2); color: var(--sonuk); border: 1px solid transparent; min-width: 0; }
-.asama-buyuk > div b { display: block; font-size: var(--punto-kucuk); color: var(--murekkep); }
-.asama-buyuk > div small { display: block; font-size: var(--punto-mini); }
-.asama-buyuk > div.gecti { background: var(--iyi-sis); }
-.asama-buyuk > div.gecti small { color: var(--iyi); }
-.asama-buyuk > div.simdi { background: var(--vurgu-sis); border-color: var(--vurgu); }
-.asama-buyuk > div.simdi small { color: var(--vurgu); font-weight: 600; }
-.asama-buyuk > div.gecikti { background: var(--kotu-sis); border-color: var(--kotu); }
-.asama-buyuk > div.gecikti small { color: var(--kotu); font-weight: 600; }
-.asama-buyuk .no { font-size: var(--punto-mini); font-weight: 700; color: var(--silik); }
 
 
-.simdi-kimde { display: flex; gap: var(--ara-4); flex-wrap: wrap; align-items: center; padding: var(--ara-3) var(--ara-4); border-radius: var(--yaricap); background: var(--zemin); margin-top: var(--ara-3); }
-.simdi-kimde div small { display: block; color: var(--sonuk); font-size: var(--punto-mini); text-transform: uppercase; letter-spacing: .05em; }
-.simdi-kimde div b { font-size: var(--punto); }
 
 /* --- Hareket akışı --- */
 
@@ -1989,7 +1974,6 @@ button.ok-plana-eklendi.bag:focus-visible { outline: 2px solid var(--vurgu); }
   .sayfa-basi h1 { font-size: var(--punto-buyuk); }
   .sayfa-basi .ikon-kutu { display: none; }
   .sayfa-basi .sag-uc { margin-inline-start: 0; width: 100%; }
-  .asama-buyuk, .asama-buyuk[data-masa-asama] { grid-template-columns: minmax(0, 1fr); }
   .akis-kutulari { grid-template-columns: minmax(0, 1fr); }
   .cikti { padding: 24px 20px; }
   .cikti-sarici { padding: var(--ara-2); }
@@ -3865,3 +3849,30 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .hareke-alan > textarea { color: transparent; caret-color: var(--murekkep); background: transparent; resize: none; overflow: hidden; position: relative; }
 .hareke-alan > textarea::placeholder { color: var(--sonuk); }
 .hareke-alan > textarea::selection { color: transparent; }
+
+/* Aşama kutuları (AsamaKutulari.tsx): dikey liste, tek kutu açık; masaüstünde içerik sağ sütunda. */
+.asama-kutulari { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: var(--ara-3); min-width: 0; }
+.asama-baslik { font-size: var(--punto-kucuk); margin: 0 0 var(--ara-2); color: var(--sonuk); font-weight: 600; }
+.asama-duzen { display: grid; gap: var(--ara-3); min-width: 0; }
+@media (min-width: 961px) { .asama-duzen { grid-template-columns: minmax(14em, 18em) minmax(0, 1fr); align-items: start; } }
+.asama-listesi { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); min-width: 0; }
+.asama-kutu { border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey-2); min-width: 0; }
+.asama-kutu-bas { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: var(--ara-2); inline-size: 100%; min-block-size: 44px; padding: var(--ara-2) var(--ara-3); cursor: pointer; color: var(--sonuk); }
+.asama-kutu-bas:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; border-radius: var(--yaricap); }
+.asama-ad { flex: 1; min-width: 0; color: var(--murekkep); font-weight: 600; font-size: var(--punto-kucuk); overflow-wrap: anywhere; }
+.asama-ad small { color: var(--sonuk); font-weight: 400; }
+.asama-masa { font-size: var(--punto-mini); color: var(--sonuk); white-space: nowrap; }
+.asama-kutu.gecti .asama-ikon { color: var(--iyi); }
+.asama-kutu.simdi { border-color: var(--vurgu); background: var(--vurgu-sis); }
+.asama-kutu.simdi .asama-ikon { color: var(--vurgu); }
+.asama-kutu.gecikti { border-color: var(--kotu); background: var(--kotu-sis); }
+.asama-kutu.gecikti .asama-ikon { color: var(--kotu); }
+.asama-kutu.acik { box-shadow: inset 3px 0 0 var(--vurgu); }
+[dir="rtl"] .asama-kutu.acik { box-shadow: inset -3px 0 0 var(--vurgu); }
+.asama-icerik { padding: 0 var(--ara-3) var(--ara-3); min-width: 0; }
+.asama-yan { padding: var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.asama-yan h3 { margin: 0 0 var(--ara-2); font-size: var(--punto); }
+/* İşlem kartı kutunun içinde: çerçevesi ve başlığı tekrar olurdu. */
+.asama-icerik > .kart { border: 0; padding: 0; background: none; box-shadow: none; }
+.asama-icerik > .kart > :is(header, .kart-bas, h2:first-child) { display: none; }
+.asama-kimde { margin: 0 0 var(--ara-2); font-size: var(--punto-kucuk); }

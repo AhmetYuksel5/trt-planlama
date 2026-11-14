@@ -436,38 +436,6 @@ export function AsamaCubugu({ paket }: { paket: Paket }) {
   );
 }
 
-/** Detay ekranındaki büyük gösterim: paketin yolu, adım adım. */
-export function AsamaBuyuk({ paket }: { paket: Paket }) {
-  const { t } = useDil();
-  if (sadeAkis(paket))
-    return (
-      <div className="asama-buyuk" data-sade-asama={sadeSira(paket)}>
-        {SADE_ASAMA_ADI.map((a, i) => {
-          const durum = sadeDurum(paket, i);
-          return (
-            <div key={a} className={durum}>
-              <span className="no">{i + 1}</span>
-              <b>{t(a)}</b>
-              <small>{t(durum === "gecti" ? "asamaGecti" : durum === "simdi" ? "asamaSimdi" : "asamaBekliyor")}</small>
-            </div>
-          );
-        })}
-      </div>
-    );
-  // Paketin kendi yolu: masa paketinde masanın üretime alması, balonla başlamışsa balondaki duraklar.
-  return (
-    <div className="asama-buyuk" data-masa-asama>
-      {paketYolu(paket).map((a, i) => (
-        <div key={i} className={a.durum}>
-          <span className="no">{i + 1}</span>
-          <b>{a.ad}</b>
-          <small>{t(a.durum === "gecti" ? "asamaGecti" : a.durum === "simdi" ? "asamaSimdi" : a.durum === "gecikti" ? "gecikti" : "asamaBekliyor")}</small>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* --- Kısa bildirim: eylemin sonucunu söyleyip kayboluyor. --- */
 
 /** Bildirimdeki tek düğme ("Geri al"): yanlış basılan kapatma onaysız geri alınsın. */

@@ -6,10 +6,10 @@ import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
 import { Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimTuru, parcaliMi, geriHedefi, durakSahibi, geciktiMi, gorunenSahip, paketSahibi, sonrakiAdim, stokDurumu } from "../akis";
+import { adimAdi, adimTuru, parcaliMi, geriHedefi, geciktiMi, paketSahibi, stokDurumu } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
-import { AsamaBuyuk, Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
@@ -27,6 +27,7 @@ import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { PaketKunyeKarti } from "../bilesenler/Kunye";
+import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -45,9 +46,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
   const stok = stokDurumu(paket);
   const yayinPlani = planBul(v, paket.yayinlandi?.planId);
   const oneri = oneriBul(v, paket.oneriId);
-  // Newsdesk yokken onaylı paket muhabirde görünüyor (akis.ts → sadeAkis).
-  const sahip = gorunenSahip(paket);
-  const sonraki = paket.durum === "uretimde" ? sonrakiAdim(paket) : null;
   const hareketler = v.hareketler.filter((h) => h.paketId === paket.id || (oneri && h.oneriId === oneri.id));
 
   return (
@@ -78,42 +76,10 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
         </NotKutu>
       )}
 
-      <Kart baslik={t("asamalar")}>
-        <AsamaBuyuk paket={paket} />
-        <div className="simdi-kimde">
-          <div>
-            <small>{t("simdiKimde")}</small>
-            <b>
-              {sahip ? birimAdi(sahip) : stok ? t(STOK_DURUM_ADI[stok]) : t(paket.durum === "iptal" ? "pdIptal" : "pdTamamlandi")}
-              {sahip === "muhabir" && muhabir && ` · ${ad(muhabir)}`}
-            </b>
-          </div>
-          {paket.adim && (
-            <div>
-              <small>{t("buAdim")}</small>
-              <b>{adimAdi(paket.adim, paket)}</b>
-            </div>
-          )}
-          {sonraki && (
-            <div>
-              <small>{t("sirada")}</small>
-              <b>{sonraki === "tamam" ? t(paket.stok ? "sdStokta" : "pdTamamlandi") : `${adimAdi(sonraki, paket)} · ${birimAdi(durakSahibi(paket, sonraki))}`}</b>
-            </div>
-          )}
-          {paket.teslim && (
-            <div>
-              <small>{t("teslim")}</small>
-              <b className={geciktiMi(paket) ? "kotu-yazi" : ""}>
-                {tarihYaz(yerelGun(paket.teslim), dil, "kisa")} {saatYaz(paket.teslim, dil)}
-              </b>
-            </div>
-          )}
-        </div>
-      </Kart>
+      <AsamaKutulari paket={paket} eylem={<EylemKarti ben={ben} paket={paket} />} />
 
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <EylemKarti ben={ben} paket={paket} />
           <UretimYoluKarti ben={ben} paket={paket} />
           {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
           <BaskaMuhabireVer ben={ben} paket={paket} />

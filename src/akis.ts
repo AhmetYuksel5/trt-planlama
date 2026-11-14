@@ -259,8 +259,12 @@ export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis
  * masanın üretime alması, akışın durakları ve tamamlanma.
  */
 export interface GorunenAsama {
+  /** Adımın kimliği: "planlama", "masa", durak kimliği ya da "tamam"; sade akışta "sade-…". Aşama kutusu içeriğini bununla seçer. */
+  id: string;
   ad: string;
   durum: "" | "gecti" | "simdi" | "gecikti";
+  /** Adımı yapacak birim (kutunun satırında); "tamam"da yok. */
+  masa?: BirimId;
 }
 export const masaYolu = (p: Paket): GorunenAsama[] | null => (masaPaketi(p) && p.durum !== "iptal" ? paketYolu(p) : null);
 
@@ -274,19 +278,39 @@ export const masaYolu = (p: Paket): GorunenAsama[] | null => (masaPaketi(p) && p
 export const paketYolu = (p: Paket): GorunenAsama[] => {
   const yol = uretimYolu(p);
   const masa = masaPaketi(p);
-  const bas = [metin("asPlanlama"), ...(masa ? [metin("asMasaUretimeAlma", undefined, { birim: birimAdi(kolSahibi(p.tur)) })] : [])];
-  const adlar = [...bas, ...yol.map((a) => adimAdi(a, p)), metin("pdTamamlandi")];
-  if (p.durum === "iptal") return adlar.map((ad) => ({ ad, durum: "" }));
+  const bas: Omit<GorunenAsama, "durum">[] = [
+    { id: "planlama", ad: metin("asPlanlama"), masa: "planlama" },
+    ...(masa ? [{ id: "masa", ad: metin("asMasaUretimeAlma", undefined, { birim: birimAdi(kolSahibi(p.tur)) }), masa: kolSahibi(p.tur) }] : []),
+  ];
+  const adimlar: Omit<GorunenAsama, "durum">[] = [...bas, ...yol.map((a) => ({ id: a, ad: adimAdi(a, p), masa: durakSahibi(p, a) })), { id: "tamam", ad: metin("pdTamamlandi") }];
+  if (p.durum === "iptal") return adimlar.map((a) => ({ ...a, durum: "" }));
   const simdi =
     p.durum === "tamamlandi"
-      ? adlar.length
+      ? adimlar.length
       : p.durum === "uretimde" && p.adim
         ? bas.length + Math.max(0, yol.indexOf(p.adim))
         : p.durum === "onaylandi" && masa
           ? 1
           : 0;
   const gec = geciktiMi(p);
-  return adlar.map((ad, i) => ({ ad, durum: i < simdi ? "gecti" : i === simdi ? (gec ? "gecikti" : "simdi") : "" }));
+  return adimlar.map((a, i) => ({ ...a, durum: i < simdi ? "gecti" : i === simdi ? (gec ? "gecikti" : "simdi") : "" }));
+};
+
+/*
+ * Aşama kutularının listesi (belgeler/asama-kutulari-brifing.md): üretime
+ * girmiş, masa ya da balonlu pakette yol; balonsuz onaylı pakette sade akışın
+ * üç adımı (plana eklendi, muhabirde, tamamlandı).
+ */
+export const asamaListesi = (p: Paket): GorunenAsama[] => {
+  if (!sadeAkis(p)) return paketYolu(p);
+  const sira = sadeSira(p);
+  const masalar: (BirimId | undefined)[] = ["planlama", "muhabir", undefined];
+  return SADE_ASAMA_ADI.map((a, i) => ({
+    id: ["sade-planda", "sade-muhabirde", "sade-tamam"][i],
+    ad: metin(a),
+    masa: masalar[i],
+    durum: i < sira || sira === 2 ? "gecti" : i === sira ? "simdi" : "",
+  }));
 };
 
 /* --- Stok haberleri --- */
