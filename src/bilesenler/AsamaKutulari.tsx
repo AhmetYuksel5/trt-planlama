@@ -45,7 +45,7 @@ function useMasaustu() {
 }
 
 // Geçmiş kutuda hangi künye satırları: adımın türünden (durak kimliği yola göre değişiyor).
-const TUR_ROLLERI: Record<string, (KunyeRolu | "oneren" | "muhabir")[]> = {
+export const TUR_ROLLERI: Record<string, (KunyeRolu | "oneren" | "muhabir")[]> = {
   planlama: ["oneren"],
   "sade-planda": ["oneren", "gorevlendiren"],
   "sade-muhabirde": ["muhabir"],
@@ -62,7 +62,7 @@ const TUR_ROLLERI: Record<string, (KunyeRolu | "oneren" | "muhabir")[]> = {
   "oz-gorevli": ["gorevlendiren"],
   "oz-hazirlaniyor": ["muhabir"],
 };
-const SON_KUTU = new Set(["tamam", "sade-tamam", "oz-hazir"]);
+export const SON_KUTU = new Set(["tamam", "sade-tamam", "oz-hazir"]);
 
 /*
  * Özel yayın paketi kendi aşamalarıyla yürüyor (ozel.ts): öneri, onay,
@@ -96,7 +96,7 @@ const gfxKutusu = (p: Paket): GorunenAsama | null => {
   };
 };
 
-const listeKur = (p: Paket): GorunenAsama[] => {
+export const listeKur = (p: Paket): GorunenAsama[] => {
   const liste = p.ozelId ? ozelListesi(p) : asamaListesi(p);
   const gfx = gfxKutusu(p);
   if (!gfx) return liste;
@@ -538,7 +538,7 @@ function GorunumAyari({ gorunum, degistir }: { gorunum: Gorunum; degistir: (g: G
 }
 
 /* Süre kısa ve kaba: "25 dk", "3 sa", "2 gün"; dakikayı saatin yanına eklemek satırı uzatıyordu. */
-const sureYazisi = (ms: number, t: ReturnType<typeof useDil>["t"]) => {
+export const sureYazisi = (ms: number, t: ReturnType<typeof useDil>["t"]) => {
   const dk = Math.round(ms / 60_000);
   if (dk < 60) return t("akDk", { n: dk });
   const sa = Math.round(dk / 60);

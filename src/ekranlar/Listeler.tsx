@@ -1,4 +1,5 @@
 import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
+import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { useAdimDurumu } from "../yol";
 import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
@@ -94,7 +95,20 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
             {t("hepsi")} <em>{gorunen.length}</em>
           </button>
         </div>
-        <PaketTablosu paketler={liste} d={v} sutunlar={["kod", "baslik", "muhabir", "tur", "plan", "asama", "kimde", "teslim"]} />
+        {/* Biten paketlerin sekmesinde tablo yerine ince şeritler (kullanıcı): basınca yapım aşamaları. */}
+        {durum === "yapildi" || durum === "yapilmadi" || durum === "tamamlandi" ? (
+          liste.length ? (
+            <div className="bp-liste" data-bitmis-liste>
+              {liste.map((p) => (
+                <BitmisPaketSeridi key={p.id} ben={ben} paket={p} />
+              ))}
+            </div>
+          ) : (
+            <Bos metin={t("kayitYok")} />
+          )
+        ) : (
+          <PaketTablosu paketler={liste} d={v} sutunlar={["kod", "baslik", "muhabir", "tur", "plan", "asama", "kimde", "teslim"]} />
+        )}
       </Kart>
     </>
   );

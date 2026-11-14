@@ -1,4 +1,5 @@
 import { AnildigimNotlar } from "../../bilesenler/Anma";
+import { BitmisPaketSeridi } from "../../bilesenler/BitmisPaket";
 import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
 import { ArrowRight, CheckCircle, Lightbulb, Newspaper } from "lucide-react";
 import { adimAdi, adimTuru, geciktiMi, type UretimAdimi } from "../../akis";
@@ -303,7 +304,7 @@ function PaketSatiri({ ben, paketId }: { ben: Kisi; paketId: string }) {
  * haber tamamlanmış sayılır ama paketi olmadığı için burada yok.
  */
 export function MuhabirHaberlerim({ ben }: { ben: Kisi }) {
-  const { t, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
   const liste = v.paketler
     .filter(
@@ -322,24 +323,13 @@ export function MuhabirHaberlerim({ ben }: { ben: Kisi }) {
       {liste.length === 0 ? (
         <Bos metin={t("paketimYok")} />
       ) : (
-        <ul className="liste" data-haberlerim>
+        <div className="bp-liste" data-haberlerim>
           {liste.map((p) => (
-            <li key={p.id} data-haber={p.id}>
-              <div className="ad">
-                <a
-                  href={
-                    p.oneriId ? `#/oneriler/${p.oneriId}` : `#/paketler/${p.id}`
-                  }
-                >
-                  <Icerik blok>{p.baslik}</Icerik>
-                </a>
-                <small>
-                  {tarihYaz(p.guncelleme.slice(0, 10), dil, "kisa")}
-                </small>
-              </div>
-            </li>
+            <div key={p.id} data-haber={p.id}>
+              <BitmisPaketSeridi ben={ben} paket={p} />
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </Kart>
   );

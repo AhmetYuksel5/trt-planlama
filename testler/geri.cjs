@@ -79,6 +79,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   for (const x of await p.locator("[data-paket-sonucu]").evaluateAll((l) => l.map((e) => e.getAttribute("data-paket-sonucu")))) {
     await p.locator(`[data-paket-sonucu="${x}"]`).click();
     await p.waitForTimeout(200);
+    // Biten paketlerin sekmesinde şerit: sayfaya bağlantı şerit açılınca.
+    const serit = p.locator(".bp-bas").first();
+    if (await serit.count()) { await serit.click(); await p.waitForTimeout(150); }
     if (await gorunurPaket().count()) { sonucu = x; break; }
   }
   ok(!!sonucu, "paketi olan süzgeç seçildi: " + sonucu);

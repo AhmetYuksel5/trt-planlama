@@ -27,6 +27,8 @@ import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
+import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
+import { bitmisMi } from "../bitmisPaket";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -71,7 +73,15 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
         </NotKutu>
       )}
 
-      <AsamaKutulari ben={ben} paket={paket} kutu={kutu} eylem={<EylemKarti ben={ben} paket={paket} />} />
+      {/* Biten paket: aşama kutuları yerine yapım aşamalarının ince özeti; kalan işlem (geri alma, masa kararı) altında. */}
+      {bitmisMi(paket) ? (
+        <>
+          <BitmisPaketSeridi ben={ben} paket={paket} sayfada />
+          <EylemKarti ben={ben} paket={paket} />
+        </>
+      ) : (
+        <AsamaKutulari ben={ben} paket={paket} kutu={kutu} eylem={<EylemKarti ben={ben} paket={paket} />} />
+      )}
 
       <div className="iz iz-ana-yan">
         <div className="iz">

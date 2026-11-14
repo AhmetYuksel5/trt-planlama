@@ -3947,3 +3947,48 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .egitim-vurgu { outline: 3px solid var(--uyari, #b54708) !important; outline-offset: 3px; border-radius: var(--yaricap); animation: egitim-nabiz 1.4s ease-in-out infinite; }
 @keyframes egitim-nabiz { 50% { outline-color: transparent; } }
 @media (prefers-reduced-motion: reduce) { .egitim-vurgu { animation: none; } }
+
+/* Biten paket şeridi (BitmisPaket.tsx): kapalıyken tek satır, açılınca yapım aşamaları. */
+.bp-liste { display: grid; border: 1px solid var(--cizgi); border-radius: var(--yaricap); overflow: hidden; background: var(--yuzey); }
+.bp-serit + .bp-serit, .bp-liste > [data-haber] + [data-haber] { border-block-start: 1px solid var(--cizgi); }
+.bp-bas { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 16px; gap: var(--ara-3); align-items: center; inline-size: 100%; min-block-size: 48px; padding: var(--ara-2) var(--ara-3); cursor: pointer; }
+.bp-bas:hover, .bp-serit.acik > .bp-bas { background: var(--yuzey-2); }
+.bp-bas:focus-visible { outline: 2px solid var(--vurgu); outline-offset: -2px; }
+.bp-nokta { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--iyi); }
+.bp-nokta.stok { background: var(--sonuk); }
+.bp-nokta.yapilmadi { background: var(--kotu); }
+.bp-baslik { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: end; }
+.bp-alt { display: flex; gap: var(--ara-3); align-items: baseline; white-space: nowrap; }
+.bp-kim { color: var(--sonuk); font-size: var(--punto-kucuk); }
+.bp-tarih { color: var(--sonuk); font-size: var(--punto-kucuk); font-variant-numeric: tabular-nums; }
+.bp-ok { color: var(--sonuk); transition: transform .15s; }
+.bp-serit.acik .bp-ok { transform: rotate(90deg); }
+[dir="rtl"] .bp-serit.acik .bp-ok { transform: scaleX(-1) rotate(90deg); }
+@media (max-width: 560px) {
+  .bp-bas { grid-template-columns: 10px minmax(0, 1fr) 16px; grid-template-areas: "n b o" ". m o"; row-gap: 2px; }
+  .bp-nokta { grid-area: n; } .bp-baslik { grid-area: b; } .bp-ok { grid-area: o; }
+  .bp-alt { grid-area: m; justify-content: space-between; }
+}
+.bp-ic { padding: var(--ara-1) var(--ara-3) var(--ara-3); padding-inline-start: calc(var(--ara-3) + 22px); display: grid; gap: var(--ara-3); min-width: 0; }
+.bp-ic.sayfada { padding: var(--ara-3); padding-inline-start: var(--ara-3); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.bp-ic-baslik { margin: 0; font-size: var(--punto-kucuk); color: var(--sonuk); font-weight: 600; }
+.bp-cizgi { list-style: none; margin: 0; padding: 0; display: grid; }
+.bp-cizgi li { display: grid; grid-template-columns: 12px minmax(0, 10rem) minmax(0, 1fr) auto; gap: var(--ara-2); align-items: baseline; padding-block: 6px; border-block-end: 1px dashed var(--cizgi); font-size: var(--punto-kucuk); }
+.bp-cizgi li:last-child { border-block-end: 0; }
+.bp-i { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--iyi); }
+.bp-cizgi li.yan .bp-i { background: transparent; border: 1.5px dashed var(--iyi); }
+.bp-ad { font-weight: 600; overflow-wrap: anywhere; }
+.bp-yapan { min-width: 0; overflow-wrap: anywhere; }
+.bp-yapan small { color: var(--sonuk); }
+.bp-zaman { color: var(--sonuk); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bp-iade { color: var(--kotu); font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
+@media (max-width: 560px) {
+  .bp-ic { padding-inline-start: var(--ara-3); }
+  .bp-cizgi li { grid-template-columns: 12px minmax(0, 1fr) auto; }
+  .bp-yapan { grid-column: 2 / -1; }
+}
+.bp-ciktilar { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; }
+.bp-kod { font-family: ui-monospace, monospace; font-size: var(--punto-mini); color: var(--sonuk); }
+.bp-not { margin: 0; padding: var(--ara-2); border-radius: var(--yaricap); background: var(--uyari-sis, var(--zemin)); font-size: var(--punto-kucuk); overflow-wrap: anywhere; }
+.bp-sayfa { justify-self: start; display: inline-flex; align-items: center; gap: 2px; font-size: var(--punto-kucuk); min-block-size: 32px; }
+@media (prefers-reduced-motion: reduce) { .bp-ok { transition: none; } }

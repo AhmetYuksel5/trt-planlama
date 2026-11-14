@@ -928,6 +928,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Masaüstünde görünüm ayarları (⚙ `data-ak-gorunum`: yazı boyu, Arapça metin
     boyu, sıklık, adım sütunu, karşıtlık; tarayıcıda
     `trt-planlama-asama-gorunum`).
+  - Biten paket şeridi (kullanıcı: aşama bittikten sonra kutular yerine ince,
+    düzenli şerit; başlık, muhabir, tarih; basınca yapım aşamaları, birim ne
+    kadar görmeliyse o kadar; `bilesenler/BitmisPaket.tsx`, kurallar
+    `bitmisPaket.ts`): tamamlanan ya da "yapılmadı"yla kapanan paket
+    (`bitmisMi`). Kapalı satırda sonucun noktası (yeşil yayın, gri stok, kırmızı
+    yapılmadı), başlık, muhabir, tarih; açılınca aşama kutularının listesi
+    (`listeKur`) zaman çizgisi olarak: yapan künyeden (`TUR_ROLLERI`), saat,
+    süre ve ↶ iade (`asamaIzi`), son metin, video, klip kodu, ekip notları,
+    "Sayfayı aç". Görünürlük `bitmisGorunum`: süre Planlama, kademe ve tam
+    yöneticide hepsi, masada yalnız kendi aşaması; ekip notu `asamaNotuGorur`;
+    muhabir süre ve not görmez; muhasebeci yalnız yapanlar. Paket sayfasında
+    aşama kutularının yerinde aynı içerik ve tam künye; Paketler'in Yapılan /
+    Yapılmayan / Tamamlandı sekmelerinde ve muhabirin Haberlerim'inde tablo
+    yerine şerit listesi. Test `testler/bitmis-paket.cjs`.
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam
