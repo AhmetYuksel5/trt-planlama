@@ -117,12 +117,84 @@ const { chromium } = require(process.env.PW);
     ok((await p.locator("[data-asama-kutu].acik").count()) === 0, "iptal pakette kutu açılmıyor");
   }
 
-  // Dil denetmeni: parça paket sayfasındaki satırın aynısı, onay sorusu yok.
+
+  // 3. parti: süre ve iade izi, ekip notu, derin bağlantı, "Şimdi" satırı, fark, taslak, görünüm.
+  await kim("pl1"); await p.setViewportSize({ width: 1440, height: 1000 });
+  await git("#/paketler/" + pid);
+  {
+    const d = await p.evaluate((k) => JSON.parse(localStorage.getItem(k)), K);
+    const x = d.paketler.find((y) => y.id === pid);
+    const iz = x.asamaIzi || {};
+    ok(Object.values(iz).some((a) => a.sure >= 0) && Object.values(iz).some((a) => a.giris), "adım değişince aşama izi yazıldı: " + JSON.stringify(iz));
+  }
+  // Ekip notu: yazılır, muhabir görmez.
+  const acikKutu = await p.locator("[data-asama-kutu].acik").getAttribute("data-asama-kutu");
+  await p.locator("[data-asama-not-girdi]").first().fill("ملاحظة داخلية للفريق");
+  await p.locator("[data-asama-not-ekle]").first().click(); await p.waitForTimeout(300);
+  ok((await p.locator(`[data-asama-notlari="${acikKutu}"] [data-asama-notu]`).count()) === 1, "ekip notu kutuya yazıldı");
+  {
+    const d = await p.evaluate((k) => JSON.parse(localStorage.getItem(k)), K);
+    ok((d.asamaNotlari || []).some((n) => n.paketId === pid && n.asama === acikKutu), "not ayrı kayıtta (asamaNotlari)");
+  }
+  // "Şimdi" satırı: başka kutuya bakınca çıkar, basınca işin kutusuna döner.
+  await p.locator('[data-asama-kutu="planlama"] button').click(); await p.waitForTimeout(200);
+  ok((await p.locator("[data-asama-simdi]").count()) === 1, "başka kutuda 'Şimdi: X' satırı");
+  await p.locator("[data-asama-simdi]").click(); await p.waitForTimeout(200);
+  ok((await p.locator(`[data-asama-kutu="${acikKutu}"].acik`).count()) === 1 && (await p.locator("[data-asama-simdi]").count()) === 0, "'Şimdi' satırı işin kutusuna götürdü");
+  // Derin bağlantı: adresin kutusu açılır.
+  await git(`#/paketler/${pid}/planlama`);
+  ok((await p.locator('[data-asama-kutu="planlama"].acik').count()) === 1, "#/paketler/<id>/<kutu> o kutuyu açıyor");
+  // Görünüm ayarları: yazı boyu ve sıkı düzen tarayıcıda kalır.
+  await p.click("[data-ak-gorunum]");
+  await p.click('[data-ak-ayar="yazi-buyut"]');
+  await p.click('[data-ak-ayar="siklik-siki"]');
+  await git("#/paketler/" + pid);
+  ok((await p.locator('[data-asama-kutulari][data-siklik="siki"]').count()) === 1, "görünüm ayarı kaldı");
+  const boy = await p.locator("[data-asama-kutulari]").evaluate((e) => getComputedStyle(e).getPropertyValue("--ak-yazi").trim());
+  ok(boy === "1.15", "yazı boyu büyüdü: " + boy);
+  await p.evaluate(() => localStorage.removeItem("trt-planlama-asama-gorunum"));
+
+
+  // Fark görünümü ve iade sayacı: editördeki parçanın muhabirden gelen hali farklı.
+  await kim("pl1"); await git("#/paketler");
+  const ed = await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const x = d.paketler.find((y) => y.durum === "uretimde" && y.uretim && (y.parcalar || []).some((z) => z.asama === "newsdesk"));
+    if (!x) return null;
+    const pr = x.parcalar.find((z) => z.asama === "newsdesk");
+    pr.ilk = "كلمة قديمة " + pr.metin;
+    localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));
+    return { id: x.id, parca: pr.id, kisi: x.uretim.yol.editoryal === "planlama" ? "pl1" : "nd1", adim: x.adim };
+  }, K);
+  if (ed) {
+    await kim(ed.kisi); await git("#/paketler/" + ed.id);
+    const fark = p.locator(`[data-parca-farki]`).first();
+    ok((await fark.count()) === 1, "editördeki parçada 'Değişiklikleri göster'");
+    await fark.locator("summary").click();
+    ok((await fark.locator("del").count()) >= 1, "silinen sözcük üstü çizili");
+    await p.locator("[data-parca-iade]").first().click();
+    await p.locator("[data-parca-iade-gerekce]").fill("ينقص المصدر");
+    await p.locator("[data-parca-iade-gonder]").click(); await p.waitForTimeout(400);
+    const iz = await p.evaluate(([k, id]) => JSON.parse(localStorage.getItem(k)).paketler.find((x) => x.id === id).asamaIzi, [K, ed.id]);
+    ok(iz?.[ed.adim]?.iade === 1, "parça iadesi metin aşamasının iadesini artırdı: " + JSON.stringify(iz));
+    ok((await p.locator(`[data-asama-kutu="${ed.adim}"] .asama-iade`).count()) === 1, "kutu satırında iade sayısı");
+  } else ok(false, "demoda editörde bekleyen parça yok");
+  // Muhabir: ekip notunu görmez.
+  const muh = await p.evaluate(([k, id]) => JSON.parse(localStorage.getItem(k)).paketler.find((x) => x.id === id).muhabirId, [K, pid]);
+  if (muh) {
+    await kim(muh); await git("#/paketler/" + pid);
+    ok((await p.locator("[data-asama-notlari]").count()) === 0, "muhabir ekip notunu görmüyor");
+  }
+
+  // Dil denetmeni: parça paket sayfasındaki satırın aynısı, onay sorusu yok; yazdığı taslak kalır, fark görünür.
   let soru = 0;
   p.on("dialog", () => soru++);
   await kim("ou2"); await git("#/");
   const dd = p.locator("[data-dd-metin] [data-parca-alan]").first();
   if (await dd.count()) {
+    await dd.fill("نص معدل من المدقق اللغوي");
+    await git("#/");
+    ok((await p.locator("[data-dd-metin] [data-parca-alan]").first().inputValue()) === "نص معدل من المدقق اللغوي", "yarım düzeltme taslak olarak kaldı");
     await p.locator("[data-dd-metin] [data-dd-gonder]").first().click(); await p.waitForTimeout(400);
     ok(soru === 0, "dil denetiminde gönderirken onay sorulmadı");
   } else ok(false, "dil denetmeninin sırasında parça yok");

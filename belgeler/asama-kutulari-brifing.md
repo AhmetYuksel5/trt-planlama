@@ -190,6 +190,6 @@ ilerletmesiyle sayfanın zıplaması.
    ilk hali ve fark görünümü, bildirimden kutuya derin bağlantı, "Şimdi: X ›"
    satırı, taslak saklama; masaüstü iki sütun.
 
-1 ve 2. parti yapıldı (14 Kasım); 3. parti sırada.
+Üç parti de yapıldı (14 Kasım).
 
 Her parti 390 pikselde Türkçe ve Arapça taşmasız; test `testler/asama-kutu.cjs`.

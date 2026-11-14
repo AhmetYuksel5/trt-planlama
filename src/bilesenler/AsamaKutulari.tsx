@@ -1,8 +1,8 @@
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
-import { CircleCheck, Circle, CircleDot, CircleAlert, Copy } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { CircleCheck, Circle, CircleDot, CircleAlert, Copy, Lock, SlidersHorizontal, Trash2, Undo2 } from "lucide-react";
 import { asamaListesi, durakBul, stokDurumu, type GorunenAsama } from "../akis";
 import { birimAdi } from "../yapi";
-import { metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
+import { metin as dilMetni, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type BirimId, type Kisi, type KunyeRolu, type Paket } from "../veri";
 import { paketKunyesi, type KunyeSatiri } from "../kunye";
 import { useAdimDurumu } from "../yol";
@@ -10,10 +10,11 @@ import { yerelGun } from "../tarih";
 import { ASAMA_ADI, PARCA_ADI, asamaYolda, gfxAcik, gfxBekliyor, istisnaAsamalari, sablonAdi, uretimSablonlari } from "../uretim";
 import { OZEL_PAKET_ASAMALARI, ozelPaketAsamasi } from "../ozel";
 import { STOK_DURUM_ADI } from "../etiketler";
-import { gfxTamamla } from "../eylemler";
-import { gfxYapabilir } from "../yetki";
+import { asamaNotuEkle, asamaNotuSil, asamaNotuSilebilir, gfxTamamla } from "../eylemler";
+import { asamaNotuGorur, gfxYapabilir } from "../yetki";
 import { KararNotlari } from "../ekranlar/haftalik/Kalem";
 import { KunyeListesi } from "./Kunye";
+import { AnmaGirdisi } from "./Anma";
 import { HarekeliMetin } from "./Hareke";
 import { PAKET_ASAMA_ADI } from "./OzelGorevler";
 import { UretimBalonuDugmesi } from "./UretimBalonu";
@@ -108,7 +109,7 @@ const listeKur = (p: Paket): GorunenAsama[] => {
 const DurumIkonu = ({ durum }: { durum: GorunenAsama["durum"] }) =>
   durum === "gecti" ? <CircleCheck size={18} /> : durum === "simdi" ? <CircleDot size={18} /> : durum === "gecikti" ? <CircleAlert size={18} /> : <Circle size={18} />;
 
-export function AsamaKutulari({ ben, paket, eylem }: { ben: Kisi; paket: Paket; eylem: ReactNode }) {
+export function AsamaKutulari({ ben, paket, eylem, kutu }: { ben: Kisi; paket: Paket; eylem: ReactNode; kutu?: string }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const masaustu = useMasaustu();
@@ -120,9 +121,32 @@ export function AsamaKutulari({ ben, paket, eylem }: { ben: Kisi; paket: Paket; 
   const bitti = liste.filter((a) => a.durum === "gecti").at(-1);
   const varsayilan = iptal ? "" : gfxSirasi ? "gfx" : (simdi?.id ?? bitti?.id ?? "");
   // "" kişinin seçimi yok demek: şimdiki kutuyu izler. "-" telefonda bütün kutular kapalı.
-  const [secim, setSecim] = useAdimDurumu<string>(`paket:${paket.id}:asama`, "");
+  // Bildirimden gelen adres kutuyu söylüyor (`#/paketler/<id>/<kutu>`): o kutu seçili açılır.
+  const [secim, setSecim] = useAdimDurumu<string>(`paket:${paket.id}:asama`, kutu ?? "");
   const acik = iptal || secim === "-" ? "" : liste.some((a) => a.id === secim) ? secim : varsayilan;
   const kutular = useRef<HTMLOListElement>(null);
+  const [gorunum, setGorunum] = useGorunum();
+
+  // Aynı sayfadayken başka bildirime basılınca da o kutu açılsın.
+  useEffect(() => {
+    if (!kutu) return;
+    setSecim(kutu);
+    kutular.current?.querySelector(`[data-asama-kutu="${kutu}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [kutu]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Açık tuttuğu kutuyu bir başkası geçirdiyse kişi bilsin: düğmeler kalkıyor, sayfa kaymıyor.
+  const acikDurum = liste.find((a) => a.id === acik)?.durum;
+  const oncekiDurum = useRef({ id: acik, durum: acikDurum });
+  const [gecen, setGecen] = useState<string | null>(null);
+  useEffect(() => {
+    const o = oncekiDurum.current;
+    oncekiDurum.current = { id: acik, durum: acikDurum };
+    if (o.id !== acik) return setGecen(null);
+    if ((o.durum === "simdi" || o.durum === "gecikti") && acikDurum === "gecti") {
+      const son = v.hareketler.filter((h) => h.paketId === paket.id).at(-1);
+      setGecen(son && son.kisiId !== ben.id ? son.kisiId : null);
+    }
+  }, [acik, acikDurum]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // İş ilerleyince (kişinin kendi işiyle ya da başkasınınkiyle) yeni kutuya kayılır; seçim yapılmışsa dokunulmaz.
   const onceki = useRef(varsayilan);
@@ -264,6 +288,36 @@ export function AsamaKutulari({ ben, paket, eylem }: { ben: Kisi; paket: Paket; 
     return <p className="sonuk">{a.masa ? t("akYapacak", { birim: birimAdi(a.masa) }) : t("akSirada")}</p>;
   };
 
+  // Kutunun içi: geçildi uyarısı, adımın işi ya da izi, ekibe özel not.
+  const kutuIci = (a: GorunenAsama) => (
+    <>
+      {gecen && a.id === acik && (
+        <p className="asama-gecildi" data-asama-gecildi>
+          {t("akGecildi", { kisi: ad(kisiBul(v, gecen)) })}
+        </p>
+      )}
+      {icerik(a)}
+      {asamaNotuGorur(ben) && a.durum && <AsamaNotlari ben={ben} paket={paket} asama={a.id} />}
+    </>
+  );
+
+  // Kutunun satırında aşamanın süresi ve iadesi (asamaIzi.ts); izi olmayan eski pakette boş.
+  const sure = (a: GorunenAsama): ReactNode => {
+    const iz = paket.asamaIzi?.[a.id];
+    if (!iz) return null;
+    const ms = iz.sure + (iz.giris ? Date.now() - new Date(iz.giris).getTime() : 0);
+    return (
+      <span className="asama-sure" data-asama-sure>
+        {ms >= 60_000 && sureYazisi(ms, t)}
+        {!!iz.iade && (
+          <span className="asama-iade" title={t("akIade", { n: iz.iade })} aria-label={t("akIade", { n: iz.iade })}>
+            <Undo2 size={12} /> {iz.iade}
+          </span>
+        )}
+      </span>
+    );
+  };
+
   const satir = (a: GorunenAsama, i: number) => (
     <li key={a.id} className={`asama-kutu ${a.durum}${a.id === acik ? " acik" : ""}${a.id === "gfx" ? " yan-is" : ""}`} data-asama-kutu={a.id} data-asama-durum={a.durum || "bekliyor"}>
       <button
@@ -280,20 +334,39 @@ export function AsamaKutulari({ ben, paket, eylem }: { ben: Kisi; paket: Paket; 
         <span className="asama-ad">
           <small>{a.id === "gfx" ? "+" : i + 1 - (liste.slice(0, i).some((x) => x.id === "gfx") ? 1 : 0)}</small> {a.ad}
         </span>
-        {a.masa && <span className="asama-masa">{birimAdi(a.masa)}</span>}
+        <span className="asama-masa">
+          {a.masa && birimAdi(a.masa)}
+          {sure(a)}
+        </span>
       </button>
       {!masaustu && a.id === acik && (
         <div className="asama-icerik" data-asama-icerik={a.id}>
-          {icerik(a)}
+          {kutuIci(a)}
         </div>
       )}
     </li>
   );
 
   const secili = liste.find((a) => a.id === acik);
+  // Kişi başka kutuya bakarken işin bulunduğu yer tek satırda; basınca oraya döner (seçim kalkar).
+  const simdiSatiri = simdi && acik !== simdi.id && acik !== varsayilan && !iptal;
   return (
-    <section className={`asama-kutulari${iptal ? " iptal" : ""}`} data-asama-kutulari>
-      <h2 className="asama-baslik">{t("asamalar")}</h2>
+    <section
+      className={`asama-kutulari${iptal ? " iptal" : ""}`}
+      data-asama-kutulari
+      data-siklik={masaustu ? gorunum.siklik : undefined}
+      data-karsitlik={masaustu ? gorunum.karsitlik : undefined}
+      style={masaustu ? ({ "--ak-yazi": gorunum.yazi, "--ak-metin": gorunum.metin, "--ak-sol": SOL_SUTUN[gorunum.sol] } as CSSProperties) : undefined}
+    >
+      <div className="asama-ust">
+        <h2 className="asama-baslik">{t("asamalar")}</h2>
+        {simdiSatiri && (
+          <button type="button" className="asama-simdi-satiri" onClick={() => setSecim(varsayilan === simdi.id ? "" : simdi.id)} data-asama-simdi>
+            {t("akSimdi", { adim: simdi.ad })} <span className="yon">›</span>
+          </button>
+        )}
+        {masaustu && <GorunumAyari gorunum={gorunum} degistir={setGorunum} />}
+      </div>
       <div className="asama-duzen">
         <ol className="asama-listesi" data-asama-listesi ref={kutular}>
           {liste.map(satir)}
@@ -303,7 +376,7 @@ export function AsamaKutulari({ ben, paket, eylem }: { ben: Kisi; paket: Paket; 
             {secili ? (
               <>
                 <h3>{secili.ad}</h3>
-                {icerik(secili)}
+                {kutuIci(secili)}
               </>
             ) : (
               <>
@@ -371,6 +444,138 @@ function GfxIcerigi({ ben, paket, durum }: { ben: Kisi; paket: Paket; durum: Gor
           </div>
         )
       )}
+    </div>
+  );
+}
+
+/*
+ * Masaüstü görünüm ayarları (kullanıcı kararı: erişilebilirlik; yazı ve
+ * Arapça metin boyu, sıklık, karşıtlık, adım sütunu). Kişiye değil
+ * tarayıcıya bağlı görünüm tercihi, kayıtta değil.
+ */
+interface Gorunum {
+  yazi: number;
+  metin: number;
+  siklik: "rahat" | "siki";
+  sol: "dar" | "orta" | "genis";
+  karsitlik: "normal" | "yuksek";
+}
+const VARSAYILAN_GORUNUM: Gorunum = { yazi: 1, metin: 1, siklik: "rahat", sol: "orta", karsitlik: "normal" };
+const GORUNUM_ANAHTARI = "trt-planlama-asama-gorunum";
+const SOL_SUTUN: Record<Gorunum["sol"], string> = { dar: "13em", orta: "18em", genis: "24em" };
+const OLCEKLER = [0.9, 1, 1.15, 1.3, 1.5];
+
+function useGorunum(): [Gorunum, (g: Gorunum) => void] {
+  const [g, setG] = useState<Gorunum>(() => {
+    try {
+      return { ...VARSAYILAN_GORUNUM, ...JSON.parse(localStorage.getItem(GORUNUM_ANAHTARI) ?? "{}") };
+    } catch {
+      return VARSAYILAN_GORUNUM;
+    }
+  });
+  const degistir = (y: Gorunum) => {
+    setG(y);
+    try {
+      localStorage.setItem(GORUNUM_ANAHTARI, JSON.stringify(y));
+    } catch {
+      /* Gizli pencere: yalnız bu sayfada. */
+    }
+  };
+  return [g, degistir];
+}
+
+function GorunumAyari({ gorunum, degistir }: { gorunum: Gorunum; degistir: (g: Gorunum) => void }) {
+  const { t } = useDil();
+  const [acik, setAcik] = useState(false);
+  const olcek = (alan: "yazi" | "metin", yon: number) => {
+    const i = Math.max(0, Math.min(OLCEKLER.length - 1, OLCEKLER.indexOf(gorunum[alan]) + yon));
+    degistir({ ...gorunum, [alan]: OLCEKLER[i < 0 ? 1 : i] });
+  };
+  const secim = <K extends "siklik" | "sol" | "karsitlik">(alan: K, degerler: [Gorunum[K], Anahtar][]) => (
+    <div className="ak-secim" role="group">
+      {degerler.map(([d, ad]) => (
+        <button key={d} type="button" className="dugme dugme-ikincil dugme-kucuk" aria-pressed={gorunum[alan] === d} onClick={() => degistir({ ...gorunum, [alan]: d })} data-ak-ayar={`${alan}-${d}`}>
+          {t(ad)}
+        </button>
+      ))}
+    </div>
+  );
+  const boy = (alan: "yazi" | "metin") => (
+    <div className="ak-secim" role="group">
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => olcek(alan, -1)} title={t("akKucult")} aria-label={t("akKucult")} data-ak-ayar={`${alan}-kucult`}>
+        A−
+      </button>
+      <output>{Math.round(gorunum[alan] * 100)}%</output>
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => olcek(alan, 1)} title={t("akBuyut")} aria-label={t("akBuyut")} data-ak-ayar={`${alan}-buyut`}>
+        A+
+      </button>
+    </div>
+  );
+  return (
+    <div className="ak-gorunum">
+      <button type="button" className="ikon-dugme" aria-expanded={acik} onClick={() => setAcik(!acik)} title={t("akGorunum")} aria-label={t("akGorunum")} data-ak-gorunum>
+        <SlidersHorizontal size={16} />
+      </button>
+      {acik && (
+        <div className="ak-panel" data-ak-panel>
+          <span>{t("akYaziBoyu")}</span>
+          {boy("yazi")}
+          <span>{t("akMetinBoyu")}</span>
+          {boy("metin")}
+          <span>{t("akSiklik")}</span>
+          {secim("siklik", [["rahat", "akRahat"], ["siki", "akSiki"]])}
+          <span>{t("akSolSutun")}</span>
+          {secim("sol", [["dar", "akDar"], ["orta", "akOrta"], ["genis", "akGenis"]])}
+          <span>{t("akKarsitlik")}</span>
+          {secim("karsitlik", [["normal", "akNormal"], ["yuksek", "akYuksek"]])}
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk ak-sifirla" onClick={() => degistir(VARSAYILAN_GORUNUM)}>
+            {t("akVarsayilan")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Süre kısa ve kaba: "25 dk", "3 sa", "2 gün"; dakikayı saatin yanına eklemek satırı uzatıyordu. */
+const sureYazisi = (ms: number, t: ReturnType<typeof useDil>["t"]) => {
+  const dk = Math.round(ms / 60_000);
+  if (dk < 60) return t("akDk", { n: dk });
+  const sa = Math.round(dk / 60);
+  if (sa < 48) return t("akSa", { n: sa });
+  return t("akGun", { n: Math.round(sa / 24) });
+};
+
+/* Ekibe özel aşama notu: kutunun altında; muhabir görmez (ayrı kayıt, kural okutmuyor). */
+function AsamaNotlari({ ben, paket, asama }: { ben: Kisi; paket: Paket; asama: string }) {
+  const { t, ad, dil } = useDil();
+  const v = useVeri();
+  const notlar = (v.asamaNotlari ?? []).filter((n) => n.paketId === paket.id && n.asama === asama);
+  const [metin, setMetin] = useState("");
+  return (
+    <div className="asama-notlari" data-asama-notlari={asama}>
+      <div className="alan-etiket">
+        <Lock size={12} aria-hidden="true" /> {t("akEkipNotu")} <small className="sonuk">· {t("akEkipNotuGizli")}</small>
+      </div>
+      {notlar.map((n) => (
+        <div key={n.id} className="asama-notu" data-asama-notu={n.id}>
+          <small className="sonuk">
+            {ad(kisiBul(v, n.kisiId))} · {tarihYaz(yerelGun(n.zaman), dil, "kisa")} {saatYaz(n.zaman, dil)}
+          </small>
+          <p dir="auto">{n.metin}</p>
+          {asamaNotuSilebilir(ben, n) && (
+            <button type="button" className="ikon-dugme" onClick={() => asamaNotuSil(ben, n.id)} title={t("sil")} aria-label={t("sil")}>
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      ))}
+      <div className="asama-not-yaz">
+        <AnmaGirdisi cokSatir rows={2} deger={metin} degistir={setMetin} aria-label={t("akEkipNotu")} data-asama-not-girdi />
+        <button type="button" className="dugme dugme-ikincil dugme-kucuk" disabled={!metin.trim()} onClick={() => asamaNotuEkle(ben, paket.id, asama, metin) && setMetin("")} data-asama-not-ekle>
+          {t("akNotEkle")}
+        </button>
+      </div>
     </div>
   );
 }

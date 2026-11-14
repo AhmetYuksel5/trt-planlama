@@ -881,6 +881,28 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ParcaSatiri`) dil denetmeninin sayfasında da aynısı; editörün, dil
     denetmeninin ve muhabirin parça adımında onay sorulmaz (video gönderiminde
     sorulur).
+    3. parti, iz ve bağlantı: aşamanın süresi ve iade sayısı pakette
+    (`Paket.asamaIzi`, durak başına `giris`, `sure`, `iade`): adımı değiştiren
+    eylemlere dokunulmadan `veri.ts → kaydet` yazıştan önce eski ve yeni paketi
+    karşılaştırır (`asamaIzi.ts → asamaIziIsle`, saf): çıkışta süre eklenir,
+    girişte an, yolda geriye gidişte ve parça iadesinde çıkılan aşamanın iadesi
+    artar; kutu satırında süre ("25 dk", "3 sa", "2 gün") ve ↶ iade. Ekibe özel
+    aşama notu ayrı kayıtta (`Durum.asamaNotlari`, `AsamaNotu`, koleksiyon
+    `asamaNotlari`; kısıtlı kişi dinlemiyor, kural okutmuyor; `yetki.ts →
+    asamaNotuGorur`, `eylemler.ts → asamaNotuEkle`, `asamaNotuSil`; anma
+    çalışır, temizlikte paketle gider): her açık kutunun altında, muhabirde
+    yok. Parçada muhabirin gönderdiği hal (`MetinParcasi.ilk`, `parcaGonder`)
+    ve editörde/dilde "Değişiklikleri göster" (`metinFarki.ts → sozcukFarki`,
+    sözcükler harekesiz karşılaştırılır: harekeleme fark sayılmaz). Bildirimden
+    kutuya: `#/paketler/<id>/<kutu>` (`akis.ts → hareketKutusu`: gfx haberi gfx,
+    parça haberi metin durağı; ekip notunun anması da). Kişi başka kutuya
+    bakarken üstte "Şimdi: X ›" (`data-asama-simdi`); açık tuttuğu kutuyu
+    başkası geçirince "az önce X tarafından geçildi", sayfa kaymaz. Parça
+    metni taslak olarak tarayıcıda kalır (`bilesenler/metinTaslagi.ts`,
+    `trt-planlama-taslak:<paket>:<parça>:<aşama>`; gönderilince silinir).
+    Masaüstünde görünüm ayarları (⚙ `data-ak-gorunum`: yazı boyu, Arapça metin
+    boyu, sıklık, adım sütunu, karşıtlık; tarayıcıda
+    `trt-planlama-asama-gorunum`).
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam

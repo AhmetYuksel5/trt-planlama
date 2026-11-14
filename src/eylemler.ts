@@ -93,6 +93,7 @@ import {
   type Oneri,
   type MasaSorusu,
   type ToplantiNotu,
+  type AsamaNotu,
   type OneriGorunumu,
   type Paket,
   type MetinParcasi,
@@ -180,6 +181,7 @@ import {
   yzGorusuGorur,
   kararNotuYazabilir,
   toplantiNotuGorur,
+  asamaNotuGorur,
   paketTamamlayabilir,
   planAdimiYapabilir,
   ozelDuzenler,
@@ -3312,7 +3314,8 @@ export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: st
   if (g.id && eski?.asama !== "muhabir") return false;
   // Üretim balonunda editoryal kontrol ya da dil atlanabiliyor: parça yolda kalan ilk aşamaya gider.
   const ilk = parcaIlkAsama(p);
-  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: ilk };
+  // Muhabirin gönderdiği hal ayrıca kalıyor: editör ve dil denetmeni metnin üzerine yazıyor, fark görünümü buna göre.
+  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: ilk, ilk: g.metin.trim() };
   const parcalar = eski ? p.parcalar!.map((x) => (x === eski ? parca : x)) : [...(p.parcalar ?? []), parca];
   d = paketGuncelle(d, paketId, (x) => parcalariYaz(x, parcalar));
   kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaGeldi", parca, parcaSahibi(p, ilk)), ben, p));
@@ -3449,6 +3452,28 @@ export const toplantiNotuSil = (ben: Kisi, id: string): boolean => {
   const n = (d.toplantiNotlari ?? []).find((x) => x.id === id);
   if (!n || !toplantiNotuSilebilir(ben, n)) return false;
   kaydet({ ...d, toplantiNotlari: (d.toplantiNotlari ?? []).filter((x) => x.id !== id) });
+  return true;
+};
+
+/* --- Aşama notu (ekibe özel; aşama kutuları) --- */
+
+export const asamaNotuEkle = (ben: Kisi, paketId: string, asama: string, metin: string): boolean => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !metin.trim() || !asamaNotuGorur(ben)) return false;
+  const not: AsamaNotu = { id: kimlik("an"), paketId, asama, kisiId: ben.id, zaman: simdi(), metin: metin.trim() };
+  kaydet(bahset({ ...d, asamaNotlari: [...(d.asamaNotlari ?? []), not] }, ben, metin, { yol: `#/paketler/${paketId}/${asama}`, baslik: p.baslik }));
+  return true;
+};
+
+/* Yazan ya da tam yönetici siler (yanlış kutuya yazılmış not). */
+export const asamaNotuSilebilir = (ben: Kisi | undefined, n: AsamaNotu) => !!ben && asamaNotuGorur(ben) && (n.kisiId === ben.id || !!ben.hesapYoneticisi);
+
+export const asamaNotuSil = (ben: Kisi, id: string): boolean => {
+  const d = getir();
+  const n = (d.asamaNotlari ?? []).find((x) => x.id === id);
+  if (!n || !asamaNotuSilebilir(ben, n)) return false;
+  kaydet({ ...d, asamaNotlari: (d.asamaNotlari ?? []).filter((x) => x.id !== id) });
   return true;
 };
 

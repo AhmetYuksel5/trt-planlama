@@ -1,4 +1,5 @@
 import type { TakvimAdayi } from "./takvimBotu";
+import { asamaIziIsle } from "./asamaIzi";
 import type { UretimSablonu, UretimYolu } from "./uretim";
 import { useSyncExternalStore } from "react";
 import type { Yazi } from "./dil";
@@ -904,6 +905,38 @@ export interface MetinParcasi {
   asama: ParcaAsamasi;
   /** Newsdesk'in iade gerekçesi; muhabir yeniden gönderince kalkar. */
   iade?: string;
+  /** Muhabirin son gönderdiği metin (kullanıcı kararı, aşama kutuları): editör ve dil denetmeni üzerine yazıyor, fark buna göre. */
+  ilk?: string;
+}
+
+/*
+ * Aşamanın izi (kullanıcı kararı: süre ve iade sayısı kaydedilsin): hareket
+ * kaydı son 2000'le sınırlı, eski paketin "ne kadar sürdü, kaç kez döndü"sü
+ * oradan kurulamazdı. Durak kimliğine göre; yazışta kendiliğinden
+ * (asamaIzi.ts, veri.ts → kaydet), eylemler dokunmuyor.
+ */
+export interface AsamaIzi {
+  /** Son girişin anı; aşamadan çıkınca kalkar. */
+  giris?: string;
+  /** Aşamada geçen toplam süre (milisaniye; dönüp yeniden girdiyse toplanır). */
+  sure: number;
+  /** Bu aşamadan geri gönderilen (iade, revizyon) iş sayısı. */
+  iade?: number;
+}
+
+/*
+ * Ekibe özel aşama notu (kullanıcı kararı: muhabir görmez, ayrı kayıt): paket
+ * belgesinde olsaydı muhabir okurdu. Kısıtlı kişi koleksiyonu dinlemiyor,
+ * kural okutmuyor (catch-all).
+ */
+export interface AsamaNotu {
+  id: string;
+  paketId: string;
+  /** Aşama kutusunun kimliği (durak kimliği, "planlama", "gfx"…). */
+  asama: string;
+  kisiId: string;
+  zaman: string;
+  metin: string;
 }
 
 export interface Paket {
@@ -977,6 +1010,8 @@ export interface Paket {
   kosul?: string;
   /** Koşulun son günü (kalemden): geçince bekleyenler listesinde kırmızı. */
   kosulSon?: string;
+  /** Aşama başına süre ve iade (asamaIzi.ts). */
+  asamaIzi?: Record<string, AsamaIzi>;
   klipKodu?: string;
   ucret?: Ucret;
   /** Tamamlanan pakete Newsdesk'in verdiği nitelik puanı (1–5); ölçütü birimle netleşecek. */
@@ -1797,6 +1832,7 @@ export interface Durum {
   yzGorusleri?: YzGorus[];
   masaSorulari?: MasaSorusu[];
   toplantiNotlari?: ToplantiNotu[];
+  asamaNotlari?: AsamaNotu[];
   /** Programlar biriminin programları; eski kayıtta yok. */
   programlar?: ProgramTanimi[];
   /** Üretim balonunun şablonları (uretim.ts); boşsa yerleşikler. */
@@ -1959,6 +1995,7 @@ export const bosDurum = (): Durum => ({
   masaSorulari: [],
   programlar: [],
   toplantiNotlari: [],
+  asamaNotlari: [],
   sehirler: [],
   gorevler: [],
   isler: [],
@@ -2086,6 +2123,8 @@ export const kaydet = (yeni: Durum) => {
     return;
   }
   const eski = simdi();
+  // Aşamanın süresi ve iadesi yazışta kendiliğinden (asamaIzi.ts): adımı değiştiren eylemler ona dokunmuyor.
+  yeni = asamaIziIsle(eski, yeni);
   durum = yeni;
   for (const f of yazisDinleyicileri) f(eski, yeni);
   if (!GERCEK) yaz(yeni);

@@ -1,6 +1,8 @@
 import { CircleCheck, Plus, Send, Undo2 } from "lucide-react";
 import { HarekeliAlan, HarekeliMetin } from "./Hareke";
 import { useState } from "react";
+import { useMetinTaslagi } from "./metinTaslagi";
+import { sozcukFarki } from "../metinFarki";
 import { parcalarHazir } from "../akis";
 import { metin as dilMetni, useDil, type Anahtar } from "../dil";
 import { adimIlerle, parcaDuzelt, parcaGonder, parcaIade, parcaSonHal } from "../eylemler";
@@ -76,7 +78,7 @@ export function ParcaliMetin({ ben, paket }: { ben: Kisi; paket: Paket }) {
  */
 export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: MetinParcasi }) {
   const { t } = useDil();
-  const [metin, setMetin] = useState(parca.metin);
+  const [metin, setMetin, taslakSil] = useMetinTaslagi(`${paket.id}:${parca.id}:${parca.asama}`, parca.metin);
   const [iade, setIade] = useState<string | null>(null);
   const [duzen, setDuzen] = useState(false);
   const [ad, rozet] = ASAMA_ROZETI[parca.asama];
@@ -91,6 +93,7 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
         <Rozet ton={rozet || undefined}>{rozetAdi(t, paket, parca.asama, ad)}</Rozet>
       </div>
       {parca.iade && parca.asama === "muhabir" && <NotKutu>{parca.iade}</NotKutu>}
+      {parca.ilk && parca.ilk !== parca.metin && parca.asama !== "muhabir" && <ParcaFarki eski={parca.ilk} yeni={parca.metin} />}
       {elde && parca.asama !== "muhabir" ? (
         <HarekeliAlan {...icerikAlani} className="dd-alan" rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
       ) : (
@@ -112,14 +115,14 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
           <button className="dugme dugme-kotu" onClick={() => setIade("")} data-parca-iade>
             <Undo2 size={15} /> {t("parcaIadeEt")}
           </button>
-          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaDuzelt(ben, paket.id, parca.id, metin) && bildir(t("bAdimTamam"))} data-parca-ilerlet>
+          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaDuzelt(ben, paket.id, parca.id, metin) && (taslakSil(), bildir(t("bAdimTamam")))} data-parca-ilerlet>
             <CircleCheck size={15} /> {t("parcaDuzeltGonder")}
           </button>
         </div>
       )}
       {elde && parca.asama === "dil" && (
         <div className="form-alt">
-          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaSonHal(ben, paket.id, parca.id, metin) && bildir(t("ddGonderildi"))} data-parca-ilerlet data-dd-gonder>
+          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaSonHal(ben, paket.id, parca.id, metin) && (taslakSil(), bildir(t("ddGonderildi")))} data-parca-ilerlet data-dd-gonder>
             <Send size={15} className="yon" /> {t("ddGonder")}
           </button>
         </div>
@@ -148,9 +151,10 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
 function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; parca?: MetinParcasi; kapat: () => void }) {
   const { t } = useDil();
   const [ad, setAd] = useState(parca?.ad ?? "");
-  const [metin, setMetin] = useState(parca?.metin ?? "");
+  const [metin, setMetin, taslakSil] = useMetinTaslagi(`${paket.id}:${parca?.id ?? "yeni"}:muhabir`, parca?.metin ?? "");
   const gonder = () => {
     if (parcaGonder(ben, paket.id, { id: parca?.id, ad, metin })) {
+      taslakSil();
       bildir(t("bAdimTamam"));
       kapat();
     }
@@ -182,5 +186,22 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
         </button>
       </div>
     </div>
+  );
+}
+
+/* Muhabirin gönderdiğiyle bugünkü metin arasındaki sözcük farkı: silinen üstü çizili, eklenen vurgulu. */
+function ParcaFarki({ eski, yeni }: { eski: string; yeni: string }) {
+  const { t } = useDil();
+  return (
+    <details className="parca-farki" data-parca-farki>
+      <summary>{t("akFark")}</summary>
+      <div className="metin-kutu">
+        <Icerik blok>
+          {sozcukFarki(eski, yeni).map((x, i) =>
+            x.tur === "ayni" ? <span key={i}>{x.metin}</span> : x.tur === "silindi" ? <del key={i}>{x.metin}</del> : <ins key={i}>{x.metin}</ins>,
+          )}
+        </Icerik>
+      </div>
+    </details>
   );
 }

@@ -1,4 +1,5 @@
 import { birimAdi, gorevAdi } from "../yapi";
+import { hareketKutusu } from "../akis";
 import { ArrowRight } from "lucide-react";
 import { ADIM_ADI, ASAMALAR, ASAMA_ADI, adimAdi, type UretimAdimi } from "../akis";
 import { aralikYaz, gecenSure, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
@@ -228,7 +229,10 @@ export function useHareketKonusu() {
     const tk = d.takipler.find((x) => x.id === h.veri?.takipId);
     if (tk) return { baslik: tk.konu, href: "#/takipler" };
     const p = paketBul(d, h.paketId);
-    if (p) return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}` };
+    if (p) {
+      const kutu = hareketKutusu(h.tip, p);
+      return { kod: p.kod, baslik: p.baslik, href: `#/paketler/${p.id}${kutu ? `/${kutu}` : ""}` };
+    }
     const o = oneriBul(d, h.oneriId);
     if (o) return { baslik: o.haberBasligi, href: `#/oneriler/${o.id}` };
     const hafta = haftaBul(d, h.haftaId);

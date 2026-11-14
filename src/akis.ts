@@ -313,6 +313,17 @@ export const asamaListesi = (p: Paket): GorunenAsama[] => {
   }));
 };
 
+/*
+ * Hareketin açacağı aşama kutusu (bildirimden derin bağlantı,
+ * `#/paketler/<id>/<kutu>`): gfx haberi gfx kutusunu, parça haberi metin
+ * durağını açar; öbürü paketin kendi sırasına bırakılır.
+ */
+export const hareketKutusu = (tip: string, p: AkisPaketi & Pick<Paket, "uretim">): string | undefined => {
+  if (tip === "gfxSirada" || tip === "gfxHazir") return p.uretim ? "gfx" : undefined;
+  if (tip.startsWith("parca")) return paketAkisi(p).duraklar.find((d) => d.tur === "metin")?.id;
+  return undefined;
+};
+
 /* --- Stok haberleri --- */
 
 /*

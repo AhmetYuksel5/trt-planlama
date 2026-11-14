@@ -36,7 +36,7 @@ import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
  * kartı yalnız o adımın sahibine görünüyor; diğerleri okuyor. Ücret alan
  * bazlı yetkiyle: kaydı görmek ücreti görmek demek değil.
  */
-export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) {
+export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Paket; kutu?: string }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const muhabir = kisiBul(v, paket.muhabirId);
@@ -71,7 +71,7 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
         </NotKutu>
       )}
 
-      <AsamaKutulari ben={ben} paket={paket} eylem={<EylemKarti ben={ben} paket={paket} />} />
+      <AsamaKutulari ben={ben} paket={paket} kutu={kutu} eylem={<EylemKarti ben={ben} paket={paket} />} />
 
       <div className="iz iz-ana-yan">
         <div className="iz">

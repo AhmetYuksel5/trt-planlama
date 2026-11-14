@@ -360,7 +360,7 @@ export default function App() {
           const p = paketBul(v, yol.id);
           icerik =
             p && paketGorebilir(ben, p, v) ? (
-              <PaketDetay ben={ben} paket={p} />
+              <PaketDetay ben={ben} paket={p} kutu={yol.alt} />
             ) : (
               <Yetkisiz />
             );

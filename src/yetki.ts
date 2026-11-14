@@ -623,6 +623,9 @@ export const icerikAktarabilir = (k: Kisi | undefined, p: Paket): boolean => !!k
 export const toplantiNotuGorur = (k: Kisi | undefined): boolean =>
   !!k && !kisitliKisi(k) && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "planlama" || yonetimdeMi(k) || k.rol === "yonetici");
 
+/* Ekibe özel aşama notu (aşama kutuları): muhabir ve onay bekleyen görmez; haber merkezinin geri kalanı görür ve yazar. */
+export const asamaNotuGorur = (k: Kisi | undefined): boolean => !!k && !kisitliKisi(k) && !k.pasif;
+
 export const kararNotuYazabilir = (
   k: Kisi | undefined,
   h: HaftalikPlan,

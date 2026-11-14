@@ -155,6 +155,8 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
     ...(d.masaSorulari?.some((m) => oneriler.has(m.oneriId)) ? { masaSorulari: d.masaSorulari.filter((m) => !oneriler.has(m.oneriId)) } : {}),
     // Toplantı notu planın (haftalık ya da Next Day) izi; planla gidiyor.
     ...(d.toplantiNotlari?.some((n) => haftalik.has(n.planId) || planlar.has(n.planId)) ? { toplantiNotlari: d.toplantiNotlari.filter((n) => !haftalik.has(n.planId) && !planlar.has(n.planId)) } : {}),
+    // Aşama notu paketin izi; paketle gidiyor.
+    ...(d.asamaNotlari?.some((n) => paketler.has(n.paketId)) ? { asamaNotlari: d.asamaNotlari.filter((n) => !paketler.has(n.paketId)) } : {}),
     hareketler: d.hareketler.filter((h) => !hareketler.has(h.id)),
   };
 
