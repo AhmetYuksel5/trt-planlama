@@ -15,6 +15,7 @@
  */
 
 :root {
+  --hareke: #d4141e;
   --zemin: #f3f5f9;
   --yuzey: #ffffff;
   --yuzey-2: #eef1f6;
@@ -3851,3 +3852,16 @@ html.yeni-tasarim .plan-etiketleri > .rozet-plan + .rozet-plan::before { content
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
+
+/* Kırmızı hareke (bilesenler/Hareke.tsx): iki katman üst üste; altta tam metin kırmızı, üstte harekesiz metin. */
+.hareke-kat { display: inline-grid; }
+.hareke-kat > *, .hareke-alan > * { grid-area: 1 / 1; }
+.hareke-alt { color: var(--hareke); }
+.hareke-ust { color: var(--murekkep); -webkit-text-stroke: 0.35px var(--murekkep); }
+.hareke-kat .hareke-ust { -webkit-user-select: none; user-select: none; }
+.hareke-alan { display: grid; position: relative; }
+.hareke-alan > .hareke-alt { background: var(--yuzey); }
+.hareke-alan > .hareke-alt, .hareke-alan > .hareke-ust { white-space: pre-wrap; overflow-wrap: break-word; pointer-events: none; direction: rtl; text-align: start; box-sizing: border-box; }
+.hareke-alan > textarea { color: transparent; caret-color: var(--murekkep); background: transparent; resize: none; overflow: hidden; position: relative; }
+.hareke-alan > textarea::placeholder { color: var(--sonuk); }
+.hareke-alan > textarea::selection { color: transparent; }

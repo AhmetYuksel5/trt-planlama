@@ -1,4 +1,5 @@
 import { CircleCheck, Plus, Send, Undo2 } from "lucide-react";
+import { HarekeliAlan, HarekeliMetin } from "./Hareke";
 import { useState } from "react";
 import { parcalarHazir } from "../akis";
 import { metin as dilMetni, useDil, type Anahtar } from "../dil";
@@ -86,10 +87,12 @@ function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: Me
       </div>
       {parca.iade && parca.asama === "muhabir" && <NotKutu>{parca.iade}</NotKutu>}
       {elde && parca.asama !== "muhabir" ? (
-        <textarea {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
+        <HarekeliAlan {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
       ) : (
         <div className="metin-kutu">
-          <Icerik blok>{parca.metin}</Icerik>
+          <Icerik blok>
+            <HarekeliMetin metin={parca.metin} />
+          </Icerik>
         </div>
       )}
       {elde && parca.asama === "muhabir" && (

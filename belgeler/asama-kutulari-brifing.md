@@ -151,7 +151,17 @@ yatay kaydırma; parçaları ayrı kutu yapmak; bütün hareket geçmişini kutu
 dökmek; kutu açılınca kendiliğinden kayda bir şey yazmak; başkasının
 ilerletmesiyle sayfanın zıplaması.
 
-## 8. Karar bekleyen noktalar
+## 8. Kararlar (kullanıcı, 14 Kasım)
+
+1. Masaüstü iki sütun (solda adımlar, sağda seçili kutunun işi; künye ve notlar
+   altta), görünüm ayarları (arayüz ve Arapça metin boyu, sıklık, karşıtlık,
+   sol sütun genişliği) tarayıcıda.
+2. Muhabirin ilk metni parçada saklanır, fark görünümü için.
+3. Aşama süresi ve iade sayısı pakete kaydedilir (`asamaIzi`).
+4. Ekibe özel aşama notu olur: muhabir görmez, ayrı kayıtta.
+5. Harekeler kırmızı (dil denetiminin harekelemesi); yapıldı, `Hareke.tsx`.
+
+## 8a. Önceki seçenekler
 
 1. **Masaüstü düzeni.** İki görüş: (a) her yerde aynı akordeon, en çok 720
    piksel genişlikte; (b) masaüstünde iki sütun: solda dar adım listesi,

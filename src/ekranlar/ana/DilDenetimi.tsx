@@ -1,4 +1,5 @@
 import { Send, SpellCheck } from "lucide-react";
+import { HarekeliAlan } from "../../bilesenler/Hareke";
 import { useState } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
@@ -43,7 +44,7 @@ function MetinKarti({ ben, p, parca }: { ben: Kisi; p: Paket; parca?: MetinParca
       <small className="sonuk-yazi">
         <Icerik>{kisiAr(kisiBul(v, p.muhabirId ?? ""))}</Icerik>
       </small>
-      <textarea {...icerikAlani} className="dd-alan" rows={12} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={t("ddBaslik")} />
+      <HarekeliAlan {...icerikAlani} className="dd-alan" rows={12} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={t("ddBaslik")} />
       <div className="form-alt">
         <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={gonder} data-dd-gonder>
           <Send size={16} className="yon" /> {t("ddGonder")}

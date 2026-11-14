@@ -1,4 +1,5 @@
 import { KisiCipi } from "../bilesenler/KisiCipi";
+import { HarekeliMetin } from "../bilesenler/Hareke";
 import { TarihSaatGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi } from "../yapi";
 import { GeriBag } from "../bilesenler/GeriBag";
@@ -121,7 +122,9 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           {paket.metin && (
             <Kart baslik={t("metin")}>
               <div className="metin-kutu">
-                <Icerik blok>{paket.metin}</Icerik>
+                <Icerik blok>
+                  <HarekeliMetin metin={paket.metin} />
+                </Icerik>
               </div>
             </Kart>
           )}
@@ -438,7 +441,9 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
           <>
             {paket.metin && (
               <div className="metin-kutu">
-                <Icerik blok>{paket.metin}</Icerik>
+                <Icerik blok>
+                  <HarekeliMetin metin={paket.metin} />
+                </Icerik>
               </div>
             )}
             <div className="form-alt">

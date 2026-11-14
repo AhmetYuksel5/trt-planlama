@@ -853,6 +853,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kart (`bilesenler/ParcaliMetin.tsx`) paket sayfasında herkese açık, düğme
     sırası gelende; dil denetmeninin sayfasında parça başına kart
     (`dilParcaSirasi`).
+  - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
+    Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
+    ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam
+    metin `--hareke` renginde, üstte harekesiz metin (`harekesiz`) yazı
+    renginde; hareke eni sıfır, harfler çakışır, açıkta harekeler kalır.
+    Okunur metin `HarekeliMetin` (parçanın okunur hali, paket metni; ekran
+    okuyucu ve kopya alttaki tam metni alır), yazı alanı `HarekeliAlan`
+    (parçalı metnin denetim alanı, dil denetmeni ekranı): alanın yazısı
+    saydam, imleç görünür, arkadaki katmanlar alanın o anki ölçülerini kopyalar
+    (yazı alanı stili sayfaya göre değişiyor), alan metinle uzar. Yalnız
+    ekranda; kayıt, çıktı, Word ve posta düz metin. Test `testler/hareke.cjs`.
   - Davranış durağın kimliğinden değil türünden: ekran ve eylem `adimTuru(p)`
     sorar, `p.adim === "kontrol"` yazılmaz. Geri gönderilen iş geride kalan son
     metin durağına, yoksa bir öncekine döner (`geriHedefi`). Genel iş
