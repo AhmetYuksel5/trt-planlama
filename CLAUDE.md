@@ -119,6 +119,31 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `trt-planlama-izleme`; bölmeler de izler), sekme kapanınca ya da şeritteki
   "Çık"la biter; kişi değişince ya da tam yönetici olmayanda iz silinir.
   Kabukta "X olarak izliyorsun" şeridi.
+- Eğitim sahnesi (kullanıcı: eğitim ve sunumda aşamaları rol rol, eş zamanlı
+  göstermek; tek başına anlatırken adım adım; `ekranlar/Egitim.tsx`,
+  `#/egitim`, yalnız demoda, oturumsuz da açılır; avatar menüsünde "Eğitim
+  sahnesi"). Ekran bölmelere ayrılır, her bölme uygulamanın kendisi
+  (`?bolme=1&kim=<kişi>`: `oturum.ts → BOLME_KISISI`, bölmenin kişisi
+  tarayıcının oturumuna yazılmaz, öbür bölmeleri değiştirmez); kayıt ortak,
+  muhabirin gönderdiği öneri Planlama'nın bölmesine hemen düşer. Düzen "Roller
+  yan yana" (senaryonun kişileri, en çok dört: muhabir, Planlama ve yolun
+  masaları, `senaryoKisileri`) ya da "Tek ekran" (tek bölme, kişisi sıradaki
+  adımınki). "Örnek veriyle baştan başlat" demo kaydını örnek veriyle kurar
+  (onaylı), senaryonun başlangıcını tarayıcının sekmesine yazar
+  (`sessionStorage`, `trt-planlama-egitim`). Senaryo "Öneriden yayına"
+  (`egitim.ts`, saf): kayda bakar, yazmaz; sıradaki adım her an kayıttan çıkar
+  (öneri gönderildi mi, plana PKG'yle girdi mi, kabul, üretim başladı mı,
+  sonra paketin yolu: `asamaListesi`), adım yapılınca kendiliğinden geçilir.
+  Üretimden sonraki adımlar paketin yolundan, kişi masadan (`masaKisisi`:
+  örnek veride o birimin kişisi); metin durağında parçaların hâlinden
+  (muhabir, editör, dil, iade, video), gfx bekleniyorsa grafik. Adımın
+  bölmesi mavi çerçeveli, sayfası mesajla açılır (`trt-bolme-git`), basılacak
+  düğme bölmenin içinde yanıp sönen halkayla (`egitimVurgu.ts`, `.egitim-vurgu`;
+  bölme yer değiştirdikçe ve pencere açıldıkça yeniden aranır). Üretim adımı
+  balonda "Günlük haber · Newsdesk" şablonunu gösterir (daha çok rol). Anlatım
+  metni burada yazılı (`dil.ts → eg*`): tanıtım sayfası gibi işi anlatan sayfa.
+  Test `testler/egitim.cjs`. Sonraki adım çok bilgisayarlı eğitim odası
+  (kayıt Firebase'de ayrı alanda).
 - Tanıtım sayfası (`ekranlar/Tanitim.tsx`): adres çıplak açılınca (hash
   yok) demoda tanıtım gelir; `#/tanitim` her kipte açar. Üstte Demo
   (demo kişi seçimi) ve Giriş (`#/gercek-giris`). Gerçek kipte kalmış
@@ -2876,7 +2901,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kendisi ekletir. Kalan kısa satırlar durum bildirir (onay bekleniyor,
   sınır doldu, adım başka birimde). Simge düğmesinin adı `title` ve
   `aria-label`'da kalır. Kullanım anlatımı birim birim kılavuzda (PDF).
-  İki istisna: tanıtım sayfası (işi sistemi anlatmak) ve muhabir kılavuzu
+  İstisnalar: tanıtım sayfası (işi sistemi anlatmak), eğitim sahnesi ve muhabir kılavuzu
   (kullanıcının isteği; `ekranlar/ana/MuhabirKilavuzu.tsx`): muhabirin
   Ayarlar sayfasının altında katlanır kart, ilk girişte açık, kapalılığı tarayıcıda
   (`trt-planlama-kilavuz`); metinler `dil.ts → kl*`. "PDF indir"

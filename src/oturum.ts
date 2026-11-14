@@ -24,12 +24,28 @@ const oku = () => {
   }
 };
 
-let kisiId: string | null = oku();
+/*
+ * Eğitim sahnesinin bölmesi kendi kişisiyle açılıyor (`?bolme=1&kim=<kişi>`,
+ * ekranlar/Egitim.tsx): ekranda aynı anda muhabir, Planlama ve Newsdesk.
+ * Bölmenin kişisi tarayıcının oturumuna yazılmaz, öbür bölmeleri ve sekmeleri
+ * değiştirmez; yalnız demoda ve çerçevenin içinde.
+ */
+const BOLME_KISISI = (() => {
+  if (GERCEK) return null;
+  try {
+    const q = new URLSearchParams(location.search);
+    return q.has("bolme") && window.frameElement !== null ? q.get("kim") : null;
+  } catch {
+    return null;
+  }
+})();
+
+let kisiId: string | null = BOLME_KISISI ?? oku();
 
 const dinleyiciler = new Set<() => void>();
 
 /* Çıkış üst pencerede; açık bölmeler ve öbür sekmeler eski kişiyle kalmasın. */
-if (!GERCEK)
+if (!GERCEK && !BOLME_KISISI)
   window.addEventListener("storage", (e) => {
     if (e.key !== SAKLA && e.key !== null) return;
     const yeni = oku();
@@ -42,7 +58,7 @@ const ayarla = (id: string | null) => {
   // Kişi değişince izleme biter: başkası bu sekmede yöneticinin izlemesiyle açılmasın.
   if (id !== kisiId) izlemeBitir();
   kisiId = id;
-  if (!GERCEK)
+  if (!GERCEK && !BOLME_KISISI)
     try {
       if (id) localStorage.setItem(SAKLA, id);
       else localStorage.removeItem(SAKLA);

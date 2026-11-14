@@ -49,6 +49,7 @@ import HaftalikListe from "./ekranlar/haftalik/Liste";
 import HaftalikPlanEkrani from "./ekranlar/haftalik/Plan";
 import HaftalikToplanti from "./ekranlar/haftalik/Toplanti";
 import ProjePlani from "./ekranlar/ProjePlani";
+import Egitim from "./ekranlar/Egitim";
 import OrtamSayfasi from "./ekranlar/ortam/Ortam";
 import YeniOrtam from "./ekranlar/ortam/YeniOrtam";
 import Takvim from "./ekranlar/takvim/Takvim";
@@ -229,6 +230,8 @@ export default function App() {
     );
   }
 
+  // Eğitim sahnesi: yalnız demoda, oturumsuz da; bölmeleri kendi kişileriyle açılıyor.
+  if (yol.sayfa === "egitim" && !GERCEK && !GOMULU) return <Egitim />;
   if (yol.sayfa === "plan")
     return GOMULU ? (
       <GomuluKabuk>

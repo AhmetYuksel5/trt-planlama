@@ -3911,3 +3911,39 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .asama-kutulari[data-siklik="siki"] .asama-icerik { padding: var(--ara-2); }
 .asama-kutulari[data-karsitlik="yuksek"] { --sonuk: var(--murekkep); --cizgi: var(--cizgi-girdi, #868fa0); }
 .asama-kutulari[data-karsitlik="yuksek"] .asama-kutu { border-width: 2px; }
+
+/* Eğitim sahnesi (ekranlar/Egitim.tsx): solda senaryo, sağda rol bölmeleri. */
+.egitim { display: grid; grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr); block-size: 100dvh; background: var(--zemin); }
+.egitim.bos { grid-template-columns: minmax(0, 28rem); justify-content: center; align-content: start; }
+.egitim-panel { display: flex; flex-direction: column; gap: var(--ara-3); padding: var(--ara-4); background: var(--yuzey); border-inline-end: 1px solid var(--cizgi); overflow-y: auto; min-width: 0; }
+.egitim-ust { display: flex; align-items: center; gap: var(--ara-2); }
+.egitim-panel h1 { display: flex; align-items: center; gap: var(--ara-2); font-size: var(--punto-buyuk, 1.25rem); margin: 0; }
+.egitim-senaryo { margin: 0; color: var(--sonuk); }
+.egitim-duzen { display: flex; gap: var(--ara-1); flex-wrap: wrap; }
+.egitim-adimlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.egitim-adimlar li { display: flex; align-items: center; gap: var(--ara-2); padding: var(--ara-1) var(--ara-2); border-radius: var(--yaricap); color: var(--sonuk); font-size: var(--punto-kucuk); }
+.egitim-adimlar li.gecti { color: var(--murekkep); }
+.egitim-adimlar li.gecti svg { color: var(--iyi); }
+.egitim-adimlar li.simdi { background: var(--vurgu-sis); color: var(--vurgu); font-weight: 600; }
+.egitim-is { margin: 0; padding: var(--ara-3); border-radius: var(--yaricap); background: var(--vurgu-sis); border: 1px solid var(--vurgu); display: grid; gap: var(--ara-2); }
+.egitim-is small { color: var(--vurgu); font-weight: 600; }
+.egitim-is p { margin: 0; line-height: 1.5; }
+.egitim-kisi { display: inline-flex; align-items: center; gap: var(--ara-2); min-width: 0; flex-wrap: wrap; }
+.egitim-sahne { display: grid; gap: var(--ara-2); padding: var(--ara-2); min-width: 0; min-height: 0; }
+.egitim-sahne.b2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.egitim-sahne.b3, .egitim-sahne.b4 { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.egitim-bolme { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 2px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); overflow: hidden; }
+.egitim-bolme.aktif { border-color: var(--vurgu); box-shadow: 0 0 0 3px var(--vurgu-sis); }
+.egitim-bolme > header { padding: var(--ara-1) var(--ara-3); border-block-end: 1px solid var(--cizgi); font-size: var(--punto-kucuk); }
+.egitim-bolme.aktif > header { background: var(--vurgu-sis); }
+.egitim-bolme iframe { flex: 1; inline-size: 100%; border: 0; min-height: 0; }
+@media (max-width: 960px) {
+  .egitim, .egitim.bos { grid-template-columns: minmax(0, 1fr); block-size: auto; }
+  .egitim-panel { border-inline-end: 0; border-block-end: 1px solid var(--cizgi); }
+  .egitim-sahne.b2, .egitim-sahne.b3, .egitim-sahne.b4 { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .egitim-bolme { block-size: 80dvh; }
+}
+/* Bölmenin içinde basılacak düğme (egitimVurgu.ts). */
+.egitim-vurgu { outline: 3px solid var(--uyari, #b54708) !important; outline-offset: 3px; border-radius: var(--yaricap); animation: egitim-nabiz 1.4s ease-in-out infinite; }
+@keyframes egitim-nabiz { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .egitim-vurgu { animation: none; } }

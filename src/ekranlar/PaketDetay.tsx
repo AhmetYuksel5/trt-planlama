@@ -322,7 +322,7 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
               </label>
             </div>
             <div className="form-alt">
-              <button className="dugme" disabled={!muhabirId} onClick={() => ilerle({ muhabirId, teslim: girdidenIso(teslim) })}>
+              <button className="dugme" disabled={!muhabirId} onClick={() => ilerle({ muhabirId, teslim: girdidenIso(teslim) })} data-durak-gorev>
                 {t("muhabireGorevVer")}
               </button>
             </div>

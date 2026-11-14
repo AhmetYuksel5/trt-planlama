@@ -6,6 +6,7 @@ import {
   CircleUser,
   FlaskConical,
   Info,
+  Presentation,
   LogIn,
   LogOut,
   Menu,
@@ -322,6 +323,11 @@ export default function UstCubuk({
             >
               <BookOpen size={16} /> {t("mProjePlani")}
             </a>
+            {!GERCEK && (
+              <a className="acilir-satir" href="#/egitim" onClick={() => setAcik("")} data-menu-egitim>
+                <Presentation size={16} /> {t("egBaslik")}
+              </a>
+            )}
             <a className="acilir-satir" href="#/tanitim" onClick={() => setAcik("")} data-menu-tanitim>
               <Info size={16} /> {t("tanitimSayfasi")}
             </a>
