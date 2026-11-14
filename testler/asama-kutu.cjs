@@ -82,6 +82,50 @@ const { chromium } = require(process.env.PW);
     await git("#/paketler/" + sade);
     ok((await p.locator('[data-asama-kutu^="sade-"]').count()) === 3, "sade akışta üç kutu");
   }
+
+  // 2. parti: kutuların içerikleri.
+  await kim("pl1"); await git("#/paketler");
+  const ids = await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    return {
+      gfx: d.paketler.find((x) => x.durum === "uretimde" && x.uretim?.parca?.gfx)?.id,
+      oneri: d.paketler.find((x) => x.durum === "uretimde" && x.uretim && x.oneriId && x.planId)?.id,
+      ozel: d.paketler.find((x) => x.ozelId && x.durum !== "iptal")?.id,
+      iptal: d.paketler.find((x) => x.durum === "iptal" && !x.ozelId)?.id,
+    };
+  }, K);
+  if (ids.gfx) {
+    await git("#/paketler/" + ids.gfx);
+    ok((await p.locator('[data-asama-kutu="gfx"].yan-is').count()) === 1, "gfx'li pakette yan iş kutusu");
+    await p.locator('[data-asama-kutu="gfx"] button').click();
+    ok((await p.locator('[data-asama-icerik="gfx"]').count()) === 1, "gfx kutusu açılıyor");
+  } else ok(false, "demoda gfx'li paket yok");
+  await git("#/paketler/" + ids.oneri);
+  await p.locator('[data-asama-kutu="planlama"] button').click();
+  const pl = p.locator('[data-asama-icerik="planlama"]');
+  ok((await pl.locator('a[href^="#/oneriler/"]').count()) === 1 && (await pl.locator('a[href^="#/nextday/"]').count()) === 1, "Planlama kutusunda öneri ve plan");
+  ok((await pl.locator("[data-uretim-ozet]").count()) === 1, "Planlama kutusunda üretim şablonu");
+  ok((await p.locator('.kart a[href^="#/oneriler/"]').count()) === 0, "öneri bağlantısı Bilgiler kartında tekrar edilmiyor");
+  if (ids.ozel) {
+    await git("#/paketler/" + ids.ozel);
+    ok((await p.locator('[data-asama-kutu^="oz-"]').count()) === 5, "özel yayın paketinde kendi beş aşaması");
+  }
+  if (ids.iptal) {
+    await git("#/paketler/" + ids.iptal);
+    ok((await p.locator(".asama-kutulari.iptal").count()) === 1 && (await p.locator("[data-asama-kutu].acik").count()) === 0, "iptal pakette kutu açık değil");
+    await p.locator("[data-asama-kutu] button").first().evaluate((e) => e.click());
+    ok((await p.locator("[data-asama-kutu].acik").count()) === 0, "iptal pakette kutu açılmıyor");
+  }
+
+  // Dil denetmeni: parça paket sayfasındaki satırın aynısı, onay sorusu yok.
+  let soru = 0;
+  p.on("dialog", () => soru++);
+  await kim("ou2"); await git("#/");
+  const dd = p.locator("[data-dd-metin] [data-parca-alan]").first();
+  if (await dd.count()) {
+    await p.locator("[data-dd-metin] [data-dd-gonder]").first().click(); await p.waitForTimeout(400);
+    ok(soru === 0, "dil denetiminde gönderirken onay sorulmadı");
+  } else ok(false, "dil denetmeninin sırasında parça yok");
   ok(hata === 0, "sayfa hatası yok");
   console.log(`${gec} geçti, ${kal} kaldı`);
   await b.close();

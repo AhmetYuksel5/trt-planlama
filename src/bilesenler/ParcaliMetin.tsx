@@ -69,7 +69,12 @@ export function ParcaliMetin({ ben, paket }: { ben: Kisi; paket: Paket }) {
   );
 }
 
-function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: MetinParcasi }) {
+/*
+ * Parçanın satırı: paket sayfasındaki metin kutusunda ve dil denetmeninin
+ * sayfasında aynısı (iki ayrı kod ayrışıyordu). Editörün ve dil denetmeninin
+ * adımında onay sorulmaz: düzeltip geçirmek her gün onlarca kez yapılıyor.
+ */
+export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: MetinParcasi }) {
   const { t } = useDil();
   const [metin, setMetin] = useState(parca.metin);
   const [iade, setIade] = useState<string | null>(null);
@@ -87,7 +92,7 @@ function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: Me
       </div>
       {parca.iade && parca.asama === "muhabir" && <NotKutu>{parca.iade}</NotKutu>}
       {elde && parca.asama !== "muhabir" ? (
-        <HarekeliAlan {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
+        <HarekeliAlan {...icerikAlani} className="dd-alan" rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
       ) : (
         <div className="metin-kutu">
           <Icerik blok>
@@ -114,7 +119,7 @@ function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; parca: Me
       )}
       {elde && parca.asama === "dil" && (
         <div className="form-alt">
-          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => confirm(t("ddGonderOnay")) && parcaSonHal(ben, paket.id, parca.id, metin) && bildir(t("ddGonderildi"))} data-parca-ilerlet>
+          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaSonHal(ben, paket.id, parca.id, metin) && bildir(t("ddGonderildi"))} data-parca-ilerlet data-dd-gonder>
             <Send size={15} className="yon" /> {t("ddGonder")}
           </button>
         </div>
@@ -145,7 +150,6 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
   const [ad, setAd] = useState(parca?.ad ?? "");
   const [metin, setMetin] = useState(parca?.metin ?? "");
   const gonder = () => {
-    if (!confirm(t("parcaGonderOnay"))) return;
     if (parcaGonder(ben, paket.id, { id: parca?.id, ad, metin })) {
       bildir(t("bAdimTamam"));
       kapat();

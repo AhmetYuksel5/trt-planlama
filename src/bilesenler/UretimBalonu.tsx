@@ -1,16 +1,13 @@
 import { CirclePlay, CircleCheck, Route, Save } from "lucide-react";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { useDil } from "../dil";
-import { gfxTamamla, uretimSablonuDuzenler, uretimSablonuKaydet, uretimYoluDegistir, uretimiBaslat, type UretimSecimi } from "../eylemler";
+import { uretimSablonuDuzenler, uretimSablonuKaydet, uretimYoluDegistir, uretimiBaslat, type UretimSecimi } from "../eylemler";
 import {
   ASAMA_ADI,
   PARCA_ADI,
   URETIM_ASAMALARI,
   URETIM_MASALARI,
-  asamaYolda,
   gecenAsamalar,
-  gfxAcik,
-  gfxBekliyor,
   istisnaAsamalari,
   paketSablonu,
   sablonAdi,
@@ -20,8 +17,8 @@ import {
 } from "../uretim";
 import { useVeri, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
-import { gfxYapabilir, uretimYoluBelirleyebilir } from "../yetki";
-import { Kart, NotKutu, Pencere, Rozet, bildir } from "./Parcalar";
+import { uretimYoluBelirleyebilir } from "../yetki";
+import { Pencere, bildir } from "./Parcalar";
 
 /* Masanın rengi; birim renkleri tasarım dilinde (`--masa-*`), olmayan nötr. */
 const masaRengi = (m: UretimMasasi) => (m === "atla" ? "var(--sonuk)" : `var(--masa-${m}, var(--vurgu))`);
@@ -235,62 +232,5 @@ export function UretimeAlDugmesi({ ben, paket }: { ben: Kisi; paket: Paket }) {
       </button>
       {acik && <UretimBalonu ben={ben} paket={paket} kapat={() => setAcik(false)} />}
     </>
-  );
-}
-
-/*
- * Paket sayfasında yolun özeti: her aşamanın masası ve durumu (yapıldı,
- * şimdi, sırada, atlandı). Grafik ekibinin sırası geldiyse "Gfx hazır" burada.
- */
-export function UretimYoluKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t } = useDil();
-  const v = useVeri();
-  const u = paket.uretim;
-  if (!u) return null;
-  const gecen = gecenAsamalar(paket);
-  const sablon = uretimSablonlari(v).find((s) => s.id === u.sablon);
-  const istisna = istisnaAsamalari(u, sablon);
-  const simdi = (a: UretimAsamasi): boolean => {
-    if (paket.durum !== "uretimde" || gecen.includes(a) || !asamaYolda(u, a)) return false;
-    if (a === "grafik") return gfxAcik(paket);
-    const durak = { gorev: "newsdesk", editoryal: "metin", dil: "metin", video: "videoKontrol", yukleme: "inews", yayin: "yayin" }[a];
-    if (durak !== paket.adim) return false;
-    if (a === "editoryal") return !!paket.parcalar?.some((x) => x.asama === "newsdesk");
-    if (a === "dil") return !!paket.parcalar?.some((x) => x.asama === "dil");
-    return true;
-  };
-  return (
-    <Kart
-      baslik={t("urBalon")}
-      ikon={<Route size={18} />}
-      ek={sablon ? sablonAdi(sablon) : undefined}
-      sagUc={<UretimBalonuDugmesi ben={ben} paket={paket} kucuk />}
-    >
-      <ol className="uretim-ozet" data-uretim-ozet>
-        {URETIM_ASAMALARI.filter((a) => a !== "grafik" || u.parca.gfx).map((a) => {
-          const yolda = asamaYolda(u, a);
-          const durum = !yolda ? "atla" : paket.durum === "tamamlandi" || gecen.includes(a) ? "gecti" : simdi(a) ? "simdi" : "";
-          return (
-            <li key={a} className={durum} data-uretim-durum={durum || "sirada"} data-asama={a}>
-              <span className="uretim-nokta" style={{ "--renk": masaRengi(u.yol[a]) } as CSSProperties} />
-              <span>
-                {t(ASAMA_ADI[a])}
-                {a === "editoryal" && <small className="sonuk-yazi"> · {(["metin", "stand", "gfx"] as const).filter((k) => k === "metin" || u.parca[k]).map((k) => t(PARCA_ADI[k])).join(", ")}</small>}
-              </span>
-              <b>{yolda ? birimAdi(u.yol[a]) : t("urAtla")}</b>
-              {istisna.includes(a) && <Rozet ton="uyari">{t("urIstisna")}</Rozet>}
-            </li>
-          );
-        })}
-      </ol>
-      {gfxYapabilir(ben, paket) && (
-        <div className="dugmeler ara-ust-2">
-          <button type="button" className="dugme dugme-iyi" onClick={() => gfxTamamla(ben, paket.id) && bildir(t("bAdimTamam"))} data-gfx-hazir>
-            <CircleCheck size={15} /> {t("urGfxHazir")}
-          </button>
-        </div>
-      )}
-      {paket.adim === "inews" && gfxBekliyor(paket) && <NotKutu>{t("urGfxBekleniyor")}</NotKutu>}
-    </Kart>
   );
 }

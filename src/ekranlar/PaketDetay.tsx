@@ -6,7 +6,7 @@ import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
 import { Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
-import { adimAdi, adimTuru, parcaliMi, geriHedefi, geciktiMi, paketSahibi, stokDurumu } from "../akis";
+import { adimAdi, adimTuru, parcaliMi, geriHedefi, geciktiMi, paketSahibi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
 import { Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
@@ -15,18 +15,17 @@ import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla } from "../eylemler";
 import { sartliBekleyen } from "../haftalik";
-import { KararNotlari } from "./haftalik/Kalem";
-import { STOK_DURUM_ADI, sehirAdi } from "../etiketler";
+
+import { sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
-import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
+import { kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
 import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimYoluBelirleyebilir, yapabilir } from "../yetki";
-import { UretimBalonuDugmesi, UretimYoluKarti } from "../bilesenler/UretimBalonu";
+import { UretimBalonuDugmesi } from "../bilesenler/UretimBalonu";
 import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { PaketMetniFormu } from "./nextday/BaslikKarti";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
-import { PaketKunyeKarti } from "../bilesenler/Kunye";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 
 /**
@@ -41,10 +40,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const muhabir = kisiBul(v, paket.muhabirId);
-  const plan = planBul(v, paket.planId);
-  const pb = plan?.basliklar.find((b) => b.id === paket.planBaslikId);
-  const stok = stokDurumu(paket);
-  const yayinPlani = planBul(v, paket.yayinlandi?.planId);
   const oneri = oneriBul(v, paket.oneriId);
   const hareketler = v.hareketler.filter((h) => h.paketId === paket.id || (oneri && h.oneriId === oneri.id));
 
@@ -76,11 +71,10 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
         </NotKutu>
       )}
 
-      <AsamaKutulari paket={paket} eylem={<EylemKarti ben={ben} paket={paket} />} />
+      <AsamaKutulari ben={ben} paket={paket} eylem={<EylemKarti ben={ben} paket={paket} />} />
 
       <div className="iz iz-ana-yan">
         <div className="iz">
-          <UretimYoluKarti ben={ben} paket={paket} />
           {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
           <BaskaMuhabireVer ben={ben} paket={paket} />
           <PaketMetniKarti ben={ben} paket={paket} />
@@ -100,7 +94,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
           </Kart>
         </div>
         <div className="iz">
-          <PaketKunyeKarti p={paket} />
           <Kart baslik={t("bilgiler")}>
             <div className="alanlar">
               <div className="alan">
@@ -147,24 +140,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 </>
               )}
               <div className="alan">
-                <small>{t("plan")}</small>
-                {plan ? (
-                  <a href={`#/nextday/${plan.id}`}>{tarihYaz(plan.tarih, dil, "kisa")}</a>
-                ) : yayinPlani ? (
-                  <a href={`#/nextday/${yayinPlani.id}`}>
-                    {t("sdYayinlandi")} · {tarihYaz(yayinPlani.tarih, dil, "kisa")}
-                  </a>
-                ) : stok ? (
-                  <b>{t(STOK_DURUM_ADI[stok])}</b>
-                ) : (
-                  <b>{paket.durum === "tamamlandi" && paket.yayin ? tarihYaz(yerelGun(paket.yayin), dil, "kisa") : t("haftalikKaynak")}</b>
-                )}
-              </div>
-              <div className="alan">
-                <small>{t("haberBasligi")}</small>
-                <b>{pb ? <Icerik>{baslikBul(v, pb.baslikId)?.ad}</Icerik> : "—"}</b>
-              </div>
-              <div className="alan">
                 <small>{t("yayinSaati")}</small>
                 <b>{paket.yayin ? saatYaz(paket.yayin, dil) : "—"}</b>
               </div>
@@ -183,30 +158,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 <b dir="ltr">{paket.slug ?? "—"}</b>
               </div>
               <div className="alan">
-                <small>{t("klipKodu")}</small>
-                <b dir="ltr">{paket.klipKodu ?? "—"}</b>
-              </div>
-              <div className="alan">
-                <small>{t("videoBaglantisi")}</small>
-                {paket.video ? (
-                  <a href={paket.video} target="_blank" rel="noreferrer" dir="ltr">
-                    {t("ac")}
-                  </a>
-                ) : (
-                  <b>—</b>
-                )}
-              </div>
-              <div className="alan">
-                <small>{t("oneri")}</small>
-                {oneri ? (
-                  <a href={`#/oneriler/${oneri.id}`}>
-                    <Icerik>{oneri.haberBasligi}</Icerik>
-                  </a>
-                ) : (
-                  <b>—</b>
-                )}
-              </div>
-              <div className="alan">
                 <small>{t("ucret")}</small>
                 {!paket.ucret ? (
                   <b>—</b>
@@ -219,7 +170,6 @@ export default function PaketDetay({ ben, paket }: { ben: Kisi; paket: Paket }) 
                 )}
               </div>
             </div>
-            <KararNotlari kalem={paket} />
             {paket.aciklama && (
               <div className="ara-ust-2">
                 <div className="alan-etiket">{t("kisaAciklama")}</div>
@@ -461,11 +411,18 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
         )}
         {adim === "videoKontrol" && (
           <>
-            {paket.video && (
-              <a href={paket.video} target="_blank" rel="noreferrer" dir="ltr" data-video-baglanti>
-                {paket.video}
-              </a>
+            {/* Bağlantı kutunun başında (AsamaKutulari); kontrol eden metni videoyla karşılaştırsın diye katlı. */}
+            {paket.metin && (
+              <details className="video-metin" data-video-metin>
+                <summary>{t("metin")}</summary>
+                <div className="metin-kutu">
+                  <Icerik blok>
+                    <HarekeliMetin metin={paket.metin} />
+                  </Icerik>
+                </div>
+              </details>
             )}
+            {geriHedefi(paket) && <small className="sonuk-yazi">{t("iadeDonecek", { adim: adimAdi(geriHedefi(paket)!, paket) })}</small>}
             <div className="form-alt">
               {gerekce === null && (
                 <button className="dugme dugme-kotu" onClick={() => setGerekce("")} data-video-revizyon>

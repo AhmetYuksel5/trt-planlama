@@ -58,7 +58,10 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   let x = d.paketler.find((y) => y.id === pk.id);
   ok(x.durum === "uretimde" && x.adim === "newsdesk" && x.uretim?.yol.editoryal === "newsdesk" && x.uretim?.parca.gfx, `üretim başladı (${x.durum}, ${x.adim})`);
   ok((d.uretimSablonlari || []).length === 7, "şablonlar kayıtta");
-  ok((await p.locator("[data-uretim-ozet] li").count()) >= 6, "paket sayfasında üretim yolu kartı");
+  // Üretim yolu ayrı kartta değil: şablon ve istisnalar Planlama kutusunda, aşamalar kutu listesinde.
+  await p.locator('[data-asama-kutu="planlama"] button').click(); await p.waitForTimeout(200);
+  ok((await p.locator("[data-asama-icerik] [data-uretim-ozet]").count()) === 1 && (await p.locator("[data-asama-kutu]").count()) >= 6, "Planlama kutusunda şablon, aşamalar kutularda");
+  await p.locator(`[data-asama-kutu="${x.adim}"] button`).click(); await p.waitForTimeout(200);
   {
     const asamalar = await p.locator("[data-asama-listesi]").innerText();
     ok(/Görevlendirme/.test(asamalar) && !/News Gathering|Teknik/.test(asamalar), "aşamalar balondaki yol, eski beş aşama yok");

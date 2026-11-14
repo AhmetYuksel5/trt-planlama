@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Bos, Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
 import { kisiAr } from "../../etiketler";
-import { adimIlerle, parcaSonHal } from "../../eylemler";
-import { kisiBul, useVeri, type Kisi, type MetinParcasi, type Paket } from "../../veri";
+import { adimIlerle } from "../../eylemler";
+import { ParcaSatiri } from "../../bilesenler/ParcaliMetin";
+import { kisiBul, useVeri, type Kisi, type Paket } from "../../veri";
 import { dilParcaSirasi, dilSirasi } from "../../yetki";
 import { SayfaBasi } from "./Planlama";
 
@@ -23,24 +24,34 @@ export default function DilDenetimi({ ben }: { ben: Kisi }) {
   return (
     <>
       <SayfaBasi ikon={<SpellCheck size={26} />} baslik={t("ddBaslik")} />
-      {parcalar.map(({ p, parca }) => <MetinKarti key={parca.id} ben={ben} p={p} parca={parca} />)}
+      {/* Parça paket sayfasındaki satırın aynısı (ParcaSatiri); başlık paketin sayfasına götürür. */}
+      {parcalar.map(({ p, parca }) => (
+        <div key={parca.id} data-dd-metin={parca.id}>
+          <Kart baslik={<a href={`#/paketler/${p.id}`}><Icerik>{p.baslik}</Icerik></a>} className="ara-alt-2">
+            <small className="sonuk-yazi">
+              <Icerik>{kisiAr(kisiBul(v, p.muhabirId ?? ""))}</Icerik>
+            </small>
+            <ParcaSatiri ben={ben} paket={p} parca={parca} />
+          </Kart>
+        </div>
+      ))}
       {sira.map((p) => <MetinKarti key={p.id} ben={ben} p={p} />)}
       {!sira.length && !parcalar.length && <Bos metin={t("ddBos")} ikon={<SpellCheck size={28} />} />}
     </>
   );
 }
 
-function MetinKarti({ ben, p, parca }: { ben: Kisi; p: Paket; parca?: MetinParcasi }) {
+/* Parçasız eski yol: metnin tamamı tek alanda. */
+function MetinKarti({ ben, p }: { ben: Kisi; p: Paket }) {
   const { t } = useDil();
   const v = useVeri();
-  const [metin, setMetin] = useState((parca ? parca.metin : p.metin) ?? "");
+  const [metin, setMetin] = useState(p.metin ?? "");
   const gonder = () => {
-    if (!confirm(t("ddGonderOnay"))) return;
-    if (parca ? parcaSonHal(ben, p.id, parca.id, metin) : adimIlerle(ben, p.id, { metin: metin.trim() })) bildir(t("ddGonderildi"));
+    if (adimIlerle(ben, p.id, { metin: metin.trim() })) bildir(t("ddGonderildi"));
   };
   return (
-    <div data-dd-metin={parca ? parca.id : p.id}>
-    <Kart baslik={<Icerik>{parca ? `${p.baslik} · ${parca.ad}` : p.baslik}</Icerik>} className="ara-alt-2">
+    <div data-dd-metin={p.id}>
+    <Kart baslik={<Icerik>{p.baslik}</Icerik>} className="ara-alt-2">
       <small className="sonuk-yazi">
         <Icerik>{kisiAr(kisiBul(v, p.muhabirId ?? ""))}</Icerik>
       </small>

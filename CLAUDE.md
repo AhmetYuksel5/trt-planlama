@@ -799,14 +799,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Editoryal kontrol ve dil denetimi parçalı metnin aşamaları: tetkikçi ve
     dilci yoldan (`parcaYapabilir`), atlanan aşamayı parça geçer
     (`parcaIlkAsama`, `parcaDilSonrasi`). Gfx yan iş: bütün parçalar hazır
-    olunca Grafik'e haber (`gfxSirada`), paket sayfasındaki yol kartında "Gfx
+    olunca Grafik'e haber (`gfxSirada`), paket sayfasının gfx kutusunda "Gfx
     hazır" (`gfxTamamla`, `gfxYapabilir`), "Sıradaki işlerim"de de; yükleme
     düğmesi o zamana dek pasif (`gfxBekliyor`, eylem de reddeder). Üretimdeki
     pakette "Yolu düzenle" (`uretimYoluDegistir`): geçmiş aşamalar kilitli
     (`gecenAsamalar`), bulunduğu durak yoldan çıkarsa sonrakine
-    (`yeniDurak`), hareket `uretimYoluDegisti`. Paket sayfasında "Üretim
-    yolu" kartı (`UretimYoluKarti`: aşama, masa, yapıldı/şimdi/atlandı,
-    istisna). Listelerdeki ve masa sayfasındaki "Üretime al" balonu açar
+    (`yeniDurak`), hareket `uretimYoluDegisti`. Ayrı "Üretim yolu" kartı
+    kalktı: aşama ve masa kutularda, şablon ve istisna Planlama kutusunda. Listelerdeki ve masa sayfasındaki "Üretime al" balonu açar
     (`UretimeAlDugmesi`). Paket sayfasının "Aşamalar"ı, durum rozeti ve
     listedeki çubuk (`AsamaCubugu`) paketin kendi yolu (`akis.ts → paketYolu`:
     Planlama, masa paketinde masanın üretime alması, durakların balondaki
@@ -866,6 +865,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     "<birim> yapacak". Seçim geçmiş adımında (`paket:<id>:asama`); seçim yokken
     şimdiki kutu açık, iş ilerleyince yeni kutuya kayılır. Eski `AsamaBuyuk` ve
     "Şimdi kimde" bloğu kalktı. Test `testler/asama-kutu.cjs`.
+    2. parti, içerikler: adımın bilgisi yalnız kendi kutusunda, Bilgiler
+    kartında tekrar edilmez (`bilgi`): Planlama kutusunda öneri, plan ve
+    başlık, karar notu ve ek talep, balonun şablonu ve istisnaları, "Yolu
+    düzenle"; video kutusunda bağlantı (kontrolde katlı birleşik metin ve
+    revizyonda dönülecek adım, `iadeDonecek`); yükleme kutusunda klip kodu ve
+    "gfx bekleniyor"; son kutuda yayın ya da stok satırı, işlem (geri alma, masa
+    kararı) ve bütün künye (yan sütundaki künye kartı ve ayrı "Üretim yolu"
+    kartı kalktı). Gfx yan iş kutusu (`gfx`, kesik kenarlı, numarasız "+"):
+    metin durağının arkasında, yolun şimdisini değiştirmez; içinde dil
+    denetiminden geçmiş gfx parçası salt okunur ve kopyalanır, "Gfx hazır"
+    (`gfxYapabilir`) ya da kimin bitirdiği; sırası grafikteyse varsayılan kutu
+    o. Özel yayın paketi kendi beş aşamasıyla (`oz-*`, `ozelPaketAsamasi`).
+    İptal pakette kutular sönük, açılmaz. Parçanın satırı (`ParcaliMetin.tsx →
+    ParcaSatiri`) dil denetmeninin sayfasında da aynısı; editörün, dil
+    denetmeninin ve muhabirin parça adımında onay sorulmaz (video gönderiminde
+    sorulur).
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam
