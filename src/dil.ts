@@ -1900,6 +1900,7 @@ const M = {
     "Approve the plan? {n} undecided packages will be accepted and {m} reporters will get the task.",
   ),
   kalanlarKabulOnay: m("Karar bekleyen {n} kalem kabul edilsin mi? Ön incelemedekiler dahil değil.", "هل تُقبل البنود المتبقية ({n})؟ لا يشمل ذلك البنود قيد المراجعة المسبقة.", "Accept the {n} remaining items? Items under pre-review are not included."),
+  sonradanKararBekliyor: m("Sonradan eklenen {n} kalem karar bekliyor", "{n} من البنود المضافة لاحقًا بانتظار القرار", "{n} items added later await a decision"),
   kesinlestirmeIcinKarar: m(
     "Kesinleştirmek için {n} kaleme daha karar verilmeli.",
     "يجب البت في {n} بنود أخرى قبل الاعتماد.",

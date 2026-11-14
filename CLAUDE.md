@@ -2035,6 +2035,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     toplantıya götürme ve onay da sorar; onay kararsız paket sayısını ve görev
     gidecek muhabiri yazar. Özel yayının onayı birlikte onaylanacak nafize ve
     paket önerisi sayısını yazar.
+  - Kesinleşmiş hafta da güncellenir (kullanıcı: haftalık program
+    güncellenebilmeli, toplantı bir durak; orada onaylananlar onaylanır,
+    sonradan eklenenler sonradan): `yetki.ts → haftalikDuzenler` duruma
+    bakmaz, `kararVerebilir` kesinleşmişte de. Sonradan eklenen kalem karar
+    bekler ("Sıradaki" kartında "Sonradan eklenen n kalem karar bekliyor",
+    `data-sonradan-bekleyen`; çıktıya girmez); karar kesinleşmenin o kaleme
+    yaptığını hemen yapar (`eylemler.ts → sonradanKarar`: kabul günü olan
+    haberi günün açık Next Day planına geçirir, plan yoksa açılınca çekilir;
+    öbürünün paketini açar; ret kalemi çıkarır, öneriyi reddeder). Next Day'e
+    ya da pakete geçmiş kalem kilitli (`haftalik.ts → kalemKilitli`:
+    düzenleme, silme, karar; değişikliği oraya gitmezdi). "Kalanları kabul
+    et" yalnız toplantıda. Test `testler/haftalik-sonradan.cjs`.
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
     `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.

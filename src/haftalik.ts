@@ -27,6 +27,9 @@ export const kalemAdi = (k: HaftalikKalem) => k.baslik?.trim() || satir(k.yer, k
 
 export const gundemde = (k: HaftalikKalem) => k.onInceleme?.durum !== "reddedildi";
 
+/** Kesinleşmiş haftada Next Day'e geçmiş ya da paketi doğmuş kalem: değişikliği oraya gitmez, kilitli. */
+export const kalemKilitli = (h: Pick<HaftalikPlan, "durum">, k: HaftalikKalem) => h.durum === "kesinlesti" && !!(k.aktarim?.planId || k.aktarim?.paketId);
+
 /** Kesinleşince işe dönüşen karar: kabul ve şartlı kabul (paketi taslakta, koşulla). */
 export const kabulMu = (k: HaftalikKalem) => k.karar === "kabul" || k.karar === "sartli";
 

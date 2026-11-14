@@ -131,6 +131,8 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
             <>
               {t("kesinlestirmeYoneticide")} <AdimYetkilileri adim="hfKesinlestir" />
             </>
+          ) : hafta.durum === "kesinlesti" && bekleyen > 0 ? (
+            <span data-sonradan-bekleyen>{t("sonradanKararBekliyor", { n: bekleyen })}</span>
           ) : hafta.durum === "kesinlesti" && aktarimBekleyen > 0 ? (
             t("aktarimBekliyor", { n: aktarimBekleyen })
           ) : null
@@ -186,7 +188,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         </Pencere>
       )}
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
-      <AyliktanBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler && hafta.durum !== "kesinlesti"} />
+      <AyliktanBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />
       <AnaDosyalar ben={ben} hafta={hafta} />

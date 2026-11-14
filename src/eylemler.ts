@@ -3,7 +3,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
 import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, kabulMu, haftaSonu, kalemAdi, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
+import { gundemde, kabulMu, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -1278,7 +1278,7 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
   if (g.id) {
     const id = g.id;
     const eski = h.kalemler.find((k) => k.id === id);
-    if (!eski) return null;
+    if (!eski || kalemKilitli(h, eski)) return null;
     kaydet(anma(kalemGuncelle(d, haftaId, id, (k) => ({ ...k, ...alanlar })), notlar(eski)));
     return id;
   }
@@ -1301,7 +1301,7 @@ export const kalemSil = (ben: Kisi, haftaId: string, kalemId: string) => {
   let d = getir();
   const h = haftaBul(d, haftaId);
   const k = h?.kalemler.find((x) => x.id === kalemId);
-  if (!h || !k || !haftalikDuzenler(ben, h)) return false;
+  if (!h || !k || !haftalikDuzenler(ben, h) || kalemKilitli(h, k)) return false;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.filter((y) => y.id !== kalemId) }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "degerlendiriliyor" } : o)) };
   kaydet(d);
@@ -1416,10 +1416,35 @@ export const kalemKarar = (ben: Kisi, haftaId: string, kalemId: string, karar: K
   const d = getir();
   const h = haftaBul(d, haftaId);
   const k = h?.kalemler.find((x) => x.id === kalemId);
-  if (!h || !k || !gundemde(k) || !kararVerebilir(ben, h)) return false;
+  if (!h || !k || !gundemde(k) || !kararVerebilir(ben, h) || kalemKilitli(h, k)) return false;
   if (karar === "sartli" && !kosul?.trim()) return false;
-  kaydet(kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar, kosul: karar === "sartli" ? kosul!.trim() : undefined, kosulSon: karar === "sartli" && kosulSon ? kosulSon : undefined })));
+  let yd = kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, karar, kosul: karar === "sartli" ? kosul!.trim() : undefined, kosulSon: karar === "sartli" && kosulSon ? kosulSon : undefined }));
+  // Kesinleşmiş haftaya sonradan eklenen kalem (kullanıcı: toplantı bir durak, sonradan eklenen sonradan onaylanır):
+  // karar kesinleşmedeki gibi hemen işlenir.
+  if (h.durum === "kesinlesti") yd = sonradanKarar(yd, ben, haftaId, kalemId);
+  kaydet(yd);
   return true;
+};
+
+/*
+ * Kesinleşmiş haftada verilen karar, kesinleşmenin o kaleme yaptığını yapar:
+ * kabul (ve şartlı) günü olan haberi o günün açık Next Day planına geçirir
+ * (plan henüz yoksa açılınca çekilir, yarinPlaniniAc), öbürünün paketini
+ * açar; ret kalemi plandan çıkarır, öneriyi gerekçesiyle reddeder.
+ */
+const sonradanKarar = (d: Durum, ben: Kisi, haftaId: string, kalemId: string): Durum => {
+  const k = haftaBul(d, haftaId)?.kalemler.find((x) => x.id === kalemId);
+  if (!k) return d;
+  if (k.karar === "ret") {
+    d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.filter((y) => y.id !== kalemId) }));
+    return k.oneriId ? { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "reddedildi", gerekce: k.kararNotu || k.onInceleme?.gerekce || o.gerekce } : o)) } : d;
+  }
+  if (!kabulMu(k)) return d;
+  if (k.tur === "haber" && k.tarih) {
+    const plan = d.planlar.find((p) => p.tarih === k.tarih);
+    if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
+  } else d = haftaliktanPaket(d, ben, haftaId, k);
+  return k.oneriId ? { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "planaEklendi" } : o)) } : d;
 };
 
 /*
@@ -1453,7 +1478,8 @@ export const paketKararNotu = (ben: Kisi, paketId: string, g: { kararNotu: strin
 export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
   const d = getir();
   const h = haftaBul(d, haftaId);
-  if (!h || !kararVerebilir(ben, h)) return 0;
+  // Toplu kabul toplantının işi; kesinleşmiş haftada sonradan eklenen tek tek karar alır.
+  if (!h || h.durum !== "toplantida" || !kararVerebilir(ben, h)) return 0;
   const kalan = new Set(topluKabulAdaylari(h).map((k) => k.id));
   if (!kalan.size) return 0;
   kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.map((k) => (kalan.has(k.id) ? { ...k, karar: "kabul" } : k)) })));

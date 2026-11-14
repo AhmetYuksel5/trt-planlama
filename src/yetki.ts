@@ -304,8 +304,13 @@ export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
 /* --- Haftalık plan --- */
 
 /** Kesinleşen plan kilitli; o haftanın kararı artık Next Day'lere ve kollara dağıldı. */
-export const haftalikDuzenler = (k: Kisi | undefined, h: HaftalikPlan) =>
-  yapabilir(k, "haftalikDuzenle") && h.durum !== "kesinlesti";
+/*
+ * Kesinleşmiş hafta da düzenleniyor (kullanıcı: haftalık program
+ * güncellenebilmeli, toplantı bir durak; sonradan eklenen sonradan
+ * onaylanır). Günlük plana ya da pakete geçmiş kalem kilitli
+ * (haftalik.ts → kalemKilitli): yeri artık Next Day ya da paket.
+ */
+export const haftalikDuzenler = (k: Kisi | undefined, _h: HaftalikPlan) => yapabilir(k, "haftalikDuzenle");
 
 /*
  * Planların akış adımları (toplantıya götürme, onay, devir, karar,
@@ -320,7 +325,7 @@ export const planAdimiYapabilir = (
 
 /** Toplantının kararı: varsayılanda planlamacı kaydediyor, toplantıyı yöneten yönetici de verebiliyor. */
 export const kararVerebilir = (k: Kisi | undefined, h: HaftalikPlan) =>
-  h.durum === "toplantida" && planAdimiYapabilir(k, "hfKarar");
+  (h.durum === "toplantida" || h.durum === "kesinlesti") && planAdimiYapabilir(k, "hfKarar");
 
 /** Ön incelemeyi kim yapar: kolu kapsamında olan müdür; ekonomi kaleminde Ekonomi birimi de. */
 export const onIncelemeci = (

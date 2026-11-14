@@ -7,7 +7,7 @@ import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
-import { gundemde, haftaGunleri, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
+import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
@@ -226,8 +226,10 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
   const [duzenle, setDuzenle] = useState(false);
   const [notFormu, setNotFormu] = useState(false);
   const [kosulFormu, setKosulFormu] = useState(false);
-  const duzenler = haftalikDuzenler(ben, hafta);
-  const karar = kararVerebilir(ben, hafta) && gundemde(kalem);
+  // Next Day'e ya da pakete geçmiş kalem kesinleşmiş haftada kilitli; sonradan eklenen düzenlenir, karar alır.
+  const kilitli = kalemKilitli(hafta, kalem);
+  const duzenler = haftalikDuzenler(ben, hafta) && !kilitli;
+  const karar = kararVerebilir(ben, hafta) && gundemde(kalem) && !kilitli;
   const notYazar = kararNotuYazabilir(ben, hafta) && gundemde(kalem);
   const plan = planBul(v, kalem.aktarim?.planId);
   const paket = paketBul(v, kalem.aktarim?.paketId);

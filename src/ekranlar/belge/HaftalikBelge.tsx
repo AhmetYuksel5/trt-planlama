@@ -9,7 +9,7 @@ import { Pencere } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
 import { TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
-import { ciktida, gundemde, haftaGunleri, haftaSonu } from "../../haftalik";
+import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
 import { KalemFormu, KosulFormu } from "../haftalik/Kalem";
@@ -99,8 +99,10 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
  */
 export const ToplantiSecimi = createContext<{ secili?: string; sec: (id: string) => void } | null>(null);
 
-function Kalem({ k, hafta, duzen, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
+function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
   const { t } = useDil();
+  // Kesinleşmiş haftada Next Day'e ya da pakete geçmiş kalem çıktı gibi, düzenlenmez.
+  const duzen = d && !kalemKilitli(hafta, k) ? d : undefined;
   const v = useVeri();
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
   const ben = duzen?.ben;
