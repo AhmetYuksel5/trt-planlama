@@ -104,7 +104,7 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
           </button>
         </div>
         {/* Her sekmede tablo yerine paket şeritleri (kullanıcı): yalnız başlık, muhabir, gün; basınca yapım aşamaları. */}
-        {liste.length ? <PaketListesi ben={ben} paketler={liste} sira={sira} artan={durum === "aktif"} /> : <Bos metin={t("kayitYok")} />}
+        {liste.length ? <PaketListesi ben={ben} paketler={liste} sira={sira} artan={false} /> : <Bos metin={t("kayitYok")} />}
       </Kart>
     </>
   );

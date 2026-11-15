@@ -953,8 +953,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ve iptal kırmızı), altında ince aşama çizgisi; gün `paketGunu` (biten
     pakette bittiği gün, sürende teslim günü, yoksa planın günü). Açılınca
     süren pakette şimdiki aşama ve kimde, sıradakiler sönük. "Sırala"
-    (`data-paket-sira`, `useAdimDurumu`): güne (gruplu; Aktif'te yakından
-    uzağa, öbür sekmelerde yeniden eskiye), muhabire, aşamaya (gruplu),
+    (`data-paket-sira`, `useAdimDurumu`): güne (gruplu; her sekmede yeniden
+    eskiye, aşağı doğru; kullanıcı, önce Aktif'te yakından uzağaydı), muhabire, aşamaya (gruplu),
     başlığa, son değişene. Tablo kalktı. Test `testler/bitmis-paket.cjs`.
   - Sade paket sayfası (kullanıcı: biten paketin sayfasında koordinasyon notları,
     muhabirin bilgileri, önerinin özeti, Strap kartı saçma; metnin kendisi sırasıyla,

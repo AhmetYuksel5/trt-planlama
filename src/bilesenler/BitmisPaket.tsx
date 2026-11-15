@@ -178,8 +178,9 @@ export const PAKET_SIRALARI: { id: PaketSirasi; ad: Anahtar }[] = [
 /*
  * Paketlerin şerit listesi, seçilen sırayla (kullanıcı: paketler muhabire,
  * yapılacağı güne göre sıralanabilsin). Gün, muhabir ve aşamada başlıklı
- * gruplar; başlık ve son değişende düz liste. Süren işte gün yakından
- * uzağa, biten işte yeniden eskiye (`artan`).
+ * gruplar; başlık ve son değişende düz liste. Gün her sekmede yeniden
+ * eskiye, aşağı doğru (kullanıcı; önce Aktif'te yakından uzağaydı);
+ * `artan` eskiden yeniye isteyen yer için.
  */
 export function PaketListesi({ ben, paketler, sira, artan }: { ben: Kisi; paketler: Paket[]; sira: PaketSirasi; artan: boolean }) {
   const { ad, dil, t } = useDil();
