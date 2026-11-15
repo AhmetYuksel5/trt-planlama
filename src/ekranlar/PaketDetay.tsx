@@ -4,29 +4,28 @@ import { TarihSaatGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi } from "../yapi";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Ban, CircleCheck, Hourglass, MessageSquare, Star, Undo2, Workflow } from "lucide-react";
+import { Ban, ChevronDown, CircleCheck, Hourglass, Undo2, Workflow } from "lucide-react";
 import { useState } from "react";
 import { adimAdi, adimTuru, parcaliMi, geriHedefi, geciktiMi, paketSahibi } from "../akis";
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
-import { Avatar, BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
-import { BaskaMuhabireVer, PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
+import { BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
-import { gecenSure, metin as dilMetni, saatYaz, tarihYaz, useDil } from "../dil";
-import { adimIlerle, geriGonder, nitelikPuanla, notEkle, paketDurum, paketMetniDuzenlenebilir, paketReddet, paketTamamla } from "../eylemler";
+import { metin as dilMetni, tarihYaz, useDil } from "../dil";
+import { adimIlerle, geriGonder, paketDurum, paketReddet, paketTamamla } from "../eylemler";
 import { sartliBekleyen } from "../haftalik";
 
-import { sehirAdi } from "../etiketler";
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, ucretGorebilir, uretimYoluBelirleyebilir, yapabilir } from "../yetki";
+import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, yapabilir } from "../yetki";
 import { UretimBalonuDugmesi } from "../bilesenler/UretimBalonu";
 import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
-import { PaketMetniFormu } from "./nextday/BaslikKarti";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
+import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
 import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
 import { bitmisMi } from "../bitmisPaket";
 
@@ -39,10 +38,10 @@ import { bitmisMi } from "../bitmisPaket";
  * bazlı yetkiyle: kaydı görmek ücreti görmek demek değil.
  */
 export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Paket; kutu?: string }) {
-  const { t, ad, dil } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
-  const muhabir = kisiBul(v, paket.muhabirId);
   const oneri = oneriBul(v, paket.oneriId);
+  const muhabir = kisiBul(v, paket.muhabirId);
   const hareketler = v.hareketler.filter((h) => h.paketId === paket.id || (oneri && h.oneriId === oneri.id));
 
   return (
@@ -60,7 +59,14 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
             {paket.kod} · <TurRozeti tur={paket.tur} /> {paket.bicim && <BicimRozeti bicim={paket.bicim} />} <PaketDurumRozeti paket={paket} />{" "}
             {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />} {paket.haftalikKalemId && <HaftalikRozeti />}
           </p>
+          {/* Muhabir yalnız adıyla; basınca iletişim kartı (ayrı bilgi kartı kalktı). */}
+          {muhabir && (
+            <p className="paket-muhabir">
+              <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} />
+            </p>
+          )}
           <GorevKunyesi p={paket} />
+          <OzelBag paket={paket} />
         </div>
       </header>
       {/* Haftalıkta şartlı kabul: muhabire ön bilgi, Planlama'ya bekleyen karar. Kabul ya da retle konu kapanıyor. */}
@@ -83,114 +89,21 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
         <AsamaKutulari ben={ben} paket={paket} kutu={kutu} eylem={<EylemKarti ben={ben} paket={paket} />} />
       )}
 
-      <div className="iz iz-ana-yan">
-        <div className="iz">
-          {/* Başka muhabire verme ayrı yetki: işlem kartı açılmayan yetkili de görsün. */}
-          <BaskaMuhabireVer ben={ben} paket={paket} />
-          <PaketMetniKarti ben={ben} paket={paket} />
-          <YoneticiKarti ben={ben} paket={paket} />
-          {paket.metin && (
-            <Kart baslik={t("metin")}>
-              <div className="metin-kutu">
-                <Icerik blok>
-                  <HarekeliMetin metin={paket.metin} />
-                </Icerik>
-              </div>
-            </Kart>
-          )}
-          <Notlar ben={ben} paket={paket} />
-          <Kart baslik={t("hareketGecmisi")}>
-            {hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}
-          </Kart>
-        </div>
-        <div className="iz">
-          <Kart baslik={t("bilgiler")}>
-            <div className="alanlar">
-              <div className="alan">
-                <small>{t("muhabir")}</small>
-                {muhabir ? (
-                  <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} />
-                ) : (
-                  <b>{t("atanmadi")}</b>
-                )}
-              </div>
-              <div className="alan">
-                <small>{t("sehirUlke")}</small>
-                <b>{paket.yer ? <Icerik>{paket.yer}</Icerik> : sehirAdi(paket.sehir)}</b>
-              </div>
-              {paket.ozelId && (
-                <>
-                  {/* Muhabir özel yayının kendisini okuyamıyor (gerçek kipte kural): adı yoksa yalnız "Özel yayın". */}
-                  <div className="alan">
-                    <small>{t("ozel")}</small>
-                    {v.ozel.some((o) => o.id === paket.ozelId) ? (
-                      <a href={`#/ozel/${paket.ozelId}`}>
-                        <Icerik>{v.ozel.find((o) => o.id === paket.ozelId)!.ad}</Icerik>
-                      </a>
-                    ) : paket.ozelAd ? (
-                      <b>
-                        <Icerik>{paket.ozelAd}</Icerik>
-                      </b>
-                    ) : (
-                      <b>{t(paket.ozelKaynak === "inhouse" ? "oyInhouse" : "oyDis")}</b>
-                    )}
-                  </div>
-                  {paket.sonTarih && (
-                    <div className="alan">
-                      <small>{t("oySonTarih")}</small>
-                      <b className={paket.durum !== "tamamlandi" && paket.sonTarih < bugun() ? "kotu-yazi" : ""}>{tarihYaz(paket.sonTarih, dil, "kisa")}</b>
-                    </div>
-                  )}
-                  {paket.hazirlayanId && (
-                    <div className="alan">
-                      <small>{t("oyHazirlayan")}</small>
-                      <b>{ad(kisiBul(v, paket.hazirlayanId))}</b>
-                    </div>
-                  )}
-                </>
-              )}
-              <div className="alan">
-                <small>{t("yayinSaati")}</small>
-                <b>{paket.yayin ? saatYaz(paket.yayin, dil) : "—"}</b>
-              </div>
-              <div className="alan">
-                <small>{t("saha")}</small>
-                <b>{t(paket.sahaGerekli ? "evet" : "hayir")}</b>
-              </div>
-              {paket.durum === "tamamlandi" && (paket.nitelik || yapabilir(ben, "nitelikPuanla")) && (
-                <div className="alan alan-genis">
-                  <small>{t("nitelikPuani")}</small>
-                  <NitelikPuani ben={ben} paket={paket} />
-                </div>
-              )}
-              <div className="alan">
-                <small>{t("slug")}</small>
-                <b dir="ltr">{paket.slug ?? "—"}</b>
-              </div>
-              <div className="alan">
-                <small>{t("ucret")}</small>
-                {!paket.ucret ? (
-                  <b>—</b>
-                ) : ucretGorebilir(ben, paket) ? (
-                  <b>
-                    {paket.ucret.tutar} {paket.ucret.para} · {t(`uc_${paket.ucret.durum}`)}
-                  </b>
-                ) : (
-                  <Kilitli metin={t("maliAlanKilitli")} />
-                )}
-              </div>
-            </div>
-            {paket.aciklama && (
-              <div className="ara-ust-2">
-                <div className="alan-etiket">{t("kisaAciklama")}</div>
-                <p className="sonuk-yazi">
-                  <Icerik blok>{paket.aciklama}</Icerik>
-                </p>
-              </div>
-            )}
-          </Kart>
-        </div>
-      </div>
+      {/*
+        Kullanıcı: tamamlanan paketin sayfasında koordinasyon notları, muhabirin bilgileri, önerinin özeti
+        gereksiz; metnin kendisi sırasıyla, künye, video ve ek masraf yeter. Geçmiş katlı.
+      */}
+      <YoneticiKarti ben={ben} paket={paket} />
+      <PaketMetniKarti paket={paket} />
+      <MasrafKarti ben={ben} paket={paket} />
+      <details className="kart katlanir" data-paket-gecmis>
+        <summary className="kart-bas">
+          <h2>{t("hareketGecmisi")}</h2>
+          <span className="ek">{hareketler.length}</span>
+          <ChevronDown size={18} className="katlanir-ok" aria-hidden="true" />
+        </summary>
+        <div className="katlanir-govde">{hareketler.length ? <HareketGecmisi hareketler={hareketler} d={v} /> : <Bos kucuk metin={t("kayitYok")} />}</div>
+      </details>
     </>
   );
 }
@@ -494,85 +407,25 @@ function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
 /* Klip kodu önerisi plan gününden; planı olmayan paket için bugünden. */
 const plan = (v: ReturnType<typeof useVeri>, p: Paket) => planBul(v, p.planId)?.tarih ?? yerelGun(new Date().toISOString());
 
-/** Koordinasyon notları: e-posta yerine kayıt üzerinde yazışma. */
-function Notlar({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t, ad, dil } = useDil();
+/* Özel yayın paketinin yayını: muhabir yayının kaydını okuyamıyor (gerçek kipte kural), adı paketin kendisinde. */
+function OzelBag({ paket }: { paket: Paket }) {
+  const { t, dil } = useDil();
   const v = useVeri();
-  const [yeni, setYeni] = useState("");
-  const gonder = () => {
-    if (notEkle(ben, paket.id, yeni)) setYeni("");
-  };
+  if (!paket.ozelId) return null;
+  const o = v.ozel.find((x) => x.id === paket.ozelId);
   return (
-    <Kart baslik={t("koordinasyonNotlari")} ikon={<MessageSquare size={18} />}>
-      {paket.notlar.length === 0 && <Bos kucuk metin={t("notYok")} />}
-      <ul className="akis">
-        {paket.notlar.map((n) => {
-          const k = kisiBul(v, n.kisiId);
-          return (
-            <li key={n.id} className={n.yonetici ? "yonetici-notu" : ""}>
-              <Avatar kisi={k} boy="kucuk" />
-              <div className="metin">
-                <b>{k ? ad(k) : "?"}</b> <span className="sonuk-yazi">· {k ? birimAdi(k.birim) : ""}</span>
-                {n.yonetici && <span className="rozet rozet-talimat">{t("yoneticiNotu")}</span>}
-                <p dir="auto">{n.metin}</p>
-              </div>
-              <time dateTime={n.zaman}>{gecenSure(n.zaman, dil)}</time>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="form ara-ust-2">
-        <AnmaGirdisi cokSatir deger={yeni} degistir={setYeni} placeholder={t("notIpucu")} rows={2} data-paket-notu />
-        <div className="form-alt">
-          <button className="dugme dugme-kucuk" onClick={gonder} disabled={!yeni.trim()}>
-            {t("notEkle")}
-          </button>
-        </div>
-      </div>
-    </Kart>
-  );
-}
-
-/** Tamamlanan pakete Newsdesk'in nitelik puanı: yıldızlar, yetkisi olana düğme. */
-function NitelikPuani({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t } = useDil();
-  const verir = yapabilir(ben, "nitelikPuanla");
-  return (
-    <span className="yildizlar" role={verir ? "group" : undefined} aria-label={t("nitelikPuani")}>
-      {[1, 2, 3, 4, 5].map((n) =>
-        verir ? (
-          <button
-            key={n}
-            className={`dugme dugme-sade dugme-ikon ${n <= (paket.nitelik ?? 0) ? "dolu" : ""}`}
-            aria-label={t("puanVer", { n })}
-            aria-pressed={n === paket.nitelik}
-            onClick={() => nitelikPuanla(ben, paket.id, n) && bildir(t("bPuanKaydedildi"))}
-          >
-            <Star size={16} />
-          </button>
-        ) : (
-          <Star key={n} size={16} className={n <= (paket.nitelik ?? 0) ? "dolu" : ""} />
-        ),
-      )}
-    </span>
-  );
-}
-
-/* Onaylı paketin metni sonradan düzeltilir (plansız Weekly paketi plan ekranında görünmüyor). */
-function PaketMetniKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const { t } = useDil();
-  const v = useVeri();
-  const [acik, setAcik] = useState(false);
-  if (!paketMetniDuzenlenebilir(ben, v, paket)) return null;
-  return (
-    <Kart baslik={t("onerilenPaketBasligi")}>
-      {acik ? (
-        <PaketMetniFormu ben={ben} paket={paket} kapat={() => setAcik(false)} />
+    <p className="sonuk-yazi" data-paket-ozel>
+      {t("ozel")}:{" "}
+      {o ? (
+        <a href={`#/ozel/${o.id}`}>
+          <Icerik>{o.ad}</Icerik>
+        </a>
+      ) : paket.ozelAd ? (
+        <Icerik>{paket.ozelAd}</Icerik>
       ) : (
-        <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} data-paket-metni-ac>
-          {t("duzenle")}
-        </button>
+        t(paket.ozelKaynak === "inhouse" ? "oyInhouse" : "oyDis")
       )}
-    </Kart>
+      {paket.sonTarih && <span className={paket.durum !== "tamamlandi" && paket.sonTarih < bugun() ? "kotu-yazi" : ""}> · {t("oySonTarih")} {tarihYaz(paket.sonTarih, dil, "kisa")}</span>}
+    </p>
   );
 }

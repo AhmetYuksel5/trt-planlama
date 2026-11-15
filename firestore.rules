@@ -258,6 +258,14 @@ service cloud.firestore {
       return adGuvenli(n.get("k", "")) && jVar(n, '"kisiId":"' + n.k + '"') && !jVar(n, '"kisiId":.*"kisiId":')
         && (n.k in kimliklerim() || (eski != null && jVar(eski.data, '"kisiId":"' + n.k + '"')));
     }
+    // Paketin masraf onayı ve onaydan sonra masraflar (kullanıcı: muhabir girer, Planlama onaylar): muhabir onayı
+    // kendisi yazamaz, onaylanmış tutarı değiştiremez. j'den aynı desenle çıkarılıp karşılaştırılıyor.
+    function jParca(j, desen) { return j.matches('.*' + desen + '.*') ? j.replace('^.*(' + desen + ').*$', '$1') : ''; }
+    function masrafAyni(n, o) {
+      return jParca(n.get("j", ""), '"masrafOnayi":[{][^}]*[}]') == jParca(o.get("j", ""), '"masrafOnayi":[{][^}]*[}]')
+        && (jParca(o.get("j", ""), '"masrafOnayi":[{][^}]*[}]') == ''
+            || jParca(n.get("j", ""), '"masraflar":\\[[^\\]]*\\]') == jParca(o.get("j", ""), '"masraflar":\\[[^\\]]*\\]'));
+    }
     function kisitliIcerik(alan, n, eski) {
       return (alan == "oneriler" && tekDurum(n)
               && (eski == null
@@ -267,7 +275,7 @@ service cloud.firestore {
                      // Düzeltip yeniden gönderme, takibi öneriye çevirme, Planlama dokunmadan geri çekme.
                      || (durumu(n, "yeni") && (durumu(eski.data, "duzeltme") || durumu(eski.data, "takip")))
                      || (durumu(n, "geriCekildi") && durumu(eski.data, "yeni")))))
-        || (alan == "paketler" && eski != null && tekDurum(n)
+        || (alan == "paketler" && eski != null && tekDurum(n) && masrafAyni(n, eski.data)
               && (paketDurumAyni(n, eski.data)
                   // Özel yayın paketini işi yapan teslim ediyor (ozelPaketTeslimEdebilir); öbürü işaret ve onayla kapanır.
                   || (durumu(n, "tamamlandi") && jVar(n, '"ozelId":"') && (durumu(eski.data, "onaylandi") || durumu(eski.data, "uretimde")))))

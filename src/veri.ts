@@ -898,6 +898,12 @@ export interface Ucret {
  * Bölüm türleri ve özellikleri sonra belirlenecek; şimdilik ad serbest.
  */
 export type ParcaAsamasi = "muhabir" | "newsdesk" | "dil" | "tamam";
+/*
+ * Parçanın türü (kullanıcı: paketin metni yayındaki sırasıyla okunsun: Strap,
+ * intro, metin ve içindeki röportajlar, stand). Eski parçada yok; adından
+ * tahmin edilir (paketMetni.ts → parcaTuru).
+ */
+export type ParcaTuru = "intro" | "metin" | "roportaj" | "stand" | "gfx";
 export interface MetinParcasi {
   id: string;
   ad: string;
@@ -907,6 +913,26 @@ export interface MetinParcasi {
   iade?: string;
   /** Muhabirin son gönderdiği metin (kullanıcı kararı, aşama kutuları): editör ve dil denetmeni üzerine yazıyor, fark buna göre. */
   ilk?: string;
+  tur?: ParcaTuru;
+  /** Röportajda konuşmanın aslı (Türkçe, İngilizce…); metin alanı Arapça çevirisi. */
+  asil?: string;
+}
+
+/*
+ * Paketin ek masrafı (kullanıcı: muhabir girer, Planlama "Yapıldı"yı
+ * onaylayınca masraf da onaylanmış olur, künyeyle Muhasebe'ye gider).
+ */
+export type MasrafTuru = "cekim" | "ulasim" | "konaklama" | "harcirah" | "diger";
+export const MASRAF_TURLERI: MasrafTuru[] = ["cekim", "ulasim", "konaklama", "harcirah", "diger"];
+export interface Masraf {
+  id: string;
+  tur: MasrafTuru;
+  tutar: number;
+  /** Para biriminin adı (Muhasebe'nin tanımlarından ya da varsayılanlardan). */
+  para: string;
+  aciklama?: string;
+  kisiId: string;
+  zaman: string;
 }
 
 /*
@@ -1042,6 +1068,9 @@ export interface Paket {
    * yapılmadı iptal eder ve `yapilmadi`'ya geçer; geri çevrilince silinir.
    */
   isaret?: { tur: "yapildi" | "yapilmadi"; zaman: string; kisiId: string; sebep?: string };
+  masraflar?: Masraf[];
+  /** Masrafların onayı: "Yapıldı"nın onayıyla birlikte, ya da üretimden biten pakette ayrıca. Sonra masraf değişmez. */
+  masrafOnayi?: { kisiId: string; zaman: string };
   /*
    * Başka muhabire verildi: paket iptal, yerine yeni muhabire teklif açıldı
    * (`oneriId`). Eski muhabirin geçmişinde iz olarak kalıyor.

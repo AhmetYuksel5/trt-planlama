@@ -130,6 +130,7 @@ export function OneriAyrinti({
   ekleFormu,
   ilkMod = null,
   ertelenebilir = true,
+  yerinde = false,
 }: {
   ben: Kisi;
   oneri: Oneri;
@@ -140,6 +141,8 @@ export function OneriAyrinti({
   ekleFormu?: (o: Oneri, kapat: () => void) => ReactNode;
   ilkMod?: Mod;
   ertelenebilir?: boolean;
+  /* Ana sayfanın satırında yerinde açılır (kullanıcı: yan panel istemiyor); kapat satırı kapatır. */
+  yerinde?: boolean;
 }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
@@ -499,6 +502,16 @@ export function OneriAyrinti({
     </>
   );
 
+  if (kapat && yerinde)
+    return (
+      <div className="oneri-yerinde" data-oneri-yerinde={o.id}>
+        <OneriMetaSatiri oneri={o} d={v} bagli kapat={kapat} />
+        {govde}
+        <div className="oneri-alt" data-oneri-alt>
+          {alt}
+        </div>
+      </div>
+    );
   if (kapat)
     return (
       <Pencere baslik={baslik} alt={<OneriMetaSatiri oneri={o} d={v} bagli kapat={kapat} />} kapat={kapat} altBilgi={alt}>

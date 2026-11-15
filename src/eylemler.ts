@@ -97,6 +97,8 @@ import {
   type OneriGorunumu,
   type Paket,
   type MetinParcasi,
+  type Masraf,
+  type ParcaTuru,
   type OzelYayin,
   type OzelIz,
   type OzelDurum,
@@ -205,6 +207,8 @@ import {
   paketinMasasi,
   programDuzenler,
   icerikAktarabilir,
+  masrafGirebilir,
+  masrafOnaylayabilir,
 } from "./yetki";
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
@@ -2633,9 +2637,42 @@ const isaretUygula = (d: Durum, ben: Kisi, p: Paket, kabul: boolean): Durum => {
     const { isaret: _, ...y } = x;
     if (!kabul) return { ...y, guncelleme: z };
     if (i.tur === "yapilmadi") return { ...y, durum: "iptal", adim: undefined, yapilmadi: { sebep: i.sebep ?? "", zaman: i.zaman, kisiId: i.kisiId, onaylayan: ben.id }, guncelleme: z };
-    return kunyeYaz({ ...y, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(i.kisiId === x.muhabirId && !x.muhabirTeslimi ? { muhabirTeslimi: i.zaman } : {}) }, "onaylayan", ben.id, z);
+    // Kullanıcı kararı: "Yapıldı"nın onayı paketin masrafını da onaylar (ayrı onay yok).
+    return kunyeYaz(
+      { ...y, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(i.kisiId === x.muhabirId && !x.muhabirTeslimi ? { muhabirTeslimi: i.zaman } : {}), ...(x.masraflar?.length && !x.masrafOnayi && { masrafOnayi: { kisiId: ben.id, zaman: z } }) },
+      "onaylayan",
+      ben.id,
+      z,
+    );
   });
   return hareketYaz(yeni, { kisiId: ben.id, tip: kabul ? "paketIsaretOnaylandi" : "paketIsaretGeriCevrildi", paketId: p.id, planId: p.planId, veri: { tur: i.tur, ...(p.muhabirId && { kime: p.muhabirId }) } });
+};
+
+/* --- Ek masraflar: muhabir girer, onay "Yapıldı"nın onayıyla (isaretUygula) ya da üretimden biten pakette ayrıca --- */
+
+export const masrafEkle = (ben: Kisi, id: string, g: { tur: Masraf["tur"]; tutar: number; para: string; aciklama?: string }) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !masrafGirebilir(ben, p) || !(g.tutar > 0) || !g.para.trim() || (g.tur === "diger" && !g.aciklama?.trim())) return false;
+  const m: Masraf = { id: kimlik("ms"), tur: g.tur, tutar: Math.round(g.tutar * 100) / 100, para: g.para.trim(), ...(g.aciklama?.trim() && { aciklama: g.aciklama.trim() }), kisiId: ben.id, zaman: simdi() };
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, masraflar: [...(x.masraflar ?? []), m], guncelleme: simdi() })));
+  return true;
+};
+
+export const masrafSil = (ben: Kisi, id: string, masrafId: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !masrafGirebilir(ben, p) || !p.masraflar?.some((m) => m.id === masrafId)) return false;
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, masraflar: x.masraflar!.filter((m) => m.id !== masrafId), guncelleme: simdi() })));
+  return true;
+};
+
+export const masrafOnayla = (ben: Kisi, id: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !masrafOnaylayabilir(ben, p)) return false;
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, masrafOnayi: { kisiId: ben.id, zaman: simdi() }, guncelleme: simdi() })));
+  return true;
 };
 
 export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi", sebep = "") => {
@@ -3328,7 +3365,7 @@ const parcaHareketi = (d: Durum, ben: Kisi, p: Paket, tip: Hareket["tip"], parca
   hareketYaz(d, { kisiId: ben.id, tip, paketId: p.id, planId: p.planId, veri: { parca: parca.ad, sahip, ...ek } });
 
 /** Muhabir yeni parça ya da iade edilen parçayı gönderiyor; parça Newsdesk'e düşer. */
-export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: string; metin: string }) => {
+export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: string; metin: string; tur?: ParcaTuru; asil?: string }) => {
   let d = getir();
   const p = paketBul(d, paketId);
   if (!p || !parcaYapabilir(ben, p, "muhabir") || !g.ad.trim() || !g.metin.trim()) return false;
@@ -3337,7 +3374,9 @@ export const parcaGonder = (ben: Kisi, paketId: string, g: { id?: string; ad: st
   // Üretim balonunda editoryal kontrol ya da dil atlanabiliyor: parça yolda kalan ilk aşamaya gider.
   const ilk = parcaIlkAsama(p);
   // Muhabirin gönderdiği hal ayrıca kalıyor: editör ve dil denetmeni metnin üzerine yazıyor, fark görünümü buna göre.
-  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: ilk, ilk: g.metin.trim() };
+  const tur = g.tur ?? eski?.tur;
+  const asil = tur === "roportaj" ? g.asil?.trim() : undefined;
+  const parca: MetinParcasi = { id: eski?.id ?? kimlik("mp"), ad: g.ad.trim(), metin: g.metin.trim(), asama: ilk, ilk: g.metin.trim(), ...(tur && { tur }), ...(asil && { asil }) };
   const parcalar = eski ? p.parcalar!.map((x) => (x === eski ? parca : x)) : [...(p.parcalar ?? []), parca];
   d = paketGuncelle(d, paketId, (x) => parcalariYaz(x, parcalar));
   kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaGeldi", parca, parcaSahibi(p, ilk)), ben, p));

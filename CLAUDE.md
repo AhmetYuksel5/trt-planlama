@@ -846,8 +846,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlamış (`ornek.ts → balonlaKur`, `BALON_YERI`: eski durak balonun
     yerine, şablon `PaketTanimi.sablon`, parçalar ve hareketler ondan); kayıt
     anahtarı bunun için v25 oldu, eski demo kaydı yeni örnekle açılır.
-    Paketin parça adı formunda Metin/Stand/Gfx
-    önerileri. Balonsuz onaylı paket eskisi gibi muhabirin "Yapıldı"sıyla
+    Parça formunda tür seçimi (aşağıda, sade paket sayfası). Balonsuz onaylı paket eskisi gibi muhabirin "Yapıldı"sıyla
     kapanır; üretimdeki eski paket kolun akışıyla biter.
   - Üretim şablonları (`organizasyon/UretimSablonlari.tsx`,
     `#/organizasyon/uretim`; eski "İş akışları" sekmesinin ve
@@ -957,6 +956,33 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`data-paket-sira`, `useAdimDurumu`): güne (gruplu; Aktif'te yakından
     uzağa, öbür sekmelerde yeniden eskiye), muhabire, aşamaya (gruplu),
     başlığa, son değişene. Tablo kalktı. Test `testler/bitmis-paket.cjs`.
+  - Sade paket sayfası (kullanıcı: biten paketin sayfasında koordinasyon notları,
+    muhabirin bilgileri, önerinin özeti, Strap kartı saçma; metnin kendisi sırasıyla,
+    künye, video ve ek masraf yeter; `ekranlar/PaketDetay.tsx`): koordinasyon notları,
+    "Bilgiler" kartı (şehir, yayın saati, saha, nitelik puanı, ücret, kısa açıklama),
+    Strap düzenleme kartı ve "Başka muhabire ver" sayfadan kalktı (eylemleri yerinde);
+    muhabir başlığın altında yalnız çip, özel yayın bağı başlıkta (`OzelBag`), hareket
+    geçmişi katlı (`data-paket-gecmis`). "Paket metni" kartı (`bilesenler/PaketMetni.tsx
+    → PaketMetniKarti`, kurallar `paketMetni.ts → paketSenaryosu`): Strap → intro →
+    metin (röportajlar girildiği yerde, aslı sönük üstte) → stand; gfx grafiğin içeriği,
+    kendi kutusunda. Parçanın türü `MetinParcasi.tur` (intro, metin, röportaj, stand,
+    balonda gfx seçildiyse gfx; formda düğme, adı türden gelir, serbest), röportajda
+    konuşmanın aslı `asil`; eski parçada addan tahmin (`parcaTuru`: INTRO, PTC, SOT,
+    مقابلة…). Biten paketin şeridi sayfada metni tekrar etmez.
+  - Ek masraflar (kullanıcı: muhabir girer, Planlama onaylar; "Yapıldı"nın onayı
+    masrafı da onaylar, künyeyle Muhasebe'ye; `Paket.masraflar`, `Masraf`: çekim,
+    ulaşım, konaklama, harcırah, diğer [açıklama zorunlu]; tutar, para birimi
+    [Muhasebe'nin tanımları, muhabir okuyamadığı için yoksa USD/EUR/TRY,
+    `paraBirimleri`], açıklama). Paket sayfasında `MasrafKarti`; girer/siler
+    `yetki.ts → masrafGirebilir` (onaylı ya da üretimdeki paketin muhabiri, onun
+    adına paket değerlendiren; onaydan sonra kimse). Onay `Paket.masrafOnayi`:
+    `isaretUygula` "yapıldı"yı onaylarken yazar; üretimden (işaretsiz) biten pakette
+    "Masrafları onayla" (`masrafOnaylayabilir`, hesap yetkisi `paketOnayi`). Onay
+    kuyruğunda ve panonun onay satırında tutar görünür. Muhasebe: onaylı masraf işin
+    satırında ve künyesinin altında (`MuhasebeIsi.masraflar`), ayın satırında para
+    birimine göre toplam (`AylikDokum.masraf`, ödemeye katılmaz), CSV'de sütun. Kural:
+    kısıtlı kişi `masrafOnayi`'ni yazamaz, onaylanmış masrafı değiştiremez
+    (`firestore.rules → masrafAyni`, j'den desenle). Test `testler/paket-metni.cjs`.
   - Harekeler kırmızı (kullanıcı: dil denetimi harekeliyor; `bilesenler/
     Hareke.tsx`): harekeyi ayrı `<span>`'da boyamak Chrome'da çalışmıyor (harf
     ve hareke tek parça çiziliyor), bu yüzden iki katman üst üste: altta tam
@@ -2920,6 +2946,28 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       düşen, satırı olan her kapsam günü kendi kalemi, o günün satırlarıyla;
       tek günde eskisi gibi tek kalem.
     Test `testler/planlama-3.cjs`; şartlı kabulün son günü `sartli-kabul.cjs`.
+    4. aşama, masaüstü ana sayfa (kullanıcı: ortada rastgele kutular, alan iyi
+    kullanılmıyor; sabit sayfa, bütün alan dolu, sağdan/soldan açılan panel yok,
+    açtıkça yerinde büyüsün; beş tasarımcıya danışıldı, ortak öneri; `ekranlar/yeni/
+    AnaPano.tsx`, kurallar `anaPano.ts`): 961 pikselden genişte `PlanlamaAna` panoyu
+    çizer, dar ekranda kutular ve sağ panel (mobil denetimde onaylı) kalır. Üstte
+    bugünün zaman çizgisi (07–24, toplantılar, yarının çağrısının son saati, canlılar
+    [GMT +3], "şimdi" çizgisi; `gunOlaylari`, `siradakiOlay`: "Sıradaki: X · 2 sa
+    sonra", bir saatten azsa kırmızı). Altında üç sütun (1400 altında iki: kararlar
+    solda, öbürleri sağda alt alta); sayfa ekranı doldurur, sütun kendi içinde kayar
+    (720 piksel altında sayfa uzar). Sıradaki kararlar tek kuyruk (`kararKuyrugu`:
+    karar bekleyen öneri, birimin yanıtladığı soru, "Yapıldı" onayı, şartlı kabul, görev
+    talebi, anılan not, kayıt onayı; "Bugün ve yarın" önce, son gün ve bekleme
+    süresine göre): satır yerinde açılır, aynı anda bir satır, Esc kapatır, j/k gezer;
+    öneri `OneriAyrinti yerinde` (pencere değil, karar verilince satır kapanır), onayda
+    masraf ve sonuç düğmeleri, şartlıda kabul/ret, talepte `TalepSatiri`. Planlar:
+    Next Day (başlık sayısı, kararsız PKG, çağrı yanıtı; başlıkları yerinde açılır,
+    toplantıdaysa toplantı görünümü), Weekly, Aylık, Özel, önümüzdeki 7 günün takvimi,
+    üretimdeki paketler (`uretimdekiler`: aşama · kimde · süre, `UZUN_DAKIKA` 180'i
+    aşan turuncu). Muhabirler: çağrıya yanıt vermeyenler (`cagriDurumu`, WhatsApp),
+    sahada ve izinde olanlar, okunmamış posta iplikleri. Kişisel alan ("+" ile kendi
+    kutuları) sonraki adım. Üst çubuktaki saat 1100 pikselden dar çubukta gizli
+    (1280 ekranda avatarı dışarı itiyordu). Test `testler/ana-pano.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

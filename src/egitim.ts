@@ -68,8 +68,13 @@ export const masaKisisi = (d: Pick<Durum, "kisiler">, birim: BirimId | string | 
   return d.kisiler.find((k: Kisi) => k.birim === birim && !k.pasif)?.id;
 };
 
-export const senaryoOnerisi = (d: Pick<Durum, "oneriler">, b: EgitimBaglami) =>
-  d.oneriler.find((o) => o.muhabirId === b.muhabirId && o.zaman >= b.baslangic);
+/*
+ * Örnek verideki öneriler günün saatlerine tarihli: gece başlatılan senaryoda
+ * sabahki örnek öneri "başlangıçtan sonra gönderilmiş" sayılıyor, ilk adım
+ * atlanıyordu. Gelecekteki kayıt senaryonun önerisi olamaz.
+ */
+export const senaryoOnerisi = (d: Pick<Durum, "oneriler">, b: EgitimBaglami, simdi = new Date(Date.now() + 60_000).toISOString()) =>
+  d.oneriler.find((o) => o.muhabirId === b.muhabirId && o.zaman >= b.baslangic && o.zaman <= simdi);
 
 export const senaryoPaketi = (d: Pick<Durum, "paketler">, oneriId: string | undefined): Paket | undefined =>
   oneriId ? d.paketler.find((p) => p.oneriId === oneriId && p.durum !== "iptal") : undefined;

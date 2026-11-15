@@ -73,6 +73,13 @@ const pk = (id, ek) => setDoc(doc(db("mu"), "paketler", id), { s: 0, j: JSON.str
 await t("muhabir paketi tamamlandı yapar", false, pk("p1", { durum: "tamamlandi" }));
 await t("muhabir paket işareti", true, pk("p1", { durum: "onaylandi", isaret: { tur: "yapildi", zaman: "z", kisiId: "mu" } }));
 await t("muhabir özel yayın paketini teslim", true, pk("p2", { durum: "tamamlandi", ozelId: "oz1" }));
+// Ek masraf: muhabir girer, onayı yazamaz; onaylanmış masraf değişmez.
+const ms = [{ id: "m1", tur: "ulasim", tutar: 40, para: "USD", kisiId: "mu", zaman: "z" }];
+await t("muhabir masraf girer", true, pk("p1", { durum: "onaylandi", masraflar: ms }));
+await t("muhabir masraf onayı yazamaz", false, pk("p1", { durum: "onaylandi", masraflar: ms, masrafOnayi: { kisiId: "mu", zaman: "z" } }));
+await t("planlamacı masrafı onaylar", true, setDoc(doc(db("pl"), "paketler", "p1"), { s: 0, j: JSON.stringify({ id: "p1", muhabirId: "mu", durum: "onaylandi", masraflar: ms, masrafOnayi: { kisiId: "pl", zaman: "z" } }), m: ["mu"] }));
+await t("muhabir onaylı masrafı değiştiremez", false, pk("p1", { durum: "onaylandi", masraflar: [{ ...ms[0], tutar: 400 }], masrafOnayi: { kisiId: "pl", zaman: "z" } }));
+await t("muhabir onaylı pakette başka alanı yazar", true, pk("p1", { durum: "onaylandi", masraflar: ms, masrafOnayi: { kisiId: "pl", zaman: "z" }, video: "https://x" }));
 const hr = (id, kisiId, k, jj) => setDoc(doc(db("mu"), "hareketler", id), { s: 0, j: jj ?? JSON.stringify({ id, kisiId, tip: "x" }), m: ["mu"], k });
 await t("muhabir kendi hareketi", true, hr("h1", "mu", "mu"));
 await t("muhabir başkası adına hareket", false, hr("h2", "adm", "adm"));

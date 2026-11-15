@@ -76,8 +76,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await kim("mu1", "#/paketler/" + pk.id);
   for (const ad of ["Metin", "Gfx"]) {
     await p.click("[data-parca-ekle]");
-    ok((await p.locator("[data-parca-onerileri] button").count()) === 2, "parça adı önerileri (Metin, Gfx)");
-    await p.locator("[data-parca-onerileri] button", { hasText: ad }).click();
+    ok((await p.locator("[data-parca-onerileri] button").count()) === 5, "parça türleri (intro, metin, röportaj, stand, gfx)");
+    await p.locator(`[data-parca-tur="${ad === "Metin" ? "metin" : "gfx"}"]`).click();
     await p.fill("[data-parca-metni]", "نص تجريبي " + ad);
     await p.click("[data-parca-gonder]");
     await p.waitForTimeout(300);

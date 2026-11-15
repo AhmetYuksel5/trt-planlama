@@ -1,4 +1,5 @@
-import type { Durum, Kisi, MuhasebeAnlasmasi, MuhasebeIs, MuhasebeKapanisi, MuhasebeTanimi } from "./veri";
+import { masrafToplami } from "./paketMetni";
+import type { Durum, Kisi, Masraf, MuhasebeAnlasmasi, MuhasebeIs, MuhasebeKapanisi, MuhasebeTanimi } from "./veri";
 
 /*
  * Muhasebe (News Gathering'in alt birimi) kuralları. Sayılar saklanmaz,
@@ -19,6 +20,8 @@ export interface MuhasebeIsi {
   tur: MuhasebeIs;
   tarih: string;
   baslik: string;
+  /** Paketin onaylanmış ek masrafları (paketMetni.ts): ödemeye katılmaz, ayrıca toplanır (para birimi anlaşmanınkinden farklı olabilir). */
+  masraflar?: Masraf[];
 }
 
 export const ay = (tarih: string) => tarih.slice(0, 7);
@@ -31,7 +34,7 @@ export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
   for (const p of d.paketler) {
     if (p.muhabirId !== kisiId || p.durum !== "tamamlandi" || p.yapilmadi || p.reddedildi) continue;
     const tarih = planTarihi(d, p.planId) ?? p.sonTarih ?? p.muhabirTeslimi?.slice(0, 10) ?? p.guncelleme?.slice(0, 10);
-    if (tarih) l.push({ id: p.id, kaynak: "paket", tur: p.bicim ?? "pkg", tarih, baslik: p.baslik });
+    if (tarih) l.push({ id: p.id, kaynak: "paket", tur: p.bicim ?? "pkg", tarih, baslik: p.baslik, ...(p.masrafOnayi && p.masraflar?.length && { masraflar: p.masraflar }) });
   }
   for (const c of d.canliYayinlar) {
     if (c.muhabirId !== kisiId || c.sonuc?.durum !== "yapildi") continue;
@@ -109,6 +112,8 @@ export interface AylikDokum {
   fiyatsiz: number;
   ekOdeme: number;
   odeme: number | null;
+  /** Ayın işlerinin onaylı ek masrafları, para birimine göre. */
+  masraf: { para: string; tutar: number }[];
 }
 
 const fiyat = (d: Durum, a: MuhasebeAnlasmasi, i: MuhasebeIsi) => {
@@ -133,7 +138,8 @@ export const aylikDokum = (d: Durum, kisi: Kisi, ayi: string): AylikDokum => {
   for (const i of isler) turler[i.tur] = (turler[i.tur] ?? 0) + 1;
   const kotaPaket = kapanis?.kotaPaket ?? anlasma?.kotaPaket;
   const kotaCanli = kapanis?.kotaCanli ?? anlasma?.kotaCanli;
-  const sonuc: AylikDokum = { kisi, anlasma, kapanis, isler, paket: paketler.length, canli: canlilar.length, turler, kotaPaket, kotaCanli, kotaAlti: false, asanPaket: 0, asanCanli: 0, fiyatsiz: 0, ekOdeme: 0, odeme: null };
+  const masraf = masrafToplami(isler.flatMap((i) => i.masraflar ?? []));
+  const sonuc: AylikDokum = { kisi, anlasma, kapanis, isler, paket: paketler.length, canli: canlilar.length, turler, kotaPaket, kotaCanli, kotaAlti: false, asanPaket: 0, asanCanli: 0, fiyatsiz: 0, ekOdeme: 0, odeme: null, masraf };
   if (!anlasma) return sonuc;
   const ucretli = (l: MuhasebeIsi[]) => {
     let toplam = 0;

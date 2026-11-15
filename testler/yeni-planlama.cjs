@@ -30,6 +30,10 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok((await p.locator('.menu a[href="#/feature"], .menu a[href="#/ekonomi"], .menu a[href="#/programlar"], .menu a[href="#/basliklar"]').count()) === 0, "başka masaların sayfaları menüde yok");
   ok((await p.locator('.menu a[href="#/raporlar"]').count()) === 0, "personelde Yönetim grubu yok");
   const menuSayi = Number(await p.locator('.menu a[href="#/oneriler"] .say').innerText().catch(() => "0"));
+  ok((await p.locator("[data-ana-pano]").count()) === 1 && (await p.locator("[data-py-kutu]").count()) === 0, "masaüstünde pano, kutular yok");
+  // Kutular ve sağ panel tablette ve telefonda (masaüstünde pano: testler/ana-pano.cjs).
+  await p.setViewportSize({ width: 900, height: 900 });
+  await p.waitForTimeout(300);
   const kutuSayi = Number(await p.locator('[data-py-kutu="oneri"] .py-sayi').innerText());
   ok(menuSayi === kutuSayi && kutuSayi > 0, `menüdeki öneri sayısı kutuyla aynı (${menuSayi}/${kutuSayi})`);
   await gir("pl2", "#/oneriler");
@@ -56,6 +60,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.waitForTimeout(300);
   ok((await p.locator('[data-py-panel="muhabir"] [data-kisi-cipi]').count()) > 5, "muhabir panelinde kişi çipleri");
   await p.keyboard.press("Escape");
+  await p.setViewportSize({ width: 1400, height: 900 });
 
   // Yönetici: Yönetim grubu.
   await gir("pl1", "#/");
@@ -65,7 +70,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await gir("yo3", "#/", false);
   const eskiMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
   await gir("yo3", "#/");
-  ok((await p.locator('[data-birim-menusu="planlama"]').count()) === 1 && (await p.locator("[data-py-kutu]").count()) >= 11 && (await p.locator('[data-py-kutu="gunNotu"]').count()) === 0, "tam yönetici yeni menü ve kutulu ana sayfa");
+  ok((await p.locator('[data-birim-menusu="planlama"]').count()) === 1 && (await p.locator("[data-ana-pano]").count()) === 1, "tam yönetici yeni menü ve pano");
   const yeniMenu = await p.locator(".menu a[href^='#/']").evaluateAll((e) => e.map((a) => a.getAttribute("href")));
   const eksik = eskiMenu.filter((h) => !yeniMenu.includes(h));
   ok(eksik.length === 0, `tam yöneticinin hiçbir sayfası menüden düşmedi (${eksik.join(",")})`);

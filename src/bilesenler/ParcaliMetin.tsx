@@ -6,10 +6,10 @@ import { sozcukFarki } from "../metinFarki";
 import { parcalarHazir } from "../akis";
 import { metin as dilMetni, useDil, type Anahtar } from "../dil";
 import { adimIlerle, parcaDuzelt, parcaGonder, parcaIade, parcaSonHal } from "../eylemler";
-import type { Kisi, MetinParcasi, Paket } from "../veri";
+import type { Kisi, MetinParcasi, Paket, ParcaTuru } from "../veri";
 import { parcaYapabilir } from "../yetki";
 import { birimAdi } from "../yapi";
-import { URETIM_PARCALARI, PARCA_ADI } from "../uretim";
+import { parcaTuru } from "../paketMetni";
 import { Icerik, Kart, NotKutu, Rozet, bildir, icerikAlani } from "./Parcalar";
 
 const ASAMA_ROZETI: Record<MetinParcasi["asama"], [Anahtar, string]> = {
@@ -147,13 +147,27 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
   );
 }
 
-/* Muhabirin yeni ya da iade edilen parçası: ad (intro, text, PTC… şimdilik serbest) ve metin. */
+/*
+ * Muhabirin yeni ya da iade edilen parçası: türü (intro, metin, röportaj, stand;
+ * balonda gfx seçildiyse gfx), adı (türden gelir, serbest) ve metin. Röportajda
+ * konuşmanın aslı ayrı, metin alanı Arapça çevirisi (kullanıcı: paketin metni
+ * röportajlarıyla ve tercümeleriyle sırayla okunsun).
+ */
+const TURLER: ParcaTuru[] = ["intro", "metin", "roportaj", "stand"];
 function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; parca?: MetinParcasi; kapat: () => void }) {
   const { t } = useDil();
-  const [ad, setAd] = useState(parca?.ad ?? "");
+  const turler = paket.uretim?.parca.gfx ? [...TURLER, "gfx" as const] : TURLER;
+  const [tur, setTur] = useState<ParcaTuru>(parca ? parcaTuru(parca) : "metin");
+  const [ad, setAd] = useState(parca?.ad ?? (parca ? "" : t(`pt_${tur}`)));
+  const [asil, setAsil] = useState(parca?.asil ?? "");
   const [metin, setMetin, taslakSil] = useMetinTaslagi(`${paket.id}:${parca?.id ?? "yeni"}:muhabir`, parca?.metin ?? "");
+  // Ad elle değiştirilmediyse türle birlikte değişir.
+  const turSec = (x: ParcaTuru) => {
+    if (!ad.trim() || turler.some((y) => ad === t(`pt_${y}`))) setAd(t(`pt_${x}`));
+    setTur(x);
+  };
   const gonder = () => {
-    if (parcaGonder(ben, paket.id, { id: parca?.id, ad, metin })) {
+    if (parcaGonder(ben, paket.id, { id: parca?.id, ad, metin, tur, asil })) {
       taslakSil();
       bildir(t("bAdimTamam"));
       kapat();
@@ -162,19 +176,22 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
   return (
     <div className="form-kutu form" data-parca-formu>
       {parca?.iade && <NotKutu>{parca.iade}</NotKutu>}
+      <div className="dugmeler" role="group" aria-label={t("pmTur")} data-parca-onerileri>
+        {turler.map((x) => (
+          <button key={x} type="button" className="dugme dugme-ikincil dugme-kucuk" aria-pressed={tur === x} onClick={() => turSec(x)} data-parca-tur={x}>
+            {t(`pt_${x}`)}
+          </button>
+        ))}
+      </div>
       <label>
         {t("parcaAdi")}
         <input value={ad} onChange={(e) => setAd(e.target.value)} dir="auto" placeholder="INTRO" data-parca-adi />
       </label>
-      {/* Balonda seçilen parçalar (metin, stand, gfx) tek dokunuşla ad olur; ad yine serbest. */}
-      {paket.uretim && !parca && (
-        <div className="dugmeler" data-parca-onerileri>
-          {URETIM_PARCALARI.filter((x) => x === "metin" || paket.uretim!.parca[x]).map((x) => (
-            <button key={x} type="button" className="dugme dugme-ikincil dugme-kucuk" aria-pressed={ad === t(PARCA_ADI[x])} onClick={() => setAd(t(PARCA_ADI[x]))}>
-              {t(PARCA_ADI[x])}
-            </button>
-          ))}
-        </div>
+      {tur === "roportaj" && (
+        <label>
+          {t("pmAsilAlan")}
+          <textarea rows={3} dir="auto" value={asil} onChange={(e) => setAsil(e.target.value)} data-parca-asil />
+        </label>
       )}
       <textarea {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} placeholder={dilMetni("metinIpucu", "ar")} aria-label={t("parcaAdi")} data-parca-metni />
       <div className="form-alt">

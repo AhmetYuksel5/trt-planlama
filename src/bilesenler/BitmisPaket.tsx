@@ -123,9 +123,10 @@ function PaketIci({ ben, paket, sayfada = false }: { ben: Kisi; paket: Paket; sa
           );
         })}
       </ol>
-      {g.cikti && (paket.metin || paket.video || paket.klipKodu) && (
+      {g.cikti && ((paket.metin && !sayfada) || paket.video || paket.klipKodu) && (
         <div className="bp-ciktilar">
-          {paket.metin && (
+          {/* Sayfada metin kendi kartında, sırasıyla (PaketMetniKarti). */}
+          {paket.metin && !sayfada && (
             <button type="button" className="dugme dugme-ikincil dugme-kucuk" aria-expanded={metin} onClick={() => setMetin(!metin)} data-bp-metin>
               {t("bpSonMetin")}
             </button>

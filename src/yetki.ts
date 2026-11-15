@@ -578,6 +578,18 @@ export const paketTamamlayabilir = (
         (!p.masaTakibi && yapabilir(k, "paketDegerlendir")));
 
 /*
+ * Ek masraf (kullanıcı: muhabir girer, Planlama onaylar): onaylı ya da
+ * üretimdeki paketin muhabiri, onun adına paketi değerlendiren (hesapsız
+ * muhabir); masraf onaylanınca kimse değiştirmez.
+ */
+export const masrafGirebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!k && !k.pasif && !p.masrafOnayi && !p.ozelId && ["onaylandi", "uretimde"].includes(p.durum) && (p.muhabirId === k.id || yapabilir(k, "paketDegerlendir"));
+
+/* Üretimden biten (işaretsiz kapanan) paketin masrafı ayrıca onaylanıyor; işaretle kapananınki onayla birlikte. */
+export const masrafOnaylayabilir = (k: Kisi | undefined, p: Paket): boolean =>
+  !!p.masraflar?.length && !p.masrafOnayi && p.durum === "tamamlandi" && !!k && !k.pasif && hesapYetkisi(k, "paketOnayi");
+
+/*
  * Newsdesk yokken onaylı paketin sonucu muhabirden: "yapıldı" ya da
  * sebebiyle "yapılmadı" (hesapsız muhabirde Planlama onun adına). Onay
  * bekleyen işaret varken yenisi yok. Özel yayın paketi kendi teslim

@@ -11,6 +11,8 @@ import { xlsxOku } from "../iceAktar";
 import { anlasmaBul, anlasmaTaslaklari, ayKaydir, aylikDokum, muhabirAylari, isaretsizCanlilar, muhasebeKisileri, tanimlar, type AnlasmaSatiri, type AylikDokum } from "../muhasebe";
 import { sozcuklerUyar as aramaUyar } from "../arama";
 import { bugun } from "../tarih";
+import { masrafToplami, masrafYaz } from "../paketMetni";
+import { MasrafListesi } from "../bilesenler/PaketMetni";
 import { ANLASMA_TURLERI, BICIMLER, useVeri, type AnlasmaTuru, type Kisi, type MuhasebeAnlasmasi, type MuhasebeIs, type MuhasebeTanimi } from "../veri";
 import { git, penceredenGit, useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
@@ -80,7 +82,7 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
   const odenen = satirlar.filter((x) => x.kapanis?.odendi).length;
 
   const excel = () => {
-    const bas = [t("mhMuhabir"), t("mhUlke"), t("mhAnlasma"), "PKG", t("mhDigerIs"), t("mhCanli"), t("mhKota"), t("mhOdeme"), t("mhPara"), t("mhOdemeAraci"), t("mhOnay"), t("mhOdendi")];
+    const bas = [t("mhMuhabir"), t("mhUlke"), t("mhAnlasma"), "PKG", t("mhDigerIs"), t("mhCanli"), t("mhKota"), t("mhOdeme"), t("mhPara"), t("mhOdemeAraci"), t("msMasraf"), t("mhOnay"), t("mhOdendi")];
     const satir = (x: AylikDokum) => [
       ad(x.kisi),
       t(ulkeAdi(sehirUlkesi(x.kisi.sehir))),
@@ -92,6 +94,7 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
       x.odeme === null ? "" : String(x.odeme),
       x.anlasma?.para ?? "",
       x.anlasma?.odeme ?? "",
+      masrafYaz(x.masraf),
       x.kapanis?.onay ? "✓" : "",
       x.kapanis?.odendi ? "✓" : "",
     ];
@@ -178,6 +181,7 @@ function DokumSatiri({ x, ay, ben }: { x: AylikDokum; ay: string; ben: Kisi }) {
           <b data-mh-odeme>{tutarYaz(x.odeme, a?.para)}</b>
           {x.ekOdeme > 0 && <small>{t("mhEkOdeme", { n: tutarYaz(x.ekOdeme, a?.para) })}</small>}
           {x.fiyatsiz > 0 && <small className="uyari-yazi">{t("mhFiyatsiz", { n: x.fiyatsiz })}</small>}
+          {x.masraf.length > 0 && <small data-mh-masraf>{t("msMasrafToplam", { n: masrafYaz(x.masraf) })}</small>}
         </span>
         <span className="muhasebe-durum">
           {x.kapanis?.odendi ? <Rozet ton="iyi">{t("mhOdendi")}</Rozet> : x.kapanis?.onay ? <Rozet ton="vurgu">{t("mhOnaylandi")}</Rozet> : null}
@@ -213,8 +217,10 @@ function DokumAyrintisi({ x, ay, ben, tur }: { x: AylikDokum; ay: string; ben: K
                   <small>{tarihYaz(i.tarih, dil)}</small>
                   <Rozet>{t(BICIM_ADI(i.tur))}</Rozet>
                   <Icerik>{i.baslik}</Icerik>
+                  {i.masraflar && <small className="muhasebe-is-masraf">{masrafYaz(masrafToplami(i.masraflar))}</small>}
                 </summary>
                 <IsKunyesi kaynak={i.kaynak} id={i.id} />
+                {i.masraflar && <MasrafListesi masraflar={i.masraflar} />}
               </details>
             </li>
           ))}

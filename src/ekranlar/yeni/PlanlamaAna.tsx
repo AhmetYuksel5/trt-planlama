@@ -18,6 +18,8 @@ import { MasalardakiOneriler } from "../oneri/MasaSorusu";
 import { OneriListesi } from "../oneri/OneriGovde";
 import type { PencereDurumu } from "../oneri/OneriKarti";
 import { penceredenGit } from "../../yol";
+import { useMedya } from "../takvim/ortak";
+import AnaPano from "./AnaPano";
 
 /*
  * Planlama'nın ana sayfası, yeni tasarımda (belgeler/planlama-yeni-mimari.md).
@@ -47,7 +49,13 @@ interface Kutu {
   hep?: boolean;
 }
 
+/* Masaüstünde pano (AnaPano: sabit, yerinde açılan), telefonda ve tablette kutular (mobil denetimde onaylanan düzen). */
 export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
+  const masaustu = useMedya("(min-width: 961px)");
+  return masaustu ? <AnaPano ben={ben} /> : <KutuluAna ben={ben} />;
+}
+
+function KutuluAna({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const b = bugun();

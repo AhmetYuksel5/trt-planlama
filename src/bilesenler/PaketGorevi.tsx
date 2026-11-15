@@ -134,7 +134,7 @@ export function GorevTalepleri({ ben }: { ben: Kisi }) {
   );
 }
 
-function TalepSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
+export function TalepSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [tarih, setTarih] = useState(p.sonTarih && p.sonTarih >= bugun() ? p.sonTarih : bugun());
