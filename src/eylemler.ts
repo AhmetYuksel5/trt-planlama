@@ -144,9 +144,6 @@ import {
   gfxYapabilir,
   haftalikDuzenler,
   stokBirimlereAcabilir,
-  stokGorevlendirebilir,
-  stokYayinIsler,
-  stokYayiniGeriAlabilir,
   hesapYetkisi,
   epostaDegistirebilir,
   geriBildirimGonderebilir,
@@ -3216,74 +3213,6 @@ export const paketGorevVer = (ben: Kisi, g: PaketGorevGirdisi): string | null =>
   if (g.not?.trim()) son = bahset(son, ben, g.not, { yol: `#/paketler/${p.id}`, baslik: p.baslik });
   kaydet(son);
   return p.id;
-};
-
-/*
- * Stok sorumlusunun toplu görevlendirmesi (kullanıcı: kararlaştırılan stok
- * paketlerinin görevlendirmesini yapıp muhabirlere süre veriyor): satır
- * başına muhabir ve son gün. Paket plansız görev paketi gibi olur (`gorev`,
- * `sonTarih`), muhabir "Yapıldı / Yapılmadı"yla kapatır; tek yazış, her
- * muhabire kendi bildirimi. Eksik satır (muhabirsiz, günsüz) atlanır.
- */
-export type StokGorevSatiri = { paketId: string; muhabirId: string; sonTarih: string };
-export const stokTopluGorevlendir = (ben: Kisi, satirlar: StokGorevSatiri[], not = ""): number => {
-  let d = getir();
-  const z = simdi();
-  let n = 0;
-  for (const s of satirlar) {
-    const p = paketBul(d, s.paketId);
-    if (!p || !s.muhabirId || !gorevTarihiUygun(ben, s.sonTarih) || !stokGorevlendirebilir(ben, p) || !kisiBul(d, s.muhabirId)) continue;
-    d = paketGuncelle(d, p.id, (x) => {
-      const { muhabirTbc: _, ...y } = x;
-      return kunyeYaz({ ...y, muhabirId: s.muhabirId, sonTarih: s.sonTarih, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, guncelleme: z }, "gorevlendiren", ben.id, z);
-    });
-    d = hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, veri: { kime: s.muhabirId, muhabir: s.muhabirId, tarih: s.sonTarih, ...(not.trim() && { not: not.trim() }) } });
-    n++;
-  }
-  if (n) kaydet(d);
-  return n;
-};
-
-/*
- * Hazır stok paketinin yayını (kullanıcı: hazırların yayınlanmasını takip
- * ediyor). Plan devri kalktığından devirle "yayınlandı" artık gelmiyordu:
- * stok sorumlusu işaretler; Next Day'in hazır paketlerindeyse plan bağı da
- * yazılır. Yanlış işaret geri alınır (masanın verdiği karar masada).
- */
-export const stokYayinlandi = (ben: Kisi, paketId: string, tarih = bugun()) => {
-  const d = getir();
-  const p = paketBul(d, paketId);
-  if (!p || !stokYayinIsler(ben, p)) return false;
-  const plan = d.planlar.find((x) => x.hazirPaketler.includes(p.id) && x.tarih <= tarih && x.durum !== "devralindi");
-  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, yayinlandi: { tarih, kisiId: ben.id, ...(plan && { planId: plan.id }) }, guncelleme: simdi() }));
-  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "stokYayinIsaretlendi", paketId, veri: { tarih, ...(p.muhabirId && { kime: p.muhabirId }) } }));
-  return true;
-};
-export const stokYayiniGeriAl = (ben: Kisi, paketId: string) => {
-  const d = getir();
-  const p = paketBul(d, paketId);
-  if (!p || !stokYayiniGeriAlabilir(ben, p)) return false;
-  const yeni = paketGuncelle(d, paketId, (x) => {
-    const { yayinlandi: _, ...y } = x;
-    return { ...y, guncelleme: simdi() };
-  });
-  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "stokYayiniGeriAlindi", paketId, veri: {} }));
-  return true;
-};
-
-/*
- * Hazır stok paketi bir masaya (Programlar, Ekonomi, Spor) verilir (kullanıcı:
- * stok listesinde programlar için yapılanlar da var): masanın takibine geçer,
- * masanın İçerikler'inde "yayına hazır" olur; Programlar onu programa aktarır,
- * yayın kararını masa verir. Stokta kalır, yayınlanınca stoktan da düşer.
- */
-export const stokMasayaVer = (ben: Kisi, paketId: string, masa: BirimId) => {
-  const d = getir();
-  const p = paketBul(d, paketId);
-  if (!p || !stokYayinIsler(ben, p) || p.masaTakibi || !(SORU_MASALARI as readonly string[]).includes(masa)) return false;
-  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, masaTakibi: masa, guncelleme: simdi() }));
-  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "stokMasayaVerildi", paketId, veri: { sahip: masa, birim: masa } }));
-  return true;
 };
 
 export const gorevTalebiGonder = (ben: Kisi, g: PaketGorevGirdisi): string | null => {

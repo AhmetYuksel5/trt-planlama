@@ -4118,35 +4118,3 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .stok-gorus-dugmeleri { display: grid; gap: var(--ara-1); margin-block-start: var(--ara-1); }
 .stok-gorus-listesi li { flex-wrap: wrap; }
 .stok-gorus-listesi li.verildi .ad { opacity: 0.75; }
-
-/* Stok sayfasının beş aşaması: tek şerit, seçilen aşamanın işi altında. */
-.stok-akis { display: grid; gap: var(--ara-3); min-inline-size: 0; }
-.stok-asamalari { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ara-1); }
-.stok-asamalari button {
-  display: flex; align-items: center; gap: var(--ara-2); min-block-size: 44px; min-inline-size: 0;
-  padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap);
-  background: var(--yuzey); color: var(--murekkep); font: inherit; cursor: pointer; text-align: start;
-}
-.stok-asamalari button.secili { border-color: var(--vurgu); background: var(--vurgu-sis); }
-.stok-asamalari .sa-no {
-  flex: none; display: grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 50%;
-  background: var(--yuzey-2); color: var(--sonuk); font-size: var(--punto-kucuk);
-}
-.stok-asamalari button.secili .sa-no { background: var(--vurgu); color: var(--yuzey); }
-.stok-asamalari .sa-ad { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stok-asamalari em { font-style: normal; font-weight: 600; }
-.stok-asamalari .sa-uyari { padding: 0 6px; border-radius: var(--yaricap-hap); background: var(--uyari-sis); color: var(--uyari); font-size: var(--punto-kucuk); }
-.stok-toplu { display: grid; gap: var(--ara-3); }
-.stok-toplu-cubuk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-3); }
-.stok-toplu-gun { display: flex; align-items: center; gap: var(--ara-2); }
-.stok-gorev-satiri { flex-wrap: wrap; }
-.stok-gorev-alanlari { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; min-inline-size: 0; }
-.stok-satir { display: grid; gap: var(--ara-1); }
-.stok-satir-alt { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); padding-inline-start: var(--ara-4); font-size: var(--punto-kucuk); }
-.stok-satir-alt > span { display: inline-flex; align-items: center; gap: 4px; }
-.stok-satir-isler { display: inline-flex; flex-wrap: wrap; gap: var(--ara-2); }
-.stok-satir-isler select { inline-size: auto; max-inline-size: 100%; }
-@media (max-width: 760px) {
-  .stok-asamalari { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-  .stok-satir-alt { padding-inline-start: 0; }
-}

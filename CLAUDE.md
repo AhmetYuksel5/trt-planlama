@@ -2375,36 +2375,6 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`yetki.ts → ozelPaketDagitabilir`; kullanıcı: özel yayın paketlerini stok
   ekibi takip etsin; önce Output'un yöneticisiydi, `ouOzel` Output'un
   varsayılanından kalktı).
-  - Stok sayfası beş aşamalı akış (kullanıcı: stok sorumlusu kararlaştırılan
-    paketleri muhabirlere süreyle görevlendiriyor, hazırlananları listede
-    tutup yayınını takip ediyor; kurallar `stokAkisi.ts`, ekran
-    `ekranlar/StokAkisi.tsx`, saklanmaz): görevlendirilecek (onaylı, görevi
-    verilmemiş), muhabirde (`gorev` var ya da özel yayın paketi; son günü
-    geçen kırmızı, `gorevGecikti`), üretimde (balonla), hazır / stokta,
-    yayınlandı (`stokAsamasi`, `asamaPaketleri`). Şerit tek satırda, seçim
-    `useAdimDurumu("stok:asama")`; aşamanın yanında geciken ve bayatlayan
-    sayısı. Eski sayaçlar, "Üretime alınacaklar" kartı ve sekmeler kalktı;
-    özel yayın, görev talebi ve şartlı kabul kartları başta kaldı.
-  - Toplu görevlendirme (`eylemler.ts → stokTopluGorevlendir`, yetki `yetki.ts
-    → stokEkibi`/`stokGorevlendirebilir`: Planlama'nın stok ekibi, Planlama
-    yöneticisi, tam yönetici): satırda muhabir ve son gün, "Hepsini seç" ve
-    "Seçilenlerin son günü", tek yazış; paket plansız görev paketi gibi olur
-    (`gorev`, `sonTarih`, künyede görevlendiren), muhabire `paketGorevVerildi`,
-    muhabir "Yapıldı"yla kapatır. Balonla üretime almak isteyen satırdaki
-    "Üretime al"ı kullanır.
-  - Hazır paket (`stokYayinIsler`, özel yayın paketi değil): kaç gündür hazır
-    (`hazirYasi`: muhabirin teslimi, yoksa son değişiklik), 21 gün
-    (`STOK_BAYAT_GUN`) sonra "Bayatlıyor"; "Next Day'e öner" açık planın hazır
-    paketlerine ekler (`hazirPaketEkle`; satırda önerildiği plan,
-    `onerildigiPlanlar`); "Masaya ver" (Programlar, Ekonomi, Spor;
-    `stokMasayaVer`, `masaTakibi`, hareket `stokMasayaVerildi`) masanın
-    İçerikler'inde "yayına hazır" yapar, yayın kararını masa verir
-    (`masaYayinKarariVerebilir` masaya verilmiş tamamlanmış stok paketini de
-    kabul eder); "Yayınlandı" (`stokYayinlandi`, hareket
-    `stokYayinIsaretlendi`; hazır paketlerindeyse planın bağı da) ve "Yayını
-    geri al" (`stokYayiniGeriAl`; masanın verdiği yayın masada). Plan devri
-    kalktığı için devirle gelen "yayınlandı" artık yoktu. Test
-    `testler/stok-akisi.cjs`.
 - Plansız paket görevi (kullanıcı: planlamacı muhabire bir plana eklemeden
   paket görevi verebilsin; `bilesenler/PaketGorevi.tsx`, eylemler
   `eylemler.ts → paketGorevVer`, `gorevTalebiGonder`, `gorevTalebiKarar`,

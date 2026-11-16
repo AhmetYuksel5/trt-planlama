@@ -39,8 +39,8 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   // 2. Stok'ta "üretimde"de; "Üretime al" beklemiyor
   await gir("pl1", "#/stok");
   ok((await p.locator(`[data-uretime-al="${g1?.id}"]`).count()) === 0, "görev paketi \"Üretime al\" beklemiyor");
-  await p.click('[data-stok-asama="muhabirde"]'); await p.waitForTimeout(300);
-  ok((await p.locator(`[data-stok-paket="${g1?.id}"]`).count()) === 1, "Stok'un Muhabirde aşamasında");
+  await p.getByRole("tab").first().click(); await p.waitForTimeout(300);
+  ok((await p.locator(`main a[href="#/paketler/${g1?.id}"]`).count()) >= 1, "Stok'un üretimde sekmesinde");
 
   // 3. Muhabirin profilinden: muhabir seçili gelir
   await gir("pl1", "#/personel/mu3");
