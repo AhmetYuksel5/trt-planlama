@@ -1901,8 +1901,6 @@ export interface Durum {
   ortamlar?: Record<string, Ortam[]>;
   /** Kişinin üst çubuktaki kısayolları (kişi → sıralı yol); yoksa birimin varsayılanı. */
   kisayollar?: Record<string, string[]>;
-  /** Muhabire doğrudan haber önerebilen birimler; yönetici seçiyor. Yoksa yalnız Planlama. */
-  muhabireOneriBirimleri?: BirimId[];
   /*
    * Newsdesk sistemde mi: değilse (şimdilik) iş Planlama'da bitiyor, onaylı
    * paketi muhabir "Tamamlandı" diye kapatıyor. Açılınca devral ve üretim

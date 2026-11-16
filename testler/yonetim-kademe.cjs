@@ -1,4 +1,5 @@
 // Yönetim kademesi: müdürler ve koordinatör ağaçtaki yerlerinde (Input, Program, Haber merkezi),
+// Eski tasarımın sayfalarını sınıyor (yeni tasarım varsayılan oldu; yeni ana sayfa ana-pano.cjs).
 // sorumluluk ağaçtan; eski "Yönetim" birimindeki kişi açılışta yerine taşınıyor. Kişiler kurgusal.
 const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
@@ -16,7 +17,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const panelBirimleri = () => p.locator(".birim-kartlari a[href^='#/panel/'], .birim-kartlari a[href='#/muhabirler']").evaluateAll((l) => l.map((a) => a.getAttribute("href").replace("#/panel/", "").replace("#/muhabirler", "muhabir")).sort());
 
   await p.goto(B);
-  await p.evaluate(() => localStorage.clear());
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-tasarim", "eski"); });
   await p.goto(B);
   await oturum("yo1");
   await git("#/");

@@ -188,7 +188,8 @@ export default function App() {
       if (izlemede() || !baglantiCanliMi()) return;
       otoCagriEsitle(otoKisi)
         .then((d) => {
-          const son = d?.benim ? d.gecmis[0] : undefined;
+          // Kendi hesabından gidemeyen ya da kimsenin göndermediği çağrı gönderen listesindekilere bildirilir.
+          const son = d?.izinli && (!d.gecmis[0]?.uid || d.gecmis[0].uid === otoKisi.id) ? d.gecmis[0] : undefined;
           if (son && !son.tamam && otoHataYeni(son.zaman)) bildir(t("otoCagriHata", { hata: otoHataMetni(t, son.hata) }));
         })
         .catch((hata) => console.error("otoCagriEsitle", hata));

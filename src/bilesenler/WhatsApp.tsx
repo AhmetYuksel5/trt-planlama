@@ -28,29 +28,6 @@ export const whatsappAdresi = (telefon: string, metin = "") => {
   return telefondaMi() ? `https://wa.me/${n}${m ? `?text=${m}` : ""}` : `https://web.whatsapp.com/send?phone=${n}${m ? `&text=${m}` : ""}`;
 };
 
-/* Bilgisayarda hangi WhatsApp: kişiye değil bilgisayara bağlı (dil gibi), kayıtta değil. */
-export type WhatsappYolu = "otomatik" | "uygulama" | "web";
-export const WHATSAPP_YOLLARI: WhatsappYolu[] = ["otomatik", "uygulama", "web"];
-const SAKLA = "trt-planlama-whatsapp";
-
-export const whatsappYolu = (): WhatsappYolu => {
-  try {
-    const y = localStorage.getItem(SAKLA);
-    return y === "uygulama" || y === "web" ? y : "otomatik";
-  } catch {
-    return "otomatik";
-  }
-};
-
-export const whatsappYoluKaydet = (y: WhatsappYolu) => {
-  try {
-    if (y === "otomatik") localStorage.removeItem(SAKLA);
-    else localStorage.setItem(SAKLA, y);
-  } catch {
-    /* saklanamazsa otomatik kalır */
-  }
-};
-
 /*
  * Uygulama açıldı mı, tarayıcı söylemiyor: açılınca öne geçiyor ve sayfa
  * odağı kaybediyor. Bu sürede odak gitmediyse uygulama yok sayılıyor.
@@ -91,11 +68,10 @@ export function WhatsAppDugmesi({ telefon, metin = "" }: { telefon: string; meti
   const adres = whatsappAdresi(telefon, metin);
   if (!adres) return null;
   const ac = (e: MouseEvent<HTMLAnchorElement>) => {
-    const yol = whatsappYolu();
-    // Telefonda wa.me zaten uygulamayı açıyor; Web seçiliyse bağlantının kendisi.
-    if (telefondaMi() || yol === "web") return;
+    // Telefonda wa.me zaten uygulamayı açıyor. Bilgisayarda hep önce uygulama, yoksa Web (kullanıcı: seçim ayarı gereksizdi).
+    if (telefondaMi()) return;
     e.preventDefault();
-    uygulamadaAc(whatsappNumarasi(telefon), yol === "otomatik" ? () => window.open(adres, PENCERE) : undefined, metin);
+    uygulamadaAc(whatsappNumarasi(telefon), () => window.open(adres, PENCERE), metin);
   };
   return (
     <a className="ikon-dugme whatsapp" href={adres} target={PENCERE} onClick={ac} title={t("whatsapp")} aria-label={t("whatsapp")} data-whatsapp>

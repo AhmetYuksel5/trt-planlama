@@ -11,7 +11,9 @@ import { OzelTalepAlani } from "./OzelYayin";
 import { GorevTalepleri, SartliPaketler, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
 import { MasaOnerileri, MasaTakibi } from "./oneri/MasaSorusu";
 import { PaketTablosu } from "../bilesenler/Tablolar";
-import { useDil, yaz, type Anahtar } from "../dil";
+import { gecenSure, saatYaz, tarihYaz, useDil, yaz, type Anahtar } from "../dil";
+import { ASAMA_ADI, PANO_SUTUNLARI, gfxAcik, panoMasasi, panoSutunu, type PanoSutunu } from "../uretim";
+import { UZUN_DAKIKA } from "../anaPano";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
 import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
@@ -120,11 +122,75 @@ const PANO: Record<string, { baslik: Anahtar; ikon: ReactNode; turler?: readonly
 };
 
 /*
+ * Haber üretimi panosu (kullanıcı: güncel sisteme göre): sütunlar üretim
+ * balonunun aşamaları (uretim.ts → panoSutunu). Kartta paket, muhabir, işin
+ * masası ve aşamada geçen süre; uzun bekleyen turuncu (ana sayfadaki kuralla).
+ * Grafik yan iş, kendi sütununda da; boş grafik ve eski akış sütunu çizilmez.
+ */
+function UretimPanosu() {
+  const { t, ad, dil } = useDil();
+  const v = useVeri();
+  const uretimde = v.paketler.filter((p) => p.durum === "uretimde");
+  const sutunda = (s: PanoSutunu) => uretimde.filter((p) => (s === "grafik" ? gfxAcik(p) : panoSutunu(p) === s));
+  const ADI: Record<PanoSutunu, Anahtar> = { ...ASAMA_ADI, muhabir: "pa_muhabir", eski: "urEskiAkis" };
+  return (
+    <>
+      <SayfaBasi ikon={<Workflow size={26} />} baslik={t("mUretim")} />
+      <div className="pano" data-uretim-panosu>
+        {PANO_SUTUNLARI.map((s) => {
+          const paketler = sutunda(s).sort((a, b) => (a.asamaIzi?.[a.adim ?? ""]?.giris ?? a.guncelleme).localeCompare(b.asamaIzi?.[b.adim ?? ""]?.giris ?? b.guncelleme));
+          if ((s === "grafik" || s === "eski") && !paketler.length) return null;
+          return (
+            <section key={s} className="pano-sutun" data-pano-sutun={s}>
+              <header>
+                <b>{t(ADI[s])}</b>
+                <Rozet>{paketler.length}</Rozet>
+              </header>
+              {paketler.length === 0 && <p className="bos-kucuk">{t("bos")}</p>}
+              {paketler.map((p) => {
+                const masa = s === "eski" ? durakSahibi(p, p.adim ?? "") : panoMasasi(p, s);
+                const beri = (s === "grafik" ? undefined : p.asamaIzi?.[p.adim ?? ""]?.giris) ?? p.guncelleme;
+                const uzun = (Date.now() - new Date(beri).getTime()) / 60_000 > UZUN_DAKIKA;
+                return (
+                  <a key={p.id} className={`pano-kart ${geciktiMi(p) ? "gecikmis" : ""}`} href={`#/paketler/${p.id}`} data-pano-paket={p.id}>
+                    <b>
+                      <Icerik blok>{p.baslik}</Icerik>
+                    </b>
+                    <span className="kisi-hucre">
+                      <Avatar kisi={kisiBul(v, p.muhabirId)} boy="kucuk" />
+                      <small>{p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}</small>
+                    </span>
+                    <span className="pano-alt">
+                      {masa && masa !== "muhabir" && <Rozet>{birimAdi(masa)}</Rozet>}
+                      {s === "eski" && <small>{adimAdi(p.adim ?? "", p)}</small>}
+                      <small className={uzun ? "uyari-yazi" : "sonuk-yazi"} title={`${tarihYaz(beri.slice(0, 10), dil)} ${saatYaz(beri, dil)}`}>
+                        {gecenSure(beri, dil)}
+                      </small>
+                      {s !== "grafik" && gfxAcik(p) && <Rozet ton="vurgu">{t("urGrafik")}</Rozet>}
+                      {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+                    </span>
+                  </a>
+                );
+              })}
+            </section>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/*
  * Sütunlar yayındaki akışın durakları. Eski sürümün akışıyla süren paketin
  * durağı bugünkü akışta yoksa kendi sütununda, sonda: yarım iş görünmez
  * olmasın.
  */
 export function IsAkisi({ sayfa }: { sayfa: string }) {
+  if (sayfa === "uretim") return <UretimPanosu />;
+  return <DurakPanosu sayfa={sayfa} />;
+}
+
+function DurakPanosu({ sayfa }: { sayfa: string }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ayar = PANO[sayfa] ?? PANO.uretim;

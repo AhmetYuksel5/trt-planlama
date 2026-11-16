@@ -417,17 +417,15 @@ export const oneriDuzeltmeyeGider = (k: Kisi | undefined, o: Oneri): boolean =>
   !o.talimatVeren &&
   ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum);
 
-/* Muhabire doğrudan haber önermek: yöneticinin seçtiği birimler; seçilmemişse Planlama. */
-export const MUHABIRE_ONERI_VARSAYILAN: readonly BirimId[] = ["planlama"];
-export const muhabireOneriBirimleri = (d: Durum) =>
-  d.muhabireOneriBirimleri ?? MUHABIRE_ONERI_VARSAYILAN;
+/*
+ * Muhabire doğrudan haber önermek: Planlama (onun "gibi" çalışan birim de) ve tam yönetici. Ayarlar'daki birim
+ * seçimi kalktı (kullanıcı: havada kalıyordu); masalar muhabirle görev talebiyle çalışıyor.
+ */
 export const muhabireOneriGonderebilir = (
   k: Kisi | undefined,
-  d: Durum,
+  _d?: Durum,
 ): boolean =>
-  !!k &&
-  k.birim !== "muhabir" &&
-  (!!k.hesapYoneticisi || muhabireOneriBirimleri(d).includes(k.birim));
+  !!k && k.birim !== "muhabir" && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "planlama");
 
 /*
  * Plansız paket görevi (kullanıcı): Planlama ve Newsdesk muhabire bir plana

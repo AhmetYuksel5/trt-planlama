@@ -50,13 +50,15 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator('[data-takdir-paket="tk1"] [data-takdir-gitti]').count()) === 1 && !(await sec("tk1").isChecked()), "gönderilen 'gönderildi' ve işaretsiz");
   // Ayarlar'da şablon: değişiklik postaya yansır; geri bildirim şablonları yerinde kalır.
   await git("#/ayarlar");
-  await p.locator("details:has([data-takdir-sablonu]) > summary").click();
+  // PKG geri bildirimi "Muhabire geri bildirim" kartının ilk satırı; pencerede düzenleniyor.
+  await p.locator("details:has([data-gb-sablonlari]) > summary").click();
+  await p.locator("[data-takdir-duzenle]").click();
   await p.locator("[data-takdir-konu]").fill("تكليف: {strap}");
   await p.locator("[data-takdir-kaydet]").click();
   await p.waitForTimeout(300);
   d = await veri();
   ok(d.geriBildirimSablonlari.some((s) => s.id === "takdir-bildirimi" && s.konu === "تكليف: {strap}") && d.geriBildirimSablonlari.filter((s) => s.id !== "takdir-bildirimi").length >= 3, "şablon kaydedildi, geri bildirim şablonları duruyor");
-  ok((await p.locator("[data-gb-sablonu]").count()) === 3, "geri bildirim listesinde takdir şablonu görünmüyor");
+  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"])').count()) === 3 && (await p.locator('[data-gb-sablonu="takdir"]').count()) === 1, "takdir şablonu listenin kendi satırında, ikinci kez değil");
   await git(`#/nextday/${plan.id}/takdir`);
   await p.locator('[data-takdir-paket="tk1"] [data-takdir-onizle]').click();
   ok((await p.locator('[data-takdir-paket="tk1"] .takdir-konu').innerText()).trim() === "تكليف: عنوان التقرير الأول", "yeni şablon önizlemede");

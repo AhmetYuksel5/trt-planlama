@@ -1,5 +1,6 @@
 import { postaAdresi } from "./girisKodu";
-import { HAFTALIK_TABLO, cagriGovdesi, cagriKonusu, etiketUret, govdeHtml, haftaAraligiAr, haftalikGovde } from "./eposta";
+import { HAFTALIK_TABLO, cagriGovdesi, cagriKonusu, etiketUret, govdeHtml, haftaAraligiAr, haftalikGovde, noktali } from "./eposta";
+import { gunAdi } from "./dil";
 import { otoCagrilariKaydet } from "./eylemler";
 import { postaKimlikGetir } from "./posta-kapi";
 import { bugun, gunEkle } from "./tarih";
@@ -8,18 +9,29 @@ import { kapiIstek } from "./yz";
 
 /*
  * Otomatik öneri çağrısı (kapıda worker/src/oto-cagri.ts): Next Day her gün
- * 09:00'da ertesi günün planı için, haftalık her Cuma 10:00'da 8 gün sonra
- * başlayan hafta için (Perşembe toplantısında görüşülen). Gönderen planlamacı,
- * Kime planning grubu, muhabirler BCC'de; metin elle gönderilen çağrının aynı
- * şablonu, yalnız tarih değişiyor, son saat 15:00.
+ * ertesi günün planı için, haftalık haftada bir, sonraki haftadan sonraki
+ * hafta için (Perşembe toplantısında görüşülen). Saatler, haftalığın günü,
+ * son saat ve metin ayarda (kullanıcı: dinamik ayarlansın); hangi gün kimin
+ * hesabından gideceği takvimde. Kime planning grubu, muhabirler BCC'de.
  *
- * Kapı veritabanını okuyamadığı için gönderenin tarayıcısı önümüzdeki iki
- * haftanın çağrılarını hazır haliyle ve BCC listesini kapıya bırakır; şablon
- * tek yerde kalır. Kapının gönderdiği çağrıyı kayda (yanıt eşleştirme için)
- * uygulamayı açan planlamacının tarayıcısı yazar.
+ * Kapı veritabanını okuyamadığı için gönderen listesindeki planlamacıların
+ * tarayıcısı önümüzdeki iki haftanın çağrılarını hazır haliyle ve BCC
+ * listesini kapıya bırakır; şablon tek yerde kalır. Kapının gönderdiği çağrıyı
+ * kayda (yanıt eşleştirme için) uygulamayı açan planlamacının tarayıcısı yazar.
  */
 
-export const OTO_SON_SAAT = "15:00";
+export interface OtoZaman {
+  nd: string;
+  /** 0 Pazar … 6 Cumartesi. */
+  hpGun: number;
+  hp: string;
+  sonSaat: string;
+}
+export const VARSAYILAN_ZAMAN: OtoZaman = { nd: "09:00", hpGun: 5, hp: "10:00", sonSaat: "15:00" };
+export interface OtoSablon {
+  nd?: string;
+  hp?: string;
+}
 /* Kaç günlük çağrı önceden bırakılıyor: gönderen bu kadar gün uygulamayı açmasa da çağrı gider. */
 export const OTO_PENCERE = 14;
 
@@ -28,6 +40,7 @@ export interface OtoKalem {
   tur: CagriTuru;
   tarih: string;
   gonderim: string;
+  saat: string;
   konu: string;
   metin: string;
   html: string;
@@ -51,30 +64,49 @@ export interface OtoKaydi {
 
 export interface OtoGorunum {
   acik: boolean;
-  gonderen: string;
-  benim: boolean;
+  gonderenler: string[];
+  /** Bu kişi kendi hesabından gönderilmesine izin vermiş mi. */
+  izinli: boolean;
+  /** Haftanın günü (0 Pazar) → gönderen. */
+  haftalik: Record<string, string>;
+  /** Gün → gönderen ("" o gün kimse). */
+  istisna: Record<string, string>;
+  zaman: OtoZaman;
+  sablon: OtoSablon;
   bccSayi: number;
   guncelleme: string;
   atla: string[];
-  kalemler: Pick<OtoKalem, "etiket" | "tur" | "tarih" | "gonderim" | "konu">[];
+  kalemler: (Pick<OtoKalem, "etiket" | "tur" | "tarih" | "gonderim" | "saat" | "konu"> & { uid: string })[];
   gecmis: OtoKaydi[];
 }
 
-const cumaMi = (g: string) => new Date(`${g}T12:00:00Z`).getUTCDay() === 5;
+const haftaninGunu = (g: string) => new Date(`${g}T12:00:00Z`).getUTCDay();
 const sarili = (ic: string) => `<html><body>${ic}</body></html>`;
 
-/* Önümüzdeki günlerin çağrıları; şablon elle çağrı ekranınınki (src/eposta.ts). */
-export const otoCagriKalemleri = (gun: string, grup: string, pencere = OTO_PENCERE): OtoKalem[] => {
+/* Elle yazılmış şablonda {gun} {tarih} {saat} (Next Day), {aralik} {adres} (haftalık); bilinmeyen yer tutucu kalır. */
+const yerlestir = (s: string, p: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, x: string) => p[x] ?? `{${x}}`);
+
+/* Next Day metni: ayardaki şablon, yoksa kurumun metni (elle çağrınınki). */
+export const ndMetni = (tarih: string, sonSaat: string, sablon?: string) =>
+  sablon ? yerlestir(sablon, { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih), saat: sonSaat }) : cagriGovdesi(tarih, sonSaat);
+export const hpMetni = (bas: string, grup: string, sablon?: string) =>
+  sablon ? yerlestir(sablon, { aralik: haftaAraligiAr(bas), adres: grup }) : haftalikGovde(bas, grup);
+
+/* Haftalık çağrı sonraki haftadan sonraki hafta için: Cuma gönderilirse 8 gün sonraki Cumartesi. */
+export const hpHaftasi = (gonderim: string) => gunEkle(gonderim, ((6 - haftaninGunu(gonderim) + 7) % 7 || 7) + 7);
+
+/* Önümüzdeki günlerin çağrıları; şablon elle çağrı ekranınınki (src/eposta.ts) ya da ayardaki. */
+export const otoCagriKalemleri = (gun: string, grup: string, z: OtoZaman = VARSAYILAN_ZAMAN, sablon: OtoSablon = {}, pencere = OTO_PENCERE): OtoKalem[] => {
   const k: OtoKalem[] = [];
   for (let i = 0; i < pencere; i++) {
     const gonderim = gunEkle(gun, i);
     const tarih = gunEkle(gonderim, 1);
-    const metin = cagriGovdesi(tarih, OTO_SON_SAAT);
-    k.push({ etiket: etiketUret(tarih), tur: "nextday", tarih, gonderim, konu: cagriKonusu(tarih), metin, html: sarili(govdeHtml(metin)), sonSaat: OTO_SON_SAAT });
-    if (cumaMi(gonderim)) {
-      const bas = gunEkle(gonderim, 8);
-      const hm = haftalikGovde(bas, grup);
-      k.push({ etiket: etiketUret(bas, "haftalik"), tur: "haftalik", tarih: bas, gonderim, konu: cagriKonusu(bas, "haftalik"), metin: hm, html: sarili(govdeHtml(hm, { vurgu: haftaAraligiAr(bas), tablo: HAFTALIK_TABLO })), sonSaat: "" });
+    const metin = ndMetni(tarih, z.sonSaat, sablon.nd);
+    k.push({ etiket: etiketUret(tarih), tur: "nextday", tarih, gonderim, saat: z.nd, konu: cagriKonusu(tarih), metin, html: sarili(govdeHtml(metin)), sonSaat: z.sonSaat });
+    if (haftaninGunu(gonderim) === z.hpGun) {
+      const bas = hpHaftasi(gonderim);
+      const hm = hpMetni(bas, grup, sablon.hp);
+      k.push({ etiket: etiketUret(bas, "haftalik"), tur: "haftalik", tarih: bas, gonderim, saat: z.hp, konu: cagriKonusu(bas, "haftalik"), metin: hm, html: sarili(govdeHtml(hm, { vurgu: haftaAraligiAr(bas), tablo: HAFTALIK_TABLO })), sonSaat: "" });
     }
   }
   return k;
@@ -87,8 +119,8 @@ export const otoBcc = (d: Durum) => {
 };
 
 /* Kapıya bırakılan paket. Kayıtta çağrısı olan (elle gönderilmiş) etiket ikinci kez gitmesin. */
-export const otoPaket = (d: Durum, gun: string, grup: string) => {
-  const kalemler = otoCagriKalemleri(gun, grup);
+export const otoPaket = (d: Durum, gun: string, grup: string, z?: OtoZaman, sablon?: OtoSablon) => {
+  const kalemler = otoCagriKalemleri(gun, grup, z, sablon);
   const var_ = new Set(d.cagrilar.map((c) => c.etiket));
   return { kalemler, ...otoBcc(d), gonderildi: kalemler.map((k) => k.etiket).filter((e) => var_.has(e)) };
 };
@@ -112,11 +144,14 @@ const izYaz = (s: string) => {
   }
 };
 
-/* Gönderenin grubuyla paketi kurup kapıya bırakır; değişmediyse yazmaz (KV'nin günlük yazma sınırı). */
-export const otoPaketiBirak = async (ekle: Record<string, unknown> = {}) => {
+/*
+ * Bırakanın grubuyla paketi kurup kapıya bırakır; değişmediyse yazmaz (KV'nin
+ * günlük yazma sınırı). Zaman ya da şablon değişiyorsa (`ekle`) paket yenisiyle kurulur.
+ */
+export const otoPaketiBirak = async (ayar: Pick<OtoGorunum, "zaman" | "sablon">, ekle: { zaman?: OtoZaman; sablon?: OtoSablon } & Record<string, unknown> = {}) => {
   const k = await postaKimlikGetir();
   if (!k.tamam || !k.veri.grupAdresi || !k.veri.parolaVar) return { tamam: false as const, hata: "kimlik" };
-  const paket = otoPaket(getir(), bugun(), k.veri.grupAdresi);
+  const paket = otoPaket(getir(), bugun(), k.veri.grupAdresi, ekle.zaman ?? ayar.zaman, ekle.sablon ?? ayar.sablon);
   const ozet = JSON.stringify(paket);
   if (!Object.keys(ekle).length && ozet === izOku()) return null;
   const r = await otoCagriYaz({ ...paket, ...ekle });
@@ -132,7 +167,7 @@ export const otoCagriEsitle = async (ben: Kisi): Promise<OtoGorunum | null> => {
   const r = await otoCagriGetir();
   if (!r.tamam) return null;
   otoCagrilariKaydet(ben, r.veri.gecmis);
-  if (r.veri.acik && r.veri.benim) await otoPaketiBirak();
+  if (r.veri.acik && r.veri.izinli) await otoPaketiBirak(r.veri);
   return r.veri;
 };
 

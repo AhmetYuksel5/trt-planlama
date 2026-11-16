@@ -1,4 +1,4 @@
-import { MailCheck, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { MailCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
@@ -9,19 +9,30 @@ import { TAKDIR_ALANLARI, VARSAYILAN_TAKDIR, takdirSablonu } from "../takdir";
 import { GERI_BILDIRIM_KARARLARI, kimlik, useVeri, type GeriBildirimKarari, type GeriBildirimSablonu, type Kisi } from "../veri";
 
 /*
- * Ayarlar › Geri bildirim: muhabire giden e-postanın şablonları. Tam
+ * Ayarlar › Muhabire geri bildirim: muhabire giden e-postanın şablonları. Tam
  * yönetici ve Planlama yöneticisi düzenliyor (yetki.ts →
- * geriBildirimSablonuDuzenler). Deneme sürecinin e-postayla takip ayarı
- * kalktı: yerini görev ve "yapıldı" akışı aldı.
+ * geriBildirimSablonuDuzenler). PKG geri bildirimi (takdir) aynı işin plan
+ * onayından sonraki postası: ayrı kartı vardı (kullanıcı: iki sekme aynı işi
+ * görüyor), listenin ilk satırı oldu; silinmez, varsayılana döner.
  */
 export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const liste = sablonlar(v);
   const [duzenlenen, setDuzenlenen] = useState<GeriBildirimSablonu | null>(null);
+  const [takdir, setTakdir] = useState(false);
   return (
     <Kart baslik={t("gbAyarBaslik")} ikon={<MailCheck size={18} />}>
       <ul className="liste" data-gb-sablonlari>
+        <li data-gb-sablonu="takdir">
+          <div className="ad">
+            <b>{t("tkAyarBaslik")}</b>
+            <small>{t("tkPlanOnayi")}</small>
+          </div>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setTakdir(true)} title={t("duzenle")} aria-label={t("duzenle")} data-takdir-duzenle>
+            <Pencil size={15} />
+          </button>
+        </li>
         {liste.map((s) => (
           <li key={s.id} data-gb-sablonu={s.id}>
             <div className="ad">
@@ -53,6 +64,11 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
         <Plus size={14} /> {t("gbSablonEkle")}
       </button>
       {duzenlenen && <SablonPenceresi ben={ben} sablon={duzenlenen} kapat={() => setDuzenlenen(null)} />}
+      {takdir && (
+        <Pencere baslik={t("tkAyarBaslik")} kapat={() => setTakdir(false)}>
+          <TakdirFormu ben={ben} />
+        </Pencere>
+      )}
     </Kart>
   );
 }
@@ -121,11 +137,11 @@ function SablonPenceresi({ ben, sablon, kapat }: { ben: Kisi; sablon: GeriBildir
 }
 
 /*
- * Ayarlar › Takdir bildirimi şablonu (src/takdir.ts): plan onaylanınca
- * muhabire giden "تكليف تقرير" postası. Konu, metin, CC ve BCC buradan;
- * Kime muhabirin adresi, planning grubu kapıda her zaman CC'de.
+ * PKG geri bildirimi şablonu (src/takdir.ts): plan onaylanınca muhabire giden
+ * "تكليف تقرير" postası. Konu, metin, CC ve BCC buradan; Kime muhabirin
+ * adresi, planning grubu kapıda her zaman CC'de.
  */
-export function TakdirAyari({ ben }: { ben: Kisi }) {
+function TakdirFormu({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const kayitli = takdirSablonu(v);
@@ -138,7 +154,6 @@ export function TakdirAyari({ ben }: { ben: Kisi }) {
     }
   };
   return (
-    <Kart baslik={t("tkAyarBaslik")} ikon={<Send size={18} />}>
       <div className="form" data-takdir-sablonu>
         <div className="satir">
           <label>
@@ -170,6 +185,5 @@ export function TakdirAyari({ ben }: { ben: Kisi }) {
           </button>
         </div>
       </div>
-    </Kart>
   );
 }

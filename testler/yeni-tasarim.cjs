@@ -1,4 +1,4 @@
-// Yeni tasarım (deneme): anahtar html sınıfını açıp kapatır, seçim hatırlanır, saat çubukta, menü açık zeminde, 390 pikselde taşma yok
+// Yeni tasarım varsayılan; Ayarlar'daki "Eski tasarıma dön" html sınıfını kapatıp açar, seçim hatırlanır, saat çubukta, menü açık zeminde, 390 pikselde taşma yok
 const { chromium } = require(process.env.PW);
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
@@ -6,8 +6,10 @@ const { chromium } = require(process.env.PW);
   const B = "http://localhost:4173/", s = {}, E = process.env.EKRAN;
   await p.goto(B); await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await p.goto("about:blank"); await p.goto(B + "#/ayarlar"); await p.waitForTimeout(1000);
-  s.eskiAcilis = !(await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim")));
+  s.yeniAcilis = await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim"));
   await p.evaluate(() => (document.querySelector("[data-tasarim-ayari]").closest("details").open = true)); await p.check("[data-tasarim-ayari]"); await p.waitForTimeout(300);
+  s.eskiyeGecti = !(await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim")));
+  await p.uncheck("[data-tasarim-ayari]"); await p.waitForTimeout(300);
   s.acildi = await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim"));
   await p.goto("about:blank"); await p.goto(B + "#/"); await p.waitForTimeout(1000);
   s.hatirlandi = await p.evaluate(() => document.documentElement.classList.contains("yeni-tasarim"));

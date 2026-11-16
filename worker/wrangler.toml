@@ -16,8 +16,7 @@ KOKENLER = "https://plannersflow.net,https://www.plannersflow.net,https://planne
 binding = "YZ"
 id = "KV_KIMLIGI"
 
-# Otomatik öneri çağrısı (src/oto-cagri.ts). UTC: İstanbul 09:00 her gün
-# (Next Day) ve Cuma 10:00 (haftalık). İfadeler index.ts → CRON_NEXTDAY,
-# CRON_HAFTALIK ile aynı olmalı.
+# Otomatik öneri çağrısı (src/oto-cagri.ts): saatler ayarda, kapı 15 dakikada
+# bir saati gelmiş çağrıya bakıyor. İfade index.ts → CRON_OTO ile aynı olmalı.
 [triggers]
-crons = ["0 6 * * *", "0 7 * * 5"]
+crons = ["*/15 * * * *"]

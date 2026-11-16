@@ -45,7 +45,7 @@ import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayi
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { KOD_SURESI_SAAT, girisAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
-import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type Birim, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
+import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, MUHASEBE_ALANLARI, muhasebeOkur, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
@@ -493,19 +493,17 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       { includeMetadataChanges: true },
       (s) => {
         const sayac = (s.data()?.sayac as number | undefined) ?? 0;
-        const birimler = s.data()?.muhabireOneriBirimleri as Birim[] | undefined;
         const geriBildirimAyari = s.data()?.geriBildirimAyari as Durum["geriBildirimAyari"];
         const newsdeskDevrede = s.data()?.newsdeskDevrede === true || undefined;
         const sayimBaslangici = (s.data()?.sayimBaslangici as string | undefined) || undefined;
         const gundemPaylasim = s.data()?.gundemPaylasim as Durum["gundemPaylasim"];
         const degisti =
           sayac !== d.sayac ||
-          JSON.stringify(birimler) !== JSON.stringify(d.muhabireOneriBirimleri) ||
           JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
           newsdeskDevrede !== d.newsdeskDevrede ||
           sayimBaslangici !== d.sayimBaslangici ||
           JSON.stringify(gundemPaylasim) !== JSON.stringify(d.gundemPaylasim);
-        if (degisti) d = { ...d, sayac, muhabireOneriBirimleri: birimler, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim };
+        if (degisti) d = { ...d, sayac, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim };
         sunucuGeldi(GENEL.koleksiyon, s);
         geldi(GENEL.koleksiyon, degisti);
       },

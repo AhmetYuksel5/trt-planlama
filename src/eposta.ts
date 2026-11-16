@@ -32,7 +32,7 @@ export const etiketUret = (tarih: string, tur: CagriTuru = "nextday") => `${ON_E
 export const etiketBul = (konu: string) => konu.match(/(ND|HP)-\d{8}/)?.[0];
 
 /** Kurumun e-postasındaki tarih biçimi: 30.09.2026. */
-const noktali = (tarih: string) => tarih.split("-").reverse().join(".");
+export const noktali = (tarih: string) => tarih.split("-").reverse().join(".");
 
 /** Haftalık e-postadaki dönem: "10 - 16 أكتوبر"; kurumun e-postasında kırmızı. */
 export const haftaAraligiAr = (bas: string) => aralikYaz(bas, gunEkle(bas, 6), "ar");

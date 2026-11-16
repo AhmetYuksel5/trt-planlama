@@ -1,8 +1,11 @@
 /*
- * Otomatik öneri çağrısı: Next Day her gün 09:00'da (ertesi günün planı),
- * haftalık her Cuma 10:00'da (8 gün sonra başlayan hafta; Perşembe
- * toplantısında görüşülen). Saatler İstanbul; Cloudflare zamanlayıcısı UTC
- * (wrangler.toml → [triggers]).
+ * Otomatik öneri çağrısı: Next Day her gün (ertesi günün planı), haftalık
+ * haftada bir (8 gün sonra başlayan hafta; Perşembe toplantısında görüşülen).
+ * Saatler ve gün ayarda (varsayılan Next Day 09:00, haftalık Cuma 10:00),
+ * İstanbul saatiyle; zamanlayıcı 15 dakikada bir bakıyor (wrangler.toml).
+ * Hangi gün kimin hesabından gideceği takvimde (haftanın günü, istisna günler);
+ * takvime yalnız kendi hesabından gönderilmesine izin veren konabilir
+ * (`gonderenler`, kişi kendini ekleyip çıkarıyor): kimsenin hesabı habersiz kullanılmasın.
  *
  * Kapı veritabanını okuyamıyor (servis hesabı istemiyoruz). Gönderenin
  * tarayıcısı önümüzdeki iki haftanın çağrılarını hazır haliyle (konu, metin,
@@ -20,18 +23,40 @@ export interface OtoCagriKalem {
   tur: OtoCagriTuru;
   /** Planın günü; haftalıkta haftanın Cumartesi'si. */
   tarih: string;
-  /** Gönderileceği gün (İstanbul). */
+  /** Gönderileceği gün ve saat (İstanbul). */
   gonderim: string;
+  saat: string;
   konu: string;
   metin: string;
   html: string;
   sonSaat: string;
 }
 
+/* Gönderim zamanları; haftalığın günü 0 Pazar … 6 Cumartesi. */
+export interface OtoZaman {
+  nd: string;
+  hpGun: number;
+  hp: string;
+  sonSaat: string;
+}
+export const VARSAYILAN_ZAMAN: OtoZaman = { nd: "09:00", hpGun: 5, hp: "10:00", sonSaat: "15:00" };
+
+/* Kurumun metninden farklı yazılmış şablon; boşsa varsayılan (istemcide, src/eposta.ts). */
+export interface OtoSablon {
+  nd?: string;
+  hp?: string;
+}
+
 export interface OtoCagriAyar {
   acik: boolean;
-  /** Gönderen: posta kimliği bu uid'ninki. */
-  uid: string;
+  /** Kendi hesabından gönderilmesine izin verenler (uid). */
+  gonderenler: string[];
+  /** Haftanın günü (0 Pazar … 6 Cumartesi) → gönderen. */
+  haftalik: Record<string, string>;
+  /** Belli gün → gönderen; haftanın gününü ezer. */
+  istisna: Record<string, string>;
+  zaman: OtoZaman;
+  sablon: OtoSablon;
   bcc: string[];
   /** BCC'deki muhabirlerin kişi kimliği: çağrı kaydına (yanıt eşleştirme) gidiyor. */
   bccIdler: string[];
@@ -59,7 +84,29 @@ export interface OtoCagriKaydi {
   hata?: string;
 }
 
-export const bosOtoCagri = (): OtoCagriAyar => ({ acik: false, uid: "", bcc: [], bccIdler: [], kalemler: [], atla: [], gonderildi: [], guncelleme: "" });
+export const bosOtoCagri = (): OtoCagriAyar => ({ acik: false, gonderenler: [], haftalik: {}, istisna: {}, zaman: { ...VARSAYILAN_ZAMAN }, sablon: {}, bcc: [], bccIdler: [], kalemler: [], atla: [], gonderildi: [], guncelleme: "" });
+
+/* İlk sürümde tek gönderen (`uid`) vardı: o kişi her günün göndereni ve izin vermiş sayılır. */
+export const otoCagriNormal = (ham: unknown): OtoCagriAyar => {
+  const a = { ...bosOtoCagri(), ...(ham && typeof ham === "object" ? (ham as Partial<OtoCagriAyar> & { uid?: string }) : {}) };
+  const eski = (ham as { uid?: string } | null)?.uid;
+  if (eski && !a.gonderenler.length) {
+    a.gonderenler = [eski];
+    a.haftalik = Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map((g) => [String(g), eski]));
+  }
+  delete (a as { uid?: string }).uid;
+  a.zaman = { ...VARSAYILAN_ZAMAN, ...a.zaman };
+  a.kalemler = a.kalemler.map((k) => ({ ...k, saat: k.saat || (k.tur === "haftalik" ? a.zaman.hp : a.zaman.nd) }));
+  return a;
+};
+
+const haftaninGunu = (g: string) => new Date(`${g}T12:00:00Z`).getUTCDay();
+
+/** O günün göndereni: istisna, yoksa haftanın günü; izni kalkmış kişi gönderen değil. */
+export const gununGondereni = (a: OtoCagriAyar, gun: string): string => {
+  const u = a.istisna[gun] ?? a.haftalik[String(haftaninGunu(gun))] ?? "";
+  return u && a.gonderenler.includes(u) ? u : "";
+};
 
 const GUN = /^\d{4}-\d{2}-\d{2}$/;
 const ETIKET = /^(ND|HP)-\d{8}$/;
@@ -67,6 +114,7 @@ const ADRES = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 /* Exchange'in alıcı sınırının altında; muhabir listesi 60 civarı. */
 export const BCC_SINIRI = 300;
 const metinMi = (x: unknown): x is string => typeof x === "string";
+const SAAT = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const kalemCoz = (x: unknown): OtoCagriKalem | null => {
   if (!x || typeof x !== "object") return null;
@@ -74,27 +122,76 @@ const kalemCoz = (x: unknown): OtoCagriKalem | null => {
   if (!metinMi(k.etiket) || !ETIKET.test(k.etiket)) return null;
   if (k.tur !== "nextday" && k.tur !== "haftalik") return null;
   if (!metinMi(k.tarih) || !GUN.test(k.tarih) || !metinMi(k.gonderim) || !GUN.test(k.gonderim)) return null;
+  if (!metinMi(k.saat) || !SAAT.test(k.saat)) return null;
   if (!metinMi(k.konu) || !k.konu.trim() || k.konu.length > 255) return null;
   if (!metinMi(k.metin) || !k.metin.trim() || k.metin.length > 20_000) return null;
   if (!metinMi(k.html) || k.html.length > 80_000) return null;
   const sonSaat = metinMi(k.sonSaat) && /^\d{2}:\d{2}$/.test(k.sonSaat) ? k.sonSaat : "";
-  return { etiket: k.etiket, tur: k.tur, tarih: k.tarih, gonderim: k.gonderim, konu: k.konu, metin: k.metin, html: k.html, sonSaat };
+  return { etiket: k.etiket, tur: k.tur, tarih: k.tarih, gonderim: k.gonderim, saat: k.saat, konu: k.konu, metin: k.metin, html: k.html, sonSaat };
 };
 
 const etiketler = (x: unknown) => (Array.isArray(x) ? [...new Set(x.filter((e): e is string => metinMi(e) && ETIKET.test(e)))].slice(0, 60) : null);
 
 /*
- * Tarayıcının gönderdiğini birleştirir. Gönderen değişmesi (`devral`) açıkça
- * istenir: başka planlamacının tarayıcısı açılışta listeyi bırakırken
- * gönderen sessizce ona geçmesin, posta kimin hesabından gidiyorsa o bilsin.
+ * Tarayıcının gönderdiğini birleştirir. İzin (`katil`) yalnız kişinin
+ * kendisi için: başkası onu gönderen listesine ekleyemez; ayrılanın takvimdeki
+ * günleri boşalır. Takvime yalnız izin vermiş kişi konur.
  */
 export const otoCagriBirlestir = (eski: OtoCagriAyar, gelen: unknown, uid: string, simdi: string): { ayar: OtoCagriAyar } | { hata: string } => {
   if (!gelen || typeof gelen !== "object") return { hata: "govde" };
   const g = gelen as Record<string, unknown>;
-  const sahip = eski.uid || uid;
-  if (sahip !== uid && g.devral !== true) return { hata: "baskasi" };
-  const yeni: OtoCagriAyar = { ...eski, uid: g.devral === true ? uid : sahip };
+  const yeni: OtoCagriAyar = { ...eski, haftalik: { ...eski.haftalik }, istisna: { ...eski.istisna } };
+  if (typeof g.katil === "boolean") {
+    yeni.gonderenler = g.katil ? [...new Set([...eski.gonderenler, uid])] : eski.gonderenler.filter((u) => u !== uid);
+    if (!g.katil) {
+      for (const m of [yeni.haftalik, yeni.istisna]) for (const [k, v] of Object.entries(m)) if (v === uid) delete m[k];
+    }
+  }
   if (typeof g.acik === "boolean") yeni.acik = g.acik;
+  if (g.haftalik !== undefined) {
+    if (!g.haftalik || typeof g.haftalik !== "object") return { hata: "takvim" };
+    const h: Record<string, string> = {};
+    for (const [k, v] of Object.entries(g.haftalik as Record<string, unknown>)) {
+      if (!/^[0-6]$/.test(k) || !metinMi(v)) return { hata: "takvim" };
+      if (!v) continue;
+      if (!yeni.gonderenler.includes(v)) return { hata: "izinsiz" };
+      h[k] = v;
+    }
+    yeni.haftalik = h;
+  }
+  if (g.istisna !== undefined) {
+    if (!g.istisna || typeof g.istisna !== "object") return { hata: "takvim" };
+    const gun = simdi.slice(0, 10);
+    const h: Record<string, string> = {};
+    for (const [k, v] of Object.entries(g.istisna as Record<string, unknown>)) {
+      if (!GUN.test(k) || !metinMi(v)) return { hata: "takvim" };
+      // Geçmiş günler birikmesin; boş metin "o gün kimse göndermesin".
+      if (k < gun) continue;
+      if (v && !yeni.gonderenler.includes(v)) return { hata: "izinsiz" };
+      h[k] = v;
+    }
+    if (Object.keys(h).length > 60) return { hata: "takvim" };
+    yeni.istisna = h;
+  }
+  if (g.zaman !== undefined) {
+    const z = g.zaman as Partial<OtoZaman> | null;
+    if (!z || typeof z !== "object") return { hata: "zaman" };
+    const zaman = { ...yeni.zaman, ...z };
+    if (![zaman.nd, zaman.hp, zaman.sonSaat].every((x) => metinMi(x) && SAAT.test(x)) || !Number.isInteger(zaman.hpGun) || zaman.hpGun < 0 || zaman.hpGun > 6) return { hata: "zaman" };
+    yeni.zaman = { nd: zaman.nd, hpGun: zaman.hpGun, hp: zaman.hp, sonSaat: zaman.sonSaat };
+  }
+  if (g.sablon !== undefined) {
+    const s = g.sablon as Record<string, unknown> | null;
+    if (!s || typeof s !== "object") return { hata: "sablon" };
+    const t: OtoSablon = {};
+    for (const k of ["nd", "hp"] as const) {
+      const v = s[k];
+      if (v === undefined || v === "") continue;
+      if (!metinMi(v) || v.length > 5000) return { hata: "sablon" };
+      t[k] = v;
+    }
+    yeni.sablon = t;
+  }
   if (g.bcc !== undefined) {
     if (!Array.isArray(g.bcc)) return { hata: "bcc" };
     const bcc = [...new Set(g.bcc.map((a) => String(a).trim().toLowerCase()).filter(Boolean))];
@@ -124,30 +221,55 @@ export const otoCagriBirlestir = (eski: OtoCagriAyar, gelen: unknown, uid: strin
 /* Tarayıcıya giden hal: adres listesi yerine sayısı (BCC gizli kalsın, ekran yalnız sayıyı gösteriyor). */
 export const otoCagriGorunur = (a: OtoCagriAyar, uid: string, gecmis: OtoCagriKaydi[]) => ({
   acik: a.acik,
-  gonderen: a.uid,
-  benim: !a.uid || a.uid === uid,
+  gonderenler: a.gonderenler,
+  izinli: a.gonderenler.includes(uid),
+  haftalik: a.haftalik,
+  istisna: a.istisna,
+  zaman: a.zaman,
+  sablon: a.sablon,
   bccSayi: a.bcc.length,
   guncelleme: a.guncelleme,
   atla: a.atla,
-  kalemler: a.kalemler.map(({ etiket, tur, tarih, gonderim, konu }) => ({ etiket, tur, tarih, gonderim, konu })),
+  kalemler: a.kalemler.map(({ etiket, tur, tarih, gonderim, saat, konu }) => ({ etiket, tur, tarih, gonderim, saat, konu, uid: gununGondereni(a, gonderim) })),
   gecmis,
 });
 
-/* Gün İstanbul saatiyle (UTC+3, yaz saati yok). */
+/* Gün ve saat İstanbul saatiyle (UTC+3, yaz saati yok). */
 export const istanbulGunu = (simdi: number) => new Date(simdi + 3 * 3600_000).toISOString().slice(0, 10);
+export const istanbulSaati = (simdi: number) => new Date(simdi + 3 * 3600_000).toISOString().slice(11, 16);
+
+/* Başarısız gönderim üç kez denenir (zamanlayıcı 15 dakikada bir); sonra o gün bırakılır. */
+export const DENEME_SINIRI = 3;
 
 /*
- * O gün o türden gönderilecek kalem; neden gönderilmeyeceği de döner (geçmişe
- * yazılsın, gönderen ekranda görsün). "liste": tarayıcı iki haftadır listeyi
- * bırakmadı, gönderilecek metin yok.
+ * Şu an gönderilecek kalem; neden gönderilmeyeceği de döner (geçmişe
+ * yazılsın, gönderen ekranda görsün). Saati gelmemiş kalem beklenir.
+ * "liste": tarayıcı iki haftadır listeyi bırakmadı, gönderilecek metin yok;
+ * "gonderen": o günün takviminde kimse yok.
  */
-export const gununKalemi = (a: OtoCagriAyar, tur: OtoCagriTuru, gun: string, gecmis: OtoCagriKaydi[]): { kalem: OtoCagriKalem } | { atla: "kapali" | "liste" | "atlandi" | "gonderildi" } => {
-  if (!a.acik || !a.uid) return { atla: "kapali" };
+export const gununKalemi = (
+  a: OtoCagriAyar,
+  tur: OtoCagriTuru,
+  gun: string,
+  saat: string,
+  gecmis: OtoCagriKaydi[],
+): { kalem: OtoCagriKalem; uid: string } | { atla: "kapali" | "erken" | "liste" | "atlandi" | "gonderildi" | "gonderen" | "denendi" } => {
+  if (!a.acik || !a.gonderenler.length) return { atla: "kapali" };
   const kalem = a.kalemler.find((k) => k.tur === tur && k.gonderim === gun);
-  if (!kalem) return { atla: "liste" };
+  if (!kalem) {
+    // Haftalık yalnız ayardaki gününde beklenir; liste uyarısı günde bir kez.
+    const vakit = tur === "haftalik" ? (haftaninGunu(gun) === a.zaman.hpGun ? a.zaman.hp : "") : a.zaman.nd;
+    if (!vakit || saat < vakit || gecmis.some((g) => g.tur === tur && g.tarih === gun && g.hata === "liste")) return { atla: "erken" };
+    return { atla: "liste" };
+  }
+  if (saat < kalem.saat) return { atla: "erken" };
   if (a.atla.includes(kalem.etiket)) return { atla: "atlandi" };
-  if (a.gonderildi.includes(kalem.etiket) || gecmis.some((g) => g.etiket === kalem.etiket && g.tamam)) return { atla: "gonderildi" };
-  return { kalem };
+  const onceki = gecmis.filter((g) => g.etiket === kalem.etiket);
+  if (a.gonderildi.includes(kalem.etiket) || onceki.some((g) => g.tamam)) return { atla: "gonderildi" };
+  if (onceki.length >= DENEME_SINIRI) return { atla: "denendi" };
+  const uid = gununGondereni(a, gun);
+  if (!uid) return onceki.some((g) => g.hata === "gonderen") ? { atla: "denendi" } : { atla: "gonderen" };
+  return { kalem, uid };
 };
 
 export const GECMIS_SINIRI = 40;

@@ -292,8 +292,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ("00…", başta tek sıfır Türkiye). Bilgisayarda önce masaüstü uygulaması
     (`whatsapp://`; kurum onu kullanıyor, açık uygulamada sohbet açılır).
     Uygulama açılınca sayfa odağı kaybeder; 1,5 saniyede kaybetmezse
-    uygulama yok sayılır, WhatsApp Web açılır. Ayarlar'da "Bilgisayarda
-    WhatsApp": otomatik / uygulama / Web, tarayıcıda (`trt-planlama-whatsapp`).
+    uygulama yok sayılır, WhatsApp Web açılır. Seçim ayarı yok (kullanıcı:
+    "Bilgisayarda WhatsApp" ayarı gereksizdi, kalktı): hep önce uygulama.
     Web sabit adlı pencereye açılır (`plannersflow-whatsapp`, `rel` yok);
     kişinin kendi açtığı WhatsApp Web sekmesine site ulaşamaz.
   - Seçmeli hesap yetkileri (`veri.ts → HESAP_YETKILERI`, `Kisi.yetkiler`):
@@ -998,8 +998,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sorar, `p.adim === "kontrol"` yazılmaz. Geri gönderilen iş geride kalan son
     metin durağına, yoksa bir öncekine döner (`geriHedefi`). Genel iş
     `adimIlerle` ile ilerler, notu pakete, `durakTamamlandi` hareketi.
-  - Üretim panosunun sütunları yayındaki akışın durakları; eski sürümle süren
-    paketin durağı bugün yoksa kendi sütununda. Sırası gelen işler her birimin
+  - Haber üretimi panosu (`#/uretim`, `Listeler.tsx → UretimPanosu`; kullanıcı:
+    güncel sisteme göre, önce yapının eski akış durakları sütundu): sütunlar
+    üretim balonunun aşamaları (`uretim.ts → PANO_SUTUNLARI`, `panoSutunu`):
+    görevlendirme, muhabir, editoryal kontrol, dil, video, (gfx sırası varsa)
+    grafik, yükleme, yayın kararı; metin durağındaki paket en geride kalan
+    parçasının aşamasında, bütün parçalar hazırsa muhabirde (video). Kartta
+    işin masası (`panoMasasi`) ve aşamada geçen süre (`asamaIzi`, 180 dakikayı
+    aşan kırmızı); balonsuz eski üretim paketi "Eski akışla süren" sütununda.
+    Metin kontrolü ve video panoları yapının durakları. Test
+    `testler/uretim-panosu.cjs`. Sırası gelen işler her birimin
     kataloğunda "Sıradaki işlerim" (`genSiram`); örneksiz yeni birimin ana
     sayfası onunla açılır.
   - Üretime giren paket akışın sürümünü taşır (`Paket.akis`, `akisDamgasi`):
@@ -1706,30 +1714,38 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     abonelik) ileride aynı `postaIsle`'yi besleyebilir
     (`belgeler/eposta-entegrasyonu.md`).
   - Otomatik öneri çağrısı (kullanıcı: çağrıyı her gün elle göndermek
-    istemiyor; `src/otoCagri.ts`, kapıda `worker/src/oto-cagri.ts`): Next Day
-    her gün 09:00'da ertesi günün planı için, haftalık her Cuma 10:00'da 8 gün
-    sonra başlayan hafta için (Perşembe toplantısında görüşülen); İstanbul
-    saati, hafta sonu dahil. Gönderen anahtarı açan planlamacı (onun EWS
-    kimliği), Kime planning grubu (gönderenin grup adresi), muhabirler BCC'de
-    (izinde olmayan, kurumsal adresi olan; elle çağrının varsayılanı), metin
-    elle çağrının şablonu (`cagriGovdesi`, `haftalikGovde`, `govdeHtml`; HTML
-    gövde, EWS `BodyType="HTML"`), son saat 15:00. Zamanlayıcı Cloudflare Cron
-    (`wrangler.toml → [triggers]`, UTC 06:00 ve Cuma 07:00; ifadeler
-    `index.ts → CRON_NEXTDAY`, `CRON_HAFTALIK` ile aynı). Kapı veritabanını
-    okuyamıyor: gönderenin tarayıcısı önümüzdeki 14 günün çağrılarını hazır
-    haliyle (konu, metin, HTML) ve BCC listesini kapıya bırakır (`PUT
-    /oto-cagri`, `otoPaketiBirak`; açılışta ve saatte bir, değişmediyse
-    yazmaz); şablon tek yerde kalır. Gönderen sessizce değişmez: başkasının
-    tarayıcısı yazamaz (409 `baskasi`), "Benim hesabımdan gönderilsin" açıkça
-    devralır. Kayıtta çağrısı olan etiket (elle gönderilmiş) ve "Bunu gönderme"
-    denen gitmez. Kapı sonucu geçmişe yazar (`oto-cagri-gecmis`); gönderilen
-    çağrıyı kayda uygulamayı açan planlamacının tarayıcısı yazar (`eylemler.ts
-    → otoCagrilariKaydet`, kimlik `oc-<etiket>`, hareket `cagriHazirlandi`;
-    `postalariCek` postayı çekmeden önce de): yanıt ND-/HP- etiketiyle ona
-    bağlanır. Gönderilemeyen (kimlik eksik, liste 14 gündür tazelenmedi, EWS
-    hatası) gönderene bir kez bildirilir. Anahtar Ayarlar › "Otomatik öneri
-    çağrısı" (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan):
-    sıradaki çağrılar, liste tarihi, son gönderimler. Testler
+    istemiyor; sonra: metin, saat ve takvimde kimin göndereceği ayarlansın,
+    ekran kalabalık olmasın; `src/otoCagri.ts`, kapıda `worker/src/oto-cagri.ts`):
+    Next Day her gün ertesi günün planı için, haftalık haftada bir sonraki
+    haftadan sonraki hafta için (`hpHaftasi`; Cuma'dan 8 gün sonraki
+    Cumartesi). Ayar kapının KV'sinde (`OtoCagriAyar`): `zaman` (Next Day
+    saati, haftalığın günü ve saati, yanıt için son saat; varsayılan 09:00,
+    Cuma 10:00, 15:00), `sablon` (Next Day ve Weekly metni; boşsa kurumun
+    metni `cagriGovdesi`/`haftalikGovde`, yer tutucular {gun} {tarih} {saat},
+    {aralik} {adres}), takvim (`haftalik`: haftanın günü → gönderen;
+    `istisna`: gün → gönderen ya da "" kimse). Takvime yalnız "Benim
+    hesabımdan gönderilebilir" diyen konur (`gonderenler`, kişi yalnız
+    kendini ekler/çıkarır, `katil`; ayrılanın günleri boşalır; kapı izinsiz
+    kimliği reddeder): posta o kişinin EWS kimliğiyle gider. İlk sürümün tek
+    göndereni (`uid`) okurken her günün göndereni olur (`otoCagriNormal`).
+    Kime gönderenin grup adresi, muhabirler BCC'de (izinde olmayan, kurumsal
+    adresi olan); HTML gövde. Zamanlayıcı 15 dakikada bir (`wrangler.toml`,
+    `index.ts → CRON_OTO`): saati gelmiş kalemi gönderir (`gununKalemi`,
+    İstanbul saati), başarısızı üç kez dener, takvimde kimse yoksa ve liste
+    bayatsa geçmişe bir kez yazar. Kapı veritabanını okuyamıyor: gönderen
+    listesindeki planlamacının tarayıcısı önümüzdeki 14 günün çağrılarını
+    (saatiyle) ve BCC listesini kapıya bırakır (`otoPaketiBirak`; açılışta ve
+    saatte bir, değişmediyse yazmaz; zaman ya da metin kaydedilince yeniden
+    kurulur). Kayıtta çağrısı olan etiket (elle gönderilmiş) ve "Bunu
+    gönderme" denen gitmez. Gönderilen çağrıyı kayda uygulamayı açan
+    planlamacının tarayıcısı yazar (`otoCagrilariKaydet`, kimlik `oc-<etiket>`,
+    hareket `cagriHazirlandi`; `postalariCek` postayı çekmeden önce de): yanıt
+    ND-/HP- etiketiyle ona bağlanır. Gönderilemeyen gönderen listesindekilere
+    bir kez bildirilir. Ekran Ayarlar › "Otomatik öneri çağrısı"
+    (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan): üstte açık
+    anahtarı ve sıradaki iki çağrı (gün, saat, gönderen, "Bunu gönderme"),
+    altında üç sekme: Kim gönderecek (izin, haftanın yedi günü, belli
+    günler), Zaman ve metin, Son gönderimler. Testler
     `worker/test/oto-cagri.test.ts`.
 - PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
   "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin
@@ -1745,11 +1761,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kişinin EWS kimliğiyle `POST /posta/gonder` (grup CC'de, kapı ekliyor),
   sırayla; demoda yalnız işaret. Şablon (konu "تكليف تقرير من {sehir} |
   {strap}", metin "sen" diliyle ama cinsiyetsiz: "مرحبًا", emir kipi yok,
-  "نرجو منك" + mastar, sonda "غرفة الأخبار ile iletişim") Ayarlar › "PKG geri
-  bildirimi şablonu" (`GeriBildirimSablonlari.tsx → TakdirAyari`; konu,
-  metin, CC, BCC, varsayılana dön): geri bildirim şablonlarının
-  koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`), o listede görünmez, onlar
-  yazılırken düşmez. Değeri boş alanın satırı düşer (notsuz "ملاحظة:" yok).
+  "نرجو منك" + mastar, sonda "غرفة الأخبار ile iletişim") Ayarlar › "Muhabire
+  geri bildirim" kartının ilk satırı "PKG geri bildirimi" (kullanıcı: ayrı
+  kartı aynı işi görüyordu, birleşti; `GeriBildirimSablonlari.tsx →
+  TakdirFormu`, pencerede; konu, metin, CC, BCC, varsayılana dön; silinmez):
+  geri bildirim şablonlarının koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`),
+  öbür şablonların arasında ikinci kez görünmez, onlar yazılırken düşmez. Değeri boş alanın satırı düşer (notsuz "ملاحظة:" yok).
   Test `testler/takdir.cjs`.
   Weekly'de de (kullanıcı: kesinleşen haftanın ⋯ menüsünde "Kabul edilen
   paketler", dilediğine posta; gönderilmeyen Next Day hazırlanırken karşıma
@@ -1779,8 +1796,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Yeni öneri düzenine geçiş. Kural: eski düzende öneri kalmaz. Sistemin
   açılış işi (`eylemler.ts → eskiOnerileriCevir`, `App.tsx → yokla`) eski
   biçimde ne kaldıysa kendiliğinden çevirir (örnek veri de ilk açılışta);
-  Ayarlar'daki kart (yalnız tam yönetici; `KayitYedegi.tsx →
-  YeniDuzenGecisi`, eylem `yeniDuzeneGecir`) aynısını önizlemeyle elle yapar.
+  Ayarlar'daki elle geçiş kartı kalktı (kullanıcı).
   Kurallar `gecis.ts`. Öneri üzerindeki e-postayla takip izleri (`takip`,
   `yalnizTakip`, `takipBitis`, `takipBitiren`) silinir: plana paketsiz giren
   haber zaten takip olarak plandadır, paket "Yapıldı" ve onayla kapanır;
@@ -1831,17 +1847,6 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriKopyala`): kopya değerlendirmeden başlar, `kopyaKaynagi` asılı
     gösterir; plan bağı, takip, satırlar, arşiv, geri bildirim geçmez.
     İkisi ayrıntıda "Bağlı öneriler"de (`BagliOneriler`).
-- iNEWS denemesi (GEÇİCİ; Ayarlar, tam yönetici; `ekranlar/InewsDenemesi.tsx`):
-  kurumun iNEWS 5.2'sine (iç ağda, `AINEWS`) aktarımın kopyala-yapıştırla
-  olup olmadığı deneniyor; olursa bilgi işten FTP istenip otomatik aktarıma
-  geçilecek ve kart silinecek. Seçilen Next Day planının paketleri ve canlı
-  yayınları slug (`ÖNEK-PKG-<baş harfler>-<saat>-<gün>`, kurumun düzenine
-  benzer, elle değişir) ve Arapça metinle; satır başına ve üç toplu biçimde
-  (yalnız slug, sekmeli, bloklar, NSML, HTML tablo) kopyalanır. Düz metin
-  iNEWS'te satır açmıyor (kendi kopyası özel pano biçiminde, tarayıcı onu
-  yazamıyor); NSML ve tablo bunun denemesi. iNEWS'ten kopyalanan panonun
-  bütün biçimleri (`text/plain`, `text/html`…) ham haliyle gösterilir. Kayda
-  yazmaz.
 - Muhasebe (kullanıcının çizimi; News Gathering'in alt birimi, yerleşik birim
   `muhasebe`, ünvanlar yönetici ve `muhasebeci`; onsuz yayınlanmış yapıda
   okurken eklenir, `yapi.ts → muhasebeyiKur`). Sayfa `ekranlar/Muhasebe.tsx`
@@ -2043,9 +2048,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kipte `mesajlar` koleksiyonu): iki taraf aynı anda yazınca öneri
     belgesi ezilmesin. Yazabilen `yetki.ts → oneriYazisabilir`; bildirim
     karşı tarafa (`oneriMesaji` hareketi). Geri almaya girmez.
-  - Muhabire haber önerisi (`muhabireOneriGonder`): Planlama (ya da
-    yöneticinin Ayarlar'da seçtiği birimler, `Durum.muhabireOneriBirimleri`,
-    yoksa Planlama; gerçek kipte genel ayar belgesinde) öneriler sayfasından
+  - Muhabire haber önerisi (`muhabireOneriGonder`): Planlama (onun "gibi"
+    çalışan birim de) ve tam yönetici (`yetki.ts → muhabireOneriGonderebilir`;
+    Ayarlar'daki birim seçimi kalktı, kullanıcı: havada kalıyordu) öneriler sayfasından
     ya da muhabirin profilinden öneri gönderir. Öneri `yon: "muhabire"`,
     durum `teklif` ("Muhabire teklif"). Muhabir reddedemez, yazışmada konuşur
     (ekranında yalnız `TeklifNotu`); kararı gönderen ya da Planlama verir
@@ -2822,9 +2827,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (şu an ne oluyor, kimde bekliyor, sıradaki ne), ilkeler, renk/yazı sistemi,
   ses ve yapılmayacaklar. Tasarım kararları ona dayanır; çelişen istek gelirse
   önce belge güncellenir.
-- Yeni tasarım (deneme; kullanıcı: Linear'ın görünüşü, Monday'in işlevi;
-  `belgeler/kimlik.md`): eski tasarım silinmeden yanında. Anahtar Ayarlar'da
-  ("Yeni tasarım") ve avatar menüsünde; seçim tarayıcıda
+- Yeni tasarım (kullanıcı: Linear'ın görünüşü, Monday'in işlevi;
+  `belgeler/kimlik.md`): varsayılan (kullanıcı); eski tasarım silinmeden
+  yanında, Ayarlar'da "Eski tasarıma dön" ve avatar menüsünde; seçim tarayıcıda
+  (yalnız "eski" yazılıysa eskisi). Eski tasarımın sayfalarını sınayan testler
+  "eski"yi kendisi yazar
   (`tasarimSecimi.ts`, `trt-planlama-tasarim`), açıkken `<html>`'de
   `yeni-tasarim` sınıfı (ilk çizimden önce, `main.tsx` içe aktarıyor).
   Bütün değişiklik `tasarim.css`'in sonundaki `html.yeni-tasarim` bloğunda:
@@ -3362,8 +3369,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Ayarlar sayfası başlık satırlarından oluşur (kullanıcı: kartlar bütün
   sayfayı kaplamasın): her `Kart` katlanır satır, basınca açılır
   (`Parcalar.tsx → KatlanirKartlar` bağlamı; sayfa açar, içteki kartlar
-  katlanmaz). Muhabirde "Bilgisayarda WhatsApp" yok (onun ekranında WhatsApp
-  düğmesi yok).
+  katlanmaz).
 - Doğrulama: `npx vite preview` ile açıp 390 piksel genişlikte her sayfada
   yatay taşmanın sıfır olduğuna bakılır, Arapçada da. Uçtan uca testler
   depoda (`testler/`, `testler/calistir.sh`; önizleme açıkken): geçici

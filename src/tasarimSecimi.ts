@@ -4,16 +4,16 @@ import { useEffect, useState } from "react";
  * "Yeni tasarım" denemesi (belgeler/kimlik.md; Linear görünüşü, Monday işlevi):
  * eski tasarım silinmeden yanında. Seçim kişiye değil tarayıcıya bağlı (dil gibi);
  * açıkken <html>'de `yeni-tasarim` sınıfı, bütün site token'larını oradan alıyor.
- * Beğenilirse eski tasarım silinip bu sınıf kalkacak.
+ * Yeni tasarım varsayılan (kullanıcı); yalnız "Eski tasarıma dön" diyen tarayıcıda eskisi.
  */
 const ANAHTAR = "trt-planlama-tasarim";
 const OLAY = "trt-tasarim";
 
 export const yeniTasarimAcik = (): boolean => {
   try {
-    return localStorage.getItem(ANAHTAR) === "yeni";
+    return localStorage.getItem(ANAHTAR) !== "eski";
   } catch {
-    return false;
+    return true;
   }
 };
 

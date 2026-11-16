@@ -5,7 +5,7 @@ import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
 import { cfBaglan, ekIndirOtomatik, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
-import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, otoCagriBirlestir, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
+import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
 /*
@@ -92,37 +92,39 @@ const OTO_ANAHTARI = "oto-cagri";
 const OTO_GECMIS_ANAHTARI = "oto-cagri-gecmis";
 const otoOku = async (env: Env): Promise<OtoCagriAyar> => {
   const ham = await env.YZ.get(OTO_ANAHTARI);
-  return ham ? { ...bosOtoCagri(), ...(JSON.parse(ham) as OtoCagriAyar) } : bosOtoCagri();
+  return ham ? otoCagriNormal(JSON.parse(ham)) : bosOtoCagri();
 };
 const otoGecmisOku = async (env: Env): Promise<OtoCagriKaydi[]> => JSON.parse((await env.YZ.get(OTO_GECMIS_ANAHTARI)) ?? "[]") as OtoCagriKaydi[];
 
-/* Zamanlayıcıların ifadesi wrangler.toml'dakiyle aynı olmalı: hangisinin çaldığı türü belirliyor. */
-export const CRON_NEXTDAY = "0 6 * * *";
-export const CRON_HAFTALIK = "0 7 * * 5";
+/* Zamanlayıcının ifadesi wrangler.toml'dakiyle aynı: saatler ayarda, kapı 15 dakikada bir bakıyor. */
+export const CRON_OTO = "*/15 * * * *";
 
 export type Gonderici = (ayar: EwsAyar, g: GidenPosta) => Promise<{ tamam: true } | { hata: string }>;
 
 /*
- * Zamanlayıcının işi: günün çağrısını gönderenin kimliğiyle gönderir.
- * Kime gönderenin grup adresi (planning); muhabirler BCC'de. Gönderilmeyen
- * (kimlik eksik, liste bayat, EWS hatası) geçmişe nedeniyle yazılır.
+ * Zamanlayıcının işi: saati gelmiş çağrıyı o günün göndereninin kimliğiyle
+ * gönderir. Kime gönderenin grup adresi (planning); muhabirler BCC'de.
+ * Gönderilmeyen (kimlik eksik, liste bayat, takvimde kimse yok, EWS hatası)
+ * geçmişe nedeniyle yazılır.
  */
 export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTuru, gonder: Gonderici): Promise<OtoCagriKaydi | null> => {
   const ayar = await otoOku(env);
   const gecmis = await otoGecmisOku(env);
   const gun = istanbulGunu(simdi);
-  const s = gununKalemi(ayar, tur, gun, gecmis);
-  if ("atla" in s && s.atla !== "liste") return null;
+  const s = gununKalemi(ayar, tur, gun, istanbulSaati(simdi), gecmis);
+  if ("atla" in s && s.atla !== "liste" && s.atla !== "gonderen") return null;
   const zaman = new Date(simdi).toISOString();
   const kayit = async (k: OtoCagriKaydi) => {
     await env.YZ.put(OTO_GECMIS_ANAHTARI, JSON.stringify(gecmiseEkle(gecmis, k)));
     return k;
   };
-  if ("atla" in s) return kayit({ etiket: "", tur, tarih: gun, zaman, uid: ayar.uid, kime: "", bccIdler: [], konu: "", metin: "", sonSaat: "", tamam: false, hata: "liste" });
-  const k = s.kalem;
+  if ("atla" in s && s.atla === "liste") return kayit({ etiket: "", tur, tarih: gun, zaman, uid: "", kime: "", bccIdler: [], konu: "", metin: "", sonSaat: "", tamam: false, hata: "liste" });
+  const k = ayar.kalemler.find((x) => x.tur === tur && x.gonderim === gun)!;
+  if ("atla" in s) return kayit({ etiket: k.etiket, tur, tarih: k.tarih, zaman, uid: "", kime: "", bccIdler: [], konu: k.konu, metin: "", sonSaat: k.sonSaat, tamam: false, hata: "gonderen" });
+  const uid = s.uid;
   const pa = await postaAyarOku(env);
-  const pk = await postaKimlikOku(env, ayar.uid);
-  const temel: OtoCagriKaydi = { etiket: k.etiket, tur, tarih: k.tarih, zaman, uid: ayar.uid, kime: pk.grupAdresi, bccIdler: ayar.bccIdler, konu: k.konu, metin: k.metin, sonSaat: k.sonSaat, tamam: false };
+  const pk = await postaKimlikOku(env, uid);
+  const temel: OtoCagriKaydi = { etiket: k.etiket, tur, tarih: k.tarih, zaman, uid, kime: pk.grupAdresi, bccIdler: ayar.bccIdler, konu: k.konu, metin: k.metin, sonSaat: k.sonSaat, tamam: false };
   if (!pa.acik || !pa.sunucu) return kayit({ ...temel, hata: "postaKapali" });
   if (!pk.kullanici || !pk.parola) return kayit({ ...temel, hata: "eksikKimlik" });
   if (!pk.grupAdresi) return kayit({ ...temel, hata: "grup" });
@@ -481,8 +483,8 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 
   /*
    * Otomatik çağrı: durum ve geçmiş haber merkezinde herkese (çağrının kaydını
-   * uygulamayı ilk açan planlamacı yazıyor); listeyi ve anahtarı gönderen ya
-   * da açıkça devralan değiştiriyor (oto-cagri.ts → otoCagriBirlestir).
+   * uygulamayı ilk açan planlamacı yazıyor); takvime yalnız kendi izniyle
+   * gönderen listesine girmiş kişi konuyor (oto-cagri.ts → otoCagriBirlestir).
    */
   if (yol === "/oto-cagri") {
     if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
@@ -490,7 +492,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (req.method === "GET") return yanit(otoCagriGorunur(oa, kisi.kimlik.uid, await otoGecmisOku(env)));
     if (req.method === "PUT") {
       const r = otoCagriBirlestir(oa, await req.json().catch(() => null), kisi.kimlik.uid, new Date(d.simdi()).toISOString());
-      if ("hata" in r) return yanit({ hata: r.hata }, r.hata === "baskasi" ? 409 : 400);
+      if ("hata" in r) return yanit({ hata: r.hata }, 400);
       await env.YZ.put(OTO_ANAHTARI, JSON.stringify(r.ayar));
       return yanit(otoCagriGorunur(r.ayar, kisi.kimlik.uid, await otoGecmisOku(env)));
     }
@@ -551,8 +553,10 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
 
 export default {
   scheduled: (olay: { cron: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) => {
-    const tur: OtoCagriTuru | null = olay.cron === CRON_NEXTDAY ? "nextday" : olay.cron === CRON_HAFTALIK ? "haftalik" : null;
-    if (tur) ctx.waitUntil(otoCagriCalistir(env, Date.now(), tur, (a, g) => postaGonderOtomatik(a, cfBaglan, Date.now(), g)));
+    if (olay.cron !== CRON_OTO) return;
+    const gonder: Gonderici = (a, g) => postaGonderOtomatik(a, cfBaglan, Date.now(), g);
+    // Sırayla: ikisi aynı anda geçmişi okuyup yazarsa biri ötekinin kaydını ezerdi.
+    ctx.waitUntil(otoCagriCalistir(env, Date.now(), "nextday", gonder).then(() => otoCagriCalistir(env, Date.now(), "haftalik", gonder)));
   },
   fetch: (req: Request, env: Env) => isle(req, env, { fetch: (...a) => fetch(...a), simdi: Date.now, anahtarBul: googleAnahtarlari((...a) => fetch(...a), Date.now), onbellek: cacheOnbellegi() }),
 };

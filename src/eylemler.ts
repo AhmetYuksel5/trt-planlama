@@ -2870,17 +2870,6 @@ export const paketBaskaMuhabireVer = (ben: Kisi, paketId: string, muhabirId: str
   return id;
 };
 
-/* Yeni öneri düzenine geçiş (gecis.ts): yalnız tam yönetici, önizlemeden sonra; tek hareket. "Plana eklendi" eşitlemesi sonra kendiliğinden. */
-export const yeniDuzeneGecir = (ben: Kisi): number | null => {
-  if (!ben.hesapYoneticisi) return null;
-  const d = getir();
-  const n = gecisOnizlemesi(d).toplam;
-  if (!n) return 0;
-  const yeni = gecisUygula(d, ben.id, simdi());
-  kaydet(hareketYaz({ ...yeni, oneriler: yeni.oneriler.map((o) => oneriPlanaGore(yeni, o)) }, { kisiId: ben.id, tip: "gecisUygulandi", veri: { sayi: String(n) } }));
-  return n;
-};
-
 /*
  * Sistemin açılış işi: öneriye çevrilmeyen takip son gelişmesinden iki gün
  * sonra izleriyle siliniyor (kurum kararı; arşive düşmüyor).
@@ -5674,13 +5663,6 @@ export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => 
 };
 
 /** Muhabire öneri gönderebilecek birimler: yalnız tam yönetici seçiyor. */
-export const muhabireOneriBirimleriKaydet = (ben: Kisi, birimler: BirimId[]) => {
-  if (!ben.hesapYoneticisi) return false;
-  const d = getir();
-  kaydet({ ...d, muhabireOneriBirimleri: [...new Set(birimler)].filter((b) => b !== "muhabir") });
-  return true;
-};
-
 /* --- Muhabirin takipleri --- */
 
 export interface TakipGirdisi {

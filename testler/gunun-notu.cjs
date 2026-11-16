@@ -1,4 +1,5 @@
 // Günün notu (Planlama ana sayfası): kayıttan kurallarla bekleyen ve gözden kaçan işler. Kayıtlar kurgusal.
+// Eski tasarımın sayfalarını sınıyor (yeni tasarım varsayılan oldu; yeni ana sayfa ana-pano.cjs).
 const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
 let gec = 0, kal = 0;
@@ -10,7 +11,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   p.on("pageerror", (e) => hatalar.push(String(e)));
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(700); };
   await p.goto(B);
-  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-oturum", "pl1"); });
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-tasarim", "eski"); localStorage.setItem("trt-planlama-oturum", "pl1"); });
   await git("#/");
   // Günün notu varsayılan düzende yok (kullanıcı); kişi "Sayfayı düzenle"den ekliyor, burada kaydına yazılıyor.
   ok((await p.locator("[data-gun-notu]").count()) === 0 && (await p.getByText(/Günün notu/).count()) === 0, "varsayılan ana sayfada Günün notu yok");

@@ -186,3 +186,48 @@ export const yeniDurak = (p: Pick<Paket, "adim">, u: UretimYolu): string | undef
   if (duraklar.includes(p.adim ?? "")) return p.adim;
   return DURAK_SIRASI.slice(DURAK_SIRASI.indexOf(p.adim ?? "") + 1).find((x) => duraklar.includes(x));
 };
+
+/*
+ * Haber üretimi panosunun sütunları (kullanıcı: pano güncel sisteme göre;
+ * önce yapının eski akış durakları sütundu, balonla başlayan paket
+ * görünmüyordu). Balonun aşamaları: metin durağı parçaların hâline göre
+ * ayrılıyor (muhabir yazıyor, editoryal kontrol, dil denetimi); en geride
+ * kalan parça işin yeri. Bütün parçalar hazırsa video muhabirden bekleniyor.
+ * Grafik yan iş: paket kendi sütununda dururken grafik sütununda da görünür.
+ * Balonsuz (eski akışla süren) üretim paketi son sütunda.
+ */
+export const PANO_SUTUNLARI = ["gorev", "muhabir", "editoryal", "dil", "video", "grafik", "yukleme", "yayin", "eski"] as const;
+export type PanoSutunu = (typeof PANO_SUTUNLARI)[number];
+
+export const panoSutunu = (p: Paket): Exclude<PanoSutunu, "grafik"> | null => {
+  if (p.durum !== "uretimde") return null;
+  if (!p.uretim) return "eski";
+  switch (p.adim) {
+    case "newsdesk":
+      return "gorev";
+    case "metin": {
+      const l = p.parcalar ?? [];
+      if (!l.length || l.some((x) => x.asama === "muhabir")) return "muhabir";
+      if (l.some((x) => x.asama === "newsdesk")) return "editoryal";
+      if (l.some((x) => x.asama === "dil")) return "dil";
+      return "muhabir";
+    }
+    case "videoKontrol":
+      return "video";
+    case "inews":
+      return "yukleme";
+    case "yayin":
+      return "yayin";
+    default:
+      return "eski";
+  }
+};
+
+/** Sütunun masası (paketin yolundan); muhabir sütununda muhabir. */
+export const panoMasasi = (p: Paket, s: PanoSutunu): BirimId | null => {
+  if (s === "muhabir") return "muhabir";
+  if (s === "eski" || !p.uretim) return null;
+  const a: UretimAsamasi = s;
+  const m = p.uretim.yol[a];
+  return m === "atla" ? null : m;
+};
