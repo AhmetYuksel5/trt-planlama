@@ -3230,51 +3230,44 @@ export const masaSorusunuYanitla = (ben: Kisi, oneriId: string, kabul: boolean, 
 };
 
 /** Masanın aldığı öneride muhabire görev: plansız görev paketi (stokta), masanın kolunda, öneriye bağlı. */
-export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string): string | null => {
+export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string, masa?: BirimId | ""): string | null => {
   let d = getir();
   const o = oneriBul(d, oneriId);
   const s = kabulSoru(d, oneriId);
-  if (o && !s && o.muhabirId && oneriDogrudanGorevlendirebilir(ben, o, d) && gorevTarihiUygun(ben, tarih)) {
-    /*
-     * Doğrudan görev (kullanıcı: plana eklemeden görevlendirilsin): plansız
-     * onaylı görev paketi, kolu önerinin, stokta "üretimde". Öneri plansız
-     * kabul (`oneriPlansizKabul`); sonra plana eklenince bu paket o başlığa
-     * onaylı PKG olarak yerleşir (`oneriPlanaEkle`).
-     */
-    const z = simdi();
-    const k = gorevPaketi(d, ben, { muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, aciklama: o.gelisme, bicim: o.bicim && o.bicim !== TAKIP_BICIMI ? o.bicim : undefined, tarih }, {
-      durum: "onaylandi",
-      gorev: { veren: ben.id, zaman: z },
-      gorevZamani: z,
-      oneriId,
-      tur: o.tur,
-      sahaGerekli: o.sahaGerekli,
-    });
-    if (!k) return null;
-    const [p, yeni] = k;
-    d = { ...yeni, oneriler: yeni.oneriler.map((x) => (x.id === oneriId ? { ...x, durum: "planaEklendi" as const, paketId: p.id } : x)) };
-    kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, oneriId, veri: { kime: o.muhabirId, muhabir: o.muhabirId, tarih } }));
-    return p.id;
-  }
-  if (!o || !s || !o.muhabirId || !oneriGorevlendirebilir(ben, o, d) || !gorevTarihiUygun(ben, tarih)) return null;
+  if (!o || !o.muhabirId || !gorevTarihiUygun(ben, tarih)) return null;
+  const dogrudan = !s && oneriDogrudanGorevlendirebilir(ben, o, d);
+  if (!dogrudan && !(s && oneriGorevlendirebilir(ben, o, d))) return null;
+  /*
+   * Hedef masa (kullanıcı: Planlama haber merkezi için planladığı gibi
+   * Programlar, Ekonomi ve Spor için de planlar; onlar için görevlendirilen
+   * paket masanın sayfasında durur, takibi ve yayını masada). Seçilmediyse
+   * masanın aldığı sorudan ya da önerinin masa kolundan; "" haber merkezi
+   * (stok): plansız onaylı görev paketi, sonra plana eklenince o başlığa
+   * onaylı PKG olarak yerleşir (`oneriPlanaEkle`).
+   */
+  const hedef = masa !== undefined ? masa : (s?.birim ?? ((SORU_MASALARI as readonly string[]).includes(o.tur) ? o.tur : ""));
+  if (hedef && !(SORU_MASALARI as readonly string[]).includes(hedef)) return null;
   const z = simdi();
   const k = gorevPaketi(d, ben, { muhabirId: o.muhabirId, baslik: o.paketBasligi || o.haberBasligi, aciklama: o.gelisme, bicim: o.bicim && o.bicim !== TAKIP_BICIMI ? o.bicim : undefined, tarih }, {
     durum: "onaylandi",
     gorev: { veren: ben.id, zaman: z },
     gorevZamani: z,
     oneriId,
-    tur: s.birim as IcerikTuru,
+    tur: hedef ? (hedef as IcerikTuru) : o.tur,
     sahaGerekli: o.sahaGerekli,
   });
   if (!k) return null;
-  // Masanın takibine geçiyor (kullanıcı): Planlama'nın stoğuna, Next Day'in hazır paketlerine ve onay kuyruğuna girmez.
-  const [p0, yeni0] = k;
-  const { stok: _stok, ...p1 } = p0;
-  const p: Paket = { ...p1, masaTakibi: s.birim };
-  const yeni = { ...yeni0, paketler: yeni0.paketler.map((x) => (x === p0 ? p : x)) };
+  let [p, yeni] = k;
+  // Masanın takibine geçen paket Planlama'nın stoğuna, Next Day'in hazır paketlerine ve onay kuyruğuna girmez.
+  if (hedef) {
+    const p0 = p;
+    const { stok: _stok, ...p1 } = p0;
+    p = { ...p1, masaTakibi: hedef };
+    yeni = { ...yeni, paketler: yeni.paketler.map((x) => (x === p0 ? p : x)) };
+  }
   d = { ...yeni, oneriler: yeni.oneriler.map((x) => (x.id === oneriId ? { ...x, durum: "planaEklendi" as const, paketId: p.id } : x)) };
   // Muhabire görev, masaya "görevlendirildi" (sahip): ikisi de bu tek hareketten.
-  d = hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, veri: { kime: o.muhabirId, muhabir: o.muhabirId, tarih, sahip: s.birim } });
+  d = hareketYaz(d, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, oneriId, veri: { kime: o.muhabirId, muhabir: o.muhabirId, tarih, ...(hedef && { sahip: hedef }) } });
   kaydet(d);
   return p.id;
 };

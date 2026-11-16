@@ -55,7 +55,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
 
   // Masa: Programlar'da İçerikler (Ekonomi ve Spor'da "Takibimizdeki paketler" kartı); teslim durumu, karar.
   await gir("pr2", "#/programlar/icerikler");
-  await p.click('[data-prg-alan="uretimde"]');
+  await p.click('[data-prg-alan="gorevli"]');
   ok((await p.locator("[data-prg-icerik]").count()) >= 3, "Programlar'ın İçerikler'inde takibindeki paketler");
   await p.click('[data-prg-alan="hazir"]');
   ok(/Teslim edildi/.test(await p.locator('[data-prg-icerik="mt-2"]').innerText()), "teslim edileni gösteriyor");
@@ -63,7 +63,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.fill("[data-yayinlanmadi-sebep]", "البرنامج تأجل");
   await p.click("[data-yayinlanmadi-gonder]");
   await p.waitForTimeout(300);
-  await p.click('[data-prg-alan="uretimde"]');
+  await p.click('[data-prg-alan="gorevli"]');
   await p.click('[data-prg-icerik="mt-1"] [data-masa-yayinlandi]');
   await p.waitForTimeout(300);
   await p.click('[data-prg-icerik="mt-3"] [data-masa-yayinlanmadi]');

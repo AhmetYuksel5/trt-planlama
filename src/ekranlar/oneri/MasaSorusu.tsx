@@ -6,7 +6,7 @@ import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { Icerik, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { masaSorusunuYanitla, oneriGorevlendir, oneriMasayaSor } from "../../eylemler";
-import { SORU_MASALARI, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSoru } from "../../masaSorusu";
+import { SORU_MASALARI, kabulSoru, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSoru } from "../../masaSorusu";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { kisiBul, oneriBul, useVeri, type BirimId, type Kisi, type MasaSorusu, type Oneri, type Paket } from "../../veri";
 import { birimAdi, izinBirimi } from "../../yapi";
@@ -163,15 +163,26 @@ function YanitFormu({ ben, oneri }: { ben: Kisi; oneri: Oneri }) {
 /** Öneriden görev: masanın aldığı öneride ve (öneri penceresinin ⋯'sinden) doğrudan; eylem ikisini ayırıyor. */
 export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat?: () => void }) {
   const { t } = useDil();
+  const v = useVeri();
   const B = bugun();
   const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
+  // Kimin için: birimin aldığı sorudan ya da önerinin masa kolundan; haber merkezi stoğa düşer.
+  const [masa, setMasa] = useState<string>(kabulSoru(v, oneri.id)?.birim ?? ((SORU_MASALARI as readonly string[]).includes(oneri.tur) ? oneri.tur : ""));
   return (
     <div className="satir-form" data-oneri-gorevlendir-formu>
+      <select className="girdi" value={masa} onChange={(e) => setMasa(e.target.value)} aria-label={t("ogGorevMasa")} title={t("ogGorevMasa")} data-oneri-gorev-masa>
+        <option value="">{t("ogGorevHaberMerkezi")}</option>
+        {SORU_MASALARI.map((m) => (
+          <option key={m} value={m}>
+            {birimAdi(m)}
+          </option>
+        ))}
+      </select>
       <TarihGirdisi className="girdi" value={tarih} min={B} onChange={(e) => setTarih(e.target.value)} aria-label={t("gvGun")} />
       <button
         type="button"
         className="dugme"
-        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih) && (bildir(t("gvVerildi")), kapat?.())}
+        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih, masa) && (bildir(t("gvVerildi")), kapat?.())}
         data-oneri-gorevlendir
       >
         <ClipboardList size={15} /> {t("msGorevlendir")}

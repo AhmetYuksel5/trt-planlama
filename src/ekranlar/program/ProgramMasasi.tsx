@@ -64,7 +64,7 @@ const BOLUM_IKONU: Record<ProgramBolumu, ReactNode> = {
   programlar: <Tv size={20} />,
   arsiv: <Archive size={20} />,
 };
-const ALAN_ADI: Record<IcerikAlani, Anahtar> = { planlamada: "pmAlanPlanlamada", uretimde: "pmAlanUretimde", hazir: "pmAlanHazir", arsiv: "pmAlanArsiv" };
+const ALAN_ADI: Record<IcerikAlani, Anahtar> = { planlamada: "pmAlanPlanlamada", gorevli: "pmAlanGorevli", uretimde: "pmAlanUretimde", hazir: "pmAlanHazir", arsiv: "pmAlanArsiv" };
 
 export const MASA_ADI: Record<MasaBirimi, Anahtar> = { program: "biProgram", ekonomi: "biEkonomi", spor: "biSpor" };
 export const MASA_IKONU: Record<MasaBirimi, ReactNode> = { program: <Clapperboard size={26} />, ekonomi: <Landmark size={26} />, spor: <Trophy size={26} /> };
@@ -222,7 +222,9 @@ function YayinPlanlari({ birim }: { birim: MasaBirimi }) {
 function Icerikler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
   const { t, ad } = useDil();
   const v = useVeri();
-  const [alan, setAlan] = useAdimDurumu<IcerikAlani>(`${birim}:alan`, "uretimde");
+  // İlk açılışta dolu ilk alan: önce Planlama'nın görevlendirdikleri, sonra üretimdekiler (boş alanla açılmasın).
+  const ilkAlan = (["gorevli", "uretimde", "hazir", "planlamada"] as IcerikAlani[]).find((a) => masaIcerikleri(v, birim).some((p) => icerikDurumAlani(p) === a)) ?? "gorevli";
+  const [alan, setAlan] = useAdimDurumu<IcerikAlani>(`${birim}:alan`, ilkAlan);
   const [aranan, setAranan] = useAdimDurumu(`${birim}:ara`, "");
   const [aktar, setAktar] = useState<Paket | null>(null);
   const q = aranan.trim().toLocaleLowerCase();

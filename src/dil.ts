@@ -2099,6 +2099,8 @@ const M = {
   hrHaftalikHazirliga: m("{kisi}, {tarih} haftasının planını hazırlığa geri aldı", "أعاد {kisi} خطة أسبوع {tarih} إلى الإعداد", "{kisi} returned the week of {tarih} plan to preparation"),
   hrHaftalikKesinlesti: m("{kisi}, {tarih} haftasının planını kesinleştirdi", "اعتمد {kisi} خطة أسبوع {tarih}", "{kisi} finalised the plan for the week of {tarih}"),
   hrOnIncelemeyeGonderildi: m("{kisi} öneriyi ön incelemeye gönderdi", "أرسل {kisi} المقترح للمراجعة المسبقة", "{kisi} sent the proposal for pre-review"),
+  ogGorevMasa: m("Kimin için", "لصالح", "For"),
+  ogGorevHaberMerkezi: m("Haber merkezi (stok)", "غرفة الأخبار (المخزون)", "Newsroom (stock)"),
   hrOnIncelemeGorusu: m("{kisi} ön incelemede görüş yazdı", "أبدى {kisi} رأيه في المراجعة المسبقة", "{kisi} commented in pre-review"),
   hrOnIncelemedeReddedildi: m("{kisi} öneriyi ön incelemede reddetti", "رفض {kisi} المقترح في المراجعة المسبقة", "{kisi} rejected the proposal in pre-review"),
   hrHaftaliktanAktarildi: m(
@@ -2900,6 +2902,7 @@ const M = {
   pmKararProgramsiz: m("hazır içerik programa konmadı", "محتوى جاهز لم يُدرج في برنامج", "ready item not scheduled in a show"),
   pmIcerikSayisi: m("{n} içerik", "{n} محتوى", "{n} items"),
   pmIcerikYok: m("İçerik yok", "لا محتوى", "No content"),
+  pmAlanGorevli: m("Görevlendirilen", "المكلَّف بها", "Assigned"),
   pmAlanPlanlamada: m("Planlamada", "قيد التخطيط", "In planning"),
   pmAlanUretimde: m("Üretimde", "قيد الإنتاج", "In production"),
   pmAlanHazir: m("Yayına hazır", "جاهز للبث", "Ready to air"),

@@ -40,6 +40,7 @@ import {
   masayaSorabilir,
   oneriBirlestirebilir,
   oneriDogrudanGorevlendirebilir,
+  oneriGorevlendirebilir,
   oneriDuzenleyebilir,
   oneriDuzeltmeyeGider,
   oneriGeriCekebilir,
@@ -240,7 +241,7 @@ export function OneriAyrinti({
     </button>
   );
   const menu = [
-    oneriDogrudanGorevlendirebilir(ben, o, v) && madde("gorev", <ClipboardList size={16} />, t("ogDogrudanGorevlendir"), () => setMod("gorev"), "data-oneri-dogrudan-gorev"),
+    (oneriDogrudanGorevlendirebilir(ben, o, v) || oneriGorevlendirebilir(ben, o, v)) && madde("gorev", <ClipboardList size={16} />, t("ogDogrudanGorevlendir"), () => setMod("gorev"), "data-oneri-dogrudan-gorev"),
     masayaSorabilir(ben, o, v) && madde("masa", <Share2 size={16} />, t("msMasayaIlet"), () => setMod("masa"), "data-masaya-sor-ac"),
     teklifKarariVerebilir(ben, o) && madde("tdeg", <Clock size={16} />, t("degerlendirmeyeAl"), () => oneriDurum(ben, o.id, "degerlendiriliyor"), "data-teklif-degerlendir"),
     teklifKarariVerebilir(ben, o) && madde("ttkp", <Lightbulb size={16} />, t("takibeAl"), () => oneriDurum(ben, o.id, "takip") && bildir(t("bTakibeAlindi")), "data-teklif-takip"),

@@ -2423,6 +2423,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     girer, stoktan çıkar; formda PKG sorusu yerine görevli paketin satırı
     (`data-pe-gorevli`), öneri penceresinde "Plana ekle" o zamana dek durur.
     Test `testler/dogrudan-gorev.cjs`.
+  - Masa için görev (kullanıcı: birimin "Uygundur" dediği öneride doğrudan
+    görevlendirme bulunmuyordu, yalnız Değerlendirme bölümünün içindeydi;
+    Planlama haber merkezi için planladığı gibi Programlar, Ekonomi ve Spor
+    için de planlar, onlar için görevlendirilen masanın sayfasında durur,
+    takibi ve yayını masada): ⋯ menüsündeki "Muhabiri görevlendir" masanın
+    aldığı öneride de (`oneriDogrudanGorevlendirebilir ||
+    oneriGorevlendirebilir`). Formda "Kimin için" (`data-oneri-gorev-masa`):
+    Haber merkezi (stok) ya da Programlar, Ekonomi, Spor; varsayılan birimin
+    aldığı sorudan, yoksa önerinin masa kolundan (`oneriGorevlendir(…,
+    masa)`). Masa seçilince paket stok değil masanın takibinde (`masaTakibi`,
+    kolu masanın), masaya `paketGorevVerildi` (`sahip`). Masa sayfasının
+    İçerikler'inde yeni ilk alan "Görevlendirilen" (`icerikDurumAlani →
+    gorevli`: muhabire verilmiş, teslim bekleyen; sayfa dolu ilk alanla, önce bununla açılır), teslim
+    edilince "Yayına hazır". Test `testler/masa-gorev.cjs`.
   - Paket masanın takibine geçer (kullanıcı: masanın paketi Planlama'nın
     günlük ve haftalık planına girmiyor, masa yayınlıyor ve takip ediyor;
     `Paket.masaTakibi`, stok değil): Planlama'nın Stok'unda, Next Day "Hazır
@@ -2464,7 +2478,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - İçerikler: masanın paketleri (`masaIcerikleri`: masanın takibindeki ve kolu
     masaya ait; karar bekleyen görev talebi öneri sayılır) üç alanda
     (`AKTIF_ALANLAR`, `icerikDurumAlani`): Planlamada (talep, taslak, üretime
-    alınmamış; "Üretime al" kartta), Üretimde (akışta ya da muhabirde), Yayına
+    alınmamış; "Üretime al" kartta), Görevlendirilen (Planlama'nın masa için
+    görevlendirdiği, muhabirde teslim bekleyen), Üretimde (akışta), Yayına
     hazır (teslim edilmiş ya da masanın akışında bitmiş, yayın kararı bekleyen).
     Kartta tür, yer, gün, durum, muhabir; işin muhabirine WhatsApp ve posta
     (kullanıcı: bütün muhabirlere değil, çalıştığı muhabire iş bazında;

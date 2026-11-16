@@ -29,16 +29,17 @@ export const masaBolumleri = (b: MasaBirimi): ProgramBolumu[] => PROGRAM_BOLUMLE
  * muhabirde. Yayına hazır: teslim edilmiş ya da masanın akışında bitmiş, yayın
  * kararı bekleyen. Arşiv: yayınlanan, yayınlanmayan, iptal.
  */
-export const ICERIK_ALANLARI = ["planlamada", "uretimde", "hazir", "arsiv"] as const;
+// Görevlendirilen (kullanıcı: Planlama'nın bu masa için görevlendirdiği paketler masanın sayfasında ayrı dursun, takibi masada): muhabire verilmiş, teslim bekleyen.
+export const ICERIK_ALANLARI = ["planlamada", "gorevli", "uretimde", "hazir", "arsiv"] as const;
 export type IcerikAlani = (typeof ICERIK_ALANLARI)[number];
 /* İçerikler'in alanları; kapananlar ayrı Arşiv bölümünde (aranır, süzülür). */
-export const AKTIF_ALANLAR: IcerikAlani[] = ["planlamada", "uretimde", "hazir"];
+export const AKTIF_ALANLAR: IcerikAlani[] = ["planlamada", "gorevli", "uretimde", "hazir"];
 
 export const icerikDurumAlani = (p: Paket): IcerikAlani => {
   if (p.durum === "iptal" || p.yayinlandi || p.yayinlanmadi) return "arsiv";
   if (p.durum === "tamamlandi") return "hazir";
   if (p.durum === "uretimde") return "uretimde";
-  if (p.durum === "onaylandi" && (p.masaTakibi || p.gorev)) return p.isaret?.tur === "yapildi" ? "hazir" : "uretimde";
+  if (p.durum === "onaylandi" && (p.masaTakibi || p.gorev)) return p.isaret?.tur === "yapildi" ? "hazir" : "gorevli";
   return "planlamada";
 };
 
