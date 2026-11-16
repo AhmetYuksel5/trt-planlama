@@ -28,6 +28,7 @@ import { SORULABILIR_DURUM, acikSoru, kabulSoru, oneriGorevPaketi, oneriSorulari
 import { acikGundemde, oneriPlanKaydi } from "./oneriPlanlari";
 import { muhasebeOkur } from "./depo/fark";
 import { gfxAcik } from "./uretim";
+import { stokAsamasi } from "./stokAkisi";
 import {
   BIRIMLER,
   ICERIK_TURLERI,
@@ -620,7 +621,9 @@ export const paketinMasasi = (p: Paket): BirimId | undefined => p.masaTakibi ?? 
 export const masaYayinKarariVerebilir = (k: Kisi | undefined, p: Paket): boolean => {
   const birim = paketinMasasi(p);
   if (!k || !birim || p.ozelId) return false;
-  const acik = p.masaTakibi ? p.durum === "onaylandi" : p.durum === "tamamlandi" && !p.yayinlandi && !p.yayinlanmadi;
+  // Stok sorumlusunun masaya verdiği hazır paket de masanın takibinde, tamamlanmış: yalnız yayın kararı bekliyor.
+  const bitmis = p.durum === "tamamlandi" && !p.yayinlandi && !p.yayinlanmadi;
+  const acik = p.masaTakibi ? p.durum === "onaylandi" || (!!p.stok && bitmis) : bitmis;
   return acik && masaUyesi(k, birim);
 };
 
@@ -1088,7 +1091,19 @@ export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
   !!p.ozelId &&
   p.ozelKaynak === "inhouse" &&
   p.durum === "onaylandi" &&
-  (!!k.hesapYoneticisi || (izinBirimi(k.birim) === "planlama" && (k.gorev === "stokTakip" || k.rol === "yonetici")));
+  stokEkibi(k);
+
+/*
+ * Stok sorumlusunun işleri (kullanıcı: kararlaştırılan stok paketlerini
+ * muhabirlere süreyle görevlendiriyor, hazırları yayına öneriyor, yayınını
+ * takip ediyor): Planlama'nın stok ekibi, Planlama yöneticisi, tam yönetici.
+ */
+export const stokEkibi = (k: Kisi | undefined): boolean =>
+  !!k && !k.pasif && (!!k.hesapYoneticisi || (izinBirimi(k.birim) === "planlama" && (k.gorev === "stokTakip" || k.rol === "yonetici")));
+export const stokGorevlendirebilir = (k: Kisi | undefined, p: Paket): boolean => stokEkibi(k) && stokAsamasi(p) === "gorevlendirilecek";
+/** Hazır stok paketinin yayın işi (Next Day'e öner, masaya ver, yayınlandı); özel yayının paketi kendi yayınıyla. */
+export const stokYayinIsler = (k: Kisi | undefined, p: Paket): boolean => stokEkibi(k) && stokAsamasi(p) === "hazir" && !p.ozelId;
+export const stokYayiniGeriAlabilir = (k: Kisi | undefined, p: Paket): boolean => stokEkibi(k) && stokAsamasi(p) === "yayinlandi" && !p.ozelId && !p.yayinlandi?.masa;
 
 /** Teslimi işi yapan (dış muhabir, Output'un görevlendirdiği kişi) ya da Planlama işliyor. Newsdesk henüz bu akışta yok. */
 export const ozelPaketTeslimEdebilir = (

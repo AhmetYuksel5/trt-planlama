@@ -36,8 +36,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(BASLIKTA ? s1.baslik !== null : s1.baslik === null, BASLIKTA ? "başlığın altında kaldı" : "başlıktan ayrıldı");
   // Stok › Üretilmiş paketler
   await p.goto("about:blank"); await p.goto(B + "#/stok"); await p.waitForTimeout(800);
-  ok((await p.locator('[role="tab"][aria-selected="true"]').innerText()).includes("Üretilmiş paketler"), "Stok'ta açık sekme Üretilmiş paketler");
-  ok((await p.locator(`a[href="#/paketler/${id}"]`).count()) > 0, "paket Üretilmiş paketler'de");
+  await p.click('[data-stok-asama="hazir"]'); await p.waitForTimeout(300);
+  ok((await p.locator(`[data-stok-paket="${id}"]`).count()) === 1, "paket Stok'un Hazır aşamasında");
   await p.goto(B + "#/nextday/yarin/cikti"); await p.waitForTimeout(1000);
   const metin = await p.locator("article.cikti").first().innerText();
   const hazirBolum = metin.split("التقارير الجاهزة")[1] ?? "";
