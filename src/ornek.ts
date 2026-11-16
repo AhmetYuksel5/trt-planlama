@@ -4,6 +4,7 @@ import { cagriGovdesi, cagriKonusu, etiketUret, haftalikGovde, ORNEK_PLANLAMA_AD
 import { sehirAdi } from "./etiketler";
 import { bugun, gunEkle, haftaBasi, planlananHafta, zaman } from "./tarih";
 import type {
+  StokGorusu,
   BirimId,
   ParcaAsamasi,
   Mesaj,
@@ -2343,6 +2344,13 @@ export const ORNEK = (): Durum => {
   };
   kalemi("ow-fon").karar = "ret";
   kalemi("ow-ekmek").onInceleme = { durum: "gonderildi", gonderen: "pl4", zaman: incelemeZamani, gorusler: [] };
+  /* Stok önerileri toplantıdan önce birimlerin görüşüne açık (stokHazirlik.ts); Program ve Ekonomi yazmış, öbürleri bekleniyor. */
+  const stokAcikZaman = arada(0.62);
+  const stokGorusleri: StokGorusu[] = [
+    { id: `${kalemi("ow-zanaat").id}:program`, haftaId: "hf-gelecek", kalemId: kalemi("ow-zanaat").id, birim: "program", kisiId: "pr2", zaman: arada(0.8), tur: "bizAlalim", not: "حكايات için uygun; Cuma bölümüne alabiliriz." },
+    { id: `${kalemi("ow-ekmek").id}:ekonomi`, haftaId: "hf-gelecek", kalemId: kalemi("ow-ekmek").id, birim: "ekonomi", kisiId: "ek1", zaman: arada(0.82), tur: "uygun" },
+  ];
+  h("pl4", "stokBirimlereAcildi", stokAcikZaman, { haftaId: "hf-gelecek", veri: { sayi: "2" } });
 
   h("pl2", "haftalikOlusturuldu", new Date(new Date(cagriZamani).getTime() - 10 * DAKIKA).toISOString(), { haftaId: "hf-gelecek", veri: { tarih: haftaBas } });
   h("pl2", "cagriHazirlandi", cagriZamani, { haftaId: "hf-gelecek", veri: { tarih: haftaBas, sahip: "muhabir", hafta: "1" } });
@@ -2483,6 +2491,7 @@ export const ORNEK = (): Durum => {
       durum: "hazirlik",
       anaKonular: GELECEK_HAFTA_DOSYALARI.map(([baslik, metin], i) => ({ id: `akg${i}`, baslik, metin })),
       kalemler: gelecekKalemleri,
+      stokAcik: { zaman: stokAcikZaman, kisiId: "pl4" },
       olusturan: "pl2",
       olusturma: new Date(new Date(cagriZamani).getTime() - 10 * DAKIKA).toISOString(),
     },
@@ -2589,6 +2598,7 @@ export const ORNEK = (): Durum => {
       { id: "prg-saha", ad: "ملعب", saat: "22:00", sure: 25, gunler: [2, 6], olusturan: "pr1", olusturma: zaman(gun(-20), "10:00") },
     ],
     kisiler: kisiListesi,
+    stokGorusleri,
     basliklar: BASLIKLAR,
     planlar,
     gelismeler,

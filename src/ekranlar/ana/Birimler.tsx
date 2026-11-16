@@ -1,4 +1,5 @@
 import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "../program/ProgramMasasi";
+import { StokGorusIstegi } from "../../bilesenler/StokGorus";
 import type { MasaBirimi } from "../../programMasasi";
 import { OzelTalepAlani } from "../OzelYayin";
 import {
@@ -382,6 +383,7 @@ export function MasaAna({ ben, birim, kisisel = true }: { ben: Kisi; birim: Masa
     <>
       <SayfaBasi sekme={!kisisel} ikon={MASA_IKONU[birim]} baslik={t(MASA_ADI[birim])} />
       <BanaVerilenIsler ben={ben} />
+      {kisisel && <StokGorusIstegi ben={ben} />}
       {onIncelemeBekleyenler(v, ben).length > 0 && <OnIncelemeKarti ben={ben} />}
       <MasaSayfasi ben={ben} birim={birim} ozet />
     </>

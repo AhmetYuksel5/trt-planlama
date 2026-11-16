@@ -23,6 +23,7 @@ import { temizle, type TemizlikSecimi } from "./temizlik";
 import { planCiftleriniBirlestir } from "./planCiftleri";
 import { kisiAr, satir, sehirAdi, sehirAr, sehirListesi, sehirUlkesi } from "./etiketler";
 import { gecisOnizlemesi, gecisUygula } from "./gecis";
+import { gorusBirimi, gorusculer, stokGorusAcik, stokOnerileri } from "./stokHazirlik";
 import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriBekleyenGorevPaketi, oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
@@ -132,6 +133,9 @@ import {
   type MuhasebeAnlasmasi,
   type MuhasebeKapanisi,
   type MuhasebeTanimi,
+  type StokGorusTuru,
+  type StokGorusu,
+  STOK_GORUS_TURLERI,
 } from "./veri";
 import {
   adimYapabilir,
@@ -139,6 +143,7 @@ import {
   uretimYoluBelirleyebilir,
   gfxYapabilir,
   haftalikDuzenler,
+  stokBirimlereAcabilir,
   hesapYetkisi,
   epostaDegistirebilir,
   geriBildirimGonderebilir,
@@ -1310,6 +1315,7 @@ export const kalemSil = (ben: Kisi, haftaId: string, kalemId: string) => {
   if (!h || !k || !haftalikDuzenler(ben, h) || kalemKilitli(h, k)) return false;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.filter((y) => y.id !== kalemId) }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "degerlendiriliyor" } : o)) };
+  if (d.stokGorusleri?.some((g) => g.kalemId === kalemId)) d = { ...d, stokGorusleri: d.stokGorusleri.filter((g) => g.kalemId !== kalemId) };
   kaydet(d);
   return true;
 };
@@ -1412,6 +1418,68 @@ export const onIncelemeReddet = (ben: Kisi, haftaId: string, kalemId: string, ge
   }));
   d = hareketYaz(d, { kisiId: ben.id, tip: "onIncelemedeReddedildi", haftaId, veri: { kalem: kalemId, gerekce: gerekce.trim(), sahip: "planlama" } });
   kaydet(d);
+  return true;
+};
+
+/* --- Stok önerilerinin toplantı öncesi hazırlığı (stokHazirlik.ts) --- */
+
+/** Haftanın stok önerilerini birimlerin görüşüne açar; görüş verebilen herkese bildirim. */
+export const stokBirimlereAc = (ben: Kisi, haftaId: string): boolean => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !stokBirimlereAcabilir(ben, h) || !stokOnerileri(h).length) return false;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, stokAcik: { zaman: simdi(), kisiId: ben.id } }));
+  const kime = gorusculer(d).filter((id) => id !== ben.id);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "stokBirimlereAcildi", haftaId, veri: { kime: kime.join(","), sayi: String(stokOnerileri(h).length) } }));
+  return true;
+};
+
+/** Birimin görüşü: birim başına bir kayıt, yenisi eskisinin yerine; hareket stok sorumlusunun önüne (Planlama). */
+export const stokGorusuVer = (ben: Kisi, haftaId: string, kalemId: string, tur: StokGorusTuru, not = ""): boolean => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const birim = gorusBirimi(ben);
+  if (!h || !birim || !stokGorusAcik(h) || !stokOnerileri(h).some((k) => k.id === kalemId) || !STOK_GORUS_TURLERI.includes(tur)) return false;
+  const id = `${kalemId}:${birim}`;
+  const g: StokGorusu = { id, haftaId, kalemId, birim, kisiId: ben.id, zaman: simdi(), tur, ...(not.trim() && { not: not.trim() }) };
+  d = { ...d, stokGorusleri: [...(d.stokGorusleri ?? []).filter((x) => x.id !== id), g] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "stokGorusuVerildi", haftaId, veri: { kalem: kalemId, gorus: tur, sahip: "planlama" } }));
+  return true;
+};
+
+/*
+ * Günü olan kalemi stoka almak (kullanıcı: haftalığa gelen paketlere "bu
+ * stoka gitsin" deniyor): günü kalkar, zamana bağlı olmayanlara geçer, eski
+ * günü kalemde kalır ("Güne geri al"). Stok ekibine bildirim.
+ */
+export const kalemStokaAl = (ben: Kisi, haftaId: string, kalemId: string): boolean => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || !k.tarih || !haftalikDuzenler(ben, h) || kalemKilitli(h, k)) return false;
+  const tarih = k.tarih;
+  d = kalemGuncelle(d, haftaId, kalemId, (x) => {
+    const { tarih: _t, ...kalan } = x;
+    return { ...kalan, stokaAlindi: { tarih, zaman: simdi(), kisiId: ben.id } };
+  });
+  const kime = d.kisiler.filter((x) => x.gorev === "stokTakip" && !x.pasif && x.id !== ben.id).map((x) => x.id);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "kalemStokaAlindi", haftaId, veri: { kalem: kalemId, ...(kime.length ? { kime: kime.join(",") } : { sahip: "planlama" }) } }));
+  return true;
+};
+
+export const kalemGuneGeriAl = (ben: Kisi, haftaId: string, kalemId: string): boolean => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || k.tarih || !k.stokaAlindi || !haftalikDuzenler(ben, h) || kalemKilitli(h, k)) return false;
+  const tarih = k.stokaAlindi.tarih;
+  d = kalemGuncelle(d, haftaId, kalemId, (x) => {
+    const { stokaAlindi: _s, ...kalan } = x;
+    return { ...kalan, tarih };
+  });
+  // Stok önerisi olarak verilmiş görüşler artık bu kaleme ait değil.
+  d = { ...d, stokGorusleri: (d.stokGorusleri ?? []).filter((g) => g.kalemId !== kalemId) };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "kalemGuneDondu", haftaId, veri: { kalem: kalemId } }));
   return true;
 };
 

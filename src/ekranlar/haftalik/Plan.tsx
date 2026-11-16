@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2, Users } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -12,6 +12,7 @@ import { Avatar, Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAFTA_DURUM_ADI, HAREKET_TURU_ADI } from "../../etiketler";
 import {
+  stokBirimlereAc,
   anaKonuKaydet,
   aylikOlayiGundemeEkle,
   anaKonuSil,
@@ -26,7 +27,8 @@ import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler,
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
 import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
-import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
+import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, stokBirimlereAcabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
+import { stokGorusAcik, stokOnerileri } from "../../stokHazirlik";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt } from "../nextday/Formlar";
@@ -590,8 +592,30 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const gundemdeki = stok.filter(gundemde);
   const dusen = stok.filter((k) => !gundemde(k));
   const gidebilir = stok.filter(onIncelemeyeGidebilir);
+  const v = useVeri();
+  const oneriler = stokOnerileri(hafta);
+  const gorusSayisi = (v.stokGorusleri ?? []).filter((g) => g.haftaId === hafta.id && oneriler.some((k) => k.id === g.kalemId)).length;
   return (
     <Bolum no={4} baslik={t("zamanaBagliOlmayan")} ek={t("kalemSayisi", { n: gundemdeki.length })}>
+      {/* Toplantıdan önce birimler stok önerilerini görsün, görüşünü yazsın (kullanıcı); kararı toplantı verir. */}
+      {stokGorusAcik(hafta) ? (
+        <p className="sonuk-yazi" data-stok-acik>
+          {t("sgAcildi", { n: gorusSayisi })}
+        </p>
+      ) : (
+        stokBirimlereAcabilir(ben, hafta) &&
+        oneriler.length > 0 && (
+          <div className="dugmeler">
+            <button
+              className="dugme dugme-ikincil dugme-kucuk"
+              onClick={() => confirm(t("sgAcOnay", { n: oneriler.length })) && stokBirimlereAc(ben, hafta.id) && bildir(t("bKaydedildi"))}
+              data-stok-birimlere-ac
+            >
+              <Users size={14} /> {t("sgBirimlereAc")}
+            </button>
+          </div>
+        )
+      )}
       {duzenler && gidebilir.length > 0 && (
         <div className="dugmeler">
           <button

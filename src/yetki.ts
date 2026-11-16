@@ -312,6 +312,9 @@ export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
  */
 export const haftalikDuzenler = (k: Kisi | undefined, _h: HaftalikPlan) => yapabilir(k, "haftalikDuzenle");
 
+/* Stok önerilerini birimlerin görüşüne açmak ve kalemi stoka alıp güne döndürmek haftayı düzenleyenin işi (stok sorumlusu). */
+export const stokBirimlereAcabilir = (k: Kisi | undefined, h: HaftalikPlan) => haftalikDuzenler(k, h) && h.durum !== "kesinlesti";
+
 /*
  * Planların akış adımları (toplantıya götürme, onay, devir, karar,
  * kesinleştirme): kim yapacağı sabit tabloda değil, yapıda; tam yönetici

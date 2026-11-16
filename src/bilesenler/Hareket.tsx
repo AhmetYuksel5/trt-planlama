@@ -125,6 +125,10 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   haftalikKesinlesti: "hrHaftalikKesinlesti",
   onIncelemeyeGonderildi: "hrOnIncelemeyeGonderildi",
   onIncelemeGorusu: "hrOnIncelemeGorusu",
+  stokBirimlereAcildi: "hrStokBirimlereAcildi",
+  stokGorusuVerildi: "hrStokGorusuVerildi",
+  kalemStokaAlindi: "hrKalemStokaAlindi",
+  kalemGuneDondu: "hrKalemGuneDondu",
   onIncelemedeReddedildi: "hrOnIncelemedeReddedildi",
   haftaliktanAktarildi: "hrHaftaliktanAktarildi",
   uretimeAlindi: "hrUretimeAlindi",
@@ -236,6 +240,8 @@ export function useHareketKonusu() {
     const o = oneriBul(d, h.oneriId);
     if (o) return { baslik: o.haberBasligi, href: `#/oneriler/${o.id}` };
     const hafta = haftaBul(d, h.haftaId);
+    // Birimler Weekly'yi açamıyor olabilir: görüş istenen liste kendi ana sayfalarının başında.
+    if (h.tip === "stokBirimlereAcildi" && hafta) return { metin: `${t("haftalik")} · ${aralikYaz(hafta.baslangic, haftaSonu(hafta.baslangic), dil)}`, href: "#/" };
     const kalem = hafta?.kalemler.find((k) => k.id === h.veri?.kalem);
     if (hafta && kalem) return { baslik: kalemAdi(kalem), href: `#/haftalik/${hafta.id}` };
     const oz = d.ozel.find((x) => x.id === h.ozelId);

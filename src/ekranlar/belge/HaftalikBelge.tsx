@@ -17,6 +17,7 @@ import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { KararNotlari } from "../haftalik/Kalem";
+import { BirimGorusOzeti } from "../../bilesenler/StokGorus";
 import { KalemPostaDugmesi } from "../haftalik/Takdir";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
@@ -243,6 +244,8 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
             <KararRozeti kalem={k} />
           </p>
         )}
+        {/* Birimlerin toplantı öncesi görüşü toplantıda kalemin altında; çıktıya girmez. */}
+        {(duzen || ts) && <BirimGorusOzeti kalem={k} />}
       </div>
       {kosulAcik && ben && (
         <Pencere baslik={t("krSartli")} kapat={() => setKosulAcik(false)}>

@@ -1167,10 +1167,32 @@ export interface OnInceleme {
   gerekce?: string;
 }
 
+/*
+ * Stok önerisine birimin toplantı öncesi görüşü (kullanıcı: diğer birimler
+ * toplantıdan önce bilgi sahibi olsun, toplantı verimli geçsin). Haftalık
+ * plandan ayrı kayıtta (masaSorulari gibi): birkaç birim aynı anda yazınca
+ * plan belgesi ezilmesin. Birim başına bir görüş, yenisi eskisinin yerine.
+ */
+export type StokGorusTuru = "uygun" | "uygunDegil" | "bizAlalim";
+export const STOK_GORUS_TURLERI: StokGorusTuru[] = ["uygun", "bizAlalim", "uygunDegil"];
+export interface StokGorusu {
+  /** `${kalemId}:${birim}` */
+  id: string;
+  haftaId: string;
+  kalemId: string;
+  birim: BirimId;
+  kisiId: string;
+  zaman: string;
+  tur: StokGorusTuru;
+  not?: string;
+}
+
 export interface HaftalikKalem {
   id: string;
   /** Boşsa zamana bağlı olmayan (stok) dosyada. */
   tarih?: string;
+  /* Günü olan kalem toplantıda ya da hazırlıkta stoka alındıysa eski günü: "Güne geri al" ona döndürür. */
+  stokaAlindi?: { tarih: string; zaman: string; kisiId: string };
   /** Dosya: merkezi başlık havuzundaki başlık. */
   baslikId?: string;
   /** Olayın kısa adı; çıktıda "ad - yer / metin". */
@@ -1234,6 +1256,8 @@ export interface HaftalikPlan {
    * haftaların dosyaları önüne gelmiyor (haftalik.ts → haftaninDosyalari).
    */
   dosyalar?: string[];
+  /* Stok önerileri toplantıdan önce birimlerin görüşüne açıldı (stokHazirlik.ts). */
+  stokAcik?: { zaman: string; kisiId: string };
   olusturan: string;
   olusturma: string;
 }
@@ -1777,6 +1801,10 @@ export const HAREKET_TIPLERI = [
   "onIncelemeyeGonderildi",
   "onIncelemeGorusu",
   "onIncelemedeReddedildi",
+  "stokBirimlereAcildi",
+  "stokGorusuVerildi",
+  "kalemStokaAlindi",
+  "kalemGuneDondu",
   "haftaliktanAktarildi",
   "uretimeAlindi",
   "stokYayinlandi",
@@ -1860,6 +1888,7 @@ export interface Durum {
   /** Yapay zekanın haber değeri görüşleri; eski kayıtta yok. */
   yzGorusleri?: YzGorus[];
   masaSorulari?: MasaSorusu[];
+  stokGorusleri?: StokGorusu[];
   toplantiNotlari?: ToplantiNotu[];
   asamaNotlari?: AsamaNotu[];
   /** Programlar biriminin programları; eski kayıtta yok. */
@@ -2020,6 +2049,7 @@ export const bosDurum = (): Durum => ({
   geriBildirimSablonlari: [],
   yzGorusleri: [],
   masaSorulari: [],
+  stokGorusleri: [],
   programlar: [],
   toplantiNotlari: [],
   asamaNotlari: [],

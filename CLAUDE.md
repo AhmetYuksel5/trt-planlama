@@ -2201,6 +2201,34 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Ön inceleme yalnız günü olmayan (stok) kalemde; inceleyen
     `yetki.ts → onIncelemeci` (kolu kapsamındaki müdür, ekonomide Ekonomi
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
+  - Stok önerilerinin toplantı öncesi hazırlığı (kullanıcı: stok planlamacısı
+    haftalık hazırlanırken stok listesini yapıp toplantıda sunuyor; öbür
+    birimler toplantıdan önce bilgi sahibi olsun, toplantı verimli geçsin;
+    kurallar `stokHazirlik.ts`, ekran `bilesenler/StokGorus.tsx`): Weekly'nin
+    stok dosyasında "Birimlerin görüşüne aç" (`eylemler.ts → stokBirimlereAc`,
+    `HaftalikPlan.stokAcik`; `stokBirimlereAcabilir`: haftalığı düzenleyen,
+    kesinleşmemiş), görüş verenlere (`gorusculer`: Newsdesk, Program,
+    Ekonomi, Spor ve kademedeki müdürler; tam yönetici, muhabir ve onay
+    bekleyen değil, `gorusBirimi`) bildirim. Ana sayfalarının başında
+    (düzenden bağımsız; masa ana sayfasında da) "Stok önerileri · görüşünüz
+    bekleniyor" (`StokGorusIstegi`, bekleyen yokken çizilmez): günü olmayan,
+    karar bekleyen gündem kalemleri (`stokOnerileri`), üç seçenek (Uygundur,
+    Biz alalım, Uygun değil) ve isteğe bağlı kısa not. Görüş birim adına,
+    birim başına tek kayıt (`Durum.stokGorusleri`, `StokGorusu`, kimlik
+    `<kalem>:<birim>`, koleksiyon `stokGorusleri`; plan belgesi eşzamanlı
+    yazışta ezilmesin diye ayrı; `stokGorusuVer`, hareket
+    `stokGorusuVerildi`, verisi `gorus`: `sonuc` öneri durumu sanılıp
+    geçmişi çökertiyordu). Kalemin altında özet (`BirimGorusOzeti`): Weekly
+    kalem kartı, belgede düzenlerken ve toplantı görünümünde; çıktıya girmez.
+    Görüş tavsiye, kararı toplantı verir. Kalem silinince ve kayıt
+    temizliğinde haftayla gider.
+  - "Stoka al" (kullanıcı: haftalığa gelen paketlere bazen "bu stoka gitsin"
+    deniyor): günü olan kalemin kartında (`eylemler.ts → kalemStokaAl`;
+    haftalığı düzenleyen, kalem kilitli değil) günü kaldırır, kalem stok
+    önerisi olur; eski günü `HaftalikKalem.stokaAlindi`'da, kartta "Stoka
+    alındı · önceki günü …" ve "Güne geri al" (`kalemGuneGeriAl`, görüşleri
+    siler). Stok ekibine (`stokTakip`, yoksa Planlama) bildirim. Demoda
+    hf-gelecek açık, iki örnek görüşle. Test `testler/stok-gorus.cjs`.
   - Kesinleşince kabul edilen haber Next Day'e onaylı paket olarak geçer
     (`haftalikKalemId`, "Haftalık plandan" rozeti); feature, ekonomi ve
     program plansız onaylı paket olur. Paketin başlığı strap
