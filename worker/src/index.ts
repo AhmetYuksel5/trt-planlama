@@ -6,6 +6,7 @@ import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi
 import { cagir, modelleriGetir } from "./saglayici.ts";
 import { cfBaglan, ekIndirOtomatik, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
+import { coz, sifrele, sifreliMi } from "./gizli.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
 /*
@@ -33,6 +34,8 @@ export interface Env {
   FIREBASE_PROJE: string;
   /** Virgüllü köken listesi; tarayıcıdan yalnız bunlar çağırabiliyor. */
   KOKENLER: string;
+  /** Posta şifrelerinin anahtarı (gizli değer, gizli.ts); yoksa şifre düz saklanır. */
+  POSTA_ANAHTARI?: string;
 }
 
 export interface Bagimlilik {
@@ -135,9 +138,16 @@ export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTur
 
 /* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi) uid'ye bağlı. */
 const postaKimlikAnahtari = (uid: string) => `posta-kimlik:${uid}`;
+/* Şifre KV'de şifreli (gizli.ts); düz kalmış eski kayıt anahtar varken ilk okumada şifrelenip yeniden yazılır. */
+const postaKimlikYaz = async (env: Env, uid: string, k: PostaKimlik) =>
+  env.YZ.put(postaKimlikAnahtari(uid), JSON.stringify({ ...k, parola: await sifrele(k.parola, env.POSTA_ANAHTARI) }));
 const postaKimlikOku = async (env: Env, uid: string): Promise<PostaKimlik> => {
   const ham = await env.YZ.get(postaKimlikAnahtari(uid));
-  return ham ? ({ ...bosPostaKimlik(), ...(JSON.parse(ham) as PostaKimlik) }) : bosPostaKimlik();
+  if (!ham) return bosPostaKimlik();
+  const k = { ...bosPostaKimlik(), ...(JSON.parse(ham) as PostaKimlik) };
+  const duz = { ...k, parola: await coz(k.parola, env.POSTA_ANAHTARI) };
+  if (env.POSTA_ANAHTARI && k.parola && !sifreliMi(k.parola)) await postaKimlikYaz(env, uid, duz).catch(() => undefined);
+  return duz;
 };
 
 /* EWS mesajını tarayıcının postaIsle'sine uygun biçime indirger; gövde temizliğini istemci de yapıyor (tek kaynak). */
@@ -403,7 +413,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (req.method === "PUT" && yol === "/posta/kimlik") {
       const r = postaKimlikBirlestir(pk, await req.json().catch(() => null));
       if ("hata" in r) return yanit({ hata: r.hata }, 400);
-      await env.YZ.put(postaKimlikAnahtari(kisi.kimlik.uid), JSON.stringify(r.kimlik));
+      await postaKimlikYaz(env, kisi.kimlik.uid, r.kimlik);
       return yanit(postaKimlikGorunur(r.kimlik));
     }
     if (req.method === "POST" && yol === "/posta/dene") {

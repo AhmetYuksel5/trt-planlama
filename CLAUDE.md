@@ -1685,7 +1685,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kişiye özel:** ortak ayar (sunucu, alan, açık/kapalı) tam yöneticide
     (`posta-ayar` KV; Ayarlar › "E-posta kutusu (EWS)", `ekranlar/PostaAyari.tsx`);
     kullanıcı adı, parola ve grup adresi herkesin kendisinde (kapının KV'sinde
-    uid'ye bağlı `posta-kimlik:<uid>`, parola tarayıcıya hiç gelmiyor). Her kişi
+    uid'ye bağlı `posta-kimlik:<uid>`, parola tarayıcıya hiç gelmiyor). Parola
+    KV'de AES-GCM ile şifreli (`worker/src/gizli.ts`; kullanıcı: şifreler düz mü
+    duruyor): anahtar Worker'ın gizli değeri `POSTA_ANAHTARI`, dağıtım işi yoksa
+    rastgele üretip yazar, varsa dokunmaz (değişse kayıtlı şifreler çözülemez,
+    çözülemeyen boş sayılır, kişi yeniden girer). Düz kalmış eski kayıt anahtar
+    varken ilk okumada şifrelenir. Test `worker/test/gizli.test.ts`. Her kişi
     kendi kurumsal hesabını ve kendi biriminin grup adresini girer (planlamacı
     planlama grubunu, Newsdesk kendi grubunu), böylece herkes kendi grubunun
     yazışmalarını görür. Kimlik formu Ayarlar'da (`ekranlar/posta/

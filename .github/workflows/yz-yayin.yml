@@ -64,3 +64,16 @@ jobs:
       - name: Dağıt
         if: steps.anahtar.outputs.var == 'evet'
         run: npx wrangler deploy
+
+      # Posta şifrelerinin anahtarı (worker/src/gizli.ts): yoksa rastgele üretilip gizli değer olarak yazılıyor,
+      # ekrana ve günlüğe düşmüyor. Varsa dokunulmuyor: değişirse kayıtlı şifreler çözülemez, herkes yeniden girerdi.
+      - name: Posta şifre anahtarı
+        if: steps.anahtar.outputs.var == 'evet'
+        run: |
+          # Liste alınamazsa dur: anahtar var sanılmadan üzerine yazılırsa kayıtlı şifreler çözülemez.
+          LISTE=$(npx wrangler secret list) || { echo "::error::Gizli değerler okunamadı."; exit 1; }
+          if echo "$LISTE" | grep -q '"POSTA_ANAHTARI"'; then
+            echo "Posta şifre anahtarı zaten var."
+          else
+            openssl rand -base64 32 | tr -d '\n' | npx wrangler secret put POSTA_ANAHTARI
+          fi
