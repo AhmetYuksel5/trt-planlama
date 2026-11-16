@@ -1,4 +1,4 @@
-import { Ban, Check, Eye, Hourglass, Layers, MessageSquarePlus, Pencil, Send, Trash2, Undo2, X } from "lucide-react";
+import { Ban, Check, Eye, Hourglass, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
 import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
@@ -6,8 +6,7 @@ import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
-import { kalemGuneGeriAl, kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, kalemStokaAl, onIncelemeyeGonder } from "../../eylemler";
-import { BirimGorusOzeti, StokGorusDugmeleri } from "../../bilesenler/StokGorus";
+import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
 import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
@@ -337,14 +336,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
         )}
       </div>
       <Gorusler kalem={kalem} d={v} />
-      <BirimGorusOzeti kalem={kalem} />
-      {!kalem.tarih && kalem.stokaAlindi && (
-        <small className="sonuk-yazi" data-stoka-alindi>
-          {t("sgStokaAlindi", { gun: tarihYaz(kalem.stokaAlindi.tarih, dil, "kisa") })}
-        </small>
-      )}
-      <StokGorusDugmeleri ben={ben} hafta={hafta} kalem={kalem} />
-      {(karar || notYazar || (duzenler && (onIncelemeyeGidebilir(kalem) || !!kalem.tarih || !!kalem.stokaAlindi))) && (
+      {(karar || notYazar || (duzenler && onIncelemeyeGidebilir(kalem))) && (
         <div className="dugmeler ara-ust">
           {karar &&
             KARAR_DUGMELERI.map((k, i) => {
@@ -367,17 +359,6 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
           {duzenler && onIncelemeyeGidebilir(kalem) && (
             <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => onIncelemeyeGonder(ben, hafta.id, [kalem.id]) && bildir(t("bOnIncelemeyeGitti", { n: 1 }))}>
               <Send size={14} className="yon" /> {t("onIncelemeyeGonder")}
-            </button>
-          )}
-          {/* Haftalığa gelen paket "bu stoka gitsin" (kullanıcı): günü kalkar, eski günü kalemde kalır. */}
-          {duzenler && kalem.tarih && (
-            <button className="dugme dugme-sade dugme-kucuk" onClick={() => kalemStokaAl(ben, hafta.id, kalem.id) && bildir(t("bKaydedildi"))} data-stoka-al>
-              <Layers size={14} /> {t("sgStokaAl")}
-            </button>
-          )}
-          {duzenler && !kalem.tarih && kalem.stokaAlindi && (
-            <button className="dugme dugme-sade dugme-kucuk" onClick={() => kalemGuneGeriAl(ben, hafta.id, kalem.id) && bildir(t("bKaydedildi"))} data-gune-geri-al>
-              <Undo2 size={14} /> {t("sgGuneGeriAl")}
             </button>
           )}
           {notYazar && !notFormu && (

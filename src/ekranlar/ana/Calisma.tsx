@@ -2,7 +2,6 @@ import { ArrowDown, ArrowUp, Check, LayoutGrid, Plus, RotateCcw, X } from "lucid
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { OnayKuyrugu } from "../../bilesenler/PaketSonucu";
 import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
-import { StokGorusIstegi } from "../../bilesenler/StokGorus";
 import { useState, type ReactNode } from "react";
 import { Kart } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -110,7 +109,6 @@ export function CalismaAlani({ ben, duzen, kisisel = true }: { ben: Kisi; duzen:
       {kisisel && <AnildigimNotlar ben={ben} />}
       {kisisel && <OnayKuyrugu ben={ben} />}
       {kisisel && <OnayBekleyenHesaplar ben={ben} />}
-      {kisisel && <StokGorusIstegi ben={ben} />}
       {/* Düzenlerken üstte yapışkan çubuk; kaydırırken "Bitti" elde dursun. Düzenlemezken sayfanın üstünde satır yok. */}
       {kisisel && duzenle && (
         <div className="alan-arac duzen-cubugu">

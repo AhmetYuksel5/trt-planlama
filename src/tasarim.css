@@ -4111,10 +4111,3 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .oto-zamanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--ara-2); }
 .oto-metin summary { cursor: pointer; font-weight: 600; min-block-size: 44px; display: flex; align-items: center; }
 .oto-metin textarea { inline-size: 100%; box-sizing: border-box; }
-
-/* Stok önerilerine birimlerin görüşü: rozet ve kısa not satır içinde, sığmayınca alta. */
-.stok-gorusler { display: flex; flex-wrap: wrap; gap: var(--ara-1) var(--ara-2); margin-block: var(--ara-1); }
-.stok-gorus { display: inline-flex; align-items: center; gap: var(--ara-1); min-inline-size: 0; flex-wrap: wrap; }
-.stok-gorus-dugmeleri { display: grid; gap: var(--ara-1); margin-block-start: var(--ara-1); }
-.stok-gorus-listesi li { flex-wrap: wrap; }
-.stok-gorus-listesi li.verildi .ad { opacity: 0.75; }
