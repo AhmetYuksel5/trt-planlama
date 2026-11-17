@@ -78,10 +78,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   }
 
   // 5. Seçimler geçmiş adımında: süzgeç ve arama, pakete girip geri dönünce yerinde; menüden yeni girişte varsayılan
-  await git("#/paketler");
-  const gorunurPaket = () => p.locator('a[href^="#/paketler/"]').filter({ visible: true });
+  await git("#/paketler/arsiv");
+  const gorunurPaket = () => p.locator('main a[href^="#/paketler/"]').filter({ visible: true });
   let sonucu = null;
-  for (const x of await p.locator("[data-paket-sonucu]").evaluateAll((l) => l.map((e) => e.getAttribute("data-paket-sonucu")))) {
+  for (const x of await p.locator("[data-paket-sonucu]").evaluateAll((l) => l.map((e) => e.getAttribute("data-paket-sonucu")).filter((x) => x !== "hepsi"))) {
     await p.locator(`[data-paket-sonucu="${x}"]`).click();
     await p.waitForTimeout(200);
     // Biten paketlerin sekmesinde şerit: sayfaya bağlantı şerit açılınca.
@@ -94,7 +94,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(500);
   await p.goBack();
   await p.waitForTimeout(700);
-  ok((await p.locator(`[data-paket-sonucu="${sonucu}"].acik`).count()) === 1, "geri dönünce süzgeç yerinde");
+  ok((await p.locator(`[data-paket-sonucu="${sonucu}"][aria-pressed="true"]`).count()) === 1, "geri dönünce süzgeç yerinde");
   await p.locator('input[type="search"]').first().fill("zzz");
   await git("#/ana");
   await p.goBack();
@@ -102,7 +102,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator('input[type="search"]').first().inputValue()) === "zzz", "geri dönünce arama yerinde");
   await git("#/ana");
   await git("#/paketler");
-  ok((await p.locator(`[data-paket-sonucu="${sonucu}"].acik`).count()) === 0 && (await p.locator('input[type="search"]').first().inputValue()) === "", "menüden yeni girişte varsayılan");
+  ok((await p.locator(`[data-paket-sonucu="${sonucu}"][aria-pressed="true"]`).count()) === 0 && (await p.locator('input[type="search"]').first().inputValue()) === "", "menüden yeni girişte varsayılan");
 
   // 6. Açık pencere: geri tuşu pencereyi kapatır, sayfada kalır; kendi kapanan pencere boş adım bırakmaz
   await p.evaluate(() => { localStorage.setItem("trt-planlama-oturum", "yo3"); });

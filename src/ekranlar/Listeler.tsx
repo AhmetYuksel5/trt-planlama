@@ -2,7 +2,7 @@ import { birimAdi, guncelYapi, type DurakTuru } from "../yapi";
 import { PAKET_SIRALARI, PaketListesi, type PaketSirasi } from "../bilesenler/BitmisPaket";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { useAdimDurumu } from "../yol";
-import { PAKET_SONUCLARI, paketSonucu, type PaketSonucu } from "../paketSonucu";
+import { ARSIV_SONUCLARI, PAKET_SEKMELERI, arsivSonucu, arsivdeYeni, paketArsivGunu, paketSekmesi, type ArsivSonucu, type PaketSekmesi } from "../paketSekmeleri";
 import { CirclePlay, Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { type ReactNode } from "react";
 import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
@@ -15,7 +15,8 @@ import { gecenSure, saatYaz, tarihYaz, useDil, yaz, type Anahtar } from "../dil"
 import { ASAMA_ADI, PANO_SUTUNLARI, gfxAcik, panoMasasi, panoSutunu, type PanoSutunu } from "../uretim";
 import { UZUN_DAKIKA } from "../anaPano";
 import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
-import { ICERIK_TURLERI, PAKET_DURUMLARI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket, type PaketDurum } from "../veri";
+import { ICERIK_TURLERI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket } from "../veri";
+import { bugun } from "../tarih";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 
@@ -33,31 +34,40 @@ const ICERIK_SAYFASI: Record<string, { baslik: Anahtar; alt: Anahtar; ikon: Reac
   programlar: { baslik: "mProgramlar", alt: "programlarAlt", ikon: <Clapperboard size={26} />, turler: ["program"] },
 };
 
-const SONUC_ADI: Record<PaketSonucu, Anahtar> = { onayBekliyor: "psOnayBekleyen", yapildi: "psYapilan", yapilmadi: "psYapilmayan", reddedildi: "psReddedilen" };
+const PAKET_SEKME_ADI: Record<PaketSekmesi, Anahtar> = { karar: "psSekmeKarar", gorevli: "psSekmeGorevli", arsiv: "psSekmeArsiv" };
+const ARSIV_SONUC_ADI: Record<ArsivSonucu, Anahtar> = { yapildi: "psYapilan", yapilmadi: "psYapilmayan", reddedildi: "psReddedilen", iptal: "psArsivIptal" };
 
-export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
+/*
+ * Paketler: üç sekme (paketSekmeleri.ts; kullanıcının çizdiği akışın paket
+ * yarısı): karar bekleyen, görevlendirilmiş, arşiv. Önce on sekme vardı (aktif,
+ * dört sonuç, altı durum, hepsi); ana sayfanın kutuları hiçbirine denk
+ * gelmiyordu. "#/paketler/<sekme>" o sekmeyle açar; arşivin içinde sonuç
+ * süzgeci, liste son 7 gün ve daha eski.
+ */
+export function Paketler({ ben, sayfa, acilis = "gorevli" }: { ben: Kisi; sayfa: string; acilis?: PaketSekmesi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const ayar = ICERIK_SAYFASI[sayfa] ?? ICERIK_SAYFASI.paketler;
-  const [durum, setDurum] = useAdimDurumu<PaketDurum | "hepsi" | "aktif" | PaketSonucu>(`${sayfa}:durum`, "aktif");
+  const [secilen, setSekme] = useAdimDurumu<PaketSekmesi>(`${sayfa}:sekme:${acilis}`, acilis);
+  // Geçmişte eski sekme adı ("aktif", "hepsi"…) kalmış olabilir.
+  const sekme: PaketSekmesi = (PAKET_SEKMELERI as readonly string[]).includes(secilen) ? secilen : acilis;
+  const [sonuc, setSonuc] = useAdimDurumu<ArsivSonucu | "">(`${sayfa}:sonuc`, "");
   const [tur, setTur] = useAdimDurumu<IcerikTuru | "">(`${sayfa}:tur`, "");
   const [aranan, setAranan] = useAdimDurumu(`${sayfa}:ara`, "");
   const [sira, setSira] = useAdimDurumu<PaketSirasi>(`${sayfa}:sira`, "gun");
   const muhabir = ben.birim === "muhabir";
   const gorunen = v.paketler.filter((p) => paketGorebilir(ben, p, v) && (!ayar.turler || ayar.turler.includes(p.tur)));
   const q = aranan.trim().toLocaleLowerCase();
-  const liste = gorunen
-    .filter(
-      (p) =>
-        (durum === "hepsi" ||
-          (durum === "aktif" ? p.durum !== "tamamlandi" && p.durum !== "iptal" : (PAKET_SONUCLARI as readonly string[]).includes(durum) ? paketSonucu(p) === durum : p.durum === durum)) &&
-        (!tur || p.tur === tur) &&
-        (!q || `${p.kod} ${p.baslik} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q)),
-    )
-    .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  // Sayılar arama ve tür süzgecinden geçmiş listeden: sekme "12" deyip liste 3 göstermesin.
+  const suzulmus = gorunen.filter((p) => (!tur || p.tur === tur) && (!q || `${p.kod} ${p.baslik} ${ad(kisiBul(v, p.muhabirId))}`.toLocaleLowerCase().includes(q)));
+  const sekmede = suzulmus.filter((p) => paketSekmesi(p) === sekme);
+  const liste = sekmede.filter((p) => sekme !== "arsiv" || !sonuc || arsivSonucu(p) === sonuc).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  const B = bugun();
+  const yeni = liste.filter((p) => arsivdeYeni(paketArsivGunu(v, p), B));
+  const eski = liste.filter((p) => !arsivdeYeni(paketArsivGunu(v, p), B));
   return (
     <>
-      <SayfaBasi ikon={ayar.ikon} baslik={t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} sagUc={<GorevlendirDugmesi ben={ben} />} />
+      <SayfaBasi ikon={ayar.ikon} baslik={`${t(muhabir && sayfa === "paketler" ? "mPaketlerim" : ayar.baslik)} · ${t(PAKET_SEKME_ADI[sekme])}`} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <GorevTalepleri ben={ben} />
       <SartliPaketler ben={ben} />
       <MasaOnerileri ben={ben} />
@@ -86,27 +96,44 @@ export function Paketler({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
             ))}
           </select>
         </div>
-        <div className="sekmeler suzgec">
-          <button className={durum === "aktif" ? "acik" : ""} onClick={() => setDurum("aktif")}>
-            {t("aktif")} <em>{gorunen.filter((p) => p.durum !== "tamamlandi" && p.durum !== "iptal").length}</em>
-          </button>
-          {/* Paketin sonucu: muhabirin, Planlama'nın ve haber merkezinin ortak listeleri (onay bekleyen, yapılan, yapılmayan, reddedilen). */}
-          {PAKET_SONUCLARI.map((x) => (
-            <button key={x} className={durum === x ? "acik" : ""} onClick={() => setDurum(x)} data-paket-sonucu={x}>
-              {t(SONUC_ADI[x])} <em>{gorunen.filter((p) => paketSonucu(p) === x).length}</em>
+        <div className="sekmeler suzgec" role="tablist" data-paket-sekmeleri>
+          {PAKET_SEKMELERI.map((x) => (
+            <button key={x} type="button" role="tab" aria-selected={sekme === x} className={sekme === x ? "acik" : ""} onClick={() => setSekme(x)} data-paket-sekme={x}>
+              {t(PAKET_SEKME_ADI[x])} <em>{suzulmus.filter((p) => paketSekmesi(p) === x).length}</em>
             </button>
           ))}
-          {PAKET_DURUMLARI.map((d) => (
-            <button key={d} className={durum === d ? "acik" : ""} onClick={() => setDurum(d)}>
-              {t(PAKET_DURUM_ADI[d])} <em>{gorunen.filter((p) => p.durum === d).length}</em>
-            </button>
-          ))}
-          <button className={durum === "hepsi" ? "acik" : ""} onClick={() => setDurum("hepsi")}>
-            {t("hepsi")} <em>{gorunen.length}</em>
-          </button>
         </div>
+        {sekme === "arsiv" && (
+          <div className="cipler ara-alt-2" data-arsiv-sonuc>
+            {(["", ...ARSIV_SONUCLARI] as const).map((x) => {
+              const n = x ? sekmede.filter((p) => arsivSonucu(p) === x).length : sekmede.length;
+              if (x && !n && sonuc !== x) return null;
+              return (
+                <button key={x || "hepsi"} type="button" className={`cip cip-dugme${sonuc === x ? " secili" : ""}`} aria-pressed={sonuc === x} onClick={() => setSonuc(x)} data-paket-sonucu={x || "hepsi"}>
+                  {t(x ? ARSIV_SONUC_ADI[x] : "hepsi")} <em>{n}</em>
+                </button>
+              );
+            })}
+          </div>
+        )}
         {/* Her sekmede tablo yerine paket şeritleri (kullanıcı): yalnız başlık, muhabir, gün; basınca yapım aşamaları. */}
-        {liste.length ? <PaketListesi ben={ben} paketler={liste} sira={sira} artan={false} /> : <Bos metin={t("kayitYok")} />}
+        {!liste.length ? (
+          <Bos metin={t("kayitYok")} />
+        ) : sekme === "arsiv" ? (
+          // Arşiv son 7 gün ve daha eski: ana sayfanın "Arşiv · paket" kutusu ilk grubu sayar.
+          ([["son7", yeni], ["eski", eski]] as const)
+            .filter(([, l]) => l.length)
+            .map(([g, l]) => (
+              <section key={g} className="oneri-gun-grubu" data-paket-arsiv-grubu={g}>
+                <h3 className="oneri-gun-basi">
+                  {t(g === "son7" ? "arSon7" : "arDahaEski")} <em>{l.length}</em>
+                </h3>
+                <PaketListesi ben={ben} paketler={[...l]} sira={sira} artan={false} />
+              </section>
+            ))
+        ) : (
+          <PaketListesi ben={ben} paketler={liste} sira={sira} artan={false} />
+        )}
       </Kart>
     </>
   );

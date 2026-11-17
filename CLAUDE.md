@@ -1443,7 +1443,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başkasında" (muhabire teklif, düzeltme, birimin görüşündeki: `acikSoru`);
   "Planda / gündemde" (`oneriYeri` ya da "plana eklendi": gündemdeki öneri
   durumda "değerlendiriliyor" olsa da karar listesinden hemen kalkar); "Arşiv"
-  (`oneriArsivde`, kural aynı; `#/oneriler/arsiv` bu sekmeyle açılır). Takip
+  (`oneriArsivde`, kural aynı; `#/oneriler/arsiv` bu sekmeyle açılır; liste "Son 7
+  gün" ve "Daha eski", ana sayfanın arşiv kutusu ilk grubu sayar). Başlıkta açık
+  sekme ("Haber önerileri · Arşiv"; varsayılanda yalnız sayfanın adı). Takip
   öneri sayfasında yok, ⋯'de "Muhabir takipleri · n". Durum çipleri ve
   Güncel/Arşiv sekmeleri kalktı. Sayılar (sekme ve plan çipi) arama, masa ve
   ülke süzgeçlerinden geçmiş listeden; boş sekme ve plan çipi çizilmez (karar
@@ -2418,7 +2420,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`SORU_MASALARI`) notla iletir (`masayaSorabilir`; açık sorusu ya da
     görevi olmayan; "yeni" öneri "değerlendiriliyor"a geçer), masaya
     `oneriMasayaIletildi` (`sahip`). Tek açık soru; almayan masadan sonra
-    başka masaya sorulur, geçmiş kartta.
+    başka masaya sorulur, geçmiş kartta. Soru da "görevlendirme bekliyor" da
+    yalnız öneri karar aşamasındayken listede (`masaninSorulari`:
+    `SORULABILIR_DURUM`, arşivde değil; kullanıcı: birimin uygun bulduğu öneri
+    Planlama'ca reddedilince "görevlendirme bekliyor" etiketiyle kalıyordu);
+    ana sayfanın birim görüşü sayısı da bu kuraldan.
   - Masa (`masaYanitlar`, birimi ya da "gibi" çalıştığı birim) notla "Uygundur" /
     "Uygun değildir" (kullanıcı: "Alırız / Almayız" profesyonel durmadı; kart
     "Birim görüşü", düğme "Birimin görüşüne sun"); Planlama'ya `masaOneriyiAldi` / `masaOneriyiAlmadi`. Masa
@@ -2665,8 +2671,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sebebiyle); geri çevrilen işaret silinir. Yetkilinin kendi işareti onay
     beklemez. Muhabire `paketIsaretOnaylandi` / `paketIsaretGeriCevrildi`.
   - Sonuç saklanmaz (`paketSonucu.ts`): onay bekleyen, yapılan, yapılmayan,
-    reddedilen; Paketler sayfasının sekmeleri (muhabirde Haberlerim,
-    Planlama ve haber merkezi aynı sayfa), rozet `PaketDurumRozeti`.
+    reddedilen; rozet `PaketDurumRozeti`.
+  - Paketler sayfasının sekmeleri (kullanıcı: ana sayfanın "Görevlendirilmiş" ve
+    "Arşiv · paket" kutusu "Aktif" sekmesine düşüyordu, on sekme üç ayrı mantıktan
+    karışıktı; `paketSekmeleri.ts`, `Listeler.tsx → Paketler`): üç sekme, çizimdeki
+    akışın paket yarısı: Karar bekleyen (taslak, değerlendirmede, şartlı),
+    Görevlendirilmiş (onaylı ve üretimde; görevi verilmemiş özel yayın paketi
+    değil), Arşiv (tamamlanan ve iptal; içinde sonuç süzgeci `ARSIV_SONUCLARI`:
+    yapıldı, yapılmadı, reddedildi, iptal; `data-paket-sonucu`, liste "Son 7 gün" ve
+    "Daha eski", `arsivdeYeni`). `#/paketler/<sekme>` o sekmeyle açar (App.tsx;
+    paket kimliği değil), varsayılan Görevlendirilmiş; başlıkta açık sekme
+    ("Haber paketleri · Arşiv"). Sayılar arama ve tür süzgecinden geçmiş listeden.
+    Muhabirde Haberlerim.
   - "Başka muhabire ver" (paket sayfası, `PaketSonucu.tsx → BaskaMuhabireVer`,
     `eylemler.ts → paketBaskaMuhabireVer`, hesap yetkisi `baskaMuhabire`):
     onaylı paket yeni muhabire teklif olarak gider (`Oneri.kaynakPaketId`,
@@ -3021,13 +3037,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (1280 ekranda avatarı dışarı itiyordu). Test `testler/ana-pano.cjs`.
     5. aşama, öneri akışı (kullanıcının çizimi: ham öneri, görevlendirilmiş, takip,
     arşiv · öneri, arşiv · paket; telefonda bütün temel girişler tek ekranda):
-    sayılar tek kuraldan (`anaPano.ts → oneriAkisi`): ham öneri "Karar bekleyen"
-    sekmesi (menüyle aynı), yanında "sırası başkasında"; görevlendirilmiş onaylı ya
-    da üretimdeki paket (masa takibi ve görevi verilmemiş özel yayın paketi değil),
-    geciken paketin gününden; takip Takiplerim'in kuralı; arşivler son 7 gün
-    (`ARSIV_PENCERESI`), paket arşivinde "yapılmadı" sayısı. Masaüstünde zaman
-    çizgisinin altında ince şerit (`AnaPano.tsx → OneriSeridi`, `.ap-serit`, her kutu
-    sayfasına götürür); zaman çizgisi, Sıradaki ve üç sütun yerinde (kullanıcı:
+    her kutu açtığı sekmenin kuralıyla sayar (`anaPano.ts → oneriAkisi`; kullanıcı:
+    arşiv kutuları "Haber önerileri", "Haber paketleri"ne düşüyor, zorlama
+    birliktelik gibiydi): ham öneri Öneriler › Karar bekleyen (menüyle aynı), yanında
+    "sırası başkasında"; görevlendirilmiş Paketler › Görevlendirilmiş
+    (`#/paketler/gorevli`, `paketSekmeleri.ts`, Paketler'in gördüğü paketler),
+    geciken paketin gününden; takip Takiplerim'in kuralı; arşivler sekmesinin ilk
+    grubu, son 7 gün (`ARSIV_PENCERESI`; Öneriler › Arşiv `#/oneriler/arsiv`,
+    Paketler › Arşiv `#/paketler/arsiv`), paket arşivinde "yapılmadı" sayısı.
+    Masaüstünde zaman çizgisinin altında ince şerit (`AnaPano.tsx → OneriSeridi`,
+    `.ap-serit`, her kutu kendi sekmesini açar); zaman çizgisi, Sıradaki ve üç sütun yerinde (kullanıcı:
     yerli yerindelik bozulmasın, Sıradaki masaüstünde kalsın). Telefon ve tablette
     `KutuluAna` tek ekran (`.py-tek`, Sıradaki yok): Öneriler (ham öneri satırı panel
     açar, altında akışın dört kutusu), Kararlar ve işlerim (paket, birim görüşü,

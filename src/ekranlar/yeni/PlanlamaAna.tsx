@@ -55,7 +55,7 @@ function KutuluAna({ ben }: { ben: Kisi }) {
   const v = useVeri();
   const b = bugun();
   const k = kararlariGetir(v, ben, b);
-  const a = oneriAkisi(v, b);
+  const a = oneriAkisi(v, ben, b);
   const [panel, setPanel] = useState<PanelTuru | null>(null);
   const muh = muhabirler(v).filter((x) => !x.pasif);
   const izinde = muh.filter((x) => kisiBugunDurumu(v, x, b) === "izinli").length;
@@ -111,10 +111,10 @@ function KutuluAna({ ben }: { ben: Kisi }) {
             <span className="py-sayi">{k.oneri}</span>
           </button>
           <div className="py-akis-hucreler">
-            {akis("gorevli", "apGorevliKisa", a.gorevli, "#/paketler", "ton-iyi")}
+            {akis("gorevli", "apGorevliKisa", a.gorevli, "#/paketler/gorevli", "ton-iyi")}
             {akis("takip", "apTakip", a.takip, "#/takipler", "ton-uyari")}
             {akis("arsivOneri", "apArsivOneri", a.arsivOneri, "#/oneriler/arsiv", "ton-sonuk")}
-            {akis("arsivPaket", "apArsivPaket", a.arsivPaket, "#/paketler", "ton-sonuk")}
+            {akis("arsivPaket", "apArsivPaket", a.arsivPaket, "#/paketler/arsiv", "ton-sonuk")}
           </div>
         </div>
       </section>

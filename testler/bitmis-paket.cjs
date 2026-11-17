@@ -52,7 +52,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-paket-sira]").selectOption("gun");
 
   // 2. Paketler › Yapılan: tablo değil şerit, kapalı; basınca açılır
-  await gir("pl1", "#/paketler");
+  await gir("pl1", "#/paketler/arsiv");
   await p.locator('[data-paket-sonucu="yapildi"]').click();
   await p.waitForTimeout(300);
   const serit = p.locator(`[data-bitmis-serit="${pk.id}"]`);

@@ -1,4 +1,5 @@
 import { SayfaBasi } from "./ekranlar/ana/Planlama";
+import { PAKET_SEKMELERI, type PaketSekmesi } from "./paketSekmeleri";
 import { useEffect, type ReactNode } from "react";
 import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
@@ -363,7 +364,10 @@ export default function App() {
         icerik = yol.id ? <BaslikSayfasi ben={ben} id={yol.id} /> : <Basliklar ben={ben} />;
         break;
       case "paketler":
-        if (yol.id) {
+        // "#/paketler/<sekme>" sayfanın sekmesi (ana sayfanın akış kutuları), paket kimliği değil.
+        if (yol.id && (PAKET_SEKMELERI as readonly string[]).includes(yol.id))
+          icerik = ben.birim === "muhabir" ? <MuhabirHaberlerim ben={ben} /> : <Paketler key={yol.id} ben={ben} sayfa="paketler" acilis={yol.id as PaketSekmesi} />;
+        else if (yol.id) {
           const p = paketBul(v, yol.id);
           icerik =
             p && paketGorebilir(ben, p, v) ? (

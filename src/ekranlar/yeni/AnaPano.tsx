@@ -54,7 +54,7 @@ function OneriSeridi({ ben }: { ben: Kisi }) {
   const v = useVeri();
   const b = bugun();
   const k = kararlariGetir(v, ben, b);
-  const a = oneriAkisi(v, b);
+  const a = oneriAkisi(v, ben, b);
   const kutu = (yol: string, ad: Anahtar, sayi: number, alt: string, ton: string, ana = false) => (
     <a href={yol} className={`ap-serit-kutu ${ton}${ana ? " ana" : ""}`} data-ap-serit={ad}>
       <b>{sayi}</b>
@@ -67,10 +67,10 @@ function OneriSeridi({ ben }: { ben: Kisi }) {
   return (
     <section className="ap-serit" aria-label={t("apSerit")}>
       {kutu("#/oneriler", "apHam", k.oneri, t("apHamAlt", { yakin: k.oneriYakin, baska: a.baskasinda }), "ton-vurgu", true)}
-      {kutu("#/paketler", "apGorevli", a.gorevli, a.geciken ? t("apGorevliAlt", { n: a.geciken }) : "", "ton-iyi")}
+      {kutu("#/paketler/gorevli", "apGorevli", a.gorevli, a.geciken ? t("apGorevliAlt", { n: a.geciken }) : "", "ton-iyi")}
       {kutu("#/takipler", "apTakip", a.takip, "", "ton-uyari")}
       {kutu("#/oneriler/arsiv", "apArsivOneri", a.arsivOneri, t("apBuHafta"), "ton-sonuk")}
-      {kutu("#/paketler", "apArsivPaket", a.arsivPaket, a.yapilmadi ? t("apYapilmadiAlt", { n: a.yapilmadi }) : t("apBuHafta"), "ton-sonuk")}
+      {kutu("#/paketler/arsiv", "apArsivPaket", a.arsivPaket, a.yapilmadi ? t("apYapilmadiAlt", { n: a.yapilmadi }) : t("apBuHafta"), "ton-sonuk")}
     </section>
   );
 }

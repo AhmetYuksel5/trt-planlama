@@ -1,6 +1,6 @@
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { GeriBag } from "../../bilesenler/GeriBag";
-import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPlanGunu, type OneriEtiketi } from "../../oneriPlanlari";
+import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPlanGunu, oneriSonGunu, type OneriEtiketi } from "../../oneriPlanlari";
 import { GUN_GRUPLARI, ONERI_SEKMELERI, oneriGunGrubu, oneriSekmesi, type GunGrubu, type OneriSekmesi } from "../../oneriSekmeleri";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { MuhabireOneriPenceresi } from "./Yazisma";
@@ -19,6 +19,7 @@ import { oneriBirlestirebilir, muhabireOneriGonderebilir, oneriGorebilir, yapabi
 import { useAdimDurumu, yerineGit } from "../../yol";
 import { useSekmeAdi } from "../../sekmeAdi";
 import { SayfaBasi } from "../ana/Planlama";
+import { arsivdeYeni } from "../../paketSekmeleri";
 import { OneriAlanlari, oneriFormuBaslangic, oneriFormuGecerli, oneriFormuGirdisi } from "./OneriFormu";
 import { GorunumSecici, OneriKarti, useOneriGorunumu } from "./OneriKarti";
 import { OneriAyrinti, esBirlestirSor } from "./OneriGovde";
@@ -77,8 +78,11 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
         ? b.zaman.localeCompare(a.zaman)
         : talimat(b) - talimat(a) || (oneriPlanGunu(a) ?? "~").localeCompare(oneriPlanGunu(b) ?? "~") || b.zaman.localeCompare(a.zaman),
     );
-  const gruplar: [GunGrubu | null, Oneri[]][] =
-    sekme === "arsiv" ? [[null, liste]] : GUN_GRUPLARI.map((g): [GunGrubu, Oneri[]] => [g, liste.filter((o) => oneriGunGrubu(o, B) === g)]).filter(([, l]) => l.length);
+  // Arşiv son 7 gün ve daha eski: ana sayfanın "Arşiv · öneri" kutusu ilk grubu sayar (paketSekmeleri.ts → arsivdeYeni).
+  const gruplar: [GunGrubu | "son7" | "eski", Oneri[]][] =
+    sekme === "arsiv"
+      ? ([["son7", liste.filter((o) => arsivdeYeni(oneriSonGunu(o), B))], ["eski", liste.filter((o) => !arsivdeYeni(oneriSonGunu(o), B))]] as [GunGrubu | "son7" | "eski", Oneri[]][]).filter(([, l]) => l.length)
+      : GUN_GRUPLARI.map((g): [GunGrubu, Oneri[]] => [g, liste.filter((o) => oneriGunGrubu(o, B) === g)]).filter(([, l]) => l.length);
   const cagri = yapabilir(ben, "cagriHazirla");
   const oner = muhabireOneriGonderebilir(ben, v);
   /*
@@ -155,7 +159,8 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
     <>
       <SayfaBasi
         ikon={<Lightbulb size={26} />}
-        baslik={t("mOneriler")}
+        // Açık sekme başlıkta da (kullanıcı: arşiv kutusu "Haber önerileri"ne düşüyor gibiydi).
+        baslik={sekme === "karar" ? t("mOneriler") : `${t("mOneriler")} · ${t(SEKME_ADI[sekme])}`}
         sagUc={
           <>
             {(cagri || oner || takipSayisi > 0) && (
@@ -268,18 +273,14 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
         {liste.length === 0 ? (
           <Bos metin={t("oneriYok")} />
         ) : (
-          gruplar.map(([g, l]) =>
-            g ? (
-              <section key={g} className="oneri-gun-grubu" data-oneri-gun={g}>
-                <h3 className="oneri-gun-basi">
-                  {t(GUN_GRUBU_ADI[g])} <em>{l.length}</em>
-                </h3>
-                {listeyiCiz(l)}
-              </section>
-            ) : (
-              <div key="hepsi">{listeyiCiz(l)}</div>
-            ),
-          )
+          gruplar.map(([g, l]) => (
+            <section key={g} className="oneri-gun-grubu" data-oneri-gun={g}>
+              <h3 className="oneri-gun-basi">
+                {t(GUN_GRUBU_ADI[g])} <em>{l.length}</em>
+              </h3>
+              {listeyiCiz(l)}
+            </section>
+          ))
         )}
         {/* Karta basınca önerinin bütün ayrıntısı pencerede: ayrıca ayrıntı sayfasına gitmek gerekmiyor. */}
         {acik && <OneriAyrinti key={acik.id} ben={ben} oneri={acik} kapat={() => setAcikId(null)} />}
@@ -289,7 +290,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
 }
 
 const SEKME_ADI: Record<OneriSekmesi, Anahtar> = { karar: "kararBekleyen", baskasinda: "oneriSirasiBaskasinda", planda: "oneriPlandaGundemde", arsiv: "oneriArsivi" };
-const GUN_GRUBU_ADI: Record<GunGrubu, Anahtar> = { bugun: "bugun", yarin: "yarin", ileri: "ileriGunler", gunsuz: "zamanaBagliDegil" };
+const GUN_GRUBU_ADI: Record<GunGrubu | "son7" | "eski", Anahtar> = { bugun: "bugun", yarin: "yarin", ileri: "ileriGunler", gunsuz: "zamanaBagliDegil", son7: "arSon7", eski: "arDahaEski" };
 
 /* Öneriler sayfasında eş çiftlerinin toplu görünümü: elle girilip takılmış eski çiftler buradan bulunur. */
 function EsCiftleri({ ben }: { ben: Kisi }) {

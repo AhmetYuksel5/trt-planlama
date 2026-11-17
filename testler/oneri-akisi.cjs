@@ -28,6 +28,46 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   const masa = await m.evaluate(() => Object.fromEntries([...document.querySelectorAll("[data-ap-serit]")].map((e) => [e.dataset.apSerit, Number(e.querySelector("b").textContent)])));
   ok((await m.locator('[data-ap-serit="apHam"]').getAttribute("href")) === "#/oneriler", "ham öneri Öneriler'e götürüyor");
 
+  // Her kutu kendi sekmesini açar ve sekmenin sayısı (arşivde ilk grup) kutununkiyle aynı (paketSekmeleri.ts).
+  const em = async (sec) => Number((await m.locator(sec).first().innerText().catch(() => "0")).replace(/\D/g, "") || 0);
+  ok((await m.locator('[data-ap-serit="apGorevli"]').getAttribute("href")) === "#/paketler/gorevli", "görevli kutusu Paketler › Görevlendirilmiş");
+  await m.click('[data-ap-serit="apGorevli"]');
+  await m.waitForTimeout(600);
+  ok((await m.locator('[data-paket-sekme="gorevli"][aria-selected="true"]').count()) === 1, "Görevlendirilmiş sekmesi açık");
+  ok((await em('[data-paket-sekme="gorevli"] em')) === masa.apGorevli, `görevli sayısı aynı (${await em('[data-paket-sekme="gorevli"] em')}/${masa.apGorevli})`);
+  ok((await m.locator("[data-paket-sekme]").count()) === 3, "Paketler'de üç sekme");
+  ok((await m.locator("main h1").first().textContent()).includes("·"), "başlıkta açık sekme");
+  await gir(m, "pl1", "tr", "#/paketler/arsiv");
+  ok((await m.locator('[data-paket-sekme="arsiv"][aria-selected="true"]').count()) === 1, "Arşiv sekmesi açık");
+  ok((await em('[data-paket-arsiv-grubu="son7"] em')) === masa.apArsivPaket, `paket arşivi son 7 gün aynı (${await em('[data-paket-arsiv-grubu="son7"] em')}/${masa.apArsivPaket})`);
+  ok((await m.locator("[data-arsiv-sonuc] [data-paket-sonucu]").count()) >= 2, "arşivde sonuç süzgeci");
+  await gir(m, "pl1", "tr", "#/oneriler/arsiv");
+  ok((await em('[data-oneri-gun="son7"] em')) === masa.apArsivOneri, `öneri arşivi son 7 gün aynı (${await em('[data-oneri-gun="son7"] em')}/${masa.apArsivOneri})`);
+
+  // Birimin uygun bulduğu öneri reddedilince "görevlendirme bekliyor"dan çıkar (masaSorusu.ts → masaninSorulari).
+  const soru = await m.evaluate(() => {
+    const k = "trt-planlama-v25";
+    const d = JSON.parse(localStorage.getItem(k));
+    const o = d.oneriler.find((x) => x.muhabirId && !x.talimatVeren && ["yeni", "degerlendiriliyor"].includes(x.durum));
+    o.durum = "degerlendiriliyor";
+    d.masaSorulari = [...(d.masaSorulari ?? []), { id: "ms-test", oneriId: o.id, birim: "ekonomi", soran: "pl1", zaman: new Date().toISOString(), cevap: { kabul: true, kisiId: "ek1", zaman: new Date().toISOString() } }];
+    localStorage.setItem(k, JSON.stringify(d));
+    localStorage.setItem(k + "-iz", String(Date.now()));
+    return o.id;
+  });
+  const git = async (yol) => { await m.goto("about:blank"); await m.goto(B + yol); await m.waitForTimeout(1000); };
+  await git("#/oneriler");
+  ok((await m.locator(`[data-masalardaki-oneriler] [data-masa-oneri="${soru}"]`).count()) === 1, "uygun bulunan öneri görev bekliyor");
+  await m.evaluate((id) => {
+    const k = "trt-planlama-v25";
+    const d = JSON.parse(localStorage.getItem(k));
+    d.oneriler.find((x) => x.id === id).durum = "reddedildi";
+    localStorage.setItem(k, JSON.stringify(d));
+    localStorage.setItem(k + "-iz", String(Date.now()));
+  }, soru);
+  await git("#/oneriler");
+  ok((await m.locator(`[data-masalardaki-oneriler] [data-masa-oneri="${soru}"]`).count()) === 0, "reddedilince birim görüşü listesinden çıkıyor");
+
   // Telefon: tek ekran, sayılar masaüstüyle aynı.
   for (const dil of ["tr", "ar"]) {
     const c = await b.newContext({ ...devices["iPhone 13"] });

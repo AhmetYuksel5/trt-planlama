@@ -1,3 +1,5 @@
+import { oneriArsivde } from "./oneriPlanlari";
+import { bugun } from "./tarih";
 import type { BirimId, Durum, HareketTipi, MasaSorusu, Oneri } from "./veri";
 
 /*
@@ -36,11 +38,17 @@ export const kabulSoru = (d: Durum, oneriId: string) => {
 export const oneriGorevPaketi = (d: Durum, oneriId: string) =>
   d.paketler.find((p) => p.oneriId === oneriId && !!p.gorev && p.durum !== "iptal");
 
-/** Masanın listesi: kendisine sorulup yanıt bekleyenler ve aldığı, görevlendirme bekleyenler. */
-export const masaninSorulari = (d: Durum, birim: BirimId) =>
+/*
+ * Masanın listesi: kendisine sorulup yanıt bekleyenler ve aldığı, görevlendirme
+ * bekleyenler. İkisi de öneri hâlâ karar aşamasındayken (kullanıcı: birimin
+ * "Uygundur" dediği öneriyi Planlama reddetti, "görevlendirme bekliyor"
+ * etiketiyle listede kaldı): reddedilen, geri çekilen, plana giren ya da
+ * arşive düşen öneri artık görev beklemez; görüşün geçmişi önerinin içinde.
+ */
+export const masaninSorulari = (d: Durum, birim: BirimId, b: string = bugun()) =>
   (d.masaSorulari ?? []).filter((m) => {
     if (m.birim !== birim || sonSoru(d, m.oneriId)?.id !== m.id) return false;
     const o = d.oneriler.find((x) => x.id === m.oneriId);
-    if (!o) return false;
-    return !m.cevap ? SORULABILIR_DURUM.includes(o.durum) : m.cevap.kabul && !oneriGorevPaketi(d, o.id);
+    if (!o || !SORULABILIR_DURUM.includes(o.durum) || oneriArsivde(o, b)) return false;
+    return !m.cevap || (m.cevap.kabul && !oneriGorevPaketi(d, o.id));
   });
