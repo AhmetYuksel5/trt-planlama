@@ -104,6 +104,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   gfxHazir: "hrGfxHazir",
   gfxSirada: "hrGfxSirada",
   uretimYoluDegisti: "hrUretimYoluDegisti",
+  uretimKapatildi: "hrUretimKapatildi",
   videoOnaylandi: "hrVideoOnaylandi",
   mediayaGonderildi: "hrMediayaGonderildi",
   klipKodu: "hrKlipKodu",

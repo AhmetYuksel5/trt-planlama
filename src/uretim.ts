@@ -36,6 +36,12 @@ export interface UretimYolu {
   parca: UretimParcalari;
   /** Grafik ekibinin gfx'i bitirdiği an; yükleme bunu bekliyor. */
   gfxTamam?: { kisiId: string; zaman: string };
+  /**
+   * Planlama yolu bitmeden "Yapıldı" dedi (kullanıcı: yol yanlışlıkla verilmiş,
+   * öbür birimler sistemde değil, paket metinde bekliyordu ama yayınlandı).
+   * Kapandığı durak: "Tamamlamayı geri al" paketi oraya döndürür.
+   */
+  kapandi?: { adim: string; kisiId: string; zaman: string };
 }
 
 export interface UretimSablonu {

@@ -729,6 +729,7 @@ const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = [
   "masaYayinlamadi",
   "paketOnaylandi",
   "tamamlandi",
+  "uretimKapatildi",
   "tamamlamaGeriAlindi",
 ];
 
@@ -876,6 +877,14 @@ export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean =>
  * paketi kendi aşama listesinde geri alınıyor; Newsdesk devredeyken paket
  * üretimde kapanıyor, o yol değil.
  */
+/*
+ * Üretimdeki paketi yol bitmeden "Yapıldı" olarak kapatmak: yol yanlış verilmiş
+ * ya da durağın birimi sistemde değil, iş dışarıda bitmiş. "Yapıldı"yı
+ * onaylayan yetki (paketOnayi); masanın takibindeki pakette karar masada.
+ */
+export const uretimiKapatabilir = (k: Kisi | undefined, p: Paket): boolean =>
+  p.durum === "uretimde" && !p.ozelId && !p.masaTakibi && paketIsaretOnaylayabilir(k, p);
+
 export const tamamlamaGeriAlabilir = (
   ben: Kisi | undefined,
   d: Durum,

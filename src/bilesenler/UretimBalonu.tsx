@@ -1,7 +1,7 @@
 import { CirclePlay, CircleCheck, Route, Save } from "lucide-react";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { useDil } from "../dil";
-import { uretimSablonuDuzenler, uretimSablonuKaydet, uretimYoluDegistir, uretimiBaslat, type UretimSecimi } from "../eylemler";
+import { uretimSablonuDuzenler, uretimSablonuKaydet, uretimYoluDegistir, uretimiBaslat, uretimiKapat, type UretimSecimi } from "../eylemler";
 import {
   ASAMA_ADI,
   PARCA_ADI,
@@ -17,7 +17,8 @@ import {
 } from "../uretim";
 import { useVeri, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
-import { uretimYoluBelirleyebilir } from "../yetki";
+import { uretimYoluBelirleyebilir, uretimiKapatabilir } from "../yetki";
+import { tamamlandiBildir } from "./TamamlamaGeriAl";
 import { Pencere, bildir } from "./Parcalar";
 
 /* Masanın rengi; birim renkleri tasarım dilinde (`--masa-*`), olmayan nötr. */
@@ -218,6 +219,22 @@ export function UretimBalonuDugmesi({ ben, paket, kucuk = false }: { ben: Kisi; 
       </button>
       {acik && <UretimBalonu ben={ben} paket={paket} kapat={() => setAcik(false)} />}
     </>
+  );
+}
+
+/* Yol bitmeden "Yapıldı": şimdiki aşamanın kutusunda, işin altında; bildirimde ve paket sayfasında geri alınır. */
+export function UretimiKapatDugmesi({ ben, paket, kucuk = true }: { ben: Kisi; paket: Paket; kucuk?: boolean }) {
+  const { t } = useDil();
+  if (!uretimiKapatabilir(ben, paket)) return null;
+  return (
+    <button
+      type="button"
+      className={`dugme dugme-ikincil${kucuk ? " dugme-kucuk" : ""}`}
+      onClick={() => confirm(t("urKapatOnay")) && uretimiKapat(ben, paket.id) && tamamlandiBildir(ben, t("bUretimKapatildi"), { paketId: paket.id })}
+      data-uretim-kapat={paket.id}
+    >
+      <CircleCheck size={15} /> {t("urKapat")}
+    </button>
   );
 }
 

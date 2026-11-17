@@ -1757,6 +1757,7 @@ export const HAREKET_TIPLERI = [
   "gfxHazir",
   "gfxSirada",
   "uretimYoluDegisti",
+  "uretimKapatildi",
   "videoOnaylandi",
   "mediayaGonderildi",
   "klipKodu",

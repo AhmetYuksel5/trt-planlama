@@ -839,7 +839,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     düğmesi o zamana dek pasif (`gfxBekliyor`, eylem de reddeder). Üretimdeki
     pakette "Yolu düzenle" (`uretimYoluDegistir`): geçmiş aşamalar kilitli
     (`gecenAsamalar`), bulunduğu durak yoldan çıkarsa sonrakine
-    (`yeniDurak`), hareket `uretimYoluDegisti`. Ayrı "Üretim yolu" kartı
+    (`yeniDurak`), hareket `uretimYoluDegisti`. Yol bitmeden "Yapıldı olarak kapat" (kullanıcı: yol yanlışlıkla
+    verilmiş, öbür birimler sistemde değil, paket metinde bekliyordu ama
+    yayınlandı; metin durağı her yolda olduğu için "Yolu düzenle" kapatamıyor):
+    şimdiki aşamanın kutusunda, işin altında (`PaketDetay.tsx → EylemKarti`,
+    `UretimiKapatDugmesi`, `data-uretim-kapat`), onaylı; `eylemler.ts →
+    uretimiKapat`, yetki `yetki.ts → uretimiKapatabilir` ("Yapıldı"nın onay
+    yetkisi `paketOnayi`; masa takibi ve özel yayın değil). Paket tamamlanır,
+    künyede onaylayan, masraf onaylanır, hareket `uretimKapatildi` (muhabire);
+    kaldığı durak `UretimYolu.kapandi`'da, "Tamamlamayı geri al" paketi oraya
+    döndürür. Test `testler/uretim-kapat.cjs`. Ayrı "Üretim yolu" kartı
     kalktı: aşama ve masa kutularda, şablon ve istisna Planlama kutusunda. Listelerdeki ve masa sayfasındaki "Üretime al" balonu açar
     (`UretimeAlDugmesi`). Paket sayfasının "Aşamalar"ı, durum rozeti ve
     listedeki çubuk (`AsamaCubugu`) paketin kendi yolu (`akis.ts → paketYolu`:

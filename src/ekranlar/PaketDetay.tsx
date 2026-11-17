@@ -18,8 +18,8 @@ import { sartliBekleyen } from "../haftalik";
 
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, yapabilir } from "../yetki";
-import { UretimBalonuDugmesi } from "../bilesenler/UretimBalonu";
+import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, uretimiKapatabilir, yapabilir } from "../yetki";
+import { UretimBalonuDugmesi, UretimiKapatDugmesi } from "../bilesenler/UretimBalonu";
 import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
@@ -110,6 +110,19 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
 
 /** Adımın sahibine görünen eylem; her adım yalnız kendi bilgisini istiyor. */
 function EylemKarti({ ben, paket }: { ben: Kisi; paket: Paket }) {
+  return (
+    <>
+      <EylemIcerigi ben={ben} paket={paket} />
+      {uretimiKapatabilir(ben, paket) && (
+        <div className="dugmeler ara-ust-2">
+          <UretimiKapatDugmesi ben={ben} paket={paket} />
+        </div>
+      )}
+    </>
+  );
+}
+
+function EylemIcerigi({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const [muhabirId, setMuhabirId] = useState(paket.muhabirId ?? "");

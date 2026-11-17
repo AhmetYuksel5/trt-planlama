@@ -158,6 +158,7 @@ import {
   baskaMuhabireVerebilir,
   paketIsaretleyebilir,
   paketIsaretOnaylayabilir,
+  uretimiKapatabilir,
   oneriGeriCekebilir,
   teklifKarariVerebilir,
   oneriYenidenGonderebilir,
@@ -1000,6 +1001,11 @@ export const tamamlamaGeriAl = (ben: Kisi, hedef: { paketId?: string }) => {
     yeni = paketGuncelle(yeni, p.id, (x) => {
       // Masanın yayın kararı da geri alınıyor: paket yeniden masanın takibinde, onaylı.
       const { muhabirTeslimi, ...kalan } = x;
+      // Üretim bitmeden kapatılmışsa kaldığı durağa döner.
+      if (x.uretim?.kapandi) {
+        const { kapandi, ...uretim } = x.uretim;
+        return { ...kalan, ...(muhabirTeslimi && { muhabirTeslimi }), durum: "uretimde", adim: kapandi.adim, uretim, guncelleme: z };
+      }
       if (x.masaTakibi) {
         delete kalan.yayinlandi;
         delete kalan.yayinlanmadi;
@@ -3043,6 +3049,35 @@ export const uretimYoluDegistir = (ben: Kisi, paketId: string, g: UretimSecimi) 
   const yeni: Paket = adim ? { ...p, uretim, adim, guncelleme: simdi() } : { ...p, uretim, durum: "tamamlandi", adim: undefined, guncelleme: simdi() };
   d = paketGuncelle(d, paketId, () => yeni);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimYoluDegisti", paketId, planId: p.planId, veri: { adim: adim ?? "tamam", sahip: paketSahibi(yeni) ?? "" } }));
+  return true;
+};
+
+/**
+ * Üretimdeki paket yol bitmeden "Yapıldı": tamamlanır, onaylayan künyeye yazılır,
+ * masraf da onaylanır ("Yapıldı"nın onayı gibi). Kapandığı durak yolda kalır,
+ * geri alınınca paket oraya döner.
+ */
+export const uretimiKapat = (ben: Kisi, paketId: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !p.uretim || !uretimiKapatabilir(ben, p)) return false;
+  const z = simdi();
+  d = paketGuncelle(d, paketId, (x) =>
+    kunyeYaz(
+      {
+        ...x,
+        durum: "tamamlandi",
+        adim: undefined,
+        uretim: { ...x.uretim!, kapandi: { adim: x.adim ?? "", kisiId: ben.id, zaman: z } },
+        guncelleme: z,
+        ...(x.masraflar?.length && !x.masrafOnayi && { masrafOnayi: { kisiId: ben.id, zaman: z } }),
+      },
+      "onaylayan",
+      ben.id,
+      z,
+    ),
+  );
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "uretimKapatildi", paketId, planId: p.planId, ...(p.oneriId && { oneriId: p.oneriId }), veri: { ...(p.muhabirId && { kime: p.muhabirId }) } }));
   return true;
 };
 
