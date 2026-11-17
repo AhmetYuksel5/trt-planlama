@@ -1352,7 +1352,6 @@ const M = {
   msKart: m("Birim görüşü", "رأي القسم", "Desk review"),
   obOzet: m("Özet", "الملخص", "Summary"),
   obPlanOneri: m("Plan ve öneri", "الخطة والمقترح", "Plan & proposal"),
-  obMateryal: m("Materyal", "المواد", "Material"),
   msMasayaIlet: m("Birimin görüşüne sun", "عرض على القسم", "Submit to desk"),
   msAliriz: m("Uygundur", "مناسب للقسم", "Approve"),
   msAlmayiz: m("Uygun değildir", "غير مناسب", "Decline"),

@@ -41,6 +41,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(o && o.haberBasligi === strap, "Header strap'ten");
   ok(o && o.islemeFikri === "مقابلات مع السائقين" && o.gorselIsleme === "لقطات من المعبر وخريطة", "işleme ve görsel kayıtta");
   ok((await p.locator('[data-oneri-metni="isleme"]').count()) === 1 && (await p.locator('[data-oneri-metni="gorsel"]').count()) === 1, "ayrıntıda işleme ve görsel görünüyor");
+  // Materyal özetle tek bölümde (kullanıcı: iki bölüm birbirini tekrar ediyordu); ardından Plan ve öneri.
+  ok((await p.locator('[data-oneri-bolum="ozet"] [data-oneri-metni="isleme"]').count()) === 1 && (await p.locator('[data-oneri-bolum="materyal"]').count()) === 0, "işleme ve görsel Özet bölümünde, ayrı Materyal yok");
+  ok((await p.evaluate(() => [...document.querySelectorAll("[data-oneri-bolum]")].map((x) => x.getAttribute("data-oneri-bolum")).slice(0, 2).join())) === "ozet,plan", "ilk Özet, sonra Plan ve öneri");
 
   // Takip: yalnız ilk iki alan
   await git("#/oneriler/yeni");

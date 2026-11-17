@@ -390,6 +390,17 @@ export function OneriAyrinti({
           <Icerik blok>{o.gelisme}</Icerik>
         </div>
         <TakipSatirlari ben={ben} oneri={o} />
+        {/* Materyal (işleme fikri, görsel işleme, ilk hali, orijinal e-posta) özetle tek bölümde (kullanıcı: iki bölüm birbirini tekrar ediyordu). */}
+        <OneriIslemeMetinleri o={o} />
+        {o.ilkHali && (
+          <details className="ara-ust-2 ilk-hal" data-oneri-ilk-hali>
+            <summary>{t("oneriIlkHali")}</summary>
+            <Icerik blok>{o.ilkHali.haberBasligi}</Icerik>
+            <Icerik blok>{o.ilkHali.gelisme}</Icerik>
+            {o.ilkHali.paketBasligi && <Icerik blok>{o.ilkHali.paketBasligi}</Icerik>}
+          </details>
+        )}
+        {yanit && <EpostaKaynagi ben={ben} oneri={o} yanit={yanit} />}
       </Bolum>
       <Bolum ad="plan" baslik={t("obPlanOneri")} acik={sayfa || ilgili}>
         <div className="alanlar">
@@ -450,18 +461,6 @@ export function OneriAyrinti({
         <BagliOneriler oneri={o} />
         <EsOneriler ben={ben} oneri={o} />
         <PlandakineBagla ben={ben} oneri={o} />
-      </Bolum>
-      <Bolum ad="materyal" baslik={t("obMateryal")} acik={sayfa}>
-        <OneriIslemeMetinleri o={o} />
-        {o.ilkHali && (
-          <details className="ara-ust-2 ilk-hal" data-oneri-ilk-hali>
-            <summary>{t("oneriIlkHali")}</summary>
-            <Icerik blok>{o.ilkHali.haberBasligi}</Icerik>
-            <Icerik blok>{o.ilkHali.gelisme}</Icerik>
-            {o.ilkHali.paketBasligi && <Icerik blok>{o.ilkHali.paketBasligi}</Icerik>}
-          </details>
-        )}
-        {yanit && <EpostaKaynagi ben={ben} oneri={o} yanit={yanit} />}
       </Bolum>
       <Bolum ad="degerlendirme" baslik={t("degerlendirme")} acik={sayfa}>
         <YzHaberDegeri ben={ben} oneri={o} ulkeAdi={t(ulkeAdi(o.ulke))} />

@@ -1997,10 +1997,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     birim görüşü, takip satırları, eş öneri yoktu): başlık ve rozet, altında
     bilgi satırı; katlanır bölümler (`data-oneri-bolum`): Özet (açık; şimdiki
     düzeltme notu ya da gerekçe, "Düzenle", Header, gelişme, takip
-    satırları), Plan ve öneri (gün ve etiketler, plan, dosya, paket, kol,
+    satırları ve materyal: işleme fikri, görsel işleme, ilk hali, orijinal
+    e-posta; kullanıcı: ayrı "Materyal" bölümü özeti tekrar ediyordu), Plan ve öneri (gün ve etiketler, plan, dosya, paket, kol,
     saha, kaynak, giren, kanal ve geliş; eş, bağlı ve plandakine bağla;
-    bunlardan biri varsa açık), Materyal (işleme fikri, görsel işleme, ilk
-    hali, orijinal e-posta), Değerlendirme (yapay zeka, birim görüşü,
+    bunlardan biri varsa açık), Değerlendirme (yapay zeka, birim görüşü,
     önceki düzeltme, gerekçe, geri bildirim, arşiv), Yazışma · n, Hareket
     geçmişi · n. Boş bölüm çizilmez (CSS `:has`). Ayrıntı sayfasında
     bölümler açık. Altta (`data-oneri-alt`; sayfada başlığın altında)
