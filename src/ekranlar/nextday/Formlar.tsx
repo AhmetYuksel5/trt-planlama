@@ -1,4 +1,4 @@
-import { SaatGirdisi, TarihGirdisi, TarihSaatGirdisi } from "../../bilesenler/TarihSaat";
+import { SaatGirdisi, TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTelefon } from "../takvim/ortak";
@@ -9,7 +9,7 @@ import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, o
 import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirAr, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
-import { girdidenIso, saatCoz, simdi, yerelGirdi, zaman } from "../../tarih";
+import { girdidenIso, saatCoz, yerelGirdi, zaman } from "../../tarih";
 import {
   BICIMLER,
   TAKIP_BICIMI,
@@ -158,7 +158,9 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     kaynakTuru: (mevcut?.kaynakTuru ?? "ajans") as KaynakTuru,
     kaynakAdi: mevcut?.kaynakAdi ?? "",
     onerenId: mevcut?.onerenId ?? "",
-    tarih: yerelGirdi(mevcut?.tarih ?? simdi()),
+    // Gün varsayılan olarak planın günü (Next Day ertesi günün planı); saat isteğe bağlı, ayrı alanda.
+    tarih: mevcut ? yerelGirdi(mevcut.tarih).slice(0, 10) : plan.tarih,
+    saat: mevcut?.saat ?? "",
     muhabirler: mevcut ? gelismeMuhabirleri(mevcut) : [],
     teams: mevcut?.teams ?? [],
     teamAd: "",
@@ -179,7 +181,8 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       metin: f.metin.trim(),
       kaynakTuru: f.kaynakTuru,
       kaynakAdi: f.kaynakAdi.trim(),
-      tarih: girdidenIso(f.tarih) ?? simdi(),
+      tarih: f.tarih ? new Date(`${f.tarih}T00:00`).toISOString() : "",
+      saat: f.saat || undefined,
       onerenId: f.onerenId || undefined,
       oneriId: mevcut?.oneriId,
       muhabirler: f.muhabirler.length ? f.muhabirler.map((m) => (m.yer?.trim() ? { kisiId: m.kisiId, yer: m.yer.trim() } : { kisiId: m.kisiId })) : undefined,
@@ -247,7 +250,11 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
       <div className="satir">
         <label>
           {t("tarih")}
-          <TarihSaatGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+          <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-gelisme-tarih />
+        </label>
+        <label>
+          {t("saat")}
+          <SaatGirdisi value={f.saat} onChange={(e) => setF({ ...f, saat: e.target.value })} data-gelisme-saat />
         </label>
         <label>
           {t("onerenMuhabir")}
@@ -500,7 +507,9 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
     aciklama: mevcut?.aciklama ?? "",
     tur: (mevcut?.tur ?? "haber") as IcerikTuru,
     bicim: (mevcut?.bicim ?? "pkg") as Bicim,
-    teslim: yerelGirdi(mevcut?.teslim),
+    // Teslim günü varsayılan olarak planın günü; saat girilmezse teslim yazılmaz.
+    teslimGun: mevcut?.teslim ? yerelGirdi(mevcut.teslim).slice(0, 10) : plan.tarih,
+    teslimSaat: mevcut?.teslim ? yerelGirdi(mevcut.teslim).slice(11, 16) : "",
     yayin: mevcut?.yayin ? yerelGirdi(mevcut.yayin).slice(11) : "",
     sahaGerekli: mevcut?.sahaGerekli ?? false,
     slug: mevcut?.slug ?? "",
@@ -531,7 +540,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
       aciklama: f.aciklama.trim(),
       tur: f.tur,
       bicim: f.bicim,
-      teslim: girdidenIso(f.teslim),
+      teslim: f.teslimGun && f.teslimSaat ? girdidenIso(`${f.teslimGun}T${f.teslimSaat}`) : undefined,
       yayin: f.yayin ? zaman(plan.tarih, f.yayin) : undefined,
       sahaGerekli: f.sahaGerekli,
       slug: f.slug.trim() || undefined,
@@ -601,7 +610,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
           {ozellikAlanlari}
         </div>
       )}
-      <FormAyrintilari telefon={telefon} acik={!!(f.diger || f.aciklama || f.not || f.teslim || f.yayin || f.slug || f.sahaGerekli || (f.gelismeId && !gelismeId))}>
+      <FormAyrintilari telefon={telefon} acik={!!(f.diger || f.aciklama || f.not || f.teslimSaat || f.yayin || f.slug || f.sahaGerekli || (f.gelismeId && !gelismeId))}>
         {telefon && <div className="satir">{ozellikAlanlari}</div>}
       <label>
         {t("kisaAciklama")}
@@ -627,7 +636,10 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
       <div className="satir">
         <label>
           {t("teslim")}
-          <TarihSaatGirdisi value={f.teslim} onChange={(e) => setF({ ...f, teslim: e.target.value })} />
+          <span className="tarih-saat-girdisi">
+            <TarihGirdisi value={f.teslimGun} onChange={(e) => setF({ ...f, teslimGun: e.target.value })} data-paket-teslim-gun />
+            <SaatGirdisi value={f.teslimSaat} onChange={(e) => setF({ ...f, teslimSaat: e.target.value })} aria-label={t("saat")} data-paket-teslim-saat />
+          </span>
         </label>
         <label>
           {t("yayinSaati")}

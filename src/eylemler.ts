@@ -2392,6 +2392,8 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
   const d = getir();
   const plan = planBul(d, g.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
+  // Boş tarih planın günü (kullanıcı: Next Day ertesi günün planı, eklenen gelişme bugünün tarihini taşıyordu).
+  if (!g.tarih) g = { ...g, tarih: new Date(`${plan.tarih}T00:00`).toISOString() };
   if (g.id) {
     kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {

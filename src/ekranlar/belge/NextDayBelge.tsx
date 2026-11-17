@@ -71,7 +71,7 @@ import {
   planMuhabirTbc,
   planBaslikLive,
 } from "../../eylemler";
-import { simdi, vardiyaYaz } from "../../tarih";
+import { vardiyaYaz } from "../../tarih";
 import {
   baslikBul,
   gelismeMuhabirleri,
@@ -218,7 +218,7 @@ function HizliEkle({
           metin: govde,
           kaynakTuru: "ajans",
           kaynakAdi: "",
-          tarih: simdi(),
+          tarih: "",
         },
         sonra,
       )
@@ -637,6 +637,8 @@ export function NextDayBelgesi({
           {gelismeBicimEki(v, g) && (
             <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>
           )}
+          {/* Saat girildiyse metnin sonunda kalın "12G" (kullanıcı); girilmediyse hiçbir şey. */}
+          {g.saat && <b data-gelisme-saat-eki> {vardiyaYaz(g.saat)}</b>}
         </Satir>
         {/* Schedule paragrafın hemen altında, saat sırasıyla; muhabirden önce, gelişmenin parçası. */}
         {gelismeProgrami(g).length > 0 && (

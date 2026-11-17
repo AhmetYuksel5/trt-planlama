@@ -381,6 +381,8 @@ export interface Gelisme {
   teams?: ({ kisiId: string } | { ad: string })[];
   /** İsteğe bağlı "Schedule": gelişmenin saat saat programı (ziyaret, zirve…); planda paragrafın altında. */
   program?: ProgramSatiri[];
+  /** İsteğe bağlı saat ("SS:DD", kullanıcı): planda metnin sonunda kalın "12G"; yoksa hiçbir şey yazılmaz. */
+  saat?: string;
   onceki?: true;
   devir?: true;
 }

@@ -6,7 +6,7 @@ import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi"
 import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
-import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
+import { metin, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { hazirSecilebilir, stokDurumu } from "../../akis";
@@ -676,6 +676,7 @@ export function GelismeListesi({
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}
                   {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
+                  {g.saat && <b data-gelisme-saat-eki> {vardiyaYaz(g.saat)}</b>}
                 </Icerik>
                 <GelismeProgrami g={g} />
                 <GelismeMuhabirSatirlari g={g} v={v} />
@@ -685,7 +686,7 @@ export function GelismeListesi({
                   {g.kaynakAdi && <Icerik>{g.kaynakAdi}</Icerik>}
                   {g.onerenId && <span>· {ad(kisiBul(v, g.onerenId))}</span>}
                   <span>
-                    · {tarihYaz(yerelGun(g.tarih), dil, "kisa")} {saatYaz(g.tarih, dil)}
+                    · {tarihYaz(yerelGun(g.tarih), dil, "kisa")}
                   </span>
                 </small>
               </div>

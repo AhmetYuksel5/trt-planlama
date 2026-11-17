@@ -12,7 +12,7 @@ import { saatYaz, useDil } from "../../dil";
 import { oneriPlandakineBagla, gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, paketNotEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
-import { simdi, vardiyaYaz } from "../../tarih";
+import { vardiyaYaz } from "../../tarih";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
 import { useYz } from "../../yz";
 import { baslikBul, kisiBul, useVeri, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
@@ -422,7 +422,7 @@ export default function BaslikKarti({
           ekleMetni={t("yzGelismeOlarakEkle")}
           ekle={(s) => {
             if (!ben) return;
-            const ok = gelismeKaydet(ben, { planId: plan.id, planBaslikId: pb.id, metin: s.metin, kaynakTuru: "medya", kaynakAdi: kaynakAdlari(s), tarih: simdi() });
+            const ok = gelismeKaydet(ben, { planId: plan.id, planBaslikId: pb.id, metin: s.metin, kaynakTuru: "medya", kaynakAdi: kaynakAdlari(s), tarih: "" });
             if (ok !== false) {
               bildir(t("bKaydedildi"));
               setTakipPenceresi(false);
@@ -566,7 +566,7 @@ function HizliGelisme({ ben, planId, pbId }: { ben: Kisi; planId: string; pbId: 
     const yer = i > 0 && i < 30 ? ham.slice(0, i).trim() : undefined;
     const govde = yer ? ham.slice(i + 3).trim() : ham;
     if (!govde) return;
-    if (gelismeKaydet(ben, { planId, planBaslikId: pbId, yer, metin: govde, kaynakTuru: "ajans", kaynakAdi: "", tarih: simdi() })) setYazi("");
+    if (gelismeKaydet(ben, { planId, planBaslikId: pbId, yer, metin: govde, kaynakTuru: "ajans", kaynakAdi: "", tarih: "" })) setYazi("");
   };
   return (
     <form

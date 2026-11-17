@@ -1199,7 +1199,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Başlık kartının satırı ve açılınca içindeki kutular her arayüz dilinde
     sağdan sola (`.baslik-karti > summary`, `.baslik-govde { direction: rtl }`,
     kutunun içi arayüzün yönünde): numara başlığın sağında, Gelişmeler sağda.
-    Telefonda sayaçlar başlığın altında, düğmeler kenarda 2×2.
+    Telefonda sayaçlar başlığın altında, düğmeler kenarda 2×2. Düğmeleri 36
+    piksele sabitleyen kural "+" menüsünün satırlarına uymaz (`:not(.acilir *)`;
+    kullanıcı: menü dar şeride sıkışıp yazılar kesiliyordu; `testler/baslik-menusu.cjs`).
   - Geri al (↶, Ctrl/⌘+Z yazı alanı dışında; `bilesenler/GeriAl.tsx`)
     Next Day, haftalık ve belge görünümünde. Kişinin o plandaki son
     düzenlemesini geri alır (`geriAl.ts`, `eylemler.ts → planGeriAl`):
@@ -1278,6 +1280,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`gelismeBasligaTasi`); sıralama aynı yerdeki paketler arasında
     (`paketTasi`). Beklenen paketler (التقارير المتوقعة) listesinde her PKG
     yine var. Test `testler/gelisme-pkg.cjs`.
+  - Gelişme ve PKG formunda gün varsayılan olarak planın günü (kullanıcı:
+    Next Day ertesi günün planı, eklenen bugünün tarihini taşıyordu): gelişmede
+    `TarihGirdisi` ve ayrı, isteğe bağlı saat (`Gelisme.saat`, "SS:DD"); boş
+    tarihle kaydedilen (hızlı ekleme, "Son gelişmeler") planın gününü alır
+    (`eylemler.ts → gelismeKaydet`). Saat girildiyse plan ekranında, belgede ve
+    çıktıda metnin sonunda kalın "12G" (`vardiyaYaz`, `data-gelisme-saat-eki`),
+    girilmediyse hiçbir şey; kayıt satırında yalnız gün. PKG'de teslim günü
+    planın günüyle açılır, saati boş; saatsiz teslim yazılmaz. Test
+    `testler/gelisme-saat.cjs`.
   - Gelişmeye isteğe bağlı "Schedule" (`Gelisme.program`, saat + olay
     satırları; gelişme formunda kutu işaretlenince açılır): ziyaret, zirve
     gibi olayın saat saat programı. Plan ekranında, belgede ve çıktıda
