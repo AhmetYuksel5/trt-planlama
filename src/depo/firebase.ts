@@ -175,18 +175,48 @@ interface Onbellek {
  * aynı kalıyor, fark da nesne kimliğiyle çıktığı için.
  */
 /*
- * Bu sekmenin sunucudan aldığı belgeler, koleksiyon başına (Ayarlar › Okuma sayacı, tam yönetici). Firestore
- * faturasının birebir aynısı değil (uzun kopukluktan sonra sorgunun tamamı faturalanıyor, burada yalnız
- * değişenler sayılıyor) ama kotayı neyin tükettiğini gösteriyor; günlük okuma kotası posta açılmadan doluyordu.
+ * Sunucudan alınan belgeler, koleksiyon başına (Ayarlar › Okuma sayacı, tam yönetici). Firestore faturasının
+ * birebir aynısı değil (uzun kopukluktan sonra sorgunun tamamı faturalanıyor, burada yalnız değişenler sayılıyor)
+ * ama kotayı neyin tükettiğini gösteriyor; günlük okuma kotası posta açılmadan doluyordu.
+ * Sayı bu tarayıcının bütün sekmelerinde ve açılışlarında birikiyor, kota günü değişince sıfırlanıyor
+ * (kullanıcı: sekmeye bağlı sayı her açılışta sıfırdan başladığı için günlük tüketim görünmüyordu). Kota günü
+ * ABD Pasifik saatiyle; günlük kota orada gece yarısı yenileniyor.
  */
-const okumalar = new Map<string, number>();
-const okumaBasi = Date.now();
+type OkumaGunu = { gun: string; bas: number; sayilar: Record<string, number> };
+const okumaAnahtari = () => `trt-planlama-okuma:${firebaseAyari().projectId}`;
+const kotaGunu = (an = Date.now()) => new Date(an).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+const okumaGunuOku = (): OkumaGunu => {
+  const gun = kotaGunu();
+  try {
+    const o = JSON.parse(localStorage.getItem(okumaAnahtari()) ?? "null") as OkumaGunu | null;
+    if (o && o.gun === gun && o.sayilar) return o;
+  } catch {
+    /* bozuk ya da erişilemeyen kayıt: gün baştan */
+  }
+  return { gun, bas: Date.now(), sayilar: {} };
+};
+// Pasifik saatinin farkı tam saat olduğu için gün sonu bir UTC saat başında; saat saat ilerleyip gün değişeni bul.
+const kotaSifirlanma = () => {
+  const gun = kotaGunu();
+  let an = Math.ceil(Date.now() / 3600000) * 3600000;
+  for (let i = 0; i < 30 && kotaGunu(an) === gun; i++) an += 3600000;
+  return an;
+};
 const okumaSay = (alan: string, n: number) => {
   if (!n) return;
-  okumalar.set(alan, (okumalar.get(alan) ?? 0) + n);
+  const o = okumaGunuOku();
+  o.sayilar[alan] = (o.sayilar[alan] ?? 0) + n;
+  try {
+    localStorage.setItem(okumaAnahtari(), JSON.stringify(o));
+  } catch {
+    /* depo kapalı: sayı bu sefer yazılmaz */
+  }
   window.dispatchEvent(new Event("trt-okuma"));
 };
-export const okumaSayilari = () => ({ bas: okumaBasi, liste: [...okumalar].sort((a, b) => b[1] - a[1]) });
+export const okumaSayilari = () => {
+  const o = okumaGunuOku();
+  return { bas: o.bas, sifir: kotaSifirlanma(), liste: Object.entries(o.sayilar).sort((a, b) => b[1] - a[1]) };
+};
 
 /*
  * Posta mesajları yalnız postayı kullanan sekmede dinleniyor: bu tarayıcıda Posta sayfası (ya da Postadan

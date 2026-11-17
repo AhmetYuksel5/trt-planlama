@@ -75,7 +75,21 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.evaluate(() => {
     const x = JSON.parse(localStorage.getItem("trt-planlama-v25"));
     let ilk = "";
-    for (const a of x.aylik) for (const o of a.olaylar ?? []) if (o.id === "ao-zirve") (o.etiketler.push("ozel"), (ilk = o.gunler.map((g) => g.tarih).sort()[0]));
+    // Olayın günleri bugüne göre (gun(3), gun(4)); Cuma'ya düşünce ikinci gün öbür haftada kalıyor, 4. adım iki kalemi
+    // bir haftada bekliyor: günler aynı haftaya (Cumartesi başlar) çekilir.
+    const kay = (t, n) => new Date(new Date(t + "T12:00:00").getTime() + n * 864e5).toISOString().slice(0, 10);
+    for (const a of x.aylik)
+      for (const o of a.olaylar ?? [])
+        if (o.id === "ao-zirve") {
+          const gunler = o.gunler.map((g) => g.tarih).sort();
+          const cuma = new Date(gunler[0] + "T12:00:00").getDay() === 5;
+          if (cuma) {
+            for (const g of o.gunler) g.tarih = kay(g.tarih, -1);
+            for (const k of ["tarih", "bitis", "kapsamBas", "kapsamBit"]) if (o[k]) o[k] = kay(o[k], -1);
+          }
+          o.etiketler.push("ozel");
+          ilk = o.gunler.map((g) => g.tarih).sort()[0];
+        }
     // Demo haftaları bugüne göre kuruluyor; olayın haftası kesinleşmiş olabiliyor (günü Cumartesi'ye denk gelince): açık olsun.
     for (const w of x.haftalik) if (w.baslangic <= ilk && ilk < new Date(new Date(w.baslangic + "T12:00:00").getTime() + 7 * 864e5).toISOString().slice(0, 10)) w.durum = "hazirlik";
     localStorage.setItem("trt-planlama-v25", JSON.stringify(x));

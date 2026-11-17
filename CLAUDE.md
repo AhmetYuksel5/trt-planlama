@@ -351,8 +351,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kişiler açıldıysa açılıştan, `trt-planlama-posta-kullanir`); sayfa
     çekmeden önce listenin sunucudan gelmesini bekler (yarım listeyle aynı
     posta ikinci kez eklenirdi). Ayarlar › "Okuma sayacı" (tam yönetici,
-    gerçek kip; `okumaSayilari`): bu sekmenin sunucudan aldığı belgeler,
-    koleksiyon başına; faturanın birebiri değil, tüketeni gösteriyor.
+    gerçek kip; `okumaSayilari`): bu tarayıcının kota günü boyunca
+    sunucudan aldığı belgeler, koleksiyon başına; bütün sekme ve açılışlarda
+    birikir (`trt-planlama-okuma:<proje>`), kota günü (ABD Pasifik) değişince
+    sıfırlanır, kartta sıfırlanma saati (kullanıcı: sekmeye bağlıyken her
+    açılışta sıfırlanıyordu). Kurumun toplamı değil, bu tarayıcınınki;
+    faturanın birebiri değil, tüketeni gösteriyor.
     Sistemin yazışları (`App.tsx → yokla`: yarının planı, aktarımlar, çift
     plan toplama) "hazır"da değil, bütün koleksiyonlar sunucudan bir kez
     teyit edilince başlar (`depo/firebase.ts → sunucuGeldi`, `kip.ts →
@@ -3270,7 +3274,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   çerçevesiz meta metni (kimlik: planlar renkli kutu taşımaz). Muhabirin
   Önerilerim'i tek kart, grup başlıklı (`.muhabir-gruplari`, `.grup-basligi`):
   "Senin sıran" ilk grup, sayısı lacivert dolu; boş grup çizilmez, hepsi boşsa
-  tek "öneri yok". Test `testler/mobil-form.cjs`.
+  tek "öneri yok". Kartın ızgara sütunu `minmax(0, 1fr)`: içeriğe göre açılınca
+  uzun Arapça başlık satırları telefonda kartın dışına taşıyordu, başlık görünmüyordu
+  (kullanıcı; `testler/muhabir-tasma.cjs`). Test `testler/mobil-form.cjs`.
   Üçüncü parti: telefonda yazı alanı odaktayken (klavye açık) alt çubuk gizli;
   `--alt-cubuk` sıfırlanmaz (düğmeye dokununca önce odak gidip çubuk geri
   geliyor, yapışık Gönder kayıp dokunuş boşa düşüyordu); tarih seçici

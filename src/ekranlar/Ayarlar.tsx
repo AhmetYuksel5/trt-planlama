@@ -200,20 +200,23 @@ export function Yetkisiz() {
 }
 
 /*
- * Bu sekmenin Firestore'dan okuduğu belgeler, koleksiyon başına (depo/firebase.ts → okumaSayilari): ücretsiz
- * planın günlük okuma kotası doluyordu, neyin tükettiği tahminle değil ölçerek bulunsun.
+ * Bu tarayıcının kota günü boyunca Firestore'dan okuduğu belgeler, koleksiyon başına (depo/firebase.ts →
+ * okumaSayilari): ücretsiz planın günlük okuma kotası doluyordu, neyin tükettiği tahminle değil ölçerek bulunsun.
+ * Başka sekme okudukça da artsın diye `storage` olayını da dinliyor.
  */
 function OkumaSayaci() {
   const { t, dil } = useDil();
-  const [s, setS] = useState<{ bas: number; liste: [string, number][] } | null>(null);
+  const [s, setS] = useState<{ bas: number; sifir: number; liste: [string, number][] } | null>(null);
   useEffect(() => {
     let acik = true;
     const tazele = () => void firebaseYukle().then((f) => acik && setS(f.okumaSayilari()));
     tazele();
     window.addEventListener("trt-okuma", tazele);
+    window.addEventListener("storage", tazele);
     return () => {
       acik = false;
       window.removeEventListener("trt-okuma", tazele);
+      window.removeEventListener("storage", tazele);
     };
   }, []);
   const toplam = s?.liste.reduce((a, [, n]) => a + n, 0) ?? 0;
@@ -222,7 +225,11 @@ function OkumaSayaci() {
       {s && (
         <>
           <p className="sonuk-yazi" data-okuma-toplam>
-            {t("okumaSayaciOzet", { n: String(toplam), saat: new Date(s.bas).toLocaleTimeString(dil, { hour: "2-digit", minute: "2-digit" }) })}
+            {t("okumaSayaciOzet", {
+              n: String(toplam),
+              saat: new Date(s.bas).toLocaleTimeString(dil, { hour: "2-digit", minute: "2-digit" }),
+              sifir: new Date(s.sifir).toLocaleTimeString(dil, { hour: "2-digit", minute: "2-digit" }),
+            })}
           </p>
           <ul className="liste" data-okuma-sayaci>
             {s.liste.map(([alan, n]) => (
