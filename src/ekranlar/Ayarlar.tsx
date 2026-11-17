@@ -1,6 +1,6 @@
 import { TarihGirdisi } from "../bilesenler/TarihSaat";
 import { birimAdi, gorevAdi } from "../yapi";
-import { Activity, Database, Lock, RotateCcw, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
+import { Activity, Database, Palette, Lock, RotateCcw, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { useEffect, useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { KatlanirKartlar, Kart, bildir } from "../bilesenler/Parcalar";
@@ -20,6 +20,8 @@ import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
 import { useYeniTasarim, yeniTasarimKaydet } from "../tasarimSecimi";
+import { TEMALAR, temaKaydet, useTema } from "../tema";
+import { birimMenusu } from "../bilesenler/AnaMenu";
 
 /* Ayarlar: dil, oturum ve (demoda) örnek veri. Kalıcılığın sınırı burada açıkça yazıyor; gerçek kayıt buradan sıfırlanmıyor. */
 export function Ayarlar({ ben }: { ben: Kisi }) {
@@ -45,6 +47,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         </Kart>
         {ben.birim === "muhabir" && <KisiselAyar ben={ben} />}
         <TasarimAyari />
+        <TemaAyari ben={ben} />
         <SesAyari />
         {ben.hesapYoneticisi && <IsAkisiAyari />}
         {ben.hesapYoneticisi && <GunNotuAyari ben={ben} />}
@@ -196,6 +199,31 @@ export function Yetkisiz() {
         {t("anaSayfayaDon")}
       </a>
     </div>
+  );
+}
+
+/*
+ * Tema rengi (tema.ts): yalnız renkli kabuğu olan kişide (muhabir, masalar, Planlama'nın yeni menüsü);
+ * öbürlerinde seçimin görünür bir etkisi olmazdı. "Birimin rengi" seçimi kaldırır.
+ */
+function TemaAyari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const yeni = useYeniTasarim();
+  const secili = useTema();
+  const kabuk = birimMenusu(ben, yeni)?.tur;
+  if (!kabuk) return null;
+  const secenekler = [{ id: "", ad: "temaVarsayilan" as const, renk: `var(--masa-${kabuk})` }, ...TEMALAR];
+  return (
+    <Kart baslik={t("temaRengi")} ikon={<Palette size={18} />}>
+      <div className="tema-secimi" role="group" aria-label={t("temaRengi")} data-tema-secimi>
+        {secenekler.map((x) => (
+          <button key={x.id || "birim"} type="button" aria-pressed={secili === x.id} onClick={() => temaKaydet(x.id)} data-tema={x.id || "birim"}>
+            <span className="tema-ornek" style={{ ["--ornek" as string]: x.renk }} />
+            {t(x.ad)}
+          </button>
+        ))}
+      </div>
+    </Kart>
   );
 }
 

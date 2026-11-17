@@ -42,12 +42,13 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     }
     ok((await p.evaluate(() => getComputedStyle(document.querySelector(".alt-cubuk a")).transitionDuration)).split(",").every((x) => parseFloat(x) < 0.01), `${dil}: az harekette geçiş yok`);
 
-    // M-58: muhabirin takibi açıkken alt çubukta Takiplerim.
+    // M-58: muhabirin takibi açıkken alt çubukta Önerilerim yanmıyor (takip öneri sayfasında açılıyor). Takiplerim artık
+    // alt çubukta değil (muhabirin sayfası masaların kalıbıyla: Ana sayfa, Yapılacaklar, Öneri gönder, Önerilerim).
     const takip = await p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25")).oneriler.find((o) => o.durum === "takip" && o.muhabirId === "mu1")?.id);
     if (takip) {
       await p.goto(B + "#/oneriler/" + takip);
       await p.waitForTimeout(700);
-      ok((await p.locator('.alt-cubuk a.acik[href="#/takipler"]').count()) === 1, `${dil}: takipte alt çubuk Takiplerim'de`);
+      ok((await p.locator('.alt-cubuk a.acik[href="#/oneriler"]').count()) === 0, `${dil}: takipte alt çubukta Önerilerim yanmıyor`);
       const ac = p.locator("[data-takip-satiri-ac]");
       if (await ac.count()) await ac.tap();
       await p.waitForTimeout(200);

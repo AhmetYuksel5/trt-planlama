@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, type LucideIcon } from "lucide-react";
+import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
@@ -14,6 +14,7 @@ import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
 import { dilDenetmeniMi, kisitliKisi, masaBirimi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
+import { bugunkuYapilacakSayisi } from "../yapilacaklar";
 import { GERCEK } from "../kip";
 import { okunmamisSayisi } from "../postaOkuma";
 import Logo from "./Logo";
@@ -56,9 +57,7 @@ export const MENU: Grup[] = [
       {
         sayfa: "ana",
         ad: "mAna",
-        adMuhabir: "mIslerim",
         kisa: "kaAna",
-        kisaMuhabir: "kaIslerim",
         ikon: House,
         say: (d, ben) => d.paketler.filter((p) => p.durum === "uretimde" && siramMi(ben, p) && paketGorebilir(ben, p, d)).length,
       },
@@ -113,6 +112,8 @@ export const MENU: Grup[] = [
         // Öneriler'in "Karar bekleyen" sekmesiyle aynı kural (planlamaKararlari.ts); önce yalnız "yeni"yi sayıyordu.
         say: (d, ben) => kararlariGetir(d, ben).oneri,
       },
+      // Muhabirin paket görevleri gün gün (yapilacaklar.ts); sayı bugüne dek sırası onda olan iş.
+      { sayfa: "yapilacaklar", ad: "mYapilacaklar", kisa: "kaYapilacaklar", ikon: ListTodo, say: (d, ben) => bugunkuYapilacakSayisi(d, ben) },
       // Gelen posta sohbeti: planlama kutusuna düşen postalar (yetki.ts → SAYFA_IZNI.posta).
       { sayfa: "posta", ad: "mPosta", kisa: "kaPosta", ikon: Mail, say: (d, ben) => okunmamisSayisi(d, ben.id) },
       {
@@ -174,7 +175,7 @@ export const MENU: Grup[] = [
  * Önerilerim'in kendisi, ayrı madde değil; takvim muhabirde yok.
  */
 const ONERI_GONDER: Madde = { sayfa: "oneriler/yeni", ad: "mOneriGonder", kisa: "kaOneriGonder", ikon: Send };
-export const MUHABIR_MENUSU = ["oneriler/yeni", "oneriler", "takipler", "paketler", "saha"];
+export const MUHABIR_MENUSU = ["oneriler/yeni", "yapilacaklar", "oneriler", "takipler", "paketler", "saha"];
 export const MUHABIR_ALT = ["ayarlar"];
 export const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
   sayfalar
@@ -182,6 +183,23 @@ export const muhabirMaddeleri = (ben: Kisi, sayfalar: string[]) =>
     .filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa.split("/")[0]));
 /* Muhabirde Önerilerim'in sayısı önündeki iş: düzeltme istenen ve Planlama'nın ona önerdiği. */
 const muhabirOneriSayisi = (d: Durum, ben: Kisi) => d.oneriler.filter((o) => o.muhabirId === ben.id && (o.durum === "duzeltme" || o.durum === "teklif") && !oneriArsivde(o)).length;
+
+/*
+ * Muhabirin menüsü masaların kalıbıyla (kullanıcı: muhabir sayfası program
+ * birimi gibi): ana sayfa (kutucuklar ve Yapılacaklar) ve Öneri gönder başta;
+ * İşlerim; Haberlerim ayrı grupta. Ayarlar altta ayrık (AnaMenu).
+ */
+export const muhabirMenusu = (ben: Kisi): Grup[] => {
+  const bul = (s: string) => muhabirMaddeleri(ben, [s])[0];
+  const ana = bul("ana");
+  return [
+    { ad: undefined, maddeler: [ana && { ...ana, say: undefined }, bul("oneriler/yeni")] },
+    { ad: "mgIslerim" as Anahtar, maddeler: [bul("yapilacaklar"), bul("oneriler"), bul("takipler"), bul("saha")] },
+    { ad: "mgHaberlerimGrubu" as Anahtar, maddeler: [bul("paketler")] },
+  ]
+    .map((g) => ({ ...g, maddeler: g.maddeler.filter((m): m is Madde => !!m) }))
+    .filter((g) => g.maddeler.length > 0);
+};
 
 /*
  * Masaların menüsü (Programlar, Ekonomi, Spor; kullanıcı: kendi çalışma
@@ -267,6 +285,7 @@ export const planlamaYeniMi = (ben: Kisi, yeni: boolean) => yeni && !kisitliKisi
 
 /** Birime özel menü (masa ya da yeni tasarımda Planlama); yoksa tablonun kendisi. */
 export const birimMenusu = (ben: Kisi, yeni: boolean): { tur: string; gruplar: Grup[] } | undefined => {
+  if (ben.birim === "muhabir") return { tur: "muhabir", gruplar: muhabirMenusu(ben) };
   const masa = masaBirimi(ben);
   if (masa) return { tur: masa, gruplar: masaMenusu(ben, masa) };
   if (planlamaYeniMi(ben, yeni)) return { tur: "planlama", gruplar: planlamaMenusu(ben) };
@@ -385,20 +404,6 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
           <small>{gorevAdi(ben.gorev)}</small>
         </div>
       </div>}
-      {muhabir && (
-        <>
-          <div className="menu-grup" data-muhabir-menusu>
-            {muhabirMaddeleri(ben, MUHABIR_MENUSU).map((m) => (
-              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
-            ))}
-          </div>
-          <div className="menu-grup menu-alta">
-            {muhabirMaddeleri(ben, MUHABIR_ALT).map((m) => (
-              <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />
-            ))}
-          </div>
-        </>
-      )}
       {dilci && (
         <>
           <div className="menu-grup" data-dil-menusu>
@@ -416,7 +421,7 @@ export default function AnaMenu({ ben, acik }: { ben: Kisi; acik: string }) {
       {masa && (
         <>
           {ozel!.gruplar.map((g, i) => (
-            <div className="menu-grup" key={i} data-masa-menusu={i === 0 ? masa : undefined} data-birim-menusu={i === 0 ? masa : undefined}>
+            <div className="menu-grup" key={i} data-masa-menusu={i === 0 && !muhabir ? masa : undefined} data-birim-menusu={i === 0 ? masa : undefined} data-muhabir-menusu={i === 0 && muhabir ? "" : undefined}>
               {g.ad && <div className="menu-grup-ad">{t(g.ad)}</div>}
               {g.maddeler.map((m) => (
                 <MenuBagi key={m.sayfa} m={m} ben={ben} acik={acik} />

@@ -81,6 +81,9 @@
   --masa-spor-acik: #4cc27f;
   --masa-ekonomi-acik: #7c9fe0;
   --masa-planlama-acik: #4fc3d9;
+  --masa-muhabir: #b45309;
+  --masa-muhabir-sis: #fdf0e1;
+  --masa-muhabir-acik: #f2a65a;
 
   /* Durumlar: renk tek başına anlam taşımıyor, yanında hep yazı var. */
   --iyi: #12825a;
@@ -3569,6 +3572,17 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 .masa-program { --prg: var(--masa-program); --prg-sis: var(--masa-program-sis); }
 .masa-spor { --prg: var(--masa-spor); --prg-sis: var(--masa-spor-sis); }
 .masa-ekonomi { --prg: var(--masa-ekonomi); --prg-sis: var(--masa-ekonomi-sis); }
+/* Muhabirin sayfası masaların kalıbıyla, kendi renginde (turuncu). */
+.masa-muhabir { --prg: var(--masa-muhabir); --prg-sis: var(--masa-muhabir-sis); }
+.prg-k-yapilacaklar .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
+.prg-k-takipler .prg-kutu-ik { background: var(--haftalik-sis); color: var(--haftalik); }
+.prg-k-paketler .prg-kutu-ik { background: var(--nextday-sis); color: var(--nextday); }
+.prg-k-saha .prg-kutu-ik { background: var(--yuzey-2); color: var(--sonuk); }
+.haber-gruplari { display: grid; gap: var(--ara-4); }
+.haber-gruplari > section { min-width: 0; }
+.muhabir-gruplari .asama { margin-block-start: var(--ara-1); grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); max-inline-size: 22rem; }
+/* Uzun kutucuk adı (Görevlendirmelerim) dar kutuda taşmasın. */
+.prg-kutu b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prg-kutular { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ara-3); }
 .prg-kutular.kutu-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 a.prg-kutu { text-decoration: none; }
@@ -3593,6 +3607,15 @@ a.prg-kutu { text-decoration: none; }
 .menu.masa-spor { --masa-menu: var(--masa-spor-acik); }
 .menu.masa-ekonomi { --masa-menu: var(--masa-ekonomi-acik); }
 .menu.masa-planlama { --masa-menu: var(--masa-planlama-acik); }
+.menu.masa-muhabir { --masa-menu: var(--masa-muhabir-acik); }
+/* Tema rengi (tema.ts, Ayarlar): seçilmişse birimin renginin yerine; seçici masanın kendi kuralından ağır. */
+html[data-tema] .prg-masa { --prg: var(--tema); --prg-sis: var(--tema-sis); }
+html[data-tema] .menu[class*="masa-"] { --masa-menu: var(--tema-acik); }
+html[data-tema].yeni-tasarim .menu[class*="masa-"] a.acik svg { color: var(--tema); }
+.tema-secimi { display: flex; flex-wrap: wrap; gap: var(--ara-2); }
+.tema-secimi button { display: inline-flex; align-items: center; gap: var(--ara-2); min-height: var(--dokunma); padding: 0 var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-hap); background: var(--yuzey); color: var(--murekkep); font: inherit; font-size: var(--punto-kucuk); cursor: pointer; }
+.tema-secimi button[aria-pressed="true"] { border-color: var(--murekkep); box-shadow: 0 0 0 2px var(--yuzey-2); font-weight: 600; }
+.tema-secimi .tema-ornek { inline-size: 18px; block-size: 18px; border-radius: 50%; background: var(--ornek); flex: none; }
 html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); }
 .menu[class*="masa-"] a.acik { border-inline-start-color: var(--masa-menu); }
 .menu[class*="masa-"] .birim-kutusu svg { color: var(--masa-menu); }

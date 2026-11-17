@@ -1,8 +1,16 @@
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { BitmisPaketSeridi } from "../../bilesenler/BitmisPaket";
 import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
-import { ArrowRight, CheckCircle, Lightbulb, Newspaper } from "lucide-react";
-import { adimAdi, adimTuru, geciktiMi, type UretimAdimi } from "../../akis";
+import { ArrowRight, Binoculars, CheckCircle, Lightbulb, ListTodo, MapPinned, Newspaper } from "lucide-react";
+import type { ReactNode } from "react";
+import { SADE_ASAMA_ADI, adimAdi, adimTuru, geciktiMi, paketYolu, sadeAkis, sadeSira, type UretimAdimi } from "../../akis";
+import { AsamaCubugu } from "../../bilesenler/Parcalar";
+import { birimAdi } from "../../yapi";
+import { YAPILACAK_GRUPLARI, bugunkuYapilacakSayisi, muhabirYapilacaklari, type Yapilacak, type YapilacakGrubu } from "../../yapilacaklar";
+import { paketGunu } from "../../bitmisPaket";
+import { ayAdi, aralikYaz } from "../../dil";
+import { gunEkle, haftaBasi } from "../../tarih";
+import { useAdimDurumu } from "../../yol";
 import {
   Bos,
   Icerik,
@@ -19,6 +27,7 @@ import { planBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { ozelGorevleri } from "../../ozel";
 import {
   muhabirBolumu,
+  oneriArsivde,
   oneriSonGunu,
   type MuhabirBolumu,
 } from "../../oneriPlanlari";
@@ -32,17 +41,6 @@ import {
   paketTamamlayabilir,
 } from "../../yetki";
 import { tamamlandiBildir } from "../../bilesenler/TamamlamaGeriAl";
-
-/**
- * Muhabirin ekranı (kurum kararı, en sade hali): Öneri gönder, Önerilerim,
- * Takiplerim, Haberlerim, Görevlendirmelerim, Ayarlar. Açılış sayfası
- * Önerilerim'in güncel bölümü. Sayaç, çağrı kartı, bildirim kartı ve
- * kılavuz ana sayfada yok: çağrı bildirim olarak geliyor, kılavuz Ayarlar'da.
- * Başka muhabirin kaydı burada da aramada da yok.
- */
-export default function MuhabirAna({ ben }: { ben: Kisi }) {
-  return <MuhabirOnerilerim ben={ben} />;
-}
 
 const BOLUM_ADI: Record<MuhabirBolumu, Anahtar> = {
   yakinda: "mbYakinda",
@@ -304,8 +302,10 @@ function PaketSatiri({ ben, paketId }: { ben: Kisi; paketId: string }) {
  * haber tamamlanmış sayılır ama paketi olmadığı için burada yok.
  */
 export function MuhabirHaberlerim({ ben }: { ben: Kisi }) {
-  const { t } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
+  // Kullanıcı: biten haberler aylık, haftalık sıralanabilsin; seçim geçmiş adımında (geri gelince kalsın).
+  const [grup, setGrup] = useAdimDurumu<HaberGrubu>("haberlerim:grup", "ay");
   const liste = v.paketler
     .filter(
       (p) =>
@@ -313,7 +313,17 @@ export function MuhabirHaberlerim({ ben }: { ben: Kisi }) {
         p.durum === "tamamlandi" &&
         paketGorebilir(ben, p, v),
     )
-    .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+    .map((p) => ({ p, gun: paketGunu(v, p) }))
+    .sort((a, b) => b.gun.localeCompare(a.gun) || b.p.guncelleme.localeCompare(a.p.guncelleme));
+  const anahtar = (gun: string) => (grup === "ay" ? gun.slice(0, 7) : grup === "hafta" ? haftaBasi(gun) : "");
+  const baslik = (k: string) => (grup === "ay" ? ayAdi(k + "-01", dil, "yil") : aralikYaz(k, gunEkle(k, 6), dil));
+  const gruplar: { k: string; l: typeof liste }[] = [];
+  for (const x of liste) {
+    const k = anahtar(x.gun);
+    const son = gruplar[gruplar.length - 1];
+    if (son && son.k === k) son.l.push(x);
+    else gruplar.push({ k, l: [x] });
+  }
   return (
     <Kart
       baslik={t("haberlerim")}
@@ -323,17 +333,198 @@ export function MuhabirHaberlerim({ ben }: { ben: Kisi }) {
       {liste.length === 0 ? (
         <Bos metin={t("paketimYok")} />
       ) : (
-        <div className="bp-liste" data-haberlerim>
-          {liste.map((p) => (
-            <div key={p.id} data-haber={p.id}>
-              <BitmisPaketSeridi ben={ben} paket={p} />
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="prg-seg" role="group" aria-label={t("hbGrupla")} data-haber-grup>
+            {HABER_GRUPLARI.map((g) => (
+              <button key={g} type="button" className={grup === g ? "acik" : ""} aria-pressed={grup === g} onClick={() => setGrup(g)} data-haber-grup-sec={g}>
+                {t(HABER_GRUP_ADI[g])}
+              </button>
+            ))}
+          </div>
+          <div className="haber-gruplari" data-haberlerim>
+            {gruplar.map(({ k, l }) => (
+              <section key={k || "hepsi"} data-haber-donem={k || "hepsi"}>
+                {k && (
+                  <h2 className="grup-basligi">
+                    {baslik(k)} <span className="grup-sayi">{l.length}</span>
+                  </h2>
+                )}
+                <div className="bp-liste">
+                  {l.map(({ p }) => (
+                    <div key={p.id} data-haber={p.id}>
+                      <BitmisPaketSeridi ben={ben} paket={p} />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </>
       )}
     </Kart>
   );
 }
 
+type HaberGrubu = "ay" | "hafta" | "hepsi";
+const HABER_GRUPLARI: HaberGrubu[] = ["ay", "hafta", "hepsi"];
+const HABER_GRUP_ADI: Record<HaberGrubu, Anahtar> = { ay: "hbAylik", hafta: "hbHaftalik", hepsi: "hbHepsi" };
+
 /* Menüde "Öneri gönder": muhabirin asıl işi, menünün başında. */
 export const ONERI_GONDER_IKONU = Lightbulb;
+
+/* --- Muhabirin sayfası, masaların kalıbıyla (kullanıcı: "muhabir sayfasının tasarımı program birimi gibi") --- */
+
+type MuhabirBolum = "yapilacaklar" | "oneriler" | "takipler" | "paketler" | "saha";
+const MUHABIR_BOLUMLERI: MuhabirBolum[] = ["yapilacaklar", "oneriler", "takipler", "paketler", "saha"];
+const MB_ADI: Record<MuhabirBolum, Anahtar> = { yapilacaklar: "mYapilacaklar", oneriler: "mOnerilerim", takipler: "mTakiplerim", paketler: "haberlerim", saha: "mGorevlerim" };
+const MB_IKONU: Record<MuhabirBolum, ReactNode> = {
+  yapilacaklar: <ListTodo size={20} />,
+  oneriler: <Lightbulb size={20} />,
+  takipler: <Binoculars size={20} />,
+  paketler: <Newspaper size={20} />,
+  saha: <MapPinned size={20} />,
+};
+
+/*
+ * Kutucuklar bağlantı (masalardaki gibi): sayfa adresle açılıyor, menü ve alt
+ * çubuk adresten vurgulanıyor. Bölüm sayfasında telefonda gizli (alt çubuğu
+ * tekrarlıyor, `.bolumde`).
+ */
+export function MuhabirCerceve({ ben, bolum, ana, children }: { ben: Kisi; bolum?: MuhabirBolum; ana?: boolean; children: ReactNode }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const B = bugun();
+  const isler = muhabirYapilacaklari(v, ben, B);
+  const bugunku = isler.filter((y) => y.grup === "geciken" || y.grup === "bugun").length;
+  const oneriler = v.oneriler.filter((o) => o.muhabirId === ben.id && o.durum !== "takip" && oneriGorebilir(ben, o) && !oneriArsivde(o, B));
+  const bekleyen = oneriler.filter((o) => o.durum === "duzeltme" || o.durum === "teklif").length;
+  const takip = v.oneriler.filter((o) => o.muhabirId === ben.id && o.durum === "takip").length;
+  const haber = v.paketler.filter((p) => p.muhabirId === ben.id && p.durum === "tamamlandi" && paketGorebilir(ben, p, v)).length;
+  const gorev = v.gorevlendirmeler.filter((g) => g.kisiId === ben.id && g.durum !== "bitti").length;
+  const bilgi: Record<MuhabirBolum, { alt: string; say: number }> = {
+    yapilacaklar: { alt: t("ykAlt", { n: isler.length, m: bugunku }), say: bugunkuYapilacakSayisi(v, ben, B) },
+    oneriler: { alt: t("ykOneriAlt", { n: oneriler.length }), say: bekleyen },
+    takipler: { alt: t("ykTakipAlt", { n: takip }), say: 0 },
+    paketler: { alt: t("ykHaberAlt", { n: haber }), say: 0 },
+    saha: { alt: t("ykGorevAlt", { n: gorev }), say: 0 },
+  };
+  return (
+    <div className={`prg-masa masa-muhabir${ana ? "" : " bolumde"}`} data-muhabir-sayfasi={bolum ?? "ana"}>
+      <div className="prg-kutular kutu-5" role="tablist">
+        {MUHABIR_BOLUMLERI.map((b) => (
+          <a key={b} href={`#/${b}`} role="tab" aria-selected={bolum === b} className={`prg-kutu prg-k-${b}${bolum === b ? " secili" : ""}`} data-mb-kutu={b}>
+            <span className="prg-kutu-ik">{MB_IKONU[b]}</span>
+            <b>{t(MB_ADI[b])}</b>
+            <small>{bilgi[b].alt}</small>
+            {bilgi[b].say > 0 && <em className="prg-say">{bilgi[b].say}</em>}
+          </a>
+        ))}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* Ana sayfa: kutucuklar ve altında Yapılacaklar (masada İçerikler gibi açılış bölümü). */
+export default function MuhabirAna({ ben }: { ben: Kisi }) {
+  return (
+    <MuhabirCerceve ben={ben} bolum="yapilacaklar" ana>
+      <AnildigimNotlar ben={ben} />
+      <MuhabirYapilacaklar ben={ben} />
+    </MuhabirCerceve>
+  );
+}
+
+const YK_GRUP_ADI: Record<YapilacakGrubu, Anahtar> = { geciken: "ykGeciken", bugun: "ykBugun", yarin: "ykYarin", yakinda: "ykYakinda", ileride: "ykIleride" };
+
+/*
+ * Yapılacaklar: paket görevine dönmüş işler gün gruplarıyla (geciken, bugün,
+ * yarın, yakında, ileride); her işte yapım aşaması (paketin kendi yolu),
+ * kimde olduğu ve sırası muhabirdeyse yapacağı adım.
+ */
+export function MuhabirYapilacaklar({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const isler = muhabirYapilacaklari(v, ben);
+  if (!isler.length)
+    return (
+      <Kart>
+        <Bos kucuk metin={t("ykYok")} />
+      </Kart>
+    );
+  return (
+    <Kart className="muhabir-gruplari" data-yapilacaklar>
+      {YAPILACAK_GRUPLARI.map((g) => {
+        const l = isler.filter((y) => y.grup === g);
+        if (!l.length) return null;
+        return (
+          <section key={g} data-yk-grup={g}>
+            <h2 className="grup-basligi">
+              {t(YK_GRUP_ADI[g])} <span className={g === "geciken" || g === "bugun" ? "sayi-rozet" : "grup-sayi"}>{l.length}</span>
+            </h2>
+            <ul className="liste">
+              {l.map((y) => (
+                <YapilacakSatiri key={y.paket.id} ben={ben} y={y} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </Kart>
+  );
+}
+
+function YapilacakSatiri({ ben, y }: { ben: Kisi; y: Yapilacak }) {
+  const { t, dil } = useDil();
+  const p = y.paket;
+  const yol = sadeAkis(p) ? null : paketYolu(p);
+  const simdi = yol ? (yol.find((a) => a.durum === "simdi" || a.durum === "gecikti") ?? yol[yol.length - 1]) : null;
+  const asama = p.isaret ? t("msOnayBekliyor") : simdi ? simdi.ad : t(SADE_ASAMA_ADI[sadeSira(p)]);
+  const kimde = !y.sirasi && simdi?.masa && simdi.masa !== "muhabir" ? birimAdi(simdi.masa) : "";
+  return (
+    <li data-yapilacak={p.id} data-sirasi={y.sirasi ? "muhabir" : "baska"}>
+      <div className="ad">
+        <a href={p.oneriId ? `#/oneriler/${p.oneriId}` : `#/paketler/${p.id}`}>
+          <Icerik blok>{p.baslik}</Icerik>
+        </a>
+        <small>
+          {tarihYaz(y.gun, dil, "kisa")}
+          {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
+          {p.ozelId && ` · ${t("ozel")}${p.ozelAd ? `: ${p.ozelAd}` : ""}`}
+          {` · ${asama}`}
+          {kimde && ` · ${kimde}`}
+        </small>
+        <AsamaCubugu paket={p} />
+        <KararNotlari kalem={p} />
+      </div>
+      {p.oncelikli && <OncelikRozeti />}
+      {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+      {y.sirasi ? <SiradakiAdim ben={ben} paketId={p.id} /> : <a className="dugme dugme-kucuk dugme-ikincil" href={`#/paketler/${p.id}`}>{t("ykIzle")}</a>}
+    </li>
+  );
+}
+
+/* Sıra muhabirdeyse yapacağı adım: Paket satırının (Senin sıran) düğmesiyle aynı. */
+function SiradakiAdim({ ben, paketId }: { ben: Kisi; paketId: string }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const p = v.paketler.find((x) => x.id === paketId);
+  if (!p) return null;
+  if (p.durum === "onaylandi" && !p.ozelId) return <PaketSonucDugmeleri ben={ben} paket={p} kucuk />;
+  if (p.durum === "onaylandi")
+    return (
+      <button
+        type="button"
+        className="dugme dugme-iyi dugme-kucuk"
+        onClick={() => confirm(t("eminMisin")) && paketTamamla(ben, p.id) && tamamlandiBildir(ben, t("bPaketTamamlandi"), { paketId: p.id })}
+        data-paket-tamamla={p.id}
+      >
+        <CheckCircle size={14} /> {t("haberTamamlandi")}
+      </button>
+    );
+  return (
+    <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
+      {t(adimTuru(p) === "metin" ? "metniGonder" : adimTuru(p) === "is" ? "tamamlaVeGec" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
+    </a>
+  );
+}

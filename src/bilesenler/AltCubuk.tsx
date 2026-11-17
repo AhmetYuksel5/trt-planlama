@@ -1,4 +1,4 @@
-import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, Mail, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
+import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, ListTodo, Mail, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
@@ -8,6 +8,7 @@ import { kararlariGetir } from "../planlamaKararlari";
 import { okunmamisSayisi } from "../postaOkuma";
 import { planlamaYeniMi } from "./AnaMenu";
 import { useYeniTasarim } from "../tasarimSecimi";
+import { bugunkuYapilacakSayisi } from "../yapilacaklar";
 
 /**
  * Telefonda alttaki sekme çubuğu.
@@ -31,12 +32,15 @@ const ADAYLAR: { yol: string; ad: Anahtar; adMuhabir?: Anahtar; ikon: LucideIcon
   { yol: "saha", ad: "abGorevlerim", ikon: MapPinned },
 ];
 
-/* Muhabirin dört sekmesi; Görevlendirmeler ve Ayarlar "Menü"de. */
-const MUHABIR_SEKMELERI: { yol: string; ad: Anahtar; ikon: LucideIcon }[] = [
+/*
+ * Muhabirin sekmeleri, masalardaki gibi ana sayfayla başlıyor: Ana sayfa (kutucuklar ve Yapılacaklar),
+ * Yapılacaklar, Öneri gönder, Önerilerim; Takiplerim, Haberlerim ve Görevlendirmeler "Menü"de ve kutucuklarda.
+ */
+const MUHABIR_SEKMELERI: { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum, ben: Kisi) => number }[] = [
+  { yol: "ana", ad: "abAna", ikon: House },
+  { yol: "yapilacaklar", ad: "abYapilacaklar", ikon: ListTodo, say: (d, ben) => bugunkuYapilacakSayisi(d, ben) },
   { yol: "oneriler/yeni", ad: "kaOneriGonder", ikon: Send },
   { yol: "oneriler", ad: "kaOnerilerim", ikon: Lightbulb },
-  { yol: "takipler", ad: "abTakiplerim", ikon: Binoculars },
-  { yol: "paketler", ad: "abPaketlerim", ikon: Package },
 ];
 
 /* Masanın sekmeleri (Programlar, Ekonomi, Spor): sayfanın bölümleri; programsız masada dördüncüsü Arşiv. */

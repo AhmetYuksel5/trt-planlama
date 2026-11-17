@@ -3131,15 +3131,36 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   personeli" (`#/personel`, dış muhabir olmayan herkes; birim ağacı ve ünvan
   süzgeci) ve "Dış muhabirler" (`#/muhabirler`, `KOK_DIS` altındakiler);
   Editörler ve Diğer personel kalktı.
-  - Muhabirin ekranı en sade hali (kurum kararı; `ekranlar/ana/Muhabir.tsx`):
-    menü `AnaMenu.tsx → MUHABIR_MENUSU` (Öneri gönder, Önerilerim, Takiplerim,
-    Haberlerim, Görevlendirmelerim; Ayarlar altta ayrık), birim kutusu yok;
-    adı ve ünvanı sayfanın üstünde ince satırda (`Kabuk → .muhabir-adi`).
+  - Muhabirin ekranı masaların kalıbıyla (kullanıcı: "muhabir sayfasının tasarımı
+    program birimi gibi"; önce en sade haliydi, ana sayfa yoktu; `ekranlar/ana/
+    Muhabir.tsx → MuhabirCerceve`): kendi rengi turuncu (`.masa-muhabir`,
+    `--masa-muhabir*`). Ana sayfa ve bölüm sayfaları (Yapılacaklar, Önerilerim,
+    Takiplerim, Haberlerim, Görevlendirmelerim; `App.tsx` sarar) beş kutucuğun
+    altında (`data-mb-kutu`, bağlantı, sayısıyla); telefonda bölüm sayfasında
+    kutucuklar gizli. Ana sayfa kutucuklar ve Yapılacaklar. Menü gruplu
+    (`AnaMenu.tsx → muhabirMenusu`, `birimMenusu` tür "muhabir"): Ana sayfa ve
+    Öneri gönder; İşlerim (Yapılacaklar, Önerilerim, Takiplerim,
+    Görevlendirmelerim); Yayınlananlar (Haberlerim); Ayarlar altta. Birim kutusu
+    yok; adı ve ünvanı sayfanın üstünde ince satırda (`Kabuk → .muhabir-adi`).
     Üst çubukta sekme, "+" ve kısayol yok; zil kalır, yeni bildirimde ses
     (`bilesenler/Ses.ts`, Ayarlar'da açılıp kapanır, tarayıcıda
-    `trt-planlama-ses`). Ana sayfa yok: `#/` ve `#/oneriler` Önerilerim
-    (`MuhabirOnerilerim`), sayaç, çağrı ve bildirim kartı yok (çağrı bildirim
-    olarak gelir).
+    `trt-planlama-ses`). Sayaç, çağrı ve bildirim kartı yok (çağrı bildirim
+    olarak gelir). Test `testler/muhabir-sayfasi.cjs`.
+    - Yapılacaklar (`#/yapilacaklar`, `SAYFA_IZNI` yalnız muhabir; kurallar
+      `yapilacaklar.ts`, saklanmaz; kullanıcı: öneri paket görevine dönünce
+      yapılacaklara düşsün, bugün, yarın ve yakın gelecek; yapım aşamasındaki
+      işler buradan izlensin): muhabirin onaylı ve üretimdeki paketleri (özel
+      yayın görevi dahil, görevi verilmemişi değil), paketin günüyle
+      (`paketGunu`) Geciken, Bugün, Yarın, Yakında (7 gün), İleride. Satırda
+      gün, teslim, şimdiki aşama ve sıra başkasındaysa birimi, paketin yolu
+      çubukta (`AsamaCubugu`); sıra muhabirdeyse adımın düğmesi (sonuç
+      bildirme, metin/video), değilse "İzle". Menüde ve alt çubukta sayı:
+      bugüne dek sırası muhabirde olan iş (`bugunkuYapilacakSayisi`).
+    - Tema rengi (Ayarlar; `tema.ts`, kullanıcı): renkli kabuğu olan kişide
+      (muhabir, masalar, Planlama'nın yeni menüsü) birimin rengi yerine seçilen
+      renk (menünün etkin maddesi, kutucuklar, seçimler); "Birimin rengi" geri
+      döner. Tarayıcıda (`trt-planlama-tema`), `<html data-tema>` ve `--tema*`;
+      planların ve durumların renkleri değişmez.
     - Önerilerim: Güncel sekmesinde "Senin sıran" (teklif, düzeltme isteği,
       sonucu bildirilecek paket, özel yayın görevi; plana girmiş öneri de,
       onaylı paketi yoksa ve planın günü geçmemişse: gün öneride,
@@ -3152,7 +3173,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       sayfasına gider). Takip burada değil, Takiplerim'de.
     - Haberlerim (`#/paketler`, `MuhabirHaberlerim`): tamamlanan paketlerin
       yalnız başlıkları, önerinin (yoksa paketin) sayfasına gider; paketsiz
-      plana giren haber tamamlanmış sayılır ama burada yok.
+      plana giren haber tamamlanmış sayılır ama burada yok. Aylık, haftalık
+      (Cumartesi başlar) ya da tek liste gruplanır (kullanıcı; `data-haber-grup`,
+      `useAdimDurumu`), en yenisi önce.
     - Takiplerim'de kendi takibine "Öneriye çevir" (`eylemler.ts →
       takipOneriyeCevir`: strap, haber türü, gün; satırlar gelişmeye eklenir,
       öneri "yeni"). Çevrilmeyen takip son satırından 2 gün sonra izleriyle
@@ -3166,8 +3189,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     - Ayarlar'da kişisel bilgiler (profile bağlantı), çalışma günleri
       (`Kisi.calismaGunleri`, `eylemler.ts → kisiCalismaGunleri`), ses ve
       kılavuz. İstatistik sonra.
-    - Telefonda alt çubuk Öneri gönder, Önerilerim, Takiplerim, Haberlerim,
-      Menü (`AltCubuk.tsx → MUHABIR_SEKMELERI`); Menü paneli muhabirin
+    - Telefonda alt çubuk Ana sayfa, Yapılacaklar, Öneri gönder, Önerilerim,
+      Menü (`AltCubuk.tsx → MUHABIR_SEKMELERI`; Takiplerim ve Haberlerim
+      kutucuklarda ve Menü'de); Menü paneli muhabirin
       menüsünü gösterir (`data-mobil-muhabir`).
     - Temel, geri dönülemeyen ya da yöneticinin düzeltmesini gerektiren
       adımda (öneri ve takip gönderme, düzeltip yeniden gönderme, öneriye

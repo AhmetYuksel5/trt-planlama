@@ -936,6 +936,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   oneriler: ["planlama", "yonetim", "muhabir"],
   // Muhabirin takipleri: muhabir kendisininkini, Planlama ve Yönetim hepsini.
   takipler: ["planlama", "yonetim", "muhabir"],
+  // Muhabirin yapılacakları: yalnız kendi paket görevleri (yapilacaklar.ts).
+  yapilacaklar: ["muhabir"],
   // Planlama görevleri ve iş taksimi: birimin kendi düzeni; Yönetim izliyor.
   gorevler: ["planlama", "yonetim"],
   // Gelen posta sohbeti: dış muhabirler hariç haber merkezi (route postaGorebilir soruyor).

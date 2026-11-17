@@ -4,6 +4,7 @@ import App from "./App";
 import { HataSiniri } from "./bilesenler/HataSiniri";
 import "./tasarim.css";
 import "./tasarimSecimi";
+import "./tema";
 import "./egitimVurgu";
 
 const kok = document.getElementById("kok");

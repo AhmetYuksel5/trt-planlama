@@ -2,7 +2,7 @@ import { SayfaBasi } from "./ekranlar/ana/Planlama";
 import { useEffect, type ReactNode } from "react";
 import { BolmeUyarisi, GomuluKabuk } from "./bilesenler/Gomulu";
 import Kabuk from "./bilesenler/Kabuk";
-import { MuhabirHaberlerim, MuhabirOnerilerim } from "./ekranlar/ana/Muhabir";
+import { MuhabirCerceve, MuhabirHaberlerim, MuhabirOnerilerim, MuhabirYapilacaklar } from "./ekranlar/ana/Muhabir";
 import AnaSayfa from "./ekranlar/AnaSayfa";
 import DilDenetimi from "./ekranlar/ana/DilDenetimi";
 import YoneticiPaneli from "./ekranlar/YoneticiPaneli";
@@ -322,6 +322,9 @@ export default function App() {
       case "takipler":
         icerik = <Takipler ben={ben} />;
         break;
+      case "yapilacaklar":
+        icerik = <MuhabirYapilacaklar ben={ben} />;
+        break;
       case "gorevler":
         icerik = <Gorevler ben={ben} />;
         break;
@@ -436,6 +439,17 @@ export default function App() {
       default:
         icerik = <Yetkisiz />;
     }
+    /*
+     * Muhabirin bölüm sayfaları masalardaki gibi kutucukların altında (kullanıcı: muhabir sayfası program birimi
+     * gibi); kutucuklar telefonda bölüm sayfasında gizli. Kaydın kendi sayfası (öneri, paket) ve form değil.
+     */
+    const bolum = sayfa as "yapilacaklar" | "oneriler" | "takipler" | "paketler" | "saha";
+    if (ben.birim === "muhabir" && ["yapilacaklar", "oneriler", "takipler", "paketler", "saha"].includes(sayfa) && (!yol.id || (sayfa === "oneriler" && yol.id === "arsiv")))
+      icerik = (
+        <MuhabirCerceve ben={ben} bolum={bolum}>
+          {icerik}
+        </MuhabirCerceve>
+      );
   }
 
   return GOMULU ? (
