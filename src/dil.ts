@@ -3774,7 +3774,7 @@ const M = {
   ozelPaketTalepleri: m("Özel yayın paket talepleri", "طلبات تقارير البث الخاص", "Special broadcast package requests"),
   oyTalepYok: m("Bekleyen talep yok.", "لا طلبات معلقة.", "No pending requests."),
   pyOzOnay: m("Özel yayın planını onaylama", "اعتماد خطة البث الخاص", "Approve the special broadcast plan"),
-  pyAyOnay: m("Aylık planı onaylama", "اعتماد الخطة الشهرية", "Approve the monthly plan"),
+  pyAyOnay: m("Aylık planı onaylama ve hazırlığa geri alma", "اعتماد الخطة الشهرية والإعادة إلى التحضير", "Approve the monthly plan / back to preparation"),
   ayCiktiAna: m("{ay} ayının ana kapsamları", "التغطيات الرئيسية خلال شهر {ay}", "Main coverages in {ay}"),
   ayCiktiOlaylar: m("{ay} ayında öne çıkan olaylar ve etkinlikler", "أبرز الأحداث والفعاليات المتوقعة خلال شهر {ay}", "Key events and activities in {ay}"),
   ayCiktiGorevler: m("{ay} ayı için önerilen görevlendirmeler", "المهام المقترحة لشهر {ay}", "Proposed deployments for {ay}"),

@@ -763,8 +763,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     alma, onay, onayı geri alma (`ndOnayGeri`: yanlış onaylanan plan toplantı
     aşamasına döner, onayla kabul edilen paketler kabullü kalır; varsayılan
     Planlama yöneticisi, tam yönetici kuraldan bağımsız her zaman; devredilmiş
-    plan geri alınmaz, paketler üretimde), devir; Weekly'yi toplantıya götürme/hazırlığa alma,
-    toplantıda karar, kesinleştirme. Kural yapıda (`Yapi.planYetkileri`,
+    plan geri alınmaz, paketler üretimde); Weekly'yi toplantıya götürme/hazırlığa alma,
+    toplantıda karar, kesinleştirme; Aylık'ın onayı ve hazırlığa alınması; özel yayının onayı.
+    Plan devri kalktığı için "devralma" adımı listede yok (kullanıcı: sekme güncel mi;
+    Newsdesk ana sayfasında eylemi reddeden ölü "Planı devral" düğmesi de kalktı; kayıttaki
+    `ndDevral` kuralı eski yapıyla uyum için tipte). Test `testler/plan-yetkileri.cjs`. Kural yapıda (`Yapi.planYetkileri`,
     taslak ve "Yayınla"; yoksa `VARSAYILAN_PLAN_YETKILERI`, bugünkü
     davranış): satırlar (birim alt birimleriyle ve örnek aldığı yerleşik
     birim "gibi", istenirse ünvan, "yalnız yöneticiler"; birimsiz satır

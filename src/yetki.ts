@@ -1030,7 +1030,6 @@ export const yetkiMatrisi = (): MatrisSatiri[] => [
   ...(
     [
       ["yPlanOnayla", "ndOnay"],
-      ["yPlanDevral", "ndDevral"],
       ["yHaftalikKesinlestir", "hfKesinlestir"],
     ] as const
   ).map(([ad, adim]) => {

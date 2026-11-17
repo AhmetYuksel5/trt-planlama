@@ -25,17 +25,16 @@ import {
 } from "lucide-react";
 import { birimAdi } from "../../yapi";
 import { adimTuru, geciktiMi } from "../../akis";
-import { planDurum } from "../../eylemler";
 import { KalemListesi, OnIncelemeKarti } from "../../bilesenler/Haftalik";
 import { HareketAkisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, TaslakEtiketi, Tumu, bildir } from "../../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, TaslakEtiketi, Tumu } from "../../bilesenler/Parcalar";
 import { PaketTablosu } from "../../bilesenler/Tablolar";
 import { tarihYaz, useDil } from "../../dil";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, PLAN_DURUM_ADI, PLAN_DURUM_TONU, kisiAr, satir, sehirAdi } from "../../etiketler";
 import { gorusBekleyenler, gundemde, onIncelemeBekleyenler } from "../../haftalik";
 import { bugun, gunEkle, haftaBasi, planlananHafta } from "../../tarih";
 import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from "../../veri";
-import { adimYapabilir, gfxYapabilir, planAdimiYapabilir } from "../../yetki";
+import { adimYapabilir, gfxYapabilir } from "../../yetki";
 import { BanaVerilenIsler } from "./Islerim";
 import { CalismaAlani, type Alan } from "./Calisma";
 import { SayfaBasi } from "./Planlama";
@@ -93,7 +92,6 @@ function NewsdeskSayaclari({ ben }: { ben: Kisi }) {
 function UygulanacakPlan({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const { v, bugunPlan, yarinPlan } = useNewsdesk(ben);
-  const devral = () => yarinPlan && planDurum(ben, yarinPlan.id, "devralindi") && bildir(t("bPlanDevralindi"));
   return (
     <Kart baslik={t("uygulanacakPlan")} ikon={<CalendarDays size={18} />}>
       <ul className="liste">
@@ -109,14 +107,7 @@ function UygulanacakPlan({ ben }: { ben: Kisi }) {
           </li>
         ))}
       </ul>
-      {yarinPlan?.durum === "onayli" && planAdimiYapabilir(ben, "ndDevral") && (
-        <div className="ara-ust-2">
-          <button className="dugme" onClick={devral}>
-            {t("planiDevral")}
-          </button>
-        </div>
-      )}
-      {yarinPlan && yarinPlan.durum !== "onayli" && yarinPlan.durum !== "devralindi" && <p className="bos-kucuk">{t("devirIcinOnayBekleniyor")}</p>}
+      {/* Plan devri kalktı (paket üretime üretim balonuyla giriyor): devral düğmesi ve "devir için onay bekleniyor" eylemi reddeden ölü düğmeydi. */}
     </Kart>
   );
 }

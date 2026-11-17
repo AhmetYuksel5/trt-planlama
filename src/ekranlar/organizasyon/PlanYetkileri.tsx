@@ -22,7 +22,8 @@ import { useTaslak } from "./Organizasyon";
 
 /**
  * Plan yetkileri: Next Day ve Weekly'nin akış adımlarını (toplantıya
- * götürme, onay, devir, karar, kesinleştirme) kimin yaptığı. Kural
+ * götürme, onay, onayı geri alma, karar, kesinleştirme) kimin yaptığı. Plan
+ * devri kalktığı için "devralma" adımı listede yok (kayıtta kuralı durabilir). Kural
  * satırlardan (birim, ünvan, yalnız yöneticiler) ve adıyla seçilen
  * kişilerden; plan ekranının düğmesi de eylemi de aynı kurala soruyor
  * (yetki.ts → planAdimiYapabilir). Öbür yapı sekmeleri gibi taslakta,
@@ -42,7 +43,7 @@ export const PLAN_ADIMI_ADI: Record<PlanAdimi, Anahtar> = {
 };
 
 const GRUPLAR: { ad: Anahtar; ikon: React.ReactNode; adimlar: PlanAdimi[] }[] = [
-  { ad: "pyNextDay", ikon: <CalendarDays size={18} />, adimlar: ["ndToplanti", "ndOnay", "ndOnayGeri", "ndDevral"] },
+  { ad: "pyNextDay", ikon: <CalendarDays size={18} />, adimlar: ["ndToplanti", "ndOnay", "ndOnayGeri"] },
   { ad: "pyWeekly", ikon: <CalendarRange size={18} />, adimlar: ["hfToplanti", "hfKarar", "hfKesinlestir"] },
   { ad: "aylik", ikon: <Calendar size={18} />, adimlar: ["ayOnay"] },
   { ad: "ozel", ikon: <Tv size={18} />, adimlar: ["ozOnay"] },
