@@ -3961,7 +3961,7 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .asama-kutulari { font-size: calc(var(--ak-yazi, 1) * 1em); }
 .asama-kutulari .asama-icerik :is(.metin-kutu, textarea[lang="ar"]) { font-size: calc(var(--ak-metin, 1) * 1em); }
 .asama-kutulari[data-siklik="siki"] .asama-listesi { gap: 2px; }
-.asama-kutulari[data-siklik="siki"] .asama-kutu-bas { min-block-size: 34px; padding-block: 4px; }
+.asama-kutulari[data-siklik="siki"] .asama-kutu-bas { min-block-size: 34px; padding-block: var(--ara-1); }
 .asama-kutulari[data-siklik="siki"] .asama-icerik { padding: var(--ara-2); }
 .asama-kutulari[data-karsitlik="yuksek"] { --sonuk: var(--murekkep); --cizgi: var(--cizgi-girdi, #868fa0); }
 .asama-kutulari[data-karsitlik="yuksek"] .asama-kutu { border-width: 2px; }
@@ -4188,3 +4188,14 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .oto-zamanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--ara-2); }
 .oto-metin summary { cursor: pointer; font-weight: 600; min-block-size: 44px; display: flex; align-items: center; }
 .oto-metin textarea { inline-size: 100%; box-sizing: border-box; }
+
+/* Staffing postasından ekip önizlemesi: işaret, GMT saat, postadaki ad ve ünvan, kayıttaki kişi. */
+.staffing-satir { display: grid; grid-template-columns: auto 3.5rem minmax(0, 1fr) minmax(0, 14rem); align-items: center; gap: var(--ara-2); padding-block: var(--ara-1); border-block-end: 1px solid var(--cizgi); }
+.staffing-satir .staffing-posta { display: flex; flex-direction: column; min-width: 0; }
+.staffing-satir .staffing-posta bdi { overflow-wrap: anywhere; }
+.staffing-satir .staffing-saat { font-variant-numeric: tabular-nums; font-weight: 600; }
+.staffing-satir select.uyari { border-color: var(--uyari); }
+@media (max-width: 760px) {
+  .staffing-satir { grid-template-columns: auto 3rem minmax(0, 1fr); }
+  .staffing-satir select { grid-column: 2 / -1; }
+}

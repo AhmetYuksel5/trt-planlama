@@ -81,6 +81,7 @@ import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { DurumAdimlari, PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
 import IceAktarPenceresi from "./IceAktar";
+import { StaffingSeridi } from "./Staffing";
 import {
   BaslikEkleFormu,
   Bolum,
@@ -320,6 +321,7 @@ function YeniPlan({
         </span>
       </header>
       <KayipSeridi ben={ben} plan={plan} />
+      <StaffingSeridi ben={ben} plan={plan} />
       <div className="yp-izgara">
         {!sutunlu && (
           <nav className="yp-icindekiler" aria-label={t("icindekiler")}>
@@ -530,6 +532,7 @@ function KlasikPlan({
     <>
       <PlanBasi ben={ben} plan={plan} secim={secim} ac={setArac} sorumlu={sorumlu} paket={paketler.length} />
       <KayipSeridi ben={ben} plan={plan} />
+      <StaffingSeridi ben={ben} plan={plan} />
 
       <EkipBolumu plan={plan} duzenler={icerik} />
       <HareketBolumu plan={plan} duzenler={icerik} />

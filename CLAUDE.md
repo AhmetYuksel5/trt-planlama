@@ -1326,6 +1326,27 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
     gelişme muhabirinde formda; boşsa muhabirin şehri.
+  - Ekip staffing postasından (kullanıcı: kurumun her gün gelen "TRT Arabi News
+    Staffing <gün> <17th Nov 2026>" postası; `staffing.ts`, ekran
+    `nextday/Staffing.tsx`): posta Posta'ya düşünce konudaki tarihin Next Day
+    planında, ekibin üstünde "Staffing postası · n kişi" şeridi
+    (`data-staffing-seridi`; plan içeriğini düzenleyen, klasik ve yeni
+    görünüm). Gövde HTML tablosundan düz metne inmiş: PRESENTER (saat, ad;
+    program satırı ve "SB" girmez), NEWSROOM (grup başlığı ardından tek "1",
+    ünvan, saat, ad), NEWSGATHERING ve VISUAL TEAM (büyük harfli grup, ünvan,
+    ad, durum "0900+", "OFF"…). Postada bütün personel yok; yalnız eşlemesi
+    olan gruplar ekibe (`staffingGorevi`): PRESENTER → مذيعون, EP TEAM → منتج
+    تنفيذي, PE … TEAM (siyasi programlar hariç) → منتج نشرات, Interpreter →
+    مترجم, INTERVIEW TEAM → منتج مقابلات, SCRIPT EDITORS → محرر, PLANNING →
+    قسم المراسلين; izinli/rapor/telafi ve saatsiz girmez. Saat İstanbul,
+    vardiya GMT (−3). Ad Latin yazımla kayıttaki kişiye (`staffingKisisi`: en az
+    iki parça, en iyisi tek; yoksa "Kayıtta yok", elle seçilir). Kendiliğinden
+    yazılmaz: önizlemede işaretlenenler "Ekibe yaz"la (`eylemler.ts →
+    ekipPostadanYaz`): postadaki görevlerin ekibi postadakiyle değişir, öbür
+    görevler kalır; "Yoksay" yalnız işaretler (`NextDayPlan.staffingPosta`,
+    düzeltilmiş posta gelince şerit yeniden). Gerçek adlar depoya girmez;
+    demoda kurgusal posta (`ornek.ts → staffingOrnegi`). Gerçek kipte posta
+    yalnız Posta'yı kullanan tarayıcıda yüklü. Test `testler/staffing.cjs`.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün

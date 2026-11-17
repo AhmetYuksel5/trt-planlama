@@ -1,4 +1,5 @@
 import { girisAdi, postaAdresi } from "./girisKodu";
+import { staffingEkibi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
@@ -2030,6 +2031,9 @@ export const ekipKisiDegistir = (ben: Kisi, planId: string, eskiId: string, yeni
   planIcerik(ben, planId, (p) =>
     p.ekip.some((e) => e.kisiId === yeniId) ? p : { ...p, ekip: p.ekip.map((e) => (e.kisiId === eskiId ? { ...e, kisiId: yeniId, onceki: undefined } : e)) },
   );
+/* Staffing postasından ekip (staffing.ts): postadaki görevlerin ekibi postadakiyle değişir; boş liste yalnız postayı yoksayar. */
+export const ekipPostadanYaz = (ben: Kisi, planId: string, mesajId: string, uyeler: EkipUyesi[]) =>
+  planIcerik(ben, planId, (p) => ({ ...p, ekip: uyeler.length ? staffingEkibi(p.ekip, uyeler) : p.ekip, staffingPosta: mesajId }));
 export const ekipCikar = (ben: Kisi, planId: string, kisiId: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.filter((e) => e.kisiId !== kisiId) }));
 export const planGorevlendirmeCikar = (ben: Kisi, planId: string, id: string) =>

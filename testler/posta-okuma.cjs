@@ -24,15 +24,15 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const v1 = await veri();
   ok(!!v1.postaOkunan?.pl1?.taban, "ilk açılışta okundu tabanı kayda yazıldı");
   ok((await rozet("ornek-gazze")) === 2 && (await rozet("ornek-mukabele")) === 1 && (await rozet("ornek-studyo")) === 1, "son bir günün gelen postaları okunmamış (giden sayılmaz)");
-  ok((await p.locator(".posta-sohbet.okunmamis").count()) === 3, "okunmamış sohbetler işaretli");
-  ok((await p.locator("[data-posta-okunmamis-suz]").innerText()).includes("4"), "listede toplam okunmamış: 4");
-  ok((await menuSayi()) === 4, "menüde Posta'nın sayısı okunmamış posta");
+  ok((await p.locator(".posta-sohbet.okunmamis").count()) === 4, "okunmamış sohbetler işaretli");
+  ok((await p.locator("[data-posta-okunmamis-suz]").innerText()).includes("5"), "listede toplam okunmamış: 5 (staffing postası da)");
+  ok((await menuSayi()) === 5, "menüde Posta'nın sayısı okunmamış posta");
 
   // Açılan sohbet okunmuş sayılır
   await p.locator('[data-posta-sohbet-bag="ornek-gazze"]').click();
   await p.waitForTimeout(400);
   ok((await rozet("ornek-gazze")) === 0 && !(await p.locator('[data-posta-sohbet-bag="ornek-gazze"]').getAttribute("class")).includes("okunmamis"), "açılan sohbet okundu");
-  ok((await menuSayi()) === 2, "menü sayısı düştü");
+  ok((await menuSayi()) === 3, "menü sayısı düştü");
   ok(!!(await veri()).postaOkunan.pl1.k["ornek-gazze"], "okundu kayıtta (iplik başına)");
 
   // Okunmadı yap: sohbet kapanır, yeniden okunmamış
@@ -49,7 +49,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-posta-okunmamis-suz]").click();
   await p.waitForTimeout(200);
   const suzulu = await p.locator("[data-posta-liste] > li").count();
-  ok(suzulu === 2, "yalnız okunmamışlar (ve açık sohbet): " + suzulu);
+  ok(suzulu === 3, "yalnız okunmamışlar (ve açık sohbet): " + suzulu);
   await p.locator("[data-posta-okunmamis-suz]").click();
 
   // Hepsini okundu say
@@ -86,7 +86,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-posta-liste] > li").count()) === 0, "eşleşmeyen sorgu: liste boş");
   await p.locator("[data-posta-genel-kapat]").click();
   await p.waitForTimeout(200);
-  ok((await p.locator("[data-posta-liste] > li").count()) === 3, "arama kapanınca bütün sohbetler");
+  ok((await p.locator("[data-posta-liste] > li").count()) === 4, "arama kapanınca bütün sohbetler");
 
   // 390px taşma, Türkçe ve Arapça
   for (const dil of ["tr", "ar"]) {

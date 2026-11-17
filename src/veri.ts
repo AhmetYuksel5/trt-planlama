@@ -347,6 +347,8 @@ export interface NextDayPlan {
   kopyaKaynagi?: string;
   /** Önceki günden taşınıp dokunulmamış hareket bağlantıları; hareket ayrı kayıt, işaret plandaki bağlantıda. */
   oncekiHareketler?: string[];
+  /** Ekibi yazılan (ya da yoksayılan) staffing postası (staffing.ts); aynı posta için şerit yeniden çıkmasın, düzeltilmiş posta gelince çıksın. */
+  staffingPosta?: string;
   olusturan: string;
   olusturma: string;
 }

@@ -1667,7 +1667,7 @@ const tohumlu = (t: number) => () => {
  * adında, kişiler kurgusal muhabirler; Kime/CC dolu ki "kim kime yazdı"
  * satırı ve "tümünü yanıtla" görülsün.
  */
-const ornekPosta = (kisiler: Kisi[], saat: (s: string, geri?: number) => string): PostaMesaji[] => {
+const ornekPosta = (kisiler: Kisi[], saat: (s: string, geri?: number) => string, yarin: string): PostaMesaji[] => {
   const [m1, m2, m3] = kisiler.filter((k) => k.birim === "muhabir");
   if (!m1 || !m2 || !m3) return [];
   const pl = kisiler.find((k) => k.birim === "planlama");
@@ -1701,7 +1701,42 @@ const ornekPosta = (kisiler: Kisi[], saat: (s: string, geri?: number) => string)
       tamMetin: "تم تأكيد ضيفين لنشرة المساء، التفاصيل في الملف المرفق.\n\nمع التحية\nسليم آراس\nNewsdesk Editor | TRT Arabi\nMob: +90 500 000 00 00",
       zaman: saat("12:05", 20), ekler: [], kaynak: "posta", kime: [P], cc: [],
     },
+    staffingOrnegi(kisiler, saat("12:30", 15), yarin, P),
   ];
+};
+
+/*
+ * Kurumun günlük staffing postasının kurgusal benzeri (kurumunki adları
+ * gerçek): yarının planına Next Day'de "Staffing postası" şeridi çıksın.
+ * Adlar örnek kişilerin Latin yazımı; biri kayıtta yok, önizlemede elle seçilir.
+ */
+const staffingOrnegi = (kisiler: Kisi[], an: string, tarih: string, P: string): PostaMesaji => {
+  const ad = (id: string) => {
+    const k = kisiler.find((x) => x.id === id);
+    return k ? (typeof k.ad === "string" ? k.ad : k.ad.tr) : id;
+  };
+  const g = new Date(tarih + "T12:00:00");
+  const gunAdi = g.toLocaleDateString("en-GB", { weekday: "long" });
+  const ay = g.toLocaleDateString("en-GB", { month: "short" });
+  const n = g.getDate();
+  const ek = n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th";
+  const govde = [
+    `Here is the staff list for ${gunAdi.slice(0, 3)} ${n}${ek} ${ay} ${g.getFullYear()}`,
+    "PRESENTER", `${n} ${ay}`, gunAdi.slice(0, 3),
+    "06.00-15.00", ad("pr6"),
+    "20.00-20.25 - Akşam programı (Live)", ad("pr6"),
+    "NEWSROOM", "NEWSROOM", gunAdi,
+    "EP TEAM", "1", "EP", "0700-1800", ad("nd1"),
+    "PE EARLY TEAM", "1", "Programme Editor", "1100-2000", ad("nd4"), "Freelancer", "1300-2200", "Kerem Tunalı",
+    "OP EARLY TEAM", "1", "Output Producer", "0700-1600", ad("ou1"),
+    "Interpreter", "1", "Interpreter", "0900-1800", ad("ou6"),
+    "NEWSGATHERING", "POSITION", "NAMES", gunAdi.slice(0, 3).toUpperCase(),
+    "PLANNING", "Planning Producer", ad("pl3").toLocaleUpperCase("tr"), "0700+", "Planning Producer", ad("pl2").toLocaleUpperCase("tr"), "OFF",
+  ].join("\n\n");
+  return {
+    id: "pm-staffing", konuKimligi: "ornek-staffing", kimden: "coords@kurgu.example", kimdenAd: "Coordination", konu: `TRT Arabi News Staffing ${gunAdi} ${n}${ek} ${ay} ${g.getFullYear()}`,
+    metin: govde, tamMetin: govde, zaman: an, ekler: [], kaynak: "posta", kime: [P], cc: [],
+  };
 };
 
 export const ORNEK = (): Durum => {
@@ -2654,7 +2689,7 @@ export const ORNEK = (): Durum => {
         etiket: etiketUret(haftaBas, "haftalik"),
       }),
     yanitlar,
-    postaMesajlari: ornekPosta(kisiListesi, bugunSaat),
+    postaMesajlari: ornekPosta(kisiListesi, bugunSaat, planTarihi.yarin),
     paketler: [...paketler, ...arsiv, ...ozelPaketler(yil, B)],
     haftalik,
     aylik: [
