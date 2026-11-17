@@ -1,9 +1,9 @@
 import { girisAdi, postaAdresi } from "./girisKodu";
-import { staffingEkibi } from "./staffing";
+import { staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
-import { bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, kabulMu, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
@@ -3612,6 +3612,19 @@ export const demoTakvimAdaylari = () => {
   const z = simdi();
   const liste = haberAdaylari(demoHaberleri(Date.now()), bugun()).map((a, i) => ({ ...a, id: `ta-ornek-${i}`, bulundu: z, durum: "yeni" as const }));
   if (liste.length) kaydet({ ...d, takvimAdaylari: [...adayTemizligi(d.takvimAdaylari ?? [], bugun()), ...liste] });
+};
+
+/*
+ * Demoda yarının planına staffing postası: örnek posta kayıt kurulurken
+ * yazılıyor, önceden açılmış demo kaydında yoktu, şerit hiç çıkmıyordu
+ * (kullanıcı). Gün dönünce yeni günün postası da gelir.
+ */
+export const demoStaffingPostasi = () => {
+  if (GERCEK) return;
+  const d = getir();
+  const tarih = gunEkle(bugun(), 1);
+  if (!d.planlar.some((p) => p.tarih === tarih) || staffingPostasi(d.postaMesajlari, tarih)) return;
+  kaydet({ ...d, postaMesajlari: [...(d.postaMesajlari ?? []), staffingOrnegi(d.kisiler, simdi(), tarih, ORNEK_PLANLAMA_ADRESI)] });
 };
 
 /** Adayın kararı: "ilgisiz" ya da (faaliyet formu kaydedilince) "eklendi". Takvimi düzenleyen verir. */

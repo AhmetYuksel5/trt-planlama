@@ -1345,7 +1345,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekipPostadanYaz`): postadaki görevlerin ekibi postadakiyle değişir, öbür
     görevler kalır; "Yoksay" yalnız işaretler (`NextDayPlan.staffingPosta`,
     düzeltilmiş posta gelince şerit yeniden). Gerçek adlar depoya girmez;
-    demoda kurgusal posta (`ornek.ts → staffingOrnegi`). Gerçek kipte posta
+    demoda kurgusal posta (`staffing.ts → staffingOrnegi`; yarının planına, önceden kurulmuş demo kaydına sistemin açılış işi ekler: `eylemler.ts → demoStaffingPostasi`, kullanıcı demoda şeridi göremedi). Gerçek kipte posta
     yalnız Posta'yı kullanan tarayıcıda yüklü. Test `testler/staffing.cjs`.
   - Ekip satırında ad uzamasın diye kurum kişinin adını ya da soyadını
     yazar: `Kisi.planAdi` ("ad" | "soyad", yoksa tam ad), `etiketler.ts →

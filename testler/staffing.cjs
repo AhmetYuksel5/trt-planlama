@@ -18,6 +18,17 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.goto(B + "#/nextday/nd-yarin");
     await p.waitForTimeout(800);
     ok((await p.locator("[data-staffing-seridi]").count()) === 1, `${dil}: yarının planında staffing şeridi`);
+    // Postası olmayan eski demo kaydı (özellikten önce kurulmuş): açılış işi postayı ekliyor.
+    await p.evaluate(() => {
+      const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
+      v.postaMesajlari = v.postaMesajlari.filter((m) => !m.id.startsWith("pm-staffing"));
+      localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+      localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
+    });
+    await p.goto("about:blank");
+    await p.goto(B + "#/nextday/nd-yarin");
+    await p.waitForTimeout(1500);
+    ok((await p.locator("[data-staffing-seridi]").count()) === 1, `${dil}: eski demo kaydında da şerit (postayı açılış işi ekliyor)`);
     await p.goto("about:blank");
     await p.goto(B + "#/nextday/nd-bugun");
     await p.waitForTimeout(500);
@@ -45,7 +56,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     ok(uye("nd4")?.gorev === "bultenYapimcisi" && uye("ou6")?.gorev === "tercuman" && uye("pl3")?.gorev === "muhabirMasasi", `${dil}: PE, tercüman, planlama yerinde`);
     ok(!uye("pl2") && !uye("ou1"), `${dil}: OFF ve eşlemesiz grup ekipte yok`);
     ok(plan.ekip.filter((e) => e.gorev === "sunucu").length === 1, `${dil}: postadaki görevin eski ekibi değişti`);
-    ok(plan.staffingPosta === "pm-staffing", `${dil}: posta işaretlendi`);
+    ok(plan.staffingPosta?.startsWith("pm-staffing-"), `${dil}: posta işaretlendi`);
     ok((await p.locator("[data-staffing-seridi]").count()) === 0, `${dil}: yazınca şerit kalkıyor`);
     await p.close();
   }
