@@ -3770,6 +3770,44 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
   .py-sayi { font-size: 24px; }
 }
 
+/*
+ * Planlama'nın telefon ve tablet ana sayfası, tek ekran (kullanıcı: telefonun tek
+ * sayfasına sığsın; PlanlamaAna.tsx → KutuluAna). Dört bölüm, kutular küçük,
+ * açıklama satırı yok; ayrıntı panelde ya da sayfasında. Kurallar .py-tek'in
+ * içinde: kutuların eski boyları (96–112 piksel) burada geçmez.
+ */
+.py-tek { gap: var(--ara-2); }
+.py-tek .py-bolum { display: grid; gap: var(--ara-1); min-width: 0; }
+.py-tek .py-bolum h2 { margin: 0; line-height: 1.3; font-size: var(--punto-kucuk); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sonuk); }
+.py-tek .py-akis { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); overflow: hidden; }
+.py-tek .py-kutu.py-ham { display: flex; align-items: center; gap: var(--ara-3); width: 100%; min-height: 52px; border: 0; border-radius: 0; border-bottom: 1px solid var(--cizgi); padding: var(--ara-2) var(--ara-4); }
+.py-tek .py-ham > span:first-child { display: grid; flex: 1; min-width: 0; }
+.py-tek .py-ham b { font-size: var(--punto-orta, 1rem); }
+.py-tek .py-ham small { color: var(--sonuk); font-size: var(--punto-kucuk); }
+.py-tek .py-ham .py-sayi { font-size: 1.75rem; }
+.py-tek .py-ham.vurgu .py-sayi { color: var(--masa-planlama); }
+.py-tek .py-ham.sonuk { min-height: 52px; }
+.py-tek .py-akis-hucreler { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.py-tek .py-akis-kutu { display: grid; justify-items: center; align-content: center; gap: 0; min-height: 52px; padding: var(--ara-1); color: var(--murekkep); text-decoration: none; text-align: center; }
+.py-tek .py-akis-kutu + .py-akis-kutu { border-inline-start: 1px solid var(--cizgi); }
+.py-tek .py-akis-kutu b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.py-tek .py-akis-kutu span { font-size: 0.75rem; overflow-wrap: anywhere; color: var(--ikincil, var(--sonuk)); line-height: 1.2; }
+.py-tek .py-akis-kutu.ton-iyi b { color: var(--iyi); }
+.py-tek .py-akis-kutu.ton-uyari b { color: var(--uyari); }
+.py-tek .py-akis-kutu.ton-sonuk b { color: var(--sonuk); }
+/* Sayı kutuları tek satırda eşit paylı (dört, hesap onayı varsa beş; ekipte üç): delik kalmaz. */
+.py-tek .py-kutular.py-sira { display: flex; gap: var(--ara-2); }
+.py-tek .py-kutular.py-sira > .py-kutu { flex: 1 1 0; min-width: 0; }
+.py-tek .py-kutular.py-ikili { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ara-2); }
+.py-tek .py-kutu.py-mini, .py-tek .py-kutular > .py-kutu.py-mini.sonuk { display: grid; justify-items: center; align-content: center; gap: 0; min-height: 54px; padding: var(--ara-1); text-align: center; }
+.py-tek .py-mini .py-sayi { font-size: 1.25rem; }
+.py-tek .py-mini b { font-size: 0.75rem; font-weight: 500; color: var(--ikincil, var(--sonuk)); line-height: 1.2; overflow-wrap: anywhere; }
+.py-tek .py-mini.sonuk .py-sayi, .py-tek .py-mini.sonuk b { color: var(--silik); }
+.py-tek .py-kutu.py-plan { display: grid; align-content: center; gap: 0; min-height: 50px; padding: var(--ara-1) var(--ara-3); }
+.py-tek .py-plan b { font-size: var(--punto-kucuk); font-weight: 600; }
+.py-tek .py-plan small { color: var(--sonuk); font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.py-tek .py-plan small.uyari { color: var(--kotu); }
+
 /* Önerinin yolu (oneriYolu.ts): geçti iyi, şimdiki vurgu, sırada gri, kesildi kırmızı. */
 .oy-metin { display: none; }
 @media (pointer: coarse) {
@@ -4045,7 +4083,20 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
  * doldurur, sütunlar kendi içinde kayar; ekran kısaysa (720 altı) sayfa uzar,
  * hiçbir şey gizlenmez.
  */
-.ap { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--ara-3); }
+.ap { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: var(--ara-3); }
+/* Öneri akışı şeridi: beş kutu tek satırda; ham öneri geniş. */
+.ap-serit { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
+.ap-serit-kutu { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: var(--ara-3); padding: var(--ara-2) var(--ara-4); color: var(--murekkep); text-decoration: none; min-height: 52px; }
+.ap-serit-kutu + .ap-serit-kutu { border-inline-start: 1px solid var(--cizgi); }
+.ap-serit-kutu:hover { background: var(--yuzey-2); }
+.ap-serit-kutu b { font-size: var(--punto-buyuk, 1.25rem); font-variant-numeric: tabular-nums; }
+.ap-serit-kutu.ana b { font-size: 1.75rem; }
+.ap-serit-kutu span { display: grid; min-width: 0; text-align: start; font-weight: 600; font-size: var(--punto-kucuk); }
+.ap-serit-kutu small { font-weight: 400; color: var(--sonuk); }
+.ap-serit-kutu.ton-vurgu b { color: var(--vurgu); }
+.ap-serit-kutu.ton-iyi b { color: var(--iyi); }
+.ap-serit-kutu.ton-uyari b { color: var(--uyari); }
+.ap-serit-kutu.ton-sonuk b { color: var(--sonuk); }
 @media (min-height: 720px) {
   .ap { height: calc(100dvh - var(--ust-yukseklik) - var(--ap-bosluk, 48px)); }
   .ap-sutun-govde { overflow: auto; overscroll-behavior: contain; }

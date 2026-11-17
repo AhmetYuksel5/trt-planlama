@@ -1,5 +1,4 @@
-import { AtSign, Building2, CalendarDays, CalendarRange, CheckCircle, ClipboardList, Lightbulb, Mail, Share2, Tv, Users, Calendar, type LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
@@ -8,6 +7,8 @@ import { OnayKuyrugu } from "../../bilesenler/PaketSonucu";
 import { Bos, Pencere } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { HAFTA_DURUM_ADI, KISI_DURUM_ADI, PLAN_DURUM_ADI } from "../../etiketler";
+import { oneriAkisi } from "../../anaPano";
+import { gorunenFaaliyetler, yaklasanlar } from "../../takvim";
 import { kisiBugunDurumu } from "../../muhabirIletisim";
 import { oneriSekmesi } from "../../oneriSekmeleri";
 import { kararlariGetir } from "../../planlamaKararlari";
@@ -34,114 +35,116 @@ import AnaPano from "./AnaPano";
 
 type PanelTuru = "oneri" | "paket" | "birim" | "gorev" | "anma" | "gunNotu" | "muhabir" | "hesap";
 
-interface Kutu {
-  id: string;
-  ad: Anahtar;
-  ikon: LucideIcon;
-  sayi: number;
-  alt: ReactNode;
-  panel?: PanelTuru;
-  href?: string;
-  genis?: boolean;
-  /** Bekleyen iş kişide: sayı vurgulu. */
-  vurgu?: boolean;
-  /** İş olmasa da göster (planlar, muhabirler). */
-  hep?: boolean;
-}
-
 /* Masaüstünde pano (AnaPano: sabit, yerinde açılan), telefonda ve tablette kutular (mobil denetimde onaylanan düzen). */
 export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
   const masaustu = useMedya("(min-width: 961px)");
   return masaustu ? <AnaPano ben={ben} /> : <KutuluAna ben={ben} />;
 }
 
+/*
+ * Telefon ve tablette tek ekran (kullanıcı: bütün temel şeylere buradan
+ * ulaşılsın, telefonun tek sayfasına sığsın; çizimdeki öneri akışı): dört
+ * bölüm. Öneriler: ham öneri (karar bekleyen, panelde karar) ve akışın öbür
+ * dört kutusu (görevlendirilmiş, takip, arşiv öneri ve paket; sayfalarına
+ * götürür). Kararlar ve işlerim: küçük sayı kutuları, panelde. Planlar 2×2,
+ * Ekip üç kutu. Kutunun yeri sabit, boşken sönük; sayılar masaüstü panonun
+ * şeridiyle aynı kuraldan (anaPano.ts → oneriAkisi).
+ */
 function KutuluAna({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const b = bugun();
   const k = kararlariGetir(v, ben, b);
+  const a = oneriAkisi(v, b);
   const [panel, setPanel] = useState<PanelTuru | null>(null);
   const muh = muhabirler(v).filter((x) => !x.pasif);
-  const durumlar = muh.map((x) => kisiBugunDurumu(v, x, b));
-  const sahada = durumlar.filter((x) => x === "sahada").length;
-  const izinde = durumlar.filter((x) => x === "izinli").length;
+  const izinde = muh.filter((x) => kisiBugunDurumu(v, x, b) === "izinli").length;
+  const takvim = yaklasanlar(gorunenFaaliyetler(v, ben), 7, b).length;
   const nd = k.nextDay;
   const hf = k.weekly;
-  const ay = v.aylik.find((a) => a.ay === b.slice(0, 7));
-  const kutular: Kutu[] = [
-    { id: "oneri", ad: "pyOneriler", ikon: Lightbulb, sayi: k.oneri, alt: k.oneriYakin ? t("pyYakin", { n: k.oneriYakin }) : t("pyTemiz"), panel: "oneri", vurgu: k.oneri > 0 },
-    { id: "paket", ad: "pyPaketKararlari", ikon: CheckCircle, sayi: k.onay + k.sartli + k.gorevTalebi, alt: [k.onay && t("pyOnay", { n: k.onay }), k.sartli && t("pySartli", { n: k.sartli }), k.gorevTalebi && t("pyTalep", { n: k.gorevTalebi })].filter(Boolean).join(" · ") || t("pyTemiz"), panel: "paket", vurgu: k.onay + k.sartli + k.gorevTalebi > 0 },
-    { id: "birim", ad: "pyBirimGorusu", ikon: Share2, sayi: k.birimGorusu + k.birimYanitladi, alt: k.birimYanitladi ? t("pyYanitladi", { n: k.birimYanitladi }) : k.birimGorusu ? t("pyBekliyor", { n: k.birimGorusu }) : t("pyTemiz"), panel: "birim", vurgu: k.birimYanitladi > 0 },
-    { id: "gorev", ad: "pyGorevlerim", ikon: ClipboardList, sayi: k.isler, alt: k.isler ? t("pyAcikIs") : t("pyTemiz"), panel: "gorev", vurgu: k.isler > 0 },
-    { id: "anma", ad: "pyAnmalar", ikon: AtSign, sayi: k.anma, alt: k.anma ? t("pyGorulmedi") : t("pyTemiz"), panel: "anma", vurgu: k.anma > 0 },
-    // Günün notu kutusu kalktı (kullanıcı: ana sayfanın varsayılanlarında olmasın).
-    { id: "muhabir", ad: "pyMuhabirler", ikon: Users, sayi: muh.length, alt: t("pySahadaIzinde", { s: sahada, i: izinde }), panel: "muhabir", hep: true },
-    { id: "posta", ad: "mPosta", ikon: Mail, sayi: k.posta, alt: k.posta ? t("pyOkunmamis") : t("pyTemiz"), href: "#/posta", vurgu: k.posta > 0 },
-    ...(k.hesapOnayi ? [{ id: "hesap", ad: "pyHesapOnayi" as Anahtar, ikon: Building2, sayi: k.hesapOnayi, alt: t("pyBekliyor", { n: k.hesapOnayi }), panel: "hesap" as const, vurgu: true }] : []),
-    {
-      id: "nextday",
-      ad: "mNextday",
-      ikon: CalendarDays,
-      sayi: k.nextDayPkg,
-      alt: nd ? `${tarihYaz(nd.tarih, dil)} · ${t(PLAN_DURUM_ADI[nd.durum])}${k.nextDayPkg ? ` · ${t("pyKararsizPkg", { n: k.nextDayPkg })}` : ""}` : t("pyPlanYok"),
-      href: nd ? `#/nextday/${nd.id}` : "#/nextday/yarin",
-      genis: true,
-      vurgu: k.nextDayPkg > 0,
-      hep: true,
-    },
-    {
-      id: "weekly",
-      ad: "mHaftalik",
-      ikon: CalendarRange,
-      sayi: k.weeklyKarar,
-      alt: hf ? `${tarihYaz(hf.baslangic, dil)} · ${t(HAFTA_DURUM_ADI[hf.durum])}${k.weeklyKarar ? ` · ${t("pyKararBekleyen", { n: k.weeklyKarar })}` : ""}` : t("pyPlanYok"),
-      href: hf ? `#/haftalik/${hf.id}` : "#/haftalik",
-      genis: true,
-      vurgu: k.weeklyKarar > 0,
-      hep: true,
-    },
-    {
-      id: "aylik",
-      ad: "mAylik",
-      ikon: Calendar,
-      sayi: ay?.olaylar?.length ?? 0,
-      alt: ay ? `${tarihYaz(b, dil, "ay")} · ${t(ay.durum === "onayli" ? "ayOnayli" : "hazirlaniyor")}` : t("pyPlanYok"),
-      href: "#/aylik",
-      hep: true,
-    },
-    { id: "ozel", ad: "mOzel", ikon: Tv, sayi: v.ozel.filter((o) => (o.bitis ?? o.tarih) >= b).length, alt: t("pyYaklasan"), href: "#/ozel", hep: true },
-  ];
+  const ay = v.aylik.find((x) => x.ay === b.slice(0, 7));
+  const ozel = v.ozel.filter((o) => (o.bitis ?? o.tarih) >= b).length;
+  const paketSayi = k.onay + k.sartli + k.gorevTalebi;
+  const birimSayi = k.birimGorusu + k.birimYanitladi;
+  // Küçük sayı kutusu: panel açar ya da sayfaya götürür; boşken sönük (panel açılmaz).
+  const mini = (id: string, ad: string, sayi: number, ac: PanelTuru | string, vurgu = sayi > 0, hep = false) => {
+    const sonuk = !hep && sayi === 0;
+    const sinif = `py-kutu py-mini${vurgu ? " vurgu" : ""}${sonuk ? " sonuk" : ""}`;
+    const ic = (
+      <>
+        <span className="py-sayi">{sayi}</span>
+        <b>{ad}</b>
+      </>
+    );
+    return ac.startsWith("#") ? (
+      <a key={id} href={ac} className={sinif} data-py-kutu={id}>
+        {ic}
+      </a>
+    ) : (
+      <button key={id} type="button" className={sinif} onClick={() => !sonuk && setPanel(ac as PanelTuru)} aria-disabled={sonuk || undefined} data-py-kutu={id}>
+        {ic}
+      </button>
+    );
+  };
+  const plan = (id: string, ad: Anahtar, href: string, alt: string, uyari: boolean) => (
+    <a key={id} href={href} className="py-kutu py-plan" data-py-kutu={id}>
+      <b>{t(ad)}</b>
+      <small className={uyari ? "uyari" : undefined}>{alt}</small>
+    </a>
+  );
+  const akis = (id: string, ad: Anahtar, sayi: number, href: string, ton: string) => (
+    <a key={id} href={href} className={`py-akis-kutu ${ton}`} data-py-akis={id}>
+      <b>{sayi}</b>
+      <span>{t(ad)}</span>
+    </a>
+  );
   return (
-    <div className="py-ana" data-yeni-planlama>
-      <div className="py-kutular">
-        {kutular.map((x) => {
-          const Ikon = x.ikon;
-          const sonuk = !x.hep && x.sayi === 0;
-          const ic = (
-            <>
-              <span className="py-kutu-bas">
-                <Ikon size={17} />
-                <b>{t(x.ad)}</b>
-              </span>
-              {(x.sayi > 0 || x.hep) && <span className="py-sayi">{x.sayi}</span>}
-              {x.alt && !sonuk && <small>{x.alt}</small>}
-            </>
-          );
-          // Telefonda iki sütun: tek kutuların sayısı tekse sonuncusu tek kalıp yanında delik bırakmasın, satırı doldursun.
-          const tekler = kutular.filter((y) => !y.genis);
-          const sonTek = !x.genis && tekler.length % 2 === 1 && tekler[tekler.length - 1] === x;
-          const sinif = `py-kutu${x.genis ? " genis" : ""}${sonTek ? " son-tek" : ""}${x.vurgu ? " vurgu" : ""}${sonuk ? " sonuk" : ""}`;
-          return x.href ? (
-            <a key={x.id} href={x.href} className={sinif} data-py-kutu={x.id}>
-              {ic}
-            </a>
-          ) : (
-            <button key={x.id} type="button" className={sinif} onClick={() => !sonuk && setPanel(x.panel!)} aria-disabled={sonuk || undefined} data-py-kutu={x.id}>
-              {ic}
-            </button>
-          );
-        })}
-      </div>
+    <div className="py-ana py-tek" data-yeni-planlama>
+      <section className="py-bolum" aria-labelledby="py-b-oneri">
+        <h2 id="py-b-oneri">{t("mOneriler")}</h2>
+        <div className="py-akis">
+          <button type="button" className={`py-kutu py-ham${k.oneri ? " vurgu" : " sonuk"}`} onClick={() => k.oneri && setPanel("oneri")} aria-disabled={!k.oneri || undefined} data-py-kutu="oneri">
+            <span>
+              <b>{t("apHam")}</b>
+              {k.oneri > 0 && <small>{t("apHamAlt", { yakin: k.oneriYakin, baska: a.baskasinda })}</small>}
+            </span>
+            <span className="py-sayi">{k.oneri}</span>
+          </button>
+          <div className="py-akis-hucreler">
+            {akis("gorevli", "apGorevliKisa", a.gorevli, "#/paketler", "ton-iyi")}
+            {akis("takip", "apTakip", a.takip, "#/takipler", "ton-uyari")}
+            {akis("arsivOneri", "apArsivOneri", a.arsivOneri, "#/oneriler/arsiv", "ton-sonuk")}
+            {akis("arsivPaket", "apArsivPaket", a.arsivPaket, "#/paketler", "ton-sonuk")}
+          </div>
+        </div>
+      </section>
+      <section className="py-bolum" aria-labelledby="py-b-karar">
+        <h2 id="py-b-karar">{t("pyBolumKararlar")}</h2>
+        <div className="py-kutular py-sira">
+          {mini("paket", t("pyKisaPaket"), paketSayi, "paket")}
+          {mini("birim", t("pyKisaBirim"), birimSayi, "birim", k.birimYanitladi > 0)}
+          {mini("gorev", t("pyGorevlerim"), k.isler, "gorev")}
+          {mini("anma", t("pyKisaAnma"), k.anma, "anma")}
+          {k.hesapOnayi > 0 && mini("hesap", t("pyKisaHesap"), k.hesapOnayi, "hesap")}
+        </div>
+      </section>
+      <section className="py-bolum" aria-labelledby="py-b-plan">
+        <h2 id="py-b-plan">{t("apPlanlar")}</h2>
+        <div className="py-kutular py-ikili">
+          {plan("nextday", "mNextday", nd ? `#/nextday/${nd.id}` : "#/nextday/yarin", nd ? `${tarihYaz(nd.tarih, dil, "kisa")} · ${k.nextDayPkg ? t("pyKararsizPkg", { n: k.nextDayPkg }) : t(PLAN_DURUM_ADI[nd.durum])}` : t("pyPlanYok"), k.nextDayPkg > 0)}
+          {plan("weekly", "mHaftalik", hf ? `#/haftalik/${hf.id}` : "#/haftalik", hf ? `${tarihYaz(hf.baslangic, dil, "kisa")} · ${k.weeklyKarar ? t("pyKararBekleyen", { n: k.weeklyKarar }) : t(HAFTA_DURUM_ADI[hf.durum])}` : t("pyPlanYok"), k.weeklyKarar > 0)}
+          {plan("aylik", "mAylik", "#/aylik", ay ? `${tarihYaz(b, dil, "ay")} · ${t(ay.durum === "onayli" ? "ayOnayli" : "hazirlaniyor")}` : t("pyPlanYok"), false)}
+          {plan("ozel", "mOzel", "#/ozel", ozel ? `${ozel} · ${t("pyYaklasan")}` : t("pyPlanYok"), false)}
+        </div>
+      </section>
+      <section className="py-bolum" aria-labelledby="py-b-ekip">
+        <h2 id="py-b-ekip">{t("pyBolumEkip")}</h2>
+        <div className="py-kutular py-sira">
+          {mini("muhabir", t("pyKisaMuhabir", { i: izinde }), muh.length, "muhabir", false, true)}
+          {mini("posta", t("mPosta"), k.posta, "#/posta", k.posta > 0, true)}
+          {mini("takvim", t("pyKisaTakvim"), takvim, "#/takvim", false, true)}
+        </div>
+      </section>
       {panel && <KararPaneli ben={ben} tur={panel} kapat={() => setPanel(null)} />}
     </div>
   );

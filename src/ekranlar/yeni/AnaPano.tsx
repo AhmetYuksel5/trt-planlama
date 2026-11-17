@@ -1,6 +1,6 @@
 import { Check, ChevronDown, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { UZUN_DAKIKA, cagriDurumu, gunOlaylari, kararKuyrugu, siradakiOlay, uretimdekiler, type KuyrukOgesi } from "../../anaPano";
+import { UZUN_DAKIKA, cagriDurumu, oneriAkisi, gunOlaylari, kararKuyrugu, siradakiOlay, uretimdekiler, type KuyrukOgesi } from "../../anaPano";
 import { sureYazisi } from "../../bilesenler/AsamaKutulari";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { TalepSatiri } from "../../bilesenler/PaketGorevi";
@@ -34,12 +34,44 @@ export default function AnaPano({ ben }: { ben: Kisi }) {
   return (
     <div className="ap" data-ana-pano>
       <GunCizgisi />
+      <OneriSeridi ben={ben} />
       <div className="ap-izgara">
         <KararKuyrugu ben={ben} />
         <PlanlarSutunu ben={ben} />
         <InsanlarSutunu ben={ben} />
       </div>
     </div>
+  );
+}
+
+/*
+ * Öneri akışı (kullanıcının çizimi: ham öneri, görevlendirilmiş, takip, arşiv
+ * öneri ve paket): zaman çizgisinin altında tek ince satır; sütunların yeri
+ * değişmez. Sayılar telefondaki kutularla aynı kurallardan.
+ */
+function OneriSeridi({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const b = bugun();
+  const k = kararlariGetir(v, ben, b);
+  const a = oneriAkisi(v, b);
+  const kutu = (yol: string, ad: Anahtar, sayi: number, alt: string, ton: string, ana = false) => (
+    <a href={yol} className={`ap-serit-kutu ${ton}${ana ? " ana" : ""}`} data-ap-serit={ad}>
+      <b>{sayi}</b>
+      <span>
+        {t(ad)}
+        {alt && <small>{alt}</small>}
+      </span>
+    </a>
+  );
+  return (
+    <section className="ap-serit" aria-label={t("apSerit")}>
+      {kutu("#/oneriler", "apHam", k.oneri, t("apHamAlt", { yakin: k.oneriYakin, baska: a.baskasinda }), "ton-vurgu", true)}
+      {kutu("#/paketler", "apGorevli", a.gorevli, a.geciken ? t("apGorevliAlt", { n: a.geciken }) : "", "ton-iyi")}
+      {kutu("#/takipler", "apTakip", a.takip, "", "ton-uyari")}
+      {kutu("#/oneriler/arsiv", "apArsivOneri", a.arsivOneri, t("apBuHafta"), "ton-sonuk")}
+      {kutu("#/paketler", "apArsivPaket", a.arsivPaket, a.yapilmadi ? t("apYapilmadiAlt", { n: a.yapilmadi }) : t("apBuHafta"), "ton-sonuk")}
+    </section>
   );
 }
 

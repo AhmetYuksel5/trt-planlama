@@ -3019,6 +3019,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sahada ve izinde olanlar, okunmamış posta iplikleri. Kişisel alan ("+" ile kendi
     kutuları) sonraki adım. Üst çubuktaki saat 1100 pikselden dar çubukta gizli
     (1280 ekranda avatarı dışarı itiyordu). Test `testler/ana-pano.cjs`.
+    5. aşama, öneri akışı (kullanıcının çizimi: ham öneri, görevlendirilmiş, takip,
+    arşiv · öneri, arşiv · paket; telefonda bütün temel girişler tek ekranda):
+    sayılar tek kuraldan (`anaPano.ts → oneriAkisi`): ham öneri "Karar bekleyen"
+    sekmesi (menüyle aynı), yanında "sırası başkasında"; görevlendirilmiş onaylı ya
+    da üretimdeki paket (masa takibi ve görevi verilmemiş özel yayın paketi değil),
+    geciken paketin gününden; takip Takiplerim'in kuralı; arşivler son 7 gün
+    (`ARSIV_PENCERESI`), paket arşivinde "yapılmadı" sayısı. Masaüstünde zaman
+    çizgisinin altında ince şerit (`AnaPano.tsx → OneriSeridi`, `.ap-serit`, her kutu
+    sayfasına götürür); zaman çizgisi, Sıradaki ve üç sütun yerinde (kullanıcı:
+    yerli yerindelik bozulmasın, Sıradaki masaüstünde kalsın). Telefon ve tablette
+    `KutuluAna` tek ekran (`.py-tek`, Sıradaki yok): Öneriler (ham öneri satırı panel
+    açar, altında akışın dört kutusu), Kararlar ve işlerim (paket, birim görüşü,
+    görevlerim, anmalar, varsa hesap onayı; küçük sayı kutuları, panelde), Planlar
+    2×2, Ekip (muhabir paneli, Posta, Takvim). iPhone 13'te (görünür 664 piksel,
+    prototip şeridiyle) kaydırmasız. Test `testler/oneri-akisi.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

@@ -2,6 +2,8 @@ import { asamaListesi, gorunenSahip } from "./akis";
 import { sartliBekleyen } from "./haftalik";
 import { masaninSorulari, SORU_MASALARI } from "./masaSorusu";
 import { oneriSekmesi } from "./oneriSekmeleri";
+import { oneriArsivde, oneriSonGunu, takibinOnerisi } from "./oneriPlanlari";
+import { bitmisMi, paketGunu } from "./bitmisPaket";
 import { gunEkle, yerelGun } from "./tarih";
 import type { BirimId, Durum, Kisi, Paket } from "./veri";
 import { gorevTalebiKarariVerebilir, hesapYetkisi, paketIsaretOnaylayabilir, yapabilir } from "./yetki";
@@ -13,6 +15,51 @@ import { gorevTalebiKarariVerebilir, hesapYetkisi, paketIsaretOnaylayabilir, yap
  * vermeyen muhabirler. Saklanmaz, kayıttan hesaplanır; sayılar menünün
  * kuralıyla (planlamaKararlari.ts) aynı.
  */
+
+/* --- Öneri akışı --- */
+
+/*
+ * Kullanıcının çizdiği öneri akışı: ham öneri (karar bekleyen; sırası
+ * başkasında olan ayrıca sayılır), görevlendirilmiş (onaylı ya da üretimde
+ * paket: öneriden de doğrudan görevden de), takip, arşivdeki öneri ve biten
+ * paket (son 7 gün). Masaüstü panonun şeridi ve telefondaki kutular bu tek
+ * kuraldan sayar; ham öneri menünün ve "Karar bekleyen" sekmesinin kuralı.
+ */
+export const ARSIV_PENCERESI = 7;
+
+export interface OneriAkisi {
+  baskasinda: number;
+  gorevli: number;
+  geciken: number;
+  takip: number;
+  arsivOneri: number;
+  arsivPaket: number;
+  yapilmadi: number;
+}
+
+export function oneriAkisi(d: Durum, b: string): OneriAkisi {
+  const once = gunEkle(b, -ARSIV_PENCERESI);
+  let baskasinda = 0, takip = 0, arsivOneri = 0;
+  for (const o of d.oneriler) {
+    const s = oneriSekmesi(d, o, b);
+    if (s === "baskasinda") baskasinda++;
+    else if (s === "arsiv" && oneriSonGunu(o) >= once) arsivOneri++;
+    // Takiplerim'in kuralı (Takipler.tsx → takipOnerileri): öneriye dönüşmüş takip sayılmaz.
+    if (o.durum === "takip" && !oneriArsivde(o, b) && !takibinOnerisi(d, o)) takip++;
+  }
+  // Masanın takibindeki paket Planlama'nın değil, masanın işi; görevi henüz verilmemiş özel yayın paketi de görev değil.
+  const gorevli = d.paketler.filter((p) => (p.durum === "onaylandi" || p.durum === "uretimde") && !p.masaTakibi && !p.ozelGorevBekliyor);
+  const biten = d.paketler.filter((p) => bitmisMi(p) && !p.masaTakibi && paketGunu(d, p) >= once);
+  return {
+    baskasinda,
+    gorevli: gorevli.length,
+    geciken: gorevli.filter((p) => paketGunu(d, p) < b).length,
+    takip,
+    arsivOneri,
+    arsivPaket: biten.length,
+    yapilmadi: biten.filter((p) => p.durum === "iptal").length,
+  };
+}
 
 /* --- Bugünün zaman çizgisi --- */
 
