@@ -167,7 +167,7 @@ const PANEL_SAYFASI: Partial<Record<PanelTuru, string>> = {
   gorev: "#/gorevler",
   anma: "#/gorevler",
   muhabir: "#/muhabirler",
-  hesap: "#/organizasyon/hesaplar",
+  hesap: "#/organizasyon/kisiler",
 };
 
 /* Sağdan açılan panel (yeni tasarımda pencere sağdan açılıyor): içinde var olan kart ve listeler, iş burada biter. */

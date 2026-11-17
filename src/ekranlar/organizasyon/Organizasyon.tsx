@@ -20,7 +20,8 @@ import {
   X,
   FolderPlus,
 } from "lucide-react";
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { girisAdi } from "../../girisKodu";
 import {
   Avatar,
   Bos,
@@ -52,7 +53,6 @@ import {
   kisilerPozisyonu,
   yoneticiligiKaldir,
 } from "../../eylemler";
-import { GERCEK } from "../../kip";
 import { yerelGun } from "../../tarih";
 import { ekipEtkisi, etkiVarMi, unvanlariGoreveEkle, type EkipEtkisi, type UnvanOnerisi } from "../../yapiEtkisi";
 import {
@@ -106,7 +106,7 @@ import { hesapYetkisi, yapiDuzenleyebilir } from "../../yetki";
 import { SayfaBasi } from "../ana/Planlama";
 import { EkipSekmesi } from "./EkipSekmesi";
 import { PostaKisileriDugmesi } from "./PostaKisileri";
-import Kullanicilar, { IzleDugmesi, PozisyonPenceresi } from "../Kullanicilar";
+import { DavetSatiri, HesapAraclari, HesapIsleriSaglayici, HesapRozeti, IzleDugmesi, KisiHesapMenusu, KullaniciAdi, PozisyonPenceresi, hesapDurumu, hesapIsiVar, useHesapIsleri, type HesapDurumu } from "../Kullanicilar";
 import { UretimSablonlari } from "./UretimSablonlari";
 import { PLAN_ADIMI_ADI, PlanYetkileriSekmesi } from "./PlanYetkileri";
 import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
@@ -128,7 +128,8 @@ import { AdAlanlari, SinirliDugme, adTemizle, dilde, metinMi } from "./Ortak";
  * - Plan yetkileri (PlanYetkileri.tsx): planları kim toplantıya götürür,
  *   kim onaylar, kim kesinleştirir.
  * - Sürümler: yayınlanan her düzen; eskisi taslağa alınıp geri getirilebiliyor.
- * - Hesaplar (gerçek kip): davet, kayıt bağlantısı, hesap yetkileri.
+ * Hesaplar ayrı sekme değil, Kişiler'de (Kullanicilar.tsx → HesapIsleriSaglayici):
+ * kullanıcı aynı kişileri iki yerde görmeyi fazlalık buldu.
  */
 
 type Sekme =
@@ -137,8 +138,7 @@ type Sekme =
   | "ekip"
   | "uretim"
   | "planlar"
-  | "surumler"
-  | "hesaplar";
+  | "surumler";
 
 const SEKME_ADI: Record<Sekme, Anahtar> = {
   kisiler: "orgKisiler",
@@ -147,7 +147,6 @@ const SEKME_ADI: Record<Sekme, Anahtar> = {
   uretim: "urSablonlar",
   planlar: "orgPlanYetkileri",
   surumler: "orgSurumler",
-  hesaplar: "orgHesaplar",
 };
 
 /* Taslak üzerinde çalışan sekmeler: üstlerinde yayın çubuğu. */
@@ -156,11 +155,8 @@ const YAPI_SEKMELERI: Sekme[] = ["birimler", "ekip", "planlar"];
 export const orgSekmeleri = (ben: Kisi): Sekme[] => {
   const yapi = yapiDuzenleyebilir(ben);
   return [
-    ...(yapi || hesapYetkisi(ben, "kisiDuzenle") ? (["kisiler"] as const) : []),
+    ...(yapi || hesapYetkisi(ben, "kisiDuzenle") || hesapIsiVar(ben) ? (["kisiler"] as const) : []),
     ...(yapi ? (["birimler", "ekip", "uretim", "planlar", "surumler"] as const) : []),
-    ...(GERCEK && (ben.hesapYoneticisi || ben.yetkiler?.length)
-      ? (["hesaplar"] as const)
-      : []),
   ];
 };
 
@@ -174,12 +170,13 @@ export default function Organizasyon({
   const { t } = useDil();
   const sekmeler = orgSekmeleri(ben);
   // Eski "İş akışları" adresi yerine geçen üretim şablonlarını açar.
-  const istenen = sekme === "akislar" ? "uretim" : sekme;
+  // Eski Hesaplar sekmesi Kişiler'e katıldı; adresi (ve eski #/kullanicilar) Kişiler'i açar.
+  const istenen = sekme === "akislar" ? "uretim" : sekme === "hesaplar" ? "kisiler" : sekme;
   const acik = (
     sekmeler.includes(istenen as Sekme) ? istenen : sekmeler[0]
   ) as Sekme;
   return (
-    <>
+    <HesapIsleriSaglayici ben={ben}>
       <SayfaBasi ikon={<Building2 size={26} />} baslik={t("mOrganizasyon")} />
       {/* Onay bekleyen hesaplar her sekmenin üstünde: menüdeki sayı buraya getiriyor. */}
       <OnayBekleyenHesaplar ben={ben} />
@@ -208,9 +205,8 @@ export default function Organizasyon({
       {acik === "uretim" && <UretimSablonlari ben={ben} />}
       {acik === "planlar" && <PlanYetkileriSekmesi ben={ben} />}
       {acik === "surumler" && <SurumlerSekmesi ben={ben} />}
-      {acik === "hesaplar" && <Kullanicilar ben={ben} gomulu />}
       <EkipEtkisiPenceresi ben={ben} />
-    </>
+    </HesapIsleriSaglayici>
   );
 }
 
@@ -793,44 +789,80 @@ function UnvanPenceresi({ ben, unvan, kapat }: { ben: Kisi; unvan: UnvanTanimi; 
 /* --- Kişiler: birim → ünvan ağacı, tayin --- */
 
 function KisilerSekmesi({ ben }: { ben: Kisi }) {
-  const { t } = useDil();
+  const { t, ad } = useDil();
   const v = useVeri();
+  const h = useHesapIsleri();
   const [aranan, setAranan] = useAdimDurumu("orgKisiler:ara", "");
   const [tayin, setTayin] = useState<Kisi | null>(null);
   const tayinEder = hesapYetkisi(ben, "kisiDuzenle");
   const [yoneticiler, setYoneticiler] = useAdimDurumu("orgKisiler:yoneticiler", false);
+  // Hesap süzgeci (gerçek kip, hesap işi yapan): hesabı olmayanlar ya da aktivasyonu bekleyenler düz listede.
+  const [hesapSuz, setHesapSuz] = useAdimDurumu<"" | "yok" | "bekliyor">("orgKisiler:hesap", "");
   const ara = aranan.trim();
+  const hesapIsi = hesapIsiVar(ben);
+  const durum = (k: Kisi): HesapDurumu => hesapDurumu(k, h?.davetiOf(k));
   const yoneticiMi = (k: Kisi) => k.rol === "yonetici" || unvanYoneticiMi(k.gorev) || !!k.hesapYoneticisi;
-  const kisiler = (ara ? v.kisiler.filter((k) => kisiUyar(k, ara, v)) : v.kisiler).filter((k) => !yoneticiler || yoneticiMi(k));
+  const kisiler = (ara ? v.kisiler.filter((k) => kisiUyar(k, ara, v)) : v.kisiler)
+    .filter((k) => !yoneticiler || yoneticiMi(k))
+    .filter((k) => !hesapSuz || durum(k) === hesapSuz);
+  // Kaydı kurulmamış davetler kendi biriminde ("aktivasyon bekleniyor"); aramada adıyla ya da adresiyle.
+  const davetler = (h?.bekleyenDavetler ?? [])
+    .filter(() => !yoneticiler && hesapSuz !== "yok")
+    .filter((d) => !ara || sozcuklerUyar(`${ad({ ad: d.ad })} ${typeof d.ad === "string" ? "" : `${d.ad.tr} ${d.ad.en ?? ""}`} ${d.eposta}`, ara));
   const yoneticiSayisi = v.kisiler.filter(yoneticiMi).length;
+  const yokSayisi = v.kisiler.filter((k) => durum(k) === "yok").length;
+  const bekleyenSayisi = v.kisiler.filter((k) => durum(k) === "bekliyor").length + (h?.bekleyenDavetler.length ?? 0);
+  const duzListe = yoneticiler || !!ara || !!hesapSuz;
   /*
    * Ağaç sırasıyla (Haber Merkezi › Input › Planlama…): kendisinde ya da
    * altında kişi olan birimler, derinliğine göre girintili; sayı alt
    * birimleriyle. Gizli birimde ya da yapıdan çıkmış birimde kalan kişi de
    * görünsün, yönetici onu tayin etsin.
    */
-  const altta = (b: BirimId) => kisiler.filter((k) => altindaMi(k.birim, b));
+  const altta = (b: BirimId) => kisiler.filter((k) => altindaMi(k.birim, b)).length + davetler.filter((d) => altindaMi(d.birim, b)).length;
   const agac = birimAgaci();
   const ulkeBekleyen = ulkeUnvaniBekleyenler(v);
   const birimler = [
-    ...agac.filter((s) => altta(s.id).length),
-    ...[...new Set(kisiler.map((k) => k.birim))].filter((b) => !agac.some((s) => s.id === b)).map((id) => ({ id, derinlik: 0 })),
+    ...agac.filter((s) => altta(s.id)),
+    ...[...new Set([...kisiler.map((k) => k.birim), ...davetler.map((d) => d.birim)])].filter((b) => !agac.some((s) => s.id === b)).map((id) => ({ id, derinlik: 0 })),
   ];
+  const suzgecDugmesi = (deger: "yok" | "bekliyor", sayi: number, etiket: Anahtar) =>
+    (sayi > 0 || hesapSuz === deger) && (
+      <button
+        type="button"
+        className={`dugme dugme-kucuk ${hesapSuz === deger ? "" : "dugme-ikincil"}`}
+        aria-pressed={hesapSuz === deger}
+        onClick={() => {
+          setHesapSuz(hesapSuz === deger ? "" : deger);
+          setYoneticiler(false);
+        }}
+        data-org-hesap-suz={deger}
+      >
+        {t(etiket)} · {sayi}
+      </button>
+    );
+  const satir = (k: Kisi, yer?: boolean) => <KisiSatiri key={k.id} ben={ben} kisi={k} durum={durum(k)} hesapIsi={hesapIsi} tayin={tayinEder ? () => setTayin(k) : undefined} yer={yer} />;
   return (
     <Kart
       baslik={t("orgKisiler")}
-      ek={String(kisiler.length)}
+      ek={String(kisiler.length + davetler.length)}
       sagUc={
         <span className="pk-ust-dugmeler">
+          <HesapAraclari ben={ben} />
           <button
             type="button"
             className={`dugme dugme-kucuk ${yoneticiler ? "" : "dugme-ikincil"}`}
             aria-pressed={yoneticiler}
-            onClick={() => setYoneticiler(!yoneticiler)}
+            onClick={() => {
+              setYoneticiler(!yoneticiler);
+              setHesapSuz("");
+            }}
             data-org-yoneticiler
           >
             <UserCog size={14} /> {t("orgYoneticiler")} · {yoneticiSayisi}
           </button>
+          {hesapIsi && suzgecDugmesi("bekliyor", bekleyenSayisi, "orgAktivasyonBekleyen")}
+          {hesapIsi && suzgecDugmesi("yok", yokSayisi, "orgHesabiYok")}
           <PostaKisileriDugmesi ben={ben} />
           {yapiDuzenleyebilir(ben) && ulkeBekleyen.length > 0 && (
             <button
@@ -845,6 +877,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
         </span>
       }
     >
+      {h?.hata && <p className="not-kutu uyari">{t("ggKayitHatasi", { kod: h.hata })}</p>}
       <label className="arama ara-alt-2">
         <Search size={16} />
         <input
@@ -856,51 +889,56 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
           data-org-ara
         />
       </label>
-      {!kisiler.length && <Bos kucuk metin={t("kisiYok")} />}
-      {/* Aramada sonucun kendisi: ağaçta tek kişi 4–5 kat içeride, telefonda ekranın dibinde kalıyordu. */}
+      {!kisiler.length && !davetler.length && <Bos kucuk metin={t("kisiYok")} />}
+      {/* Aramada ve süzgeçte sonucun kendisi: ağaçta tek kişi 4–5 kat içeride, telefonda ekranın dibinde kalıyordu. */}
       {yoneticiler ? (
-        <YoneticiListesi ben={ben} kisiler={kisiler} tayin={tayinEder ? setTayin : undefined} />
-      ) : ara ? (
+        <YoneticiListesi ben={ben} kisiler={kisiler} tayin={tayinEder ? setTayin : undefined} satir={(k, sec) => (
+          <KisiSatiri key={k.id} ben={ben} kisi={k} durum={durum(k)} hesapIsi={hesapIsi} tayin={tayinEder ? () => setTayin(k) : undefined} yer sec={sec} />
+        )} />
+      ) : duzListe ? (
         <ul className="liste org-sonuclar" data-org-sonuclar>
-          {kisiler.map((k) => (
-            <KisiSatiri key={k.id} ben={ben} kisi={k} tayin={tayinEder ? () => setTayin(k) : undefined} yer />
+          {davetler.map((d) => (
+            <DavetSatiri key={d.eposta} davet={d} yer />
           ))}
+          {kisiler.map((k) => satir(k, true))}
         </ul>
       ) : (
       <div className="org-agac" data-org-agac>
         {birimler.map(({ id: b, derinlik }) => {
           const birimdekiler = kisiler.filter((k) => k.birim === b);
+          const birimDavetleri = davetler.filter((d) => d.birim === b);
           // Ünvan grupları birimin kıdem sırasıyla; listede olmayan ünvandaki kişi sonda.
           const sira = birimUnvanlari(b);
-          const unvanlar = [...new Set(birimdekiler.map((k) => k.gorev))].sort((x, y) => (sira.indexOf(x) + 1 || 999) - (sira.indexOf(y) + 1 || 999));
+          const unvanlar = [...new Set([...birimdekiler.map((k) => k.gorev), ...birimDavetleri.map((d) => d.gorev)])].sort((x, y) => (sira.indexOf(x) + 1 || 999) - (sira.indexOf(y) + 1 || 999));
           return (
             <details
               key={b}
-              open={!!ara || birimler.length <= 3 || !birimdekiler.length}
+              open={birimler.length <= 3 || (!birimdekiler.length && !birimDavetleri.length)}
               style={{ "--derinlik": derinlik } as CSSProperties}
               data-org-birim={b}
             >
               <summary>
                 <b>{birimAdi(b)}</b>{" "}
-                <em className="sonuk-yazi">{altta(b).length}</em>
+                <em className="sonuk-yazi">{altta(b)}</em>
               </summary>
-              {unvanlar.map((g) => (
-                <div key={g} className="org-unvan" data-org-unvan={g}>
-                  <h4>
-                    {gorevAdi(g)}{" "}
-                    <em className="sonuk-yazi">
-                      {birimdekiler.filter((k) => k.gorev === g).length}
-                    </em>
-                  </h4>
-                  <ul className="liste">
-                    {birimdekiler
-                      .filter((k) => k.gorev === g)
-                      .map((k) => (
-                        <KisiSatiri key={k.id} ben={ben} kisi={k} tayin={tayinEder ? () => setTayin(k) : undefined} />
+              {unvanlar.map((g) => {
+                const unvandakiler = birimdekiler.filter((k) => k.gorev === g);
+                const unvanDavetleri = birimDavetleri.filter((d) => d.gorev === g);
+                return (
+                  <div key={g} className="org-unvan" data-org-unvan={g}>
+                    <h4>
+                      {gorevAdi(g)}{" "}
+                      <em className="sonuk-yazi">{unvandakiler.length + unvanDavetleri.length}</em>
+                    </h4>
+                    <ul className="liste">
+                      {unvandakiler.map((k) => satir(k))}
+                      {unvanDavetleri.map((d) => (
+                        <DavetSatiri key={d.eposta} davet={d} />
                       ))}
-                  </ul>
-                </div>
-              ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </details>
           );
         })}
@@ -922,7 +960,8 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
  * yöneticinin yetki verdiği kişi): kademe dışındakiler işaretli gelir, toplu personele
  * çevrilir. Kendiliğinden çevrilmez: gerçek bir birim yöneticisi de olabilir.
  */
-function YoneticiListesi({ ben, kisiler, tayin }: { ben: Kisi; kisiler: Kisi[]; tayin?: (k: Kisi) => void }) {
+type SecimDurumu = { secili: boolean; degistir: (x: boolean) => void };
+function YoneticiListesi({ ben, kisiler, tayin, satir }: { ben: Kisi; kisiler: Kisi[]; tayin?: (k: Kisi) => void; satir: (k: Kisi, sec?: SecimDurumu) => ReactNode }) {
   const { t } = useDil();
   const disarida = kisiler.filter((k) => kademeDisiYonetici(k));
   const [secili, setSecili] = useState<string[]>(() => disarida.map((k) => k.id));
@@ -952,30 +991,28 @@ function YoneticiListesi({ ben, kisiler, tayin }: { ben: Kisi; kisiler: Kisi[]; 
         </p>
       )}
       <ul className="liste org-sonuclar" data-org-yonetici-listesi>
-        {sirali.map((k) => (
-          <KisiSatiri
-            key={k.id}
-            ben={ben}
-            kisi={k}
-            tayin={tayin ? () => tayin(k) : undefined}
-            yer
-            sec={
-              tayin && disarida.includes(k)
-                ? { secili: secili.includes(k.id), degistir: (x: boolean) => setSecili(x ? [...secili, k.id] : secili.filter((y) => y !== k.id)) }
-                : undefined
-            }
-          />
-        ))}
+        {sirali.map((k) =>
+          satir(
+            k,
+            tayin && disarida.includes(k)
+              ? { secili: secili.includes(k.id), degistir: (x: boolean) => setSecili(x ? [...secili, k.id] : secili.filter((y) => y !== k.id)) }
+              : undefined,
+          ),
+        )}
       </ul>
     </>
   );
 }
 
-/* Kişinin satırı; aramada altında yeri ("Birim › Ünvan · Şehir"), ağaçta birim ve ünvan zaten başlıkta. */
-function KisiSatiri({ ben, kisi: k, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; tayin?: () => void; yer?: boolean; sec?: { secili: boolean; degistir: (x: boolean) => void } }) {
+/*
+ * Kişinin satırı; aramada altında yeri ("Birim › Ünvan · Şehir"), ağaçta birim ve ünvan zaten başlıkta.
+ * Hesap durumu satırın tonunda (kullanıcı: aktivasyonu olmayanları farklı tonda görüp oradan etkinleştirmek
+ * istedi): hesabı yok soluk, aktivasyon bekleyen sarı, kapalı gri; hesap işleri satırın ⋯'sinde.
+ */
+function KisiSatiri({ ben, kisi: k, durum, hesapIsi, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; durum: HesapDurumu; hesapIsi: boolean; tayin?: () => void; yer?: boolean; sec?: SecimDurumu }) {
   const { t, ad } = useDil();
   return (
-    <li data-org-kisi={k.id}>
+    <li className={durum === "etkin" ? undefined : `hesap-${durum}`} data-org-kisi={k.id} data-hesap={k.id}>
       {sec && (
         <input type="checkbox" checked={sec.secili} onChange={(e) => sec.degistir(e.target.checked)} aria-label={t("orgSec")} data-org-yonetici-sec={k.id} />
       )}
@@ -990,12 +1027,15 @@ function KisiSatiri({ ben, kisi: k, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; 
         )}
         <small>
           {k.rol === "yonetici" && <Rozet ton="koyu">{t("rolYonetici")}</Rozet>}{" "}
-          {k.hesapsiz && <Rozet>{t("hesapYok")}</Rozet>}{" "}
+          {k.hesapYoneticisi && <Rozet ton="koyu">{t("hesapYoneticisi")}</Rozet>}{" "}
+          <HesapRozeti durum={durum} />{" "}
           {k.kontrolBekliyor && (
             <span data-org-onay-bekliyor>
               <Rozet ton="uyari">{t("kontrolBekliyor")}</Rozet>
             </span>
-          )}
+          )}{" "}
+          {/* Giriş kodu hesabının kullanıcı adı: yönetici kişiye söylerken buradan okuyor. */}
+          {hesapIsi && girisAdi(k.yeniEposta ?? k.eposta) && <KullaniciAdi eposta={k.yeniEposta ?? k.eposta} />}
         </small>
       </div>
       <IzleDugmesi ben={ben} kisi={k} />
@@ -1004,6 +1044,7 @@ function KisiSatiri({ ben, kisi: k, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; 
           <UserCog size={14} /> {t("orgTayin")}
         </button>
       )}
+      <KisiHesapMenusu ben={ben} kisi={k} />
     </li>
   );
 }

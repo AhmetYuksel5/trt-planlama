@@ -1,9 +1,8 @@
-import { OnayBekleyenHesaplar } from "../bilesenler/HesapOnayi";
 import { BirimSecenekleri, UnvanSecenekleri } from "../bilesenler/BirimSecimi";
 import { birimAdi, birimeUygunUnvan, disMuhabirMi, gorevAdi, icMuhabirMi, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvandanRol } from "../yapi";
-import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, MessageCircle, Plus, RotateCcw, Send, Ticket, Trash2, UserCog, UserPlus, X } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
-import { Avatar, Bos, Kart, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
+import { AtSign, Copy, Eye, FileSpreadsheet, KeyRound, Link2, Mail, MessageCircle, Plus, RotateCcw, Ticket, Trash2, UserCog, UserPlus, X } from "lucide-react";
+import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Avatar, Bos, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, oburAd, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, GirisKodu, KayitBaglantisi } from "../depo/firebase";
@@ -14,12 +13,12 @@ import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { bosAlan, epostaListesiniEslestir, listedenAdresler, type EpostaAlani, type EslesmeSatiri } from "../epostaEslestir";
 import { izlemeBaslat } from "../izleme";
 import { GERCEK, firebaseYukle } from "../kip";
-import { HESAP_YETKILERI, getir, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
-import { epostaDegistirebilir, hesapYetkisi, profilDuzenler } from "../yetki";
-import { SatirSehirSecimi, SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
+import { HESAP_YETKILERI, getir, kisiBul, useVeri, type BirimId, type GorevId, type HesapYetkisi, type Kisi, type Sehir } from "../veri";
+import { epostaDegistirebilir, hesapYetkisi } from "../yetki";
+import { SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
 import type { YeniSehir } from "../eylemler";
 import { git } from "../yol";
-import { SayfaBasi } from "./ana/Planlama";
+import { IslemMenusu } from "../bilesenler/IslemMenusu";
 
 /**
  * Gerçek kipte hesaplar (yalnız hesap yöneticisi; yetki.ts → sayfaGorebilir).
@@ -43,9 +42,6 @@ import { SayfaBasi } from "./ana/Planlama";
  * Davetler ve bağlantılar kaydın (`Durum`) parçası değil: hesap işi,
  * planlama kaydına karışmasın; doğrudan Firestore'dan dinleniyor.
  */
-
-const DAVET_DURUM_ADI: Record<Davet["durum"], Anahtar> = { bekliyor: "davetBekliyor", kullanildi: "davetKullanildi", iptal: "davetIptal" };
-const DAVET_DURUM_TONU: Record<Davet["durum"], string> = { bekliyor: "uyari", kullanildi: "iyi", iptal: "" };
 
 const BOS_FORM = {
   eposta: "",
@@ -94,102 +90,434 @@ const gonderimHatasi = (x: unknown) => {
   return anahtar !== "ghBilinmeyen" ? `${metin("davetGonderilemedi")} ${metin(anahtar)}` : metin("davetGonderilemediKod", undefined, { kod: kod || "?" });
 };
 
-export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomulu?: boolean }) {
-  const { t, ad, dil } = useDil();
+/*
+ * Hesap işleri Organizasyon › Kişiler'de (kullanıcı: Hesaplar ile Kişiler ayrı
+ * iki yerdi, fazlalıktı; aktivasyonu kişinin satırından yapmak istedi). Bu
+ * bağlam davetleri ve kayıt bağlantılarını bir kez dinler, pencereleri tutar;
+ * Kişiler sekmesi araç çubuğunu (Kişi ekle, ⋯), satırın hesap menüsünü ve
+ * henüz kaydı kurulmamış davetlerin satırlarını buradan alır.
+ */
+interface HesapIsleri {
+  davetler: Davet[] | null;
+  hata: string | null;
+  /** Kişinin bekleyen daveti: "Hesaba bağla" ya da e-posta değişikliği (kisiId'li). */
+  davetiOf: (k: Kisi) => Davet | undefined;
+  /** Kaydı henüz kurulmamış bekleyen davetler (yeni kişi davet ya da kodla). */
+  bekleyenDavetler: Davet[];
+  ac: (p: Acik) => void;
+}
+type Acik =
+  | { tur: "ekle" }
+  | { tur: "baglantilar" }
+  | { tur: "aktar" }
+  | { tur: "eslestir" }
+  | { tur: "duzenle" | "bagla" | "yeniKod" | "yetkiler"; kisi: Kisi }
+  | { tur: "kod"; sonuc: KodSonucu };
+
+const HesapBaglami = createContext<HesapIsleri | null>(null);
+export const useHesapIsleri = () => useContext(HesapBaglami);
+
+/* Hesap işi yapan yetkiler (davet, bağlantı, düzenleme, kapatma, hesapsız kişi, silme). */
+const HESAP_ISLERI: HesapYetkisi[] = ["davet", "kayitBaglantisi", "kisiDuzenle", "hesapAcKapa", "hesapsizKisi", "kisiSil"];
+export const hesapIsiVar = (ben: Kisi) => GERCEK && (!!ben.hesapYoneticisi || HESAP_ISLERI.some((y) => hesapYetkisi(ben, y)));
+
+export function HesapIsleriSaglayici({ ben, children }: { ben: Kisi; children: ReactNode }) {
   const v = useVeri();
-  const davetYetkisi = hesapYetkisi(ben, "davet");
-  const baglantiYetkisi = hesapYetkisi(ben, "kayitBaglantisi");
-  const hesapsizYetkisi = hesapYetkisi(ben, "hesapsizKisi");
+  const davetYetkisi = GERCEK && hesapYetkisi(ben, "davet");
   const [davetler, setDavetler] = useState<Davet[] | null>(null);
-  const [baglantilar, setBaglantilar] = useState<KayitBaglantisi[] | null>(null);
   const [hata, setHata] = useState<string | null>(null);
-  const [tur, setTur] = useState<"davet" | "kod" | "hesapsiz">(davetYetkisi ? "davet" : "hesapsiz");
-  const [kodSonucu, setKodSonucu] = useState<KodSonucu | null>(null);
-  const [kodVerilen, setKodVerilen] = useState<Kisi | null>(null);
-  const [form, setForm] = useState(BOS_FORM);
-  const [bekle, setBekle] = useState(false);
-  const [duzenlenen, setDuzenlenen] = useState<Kisi | null>(null);
-  const [baglanan, setBaglanan] = useState<Kisi | null>(null);
-  const [yetkiVerilen, setYetkiVerilen] = useState<Kisi | null>(null);
-  const [aktar, setAktar] = useState(false);
-  const [eslestir, setEslestir] = useState(false);
-  const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
-  // Kayıtlı yapıda başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
-  const gorev = birimeUygunUnvan(form.birim, form.gorev);
+  const [acik, setAcik] = useState<Acik | null>(null);
 
   // Yalnız yetkisi olan dinliyor: kurallar öbürüne okutmuyor, boşuna hata vermesin.
   useEffect(() => {
+    if (!davetYetkisi) return;
     let kopar: (() => void) | undefined;
     let bitti = false;
     firebaseYukle().then((f) => {
-      if (bitti) return;
-      const k1 = davetYetkisi ? f.davetleriIzle(setDavetler, setHata) : undefined;
-      const k2 = baglantiYetkisi ? f.kayitBaglantilariIzle(setBaglantilar, setHata) : undefined;
-      kopar = () => {
-        k1?.();
-        k2?.();
-      };
+      if (!bitti) kopar = f.davetleriIzle(setDavetler, setHata);
     });
     return () => {
       bitti = true;
       kopar?.();
     };
-  }, [davetYetkisi, baglantiYetkisi]);
+  }, [davetYetkisi]);
+
+  const bekleyen = (davetler ?? []).filter((d) => d.durum === "bekliyor");
+  const deger: HesapIsleri = {
+    davetler,
+    hata,
+    davetiOf: (k) => bekleyen.find((d) => d.kisiId === k.id),
+    // Kaydı kurulmuş (kişisi olan) davet kişinin kendi satırında görünüyor.
+    bekleyenDavetler: bekleyen.filter((d) => !d.kisiId && !v.kisiler.some((k) => k.eposta === d.eposta)),
+    ac: setAcik,
+  };
+  const alinmis = alinmisKullanicilar(v.kisiler, davetler);
+  // Kod veren pencere önce kodu açtırıp sonra kendini kapatıyor: kapanış açılan kod penceresini silmesin.
+  const kapat = () => setAcik((a) => (a?.tur === "kod" ? a : null));
+  const kodVerildi = (sonuc: KodSonucu) => setAcik({ tur: "kod", sonuc });
+  return (
+    <HesapBaglami.Provider value={deger}>
+      {children}
+      {acik?.tur === "ekle" && <KisiEklePenceresi ben={ben} alinmis={alinmis} kodVerildi={kodVerildi} kapat={kapat} />}
+      {acik?.tur === "baglantilar" && <BaglantilarPenceresi ben={ben} kapat={kapat} />}
+      {acik?.tur === "aktar" && <AktarPenceresi ben={ben} kapat={kapat} />}
+      {acik?.tur === "eslestir" && <EslestirPenceresi ben={ben} kapat={kapat} />}
+      {acik?.tur === "duzenle" && <PozisyonPenceresi ben={ben} kisi={kisiBul(v, acik.kisi.id) ?? acik.kisi} kapat={kapat} />}
+      {acik?.tur === "bagla" && <BaglaPenceresi ben={ben} kisi={acik.kisi} alinmis={alinmis} kodVerildi={kodVerildi} kapat={kapat} />}
+      {acik?.tur === "yeniKod" && <YeniKodPenceresi ben={ben} kisi={acik.kisi} alinmis={alinmis} kodVerildi={kodVerildi} kapat={kapat} />}
+      {acik?.tur === "yetkiler" && <YetkiPenceresi ben={ben} kisi={kisiBul(v, acik.kisi.id) ?? acik.kisi} kapat={kapat} />}
+      {acik?.tur === "kod" && <KodPenceresi sonuc={acik.sonuc} kapat={() => setAcik(null)} />}
+    </HesapBaglami.Provider>
+  );
+}
+
+/* Kişinin hesap durumu: satırın tonu ve süzgeçler bundan. */
+export type HesapDurumu = "etkin" | "yok" | "bekliyor" | "pasif";
+export const hesapDurumu = (k: Kisi, davet?: Davet): HesapDurumu =>
+  k.pasif ? "pasif" : k.yeniEposta || davet ? "bekliyor" : k.hesapsiz ? "yok" : "etkin";
+
+export function HesapRozeti({ durum }: { durum: HesapDurumu }) {
+  const { t } = useDil();
+  if (durum === "etkin") return null;
+  return (
+    <span data-hesap-durumu={durum}>
+      <Rozet ton={durum === "bekliyor" ? "uyari" : ""}>{t(durum === "yok" ? "hesapYok" : durum === "pasif" ? "hesapPasif" : "aktivasyonBekleniyor")}</Rozet>
+    </span>
+  );
+}
+
+/* Kişiler'in başındaki araçlar: "Kişi ekle" ve az kullanılanlar ⋯'de. */
+export function HesapAraclari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const h = useHesapIsleri();
+  if (!h) return null;
+  const ekle = GERCEK && (hesapYetkisi(ben, "davet") || hesapYetkisi(ben, "hesapsizKisi"));
+  const aktar = GERCEK && hesapYetkisi(ben, "hesapsizKisi");
+  const eslestir = hesapYetkisi(ben, "kisiDuzenle");
+  const baglanti = GERCEK && hesapYetkisi(ben, "kayitBaglantisi");
+  return (
+    <>
+      {ekle && (
+        <button type="button" className="dugme dugme-kucuk" onClick={() => h.ac({ tur: "ekle" })} data-kisi-ekle-ac>
+          <UserPlus size={14} /> {t("kisiEkle")}
+        </button>
+      )}
+      {(aktar || eslestir || baglanti) && (
+        <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-kucuk dugme-ikon" menuSinifi="plan-menusu" katman>
+          {aktar && (
+            <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "aktar" })} data-excel-aktar>
+              <FileSpreadsheet size={16} /> {t("excelAktar")}
+            </button>
+          )}
+          {eslestir && (
+            <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "eslestir" })} data-eposta-eslestir>
+              <AtSign size={16} /> {t("epostaEslestir")}
+            </button>
+          )}
+          {baglanti && (
+            <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "baglantilar" })} data-kayit-baglantilari-ac>
+              <Link2 size={16} /> {t("kayitBaglantilari")}
+            </button>
+          )}
+        </IslemMenusu>
+      )}
+    </>
+  );
+}
+
+/* Davetin işleri: kodu göster, yeni kod ya da yeniden gönder, iptal. Kişinin menüsünde ve davet satırında aynı. */
+function DavetMaddeleri({ davet: d }: { davet: Davet }) {
+  const { t, ad, dil } = useDil();
+  const h = useHesapIsleri()!;
+  const yenidenGonder = () =>
+    firebaseYukle()
+      .then((f) => f.baglantiGonder(d.eposta, dil))
+      .then(() => bildir(t("davetGonderildi", { eposta: d.eposta })))
+      .catch((x) => bildir(gonderimHatasi(x)));
+  const kodYenile = () =>
+    firebaseYukle()
+      .then((f) => f.kodYenile(d.eposta))
+      .then((k) => h.ac({ tur: "kod", sonuc: { ...k, ad: ad({ ad: d.ad }) } }))
+      .catch((x) => bildir(gonderimHatasi(x)));
+  const iptal = () => confirm(t("davetiIptalEt") + "?") && firebaseYukle().then((f) => f.davetIptal(d.eposta));
+  return (
+    <>
+      {d.kod ? (
+        <>
+          {!!d.bitis && Date.now() < d.bitis && (
+            <button
+              type="button"
+              role="menuitem"
+              className="acilir-satir"
+              onClick={() => h.ac({ tur: "kod", sonuc: { kod: d.kod!, kullanici: d.kullanici ?? girisAdi(d.eposta), eposta: d.eposta, bitis: d.bitis!, ad: ad({ ad: d.ad }) } })}
+              data-kod-goster
+            >
+              <Ticket size={16} /> {t("koduGoster")}
+            </button>
+          )}
+          <button type="button" role="menuitem" className="acilir-satir" onClick={kodYenile} data-kod-yenile>
+            <RotateCcw size={16} /> {t("yeniKodVer")}
+          </button>
+        </>
+      ) : (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={yenidenGonder} data-davet-yeniden>
+          <RotateCcw size={16} /> {t("yenidenGonder")}
+        </button>
+      )}
+      <button type="button" role="menuitem" className="acilir-satir" onClick={iptal} data-davet-iptal>
+        <X size={16} /> {t("davetiIptalEt")}
+      </button>
+    </>
+  );
+}
+
+/* Kişinin satırındaki hesap menüsü: yalnız yetkisi olan maddeler; hiçbiri yoksa çizilmez. */
+export function KisiHesapMenusu({ ben, kisi: k }: { ben: Kisi; kisi: Kisi }) {
+  const { t, ad } = useDil();
+  const h = useHesapIsleri();
+  if (!h || !GERCEK) return null;
+  const davetYetkisi = hesapYetkisi(ben, "davet");
+  const davet = davetYetkisi ? h.davetiOf(k) : undefined;
+  // Şifresini unutan kod hesabına yeni kod: e-postayla sıfırlama yok (adres posta almıyor).
+  const yeniKod = !!girisAdi(k.eposta) && davetYetkisi && epostaDegistirebilir(ben, k) && k.id !== ben.id && !k.pasif;
+  const bagla = k.hesapsiz && davetYetkisi && !davet;
+  // Kendi hesabını kapatamıyor, yetkisini bırakamıyor: sistem yöneticisiz kalmasın.
+  const kapatabilir = k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
+  const yetkiler = !!ben.hesapYoneticisi && k.id !== ben.id && !k.hesapsiz;
+  const silebilir = k.id !== ben.id && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi));
+  if (!davet && !yeniKod && !bagla && !kapatabilir && !yetkiler && !silebilir) return null;
+  return (
+    <IslemMenusu etiket={t("hesapIslemleri", { ad: ad(k) })} dugmeSinifi="dugme dugme-sade dugme-kucuk dugme-ikon" menuSinifi="plan-menusu" katman>
+      {bagla && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "bagla", kisi: k })} data-hesaba-bagla>
+          <Mail size={16} /> {t("hesabaBagla")}
+        </button>
+      )}
+      {davet && <DavetMaddeleri davet={davet} />}
+      {yeniKod && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "yeniKod", kisi: k })} data-yeni-kod>
+          <Ticket size={16} /> {t("yeniKodVer")}
+        </button>
+      )}
+      {yetkiler && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "yetkiler", kisi: k })} data-yetkiler>
+          <KeyRound size={16} /> {t("yetkiler")}
+          {!!k.yetkiler?.length && ` · ${k.yetkiler.length}`}
+        </button>
+      )}
+      {kapatabilir && (
+        <button
+          type="button"
+          role="menuitem"
+          className="acilir-satir"
+          onClick={() => confirm(t(k.pasif ? "hesabiAc" : "hesabiKapat") + "?") && kisiHesabi(ben, k.id, { pasif: !k.pasif })}
+          data-hesap-pasif
+        >
+          <UserCog size={16} /> {t(k.pasif ? "hesabiAc" : "hesabiKapat")}
+        </button>
+      )}
+      {silebilir && (
+        <button
+          type="button"
+          role="menuitem"
+          className="acilir-satir kotu-yazi"
+          onClick={() => {
+            if (confirm(t("kisiSilinsinMi", { ad: ad(k) })) && kisiSil(ben, k.id)) bildir(t("kisiSilindi", { ad: ad(k) }));
+          }}
+          data-kisi-sil
+        >
+          <Trash2 size={16} /> {t("kisiSil")}
+        </button>
+      )}
+    </IslemMenusu>
+  );
+}
+
+/* Kaydı henüz kurulmamış davetin satırı: kişinin birimindeki yerinde, sarı tonda. */
+export function DavetSatiri({ davet: d, yer }: { davet: Davet; yer?: boolean }) {
+  const { t, ad } = useDil();
+  const adi = ad({ ad: d.ad });
+  return (
+    <li className="hesap-bekliyor" data-davet={d.eposta}>
+      <Avatar kisi={{ id: d.eposta, ad: d.ad } as Kisi} boy="kucuk" />
+      <div className="ad">
+        <span>{adi}</span>
+        {yer && (
+          <small className="sonuk-yazi">
+            {birimAdi(d.birim)} › {gorevAdi(d.gorev)}
+          </small>
+        )}
+        <small>
+          <HesapRozeti durum="bekliyor" /> {d.kod ? <KullaniciAdi eposta={d.eposta} /> : <bdi className="soluk">{d.eposta}</bdi>}
+        </small>
+      </div>
+      <IslemMenusu etiket={t("hesapIslemleri", { ad: adi })} dugmeSinifi="dugme dugme-sade dugme-kucuk dugme-ikon" menuSinifi="plan-menusu" katman>
+        <DavetMaddeleri davet={d} />
+      </IslemMenusu>
+    </li>
+  );
+}
+
+/* Kişi ekleme: davet, giriş kodu ya da hesapsız kişi; önce sayfanın kartıydı, şimdi Kişiler'in "Kişi ekle"sinden pencere. */
+function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; alinmis: Set<string>; kodVerildi: (k: KodSonucu) => void; kapat: () => void }) {
+  const { t, dil } = useDil();
+  const davetYetkisi = hesapYetkisi(ben, "davet");
+  const hesapsizYetkisi = hesapYetkisi(ben, "hesapsizKisi");
+  const [tur, setTur] = useState<"davet" | "kod" | "hesapsiz">(davetYetkisi ? "davet" : "hesapsiz");
+  const [form, setForm] = useState(BOS_FORM);
+  const [bekle, setBekle] = useState(false);
+  const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
+  // Kayıtlı yapıda başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
+  const gorev = birimeUygunUnvan(form.birim, form.gorev);
+  const kodOnerisi = kullaniciAdiOner(form.adTr || form.adEn, alinmis);
+  const hesapsizTur = tur === "hesapsiz";
+  const kodTur = tur === "kod";
 
   const ekle = (e: FormEvent) => {
     e.preventDefault();
     if (!confirm(t("eminMisin"))) return;
     const eposta = form.eposta.trim().toLowerCase();
     const adi = adKur(form.adTr, form.adAr, form.adEn, eposta);
-    if (tur === "hesapsiz") {
+    if (hesapsizTur) {
       if (hesapsizKisiEkle(ben, { ad: adi, birim: form.birim, gorev, eposta, telefon: form.telefon })) {
         bildir(t("hesapsizEklendi", { ad: adi.tr }));
-        setForm(BOS_FORM);
+        kapat();
       }
       return;
     }
-    if (tur === "kod") {
+    if (kodTur) {
       const kullanici = form.kullanici.trim().toLowerCase() || kodOnerisi;
       if (!kullaniciAdiGecerli(kullanici) || alinmis.has(kullanici)) return bildir(t(alinmis.has(kullanici) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
       setBekle(true);
       firebaseYukle()
         .then((f) => f.kodlaDavetEt({ kullanici, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }))
-        .then((k) => {
-          setKodSonucu({ ...k, ad: adi.ar });
-          setForm(BOS_FORM);
-        })
-        .catch((x) => bildir(gonderimHatasi(x)))
-        .finally(() => setBekle(false));
+        .then((k) => kodVerildi({ ...k, ad: adi.ar }))
+        .catch((x) => {
+          bildir(gonderimHatasi(x));
+          setBekle(false);
+        });
       return;
     }
     setBekle(true);
     firebaseYukle()
-      .then((f) =>
-        f.davetEt({ eposta, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil),
-      )
+      .then((f) => f.davetEt({ eposta, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil))
       .then(() => {
         bildir(t("davetGonderildi", { eposta }));
-        setForm(BOS_FORM);
+        kapat();
       })
-      .catch((x) => bildir(gonderimHatasi(x)))
-      .finally(() => setBekle(false));
+      .catch((x) => {
+        bildir(gonderimHatasi(x));
+        setBekle(false);
+      });
   };
 
-  const yenidenGonder = (eposta: string) =>
-    firebaseYukle()
-      .then((f) => f.baglantiGonder(eposta, dil))
-      .then(() => bildir(t("davetGonderildi", { eposta })))
-      .catch((x) => bildir(gonderimHatasi(x)));
-  const iptalEt = (eposta: string) => firebaseYukle().then((f) => f.davetIptal(eposta));
-  const kodYenile = (d: Davet) =>
-    firebaseYukle()
-      .then((f) => f.kodYenile(d.eposta))
-      .then((k) => setKodSonucu({ ...k, ad: ad({ ad: d.ad }) }))
-      .catch((x) => bildir(gonderimHatasi(x)));
-  // Alınmış kullanıcı adları: kayıtta ve davetlerde. Firebase'de kalan eskiler kodlaDavetEt'te ayrıca yakalanıyor.
-  const alinmis = alinmisKullanicilar(v.kisiler, davetler);
-  const kodOnerisi = kullaniciAdiOner(form.adTr || form.adEn, alinmis);
+  return (
+    <Pencere baslik={t("kisiEkle")} kapat={kapat}>
+      <form className="form" onSubmit={ekle} data-davet-formu>
+        {davetYetkisi && (
+          <div className="sekmeler" role="tablist" aria-label={t("kisiEkle")}>
+            <button type="button" role="tab" aria-selected={tur === "davet"} className={tur === "davet" ? "acik" : ""} onClick={() => setTur("davet")} data-tur-davet>
+              {t("davetEt")}
+            </button>
+            <button type="button" role="tab" aria-selected={kodTur} className={kodTur ? "acik" : ""} onClick={() => setTur("kod")} data-tur-kod>
+              {t("girisKodu")}
+            </button>
+            {hesapsizYetkisi && (
+              <button type="button" role="tab" aria-selected={hesapsizTur} className={hesapsizTur ? "acik" : ""} onClick={() => setTur("hesapsiz")} data-tur-hesapsiz>
+                {t("hesapsizKisi")}
+              </button>
+            )}
+          </div>
+        )}
+        {kodTur ? (
+          <label>
+            {t("kullaniciAdi")}
+            <input dir="ltr" autoCapitalize="none" spellCheck={false} value={form.kullanici} placeholder={kodOnerisi} onChange={(e) => alan("kullanici", e.target.value.toLowerCase())} data-kod-kullanici-adi />
+          </label>
+        ) : (
+          <label>
+            {t("eposta")}
+            <input type="email" dir="ltr" value={form.eposta} onChange={(e) => alan("eposta", e.target.value)} required={!hesapsizTur} data-davet-eposta />
+          </label>
+        )}
+        {hesapsizTur && (
+          <label>
+            {t("telefon")}
+            <input type="tel" dir="ltr" value={form.telefon} onChange={(e) => alan("telefon", e.target.value)} data-hesapsiz-telefon />
+          </label>
+        )}
+        {/* Ad her arayüz dilinde Arapça görünüyor, o yüzden zorunlu ve önde; Latin yazımlar aramada ve baş harfte. */}
+        <label>
+          {t("adArapca")}
+          <input dir="rtl" lang="ar" value={form.adAr} onChange={(e) => alan("adAr", e.target.value)} required data-davet-ad-ar />
+        </label>
+        <label>
+          {t("adTurkce")}
+          <input value={form.adTr} onChange={(e) => alan("adTr", e.target.value)} data-davet-ad />
+        </label>
+        <label>
+          {t("adIngilizce")}
+          <input dir="ltr" value={form.adEn} onChange={(e) => alan("adEn", e.target.value)} />
+        </label>
+        <label>
+          {t("birim")}
+          <select value={form.birim} onChange={(e) => setForm((f) => ({ ...f, birim: e.target.value, gorev: birimeUygunUnvan(e.target.value, f.gorev) }))} data-davet-birim>
+            <BirimSecenekleri />
+          </select>
+        </label>
+        <label>
+          {t("gorev")}
+          <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
+            <UnvanSecenekleri birim={form.birim} />
+          </select>
+        </label>
+        {/* Yöneticilik yalnız tam yöneticiden: davet yetkisi olan yönetici davet edemiyor (kurallar da). */}
+        {!hesapsizTur && ben.hesapYoneticisi && (
+          <label className="secim">
+            <input type="checkbox" checked={form.hesapYoneticisi} onChange={(e) => alan("hesapYoneticisi", e.target.checked)} />
+            {t("hesapYoneticisi")}
+          </label>
+        )}
+        <div className="form-alt">
+          {hesapsizTur ? (
+            <button className="dugme" disabled={!gorev} data-hesapsiz-ekle>
+              <UserPlus size={16} /> {t("hesapsizKisiEkle")}
+            </button>
+          ) : kodTur ? (
+            <button className="dugme" disabled={bekle || !gorev} data-kod-olustur>
+              <Ticket size={16} /> {t("kodOlustur")}
+            </button>
+          ) : (
+            <button className="dugme" disabled={bekle || !gorev} data-davet-gonder>
+              <Mail size={16} /> {t("davetGonder")}
+            </button>
+          )}
+        </div>
+      </form>
+    </Pencere>
+  );
+}
 
+/* Paylaşılabilir kayıt bağlantıları (KayitSayfasi): yalnız geçerliler listede. */
+function BaglantilarPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+  const { t } = useDil();
+  const [baglantilar, setBaglantilar] = useState<KayitBaglantisi[] | null>(null);
+  useEffect(() => {
+    let kopar: (() => void) | undefined;
+    let bitti = false;
+    firebaseYukle().then((f) => {
+      if (!bitti) kopar = f.kayitBaglantilariIzle(setBaglantilar, () => setBaglantilar([]));
+    });
+    return () => {
+      bitti = true;
+      kopar?.();
+    };
+  }, []);
+  const kopyala = (kod: string) =>
+    firebaseYukle()
+      .then((f) => navigator.clipboard.writeText(f.kayitAdresi(kod)))
+      .then(() => bildir(t("bKopyalandi")))
+      .catch(() => bildir(t("kopyalanamadi")));
   const baglantiAc = () =>
     firebaseYukle()
       .then((f) => f.kayitBaglantisiOlustur(ben.id))
@@ -198,385 +526,39 @@ export default function Kullanicilar({ ben, gomulu = false }: { ben: Kisi; gomul
         console.error(x);
         bildir(t("ghBilinmeyen"));
       });
-  const kopyala = (kod: string) =>
-    firebaseYukle()
-      .then((f) => navigator.clipboard.writeText(f.kayitAdresi(kod)))
-      .then(() => bildir(t("bKopyalandi")))
-      .catch(() => bildir(t("kopyalanamadi")));
   const baglantiKapat = (kod: string) => firebaseYukle().then((f) => f.kayitBaglantisiKapat(kod));
-  // Kapalı ve süresi geçmiş bağlantı listede kalabalık etmesin; yalnız geçerliler.
   const acikBaglantilar = (baglantilar ?? []).filter((b) => b.acik && Date.now() < b.bitis);
-
-  const kisiler = [...v.kisiler].sort((a, b) => Number(!!a.pasif) - Number(!!b.pasif) || Number(!!a.hesapsiz) - Number(!!b.hesapsiz) || ad(a).localeCompare(ad(b)));
-  const sehirDegisebilir = (k: Kisi) => profilDuzenler(ben, k) || hesapYetkisi(ben, "kisiDuzenle");
-  const silebilir = (k: Kisi) => k.id !== ben.id && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi));
-  const kapatabilir = (k: Kisi) => k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
-  const ekleyebilir = davetYetkisi || hesapsizYetkisi;
-  const hesapsizTur = tur === "hesapsiz";
-  const kodTur = tur === "kod";
-
   return (
-    <>
-      {!gomulu && <SayfaBasi ikon={<UserCog size={26} />} baslik={t("mKullanicilar")} />}
-      {!gomulu && <OnayBekleyenHesaplar ben={ben} />}
-      {ekleyebilir && (
-        <Kart
-          baslik={t("kisiEkle")}
-          ikon={<UserPlus size={18} />}
-          sagUc={
-            (hesapsizYetkisi || hesapYetkisi(ben, "kisiDuzenle")) && (
-              <span className="dugmeler">
-                {hesapsizYetkisi && (
-                  <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAktar(true)} data-excel-aktar>
-                    <FileSpreadsheet size={14} /> {t("excelAktar")}
-                  </button>
-                )}
-                {hesapYetkisi(ben, "kisiDuzenle") && (
-                  <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setEslestir(true)} data-eposta-eslestir>
-                    <AtSign size={14} /> {t("epostaEslestir")}
-                  </button>
-                )}
-              </span>
-            )
-          }
-        >
-          <form className="form" onSubmit={ekle} data-davet-formu>
-            {davetYetkisi && (
-              <div className="sekmeler" role="tablist" aria-label={t("kisiEkle")}>
-                <button type="button" role="tab" aria-selected={!hesapsizTur} className={!hesapsizTur ? "acik" : ""} onClick={() => setTur("davet")} data-tur-davet>
-                  {t("davetEt")}
-                </button>
-                <button type="button" role="tab" aria-selected={kodTur} className={kodTur ? "acik" : ""} onClick={() => setTur("kod")} data-tur-kod>
-                  {t("girisKodu")}
-                </button>
-                {hesapsizYetkisi && (
-                  <button type="button" role="tab" aria-selected={hesapsizTur} className={hesapsizTur ? "acik" : ""} onClick={() => setTur("hesapsiz")} data-tur-hesapsiz>
-                    {t("hesapsizKisi")}
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="satir">
-              {kodTur ? (
-                <label>
-                  {t("kullaniciAdi")}
-                  <input
-                    dir="ltr"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    value={form.kullanici}
-                    placeholder={kodOnerisi}
-                    onChange={(e) => alan("kullanici", e.target.value.toLowerCase())}
-                    data-kod-kullanici-adi
-                  />
-                </label>
-              ) : (
-                <label>
-                  {t("eposta")}
-                  <input type="email" dir="ltr" value={form.eposta} onChange={(e) => alan("eposta", e.target.value)} required={!hesapsizTur} data-davet-eposta />
-                </label>
-              )}
-              {hesapsizTur && (
-                <label>
-                  {t("telefon")}
-                  <input type="tel" dir="ltr" value={form.telefon} onChange={(e) => alan("telefon", e.target.value)} data-hesapsiz-telefon />
-                </label>
-              )}
-            </div>
-            {/* Ad her arayüz dilinde Arapça görünüyor, o yüzden zorunlu ve önde; Latin yazımlar aramada ve baş harfte. */}
-            <div className="satir">
-              <label>
-                {t("adArapca")}
-                <input dir="rtl" lang="ar" value={form.adAr} onChange={(e) => alan("adAr", e.target.value)} required data-davet-ad-ar />
-              </label>
-              <label>
-                {t("adTurkce")}
-                <input value={form.adTr} onChange={(e) => alan("adTr", e.target.value)} data-davet-ad />
-              </label>
-              <label>
-                {t("adIngilizce")}
-                <input dir="ltr" value={form.adEn} onChange={(e) => alan("adEn", e.target.value)} />
-              </label>
-            </div>
-            <div className="satir">
-              <label>
-                {t("birim")}
-                <select value={form.birim} onChange={(e) => setForm((f) => ({ ...f, birim: e.target.value, gorev: birimeUygunUnvan(e.target.value, f.gorev) }))} data-davet-birim>
-                  <BirimSecenekleri />
-                </select>
-              </label>
-              <label>
-                {t("gorev")}
-                <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
-                  <UnvanSecenekleri birim={form.birim} />
-                </select>
-              </label>
-            </div>
-            {/* Yöneticilik yalnız tam yöneticiden: davet yetkisi olan yönetici davet edemiyor (kurallar da). */}
-            {!hesapsizTur && ben.hesapYoneticisi && (
-              <label className="secim">
-                <input type="checkbox" checked={form.hesapYoneticisi} onChange={(e) => alan("hesapYoneticisi", e.target.checked)} />
-                {t("hesapYoneticisi")}
-              </label>
-            )}
-            <div className="form-alt">
-              {hesapsizTur ? (
-                <button className="dugme" disabled={!gorev} data-hesapsiz-ekle>
-                  <UserPlus size={16} /> {t("hesapsizKisiEkle")}
-                </button>
-              ) : kodTur ? (
-                <button className="dugme" disabled={bekle || !gorev} data-kod-olustur>
-                  <Ticket size={16} /> {t("kodOlustur")}
-                </button>
-              ) : (
-                <button className="dugme" disabled={bekle || !gorev} data-davet-gonder>
-                  <Mail size={16} /> {t("davetGonder")}
-                </button>
-              )}
-            </div>
-          </form>
-        </Kart>
+    <Pencere
+      baslik={t("kayitBaglantilari")}
+      kapat={kapat}
+      altBilgi={
+        <button type="button" className="dugme" onClick={baglantiAc} data-kayit-baglantisi-ac>
+          <Plus size={16} /> {t("yeniKayitBaglantisi")}
+        </button>
+      }
+    >
+      {!baglantilar ? (
+        <Bos kucuk metin={t("yukleniyor")} />
+      ) : acikBaglantilar.length === 0 ? (
+        <Bos kucuk metin={t("kayitBaglantisiYok")} />
+      ) : (
+        <ul className="kayit-baglantilari">
+          {acikBaglantilar.map((b) => (
+            <li key={b.kod} data-kayit-baglantisi={b.kod}>
+              <input readOnly dir="ltr" value={`…/#/kayit/${b.kod}`} aria-label={t("kayitBaglantilari")} onFocus={(e) => e.target.select()} />
+              <span className="soluk">{t("sonGecerlilik", { tarih: tarihYaz(new Date(b.bitis).toISOString()) })}</span>
+              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kopyala(b.kod)} data-kayit-kopyala>
+                <Copy size={14} /> {t("baglantiyiKopyala")}
+              </button>
+              <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => baglantiKapat(b.kod)} data-kayit-kapat>
+                <X size={14} /> {t("baglantiyiKapat")}
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
-
-      {baglantiYetkisi && (
-        <Kart
-          baslik={t("kayitBaglantilari")}
-          ikon={<Link2 size={18} />}
-          sagUc={
-            <button type="button" className="dugme dugme-kucuk" onClick={baglantiAc} data-kayit-baglantisi-ac>
-              <Plus size={14} /> {t("yeniKayitBaglantisi")}
-            </button>
-          }
-        >
-          {!baglantilar ? (
-            <Bos kucuk metin={t("yukleniyor")} />
-          ) : acikBaglantilar.length === 0 ? (
-            <Bos kucuk metin={t("kayitBaglantisiYok")} />
-          ) : (
-            <ul className="kayit-baglantilari">
-              {acikBaglantilar.map((b) => (
-                <li key={b.kod} data-kayit-baglantisi={b.kod}>
-                  <input readOnly dir="ltr" value={`…/#/kayit/${b.kod}`} aria-label={t("kayitBaglantilari")} onFocus={(e) => e.target.select()} />
-                  <span className="soluk">{t("sonGecerlilik", { tarih: tarihYaz(new Date(b.bitis).toISOString()) })}</span>
-                  <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kopyala(b.kod)} data-kayit-kopyala>
-                    <Copy size={14} /> {t("baglantiyiKopyala")}
-                  </button>
-                  <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => baglantiKapat(b.kod)} data-kayit-kapat>
-                    <X size={14} /> {t("baglantiyiKapat")}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Kart>
-      )}
-
-      {davetYetkisi && (
-        <Kart baslik={t("davetler")} ek={davetler ? String(davetler.length) : undefined} ikon={<Send size={18} />}>
-          {hata ? (
-            <p className="not-kutu uyari">{t("ggKayitHatasi", { kod: hata })}</p>
-          ) : !davetler ? (
-            <Bos kucuk metin={t("yukleniyor")} />
-          ) : davetler.length === 0 ? (
-            <Bos kucuk metin={t("davetYok")} />
-          ) : (
-            <table className="tablo kartli">
-              <thead>
-                <tr>
-                  <th>{t("eposta")}</th>
-                  <th>{t("ad")}</th>
-                  <th>{t("birim")}</th>
-                  <th>{t("durum")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {davetler.map((d) => (
-                  <tr key={d.eposta} data-davet={d.eposta}>
-                    <td className="birincil">
-                      {d.kod ? <KullaniciAdi eposta={d.eposta} /> : <bdi>{d.eposta}</bdi>}
-                    </td>
-                    <td data-etiket={t("ad")}>{ad({ ad: d.ad })}</td>
-                    <td data-etiket={t("birim")}>
-                      {birimAdi(d.birim)} · {gorevAdi(d.gorev)}
-                    </td>
-                    <td data-etiket={t("durum")}>
-                      <Rozet ton={DAVET_DURUM_TONU[d.durum]}>{t(DAVET_DURUM_ADI[d.durum])}</Rozet>
-                    </td>
-                    <td className="islem-hucre">
-                      {d.durum === "bekliyor" && (
-                        <>
-                          {d.kod ? (
-                            <>
-                              {!!d.bitis && Date.now() < d.bitis && (
-                                <button
-                                  type="button"
-                                  className="dugme dugme-sade dugme-kucuk"
-                                  onClick={() => setKodSonucu({ kod: d.kod!, kullanici: d.kullanici ?? girisAdi(d.eposta), eposta: d.eposta, bitis: d.bitis!, ad: ad({ ad: d.ad }) })}
-                                  data-kod-goster
-                                >
-                                  <Ticket size={14} /> {t("koduGoster")}
-                                </button>
-                              )}
-                              <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => kodYenile(d)} data-kod-yenile>
-                                <RotateCcw size={14} /> {t("yeniKodVer")}
-                              </button>
-                            </>
-                          ) : (
-                            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => yenidenGonder(d.eposta)}>
-                              <RotateCcw size={14} /> {t("yenidenGonder")}
-                            </button>
-                          )}
-                          <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => iptalEt(d.eposta)} data-davet-iptal>
-                            <X size={14} /> {t("davetiIptalEt")}
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Kart>
-      )}
-
-      <Kart baslik={t("hesaplar")} ek={String(kisiler.length)}>
-        <table className="tablo kartli">
-          <thead>
-            <tr>
-              <th>{t("ad")}</th>
-              <th>{t("eposta")}</th>
-              <th>{t("birim")}</th>
-              <th>{t("sehir")}</th>
-              <th>{t("durum")}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {kisiler.map((k) => (
-              <tr key={k.id} data-hesap={k.id}>
-                <td className="birincil">
-                  <span className="kisi-hucre">
-                    <Avatar kisi={k} boy="kucuk" /> {ad(k)}
-                  </span>
-                </td>
-                <td data-etiket={t("eposta")}>
-                  {girisAdi(k.eposta) ? (
-                    <>
-                      <KullaniciAdi eposta={k.eposta} />
-                      {k.kurumEposta && (
-                        <>
-                          {" "}
-                          <bdi className="soluk">{k.kurumEposta}</bdi>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <bdi>{k.eposta || "—"}</bdi>
-                  )}
-                </td>
-                <td data-etiket={t("birim")}>
-                  {birimAdi(k.birim)} · {gorevAdi(k.gorev)}
-                </td>
-                {/* Şehir satırda değişir: muhabirler yer değiştirdikçe tek tek profile girmek gerekmesin. */}
-                <td data-etiket={t("sehir")} data-hesap-sehir>
-                  {sehirDegisebilir(k) ? (
-                    <SatirSehirSecimi
-                      deger={k.sehir}
-                      etiket={`${ad(k)} · ${t("sehir")}`}
-                      kaydet={(x) => {
-                        const tamam = kisiSehri(ben, k.id, x);
-                        if (tamam) bildir(t("bKaydedildi"));
-                        return tamam;
-                      }}
-                    />
-                  ) : (
-                    sehirAdi(k.sehir)
-                  )}
-                </td>
-                <td data-etiket={t("durum")}>
-                  {k.hesapsiz ? (
-                    <span data-hesap-yok>
-                      <Rozet>{t("hesapYok")}</Rozet>
-                    </span>
-                  ) : (
-                    <Rozet ton={k.pasif ? "" : "iyi"}>{t(k.pasif ? "hesapPasif" : "hesapEtkin")}</Rozet>
-                  )}{" "}
-                  {k.hesapYoneticisi && <Rozet ton="koyu">{t("hesapYoneticisi")}</Rozet>}
-                  {!k.hesapYoneticisi && !!k.yetkiler?.length && (
-                    <span data-yetki-sayisi={k.yetkiler.length}>
-                      <Rozet ton="koyu" title={k.yetkiler.map((y) => t(YETKI_ADI[y])).join(", ")}>
-                        {t("yetkiSayisi", { n: k.yetkiler.length })}
-                      </Rozet>
-                    </span>
-                  )}{" "}
-                  {k.yeniEposta && (
-                    <span data-eposta-bekliyor>
-                      <Rozet ton="uyari">{girisAdi(k.yeniEposta) ? t("kodBekliyor", { kullanici: girisAdi(k.yeniEposta) }) : t("epostaBekliyor", { eposta: k.yeniEposta })}</Rozet>
-                    </span>
-                  )}{" "}
-                  {k.kontrolBekliyor && (
-                    <span data-kontrol-bekliyor>
-                      <Rozet ton="uyari">{t("kontrolBekliyor")}</Rozet>
-                    </span>
-                  )}
-                </td>
-                <td className="islem-hucre">
-                  <IzleDugmesi ben={ben} kisi={k} />
-                  {hesapYetkisi(ben, "kisiDuzenle") && (
-                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setDuzenlenen(k)} data-pozisyon-duzenle>
-                      {t("duzenle")}
-                    </button>
-                  )}
-                  {/* Şifresini unutan kod hesabına yeni kod: e-postayla sıfırlama yok (adres posta almıyor). */}
-                  {girisAdi(k.eposta) && davetYetkisi && epostaDegistirebilir(ben, k) && k.id !== ben.id && !k.pasif && (
-                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setKodVerilen(k)} data-yeni-kod>
-                      <Ticket size={14} /> {t("yeniKodVer")}
-                    </button>
-                  )}
-                  {k.hesapsiz && davetYetkisi && (
-                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setBaglanan(k)} data-hesaba-bagla>
-                      <Mail size={14} /> {t("hesabaBagla")}
-                    </button>
-                  )}
-                  {/* Kendi hesabını kapatamıyor, yetkisini bırakamıyor: sistem yöneticisiz kalmasın. */}
-                  {kapatabilir(k) && (
-                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => kisiHesabi(ben, k.id, { pasif: !k.pasif })} data-hesap-pasif>
-                      {t(k.pasif ? "hesabiAc" : "hesabiKapat")}
-                    </button>
-                  )}
-                  {ben.hesapYoneticisi && k.id !== ben.id && !k.hesapsiz && (
-                    <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setYetkiVerilen(k)} data-yetkiler>
-                      <KeyRound size={14} /> {t("yetkiler")}
-                    </button>
-                  )}
-                  {silebilir(k) && (
-                    <button
-                      type="button"
-                      className="dugme dugme-sade dugme-kucuk kotu-yazi"
-                      onClick={() => {
-                        if (confirm(t("kisiSilinsinMi", { ad: ad(k) })) && kisiSil(ben, k.id)) bildir(t("kisiSilindi", { ad: ad(k) }));
-                      }}
-                      data-kisi-sil
-                    >
-                      <Trash2 size={14} /> {t("kisiSil")}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Kart>
-      {duzenlenen && <PozisyonPenceresi ben={ben} kisi={duzenlenen} kapat={() => setDuzenlenen(null)} />}
-      {baglanan && <BaglaPenceresi ben={ben} kisi={baglanan} alinmis={alinmis} kodVerildi={setKodSonucu} kapat={() => setBaglanan(null)} />}
-      {kodVerilen && <YeniKodPenceresi ben={ben} kisi={kodVerilen} alinmis={alinmis} kodVerildi={setKodSonucu} kapat={() => setKodVerilen(null)} />}
-      {kodSonucu && <KodPenceresi sonuc={kodSonucu} kapat={() => setKodSonucu(null)} />}
-      {yetkiVerilen && <YetkiPenceresi ben={ben} kisi={yetkiVerilen} kapat={() => setYetkiVerilen(null)} />}
-      {aktar && <AktarPenceresi ben={ben} kapat={() => setAktar(false)} />}
-      {eslestir && <EslestirPenceresi ben={ben} kapat={() => setEslestir(false)} />}
-    </>
+    </Pencere>
   );
 }
 

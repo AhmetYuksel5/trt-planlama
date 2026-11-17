@@ -105,7 +105,7 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
               className="dugme dugme-kucuk"
               onClick={() => {
                 izlemeBitir();
-                git("organizasyon/hesaplar");
+                git("organizasyon/kisiler");
               }}
               data-izleme-bitir
             >

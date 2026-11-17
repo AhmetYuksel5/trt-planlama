@@ -283,8 +283,8 @@ function SatirGovdesi({ ben, x, kapat }: { ben: Kisi; x: KuyrukOgesi; kapat: () 
   if (x.tur === "hesap")
     return (
       <div className="dugmeler">
-        <a className="dugme dugme-kucuk" href="#/organizasyon/hesaplar">
-          {t("hesaplar")}
+        <a className="dugme dugme-kucuk" href="#/organizasyon/kisiler">
+          {t("orgKisiler")}
         </a>
       </div>
     );

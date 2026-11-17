@@ -4199,3 +4199,14 @@ a.ap-plan:hover { border-color: var(--vurgu); }
   .staffing-satir { grid-template-columns: auto 3rem minmax(0, 1fr); }
   .staffing-satir select { grid-column: 2 / -1; }
 }
+
+/*
+ * Kişiler'de hesap durumu satırın tonunda (Hesaplar sekmesi buraya katıldı):
+ * hesabı yok soluk, aktivasyon bekleyen sarımsı, kapalı hesap gri ve adı çizili.
+ * Opaklık değil renk: içindeki düğme ve menü de okunur kalsın.
+ */
+li.hesap-yok { background: var(--yuzey-2); }
+li.hesap-yok .ad > a, li.hesap-yok .ad > span { color: var(--sonuk); }
+li.hesap-bekliyor { background: var(--uyari-sis); }
+li.hesap-pasif .ad > a { color: var(--sonuk); text-decoration: line-through; }
+:is(li.hesap-yok, li.hesap-bekliyor, li.hesap-pasif) { border-radius: var(--yaricap); padding-inline: var(--ara-2); }

@@ -109,7 +109,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kendi haberinde sıranın ona geçtiği adım ve sonucu (öncelik, iptal,
   yayın); ara işler (kontrol, Media, not) zile düşmez.
   Yetki hem düğmede hem eylemde soruluyor.
-- İzleme (`izleme.ts`): tam yönetici Organizasyon › Kişiler'de ve Hesaplar'da
+- İzleme (`izleme.ts`): tam yönetici Organizasyon › Kişiler'de
   kişinin yanındaki 👁 (`Kullanicilar.tsx → IzleDugmesi`) ile sitenin o kişiye
   göründüğü halini açar: `useBen()` izleneni döndürür (menü, ana sayfa, yetki
   onun), oturum yöneticide kalır (`useGercekBen`). Yazış kapalı: `veri.ts →
@@ -157,7 +157,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     dene"; `kip.ts → demoyuAc`): Firebase oturumu kapanmadan demoya geçer.
     Girişe dönen kişinin oturumu tarayıcıda açıksa şifre sorulmaz
     (`depo/firebase.ts → sakliOturum`). Çıkış oturumu kapatıp tanıtıma döner.
-  - Hesap davetle açılır (`ekranlar/Kullanicilar.tsx`, yalnız hesap
+  - Hesap davetle açılır (Organizasyon › Kişiler, `ekranlar/Kullanicilar.tsx`; yalnız hesap
     yöneticisi). Etkin kişinin adı, birimi, görevi ve rolü aynı sayfada
     "Düzenle" ile değişir (`eylemler.ts → kisiPozisyonu`, kendisininki
     dahil). Kişi e-postadaki Firebase bağlantısıyla etkinleşir, şifre
@@ -235,7 +235,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - E-posta listesiyle eşleştirme (kullanıcı: çağrının CC'sindeki muhabir
     adreslerini teker teker girmek istemiyor; `epostaEslestir.ts`, pencere
     `Kullanicilar.tsx → EslestirPenceresi`, Dış muhabirler sayfasının başında
-    ve Hesaplar'da; demoda Hesaplar yok). Liste yapıştırılır (virgül, noktalı
+    ve Organizasyon › Kişiler'in ⋯'sinde). Liste yapıştırılır (virgül, noktalı
     virgül, satır, "Ad <adres>"), adresin yerel kısmı muhabirin Latin adının
     parçalarıyla (Türkçe/aksanlı harf Latin'e; kayıtlı adreslerin yerel
     kısmı da parça) karşılaştırılır: noktalı, bitişik, rakamlı yazım tutar.
@@ -282,8 +282,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şehirde boş kalır). Gerçek kipte `sehirler` koleksiyonunu herkes okur,
     kısıtlı muhabir yalnız yeni şehir ekler (kural), var olanı değiştiremez.
     Excel aktarımı eklenen şehrin adlarını da tanır.
-    Hesaplar'da her satırda şehir seçimi (`bilesenler/SehirSecimi.tsx →
-    SatirSehirSecimi`): seçilen hemen kaydedilir (`eylemler.ts → kisiSehri`;
+    Hesaplar sekmesinin satırındaki şehir seçimi Kişiler'e taşınmadı, şehir "Düzenle"de;
+    `bilesenler/SehirSecimi.tsx → SatirSehirSecimi` duruyor: seçilen hemen kaydedilir (`eylemler.ts → kisiSehri`;
     profili düzenleyebilen ya da `kisiDuzenle` yetkili), "+ Yeni şehir…"
     küçük pencerede; "Düzenle" penceresinde de şehir. Seçenekler ve yeni şehir
     alanları her yerde aynı bileşenden (`SehirSecenekleri`, `YeniSehirAlanlari`).
@@ -639,7 +639,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     düşerek ekler (`Durum.gundemArsivi`, `gundemNotuKaydet`; aynı haber
     çoğalmaz, kişinin kendi notları).
 - Organizasyon (`ekranlar/organizasyon/Organizasyon.tsx`, `#/organizasyon/<sekme>`;
-  menüde Kullanıcılar'ın yerinde, eski adres Hesaplar sekmesini açar): kurumun
+  menüde Kullanıcılar'ın yerinde, eski adres Kişiler'i açar): kurumun
   yapısı veri (`yapi.ts`). Varsayılan yapı koddaki sabitlerin birebir karşılığı.
   - "Birimler ve ünvanlar": her birim bir kart, ünvanları içinde kıdem
     sırasıyla (`BirimTanimi.unvanlar`; ör. Newsdesk'te Executive Producer,
@@ -738,7 +738,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     şehirden türetir, yapıda kaydı gerekmez; şehir sonradan eklense ya da adı
     değişse de doğru çıkar. Kişi düzenleme penceresinde dış muhabire görev
     sorulmaz, şehir seçilir (altında çıkacak ünvan yazılı); öbür personelde
-    şehir sorulmaz. Şehir nerede değişirse (profil, Hesaplar satırı,
+    şehir sorulmaz. Şehir nerede değişirse (profil,
     düzenleme) ünvan da değişir (`yapi.ts → yerUnvaniUygula`; sistemin verdiği
     ünvan, yani genel "Muhabir" ya da `muhabir-…`; elle verilene dokunmaz).
     Eski kayıtları açılışta sistemin işi eşitler (`eylemler.ts →
@@ -775,6 +775,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     varsayılan kuraldan). Yetkisi olmayan planlamacı Weekly'de kimin
     kesinleştirdiğini görür (`AdimYetkilileri`). Plan içeriğini düzenleme
     (`planDuzenle`, `haftalikDuzenle`) ayrı, değişmedi.
+  - Hesaplar Kişiler'de (kullanıcı: Hesaplar ve Kişiler aynı kişileri iki ayrı yerde
+    gösteriyordu, fazlalıktı; aktivasyonu kişinin satırından yapmak istedi): Hesaplar
+    sekmesi kalktı, `#/organizasyon/hesaplar` ve `#/kullanicilar` Kişiler'i açar
+    (izni Organizasyon'unki). Hesap işleri `Kullanicilar.tsx → HesapIsleriSaglayici`
+    bağlamında (davetleri bir kez dinler, pencereleri tutar): başlıkta "Kişi ekle"
+    (davet, giriş kodu, hesapsız kişi aynı pencerede, `data-kisi-ekle-ac`) ve ⋯
+    (Excel'den muhabir aktar, e-posta eşleştir, kayıt bağlantıları penceresi);
+    kişinin satırında ⋯ (`KisiHesapMenusu`: hesaba bağla, bekleyen davetin kodu /
+    yeni kodu / yeniden gönderimi / iptali, yeni kod, yetkiler, hesabı kapat/aç,
+    sil; yalnız yetkili maddeler, gerçek kipte). Hesap durumu satırın tonunda
+    (`hesapDurumu`): hesabı yok soluk (`.hesap-yok`), aktivasyon bekleyen sarımsı
+    (`yeniEposta` ya da kişiye bağlı bekleyen davet), kapalı gri ve adı çizili;
+    kod hesabında kullanıcı adı satırda. Kaydı henüz kurulmamış davet kendi biriminde
+    ve ünvanında "aktivasyon bekleniyor" satırı (`DavetSatiri`, `data-davet`).
+    Başlıkta süzgeç "Aktivasyon bekleyen · n" ve "Hesabı yok · n" (`data-org-hesap-suz`,
+    `useAdimDurumu`; düz liste). Ayrı davetler tablosu kalktı. Test
+    `testler/org-hesap.cjs`; gerçek kip emülatörle `testler/giris-kodu.mjs`.
   - Kişiler: birim ağacı → ünvan (sayılar alt birimleri de toplar), "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).
   - Bulma ve güvenli tayin (kullanıcı: Organizasyon karmaşık, isim bulmak ve işlem

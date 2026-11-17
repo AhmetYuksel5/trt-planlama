@@ -55,7 +55,8 @@ const gir = async (p, kim, sifre) => {
 const yon = await yeniSayfa();
 await gir(yon, KURUCU, SIFRE);
 await yon.waitForSelector("header.ust", { timeout: 30000 });
-await yon.goto(ADRES + "#/organizasyon/hesaplar");
+await yon.goto(ADRES + "#/organizasyon/kisiler");
+await yon.click("[data-kisi-ekle-ac]");
 await yon.click("[data-tur-kod]");
 await yon.fill("[data-davet-ad-ar]", "علي كايا");
 await yon.fill("[data-davet-ad]", "Ali Kaya");
@@ -66,7 +67,7 @@ const kod = await yon.getAttribute("[data-kod]", "data-kod");
 dogrula("kod biçimi", /^[A-Z2-9]{8}$/.test(kod ?? ""), kod);
 dogrula("pencerede kullanıcı adı", (await yon.textContent("[data-kod-sonuc-kullanici]"))?.trim() === "ali.kaya");
 await yon.keyboard.press("Escape");
-await yon.waitForSelector('[data-davet="ali.kaya@giris.plannersflow.net"] [data-kod-hesap]');
+await yon.waitForSelector('[data-davet="ali.kaya@giris.plannersflow.net"] [data-kod-hesap]', { state: "attached" });
 
 // 2. Kişi bağlantıdaki kodla girer, şifresini belirler.
 const ali = await yeniSayfa();
@@ -99,9 +100,11 @@ await unutan.getByText(/Şifremi unuttum|نسيت|Forgot/).click();
 dogrula("kod hesabında şifre sıfırlama yok", (await unutan.getAttribute("[data-gg-hata]", "data-gg-hata")) === "ggKodHesabiSifre");
 
 // 5. Yönetici şifresini unutana yeni kod verir; yeni hesapla giren kişinin kaydı taşınır.
-await yon.goto(ADRES + "#/organizasyon/hesaplar");
+await yon.goto(ADRES + "#/organizasyon/kisiler");
+await yon.fill("[data-org-ara]", "ali");
 const satir = yon.locator("[data-hesap]", { has: yon.locator("[data-kod-hesap]") }).first();
-await satir.locator("[data-yeni-kod]").click();
+await satir.locator("button[aria-haspopup]").last().click();
+await yon.locator("[data-yeni-kod]").click();
 dogrula("yeni kod önerisi", (await yon.getAttribute("[data-yeni-kod-kullanici]", "placeholder")) === "ali.kaya2");
 await yon.click("[data-yeni-kod-olustur]");
 await yon.waitForSelector("[data-kod]", { timeout: 30000 });

@@ -1000,14 +1000,12 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
   !!k &&
   (sayfa === "panel"
     ? !!kapsam(k)
-    : // Hesaplar yalnız gerçek kipte ve hesap yetkisi olanda: demoda davet edilecek kimse yok.
-      sayfa === "kullanicilar"
-      ? GERCEK && (!!k.hesapYoneticisi || hesapIsiYetkisi(k))
-      : sayfa === "muhasebe"
+    : sayfa === "muhasebe"
         ? muhasebeGorebilir(k)
       : sayfa === "gundem"
         ? gundemGorebilir(anlik(), k)
-        : sayfa === "organizasyon"
+        : // Eski Hesaplar adresi (#/kullanicilar) Organizasyon › Kişiler'i açıyor, izni de onun.
+          sayfa === "organizasyon" || sayfa === "kullanicilar"
           ? yapiDuzenleyebilir(k) ||
             hesapYetkisi(k, "kisiDuzenle") ||
             (GERCEK && hesapIsiYetkisi(k))

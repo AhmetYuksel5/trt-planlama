@@ -436,9 +436,9 @@ export default function App() {
       case "organizasyon":
         icerik = <Organizasyon ben={ben} sekme={yol.id} />;
         break;
-      /* Eski adres: hesaplar artık Organizasyon'un sekmesi. */
+      /* Eski adres: hesaplar Organizasyon › Kişiler'de. */
       case "kullanicilar":
-        icerik = <Organizasyon ben={ben} sekme="hesaplar" />;
+        icerik = <Organizasyon ben={ben} sekme="kisiler" />;
         break;
       default:
         icerik = <Yetkisiz />;
