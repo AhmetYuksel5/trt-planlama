@@ -2,7 +2,7 @@ import { girisAdi, postaAdresi } from "./girisKodu";
 import { staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
-import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, type UretimAdimi } from "./akis";
+import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { gundemde, kabulMu, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
@@ -1993,14 +1993,9 @@ export const planDurum = (ben: Kisi, planId: string, yeni: PlanDurum) => {
       const sahip = paketSahibi({ ...p, durum: "uretimde", adim, akis });
       d = hareketYaz(d, { kisiId: ben.id, tip: "planDevralindi", paketId: p.id, planId, veri: { adim, sahip: sahip ?? "" } });
     }
-    // Plana stoktan seçilen paketler bu planla yayına çıkıyor; stoktan düşüp arşive geçiyor.
-    for (const id of plan.hazirPaketler) {
-      const p = paketBul(d, id);
-      if (!p || !hazirSecilebilir(p)) continue;
-      d = paketGuncelle(d, id, (x) => ({ ...x, yayinlandi: { planId, tarih: plan.tarih } }));
-      d = hareketYaz(d, { kisiId: ben.id, tip: "stokYayinlandi", paketId: id, planId, veri: { tarih: plan.tarih } });
-    }
   }
+  // Hazır paketler planın onayıyla yayına çıkar, onay geri alınınca stoka döner.
+  d = hazirYayiniEsitle(d, planId, ben.id);
   const tip = yeni === "toplantida" && plan.durum === "onayli" ? "planOnayiGeriAlindi" : yeni === "toplantida" ? "planToplantida" : yeni === "onayli" ? "planOnaylandi" : yeni === "devralindi" ? "planDevralindi" : "planTaslaga";
   const sahip: Birim | "" = yeni === "toplantida" ? "yonetim" : yeni === "onayli" ? "newsdesk" : "";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip, planId, veri: { tarih: plan.tarih, durum: yeni, sahip } }));
@@ -2076,11 +2071,41 @@ export const gorevlendirmeOlustur = (ben: Kisi, planId: string, g: Omit<Gorevlen
   return true;
 };
 
-/** Plana yalnız stoktaki ya da masanın bitirdiği (henüz yayınlanmamış) paket seçiliyor. */
+/*
+ * Hazır paketin yayını planın onayına bağlı (kullanıcı: stoka çevrilen paket
+ * yayınlanmış görünmüyor, başka planın "Hazır paketler"inde yine seçiliyordu).
+ * Önce plan Newsdesk'e devredilince yayınlandı sayılıyordu; devir kalktı, o an
+ * hiç gelmiyordu. Onaylı plan hazırlarını yayınlar; plan onayı geri alınınca ya
+ * da paket hazırdan çıkınca bu planın yayın izi silinir, paket stoka döner.
+ * Her geçişte çağrılır, tek kural burada.
+ */
+// Günü geçmiş plan da yayına çıkmıştır: kurumda plan her zaman onaylanmıyor, paketi yine de o gün yayınlandı (kullanıcı).
+const yayinda = (plan: NextDayPlan) => plan.durum === "onayli" || plan.durum === "devralindi" || plan.tarih < bugun();
+const hazirYayiniEsitle = (d: Durum, planId: string, kisiId: string): Durum => {
+  const plan = planBul(d, planId);
+  if (!plan) return d;
+  for (const id of plan.hazirPaketler) {
+    const p = paketBul(d, id);
+    if (!p || !yayinda(plan) || p.yayinlandi || !hazirSecilebilir(p)) continue;
+    d = paketGuncelle(d, id, (x) => ({ ...x, yayinlandi: { planId, tarih: plan.tarih } }));
+    d = hareketYaz(d, { kisiId, tip: "stokYayinlandi", paketId: id, planId, veri: { tarih: plan.tarih } });
+  }
+  for (const p of d.paketler) {
+    if (p.yayinlandi?.planId !== planId || (yayinda(plan) && plan.hazirPaketler.includes(p.id))) continue;
+    d = paketGuncelle(d, p.id, (x) => ({ ...x, yayinlandi: undefined }));
+  }
+  return d;
+};
+
+/** Plana yalnız stoktaki ya da masanın bitirdiği (henüz yayınlanmamış) paket seçiliyor; başka planın hazırında duran değil. */
 export const hazirPaketEkle = (ben: Kisi, planId: string, id: string) => {
-  const p = paketBul(getir(), id);
-  if (!p || !hazirSecilebilir(p)) return false;
-  return planIcerik(ben, planId, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, id) }));
+  let d = getir();
+  const p = paketBul(d, id);
+  const plan = planBul(d, planId);
+  if (!p || !plan || !hazirSecilebilir(p) || !planIcerikDuzenler(ben, plan) || baskaPlandaHazir(d, id, planId)) return false;
+  d = planGuncelle(d, planId, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, id) }));
+  kaydet(hazirYayiniEsitle(d, planId, ben.id));
+  return true;
 };
 /*
  * Planın beklenen paketi (PKG) aslında yapılmış: stok paketi oluyor.
@@ -2101,11 +2126,18 @@ export const paketStogaAl = (ben: Kisi, paketId: string, baslikta = false) => {
   if (!p || !plan || !paketStogaAlinabilir(p) || !planIcerikDuzenler(ben, plan)) return false;
   d = paketGuncelle(d, p.id, (x) => ({ ...x, stok: true, durum: "tamamlandi", planBaslikId: baslikta ? x.planBaslikId : undefined, isaret: undefined }));
   d = planGuncelle(d, plan.id, (x) => ({ ...x, hazirPaketler: ekle(x.hazirPaketler, p.id) }));
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketStogaAlindi", paketId: p.id, planId: plan.id }));
+  d = hareketYaz(d, { kisiId: ben.id, tip: "paketStogaAlindi", paketId: p.id, planId: plan.id });
+  kaydet(hazirYayiniEsitle(d, plan.id, ben.id));
   return true;
 };
-export const hazirPaketCikar = (ben: Kisi, planId: string, id: string) =>
-  planIcerik(ben, planId, (p) => ({ ...p, hazirPaketler: cikar(p.hazirPaketler, id) }));
+export const hazirPaketCikar = (ben: Kisi, planId: string, id: string) => {
+  let d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan)) return false;
+  d = planGuncelle(d, planId, (x) => ({ ...x, hazirPaketler: cikar(x.hazirPaketler, id) }));
+  kaydet(hazirYayiniEsitle(d, planId, ben.id));
+  return true;
+};
 export const hazirPaketTasi = (ben: Kisi, planId: string, id: string, yon: -1 | 1) =>
   planIcerik(ben, planId, (p) => {
     const yeni = komsuylaDegis(p.hazirPaketler, (x) => x === id, () => true, yon);
@@ -5862,6 +5894,19 @@ export const stokPaketleriniHazirlaraAl = (): number => {
   }
   if (n) kaydet(d);
   return n;
+};
+
+/*
+ * Devir kalktıktan sonra onaylanmış planların hazır paketleri yayınlandı
+ * almamıştı, stokta seçilebilir duruyordu: açılışta bir kez eşitlenir.
+ */
+export const hazirYayinlariniEsitle = (): number => {
+  const ilk = getir();
+  let d = ilk;
+  for (const plan of ilk.planlar) if (yayinda(plan) && plan.hazirPaketler.some((id) => !paketBul(ilk, id)?.yayinlandi)) d = hazirYayiniEsitle(d, plan.id, SISTEM);
+  if (d === ilk) return 0;
+  kaydet(d);
+  return 1;
 };
 
 export const masaPaketleriniStoktanAyir = (): number => {

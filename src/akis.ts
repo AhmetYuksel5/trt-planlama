@@ -350,6 +350,10 @@ export const stokDurumu = (p: Paket): StokDurumu | null => {
  * masaların paketi de Next Day'den seçilsin).
  */
 // Masanın "Yayınlanmadı" dediği paket de yayına çıkmış sayılmaz ama masa kapattı: seçilmez.
+/* Başka bir (henüz yayınlanmamış) planın hazır paketlerinde duran paket ikinci plana seçilmez: iki gün aynı paket yayınlanırdı. */
+export const baskaPlandaHazir = (d: { planlar: { id: string; hazirPaketler: string[] }[] }, id: string, planId: string) =>
+  d.planlar.some((x) => x.id !== planId && x.hazirPaketler.includes(id));
+
 export const hazirSecilebilir = (p: Paket) => stokDurumu(p) === "stokta" || (masaPaketi(p) && p.durum === "tamamlandi" && !p.yayinlandi && !p.yayinlanmadi);
 
 /** Teslim zamanı geçmiş ve henüz bitmemiş iş. */

@@ -9,7 +9,7 @@ import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../
 import { metin, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
-import { hazirSecilebilir, stokDurumu } from "../../akis";
+import { baskaPlandaHazir, hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
 import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
@@ -523,7 +523,7 @@ function HazirSatiri({ p, d }: { p: Paket; d: Durum }) {
 export function StoktanSecici({ plan, d, kapat }: { plan: NextDayPlan; d: Durum; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
-  const stokta = d.paketler.filter((p) => hazirSecilebilir(p) && !plan.hazirPaketler.includes(p.id));
+  const stokta = d.paketler.filter((p) => hazirSecilebilir(p) && !plan.hazirPaketler.includes(p.id) && !baskaPlandaHazir(d, p.id, plan.id));
   return (
     <div className="form form-kutu ara-ust-2">
       <div className="alan-etiket">{t("stoktakiPaketler")}</div>

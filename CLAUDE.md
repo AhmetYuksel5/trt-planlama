@@ -2669,13 +2669,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     da, paket listesinde ve ayrıntıda şehrin yerine o. Şehir alanı kalır
     (muhabirinki; ülke ve süzgeçler ondan).
   - Next Day'in "Hazır paketler" bölümü (`hazirPaketler`) stoktan seçer;
-    plan devredilince seçili paket `yayinlandi` alır.
+    seçili paket plan onaylanınca ya da planın günü geçince (kurumda plan her
+    zaman onaylanmıyor) `yayinlandi` alır, onay geri alınınca ya da
+    paket hazırdan çıkınca stoka döner (`eylemler.ts → hazirYayiniEsitle`;
+    kullanıcı: stoka çevrilen paket yayınlanmış görünmüyor, başka planda yine
+    seçiliyordu: yayın kalkmış plan devrine bağlıydı). Onaylıdan önce kalmışları
+    sistemin açılış işi eşitler (`hazirYayinlariniEsitle`). Başka planın
+    hazırında duran paket ikinci plana seçilmez (`akis.ts → baskaPlandaHazir`).
+    Test `testler/hazir-yayin.cjs`.
     Planın beklenen paketi (PKG) yapılmışsa satırındaki "Stok paket olarak
     ekle" (plan ekranında ve belgede; `eylemler.ts → paketStogaAl`,
     `paketStogaAlinabilir`: plan içeriğini düzenleyen, üretimde, iptal ve özel
     yayın paketi değil) onu stok paketi yapar (`tamamlandi`): bu planın hazır
     paketlerine (التقارير الجاهزة) girer ve Stok'un "Üretilmiş paketler"inde
-    durur, plan devredilince yayınlandı; başka planda "Stoktan seç"le de
+    durur, plan onaylanınca yayınlandı; başka planda "Stoktan seç"le de
     seçilir; hareket `paketStogaAlindi`. Bir süre (10–12 Kasım) yalnız Stok'a
     gidiyordu: hazır listesinde olmayan paket "beklenen" sayılıp التقارير
     المتوقعة'da basılıyordu (kullanıcı: hazır paketlerde görünmeli); o arada
