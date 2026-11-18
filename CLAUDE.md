@@ -2711,6 +2711,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önerinin e-posta takibi de), yapılmadı iptal eder (`Paket.yapilmadi`
     sebebiyle); geri çevrilen işaret silinir. Yetkilinin kendi işareti onay
     beklemez. Muhabire `paketIsaretOnaylandi` / `paketIsaretGeriCevrildi`.
+  - "Yapılmadı"nın türü (kullanıcı: ziyaret iptal olunca muhabire verilen paket
+    muhabir raporunda yapılmayan sayılıyordu; `YapilmamaNedeni`): formda sebebin
+    üstünde "Haber düştü" / "Muhabir yapamadı", seçilmeden gönderilmez
+    (`PaketSonucu.tsx → NedenSecimi`, `Paket.isaret.neden`, onayla
+    `yapilmadi.neden`'e). Muhabir raporu yalnız "muhabir yapamadı"yı (ve türsüz
+    eskiyi) yapılmayan sayar (`muhabirRaporu.ts`). Paket sayfasında biten paketin
+    altında satır (`YapilmadiSatiri`, `data-yapilmadi-satiri`): tür, sebep, kim
+    dedi; onay yetkilisi türü sonradan değiştirir (`eylemler.ts →
+    yapilmamaNedeni`). Plana dokunulmaz (kullanıcı: plan Newsdesk'in alanı).
+    Rozet "Haber düştü". Test `testler/yapilmadi-neden.cjs`.
   - Sonuç saklanmaz (`paketSonucu.ts`): onay bekleyen, yapılan, yapılmayan,
     reddedilen; rozet `PaketDurumRozeti`.
   - Paketler sayfasının sekmeleri (kullanıcı: ana sayfanın "Görevlendirilmiş" ve

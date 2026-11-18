@@ -10,7 +10,7 @@ import { adimAdi, adimTuru, parcaliMi, geriHedefi, geciktiMi, paketSahibi } from
 import { HareketGecmisi } from "../bilesenler/Hareket";
 import { ParcaliMetin } from "../bilesenler/ParcaliMetin";
 import { BicimRozeti, Bos, HaftalikRozeti, Icerik, Kart, NotKutu, OncelikRozeti, PaketDurumRozeti, Rozet, TurRozeti, bildir, icerikAlani } from "../bilesenler/Parcalar";
-import { PaketSonucDugmeleri } from "../bilesenler/PaketSonucu";
+import { PaketSonucDugmeleri, YapilmadiSatiri } from "../bilesenler/PaketSonucu";
 import { YoneticiKarti } from "../bilesenler/Yonetici";
 import { metin as dilMetni, tarihYaz, useDil } from "../dil";
 import { adimIlerle, geriGonder, paketDurum, paketReddet, paketTamamla } from "../eylemler";
@@ -83,6 +83,7 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
       {bitmisMi(paket) ? (
         <>
           <BitmisPaketSeridi ben={ben} paket={paket} sayfada />
+          <YapilmadiSatiri ben={ben} paket={paket} />
           <EylemKarti ben={ben} paket={paket} />
         </>
       ) : (

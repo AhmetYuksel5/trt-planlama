@@ -97,6 +97,7 @@ import {
   type AsamaNotu,
   type OneriGorunumu,
   type Paket,
+  type YapilmamaNedeni,
   type MetinParcasi,
   type Masraf,
   type ParcaTuru,
@@ -2648,7 +2649,7 @@ const isaretUygula = (d: Durum, ben: Kisi, p: Paket, kabul: boolean): Durum => {
   const yeni = paketGuncelle(d, p.id, (x) => {
     const { isaret: _, ...y } = x;
     if (!kabul) return { ...y, guncelleme: z };
-    if (i.tur === "yapilmadi") return { ...y, durum: "iptal", adim: undefined, yapilmadi: { sebep: i.sebep ?? "", zaman: i.zaman, kisiId: i.kisiId, onaylayan: ben.id }, guncelleme: z };
+    if (i.tur === "yapilmadi") return { ...y, durum: "iptal", adim: undefined, yapilmadi: { sebep: i.sebep ?? "", zaman: i.zaman, kisiId: i.kisiId, onaylayan: ben.id, ...(i.neden && { neden: i.neden }) }, guncelleme: z };
     // Kullanıcı kararı: "Yapıldı"nın onayı paketin masrafını da onaylar (ayrı onay yok).
     return kunyeYaz(
       { ...y, durum: "tamamlandi", adim: undefined, guncelleme: z, ...(i.kisiId === x.muhabirId && !x.muhabirTeslimi ? { muhabirTeslimi: i.zaman } : {}), ...(x.masraflar?.length && !x.masrafOnayi && { masrafOnayi: { kisiId: ben.id, zaman: z } }) },
@@ -2687,11 +2688,11 @@ export const masrafOnayla = (ben: Kisi, id: string) => {
   return true;
 };
 
-export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi", sebep = "") => {
+export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi", sebep = "", neden?: YapilmamaNedeni) => {
   const d = getir();
   const p = paketBul(d, id);
   if (!p || !paketIsaretleyebilir(ben, p, d) || (tur === "yapilmadi" && !sebep.trim())) return false;
-  const isaret = { tur, zaman: simdi(), kisiId: ben.id, ...(tur === "yapilmadi" && { sebep: sebep.trim() }) };
+  const isaret = { tur, zaman: simdi(), kisiId: ben.id, ...(tur === "yapilmadi" && { sebep: sebep.trim(), ...(neden && { neden }) }) };
   let yeni = paketGuncelle(d, id, (x) => ({ ...x, isaret, guncelleme: simdi() }));
   // Masanın takibindeki paketin teslimi masaya gidiyor; yayın kararını o veriyor (masaYayinKarari).
   if (p.masaTakibi) {
@@ -2703,6 +2704,19 @@ export const paketIsaretle = (ben: Kisi, id: string, tur: "yapildi" | "yapilmadi
   yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketIsaretlendi", paketId: id, planId: p.planId, veri: { tur, ...(onaylayanlar.length ? { kime: onaylayanlar.join(",") } : { sahip: "planlama" }) } });
   if (paketIsaretOnaylayabilir(ben, p)) yeni = isaretUygula(yeni, ben, paketBul(yeni, id)!, true);
   kaydet(yeni);
+  return true;
+};
+
+/*
+ * Kapanmış "yapılmadı"nın türü sonradan düzelir (haber düştü / muhabir
+ * yapamadı): muhabir raporu yalnız muhabirden kaynaklananı sayıyor, yanlış
+ * tür muhabiri haksız gösterirdi. Onay yetkilisi değiştirir; paket kapalı kalır.
+ */
+export const yapilmamaNedeni = (ben: Kisi, id: string, neden: YapilmamaNedeni) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p?.yapilmadi || p.durum !== "iptal" || !paketIsaretOnaylayabilir(ben, p) || p.yapilmadi.neden === neden) return false;
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, yapilmadi: { ...x.yapilmadi!, neden }, guncelleme: simdi() })));
   return true;
 };
 

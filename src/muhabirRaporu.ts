@@ -59,7 +59,8 @@ function ayHesabi(d: Durum, k: Kisi, ayi: string, isler: ReturnType<typeof muhab
   for (const p of d.paketler) {
     if (p.muhabirId !== k.id || p.ozelGorevBekliyor) continue;
     if (ayGunu(p.gorevZamani ?? p.olusturma) === ayi && (["onaylandi", "uretimde", "tamamlandi"].includes(p.durum) || p.yapilmadi)) verilen++;
-    if (p.yapilmadi && ayGunu(p.yapilmadi.zaman) === ayi) yapilmayan++;
+    // Haberin kendisi düştüyse (ziyaret iptal…) muhabirin yapmadığı iş sayılmaz.
+    if (p.yapilmadi && p.yapilmadi.neden !== "haber" && ayGunu(p.yapilmadi.zaman) === ayi) yapilmayan++;
   }
   const buAy = isler.filter((x) => ay(x.tarih) === ayi);
   const cagrilar = (d.cagrilar ?? []).filter((c) => c.bcc.includes(k.id) && ayGunu(c.tarih) === ayi);

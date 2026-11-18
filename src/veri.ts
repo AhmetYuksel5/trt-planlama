@@ -969,6 +969,13 @@ export interface AsamaNotu {
   metin: string;
 }
 
+/*
+ * "Yapılmadı"nın türü (kullanıcı: ziyaret iptal olunca muhabire verilen paket
+ * muhabir raporunda yapılmayan sayılıyordu): "haber" haberin kendisi düştü,
+ * muhabirden değil; "muhabir" muhabir yapamadı. Türsüz eski kayıt muhabir sayılır.
+ */
+export type YapilmamaNedeni = "haber" | "muhabir";
+
 export interface Paket {
   id: string;
   kod: string;
@@ -1071,7 +1078,7 @@ export interface Paket {
    * onayını bekliyor. Onaylanınca yapıldı paketi kapatır (tamamlandı),
    * yapılmadı iptal eder ve `yapilmadi`'ya geçer; geri çevrilince silinir.
    */
-  isaret?: { tur: "yapildi" | "yapilmadi"; zaman: string; kisiId: string; sebep?: string };
+  isaret?: { tur: "yapildi" | "yapilmadi"; zaman: string; kisiId: string; sebep?: string; neden?: YapilmamaNedeni };
   masraflar?: Masraf[];
   /** Masrafların onayı: "Yapıldı"nın onayıyla birlikte, ya da üretimden biten pakette ayrıca. Sonra masraf değişmez. */
   masrafOnayi?: { kisiId: string; zaman: string };
@@ -1081,7 +1088,7 @@ export interface Paket {
    */
   devredildi?: { muhabirId: string; oneriId: string; zaman: string; kisiId: string };
   /** Onaylanmış "yapılmadı": Yapılmayan paketler listesinde sebebiyle. */
-  yapilmadi?: { sebep: string; zaman: string; kisiId: string; onaylayan: string };
+  yapilmadi?: { sebep: string; zaman: string; kisiId: string; onaylayan: string; neden?: YapilmamaNedeni };
   /** Haftalık toplantıda kabul edilen kalemden doğduysa: "Haftalık plandan" rozeti. */
   haftalikKalemId?: string;
   /*

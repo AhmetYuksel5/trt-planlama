@@ -2,10 +2,10 @@ import { KisiCipi } from "./KisiCipi";
 import { CheckCircle, CircleSlash, Undo2, UserRoundCog } from "lucide-react";
 import { useState } from "react";
 import { useDil } from "../dil";
-import { masaYayinKarari, paketBaskaMuhabireVer, paketIsaretKarar, paketIsaretle } from "../eylemler";
+import { masaYayinKarari, paketBaskaMuhabireVer, paketIsaretKarar, paketIsaretle, yapilmamaNedeni } from "../eylemler";
 import { MuhabirSecici } from "../ekranlar/nextday/Formlar";
 import { git } from "../yol";
-import { kisiBul, useVeri, type Kisi, type Paket } from "../veri";
+import { kisiBul, useVeri, type Kisi, type Paket, type YapilmamaNedeni } from "../veri";
 import { baskaMuhabireVerebilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir } from "../yetki";
 import { Icerik, Kart, Rozet, bildir } from "./Parcalar";
 
@@ -18,6 +18,7 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
   const { t, ad } = useDil();
   const v = useVeri();
   const [sebep, setSebep] = useState<string | null>(null);
+  const [neden, setNeden] = useState<YapilmamaNedeni | null>(null);
   const k = kucuk ? " dugme-kucuk" : "";
   if (p.isaret) {
     const i = p.isaret;
@@ -28,7 +29,8 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
         </Rozet>
         {i.sebep && (
           <span dir="auto" className="soluk">
-            {ad(kisiBul(v, i.kisiId))}: {i.sebep}
+            {ad(kisiBul(v, i.kisiId))}: {i.neden && <b>{t(i.neden === "haber" ? "ynHaber" : "ynMuhabir")} · </b>}
+            {i.sebep}
           </span>
         )}
         <MasaYayinDugmeleri ben={ben} paket={p} kucuk={kucuk} />
@@ -49,6 +51,7 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
   if (sebep !== null)
     return (
       <div className="form form-kutu" data-yapilmadi-formu={p.id}>
+        <NedenSecimi neden={neden} sec={setNeden} />
         <label>
           {t("yapilmadiSebep")}
           <textarea dir="auto" rows={2} value={sebep} onChange={(e) => setSebep(e.target.value)} autoFocus data-yapilmadi-sebep />
@@ -60,8 +63,8 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
           <button
             type="button"
             className="dugme dugme-kotu dugme-kucuk"
-            disabled={!sebep.trim()}
-            onClick={() => confirm(t("yapilmadiOnayi")) && paketIsaretle(ben, p.id, "yapilmadi", sebep) && (setSebep(null), bildir(t("bIsaretGonderildi")))}
+            disabled={!sebep.trim() || !neden}
+            onClick={() => confirm(t("yapilmadiOnayi")) && paketIsaretle(ben, p.id, "yapilmadi", sebep, neden ?? undefined) && (setSebep(null), setNeden(null), bildir(t("bIsaretGonderildi")))}
             data-yapilmadi-gonder
           >
             {t("yapilmadi")}
@@ -77,6 +80,52 @@ export function PaketSonucDugmeleri({ ben, paket: p, kucuk = false }: { ben: Kis
       <button type="button" className={`dugme dugme-ikincil${k}`} onClick={() => setSebep("")} data-paket-yapilmadi={p.id}>
         <CircleSlash size={14} /> {t("yapilmadi")}
       </button>
+    </div>
+  );
+}
+
+/* İki tür: muhabir raporu yalnız "muhabir yapamadı"yı yapılmayan sayıyor; seçilmeden gönderilmez. */
+function NedenSecimi({ neden, sec }: { neden: YapilmamaNedeni | null; sec: (n: YapilmamaNedeni) => void }) {
+  const { t } = useDil();
+  return (
+    <div className="dugmeler" role="radiogroup" aria-label={t("ynNeden")} data-yapilmama-nedeni>
+      {(["haber", "muhabir"] as const).map((n) => (
+        <button key={n} type="button" role="radio" aria-checked={neden === n} className={`dugme dugme-kucuk${neden === n ? "" : " dugme-ikincil"}`} onClick={() => sec(n)} data-neden={n}>
+          {t(n === "haber" ? "ynHaber" : "ynMuhabir")}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/*
+ * Kapanmış "yapılmadı"nın satırı paket sayfasında: tür, sebep, kim dedi;
+ * onay yetkilisi türü değiştirir (bugünkü iptal ziyaret gibi yanlış türle kapanan).
+ */
+export function YapilmadiSatiri({ ben, paket: p }: { ben: Kisi; paket: Paket }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const [acik, setAcik] = useState(false);
+  const y = p.yapilmadi;
+  if (!y || p.durum !== "iptal") return null;
+  const yetkili = paketIsaretOnaylayabilir(ben, p);
+  return (
+    <div className="kart" data-yapilmadi-satiri={y.neden ?? "muhabir"}>
+      <div className="dugmeler">
+        <Rozet ton="kotu">{t(y.neden === "haber" ? "ynHaber" : "yapilmadi")}</Rozet>
+        <span dir="auto">{y.sebep}</span>
+        <small className="sonuk">{ad(kisiBul(v, y.kisiId))}</small>
+        {yetkili && !acik && (
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setAcik(true)} data-yapilmadi-tur-degistir>
+            {t("ynDegistir")}
+          </button>
+        )}
+      </div>
+      {yetkili && acik && (
+        <div className="ara-ust-2">
+          <NedenSecimi neden={y.neden ?? "muhabir"} sec={(n) => { if (yapilmamaNedeni(ben, p.id, n)) bildir(t("bKaydedildi")); setAcik(false); }} />
+        </div>
+      )}
     </div>
   );
 }
