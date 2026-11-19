@@ -19,6 +19,8 @@ import { ICERIK_TURLERI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kis
 import { bugun } from "../tarih";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
+import { ALAN_ADI, MASA_ADI } from "./program/ProgramMasasi";
+import { ICERIK_ALANLARI, MASA_BIRIMLERI, MASA_YOLU, icerikDurumAlani, masaIcerikleri, type IcerikAlani, type MasaBirimi } from "../programMasasi";
 
 /*
  * Liste ekranları. Hepsi aynı ortak kayıtların (paket önerileri) farklı
@@ -288,6 +290,61 @@ const STOK_SEKMELERI: StokSekme[] = ["uretimde", "stokta", "yayinlandi"];
  * arşivine geçiyor. Durum kayıttan çıkıyor (akis.ts → stokDurumu).
  */
 export function StokHaberler({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  // İki alan (kullanıcı: Weekly'nin "Stok ve programlar"ında kabul edilenler burada birikiyor):
+  // haber merkezinin stoku Planlama'nın gözetiminde, programların ve masaların paketleri
+  // masanın kendi takibinde; burada yalnız nerede oldukları görünüyor.
+  const [alan, setAlan] = useAdimDurumu<"haber" | "masa">("stok:alan", "haber");
+  return (
+    <>
+      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} sagUc={<GorevlendirDugmesi ben={ben} />} />
+      <div className="secim-grubu ara-alt-2" role="group" aria-label={t("mStok")}>
+        {(["haber", "masa"] as const).map((x) => (
+          <button key={x} type="button" aria-pressed={alan === x} data-stok-alan={x} className={`dugme dugme-kucuk ${alan === x ? "" : "dugme-ikincil"}`} onClick={() => setAlan(x)}>
+            {t(x === "haber" ? "stAlanHaber" : "stAlanMasa")}
+          </button>
+        ))}
+      </div>
+      {alan === "masa" ? <StokMasalar /> : <StokHaberMerkezi ben={ben} />}
+    </>
+  );
+}
+
+/*
+ * Programların ve masaların (Ekonomi, Spor) paketleri: masa sayfasının İçerikler'iyle
+ * aynı alanlar ve kural (programMasasi.ts); üretimin takibi masada, buradan gidilir.
+ */
+function StokMasalar() {
+  const { t } = useDil();
+  const v = useVeri();
+  const [masa, setMasa] = useAdimDurumu<MasaBirimi>("stok:masa", "program");
+  const [alan, setAlan] = useAdimDurumu<IcerikAlani>("stok:masaAlan", "planlamada");
+  const icerik = masaIcerikleri(v, masa);
+  const listede = icerik.filter((p) => icerikDurumAlani(p) === alan).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
+  return (
+    <Kart sagUc={<Tumu href={`#/${MASA_YOLU[masa]}/icerikler`} />}>
+      <div className="secim-grubu" role="group" aria-label={t("stAlanMasa")}>
+        {MASA_BIRIMLERI.map((b) => (
+          <button key={b} type="button" aria-pressed={masa === b} data-stok-masa={b} className={`dugme dugme-kucuk ${masa === b ? "" : "dugme-ikincil"}`} onClick={() => setMasa(b)}>
+            {t(MASA_ADI[b])} <em>{masaIcerikleri(v, b).filter((p) => icerikDurumAlani(p) !== "arsiv").length}</em>
+          </button>
+        ))}
+      </div>
+      <div className="sekmeler ara-ust-2" role="tablist" aria-label={t(MASA_ADI[masa])}>
+        {ICERIK_ALANLARI.map((a) => (
+          <button key={a} type="button" role="tab" aria-selected={alan === a} className={alan === a ? "acik" : ""} onClick={() => setAlan(a)} data-stok-masa-alan={a}>
+            {t(ALAN_ADI[a])} <em>{icerik.filter((p) => icerikDurumAlani(p) === a).length}</em>
+          </button>
+        ))}
+      </div>
+      <div className="ara-ust-2" data-stok-masa-liste>
+        <PaketTablosu paketler={listede} d={v} bosMetin={t("kayitYok")} sutunlar={["kod", "baslik", "muhabir", "asama", "kimde", "teslim"]} />
+      </div>
+    </Kart>
+  );
+}
+
+function StokHaberMerkezi({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const [sekme, setSekme] = useAdimDurumu<StokSekme>("stok:sekme", "stokta");
@@ -302,7 +359,6 @@ export function StokHaberler({ ben }: { ben: Kisi }) {
   const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdUretilmis", yayinlandi: "sdYayinlanan" };
   return (
     <>
-      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <div className="sayaclar">
         {STOK_DURUMLARI.map((s) => (
           <Sayac key={s} ikon={<Layers size={22} />} ton={s === "bekliyor" && bekleyen.length ? "uyari" : ""} renk="renk-haftalik" etiket={t(STOK_DURUM_ADI[s])} deger={durumda(s).length} />

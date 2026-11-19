@@ -2077,6 +2077,8 @@ const M = {
   kalemEkle: m("Kalem ekle", "إضافة بند", "Add item"),
   kalemSayisi: m("{n} kalem", "{n} بندا", "{n} items"),
   zamanaBagliOlmayan: m("Zamana bağlı olmayan dosya", "ملفات غير مرتبطة بموعد", "Not tied to a date"),
+  // Weekly'nin günsüz bölümü (kullanıcı: feature ve program önerileri burada toplanıp toplantıda değerlendiriliyor).
+  stokVeProgramlar: m("Stok ve programlar", "التقارير المخزنة والبرامج", "Stock and programmes"),
   dosya: m("Dosya", "الملف", "File"),
   dosyasiz: m("Dosyasız", "بدون ملف", "No file"),
   yeniDosya: m("Yeni dosya", "ملف جديد", "New file"),
@@ -2176,7 +2178,9 @@ const M = {
   kalanGun: m("{n} gün kaldı", "بقي {n} يوما", "{n} days left"),
   yayinlandi: m("Yayınlandı", "بُث", "Aired"),
   /* Stok haberler: feature/stok ekibinin üretimi, stok ve yayın */
-  mStok: m("Stok haberler", "التقارير المخزنة", "Stock stories"),
+  mStok: m("Stok haberler / Programlar", "التقارير المخزنة / البرامج", "Stock stories / Programmes"),
+  stAlanHaber: m("Haber merkezi", "غرفة الأخبار", "Newsroom"),
+  stAlanMasa: m("Programlar", "البرامج", "Programmes"),
   goStokTakip: m("Feature / stok takibi", "متابعة المنوعات والمخزون", "Feature / stock desk"),
   sdBekliyor: m("Üretime alınacak", "بانتظار بدء الإنتاج", "To be produced"),
   sdUretimde: m("Üretimde", "قيد الإنتاج", "In production"),
@@ -3334,6 +3338,7 @@ const M = {
   sonGecerlilik: m("Son geçerlilik: {tarih}", "صالح حتى: {tarih}", "Valid until: {tarih}"),
   girisKodu: m("Giriş kodu", "رمز الدخول", "Sign-in code"),
   kabulEdilenPaketler: m("Kabul edilen paketler", "التقارير المقبولة", "Accepted packages"),
+  tkGunluk: m("Günlük", "اليومية", "Daily"),
   skHaftalikPosta: m("Weekly · {n} paketin postası gitmedi", "Weekly · {n} تقرير لم يُرسل بريده", "Weekly · {n} packages not emailed"),
   girisKodumVar: m("Giriş kodum var", "لديّ رمز دخول", "I have a sign-in code"),
   kodlaGirisBaslik: m("Giriş koduyla gir", "الدخول برمز", "Sign in with a code"),

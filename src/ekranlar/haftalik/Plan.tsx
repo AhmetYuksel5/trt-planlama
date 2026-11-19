@@ -578,7 +578,7 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const dusen = stok.filter((k) => !gundemde(k));
   const gidebilir = stok.filter(onIncelemeyeGidebilir);
   return (
-    <Bolum no={4} baslik={t("zamanaBagliOlmayan")} ek={t("kalemSayisi", { n: gundemdeki.length })}>
+    <Bolum no={4} baslik={t("stokVeProgramlar")} ek={t("kalemSayisi", { n: gundemdeki.length })}>
       {duzenler && gidebilir.length > 0 && (
         <div className="dugmeler">
           <button

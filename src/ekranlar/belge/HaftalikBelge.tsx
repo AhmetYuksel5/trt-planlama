@@ -413,7 +413,7 @@ export function HaftalikBelgesi({
     <>
       {(stok.length > 0 || duzen) && (
         <section>
-          <h2 className="yesil">{c("zamanaBagliOlmayan")}</h2>
+          <h2 className="yesil">{c("stokVeProgramlar")}</h2>
           <Dosyalar liste={stok} hafta={hafta} duzen={duzen} />
           {duzen && (
             <EkleCubugu>

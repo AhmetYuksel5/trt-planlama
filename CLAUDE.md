@@ -2448,6 +2448,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`yetki.ts → ozelPaketDagitabilir`; kullanıcı: özel yayın paketlerini stok
   ekibi takip etsin; önce Output'un yöneticisiydi, `ouOzel` Output'un
   varsayılanından kalktı).
+  Sayfanın adı "Stok haberler / Programlar" (kullanıcı: Weekly'nin günsüz bölümü
+  "Stok ve programlar" oldu, feature ve program önerileri düzenlenip oraya giriyor,
+  toplantıda aynı kararlarla değerlendiriliyor): başta "Haber merkezi / Programlar"
+  seçimi (`data-stok-alan`, `useAdimDurumu`). Haber merkezi bugünkü stok (Planlama
+  gözetir); Programlar masaların (Programlar, Ekonomi, Spor) paketleri, masa
+  sayfasının İçerikler'iyle aynı alanlar ve kural (`programMasasi.ts →
+  masaIcerikleri`, `icerikDurumAlani`; `Listeler.tsx → StokMasalar`), takibi masada.
+  Weekly'nin "Kabul edilen paketler" penceresi iki sekme: Günlük ve Stok ve
+  programlar (günsüz kalemler; `data-takdir-sekme`). Test `testler/stok-programlar.cjs`.
 - Plansız paket görevi (kullanıcı: planlamacı muhabire bir plana eklemeden
   paket görevi verebilsin; `bilesenler/PaketGorevi.tsx`, eylemler
   `eylemler.ts → paketGorevVer`, `gorevTalebiGonder`, `gorevTalebiKarar`,

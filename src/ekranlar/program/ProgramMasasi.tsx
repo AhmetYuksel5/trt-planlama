@@ -64,7 +64,7 @@ const BOLUM_IKONU: Record<ProgramBolumu, ReactNode> = {
   programlar: <Tv size={20} />,
   arsiv: <Archive size={20} />,
 };
-const ALAN_ADI: Record<IcerikAlani, Anahtar> = { planlamada: "pmAlanPlanlamada", gorevli: "pmAlanGorevli", uretimde: "pmAlanUretimde", hazir: "pmAlanHazir", arsiv: "pmAlanArsiv" };
+export const ALAN_ADI: Record<IcerikAlani, Anahtar> = { planlamada: "pmAlanPlanlamada", gorevli: "pmAlanGorevli", uretimde: "pmAlanUretimde", hazir: "pmAlanHazir", arsiv: "pmAlanArsiv" };
 
 export const MASA_ADI: Record<MasaBirimi, Anahtar> = { program: "biProgram", ekonomi: "biEkonomi", spor: "biSpor" };
 export const MASA_IKONU: Record<MasaBirimi, ReactNode> = { program: <Clapperboard size={26} />, ekonomi: <Landmark size={26} />, spor: <Trophy size={26} /> };

@@ -17,13 +17,17 @@ import { TakdirListesi, type TakdirSatiri } from "../nextday/Takdir";
  * sıralansın, dilediğine posta göndereyim; gönderilmeyen Next Day hazırlanırken
  * karşıma çıksın). Next Day'in PKG geri bildirimiyle aynı liste ve şablon;
  * paket henüz doğmamış olabildiği için iz kalemde (eylemler.ts →
- * haftalikTakdirBildirildi). Sıra planınki: gün, sonra zamana bağlı olmayanlar.
+ * haftalikTakdirBildirildi). Sıra planınki: gün sırası; günsüzler kendi sekmesinde.
  */
 export function HaftalikTakdirPenceresi({ ben, hafta, kapat }: { ben: Kisi; hafta: HaftalikPlan; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const kalemler = [...haftalikTakdirKalemleri(hafta)].sort((a, b) => (a.tarih ?? "9").localeCompare(b.tarih ?? "9"));
-  const satirlar: TakdirSatiri[] = kalemler.map((k) => ({
+  // İki ayrı liste (kullanıcı): günlük haberler Next Day'e gidiyor, "Stok ve programlar"ın
+  // günsüz paketleri stoka ve masalara; görev postaları toplantıdan sonra ayrı ayrı gönderiliyor.
+  const gruplar = { gunluk: kalemler.filter((k) => k.tarih), stok: kalemler.filter((k) => !k.tarih) };
+  const [sekme, setSekme] = useState<keyof typeof gruplar>(gruplar.gunluk.length || !gruplar.stok.length ? "gunluk" : "stok");
+  const satirlar: TakdirSatiri[] = gruplar[sekme].map((k) => ({
     id: k.id,
     baslik: k.paketBasligi || kalemAdi(k),
     muhabirId: k.muhabirler[0],
@@ -33,7 +37,15 @@ export function HaftalikTakdirPenceresi({ ben, hafta, kapat }: { ben: Kisi; haft
   }));
   return (
     <Pencere baslik={t("kabulEdilenPaketler")} kapat={kapat} genis>
-      <TakdirListesi ben={ben} satirlar={satirlar} yetkili={yapabilir(ben, "haftalikDuzenle")} />
+      <div className="sekmeler" role="tablist" aria-label={t("kabulEdilenPaketler")}>
+        {(["gunluk", "stok"] as const).map((x) => (
+          <button key={x} type="button" role="tab" aria-selected={sekme === x} className={sekme === x ? "acik" : ""} onClick={() => setSekme(x)} data-takdir-sekme={x}>
+            {t(x === "gunluk" ? "tkGunluk" : "stokVeProgramlar")} <em>{gruplar[x].length}</em>
+          </button>
+        ))}
+      </div>
+      {/* Seçim listenin ilk halinden kuruluyor; sekme değişince liste yeniden kurulsun. */}
+      <TakdirListesi key={sekme} ben={ben} satirlar={satirlar} yetkili={yapabilir(ben, "haftalikDuzenle")} />
     </Pencere>
   );
 }
