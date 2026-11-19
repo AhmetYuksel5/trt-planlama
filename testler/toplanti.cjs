@@ -50,7 +50,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await secili()) === ids[0], "↑ ile geri");
   await p.keyboard.press("0"); await p.waitForTimeout(300);
   ok((await kalem(ids[0])).karar === "bekliyor" && (await secili()) === ids[0], "0 → karar kalktı, yerinde kaldı");
-  ok((await p.locator("[data-toplanti-ayrinti] kbd").count()) === 4, "karar düğmelerinde kısayol rakamı");
+  ok((await p.locator("[data-toplanti-ayrinti] kbd").count()) === 5, "karar düğmelerinde kısayol rakamı (5: Next Day'de karar ver)");
 
   // 3. 2 → şartlı kabulün koşul formu; N → karar notu
   await p.keyboard.press("2"); await p.waitForTimeout(300);

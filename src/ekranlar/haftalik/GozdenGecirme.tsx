@@ -16,7 +16,7 @@ import { KararNotlari } from "./Kalem";
  * kararlarına göre gruplu, karar burada da değişir; tutanak kopyalanır; onay en
  * altta. Önce iki ardışık confirm vardı, kararlar hiç görünmüyordu.
  */
-const SIRA: Karar[] = ["kabul", "sartli", "bilgi", "ret"];
+const SIRA: Karar[] = ["kabul", "sartli", "nextday", "bilgi", "ret"];
 
 export function GozdenGecirme({ ben, hafta, kapat }: { ben: Kisi; hafta: HaftalikPlan; kapat: () => void }) {
   const { t, dil, ad } = useDil();

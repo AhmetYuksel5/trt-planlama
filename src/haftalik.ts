@@ -32,6 +32,10 @@ export const kalemKilitli = (h: Pick<HaftalikPlan, "durum">, k: HaftalikKalem) =
 
 /** Kesinleşince işe dönüşen karar: kabul ve şartlı kabul (paketi taslakta, koşulla). */
 export const kabulMu = (k: HaftalikKalem) => k.karar === "kabul" || k.karar === "sartli";
+/* Kesinleşince plana ya da pakete dönüşen karar: kabul ve şartlıya ek paketsiz takip ve "Next Day'de karar ver". */
+export const isDogurur = (k: HaftalikKalem) => kabulMu(k) || k.karar === "bilgi" || k.karar === "nextday";
+/* Paket doğuran: paketsiz takip doğurmaz. */
+export const paketDogurur = (k: HaftalikKalem) => isDogurur(k) && k.karar !== "bilgi";
 
 export const kararBekleyenler = (h: HaftalikPlan) => h.kalemler.filter((k) => gundemde(k) && k.karar === "bekliyor");
 
@@ -44,11 +48,11 @@ export const topluKabulAdaylari = (h: HaftalikPlan) => kararBekleyenler(h).filte
  * açık öneri. Önce sessizce oluyordu; muhabir düzeltme beklerken ret alıyordu.
  */
 export const kesinlesmeOzeti = (d: Durum, h: HaftalikPlan) => {
-  const kabul = h.kalemler.filter((k) => gundemde(k) && kabulMu(k));
+  const kabul = h.kalemler.filter((k) => gundemde(k) && isDogurur(k));
   const kalemli = new Set(h.kalemler.map((k) => k.oneriId).filter(Boolean));
   return {
     nextDay: kabul.filter((k) => k.tur === "haber" && k.tarih).length,
-    paket: kabul.filter((k) => !(k.tur === "haber" && k.tarih)).length,
+    paket: kabul.filter((k) => paketDogurur(k) && !(k.tur === "haber" && k.tarih)).length,
     sartli: kabul.filter((k) => k.karar === "sartli").length,
     // Reddedilen kalem kesinleşince plandan çıkıyor (eylemler.ts → haftalikKesinlestir).
     ret: h.kalemler.filter((k) => k.karar === "ret").length,
@@ -56,10 +60,10 @@ export const kesinlesmeOzeti = (d: Durum, h: HaftalikPlan) => {
   };
 };
 
-/** Çıktıya giren: kabul, şartlı kabul (koşul notuyla) ve bilgi. */
-export const ciktida = (k: HaftalikKalem) => gundemde(k) && (kabulMu(k) || k.karar === "bilgi");
+/** Çıktıya giren: kabul, şartlı kabul (koşul notuyla), paketsiz takip ve Next Day'de karar verilecek. */
+export const ciktida = (k: HaftalikKalem) => gundemde(k) && isDogurur(k);
 
-export const nextDayeGider = (k: HaftalikKalem) => kabulMu(k) && k.tur === "haber" && !!k.tarih;
+export const nextDayeGider = (k: HaftalikKalem) => isDogurur(k) && k.tur === "haber" && !!k.tarih;
 
 /** Planlama'nın kararını bekleyen şartlı paket: taslakta, koşullu, iptal edilmemiş. */
 export const sartliBekleyen = (p: { kosul?: string; durum: string }) => !!p.kosul && (p.durum === "taslak" || p.durum === "degerlendiriliyor");

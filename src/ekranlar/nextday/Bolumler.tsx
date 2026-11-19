@@ -12,10 +12,10 @@ import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYa
 import { baskaPlandaHazir, hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
 import { vardiyaYaz, yerelGun } from "../../tarih";
-import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
+import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Gorevlendirme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { OneriyiAc, useOneriSimgesi } from "../oneri/OneriyiAc";
 import { useTelefon } from "../takvim/ortak";
-import { CanliFormu, GelismeFormu, GorevlendirmeFormu, OneridenAl } from "./Formlar";
+import { CanliFormu, GelismeFormu, HareketPenceresi, OneridenAl } from "./Formlar";
 
 /**
  * Next Day planının bölümleri, promptun 4.3 maddesindeki ve kurumun
@@ -365,6 +365,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
   const v = useVeri();
   const ben = useBen();
   const [form, setForm] = useState<"" | "yeni" | "mevcut">("");
+  const [duzenlenen, setDuzenlenen] = useState<Gorevlendirme | null>(null);
   const bagli = plan.gorevlendirmeler.map((id) => v.gorevlendirmeler.find((g) => g.id === id)).filter((g) => g !== undefined);
   return (
     <Bolum ar no={2} baslik={metin("muhabirHareketleri", "ar")} ek={String(bagli.length)}>
@@ -393,6 +394,7 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
                 {duzenler && (
                   <div className="islemler">
                     {onceki && <OncekiDugmesi planId={plan.id} hedef={{ hareket: g.id }} />}
+                    <IkonDugme ikon={<Pencil size={15} />} etiket={t("hareketDuzenle")} onClick={() => setDuzenlenen(g)} />
                     <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && planGorevlendirmeCikar(ben, plan.id, g.id)} />
                   </div>
                 )}
@@ -401,12 +403,16 @@ export function HareketBolumu({ plan, duzenler }: { plan: NextDayPlan; duzenler:
           );
         })
       )}
-      {duzenler && form === "yeni" && <GorevlendirmeFormu plan={plan} kapat={() => setForm("")} />}
+      {duzenler && form === "yeni" && <HareketPenceresi plan={plan} kapat={() => setForm("")} />}
+      {duzenler && duzenlenen && <HareketPenceresi mevcut={duzenlenen} kapat={() => setDuzenlenen(null)} />}
       {duzenler && form === "mevcut" && <KayitliHareketSecici plan={plan} kapat={() => setForm("")} />}
       {duzenler && !form && (
         <div className="dugmeler ara-ust-2">
           <EkleDugmesi metin={t("yeniHareket")} onClick={() => setForm("yeni")} />
           <EkleDugmesi metin={t("kayitliHareketEkle")} onClick={() => setForm("mevcut")} />
+          <a className="dugme dugme-sade dugme-kucuk" href="#/hareketler" data-tum-hareketler>
+            {t("tumHareketler")}
+          </a>
         </div>
       )}
     </Bolum>

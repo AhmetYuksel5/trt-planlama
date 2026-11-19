@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
+import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Plane, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
@@ -137,6 +137,7 @@ export const MENU: Grup[] = [
   {
     ad: "mgGorevlendirme",
     maddeler: [
+      { sayfa: "hareketler", ad: "mHareketler", kisa: "kaHareketler", ikon: Plane },
       { sayfa: "saha", ad: "mSaha", adMuhabir: "mGorevlerim", kisa: "kaSaha", kisaMuhabir: "kaGorevlerim", ikon: MapPinned },
       { sayfa: "seyahat", ad: "mSeyahat", kisa: "kaSeyahat", ikon: Route },
       { sayfa: "talepler", ad: "mTalepler", kisa: "kaTalepler", ikon: Inbox },
@@ -263,7 +264,7 @@ export const planlamaMenusu = (ben: Kisi): Grup[] => {
       (yonetici || ben.gorev === "stokTakip") && tablodan("uretim"),
       tablodan("saha"),
     ]),
-    grup("mgEkip", [tablodan("gorevler", { say: k((x) => x.isler) }), tablodan("muhabirler"), tablodan("izinler")]),
+    grup("mgEkip", [tablodan("gorevler", { say: k((x) => x.isler) }), tablodan("muhabirler"), tablodan("hareketler"), tablodan("izinler")]),
     grup("mgYonetim", yonetici ? [tablodan("raporlar"), tablodan("gundem"), tablodan("organizasyon", { say: k((x) => x.hesapOnayi) })] : []),
   ];
   /*

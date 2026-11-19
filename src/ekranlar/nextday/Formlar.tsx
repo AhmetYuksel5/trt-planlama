@@ -5,7 +5,7 @@ import { useTelefon } from "../takvim/ortak";
 import { Icerik, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { Lightbulb, Plus } from "lucide-react";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { canliKaydet, gelismeKaydet, gorevlendirmeOlustur, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet, formNotuKimligi } from "../../eylemler";
+import { canliKaydet, gelismeKaydet, hareketKaydet, hareketSil, oneriPaketsizGirer, oneriPlanaEkle, paketKaydet, formNotuKimligi } from "../../eylemler";
 import { gelismeOneriAdaylari, oneriPaketBasligi } from "../../oneriPlanlari";
 import { BICIM_ADI, HAREKET_TURU_ADI, KAYNAK_ADI, TUR_ADI, sehirAdi, sehirAr, sehirListesi } from "../../etiketler";
 import { useBen } from "../../oturum";
@@ -23,6 +23,7 @@ import {
   type Bicim,
   type CanliYayin,
   type Gelisme,
+  type Gorevlendirme,
   type HareketTuru,
   type IcerikTuru,
   type KaynakTuru,
@@ -34,7 +35,7 @@ import {
   gelismeMuhabirleri,
 } from "../../veri";
 import { disMuhabirMi, icMuhabirMi } from "../../yapi";
-import { yapabilir } from "../../yetki";
+import { hareketDuzenleyebilir, yapabilir } from "../../yetki";
 
 /*
  * Plan ekranının küçük formları. Promptun istediği gibi kısa: yalnız
@@ -660,17 +661,39 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
   );
 }
 
-export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: () => void }) {
+/*
+ * Muhabir hareketinin tek formu (kullanıcı: menüdeki "Muhabir hareketleri",
+ * Next Day ve Weekly aynı yeri açsın): yeni kayıt ya da var olanın düzeltmesi;
+ * Next Day'den açılınca o plana bağlanır (`plan`), gün varsayılanı planın günü.
+ */
+export function GorevlendirmeFormu({ plan, mevcut, gun, kapat }: { plan?: NextDayPlan; mevcut?: Gorevlendirme; gun?: string; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
-  const [f, setF] = useState({ kisiId: "", tur: "gorevlendirme" as HareketTuru, yer: "", baslangic: plan.tarih, bitis: plan.tarih, aciklama: "" });
+  const ilk = gun ?? plan?.tarih ?? "";
+  const [f, setF] = useState({
+    kisiId: mevcut?.kisiId ?? "",
+    tur: (mevcut?.tur ?? "gorevlendirme") as HareketTuru,
+    yer: mevcut?.yer ?? "",
+    baslangic: mevcut?.baslangic ?? ilk,
+    bitis: mevcut?.bitis ?? ilk,
+    aciklama: mevcut?.aciklama ?? "",
+  });
   const kaydet = () => {
-    if (!ben || !f.kisiId || !f.yer.trim()) return;
-    gorevlendirmeOlustur(ben, plan.id, { ...f, yer: f.yer.trim(), aciklama: f.aciklama.trim(), bitis: f.bitis < f.baslangic ? f.baslangic : f.bitis });
-    kapat();
+    if (!ben || !f.kisiId || !f.yer.trim() || !f.baslangic) return;
+    if (hareketKaydet(ben, f, { id: mevcut?.id, planId: mevcut ? undefined : plan?.id })) {
+      bildir(t("bKaydedildi"));
+      kapat();
+    }
+  };
+  const sil = () => {
+    if (!ben || !mevcut || !confirm(t("hareketSilinsinMi"))) return;
+    if (hareketSil(ben, mevcut.id)) {
+      bildir(t("bSilindi"));
+      kapat();
+    }
   };
   return (
-    <div className="form form-kutu">
+    <div className="form form-kutu" data-hareket-formu={mevcut?.id ?? "yeni"}>
       <div className="satir">
         <label>
           {t("muhabir")}
@@ -678,7 +701,7 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
         </label>
         <label>
           {t("hareketTuru")}
-          <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as HareketTuru })}>
+          <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as HareketTuru })} data-hareket-tur>
             {HAREKET_TURLERI.map((x) => (
               <option key={x} value={x}>
                 {t(HAREKET_TURU_ADI[x])}
@@ -688,24 +711,41 @@ export function GorevlendirmeFormu({ plan, kapat }: { plan: NextDayPlan; kapat: 
         </label>
         <label>
           {t("yer")}
-          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
+          <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} data-hareket-yer />
         </label>
       </div>
       <div className="satir">
         <label>
           {t("baslangic")}
-          <TarihGirdisi value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value })} />
+          <TarihGirdisi value={f.baslangic} onChange={(e) => setF({ ...f, baslangic: e.target.value, bitis: f.bitis < e.target.value ? e.target.value : f.bitis })} data-hareket-baslangic />
         </label>
         <label>
           {t("bitis")}
-          <TarihGirdisi value={f.bitis} onChange={(e) => setF({ ...f, bitis: e.target.value })} />
+          <TarihGirdisi value={f.bitis} min={f.baslangic} onChange={(e) => setF({ ...f, bitis: e.target.value })} data-hareket-bitis />
         </label>
       </div>
       <label>
         {t("aciklama")}
-        <input {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+        <input {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} data-hareket-aciklama />
       </label>
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.kisiId || !f.yer.trim()} />
+      {mevcut && ben && hareketDuzenleyebilir(ben) && (
+        <div className="dugmeler">
+          <button type="button" className="dugme dugme-kotu dugme-kucuk" onClick={sil} data-hareket-sil>
+            {t("sil")}
+          </button>
+        </div>
+      )}
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.kisiId || !f.yer.trim() || !f.baslangic} />
     </div>
+  );
+}
+
+/* Hareketin penceresi: sayfa, Next Day ve Weekly aynı formu aynı pencerede açar. */
+export function HareketPenceresi({ plan, mevcut, gun, kapat }: { plan?: NextDayPlan; mevcut?: Gorevlendirme; gun?: string; kapat: () => void }) {
+  const { t } = useDil();
+  return (
+    <Pencere baslik={t(mevcut ? "hareketDuzenle" : "yeniHareket")} kapat={kapat}>
+      <GorevlendirmeFormu plan={plan} mevcut={mevcut} gun={gun} kapat={kapat} />
+    </Pencere>
   );
 }

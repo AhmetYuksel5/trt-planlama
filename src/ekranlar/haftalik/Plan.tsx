@@ -8,9 +8,9 @@ import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
 import { useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
-import { Avatar, Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAFTA_DURUM_ADI, HAREKET_TURU_ADI } from "../../etiketler";
+import { HAFTA_DURUM_ADI } from "../../etiketler";
 import {
   anaKonuKaydet,
   aylikOlayiGundemeEkle,
@@ -25,11 +25,13 @@ import { etiketUret } from "../../eposta";
 import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
-import { HAFTA_DURUMLARI, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
-import { haftalikDuzenler, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
+import { HAFTA_DURUMLARI, sahaGorevi, useVeri, type AnaKonu, type Gorevlendirme, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
+import { haftalikDuzenler, hareketDuzenleyebilir, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
-import { FormAlt } from "../nextday/Formlar";
+import { FormAlt, HareketPenceresi } from "../nextday/Formlar";
+import { HareketListesi } from "../Hareketler";
+import { useBen } from "../../oturum";
 import { YzKisalt } from "../../bilesenler/YzKisalt";
 import { YzSonGelismeler } from "../../bilesenler/YzTakip";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
@@ -369,47 +371,32 @@ function GelenOneriler({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   );
 }
 
-/* --- Muhabir hareketleri: haftaya düşen saha görevlendirmeleri, salt okunur --- */
-
+/*
+ * Muhabir hareketleri: haftaya düşen saha görevlendirmeleri. Kayıttan okunur;
+ * ekleme ve düzeltme sayfa ve Next Day'le aynı pencerede (kullanıcı: hepsi aynı yeri açsın).
+ */
 function MuhabirHareketleri({ hafta }: { hafta: HaftalikPlan }) {
-  const { t, ad, dil } = useDil();
+  const { t } = useDil();
   const v = useVeri();
+  const ben = useBen();
+  const [pencere, setPencere] = useState<Gorevlendirme | "yeni" | null>(null);
   const bit = haftaSonu(hafta.baslangic);
   const liste = v.gorevlendirmeler
     .filter((g) => sahaGorevi(g) && g.baslangic <= bit && g.bitis >= hafta.baslangic && g.durum !== "talep")
     .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
+  const duzenler = hareketDuzenleyebilir(ben);
+  // Yeni hareketin günü haftanın bugünden sonraki ilk günü: geçmiş güne hareket nadiren giriliyor.
+  const gun = bugun() > hafta.baslangic && bugun() <= bit ? bugun() : hafta.baslangic;
   return (
     <Bolum no={1} baslik={t("muhabirHareketleriHafta")} ek={String(liste.length)}>
-      {liste.length === 0 ? (
-        <Bos kucuk metin={t("kayitYok")} />
-      ) : (
-        liste.map((g) => {
-          const k = kisiBul(v, g.kisiId);
-          return (
-            <div key={g.id} className="kayit">
-              <div className="kayit-bas">
-                <Avatar kisi={k} boy="kucuk" />
-                <div>
-                  <b>
-                    <Icerik>{g.yer}</Icerik> · {ad(k)}
-                  </b>
-                  <small>
-                    <span>{t(HAREKET_TURU_ADI[g.tur])}</span>
-                    <span>
-                      · {tarihYaz(g.baslangic, dil, "kisa")} – {tarihYaz(g.bitis, dil, "kisa")}
-                    </span>
-                  </small>
-                  {g.aciklama && (
-                    <Icerik blok className="kayit-metin">
-                      {g.aciklama}
-                    </Icerik>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })
-      )}
+      {liste.length === 0 ? <Bos kucuk metin={t("kayitYok")} /> : <HareketListesi hareketler={liste} duzenle={duzenler ? setPencere : undefined} />}
+      <div className="dugmeler ara-ust-2">
+        {duzenler && <EkleDugmesi metin={t("yeniHareket")} onClick={() => setPencere("yeni")} />}
+        <a className="dugme dugme-sade dugme-kucuk" href="#/hareketler" data-tum-hareketler>
+          {t("tumHareketler")}
+        </a>
+      </div>
+      {pencere && <HareketPenceresi mevcut={pencere === "yeni" ? undefined : pencere} gun={gun} kapat={() => setPencere(null)} />}
     </Bolum>
   );
 }

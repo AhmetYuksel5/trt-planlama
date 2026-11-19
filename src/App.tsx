@@ -15,6 +15,7 @@ import GercekGiris from "./ekranlar/GercekGiris";
 import Tanitim from "./ekranlar/Tanitim";
 import Takipler from "./ekranlar/Takipler";
 import Gorevler from "./ekranlar/Gorevler";
+import Hareketler from "./ekranlar/Hareketler";
 import KayitSayfasi from "./ekranlar/KayitSayfasi";
 import KodlaGiris from "./ekranlar/KodlaGiris";
 import NdToplanti from "./ekranlar/nextday/Toplanti";
@@ -328,6 +329,9 @@ export default function App() {
         break;
       case "gorevler":
         icerik = <Gorevler ben={ben} />;
+        break;
+      case "hareketler":
+        icerik = <Hareketler ben={ben} />;
         break;
       case "posta":
         icerik = postaGorebilir(ben) ? <Posta ben={ben} /> : <Yetkisiz />;

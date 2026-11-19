@@ -1,7 +1,7 @@
-import { Ban, Check, Eye, Hourglass, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
+import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
-import { Gorusler, KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
+import { Gorusler, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
 import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -215,6 +215,7 @@ const KARAR_DUGMELERI: { karar: Karar; ad: Anahtar; ikon: typeof Check; sinif: s
   { karar: "sartli", ad: "krSartli", ikon: Hourglass, sinif: "dugme-uyari" },
   { karar: "bilgi", ad: "krBilgi", ikon: Eye, sinif: "dugme-ikincil" },
   { karar: "ret", ad: "krRet", ikon: Ban, sinif: "dugme-kotu" },
+  { karar: "nextday", ad: "krNextday", ikon: CalendarClock, sinif: "dugme-ikincil" },
 ];
 
 // kisayol: toplantı görünümünde karar düğmelerinde klavye rakamı (1 kabul, 2 şartlı, 3 bilgi, 4 ret).
@@ -245,6 +246,11 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
               <Icerik>{dosya.ad}</Icerik>
             </small>
           )}
+          {kalemMasaEtiketi(kalem, v) && (
+            <Icerik blok className="kalem-satiri">
+              <b data-kalem-masa>{kalemMasaEtiketi(kalem, v)}</b>
+            </Icerik>
+          )}
           <Icerik blok className="kalem-satiri">
             {kalem.yer && <b>{kalem.yer} / </b>}
             {kalem.metin}
@@ -254,7 +260,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
           {kalemPaketli(kalem) && (
             <div data-kalem-pkg>
               <Icerik blok className="kalem-satiri">
-                <b>PKG · </b>
+                <b>{kalemPkgEtiketi(kalem)} · </b>
                 {kalem.muhabirler.length > 1
                   ? satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi)
                   : satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}

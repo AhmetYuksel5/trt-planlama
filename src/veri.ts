@@ -1144,8 +1144,13 @@ export interface Paket {
 export const HAFTA_DURUMLARI = ["hazirlik", "toplantida", "kesinlesti"] as const;
 export type HaftaDurum = (typeof HAFTA_DURUMLARI)[number];
 
-/** Toplantı kararı. "bilgi": çıktıda yer alır ama takip edilmez (لا نتابع). */
-export const KARARLAR = ["bekliyor", "kabul", "sartli", "bilgi", "ret"] as const;
+/*
+ * Toplantı kararı. "bilgi" paketsiz takip: haber Next Day'e yalnız gelişme
+ * olarak geçer, paket istenmez. "nextday": paket Next Day'e PKG PROPOSAL
+ * olarak geçer, kararı o günün planı hazırlanırken verilir (kullanıcı).
+ * "ret" ekranda "Plandan kaldır": kesinleşince kalem plandan çıkar.
+ */
+export const KARARLAR = ["bekliyor", "kabul", "sartli", "bilgi", "ret", "nextday"] as const;
 export type Karar = (typeof KARARLAR)[number];
 
 /** Haftanın ana dosyası (أهم ملفات الأسبوع): başlık ve bir paragraf durum özeti. */

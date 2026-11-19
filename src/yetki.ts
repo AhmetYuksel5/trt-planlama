@@ -942,6 +942,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   editorler: HABER_MERKEZI,
   personel: HABER_MERKEZI,
   izinler: ["planlama", "newsdesk", "newsgathering", "program", "yonetim"],
+  // Muhabir hareketleri (kullanıcı): Planlama bugün giriyor, News Gathering etkinleşince onun alanı.
+  hareketler: ["planlama", "newsgathering", "yonetim"],
   oneriler: ["planlama", "yonetim", "muhabir"],
   // Muhabirin takipleri: muhabir kendisininkini, Planlama ve Yönetim hepsini.
   takipler: ["planlama", "yonetim", "muhabir"],
@@ -1011,6 +1013,10 @@ export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
             (GERCEK && hesapIsiYetkisi(k))
           : SAYFA_IZNI[sayfa] === HERKES ||
             !!SAYFA_IZNI[sayfa]?.includes(izinBirimi(k.birim)));
+
+/* Muhabir hareketini ekler, düzeltir, siler: sayfayı gören (muhabir değil) ve tam yönetici. */
+export const hareketDuzenleyebilir = (k: Kisi | undefined): boolean =>
+  !!k && !k.pasif && k.birim !== "muhabir" && (!!k.hesapYoneticisi || sayfaGorebilir(k, "hareketler"));
 
 /* --- Proje planı için matris: tablolardan üretiliyor, elle yazılmıyor --- */
 

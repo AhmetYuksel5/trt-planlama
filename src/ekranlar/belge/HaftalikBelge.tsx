@@ -1,7 +1,7 @@
-import { Ban, Check, Eye, Hourglass, Printer } from "lucide-react";
+import { Ban, CalendarClock, Check, Eye, Hourglass, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
-import { KararRozeti, bicimSatiri, kalemPaketli } from "../../bilesenler/Haftalik";
+import { KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
 import trtArabi from "../../varliklar/trt-arabi.svg";
 import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import type { Baski } from "./Baski";
@@ -89,6 +89,7 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
   { karar: "sartli", ad: "krSartli", ikon: <Hourglass size={15} /> },
   { karar: "bilgi", ad: "krBilgi", ikon: <Eye size={15} /> },
   { karar: "ret", ad: "krRet", ikon: <Ban size={15} /> },
+  { karar: "nextday", ad: "krNextday", ikon: <CalendarClock size={15} /> },
 ];
 
 /** Bir kalem: "YER - OLAY / metin", muhabirler, biçim, not; bilgi kaleminde "(لا نتابع)". */
@@ -108,7 +109,7 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
   const ben = duzen?.ben;
   const yaz = (g: Partial<KalemGirdisi>) => ben && kalemKaydet(ben, hafta.id, kalemGirdisi(k, g));
   // Şartlı kabulün koşulu çıktıda sarı notta: toplantının kararı kağıtta da "henüz kesin değil" görünsün.
-  const notlar = [k.karar === "bilgi" ? c("laNutabi") : "", k.karar === "sartli" && k.kosul ? `${c("mesrut")} ${k.kosul}` : "", k.not ?? ""].filter(Boolean);
+  const notlar = [k.karar === "sartli" && k.kosul ? `${c("mesrut")} ${k.kosul}` : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
   const ts = useContext(ToplantiSecimi);
   const [kosulAcik, setKosulAcik] = useState(false);
@@ -161,6 +162,11 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
       >
         {/* Kesinleşen haftada kabul edilen paketin görevlendirme postası satırın solunda. */}
         {ts && hafta.durum === "kesinlesti" && <KalemPostaDugmesi hafta={hafta} kalem={k} />}
+        {kalemMasaEtiketi(k, v) && (
+          <p className="alt-baslik" data-kalem-masa>
+            {kalemMasaEtiketi(k, v)}
+          </p>
+        )}
         {duzen ? (
           <Satir
             yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}
@@ -180,8 +186,8 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
         */}
         {kalemPaketli(k) && (
           <>
-            <p className="alt-baslik">
-              <bdi>PKG</bdi>
+            <p className="alt-baslik" data-kalem-pkg-etiketi>
+              <bdi>{kalemPkgEtiketi(k)}</bdi>
             </p>
             <p data-kalem-pkg>
               {k.yer || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi}
@@ -223,7 +229,6 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
         {/* Boş not satır kaplamıyor (Next Day belgesi gibi); not "Düzenle" penceresinden giriliyor. */}
         {duzen && k.not ? (
           <p>
-            {k.karar === "bilgi" && <mark>{c("laNutabi")}</mark>}
             {k.karar === "sartli" && k.kosul && <mark>{`${c("mesrut")} ${k.kosul}`}</mark>}{" "}
             <mark>
               <YerindeMetin acik deger={k.not} etiket={t("kalemNotu")} kaydet={(x) => yaz({ not: x })} />

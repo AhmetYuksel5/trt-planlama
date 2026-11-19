@@ -4,7 +4,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, kabulMu, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
+import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -167,6 +167,7 @@ import {
   onIncelemeci,
   paketGorebilir,
   planIcerikDuzenler,
+  hareketDuzenleyebilir,
   paketPlandanSilinir,
   planOperasyonDuzenler,
   profilDuzenler,
@@ -1453,11 +1454,11 @@ const sonradanKarar = (d: Durum, ben: Kisi, haftaId: string, kalemId: string): D
     d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: x.kalemler.filter((y) => y.id !== kalemId) }));
     return k.oneriId ? { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "reddedildi", gerekce: k.kararNotu || k.onInceleme?.gerekce || o.gerekce } : o)) } : d;
   }
-  if (!kabulMu(k)) return d;
+  if (!isDogurur(k)) return d;
   if (k.tur === "haber" && k.tarih) {
     const plan = d.planlar.find((p) => p.tarih === k.tarih);
     if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
-  } else d = haftaliktanPaket(d, ben, haftaId, k);
+  } else if (paketDogurur(k)) d = haftaliktanPaket(d, ben, haftaId, k);
   return k.oneriId ? { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, durum: "planaEklendi" } : o)) } : d;
 };
 
@@ -1529,7 +1530,12 @@ const toplantidan = (k: HaftalikKalem) => ({ ...(k.kararNotu ? { kararNotu: k.ka
  * Muhabire ön bilgi koşuluyla gidiyor, iş olarak değil.
  */
 const sartliMi = (k: HaftalikKalem) => k.karar === "sartli";
-const kalemPaketDurumu = (k: HaftalikKalem) => (sartliMi(k) ? { durum: "taslak" as const, kosul: k.kosul || "—", ...(k.kosulSon ? { kosulSon: k.kosulSon } : {}) } : { durum: "onaylandi" as const });
+/* "Next Day'de karar ver": paket değerlendirmede, PKG PROPOSAL; kabul, ret ya da paketsiz bırakmak o günün planında. */
+const ndKarari = (k: HaftalikKalem) => k.karar === "nextday";
+const kalemPaketDurumu = (k: HaftalikKalem) =>
+  sartliMi(k) ? { durum: "taslak" as const, kosul: k.kosul || "—", ...(k.kosulSon ? { kosulSon: k.kosulSon } : {}) } : ndKarari(k) ? { durum: "degerlendiriliyor" as const } : { durum: "onaylandi" as const };
+/* Görev yalnız kabulle gidiyor: şartlı ve Next Day'e bırakılan karar beklerken künyeye görevlendiren yazılmaz. */
+const kalemGoreviVar = (k: HaftalikKalem) => k.karar === "kabul";
 
 const planAktarimaAcik = (p: NextDayPlan) => p.durum === "taslak" || p.durum === "toplantida" || p.durum === "onayli";
 
@@ -1612,8 +1618,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
 
   let paketId: string | undefined;
   const bicim = k.bicimler.length ? k.bicimler.find((b) => b !== "canli") : "pkg";
-  // Muhabiri TBC olan kalemin paketi de girer: "YER / strap / TBC", muhabir sonra atanır.
-  if ((muhabirId || k.muhabirTbc) && bicim) {
+  // Muhabiri TBC olan kalemin paketi de girer: "YER / strap / TBC", muhabir sonra atanır. Paketsiz takipte paket yok, yalnız gelişme.
+  if ((muhabirId || k.muhabirTbc) && bicim && paketDogurur(k)) {
     let kod: string;
     [kod, d] = yeniKod(d);
     paketId = `p-${turet(plan.id, k.id)}`;
@@ -1641,10 +1647,11 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       guncelleme: simdi(),
     };
     // Görev haftalığın kesinleşmesiyle gidiyor; sistemin sonradan yaptığı aktarımda (SISTEM) künyeye yazılmaz.
-    d = { ...d, paketler: [sartliMi(k) ? paket : kunyeYaz(paket, "gorevlendiren", kisiId, simdi()), ...d.paketler] };
+    d = { ...d, paketler: [kalemGoreviVar(k) ? kunyeYaz(paket, "gorevlendiren", kisiId, simdi()) : paket, ...d.paketler] };
   }
   // Paket ancak günlük plan açılınca da doğabiliyor (kesinleşmeden sonra); muhabir o an haberdar oluyor. Kimlik plandan: iki tarayıcı tek bildirim.
-  if (paketId && muhabirId)
+  // Next Day'e bırakılan paket için bildirim yok: görev o günün planında verilecek.
+  if (paketId && muhabirId && !ndKarari(k))
     d = sartliMi(k)
       ? hareketYaz(d, { kisiId, tip: "paketSartliKabul", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId, not: k.kosul ?? "" } }, `po-${turet(plan.id, k.id)}`)
       : hareketYaz(d, { kisiId, tip: "paketOnaylandi", paketId, haftaId, planId: plan.id, veri: { kime: muhabirId } }, `po-${turet(plan.id, k.id)}`);
@@ -1682,9 +1689,11 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     olusturma: simdi(),
     guncelleme: simdi(),
   };
-  d = { ...d, paketler: [sartliMi(k) ? paket : kunyeYaz(paket, "gorevlendiren", ben.id, simdi()), ...d.paketler] };
+  d = { ...d, paketler: [kalemGoreviVar(k) ? kunyeYaz(paket, "gorevlendiren", ben.id, simdi()) : paket, ...d.paketler] };
   d = kalemGuncelle(d, haftaId, k.id, (x) => ({ ...x, aktarim: { paketId } }));
   if (k.oneriId) d = { ...d, oneriler: d.oneriler.map((o) => (o.id === k.oneriId ? { ...o, paketId } : o)) };
+  // Günü olmayan "Next Day'de karar ver": paket Paketler › Karar bekleyen'de; muhabire henüz bir şey gitmez.
+  if (ndKarari(k)) return d;
   // Şartlıda kararı Planlama veriyor (Paketler'deki "Şartlı kabul bekleyenler"); muhabire yalnız ön bilgi.
   if (sartliMi(k)) return hareketYaz(d, { kisiId: ben.id, tip: "paketSartliKabul", paketId, haftaId, veri: { not: k.kosul ?? "", ...(muhabirId ? { kime: muhabirId } : {}) } });
   // Muhabire de: onaylanan haber sayfasına ve zile düşüyor.
@@ -1706,12 +1715,12 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = tru
   // öneri aşağıda reddedilir, toplantının notu gerekçesi olur; iz önerinin kendisinde kalıyor.
   const cikan = h.kalemler.filter((k) => k.karar === "ret").length;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, durum: "kesinlesti", kalemler: x.kalemler.filter((k) => k.karar !== "ret") }));
-  for (const k of h.kalemler.filter((x) => gundemde(x) && kabulMu(x))) {
+  for (const k of h.kalemler.filter((x) => gundemde(x) && isDogurur(x))) {
     if (k.tur === "haber" && k.tarih) {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
       // Plan henüz yoksa sistem açınca çekiyor (yarinPlaniniAc). Onaylı plana da giriyor (önce kayboluyordu); devredilmiş gün geçmişte kaldı.
       if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, ben.id, haftaId, k, plan);
-    } else {
+    } else if (paketDogurur(k)) {
       d = haftaliktanPaket(d, ben, haftaId, k);
     }
   }
@@ -1860,18 +1869,20 @@ export const yarinPlaniniAc = (): string | null => {
     pbEsle.set(b.id, yeniId);
     return { id: yeniId, baslikId: b.baslikId, muhabirler: (b.muhabirler ?? []).map((m) => ({ ...m, onceki: true as const, devir: true as const })), devir: true as const };
   });
-  // Bitmiş hareket taşınmıyor; plan gününde süren hareket taşınıyor.
-  const hareketler = (kaynak?.gorevlendirmeler ?? []).filter((gid) => {
+  // Bitmiş hareket taşınmıyor; plan gününde süren hareket taşınıyor. O gün başlayan kayıtlı hareket de giriyor (sayfadan önceden girilen).
+  const tasinan = (kaynak?.gorevlendirmeler ?? []).filter((gid) => {
     const g = d.gorevlendirmeler.find((x) => x.id === gid);
     return !!g && g.bitis >= tarih;
   });
+  const baslayan = d.gorevlendirmeler.filter((g) => g.baslangic === tarih && g.durum !== "talep" && !tasinan.includes(g.id)).map((g) => g.id);
+  const hareketler = [...tasinan, ...baslayan];
   const plan: NextDayPlan = {
     id,
     tarih,
     durum: "taslak",
     ekip: (kaynak?.ekip ?? []).map((e) => ({ ...e, onceki: true as const })),
     gorevlendirmeler: hareketler,
-    oncekiHareketler: hareketler.length ? hareketler : undefined,
+    oncekiHareketler: tasinan.length ? tasinan : undefined,
     hazirPaketler: [],
     basliklar,
     kopyaKaynagi: kaynak?.id,
@@ -2060,16 +2071,61 @@ export const gorevlendirmeMetni = (ben: Kisi, planId: string, id: string, g: { y
   return true;
 };
 
-/** Plan ekranından yeni muhabir hareketi: ayrı kayıt olarak doğuyor, plan yalnız bağlantı tutuyor. */
-export const gorevlendirmeOlustur = (ben: Kisi, planId: string, g: Omit<Gorevlendirme, "id" | "durum">) => {
+/*
+ * Muhabir hareketi tek kayıt (kullanıcı: menüdeki "Muhabir hareketleri",
+ * Next Day ve Weekly aynı pencereyi açsın; güncellenip silinsin). Plan
+ * yalnız bağlantı tutuyor: hareket gününe düşen açık Next Day planlarına
+ * kendiliğinden girer, tarihi değişince düşmeyenden çıkar. Geçmiş planlara
+ * dokunulmaz; talep (onaysız) plana girmez. Elle verilen plan (Next Day'den
+ * açılan pencere) her durumda bağlı kalır.
+ */
+const hareketPlanaAcik = (p: NextDayPlan) => p.tarih >= bugun() && p.durum !== "devralindi";
+const hareketPlanlariEsitle = (d: Durum, id: string, tut?: string): Durum => {
+  const g = d.gorevlendirmeler.find((x) => x.id === id);
+  for (const p of d.planlar) {
+    if (!hareketPlanaAcik(p) || p.id === tut) continue;
+    const duser = !!g && g.durum !== "talep" && g.baslangic <= p.tarih && g.bitis >= p.tarih;
+    const var_ = p.gorevlendirmeler.includes(id);
+    if (duser && !var_) d = planGuncelle(d, p.id, (x) => ({ ...x, gorevlendirmeler: [...x.gorevlendirmeler, id] }));
+    if (!duser && var_) d = planGuncelle(d, p.id, (x) => ({ ...x, gorevlendirmeler: cikar(x.gorevlendirmeler, id), oncekiHareketler: bosIse(cikar(x.oncekiHareketler ?? [], id)) }));
+  }
+  return d;
+};
+
+export type HareketGirdisi = Omit<Gorevlendirme, "id" | "durum" | "ozelId">;
+export const hareketKaydet = (ben: Kisi, g: HareketGirdisi, ek: { id?: string; planId?: string } = {}): string | null => {
   let d = getir();
-  const plan = planBul(d, planId);
-  if (!plan || !planIcerikDuzenler(ben, plan)) return false;
-  const id = kimlik("gr");
-  d = { ...d, gorevlendirmeler: [{ ...g, id, durum: "onayli" }, ...d.gorevlendirmeler] };
-  kaydet(planGuncelle(d, planId, (p) => ({ ...p, gorevlendirmeler: [...p.gorevlendirmeler, id] })));
+  const plan = ek.planId ? planBul(d, ek.planId) : undefined;
+  if (!hareketDuzenleyebilir(ben) && !(plan && planIcerikDuzenler(ben, plan))) return null;
+  if (!g.kisiId || !g.yer.trim() || !g.baslangic) return null;
+  const alanlar = { kisiId: g.kisiId, tur: g.tur, yer: g.yer.trim(), aciklama: g.aciklama.trim(), baslangic: g.baslangic, bitis: g.bitis && g.bitis > g.baslangic ? g.bitis : g.baslangic };
+  let id = ek.id;
+  if (id) {
+    if (!d.gorevlendirmeler.some((x) => x.id === id)) return null;
+    d = { ...d, gorevlendirmeler: d.gorevlendirmeler.map((x) => (x.id === id ? { ...x, ...alanlar } : x)) };
+  } else {
+    id = kimlik("gr");
+    d = { ...d, gorevlendirmeler: [{ ...alanlar, id, durum: "onayli" }, ...d.gorevlendirmeler] };
+  }
+  const yeniId = id;
+  if (plan) d = planGuncelle(d, plan.id, (x) => (x.gorevlendirmeler.includes(yeniId) ? x : { ...x, gorevlendirmeler: [...x.gorevlendirmeler, yeniId] }));
+  kaydet(hareketPlanlariEsitle(d, id, plan?.id));
+  return id;
+};
+
+/* Kaydın kendisi silinir; bütün planlardaki bağlantısı da (geçmiş planda satır boş kalmasın). */
+export const hareketSil = (ben: Kisi, id: string) => {
+  let d = getir();
+  if (!hareketDuzenleyebilir(ben) || !d.gorevlendirmeler.some((x) => x.id === id)) return false;
+  d = { ...d, gorevlendirmeler: d.gorevlendirmeler.filter((x) => x.id !== id) };
+  for (const p of d.planlar)
+    if (p.gorevlendirmeler.includes(id)) d = planGuncelle(d, p.id, (x) => ({ ...x, gorevlendirmeler: cikar(x.gorevlendirmeler, id), oncekiHareketler: bosIse(cikar(x.oncekiHareketler ?? [], id)) }));
+  kaydet(d);
   return true;
 };
+
+/** Plan ekranından yeni muhabir hareketi (eski çağrı): ortak kayda gider. */
+export const gorevlendirmeOlustur = (ben: Kisi, planId: string, g: HareketGirdisi) => !!hareketKaydet(ben, g, { planId });
 
 /*
  * Hazır paketin yayını planın onayına bağlı (kullanıcı: stoka çevrilen paket

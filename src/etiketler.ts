@@ -174,6 +174,7 @@ export const KARAR_ADI: Record<Karar, Anahtar> = {
   sartli: "krSartli",
   bilgi: "krBilgi",
   ret: "krRet",
+  nextday: "krNextday",
 };
 
 export const KARAR_TONU: Record<Karar, string> = {
@@ -182,6 +183,7 @@ export const KARAR_TONU: Record<Karar, string> = {
   sartli: "uyari",
   bilgi: "vurgu",
   ret: "kotu",
+  nextday: "uyari",
 };
 
 /*

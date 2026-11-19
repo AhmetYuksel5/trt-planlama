@@ -5,7 +5,9 @@ import { BICIM_KODU, KARAR_ADI, KARAR_TONU } from "../etiketler";
 import { onIncelemeGorusu, onIncelemeReddet } from "../eylemler";
 import { haftaSonu, kalemAdi, onIncelemeBekleyenler } from "../haftalik";
 import { yerelGun } from "../tarih";
-import { kisiBul, useVeri, type Durum, type HaftalikKalem, type Kisi } from "../veri";
+import { kolSahibi } from "../akis";
+import { birimAdiDilde } from "../yapi";
+import { MASA_KOLLARI, kisiBul, useVeri, type BirimId, type Durum, type HaftalikKalem, type Kisi } from "../veri";
 import { yapabilir } from "../yetki";
 import { Avatar, Bos, Icerik, Kart, Rozet, TurRozeti, bildir } from "./Parcalar";
 
@@ -35,7 +37,25 @@ export const bicimSatiri = (k: HaftalikKalem) => kalanBicimler(k).map((b) => BIC
  * "YER / strap / muhabir" satırıyla yazılıyor; o paketin biçimi biçim
  * satırında tekrar yazılmıyor, öbürleri (LIVE…) kalıyor.
  */
-export const kalemPaketli = (k: HaftalikKalem) => !!k.paketBasligi && k.bicimler.some((b) => b !== "canli");
+// Paketsiz takipte paket istenmiyor: strap ve PKG satırı yazılmaz, haber gelişme olarak kalır.
+export const kalemPaketli = (k: HaftalikKalem) => !!k.paketBasligi && k.karar !== "bilgi" && k.bicimler.some((b) => b !== "canli");
+/* Kurumun terimi: kabul edilmemiş (bekleyen, şartlı, bilgi) paket "PKG PROPOSAL", Next Day'deki gibi (kullanıcı). */
+export const kalemPkgEtiketi = (k: HaftalikKalem) => (k.karar === "kabul" ? "PKG" : "PKG PROPOSAL");
+
+/*
+ * Kalemin masası (kullanıcı: Ekonomi'ye önerilen öneri gündeme girince plan
+ * metninde o birimin adı görünsün; başka masa için de): kalemin kolu masa
+ * koluysa kolun sahibi, önerisi bir masaya sorulup "Uygundur" dendiyse o masa.
+ */
+export const kalemMasalari = (k: HaftalikKalem, d: Pick<Durum, "masaSorulari">): BirimId[] => {
+  const m = new Set<BirimId>();
+  if (MASA_KOLLARI.includes(k.tur)) m.add(kolSahibi(k.tur));
+  if (k.oneriId) for (const s of d.masaSorulari ?? []) if (s.oneriId === k.oneriId && s.cevap?.kabul) m.add(s.birim);
+  return [...m];
+};
+/* Plan metninde her arayüz dilinde Arapça (çıktının dili). */
+export const kalemMasaEtiketi = (k: HaftalikKalem, d: Pick<Durum, "masaSorulari">) => kalemMasalari(k, d).map((b) => birimAdiDilde(b, "ar")).join(" · ");
+
 const kalanBicimler = (k: HaftalikKalem) => {
   if (!kalemPaketli(k)) return k.bicimler;
   const i = k.bicimler.findIndex((b) => b !== "canli");

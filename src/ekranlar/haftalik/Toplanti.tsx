@@ -27,7 +27,7 @@ import { useMedya } from "../takvim/ortak";
  * 3 bilgi, 4 ret, 0 kararı kaldır, N not. Kararla bir sonraki kaleme geçer.
  */
 
-const TUS_KARAR: Record<string, Karar> = { "1": "kabul", "3": "bilgi", "4": "ret", "0": "bekliyor" };
+const TUS_KARAR: Record<string, Karar> = { "1": "kabul", "3": "bilgi", "4": "ret", "5": "nextday", "0": "bekliyor" };
 
 /* Gündemin toplantıdaki sırası: günler sırasıyla, sonra zamana bağlı olmayanlar; günün içinde plandaki sıra. */
 export const toplantiSirasi = (h: HaftalikPlan): HaftalikKalem[] =>

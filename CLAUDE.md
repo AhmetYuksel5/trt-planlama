@@ -1372,6 +1372,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekipAdi`; "عبد المنعم", "أبو جهاد" gibi bileşik ad tek parça. Bütün
     planlamacılar seçer (`kisiPlanAdi`, `planDuzenle`): ekip çipinde ve
     belgedeki ekip penceresinde, seçenekler adın kendisiyle.
+  - Muhabir hareketi tek kayıt (`Durum.gorevlendirmeler`; kullanıcı: menüde
+    ayrı başlık, Next Day ve Weekly aynı yeri açsın, hareket güncellenip
+    silinsin): sayfa `#/hareketler` (`ekranlar/Hareketler.tsx`, menüde
+    Görevlendirme grubunda ve Planlama menüsünün Ekip'inde; izin
+    `SAYFA_IZNI.hareketler`: Planlama, News Gathering, Yönetim; News Gathering
+    etkinleşince onun da işi), "Süren ve yaklaşan" / "Geçmiş" sekmeleri. Ekleme,
+    düzeltme ve silme tek pencerede (`nextday/Formlar.tsx → HareketPenceresi`,
+    `GorevlendirmeFormu`): sayfa, Next Day'in hareket bölümü (yeni ve satırdaki
+    ✎) ve Weekly'nin bölümü (`haftalik/Plan.tsx → MuhabirHareketleri`, ✎ ve
+    "Yeni hareket") aynısını açar; her iki bölümde "Bütün hareketler". Eylemler
+    `eylemler.ts → hareketKaydet` (yeni/düzelt; yetki `yetki.ts →
+    hareketDuzenleyebilir` ya da Next Day'den açılınca planı düzenleyen),
+    `hareketSil` (kayıt ve bütün planlardaki bağı). Hareket gününe düşen açık
+    Next Day planlarına (bugün ve sonrası, devredilmemiş) kendiliğinden girer,
+    tarihi değişince düşmeyenden çıkar (`hareketPlanlariEsitle`; talep girmez);
+    yarının planı önceki günden süreni taşır, o gün başlayanı da alır
+    (`yarinPlaniniAc`). Weekly kayıttan okur. Test `testler/hareketler.cjs`.
   - Muhabir hareketleri (تحركات وإجازات المراسلين) belgede ve çıktıda
     "YER / ad / süre / açıklama" (Next Day ve Weekly; kurumun isteği): süre
     tek günse o gün, değilse aralık (`dil.ts → sureYaz`). Tür sözcüğü
@@ -2185,6 +2202,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yalnız düzenlerken). Kesinleşince pakete geçer (`toplantidan`), muhabire
     "paketOnaylandi" bildirimi gider (paket doğduğu an: kesinleşmede ya da
     günlük plan açılınca). Ret notu öneriye gerekçe olur.
+  - Kararlar (kullanıcı; `veri.ts → KARARLAR`, `haftalik.ts → isDogurur`,
+    `paketDogurur`): Kabul, Şartlı kabul (aşağıda), "Paketsiz takip" (`bilgi`;
+    önce "Bilgi (takip yok)", çıktıda "لا نتابع"): günü olan haber Next Day'e
+    yalnız gelişme olarak geçer, paket doğmaz, kalemin strap ve PKG satırı
+    yazılmaz (`kalemPaketli`); "Next Day'de karar ver" (`nextday`, 5. tuş): paket
+    Next Day'e "değerlendiriliyor" olarak, PKG PROPOSAL alt başlığıyla geçer;
+    görevlendiren yazılmaz, muhabire bildirim gitmez, kabul, ret ya da paketsiz
+    bırakmak o günün planında (plan onayı kararsız paketi kabul sayar); günü
+    olmayan kalemde plansız paket "Karar bekleyen"de. "Plandan kaldır" (`ret`,
+    önce "Ret"): kesinleşince kalem gelişmesi ve paket önerisiyle plandan çıkar,
+    öneri reddedilir. Test `testler/haftalik-karar.cjs`.
   - Şartlı kabul (kullanıcı: toplantıda paket bazen o an onaylanmıyor,
     "duruma göre onaylayalım" deniyor; karar `sartli`, `HaftalikKalem.kosul`,
     `haftalik.ts → kabulMu`): kalem kartında ve belgede "Şartlı kabul" koşul
@@ -2214,7 +2242,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     koşulu, karar notu ve ek talep, plan ekranınınkiyle aynı) ve genel notlar;
     1100 pikselden darda kalem dokununca kart pencerede. Klavye (yazı alanı ve
     açık pencere dışında): ↑/↓ (j/k) belgedeki sırayla kalem, 1 kabul, 2
-    şartlı (koşul formu), 3 bilgi, 4 ret, 0 kararı kaldırır, N karar notu;
+    şartlı (koşul formu), 3 paketsiz takip, 4 plandan kaldır, 5 Next Day'de karar ver, 0 kararı kaldırır, N karar notu;
     karar verince sonraki kaleme geçer. Üstte ilerleme ("n/m"), Hepsi / Karar
     bekleyen (`useAdimDurumu`; belge yerinde kalır, kararı verilmiş kalem soluk
     ve gezinmede atlanır), "Planı kesinleştir" gözden geçirme penceresini
@@ -2301,7 +2329,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     altında unvan (`etiketler.ts → muhabirUnvani`: المراسل, المراسلة,
     المراسلون) ve her muhabir kendi satırında "YER / ad"; paketsiz kalemde de
     unvan ve "YER / ad" (önce "ad / YER"di). Plan ekranının kalemi de aynı
-    (`Kalem.tsx`). Test `testler/haftalik-muhabir.cjs`. Dosyasız kalemler bölümün (günün, zamana
+    (`Kalem.tsx`). Test `testler/haftalik-muhabir.cjs`. Masaya önerilen kalemin üstünde
+    o birimin Arapça adı kalın alt başlıkla (kullanıcı; `bilesenler/Haftalik.tsx →
+    kalemMasalari`, `kalemMasaEtiketi`: kalemin kolu Ekonomi/Program/Spor ise kolun
+    sahibi, önerisi bir masaya sorulup "Uygundur" dendiyse o masa; belge, çıktı ve
+    plan ekranı). Paketli kalemin alt başlığı kabul edilmişse "PKG", değilse
+    (bekleyen, şartlı, bilgi) "PKG PROPOSAL" (`kalemPkgEtiketi`, Next Day'deki
+    gibi). Test `testler/haftalik-etiket.cjs`. Dosyasız kalemler bölümün (günün, zamana
     bağlı olmayanların) en altında yeşil, kalın "متابعات" başlığıyla
     (`HaftalikBelge.tsx → Dosyalar`). Belgede boş alan
     (yer, konu, not) satır kaplamaz; "Düzenle" penceresinden girilir.
