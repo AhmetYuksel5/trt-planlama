@@ -72,6 +72,7 @@ await t("muhabir çift durum", false, on("o2", { durum: "degerlendiriliyor", x: 
 const pk = (id, ek) => setDoc(doc(db("mu"), "paketler", id), { s: 0, j: JSON.stringify({ id, muhabirId: "mu", ...ek }), m: ["mu"] });
 await t("muhabir paketi tamamlandı yapar", false, pk("p1", { durum: "tamamlandi" }));
 await t("muhabir paket işareti", true, pk("p1", { durum: "onaylandi", isaret: { tur: "yapildi", zaman: "z", kisiId: "mu" } }));
+await t("muhabir sıradan pakete ozelId ekleyip kapatamaz", false, pk("p1", { durum: "tamamlandi", ozelId: "oz1" }));
 await t("muhabir özel yayın paketini teslim", true, pk("p2", { durum: "tamamlandi", ozelId: "oz1" }));
 // Ek masraf: muhabir girer, onayı yazamaz; onaylanmış masraf değişmez.
 const ms = [{ id: "m1", tur: "ulasim", tutar: 40, para: "USD", kisiId: "mu", zaman: "z" }];
@@ -138,6 +139,16 @@ await davetYaz(KB, { kod: "ABCD2349", bitis: Date.now() - 1000 });
 await t("süresi geçmiş kodla kayıt kurulamaz", false, setDoc(doc(kodDb("kb1", KB), "kisiler", "kb1"), kodKisi("kb1", KB)));
 await t("başkası kodu silemez", false, deleteDoc(doc(db("pl"), "girisKodlari", "ABCD2345")));
 await t("kod sahibi kodunu siler", true, deleteDoc(doc(kodDb("ka1", KA), "girisKodlari", "ABCD2345")));
+// 7. Davetle ilk kayıt: adres doğrulanmış olmalı (davet edilecek adresle önceden hesap açan daveti üstlenmesin),
+// rol ve görev davetteki gibi.
+const DA = "davetli@x.test";
+await davetYaz(DA, {});
+const davetli = (uid, dogrulandi) => env.authenticatedContext(uid, { email: DA, email_verified: dogrulandi }).firestore();
+const dKisi = (uid, o) => kisi(uid, { birim: "planlama", rol: "personel", gorev: "planlamaci", ...o }, { eposta: DA });
+await t("doğrulanmamış adres daveti üstlenemez", false, setDoc(doc(davetli("da0", false), "kisiler", "da0"), dKisi("da0")));
+await t("davetli kendini yönetici kuramaz", false, setDoc(doc(davetli("da1", true), "kisiler", "da1"), dKisi("da1", { rol: "yonetici" })));
+await t("davetli görevini değiştiremez", false, setDoc(doc(davetli("da1", true), "kisiler", "da1"), dKisi("da1", { gorev: "yonetici" })));
+await t("doğrulanmış davetli kaydını kurar", true, setDoc(doc(davetli("da1", true), "kisiler", "da1"), dKisi("da1")));
 console.log(`\n${gec} geçti, ${kal} kaldı`);
 await env.cleanup();
 process.exit(kal ? 1 : 0);

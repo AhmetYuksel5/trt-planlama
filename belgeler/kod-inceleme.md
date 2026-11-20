@@ -2,7 +2,8 @@
 
 Bütün kodun baştan sona gözden geçirilmesi. Parça parça ilerliyor; her parça
 bitince buraya yazılıyor. Yalnız gerçek kusurlar: güvenlik, veri kaybı, yanlış
-mantık. Üslup ve yeniden düzenleme önerisi yok. Hiçbir bulgu henüz düzeltilmedi.
+mantık. Üslup ve yeniden düzenleme önerisi yok. Depo herkese açık olduğu için
+güvenlik açıkları (1.1–1.3) bulunduğu gün kapatıldı; öbür bulgular bekliyor.
 
 Durum: **CONFIRMED** kod okunarak doğrulandı, **PLAUSIBLE** olası ama uçtan uca
 denenmedi.
@@ -17,7 +18,7 @@ denenmedi.
 
 ## 1. Güvenlik kuralları ve veri katmanı
 
-### 1.1 Davetle ilk kayıt e-posta doğrulaması istemiyor (yüksek, CONFIRMED)
+### 1.1 Davetle ilk kayıt e-posta doğrulaması istemiyordu (yüksek, DÜZELTİLDİ)
 
 `firestore.rules` → `kisiler` `create`, davet dalı; `depo/firebase.ts → hesapAc`.
 
@@ -32,11 +33,12 @@ Senaryo: biri, davet edileceğini tahmin ettiği adresle (ad.soyad@kurum)
 davetteki yetkilerle (tam yöneticilik dahil) kurar. Gerçek kişi şifre
 belirleme e-postasıyla hesabı geri alana kadar kayıt açık kalır.
 
-Öneri: davet dalına `request.auth.token.email_verified == true` (giriş kodu
-adresleri `@giris.plannersflow.net` hariç; onların şifresi koddan). Şifre
-belirleme bağlantısı adresi doğrulanmış sayıyor, meşru akış etkilenmez.
+Düzeltme: davet dalında `email_verified` şartı (giriş kodu adresleri hariç;
+onların şifresi koddan). Şifre belirleme bağlantısı adresi doğruluyor, meşru
+akış etkilenmiyor; eski şifresiyle giren doğrulanmamış hesap doğrulama adımına
+gidiyor (`ilkKayit → "dogrulanmadi"`). Test `testler/kurallar.mjs`, 7. bölüm.
 
-### 1.2 Davetli rolünü ve görevini kendisi yazabiliyor (orta, CONFIRMED)
+### 1.2 Davetli rolünü ve görevini kendisi yazabiliyordu (orta, DÜZELTİLDİ)
 
 `firestore.rules` → `kisiler` `create`, davet dalı.
 
@@ -48,9 +50,9 @@ olarak davet edilen kişi böylece muhasebe koleksiyonlarını okur
 (`muhasebeci()`: rol yönetici + kademe birimi). Sonradan rol değişmiyor
 (`pozisyonAyni`), açık yalnız ilk kayıtta.
 
-Öneri: davet dalında `rol` ve `gorev` de davetle aynı olsun.
+Düzeltme: davet dalında `rol` ve `gorev` de davetle karşılaştırılıyor.
 
-### 1.3 Muhabir sıradan paketini "özel yayın" diye kendisi kapatabiliyor (orta, CONFIRMED)
+### 1.3 Muhabir sıradan paketini "özel yayın" diye kendisi kapatabiliyordu (orta, DÜZELTİLDİ)
 
 `firestore.rules` → `kisitliIcerik`, paket dalı.
 
@@ -60,7 +62,7 @@ yapma izni var; ama `"ozelId"` yeni belgede aranıyor, eskisinde değil.
 `ozelId` ekleyip durumu "tamamlandı" yapabilir: "Yapıldı" onayı atlanır,
 Muhasebe paketi yapılmış iş sayar.
 
-Öneri: `jVar(eski.data, '"ozelId":"')` (eski belgede de özel yayın paketi).
+Düzeltme: `ozelId` eski belgede de aranıyor.
 
 ### 1.4 Tam yönetici her açılışta bütün kişi belgelerini yeniden yazıyor (orta, CONFIRMED)
 

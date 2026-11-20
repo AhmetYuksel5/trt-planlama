@@ -410,6 +410,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       yeni/takip açma, düzeltip yeniden gönderme, takibi öneriye çevirme ve
       geri çekmeyle; paketin durumu değişmez (özel yayın paketinin teslimi
       hariç); hareket ve mesaj yalnız kendi adıyla (düz `k`, `ogeBelgesi`).
+    - Davetle ilk kayıt (kod incelemesi, `belgeler/kod-inceleme.md`): adres doğrulanmış olmalı (giriş kodu
+      adresi hariç); davet edilecek adresle önceden hesap açan daveti üstleniyordu. Şifre belirleme bağlantısı
+      doğruluyor; doğrulanmamış hesap `ilkKayit → "dogrulanmadi"`. Rol ve görev de davetteki (davetli kendini
+      yönetici kurabiliyordu). Özel yayın teslimi yalnız eski belgede de `ozelId` olan pakette.
     - Önceki kimlik yalnız o kayıt hesapsızsa, e-postası bu hesaba
       taşınıyorsa ya da silinmişse (geçişi tam yönetici tamamlamış) geçerli
       (`oncekiGecerli`; silinince sayılmıyordu, tarayıcı iki kimlikle

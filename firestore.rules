@@ -173,6 +173,12 @@ service cloud.firestore {
                  && get(davetYolu()).data.durum == "bekliyor"
                  // Kod davetinin süresi (src/girisKodu.ts): unutulan kod açık kalmasın.
                  && request.time.toMillis() < get(davetYolu()).data.get("bitis", request.time.toMillis() + 1)
+                 // Adresin sahibi: davet edilecek adresle önceden hesap açan daveti üstlenmesin. Şifre belirleme
+                 // bağlantısı adresi doğruluyor; giriş kodu adresi posta almıyor, şifresi koddan.
+                 && (request.auth.token.email_verified == true || eposta().matches('[a-z0-9._-]+@giris[.]plannersflow[.]net'))
+                 // Rol ve görev davetteki: davetli kendini yönetici kuramıyor.
+                 && request.resource.data.get("rol", "") == get(davetYolu()).data.get("rol", request.resource.data.get("rol", ""))
+                 && request.resource.data.get("gorev", "") == get(davetYolu()).data.get("gorev", request.resource.data.get("gorev", ""))
                  && request.resource.data.hesapYoneticisi == get(davetYolu()).data.hesapYoneticisi
                  && request.resource.data.get("yetkiler", []) == get(davetYolu()).data.get("yetkiler", [])
                  && request.resource.data.get("oncekiKimlik", "") == get(davetYolu()).data.get("kisiId", "")
@@ -278,7 +284,7 @@ service cloud.firestore {
         || (alan == "paketler" && eski != null && tekDurum(n) && masrafAyni(n, eski.data)
               && (paketDurumAyni(n, eski.data)
                   // Özel yayın paketini işi yapan teslim ediyor (ozelPaketTeslimEdebilir); öbürü işaret ve onayla kapanır.
-                  || (durumu(n, "tamamlandi") && jVar(n, '"ozelId":"') && (durumu(eski.data, "onaylandi") || durumu(eski.data, "uretimde")))))
+                  || (durumu(n, "tamamlandi") && jVar(n, '"ozelId":"') && jVar(eski.data, '"ozelId":"') && (durumu(eski.data, "onaylandi") || durumu(eski.data, "uretimde")))))
         || (alan in ["hareketler", "mesajlar"] && yazanGecerli(n, eski))
         || alan in ["takipler", "bahsetmeler"];
     }

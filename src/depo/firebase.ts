@@ -749,6 +749,9 @@ export const ilkKayit = async (verilen?: KayitBilgisi | null): Promise<KisiHali 
   const kisiRef = doc(db, "kisiler", u.uid);
   // Süresi geçmiş kod daveti: kural da reddediyor, kişiye "davet yok" görünsün.
   if (davet?.durum === "bekliyor" && !(davet.bitis && Date.now() > davet.bitis)) {
+    // Kural adresin doğrulanmasını istiyor (davet edilecek adresle önceden hesap açan daveti üstlenmesin);
+    // şifre belirleme bağlantısı doğruluyor. Eski şifresiyle giren doğrulanmamış hesap doğrulama e-postasına gider.
+    if (!u.emailVerified && !davet.kod) return "dogrulanmadi";
     const k = {
       ...yeniKisi({ id: u.uid, ad: davet.ad, eposta, birim: davet.birim, gorev: davet.gorev, rol: davet.rol, hesapYoneticisi: davet.hesapYoneticisi }),
       ...(davet.kisiId ? { oncekiKimlik: davet.kisiId } : {}),
