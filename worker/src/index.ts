@@ -502,6 +502,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const oa = await otoOku(env);
     if (req.method === "GET") return yanit(otoCagriGorunur(oa, kisi.kimlik.uid, await otoGecmisOku(env)));
     if (req.method === "PUT") {
+      // İçeriği (alıcı listesi, konu, metin, görevli) yalnız çağrıyı hazırlayan birim yazar: yoksa haber merkezindeki
+      // herkes, izin vermiş planlamacının hesabından dilediği adreslere dilediği metni gönderebilirdi.
+      if (!kisi.yonetici && kisi.birim !== "planlama") return yanit({ hata: "yetki" }, 403);
       const r = otoCagriBirlestir(oa, await req.json().catch(() => null), kisi.kimlik.uid, new Date(d.simdi()).toISOString());
       if ("hata" in r) return yanit({ hata: r.hata }, 400);
       await env.YZ.put(OTO_ANAHTARI, JSON.stringify(r.ayar));

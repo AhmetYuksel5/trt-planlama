@@ -561,3 +561,12 @@ test("Firestore kotası dolunca kişi kaydı önbellekten; önbellekte yoksa 'ko
   }
   assert.equal((await t.cagir("/durum", "pas")).status, 403, "pasif kişi önbelleğe girmiyor");
 });
+
+test("otomatik çağrının içeriğini yalnız Planlama ve tam yönetici yazar; öbür birim okur", async () => {
+  const t = kur();
+  const govde = { acik: true, bcc: ["x@ornek.test"] };
+  assert.equal((await t.cagir("/oto-cagri", "nd", govde, "PUT")).status, 403);
+  assert.equal((await t.cagir("/oto-cagri", "nd")).status, 200);
+  assert.equal((await t.cagir("/oto-cagri", "pl", govde, "PUT")).status, 200);
+  assert.equal((await (await t.cagir("/oto-cagri", "nd")).json()).bccSayi, 1);
+});
