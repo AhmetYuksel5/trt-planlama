@@ -12,7 +12,7 @@ denenmedi.
 |---|---|---|
 | 1 | `firestore.rules`, `depo/`, `veri.ts` yükle/kaydet, `kip.ts`, açılış işleri | bitti |
 | 2 | Kapı (`worker/`) | bitti |
-| 3 | `eylemler.ts` | sırada |
+| 3 | `eylemler.ts` (tamamı okundu) | bitti |
 | 4 | Yetki ve saf kurallar (`yetki.ts`, `yapi.ts`, `akis.ts`…) | sırada |
 | 5 | Ekranlar ve bileşenler | sırada |
 
@@ -185,3 +185,95 @@ işlemci sınırı aşılır, o haberin metni gelmez. Yalnız o isteği etkiler.
 - Posta gönderiminde adres denetimi, alıcı sınırı, XML kaçışı; ekin dosya
   adı ve türü başlıkları.
 - Akış ve makale adreslerinin https ile sınırlanması.
+
+## 3. Eylemler (`eylemler.ts`)
+
+Dosyanın tamamı okundu (290 eylem). Güvenlik açığı çıkmadı; yetki önce
+soruluyor, temel `getir()`'den alınıyor, değişmeyen öğenin nesnesi korunuyor.
+Bulunanlar işlev kusurları.
+
+### 3.1 Kısa yanıttan sonra gelen posta sohbete eklenmiyor (orta, CONFIRMED)
+
+`eylemler.ts → postaIsle` (`esGiden`).
+
+Kutudan gelen posta, henüz kimliği öğrenilmemiş giden balonla yalnız metnin
+başına ve 6 saatlik süreye bakılarak eşleştiriliyor; gönderene bakılmıyor.
+Kişi "شكرا" gibi kısa bir yanıt gönderip muhabir "شكرا لكم…" diye yanıtlarsa
+ve ikisi aynı çekimde gelirse, muhabirin postası kendi gidenimizin geri
+dönüşü sanılır: sohbete eklenmez ("tekrar"), Message-ID'si giden balona
+yazılır. Ardından asıl geri dönüş eşleşecek balon bulamaz, gelen posta gibi
+ikinci balon olur. Sonuç: muhabirin yanıtı görünmez, kendi postamız çift.
+
+Öneri: eşleştirmede gönderen de aranmalı (gelen postanın göndereni giden
+balonun `kimden`'i, yani kişinin kendi adresi olmalı).
+
+### 3.2 Planlama dışındaki kişinin gönderdiği posta giden balon olmuyor (orta-düşük, CONFIRMED)
+
+`eylemler.ts → postaGidenEkle`.
+
+Posta haber merkezinin herkesine açık (`postaGorebilir`), ama giden balonu
+yazan eylem hâlâ "çağrı hazırlama" yetkisi istiyor (yalnız Planlama). Newsdesk
+ya da masadaki kişi yanıt gönderince posta gider, sohbete yazılmaz; ancak bir
+sonraki çekimde, gelen posta gibi (solda, kendi adresinden) görünür.
+
+Öneri: yetkiyi `postaGorebilir` yapmak.
+
+### 3.3 Profil formundaki "Kurumsal e-posta" giriş adresini yazıyor (orta-düşük, CONFIRMED)
+
+`eylemler.ts → profilGuncelle`, `ekranlar/Personel.tsx` (profil formu).
+
+Formdaki alan kişinin `eposta`'sına, yani gerçek kipte giriş adresine bağlı.
+Etkin hesapta kişi bu alanı değiştirip kaydederse kural giriş adresinin
+değişmesini reddediyor ve kaydın tamamı (telefon, şehir dahil) düşüyor; kişi
+yalnız "kaydedilemedi" görüyor. Tam yönetici kendisinin ya da başkasının
+profilinde değiştirirse kural geçiriyor: kayıttaki adres, aktivasyon akışı
+(`kisiEpostasi`) atlanarak gerçek giriş adresinden ayrılıyor.
+
+Öneri: gerçek kipte etkin hesapta profil formunun `eposta`'yı yazmaması
+(kod hesabındaki gibi `kurumEposta`'ya ya da "Düzenle"deki akışa yönlendirme).
+
+### 3.4 Kişi taşıma işleri yetkisiz tarayıcıda da çalışıyor (düşük, PLAUSIBLE)
+
+`App.tsx → yokla`, `eylemler.ts → yonetimiAgacaTasi`, `dilDenetmenleriniTasi`.
+
+Bu açılış işleri kısıtlı olmayan herkesin tarayıcısında çalışıyor ve
+başkasının birimini değiştiriyor; kural bunu yalnız tam yöneticiye ve kişi
+düzenleme yetkilisine yazdırıyor. Taşınacak kişi kaldığı sürece öbür
+personelin tarayıcısı her yoklamada reddedilen bir yazış gönderir ("kayıt
+hatası"), yerel görüntü bir an değişip geri döner. Tam yönetici uygulamayı
+açınca biter.
+
+Öneri: bu iki işi yalnız kişi düzenleme yetkisi olanın tarayıcısında
+çalıştırmak.
+
+### 3.5 Onaylı aylık plana eylemle kayıt girebiliyor (düşük, CONFIRMED)
+
+`eylemler.ts → aylikOlayKaydet`, `aylikOlaySil`, `faaliyetAylikaEkle`.
+
+"Onaylı plan düzenlenmez" kuralı yalnız ekranda; eylemler planın durumunu
+sormuyor. Eski sekmeden ya da takvimden aktarımla onaylı aya olay eklenir,
+silinir.
+
+### 3.6 Düzenleme eylemleri kaydın o plana ait olduğunu sormuyor (düşük, CONFIRMED)
+
+`eylemler.ts → gelismeKaydet`, `canliKaydet`, `paketKaydet` (düzenleme dalı).
+
+Yetki, gönderilen `planId`'nin planından soruluyor; düzenlenen kaydın o
+planda olduğu ve (pakette) hâlâ taslakta olduğu sorulmuyor. Ekran doğru
+gönderiyor; eski sekmeden gelen istek kilitli planın kaydını ya da onaylı
+paketin bütün alanlarını değiştirebilir.
+
+### 3.7 Tam yöneticinin pozisyonunu değiştirme isteği kuralda düşüyor (düşük, CONFIRMED)
+
+`eylemler.ts → kisiPozisyonu`, `kisilerPozisyonu`.
+
+Kişi düzenleme yetkilisi tam yöneticinin birimini ya da ünvanını
+değiştirince program kabul ediyor, kural reddediyor: ekranda değişmiş
+görünüp geri dönüyor. Eylem de `hesapYoneticisi`'ni sormalı.
+
+### Temiz bulunanlar
+
+- Öneri akışı (plana ekleme, çıkarma, geri alma, birleştirme, plandakine
+  bağlama), haftalığın kesinleşmesi ve aktarımı, yarının planının açılması.
+- Paket kapanışı (işaret, onay, geri alma), üretim balonu, parçalı metin.
+- Hesap geçişi (`hesabaGecir`, `kimligiTasi`), özel yayın, muhasebe.
