@@ -11,6 +11,9 @@ import type { Kisi } from "./veri";
 
 const HARF = /[\p{L}\p{N}]/u;
 
+/* Anma kaydındaki bağlantı kayıttan geliyor (başka biri yazıyor): yalnız uygulamanın kendi sayfasına gider, dış adrese değil. */
+export const icYol = (yol?: string) => (yol && yol.startsWith("#/") ? yol : "#/");
+
 /** Kişinin anılabileceği adları: Arapça ve Latin yazımı. */
 export const anmaAdlari = (k: Pick<Kisi, "ad">) => [...new Set([yaz(k.ad, "ar"), yaz(k.ad, "tr"), yaz(k.ad, "en")].map((a) => a.trim()).filter(Boolean))];
 

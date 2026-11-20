@@ -11,6 +11,7 @@ import { WhatsAppDugmesi } from "../../bilesenler/WhatsApp";
 import { gecenSure, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { postaKonuBasligi } from "../../eposta";
 import { HAFTA_DURUM_ADI, KISI_DURUM_ADI, PLAN_DURUM_ADI } from "../../etiketler";
+import { icYol } from "../../bahsetme";
 import { bahsetmeGoruldu, paketDurum, paketReddet } from "../../eylemler";
 import { kisiBugunDurumu } from "../../muhabirIletisim";
 import { masrafToplami, masrafYaz } from "../../paketMetni";
@@ -270,7 +271,7 @@ function SatirGovdesi({ ben, x, kapat }: { ben: Kisi; x: KuyrukOgesi; kapat: () 
       <div className="ap-anma">
         <p dir="auto">{a.metin}</p>
         <div className="dugmeler">
-          <a className="dugme dugme-ikincil dugme-kucuk" href={a.yol} onClick={() => bahsetmeGoruldu(ben, a.id)}>
+          <a className="dugme dugme-ikincil dugme-kucuk" href={icYol(a.yol)} onClick={() => bahsetmeGoruldu(ben, a.id)}>
             {t("pySayfayiAc")}
           </a>
           <button type="button" className="dugme dugme-kucuk" onClick={() => bahsetmeGoruldu(ben, a.id)} data-ap-gordum>

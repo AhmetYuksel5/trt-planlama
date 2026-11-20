@@ -86,6 +86,7 @@ import {
   dilDenetmeniMi,
   muhasebeciMi,
   masaOneriyiGorur,
+  hesapYetkisi,
 } from "./yetki";
 import { GOMULU, useYol } from "./yol";
 
@@ -151,6 +152,8 @@ export default function App() {
   // Bölmeler değil üst pencere yokluyor: dört bölme aynı işi dört kez yapmasın. Gerçek kipte kayıt gelince.
   // Gerçek kipte kısıtlı kişi (muhabir) kaydın yalnız kendi parçasını görüyor: planı yok sanıp gerçeğinin üstüne boş plan yazardı.
   const sistemYazar = !GERCEK || (!!ben && !kisitliKisi(ben));
+  // Kişi taşıyan işler (birim değişir) gerçek kipte yalnız kişi düzenleme yetkilisinde: kural öbürünün yazışını reddediyor, her yoklamada "kayıt hatası" çıkıyordu.
+  const kisiTasir = !GERCEK || (!!ben && hesapYetkisi(ben, "kisiDuzenle"));
   useEffect(() => {
     if (GOMULU || !sistemHazir || !sistemYazar) return;
     const yokla = () => {
@@ -165,6 +168,7 @@ export default function App() {
        * sayfa çalışıyor; hata konsolda.
        */
       for (const is of [planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, demoStaffingPostasi, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir]) {
+        if (!kisiTasir && (is === dilDenetmenleriniTasi || is === yonetimiAgacaTasi)) continue;
         try {
           is();
         } catch (hata) {
@@ -175,7 +179,7 @@ export default function App() {
     yokla();
     const z = setInterval(yokla, GUN_YOKLAMA);
     return () => clearInterval(z);
-  }, [sistemHazir, sistemYazar]);
+  }, [sistemHazir, sistemYazar, kisiTasir]);
 
   /*
    * Otomatik çağrı (otoCagri.ts): kapının gönderdiği çağrı kayda girsin (yanıtlar

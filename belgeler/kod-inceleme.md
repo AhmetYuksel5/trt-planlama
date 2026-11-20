@@ -3,7 +3,8 @@
 Bütün kodun baştan sona gözden geçirilmesi. Parça parça ilerliyor; her parça
 bitince buraya yazılıyor. Yalnız gerçek kusurlar: güvenlik, veri kaybı, yanlış
 mantık. Üslup ve yeniden düzenleme önerisi yok. Depo herkese açık olduğu için
-güvenlik açıkları (1.1–1.3, 2.1) bulunduğu gün kapatıldı; öbür bulgular bekliyor.
+güvenlik açıkları (1.1–1.3, 2.1) bulunduğu gün kapatıldı; öbür bulgular ardından
+düzeltildi. Üçü bilerek bırakıldı (1.7, 1.8, 2.4; nedenleri Özet'te).
 
 Durum: **CONFIRMED** kod okunarak doğrulandı, **PLAUSIBLE** olası ama uçtan uca
 denenmedi.
@@ -104,7 +105,7 @@ başarısız olur ve o 450'lik paketin tamamı düşer.
 
 Öneri: `sunucuyaEsitOlunca` içinde çalıştırmak.
 
-### 1.7 Paket kodu sayacı çakışabilir (düşük, PLAUSIBLE)
+### 1.7 Paket kodu sayacı çakışabilir (düşük, PLAUSIBLE, BIRAKILDI)
 
 `depo/fark.ts → farkCikar` (genel belge).
 
@@ -113,7 +114,7 @@ kişi aynı sayıyı okuyup aynı kodu verebilir. Aynı belgeyi yazan kişinin
 görüntüsünde `gundemPaylasim` bir an bayatsa kural yazışı reddeder, o yazışın
 tamamı (paket dahil) düşer.
 
-### 1.8 Kayıt başvurusunun üzerine başkası yazabilir (düşük, CONFIRMED)
+### 1.8 Kayıt başvurusunun üzerine başkası yazabilir (düşük, CONFIRMED, BIRAKILDI)
 
 `firestore.rules` → `kayitBasvurulari`.
 
@@ -169,7 +170,7 @@ XML'de geçersiz denetim karakterleri (Word'den yapıştırılan dikey sekme
 
 Öneri: `kacXml` içinde `[\x00-\x08\x0B\x0C\x0E-\x1F]` atılsın.
 
-### 2.4 Tam metin ayıklama büyük sayfada işlemciyi tüketebilir (düşük, PLAUSIBLE)
+### 2.4 Tam metin ayıklama büyük sayfada işlemciyi tüketebilir (düşük, PLAUSIBLE, BIRAKILDI)
 
 `worker/src/makale.ts → AT`.
 
@@ -233,7 +234,7 @@ profilinde değiştirirse kural geçiriyor: kayıttaki adres, aktivasyon akış�
 Öneri: gerçek kipte etkin hesapta profil formunun `eposta`'yı yazmaması
 (kod hesabındaki gibi `kurumEposta`'ya ya da "Düzenle"deki akışa yönlendirme).
 
-### 3.4 Kişi taşıma işleri yetkisiz tarayıcıda da çalışıyor (düşük, PLAUSIBLE)
+### 3.4 Kişi taşıma işleri yetkisiz tarayıcıda da çalışıyor (düşük, DÜZELTİLDİ)
 
 `App.tsx → yokla`, `eylemler.ts → yonetimiAgacaTasi`, `dilDenetmenleriniTasi`.
 
@@ -247,7 +248,7 @@ açınca biter.
 Öneri: bu iki işi yalnız kişi düzenleme yetkisi olanın tarayıcısında
 çalıştırmak.
 
-### 3.5 Onaylı aylık plana eylemle kayıt girebiliyor (düşük, CONFIRMED)
+### 3.5 Onaylı aylık plana eylemle kayıt girebiliyor (düşük, DÜZELTİLDİ)
 
 `eylemler.ts → aylikOlayKaydet`, `aylikOlaySil`, `faaliyetAylikaEkle`.
 
@@ -255,7 +256,7 @@ açınca biter.
 sormuyor. Eski sekmeden ya da takvimden aktarımla onaylı aya olay eklenir,
 silinir.
 
-### 3.6 Düzenleme eylemleri kaydın o plana ait olduğunu sormuyor (düşük, CONFIRMED)
+### 3.6 Düzenleme eylemleri kaydın o plana ait olduğunu sormuyor (düşük, DÜZELTİLDİ)
 
 `eylemler.ts → gelismeKaydet`, `canliKaydet`, `paketKaydet` (düzenleme dalı).
 
@@ -264,7 +265,7 @@ planda olduğu ve (pakette) hâlâ taslakta olduğu sorulmuyor. Ekran doğru
 gönderiyor; eski sekmeden gelen istek kilitli planın kaydını ya da onaylı
 paketin bütün alanlarını değiştirebilir.
 
-### 3.7 Tam yöneticinin pozisyonunu değiştirme isteği kuralda düşüyor (düşük, CONFIRMED)
+### 3.7 Tam yöneticinin pozisyonunu değiştirme isteği kuralda düşüyor (düşük, DÜZELTİLDİ)
 
 `eylemler.ts → kisiPozisyonu`, `kisilerPozisyonu`.
 
@@ -304,7 +305,7 @@ görünebilir.
 Öneri: tarihi paket kapandığı anda bir kez yazılan bir alandan almak
 (künyedeki "onaylayan"ın zamanı kapanış anını zaten taşıyor).
 
-### 4.2 Sıralı görevde izin, izin kaydına ve güne bakmıyor (orta-düşük, CONFIRMED)
+### 4.2 Sıralı görevde izin, izin kaydına ve güne bakmıyor (orta-düşük, DÜZELTİLDİ)
 
 `gorevler.ts → sorumlular`.
 
@@ -317,7 +318,7 @@ Otomatik çağrının göndereni de (14 gün ileriye) bu hesaptan.
 
 Öneri: `sorumlular` içinde `kisiBugunDurumu(d, kisi, tarih)` kullanmak.
 
-### 4.3 "Bugün" tarayıcının yerel saatinden (orta-düşük, PLAUSIBLE)
+### 4.3 "Bugün" tarayıcının yerel saatinden (orta-düşük, DÜZELTİLDİ)
 
 `tarih.ts → bugun`, `eylemler.ts → yarinPlaniniAc`.
 
@@ -330,7 +331,7 @@ taşınmamış olur. Arşiv günü ve "geciken" hesapları da aynı saatten.
 
 Öneri: `bugun()`'ü İstanbul saatine sabitlemek (kapıdaki `istanbulGunu` gibi).
 
-### 4.4 "Gibi" çalışan birim, birime düşen bildirimi almıyor (düşük, CONFIRMED)
+### 4.4 "Gibi" çalışan birim, birime düşen bildirimi almıyor (düşük, DÜZELTİLDİ)
 
 `yetki.ts → bildirimMi`.
 
@@ -338,7 +339,7 @@ Bildirim `veri.sahip === k.birim` ile eşleşiyor; yöneticinin açtığı ve
 Planlama (ya da başka yerleşik birim) "gibi" çalışan birimde sayfalar ve
 izinler geliyor, ama "sahip: planlama" bildirimleri gelmiyor.
 
-### 4.5 Muhasebe aktarımında "1,500" 1,5 okunuyor (düşük, CONFIRMED)
+### 4.5 Muhasebe aktarımında "1,500" 1,5 okunuyor (düşük, DÜZELTİLDİ)
 
 `muhasebe.ts → sayi`.
 
@@ -384,7 +385,7 @@ Ekranların davranışı depodaki uçtan uca testlerle (`testler/`, her birimden
 bir kişiyle bütün sayfalar dahil) sınanıyor; bu inceleme onların yerine
 geçmiyor. İstenirse ekranlar da dosya dosya okunur.
 
-### 5.1 Anma kaydındaki bağlantı denetlenmiyor (düşük, CONFIRMED)
+### 5.1 Anma kaydındaki bağlantı denetlenmiyor (düşük, DÜZELTİLDİ)
 
 `bilesenler/Anma.tsx` (`href={b.yol}`), `ekranlar/yeni/AnaPano.tsx`.
 
@@ -400,10 +401,30 @@ adresle yazabilir; tıklayan kişi siteden dışarı gider.
 | Önem | Sayı | Durum |
 |---|---|---|
 | Yüksek | 2 | ikisi de düzeltildi (1.1, 2.1) |
-| Orta | 5 | ikisi düzeltildi (1.2, 1.3); 1.4, 1.5, 4.1 bekliyor |
-| Orta-düşük ve düşük | 19 | bekliyor |
+| Orta | 5 | hepsi düzeltildi (1.2, 1.3, 1.4, 1.5, 4.1) |
+| Orta-düşük ve düşük | 19 | 16'sı düzeltildi; 1.7, 1.8, 2.4 bırakıldı |
 
-Önce ele alınması önerilenler: **4.1** (muhasebede işin ayı; ödemeyi
-etkiler), **1.4** (her açılışta bütün kişilerin yeniden yazılması; kotayı
-tüketir), **3.2** ve **3.3** (posta ve profil; kullanıcının gördüğü hata),
-**1.5** (silme işaretlerinin birikmesi; uzun vadede okuma kotası).
+Bırakılanlar ve nedeni:
+
+- **1.7** (paket kodu sayacı): çözümü sayacı işlemle (transaction) yazmak;
+  yazış yolu bugün tek toplu yazış ve çevrimdışı da çalışıyor, işlem bunu
+  değiştirir. Çakışma iki kişinin aynı saniyede paket açmasını gerektiriyor,
+  sonucu aynı kodlu iki paket (kimlikleri ayrı). Kurum büyürse ele alınır.
+- **1.8** (kayıt başvurusu): kuralı sıkmak, hesabı önceden açılmış kişinin
+  "şifre belirle" yolunu (oturumsuz yazış) bozuyor. Etkisi onay bekleyen,
+  kısıtlı kayıtla sınırlı; yönetici onaylarken bilgileri görüyor.
+- **2.4** (tam metin ayıklama): yalnız o haberin metni gelmez, ekran özeti
+  gösterir; deseni değiştirmek çalışan sitelerin ayıklamasını riske atıyor.
+
+Düzeltmelerin kısa dökümü: muhasebede işin ayı kapanış anından (4.1, 4.6);
+erişim tazeleme yalnız farkı ve sunucu teyidinden sonra yazıyor (1.4, 1.6);
+eski silme işaretleri temizleniyor, uzun süre eşitlenmemiş tarayıcı tam
+okuyor (1.5); belirsiz biten otomatik çağrı yinelenmiyor (2.2), XML'de
+denetim karakteri atılıyor (2.3); giden posta eşleşmesi gönderene bakıyor,
+postayı gören herkesin gönderdiği sohbete yazılıyor (3.1, 3.2); etkin hesapta
+profil giriş adresini değiştirmiyor (3.3); kişi taşıyan açılış işleri yalnız
+yetkilide (3.4); onaylı aylık plan, başka planın kaydı ve tam yöneticinin
+pozisyonu eylemde de korunuyor (3.5–3.7); sıralı görev izin kaydına ve güne
+bakıyor (4.2); İstanbul'un ilerisindeki tarayıcı planı erken açmıyor (4.3);
+"gibi" çalışan birim bildirimi alıyor (4.4); "1,500" bin beş yüz okunuyor
+(4.5); anma bağlantısı yalnız uygulamanın içine gidiyor (5.1).

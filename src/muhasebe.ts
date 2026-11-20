@@ -224,7 +224,9 @@ export interface AnlasmaSatiri {
 
 const sayi = (s?: string) => {
   if (!s) return undefined;
-  const n = Number(s.replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+  const ham = s.replace(/[^\d.,-]/g, "");
+  // İngilizce binlik ("1,500", "12,000.50"): virgül ondalık sanılıp 1,5 okunuyordu.
+  const n = /^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(ham) ? Number(ham.replace(/,/g, "")) : Number(ham.replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
   return Number.isFinite(n) && s.trim() ? n : undefined;
 };
 

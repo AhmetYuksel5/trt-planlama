@@ -695,7 +695,8 @@ export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   const kime = h.veri?.kime ? h.veri.kime.split(",") : [];
   if (kime.includes(k.id)) return true;
   if (k.birim === "muhabir") return !kime.length && muhabirBildirimi(k, h, d);
-  return h.veri?.sahip === k.birim;
+  // "Gibi" çalışan birim (örnek aldığı yerleşik birim) ve kademedeki müdür de: işi yapabiliyor ama birime düşen bildirimi almıyordu.
+  return h.veri?.sahip === k.birim || (!!h.veri?.sahip && h.veri.sahip === izinBirimi(k.birim));
 };
 
 /* Muhabirin önerisinde ona dönen karar ve yanıtlar; ara işler (paket önerisi, plan) değil. */

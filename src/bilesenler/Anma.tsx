@@ -1,6 +1,6 @@
 import { AtSign, Check } from "lucide-react";
 import { useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type TextareaHTMLAttributes } from "react";
-import { anmaAdaylari, anmaSorgusu } from "../bahsetme";
+import { anmaAdaylari, anmaSorgusu, icYol } from "../bahsetme";
 import { saatYaz, tarihYaz, useDil, yaz } from "../dil";
 import { bahsetmeGoruldu } from "../eylemler";
 import { kisiBul, useVeri, type Kisi } from "../veri";
@@ -127,7 +127,7 @@ export function AnildigimNotlar({ ben }: { ben: Kisi }) {
               <Avatar kisi={yazan} boy="kucuk" />
               <a
                 className="ad"
-                href={b.yol}
+                href={icYol(b.yol)}
                 onClick={() => {
                   bahsetmeGoruldu(ben, b.id);
                 }}

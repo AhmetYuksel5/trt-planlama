@@ -3568,6 +3568,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Next Day yan paneli, Posta'da açık sohbet, takvim araması ve süzgeci,
     Muhasebe. Pencere içindeki seçim bununla tutulmaz. Yeni liste sayfasının
     süzgeci de bununla yazılır. Test `testler/geri.cjs`.
+- Kod incelemesi (`belgeler/kod-inceleme.md`, Kasım 2026; 26 bulgu, 23'ü
+  düzeltildi, üçü nedeniyle bırakıldı). Ondan kalan kurallar: eylem, ekranın
+  gizlediği düğmenin koşulunu kendisi de sorar (onaylı aylık plana olay
+  yazılmaz, düzenlenen gelişme/canlı/PKG yetkinin sorulduğu planın olmalı, tam
+  yöneticinin pozisyonunu yalnız tam yönetici değiştirir); kişi taşıyan açılış
+  işleri gerçek kipte yalnız kişi düzenleme yetkilisinin tarayıcısında
+  (`App.tsx → kisiTasir`); `yarinPlaniniAc` İstanbul'un yarınından ileri günü
+  açmaz; sıralı görevde izin, izin kaydından ve sorulan günden
+  (`gorevler.ts → izinde`); birime düşen bildirim "gibi" çalışan birime de
+  (`bildirimMi`); kayıttan gelen bağlantı `bahsetme.ts → icYol`'dan geçer.
 - Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
   hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
   dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede

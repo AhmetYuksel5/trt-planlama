@@ -23,6 +23,18 @@ export const isListesi = (d: Durum): Is[] => d.isler ?? [];
 /** Sıralı görevde dönemin anahtarı: gün ya da haftanın Cumartesi'si. */
 export const donemAnahtari = (g: GorevTanimi, tarih: string) => (g.dagilim.tur === "sirali" && g.dagilim.periyot === "hafta" ? haftaBasi(tarih) : tarih);
 
+/*
+ * Sorulan gün izinde mi: önce onaylı izin kaydı (o günü kapsayan), yoksa
+ * kişideki sabit alan. Yalnız sabit alana bakınca izin kaydı girilmiş kişi
+ * sıraya giriyor, bugün izinli olan gelecek haftanın sırasından da düşüyordu.
+ * (muhabirIletisim.ts → kisiBugunDurumu ile aynı kural; orayı içe aktarmak döngü açıyor.)
+ */
+const izinde = (d: Durum, kisiId: string, tarih: string) => {
+  const kayit = (d.gorevlendirmeler ?? []).find((g) => g.kisiId === kisiId && g.durum !== "talep" && g.baslangic.slice(0, 10) <= tarih && g.bitis.slice(0, 10) >= tarih);
+  if (kayit) return kayit.tur === "izin";
+  return d.kisiler.find((k) => k.id === kisiId)?.durum === "izinli";
+};
+
 /**
  * Görevin o tarihteki sorumluları. Sıralıda başlangıçtan beri geçen dönem
  * sayısı listede kaçıncı kişinin sırası olduğunu veriyor; sırası gelen
@@ -39,7 +51,7 @@ export const sorumlular = (d: Durum, g: GorevTanimi, tarih: string): string[] =>
   const sira = ((fark % l.length) + l.length) % l.length;
   for (let i = 0; i < l.length; i++) {
     const id = l[(sira + i) % l.length];
-    if (d.kisiler.find((k) => k.id === id)?.durum !== "izinli") return [id];
+    if (!izinde(d, id, tarih)) return [id];
   }
   return [l[sira]];
 };

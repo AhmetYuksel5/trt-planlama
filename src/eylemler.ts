@@ -1834,6 +1834,13 @@ export const kayipPlaniGeriGetir = (ben: Kisi, id: string): boolean => {
 
 export const yarinPlaniniAc = (): string | null => {
   const tarih = gunEkle(bugun(), 1);
+  /*
+   * "Bugün" tarayıcının yerel saatinden. Haber merkezinin (İstanbul) ilerisindeki
+   * saat diliminde açık duran tarayıcı İstanbul'da gün dönmeden öbür günün planını
+   * açardı: o günün şablonu, henüz çalışılan planın bitmemiş haliyle kurulurdu.
+   */
+  const istanbulBugun = new Date(Date.now() + 3 * 3600_000).toISOString().slice(0, 10);
+  if (tarih > gunEkle(istanbulBugun, 1)) return null;
   let d = getir();
   if (d.planlar.some((p) => p.tarih === tarih)) return null;
   const id = gunPlaniKimligi(tarih);
@@ -2495,6 +2502,8 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
   // Boş tarih planın günü (kullanıcı: Next Day ertesi günün planı, eklenen gelişme bugünün tarihini taşıyordu).
   if (!g.tarih) g = { ...g, tarih: new Date(`${plan.tarih}T00:00`).toISOString() };
   if (g.id) {
+    // Yetki bu plana göre soruldu; kayıt başka planınsa (kilitli, devredilmiş plan) bu yoldan değişmesin.
+    if (d.gelismeler.find((x) => x.id === g.id)?.planId !== plan.id) return false;
     kaydet({ ...d, gelismeler: d.gelismeler.map((x) => (x.id === g.id ? { ...x, ...g, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {
     const id = kimlik("g");
@@ -2590,6 +2599,7 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   const plan = planBul(d, c.planId);
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (c.id) {
+    if (d.canliYayinlar.find((x) => x.id === c.id)?.planId !== plan.id) return false;
     kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) });
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy"), ekleyen: { kisiId: ben.id, zaman: simdi() } }] });
@@ -2649,6 +2659,7 @@ export const paketKaydet = (ben: Kisi, g: PaketGirdisi, sonra?: string): string 
   const { not: formNotu, ...alanlar } = g;
   if (g.id) {
     const id = g.id;
+    if (d.paketler.find((x) => x.id === id)?.planId !== plan.id) return null;
     kaydet(paketGuncelle(d, id, (p) => ({ ...p, ...alanlar, muhabirTbc: g.muhabirTbc || undefined, id, notlar: formNotuyla(p.notlar ?? [], id, formNotu, ben) })));
     return id;
   }
@@ -4514,6 +4525,8 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
   const d = getir();
   const eski = d.kisiler.find((k) => k.id === kisiId);
   if (!eski) return false;
+  // Tam yöneticinin pozisyonunu yalnız tam yönetici değiştirir (kural da öyle): yoksa ekran "kaydedildi" deyip yazış sunucuda düşüyordu.
+  if (eski.hesapYoneticisi && !ben.hesapYoneticisi) return false;
   let yeni: Durum = {
     ...d,
     kisiler: d.kisiler.map((k) => {
@@ -4541,6 +4554,9 @@ export const kisiPozisyonu = (ben: Kisi, kisiId: string, p: { birim: BirimId; go
 export const kisilerPozisyonu = (ben: Kisi, liste: { id: string; birim: BirimId; gorev: GorevId; rol: Rol }[]) => {
   if (!hesapYetkisi(ben, "kisiDuzenle") || !liste.length) return false;
   const d = getir();
+  // Tam yönetici olmayan, tam yöneticinin pozisyonunu değiştiremez (kisiPozisyonu'ndaki kural).
+  if (!ben.hesapYoneticisi) liste = liste.filter((p) => !d.kisiler.find((k) => k.id === p.id)?.hesapYoneticisi);
+  if (!liste.length) return false;
   let yeni: Durum = {
     ...d,
     kisiler: d.kisiler.map((k) => {
@@ -5369,7 +5385,7 @@ export const faaliyetHaftalikaBagla = (ben: Kisi, id: string, haftaId: string, k
 export const faaliyetAylikaEkle = (ben: Kisi, id: string, tarih: string, _tur: IcerikTuru): string | null => {
   const d = getir();
   const f = faaliyetBul(d, id);
-  if (!f || !aylikDuzenler(ben)) return null;
+  if (!f || !aylikDuzenler(ben) || ayKilitli(d, olayAyi(tarih))) return null;
   const [y, olayId] = aylikOlayYaz(d, ben, { baslik: f.baslik, tarih, yer: f.sehir, etiketler: [], gunler: [], ekip: [] });
   const planId = y.aylik.find((a) => a.olaylar?.some((o) => o.id === olayId))!.id;
   kaydet(baglantiYaz(y, ben, f, { tur: "aylik", planId, kayitId: olayId, tarih }));
@@ -5402,8 +5418,13 @@ const aylikOlayYaz = (d: Durum, ben: Kisi, g: AylikOlayGirdisi): [Durum, string]
   return [hareketYaz({ ...d, aylik }, { kisiId: ben.id, tip: "aylikOlayKaydedildi", veri: { ay, baslik: temiz.baslik } }), id];
 };
 
+/* Onaylı ay planı düzenlenmez ("Hazırlığa al" açar); ekran düğmeyi gizliyordu ama eylem sormuyordu. */
+const ayKilitli = (d: Durum, ay: string) => d.aylik.some((a) => a.ay === ay && a.durum === "onayli");
+const olayinAyiKilitli = (d: Durum, olayId?: string) => !!olayId && d.aylik.some((a) => a.durum === "onayli" && a.olaylar?.some((o) => o.id === olayId));
+
 export const aylikOlayKaydet = (ben: Kisi, g: AylikOlayGirdisi): string | null => {
   if (!aylikDuzenler(ben) || !g.baslik.trim() || !g.tarih) return null;
+  if (ayKilitli(getir(), olayAyi(g.tarih)) || olayinAyiKilitli(getir(), g.id)) return null;
   const [y, id] = aylikOlayYaz(getir(), ben, g);
   kaydet(y);
   return id;
@@ -5411,7 +5432,7 @@ export const aylikOlayKaydet = (ben: Kisi, g: AylikOlayGirdisi): string | null =
 
 export const aylikOlaySil = (ben: Kisi, olayId: string) => {
   const d = getir();
-  if (!aylikDuzenler(ben) || !d.aylik.some((a) => a.olaylar?.some((o) => o.id === olayId))) return false;
+  if (!aylikDuzenler(ben) || !d.aylik.some((a) => a.olaylar?.some((o) => o.id === olayId)) || olayinAyiKilitli(d, olayId)) return false;
   kaydet({ ...d, aylik: d.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.filter((o) => o.id !== olayId) } : a)) });
   return true;
 };
