@@ -32,6 +32,8 @@ const { chromium } = require(process.env.PW);
     const kilitli = h.kalemler.find((x) => x.aktarim?.planId || x.aktarim?.paketId) ?? h.kalemler[0];
     kilitli.karar = "kabul";
     kilitli.aktarim = kilitli.aktarim ?? { planId: plan.id };
+    // Haftanın kendi karar bekleyenleri testin konusu değil: hafta sonunda örnek veri hazırlıktaki haftayı veriyor, satır onlar yüzünden kalıyordu.
+    for (const x of h.kalemler) if (x.karar === "bekliyor") x.karar = "bilgi";
     const yeni = { id: "hk-sonradan-test", tarih: plan.tarih, metin: "زيارة مفاجئة يعلن عنها لاحقا", yer: "أنقرة", tur: "haber", bicimler: [], muhabirler: [], karar: "bekliyor" };
     h.kalemler.push(yeni);
     // Plan bu haftanın içinde değilse testin kendi haftası: plan günü haftaya düşsün.
