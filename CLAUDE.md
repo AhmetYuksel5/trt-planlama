@@ -1832,9 +1832,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ND-/HP- etiketiyle ona bağlanır. Gönderilemeyen gönderen listesindekilere
     bir kez bildirilir. Ekran Ayarlar › "Otomatik öneri çağrısı"
     (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan): üstte açık
-    anahtarı ve sıradaki iki çağrı (gün, saat, gönderen, "Bunu gönderme"),
-    altında üç sekme: Kim gönderecek (izin, haftanın yedi günü, belli
-    günler), Zaman ve metin, Son gönderimler. Testler
+    anahtarı ve sıradaki iki çağrı, her biri kutuda (kullanıcı: telefonda çok
+    karışıktı): tür, gün ve saat, "Gönderilsin" kutusu (`data-oto-atla`; ters
+    dönen "Bunu gönderme / Gönderilsin" düğmesi kalktı); altında gönderen, yoksa
+    "Bu güne gönderen seçilmedi" ve o güne gönderen seçimi (`data-oto-gonderen-sec`,
+    o tarihe istisna yazar); konu tek satır. Altında üç sekme (telefonda satıra
+    kırılır): Gönderenler (izin, haftanın yedi günü, belli günler), Zaman ve
+    metin, Geçmiş. Testler
     `worker/test/oto-cagri.test.ts`.
 - PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
   "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin

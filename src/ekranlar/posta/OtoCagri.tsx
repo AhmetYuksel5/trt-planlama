@@ -99,21 +99,64 @@ export function OtoCagriKart() {
           <input type="checkbox" checked={d.acik} disabled={mesgul} onChange={(e) => (e.target.checked ? yenidenKur({ acik: true }) : yaz({ acik: false }))} data-oto-cagri-acik />
           {t("otoCagriAc")}
         </label>
+        {/*
+         * Sıradaki çağrılar (kullanıcı: telefonda çok karışıktı; ters dönen "Bunu gönderme /
+         * Gönderilsin" düğmesi, ne yapılacağını söylemeyen kırmızı uyarı, iki satırlık konu).
+         * Satır: tür, gün ve saat, "Gönderilsin" kutusu; altında gönderen ya da o güne
+         * gönderen seçimi (o tarihe istisna yazar); en altta konu, tek satır.
+         */}
         {d.acik &&
           siradakiler.map((k) => {
             const atlandi = d.atla.includes(k.etiket);
             return (
-              <div key={k.etiket} className="oto-siradaki" data-oto-siradaki={k.etiket}>
-                <div>
-                  <div className="alan-etiket">
-                    {t(k.tur === "haftalik" ? "haftalik" : "nextday")} · {tarihYaz(k.gonderim, dil)} {k.saat} · {k.uid ? kisiAdi(k.uid) : <span className="kotu-yazi">{t("otoHataGonderen")}</span>}
-                    {atlandi && ` · ${t("otoAtlandi")}`}
-                  </div>
-                  <Icerik blok>{k.konu}</Icerik>
+              <div key={k.etiket} className={`oto-siradaki${atlandi ? " atlandi" : ""}`} data-oto-siradaki={k.etiket}>
+                <div className="oto-siradaki-bas">
+                  <span>
+                    <b>{t(k.tur === "haftalik" ? "haftalik" : "nextday")}</b> <span className="sonuk-yazi">{tarihYaz(k.gonderim, dil)} · {k.saat}</span>
+                  </span>
+                  <label className="secim">
+                    <input
+                      type="checkbox"
+                      checked={!atlandi}
+                      disabled={mesgul}
+                      onChange={() => yaz({ atla: atlandi ? d.atla.filter((e) => e !== k.etiket) : [...d.atla, k.etiket] })}
+                      data-oto-atla
+                    />
+                    {t("otoGonderilsin")}
+                  </label>
                 </div>
-                <button className="dugme dugme-sade dugme-kucuk" disabled={mesgul} onClick={() => yaz({ atla: atlandi ? d.atla.filter((e) => e !== k.etiket) : [...d.atla, k.etiket] })} data-oto-atla>
-                  {t(atlandi ? "otoGonderilsin" : "otoAtla")}
-                </button>
+                {!atlandi &&
+                  (k.uid ? (
+                    <div className="sonuk-yazi" data-oto-gonderen>
+                      {t("otoGonderenSec")}: {kisiAdi(k.uid)}
+                    </div>
+                  ) : (
+                    <div className="oto-gonderen-yok" data-oto-gonderen-yok>
+                      <span className="kotu-yazi">{t("otoGonderenYokGun")}</span>
+                      {d.gonderenler.length ? (
+                        <select
+                          className="girdi"
+                          value=""
+                          disabled={mesgul}
+                          aria-label={t("otoGonderenSec")}
+                          onChange={(e) => e.target.value && yaz({ istisna: { ...d.istisna, [k.gonderim]: e.target.value } })}
+                          data-oto-gonderen-sec
+                        >
+                          <option value="">{t("otoGonderenSecin")}</option>
+                          {d.gonderenler.map((u) => (
+                            <option key={u} value={u}>
+                              {kisiAdi(u)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="sonuk-yazi">{t("otoGonderenListesiBos")}</span>
+                      )}
+                    </div>
+                  ))}
+                <small className="oto-konu sonuk-yazi">
+                  <Icerik>{k.konu}</Icerik>
+                </small>
               </div>
             );
           })}

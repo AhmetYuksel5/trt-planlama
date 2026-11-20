@@ -1088,8 +1088,18 @@ a.rozet-plan { text-decoration: none; }
 .form-alt { display: flex; gap: var(--ara-2); justify-content: flex-end; flex-wrap: wrap; }
 
 /* Otomatik çağrının sıradaki gönderimi: konu solda (içerik sağa yaslı), "Bunu gönderme" kenarda; dar ekranda alta iner. */
-.oto-siradaki { display: flex; gap: var(--ara-2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.oto-siradaki > div { flex: 1 1 14rem; min-width: 0; }
+.oto-siradaki { display: grid; gap: var(--ara-1); padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); min-width: 0; }
+.oto-siradaki.atlandi { opacity: .65; }
+.oto-siradaki-bas { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
+/* Kutu sağda kalsın; dar telefonda tür ve tarih kendi içinde iki satıra iner. */
+.oto-siradaki-bas > span { flex: 1 1 0; min-width: 0; }
+.oto-siradaki-bas > span > b { display: block; }
+.oto-siradaki-bas .secim { margin: 0; flex: 0 0 auto; inline-size: auto; }
+.oto-gonderen-yok { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
+.oto-gonderen-yok select { flex: 1 1 12rem; min-width: 0; }
+/* Konu tek satır: Arapça uzun başlık kutuyu iki satır büyütüyordu. */
+.oto-konu { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; direction: rtl; text-align: right; }
+[data-oto-sekmeler] { flex-wrap: wrap; overflow: visible; }
 
 /* --- Sekmeler ve süzgeç --- */
 
