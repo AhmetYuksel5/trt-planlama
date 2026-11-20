@@ -14,7 +14,7 @@ denenmedi.
 | 2 | Kapı (`worker/`) | bitti |
 | 3 | `eylemler.ts` (tamamı okundu) | bitti |
 | 4 | Yetki ve saf kurallar | bitti (aşağıda okunanlar yazılı) |
-| 5 | Ekranlar ve bileşenler | sırada |
+| 5 | Ekranlar ve bileşenler | otomatik tarama bitti; satır satır okuma yapılmadı |
 
 ## 1. Güvenlik kuralları ve veri katmanı
 
@@ -192,17 +192,18 @@ Dosyanın tamamı okundu (290 eylem). Güvenlik açığı çıkmadı; yetki önc
 soruluyor, temel `getir()`'den alınıyor, değişmeyen öğenin nesnesi korunuyor.
 Bulunanlar işlev kusurları.
 
-### 3.1 Kısa yanıttan sonra gelen posta sohbete eklenmiyor (orta, CONFIRMED)
+### 3.1 Giden posta eşleştirmesi gönderene bakmıyor (düşük-orta, CONFIRMED)
 
 `eylemler.ts → postaIsle` (`esGiden`).
 
 Kutudan gelen posta, henüz kimliği öğrenilmemiş giden balonla yalnız metnin
 başına ve 6 saatlik süreye bakılarak eşleştiriliyor; gönderene bakılmıyor.
-Kişi "شكرا" gibi kısa bir yanıt gönderip muhabir "شكرا لكم…" diye yanıtlarsa
-ve ikisi aynı çekimde gelirse, muhabirin postası kendi gidenimizin geri
-dönüşü sanılır: sohbete eklenmez ("tekrar"), Message-ID'si giden balona
-yazılır. Ardından asıl geri dönüş eşleşecek balon bulamaz, gelen posta gibi
-ikinci balon olur. Sonuç: muhabirin yanıtı görünmez, kendi postamız çift.
+Çekim eskiden yeniye işlendiği için olağan sırada (önce kendi postamızın geri
+dönüşü, sonra yanıtı) sorun çıkmıyor. Ama kendi postamızın geri dönüşü o
+çekimde yoksa (son 25 postanın dışında kaldı, gecikti) ve kısa metnimizle
+("شكرا") aynı sözcükle başlayan başka bir posta geldiyse, o posta kendi
+gidenimiz sanılır: sohbete eklenmez, Message-ID'si giden balona yazılır;
+asıl geri dönüş sonradan gelen posta gibi ikinci balon olur.
 
 Öneri: eşleştirmede gönderen de aranmalı (gelen postanın göndereni giden
 balonun `kimden`'i, yani kişinin kendi adresi olmalı).
@@ -360,3 +361,49 @@ arası teslim edilen iş bir önceki güne, ay başında bir önceki aya yazıl�
 - Tarih yardımcıları (gün ekleme öğlen üzerinden, ay sonu, hafta başı).
 - Takvim tekrarlarının açılımı (ay sonu günleri, yıl geçişi, üst sınır).
 - Birim ağacında döngü koruması.
+
+## 5. Ekranlar ve bileşenler
+
+Yaklaşık 45 bin satır. Bu parçada satır satır okuma yapılmadı; yapılanlar:
+
+- **Kanca sırası** (`react-hooks/rules-of-hooks`) bütün `src/` üzerinde
+  çalıştırıldı: ihlal yok (koşullu ya da döngü içinde çağrılan kanca yok).
+- **Eksik bağımlılık** uyarıları (10 tane) tek tek bakıldı: hepsi bilinçli
+  (açılışta bir kez çalışan etki) ya da eşitlik denetimiyle korunuyor; kusur
+  çıkmadı.
+- **HTML sızması**: `dangerouslySetInnerHTML` yok; `innerHTML` yalnız kendi
+  çizdiğimiz belgenin Word ve e-posta kopyasında. Kullanıcı metni her yerde
+  React'ten geçiyor.
+- **Bağlantılar**: kayıttan gelen adresler (`video`, haber bağlantısı, yapay
+  zeka kaynakları) `href`'e yazılıyor; React 19 `javascript:` adresini
+  engelliyor, hepsi `rel="noreferrer"` ile açılıyor.
+- Gerçek kipin giriş ekranı (`GercekGiris.tsx`) ve posta çekme döngüsü
+  (`posta-kapi.ts`) okundu.
+
+Ekranların davranışı depodaki uçtan uca testlerle (`testler/`, her birimden
+bir kişiyle bütün sayfalar dahil) sınanıyor; bu inceleme onların yerine
+geçmiyor. İstenirse ekranlar da dosya dosya okunur.
+
+### 5.1 Anma kaydındaki bağlantı denetlenmiyor (düşük, CONFIRMED)
+
+`bilesenler/Anma.tsx` (`href={b.yol}`), `ekranlar/yeni/AnaPano.tsx`.
+
+"Senden bahsedilen notlar" satırı kayıttaki `yol`'u olduğu gibi bağlantı
+yapıyor. Program hep `#/…` yazıyor, ama gerçek kipte anma kaydını isteğini
+kendisi gönderen herkes (dış muhabir dahil; kural içeriğe bakmıyor) dış bir
+adresle yazabilir; tıklayan kişi siteden dışarı gider.
+
+Öneri: çizerken `yol` yalnız `#/` ile başlıyorsa bağlantı yapılsın.
+
+## Özet
+
+| Önem | Sayı | Durum |
+|---|---|---|
+| Yüksek | 2 | ikisi de düzeltildi (1.1, 2.1) |
+| Orta | 5 | ikisi düzeltildi (1.2, 1.3); 1.4, 1.5, 4.1 bekliyor |
+| Orta-düşük ve düşük | 19 | bekliyor |
+
+Önce ele alınması önerilenler: **4.1** (muhasebede işin ayı; ödemeyi
+etkiler), **1.4** (her açılışta bütün kişilerin yeniden yazılması; kotayı
+tüketir), **3.2** ve **3.3** (posta ve profil; kullanıcının gördüğü hata),
+**1.5** (silme işaretlerinin birikmesi; uzun vadede okuma kotası).
