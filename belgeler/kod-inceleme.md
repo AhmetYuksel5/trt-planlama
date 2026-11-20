@@ -3,7 +3,7 @@
 Bütün kodun baştan sona gözden geçirilmesi. Parça parça ilerliyor; her parça
 bitince buraya yazılıyor. Yalnız gerçek kusurlar: güvenlik, veri kaybı, yanlış
 mantık. Üslup ve yeniden düzenleme önerisi yok. Depo herkese açık olduğu için
-güvenlik açıkları (1.1–1.3) bulunduğu gün kapatıldı; öbür bulgular bekliyor.
+güvenlik açıkları (1.1–1.3, 2.1) bulunduğu gün kapatıldı; öbür bulgular bekliyor.
 
 Durum: **CONFIRMED** kod okunarak doğrulandı, **PLAUSIBLE** olası ama uçtan uca
 denenmedi.
@@ -11,7 +11,7 @@ denenmedi.
 | Parça | Kapsam | Durum |
 |---|---|---|
 | 1 | `firestore.rules`, `depo/`, `veri.ts` yükle/kaydet, `kip.ts`, açılış işleri | bitti |
-| 2 | Kapı (`worker/`) ve istemcileri | sırada |
+| 2 | Kapı (`worker/`) | bitti |
 | 3 | `eylemler.ts` | sırada |
 | 4 | Yetki ve saf kurallar (`yetki.ts`, `yapi.ts`, `akis.ts`…) | sırada |
 | 5 | Ekranlar ve bileşenler | sırada |
@@ -130,3 +130,58 @@ başkasının yazdığı adı ve birimi görür.
 - Eşitlenmeden yazmama, bağlantı kopukken sistemin yazmaması, zaman
   sorgusunda "removed"ın silme sayılmaması.
 - Açılış işlerinin tek tek korumada çalışması.
+
+## 2. Kapı (worker)
+
+### 2.1 Otomatik çağrının içeriğini herkes yazabiliyordu (yüksek, DÜZELTİLDİ)
+
+`worker/src/index.ts` → `PUT /oto-cagri`.
+
+Yazış dış muhabir dışında haber merkezindeki herkese açıktı; "çağrı
+hazırlayan" denetimi yalnız tarayıcıdaydı. İsteğini kendisi gönderen herhangi
+bir personel alıcı listesini (300 adrese kadar), konuyu, HTML metni ve
+görevliyi yazıp, izin vermiş planlamacının kurumsal hesabından dilediği
+adreslere posta gönderebilirdi.
+
+Düzeltme: yazış Planlama birimine ve tam yöneticiye indi; okuma eskisi gibi.
+Test `worker/test/worker.test.ts`.
+
+### 2.2 Zamanlayıcı belirsiz hatada çağrıyı yeniden gönderebilir (orta-düşük, PLAUSIBLE)
+
+`worker/src/index.ts → otoCagriCalistir`, `oto-cagri.ts → DENEME_SINIRI`.
+
+Başarısız gönderim üç kez deneniyor. Hata, istek sunucuya yazıldıktan sonra
+geldiyse (yanıt okunurken zaman aşımı, bağlantı kopması) posta gitmiş
+olabilir; 15 dakika sonraki deneme aynı çağrıyı bütün muhabirlere ikinci kez
+gönderir. Posta katmanı bu yüzden gönderimi kendisi yinelemiyor, ama
+zamanlayıcının yeniden denemesi aynı riski taşıyor.
+
+Öneri: yalnız istek yazılmadan önceki hatalarda (bağlantı, kimlik) yeniden
+denemek; yazıldıktan sonraki hatayı "belirsiz" diye işaretleyip bırakmak.
+
+### 2.3 Denetim karakteri taşıyan metin gönderilemiyor (düşük, PLAUSIBLE)
+
+`worker/src/ews.ts → kacXml`.
+
+XML'de geçersiz denetim karakterleri (Word'den yapıştırılan dikey sekme
+`\u000b`, `\u000c`…) ayıklanmıyor; Exchange isteği reddeder, kişi yalnız
+"gönderilemedi" görür.
+
+Öneri: `kacXml` içinde `[\x00-\x08\x0B\x0C\x0E-\x1F]` atılsın.
+
+### 2.4 Tam metin ayıklama büyük sayfada işlemciyi tüketebilir (düşük, PLAUSIBLE)
+
+`worker/src/makale.ts → AT`.
+
+Kapanmamış çok sayıda `<nav`, `<script` taşıyan 3 MB'lık sayfada geri
+başvurulu desen her açılışta sayfanın sonuna kadar tarar; ücretsiz planın
+işlemci sınırı aşılır, o haberin metni gelmez. Yalnız o isteği etkiler.
+
+### Temiz bulunanlar
+
+- Oturum belgesinin doğrulanması (imza, süre, proje, yayıncı).
+- Kayıtlı sağlayıcı anahtarının yalnız kayıtlı adrese gitmesi; anahtar ve
+  parolanın tarayıcıya dönmemesi; parolanın şifreli saklanması.
+- Posta gönderiminde adres denetimi, alıcı sınırı, XML kaçışı; ekin dosya
+  adı ve türü başlıkları.
+- Akış ve makale adreslerinin https ile sınırlanması.
