@@ -1099,7 +1099,8 @@ a.rozet-plan { text-decoration: none; }
 .oto-gonderen-yok select { flex: 1 1 12rem; min-width: 0; }
 /* Konu tek satır: Arapça uzun başlık kutuyu iki satır büyütüyordu. */
 .oto-konu { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; direction: rtl; text-align: right; }
-[data-oto-sekmeler] { flex-wrap: wrap; overflow: visible; }
+.oto-katli > summary { cursor: pointer; font-weight: 600; min-block-size: 44px; display: flex; align-items: center; }
+.oto-katli[open] > summary { margin-block-end: var(--ara-2); }
 
 /* --- Sekmeler ve süzgeç --- */
 
@@ -4190,11 +4191,6 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .paket-muhabir { margin: var(--ara-1) 0 0; }
 
 /* Otomatik çağrı: haftanın günleri iki sütunda, istisnalar tek satır. */
-.oto-hafta { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--ara-2); }
-.oto-gun { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); align-items: center; gap: var(--ara-2); }
-.oto-istisna { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); }
-.oto-istisna-ekle { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; }
-.oto-istisna-ekle > * { min-inline-size: 0; }
 .oto-zamanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--ara-2); }
 .oto-metin summary { cursor: pointer; font-weight: 600; min-block-size: 44px; display: flex; align-items: center; }
 .oto-metin textarea { inline-size: 100%; box-sizing: border-box; }

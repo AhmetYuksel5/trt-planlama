@@ -3,9 +3,12 @@
  * haftada bir (8 gün sonra başlayan hafta; Perşembe toplantısında görüşülen).
  * Saatler ve gün ayarda (varsayılan Next Day 09:00, haftalık Cuma 10:00),
  * İstanbul saatiyle; zamanlayıcı 15 dakikada bir bakıyor (wrangler.toml).
- * Hangi gün kimin hesabından gideceği takvimde (haftanın günü, istisna günler);
- * takvime yalnız kendi hesabından gönderilmesine izin veren konabilir
- * (`gonderenler`, kişi kendini ekleyip çıkarıyor): kimsenin hesabı habersiz kullanılmasın.
+ * Gönderen o çağrının görevlisi (kullanıcı: ayrı gönderen takvimi çok karışıktı;
+ * Görevler'de zaten Next Day ve Weekly görevlisi var): tarayıcı paketi kurarken
+ * Görevler'den hesaplayıp kaleme yazıyor (`gorevli`). Görevli yalnız kendi
+ * hesabından gönderilmesine izin vermişse (`gonderenler`, kişi kendini ekleyip
+ * çıkarıyor) gider: kimsenin hesabı habersiz kullanılmasın. Görevlisi yazılmamış
+ * eski pakette eski takvim (haftanın günü, istisna günler) geçerli.
  *
  * Kapı veritabanını okuyamıyor (servis hesabı istemiyoruz). Gönderenin
  * tarayıcısı önümüzdeki iki haftanın çağrılarını hazır haliyle (konu, metin,
@@ -30,6 +33,8 @@ export interface OtoCagriKalem {
   metin: string;
   html: string;
   sonSaat: string;
+  /** Görevler'deki o günün görevlisi (uid; "" görevli yok). Yoksa eski paket: takvim geçerli. */
+  gorevli?: string;
 }
 
 /* Gönderim zamanları; haftalığın günü 0 Pazar … 6 Cumartesi. */
@@ -102,9 +107,9 @@ export const otoCagriNormal = (ham: unknown): OtoCagriAyar => {
 
 const haftaninGunu = (g: string) => new Date(`${g}T12:00:00Z`).getUTCDay();
 
-/** O günün göndereni: istisna, yoksa haftanın günü; izni kalkmış kişi gönderen değil. */
-export const gununGondereni = (a: OtoCagriAyar, gun: string): string => {
-  const u = a.istisna[gun] ?? a.haftalik[String(haftaninGunu(gun))] ?? "";
+/** Kalemin göndereni: görevlisi, yoksa (eski paket) takvim; izin vermemiş kişi gönderen değil. */
+export const gununGondereni = (a: OtoCagriAyar, gun: string, kalem?: Pick<OtoCagriKalem, "gorevli">): string => {
+  const u = kalem?.gorevli !== undefined ? kalem.gorevli : (a.istisna[gun] ?? a.haftalik[String(haftaninGunu(gun))] ?? "");
   return u && a.gonderenler.includes(u) ? u : "";
 };
 
@@ -127,7 +132,8 @@ const kalemCoz = (x: unknown): OtoCagriKalem | null => {
   if (!metinMi(k.metin) || !k.metin.trim() || k.metin.length > 20_000) return null;
   if (!metinMi(k.html) || k.html.length > 80_000) return null;
   const sonSaat = metinMi(k.sonSaat) && /^\d{2}:\d{2}$/.test(k.sonSaat) ? k.sonSaat : "";
-  return { etiket: k.etiket, tur: k.tur, tarih: k.tarih, gonderim: k.gonderim, saat: k.saat, konu: k.konu, metin: k.metin, html: k.html, sonSaat };
+  if (k.gorevli !== undefined && !(metinMi(k.gorevli) && /^[\w-]{0,128}$/.test(k.gorevli))) return null;
+  return { etiket: k.etiket, tur: k.tur, tarih: k.tarih, gonderim: k.gonderim, saat: k.saat, konu: k.konu, metin: k.metin, html: k.html, sonSaat, ...(metinMi(k.gorevli) ? { gorevli: k.gorevli } : {}) };
 };
 
 const etiketler = (x: unknown) => (Array.isArray(x) ? [...new Set(x.filter((e): e is string => metinMi(e) && ETIKET.test(e)))].slice(0, 60) : null);
@@ -230,7 +236,7 @@ export const otoCagriGorunur = (a: OtoCagriAyar, uid: string, gecmis: OtoCagriKa
   bccSayi: a.bcc.length,
   guncelleme: a.guncelleme,
   atla: a.atla,
-  kalemler: a.kalemler.map(({ etiket, tur, tarih, gonderim, saat, konu }) => ({ etiket, tur, tarih, gonderim, saat, konu, uid: gununGondereni(a, gonderim) })),
+  kalemler: a.kalemler.map(({ etiket, tur, tarih, gonderim, saat, konu, gorevli }) => ({ etiket, tur, tarih, gonderim, saat, konu, gorevli, uid: gununGondereni(a, gonderim, { gorevli }) })),
   gecmis,
 });
 
@@ -245,7 +251,8 @@ export const DENEME_SINIRI = 3;
  * Şu an gönderilecek kalem; neden gönderilmeyeceği de döner (geçmişe
  * yazılsın, gönderen ekranda görsün). Saati gelmemiş kalem beklenir.
  * "liste": tarayıcı iki haftadır listeyi bırakmadı, gönderilecek metin yok;
- * "gonderen": o günün takviminde kimse yok.
+ * "gonderen": o günün görevlisi (ya da eski pakette takvimde biri) yok;
+ * "izinsiz": görevli kendi hesabından gönderilmesine izin vermemiş.
  */
 export const gununKalemi = (
   a: OtoCagriAyar,
@@ -253,8 +260,8 @@ export const gununKalemi = (
   gun: string,
   saat: string,
   gecmis: OtoCagriKaydi[],
-): { kalem: OtoCagriKalem; uid: string } | { atla: "kapali" | "erken" | "liste" | "atlandi" | "gonderildi" | "gonderen" | "denendi" } => {
-  if (!a.acik || !a.gonderenler.length) return { atla: "kapali" };
+): { kalem: OtoCagriKalem; uid: string } | { atla: "kapali" | "erken" | "liste" | "atlandi" | "gonderildi" | "gonderen" | "izinsiz" | "denendi" } => {
+  if (!a.acik) return { atla: "kapali" };
   const kalem = a.kalemler.find((k) => k.tur === tur && k.gonderim === gun);
   if (!kalem) {
     // Haftalık yalnız ayardaki gününde beklenir; liste uyarısı günde bir kez.
@@ -267,8 +274,12 @@ export const gununKalemi = (
   const onceki = gecmis.filter((g) => g.etiket === kalem.etiket);
   if (a.gonderildi.includes(kalem.etiket) || onceki.some((g) => g.tamam)) return { atla: "gonderildi" };
   if (onceki.length >= DENEME_SINIRI) return { atla: "denendi" };
-  const uid = gununGondereni(a, gun);
-  if (!uid) return onceki.some((g) => g.hata === "gonderen") ? { atla: "denendi" } : { atla: "gonderen" };
+  const uid = gununGondereni(a, gun, kalem);
+  if (!uid) {
+    // Sebep geçmişe bir kez yazılır; görevli var ama izin vermemişse ayrı söylenir.
+    const neden = kalem.gorevli ? "izinsiz" : "gonderen";
+    return onceki.some((g) => g.hata === neden) ? { atla: "denendi" } : { atla: neden };
+  }
   return { kalem, uid };
 };
 

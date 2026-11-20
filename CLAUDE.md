@@ -1811,34 +1811,38 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     saati, haftalığın günü ve saati, yanıt için son saat; varsayılan 09:00,
     Cuma 10:00, 15:00), `sablon` (Next Day ve Weekly metni; boşsa kurumun
     metni `cagriGovdesi`/`haftalikGovde`, yer tutucular {gun} {tarih} {saat},
-    {aralik} {adres}), takvim (`haftalik`: haftanın günü → gönderen;
-    `istisna`: gün → gönderen ya da "" kimse). Takvime yalnız "Benim
-    hesabımdan gönderilebilir" diyen konur (`gonderenler`, kişi yalnız
-    kendini ekler/çıkarır, `katil`; ayrılanın günleri boşalır; kapı izinsiz
-    kimliği reddeder): posta o kişinin EWS kimliğiyle gider. İlk sürümün tek
-    göndereni (`uid`) okurken her günün göndereni olur (`otoCagriNormal`).
+    {aralik} {adres}). Gönderen o çağrının görevlisi (kullanıcı: ayrı gönderen
+    takvimi, istisna günleri ve tek tek "gönderme" işaretleri çok karışıktı;
+    Görevler'de zaten görevli var): Next Day çağrısında gönderildiği günün Next
+    Day görevlisi (o gün ertesi günün planını o hazırlıyor), haftalıkta Weekly
+    görevlisi (`otoCagri.ts → cagriGorevlisi`, `gorevler.ts → temelSorumlular`).
+    Tarayıcı paketi kurarken görevliyi kaleme yazar (`OtoKalem.gorevli`, "" yok);
+    kapı yalnız "Görevli olduğum gün çağrı benim hesabımdan gitsin" diyene
+    gönderir (`gonderenler`, kişi yalnız kendini ekler/çıkarır, `katil`): posta
+    o kişinin EWS kimliğiyle gider; izin vermemiş görevlide geçmişe `izinsiz`
+    (adıyla), görevli yoksa `gonderen` yazılır, başkasına düşmez. Görevlisi
+    yazılmamış eski pakette eski takvim (`haftalik`, `istisna`) geçerli
+    (`worker/src/oto-cagri.ts → gununGondereni`); ilk sürümün tek göndereni
+    (`uid`) okurken her günün göndereni olur (`otoCagriNormal`). "Bunu gönderme"
+    (`atla`) kalktı, paket bırakılırken eski işaretler silinir.
     Kime gönderenin grup adresi, muhabirler BCC'de (izinde olmayan, kurumsal
     adresi olan); HTML gövde. Zamanlayıcı 15 dakikada bir (`wrangler.toml`,
     `index.ts → CRON_OTO`): saati gelmiş kalemi gönderir (`gununKalemi`,
-    İstanbul saati), başarısızı üç kez dener, takvimde kimse yoksa ve liste
-    bayatsa geçmişe bir kez yazar. Kapı veritabanını okuyamıyor: gönderen
+    İstanbul saati), başarısızı üç kez dener, görevli yoksa ya da izin
+    vermemişse ve liste bayatsa geçmişe bir kez yazar. Kapı veritabanını okuyamıyor: gönderen
     listesindeki planlamacının tarayıcısı önümüzdeki 14 günün çağrılarını
     (saatiyle) ve BCC listesini kapıya bırakır (`otoPaketiBirak`; açılışta ve
     saatte bir, değişmediyse yazmaz; zaman ya da metin kaydedilince yeniden
-    kurulur). Kayıtta çağrısı olan etiket (elle gönderilmiş) ve "Bunu
-    gönderme" denen gitmez. Gönderilen çağrıyı kayda uygulamayı açan
+    kurulur). Kayıtta çağrısı olan etiket (elle gönderilmiş) gitmez. Gönderilen çağrıyı kayda uygulamayı açan
     planlamacının tarayıcısı yazar (`otoCagrilariKaydet`, kimlik `oc-<etiket>`,
     hareket `cagriHazirlandi`; `postalariCek` postayı çekmeden önce de): yanıt
     ND-/HP- etiketiyle ona bağlanır. Gönderilemeyen gönderen listesindekilere
     bir kez bildirilir. Ekran Ayarlar › "Otomatik öneri çağrısı"
-    (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan): üstte açık
-    anahtarı ve sıradaki iki çağrı, her biri kutuda (kullanıcı: telefonda çok
-    karışıktı): tür, gün ve saat, "Gönderilsin" kutusu (`data-oto-atla`; ters
-    dönen "Bunu gönderme / Gönderilsin" düğmesi kalktı); altında gönderen, yoksa
-    "Bu güne gönderen seçilmedi" ve o güne gönderen seçimi (`data-oto-gonderen-sec`,
-    o tarihe istisna yazar); konu tek satır. Altında üç sekme (telefonda satıra
-    kırılır): Gönderenler (izin, haftanın yedi günü, belli günler), Zaman ve
-    metin, Geçmiş. Testler
+    (`ekranlar/posta/OtoCagri.tsx`; gerçek kip, çağrı hazırlayan): açık anahtarı,
+    kişinin kendi izni (`data-oto-izin`), sıradaki iki çağrı kutuda (tür, gün ve
+    saat; "Gönderecek: X", yoksa "Bu gün görevli yok" ve Görevler'e bağlantı ya
+    da "X izin vermedi"; konu tek satır); altında katlı "Zaman ve metin" ve
+    "Geçmiş". Testler
     `worker/test/oto-cagri.test.ts`.
 - PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
   "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin

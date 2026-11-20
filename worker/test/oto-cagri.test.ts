@@ -112,3 +112,19 @@ test("zamanlayıcı: hata üç kez denenir, bayat liste ve boş takvim bir kez y
   const { env: e3 } = ortam(ayar, { kullanici: "", parola: "", grupAdresi: "" });
   assert.equal((await otoCagriCalistir(e3, t0, "nextday", async () => ({ tamam: true })))?.hata, "eksikKimlik");
 });
+
+test("görevli: kalemdeki görevli takvimi ezer, izin vermemiş görevli gönderemez", async () => {
+  const gk = (gorevli: string) => ({ ...kalem("ND-20261109", "nextday", "2026-11-08", "2026-11-09"), gorevli });
+  const a: OtoCagriAyar = { ...bosOtoCagri(), acik: true, gonderenler: ["a", "b"], haftalik: her("a"), kalemler: [gk("b")] };
+  const k = gununKalemi(a, "nextday", "2026-11-08", "09:00", []);
+  assert.ok("kalem" in k && k.uid === "b", "takvimde a olsa da görevli b gönderir");
+  assert.deepEqual(gununKalemi({ ...a, kalemler: [gk("c")] }, "nextday", "2026-11-08", "09:00", []), { atla: "izinsiz" });
+  assert.deepEqual(gununKalemi({ ...a, kalemler: [gk("")] }, "nextday", "2026-11-08", "09:00", []), { atla: "gonderen" }, "görevli yok: takvime düşmez");
+  const r = otoCagriBirlestir(a, { kalemler: [gk("b"), { ...gk("x"), gorevli: "a b" }] }, "a", "2026-11-08T08:00:00.000Z");
+  assert.ok("hata" in r, "görevli kimliği yalnız düz kimlik");
+  const ayar: OtoCagriAyar = { ...a, bcc: ["m1@ornek.test"], kalemler: [gk("c")] };
+  const { env } = ortam(ayar);
+  const kayit = await otoCagriCalistir(env, Date.UTC(2026, 10, 8, 6), "nextday", async () => ({ tamam: true }));
+  assert.equal(kayit?.hata, "izinsiz");
+  assert.equal(kayit?.uid, "c", "kimin onayı beklendiği geçmişte");
+});

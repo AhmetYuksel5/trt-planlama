@@ -1,20 +1,21 @@
-import { CalendarClock, Check, Loader2, Plus, X } from "lucide-react";
+import { CalendarClock, Check, Loader2, X } from "lucide-react";
 import { kapiHatasi } from "../../yz";
 import { useEffect, useState } from "react";
 import { Icerik, Kart, bildir, icerikAlani } from "../../bilesenler/Parcalar";
-import { SaatGirdisi, TarihGirdisi } from "../../bilesenler/TarihSaat";
+import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { VARSAYILAN_ZAMAN, otoCagriGetir, otoCagriYaz, otoPaketiBirak, type OtoGorunum, type OtoSablon, type OtoZaman } from "../../otoCagri";
-import { bugun, gunEkle } from "../../tarih";
+import { bugun } from "../../tarih";
 import { kisiBul, useVeri } from "../../veri";
 
 /*
- * Otomatik öneri çağrısı (Ayarlar; src/otoCagri.ts). Kullanıcı: metin,
- * gönderim zamanı ve hangi gün kimin göndereceği ayarlansın, kalabalık
- * olmasın. Üstte açık/kapalı ve sıradaki çağrılar; ayrıntı üç sekmede
- * (takvim, zaman ve metin, geçmiş), aynı anda biri.
- * Takvime yalnız "Benim hesabımdan gönderilebilir" diyen konuyor: posta onun
- * kurumsal hesabından gidiyor, kimsenin hesabı habersiz kullanılmasın.
+ * Otomatik öneri çağrısı (Ayarlar; src/otoCagri.ts). Kullanıcı: kart karışıktı,
+ * yalnız tasarım değil iş de (anahtar, izin, haftanın günleri, istisnalar, tek tek
+ * "gönderme" işaretleri, ayrı sekmeler). Gönderen artık o günün görevlisi
+ * (Görevler'de Next Day ve Weekly görevlisi); kart yalnız anahtar, kişinin kendi
+ * izni, sıradaki iki çağrı ve kimden gideceği. Saat/metin ve geçmiş katlı.
+ * İzin kişinin kendisinde: posta onun kurumsal hesabından gidiyor, kimsenin
+ * hesabı habersiz kullanılmasın.
  */
 
 const HATALAR: Record<string, Anahtar> = {
@@ -24,21 +25,14 @@ const HATALAR: Record<string, Anahtar> = {
   postaKapali: "otoHataPosta",
   bcc: "otoHataBcc",
   gonderen: "otoHataGonderen",
-  izinsiz: "otoHataGonderen",
+  izinsiz: "otoHataIzinsiz",
 };
 
 export const otoHataMetni = (t: (a: Anahtar) => string, hata?: string) => (hata && HATALAR[hata] ? t(HATALAR[hata]) : (hata ?? ""));
 
-/* Hafta Cumartesi başlıyor; gün adı örnek tarihten (18 Ekim 2026 Pazar). */
+/* Haftalık çağrının günü için: hafta Cumartesi başlar; gün adı örnek tarihten (18 Ekim 2026 Pazar). */
 const HAFTA = [6, 0, 1, 2, 3, 4, 5];
 const ornekGun = (g: number) => `2026-10-${String(18 + g).padStart(2, "0")}`;
-
-type Sekme = "takvim" | "zaman" | "gecmis";
-const SEKMELER: [Sekme, Anahtar][] = [
-  ["takvim", "otoTakvim"],
-  ["zaman", "otoZamanMetin"],
-  ["gecmis", "otoGecmis"],
-];
 
 export function OtoCagriKart() {
   const { t, dil, ad } = useDil();
@@ -46,7 +40,6 @@ export function OtoCagriKart() {
   const [d, setD] = useState<OtoGorunum | null>(null);
   const [hata, setHata] = useState("");
   const [mesgul, setMesgul] = useState(false);
-  const [sekme, setSekme] = useState<Sekme>("takvim");
 
   useEffect(() => {
     void otoCagriGetir().then((r) => (r.tamam ? setD(r.veri) : setHata(kapiHatasi(r))));
@@ -73,10 +66,11 @@ export function OtoCagriKart() {
   };
   const yaz = (g: Record<string, unknown>) => is(() => otoCagriYaz(g));
   /*
-   * Zaman ya da metin değişince çağrılar yeniden kurulup bırakılıyor (saat ve metin kalemde).
-   * Grup adresi olmayan kişi yalnız ayarı yazar; liste gönderen listesindekinin tarayıcısında tazelenir.
+   * Anahtar açılınca, izin verilince ya da zaman/metin değişince paket yeniden kurulup
+   * bırakılır (görevli, saat ve metin kalemde). Grup adresi olmayan kişi yalnız ayarı yazar;
+   * paket izinli birinin tarayıcısında tazelenir.
    */
-  const yenidenKur = (g: { acik?: boolean; zaman?: OtoZaman; sablon?: OtoSablon }) =>
+  const yenidenKur = (g: { acik?: boolean; katil?: boolean; zaman?: OtoZaman; sablon?: OtoSablon }) =>
     is(async () => {
       const r = await otoPaketiBirak(d, g);
       return r && !r.tamam && r.hata === "kimlik" ? otoCagriYaz(g) : r;
@@ -85,7 +79,7 @@ export function OtoCagriKart() {
   const B = bugun();
   const kisiAdi = (uid: string) => {
     const k = kisiBul(v, uid);
-    return k ? ad(k) : uid ? "?" : "—";
+    return k ? ad(k) : "?";
   };
   const simdi = new Date();
   const saat = `${String(simdi.getHours()).padStart(2, "0")}:${String(simdi.getMinutes()).padStart(2, "0")}`;
@@ -99,78 +93,48 @@ export function OtoCagriKart() {
           <input type="checkbox" checked={d.acik} disabled={mesgul} onChange={(e) => (e.target.checked ? yenidenKur({ acik: true }) : yaz({ acik: false }))} data-oto-cagri-acik />
           {t("otoCagriAc")}
         </label>
-        {/*
-         * Sıradaki çağrılar (kullanıcı: telefonda çok karışıktı; ters dönen "Bunu gönderme /
-         * Gönderilsin" düğmesi, ne yapılacağını söylemeyen kırmızı uyarı, iki satırlık konu).
-         * Satır: tür, gün ve saat, "Gönderilsin" kutusu; altında gönderen ya da o güne
-         * gönderen seçimi (o tarihe istisna yazar); en altta konu, tek satır.
-         */}
+        <label className="secim">
+          <input type="checkbox" checked={d.izinli} disabled={mesgul} onChange={(e) => (e.target.checked ? yenidenKur({ katil: true }) : yaz({ katil: false }))} data-oto-izin />
+          {t("otoIzin")}
+        </label>
         {d.acik &&
           siradakiler.map((k) => {
-            const atlandi = d.atla.includes(k.etiket);
+            // Eski pakette görevli yazılı değil: kapı takvimle seçiyor, gösterilen yine gönderen.
+            const kim = k.gorevli ?? k.uid;
             return (
-              <div key={k.etiket} className={`oto-siradaki${atlandi ? " atlandi" : ""}`} data-oto-siradaki={k.etiket}>
+              <div key={k.etiket} className="oto-siradaki" data-oto-siradaki={k.etiket}>
                 <div className="oto-siradaki-bas">
                   <span>
                     <b>{t(k.tur === "haftalik" ? "haftalik" : "nextday")}</b> <span className="sonuk-yazi">{tarihYaz(k.gonderim, dil)} · {k.saat}</span>
                   </span>
-                  <label className="secim">
-                    <input
-                      type="checkbox"
-                      checked={!atlandi}
-                      disabled={mesgul}
-                      onChange={() => yaz({ atla: atlandi ? d.atla.filter((e) => e !== k.etiket) : [...d.atla, k.etiket] })}
-                      data-oto-atla
-                    />
-                    {t("otoGonderilsin")}
-                  </label>
                 </div>
-                {!atlandi &&
-                  (k.uid ? (
-                    <div className="sonuk-yazi" data-oto-gonderen>
-                      {t("otoGonderenSec")}: {kisiAdi(k.uid)}
-                    </div>
-                  ) : (
-                    <div className="oto-gonderen-yok" data-oto-gonderen-yok>
-                      <span className="kotu-yazi">{t("otoGonderenYokGun")}</span>
-                      {d.gonderenler.length ? (
-                        <select
-                          className="girdi"
-                          value=""
-                          disabled={mesgul}
-                          aria-label={t("otoGonderenSec")}
-                          onChange={(e) => e.target.value && yaz({ istisna: { ...d.istisna, [k.gonderim]: e.target.value } })}
-                          data-oto-gonderen-sec
-                        >
-                          <option value="">{t("otoGonderenSecin")}</option>
-                          {d.gonderenler.map((u) => (
-                            <option key={u} value={u}>
-                              {kisiAdi(u)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="sonuk-yazi">{t("otoGonderenListesiBos")}</span>
-                      )}
-                    </div>
-                  ))}
+                {k.uid ? (
+                  <div className="sonuk-yazi" data-oto-gonderen>
+                    {t("otoGonderecek", { ad: kisiAdi(k.uid) })}
+                  </div>
+                ) : (
+                  <div className="oto-gonderen-yok" data-oto-gonderen-yok>
+                    <span className="kotu-yazi">{kim ? t("otoGorevliIzinsiz", { ad: kisiAdi(kim) }) : t("otoGorevliYok")}</span>
+                    {!kim && (
+                      <a href="#/gorevler" className="dugme dugme-ikincil dugme-kucuk" data-oto-gorevler>
+                        {t("mGorevler")}
+                      </a>
+                    )}
+                  </div>
+                )}
                 <small className="oto-konu sonuk-yazi">
                   <Icerik>{k.konu}</Icerik>
                 </small>
               </div>
             );
           })}
-        <div className="sekmeler" role="tablist" data-oto-sekmeler>
-          {SEKMELER.map(([x, a]) => (
-            <button key={x} type="button" role="tab" aria-selected={sekme === x} className={sekme === x ? "acik" : ""} onClick={() => setSekme(x)} data-oto-sekme={x}>
-              {t(a)}
-            </button>
-          ))}
-        </div>
-        {sekme === "takvim" && <Takvim d={d} mesgul={mesgul} yaz={yaz} kisiAdi={kisiAdi} />}
-        {sekme === "zaman" && <ZamanMetin d={d} mesgul={mesgul} kaydet={yenidenKur} />}
-        {sekme === "gecmis" &&
-          (d.gecmis.length ? (
+        <details className="oto-katli" data-oto-zaman>
+          <summary>{t("otoZamanMetin")}</summary>
+          <ZamanMetin d={d} mesgul={mesgul} kaydet={yenidenKur} />
+        </details>
+        <details className="oto-katli" data-oto-gecmis>
+          <summary>{t("otoGecmis")}</summary>
+          {d.gecmis.length ? (
             <div data-oto-gecmis-liste>
               {d.gecmis.slice(0, 10).map((g) => (
                 <div key={g.zaman} className="sonuk-yazi" data-oto-gecmis>
@@ -181,86 +145,10 @@ export function OtoCagriKart() {
             </div>
           ) : (
             <p className="sonuk-yazi">{t("otoGecmisYok")}</p>
-          ))}
+          )}
+        </details>
       </div>
     </Kart>
-  );
-}
-
-/* Haftanın her günü bir gönderen; belli günler için istisna (o gün başkası ya da kimse). */
-function Takvim({ d, mesgul, yaz, kisiAdi }: { d: OtoGorunum; mesgul: boolean; yaz: (g: Record<string, unknown>) => void; kisiAdi: (uid: string) => string }) {
-  const { t, dil } = useDil();
-  const [gun, setGun] = useState("");
-  const [kim, setKim] = useState("");
-  const secenekler = (
-    <>
-      <option value="">—</option>
-      {d.gonderenler.map((u) => (
-        <option key={u} value={u}>
-          {kisiAdi(u)}
-        </option>
-      ))}
-    </>
-  );
-  const istisnalar = Object.entries(d.istisna).sort(([a], [b]) => a.localeCompare(b));
-  return (
-    <div className="form" data-oto-takvim>
-      <label className="secim">
-        <input type="checkbox" checked={d.izinli} disabled={mesgul} onChange={(e) => yaz({ katil: e.target.checked })} data-oto-izin />
-        {t("otoIzin")}
-      </label>
-      <div className="oto-hafta" data-oto-hafta>
-        {HAFTA.map((g) => (
-          <label key={g} className="oto-gun">
-            <span>{gunAdi(ornekGun(g), dil)}</span>
-            <select className="girdi" value={d.haftalik[String(g)] ?? ""} disabled={mesgul || !d.gonderenler.length} onChange={(e) => yaz({ haftalik: { ...d.haftalik, [String(g)]: e.target.value } })} data-oto-gun={g}>
-              {secenekler}
-            </select>
-          </label>
-        ))}
-      </div>
-      <div className="alan-etiket">{t("otoIstisna")}</div>
-      {istisnalar.map(([g, u]) => (
-        <div key={g} className="oto-istisna" data-oto-istisna={g}>
-          <span>
-            {tarihYaz(g, dil)} · {u ? kisiAdi(u) : t("otoKimseYok")}
-          </span>
-          <button
-            type="button"
-            className="ikon-dugme"
-            disabled={mesgul}
-            title={t("cikar")}
-            aria-label={t("cikar")}
-            onClick={() => yaz({ istisna: Object.fromEntries(istisnalar.filter(([x]) => x !== g)) })}
-          >
-            <X size={16} />
-          </button>
-        </div>
-      ))}
-      <div className="oto-istisna-ekle">
-        <TarihGirdisi value={gun} min={bugun()} max={gunEkle(bugun(), 60)} onChange={(e) => setGun(e.target.value)} data-oto-istisna-gun />
-        <select className="girdi" value={kim} onChange={(e) => setKim(e.target.value)} aria-label={t("otoGonderenSec")} data-oto-istisna-kim>
-          <option value="">{t("otoKimseYok")}</option>
-          {d.gonderenler.map((u) => (
-            <option key={u} value={u}>
-              {kisiAdi(u)}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="dugme dugme-ikincil dugme-kucuk"
-          disabled={mesgul || !gun}
-          onClick={() => {
-            yaz({ istisna: { ...d.istisna, [gun]: kim } });
-            setGun("");
-          }}
-          data-oto-istisna-ekle
-        >
-          <Plus size={14} /> {t("ekle")}
-        </button>
-      </div>
-    </div>
   );
 }
 

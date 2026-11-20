@@ -107,7 +107,7 @@ export type Gonderici = (ayar: EwsAyar, g: GidenPosta) => Promise<{ tamam: true 
 /*
  * Zamanlayıcının işi: saati gelmiş çağrıyı o günün göndereninin kimliğiyle
  * gönderir. Kime gönderenin grup adresi (planning); muhabirler BCC'de.
- * Gönderilmeyen (kimlik eksik, liste bayat, takvimde kimse yok, EWS hatası)
+ * Gönderilmeyen (kimlik eksik, liste bayat, görevli yok ya da izin vermemiş, EWS hatası)
  * geçmişe nedeniyle yazılır.
  */
 export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTuru, gonder: Gonderici): Promise<OtoCagriKaydi | null> => {
@@ -115,7 +115,7 @@ export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTur
   const gecmis = await otoGecmisOku(env);
   const gun = istanbulGunu(simdi);
   const s = gununKalemi(ayar, tur, gun, istanbulSaati(simdi), gecmis);
-  if ("atla" in s && s.atla !== "liste" && s.atla !== "gonderen") return null;
+  if ("atla" in s && s.atla !== "liste" && s.atla !== "gonderen" && s.atla !== "izinsiz") return null;
   const zaman = new Date(simdi).toISOString();
   const kayit = async (k: OtoCagriKaydi) => {
     await env.YZ.put(OTO_GECMIS_ANAHTARI, JSON.stringify(gecmiseEkle(gecmis, k)));
@@ -123,7 +123,8 @@ export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTur
   };
   if ("atla" in s && s.atla === "liste") return kayit({ etiket: "", tur, tarih: gun, zaman, uid: "", kime: "", bccIdler: [], konu: "", metin: "", sonSaat: "", tamam: false, hata: "liste" });
   const k = ayar.kalemler.find((x) => x.tur === tur && x.gonderim === gun)!;
-  if ("atla" in s) return kayit({ etiket: k.etiket, tur, tarih: k.tarih, zaman, uid: "", kime: "", bccIdler: [], konu: k.konu, metin: "", sonSaat: k.sonSaat, tamam: false, hata: "gonderen" });
+  // Görevli izin vermemişse adı geçmişte kalsın: kimin onayı beklendiği görünsün.
+  if ("atla" in s) return kayit({ etiket: k.etiket, tur, tarih: k.tarih, zaman, uid: s.atla === "izinsiz" ? (k.gorevli ?? "") : "", kime: "", bccIdler: [], konu: k.konu, metin: "", sonSaat: k.sonSaat, tamam: false, hata: s.atla });
   const uid = s.uid;
   const pa = await postaAyarOku(env);
   const pk = await postaKimlikOku(env, uid);
