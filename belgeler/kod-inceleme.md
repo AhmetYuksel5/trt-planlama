@@ -146,7 +146,7 @@ adreslere posta gönderebilirdi.
 Düzeltme: yazış Planlama birimine ve tam yöneticiye indi; okuma eskisi gibi.
 Test `worker/test/worker.test.ts`.
 
-### 2.2 Zamanlayıcı belirsiz hatada çağrıyı yeniden gönderebilir (orta-düşük, PLAUSIBLE)
+### 2.2 Zamanlayıcı belirsiz hatada çağrıyı yeniden gönderebilir (orta-düşük, DÜZELTİLDİ)
 
 `worker/src/index.ts → otoCagriCalistir`, `oto-cagri.ts → DENEME_SINIRI`.
 
@@ -159,7 +159,7 @@ zamanlayıcının yeniden denemesi aynı riski taşıyor.
 Öneri: yalnız istek yazılmadan önceki hatalarda (bağlantı, kimlik) yeniden
 denemek; yazıldıktan sonraki hatayı "belirsiz" diye işaretleyip bırakmak.
 
-### 2.3 Denetim karakteri taşıyan metin gönderilemiyor (düşük, PLAUSIBLE)
+### 2.3 Denetim karakteri taşıyan metin gönderilemiyor (düşük, DÜZELTİLDİ)
 
 `worker/src/ews.ts → kacXml`.
 

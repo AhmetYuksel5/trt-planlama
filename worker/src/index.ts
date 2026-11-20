@@ -102,7 +102,7 @@ const otoGecmisOku = async (env: Env): Promise<OtoCagriKaydi[]> => JSON.parse((a
 /* Zamanlayıcının ifadesi wrangler.toml'dakiyle aynı: saatler ayarda, kapı 15 dakikada bir bakıyor. */
 export const CRON_OTO = "*/15 * * * *";
 
-export type Gonderici = (ayar: EwsAyar, g: GidenPosta) => Promise<{ tamam: true } | { hata: string }>;
+export type Gonderici = (ayar: EwsAyar, g: GidenPosta) => Promise<{ tamam: true } | { hata: string; belirsiz?: boolean }>;
 
 /*
  * Zamanlayıcının işi: saati gelmiş çağrıyı o günün göndereninin kimliğiyle
@@ -134,7 +134,7 @@ export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTur
   if (!pk.grupAdresi) return kayit({ ...temel, hata: "grup" });
   if (!ayar.bcc.length) return kayit({ ...temel, hata: "bcc" });
   const r = await gonder({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, { kime: [pk.grupAdresi], bcc: ayar.bcc.filter((a) => a !== pk.grupAdresi), konu: k.konu, metin: k.metin, html: k.html || undefined });
-  return kayit("hata" in r ? { ...temel, hata: r.hata.slice(0, 200) } : { ...temel, tamam: true });
+  return kayit("hata" in r ? { ...temel, hata: r.hata.slice(0, 200), ...(r.belirsiz && { belirsiz: true }) } : { ...temel, tamam: true });
 };
 
 /* Kişiye özel kimlik (kullanıcı adı, parola, grup adresi) uid'ye bağlı. */

@@ -1837,7 +1837,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Kime gönderenin grup adresi, muhabirler BCC'de (izinde olmayan, kurumsal
     adresi olan); HTML gövde. Zamanlayıcı 15 dakikada bir (`wrangler.toml`,
     `index.ts → CRON_OTO`): saati gelmiş kalemi gönderir (`gununKalemi`,
-    İstanbul saati), başarısızı üç kez dener, görevli yoksa ya da izin
+    İstanbul saati), başarısızı üç kez dener (istek sunucuya yazıldıktan sonra kopan gönderim `belirsiz`, yeniden denenmez: çağrı iki kez gidebilirdi), görevli yoksa ya da izin
     vermemişse ve liste bayatsa geçmişe bir kez yazar. Kapı veritabanını okuyamıyor: gönderen
     listesindeki planlamacının tarayıcısı önümüzdeki 14 günün çağrılarını
     (saatiyle) ve BCC listesini kapıya bırakır (`otoPaketiBirak`; açılışta ve

@@ -113,6 +113,17 @@ test("zamanlayıcı: hata üç kez denenir, bayat liste ve boş takvim bir kez y
   assert.equal((await otoCagriCalistir(e3, t0, "nextday", async () => ({ tamam: true })))?.hata, "eksikKimlik");
 });
 
+test("zamanlayıcı: belirsiz biten gönderim yeniden denenmez", async () => {
+  const ayar: OtoCagriAyar = { ...bosOtoCagri(), acik: true, gonderenler: ["a"], haftalik: her("a"), bcc: ["m1@ornek.test"], kalemler: [kalem("ND-20261109", "nextday", "2026-11-08", "2026-11-09")] };
+  const { env } = ortam(ayar);
+  const t0 = Date.UTC(2026, 10, 8, 6);
+  let sayi = 0;
+  const kopan: Gonderici = async () => (sayi++, { hata: "bağlantı yanıt gelmeden kapandı", belirsiz: true });
+  assert.equal((await otoCagriCalistir(env, t0, "nextday", kopan))?.belirsiz, true);
+  assert.equal(await otoCagriCalistir(env, t0 + 900_000, "nextday", kopan), null, "posta gitmiş olabilir: ikinci kez gönderilmez");
+  assert.equal(sayi, 1);
+});
+
 test("görevli: kalemdeki görevli takvimi ezer, izin vermemiş görevli gönderemez", async () => {
   const gk = (gorevli: string) => ({ ...kalem("ND-20261109", "nextday", "2026-11-08", "2026-11-09"), gorevli });
   const a: OtoCagriAyar = { ...bosOtoCagri(), acik: true, gonderenler: ["a", "b"], haftalik: her("a"), kalemler: [gk("b")] };

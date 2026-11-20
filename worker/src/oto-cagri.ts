@@ -87,6 +87,8 @@ export interface OtoCagriKaydi {
   sonSaat: string;
   tamam: boolean;
   hata?: string;
+  /** İstek sunucuya yazıldıktan sonra hata geldi: posta gitmiş olabilir, yeniden denenmez. */
+  belirsiz?: boolean;
 }
 
 export const bosOtoCagri = (): OtoCagriAyar => ({ acik: false, gonderenler: [], haftalik: {}, istisna: {}, zaman: { ...VARSAYILAN_ZAMAN }, sablon: {}, bcc: [], bccIdler: [], kalemler: [], atla: [], gonderildi: [], guncelleme: "" });
@@ -273,7 +275,8 @@ export const gununKalemi = (
   if (a.atla.includes(kalem.etiket)) return { atla: "atlandi" };
   const onceki = gecmis.filter((g) => g.etiket === kalem.etiket);
   if (a.gonderildi.includes(kalem.etiket) || onceki.some((g) => g.tamam)) return { atla: "gonderildi" };
-  if (onceki.length >= DENEME_SINIRI) return { atla: "denendi" };
+  // Belirsiz biten deneme yinelenmez: çağrı bütün muhabirlere ikinci kez gidebilirdi.
+  if (onceki.length >= DENEME_SINIRI || onceki.some((g) => g.belirsiz)) return { atla: "denendi" };
   const uid = gununGondereni(a, gun, kalem);
   if (!uid) {
     // Sebep geçmişe bir kez yazılır; görevli var ama izin vermemişse ayrı söylenir.

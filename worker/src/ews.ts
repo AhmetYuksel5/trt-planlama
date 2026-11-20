@@ -156,7 +156,9 @@ const varlikCoz = (s: string): string =>
     .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
     .replace(/&amp;/g, "&");
 
-const kacXml = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/* XML 1.0'da geçersiz denetim karakterleri de atılıyor (Word'den yapıştırılan dikey sekme…): Exchange bütün isteği reddediyordu. */
+// eslint-disable-next-line no-control-regex
+const kacXml = (s: string): string => s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /* <t:Etiket ...>değer</t:Etiket> içeriği (ilk eşleşme), varlıklar çözülmüş. */
 const etiketDegeri = (xml: string, ad: string): string | undefined => {
@@ -495,8 +497,9 @@ const yanitOku = async (soket: Soket): Promise<HttpYanit> => {
  * 200 ve SOAP yanıtı. Bağlantı doğrulandığı için sonraki istekler (aynı
  * soket) yeniden el sıkışması istemez.
  */
-export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi: number, elSikisGerek: boolean, mic = false): Promise<HttpYanit> => {
+export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi: number, elSikisGerek: boolean, mic = false, iz?: { kimlikli?: boolean }): Promise<HttpYanit> => {
   if (!elSikisGerek) {
+    if (iz) iz.kimlikli = true;
     await soket.yaz(istekBaytlari(ayar, null, soap));
     return yanitOku(soket);
   }
@@ -509,6 +512,8 @@ export const ntlmIstek = async (soket: Soket, ayar: EwsAyar, soap: string, simdi
   if (!m) throw new Error("sunucu NTLM challenge vermedi: " + baslik.slice(0, 60));
   const t2 = tip2Coz(b64Coz(m[1]));
   const t3 = tip3({ kullanici: ayar.kullanici, parola: ayar.parola, alan: ayar.alan, tip2: t2, simdi, tip1Ham: t1, mic });
+  // Bundan sonraki hata belirsiz: kimlikli istek yazıldı, sunucu işlemiş olabilir (gönderimde posta gitmiş olabilir).
+  if (iz) iz.kimlikli = true;
   await soket.yaz(istekBaytlari(ayar, `NTLM ${b64Yap(t3)}`, soap));
   return yanitOku(soket);
 };
@@ -606,24 +611,26 @@ export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi:
 };
 
 /* Postayı gönderir (EWS CreateItem, SendAndSaveCopy). */
-export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean }> => {
+export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean; belirsiz?: boolean }> => {
   let soket: Soket | undefined;
+  const iz: { kimlikli?: boolean } = {};
   try {
     soket = await baglan(ayar.sunucu);
-    const r = await ntlmIstek(soket, ayar, createItemIstegi(g), simdi, true, mic);
+    const r = await ntlmIstek(soket, ayar, createItemIstegi(g), simdi, true, mic, iz);
     if (r.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
     if (r.durum !== 200) return { hata: `CreateItem ${r.durum}: ${faultMetni(latin1Utf8(r.govde))}` };
     const xml = latin1Utf8(r.govde);
     if (!/ResponseClass="Success"/.test(xml) && !/>NoError</.test(xml)) return { hata: `gönderilemedi: ${faultMetni(xml)}` };
     return { tamam: true };
   } catch (e) {
-    return { hata: e instanceof Error ? e.message : String(e) };
+    // Kimlikli istek yazıldıktan sonra kopan bağlantıda posta gitmiş olabilir: çağıran yeniden denemesin.
+    return { hata: e instanceof Error ? e.message : String(e), ...(iz.kimlikli && { belirsiz: true }) };
   } finally {
     await soket?.kapat().catch(() => {});
   }
 };
 
-export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string }> => {
+export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string; belirsiz?: boolean }> => {
   const ilk = await postaGonder(ayar, baglan, simdi, g, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postaGonder(ayar, baglan, simdi, g, true);
