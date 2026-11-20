@@ -64,7 +64,7 @@ Muhasebe paketi yapılmış iş sayar.
 
 Düzeltme: `ozelId` eski belgede de aranıyor.
 
-### 1.4 Tam yönetici her açılışta bütün kişi belgelerini yeniden yazıyor (orta, CONFIRMED)
+### 1.4 Tam yönetici her açılışta bütün kişi belgelerini yeniden yazıyor (orta, DÜZELTİLDİ)
 
 `depo/firebase.ts → erisimiTazele`.
 
@@ -77,7 +77,7 @@ listesini dinleyen herkese değişiklik olarak dönebiliyor.
 
 Öneri: belgedeki düz `kisitli` alanıyla karşılaştırmak (izin ilk öğesi).
 
-### 1.5 Silme işaretleri hiç temizlenmiyor (orta, uzun vade, CONFIRMED)
+### 1.5 Silme işaretleri hiç temizlenmiyor (orta, uzun vade, DÜZELTİLDİ)
 
 `depo/firebase.ts → yaz`, `eylemler.ts → EN_COK_HAREKET`.
 
@@ -92,7 +92,7 @@ artar.
 işaretleri gerçekten silen bir açılış işi; o süreden uzun açılmamış tarayıcı
 tam okusun.
 
-### 1.6 Erişim listesi tazelemesi eşitlenmeden çalışıyor (düşük, PLAUSIBLE)
+### 1.6 Erişim listesi tazelemesi eşitlenmeden çalışıyor (düşük, DÜZELTİLDİ)
 
 `depo/firebase.ts → geldi → erisimiTazele`.
 
@@ -192,7 +192,7 @@ Dosyanın tamamı okundu (290 eylem). Güvenlik açığı çıkmadı; yetki önc
 soruluyor, temel `getir()`'den alınıyor, değişmeyen öğenin nesnesi korunuyor.
 Bulunanlar işlev kusurları.
 
-### 3.1 Giden posta eşleştirmesi gönderene bakmıyor (düşük-orta, CONFIRMED)
+### 3.1 Giden posta eşleştirmesi gönderene bakmıyor (düşük-orta, DÜZELTİLDİ)
 
 `eylemler.ts → postaIsle` (`esGiden`).
 
@@ -208,7 +208,7 @@ asıl geri dönüş sonradan gelen posta gibi ikinci balon olur.
 Öneri: eşleştirmede gönderen de aranmalı (gelen postanın göndereni giden
 balonun `kimden`'i, yani kişinin kendi adresi olmalı).
 
-### 3.2 Planlama dışındaki kişinin gönderdiği posta giden balon olmuyor (orta-düşük, CONFIRMED)
+### 3.2 Planlama dışındaki kişinin gönderdiği posta giden balon olmuyor (orta-düşük, DÜZELTİLDİ)
 
 `eylemler.ts → postaGidenEkle`.
 
@@ -219,7 +219,7 @@ sonraki çekimde, gelen posta gibi (solda, kendi adresinden) görünür.
 
 Öneri: yetkiyi `postaGorebilir` yapmak.
 
-### 3.3 Profil formundaki "Kurumsal e-posta" giriş adresini yazıyor (orta-düşük, CONFIRMED)
+### 3.3 Profil formundaki "Kurumsal e-posta" giriş adresini yazıyor (orta-düşük, DÜZELTİLDİ)
 
 `eylemler.ts → profilGuncelle`, `ekranlar/Personel.tsx` (profil formu).
 
@@ -287,7 +287,7 @@ gezen fonksiyonların döngü koruması denetlendi. `akis.ts`, `uretim.ts`,
 `oneriPlanlari.ts` ve öbür küçük kural dosyaları eylemlerden çağrıldıkları
 yerlerde izlendi, baştan sona okunmadı.
 
-### 4.1 Muhasebede işin ayı sonradan değişebiliyor (orta, CONFIRMED)
+### 4.1 Muhasebede işin ayı sonradan değişebiliyor (orta, DÜZELTİLDİ)
 
 `muhasebe.ts → muhabirIsleri`.
 
@@ -346,7 +346,7 @@ Metin olarak yazılmış tutarda virgül her zaman ondalık ayraç sayılıyor;
 İngilizce binlik ayraçlı "1,500" 1,5 olur. Sayı biçimli Excel hücresi
 etkilenmez.
 
-### 4.6 Muhasebede gün UTC'den kesiliyor (düşük, CONFIRMED)
+### 4.6 Muhasebede gün UTC'den kesiliyor (düşük, DÜZELTİLDİ)
 
 `muhasebe.ts → muhabirIsleri`.
 

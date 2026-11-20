@@ -23,6 +23,7 @@ import {
   doc,
   documentId,
   getDoc,
+  getDocs,
   getDocsFromCache,
   initializeFirestore,
   onSnapshot,
@@ -150,6 +151,75 @@ const tamOkunanlar = (): string[] => {
   }
 };
 const tamOkundu = (alan: string) => tamOkunanlar().includes(alan);
+
+/*
+ * Silinen belge fark okunan koleksiyonda "silindi" işaretiyle kalıyor; hiç
+ * temizlenmediği için işaretler birikiyordu. Tam yöneticinin tarayıcısı
+ * IZ_GUNU'nden eski işaretleri siliyor (haftada bir). İşaret silinince onu
+ * görmemiş tarayıcı silmeyi hiç öğrenemez: bu yüzden BAYAT_GUN'dür sunucuyla
+ * eşitlenmemiş tarayıcı önbelleğe güvenmeyip baştan tam okur (BAYAT_GUN <
+ * IZ_GUNU; aradaki pay saat farkına ve uzun kapalı kalan sekmeye).
+ */
+const IZ_GUNU = 30;
+const BAYAT_GUN = 20;
+const IZ_ARALIGI_GUN = 7;
+const GUN_MS = 864e5;
+const esitlikAnahtari = () => `trt-planlama-son-esitlik:${firebaseAyari().projectId}`;
+const izAnahtari = () => `trt-planlama-iz-temizligi:${firebaseAyari().projectId}`;
+const sayiOku = (anahtar: string): number => {
+  try {
+    return Number(localStorage.getItem(anahtar)) || 0;
+  } catch {
+    return 0;
+  }
+};
+const sayiYaz = (anahtar: string, n: number) => {
+  try {
+    localStorage.setItem(anahtar, String(n));
+  } catch {
+    /* saklanamazsa bir sonraki açılış yeniden dener */
+  }
+};
+/* Dinleme kurulmadan önce: uzun süredir eşitlenmemiş tarayıcıda "tam okundu" işaretleri silinir, koleksiyonlar baştan okunur. */
+const bayatsaTamOku = () => {
+  const son = sayiOku(esitlikAnahtari());
+  if (!son || Date.now() - son < BAYAT_GUN * GUN_MS) return;
+  try {
+    localStorage.removeItem(tamAnahtari());
+  } catch {
+    /* silinemezse fark okuma sürer; eski davranış */
+  }
+};
+let sonEsitlikYazimi = 0;
+const esitlikAniYaz = () => {
+  // Sık gelen görüntülerde her seferinde yazma: saatte bir yeter.
+  if (Date.now() - sonEsitlikYazimi < 3600_000) return;
+  sonEsitlikYazimi = Date.now();
+  sayiYaz(esitlikAnahtari(), sonEsitlikYazimi);
+};
+const eskiIzleriSil = async (alanlar: readonly string[]) => {
+  if (Date.now() - sayiOku(izAnahtari()) < IZ_ARALIGI_GUN * GUN_MS) return;
+  sayiYaz(izAnahtari(), Date.now());
+  const esik = Date.now() - IZ_GUNU * GUN_MS;
+  for (const alan of alanlar) {
+    try {
+      const snap = await getDocs(query(collection(db, alan), where("silindi", "==", true)));
+      okumaSay(alan, snap.size);
+      // Zamanı henüz yazılmamış (bekleyen sunucu zamanı) işaret yeni demek; ona dokunma.
+      const eski = snap.docs.filter((b) => {
+        const z = (b.data() as { z?: Timestamp | null }).z;
+        return !!z && z.toMillis() < esik;
+      });
+      for (let i = 0; i < eski.length; i += 450) {
+        const b = writeBatch(db);
+        for (const x of eski.slice(i, i + 450)) b.delete(x.ref);
+        await b.commit();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
 const tamOkunduYaz = (alan: string) => {
   const l = tamOkunanlar();
   if (l.includes(alan)) return;
@@ -252,6 +322,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
   // Kısıtlı kişi (muhabir, onay bekleyen kayıt) yalnız erişim listesinde adı geçen belgeleri istiyor; kural da yalnız onları veriyor.
   const kisitli = kisitliJson(kendi.j);
   const kimlikler = [uid, ...(kendi.oncekiKimlik ? [kendi.oncekiKimlik] : [])];
+  bayatsaTamOku();
   const onbellek: Record<string, Map<string, Onbellek>> = {};
   let siralar: Siralar = {};
   let d: Durum = bosDurum();
@@ -281,7 +352,10 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     baglantiCanli(onbellekte.size === 0);
     if (snap.metadata.fromCache || sunucudan.has(k)) return;
     sunucudan.add(k);
-    if ([...dinlenen].every((x) => sunucudan.has(x))) sunucuyaEsitlendi();
+    if ([...dinlenen].every((x) => sunucudan.has(x))) {
+      esitlikAniYaz();
+      sunucuyaEsitlendi();
+    }
   };
   let bagli = false;
   const iptal: Unsubscribe[] = [];
@@ -293,7 +367,14 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       bagli = true;
       uzakDepoyuTak({ yaz }, d);
       hazir(kisitli);
-      if (!kisitli && kendi.hesapYoneticisi) erisimiTazele();
+      // Önbellekten gelen bayat görüntüyle değil, sunucu teyidinden sonra: yoksa eski listeler yeniden yazılırdı.
+      if (!kisitli && kendi.hesapYoneticisi)
+        setTimeout(() =>
+          sunucuyaEsitOlunca(() => {
+            erisimiTazele();
+            void eskiIzleriSil(DIZI_ALANLARI.filter(farkAlaniMi));
+          }),
+        );
     } else if (degisti) {
       disaridanGeldi(d);
       // Muhabir hesaba bağlanınca eski kaydını kendisi taşıyamıyor; açık duran tam yönetici hemen tamamlıyor.
@@ -556,7 +637,14 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
       }
     for (const [id, x] of onbellek.kisiler ?? []) {
       const k = kisitliJson(x.j);
-      if (x.e !== String(k)) islemler.push({ alan: "kisiler", id, veri: { kisitli: k } });
+      // `e` düz alanların dizisi (ek); ilk öğesi kısıt işareti. Bütün metinle karşılaştırınca her açılışta herkes yeniden yazılıyordu.
+      let duz: unknown;
+      try {
+        duz = (JSON.parse(x.e ?? "[]") as unknown[])[0];
+      } catch {
+        duz = undefined;
+      }
+      if (duz !== k) islemler.push({ alan: "kisiler", id, veri: { kisitli: k } });
     }
     for (let i = 0; i < islemler.length; i += 450) {
       const b = writeBatch(db);

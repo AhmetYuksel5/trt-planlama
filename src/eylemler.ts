@@ -213,6 +213,7 @@ import {
   icerikAktarabilir,
   masrafGirebilir,
   masrafOnaylayabilir,
+  postaGorebilir,
 } from "./yetki";
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
@@ -3999,6 +4000,8 @@ export const profilGuncelle = (ben: Kisi, kisiId: string, g: ProfilGirdisi, yeni
     if (!girisAdi(temiz.eposta)) temiz.kurumEposta = temiz.eposta.trim().toLowerCase();
     delete temiz.eposta;
   }
+  // Etkin hesapta `eposta` Firebase'deki giriş adresi: profilden değişirse kayıt hesaptan kopar. Değişimi "Düzenle"deki aktivasyon akışı (kisiEpostasi).
+  if (GERCEK && !kisi.hesapsiz && temiz.eposta !== undefined) delete temiz.eposta;
   d = { ...d, kisiler: d.kisiler.map((k) => (k.id === kisiId ? yerUnvaniUygula({ ...k, ...temiz }) : k)) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "profilGuncellendi", veri: { muhabir: kisiId } }));
   return true;
@@ -4156,7 +4159,16 @@ export const postaIsle = (ben: Kisi | undefined, gelen: GelenEposta, kaynak: Pos
    */
   const duz = (x: string) => x.replace(/\s+/g, " ").trim();
   const zamanFarki = (a: string) => Math.abs(new Date(a).getTime() - new Date(gelen.zaman ?? simdi()).getTime());
-  const esGiden = mevcut.find((m) => m.giden && !m.mesajKimligi && duz(metin).startsWith(duz(m.metin).slice(0, 200)) && zamanFarki(m.zaman) < 6 * 3600_000);
+  // Gönderen de aynı olmalı: muhabir bizim kısa postamızla aynı sözle başlayan yanıt yazınca kendi yankımız sanılıp yutuluyordu.
+  const gonderen = gelen.kimden?.trim().toLowerCase();
+  const esGiden = mevcut.find(
+    (m) =>
+      m.giden &&
+      !m.mesajKimligi &&
+      (!gonderen || !m.kimden || m.kimden.trim().toLowerCase() === gonderen) &&
+      duz(metin).startsWith(duz(m.metin).slice(0, 200)) &&
+      zamanFarki(m.zaman) < 6 * 3600_000,
+  );
   if (esGiden) {
     const eskiKonu = esGiden.konuKimligi;
     const yeniKonu = sunucuKonu || eskiKonu;
@@ -4222,7 +4234,8 @@ export const postaGidenEkle = (
   grup?: string,
   alicilar?: { kime: string[]; cc?: string[] },
 ): string | null => {
-  if (!yapabilir(ben, "cagriHazirla")) return null;
+  // Postayı gören herkes gönderebiliyor (kapı da öyle); yalnız çağrı hazırlayana bakınca Newsdesk'in gönderdiği posta sohbete yazılmıyordu.
+  if (!postaGorebilir(ben)) return null;
   const d = getir();
   const g = grup?.trim().toLowerCase();
   const mesaj: PostaMesaji = {

@@ -1,4 +1,5 @@
 import { masrafToplami } from "./paketMetni";
+import { yerelGun } from "./tarih";
 import type { Durum, Kisi, Masraf, MuhasebeAnlasmasi, MuhasebeIs, MuhasebeKapanisi, MuhasebeTanimi } from "./veri";
 
 /*
@@ -33,7 +34,14 @@ export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
   const l: MuhasebeIsi[] = [];
   for (const p of d.paketler) {
     if (p.muhabirId !== kisiId || p.durum !== "tamamlandi" || p.yapilmadi || p.reddedildi) continue;
-    const tarih = planTarihi(d, p.planId) ?? p.sonTarih ?? p.muhabirTeslimi?.slice(0, 10) ?? p.guncelleme?.slice(0, 10);
+    /*
+     * Günü olmayan pakette işin ayı kapanış anından: son değişiklik (`guncelleme`)
+     * paket her düzenlendiğinde ilerliyor, kapanmış ayın işi sonraki aya kayıyordu.
+     * O yüzden en sonda; önce teslim, onay, üretimin kapanışı, yayın. Gün yerel
+     * saatle: UTC'de gece yarısından sonraki teslim önceki güne düşüyordu.
+     */
+    const an = p.muhabirTeslimi ?? p.kunye?.onaylayan?.at(-1)?.zaman ?? p.uretim?.kapandi?.zaman ?? p.yayinlandi?.tarih ?? p.guncelleme;
+    const tarih = planTarihi(d, p.planId) ?? p.sonTarih?.slice(0, 10) ?? (an ? (an.length > 10 ? yerelGun(an) : an) : undefined);
     if (tarih) l.push({ id: p.id, kaynak: "paket", tur: p.bicim ?? "pkg", tarih, baslik: p.baslik, ...(p.masrafOnayi && p.masraflar?.length && { masraflar: p.masraflar }) });
   }
   for (const c of d.canliYayinlar) {

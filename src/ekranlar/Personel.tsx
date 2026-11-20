@@ -1,3 +1,4 @@
+import { GERCEK } from "../kip";
 import { girisAdi, postaAdresi } from "../girisKodu";
 import { TopluCubuk } from "../bilesenler/TopluIletisim";
 import { useYeniTasarim } from "../tasarimSecimi";
@@ -396,7 +397,8 @@ function ProfilFormu({ ben, kisi, kapat }: { ben: Kisi; kisi: Kisi; kapat: () =>
         </div>
         <label>
           {t("kurumsalEposta")}
-          <input dir="ltr" type="email" value={f.eposta} onChange={(e) => setF({ ...f, eposta: e.target.value })} />
+          {/* Etkin hesapta bu adres giriş adresi; değişimi "Düzenle"deki aktivasyon akışından (profilGuncelle de yazmıyor). */}
+          <input dir="ltr" type="email" value={f.eposta} readOnly={GERCEK && !kisi.hesapsiz && !girisAdi(kisi.eposta)} onChange={(e) => setF({ ...f, eposta: e.target.value })} />
         </label>
         <label>
           {t("kisiselEposta")}

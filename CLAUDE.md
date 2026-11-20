@@ -341,6 +341,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önbelleğinden kurulur, sunucudan yalnız `z`'si yeni olanlar gelir.
     Önbellek sınırsız; boşsa tam okunur. Kayda REST ya da başka yoldan
     yazan da `z` yazmalı, yoksa sonradan açılan tarayıcı o değişikliği görmez.
+    "Silindi" işaretleri birikmesin diye tam yöneticinin tarayıcısı 30 günden
+    eskilerini haftada bir siler (`depo/firebase.ts → eskiIzleriSil`); 20
+    gündür sunucuyla eşitlenmemiş tarayıcı önbelleğe güvenmeyip baştan tam okur
+    (`bayatsaTamOku`, `trt-planlama-son-esitlik:<proje>`): işareti kaçıran
+    tarayıcı silmeyi öğrenemezdi.
     Günlük okuma kotası (50.000) kurum tam kullanmadan doldu, posta ve yapay
     zeka durdu (kullanıcı): kişiye bağlı ayarlar (`HARITA_ALANLARI`, fark
     sorgusu yok) her açılışta herkesinkiyle baştan okunuyordu; artık kişi
@@ -1988,6 +1993,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `canliSonucIsaretleyebilir`: Newsdesk ve tam yönetici; plan ekranındaki
     canlı satırında ✓/✕, plan kilitliyken de), yayınlanmış nafize.
     İşaretlenmemiş geçmiş canlı sayılmaz, dökümde uyarı.
+  - Günü olmayan paketin ayı kapanış anından (teslim, onay, üretimin kapanışı,
+    yayın; yerel günle), son değişiklikten (`guncelleme`) değil: düzenlenen
+    paket kapanmış aydan sonraki aya kayıyordu (kod incelemesi 4.1).
   - Demoda kurgusal `mh1` ve örnek anlaşmalar. Test `testler/muhasebe.cjs`,
     kural testleri `testler/kurallar.mjs`.
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
