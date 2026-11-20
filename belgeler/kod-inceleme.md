@@ -13,7 +13,7 @@ denenmedi.
 | 1 | `firestore.rules`, `depo/`, `veri.ts` yükle/kaydet, `kip.ts`, açılış işleri | bitti |
 | 2 | Kapı (`worker/`) | bitti |
 | 3 | `eylemler.ts` (tamamı okundu) | bitti |
-| 4 | Yetki ve saf kurallar (`yetki.ts`, `yapi.ts`, `akis.ts`…) | sırada |
+| 4 | Yetki ve saf kurallar | bitti (aşağıda okunanlar yazılı) |
 | 5 | Ekranlar ve bileşenler | sırada |
 
 ## 1. Güvenlik kuralları ve veri katmanı
@@ -277,3 +277,86 @@ görünüp geri dönüyor. Eylem de `hesapYoneticisi`'ni sormalı.
   bağlama), haftalığın kesinleşmesi ve aktarımı, yarının planının açılması.
 - Paket kapanışı (işaret, onay, geri alma), üretim balonu, parçalı metin.
 - Hesap geçişi (`hesabaGecir`, `kimligiTasi`), özel yayın, muhasebe.
+
+## 4. Yetki ve saf kurallar
+
+Tamamı okunanlar: `yetki.ts`, `tarih.ts`, `gorevler.ts`, `muhasebe.ts`,
+`haftalik.ts`, `takvim.ts` (tekrar açılımı ve hatırlatma). `yapi.ts`'te ağaç
+gezen fonksiyonların döngü koruması denetlendi. `akis.ts`, `uretim.ts`,
+`oneriPlanlari.ts` ve öbür küçük kural dosyaları eylemlerden çağrıldıkları
+yerlerde izlendi, baştan sona okunmadı.
+
+### 4.1 Muhasebede işin ayı sonradan değişebiliyor (orta, CONFIRMED)
+
+`muhasebe.ts → muhabirIsleri`.
+
+Paketin tarihi sırayla planın günü, görev günü (`sonTarih`), muhabirin teslim
+anı ve hiçbiri yoksa paketin son güncelleme anından alınıyor. Weekly'den
+doğan plansız pakette (feature, masa) plan ve görev günü yok; muhabirin
+teslim anı da Planlama onun adına kapattığında, masa teslimi beklemeden
+"Yayınlandı" dediğinde ya da üretim "Yapıldı olarak kapat"la bittiğinde
+yazılmıyor. Bu paketlerde tarih son güncelleme anı: pakete sonradan not
+düşülünce, nitelik puanı verilince, masrafı onaylanınca ya da programa
+aktarılınca iş o günün ayına geçer. Ekimde sayılıp ödenen iş kasımda yeniden
+görünebilir.
+
+Öneri: tarihi paket kapandığı anda bir kez yazılan bir alandan almak
+(künyedeki "onaylayan"ın zamanı kapanış anını zaten taşıyor).
+
+### 4.2 Sıralı görevde izin, izin kaydına ve güne bakmıyor (orta-düşük, CONFIRMED)
+
+`gorevler.ts → sorumlular`.
+
+Sırası gelen kişi izinliyse atlanıyor, ama izin kişideki sabit durum
+alanından okunuyor; onaylı izin kaydı (kişi çipi ve rozetlerin kullandığı
+`kisiBugunDurumu`) ve sorulan gün dikkate alınmıyor. İzin kaydı girilmiş ama
+durumu elle "izinli" yapılmamış kişi görevli görünmeye devam eder; bugün
+izinli olan kişi, izni yarın bitse de önümüzdeki bütün dönemlerde atlanır.
+Otomatik çağrının göndereni de (14 gün ileriye) bu hesaptan.
+
+Öneri: `sorumlular` içinde `kisiBugunDurumu(d, kisi, tarih)` kullanmak.
+
+### 4.3 "Bugün" tarayıcının yerel saatinden (orta-düşük, PLAUSIBLE)
+
+`tarih.ts → bugun`, `eylemler.ts → yarinPlaniniAc`.
+
+Gün İstanbul saatine sabitlenmiyor. İleri saat dilimindeki ya da sistem
+tarihi ileri olan bir bilgisayardan giren personelin tarayıcısı, İstanbul'a
+göre öbür günün planını "yarının planı" diye açar; plan o an henüz
+işlenmemiş bir önceki günün şablonundan kurulur. Gün İstanbul'da dönünce
+plan zaten var olduğu için yeniden kurulmaz, o günün çalışılmış başlıkları
+taşınmamış olur. Arşiv günü ve "geciken" hesapları da aynı saatten.
+
+Öneri: `bugun()`'ü İstanbul saatine sabitlemek (kapıdaki `istanbulGunu` gibi).
+
+### 4.4 "Gibi" çalışan birim, birime düşen bildirimi almıyor (düşük, CONFIRMED)
+
+`yetki.ts → bildirimMi`.
+
+Bildirim `veri.sahip === k.birim` ile eşleşiyor; yöneticinin açtığı ve
+Planlama (ya da başka yerleşik birim) "gibi" çalışan birimde sayfalar ve
+izinler geliyor, ama "sahip: planlama" bildirimleri gelmiyor.
+
+### 4.5 Muhasebe aktarımında "1,500" 1,5 okunuyor (düşük, CONFIRMED)
+
+`muhasebe.ts → sayi`.
+
+Metin olarak yazılmış tutarda virgül her zaman ondalık ayraç sayılıyor;
+İngilizce binlik ayraçlı "1,500" 1,5 olur. Sayı biçimli Excel hücresi
+etkilenmez.
+
+### 4.6 Muhasebede gün UTC'den kesiliyor (düşük, CONFIRMED)
+
+`muhasebe.ts → muhabirIsleri`.
+
+Teslim anından gün `slice(0, 10)` ile alınıyor; İstanbul'da gece 00:00–03:00
+arası teslim edilen iş bir önceki güne, ay başında bir önceki aya yazılır.
+`tarih.ts → yerelGun` bunun için var.
+
+### Temiz bulunanlar
+
+- `yetki.ts`: izin tablosu, kapsam, görünürlük, muhabirin bildirim süzgeci,
+  masa ve özel yayın yetkileri.
+- Tarih yardımcıları (gün ekleme öğlen üzerinden, ay sonu, hafta başı).
+- Takvim tekrarlarının açılımı (ay sonu günleri, yıl geçişi, üst sınır).
+- Birim ağacında döngü koruması.
