@@ -1686,7 +1686,7 @@ const M = {
   turAciklama: m("Açıklama", "الوصف", "Description"),
   bc_takip: m("Takip", "متابعة", "Follow-up"),
   bc_pkg: m("PKG", "PKG", "PKG"),
-  bc_canli: m("Live / Is-Live", "Live / Is-Live", "Live / Is-Live"),
+  bc_canli: m("Live", "Live", "Live"),
   bc_voxpop: m("Vox Pop", "Vox Pop", "Vox Pop"),
   bc_walktalk: m("Walk & Talk", "Walk & Talk", "Walk & Talk"),
   bc_feature: m("Feature", "Feature", "Feature"),
@@ -1694,6 +1694,9 @@ const M = {
   bc_ozelRoportaj: m("Exclusive Interview", "Exclusive Interview", "Exclusive Interview"),
   bc_hikayem: m("My Story", "My Story", "My Story"),
   bc_videowall: m("VideoWall", "VideoWall", "VideoWall"),
+  bc_rushes: m("Rushes", "Rushes", "Rushes"),
+  bc_ulaySot: m("Ulay + SOT", "Ulay + SOT", "Ulay + SOT"),
+  bc_gfx: m("GFX", "GFX", "GFX"),
   bcA_takip: m("Muhabir konuyu izliyor; paket önerisi değil", "المراسل يتابع الموضوع؛ ليس اقتراح تقرير", "The reporter is following the topic; not a package proposal"),
   bcA_pkg: m("Kapsamlı, kayıtlı haber paketi", "تقرير مسجّل متكامل", "Comprehensive recorded news package"),
   bcA_canli: m("Canlı yayın bağlantısı", "رسالة مباشرة على الهواء", "Live broadcast link"),
@@ -1703,6 +1706,9 @@ const M = {
   bcA_derinlemesine: m("Derinlemesine veya araştırmacı haber", "تقرير معمّق أو استقصائي", "In-depth or investigative report"),
   bcA_ozelRoportaj: m("Özel ve ayrıcalıklı röportaj", "مقابلة خاصة وحصرية", "Exclusive, privileged interview"),
   bcA_videowall: m("Stüdyodaki video duvarında anlatılan haber", "خبر يُقدَّم على شاشة الفيديو وول في الاستوديو", "Story presented on the studio video wall"),
+  bcA_rushes: m("Kurgusuz ham görüntü", "لقطات خام دون مونتاج", "Raw, unedited footage"),
+  bcA_ulaySot: m("Üzerine metin okunan görüntü ve kayıtlı konuşma (SOT)", "صور مع تعليق صوتي ومقطع صوتي مسجّل (SOT)", "Voice-over footage with a recorded sound bite (SOT)"),
+  bcA_gfx: m("Grafikle anlatılan haber", "خبر يُروى بالغرافيك", "Story told with graphics"),
   bcA_hikayem: m("Muhabirin kendi anlatım tarzını öne çıkardığı hikâye", "قصة يبرز فيها المراسل أسلوبه الخاص في السرد", "Story told in the reporter's own voice"),
 
   /* Muhabir profili */

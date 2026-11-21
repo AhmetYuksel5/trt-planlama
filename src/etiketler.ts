@@ -201,6 +201,9 @@ export const BICIM_KODU: Record<Bicim, string> = {
   ozelRoportaj: "Interview",
   hikayem: "My Story",
   videowall: "VideoWall",
+  rushes: "Rushes",
+  ulaySot: "Ulay + SOT",
+  gfx: "GFX",
 };
 
 export const STOK_DURUM_ADI: Record<StokDurumu, Anahtar> = {

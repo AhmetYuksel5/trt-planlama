@@ -153,8 +153,11 @@ export interface SehirTanimi {
  * biçim ise ekrana nasıl çıktığını: aynı kolda PKG de canlı bağlantı da
  * olabilir. Bu yüzden ayrı alan.
  */
-export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "derinlemesine", "ozelRoportaj", "hikayem", "videowall"] as const;
-export type Bicim = (typeof BICIMLER)[number];
+/* Seçilebilen haber türleri (kullanıcı: Rushes, Ulay + SOT ve GFX eklendi, In-depth kalktı). */
+export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulaySot", "gfx"] as const;
+/* Seçimden kalkmış türler: eski kayıtta yazılı kalır, adı ve kodu tanınır, yeniden seçilmez. */
+export const ESKI_BICIMLER = ["derinlemesine"] as const;
+export type Bicim = (typeof BICIMLER)[number] | (typeof ESKI_BICIMLER)[number];
 
 /*
  * Öneride haber türünün yanında "Takip": muhabir konuyu yalnız izlediğini

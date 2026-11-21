@@ -227,11 +227,11 @@ const KOMSU: Partial<Record<Ulke, Ulke[]>> = {
 /* Her muhabir PKG ve canlı yapıyor; diğer türler kişiden kişiye. */
 const BICIM_EKI: Bicim[][] = [
   ["voxpop", "feature"],
-  ["walktalk", "derinlemesine"],
+  ["walktalk", "rushes"],
   ["ozelRoportaj"],
   ["hikayem", "feature"],
   ["voxpop", "walktalk", "ozelRoportaj"],
-  ["derinlemesine", "ozelRoportaj"],
+  ["gfx", "ozelRoportaj"],
   ["feature"],
 ];
 
@@ -430,8 +430,8 @@ interface PaketTanimi {
   gfxTamam?: boolean;
 }
 
-/* Kolun varsayılan biçimi: feature kolu insan hikâyesi, program derinlemesine, gerisi PKG. */
-const varsayilanBicim = (tur: IcerikTuru): Bicim => (tur === "feature" ? "feature" : tur === "program" ? "derinlemesine" : "pkg");
+/* Kolun varsayılan biçimi: feature kolu insan hikâyesi, gerisi PKG. */
+const varsayilanBicim = (tur: IcerikTuru): Bicim => (tur === "feature" ? "feature" : "pkg");
 
 const GAZZE_METNI =
   "تعاني المستشفيات في قطاع غزة من نقص حاد في الأدوية والوقود، فيما تعمل أقسام الطوارئ بأكثر من طاقتها الاستيعابية. ويقول الأطباء إن المولدات الاحتياطية لا تكفي إلا لساعات محدودة يوميا، وإن آلاف المرضى ينتظرون عمليات مؤجلة. وتؤكد منظمة الصحة العالمية أن أقل من نصف مستشفيات القطاع ما زالت تعمل بشكل جزئي.";
@@ -1337,7 +1337,7 @@ const GELECEK_HAFTA: KalemSatiri[] = [
   [5, "b-irak", "ما بعد انسحاب التحالف الدولي", "بغداد", "قراءة في المشهد الأمني بعد انتهاء مهمة التحالف، مع مقابلات مع مسؤولين وخبراء.", "haber", ["pkg"], ["mu15"]],
   [6, "b-lubnan", undefined, "بيروت", "جلسة نيابية لمناقشة مشروع قانون الموازنة.", "haber", [], []],
   [null, "b-korfez", "مقاهي القاهرة القديمة", "القاهرة", "قصص أصحاب المقاهي التاريخية وروادها في وسط البلد.", "feature", ["feature"], ["mu4"]],
-  [null, undefined, "برنامج: أصوات من المخيمات", "عمّان", "حلقة عن شباب المخيمات ومشاريعهم الصغيرة لصالح البرنامج الأسبوعي.", "program", ["derinlemesine"], ["mu17"]],
+  [null, undefined, "برنامج: أصوات من المخيمات", "عمّان", "حلقة عن شباب المخيمات ومشاريعهم الصغيرة لصالح البرنامج الأسبوعي.", "program", ["pkg"], ["mu17"]],
 ];
 
 /*
@@ -1652,6 +1652,9 @@ const BICIM_SLUG: Record<Bicim, string> = {
   ozelRoportaj: "INT",
   hikayem: "STORY",
   videowall: "VW",
+  rushes: "RUSH",
+  ulaySot: "ULAY",
+  gfx: "GFX",
 };
 
 /* mulberry32: ardışık tohumlar da birbirinden bağımsız dizi versin (basit doğrusal üreteçte ilk değerler neredeyse aynıydı). */
@@ -2248,7 +2251,7 @@ export const ORNEK = (): Durum => {
     { id: "hb-elyazma", baslikId: "b-misir", baslik: "مكتبة المخطوطات في القاهرة", yer: "القاهرة", metin: "فريق يعمل على رقمنة مخطوطات عمرها قرون.", tur: "feature", bicimler: ["feature"], muhabirler: ["mu8"], karar: "kabul", aktarim: { paketId: "p-elyazma" } },
     { id: "hb-hidrojen", baslikId: "b-korfez", baslik: "استثمارات الهيدروجين الأخضر في الخليج", yer: "الدوحة", metin: "مشاريع جديدة وتحوّل الطاقة.", tur: "ekonomi", bicimler: ["pkg"], muhabirler: ["mu18"], karar: "kabul", aktarim: { paketId: "p-hidrojen" } },
     { id: "hb-sahaf", baslikId: "b-irak", baslik: "سوق الكتب المستعملة في شارع المتنبي", yer: "بغداد", metin: "باعة الكتب في شارع المتنبي وجمهور الجمعة.", tur: "feature", bicimler: ["feature"], muhabirler: ["mu15"], karar: "kabul", aktarim: { paketId: "p-sahaf" } },
-    { id: "hb-girisim", baslik: "برنامج: رواد الأعمال الشباب في العالم العربي", yer: "عمّان", metin: "ثلاثة بورتريهات لرواد أعمال لصالح البرنامج الأسبوعي.", tur: "program", bicimler: ["derinlemesine"], muhabirler: ["mu17"], karar: "kabul", aktarim: { paketId: "p-girisim" } },
+    { id: "hb-girisim", baslik: "برنامج: رواد الأعمال الشباب في العالم العربي", yer: "عمّان", metin: "ثلاثة بورتريهات لرواد أعمال لصالح البرنامج الأسبوعي.", tur: "program", bicimler: ["pkg"], muhabirler: ["mu17"], karar: "kabul", aktarim: { paketId: "p-girisim" } },
   ];
   for (const p of paketler) {
     const k = buHaftaKalemleri.find((x) => x.aktarim?.paketId === p.id);
@@ -2890,7 +2893,7 @@ export const ORNEK = (): Durum => {
     ],
     // Muhasebenin örnek tanımları ve anlaşmaları (kurgusal tutarlar).
     muhasebeTanimlari: [
-      { id: "mt-paket", tur: "fiyat", ad: "Paket", isler: ["pkg", "voxpop", "feature", "derinlemesine", "ozelRoportaj", "hikayem", "videowall"] },
+      { id: "mt-paket", tur: "fiyat", ad: "Paket", isler: ["pkg", "voxpop", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulaySot", "gfx"] },
       { id: "mt-walk", tur: "fiyat", ad: "Walk & Talk", isler: ["walktalk"] },
       { id: "mt-canli", tur: "fiyat", ad: "Canlı yayın", isler: ["canli"] },
       { id: "mt-havale", tur: "odeme", ad: "Banka havalesi" },
