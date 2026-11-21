@@ -57,6 +57,20 @@ export const findItemIstegi = (adet: number): string =>
   );
 
 /*
+ * Konusunda "News Staffing" geçen son postalar (Next Day ekibinin günlük
+ * listesi). Ana liste kutunun en yeni N postası: staffing postasının üstüne
+ * N'den çok posta gelince hiç okunmuyordu. Şema sırası: Restriction,
+ * ParentFolderIds'den önce.
+ */
+export const staffingAramaIstegi = (): string =>
+  ZARF(
+    `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
+      `<m:IndexedPageItemView MaxEntriesReturned="5" Offset="0" BasePoint="Beginning"/>` +
+      `<m:Restriction><t:Contains ContainmentMode="Substring" ContainmentComparison="IgnoreCase"><t:FieldURI FieldURI="item:Subject"/><t:Constant Value="News Staffing"/></t:Contains></m:Restriction>` +
+      `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
+  );
+
+/*
  * Seçili postaların bütün ortak alanları (gönderen, alıcılar, konu, tarih,
  * gövde, InternetMessageId, ConversationId, ekler). AllProperties kullanılıyor:
  * FieldURI'leri elle saymak bir alan geçersizse "The request is invalid"
@@ -602,17 +616,55 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     // 401: kimlik reddedildi. Üst katman MIC'li/MIC'siz ikinci denemeyi buna bakarak yapıyor.
     if (bul.durum === 401) return { hata: "kimlik doğrulanamadı (kullanıcı adı, parola ya da alan yanlış olabilir)", kimlik: true };
     if (bul.durum !== 200) return { hata: `FindItem ${bul.durum}: ${faultMetni(latin1Utf8(bul.govde))}` };
-    const idler = findItemCoz(latin1Utf8(bul.govde));
-    if (idler.length === 0) return { mesajlar: [] };
-    // Gövdeleri küçük gruplar hâlinde çek: büyük tek GetItem yanıtı zaman
-    // aşımına düşüyordu. Aynı doğrulanmış bağlantıda; kapanırsa oturum yeniler.
-    const grup = Math.ceil(idler.length / GETITEM_PARCA);
-    for (let i = 0; i < idler.length; i += GETITEM_PARCA) {
-      adim = `GetItem ${i / GETITEM_PARCA + 1}/${grup}`;
-      const al = await o.iste(getItemIstegi(idler.slice(i, i + GETITEM_PARCA)));
+    const anaIdler = findItemCoz(latin1Utf8(bul.govde));
+    // Staffing araması ek: sunucu reddederse ya da bağlantı düşerse ana liste yine okunur.
+    let ozel: EwsItemKimlik[] = [];
+    try {
+      const st = await o.iste(staffingAramaIstegi());
+      if (st.durum === 200) ozel = findItemCoz(latin1Utf8(st.govde));
+    } catch {
+      /* ek arama; yok say */
+    }
+    const ozelIdler = new Set(ozel.map((i) => i.id));
+    const kalan = anaIdler.filter((i) => !ozelIdler.has(i.id));
+    // Staffing postası tek başına okunur: gövdesi büyük tablo, gruba girince grubu zaman aşımına düşürebiliyordu.
+    const gruplar: EwsItemKimlik[][] = [...ozel.map((i) => [i])];
+    for (let i = 0; i < kalan.length; i += GETITEM_PARCA) gruplar.push(kalan.slice(i, i + GETITEM_PARCA));
+    if (gruplar.length === 0) return { mesajlar: [] };
+    const uyarilar: string[] = [];
+    // Bir grup alınamazsa postaları tek tek dene, sonraki gruplara geç: önce ilk hatada hepsi bırakılıyordu,
+    // okunamayan tek posta (hep aynı grupta) arkasındakileri de her çekişte düşürüyordu. Arka arkaya iki
+    // bağlantı kopması sunucuya ulaşılamıyor demek; kalan sonraki çekişte.
+    let kopma = 0;
+    const oku = async (grup: EwsItemKimlik[]): Promise<void> => {
+      const al = await o.iste(getItemIstegi(grup));
       if (al.durum !== 200) throw new Error(`${al.durum}: ${faultMetni(latin1Utf8(al.govde))}`);
       mesajlar.push(...getItemCoz(latin1Utf8(al.govde)));
+      kopma = 0;
+    };
+    const hataIsle = (e: unknown, ad: string) => {
+      const metin = e instanceof Error ? e.message : String(e);
+      uyarilar.push(`${ad}: ${metin}`);
+      if (YENILENIR.test(metin)) kopma++;
+    };
+    for (let g = 0; g < gruplar.length && kopma < 2; g++) {
+      adim = `GetItem ${g + 1}/${gruplar.length}`;
+      try {
+        await oku(gruplar[g]);
+      } catch (e) {
+        hataIsle(e, adim);
+        if (gruplar[g].length > 1) for (const tek of gruplar[g]) {
+          if (kopma >= 2) break;
+          try {
+            await oku([tek]);
+          } catch (e2) {
+            hataIsle(e2, adim);
+          }
+        }
+      }
     }
+    if (uyarilar.length && !mesajlar.length) return { hata: uyarilar[0] };
+    if (uyarilar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: uyarilar[0] };
     return { mesajlar: siraliMesajlar(mesajlar) };
   } catch (e) {
     const hata = `${adim}: ${e instanceof Error ? e.message : String(e)}`;

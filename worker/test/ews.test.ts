@@ -163,6 +163,9 @@ const httpYanit = (durum: string, govde: string, ekBaslik = ""): string => {
   return `HTTP/1.1 ${durum}\r\n${ekBaslik}Content-Length: ${b.length}\r\n\r\n${govde}`;
 };
 
+/* Staffing araması (ana FindItem'dan sonra) boş döner. */
+const BOS_ARAMA = httpYanit("200 OK", `<m:FindItemResponse><t:Items/></m:FindItemResponse>`);
+
 test("postalariCek: NTLM el sıkışması (Type1→401→Type3→200) ve GetItem", async () => {
   const ayar: EwsAyar = { sunucu: "posta.trt.net.tr", kullanici: "mehmetsafa.bicer", parola: "sahte", alan: "TRT" };
   const findXml = `<t:Message><t:ItemId Id="ID1" ChangeKey="CK1"/></t:Message>`;
@@ -171,16 +174,18 @@ test("postalariCek: NTLM el sıkışması (Type1→401→Type3→200) ve GetItem
     // Gerçek Exchange 401'i gibi: NTLM challenge'ın ardından ayrı bir Negotiate satırı.
     httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\nWWW-Authenticate: Negotiate\r\n`),
     httpYanit("200 OK", findXml),
+    BOS_ARAMA,
     httpYanit("200 OK", getXml),
   ]);
   const sonuc = await postalariCek(ayar, async () => soket, Date.UTC(2026, 10, 7), 25);
   assert.ok("mesajlar" in sonuc, "hata değil: " + JSON.stringify(sonuc));
   assert.equal(sonuc.mesajlar.length, 1);
   assert.equal(sonuc.mesajlar[0].kimden, "a@trt.net.tr");
-  // İlk istek Type1, ikinci Type3 (handshake), üçüncü GetItem (handshake yok).
+  // İlk istek Type1, ikinci Type3 (handshake), üçüncü staffing araması, dördüncü GetItem (handshake yok).
   assert.ok(istekler[0].includes("Authorization: NTLM TlRMTVNTUAABAAAA"), "Type1 gönderildi");
   assert.ok(istekler[1].includes("Authorization: NTLM TlRMTVNTUAADAAAA"), "Type3 gönderildi");
-  assert.ok(istekler[2].includes("GetItem") && !istekler[2].includes("Authorization: NTLM TlRMTVNTUAAB"), "GetItem aynı bağlantıda, yeni handshake yok");
+  assert.ok(istekler[2].includes("News Staffing") && istekler[2].indexOf("Restriction") < istekler[2].indexOf("ParentFolderIds"), "staffing araması, şema sırasıyla");
+  assert.ok(istekler[3].includes("GetItem") && !istekler[3].includes("Authorization: NTLM TlRMTVNTUAAB"), "GetItem aynı bağlantıda, yeni handshake yok");
 });
 
 test("postalariCekOtomatik: MIC'siz kimlik reddedilince MIC'li yeni bağlantıda yeniden dener", async () => {
@@ -194,7 +199,7 @@ test("postalariCekOtomatik: MIC'siz kimlik reddedilince MIC'li yeni bağlantıda
     // İlk bağlantı (MIC'siz): Type3 sonrası 401 (reddedildi). İkinci (MIC'li): 401 challenge → 200 → 200.
     return baglanti === 1
       ? sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("401 Unauthorized", "", auth)]).soket
-      : sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), httpYanit("200 OK", getXml)]).soket;
+      : sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), BOS_ARAMA, httpYanit("200 OK", getXml)]).soket;
   };
   const sonuc = await postalariCekOtomatik(ayar, baglan, Date.now(), 25);
   assert.ok("mesajlar" in sonuc && sonuc.mesajlar.length === 1, "MIC'li ikinci denemede bağlandı");
@@ -272,7 +277,7 @@ test("postalariCek: sunucu bağlantıyı yanıt vermeden kapatınca yeni bağlan
   const findXml = `<t:Message><t:ItemId Id="ID1" ChangeKey="CK1"/></t:Message>`;
   const getXml = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">merhaba</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
   // İlk bağlantı FindItem'dan sonra kapanıyor (GetItem'a yanıt yok); ikincisi el sıkışıp GetItem'ı yanıtlıyor.
-  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml)]);
+  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), BOS_ARAMA]);
   const ikinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", getXml)]);
   let n = 0;
   const r = await postalariCek(ayar, async () => (n++ === 0 ? birinci.soket : ikinci.soket), Date.now(), 25);
@@ -296,12 +301,50 @@ test("postalariCek: bir GetItem grubu alınamazsa alınanlar uyarıyla döner", 
   const findXml = Array.from({ length: 8 }, (_, i) => `<t:Message><t:ItemId Id="ID${i}" ChangeKey="CK"/></t:Message>`).join("");
   const getXml = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">merhaba</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
   // İlk bağlantı FindItem ve ilk grubu yanıtlıyor, ikinci grupta kapanıyor; yenilemeler de kapalı.
-  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), httpYanit("200 OK", getXml)]);
+  const birinci = sahteSoket([httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), BOS_ARAMA, httpYanit("200 OK", getXml)]);
   let n = 0;
   const r = await postalariCek(ayar, async () => (n++ === 0 ? birinci.soket : sahteSoket([]).soket), Date.now(), 25);
   assert.ok("mesajlar" in r, JSON.stringify(r));
   assert.equal(r.mesajlar.length, 1);
   assert.ok(r.uyari && /^GetItem 2\/2: .*kapandı/.test(r.uyari), r.uyari);
+});
+
+test("postalariCek: ana listede olmayan staffing postası aranıp tek başına önce okunur", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const posta = (konu: string) => `<t:Message><t:Subject>${konu}</t:Subject><t:Body BodyType="Text">x</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  const { soket, istekler } = sahteSoket([
+    httpYanit("401 Unauthorized", "", auth),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="A1" ChangeKey="C"/></t:Message><t:Message><t:ItemId Id="ST" ChangeKey="C"/></t:Message>`),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="ST" ChangeKey="C"/></t:Message><t:Message><t:ItemId Id="ST2" ChangeKey="C"/></t:Message>`),
+    httpYanit("200 OK", posta("TRT Arabi News Staffing Sunday 22nd Nov 2026")),
+    httpYanit("200 OK", posta("TRT Arabi News Staffing Saturday 21st Nov 2026")),
+    httpYanit("200 OK", posta("Deneme")),
+  ]);
+  const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("mesajlar" in r && !r.uyari, JSON.stringify(r));
+  assert.equal(r.mesajlar.length, 3);
+  assert.ok(istekler[3].includes('Id="ST"') && !istekler[3].includes('Id="A1"'), "staffing tek başına, önce");
+  assert.ok(istekler[5].includes('Id="A1"') && !istekler[5].includes('Id="ST"'), "ana listede ikinci kez okunmaz");
+});
+
+test("postalariCek: okunamayan grup tek tek denenir, sonraki gruplar da okunur", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const findXml = Array.from({ length: 8 }, (_, i) => `<t:Message><t:ItemId Id="ID${i}" ChangeKey="CK"/></t:Message>`).join("");
+  const posta = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">x</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  const fault = httpYanit("500 Internal Server Error", "<faultstring>ErrorItemCorrupt</faultstring>");
+  // İlk grup (6) 500 verir; tek tek denemede yalnız ikinci posta bozuk; ikinci grup (2) gelir.
+  const { soket } = sahteSoket([
+    httpYanit("401 Unauthorized", "", auth), httpYanit("200 OK", findXml), BOS_ARAMA,
+    fault,
+    httpYanit("200 OK", posta), fault, httpYanit("200 OK", posta), httpYanit("200 OK", posta), httpYanit("200 OK", posta), httpYanit("200 OK", posta),
+    httpYanit("200 OK", posta + posta),
+  ]);
+  const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("mesajlar" in r, JSON.stringify(r));
+  assert.equal(r.mesajlar.length, 7, "bozuk tek posta dışında hepsi");
+  assert.ok(r.uyari && /^GetItem 1\/2: 500/.test(r.uyari), r.uyari);
 });
 
 test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", () => {
