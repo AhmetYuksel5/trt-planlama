@@ -60,13 +60,19 @@ export const findItemIstegi = (adet: number): string =>
  * Konusunda "News Staffing" geçen son postalar (Next Day ekibinin günlük
  * listesi). Ana liste kutunun en yeni N postası: staffing postasının üstüne
  * N'den çok posta gelince hiç okunmuyordu. Şema sırası: Restriction,
- * ParentFolderIds'den önce.
+ * ParentFolderIds'den önce. Son 36 saatle sınırlı: FindItem sıralamıyor,
+ * kutuda haftalarca staffing postası birikince ilk beşi eskiler olabiliyor,
+ * günün postası hiç gelmiyordu (kullanıcı: önce geliyordu, sonra kesildi).
  */
-export const staffingAramaIstegi = (): string =>
+export const STAFFING_SAAT = 36;
+export const staffingAramaIstegi = (simdi: number): string =>
   ZARF(
     `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
-      `<m:IndexedPageItemView MaxEntriesReturned="5" Offset="0" BasePoint="Beginning"/>` +
-      `<m:Restriction><t:Contains ContainmentMode="Substring" ContainmentComparison="IgnoreCase"><t:FieldURI FieldURI="item:Subject"/><t:Constant Value="News Staffing"/></t:Contains></m:Restriction>` +
+      `<m:IndexedPageItemView MaxEntriesReturned="6" Offset="0" BasePoint="Beginning"/>` +
+      `<m:Restriction><t:And>` +
+      `<t:Contains ContainmentMode="Substring" ContainmentComparison="IgnoreCase"><t:FieldURI FieldURI="item:Subject"/><t:Constant Value="News Staffing"/></t:Contains>` +
+      `<t:IsGreaterThanOrEqualTo><t:FieldURI FieldURI="item:DateTimeReceived"/><t:FieldURIOrConstant><t:Constant Value="${new Date(simdi - STAFFING_SAAT * 3600_000).toISOString().replace(/\.\d+Z$/, "Z")}"/></t:FieldURIOrConstant></t:IsGreaterThanOrEqualTo>` +
+      `</t:And></m:Restriction>` +
       `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
   );
 
@@ -643,7 +649,7 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     let ozel: EwsItemKimlik[] = [];
     const uyarilar: string[] = [];
     try {
-      const st = await o.iste(staffingAramaIstegi());
+      const st = await o.iste(staffingAramaIstegi(simdi));
       const x = latin1Utf8(st.govde);
       if (st.durum === 200 && !/ResponseClass="Error"/.test(x)) ozel = findItemCoz(x);
       else uyarilar.push(`News Staffing: ${st.durum} ${faultMetni(x)}`);

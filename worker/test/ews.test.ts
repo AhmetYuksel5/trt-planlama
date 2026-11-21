@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
+import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, staffingAramaIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -391,4 +391,11 @@ test("hatırlatma: kırmızı başlık ve yanıt bağı şema sırasıyla", () =
   assert.match(baslikliHtml("تذكير", "x"), /dir="rtl"/);
   assert.ok(!createItemIstegi({ kime: ["a@ornek.test"], konu: "k", metin: "m" }).includes("InReplyTo"));
   assert.ok(mesajKimligiGecerli("<a.b@c.d>") && !mesajKimligiGecerli("a@b") && !mesajKimligiGecerli("<a@b>\r\nX: y") && !mesajKimligiGecerli(5));
+});
+
+test("staffing araması son 36 saatle sınırlı (FindItem sıralamıyor, eskiler yeniyi örtmesin)", () => {
+  const x = staffingAramaIstegi(Date.UTC(2026, 10, 21, 17, 0, 0));
+  assert.ok(x.includes("<t:And>") && x.includes('Value="News Staffing"'));
+  assert.ok(x.includes('FieldURI="item:DateTimeReceived"') && x.includes('Value="2026-11-20T05:00:00Z"'));
+  assert.ok(x.indexOf("<m:Restriction>") < x.indexOf("<m:ParentFolderIds>"));
 });
