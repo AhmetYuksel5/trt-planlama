@@ -76,9 +76,9 @@ export const staffingAramaIstegi = (): string =>
  * FieldURI'leri elle saymak bir alan geçersizse "The request is invalid"
  * veriyordu; AllProperties hepsini kendiliğinden döndürüyor. Gövde düz metin.
  */
-export const getItemIstegi = (idler: { id: string; degisim: string }[]): string =>
+export const getItemIstegi = (idler: { id: string; degisim: string }[], govde: "Text" | "HTML" = "Text"): string =>
   ZARF(
-    `<m:GetItem><m:ItemShape><t:BaseShape>AllProperties</t:BaseShape><t:BodyType>Text</t:BodyType></m:ItemShape>` +
+    `<m:GetItem><m:ItemShape><t:BaseShape>AllProperties</t:BaseShape><t:BodyType>${govde}</t:BodyType></m:ItemShape>` +
       `<m:ItemIds>${idler.map((i) => `<t:ItemId Id="${kacXml(i.id)}"${i.degisim ? ` ChangeKey="${kacXml(i.degisim)}"` : ""}/>`).join("")}</m:ItemIds></m:GetItem>`,
   );
 
@@ -309,7 +309,28 @@ export const ekIcerikCoz = (govde: Uint8Array): { tur: string; veri: Uint8Array 
 };
 
 /* GetItem yanıtındaki her <t:Message> bloğunu PostaMesaji'ye yakın bir yapıya çözer. */
-export const getItemCoz = (xml: string): EwsMesaj[] => {
+/*
+ * GetItem'in posta başına hatası (ResponseClass="Error"): yanıt 200 dönüyor, posta yanıtta yok.
+ * Önce görülmüyordu; okunamayan posta sessizce düşüyordu (kullanıcı: staffing postası gelmiyor).
+ */
+export const getItemHatalari = (xml: string): string[] =>
+  [...xml.matchAll(/<(?:[a-z]+:)?GetItemResponseMessage\b[^>]*ResponseClass="Error"[^>]*>([\s\S]*?)<\/(?:[a-z]+:)?GetItemResponseMessage>/gi)].map(
+    (m) => etiketDegeri(m[1], "MessageText") ?? etiketDegeri(m[1], "ResponseCode") ?? "Error",
+  );
+
+/* HTML gövdeden satırlı düz metin: Exchange'in metne çevirisi gibi hücre ve satır başına satır sonu. */
+export const htmlMetin = (html: string): string =>
+  html
+    .replace(/<(head|style|script)\b[\s\S]*?<\/\1>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|td|th|li|h[1-6])>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&")
+    .replace(/[ \t\u00a0]+/g, " ")
+    .split("\n").map((l) => l.trim()).filter(Boolean).join("\n");
+
+export const getItemCoz = (xml: string, html = false): EwsMesaj[] => {
   const mesajlar: EwsMesaj[] = [];
   for (const blok of xml.matchAll(/<(?:[a-z]+:)?Message\b[^>]*>([\s\S]*?)<\/(?:[a-z]+:)?Message>/gi)) {
     const g = blok[1];
@@ -319,7 +340,8 @@ export const getItemCoz = (xml: string): EwsMesaj[] => {
       const ad = etiketDegeri(e[1], "Name");
       if (ad) ekler.push(ad);
     }
-    const tam = etiketDegeri(g, "Body") ?? "";
+    const govde = etiketDegeri(g, "Body") ?? "";
+    const tam = html ? htmlMetin(govde) : govde;
     const imid = etiketDegeri(g, "InternetMessageId");
     const kime: string[] = [];
     const cc: string[] = [];
@@ -619,11 +641,14 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     const anaIdler = findItemCoz(latin1Utf8(bul.govde));
     // Staffing araması ek: sunucu reddederse ya da bağlantı düşerse ana liste yine okunur.
     let ozel: EwsItemKimlik[] = [];
+    const uyarilar: string[] = [];
     try {
       const st = await o.iste(staffingAramaIstegi());
-      if (st.durum === 200) ozel = findItemCoz(latin1Utf8(st.govde));
-    } catch {
-      /* ek arama; yok say */
+      const x = latin1Utf8(st.govde);
+      if (st.durum === 200 && !/ResponseClass="Error"/.test(x)) ozel = findItemCoz(x);
+      else uyarilar.push(`News Staffing: ${st.durum} ${faultMetni(x)}`);
+    } catch (e) {
+      uyarilar.push(`News Staffing: ${e instanceof Error ? e.message : String(e)}`);
     }
     const ozelIdler = new Set(ozel.map((i) => i.id));
     const kalan = anaIdler.filter((i) => !ozelIdler.has(i.id));
@@ -631,16 +656,29 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     const gruplar: EwsItemKimlik[][] = [...ozel.map((i) => [i])];
     for (let i = 0; i < kalan.length; i += GETITEM_PARCA) gruplar.push(kalan.slice(i, i + GETITEM_PARCA));
     if (gruplar.length === 0) return { mesajlar: [] };
-    const uyarilar: string[] = [];
     // Bir grup alınamazsa postaları tek tek dene, sonraki gruplara geç: önce ilk hatada hepsi bırakılıyordu,
     // okunamayan tek posta (hep aynı grupta) arkasındakileri de her çekişte düşürüyordu. Arka arkaya iki
     // bağlantı kopması sunucuya ulaşılamıyor demek; kalan sonraki çekişte.
     let kopma = 0;
+    const ozelIdSet = new Set(ozel.map((i) => i.id));
     const oku = async (grup: EwsItemKimlik[]): Promise<void> => {
       const al = await o.iste(getItemIstegi(grup));
       if (al.durum !== 200) throw new Error(`${al.durum}: ${faultMetni(latin1Utf8(al.govde))}`);
-      mesajlar.push(...getItemCoz(latin1Utf8(al.govde)));
       kopma = 0;
+      const x = latin1Utf8(al.govde);
+      const gelen = getItemCoz(x);
+      mesajlar.push(...gelen);
+      const hatalar = getItemHatalari(x);
+      if (!hatalar.length) return;
+      // Staffing postası düz metne çevrilemediyse (büyük HTML tablo) HTML olarak iste, metne burada çevir.
+      if (grup.length === 1 && ozelIdSet.has(grup[0].id) && !gelen.length) {
+        const h = await o.iste(getItemIstegi(grup, "HTML"));
+        const hx = latin1Utf8(h.govde);
+        const hm = h.durum === 200 ? getItemCoz(hx, true) : [];
+        if (hm.length) return void mesajlar.push(...hm);
+        hatalar.push(...getItemHatalari(hx));
+      }
+      uyarilar.push(`${adim}: ${hatalar.join("; ")}`);
     };
     const hataIsle = (e: unknown, ad: string) => {
       const metin = e instanceof Error ? e.message : String(e);

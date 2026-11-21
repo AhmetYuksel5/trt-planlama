@@ -347,6 +347,28 @@ test("postalariCek: okunamayan grup tek tek denenir, sonraki gruplar da okunur",
   assert.ok(r.uyari && /^GetItem 1\/2: 500/.test(r.uyari), r.uyari);
 });
 
+test("postalariCek: staffing postası metne çevrilemezse HTML'den okunur, posta hatası uyarıda", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const hata = (kod: string) => `<m:GetItemResponseMessage ResponseClass="Error"><m:MessageText>${kod}</m:MessageText><m:ResponseCode>${kod}</m:ResponseCode><m:Items/></m:GetItemResponseMessage>`;
+  const html = "&lt;html&gt;&lt;head&gt;&lt;style&gt;td{}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;table&gt;&lt;tr&gt;&lt;td&gt;PRESENTER&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;0700-1500&lt;/td&gt;&lt;td&gt;Ali&amp;nbsp;Veli&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;";
+  const st = `<m:GetItemResponseMessage ResponseClass="Success"><m:Items><t:Message><t:Subject>TRT Arabi News Staffing Sunday 22nd Nov 2026</t:Subject><t:Body BodyType="HTML">${html}</t:Body><t:From><t:Mailbox><t:EmailAddress>k@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message></m:Items></m:GetItemResponseMessage>`;
+  const { soket, istekler } = sahteSoket([
+    httpYanit("401 Unauthorized", "", auth),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="A1" ChangeKey="C"/></t:Message>`),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="ST" ChangeKey="C"/></t:Message>`),
+    httpYanit("200 OK", hata("ErrorContentConversionFailed")),
+    httpYanit("200 OK", st),
+    httpYanit("200 OK", hata("ErrorItemNotFound")),
+  ]);
+  const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("mesajlar" in r, JSON.stringify(r));
+  assert.equal(r.mesajlar.length, 1);
+  assert.ok(istekler[4].includes("<t:BodyType>HTML</t:BodyType>"), "ikinci deneme HTML");
+  assert.equal(r.mesajlar[0].tamMetin, "PRESENTER\n0700-1500\nAli Veli", "tablo satır satır");
+  assert.ok(r.uyari && r.uyari.includes("ErrorItemNotFound"), "öbür postanın hatası görünür: " + r.uyari);
+});
+
 test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", () => {
   assert.equal(satirYonu("مرحبا بكم"), "rtl");
   assert.equal(satirYonu("Merhaba, şöyle"), "ltr");
