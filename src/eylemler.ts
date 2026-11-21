@@ -304,6 +304,15 @@ export const cagriKaydet = (
 };
 
 
+/* Çağrının altına gönderilen hatırlatma (haftalik/Cagri.tsx → HatirlatmaPenceresi): kim, ne zaman, kaç muhabire. */
+export const cagriHatirlatildi = (ben: Kisi, cagriId: string, alici: number) => {
+  if (!yapabilir(ben, "cagriHazirla")) return false;
+  const d = getir();
+  if (!d.cagrilar.some((c) => c.id === cagriId)) return false;
+  kaydet({ ...d, cagrilar: d.cagrilar.map((c) => (c.id === cagriId ? { ...c, hatirlatmalar: [...(c.hatirlatmalar ?? []), { kisiId: ben.id, zaman: simdi(), alici }] } : c)) });
+  return true;
+};
+
 /*
  * Kapının otomatik gönderdiği çağrılar (src/otoCagri.ts) kayda burada girer:
  * uygulamayı ilk açan planlamacının tarayıcısı yazar, postaları çekmeden önce

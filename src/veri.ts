@@ -801,6 +801,8 @@ export interface Cagri {
   bcc: string[];
   /** Konudaki eşleştirme etiketi: ND-20260930, haftalıkta HP-20261003. */
   etiket: string;
+  /** Çağrının altına gönderilen hatırlatmalar (kim, ne zaman, kaç muhabire). */
+  hatirlatmalar?: { kisiId: string; zaman: string; alici: number }[];
 }
 
 /*

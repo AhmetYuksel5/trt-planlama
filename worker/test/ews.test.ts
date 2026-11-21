@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
+import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -315,4 +315,14 @@ test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", () 
   assert.ok(metinHtml("<b>&").includes("&lt;b&gt;&amp;"), "metin kaçar");
   const x = createItemIstegi({ kime: ["a@ornek.test"], konu: "k", metin: "شكرا" });
   assert.ok(x.includes("dir=&quot;rtl&quot;"));
+});
+
+test("hatırlatma: kırmızı başlık ve yanıt bağı şema sırasıyla", () => {
+  const x = createItemIstegi({ kime: ["planning@ornek.test"], bcc: ["m@ornek.test"], konu: "RE: k [HP-20261128]", metin: "نص", baslik: "تذكير", yanitlanan: "<abc@ornek.test>" });
+  assert.ok(x.indexOf("</t:Body>") < x.indexOf("<t:InReplyTo>&lt;abc@ornek.test&gt;</t:InReplyTo>") && x.indexOf("</t:InReplyTo>") < x.indexOf("<t:ToRecipients>"), "InReplyTo Body ile alıcılar arasında");
+  assert.ok(x.indexOf("</t:BccRecipients>") < x.indexOf("<t:References>"), "References alıcılardan sonra");
+  assert.match(x, /color:#C00000;font-weight:bold;font-size:28pt/);
+  assert.match(baslikliHtml("تذكير", "x"), /dir="rtl"/);
+  assert.ok(!createItemIstegi({ kime: ["a@ornek.test"], konu: "k", metin: "m" }).includes("InReplyTo"));
+  assert.ok(mesajKimligiGecerli("<a.b@c.d>") && !mesajKimligiGecerli("a@b") && !mesajKimligiGecerli("<a@b>\r\nX: y") && !mesajKimligiGecerli(5));
 });

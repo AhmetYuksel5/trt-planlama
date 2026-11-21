@@ -1,7 +1,7 @@
 import { useSekmeAdi } from "../../sekmeAdi";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
-import { ArrowDown, ArrowUp, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BellRing, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
@@ -43,6 +43,7 @@ import { KalemFormu, KalemKarti } from "./Kalem";
 import { GozdenGecirme } from "./GozdenGecirme";
 import { HaftalikCiktiOnizleme } from "./Cikti";
 import { HaftalikTakdirPenceresi } from "./Takdir";
+import { HatirlatmaPenceresi } from "./Cagri";
 import { haftalikTakdirKalemleri, kalemBildirimi } from "../../takdir";
 import { ToplantiNotlari } from "./Toplanti";
 
@@ -70,6 +71,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const [gozden, setGozden] = useState(false);
   const [onizleme, setOnizleme] = useState(false);
   const [takdir, setTakdir] = useState(false);
+  const [hatirlatma, setHatirlatma] = useState(false);
   const takdirKalemleri = haftalikTakdirKalemleri(hafta);
   const takdirBekleyen = takdirKalemleri.filter((k) => !kalemBildirimi(v, k)).length;
   const gundem = hafta.kalemler.filter(gundemde);
@@ -121,6 +123,13 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
                 <a role="menuitem" className="acilir-satir" href={`#/oneriler/yanitlar/${cagri.id}`} data-arac="yanitlar">
                   <Inbox size={16} /> {t("gelenYanitlar")}
                 </a>
+              )}
+              {/* Çağrının altına "تذكير": kesinleşmemiş haftada, öneri toplanırken. */}
+              {cagri && yapabilir(ben, "cagriHazirla") && hafta.durum !== "kesinlesti" && (
+                <button type="button" role="menuitem" className="acilir-satir" onClick={() => setHatirlatma(true)} data-arac="hatirlatma">
+                  <BellRing size={16} /> {t("htHatirlatma")}
+                  {(cagri.hatirlatmalar?.length ?? 0) > 0 && <em className="dugme-sayi">{cagri.hatirlatmalar!.length}</em>}
+                </button>
               )}
             </IslemMenusu>
           </>
@@ -182,6 +191,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
 
       {onizleme && <HaftalikCiktiOnizleme hafta={hafta} kapat={() => setOnizleme(false)} />}
       {takdir && <HaftalikTakdirPenceresi ben={ben} hafta={hafta} kapat={() => setTakdir(false)} />}
+      {hatirlatma && cagri && <HatirlatmaPenceresi ben={ben} cagri={cagri} kapat={() => setHatirlatma(false)} />}
       {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}
       {takipler && (

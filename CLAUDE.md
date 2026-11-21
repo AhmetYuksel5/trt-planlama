@@ -1858,6 +1858,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     da "X izin vermedi"; konu tek satır); altında katlı "Zaman ve metin" ve
     "Geçmiş". Testler
     `worker/test/oto-cagri.test.ts`.
+- Çağrıya hatırlatma (kullanıcı: haftalık çağrıdan sonra haftanın belli
+  vakitlerinde aynı postanın altına iri, kalın, kırmızı "تذكير"; yanıtları
+  öneriye düşmeye devam etsin): Weekly ⋯ › "Hatırlatma" (`data-arac="hatirlatma"`;
+  çağrısı olan, kesinleşmemiş hafta, `cagriHazirla`), pencere
+  `haftalik/Cagri.tsx → HatirlatmaPenceresi` (önizleme, isteğe bağlı not, alıcı
+  sayısı, önceki hatırlatmalar). Kişinin EWS kimliğiyle `POST /posta/gonder`:
+  Kime çağrının Kime'si, BCC çağrının muhabirleri (kapı sınırı 50, 45'lik
+  parçalar), konu `eposta.ts → hatirlatmaKonusu` ("RE: " + çağrının konusu,
+  HP- etiketi yerinde: yanıt `cagriYanitiysaIsle`'den öneriye), gövde not ve
+  çağrının metni (`hatirlatmaMetni`). Kırmızı başlığı kapı kurar (`baslik`,
+  `ews.ts → baslikliHtml`; tarayıcıdan HTML alınmaz). Çağrı Posta'daysa
+  (grup Kime'de, kutuya düşüyor) en eski aynı etiketli postanın Message-ID'si
+  `yanitlanan` (`cagriMesajKimligi`): kapı `InReplyTo` ve `References` yazar,
+  muhabirin posta programında çağrının altına düşer; sunucu şemada reddederse
+  bağsız bir kez daha (posta gitmemişti). Kayıt `Cagri.hatirlatmalar`
+  (`eylemler.ts → cagriHatirlatildi`), menüde sayısı. Demoda posta gitmez,
+  yalnız kayıt. Test `testler/hatirlatma.cjs`, kapıda `ews.test.ts`.
 - PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
   "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin
   muhabirine hazır şablonla posta; kendiliğinden gitmesin, tek tek işaretleyip

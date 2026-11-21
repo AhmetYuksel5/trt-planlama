@@ -1,7 +1,7 @@
 import { aralikYaz, gunAdi, metin, sureYaz } from "./dil";
 import { gunEkle } from "./tarih";
 import { sehirUlkesi } from "./etiketler";
-import { type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type Yanit } from "./veri";
+import { type Cagri, type CagriTuru, type Durum, type Kisi, type Oneri, type PostaMesaji, type Yanit } from "./veri";
 
 /**
  * Öneri çağrısının e-posta tarafı.
@@ -51,6 +51,28 @@ export const cagriKonulari = (tarih: string, tur: CagriTuru = "nextday") => [
   cagriKonusu(tarih, tur),
   tur === "haftalik" ? `مقترحات الخطة الأسبوعية – ${haftaAraligiAr(tarih)}` : `خطة الغد – ${gunAdi(tarih, "ar")} ${noktali(tarih)}`,
 ];
+
+/*
+ * Çağrının altına hatırlatma (kullanıcı: haftalık çağrıdan sonra haftanın
+ * belli vakitlerinde aynı postanın altına "تذكير"). Konu çağrınınki "RE:"
+ * ile: etiket yerinde, muhabirin hatırlatmaya yanıtı da öneriye düşer. Başlık
+ * iri, kalın, kırmızı (kapı kuruyor, ews.ts → baslikliHtml); altında not ve
+ * çağrının kendi metni, posta programı bağı tanımasa da çağrı görünsün.
+ */
+export const HATIRLATMA_BASLIGI = "تذكير";
+export const hatirlatmaKonusu = (c: Pick<Cagri, "tarih" | "tur">) => `RE: ${cagriKonusu(c.tarih, c.tur ?? "nextday")}`;
+export const hatirlatmaMetni = (c: Pick<Cagri, "tarih" | "tur" | "metin">, not = "") =>
+  [...(not.trim() ? [not.trim(), ""] : []), "________________________________", cagriKonusu(c.tarih, c.tur ?? "nextday"), "", c.metin.trim()].join("\n");
+/*
+ * Hatırlatmanın yanıtı olacağı posta: grup Kime'de olduğu için çağrı grup
+ * kutusuna da düşüyor, Posta'da Message-ID'siyle duruyor. Aynı etiketli en
+ * eski posta çağrının kendisi (yanıtlar ve hatırlatmalar sonra geliyor);
+ * Posta'ya hiç çekilmediyse bağsız gider, konu yine aynı.
+ */
+export const cagriMesajKimligi = (postalar: PostaMesaji[], etiket: string): string | undefined =>
+  postalar
+    .filter((m) => m.mesajKimligi && etiketBul(m.konu) === etiket)
+    .sort((a, b) => a.zaman.localeCompare(b.zaman))[0]?.mesajKimligi;
 
 export const cagriGovdesi = (tarih: string, sonSaat: string) =>
   metin("cagriSablonu", "ar", { gun: gunAdi(tarih, "ar"), tarih: noktali(tarih), saat: sonSaat });

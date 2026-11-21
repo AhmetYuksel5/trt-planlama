@@ -100,7 +100,17 @@ export interface GidenPosta {
   metin: string;
   /** Verilirse gövde HTML (otomatik çağrı: kırmızı vurgu ve tablo kurumun e-postasındaki gibi). */
   html?: string;
+  /** Gövdenin başında iri, kalın, kırmızı satır (hatırlatmanın "تذكير"si). */
+  baslik?: string;
+  /*
+   * Yanıtı olduğu postanın Message-ID'si: hatırlatma muhabirin posta
+   * programında çağrının altına düşsün (In-Reply-To, References).
+   */
+  yanitlanan?: string;
 }
+
+/* Message-ID biçimi: "<…@…>"; başlığa başka şey sızmasın. */
+export const mesajKimligiGecerli = (s: unknown): s is string => typeof s === "string" && s.length <= 300 && /^<[^<>\s"]+@[^<>\s"]+>$/.test(s);
 
 /*
  * Düz metni yönlü HTML'e çevirir. Düz metin gövdede Outlook paragrafı hep
@@ -129,6 +139,13 @@ export const metinHtml = (metin: string): string => {
   return `<html><body><div style="font-family:Arial,sans-serif;font-size:11pt">${govde}</div></body></html>`;
 };
 
+/* Başlıklı gövde: başlık iri, kalın, kırmızı; yönü kendi harfinden. */
+export const baslikliHtml = (baslik: string, metin: string): string => {
+  const yon = satirYonu(baslik, "rtl");
+  const bas = `<div dir="${yon}" style="text-align:${yon === "rtl" ? "right" : "left"};color:#C00000;font-weight:bold;font-size:28pt;line-height:1.3;font-family:Arial,sans-serif">${kacHtml(baslik)}</div>`;
+  return metinHtml(metin).replace("<body>", `<body>${bas}`);
+};
+
 /*
  * Yanıt ve yeni posta: gövde her zaman HTML (düz metin `metinHtml` ile yönlü), gönderilip Gönderilmiş'e
  * kopyalanıyor. Şema sırayı şart koşuyor (To, Cc, Bcc); boş liste yazılmıyor.
@@ -139,10 +156,13 @@ export const createItemIstegi = (g: GidenPosta): string => {
   return ZARF(
     `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
       `<t:Subject>${kacXml(g.konu)}</t:Subject>` +
-      `<t:Body BodyType="HTML">${kacXml(g.html ?? metinHtml(g.metin))}</t:Body>` +
+      `<t:Body BodyType="HTML">${kacXml(g.html ?? (g.baslik ? baslikliHtml(g.baslik, g.metin) : metinHtml(g.metin)))}</t:Body>` +
+      // Şema sırası: InReplyTo ItemType'ta Body'den sonra, References MessageType'ta alıcılardan sonra.
+      (g.yanitlanan ? `<t:InReplyTo>${kacXml(g.yanitlanan)}</t:InReplyTo>` : "") +
       liste("ToRecipients", g.kime) +
       liste("CcRecipients", g.cc) +
       liste("BccRecipients", g.bcc) +
+      (g.yanitlanan ? `<t:References>${kacXml(g.yanitlanan)}</t:References>` : "") +
       `</t:Message></m:Items></m:CreateItem>`,
   );
 };
@@ -631,9 +651,18 @@ export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, 
 };
 
 export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string; belirsiz?: boolean }> => {
-  const ilk = await postaGonder(ayar, baglan, simdi, g, false);
-  if (!("hata" in ilk) || !ilk.kimlik) return ilk;
-  return postaGonder(ayar, baglan, simdi, g, true);
+  let ilk = await postaGonder(ayar, baglan, simdi, g, false);
+  if ("hata" in ilk && ilk.kimlik) ilk = await postaGonder(ayar, baglan, simdi, g, true);
+  /*
+   * Sunucu yanıt bağını (InReplyTo, References) şemasında tanımazsa bütün
+   * isteği reddediyor; posta gitmedi, bağsız bir kez daha: hatırlatma yine
+   * aynı konuyla gider, öneri eşleşmesi konudaki etiketten.
+   */
+  if ("hata" in ilk && !ilk.belirsiz && g.yanitlanan && /schema|InReplyTo|References/i.test(ilk.hata)) {
+    const { yanitlanan: _, ...bagsiz } = g;
+    return postaGonderOtomatik(ayar, baglan, simdi, bagsiz);
+  }
+  return ilk;
 };
 
 /* Bu boyuttan büyük ek indirilmez: Worker belleği (yanıt base64, artı çözülmüşü). */
