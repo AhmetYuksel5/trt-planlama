@@ -105,6 +105,7 @@ test("grup adresi süzgeci: To/Cc'de grup adresi arıyor", () => {
   assert.equal(grubaUygun(m, "planning@trtarabi.com"), true);
   assert.equal(grubaUygun(m, "baska@trtarabi.com"), false);
   assert.equal(grubaUygun(m, ""), true, "boş grupta hepsi geçer");
+  assert.equal(grubaUygun({ ...m, konu: "TRT Arabi News Staffing Tuesday 17th Nov 2026" }, "baska@trtarabi.com"), true, "staffing postası grup adresi olmadan da geçer");
 });
 
 test("To ve Cc ayrı okunuyor (kim kime yazdı)", () => {

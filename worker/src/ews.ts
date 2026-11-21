@@ -233,11 +233,15 @@ export interface EwsMesaj {
   cc: string[];
 }
 
+/* Günlük ekip listesi ("TRT Arabi News Staffing …"): kurumun dağıtım listesine gidiyor, grup adresi alıcılarda
+   yok; Next Day ekibi ondan okunduğu için grup süzgecinden geçer (kişinin kendi kutusundan, kendi hesabıyla). */
+export const STAFFING_KONUSU = /news\s+staffing\b/i;
+
 /* Postanın alıcıları (To+Cc) arasında grup adresi var mı; grupAdresi boşsa hepsi geçer. */
 export const grubaUygun = (m: EwsMesaj, grupAdresi: string): boolean => {
   const g = grupAdresi.trim().toLowerCase();
   if (!g) return true;
-  return m.alicilar.includes(g);
+  return m.alicilar.includes(g) || STAFFING_KONUSU.test(m.konu);
 };
 
 export interface EwsEk {
