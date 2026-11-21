@@ -153,10 +153,13 @@ export interface SehirTanimi {
  * biçim ise ekrana nasıl çıktığını: aynı kolda PKG de canlı bağlantı da
  * olabilir. Bu yüzden ayrı alan.
  */
-/* Seçilebilen haber türleri (kullanıcı: Rushes, Ulay + SOT ve GFX eklendi, In-depth kalktı). */
-export const BICIMLER = ["pkg", "canli", "voxpop", "walktalk", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulaySot", "gfx"] as const;
+/*
+ * Seçilebilen haber türleri (kullanıcı: Rushes, GFX, Ulay, SOT, Overlay, Long
+ * PKG, Standup eklendi; In-depth kalktı; "Ulay + SOT" önce tek türdü, ayrıldı).
+ */
+export const BICIMLER = ["pkg", "longPkg", "canli", "voxpop", "walktalk", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulay", "sot", "overlay", "standup", "gfx"] as const;
 /* Seçimden kalkmış türler: eski kayıtta yazılı kalır, adı ve kodu tanınır, yeniden seçilmez. */
-export const ESKI_BICIMLER = ["derinlemesine"] as const;
+export const ESKI_BICIMLER = ["derinlemesine", "ulaySot"] as const;
 export type Bicim = (typeof BICIMLER)[number] | (typeof ESKI_BICIMLER)[number];
 
 /*

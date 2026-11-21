@@ -90,10 +90,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   yerine göre `--logo-*` token'larından. Favicon işaretin kendisi
   (`varliklar/simge.png`, `simge-180.png`). Kurumun eski logosu arayüzden kalktı (TRT عربي logosu yalnız çıktının baskı tasarımlarında);
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
-- Haber türü (biçim: PKG, Live, Vox Pop, Rushes, Ulay + SOT, GFX…; `veri.ts →
-  BICIMLER`) kol'dan (haber, feature/ekonomi, program) ayrı alan. Kol akışı
-  belirler, biçim ekrana nasıl çıktığını. Seçimden kalkan tür (`ESKI_BICIMLER`:
-  In-depth, kullanıcı) eski kayıtta adıyla görünür, yeniden seçilmez; kapının
+- Haber türü (biçim: PKG, Long PKG, Live, Vox Pop, Rushes, Ulay, SOT, Overlay,
+  Standup, GFX…; `veri.ts → BICIMLER`) kol'dan (haber, feature/ekonomi, program)
+  ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını. Seçimden kalkan
+  tür (`ESKI_BICIMLER`: In-depth ve bir süre tek tür olan "Ulay + SOT",
+  kullanıcı) eski kayıtta adıyla görünür, yeniden seçilmez; kapının
   listesi (`worker/src/ozellikler.ts → BICIMLER`) seçilebilenlerle aynı.
 - Demoda veri tarayıcıda (`localStorage`, anahtar `trt-planlama-v25`;
   şema değişince anahtar da değişir) ve örnek kayıtla açılıyor. Gerçek

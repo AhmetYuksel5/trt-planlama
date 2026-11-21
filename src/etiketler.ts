@@ -204,6 +204,11 @@ export const BICIM_KODU: Record<Bicim, string> = {
   rushes: "Rushes",
   ulaySot: "Ulay + SOT",
   gfx: "GFX",
+  longPkg: "Long PKG",
+  ulay: "Ulay",
+  sot: "SOT",
+  overlay: "Overlay",
+  standup: "Standup",
 };
 
 export const STOK_DURUM_ADI: Record<StokDurumu, Anahtar> = {

@@ -1655,6 +1655,11 @@ const BICIM_SLUG: Record<Bicim, string> = {
   rushes: "RUSH",
   ulaySot: "ULAY",
   gfx: "GFX",
+  longPkg: "LPKG",
+  ulay: "ULAY",
+  sot: "SOT",
+  overlay: "OVL",
+  standup: "STUP",
 };
 
 /* mulberry32: ardışık tohumlar da birbirinden bağımsız dizi versin (basit doğrusal üreteçte ilk değerler neredeyse aynıydı). */
@@ -2893,7 +2898,7 @@ export const ORNEK = (): Durum => {
     ],
     // Muhasebenin örnek tanımları ve anlaşmaları (kurgusal tutarlar).
     muhasebeTanimlari: [
-      { id: "mt-paket", tur: "fiyat", ad: "Paket", isler: ["pkg", "voxpop", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulaySot", "gfx"] },
+      { id: "mt-paket", tur: "fiyat", ad: "Paket", isler: ["pkg", "longPkg", "voxpop", "feature", "ozelRoportaj", "hikayem", "videowall", "rushes", "ulay", "sot", "overlay", "standup", "gfx"] },
       { id: "mt-walk", tur: "fiyat", ad: "Walk & Talk", isler: ["walktalk"] },
       { id: "mt-canli", tur: "fiyat", ad: "Canlı yayın", isler: ["canli"] },
       { id: "mt-havale", tur: "odeme", ad: "Banka havalesi" },
