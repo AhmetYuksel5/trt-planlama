@@ -1,5 +1,6 @@
 import type { Durum, PostaMesaji } from "./veri";
 import { GERCEK } from "./kip";
+import { staffingTarihi } from "./staffing";
 
 /*
  * Postanın okundu bilgisi (kullanıcı: hangi posta okunmuş, hangisi okunmamış
@@ -23,9 +24,13 @@ export const ILK_TABAN_SAAT = 24;
 
 export const okunmamisMi = (o: PostaOkuma | undefined, m: PostaMesaji): boolean => !!o && !m.giden && m.zaman > (o.k[m.konuKimligi] ?? o.taban);
 
-/** Kişinin gördüğü postalar: gerçek kipte yalnız kendi grubununkiler (Posta ekranının süzgeci). */
+/*
+ * Kişinin gördüğü postalar: gerçek kipte yalnız kendi grubununkiler (Posta ekranının süzgeci).
+ * Staffing postası herkese gidiyor, Message-ID'si bir kez işleniyor: önce çeken başka birimin
+ * grubuna yazılınca planlamacının listesinde hiç görünmüyordu (kullanıcı). Grubu sorulmaz.
+ */
 export const gorunenPostalar = (d: Pick<Durum, "postaMesajlari">, grup: string | undefined): PostaMesaji[] =>
-  (d.postaMesajlari ?? []).filter((m) => !GERCEK || (!!grup && m.grup === grup));
+  (d.postaMesajlari ?? []).filter((m) => !GERCEK || (!!grup && (m.grup === grup || (!m.giden && !!staffingTarihi(m.konu)))));
 
 /** Menüdeki sayı: okunmamış posta sayısı. Posta hiç açılmamışsa sayı yok. */
 export const okunmamisSayisi = (d: Pick<Durum, "postaMesajlari" | "postaOkunan">, kisiId: string): number => {
