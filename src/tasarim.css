@@ -557,6 +557,17 @@ details.kart.katlanir > .katlanir-govde { padding-block: var(--ara-2) var(--ara-
 
 /* Posta: solda sohbet listesi (dar), sağda seçili sohbet (geniş); telefonda alt alta. */
 .posta-duzen { display: grid; gap: var(--ara-4); grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
+/*
+ * Gerçek postada konu ve gönderen adı boşluksuz uzun olabiliyor
+ * ("RE:FW:TRT_Arabi_News_…", adı olmayan gönderenin adresi): kırılmayan sözcük
+ * liste satırını ve sohbetin başlığını ekrandan taşırıyor, telefonda bütün
+ * sayfayı iki katına genişletiyordu. Kalıtılan kural düzenin her metnine geçer;
+ * "anywhere" en küçük genişliği de daraltır, esnek öğe kendi içinde kırılır.
+ */
+.posta-duzen { overflow-wrap: anywhere; }
+.posta-duzen > *, .posta-sohbet-bas > *, .posta-duzen .kart-bas > *, .posta-duzen .kart-bas h2 > * { min-inline-size: 0; }
+/* Saat ve sayılar kırılmaz: "anywhere" dar satırda "08:42"yi rakam rakam bölüyordu. */
+.posta-sohbet-bas small, .posta-zaman, .posta-okunmamis-say, .posta-eslesme, .posta-duzen .kart-bas .ek { flex: 0 0 auto; white-space: nowrap; }
 .posta-sohbetler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-2); max-block-size: 68vh; overflow: auto; }
 /* Her sohbet kontürlü ayrı kart: avatar + başlık/gönderen. */
 .posta-sohbet { inline-size: 100%; text-align: start; cursor: pointer; font: inherit; color: inherit; display: flex; gap: var(--ara-3); align-items: center; padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); }

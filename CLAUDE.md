@@ -1641,6 +1641,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   png/jpg) gösterilmiyor, pdf/docx gibi gerçek dosyalar kalıyor. Sohbet listesi kontürlü ayrı kartlar
   (`.posta-sohbet`: renkli avatar harfi, başlık, `@gönderen`, mesaj sayısı). Telefonda tek ekran:
   sohbet seçilince liste gizlenir, "← Sohbetler"le dönülür (`.posta-duzen.secili`).
+  Boşluksuz uzun konu ve gönderen adı (gerçek postada "RE:FW:TRT_Arabi_…",
+  adsız gönderenin adresi) kırılır (kullanıcı: telefonda Posta sağa taşıyordu;
+  `.posta-duzen { overflow-wrap: anywhere }`, esnek öğeler `min-inline-size: 0`),
+  saat ve sayılar tek satırda. Demonun örnek postaları boşluklu olduğu için
+  testler yakalamıyordu; `testler/posta.cjs` uzun konulu posta ekliyor.
   Sohbetin başlığında 🔍 (kullanıcı: sohbet içinde arama; `Posta.tsx →
   useSohbetAramasi`, `SohbetAramaCubugu`): balonda görünen metin, gönderenin
   adı ve ek adları aranır (`balonIcerigi`, `arama.ts → sozcuklerUyar`: hareke

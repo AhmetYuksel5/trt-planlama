@@ -269,6 +269,23 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     const tasma3 = await p.evaluate(() => { const g = document.querySelector("dialog[open]"); return g ? g.scrollWidth - g.clientWidth : -1; });
     ok(tasma3 >= 0 && tasma3 <= 1, "390px yeni posta penceresi taşmıyor (" + d + "): " + tasma3);
     await p.keyboard.press("Escape");
+    // Gerçek postada konu ve gönderen adı boşluksuz uzun olabiliyor; satırı ve bütün sayfayı genişletiyordu.
+    await p.evaluate(() => {
+      const k = "trt-planlama-v25"; const d = JSON.parse(localStorage.getItem(k));
+      const uzun = "RE:FW:TRT_Arabi_News_Planning_Request_ND-20261122_Saturday_21st_November_2026_Very_Long_Subject_Without_Spaces";
+      d.postaMesajlari = [...d.postaMesajlari.filter((m) => m.id !== "pm-uzun"), { id: "pm-uzun", konuKimligi: "uzun-konu", kimden: "a@ornek.local", kimdenAd: "muhammad.abdulrahman.alsayed.correspondent@ornek-uzun-alan-adi.local", konu: uzun, metin: "https://www.ornek-haber-ajansi-uzun-alan-adi.local/uzun/yol/bosluksuz-1234567890abcdefghijklmnopqrstuvwxyz?utm_source=x", tamMetin: "x", zaman: new Date().toISOString(), ekler: ["Bosluksuz_Uzun_Ek_Adi_Rapor_2026_11_20_son_surum_v3.pdf"], kaynak: "posta" }];
+      localStorage.setItem(k, JSON.stringify(d)); localStorage.setItem(k + "-iz", String(Date.now()));
+    });
+    await git("#/posta");
+    const tasma5 = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    const satir = await p.evaluate(() => { const b = document.querySelector('[data-posta-sohbet-bag="uzun-konu"]'); return b ? Math.round(b.getBoundingClientRect().right - document.documentElement.clientWidth) : 999; });
+    ok(tasma5 <= 1 && satir <= 1, "390px boşluksuz uzun konu listede taşmıyor (" + d + "): " + tasma5 + "/" + satir);
+    const saat = await p.evaluate(() => { const s = document.querySelector('[data-posta-sohbet-bag="uzun-konu"] .posta-sohbet-bas small'); return s ? s.getClientRects().length && s.getBoundingClientRect().height : 0; });
+    ok(saat > 0 && saat < 30, "liste satırında saat tek satırda: " + saat);
+    await p.locator('[data-posta-sohbet-bag="uzun-konu"]').click();
+    await p.waitForTimeout(300);
+    const tasma6 = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    ok(tasma6 <= 1, "390px boşluksuz uzun konulu sohbet taşmıyor (" + d + "): " + tasma6);
   }
   await p.setViewportSize({ width: 1440, height: 1000 });
 
