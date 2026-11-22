@@ -326,6 +326,27 @@ test("postalariCek: ana listede olmayan staffing postası aranıp tek başına �
   assert.equal(r.mesajlar.length, 3);
   assert.ok(istekler[3].includes('Id="ST"') && !istekler[3].includes('Id="A1"'), "staffing tek başına, önce");
   assert.ok(istekler[5].includes('Id="A1"') && !istekler[5].includes('Id="ST"'), "ana listede ikinci kez okunmaz");
+  assert.ok(istekler[2].includes('Id="junkemail"'), "gereksiz klasörü de aranır");
+  assert.equal(r.staffing?.bulunan, 2, "tanı: bulunan");
+  assert.equal(r.staffing?.okunan.length, 2, "tanı: okunan");
+});
+
+test("postalariCek: sunucu iki klasörlü aramayı reddederse staffing yalnız gelen kutusunda aranır", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const posta = `<t:Message><t:Subject>TRT Arabi News Staffing Sunday 22nd Nov 2026</t:Subject><t:Body BodyType="Text">x</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  const { soket, istekler } = sahteSoket([
+    httpYanit("401 Unauthorized", "", auth),
+    httpYanit("200 OK", `<m:FindItemResponse><t:Items/></m:FindItemResponse>`),
+    httpYanit("200 OK", `<m:FindItemResponseMessage ResponseClass="Error"><m:MessageText>ErrorInvalidOperation</m:MessageText></m:FindItemResponseMessage>`),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="ST" ChangeKey="C"/></t:Message>`),
+    httpYanit("200 OK", posta),
+  ]);
+  const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("mesajlar" in r && !r.uyari, JSON.stringify(r));
+  assert.ok(!istekler[3].includes("junkemail") && istekler[3].includes("News Staffing"), "ikinci arama yalnız gelen kutusu");
+  assert.equal(r.mesajlar.length, 1);
+  assert.equal(r.staffing?.bulunan, 1);
 });
 
 test("postalariCek: okunamayan grup tek tek denenir, sonraki gruplar da okunur", async () => {

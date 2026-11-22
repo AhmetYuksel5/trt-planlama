@@ -944,7 +944,9 @@ export function Posta({ ben }: { ben: Kisi }) {
       else bildir(kapiHatasi(r, t("bPostaCekHata")));
     } else {
       const sonuc = r.oneri ? t("bPostaCekildiOneri", { n: String(r.eklenen), o: String(r.oneri) }) : r.eklenen ? t("bPostaCekildi", { n: String(r.eklenen) }) : t("bPostaCekYok");
-      bildir(r.uyari ? `${sonuc} · ${t("bPostaCekKismi")} (${r.uyari})` : sonuc);
+      // Staffing aramasının tanısı her çekişte (kullanıcı: posta gelmiyordu, neden görünmüyordu).
+      const st = r.staffing ? ` · ${t("bStaffingTani", { b: String(r.staffing.bulunan), o: String(r.staffing.okunan), e: String(r.staffing.eklenen) })}${r.staffing.hata ? ` (${r.staffing.hata})` : ""}` : "";
+      bildir((r.uyari ? `${sonuc} · ${t("bPostaCekKismi")} (${r.uyari})` : sonuc) + st);
     }
   };
   // Kimlik kişiye özel (Ayarlar'dan girilir): parola varsa açılışta kutuyu

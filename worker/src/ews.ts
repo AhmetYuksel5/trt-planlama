@@ -63,9 +63,12 @@ export const findItemIstegi = (adet: number): string =>
  * ParentFolderIds'den önce. Son 36 saatle sınırlı: FindItem sıralamıyor,
  * kutuda haftalarca staffing postası birikince ilk beşi eskiler olabiliyor,
  * günün postası hiç gelmiyordu (kullanıcı: önce geliyordu, sonra kesildi).
+ * Gereksiz (junk) klasörü de aranır: dağıtım listesinden gelen posta oraya
+ * düşebiliyor; sunucu iki klasörü birden reddederse yalnız gelen kutusuyla
+ * yeniden denenir.
  */
 export const STAFFING_SAAT = 36;
-export const staffingAramaIstegi = (simdi: number): string =>
+export const staffingAramaIstegi = (simdi: number, junk = true): string =>
   ZARF(
     `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
       `<m:IndexedPageItemView MaxEntriesReturned="6" Offset="0" BasePoint="Beginning"/>` +
@@ -73,7 +76,7 @@ export const staffingAramaIstegi = (simdi: number): string =>
       `<t:Contains ContainmentMode="Substring" ContainmentComparison="IgnoreCase"><t:FieldURI FieldURI="item:Subject"/><t:Constant Value="News Staffing"/></t:Contains>` +
       `<t:IsGreaterThanOrEqualTo><t:FieldURI FieldURI="item:DateTimeReceived"/><t:FieldURIOrConstant><t:Constant Value="${new Date(simdi - STAFFING_SAAT * 3600_000).toISOString().replace(/\.\d+Z$/, "Z")}"/></t:FieldURIOrConstant></t:IsGreaterThanOrEqualTo>` +
       `</t:And></m:Restriction>` +
-      `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
+      `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/>${junk ? `<t:DistinguishedFolderId Id="junkemail"/>` : ""}</m:ParentFolderIds></m:FindItem>`,
   );
 
 /*
@@ -256,6 +259,13 @@ export interface EwsMesaj {
 /* Günlük ekip listesi ("TRT Arabi News Staffing …"): kurumun dağıtım listesine gidiyor, grup adresi alıcılarda
    yok; Next Day ekibi ondan okunduğu için grup süzgecinden geçer (kişinin kendi kutusundan, kendi hesabıyla). */
 export const STAFFING_KONUSU = /news\s+staffing\b/i;
+
+/* Çekişte staffing aramasının sonucu (tanı): bulunan kimlik sayısı, okunan postalar, arama hatası. */
+export interface StaffingDurumu {
+  bulunan: number;
+  okunan: { konu: string; zaman?: string }[];
+  hata?: string;
+}
 
 /* Postanın alıcıları (To+Cc) arasında grup adresi var mı; grupAdresi boşsa hepsi geçer. */
 export const grubaUygun = (m: EwsMesaj, grupAdresi: string): boolean => {
@@ -634,7 +644,7 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
  * GetItem ile gövdeler. Tek soket; FindItem el sıkışmasından sonra GetItem
  * aynı doğrulanmış bağlantıda. Hata metinle döner (kullanıcı "dene"de görsün).
  */
-export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[]; uyari?: string } | { hata: string; kimlik?: boolean }> => {
+export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string; kimlik?: boolean }> => {
   const o = okumaOturumu(ayar, baglan, simdi, mic);
   // Hata hangi adımda olduysa metnin başında: bağlantı mı, liste mi, kaçıncı grup.
   let adim = "FindItem";
@@ -648,20 +658,31 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     // Staffing araması ek: sunucu reddederse ya da bağlantı düşerse ana liste yine okunur.
     let ozel: EwsItemKimlik[] = [];
     const uyarilar: string[] = [];
+    let staffingHata: string | undefined;
     try {
-      const st = await o.iste(staffingAramaIstegi(simdi));
-      const x = latin1Utf8(st.govde);
+      let st = await o.iste(staffingAramaIstegi(simdi));
+      let x = latin1Utf8(st.govde);
+      if (st.durum !== 200 || /ResponseClass="Error"/.test(x)) {
+        st = await o.iste(staffingAramaIstegi(simdi, false));
+        x = latin1Utf8(st.govde);
+      }
       if (st.durum === 200 && !/ResponseClass="Error"/.test(x)) ozel = findItemCoz(x);
-      else uyarilar.push(`News Staffing: ${st.durum} ${faultMetni(x)}`);
+      else uyarilar.push((staffingHata = `News Staffing: ${st.durum} ${faultMetni(x)}`));
     } catch (e) {
-      uyarilar.push(`News Staffing: ${e instanceof Error ? e.message : String(e)}`);
+      uyarilar.push((staffingHata = `News Staffing: ${e instanceof Error ? e.message : String(e)}`));
     }
+    // Ekranda görünsün (kullanıcı: staffing postası gelmiyor, neden olduğu görünmüyordu): kaç bulundu, kaçı okundu.
+    const staffingDurumu = (): StaffingDurumu => ({
+      bulunan: ozel.length,
+      okunan: mesajlar.filter((m) => STAFFING_KONUSU.test(m.konu)).map((m) => ({ konu: m.konu.slice(0, 120), zaman: m.zaman })),
+      ...(staffingHata ? { hata: staffingHata.slice(0, 160) } : {}),
+    });
     const ozelIdler = new Set(ozel.map((i) => i.id));
     const kalan = anaIdler.filter((i) => !ozelIdler.has(i.id));
     // Staffing postası tek başına okunur: gövdesi büyük tablo, gruba girince grubu zaman aşımına düşürebiliyordu.
     const gruplar: EwsItemKimlik[][] = [...ozel.map((i) => [i])];
     for (let i = 0; i < kalan.length; i += GETITEM_PARCA) gruplar.push(kalan.slice(i, i + GETITEM_PARCA));
-    if (gruplar.length === 0) return { mesajlar: [] };
+    if (gruplar.length === 0) return { mesajlar: [], staffing: staffingDurumu() };
     // Bir grup alınamazsa postaları tek tek dene, sonraki gruplara geç: önce ilk hatada hepsi bırakılıyordu,
     // okunamayan tek posta (hep aynı grupta) arkasındakileri de her çekişte düşürüyordu. Arka arkaya iki
     // bağlantı kopması sunucuya ulaşılamıyor demek; kalan sonraki çekişte.
@@ -708,8 +729,9 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
       }
     }
     if (uyarilar.length && !mesajlar.length) return { hata: uyarilar[0] };
-    if (uyarilar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: uyarilar[0] };
-    return { mesajlar: siraliMesajlar(mesajlar) };
+    const staffing = staffingDurumu();
+    if (uyarilar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: uyarilar.find((u) => u.startsWith("News Staffing") || u.includes("GetItem")) ?? uyarilar[0], staffing };
+    return { mesajlar: siraliMesajlar(mesajlar), staffing };
   } catch (e) {
     const hata = `${adim}: ${e instanceof Error ? e.message : String(e)}`;
     // Bir grup alınamasa da alınanlar kaybolmasın; kalanı sonraki çekişte gelir.
@@ -724,7 +746,7 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
 const siraliMesajlar = (m: EwsMesaj[]) => [...m].sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
 
 /* Önce sade NTLMv2 (MIC'siz), kimlik reddedilirse MIC'li yeni bağlantıda dener; hangisi tuttuysa o. */
-export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string } | { hata: string }> => {
+export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string }> => {
   const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postalariCek(ayar, baglan, simdi, adet, true);

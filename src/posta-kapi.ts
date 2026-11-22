@@ -76,22 +76,38 @@ interface KapiMesaji {
  * cagriYanitiysaIsle). Dönen sayılar yeni eklenen mesaj ve öneriye aktarılan;
  * tekrar gelenler sayılmıyor.
  */
-export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number; oneri: number; uyari?: string } | { hata: string; ayrinti?: string }> => {
+/* Kapının staffing tanısı ve bu çekişte kayda yeni girenler (kullanıcı: posta gelmiyor, nedeni görünmüyordu). */
+// Kapıdaki STAFFING_KONUSU ile aynı.
+const STAFFING = /news\s+staffing\b/i;
+
+export interface StaffingTanisi {
+  bulunan: number;
+  okunan: number;
+  eklenen: number;
+  hata?: string;
+}
+
+export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise<{ eklenen: number; toplam: number; oneri: number; uyari?: string; staffing?: StaffingTanisi } | { hata: string; ayrinti?: string }> => {
   // Kapının sabah gönderdiği çağrı önce kayda girsin: yanıtı o çağrıya bağlanıp öneri olsun.
   await otoCagriEsitle(ben).catch(() => null);
   // uyari: kapı bir grubu alamadı, alınanlar yine geldi (bağlantı kopunca hepsi gitmesin).
-  const r: YzSonuc<{ mesajlar: KapiMesaji[]; uyari?: string }> = await kapiIstek<{ mesajlar: KapiMesaji[]; uyari?: string }>("/posta/cek", "POST", { adet });
+  type Cekis = { mesajlar: KapiMesaji[]; uyari?: string; staffing?: { bulunan: number; okunan: { konu: string }[]; hata?: string } };
+  const r: YzSonuc<Cekis> = await kapiIstek<Cekis>("/posta/cek", "POST", { adet });
   if (!r.tamam) return { hata: r.hata, ayrinti: r.ayrinti };
   // En eski önce yazılsın ki sohbet sırası doğru olsun (kapı en yeni önce veriyor).
   const mesajlar = [...r.veri.mesajlar].reverse();
   let eklenen = 0;
   let oneri = 0;
+  let staffingEklenen = 0;
   for (const m of mesajlar) {
     const gelen: GelenEposta = { kimden: m.kimden, kimdenAd: m.kimdenAd, konu: m.konu, metin: m.metin, zaman: m.zaman, mesajKimligi: m.mesajKimligi, konuKimligi: m.konuKimligi, ekler: m.ekler, kime: m.kime, cc: m.cc };
     const s = postaIsle(ben, gelen, "posta", grup);
     if (s?.durum === "eklendi") eklenen++;
+    if (s?.durum === "eklendi" && STAFFING.test(m.konu)) staffingEklenen++;
     // Çağrıya verilmiş muhabir yanıtı öneriye de aktarılır; sohbette de kalır.
     if (cagriYanitiysaIsle(ben, gelen)?.durum === "oneri") oneri++;
   }
-  return { eklenen, toplam: mesajlar.length, oneri, ...(r.veri.uyari ? { uyari: r.veri.uyari } : {}) };
+  const st = r.veri.staffing;
+  const staffing = st ? { bulunan: st.bulunan, okunan: st.okunan.length, eklenen: staffingEklenen, ...(st.hata ? { hata: st.hata } : {}) } : undefined;
+  return { eklenen, toplam: mesajlar.length, oneri, ...(r.veri.uyari ? { uyari: r.veri.uyari } : {}), ...(staffing ? { staffing } : {}) };
 };
