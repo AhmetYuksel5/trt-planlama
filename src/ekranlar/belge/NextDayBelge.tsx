@@ -39,6 +39,7 @@ import {
   muhabirYeri,
   paketYeri,
   pkgGruplari,
+  pkgOnerisiMi,
   sehirAr,
 } from "../../etiketler";
 import {
@@ -400,8 +401,9 @@ export function NextDayBelgesi({
   // Hazır paketlere alınan beklenenlerde ikinci kez basılmaz; başlığın altında kalması planlamacının seçimi.
   // Stoka alınmış (yapılmış) paket hazırdan çıkarılsa da "beklenen" değil.
   const stokta = (p: Paket) => !!p.stok && p.durum === "tamamlandi";
+  // Karar bekleyen (PKG PROPOSAL) yalnız başlığının ya da gelişmesinin altında; kabul edilince beklenenlere girer (kullanıcı).
   const beklenenler = paketler.filter(
-    (p) => !plan.hazirPaketler.includes(p.id) && !stokta(p),
+    (p) => !plan.hazirPaketler.includes(p.id) && !stokta(p) && !pkgOnerisiMi(p),
   );
   const takipler = v.gelismeler.filter(
     (g) => g.planId === plan.id && !g.planBaslikId,

@@ -1124,7 +1124,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (başlık, muhabir, gelişme, canlı): onay silmez (`onceki`yi siler),
   düzenleme ve "bugün de geçerli" siler. Taşınan kayıt `onceki` işaretli
   (hareket bağlantısında `NextDayPlan.oncekiHareketler`) ve ekranda
-  `.onceki` hafif fonuyla görünür. Fon düzenleyince, "Bugün de geçerli"
+  `.onceki` fonuyla ve başında mavi kenar şeridiyle (`--onceki-serit`)
+  görünür (kullanıcı: hafif fon seçilmiyordu). Fon düzenleyince, "Bugün de geçerli"
   (`oncekiOnayla`) deyince ya da plan onaylanınca kalkar; çıktıda yoktur.
   Paket önerisi ve hazır paket taşınmaz.
   - Gün başına tek plan. Sistemin açtığı planın kimliği tarihten
@@ -1307,7 +1308,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     gelismeTeamAdlari`, `GelismeTeamSatirlari`).
   - Başlığın altındaki paketler iki alt başlıkta (`etiketler.ts →
     pkgGruplari`; belge ve çıktı): kabul edilenler "PKG", karar bekleyenler
-    (taslak, değerlendirmede) "PKG PROPOSAL"; boş grup yazılmaz.
+    (taslak, değerlendirmede) "PKG PROPOSAL"; boş grup yazılmaz. Beklenen
+    paketler (التقارير المتوقعة) yalnız kabul edilenler (`pkgOnerisiMi` değil;
+    kullanıcı): öneri yalnız başlığının ya da gelişmesinin altında.
   - Gelişmeye bağlı PKG (kullanıcı: başlık bazen genel, altında daha özel
     konular var; PKG başlığın en altında değil o gelişmenin altında görünsün;
     `Paket.gelismeId`): gelişmenin satırında "Bu gelişmeye PKG ekle" (plan
@@ -1320,8 +1323,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     başlığın PKG bölümünde yalnız öbürleri. Gelişme silinince paket başlığın
     PKG'sine iner (`gelismeSil`), başka başlığa taşınınca onunla gider
     (`gelismeBasligaTasi`); sıralama aynı yerdeki paketler arasında
-    (`paketTasi`). Beklenen paketler (التقارير المتوقعة) listesinde her PKG
-    yine var. Test `testler/gelisme-pkg.cjs`.
+    (`paketTasi`). Beklenen paketler (التقارير المتوقعة) listesinde kabul
+    edilmiş her PKG yine var. Test `testler/gelisme-pkg.cjs`.
   - Gelişme ve PKG formunda gün varsayılan olarak planın günü (kullanıcı:
     Next Day ertesi günün planı, eklenen bugünün tarihini taşıyordu): gelişmede
     `TarihGirdisi` ve ayrı, isteğe bağlı saat (`Gelisme.saat`, "SS:DD"); boş

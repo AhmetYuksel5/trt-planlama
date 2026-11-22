@@ -68,9 +68,10 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Next Day çıktısında PKG PROPOSAL altında
   await git(`#/nextday/${ids.plan}/cikti`);
   const c = await p.locator("article.cikti").first().innerText();
-  // İlk geçiş "التقارير المتوقعة" listesinde; başlığın altındaki son geçiş.
   const i = c.lastIndexOf("تقرير يُحسم غداً");
   ok(i > 0 && c.lastIndexOf("PKG PROPOSAL", i) > 0, "Next Day çıktısında PKG PROPOSAL altında");
+  // Kullanıcı: kabul edilmemiş paket التقارير المتوقعة'da görünmesin, yalnız başlığının altında.
+  ok(c.indexOf("تقرير يُحسم غداً") === i, "karar bekleyen paket beklenenlerde yok, bir kez basıldı");
 
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
   console.log(`\n${gec} geçti, ${kal} kaldı`);

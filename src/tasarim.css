@@ -31,8 +31,10 @@
   --vurgu-yazi: #ffffff;
   --vurgu-sis: #e7eefc;
   /* Önceki günden gelen kayıt: vurgu sisinden de açık; yazıyı bastırmadan "dünden" dedirtecek kadar. */
-  --onceki-fon: #eef3fd;
-  --onceki-cizgi: #d3def5;
+  --onceki-fon: #dce7fb;
+  --onceki-cizgi: #9fbaea;
+  /* Dünden gelen kaydın kenar şeridi: fon tek başına soluk kalıyordu (kullanıcı: daha belirgin olsun). */
+  --onceki-serit: #4f7fd6;
 
   /* Sol menü ve marka. */
   --lacivert: #0f1f3a;
@@ -1455,7 +1457,7 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
  */
 .belge-satir { position: relative; border-radius: var(--yaricap); margin-inline: calc(-1 * var(--ara-2)); padding-inline: var(--ara-2); }
 .belge-satir:hover, .belge-satir:focus-within { background: var(--vurgu-sis); }
-.belge-satir.onceki { background: var(--onceki-fon); box-shadow: inset 0 0 0 1px var(--onceki-cizgi); }
+.belge-satir.onceki { background: var(--onceki-fon); box-shadow: inset 0 0 0 1px var(--onceki-cizgi); border-inline-start: 3px solid var(--onceki-serit); }
 .belge-satir.soluk > :not(.satir-seridi) { opacity: .5; }
 .satir-seridi {
   position: absolute; inset-block-start: 100%; inset-inline-start: var(--ara-1); z-index: 5;
@@ -1608,7 +1610,8 @@ small.ince { display: block; font-weight: 500; font-size: var(--punto-mini); }
 .kayit-talimat { border-inline-start: 3px solid var(--lacivert); }
 /* Önceki günden gelip dokunulmamış satır ve çip: çok hafif fon. Çıktı kendi düzenini kullandığı için orada yok. */
 .kayit.onceki, .cip.onceki { background: var(--onceki-fon); border-color: var(--onceki-cizgi); }
-.onceki-ornek { display: inline-block; inline-size: 1.6em; block-size: 1em; border-radius: 4px; background: var(--onceki-fon); border: 1px solid var(--onceki-cizgi); vertical-align: middle; margin-inline-end: var(--ara-1); }
+.kayit.onceki { border-inline-start: 3px solid var(--onceki-serit); }
+.onceki-ornek { display: inline-block; inline-size: 1.6em; block-size: 1em; border-radius: 4px; background: var(--onceki-fon); border: 1px solid var(--onceki-cizgi); border-inline-start: 3px solid var(--onceki-serit); vertical-align: middle; margin-inline-end: var(--ara-1); }
 .akis li.yonetici-notu { background: var(--yuzey-2); border-radius: var(--yaricap); padding: var(--ara-2); border-top: 0; margin-top: var(--ara-1); }
 .akis li.yonetici-notu .rozet { margin-inline-start: var(--ara-1); }
 
@@ -3228,8 +3231,9 @@ html.yeni-tasarim {
   --vurgu: #2459d6;
   --vurgu-koyu: #1a44a8;
   --vurgu-sis: #eff4ff;
-  --onceki-fon: #f5f8ff;
-  --onceki-cizgi: #d1e0ff;
+  --onceki-fon: #e0eaff;
+  --onceki-cizgi: #9dbcf5;
+  --onceki-serit: #2459d6;
   --lacivert: #13274a;
   /* Planlar renkle değil adla ve simgeyle ayrılır: durum renkleriyle karışmasın. */
   --nextday: var(--lacivert); --nextday-sis: var(--yuzey-2);
