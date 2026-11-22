@@ -4,7 +4,7 @@ import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode, type HTMLAttributes } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
@@ -652,6 +652,7 @@ export function GelismeListesi({
   planBaslikId,
   gelismeAlti,
   paketEkle,
+  hedef,
 }: {
   plan: NextDayPlan;
   gelismeler: Gelisme[];
@@ -659,6 +660,8 @@ export function GelismeListesi({
   planBaslikId?: string;
   gelismeAlti?: (g: Gelisme) => ReactNode;
   paketEkle?: (g: Gelisme) => void;
+  /** PKG bırakma alanı (paketSurukle.ts): gelişme ve altındaki paketler. */
+  hedef?: (g: Gelisme) => HTMLAttributes<HTMLDivElement>;
 }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
@@ -675,7 +678,7 @@ export function GelismeListesi({
           <GelismeFormu key={g.id} plan={plan} planBaslikId={planBaslikId} mevcut={g} kapat={() => setForm("")} />
         ) : (
           <Fragment key={g.id}>
-          <div data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
+          <div {...hedef?.(g)} data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
                 <Icerik blok className="kayit-metin">
@@ -714,7 +717,7 @@ export function GelismeListesi({
               )}
             </div>
           </div>
-          {gelismeAlti && <div className="gelisme-alti">{gelismeAlti(g)}</div>}
+          {gelismeAlti && <div {...hedef?.(g)} className="gelisme-alti">{gelismeAlti(g)}</div>}
           </Fragment>
         ),
       )}

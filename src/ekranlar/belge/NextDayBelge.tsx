@@ -106,6 +106,7 @@ import {
   gorevEkibi,
 } from "../nextday/Bolumler";
 import { PaketPlanNotlari } from "../nextday/PaketPlanNotlari";
+import { paketHedefi, paketSuruklenir } from "../nextday/paketSurukle";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import {
   CanliFormu,
@@ -431,6 +432,7 @@ export function NextDayBelgesi({
                                 <BelgeSatiri
                                   key={p.id}
                                   duzen={ic}
+                                  ozellik={paketSuruklenir(p, ic && !!ben && !!p.planBaslikId)}
                                   serit={
                                     <SatirSeridi
                                       yukari={yukari(
@@ -555,8 +557,11 @@ export function NextDayBelgesi({
           (p) => p.planBaslikId === planBaslikId && p.gelismeId === g.id,
         )
       : [];
+    // Belgede gelişme (ve altındaki PKG'ler) paket bırakma alanı; çıktıda ve Word'de yalnız Fragment.
+    const Kap = ic && ben && planBaslikId ? "div" : Fragment;
+    const kapOz = Kap === "div" ? { className: "pkg-hedef", "data-pkg-hedef": g.id, ...paketHedefi(ben, planBaslikId!, g.id, true) } : {};
     return (
-      <Fragment key={g.id}>
+      <Kap key={g.id} {...kapOz}>
       <BelgeSatiri
         duzen={op}
         onceki={g.onceki}
@@ -697,7 +702,7 @@ export function NextDayBelgesi({
             {grup.map(paketSatiri(planBaslikId, grup))}
           </Fragment>
         ))}
-      </Fragment>
+      </Kap>
     );
   };
 
@@ -818,6 +823,7 @@ export function NextDayBelgesi({
                         key={pb.id}
                         className="cikti-baslik"
                         data-nd-baslik={pb.id}
+                        {...paketHedefi(ben, pb.id, undefined, ic)}
                       >
                         <BelgeSatiri
                           duzen={ic}
@@ -1736,6 +1742,7 @@ export function NextDayBelgesi({
                     key={pb.id}
                     className="cikti-baslik"
                     data-nd-baslik={pb.id}
+                    {...paketHedefi(ben, pb.id, undefined, ic)}
                   >
                     <BelgeSatiri
                       duzen={ic}

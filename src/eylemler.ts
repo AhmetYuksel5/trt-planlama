@@ -2701,6 +2701,25 @@ export const paketTasi = (ben: Kisi, id: string, yon: -1 | 1) => {
 };
 
 /** Yalnız henüz değerlendirmedeki paket silinir; ileri gitmiş olan iptal edilir ki geçmişi kalsın. */
+/*
+ * PKG'nin plandaki yeri: gelişmenin altı ya da başlığın PKG bölümü (sürükle
+ * bırak, nextday/paketSurukle.ts). Yalnız aynı başlığın gelişmesine; durum,
+ * sıra ve onay değişmez.
+ */
+export const paketYerineTasi = (ben: Kisi, id: string, gelismeId?: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  const plan = planBul(d, p?.planId);
+  if (!p || !plan || p.durum === "iptal" || !planIcerikDuzenler(ben, plan)) return false;
+  if ((p.gelismeId ?? "") === (gelismeId ?? "")) return false;
+  if (gelismeId) {
+    const g = d.gelismeler.find((x) => x.id === gelismeId);
+    if (!g || g.planId !== plan.id || g.planBaslikId !== p.planBaslikId) return false;
+  }
+  kaydet({ ...d, paketler: d.paketler.map((x) => (x.id === id ? { ...x, gelismeId: gelismeId || undefined, guncelleme: simdi() } : x)) });
+  return true;
+};
+
 /* Plandaki işleme fikri / görsel işleme satırını kaldırır; öneri değişmez. Planın içeriğini düzenleyen. */
 export const paketPlanNotuSil = (ben: Kisi, id: string, alan: "planIsleme" | "planGorsel") => {
   const d = getir();

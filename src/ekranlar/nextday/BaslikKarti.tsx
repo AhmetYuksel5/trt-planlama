@@ -21,6 +21,7 @@ import PlanaEkle from "../oneri/PlanaEkle";
 import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
 import { PaketPlanNotlari } from "./PaketPlanNotlari";
+import { paketHedefi, paketSuruklenir } from "./paketSurukle";
 
 /**
  * Haber gündemindeki bir başlık: kurumun çıktısında altı çizili başlık ve
@@ -93,7 +94,7 @@ export default function BaslikKarti({
             ) : paketForm === p.id ? (
               <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
             ) : (
-              <div key={p.id} className="kayit">
+              <div key={p.id} className="kayit" {...paketSuruklenir(p, icerik && !!ben)}>
                 <div className="kayit-bas">
                   <div>
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
@@ -154,6 +155,7 @@ export default function BaslikKarti({
     </>
   );
 
+  const pkgHedef = paketHedefi(ben ?? undefined, pb.id, undefined, icerik);
   return (
     <>
     <details
@@ -161,12 +163,19 @@ export default function BaslikKarti({
       open={acik}
       data-plan-baslik={pb.id}
       onDragOver={(e) => {
+        // PKG bırakma (gelişmenin altından başlığın PKG bölümüne) önce; başlık sıralamasının türü ayrı.
+        pkgHedef.onDragOver?.(e);
         if (!icerik || !e.dataTransfer.types.includes(SURUKLENEN)) return;
         e.preventDefault();
         setBirakilir(true);
       }}
-      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setBirakilir(false)}
+      onDragLeave={(e) => {
+        pkgHedef.onDragLeave?.(e);
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setBirakilir(false);
+      }}
       onDrop={(e) => {
+        pkgHedef.onDrop?.(e);
+        if (e.defaultPrevented) return;
         const kaynak = e.dataTransfer.getData(SURUKLENEN);
         setBirakilir(false);
         if (!kaynak) return;
@@ -258,7 +267,7 @@ export default function BaslikKarti({
           <h4>
             <Newspaper size={14} /> {t("gelismeler")}
           </h4>
-          <GelismeListesi plan={plan} gelismeler={gelismeler} duzenler={operasyon} planBaslikId={pb.id} gelismeAlti={gelismeAlti} paketEkle={icerik ? (g) => setPaketForm(`yeni:${g.id}`) : undefined} />
+          <GelismeListesi plan={plan} gelismeler={gelismeler} duzenler={operasyon} planBaslikId={pb.id} gelismeAlti={gelismeAlti} hedef={(g) => paketHedefi(ben ?? undefined, pb.id, g.id, icerik)} paketEkle={icerik ? (g) => setPaketForm(`yeni:${g.id}`) : undefined} />
           {operasyon && ben && <HizliGelisme ben={ben} planId={plan.id} pbId={pb.id} />}
         </section>
 
@@ -348,7 +357,7 @@ export default function BaslikKarti({
             ))}
         </section>
 
-        <section className="alt-alan">
+        <section className="alt-alan" data-pkg-bolum={pb.id}>
           <h4>
             <Package size={14} /> {t("paketOnerileri")} (PKG)
           </h4>

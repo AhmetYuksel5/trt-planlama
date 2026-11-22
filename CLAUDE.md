@@ -1325,6 +1325,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`gelismeBasligaTasi`); sıralama aynı yerdeki paketler arasında
     (`paketTasi`). Beklenen paketler (التقارير المتوقعة) listesinde kabul
     edilmiş her PKG yine var. Test `testler/gelisme-pkg.cjs`.
+    Yeri sürükle-bırakla da değişir (kullanıcı: geri almak da kolay olsun;
+    `nextday/paketSurukle.ts`, eylem `eylemler.ts → paketYerineTasi`, plan
+    içeriğini düzenleyen): PKG satırı (`data-pkg-surukle`) gelişmenin üstüne
+    bırakılınca onun altına, başlığın başka yerine (klasikte PKG bölümü
+    `data-pkg-bolum`, belgede başlık satırı) bırakılınca başlığın PKG'sine;
+    yalnız aynı başlıkta, durum ve onay değişmez. Belgede gelişme ve altı
+    `.pkg-hedef` (yalnız düzenlerken; çıktı ve Word'de sarmal yok), bırakılacak
+    yer kesik çizgiyle (`.pkg-birakilir`). Telefonda sürükleme yok, formdaki
+    "Planda yeri" kalır. Test `testler/pkg-surukle.cjs`.
   - Gelişme ve PKG formunda gün varsayılan olarak planın günü (kullanıcı:
     Next Day ertesi günün planı, eklenen bugünün tarihini taşıyordu): gelişmede
     `TarihGirdisi` ve ayrı, isteğe bağlı saat (`Gelisme.saat`, "SS:DD"); boş

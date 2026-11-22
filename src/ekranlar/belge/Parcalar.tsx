@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Check, ClipboardCopy, FileDown, Pencil, Plus, Printer, X } from "lucide-react";
 import { GeriBag } from "../../bilesenler/GeriBag";
-import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent, type ReactNode, type RefObject, type HTMLAttributes } from "react";
 import { epostaHtml, wordIndir, zenginKopyala } from "../../bilesenler/indir";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
@@ -143,11 +143,11 @@ export function SatirSeridi({
 }
 
 /** Düzende satır ve şeridi bir arada; çıktıda yalnız satırın kendisi, sarıcı yok. */
-export function BelgeSatiri({ duzen, onceki, soluk, serit, children }: { duzen: boolean; onceki?: boolean; soluk?: boolean; serit?: ReactNode; children: ReactNode }) {
+export function BelgeSatiri({ duzen, onceki, soluk, serit, ozellik, children }: { duzen: boolean; onceki?: boolean; soluk?: boolean; serit?: ReactNode; ozellik?: HTMLAttributes<HTMLDivElement>; children: ReactNode }) {
   const { t } = useDil();
   if (!duzen) return <>{children}</>;
   return (
-    <div className={`belge-satir${onceki ? " onceki" : ""}${soluk ? " soluk" : ""}`} title={onceki ? t("oncekiGunden") : undefined}>
+    <div {...ozellik} className={`belge-satir${onceki ? " onceki" : ""}${soluk ? " soluk" : ""}`} title={onceki ? t("oncekiGunden") : undefined}>
       {children}
       {serit}
     </div>
