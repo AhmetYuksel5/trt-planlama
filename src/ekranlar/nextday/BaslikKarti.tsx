@@ -20,6 +20,7 @@ import { paketPlandanSilinir, yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
+import { PaketPlanNotlari } from "./PaketPlanNotlari";
 
 /**
  * Haber gündemindeki bir başlık: kurumun çıktısında altı çizili başlık ve
@@ -103,6 +104,7 @@ export default function BaslikKarti({
                         {p.slug}
                       </span>
                     )}
+                    <PaketPlanNotlari paket={p} ben={icerik && ben ? ben : undefined} />
                     <small>
                       {yeni && ben && p.muhabirId && <KisiCipi ben={ben} kisi={kisiBul(v, p.muhabirId)} konu={p.baslik} sade />}
                       {p.oncelikli && <OncelikRozeti />}

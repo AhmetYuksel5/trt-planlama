@@ -1349,6 +1349,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     not, yönetici notu, durak notu)
     planda paket satırının sonunda parantez içinde (`etiketler.ts →
     paketNotEki`; PKG, başlıksız ve hazır paket; plan ekranı, belge, çıktı).
+  - Önerinin فكرة المعالجة ve المعالجة البصرية metni (kullanıcı: plana yalnız
+    gelişme giriyordu): "Plana ekle" formunda paket açılıyorsa iki işaretsiz
+    kutu (`data-pe-isleme`, `data-pe-gorsel`), işaretlenen pakete kopyalanır
+    (`Paket.planIsleme`, `planGorsel`; `oneriPlanaEkle(…, { isleme, gorsel })`).
+    Plan ekranında, belgede ve çıktıda PKG satırının (ve kodunun) altında
+    içeriden, italik, alt alta (`nextday/PaketPlanNotlari.tsx`, `.cikti-pkg-not`,
+    Word ve e-posta kopyasında da); plan içeriğini düzenleyen satırın ×'iyle
+    kaldırır (`eylemler.ts → paketPlanNotuSil`), öneri değişmez. Test
+    `testler/pkg-isleme.cjs`.
   - Başlıktaki muhabire planlamacının notu (`PlanMuhabiri.not`; plan ekranında
     çipteki not simgesi, doluysa ipucunda notun kendisi; belgede muhabir
     penceresinde): neyi takip edeceği, işiyle ilgili. Çıktıya girmez. Plan

@@ -112,12 +112,16 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
   const strap = oneriPaketBasligi(oneri) ?? (takipOneri ? oneri.haberBasligi : undefined);
   const [paket, setPaket] = useState((!!strap && !takipOneri) || canli);
   const [muhabirId, setMuhabirId] = useState("");
+  // İşleme fikri ve görsel işleme plana kendiliğinden girmez; planlamacı isterse PKG satırının altına.
+  const [isleme, setIsleme] = useState(false);
+  const [gorsel, setGorsel] = useState(false);
   // Doğrudan görevlendirilmiş öneri: görev paketi planın başlığına onaylı PKG olarak girer, yeni paket sorulmaz.
   const gorevli = oneriBekleyenGorevPaketi(v, oneri);
 
   if (!plan) return <p className="bos-kucuk">{t("duzenlenebilirPlanYok")}</p>;
   const secenekler = secenek(plan);
 
+  const paketVar = !!gorevli || ((talimat || paket) && !!strap && !canli);
   const ekle = () => {
     const istenen = talimat || paket;
     // Paketsiz giren muhabir haberinde muhabire "takip olarak plana eklendi" gidiyor; planlamacı bunu bilerek onaylasın.
@@ -132,6 +136,8 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
       yeniBaslik: baslikId === "yeni" ? yeniBaslik : undefined,
       paketOlustur: talimat || paket,
       muhabirId: oneri.muhabirId ? undefined : muhabirId,
+      isleme: paketVar && isleme,
+      gorsel: paketVar && gorsel,
     });
     if (tamam) {
       bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
@@ -234,6 +240,18 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
             {t(canli ? "canliOlarakEkle" : "paketOnerisiOlustur")}: <b>
               <Icerik>{strap || oneri.haberBasligi}</Icerik>
             </b>
+          </label>
+        )}
+        {paketVar && oneri.islemeFikri?.trim() && (
+          <label className="secim">
+            <input type="checkbox" checked={isleme} onChange={(e) => setIsleme(e.target.checked)} data-pe-isleme />
+            {t("pePlanaYaz")}: <b>{t("ofIsleme")}</b>
+          </label>
+        )}
+        {paketVar && oneri.gorselIsleme?.trim() && (
+          <label className="secim">
+            <input type="checkbox" checked={gorsel} onChange={(e) => setGorsel(e.target.checked)} data-pe-gorsel />
+            {t("pePlanaYaz")}: <b>{t("ofGorsel")}</b>
           </label>
         )}
       </div>

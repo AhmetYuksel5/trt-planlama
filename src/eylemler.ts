@@ -564,7 +564,7 @@ const plandaKarara = (o: Oneri) => !["teklif", "reddedildi", "geriCekildi", "duz
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
-  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string },
+  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string; isleme?: boolean; gorsel?: boolean },
 ): boolean => {
   let d = getir();
   const o = oneriBul(d, oneriId);
@@ -625,6 +625,11 @@ export const oneriPlanaEkle = (
   d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
 
   let paketId: string | undefined;
+  // İşleme fikri ve görsel işleme yalnız istenirse ve pakette (PKG satırının altında basılıyor).
+  const planNotlari = {
+    ...(g.isleme && o.islemeFikri?.trim() && { planIsleme: o.islemeFikri.trim() }),
+    ...(g.gorsel && o.gorselIsleme?.trim() && { planGorsel: o.gorselIsleme.trim() }),
+  };
   if (gorevli) {
     // Görev paketi yeni PKG açılmadan planın başlığına onaylı olarak girer; stoktan çıkar (planın paketi).
     paketId = gorevli.id;
@@ -633,7 +638,7 @@ export const oneriPlanaEkle = (
       paketler: d.paketler.map((x) => {
         if (x.id !== gorevli.id) return x;
         const { stok: _stok, ...y } = x;
-        return { ...y, planId: plan.id, planBaslikId: pbId, guncelleme: simdi() };
+        return { ...y, ...planNotlari, planId: plan.id, planBaslikId: pbId, guncelleme: simdi() };
       }),
     };
   } else if (paketli) {
@@ -656,6 +661,7 @@ export const oneriPlanaEkle = (
       sahaGerekli: o.sahaGerekli,
       oneriId: o.id,
       oncelikli: o.talimatVeren ? true : undefined,
+      ...planNotlari,
       notlar: [],
       olusturma: simdi(),
       guncelleme: simdi(),
@@ -2695,6 +2701,16 @@ export const paketTasi = (ben: Kisi, id: string, yon: -1 | 1) => {
 };
 
 /** Yalnız henüz değerlendirmedeki paket silinir; ileri gitmiş olan iptal edilir ki geçmişi kalsın. */
+/* Plandaki işleme fikri / görsel işleme satırını kaldırır; öneri değişmez. Planın içeriğini düzenleyen. */
+export const paketPlanNotuSil = (ben: Kisi, id: string, alan: "planIsleme" | "planGorsel") => {
+  const d = getir();
+  const p = paketBul(d, id);
+  const plan = planBul(d, p?.planId);
+  if (!p || !plan || !p[alan] || !planIcerikDuzenler(ben, plan)) return false;
+  kaydet({ ...d, paketler: d.paketler.map((x) => (x.id === id ? { ...x, [alan]: undefined, guncelleme: simdi() } : x)) });
+  return true;
+};
+
 export const paketSil = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);

@@ -25,6 +25,7 @@ p { margin: 0; line-height: 115%; }
 .alt-baslik { font-weight: bold; }
 .cikti-aciklama { color: #333333; }
 .cikti-slug { font-size: 11pt; }
+.cikti-pkg-not { font-style: italic; padding-right: 18pt; }
 mark { background: #ffff00; }
 `;
 
@@ -54,6 +55,7 @@ const EPOSTA_STILI: [string, string][] = [
   [".alt-baslik", "font-weight:bold"],
   [".cikti-aciklama", "color:#333333"],
   [".cikti-slug", "font-size:11pt"],
+  [".cikti-pkg-not", "font-style:italic;padding-right:18pt"],
   ["mark", "background:#ffff00"],
 ];
 const GOVDE_STILI = "font-family:Calibri,Arial,sans-serif;font-size:13pt;line-height:115%;direction:rtl;text-align:right;color:#000000";

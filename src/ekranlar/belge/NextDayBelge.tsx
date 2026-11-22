@@ -105,6 +105,7 @@ import {
   gelismeTeamAdlari,
   gorevEkibi,
 } from "../nextday/Bolumler";
+import { PaketPlanNotlari } from "../nextday/PaketPlanNotlari";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import {
   CanliFormu,
@@ -533,6 +534,7 @@ export function NextDayBelgesi({
                                       <bdi>{p.slug}</bdi>
                                     </p>
                                   )}
+                                  <PaketPlanNotlari paket={p} ben={ic && ben ? ben : undefined} />
                                   </ToplantiPaketi>
                                 </BelgeSatiri>
                               );

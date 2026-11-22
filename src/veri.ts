@@ -1034,6 +1034,13 @@ export interface Paket {
   yayin?: string;
   durum: PaketDurum;
   slug?: string;
+  /*
+   * Önerinin فكرة المعالجة ve المعالجة البصرية metni, planlamacı plana eklerken
+   * isterse (kullanıcı): Next Day'de PKG satırının altında içeriden, italik.
+   * Önerinin kendisinden kopya: plandan silinince öneri değişmez.
+   */
+  planIsleme?: string;
+  planGorsel?: string;
   /** Yalnız "üretimde" iken anlamlı; adımlar `akis.ts`'te. */
   adim?: string;
   /** Üretime girdiği akış ve yapı sürümü; sonradan yayınlanan düzen bu pakete uygulanmıyor (yapi.ts). */

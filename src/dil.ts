@@ -919,6 +919,8 @@ const M = {
   ofGelisme: m("تفاصيل التطور", "تفاصيل التطور", "تفاصيل التطور"),
   ofIsleme: m("فكرة المعالجة", "فكرة المعالجة", "فكرة المعالجة"),
   ofGorsel: m("المعالجة البصرية", "المعالجة البصرية", "المعالجة البصرية"),
+  pePlanaYaz: m("Plana yaz", "أضف إلى الخطة", "Add to plan"),
+  pkgNotuSil: m("Plandan kaldır", "احذف من الخطة", "Remove from plan"),
   hedefPlan: m("Hangi günün planı için", "لخطة أي يوم", "For which day's plan"),
   oneriOrijinal: m("Muhabirin gönderdiği haliyle", "كما أرسله المراسل", "As sent by the reporter"),
   degerlendirme: m("Değerlendirme", "التقييم", "Review"),
