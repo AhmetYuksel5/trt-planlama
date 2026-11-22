@@ -63,12 +63,11 @@ export const findItemIstegi = (adet: number): string =>
  * ParentFolderIds'den önce. Son 36 saatle sınırlı: FindItem sıralamıyor,
  * kutuda haftalarca staffing postası birikince ilk beşi eskiler olabiliyor,
  * günün postası hiç gelmiyordu (kullanıcı: önce geliyordu, sonra kesildi).
- * Gereksiz (junk) klasörü de aranır: dağıtım listesinden gelen posta oraya
- * düşebiliyor; sunucu iki klasörü birden reddederse yalnız gelen kutusuyla
- * yeniden denenir.
+ * Çekişte yalnız gelen kutusu aranır (`junk` kapalı): gereksiz klasörünü de
+ * kapsayan arama kurumun sunucusunda çekişi bütünüyle düşürdü.
  */
 export const STAFFING_SAAT = 36;
-export const staffingAramaIstegi = (simdi: number, junk = true): string =>
+export const staffingAramaIstegi = (simdi: number, junk = false): string =>
   ZARF(
     `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape></m:ItemShape>` +
       `<m:IndexedPageItemView MaxEntriesReturned="6" Offset="0" BasePoint="Beginning"/>` +
@@ -660,12 +659,10 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     const uyarilar: string[] = [];
     let staffingHata: string | undefined;
     try {
-      let st = await o.iste(staffingAramaIstegi(simdi));
-      let x = latin1Utf8(st.govde);
-      if (st.durum !== 200 || /ResponseClass="Error"/.test(x)) {
-        st = await o.iste(staffingAramaIstegi(simdi, false));
-        x = latin1Utf8(st.govde);
-      }
+      // Yalnız gelen kutusu, tek deneme: gereksiz klasörü de kapsayan arama kurumun sunucusunda çekişi
+      // bütünüyle düşürdü (kullanıcı: posta çekilemiyor), reddinde yeniden denemeler zaman aşımına uzuyordu.
+      const st = await o.iste(staffingAramaIstegi(simdi, false));
+      const x = latin1Utf8(st.govde);
       if (st.durum === 200 && !/ResponseClass="Error"/.test(x)) ozel = findItemCoz(x);
       else uyarilar.push((staffingHata = `News Staffing: ${st.durum} ${faultMetni(x)}`));
     } catch (e) {
