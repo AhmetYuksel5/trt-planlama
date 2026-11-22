@@ -1311,6 +1311,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (taslak, değerlendirmede) "PKG PROPOSAL"; boş grup yazılmaz. Beklenen
     paketler (التقارير المتوقعة) yalnız kabul edilenler (`pkgOnerisiMi` değil;
     kullanıcı): öneri yalnız başlığının ya da gelişmesinin altında.
+    Beklenenlerin sırası aşağıdaki başlıklarınki (kullanıcı; `NextDayBelge.tsx →
+    beklenenSirasi`): başlık sırası, başlığın içinde gelişme altındakiler
+    gelişme sırasıyla, sonra başlığın PKG'leri; başlıksız sonda. Saklanmaz,
+    başlık ya da PKG yer değiştirince kendiliğinden. Test `testler/beklenen-sira.cjs`.
   - Gelişmeye bağlı PKG (kullanıcı: başlık bazen genel, altında daha özel
     konular var; PKG başlığın en altında değil o gelişmenin altında görünsün;
     `Paket.gelismeId`): gelişmenin satırında "Bu gelişmeye PKG ekle" (plan

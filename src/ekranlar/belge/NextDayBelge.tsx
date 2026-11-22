@@ -404,9 +404,23 @@ export function NextDayBelgesi({
   // Stoka alınmış (yapılmış) paket hazırdan çıkarılsa da "beklenen" değil.
   const stokta = (p: Paket) => !!p.stok && p.durum === "tamamlandi";
   // Karar bekleyen (PKG PROPOSAL) yalnız başlığının ya da gelişmesinin altında; kabul edilince beklenenlere girer (kullanıcı).
-  const beklenenler = paketler.filter(
-    (p) => !plan.hazirPaketler.includes(p.id) && !stokta(p) && !pkgOnerisiMi(p),
-  );
+  /*
+   * Sırası aşağıdaki başlıklarınki (kullanıcı): başlığın sırası, başlığın
+   * içinde gelişme altındakiler gelişme sırasıyla, sonra başlığın kendi
+   * PKG'leri; aynı yerdekiler kendi sıralarıyla. Başlıksız paket sonda.
+   */
+  const beklenenSirasi = (p: Paket): [number, number] => {
+    const bi = plan.basliklar.findIndex((pb) => pb.id === p.planBaslikId);
+    if (bi < 0) return [plan.basliklar.length, 0];
+    const gs = v.gelismeler.filter((g) => g.planBaslikId === p.planBaslikId);
+    const gi = p.gelismeId ? gs.findIndex((g) => g.id === p.gelismeId) : -1;
+    return [bi, gi < 0 ? gs.length : gi];
+  };
+  const beklenenler = paketler
+    .filter((p) => !plan.hazirPaketler.includes(p.id) && !stokta(p) && !pkgOnerisiMi(p))
+    .map((p, i) => ({ p, i, k: beklenenSirasi(p) }))
+    .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i)
+    .map((x) => x.p);
   const takipler = v.gelismeler.filter(
     (g) => g.planId === plan.id && !g.planBaslikId,
   );
