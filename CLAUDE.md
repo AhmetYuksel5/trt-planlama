@@ -2584,9 +2584,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kopyası ve sayfadan seçme biçimi bozuyordu, Word'e indirip oradan
     kopyalanıyordu. Biçim `EPOSTA_STILI`, `WORD_BICIMI` ile aynı tutulur. Test
     `testler/kopya.cjs`.
-  - Aralık kurumun kuralı: aynı başlığın altındaki satırlar 1,15, başlıklar
-    ve bölümler arası 1,30 satır; satırlar arasına başka boşluk girmez.
-    Ekran, baskı (`.cikti`) ve Word (`WORD_BICIMI`) aynı değerde.
+  - Aralık kurumun kuralı: aynı başlığın altındaki satırlar 1,15; başlıklar
+    ve bölümler arasında tek boş satır (kullanıcı: satır aralığını artırarak
+    değil, birer boş satırla; önce 1,30 satırdı). Word dosyasında ve e-posta
+    kopyasında başlığın (h2, h3, h4) önüne gerçek boş paragraf girer, başlığın
+    üst boşluğu yok (`indir.ts → bosSatirlaAyir`; belgenin ilk satırında
+    değil); ekranda ve baskıda bir gövde satırı (`--cikti-bos`, 14,5px ×
+    1,15). Satırlar arasına başka boşluk girmez. Test `testler/bos-satir.cjs`.
 - Stok haberi ayrı kayıt değil, `Paket` (`stok: true`): haftalıkta kabul
   edilen plansız feature ya da günü olmayan haber, Next Day'de "stok" diye
   işaretlenen paket ve özel yayının dosya paketi (`ozelId`; kullanıcı:

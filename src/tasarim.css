@@ -1427,17 +1427,20 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
 /*
  * Kurumun aralık kuralı: aynı başlığın altındaki satırlar 1,15 aralıklı ve
  * aralarında başka boşluk yok; başlıklar (bölüm, alt başlık, gün) arasında
- * 1,30 satır. Word çıktısı da aynısını kullanıyor (indir.ts → WORD_BICIMI).
+ * tek boş satır (kullanıcı: satır aralığını artırarak değil, birer boş
+ * satırla). Ekranda bir gövde satırının yüksekliği (14,5px × 1,15); Word ve
+ * e-posta kopyasında gerçek boş paragraf (indir.ts → bosSatirlaAyir).
  */
+.cikti { --cikti-bos: calc(14.5px * 1.15); }
 .cikti[dir="rtl"] { font-family: Calibri, Arial, var(--yazi-arapca); }
-.cikti h1 { font-size: 18px; text-align: center; color: var(--cikti-kirmizi); margin: 0 0 1.3em; }
+.cikti h1 { font-size: 18px; text-align: center; color: var(--cikti-kirmizi); margin: 0 0 var(--cikti-bos); }
 .cikti section { margin: 0; }
-.cikti section + section { margin-top: 1.3em; }
+.cikti section + section { margin-top: var(--cikti-bos); }
 .cikti h2 { font-size: 16px; margin: 0; }
 .cikti h2.yesil { color: var(--cikti-yesil); }
 .cikti h2.kirmizi { color: var(--cikti-kirmizi); }
 .cikti h2.ortali { text-align: center; }
-.cikti h3 { font-size: 15px; text-decoration: underline; text-underline-offset: 4px; margin: 1.3em 0 0; }
+.cikti h3 { font-size: 15px; text-decoration: underline; text-underline-offset: 4px; margin: var(--cikti-bos) 0 0; }
 /* Dosyasız haberlerin başlığı (متابعات): kurumun belgesindeki gibi yeşil, kalın, altı çizgisiz. */
 .cikti h3.yesil { color: var(--cikti-yesil); text-decoration: none; }
 .cikti p { margin: 0; }
@@ -1464,7 +1467,7 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
 [data-sur][draggable="true"] { cursor: grab; }
 .cikti-pkg-not .dugme-ikon { vertical-align: middle; margin-inline-start: var(--ara-1); }
 
-.cikti h4.gun { font-size: 15px; color: var(--cikti-kirmizi); margin: 1.3em 0 0; }
+.cikti h4.gun { font-size: 15px; color: var(--cikti-kirmizi); margin: var(--cikti-bos) 0 0; }
 .cikti mark { background: var(--cikti-sari); color: inherit; padding: 0 2px; }
 
 /* --- Belge görünümü: planı çıktının üzerinde düzenleme --- */
@@ -3119,7 +3122,7 @@ input[aria-invalid="true"] {
 .ay-etiketler { display: flex; flex-wrap: wrap; gap: var(--ara-2) var(--ara-4); }
 .ay-form-alt { display: flex; align-items: center; gap: var(--ara-2); width: 100%; }
 /* Çıktı: şablondaki gri bant, sarı tarih kutusu, kırmızı kod. */
-.ay-belge h2 { margin-top: 1.3em; }
+.ay-belge h2 { margin-top: var(--cikti-bos); }
 .ay-bant { background: #d9d9d9; font-weight: 700; padding-inline: 4px; }
 .ay-sari { background: var(--cikti-sari); font-weight: 700; padding-inline: 4px; }
 .ay-kirmizi { color: var(--cikti-kirmizi); font-weight: 700; }
@@ -3414,7 +3417,7 @@ html.yeni-tasarim .oneri-karti:hover { border-color: var(--vurgu); border-inline
 
 /* ======================================================================
  * Çıktı baskı denemeleri (nextday/Cikti.tsx → baski; NextDayBelgesi baski).
- * Kurumun düzeni (Calibri, 1,15/1,30) seçim yokken aynen; Word ve kopya hep
+ * Kurumun düzeni (Calibri, 1,15, başlıklar arası boş satır) seçim yokken aynen; Word ve kopya hep
  * ondan. Denemeler ekranda ve baskıda aynı görünsün diye @media'sız.
  * ==================================================================== */
 .word-kaynagi { position: fixed; inset-block-start: 0; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); pointer-events: none; }

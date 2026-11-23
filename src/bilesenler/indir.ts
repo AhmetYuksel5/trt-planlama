@@ -13,14 +13,19 @@ export const indir = (ad: string, icerik: string, tur: string) => {
  * kurumun belgesindeki kırmızı, yeşil ve sarı vurgu. Next Day ve haftalık
  * plan aynı biçimi kullanıyor.
  */
-// Ekrandaki çıktıyla aynı aralık: satırlar 1,15, başlıklar arası 1,30 satır (13pt × 1,15 × 1,3 ≈ 19pt).
+/*
+ * Satırlar 1,15. Başlıklar (bölüm, haber başlığı, gün) arasında tek boş satır
+ * (kullanıcı: satır aralığı artırılarak değil, birer boş satırla; Word'de
+ * açılınca araya bir Enter basılmış gibi): `bosSatirlaAyir` başlıkların önüne
+ * boş paragraf koyar, başlığın kendi üst boşluğu yok.
+ */
 const WORD_BICIMI = `
 body { font-family: Calibri, Arial, sans-serif; font-size: 13pt; line-height: 115%; direction: rtl; text-align: right; }
 h1 { font-size: 16pt; line-height: 115%; text-align: center; color: #c00000; margin: 0; }
-h2 { font-size: 14pt; line-height: 115%; margin: 19pt 0 0; }
+h2 { font-size: 14pt; line-height: 115%; margin: 0; }
 h2.yesil { color: #4f7a28; } h2.kirmizi { color: #c00000; } h2.ortali { text-align: center; }
-h3 { font-size: 13pt; line-height: 115%; text-decoration: underline; margin: 19pt 0 0; } h3.yesil { color: #4f7a28; text-decoration: none; }
-h4.gun { font-size: 13pt; line-height: 115%; color: #c00000; margin: 19pt 0 0; }
+h3 { font-size: 13pt; line-height: 115%; text-decoration: underline; margin: 0; } h3.yesil { color: #4f7a28; text-decoration: none; }
+h4.gun { font-size: 13pt; line-height: 115%; color: #c00000; margin: 0; }
 p { margin: 0; line-height: 115%; }
 .alt-baslik { font-weight: bold; }
 .cikti-aciklama { color: #333333; }
@@ -29,8 +34,26 @@ p { margin: 0; line-height: 115%; }
 mark { background: #ffff00; }
 `;
 
+/*
+ * Başlıkların (h2, h3, h4) önüne boş paragraf: belgenin ilk satırı değilse.
+ * Word ve e-posta istemcisi onu gerçek boş satır olarak açar.
+ */
+const BOS_SATIR = "<p class=\"bos-satir\">&nbsp;</p>";
+const bosSatirlaAyir = (kok: Element) => {
+  const ilk = kok.querySelector("h1, h2, h3, h4, p");
+  kok.querySelectorAll("h2, h3, h4").forEach((h) => {
+    if (h !== ilk) h.insertAdjacentHTML("beforebegin", BOS_SATIR);
+  });
+};
+const bosSatirli = (govde: string) => {
+  const kok = new DOMParser().parseFromString(`<div>${govde}</div>`, "text/html").body.firstElementChild as HTMLElement;
+  bosSatirlaAyir(kok);
+  return kok.innerHTML;
+};
+
 /** Belgenin HTML'inden Word (.doc) dosyası: her zaman Arapça ve sağdan sola. */
-export const wordIndir = (ad: string, baslik: string, govde: string) => {
+export const wordIndir = (ad: string, baslik: string, govde_: string) => {
+  const govde = bosSatirli(govde_);
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${baslik}</title><style>${WORD_BICIMI}</style></head><body dir="rtl" lang="ar">${govde}</body></html>`;
   indir(ad, "﻿" + html, "application/msword");
 };
@@ -44,13 +67,13 @@ export const wordIndir = (ad: string, baslik: string, govde: string) => {
  */
 const EPOSTA_STILI: [string, string][] = [
   ["h1", "font-size:16pt;line-height:115%;text-align:center;color:#c00000;margin:0;font-weight:bold"],
-  ["h2", "font-size:14pt;line-height:115%;margin:19pt 0 0;font-weight:bold"],
+  ["h2", "font-size:14pt;line-height:115%;margin:0;font-weight:bold"],
   ["h2.yesil", "color:#4f7a28"],
   ["h2.kirmizi", "color:#c00000"],
   ["h2.ortali", "text-align:center"],
-  ["h3", "font-size:13pt;line-height:115%;text-decoration:underline;margin:19pt 0 0;font-weight:bold"],
+  ["h3", "font-size:13pt;line-height:115%;text-decoration:underline;margin:0;font-weight:bold"],
   ["h3.yesil", "color:#4f7a28;text-decoration:none"],
-  ["h4.gun", "font-size:13pt;line-height:115%;color:#c00000;margin:19pt 0 0;font-weight:bold"],
+  ["h4.gun", "font-size:13pt;line-height:115%;color:#c00000;margin:0;font-weight:bold"],
   ["p", "margin:0;line-height:115%"],
   [".alt-baslik", "font-weight:bold"],
   [".cikti-aciklama", "color:#333333"],
@@ -65,6 +88,7 @@ export const epostaHtml = (govde: string): string => {
   const kok = belge.body.firstElementChild as HTMLElement;
   // Ekrana ait düğme ve şeritler kopyaya girmesin.
   kok.querySelectorAll("button, [aria-hidden='true'], .yazdirma-gizle").forEach((x) => x.remove());
+  bosSatirlaAyir(kok);
   for (const [secici, stil] of EPOSTA_STILI) kok.querySelectorAll<HTMLElement>(secici).forEach((x) => x.setAttribute("style", `${x.getAttribute("style") ?? ""};${stil}`));
   kok.querySelectorAll<HTMLElement>("h1, h2, h3, h4, p, div, section, article").forEach((x) => {
     x.setAttribute("dir", "rtl");
