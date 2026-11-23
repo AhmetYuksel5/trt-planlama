@@ -146,10 +146,21 @@ export function PlanaEklendiNotu({ oneri: o, d, bagli = false, kapat }: { oneri:
   const baslikId = yer.planda ? o.baslikId : (yer.kalem?.baslikId ?? o.baslikId);
   const baslik = baslikId ? d.basliklar.find((b) => b.id === baslikId)?.ad : undefined;
   const gun = yer.planda ? yer.plan?.tarih : yer.kalem?.tarih;
+  /*
+   * Paketsiz giren öneri (kullanıcı: plana eklendi yazıyor ama paket olmadığı
+   * belli değildi, haber türü "PKG" de görünüyordu): planda yalnız gelişmesi var.
+   * Canlı yayın olarak giren ayrı; muhabir canlıları okuyamadığı için türüne de bakılıyor.
+   */
+  const paketsiz =
+    yer.planda &&
+    o.bicim !== "canli" &&
+    !d.paketler.some((p) => p.oneriId === o.id && p.durum !== "iptal") &&
+    !d.canliYayinlar.some((c) => c.oneriId === o.id);
   const icerik = (
     <>
       <CircleCheck size={14} /> {t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi")} · {t(yer.planda ? "mNextday" : "mHaftalik")}
       {gun && ` ${tarihYaz(gun, dil, "kisa")}`}
+      {paketsiz && <span data-paketsiz> · {t("odGelismeOlarak")}</span>}
       {baslik && (
         <>
           {" · "}

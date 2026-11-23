@@ -2133,6 +2133,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   "Plana ekle" (`PlanaEkle`, o planla): takip paketsiz gelir, istenirse PKG
   işaretlenir (adı strap, yoksa takibin konusu; `oneriPlanaEkle`).
   "Öneri ve takiplerden al" adaylarında da (`gelismeOneriAdaylari`).
+  Paketsiz (canlısız) giren önerinin "Plana eklendi" notunun ve rozetinin
+  yanında "Gelişme olarak · paketsiz" (kullanıcı: paket olmadığı belli
+  değildi, haber türü "PKG" de görünüyordu; `OneriKarti.tsx →
+  PlanaEklendiNotu`, `Tablolar.tsx → OneriDurumRozeti`; muhabirin ekranında
+  da). Test `testler/oneri-paketsiz.cjs`.
   Plana paketsiz (canlısız) giren her muhabir haberinde hareket
   `veri.takip` (`eylemler.ts → oneriPaketsizGirer`): muhabire "takip olarak
   plana eklendi; paket beklenmiyor"; "Plana ekle" ve "Önerilerden al" onay

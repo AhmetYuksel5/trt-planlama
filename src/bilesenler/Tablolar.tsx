@@ -170,9 +170,22 @@ export function OneriDurumRozeti({ oneri, planaGizle = false }: { oneri: Oneri; 
   const pk = v.paketler.filter((p) => p.oneriId === oneri.id);
   const paketRet = oneri.durum === "planaEklendi" && pk.some((p) => p.reddedildi) && !pk.some((p) => p.durum !== "iptal");
   if (planaGizle && oneri.durum === "planaEklendi" && !paketRet) return null;
+  // Paketsiz giren öneri: rozetin yanında yalnız gelişmesinin plana girdiği (paket beklenmiyor).
+  const paketsiz =
+    oneri.durum === "planaEklendi" &&
+    !paketRet &&
+    !oneri.hafta &&
+    oneri.bicim !== "canli" &&
+    !pk.some((p) => p.durum !== "iptal") &&
+    !v.canliYayinlar.some((c) => c.oneriId === oneri.id);
   return (
     <>
       <Rozet ton={ONERI_DURUM_TONU[oneri.durum]}>{t(ONERI_DURUM_ADI[oneri.durum])}</Rozet>
+      {paketsiz && (
+        <span data-oneri-paketsiz>
+          <Rozet>{t("odGelismeOlarak")}</Rozet>
+        </span>
+      )}
       {paketRet && (
         <span data-oneri-paket-ret>
           <Rozet ton="kotu">{t("oneriPaketReddedildi")}</Rozet>

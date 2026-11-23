@@ -897,6 +897,7 @@ const M = {
   paketiAc: m("Paketi aç", "فتح التقرير", "Open package"),
   odDegerlendiriliyor: m("Değerlendiriliyor", "قيد التقييم", "Under review"),
   odPlanaEklendi: m("Plana eklendi", "أُضيف إلى الخطة", "Added to plan"),
+  odGelismeOlarak: m("Gelişme olarak · paketsiz", "كتطور · بلا تقرير", "As a development · no package"),
   odGundemeEklendi: m("Gündeme eklendi", "أُضيف إلى جدول الأعمال", "Added to agenda"),
   gundemdenCikar: m("Gündemden çıkar", "إخراج من جدول الأعمال", "Remove from agenda"),
   plandanCikarOnay: m("Öneri plandan çıkarılsın mı? Gelişmesi ve paket önerisi plandan silinir, öneri yeniden değerlendirmeye döner.", "هل يُخرج المقترح من الخطة؟ يُحذف التطور ومقترح التقرير من الخطة ويعود المقترح إلى التقييم.", "Remove the proposal from the plan? Its development and package proposal are deleted from the plan and the proposal returns to review."),
