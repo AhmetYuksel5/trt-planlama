@@ -1,6 +1,7 @@
 import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
+import { oneriPostaYaniti } from "../../muhabirIletisim";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { Bos, Icerik, Kart, KatlanirKartlar, NotKutu, PaketDurumRozeti, Pencere, Rozet, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -118,7 +119,7 @@ function OneriKisisi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri; d: Durum }
         )}
       </span>
       {/* Muhabire öneriden çıkmadan ulaşma; posta konusu önerinin başlığı. */}
-      {k && !o.talimatVeren && <KisiIletisim ben={ben} kisi={k} konu={o.haberBasligi} />}
+      {k && !o.talimatVeren && <KisiIletisim ben={ben} kisi={k} konu={o.haberBasligi} yanit={oneriPostaYaniti(d, o)} />}
     </span>
   );
 }

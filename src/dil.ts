@@ -1849,6 +1849,7 @@ const M = {
   bPostaCekKapali: m("Posta çekme kapalı (yönetici açmalı)", "جلب البريد مُعطّل (يفعّله المدير)", "Mail fetching is off (admin must enable)"),
   bPostaCekSunucuYok: m("Sunucu ayarlı değil (yönetici)", "الخادم غير مُعدّ (المدير)", "Server not set (admin)"),
   postaYaz: m("Yanıt yaz", "اكتب ردًا", "Write a reply"),
+  postaYanitla: m("Postasına yanıt ver", "الرد على رسالته", "Reply to their email"),
   postaYeni: m("Yeni posta", "بريد جديد", "New mail"),
   postaTumunuAra: m("Bütün postalarda ara", "البحث في كل الرسائل", "Search all mail"),
   postaOkunmamis: m("Okunmamış · {n}", "غير مقروءة · {n}", "Unread · {n}"),

@@ -1,6 +1,6 @@
 import { postaAdresi } from "../../girisKodu";
 import { kapiHatasi } from "../../yz";
-import { muhabirAdresi } from "../../muhabirIletisim";
+import { muhabirAdresi, type PostaYaniti } from "../../muhabirIletisim";
 import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { GOMULU, useAdimDurumu, useGeriKapatir } from "../../yol";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -738,7 +738,7 @@ function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string 
  * geri gelince sunucudaki yazışma kimliği öğrenilip iplik ona taşınır
  * (eylemler.ts → postaIsle), sonraki yanıtlar aynı sohbete düşer.
  */
-function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string; bcc?: string[] } }) {
+function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string; bcc?: string[]; yanitlanan?: string; konuKimligi?: string } }) {
   const { t } = useDil();
   const [kime, setKime] = useState<string[]>(ilk?.kime ?? []);
   const [cc, setCc] = useState<string[]>([]);
@@ -754,12 +754,13 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string;
     setGonderiliyor(true);
     let alicilar = { kime, cc: tekil([...cc, ...(grup ? [grup] : [])]).filter((a) => !kime.includes(a)) };
     if (GERCEK) {
-      const r = await postaGonder({ kime, cc, bcc, konu: konu.trim(), metin: metin.trim() });
+      const r = await postaGonder({ kime, cc, bcc, konu: konu.trim(), metin: metin.trim(), ...(ilk?.yanitlanan && { yanitlanan: ilk.yanitlanan }) });
       setGonderiliyor(false);
       if (!r.tamam) return bildir(gonderimHatasi(r, t));
       alicilar = { kime: r.veri.kime, cc: r.veri.cc };
     } else setGonderiliyor(false);
-    const konuKimligi = postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`;
+    // Yanıtta giden balon muhabirin postasının sohbetine düşer.
+    const konuKimligi = ilk?.konuKimligi || postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`;
     postaGidenEkle(ben, konuKimligi, konu.trim(), metin.trim(), grup, alicilar);
     bildir(t("bPostaGonderildi"));
     acildi(konuKimligi);
@@ -767,7 +768,7 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string;
   };
   return (
     <Pencere
-      baslik={t("postaYeni")}
+      baslik={ilk?.yanitlanan || ilk?.konuKimligi ? t("postaYanitla") : t("postaYeni")}
       kapat={kapat}
       altBilgi={
         <button type="button" className="dugme" disabled={!hazir} onClick={gonder} data-posta-yeni-gonder>
@@ -836,12 +837,15 @@ export function TopluPostaPenceresi({ ben, adresler, kapat }: { ben: Kisi; adres
   return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={{ kime: [], konu: "", bcc: adresler }} />;
 }
 
-export function IsPostasiPenceresi({ ben, kisi, konu, kapat }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void }) {
+export function IsPostasiPenceresi({ ben, kisi, konu, kapat, yanit }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void; yanit?: PostaYaniti }) {
   const [grup, setGrup] = useState("");
   useEffect(() => {
     if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
   }, []);
-  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={{ kime: [muhabirAdresi(kisi)], konu }} />;
+  const ilk = yanit
+    ? { kime: [yanit.kime], konu: yanit.konu, ...(yanit.mesajKimligi && { yanitlanan: yanit.mesajKimligi }), ...(yanit.konuKimligi && { konuKimligi: yanit.konuKimligi }) }
+    : { kime: [muhabirAdresi(kisi)], konu };
+  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={ilk} />;
 }
 
 /*

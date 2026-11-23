@@ -1,7 +1,7 @@
 import { postaAdresi } from "./girisKodu";
 import { oneriArsivde } from "./oneriPlanlari";
 import { bugun } from "./tarih";
-import type { Durum, Kisi, KisiDurum } from "./veri";
+import type { Durum, Kisi, KisiDurum, Oneri } from "./veri";
 
 /*
  * Muhabire ulaşmanın ortak kuralları (yeni mimari; belgeler/planlama-yeni-mimari.md).
@@ -45,4 +45,26 @@ export const kisiOzeti = (d: Pick<Durum, "oneriler" | "paketler">, kisiId: strin
   }
   const paket = d.paketler.filter((p) => p.muhabirId === kisiId && (p.durum === "onaylandi" || p.durum === "uretimde")).length;
   return { oneri, takip, paket };
+};
+
+/** Posta penceresinin yanıt bağlamı: kime, konu, yanıtlanan Message-ID ve sohbetin ipliği. */
+export interface PostaYaniti {
+  kime: string;
+  konu: string;
+  mesajKimligi?: string;
+  konuKimligi?: string;
+}
+
+/*
+ * E-postayla gelen önerinin postası (kullanıcı: öneriden muhabire yazınca yeni
+ * posta değil, onun gönderdiği postaya yanıt gitsin): kime postayı gönderen
+ * adres, konu "RE: …", Message-ID kapıda InReplyTo/References olur; posta
+ * Posta'daysa giden balon o sohbete düşer. E-postasız öneride yok.
+ */
+export const oneriPostaYaniti = (d: Pick<Durum, "yanitlar" | "postaMesajlari">, o: Pick<Oneri, "yanitId">): PostaYaniti | undefined => {
+  const y = o.yanitId ? d.yanitlar.find((x) => x.id === o.yanitId) : undefined;
+  if (!y?.kimden) return undefined;
+  const sohbet = y.mesajKimligi ? (d.postaMesajlari ?? []).find((m) => m.mesajKimligi === y.mesajKimligi) : undefined;
+  const konu = /^\s*(re|ynt|aw|رد)\s*:/i.test(y.konu) ? y.konu.trim() : `RE: ${y.konu.trim()}`;
+  return { kime: y.kimden.trim().toLowerCase(), konu, ...(y.mesajKimligi && { mesajKimligi: y.mesajKimligi }), ...(sohbet && { konuKimligi: sohbet.konuKimligi }) };
 };

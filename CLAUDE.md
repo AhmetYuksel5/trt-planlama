@@ -3264,6 +3264,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       izin ve saha kaydı kişideki sabit alandan önce), `kisiOzeti`. Posta
       penceresi `posta/Posta.tsx → IsPostasiPenceresi` (açılır kart kapanınca
       gitmesin diye ayrı). WhatsApp'a basış kaydedilmez.
+      E-postayla gelen önerinin penceresinde ve yolunun kimde satırında
+      muhabirin posta düğmesi yanıt (kullanıcı: yeni posta değil, muhabirin
+      gönderdiği postaya yanıt gitsin; `muhabirIletisim.ts → oneriPostaYaniti`,
+      `KisiIletisim yanit`, `data-is-postasi="yanit"`): kime postayı gönderen
+      adres, konu "RE: …", yanıtın Message-ID'si kapıda InReplyTo/References
+      (`postaGonder yanitlanan`), giden balon postanın Posta'daki sohbetine.
+      Test `testler/oneri-posta-yanit.cjs`.
     Test `testler/yeni-planlama.cjs`.
     2. aşama (kişi çipinden sonrakiler de yalnız yeni tasarımda, kısıtlı
     olmayan kişide):

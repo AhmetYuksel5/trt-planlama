@@ -2,7 +2,7 @@ import { FolderOpen, Mail, MessageCircle } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { oburAd, useDil } from "../dil";
 import { KISI_DURUM_ADI, sehirAdi } from "../etiketler";
-import { kisiBugunDurumu, kisiOzeti, muhabirAdresi } from "../muhabirIletisim";
+import { kisiBugunDurumu, kisiOzeti, muhabirAdresi, type PostaYaniti } from "../muhabirIletisim";
 import { useVeri, type Kisi } from "../veri";
 import { birimAdi, disMuhabirMi, gorevAdi } from "../yapi";
 import { kisitliKisi, sayfaGorebilir } from "../yetki";
@@ -25,11 +25,11 @@ import { WhatsAppDugmesi } from "./WhatsApp";
 const kisiSayfasi = (k: Kisi) => (disMuhabirMi(k) ? "muhabirler" : "personel");
 
 /** İletişim düğmeleri; kartın içinde ve satır sonunda aynı sıra: WhatsApp, posta, kişinin sayfası. */
-export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: Kisi; kisi: Kisi; konu: string; onPosta?: () => void; dosya?: boolean }) {
+export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true, yanit }: { ben: Kisi; kisi: Kisi; konu: string; onPosta?: () => void; dosya?: boolean; yanit?: PostaYaniti }) {
   const { t } = useDil();
   const [posta, setPosta] = useState(false);
   if (kisitliKisi(ben)) return null;
-  const adres = muhabirAdresi(kisi);
+  const adres = yanit?.kime || muhabirAdresi(kisi);
   const sayfa = kisiSayfasi(kisi);
   return (
     <span className="kisi-iletisim" data-kisi-iletisim={kisi.id}>
@@ -44,10 +44,10 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: 
         type="button"
         className="ikon-dugme"
         aria-disabled={!adres || undefined}
-        title={adres ? t("postaYeni") : t("kcAdresYok")}
-        aria-label={adres ? t("postaYeni") : t("kcAdresYok")}
+        title={!adres ? t("kcAdresYok") : yanit ? t("postaYanitla") : t("postaYeni")}
+        aria-label={!adres ? t("kcAdresYok") : yanit ? t("postaYanitla") : t("postaYeni")}
         onClick={() => adres && (onPosta ? onPosta() : setPosta(true))}
-        data-is-postasi
+        data-is-postasi={yanit ? "yanit" : ""}
       >
         <Mail size={17} />
       </button>
@@ -56,7 +56,7 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: 
           <FolderOpen size={17} />
         </a>
       )}
-      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} kapat={() => setPosta(false)} />}
+      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} yanit={yanit} kapat={() => setPosta(false)} />}
     </span>
   );
 }
@@ -65,7 +65,7 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true }: { ben: 
  * `sade`: yalnız avatar (ad ipucunda); plan satırlarında ad zaten çıktının
  * biçimiyle ("YER / ad") yazılı, çip onu tekrar etmesin.
  */
-export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi; kisi?: Kisi; konu?: string; ek?: ReactNode; sade?: boolean }) {
+export function KisiCipi({ ben, kisi, konu = "", ek, sade = false, yanit }: { ben: Kisi; kisi?: Kisi; konu?: string; ek?: ReactNode; sade?: boolean; yanit?: PostaYaniti }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [posta, setPosta] = useState(false);
@@ -117,10 +117,10 @@ export function KisiCipi({ ben, kisi, konu = "", ek, sade = false }: { ben: Kisi
           <span className="sonuk">{t("kcAcikIsler", { o: oz.oneri, t: oz.takip, p: oz.paket })}</span>
         </div>
         <div className="kisi-karti-eylem" onClick={(e) => e.stopPropagation()}>
-          <KisiIletisim ben={ben} kisi={kisi} konu={konu} onPosta={() => setPosta(true)} />
+          <KisiIletisim ben={ben} kisi={kisi} konu={konu} yanit={yanit} onPosta={() => setPosta(true)} />
         </div>
       </IslemMenusu>
-      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} kapat={() => setPosta(false)} />}
+      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} yanit={yanit} kapat={() => setPosta(false)} />}
     </span>
   );
 }

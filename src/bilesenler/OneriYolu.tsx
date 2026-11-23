@@ -7,6 +7,7 @@ import { birimAdi } from "../yapi";
 import { kisitliKisi } from "../yetki";
 import { baslikaGit } from "./baslikaGit";
 import { KisiCipi } from "./KisiCipi";
+import { oneriPostaYaniti } from "../muhabirIletisim";
 
 /*
  * Önerinin yolu ekranda (kurallar oneriYolu.ts). Kartta etiketsiz ince şerit
@@ -88,7 +89,7 @@ export function OneriYolu({ oneri: o, d, ince = false, kapat }: { oneri: Oneri; 
           <>{t("oyBitti")} · {sure}</>
         ) : kimKisi ? (
           <>
-            {t("oyKimde")} <KisiCipi ben={ben} kisi={kimKisi} konu={o.paketBasligi || o.haberBasligi} /> · {sure}
+            {t("oyKimde")} <KisiCipi ben={ben} kisi={kimKisi} konu={o.paketBasligi || o.haberBasligi} yanit={kimKisi.id === o.muhabirId ? oneriPostaYaniti(d, o) : undefined} /> · {sure}
           </>
         ) : (
           <>
