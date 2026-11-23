@@ -2521,7 +2521,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   varsayılanından kalktı).
   Sayfanın adı "Stok haberler / Programlar" (kullanıcı: Weekly'nin günsüz bölümü
   "Stok ve programlar" oldu, feature ve program önerileri düzenlenip oraya giriyor,
-  toplantıda aynı kararlarla değerlendiriliyor). Programlar masasının kalıbıyla
+  toplantıda aynı kararlarla değerlendiriliyor). Gün seçimlerindeki günsüz seçenek
+  (kalem formu, "Gündeme ekle") ve kalemin gün etiketi de bu adla (`stokVeProgramlar`;
+  kullanıcı: eski "Zamana bağlı olmayan dosya" adı kalmıştı). Programlar masasının kalıbıyla
   (kullanıcı: tıklanınca altında açılan kutucuklar; orada çalışan bir yandan gelecek
   haftanın tekliflerini topluyor, bir yandan daha önce planladığının üretimini
   izliyor, bir yandan stoktaki paketleri kontrol edip planlara ekliyor; sıralama

@@ -299,7 +299,7 @@ export function GundemeEkle({ ben, hafta, oneri, kapat, stok }: { ben: Kisi; haf
         <label>
           {t("gun")}
           <select value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })}>
-            <option value="">{t("zamanaBagliOlmayan")}</option>
+            <option value="">{t("stokVeProgramlar")}</option>
             {haftaGunleri(hafta.baslangic).map((g) => (
               <option key={g} value={g}>
                 {gunAdi(g, dil)} {tarihYaz(g, dil, "kisa")}
@@ -578,7 +578,7 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   );
 }
 
-/* --- Zamana bağlı olmayan dosya: stok önerileri ve ön inceleme --- */
+/* --- Stok ve programlar (günü olmayan kalemler; eski adı "Zamana bağlı olmayan dosya"): stok önerileri ve ön inceleme --- */
 
 function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const { t } = useDil();

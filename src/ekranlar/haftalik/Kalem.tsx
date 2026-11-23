@@ -101,7 +101,7 @@ export function KalemFormu({
                 {gunAdi(g, dil)} {tarihYaz(g, dil, "kisa")}
               </option>
             ))}
-            <option value="">{t("zamanaBagliOlmayan")}</option>
+            <option value="">{t("stokVeProgramlar")}</option>
           </select>
         </label>
         <label>

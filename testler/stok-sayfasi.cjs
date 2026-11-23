@@ -58,6 +58,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const form = p.locator('[data-gundeme-ekle-formu="o-st-feature"]');
   ok((await form.count()) === 1, "Gündeme ekle formu açıldı");
   ok((await form.locator("select").first().inputValue()) === "", "gün boş: Stok ve programlar'a düşecek");
+  // Kullanıcı: seçenek eski adıyla ("Zamana bağlı olmayan dosya") çıkıyordu; bölümün adı Stok ve programlar.
+  ok((await form.locator("select").first().locator("option").first().innerText()).trim() === "Stok ve programlar", "gün seçiminde bölümün yeni adı");
   await form.locator(".form-alt .dugme:not(.dugme-ikincil)").click(); await p.waitForTimeout(700);
   let d = await durum();
   const plan = d.haftalik.find((h) => h.baslangic === hafta);

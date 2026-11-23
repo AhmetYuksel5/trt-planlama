@@ -24,10 +24,10 @@ export function KararRozeti({ kalem }: { kalem: HaftalikKalem }) {
   return <Rozet ton={KARAR_TONU[kalem.karar]}>{t(KARAR_ADI[kalem.karar])}</Rozet>;
 }
 
-/** Kalemin günü; günü yoksa zamana bağlı olmayan dosyada. */
+/** Kalemin günü; günü yoksa Weekly'nin "Stok ve programlar" bölümünde (eski adı "Zamana bağlı olmayan dosya"). */
 export function KalemGunu({ kalem }: { kalem: HaftalikKalem }) {
   const { t, dil } = useDil();
-  return <>{kalem.tarih ? `${gunAdi(kalem.tarih, dil)} ${tarihYaz(kalem.tarih, dil, "kisa")}` : t("zamanaBagliOlmayan")}</>;
+  return <>{kalem.tarih ? `${gunAdi(kalem.tarih, dil)} ${tarihYaz(kalem.tarih, dil, "kisa")}` : t("stokVeProgramlar")}</>;
 }
 
 export const bicimSatiri = (k: HaftalikKalem) => kalanBicimler(k).map((b) => BICIM_KODU[b]).join(" + ");

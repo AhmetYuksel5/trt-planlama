@@ -2092,7 +2092,6 @@ const M = {
   buGunKalemYok: m("Bu gün için kalem yok.", "لا بنود لهذا اليوم.", "No items for this day."),
   kalemEkle: m("Kalem ekle", "إضافة بند", "Add item"),
   kalemSayisi: m("{n} kalem", "{n} بندا", "{n} items"),
-  zamanaBagliOlmayan: m("Zamana bağlı olmayan dosya", "ملفات غير مرتبطة بموعد", "Not tied to a date"),
   // Weekly'nin günsüz bölümü (kullanıcı: feature ve program önerileri burada toplanıp toplantıda değerlendiriliyor).
   stokVeProgramlar: m("Stok ve programlar", "التقارير المخزنة والبرامج", "Stock and programmes"),
   dosya: m("Dosya", "الملف", "File"),
