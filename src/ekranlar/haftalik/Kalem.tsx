@@ -6,13 +6,13 @@ import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
-import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
+import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
 import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
-import { YzKisalt } from "../../bilesenler/YzKisalt";
+import { YzKisalt, YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { bugun } from "../../tarih";
@@ -347,6 +347,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
         {duzenler && (
           <div className="islemler">
             <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setDuzenle(true)} />
+            <YzKisaltSerit metin={kalem.metin} kaydet={(m) => kalemKaydet(ben, hafta.id, kalemGirdisi(kalem, { metin: m }))} />
             <IkonDugme
               ikon={<Trash2 size={15} />}
               etiket={t("sil")}
@@ -422,7 +423,27 @@ export function KararNotlari({ kalem }: { kalem: Pick<HaftalikKalem, "kararNotu"
 }
 
 /* Toplantıda karar verilirken hızlı not: kalemin bütün formunu açmadan. */
-function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; kapat: () => void }) {
+/* Kalemin düzeltilen tek alanı için: eylem bütün alanları istiyor. */
+export const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi => ({
+  id: k.id,
+  tarih: k.tarih,
+  baslikId: k.baslikId,
+  baslik: k.baslik,
+  yer: k.yer,
+  metin: k.metin,
+  tur: k.tur,
+  bicimler: k.bicimler,
+  paketBasligi: k.paketBasligi,
+  muhabirler: k.muhabirler,
+  muhabirTbc: k.muhabirTbc,
+  kararNotu: k.kararNotu,
+  ekTalep: k.ekTalep,
+  not: k.not,
+  teslimGunu: k.teslimGunu,
+  ...g,
+});
+
+export function KararNotuFormu({ ben, hafta, kalem, kapat }: { ben: Kisi; hafta: HaftalikPlan; kalem: HaftalikKalem; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ kararNotu: kalem.kararNotu ?? "", ekTalep: kalem.ekTalep ?? "" });
   return (

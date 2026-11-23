@@ -1,3 +1,7 @@
+import { useYz } from "../../yz";
+import { BaslikOnerileriDugmesi, BaslikaKatPenceresi, CanliSonucDugmeleri, PaketKararDugmeleri, PaketOneriBagi, SonGelismelerPenceresi } from "../nextday/SatirIslemleri";
+import { PaketMetniFormu } from "../nextday/BaslikKarti";
+import { OneridenAl } from "../nextday/Formlar";
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { OneriyiAc } from "../oneri/OneriyiAc";
 import { useBen } from "../../oturum";
@@ -10,6 +14,8 @@ import {
   Package,
   PackageCheck,
   Printer,
+  Combine,
+  Search,
 } from "lucide-react";
 // Kurumun logosu yalnız baskı tasarımlarında; kurumun düz çıktısı ve Word'de yok.
 import type { Baski } from "./Baski";
@@ -71,6 +77,7 @@ import {
   planMuhabirTasi,
   planMuhabirTbc,
   planBaslikLive,
+  paketMetniDuzenlenebilir,
 } from "../../eylemler";
 import { vardiyaYaz } from "../../tarih";
 import {
@@ -86,6 +93,7 @@ import {
   type Kisi,
   type NextDayPlan,
   type Paket,
+  type PlanBasligi,
 } from "../../veri";
 import {
   paketPlandanSilinir,
@@ -145,14 +153,15 @@ export type NdPencere =
   | { tur: "ekipEkle"; gorev?: EkipGoreviId }
   | { tur: "ekipUye"; kisiId: string }
   | { tur: "hareketEkle" }
-  | { tur: "canli"; mevcut?: CanliYayin }
+  | { tur: "canli"; mevcut?: CanliYayin; pbId?: string }
   | { tur: "hazirSec" }
   | { tur: "baslikEkle"; sonra?: string }
   | { tur: "gelisme"; planBaslikId?: string; mevcut?: Gelisme; sonra?: string }
   | { tur: "gelismeTasi"; gelisme: Gelisme }
   | { tur: "muhabirEkle"; pbId: string; sonra?: string }
   | { tur: "muhabir"; pbId: string; kisiId: string }
-  | { tur: "paket"; pbId: string; mevcut?: Paket; sonra?: string; gelismeId?: string };
+  | { tur: "paket"; pbId: string; mevcut?: Paket; sonra?: string; gelismeId?: string }
+  | { tur: "paketMetni"; paket: Paket };
 
 export interface NdDuzen {
   ben: Kisi;
@@ -195,7 +204,7 @@ function HizliEkle({
           ["muhabirAta", { tur: "muhabirEkle", pbId }],
         ] as [Anahtar, NdPencere][])
       : []),
-    ["canliEkle", { tur: "canli" }],
+    ["canliEkle", { tur: "canli", pbId }],
   ];
   const ara = yazi.slice(1).trim().toLocaleLowerCase();
   const uyan = secenekler.filter(
@@ -476,11 +485,15 @@ export function NextDayBelgesi({
                                                 pbId,
                                                 mevcut: p,
                                               })
-                                          : undefined
+                                          : paketMetniDuzenlenebilir(ben, v, p)
+                                            ? () => ac({ tur: "paketMetni", paket: p })
+                                            : undefined
                                       }
                                       ek={
                                         <>
                                           <OneriyiAc oneriId={p.oneriId} />
+                                          <PaketOneriBagi ben={ben} paket={p} />
+                                          <PaketKararDugmeleri ben={ben} paket={p} />
                                           <PaketBaglantisi id={p.id} />
                                           {paketStogaAlinabilir(p) && (
                                             <IkonDugme
@@ -862,7 +875,7 @@ export function NextDayBelgesi({
                               ekle={() =>
                                 ac({ tur: "baslikEkle", sonra: pb.id })
                               }
-                              ekleEtiket={t("baslikEkle")}
+                              ekleEtiket={t("baslikEkle")} ek={ben && <BaslikSeritEki ben={ben} plan={plan} pb={pb} icerik={ic} />}
                               cikar={() => {
                                 if (!ben) return;
                                 if (!cikabilir)
@@ -1044,6 +1057,8 @@ export function NextDayBelgesi({
                                     duzenle={() =>
                                       ac({ tur: "canli", mevcut: x })
                                     }
+                                    ek={<><OneriyiAc oneriId={x.oneriId} /><CanliSonucDugmeleri ben={ben} canli={x} /></>}
+                                    onceki={x.onceki ? () => ben && oncekiOnayla(ben, plan.id, { canli: x.id }) : undefined}
                                     cikar={
                                       !x.oneriId ||
                                       (ben &&
@@ -1108,6 +1123,8 @@ export function NextDayBelgesi({
                                 }
                               />
                             )}
+                            {op && <OneridenAl plan={plan} planBaslikId={pb.id} />}
+                            {op && <EkleDugmesi metin={t("canliEkle")} onClick={() => ac({ tur: "canli", pbId: pb.id })} />}
                             {ic && (
                               <EkleDugmesi
                                 metin={t("muhabirAta")}
@@ -1336,7 +1353,7 @@ export function NextDayBelgesi({
                       onceki={x.onceki}
                       serit={
                         <SatirSeridi
-                          duzenle={() => ac({ tur: "canli", mevcut: x })}
+                          duzenle={() => ac({ tur: "canli", mevcut: x })} ek={<><OneriyiAc oneriId={x.oneriId} /><CanliSonucDugmeleri ben={ben} canli={x} /></>}
                           onceki={
                             x.onceki
                               ? () =>
@@ -1608,7 +1625,7 @@ export function NextDayBelgesi({
                   onceki={x.onceki}
                   serit={
                     <SatirSeridi
-                      duzenle={() => ac({ tur: "canli", mevcut: x })}
+                      duzenle={() => ac({ tur: "canli", mevcut: x })} ek={<><OneriyiAc oneriId={x.oneriId} /><CanliSonucDugmeleri ben={ben} canli={x} /></>}
                       onceki={
                         x.onceki
                           ? () =>
@@ -1781,7 +1798,7 @@ export function NextDayBelgesi({
                             () => ben && planBaslikTasi(ben, plan.id, pb.id, 1),
                           )}
                           ekle={() => ac({ tur: "baslikEkle", sonra: pb.id })}
-                          ekleEtiket={t("baslikEkle")}
+                          ekleEtiket={t("baslikEkle")} ek={ben && <BaslikSeritEki ben={ben} plan={plan} pb={pb} icerik={ic} />}
                           cikar={() => {
                             if (!ben) return;
                             if (!cikabilir)
@@ -1959,7 +1976,7 @@ export function NextDayBelgesi({
                             onceki={x.onceki}
                             serit={
                               <SatirSeridi
-                                duzenle={() => ac({ tur: "canli", mevcut: x })}
+                                duzenle={() => ac({ tur: "canli", mevcut: x })} ek={<><OneriyiAc oneriId={x.oneriId} /><CanliSonucDugmeleri ben={ben} canli={x} /></>} onceki={x.onceki ? () => ben && oncekiOnayla(ben, plan.id, { canli: x.id }) : undefined}
                                 cikar={
                                   !x.oneriId ||
                                   (ben && yapabilir(ben, "oneriDegerlendir"))
@@ -2018,6 +2035,8 @@ export function NextDayBelgesi({
                             }
                           />
                         )}
+                        {op && <OneridenAl plan={plan} planBaslikId={pb.id} />}
+                        {op && <EkleDugmesi metin={t("canliEkle")} onClick={() => ac({ tur: "canli", pbId: pb.id })} />}
                         {ic && (
                           <EkleDugmesi
                             metin={t("muhabirAta")}
@@ -2111,6 +2130,31 @@ function Manset({ plan }: { plan: NextDayPlan }) {
         </span>
       </span>
     </header>
+  );
+}
+
+/*
+ * Belgede başlık şeridinin ek işleri, klasik başlık kartının "+" menüsüyle aynı
+ * (kullanıcı: belge ile plan ekranının özellikleri eşit olsun): gelen öneriler,
+ * başka başlığa katma, son gelişmeler. Pencereler kendi durumunda.
+ */
+function BaslikSeritEki({ ben, plan, pb, icerik }: { ben: Kisi; plan: NextDayPlan; pb: PlanBasligi; icerik: boolean }) {
+  const { t } = useDil();
+  const takipAcik = !!useYz("takipMetni");
+  const [kat, setKat] = useState(false);
+  const [takip, setTakip] = useState(false);
+  return (
+    <>
+      {icerik && <BaslikOnerileriDugmesi ben={ben} plan={plan} pb={pb} />}
+      {icerik && plan.basliklar.length > 1 && (
+        <span data-baslika-kat>
+          <IkonDugme ikon={<Combine size={15} />} etiket={t("baslikaKat")} onClick={() => setKat(true)} />
+        </span>
+      )}
+      {icerik && takipAcik && <IkonDugme ikon={<Search size={15} />} etiket={t("yzTakipMetni")} onClick={() => setTakip(true)} />}
+      {kat && <BaslikaKatPenceresi ben={ben} plan={plan} pb={pb} kapat={() => setKat(false)} />}
+      {takip && <SonGelismelerPenceresi ben={ben} plan={plan} pb={pb} kapat={() => setTakip(false)} />}
+    </>
   );
 }
 
@@ -2371,7 +2415,7 @@ export function NdPencereIcerik({
         t(p.mevcut ? "duzenle" : "canliEkle"),
         <CanliFormu
           plan={plan}
-          planBaslikId={p.mevcut?.planBaslikId}
+          planBaslikId={p.mevcut?.planBaslikId ?? p.pbId}
           mevcut={p.mevcut}
           kapat={kapat}
         />,
@@ -2434,6 +2478,9 @@ export function NdPencereIcerik({
           kapat={kapat}
         />,
       );
+    case "paketMetni":
+      // Onaylı paketin yalnız metni (Strap, açıklama); plan ekranının kalemiyle aynı form.
+      return pencere(t("duzenle"), <PaketMetniFormu ben={ben} paket={p.paket} kapat={kapat} />);
     case "paket":
       return pencere(
         t(p.mevcut ? "duzenle" : "paketOnerisiEkle"),
@@ -2467,7 +2514,7 @@ export default function NextDayBelge({
   const temiz = useRef<HTMLElement>(null);
   const duzen =
     icerik || operasyon
-      ? { ben, icerik, operasyon, ac: setPencere }
+      ? { ben, icerik, operasyon, ac: setPencere, hizli: true }
       : undefined;
 
   return (

@@ -2,23 +2,20 @@ import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { OneriyiAc } from "../oneri/OneriyiAc";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { useYeniTasarim } from "../../tasarimSecimi";
-import { ArrowDown, ArrowUp, CircleCheck, Combine, Search, Hourglass, Lightbulb, Link2, Pencil, Plus, Radio, Trash2, Users, X, Ban, Newspaper, Package, PackageCheck, Send, StickyNote } from "lucide-react";
-import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
+import { ArrowDown, ArrowUp, Combine, Search, Lightbulb, Pencil, Plus, Radio, Trash2, Users, X, Newspaper, Package, PackageCheck, Send, StickyNote } from "lucide-react";
 import { useState } from "react";
-import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce, talimatOnce } from "../../bilesenler/Parcalar";
+import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
-import { OneriAvatari, OneriKaynagi } from "../../bilesenler/Tablolar";
 import { saatYaz, useDil } from "../../dil";
-import { oneriPlandakineBagla, gelismeKaydet, paketDurum, paketMetniDuzenle, paketMetniDuzenlenebilir, paketReddet, paketSil, paketStogaAl, paketStogaAlinabilir, planBaslikBirlestir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, paketMetniDuzenle, paketMetniDuzenlenebilir, paketSil, paketStogaAl, paketStogaAlinabilir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, paketNotEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { vardiyaYaz } from "../../tarih";
-import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
 import { useYz } from "../../yz";
 import { baslikBul, kisiBul, useVeri, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
 import { paketPlandanSilinir, yapabilir } from "../../yetki";
-import PlanaEkle from "../oneri/PlanaEkle";
-import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } from "./Bolumler";
+import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, OncekiDugmesi, oncekiSinif } from "./Bolumler";
+import { BaslikAdiPenceresi, BaslikaKatPenceresi, BaslikOnerileri, PaketKararDugmeleri, PaketOneriBagi, SonGelismelerPenceresi, baslikOnerileri } from "./SatirIslemleri";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
 import { PaketPlanNotlari } from "./PaketPlanNotlari";
 import { paketHedefi, paketSuruklenir } from "./paketSurukle";
@@ -58,29 +55,17 @@ export default function BaslikKarti({
   const yeni = useYeniTasarim();
   const [paketForm, setPaketForm] = useState("");
   const [muhabirEkle, setMuhabirEkle] = useState(false);
-  const [oneriAcik, setOneriAcik] = useState("");
+  const [adPenceresi, setAdPenceresi] = useState(false);
   const [katPenceresi, setKatPenceresi] = useState(false);
   const [takipPenceresi, setTakipPenceresi] = useState(false);
   const [notKisi, setNotKisi] = useState<string | null>(null);
   const takipAcik = !!useYz("takipMetni");
   const [birakilir, setBirakilir] = useState(false);
   const baslik = baslikBul(v, pb.baslikId);
-  const adi = (x: PlanBasligi) => baslikBul(v, x.baslikId)?.ad ?? "";
-  // Kaynak başlık hedefin içine katılıyor; onay soruluyor (geri al ↶ ile de dönülüyor).
-  const kat = (kaynakId: string, hedefId: string) => {
-    const k = plan.basliklar.find((b) => b.id === kaynakId);
-    const h = plan.basliklar.find((b) => b.id === hedefId);
-    if (!ben || !k || !h || k.id === h.id) return;
-    if (!confirm(t("baslikKatilsinMi", { katilan: adi(k), hedef: adi(h) }))) return;
-    if (planBaslikBirlestir(ben, plan.id, k.id, h.id)) bildir(t("baslikKatildi"));
-  };
   const gelismeler = v.gelismeler.filter((g) => g.planBaslikId === pb.id);
   const paketler = v.paketler.filter((p) => p.planBaslikId === pb.id);
   const canlilar = v.canliYayinlar.filter((c) => c.planBaslikId === pb.id);
-  const oneriler = v.oneriler.filter(
-    (o) => o.baslikId === pb.baslikId && oneriGunde(o, plan.tarih) && (o.durum === "yeni" || o.durum === "degerlendiriliyor"),
-  );
-  const degerlendirir = yapabilir(ben, "paketDegerlendir");
+  const oneriler = baslikOnerileri(v, plan, pb);
   const cikabilir = !paketler.some((p) => p.durum !== "iptal");
   /*
    * Gelişmeye bağlı PKG (başlığın içindeki daha özel konu) o gelişmenin hemen
@@ -126,19 +111,8 @@ export default function BaslikKarti({
                     {paketMetniDuzenlenebilir(ben, v, p) && (
                       <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setPaketForm(p.id)} />
                     )}
-                    {degerlendirir && p.durum === "taslak" && (
-                      <IkonDugme ikon={<Hourglass size={15} />} etiket={t("degerlendirmeyeAl")} onClick={() => ben && paketDurum(ben, p.id, "degerlendiriliyor")} />
-                    )}
                     {/* Toplantıda paket başına karar: kabul muhabire görev, ret paketi iz olarak bırakır. */}
-                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("kabulEt")} onClick={() => ben && confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} />
-                    )}
-                    {degerlendirir && ["taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<Ban size={15} />} etiket={t("reddet")} onClick={() => ben && confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} />
-                    )}
-                    {degerlendirir && !["tamamlandi", "iptal", "taslak", "degerlendiriliyor"].includes(p.durum) && (
-                      <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => ben && confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
-                    )}
+                    <PaketKararDugmeleri ben={ben} paket={p} />
                     {icerik && paketStogaAlinabilir(p) && (
                       <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
                     )}
@@ -220,6 +194,11 @@ export default function BaslikKarti({
               <button type="button" role="menuitem" className="acilir-satir" disabled={toplam < 2} onClick={() => setKatPenceresi(true)} data-baslika-kat>
                 <Combine size={16} /> {t("baslikaKat")}
               </button>
+              {ben && yapabilir(ben, "baslikYonet") && (
+                <button type="button" role="menuitem" className="acilir-satir" onClick={() => setAdPenceresi(true)} data-baslik-adi-ac>
+                  <Pencil size={16} /> {t("baslik")}
+                </button>
+              )}
               {takipAcik && (
                 <button type="button" role="menuitem" className="acilir-satir" onClick={() => setTakipPenceresi(true)} data-yz-takip-ac>
                   <Search size={16} /> {t("yzTakipMetni")}
@@ -310,6 +289,7 @@ export default function BaslikKarti({
                   ) : (
                     m.saat && <Rozet>{vardiyaYaz(m.saat)}</Rozet>
                   )}
+                  {icerik && m.onceki && <OncekiDugmesi planId={plan.id} hedef={{ muhabir: [pb.id, m.kisiId] }} />}
                   {icerik && (
                     // Not varsa simge dolu ve ipucunda notun kendisi: planlamacı açmadan görsün.
                     <button onClick={() => setNotKisi(m.kisiId)} aria-label={t("muhabireNot")} title={m.not ? `${t("muhabireNot")}: ${m.not}` : t("muhabireNot")} data-muhabir-not={m.not ? "dolu" : "bos"}>
@@ -384,30 +364,7 @@ export default function BaslikKarti({
             <h4>
               <Lightbulb size={14} /> {t("buBasligaGelenOneriler")}
             </h4>
-            {[...oneriler].sort(talimatOnce).map((o) => (
-              <div key={o.id} className={`kayit ${o.talimatVeren ? "kayit-talimat" : ""}`}>
-                <div className="kayit-bas">
-                  <OneriAvatari oneri={o} d={v} />
-                  <div>
-                    <b>
-                      <Icerik blok>{o.haberBasligi}</Icerik>
-                    </b>
-                    <Icerik blok className="kayit-metin">
-                      {o.gelisme}
-                    </Icerik>
-                    <small>
-                      <OneriKaynagi oneri={o} d={v} />
-                    </small>
-                  </div>
-                  {oneriAcik !== o.id && (
-                    <button className="dugme dugme-iyi dugme-kucuk" onClick={() => setOneriAcik(o.id)}>
-                      {t("planaEkle")}
-                    </button>
-                  )}
-                </div>
-                {oneriAcik === o.id && ben && <PlanaEkle ben={ben} oneri={o} planId={plan.id} kapat={() => setOneriAcik("")} />}
-              </div>
-            ))}
+            <BaslikOnerileri ben={ben} plan={plan} pb={pb} />
           </section>
         )}
       </div>
@@ -426,97 +383,14 @@ export default function BaslikKarti({
         />
       </Pencere>
     )}
-    {takipPenceresi && baslik && (
-      <Pencere baslik={t("yzTakipMetni")} alt={<Icerik>{baslik.ad}</Icerik>} kapat={() => setTakipPenceresi(false)}>
-        <YzSonGelismeler
-          baslik={baslik.ad}
-          baslikId={baslik.id}
-          ekleMetni={t("yzGelismeOlarakEkle")}
-          ekle={(s) => {
-            if (!ben) return;
-            const ok = gelismeKaydet(ben, { planId: plan.id, planBaslikId: pb.id, metin: s.metin, kaynakTuru: "medya", kaynakAdi: kaynakAdlari(s), tarih: "" });
-            if (ok !== false) {
-              bildir(t("bKaydedildi"));
-              setTakipPenceresi(false);
-            }
-          }}
-        />
-      </Pencere>
-    )}
-    {katPenceresi && (
-      <Pencere baslik={t("baslikaKat")} alt={<Icerik>{baslik?.ad}</Icerik>} kapat={() => setKatPenceresi(false)}>
-        <div className="dugmeler dikey" data-kat-hedefleri>
-          {plan.basliklar
-            .filter((x) => x.id !== pb.id)
-            .map((x) => (
-              <button
-                key={x.id}
-                type="button"
-                className="dugme dugme-ikincil"
-                data-kat-hedef={x.id}
-                onClick={() => {
-                  setKatPenceresi(false);
-                  kat(pb.id, x.id);
-                }}
-              >
-                <Icerik>{adi(x)}</Icerik>
-              </button>
-            ))}
-        </div>
-      </Pencere>
-    )}
+    {takipPenceresi && ben && <SonGelismelerPenceresi ben={ben} plan={plan} pb={pb} kapat={() => setTakipPenceresi(false)} />}
+    {katPenceresi && ben && <BaslikaKatPenceresi ben={ben} plan={plan} pb={pb} kapat={() => setKatPenceresi(false)} />}
+    {adPenceresi && ben && <BaslikAdiPenceresi ben={ben} pb={pb} kapat={() => setAdPenceresi(false)} />}
     </>
   );
 }
 
 /* Onaylı paketin yalnız metni (Strap, açıklama); geri kalanı kilitli. */
-/*
- * Ters yön: planda muhabir adına doğrudan açılmış PKG'nin muhabirinin bekleyen,
- * benzer başlıklı önerisi varsa satırda bağla düğmesi. Paket ve plan değişmez.
- */
-function PaketOneriBagi({ ben, paket: p }: { ben: Kisi | undefined; paket: Paket }) {
-  const { t } = useDil();
-  const v = useVeri();
-  const [acik, setAcik] = useState(false);
-  if (!ben || (!ben.hesapYoneticisi && !yapabilir(ben, "oneriDegerlendir"))) return null;
-  const adaylar = paketinOneriAdaylari(v, p);
-  if (!adaylar.length) return null;
-  return (
-    <>
-      <span data-paket-oneri-bagi={p.id}>
-        <IkonDugme ikon={<Link2 size={15} />} etiket={t("pbPaketAdayi")} onClick={() => setAcik(true)} />
-      </span>
-      {acik && (
-        <Pencere baslik={t("pbPaketAdayi")} alt={<Icerik>{p.baslik}</Icerik>} kapat={() => setAcik(false)}>
-          <ul className="liste" data-paket-oneri-adaylari>
-            {adaylar.map((o) => (
-              <li key={o.id}>
-                <a href={`#/oneriler/${o.id}`}>
-                  <Icerik>{o.haberBasligi}</Icerik>
-                </a>{" "}
-                <button
-                  type="button"
-                  className="dugme dugme-ikincil dugme-kucuk"
-                  onClick={() => {
-                    if (!confirm(t("pbBaglaOnay"))) return;
-                    if (oneriPlandakineBagla(ben, o.id, { tur: "paket", id: p.id })) {
-                      setAcik(false);
-                      bildir(t("pbBaglandi"));
-                    }
-                  }}
-                  data-paket-bagla
-                >
-                  {t("pbBagla")}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Pencere>
-      )}
-    </>
-  );
-}
-
 export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Paket; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ baslik: p.baslik, aciklama: p.aciklama ?? "" });

@@ -2508,6 +2508,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     verilmezse çıktı, verilirse aynı kağıt düzenlenebilir. Çıktı sayfaları
     da bunu çağırır; belge ile çıktı ayrışmaz. Bileşenin içinde bileşen
     tanımlanmaz, yoksa yazı kutusu her kayıtta sıfırlanır.
+  - Belge ile plan ekranının işlemleri aynı (kullanıcı: eşitlensin). Satırın
+    işi iki yerde ayrı yazılmaz, ortak bileşenden (`nextday/SatirIslemleri.tsx`):
+    PKG kararı (değerlendirmeye al, kabul, ret, iptal: `PaketKararDugmeleri`),
+    öneriye bağlama (`PaketOneriBagi`), canlının yapıldı/yapılmadı
+    (`CanliSonucDugmeleri`), başlığa gelen öneriler (`BaslikOnerileri`; belgede
+    şeritte sayılı simge), başka başlığa katma, son gelişmeler, başlığın adı
+    (pencereleri). Belgede ayrıca onaylı paketin metni ("Düzenle" →
+    `PaketMetniFormu`), başlığa canlı ekleme ve "Öneri ve takiplerden al"
+    (ekleme çubuğunda), canlıda "bugün de geçerli", belge sayfasında hızlı ekleme
+    satırı; klasikte başlığın adı (+ menüsü), gelişmede ✨, muhabirde "bugün de
+    geçerli". Weekly'de belgenin kalemi kartın kurallarıyla: seçili karara
+    basmak kararı kaldırır, ön incelemeye gönder, karar notu ve ek talep (kilitli
+    kalemde de, `kalemGirdisi` ortak), görüşler ve teslim günü düzenlerken;
+    klasikte kalem ve ana dosyada ✨. Yeni işlem iki yüzeye birden girer. Test
+    `testler/belge-esit.cjs`.
   - Satır `BelgeSatiri` + `SatirSeridi` (taşı, altına ekle, düzenle, bugün
     de geçerli, çıkar); yazılar `YerindeMetin`, seçimler plan ekranının
     formlarıyla `Pencere`de. Yeni satır türü eklenince hem belgeye hem

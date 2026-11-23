@@ -1,19 +1,19 @@
 import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "../haftalik/haftaSurukle";
-import { Ban, CalendarClock, Check, Eye, Hourglass, Printer } from "lucide-react";
+import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Printer, Send } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
-import { KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
+import { Gorusler, KalemTeslimGunu, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
 import trtArabi from "../../varliklar/trt-arabi.svg";
 import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import type { Baski } from "./Baski";
-import { Pencere } from "../../bilesenler/Parcalar";
+import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
 import { TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
-import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, type KalemGirdisi } from "../../eylemler";
-import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu } from "../../haftalik";
+import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
+import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu, onIncelemeyeGidebilir } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
-import { haftalikDuzenler, kararVerebilir, yapabilir } from "../../yetki";
-import { KalemFormu, KosulFormu } from "../haftalik/Kalem";
+import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir, yapabilir } from "../../yetki";
+import { KalemFormu, KararNotuFormu, KosulFormu, kalemGirdisi } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
 import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
@@ -66,25 +66,6 @@ function Satir({ yer, olay, children }: { yer?: ReactNode; olay?: ReactNode; chi
   );
 }
 
-/* Kalemin düzeltilen tek alanı için: eylem bütün alanları istiyor. */
-const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi => ({
-  id: k.id,
-  tarih: k.tarih,
-  baslikId: k.baslikId,
-  baslik: k.baslik,
-  yer: k.yer,
-  metin: k.metin,
-  tur: k.tur,
-  bicimler: k.bicimler,
-  paketBasligi: k.paketBasligi,
-  muhabirler: k.muhabirler,
-  muhabirTbc: k.muhabirTbc,
-  kararNotu: k.kararNotu,
-  ekTalep: k.ekTalep,
-  not: k.not,
-  teslimGunu: k.teslimGunu,
-  ...g,
-});
 
 const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
   { karar: "kabul", ad: "krKabul", ikon: <Check size={15} /> },
@@ -115,6 +96,9 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
   const bekliyor = k.karar === "bekliyor";
   const ts = useContext(ToplantiSecimi);
   const [kosulAcik, setKosulAcik] = useState(false);
+  const [notAcik, setNotAcik] = useState(false);
+  // Karar notu ve ek talep kesinleşmiş (kilitli) kalemde de yazılıyor; plan ekranının kartıyla aynı kural.
+  const notYazar = !!d?.ben && kararNotuYazabilir(d.ben, hafta) && gundemde(k);
 
   return (
     <BelgeSatiri
@@ -122,6 +106,9 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
       soluk={bekliyor && !ts}
       ozellik={haftaSuruklenir("kalem", k.id, !!duzen && !!ben)}
       serit={
+        !duzen && d?.ben && notYazar ? (
+          <SatirSeridi ek={<IkonDugme ikon={<MessageSquarePlus size={15} />} etiket={t("kararNotuEkTalep")} onClick={() => setNotAcik(true)} />} />
+        ) : (
         duzen &&
         ben && (
           <SatirSeridi
@@ -141,13 +128,19 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
                       ikon={x.ikon}
                       etiket={t(x.ad)}
                       ton={k.karar === x.karar ? "secili" : ""}
-                      onClick={() => (x.karar === "sartli" ? setKosulAcik(true) : kalemKarar(ben, hafta.id, k.id, x.karar))}
+                      // Seçili karara yeniden basmak kararı kaldırır (plan ekranındaki gibi); şartlı kabul önce koşulun formu.
+                      onClick={() => (k.karar === x.karar ? kalemKarar(ben, hafta.id, k.id, "bekliyor") : x.karar === "sartli" ? setKosulAcik(true) : kalemKarar(ben, hafta.id, k.id, x.karar))}
                     />
                   ))}
+                {onIncelemeyeGidebilir(k) && (
+                  <IkonDugme ikon={<Send size={15} className="yon" />} etiket={t("onIncelemeyeGonder")} onClick={() => onIncelemeyeGonder(ben, hafta.id, [k.id]) && bildir(t("bOnIncelemeyeGitti", { n: 1 }))} />
+                )}
+                {notYazar && <IkonDugme ikon={<MessageSquarePlus size={15} />} etiket={t("kararNotuEkTalep")} onClick={() => setNotAcik(true)} />}
               </>
             }
             cikar={onayla(t("silinsinMi"), () => kalemSil(ben, hafta.id, k.id))}
           />
+        )
         )
       }
     >
@@ -246,12 +239,24 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
         )}
         {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız düzenlerken ekranda. */}
         {(duzen || ts) && <KararNotlari kalem={k} />}
+        {/* Ön inceleme görüşleri ve teslim günü plan ekranının kartında da; çıktıda yok. */}
+        {duzen && (
+          <>
+            <Gorusler kalem={k} d={v} />
+            <KalemTeslimGunu kalem={k} />
+          </>
+        )}
         {ts && (
           <p className="toplanti-karar-satiri">
             <KararRozeti kalem={k} />
           </p>
         )}
       </div>
+      {notAcik && d?.ben && (
+        <Pencere baslik={t("kararNotuEkTalep")} kapat={() => setNotAcik(false)}>
+          <KararNotuFormu ben={d.ben} hafta={hafta} kalem={k} kapat={() => setNotAcik(false)} />
+        </Pencere>
+      )}
       {kosulAcik && ben && (
         <Pencere baslik={t("krSartli")} kapat={() => setKosulAcik(false)}>
           <KosulFormu ben={ben} hafta={hafta} kalem={k} kapat={() => setKosulAcik(false)} />

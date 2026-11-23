@@ -33,7 +33,7 @@ import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, HareketPenceresi } from "../nextday/Formlar";
 import { HareketListesi } from "../Hareketler";
 import { useBen } from "../../oturum";
-import { YzKisalt } from "../../bilesenler/YzKisalt";
+import { YzKisalt, YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { YzSonGelismeler } from "../../bilesenler/YzTakip";
 import { ElleOneriFormu } from "../oneri/OneriFormu";
 import { GorunumSecici, useOneriGorunumu, type PencereDurumu } from "../oneri/OneriKarti";
@@ -526,6 +526,7 @@ function AnaDosyalar({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
                   <IkonDugme ikon={<ArrowUp size={15} />} etiket={t("yukari")} onClick={() => i > 0 && anaKonuTasi(ben, hafta.id, a.id, -1)} />
                   <IkonDugme ikon={<ArrowDown size={15} />} etiket={t("asagi")} onClick={() => anaKonuTasi(ben, hafta.id, a.id, 1)} />
                   <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(a.id)} />
+                  <YzKisaltSerit metin={a.metin} kaydet={(m) => anaKonuKaydet(ben, hafta.id, { id: a.id, metin: m })} />
                   <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} ton="kotu-yazi" onClick={() => confirm(t("silinsinMi")) && anaKonuSil(ben, hafta.id, a.id)} />
                 </div>
               )}

@@ -1,5 +1,7 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { suruklenir } from "./planSurukle";
+import { CanliSonucDugmeleri } from "./SatirIslemleri";
+import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
@@ -8,7 +10,7 @@ import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } 
 import { Fragment, useState, type ReactNode, type HTMLAttributes } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { baslikEkle, canliSil, canliSonuc, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { baslikEkle, canliSil, gelismeKaydet, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { baskaPlandaHazir, hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -460,8 +462,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                 {/* Yapıldı mı (Newsdesk; muhasebe yapılanı sayar): plan kilitli olsa da işaretlenir. */}
                 {ben && c.muhabirId && canliSonucIsaretleyebilir(ben) && (
                   <div className="islemler canli-sonuc">
-                    <IkonDugme ikon={<Check size={15} />} etiket={t(c.sonuc?.durum === "yapildi" ? "csKaldir" : "csYapildi")} onClick={() => canliSonuc(ben, c.id, c.sonuc?.durum === "yapildi" ? null : "yapildi")} />
-                    <IkonDugme ikon={<X size={15} />} etiket={t(c.sonuc?.durum === "yapilmadi" ? "csKaldir" : "csYapilmadi")} onClick={() => canliSonuc(ben, c.id, c.sonuc?.durum === "yapilmadi" ? null : "yapilmadi")} />
+                    <CanliSonucDugmeleri ben={ben} canli={c} />
                   </div>
                 )}
                 {(duzenler || (oneriSimgesi && c.oneriId)) && (
@@ -711,6 +712,7 @@ export function GelismeListesi({
                     <>
                       {g.onceki && <OncekiDugmesi planId={plan.id} hedef={{ gelisme: g.id }} />}
                       <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(g.id)} />
+                      {ben && <YzKisaltSerit metin={g.metin} kaydet={(m) => gelismeKaydet(ben, { ...g, metin: m })} />}
                       {(plan.basliklar.length > 1 || (plan.basliklar.length === 1 && !g.planBaslikId)) && (
                         <IkonDugme ikon={<ArrowRightLeft size={15} />} etiket={t("baskaBasligaTasi")} onClick={() => setTasinan(g)} />
                       )}
