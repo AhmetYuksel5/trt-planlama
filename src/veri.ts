@@ -348,6 +348,8 @@ export interface NextDayPlan {
   gorevlendirmeler: string[];
   /** Stoktan seçilen paketler (Paket kimliği); plan Newsdesk'e devredilince yayınlanmış sayılıyor. */
   hazirPaketler: string[];
+  /** Beklenen paketlerin elle verilen sırası (paket kimlikleri); yoksa başlıkların sırası (`beklenenSira.ts`). */
+  beklenenSira?: string[];
   basliklar: PlanBasligi[];
   /** Şablonun alındığı önceki plan. */
   kopyaKaynagi?: string;

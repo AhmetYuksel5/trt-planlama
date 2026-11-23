@@ -2376,6 +2376,7 @@ const M = {
   tekrarlayan: m("Tekrarlayan faaliyet", "فعالية متكررة", "Recurring event"),
   oncedenSuruyor: m("Önceki günden sürüyor", "تستمر من اليوم السابق", "Continues from the previous day"),
   sonrayaSuruyor: m("Sonraki güne sürüyor", "تستمر إلى اليوم التالي", "Continues to the next day"),
+  beklenenBaslikSirasi: m("Başlık sırasına dön", "العودة إلى ترتيب العناوين", "Back to heading order"),
   baslikSurukle: m("Başlığı içeriğiyle taşı", "اسحب العنوان بمحتواه", "Drag the heading with its content"),
   surukleTasi: m("Sürükleyip başka güne taşıyın", "اسحبها لنقلها إلى يوم آخر", "Drag to another day to move"),
   baslangiciDegistir: m("Başlangıcı değiştirmek için sürükleyin", "اسحب لتغيير البداية", "Drag to change the start"),

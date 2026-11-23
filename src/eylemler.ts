@@ -2510,6 +2510,13 @@ export const planBaslikTasi = (ben: Kisi, planId: string, pbId: string, yon: -1 
   });
 
 /* Sürükle-bırak: başlık bırakıldığı başlığın yerine geçer (aşağı inerken arkasına, yukarı çıkarken önüne); katma "+" menüsünde. */
+/* Beklenen paketlerin elle sırası (kullanıcı: varsayılan başlık sırası, planlamacı sürükleyerek değiştirir); boş liste varsayılana döner. */
+export const beklenenSiraKaydet = (ben: Kisi, planId: string, ids: string[] | undefined) =>
+  planIcerik(ben, planId, (p) => {
+    const { beklenenSira: _, ...temiz } = p;
+    return ids?.length ? { ...temiz, beklenenSira: ids } : temiz;
+  });
+
 export const planBaslikYerine = (ben: Kisi, planId: string, pbId: string, hedefId: string) =>
   planIcerik(ben, planId, (p) => {
     const i = p.basliklar.findIndex((b) => b.id === pbId);

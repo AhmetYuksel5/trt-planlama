@@ -80,7 +80,10 @@ import {
   planMuhabirTbc,
   planBaslikLive,
   paketMetniDuzenlenebilir,
+  paketMetniDuzenle,
+  beklenenSiraKaydet,
 } from "../../eylemler";
+import { beklenenDuzeni } from "../../beklenenSira";
 import { vardiyaYaz } from "../../tarih";
 import {
   baslikBul,
@@ -145,6 +148,7 @@ import {
   SatirSeridi,
   YerindeMetin,
   onayla,
+ useArayuz,
 } from "./Parcalar";
 
 /**
@@ -401,6 +405,7 @@ export function NextDayBelgesi({
   const sehir = (id?: string) => sehirAr(kisiBul(v, id)?.sehir);
   const ben = duzen?.ben;
   const ic = !!duzen?.icerik;
+  const arayuzOzelligi = useArayuz();
   const op = !!duzen?.operasyon;
   const d = !!duzen;
   const ac = (p: NdPencere) => duzen?.ac(p);
@@ -438,11 +443,21 @@ export function NextDayBelgesi({
     const gi = p.gelismeId ? gs.findIndex((g) => g.id === p.gelismeId) : -1;
     return [bi, gi < 0 ? gs.length : gi];
   };
-  const beklenenler = paketler
-    .filter((p) => !plan.hazirPaketler.includes(p.id) && !stokta(p) && !pkgOnerisiMi(p))
-    .map((p, i) => ({ p, i, k: beklenenSirasi(p) }))
-    .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i)
-    .map((x) => x.p);
+  const beklenenler = beklenenDuzeni(
+    paketler
+      .filter((p) => !plan.hazirPaketler.includes(p.id) && !stokta(p) && !pkgOnerisiMi(p))
+      .map((p, i) => ({ p, i, k: beklenenSirasi(p) }))
+      .sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.i - b.i)
+      .map((x) => x.p),
+    plan.beklenenSira,
+  );
+  const beklenenIdleri = beklenenler.map((p) => p.id);
+  const beklenenKomsu = (i: number, yon: -1 | 1) => () => {
+    if (!ben) return;
+    const ids = [...beklenenIdleri];
+    [ids[i], ids[i + yon]] = [ids[i + yon], ids[i]];
+    beklenenSiraKaydet(ben, plan.id, ids);
+  };
   const takipler = v.gelismeler.filter(
     (g) => g.planId === plan.id && !g.planBaslikId,
   );
@@ -581,6 +596,68 @@ export function NextDayBelgesi({
                                 </BelgeSatiri>
                               );
                             };
+
+  /*
+   * Beklenen paketler: aşağıdaki PKG satırıyla aynı kayıt (kullanıcı: belgede
+   * burada da düzenlensin, aşağıda da aynı düzelsin). Sıra sürükleyerek ya da
+   * oklarla; elle sıra varken başlıkta "Başlık sırasına dön".
+   */
+  const beklenenBolumu = (
+    <section data-beklenen>
+      <h2 className="yesil">
+        {c("ciktiBeklenen")}
+        {ic && ben && plan.beklenenSira?.length ? (
+          <button type="button" className="dugme dugme-sade dugme-kucuk beklenen-varsayilan" onClick={() => beklenenSiraKaydet(ben, plan.id, undefined)} data-beklenen-varsayilan {...arayuzOzelligi}>
+            {t("beklenenBaslikSirasi")}
+          </button>
+        ) : null}
+      </h2>
+      {beklenenler.map((p, i) => {
+        const acikPaket = p.durum === "taslak" || p.durum === "degerlendiriliyor";
+        const metinDuzenlenir = paketMetniDuzenlenebilir(ben, v, p);
+        return (
+          <BelgeSatiri
+            key={p.id}
+            duzen={ic}
+            ozellik={suruklenir("beklenen", p.id, p.planBaslikId, ic && !!ben)}
+            serit={
+              <SatirSeridi
+                yukari={yukari(i, beklenenKomsu(i, -1))}
+                asagi={asagi(i, beklenenler.length, beklenenKomsu(i, 1))}
+                duzenle={
+                  acikPaket
+                    ? () => ac({ tur: "paket", pbId: p.planBaslikId ?? "", mevcut: p })
+                    : metinDuzenlenir
+                      ? () => ac({ tur: "paketMetni", paket: p })
+                      : undefined
+                }
+              />
+            }
+          >
+            <Satir yer={paketYeri(p)}>
+              {ic && ben && (acikPaket || metinDuzenlenir) ? (
+                <YerindeMetin
+                  acik
+                  deger={p.baslik}
+                  etiket={t("paketBasligi")}
+                  kaydet={(x) =>
+                    x &&
+                    (acikPaket ? paketKaydet(ben, paketGirdisi(p, x)) : paketMetniDuzenle(ben, p.id, { baslik: x, aciklama: p.aciklama ?? "" }))
+                  }
+                />
+              ) : (
+                p.baslik
+              )}{" "}
+              /{" "}
+              <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
+              {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
+              {paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
+            </Satir>
+          </BelgeSatiri>
+        );
+      })}
+    </section>
+  );
 
   /* Gelişme satırı: başlığın altında da takiplerde de aynı; başlıkta yer yoksa öneren muhabirin şehri. */
   const gelismeSatiri = (
@@ -809,28 +886,7 @@ export function NextDayBelgesi({
         <>
           <div className="nd-sutunlar">
             <div className="nd-ana">
-              {beklenenler.length > 0 && (
-                <section>
-                  <h2 className="yesil">{c("ciktiBeklenen")}</h2>
-                  {beklenenler.map((p) => (
-                    <Satir key={p.id} yer={paketYeri(p)}>
-                      {p.baslik} /{" "}
-                      <b>
-                        {muhabirYeri(
-                          [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                          p.muhabirTbc,
-                        )}
-                      </b>
-                      {bicimEki(p.bicim) && (
-                        <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                      )}
-                      {paketNotEki(p) && (
-                        <span data-paket-notu>{paketNotEki(p)}</span>
-                      )}
-                    </Satir>
-                  ))}
-                </section>
-              )}
+              {beklenenler.length > 0 && beklenenBolumu}
 
               {(plan.basliklar.length > 0 || ic) && (
                 <section>
@@ -1684,28 +1740,7 @@ export function NextDayBelgesi({
             </section>
           )}
 
-          {beklenenler.length > 0 && (
-            <section>
-              <h2 className="yesil">{c("ciktiBeklenen")}</h2>
-              {beklenenler.map((p) => (
-                <Satir key={p.id} yer={paketYeri(p)}>
-                  {p.baslik} /{" "}
-                  <b>
-                    {muhabirYeri(
-                      [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
-                      p.muhabirTbc,
-                    )}
-                  </b>
-                  {bicimEki(p.bicim) && (
-                    <b data-bicim-eki> {bicimEki(p.bicim)}</b>
-                  )}
-                  {paketNotEki(p) && (
-                    <span data-paket-notu>{paketNotEki(p)}</span>
-                  )}
-                </Satir>
-              ))}
-            </section>
-          )}
+          {beklenenler.length > 0 && beklenenBolumu}
 
           {(plan.basliklar.length > 0 || ic) && (
             <section>

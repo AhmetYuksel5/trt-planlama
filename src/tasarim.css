@@ -4287,3 +4287,5 @@ li.hesap-yok .ad > a, li.hesap-yok .ad > span { color: var(--sonuk); }
 li.hesap-bekliyor { background: var(--uyari-sis); }
 li.hesap-pasif .ad > a { color: var(--sonuk); text-decoration: line-through; }
 :is(li.hesap-yok, li.hesap-bekliyor, li.hesap-pasif) { border-radius: var(--yaricap); padding-inline: var(--ara-2); }
+/* Beklenen paketlerin elle sırası varken bölüm başlığında varsayılana dönüş. */
+.beklenen-varsayilan { margin-inline-start: 8px; vertical-align: middle; font-weight: normal; }

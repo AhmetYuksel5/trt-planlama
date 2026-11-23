@@ -1,5 +1,6 @@
 import type { DragEvent, PointerEvent } from "react";
-import { canliBasligaBagla, gelismeSurukle, planBaslikYerine, planMuhabirSurukle } from "../../eylemler";
+import { beklenenSiraKaydet, canliBasligaBagla, gelismeSurukle, planBaslikYerine, planMuhabirSurukle } from "../../eylemler";
+import { yerineTasi } from "../../beklenenSira";
 import type { Kisi, NextDayPlan } from "../../veri";
 
 /*
@@ -17,10 +18,14 @@ import type { Kisi, NextDayPlan } from "../../veri";
  * kendisi; hedef başlığın içi değil kenarı vurgulanır (üstüne ya da altına
  * geçeceği yer), bırakınca `planBaslikYerine`.
  *
+ * Beklenen paketler (التقارير المتوقعة) kendi aralarında sıralanır
+ * (kullanıcı): varsayılan başlıkların sırası, sürükleyince planın elle sırası
+ * (`beklenenSiraKaydet`); yalnız bölüm içinde, başka yere bırakılmaz.
+ *
  * Hedefler DOM'dan: başlık `[data-plan-baslik]` (klasik) ya da
  * `[data-nd-baslik]` (belge), متابعات `[data-sur-takip]`, مباشر `[data-sur-canli]`.
  */
-export type SurTuru = "gelisme" | "muhabir" | "canli" | "baslik";
+export type SurTuru = "gelisme" | "muhabir" | "canli" | "baslik" | "beklenen";
 export const OGE_TURU = "application/x-plan-oge";
 interface Oge {
   tur: SurTuru;
@@ -53,7 +58,20 @@ const baslikOf = (el: HTMLElement) => el.closest<HTMLElement>("[data-plan-baslik
 const pbOf = (el: HTMLElement) => el.dataset.planBaslik ?? el.dataset.ndBaslik;
 
 /* Bırakılan yer ve ne olacağı; boşsa bırakılmaz (kendi yeri, geçersiz hedef). */
+/* Beklenen bölümündeki satırların ekrandaki sırası (elle sıra ya da varsayılan; DOM'dan, ikisini ayrıca hesaplamamak için). */
+const beklenenIdleri = (el: HTMLElement) =>
+  [...(el.closest("[data-beklenen]")?.querySelectorAll<HTMLElement>('[data-sur="beklenen"]') ?? [])].map((x) => x.dataset.surId ?? "");
+
 const hedefBul = (hedef: HTMLElement, o: Oge, plan?: NextDayPlan): Hedef | null => {
+  if (o.tur === "beklenen") {
+    const s = hedef.closest<HTMLElement>('[data-sur="beklenen"]');
+    if (!s || s.dataset.surId === o.id) return null;
+    const ids = beklenenIdleri(s);
+    const i = ids.indexOf(o.id);
+    const j = ids.indexOf(s.dataset.surId ?? "");
+    if (i < 0 || j < 0) return null;
+    return { el: s, yerine: s.dataset.surId, kenar: i < j ? ARA_ALT : ARA_UST };
+  }
   if (o.tur === "baslik") {
     // Yalnız sıralama: hedef başlığın yerine geçer; yukarıdan gelen altına, aşağıdan gelen üstüne.
     const b = hedef.closest<HTMLElement>("[data-nd-baslik]");
@@ -137,6 +155,8 @@ export const planSurukleKabi = (ben: Kisi | null | undefined, plan: NextDayPlan)
     if (!h) return;
     if (o.tur === "baslik") {
       if (h.yerine) planBaslikYerine(ben, plan.id, o.id, h.yerine);
+    } else if (o.tur === "beklenen") {
+      if (h.yerine) beklenenSiraKaydet(ben, plan.id, yerineTasi(beklenenIdleri(h.el), o.id, h.yerine));
     } else if (o.tur === "gelisme") gelismeSurukle(ben, o.id, h.pb, h.yerine);
     else if (o.tur === "muhabir" && o.pb && h.pb) planMuhabirSurukle(ben, plan.id, o.id, o.pb, h.pb, h.yerine);
     else if (o.tur === "canli") canliBasligaBagla(ben, o.id, h.pb);

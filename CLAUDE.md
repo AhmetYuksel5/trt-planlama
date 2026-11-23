@@ -1323,6 +1323,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     beklenenSirasi`): başlık sırası, başlığın içinde gelişme altındakiler
     gelişme sırasıyla, sonra başlığın PKG'leri; başlıksız sonda. Saklanmaz,
     başlık ya da PKG yer değiştirince kendiliğinden. Test `testler/beklenen-sira.cjs`.
+    Planlamacı sırayı belgede elle değiştirir (kullanıcı: varsayılan başlık
+    sırası kalsın ama sürükle-bırakla değişsin): satır `suruklenir("beklenen")`,
+    oklar da; planın elle sırası `NextDayPlan.beklenenSira` (`eylemler.ts →
+    beklenenSiraKaydet`, kural `beklenenSira.ts → beklenenDuzeni`: sonradan
+    eklenen paket varsayılandaki yerine, kendinden önceki paketin arkasına;
+    plandan çıkan düşer). Elle sıra varken bölüm başlığında "Başlık sırasına
+    dön" (`data-beklenen-varsayilan`). Beklenendeki satır aşağıdaki PKG'yle
+    aynı kayıt, belgede yerinde düzenlenir (taslakta `paketKaydet`, onaylıda
+    `paketMetniDuzenle`; şeritte düzenle penceresi), aşağısı da düzelir. Test
+    `testler/beklenen-elle.cjs`.
   - Gelişmeye bağlı PKG (kullanıcı: başlık bazen genel, altında daha özel
     konular var; PKG başlığın en altında değil o gelişmenin altında görünsün;
     `Paket.gelismeId`): gelişmenin satırında "Bu gelişmeye PKG ekle" (plan
