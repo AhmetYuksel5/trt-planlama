@@ -283,7 +283,7 @@ const M = {
   mGorevlerim: m("Görevlendirmelerim", "تكليفاتي", "My assignments"),
   mYapilacaklar: m("Yapılacaklar", "مهامي", "To do"),
   mgIslerim: m("İşlerim", "أعمالي", "My work"),
-  mgHaberlerimGrubu: m("Yayınlananlar", "المنشور", "Published"),
+  mgHaberlerimGrubu: m("Yayınlananlar", "الأعمال المنجزة", "Published"),
   ykAlt: m("{n} iş · bugün {m}", "{n} مهمة · اليوم {m}", "{n} tasks · today {m}"),
   ykOneriAlt: m("{n} güncel öneri", "{n} مقترحات حالية", "{n} current proposals"),
   ykTakipAlt: m("{n} takip", "{n} متابعة", "{n} follow-ups"),
