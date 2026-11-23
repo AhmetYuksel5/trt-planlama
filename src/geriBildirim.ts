@@ -44,10 +44,12 @@ export const VARSAYILAN_SABLONLAR: GeriBildirimSablonu[] = [
 
 /* Takdir bildiriminin şablonu bu koleksiyonda sabit kimlikle (src/takdir.ts); geri bildirim listesine karışmaz. */
 export const TAKDIR_SABLONU = "takdir-bildirimi";
+/* Sabit kimlikli şablonlar (PKG geri bildirimi, planı gönder; planGonder.ts) listede görünmez, liste yazılırken düşmez. */
+export const SABIT_SABLONLAR = new Set([TAKDIR_SABLONU, "plan-gonder-nd", "plan-gonder-hf"]);
 
 /** Kayıtta şablon yoksa (yeni kurulum, eski kayıt) varsayılanlar; hepsi silinirse de varsayılana dönülüyor. */
 export const sablonlar = (d: Durum): GeriBildirimSablonu[] => {
-  const l = (d.geriBildirimSablonlari ?? []).filter((s) => s.id !== TAKDIR_SABLONU);
+  const l = (d.geriBildirimSablonlari ?? []).filter((s) => !SABIT_SABLONLAR.has(s.id));
   return l.length ? l : VARSAYILAN_SABLONLAR;
 };
 /** Geri bildirim kararı verilmiş öneride ve muhabiri varsa (talimat, ajans önerisinde dönülecek muhabir yok). */

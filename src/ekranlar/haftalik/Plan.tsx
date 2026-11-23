@@ -1,4 +1,5 @@
 import { useSekmeAdi } from "../../sekmeAdi";
+import { PlanGonderDugmesi } from "../../bilesenler/PlanGonder";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
 import { ArrowDown, ArrowUp, BellRing, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
@@ -97,6 +98,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         uc={
           <>
             {duzenler && <GeriAlDugmesi ben={ben} planId={hafta.id} />}
+            <PlanGonderDugmesi ben={ben} hedef={{ tur: "haftalik", plan: hafta }} />
             <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
               {(kararVerebilir(ben, hafta) || toplantiNotuGorur(ben)) && (
                 <a role="menuitem" className="acilir-satir" href={`#/haftalik/${hafta.id}/toplanti`} data-arac="toplanti">

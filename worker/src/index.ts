@@ -4,7 +4,7 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { cagir, modelleriGetir } from "./saglayici.ts";
-import { cfBaglan, ekIndirOtomatik, grubaUygun, postalariCekOtomatik, postaGonderOtomatik, mesajKimligiGecerli, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
+import { cfBaglan, ekIndirOtomatik, grubaUygun, guvenliHtml, postalariCekOtomatik, postaGonderOtomatik, mesajKimligiGecerli, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { coz, sifrele, sifreliMi } from "./gizli.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
@@ -472,7 +472,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
-    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown } | null;
+    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown } | null;
     const kimeL = adresListesi(g?.kime), ccL = adresListesi(g?.cc), bccL = adresListesi(g?.bcc);
     if (!kimeL || !ccL || !bccL) return yanit({ hata: "kime" }, 400);
     const grup = pk.grupAdresi;
@@ -490,7 +490,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     // Hatırlatma: kırmızı başlık (kısa düz metin) ve çağrının Message-ID'si; HTML'i kapı kuruyor, tarayıcıdan HTML alınmıyor.
     const baslik = typeof g?.baslik === "string" ? g.baslik.trim().slice(0, 60) : "";
     const yanitlanan = mesajKimligiGecerli(g?.yanitlanan) ? g.yanitlanan : undefined;
-    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(baslik && { baslik }), ...(yanitlanan && { yanitlanan }) });
+    // Biçimli gövde (planı gönder): yalnız süzgeçten geçmiş biçim etiketleri (ews.ts → guvenliHtml).
+    const html = typeof g?.html === "string" && g.html.trim() ? guvenliHtml(g.html) : undefined;
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }) });
     // Gerçekten kime gittiğini döndür: ekrandaki "→ kime · CC" satırı bundan.
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });
   }

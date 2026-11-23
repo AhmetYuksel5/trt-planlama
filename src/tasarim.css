@@ -4292,3 +4292,8 @@ li.hesap-pasif .ad > a { color: var(--sonuk); text-decoration: line-through; }
 :is(li.hesap-yok, li.hesap-bekliyor, li.hesap-pasif) { border-radius: var(--yaricap); padding-inline: var(--ara-2); }
 /* Beklenen paketlerin elle sırası varken bölüm başlığında varsayılana dönüş. */
 .beklenen-varsayilan { margin-inline-start: 8px; vertical-align: middle; font-weight: normal; }
+
+/* Planı gönder penceresi: alıcılar satır satır, plan kaydırılan önizlemede (bilesenler/PlanGonder.tsx). */
+.pg-alici { font-size: var(--yazi-kucuk, 13px); overflow-wrap: anywhere; }
+.pg-govde { white-space: pre-wrap; margin: 0; }
+.pg-onizleme { max-block-size: 55vh; overflow: auto; border: 1px solid var(--cizgi); border-radius: 8px; }

@@ -1992,6 +1992,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   sola, satırın sonu boş): onay sorulur, tek posta aynı şablonla gider,
   kalemi seçmez; gönderilmişse yeşil işaret, ipucunda saat; adresi yoksa pasif.
   Test `testler/toplanti-posta.cjs`.
+- Planı gönder (kullanıcı: onaylanan plan üstteki zarfla, plan metnindeki
+  biçimiyle postaya gitsin; CC ve başlık Ayarlar'da bir kez; `planGonder.ts`,
+  `bilesenler/PlanGonder.tsx`): onaylı (ya da devralınmış) Next Day'in (klasik ve
+  yeni görünüm) ve kesinleşmiş Weekly'nin başlığında zarf (`data-plan-gonder`;
+  yetki `yetki.ts → planGonderebilir`: planDuzenle / haftalikDuzenle). Pencerede
+  Kime, CC, BCC ve konu şablondan (konu değişir), altında planın temiz kopyası;
+  gövde "E-posta için kopyala"nın biçimi (`indir.ts → epostaHtml`), şablonun metni
+  varsa planın üstünde (`govdeliHtml`). Kişinin EWS kimliğiyle `POST /posta/gonder`
+  `html`'le: kapı tarayıcıdan gelen HTML'i izin listesiyle süzer (`ews.ts →
+  guvenliHtml`: biçim etiketleri ve style/dir/lang; betik, bağlantı, resim, olay
+  özniteliği, url() atılır; önce kapı tarayıcıdan HTML hiç almıyordu); grup yine
+  CC'de, Kime boşsa grup Kime'ye. Gönderilince planda `gonderildi` (zaman, kişi;
+  `eylemler.ts → planGonderildi`), zarf yeşil, saati ipucunda; yeniden gönderim
+  sorulur. Demoda posta gitmez, yalnız iz. Şablonlar Ayarlar › "Muhabire geri
+  bildirim" kartında "Planı gönder · Next Day / Weekly" satırları
+  (`PlanGonderFormu`): geri bildirim koleksiyonunda sabit kimlikle
+  (`plan-gonder-nd`, `plan-gonder-hf`; `geriBildirim.ts → SABIT_SABLONLAR`, PKG
+  geri bildirimiyle aynı yol), `GeriBildirimSablonu.kime`, yer tutucular {tarih}
+  {gun} ve {aralik}; varsayılan konu "الأجندة الإخبارية - {tarih}" ve "الأجندة
+  الأسبوعية {aralik}". Test `testler/plan-gonder.cjs`, kapıda `ews.test.ts`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.

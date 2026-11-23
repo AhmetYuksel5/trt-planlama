@@ -357,6 +357,8 @@ export interface NextDayPlan {
   oncekiHareketler?: string[];
   /** Ekibi yazılan (ya da yoksayılan) staffing postası (staffing.ts); aynı posta için şerit yeniden çıkmasın, düzeltilmiş posta gelince çıksın. */
   staffingPosta?: string;
+  /** Onaylanan planın son postayla gönderimi (planGonder.ts). */
+  gonderildi?: PlanGonderimi;
   olusturan: string;
   olusturma: string;
 }
@@ -683,8 +685,15 @@ export interface GeriBildirimSablonu {
   karar?: GeriBildirimKarari;
   konu: string;
   govde: string;
+  /** Yalnız "planı gönder" şablonunda (planGonder.ts): planın gideceği adresler. */
+  kime?: string;
   cc: string;
   bcc: string;
+}
+/** Planın postayla gönderildiği an (planGonder.ts); ikinci gönderimde de yazılır. */
+export interface PlanGonderimi {
+  zaman: string;
+  kisiId: string;
 }
 /** Deneme süreci ayarı: diğer birimler devreye girince kapatılıyor, takip uygulamadaki akışa dönüyor. */
 export interface GeriBildirimAyari {
@@ -1273,6 +1282,8 @@ export interface HaftalikPlan {
   /** Haftanın Cumartesi'si. */
   baslangic: string;
   durum: HaftaDurum;
+  /** Kesinleşen haftanın son postayla gönderimi (planGonder.ts). */
+  gonderildi?: PlanGonderimi;
   anaKonular: AnaKonu[];
   kalemler: HaftalikKalem[];
   /**

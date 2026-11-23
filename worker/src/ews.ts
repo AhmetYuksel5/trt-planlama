@@ -131,6 +131,41 @@ export interface GidenPosta {
   yanitlanan?: string;
 }
 
+/*
+ * Tarayıcıdan gelen biçimli gövde (kullanıcı: onaylanan planı plan metnindeki
+ * biçimiyle göndermek; "E-posta için kopyala"nın satır içi stilli HTML'i).
+ * Kapı önce tarayıcıdan HTML almıyordu; yalnız biçim etiketleri ve stil, yön,
+ * dil öznitelikleri geçer: betik, stil bloğu, gömülü nesne, bağlantı, resim,
+ * olay öznitelikleri ve url()/expression içeren stil atılır.
+ */
+const IZINLI_ETIKET = new Set(["div", "p", "span", "b", "strong", "i", "em", "u", "br", "h1", "h2", "h3", "h4", "section", "article", "mark", "bdi", "small", "ul", "ol", "li", "table", "thead", "tbody", "tr", "td", "th"]);
+const IZINLI_OZ = new Set(["style", "dir", "lang"]);
+export const HTML_SINIRI = 400_000;
+export const guvenliHtml = (html: string): string => {
+  const govde = html
+    .slice(0, HTML_SINIRI)
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|iframe|object|embed|template|svg|math|noscript|textarea|select|button|head|title)\b[\s\S]*?<\/\1\s*>/gi, "")
+    .replace(/<\/?([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/g, (tam, ad: string, oz: string) => {
+      const etiket = ad.toLowerCase();
+      if (!IZINLI_ETIKET.has(etiket)) return "";
+      if (tam.startsWith("</")) return `</${etiket}>`;
+      const kalan: string[] = [];
+      for (const m of oz.matchAll(/([a-zA-Z-:]+)\s*=\s*("([^"]*)"|'([^']*)')/g)) {
+        const a = m[1].toLowerCase();
+        const deger = m[3] ?? m[4] ?? "";
+        if (!IZINLI_OZ.has(a)) continue;
+        if (a === "style" && /url\s*\(|expression|javascript:|@import|behavior/i.test(deger)) continue;
+        if ((a === "dir" || a === "lang") && !/^[a-zA-Z-]{1,10}$/.test(deger)) continue;
+        kalan.push(`${a}="${deger.replace(/"/g, "&quot;")}"`);
+      }
+      return `<${etiket}${kalan.length ? " " + kalan.join(" ") : ""}>`;
+    })
+    // Kalan "<" (yarım etiket) metin olsun.
+    .replace(/<(?![a-z/])/gi, "&lt;");
+  return `<html><body>${govde}</body></html>`;
+};
+
 /* Message-ID biçimi: "<…@…>"; başlığa başka şey sızmasın. */
 export const mesajKimligiGecerli = (s: unknown): s is string => typeof s === "string" && s.length <= 300 && /^<[^<>\s"]+@[^<>\s"]+>$/.test(s);
 

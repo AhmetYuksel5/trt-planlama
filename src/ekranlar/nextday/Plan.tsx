@@ -1,4 +1,5 @@
 import { GeriBag } from "../../bilesenler/GeriBag";
+import { PlanGonderDugmesi } from "../../bilesenler/PlanGonder";
 import { planSurukleKabi } from "./planSurukle";
 import { useHedefBaslik } from "../../bilesenler/baslikaGit";
 import {
@@ -278,6 +279,7 @@ function YeniPlan({
           {(icerik || operasyon) && (
             <GeriAlDugmesi ben={ben} planId={plan.id} />
           )}
+          <PlanGonderDugmesi ben={ben} hedef={{ tur: "nextday", plan }} />
           {icerik && (
             <button
               type="button"
@@ -643,6 +645,7 @@ function PlanBasi({
         uc={
           <>
             {(icerik || operasyon) && <GeriAlDugmesi ben={ben} planId={plan.id} />}
+            <PlanGonderDugmesi ben={ben} hedef={{ tur: "nextday", plan }} />
             <PlanMenusu ben={ben} plan={plan} secim={secim} ac={ac} onizle={() => setOnizleme(true)} />
           </>
         }

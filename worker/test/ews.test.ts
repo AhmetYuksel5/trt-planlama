@@ -450,3 +450,11 @@ test("postaGonderOtomatik: yanıtlanan posta kutuda yoksa bağlı yeni posta (In
   const gonderim = istekler.find((x) => x.includes("CreateItem"))!;
   assert.ok(!gonderim.includes("ReplyToItem") && gonderim.includes("InReplyTo"));
 });
+
+test("guvenliHtml: biçim kalır, betik, olay, bağlantı ve url() atılır", async () => {
+  const { guvenliHtml } = await import("../src/ews.ts");
+  const x = guvenliHtml(`<div dir="rtl" style="color:#c00000" onclick="kotu()"><h3 style="margin:0">عنوان</h3><script>alert(1)</script><a href="javascript:x">bag</a><img src=x onerror=y><p style="background:url(http://x)">نص</p><!-- yorum --></div>`);
+  assert.ok(x.includes('<div dir="rtl" style="color:#c00000">') && x.includes('<h3 style="margin:0">عنوان</h3>'), x);
+  assert.ok(!/script|onclick|onerror|javascript|<a|<img|url\(|yorum/.test(x), x);
+  assert.ok(x.includes("bag") && x.includes("<p>نص</p>"), x);
+});

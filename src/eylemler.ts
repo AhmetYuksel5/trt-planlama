@@ -13,7 +13,8 @@ import type { MuhabirTaslagi } from "./iceAktar";
 import { bosAlan } from "./epostaEslestir";
 import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
-import { TAKDIR_SABLONU, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
+import { SABIT_SABLONLAR, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
+import { PLAN_GONDER_SABLONU, VARSAYILAN_PLAN_GONDER, type PlanGonderTuru } from "./planGonder";
 import { VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, unvanYoneticiMi, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
@@ -145,6 +146,7 @@ import {
   epostaDegistirebilir,
   geriBildirimGonderebilir,
   geriBildirimSablonuDuzenler,
+  planGonderebilir,
   tamamlamaGeriAlabilir,
   yalnizPlanlama,
   kararVerebilir,
@@ -1063,17 +1065,48 @@ export const geriBildirimSablonuSil = (ben: Kisi, id: string) => {
   return true;
 };
 
-/* Takdir şablonu aynı koleksiyonda; geri bildirim şablonu yazılırken düşmesin. */
-const takdirKaydi = (d: Durum) => (d.geriBildirimSablonlari ?? []).filter((x) => x.id === TAKDIR_SABLONU);
+/* Sabit kimlikli şablonlar (takdir, planı gönder) aynı koleksiyonda; geri bildirim şablonu yazılırken düşmesin. */
+const takdirKaydi = (d: Durum) => (d.geriBildirimSablonlari ?? []).filter((x) => SABIT_SABLONLAR.has(x.id));
 
-/* Takdir bildiriminin şablonu (Ayarlar): geri bildirim şablonlarıyla aynı yetki. Öbür şablonlar yerinde kalır. */
+/* Sabit kimlikli şablonu yazar; öbür şablonlar yerinde kalır. */
+const sabitSablonYaz = (d: Durum, kayit: GeriBildirimSablonu) => {
+  const oteki = (d.geriBildirimSablonlari ?? []).filter((x) => x.id !== kayit.id);
+  // Kayıtta geri bildirim şablonu yokken yalnız sabiti yazmak varsayılanları silmesin diye onlar da yazılır.
+  const liste = oteki.filter((x) => !SABIT_SABLONLAR.has(x.id));
+  kaydet({ ...d, geriBildirimSablonlari: [...(liste.length ? liste : VARSAYILAN_SABLONLAR), ...oteki.filter((x) => SABIT_SABLONLAR.has(x.id)), kayit] });
+};
+
+/* Takdir bildiriminin şablonu (Ayarlar): geri bildirim şablonlarıyla aynı yetki. */
 export const takdirSablonuKaydet = (ben: Kisi, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "cc" | "bcc">) => {
   if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim() || !s.govde.trim()) return false;
+  sabitSablonYaz(getir(), { ...VARSAYILAN_TAKDIR, ...s });
+  return true;
+};
+
+/* Planı gönder şablonu (planGonder.ts): konu zorunlu, metin isteğe bağlı (plan zaten gövde). */
+export const planGonderSablonuKaydet = (ben: Kisi, tur: PlanGonderTuru, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "kime" | "cc" | "bcc">) => {
+  if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim()) return false;
+  sabitSablonYaz(getir(), { ...VARSAYILAN_PLAN_GONDER[tur], ...s, id: PLAN_GONDER_SABLONU[tur] });
+  return true;
+};
+
+/*
+ * Plan postayla gönderildi: planın üstünde işaret (zarfın yanında saat), hareket
+ * yok (posta Posta'da giden balon). Gönderimi kapı yapar; bu yalnız iz.
+ * Onaylı Next Day plan içeriği düzenlenemediği için yetki planDuzenle'den.
+ */
+export const planGonderildi = (ben: Kisi, tur: PlanGonderTuru, id: string) => {
   const d = getir();
-  const kayit: GeriBildirimSablonu = { ...VARSAYILAN_TAKDIR, ...s };
-  const oteki = (d.geriBildirimSablonlari ?? []).filter((x) => x.id !== TAKDIR_SABLONU);
-  // Kayıtta geri bildirim şablonu yokken yalnız takdiri yazmak varsayılanları silmesin diye onlar da yazılır.
-  kaydet({ ...d, geriBildirimSablonlari: [...(oteki.length ? oteki : VARSAYILAN_SABLONLAR), kayit] });
+  const iz = { zaman: new Date().toISOString(), kisiId: ben.id };
+  if (tur === "nextday") {
+    const plan = planBul(d, id);
+    if (!plan || !planGonderebilir(ben, "nextday", plan)) return false;
+    kaydet(planGuncelle(d, id, (p) => ({ ...p, gonderildi: iz })));
+    return true;
+  }
+  const h = d.haftalik.find((x) => x.id === id);
+  if (!h || !planGonderebilir(ben, "haftalik", h)) return false;
+  kaydet(haftaGuncelle(d, id, (x) => ({ ...x, gonderildi: iz })));
   return true;
 };
 

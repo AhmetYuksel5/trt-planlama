@@ -313,6 +313,15 @@ export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
 export const haftalikDuzenler = (k: Kisi | undefined, _h: HaftalikPlan) => yapabilir(k, "haftalikDuzenle");
 
 /*
+ * Planı gönder (planGonder.ts): yalnız son hali olan plan, onaylanan (ya da
+ * devredilmiş) Next Day ve kesinleşen Weekly; planı hazırlayan yetki.
+ */
+export const planGonderebilir = (k: Kisi | undefined, tur: "nextday" | "haftalik", p: NextDayPlan | HaftalikPlan) =>
+  tur === "nextday"
+    ? yapabilir(k, "planDuzenle") && (p.durum === "onayli" || p.durum === "devralindi")
+    : yapabilir(k, "haftalikDuzenle") && p.durum === "kesinlesti";
+
+/*
  * Planların akış adımları (toplantıya götürme, onay, devir, karar,
  * kesinleştirme): kim yapacağı sabit tabloda değil, yapıda; tam yönetici
  * Organizasyon › Plan yetkileri'nde değiştiriyor (yapi.ts → planYetkisi).

@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
 import { ONERI_DURUM_ADI } from "../etiketler";
-import { geriBildirimSablonuKaydet, geriBildirimSablonuSil, takdirSablonuKaydet } from "../eylemler";
+import { geriBildirimSablonuKaydet, geriBildirimSablonuSil, planGonderSablonuKaydet, takdirSablonuKaydet } from "../eylemler";
+import { PLAN_GONDER_ALANLARI, VARSAYILAN_PLAN_GONDER, planGonderSablonu, type PlanGonderTuru } from "../planGonder";
 import { sablonlar } from "../geriBildirim";
 import { TAKDIR_ALANLARI, VARSAYILAN_TAKDIR, takdirSablonu } from "../takdir";
 import { GERI_BILDIRIM_KARARLARI, kimlik, useVeri, type GeriBildirimKarari, type GeriBildirimSablonu, type Kisi } from "../veri";
@@ -21,6 +22,7 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
   const liste = sablonlar(v);
   const [duzenlenen, setDuzenlenen] = useState<GeriBildirimSablonu | null>(null);
   const [takdir, setTakdir] = useState(false);
+  const [planGonder, setPlanGonder] = useState<PlanGonderTuru | null>(null);
   return (
     <Kart baslik={t("gbAyarBaslik")} ikon={<MailCheck size={18} />}>
       <ul className="liste" data-gb-sablonlari>
@@ -33,6 +35,19 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
             <Pencil size={15} />
           </button>
         </li>
+        {(["nextday", "haftalik"] as const).map((tur) => (
+          <li key={tur} data-gb-sablonu={`plan-gonder-${tur}`}>
+            <div className="ad">
+              <b>
+                {t("pgGonder")} · {t(tur === "nextday" ? "nextday" : "mHaftalik")}
+              </b>
+              <small>{t("pgAyarAlt")}</small>
+            </div>
+            <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setPlanGonder(tur)} title={t("duzenle")} aria-label={t("duzenle")} data-plan-gonder-duzenle={tur}>
+              <Pencil size={15} />
+            </button>
+          </li>
+        ))}
         {liste.map((s) => (
           <li key={s.id} data-gb-sablonu={s.id}>
             <div className="ad">
@@ -64,6 +79,11 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
         <Plus size={14} /> {t("gbSablonEkle")}
       </button>
       {duzenlenen && <SablonPenceresi ben={ben} sablon={duzenlenen} kapat={() => setDuzenlenen(null)} />}
+      {planGonder && (
+        <Pencere baslik={`${t("pgGonder")} · ${t(planGonder === "nextday" ? "nextday" : "mHaftalik")}`} kapat={() => setPlanGonder(null)}>
+          <PlanGonderFormu ben={ben} tur={planGonder} />
+        </Pencere>
+      )}
       {takdir && (
         <Pencere baslik={t("tkAyarBaslik")} kapat={() => setTakdir(false)}>
           <TakdirFormu ben={ben} />
@@ -185,5 +205,60 @@ function TakdirFormu({ ben }: { ben: Kisi }) {
           </button>
         </div>
       </div>
+  );
+}
+
+/*
+ * Planı gönder şablonu (planGonder.ts): onaylanan planın postasının alıcıları ve
+ * konusu bir kez burada. Metin isteğe bağlı, planın üstüne girer; gövde planın kendisi.
+ */
+function PlanGonderFormu({ ben, tur }: { ben: Kisi; tur: PlanGonderTuru }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const kayitli = planGonderSablonu(v, tur);
+  const [s, setS] = useState(kayitli);
+  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || (s.kime ?? "") !== (kayitli.kime ?? "") || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
+  const kaydet = (x = s) => {
+    if (planGonderSablonuKaydet(ben, tur, x)) {
+      setS(x);
+      bildir(t("bKaydedildi"));
+    }
+  };
+  return (
+    <div className="form" data-plan-gonder-sablonu={tur}>
+      <label>
+        {t("postaKime")}
+        <input dir="ltr" value={s.kime ?? ""} onChange={(e) => setS({ ...s, kime: e.target.value })} placeholder={t("pgGrupKime")} data-pg-sablon-kime />
+      </label>
+      <div className="satir">
+        <label>
+          {t("gbCc")}
+          <input dir="ltr" value={s.cc} onChange={(e) => setS({ ...s, cc: e.target.value })} data-pg-sablon-cc />
+        </label>
+        <label>
+          {t("gbBcc")}
+          <input dir="ltr" value={s.bcc} onChange={(e) => setS({ ...s, bcc: e.target.value })} data-pg-sablon-bcc />
+        </label>
+      </div>
+      <label>
+        {t("gbKonu")}
+        <input {...icerikAlani} value={s.konu} onChange={(e) => setS({ ...s, konu: e.target.value })} data-pg-sablon-konu />
+      </label>
+      <label>
+        {t("gbMetin")}
+        <textarea {...icerikAlani} rows={4} value={s.govde} onChange={(e) => setS({ ...s, govde: e.target.value })} data-pg-sablon-metin />
+      </label>
+      <small className="sonuk" dir="ltr">
+        {PLAN_GONDER_ALANLARI[tur].map((a) => `{${a}}`).join(" ")}
+      </small>
+      <div className="form-alt">
+        <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet({ ...VARSAYILAN_PLAN_GONDER[tur] })} data-pg-sablon-varsayilan>
+          {t("tkVarsayilan")}
+        </button>
+        <button type="button" className="dugme dugme-kucuk" disabled={!degisti || !s.konu.trim()} onClick={() => kaydet()} data-pg-sablon-kaydet>
+          {t("kaydet")}
+        </button>
+      </div>
+    </div>
   );
 }
