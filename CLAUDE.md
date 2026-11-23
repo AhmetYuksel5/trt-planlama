@@ -1411,10 +1411,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ad, durum "0900+", "OFF"…). Postada bütün personel yok; yalnız eşlemesi
     olan gruplar ekibe (`staffingGorevi`): PRESENTER → مذيعون, EP TEAM → منتج
     تنفيذي, PE … TEAM (siyasi programlar hariç) → منتج نشرات, Interpreter →
-    مترجم, INTERVIEW TEAM → منتج مقابلات, SCRIPT EDITORS → محرر, PLANNING →
-    قسم المراسلين; izinli/rapor/telafi ve saatsiz girmez. Saat İstanbul,
+    مترجم, INTERVIEW TEAM → منتج مقابلات, SCRIPT EDITORS → محرر, NEWSDESK → قسم
+    المراسلين (kullanıcı: önce PLANNING'den alınıyordu, yanlıştı); izinli/rapor/telafi ve saatsiz girmez. Saat İstanbul,
     vardiya GMT (−3). Ad Latin yazımla kayıttaki kişiye (`staffingKisisi`: en az
-    iki parça, en iyisi tek; yoksa "Kayıtta yok", elle seçilir). Kendiliğinden
+    iki parça, en iyisi tek; yoksa "Kayıtta yok", elle seçilir). Kişinin Latin
+    adı, e-postalarının yerel kısmı ve Arapça adının ünsüz iskeleti (`iskelet`:
+    ünlüler, و ve ي düşer, aynı sesin harfleri birleşir; "عبد الرحمن" bileşik
+    okunuşlarıyla) karşılaştırılır (kullanıcı: plana ekli kişiler eşleşmiyordu,
+    kayıtta çoğunun yalnız Arapça adı var); eşit adaylardan yalnız biri planın
+    ekibindeyse o. Kendiliğinden
     yazılmaz: önizlemede işaretlenenler "Ekibe yaz"la (`eylemler.ts →
     ekipPostadanYaz`): postadaki görevlerin ekibi postadakiyle değişir, öbür
     görevler kalır; "Yoksay" yalnız işaretler (`NextDayPlan.staffingPosta`,

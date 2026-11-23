@@ -63,7 +63,7 @@ export function StaffingSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) 
   useStaffingPostasi(ben, plan);
   const posta = staffingPostasi(v.postaMesajlari, plan.tarih);
   const kisiler = v.kisiler;
-  const oneriler = useMemo(() => (posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler) : []), [posta, kisiler]);
+  const oneriler = useMemo(() => (posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip) : []), [posta, kisiler, plan.ekip]);
   if (!posta || !planIcerikDuzenler(ben, plan) || (plan.staffingPosta === posta.id && !acik) || !oneriler.length) return null;
   return (
     <>

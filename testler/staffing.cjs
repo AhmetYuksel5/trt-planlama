@@ -53,11 +53,27 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     const uye = (id) => plan.ekip.find((e) => e.kisiId === id);
     ok(uye("pr6")?.gorev === "sunucu" && uye("pr6")?.vardiya === "03:00", `${dil}: sunucu GMT vardiyayla (06.00 İstanbul → 03G)`);
     ok(uye("nd1")?.gorev === "yapimciSef" && uye("nd1")?.vardiya === "04:00", `${dil}: EP yapım şefi 04G`);
-    ok(uye("nd4")?.gorev === "bultenYapimcisi" && uye("ou6")?.gorev === "tercuman" && uye("pl3")?.gorev === "muhabirMasasi", `${dil}: PE, tercüman, planlama yerinde`);
+    ok(uye("nd4")?.gorev === "bultenYapimcisi" && uye("ou6")?.gorev === "tercuman", `${dil}: PE, tercüman yerinde`);
+    ok(uye("nd2")?.gorev === "muhabirMasasi" && uye("nd2")?.vardiya === "04:00", `${dil}: قسم المراسلين postanın NEWSDESK satırından`);
+    ok(!plan.ekip.some((e) => e.kisiId === "pl3" && e.gorev === "muhabirMasasi"), `${dil}: PLANNING grubu قسم المراسلين'e girmiyor`);
     ok(!uye("pl2") && !uye("ou1"), `${dil}: OFF ve eşlemesiz grup ekipte yok`);
     ok(plan.ekip.filter((e) => e.gorev === "sunucu").length === 1, `${dil}: postadaki görevin eski ekibi değişti`);
     ok(plan.staffingPosta?.startsWith("pm-staffing-"), `${dil}: posta işaretlendi`);
     ok((await p.locator("[data-staffing-seridi]").count()) === 0, `${dil}: yazınca şerit kalkıyor`);
+    // Kayıtta yalnız Arapça adı olan kişi (geçmiş plan yüklemesi) postanın Latin adıyla da eşleşiyor.
+    await p.evaluate(() => {
+      const v = JSON.parse(localStorage.getItem("trt-planlama-v25"));
+      for (const [id, ad] of [["ou6", "رشا حمدان"], ["pr6", "يوسف الخطيب"]]) v.kisiler.find((k) => k.id === id).ad = ad;
+      delete v.planlar.find((x) => x.id === "nd-yarin").staffingPosta;
+      localStorage.setItem("trt-planlama-v25", JSON.stringify(v));
+      localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
+    });
+    await p.goto("about:blank");
+    await p.goto(B + "#/nextday/nd-yarin");
+    await p.waitForTimeout(800);
+    await p.locator("[data-staffing-ac]").click();
+    await p.waitForTimeout(400);
+    ok((await p.locator('[data-staffing-satir][data-eslesti="0"]').count()) === 1, `${dil}: Arapça adlı kayıt Latin adla eşleşiyor (yalnız kayıtta olmayan eşleşmiyor)`);
     await p.close();
   }
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));

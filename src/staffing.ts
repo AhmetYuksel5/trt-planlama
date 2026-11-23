@@ -201,7 +201,8 @@ const sade = (s: string) => s.toUpperCase().replace(/\s+/g, " ").trim();
 /*
  * Postanın grubu → Next Day ekibindeki görev. Kurumun Next Day çıktısındaki
  * ekip: منتج تنفيذي (EP), منتج نشرات (haber programı editörleri), مذيعون,
- * قسم المراسلين (planlama), منتج مقابلات, مترجم, محرر (script editor).
+ * قسم المراسلين (postanın NEWSDESK grubu; kullanıcı: PLANNING değil, Newsdesk
+ * satırı), منتج مقابلات, مترجم, محرر (script editor).
  * Programların (Political programs, Yeni Sabah…) ekibi Next Day'e girmiyor.
  */
 export const staffingGorevi = (k: Pick<StaffingKaydi, "bolum" | "grup">): EkipGorevi | undefined => {
@@ -213,9 +214,9 @@ export const staffingGorevi = (k: Pick<StaffingKaydi, "bolum" | "grup">): EkipGo
     if (/^INTERPRETER/.test(g)) return "tercuman";
     if (g === "INTERVIEW TEAM") return "roportajYapimcisi";
     if (/^SCRIPT EDITOR/.test(g)) return "editor";
+    if (/^NEWS ?DESK\b/.test(g)) return "muhabirMasasi";
     return undefined;
   }
-  if (k.bolum === "newsgathering" && g === "PLANNING") return "muhabirMasasi";
   return undefined;
 };
 
@@ -231,36 +232,106 @@ const latin = (s: string) =>
     .replace(/ı/g, "i")
     .replace(/İ/g, "i")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 const parcalar = (s: string) => latin(s).split(/[^a-z]+/).filter((p) => p.length >= 2);
 
-const kisiParcalari = (k: Kisi) => {
-  const adlar = typeof k.ad === "string" ? [k.ad] : [k.ad.tr, k.ad.en];
-  return new Set(adlar.filter((x): x is string => !!x).flatMap(parcalar));
+/*
+ * Ünsüz iskeleti: Latin ve Arapça yazım aynı biçime iner, kayıtta yalnız
+ * Arapça adı olan kişi (geçmiş plan yüklemesi, hesapsız kişi) postanın Latin
+ * adıyla da tutsun (kullanıcı: postadaki adlar plana ekli kişilerle
+ * eşleşmiyordu). Ünlüler, و ve ي (ünlü de okunur) düşer; aynı sesin harfleri
+ * birleşir (ج/c/g/غ, ح/خ/h, س/ص/ث/ش/sh, ق/ك/k…), çift harf teke iner.
+ */
+const AR_ISKELET: Record<string, string> = {
+  ب: "b", ت: "t", ث: "s", ج: "j", ح: "h", خ: "h", د: "d", ذ: "z", ر: "r", ز: "z", س: "s", ش: "s", ص: "s", ض: "d",
+  ط: "t", ظ: "z", غ: "j", ف: "f", ق: "k", ك: "k", ل: "l", م: "m", ن: "n", ه: "h", پ: "b", چ: "j", گ: "j", ڤ: "f",
+};
+const iskelet = (s: string): string => {
+  let x: string;
+  if (/[\u0600-\u06ff]/.test(s)) x = [...s].map((h) => AR_ISKELET[h] ?? "").join("");
+  else
+    x = latin(s)
+      .replace(/sh|ch/g, "s")
+      .replace(/kh/g, "h")
+      .replace(/gh|dj|dsch/g, "j")
+      .replace(/ph/g, "f")
+      .replace(/th/g, "s")
+      .replace(/q/g, "k")
+      .replace(/[cg]/g, "j")
+      .replace(/x/g, "ks")
+      .replace(/p/g, "b")
+      .replace(/v/g, "f")
+      .replace(/[^bdfhjklmnrstz]/g, "");
+  return x.replace(/(.)\1+/g, "$1");
+};
+/* Arapça adın parçaları ve bileşik okunuşları: "عبد الرحمن" postada "Abdurrahman", "Abdulrahman" diye geçer. */
+const arapcaIskeletleri = (ad: string): string[] => {
+  const p = ad.split(/[\s\u200c-]+/).filter(Boolean);
+  const sonuc = p.map(iskelet);
+  for (let i = 0; i + 1 < p.length; i++) {
+    const ikinci = p[i + 1].replace(/^ال/, "");
+    sonuc.push(iskelet(p[i] + p[i + 1]), iskelet(p[i] + ikinci), iskelet(p[i]) + "l" + iskelet(ikinci));
+    if (p[i + 1].startsWith("ال")) sonuc.push(iskelet(ikinci));
+  }
+  return sonuc;
+};
+
+interface KisiAdlari {
+  /** Latin parçalar (Türkçe, İngilizce ad ve e-postaların yerel kısmı). */
+  latin: Set<string>;
+  /** Ünsüz iskeletleri (Latin ve Arapça). */
+  iskelet: Set<string>;
+  /** Adın kaç parçası var (tutması gereken sayı ondan). */
+  uzunluk: number;
+}
+const kisiAdlari = (k: Kisi): KisiAdlari => {
+  const latinAdlar = typeof k.ad === "string" ? (/[\u0600-\u06ff]/.test(k.ad) ? [] : [k.ad]) : [k.ad.tr, k.ad.en];
+  const arapca = typeof k.ad === "string" ? (/[\u0600-\u06ff]/.test(k.ad) ? k.ad : "") : k.ad.ar || "";
+  const adParca = latinAdlar.filter((x): x is string => !!x).flatMap(parcalar);
+  const postaParca = [k.eposta, k.kurumEposta]
+    .filter((x): x is string => !!x && !/@giris\./.test(x))
+    .flatMap((e) => parcalar(e.split("@")[0]));
+  const arParca = arapca ? arapca.split(/\s+/).filter(Boolean) : [];
+  const latinSet = new Set([...adParca, ...postaParca]);
+  const isk = new Set([...[...latinSet].map(iskelet), ...(arapca ? arapcaIskeletleri(arapca) : [])].filter((x) => x.length >= 2));
+  return { latin: latinSet, iskelet: isk, uzunluk: Math.max(new Set(adParca).size, arParca.length, 1) };
+};
+const tutar = (parca: string, a: KisiAdlari) => {
+  if (a.latin.has(parca)) return true;
+  const i = iskelet(parca);
+  return i.length >= 2 && a.iskelet.has(i);
 };
 
 /**
- * Postadaki adı kayıtlı kişiyle eşleştirir (Latin yazım). En az iki parça
- * tutmalı (tek parçalı adda o parça) ve en iyisi tek olmalı; değilse
- * eşleşmez, önizlemede elle seçilir. Yanlış kişi sessizce ekibe girmesin.
+ * Postadaki adı kayıtlı kişiyle eşleştirir (Latin yazım; kişinin Latin adı,
+ * e-postası ya da Arapça adının iskeleti). En az iki parça tutmalı (tek
+ * parçalı adda o parça) ve en iyisi tek olmalı; değilse eşleşmez, önizlemede
+ * elle seçilir. Yanlış kişi sessizce ekibe girmesin. Eşit adaylardan yalnız
+ * biri planın ekibindeyse o seçilir (`oncelikli`).
  */
-export const staffingKisisi = (ad: string, kisiler: Kisi[]): { kisiId?: string; adaylar: string[] } => {
+export const staffingKisisi = (
+  ad: string,
+  kisiler: Kisi[],
+  oncelikli: ReadonlySet<string> = new Set(),
+): { kisiId?: string; adaylar: string[] } => {
   const p = [...new Set(parcalar(ad))];
   if (!p.length) return { adaylar: [] };
   const puanlar = kisiler
     .filter((k) => !k.pasif)
     .map((k) => {
-      const kp = kisiParcalari(k);
-      return { k, sayi: p.filter((x) => kp.has(x)).length, kalan: kp.size };
+      const a = kisiAdlari(k);
+      return { k, sayi: p.filter((x) => tutar(x, a)).length, kalan: a.uzunluk };
     })
     .filter((x) => x.sayi >= Math.min(2, p.length) && x.sayi >= Math.min(2, x.kalan))
     .sort((a, b) => b.sayi - a.sayi || a.kalan - b.kalan);
   const adaylar = puanlar.map((x) => x.k.id);
   if (!puanlar.length) return { adaylar };
-  const [ilk, ikinci] = puanlar;
-  if (ikinci && ikinci.sayi === ilk.sayi && ikinci.kalan === ilk.kalan) return { adaylar };
-  return { kisiId: ilk.k.id, adaylar };
+  const ilk = puanlar[0];
+  const esit = puanlar.filter((x) => x.sayi === ilk.sayi && x.kalan === ilk.kalan);
+  if (esit.length === 1) return { kisiId: ilk.k.id, adaylar };
+  const ekipte = esit.filter((x) => oncelikli.has(x.k.id));
+  return ekipte.length === 1 ? { kisiId: ekipte[0].k.id, adaylar } : { adaylar };
 };
 
 export interface StaffingOnerisi extends StaffingKaydi {
@@ -272,12 +343,14 @@ export interface StaffingOnerisi extends StaffingKaydi {
 }
 
 /** Ekibe girecek satırlar: eşlemesi olan grupta, o gün vardiyası olan kişiler. */
-export const staffingOnerileri = (metin: string, kisiler: Kisi[]): StaffingOnerisi[] =>
-  staffingCoz(metin).flatMap((k) => {
+export const staffingOnerileri = (metin: string, kisiler: Kisi[], ekip: EkipUyesi[] = []): StaffingOnerisi[] => {
+  const oncelikli = new Set(ekip.map((e) => e.kisiId));
+  return staffingCoz(metin).flatMap((k) => {
     const gorev = staffingGorevi(k);
     if (!gorev || !k.calisiyor || !k.saat) return [];
-    return [{ ...k, gorev, vardiya: gmtVardiya(k.saat), ...staffingKisisi(k.ad, kisiler) }];
+    return [{ ...k, gorev, vardiya: gmtVardiya(k.saat), ...staffingKisisi(k.ad, kisiler, oncelikli) }];
   });
+};
 
 /** Ekibe yazış: postadaki görevlerin ekibi postadakiyle değişir, öbür görevler kalır. */
 export const staffingEkibi = (ekip: EkipUyesi[], yeni: EkipUyesi[]): EkipUyesi[] => {
@@ -291,6 +364,7 @@ export const staffingEkibi = (ekip: EkipUyesi[], yeni: EkipUyesi[]): EkipUyesi[]
  * Kurumun günlük staffing postasının kurgusal benzeri (kurumunki adları
  * gerçek): yarının planına Next Day'de "Staffing postası" şeridi çıksın.
  * Adlar örnek kişilerin Latin yazımı; biri kayıtta yok, önizlemede elle seçilir.
+ * PLANNING grubu ekibe girmez (قسم المراسلين NEWSDESK'ten).
  * Kimliği tarihten: eski demo kaydına açılış işi (demoStaffingPostasi) ekliyor.
  */
 export const staffingOrnegi = (kisiler: Kisi[], an: string, tarih: string, P: string): PostaMesaji => {
@@ -313,6 +387,7 @@ export const staffingOrnegi = (kisiler: Kisi[], an: string, tarih: string, P: st
     "PE EARLY TEAM", "1", "Programme Editor", "1100-2000", ad("nd4"), "Freelancer", "1300-2200", "Kerem Tunalı",
     "OP EARLY TEAM", "1", "Output Producer", "0700-1600", ad("ou1"),
     "Interpreter", "1", "Interpreter", "0900-1800", ad("ou6"),
+    "NEWSDESK", "1", "News Editor", "0700-1815", ad("nd2"),
     "NEWSGATHERING", "POSITION", "NAMES", gunAdi.slice(0, 3).toUpperCase(),
     "PLANNING", "Planning Producer", ad("pl3").toLocaleUpperCase("tr"), "0700+", "Planning Producer", ad("pl2").toLocaleUpperCase("tr"), "OFF",
   ].join("\n\n");
