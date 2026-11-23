@@ -1,4 +1,5 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
+import { suruklenir } from "./planSurukle";
 import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
@@ -436,7 +437,7 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
           form === c.id ? (
             <CanliFormu key={c.id} plan={plan} planBaslikId={planBaslikId} mevcut={c} kapat={() => setForm("")} />
           ) : (
-            <div key={c.id} className={oncekiSinif(c.onceki, "kayit")} title={c.onceki ? t("oncekiGunden") : undefined}>
+            <div key={c.id} {...suruklenir("canli", c.id, c.planBaslikId, duzenler && !!ben)} className={oncekiSinif(c.onceki, "kayit")} title={c.onceki ? t("oncekiGunden") : undefined}>
               <div className="kayit-bas">
                 <div>
                   <b>
@@ -489,7 +490,10 @@ export function CanliBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
   const canlilar = d.canliYayinlar.filter((c) => c.planId === plan.id && !c.planBaslikId);
   return (
     <Bolum ar no={3} baslik={metin("canliYayinlar", "ar")} ek={String(canlilar.length)}>
-      <CanliListesi plan={plan} canlilar={canlilar} duzenler={duzenler} />
+      {/* Başlığa bağlı canlı buraya bırakılınca bağı kalkar (planSurukle.ts). */}
+      <div data-sur-canli>
+        <CanliListesi plan={plan} canlilar={canlilar} duzenler={duzenler} />
+      </div>
     </Bolum>
   );
 }
@@ -678,7 +682,7 @@ export function GelismeListesi({
           <GelismeFormu key={g.id} plan={plan} planBaslikId={planBaslikId} mevcut={g} kapat={() => setForm("")} />
         ) : (
           <Fragment key={g.id}>
-          <div {...hedef?.(g)} data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
+          <div {...hedef?.(g)} {...suruklenir("gelisme", g.id, planBaslikId, duzenler && !!ben)} data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
                 <Icerik blok className="kayit-metin">
@@ -779,7 +783,10 @@ export function TakipBolumu({ plan, duzenler, d, no }: { plan: NextDayPlan; duze
   const takipler = d.gelismeler.filter((g) => g.planId === plan.id && !g.planBaslikId);
   return (
     <Bolum ar no={no} baslik={metin("takipler", "ar")} ek={String(takipler.length)}>
-      <GelismeListesi plan={plan} gelismeler={takipler} duzenler={duzenler} />
+      {/* Başlığın gelişmesi buraya bırakılınca başlıksız متابعات olur (planSurukle.ts). */}
+      <div data-sur-takip>
+        <GelismeListesi plan={plan} gelismeler={takipler} duzenler={duzenler} />
+      </div>
     </Bolum>
   );
 }

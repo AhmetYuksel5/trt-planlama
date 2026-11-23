@@ -41,6 +41,7 @@ import { OneriListesi } from "../oneri/OneriGovde";
 import { plandakiFaaliyetler } from "../../takvim";
 import { TakvimdenListe } from "../takvim/Planlarda";
 import { KalemFormu, KalemKarti } from "./Kalem";
+import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "./haftaSurukle";
 import { GozdenGecirme } from "./GozdenGecirme";
 import { HaftalikCiktiOnizleme } from "./Cikti";
 import { HaftalikTakdirPenceresi } from "./Takdir";
@@ -73,6 +74,9 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const [onizleme, setOnizleme] = useState(false);
   const [takdir, setTakdir] = useState(false);
   const [hatirlatma, setHatirlatma] = useState(false);
+  // Sürüklenip bir güne ya da dosyaya bırakılan öneri: "Gündeme ekle" o yerle açılır.
+  const [birakilan, setBirakilan] = useState<{ oneriId: string; tarih: string; baslikId?: string } | null>(null);
+  const birakilanOneri = birakilan ? v.oneriler.find((o) => o.id === birakilan.oneriId) : undefined;
   const takdirKalemleri = haftalikTakdirKalemleri(hafta);
   const takdirBekleyen = takdirKalemleri.filter((k) => !kalemBildirimi(v, k)).length;
   const gundem = hafta.kalemler.filter(gundemde);
@@ -204,9 +208,17 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       <AyliktanBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />
-      <AnaDosyalar ben={ben} hafta={hafta} />
-      <GunlukGundem ben={ben} hafta={hafta} />
-      <StokDosyasi ben={ben} hafta={hafta} />
+      {/* Kalem, ana dosya ve öneri kartı sürükle-bırak (haftaSurukle.ts): tek dinleyici. */}
+      <div className="plan-surukle" {...(duzenler ? haftaSurukleKabi(ben, hafta, yapabilir(ben, "oneriDegerlendir") ? (oneriId, tarih, baslikId) => setBirakilan({ oneriId, tarih, baslikId }) : undefined) : {})}>
+        <AnaDosyalar ben={ben} hafta={hafta} />
+        <GunlukGundem ben={ben} hafta={hafta} />
+        <StokDosyasi ben={ben} hafta={hafta} />
+      </div>
+      {birakilanOneri && birakilan && (
+        <Pencere baslik={t("gundemeEkle")} kapat={() => setBirakilan(null)}>
+          <GundemeEkle ben={ben} hafta={hafta} oneri={birakilanOneri} yer={{ tarih: birakilan.tarih, baslikId: birakilan.baslikId }} kapat={() => setBirakilan(null)} />
+        </Pencere>
+      )}
       {toplantiNotuGorur(ben) && (hafta.durum !== "hazirlik" || (v.toplantiNotlari ?? []).some((n) => n.planId === hafta.id)) && (
         <Bolum no="✎" baslik={t("toplantiNotlari")} ek={String((v.toplantiNotlari ?? []).filter((n) => n.planId === hafta.id).length || "")}>
           <ToplantiNotlari ben={ben} planId={hafta.id} kartsiz />
@@ -270,18 +282,19 @@ function TakvimdenBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: Haftal
 /* --- Bu haftaya gelen öneriler: gündeme alınıyor ya da reddediliyor --- */
 
 /* `stok`: Stok sayfasından (kullanıcı: stok ekibi gelecek haftanın tekliflerini topluyor) gün boş gelir, teklif "Stok ve programlar"a düşer. */
-export function GundemeEkle({ ben, hafta, oneri, kapat, stok }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void; stok?: boolean }) {
+// yer: öneri kartı bir güne ya da dosyaya bırakılınca (haftaSurukle.ts) o gün ve dosya seçili gelir.
+export function GundemeEkle({ ben, hafta, oneri, kapat, stok, yer }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void; stok?: boolean; yer?: { tarih: string; baslikId?: string } }) {
   const { t, dil } = useDil();
   const v = useVeri();
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
   // Önerinin dosyası pasifse listede yok; seçici başka seçeneği gösterip kayıt görünmeyen dosyaya gitmesin.
   const dosya = oneri.baslikId && v.basliklar.some((b) => b.id === oneri.baslikId && b.aktif) ? oneri.baslikId : "";
   // Haftanın dosyaları ve önerinin kendi dosyası; havuzun bütün eski başlıkları değil.
-  const haftanin = new Set([...haftaninDosyalari(hafta), dosya]);
+  const haftanin = new Set([...haftaninDosyalari(hafta), dosya, ...(yer?.baslikId ? [yer.baslikId] : [])]);
   // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
   const aralik = oneriAraligi(oneri);
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
-  const [f, setF] = useState({ tarih: !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "", teslimGunu: "" });
+  const [f, setF] = useState({ tarih: yer ? yer.tarih : !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: yer ? (yer.baslikId ?? dosya) : dosya, yeniBaslik: "", teslimGunu: "" });
   // "Stok ve programlar"a giren paket önerisinde teslim günü (kalemin formundaki gibi).
   const pb = paketBicimi(oneri.bicim);
   const teslimSorulur = teslimGunuSorulur({ tarih: f.tarih || undefined, bicimler: pb ? [pb] : [] });
@@ -496,7 +509,7 @@ function AnaDosyalar({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
         form === a.id ? (
           <AnaKonuFormu key={a.id} ben={ben} hafta={hafta} mevcut={a} kapat={() => setForm(null)} />
         ) : (
-          <div key={a.id} className="kayit">
+          <div key={a.id} {...haftaSuruklenir("ana", a.id, duzenler)} className="kayit">
             <div className="kayit-bas">
               <div>
                 <b>
@@ -541,13 +554,13 @@ const dosyalaraGore = (kalemler: HaftalikKalem[]) => {
   return [...gruplar.entries()];
 };
 
-function DosyaGruplari({ ben, hafta, kalemler }: { ben: Kisi; hafta: HaftalikPlan; kalemler: HaftalikKalem[] }) {
+function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: HaftalikPlan; kalemler: HaftalikKalem[]; tarih: string }) {
   const { t } = useDil();
   const v = useVeri();
   return (
     <>
       {dosyalaraGore(kalemler).map(([baslikId, liste]) => (
-        <div key={baslikId || "-"} className="dosya-grubu">
+        <div key={baslikId || "-"} className="dosya-grubu" {...hfYer(tarih, baslikId)}>
           <div className="alan-etiket">{baslikId ? <Icerik>{v.basliklar.find((b) => b.id === baslikId)?.ad}</Icerik> : t("dosyasiz")}</div>
           {liste.map((k) => (
             <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
@@ -568,12 +581,12 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
       {haftaGunleri(hafta.baslangic).map((g) => {
         const kalemler = gunlu.filter((k) => k.tarih === g);
         return (
-          <section key={g} className="gun-blogu">
+          <section key={g} className="gun-blogu" {...hfYer(g)}>
             <h3>
               {gunAdi(g, dil)} <span>{tarihYaz(g, dil, "uzun")}</span>
             </h3>
             {kalemler.length === 0 && form !== g && <p className="bos-kucuk">{t("buGunKalemYok")}</p>}
-            <DosyaGruplari ben={ben} hafta={hafta} kalemler={kalemler} />
+            <DosyaGruplari ben={ben} hafta={hafta} kalemler={kalemler} tarih={g} />
             {duzenler &&
               (form === g ? (
                 <KalemFormu ben={ben} hafta={hafta} tarih={g} kapat={() => setForm(null)} />
@@ -601,6 +614,7 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const gidebilir = stok.filter(onIncelemeyeGidebilir);
   return (
     <Bolum no={4} baslik={t("stokVeProgramlar")} ek={t("kalemSayisi", { n: gundemdeki.length })}>
+      <div {...hfYer("")}>
       {duzenler && gidebilir.length > 0 && (
         <div className="dugmeler">
           <button
@@ -616,7 +630,7 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
       )}
       {gundemdeki.length === 0 && !form && <Bos kucuk metin={t("kayitYok")} />}
       <div className="ara-ust-2">
-        <DosyaGruplari ben={ben} hafta={hafta} kalemler={gundemdeki} />
+        <DosyaGruplari ben={ben} hafta={hafta} kalemler={gundemdeki} tarih="" />
       </div>
       {duzenler &&
         (form ? (
@@ -634,6 +648,7 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
           ))}
         </details>
       )}
+      </div>
     </Bolum>
   );
 }

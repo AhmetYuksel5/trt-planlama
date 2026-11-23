@@ -1334,10 +1334,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     içeriğini düzenleyen): PKG satırı (`data-pkg-surukle`) gelişmenin üstüne
     bırakılınca onun altına, başlığın başka yerine (klasikte PKG bölümü
     `data-pkg-bolum`, belgede başlık satırı) bırakılınca başlığın PKG'sine;
-    yalnız aynı başlıkta, durum ve onay değişmez. Belgede gelişme ve altı
+    başka başlığa da (o başlığın PKG'si), başka PKG'nin üstüne bırakılınca onun
+    yerine (sıralama); durum ve onay değişmez. Belgede gelişme ve altı
     `.pkg-hedef` (yalnız düzenlerken; çıktı ve Word'de sarmal yok), bırakılacak
     yer kesik çizgiyle (`.pkg-birakilir`). Telefonda sürükleme yok, formdaki
     "Planda yeri" kalır. Test `testler/pkg-surukle.cjs`.
+    Planın öbür satırları da sürüklenir (kullanıcı: plan hazırlarken her işlem
+    sürükle-bırakla; `nextday/planSurukle.ts`): gelişme başka gelişmenin yerine
+    (sıralama), başka başlığa ya da متابعات'e (`eylemler.ts → gelismeSurukle`,
+    taşımada "Başka başlığa taşı"nın kuralı, PKG'si de gider); başlığın muhabiri
+    yeri ve notuyla başka başlığa ya da başka muhabirin yerine
+    (`planMuhabirSurukle`, plan içeriğini düzenleyen); canlı yayın başlığa,
+    başlıktan "مباشر"a (`canliBasligaBagla`). Satır yalnız işaret taşır
+    (`suruklenir`: `data-sur`, `data-sur-id`, `data-sur-pb`), hedefi planın kabındaki
+    tek dinleyici çözer (`planSurukleKabi`; klasikte `.plan-surukle`, belgede
+    `<article>`): başlık `[data-plan-baslik]`/`[data-nd-baslik]`, متابعات
+    `[data-sur-takip]`, مباشر `[data-sur-canli]`; hedef `.sur-hedef`. Yazı
+    alanında başlayan sürükleme (muhabirin yeri, yerinde yazılan metin) metin
+    seçimidir, satırı taşımaz. Taşınan kaydın "önceki gün" izi kalkar. Test
+    `testler/plan-surukle.cjs`.
   - Gelişme ve PKG formunda gün varsayılan olarak planın günü (kullanıcı:
     Next Day ertesi günün planı, eklenen bugünün tarihini taşıyordu): gelişmede
     `TarihGirdisi` ve ayrı, isteğe bağlı saat (`Gelisme.saat`, "SS:DD"); boş
@@ -2241,6 +2256,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     "Kalanları kabul et" ve dolu "Planı kesinleştir" (karar bekleyen varken
     pasif, sayısı kartta), kesinleşmişte bekleyen aktarım; künye ve Takip.
     Önce büyük ikon, ortalı düğmeler ve ayrı durum kartı vardı.
+  - Sürükle-bırak (kullanıcı: Next Day'deki gibi; `haftalik/haftaSurukle.ts`,
+    kalıbı `nextday/planSurukle.ts`): kalem başka kalemin üstüne bırakılınca
+    onun gününü ve dosyasını alıp yerine geçer, dosya grubuna bırakılınca o gün
+    ve dosyanın sonuna, günün kendisine bırakılınca dosyası kalır ve gün değişir,
+    "Stok ve programlar"a bırakılınca günsüz (`eylemler.ts → kalemSurukle`;
+    haftalık düzenleyen, gündemdeki ve kilitli olmayan kalem; teslim günü
+    `kalemKaydet`'in kuralıyla). Ana dosyalar birbirinin yerine
+    (`anaKonuYerine`). Öneri kartı güne ya da dosyaya bırakılınca "Gündeme ekle"
+    o yerle pencerede açılır (`GundemeEkle yer`), kayıt formdan. Satır
+    `haftaSuruklenir` (`data-hf-sur`), yer `hfYer` (`data-hf-gun`, dosya grubunda
+    `data-hf-dosya`, dosyasız ""), tek dinleyici `haftaSurukleKabi` (plan
+    ekranında `.plan-surukle`, belgede `<article>`). Test `testler/hafta-surukle.cjs`.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
     başlıkla geçer, havuz ikiye bölünmez.
   - Dosya seçimleri (kalem formu, "Gündeme ekle", ana dosya) her hafta boş

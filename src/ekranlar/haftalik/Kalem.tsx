@@ -17,6 +17,7 @@ import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { bugun } from "../../tarih";
 import { useYeniTasarim } from "../../tasarimSecimi";
+import { haftaSuruklenir } from "./haftaSurukle";
 
 /*
  * Haftalık gündemin kalemi: kurumun çıktısındaki satır ("ad - YER /
@@ -251,7 +252,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
   const oneri = oneriBul(v, kalem.oneriId);
   if (duzenle) return <KalemFormu ben={ben} hafta={hafta} mevcut={kalem} kapat={() => setDuzenle(false)} />;
   return (
-    <div className={`kayit kalem ${gundemde(kalem) ? "" : "dusmus"}`} data-karar={kalem.karar} data-kalem={kalem.id}>
+    <div {...haftaSuruklenir("kalem", kalem.id, duzenler && gundemde(kalem) && !kisayol)} className={`kayit kalem ${gundemde(kalem) ? "" : "dusmus"}`} data-karar={kalem.karar} data-kalem={kalem.id}>
       <div className="kayit-bas">
         <div>
           {dosyaGoster && dosya && (

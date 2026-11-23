@@ -1167,6 +1167,20 @@ const arkasina = <T>(dizi: T[], kimi: (x: T) => string, id: string, sonra?: stri
   return i < 0 ? dizi : [...kalan.slice(0, i + 1), x, ...kalan.slice(i + 1)];
 };
 const kimlikOf = (x: { id: string }) => x.id;
+/*
+ * Sürükle-bırak: öğe bırakıldığı öğenin yerine geçer (aynı listede aşağı inerken
+ * arkasına, yukarı çıkarken önüne; başka listeden gelen önüne). Başlık
+ * sıralamasıyla (planBaslikYerine) aynı kural.
+ */
+const yerineKoy = <T>(dizi: T[], kimi: (x: T) => string, id: string, hedef: string): T[] => {
+  const i = dizi.findIndex((x) => kimi(x) === id);
+  const j = dizi.findIndex((x) => kimi(x) === hedef);
+  if (i < 0 || j < 0 || i === j) return dizi;
+  const yeni = [...dizi];
+  const [x] = yeni.splice(i, 1);
+  yeni.splice(j, 0, x);
+  return yeni;
+};
 
 /* İçerik düzenlemeleri aynı kalıpta: yetki ve kilit tek yerde. */
 const haftaIcerik = (ben: Kisi, id: string, f: (h: HaftalikPlan) => HaftalikPlan | null) => {
@@ -1330,6 +1344,47 @@ export const kalemTasi = (ben: Kisi, haftaId: string, kalemId: string, yon: -1 |
     if (!k) return null;
     const yeni = komsuylaDegis(h.kalemler, (x) => x.id === kalemId, (x) => x.tarih === k.tarih && x.baslikId === k.baslikId && gundemde(x) && x.karar !== "ret", yon);
     return yeni ? { ...h, kalemler: yeni } : null;
+  });
+
+/*
+ * Kalemi sürükle-bırak (kullanıcı: Next Day'deki gibi Weekly'de de): başka
+ * kalemin üstüne bırakılınca onun gününü ve dosyasını alıp yerine geçer; dosya
+ * grubuna bırakılınca o gün ve dosyanın sonuna; günün kendisine bırakılınca
+ * dosyası kalır, gün değişir; "Stok ve programlar"a bırakılınca günsüz. Teslim
+ * günü yalnız günsüz paketli kalemde kalır (kalemKaydet'in kuralı).
+ */
+export const kalemSurukle = (ben: Kisi, haftaId: string, kalemId: string, hedef: { tarih?: string; baslikId?: string | null; yerine?: string }) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  const k = h?.kalemler.find((x) => x.id === kalemId);
+  if (!h || !k || !haftalikDuzenler(ben, h) || !gundemde(k) || kalemKilitli(h, k)) return false;
+  const y = hedef.yerine ? h.kalemler.find((x) => x.id === hedef.yerine && x.id !== kalemId) : undefined;
+  if (hedef.yerine && !y) return false;
+  const tarih = y ? y.tarih : hedef.tarih || undefined;
+  // null: dosyasız (متابعات); undefined: dosyası kalır.
+  const baslikId = y ? y.baslikId : hedef.baslikId === null ? undefined : (hedef.baslikId ?? k.baslikId);
+  if (tarih && (tarih < h.baslangic || tarih > haftaSonu(h.baslangic))) return false;
+  const yer = tarih !== k.tarih || baslikId !== k.baslikId;
+  if (!yer && !y) return false;
+  const yeni: HaftalikKalem = yer
+    ? { ...k, tarih, baslikId, teslimGunu: teslimGunuSorulur({ tarih, bicimler: k.bicimler }) ? k.teslimGunu : undefined }
+    : k;
+  d = haftayaDosya(d, haftaId, baslikId);
+  d = haftaGuncelle(d, haftaId, (x) => {
+    let ks = x.kalemler.map((z) => (z.id === kalemId ? yeni : z));
+    // Hedef kalem yoksa grubun sonuna: dizinin sonu, dosya grubunun sırası ilk geçtiği yerden.
+    ks = y ? yerineKoy(ks, kimlikOf, kalemId, y.id) : yer ? [...ks.filter((z) => z.id !== kalemId), yeni] : ks;
+    return { ...x, kalemler: ks };
+  });
+  kaydet(d);
+  return true;
+};
+
+/** Ana dosya başka ana dosyanın üstüne bırakılınca onun yerine geçer. */
+export const anaKonuYerine = (ben: Kisi, haftaId: string, id: string, hedef: string) =>
+  haftaIcerik(ben, haftaId, (h) => {
+    const yeni = yerineKoy(h.anaKonular, kimlikOf, id, hedef);
+    return yeni === h.anaKonular ? null : { ...h, anaKonular: yeni };
   });
 
 /** Kalem silinince öneri yeniden değerlendirmeye dönüyor; önerinin kendisi kalıyor. */
@@ -2465,6 +2520,34 @@ export const planMuhabir = (ben: Kisi, planId: string, pbId: string, kisiId: str
     return var_ ? { ...yeni, basliklar: yeni.basliklar.map((b) => (b.id === pbId && b.muhabirTbc ? { ...b, muhabirTbc: undefined } : b)) } : yeni;
   });
 
+/*
+ * Sürükle-bırak: başlığın muhabiri başka başlığa geçer (yeri, saati ve notu
+ * onunla) ya da bırakıldığı muhabirin yerine (aynı başlıkta sıralama). Hedefte
+ * zaten varsa yalnız kaynaktan çıkar. Hedefin TBC'si kalkar.
+ */
+export const planMuhabirSurukle = (ben: Kisi, planId: string, kisiId: string, kaynakPbId: string, hedefPbId: string, yerine?: string) =>
+  planIcerik(ben, planId, (p) => {
+    const kaynak = p.basliklar.find((b) => b.id === kaynakPbId);
+    const m = kaynak?.muhabirler.find((x) => x.kisiId === kisiId);
+    const hedef = p.basliklar.find((b) => b.id === hedefPbId);
+    if (!kaynak || !m || !hedef) return p;
+    if (kaynakPbId === hedefPbId) {
+      if (!yerine || yerine === kisiId) return p;
+      return pbGuncelle(p, hedefPbId, (l) => yerineKoy(l, (x) => x.kisiId, kisiId, yerine));
+    }
+    const tasinan: PlanMuhabiri = { ...m, onceki: undefined, devir: undefined };
+    return {
+      ...p,
+      basliklar: p.basliklar.map((b) => {
+        if (b.id === kaynakPbId) return { ...b, muhabirler: b.muhabirler.filter((x) => x.kisiId !== kisiId) };
+        if (b.id !== hedefPbId || b.muhabirler.some((x) => x.kisiId === kisiId)) return b;
+        const i = yerine ? b.muhabirler.findIndex((x) => x.kisiId === yerine) : -1;
+        const muhabirler = i < 0 ? [...b.muhabirler, tasinan] : [...b.muhabirler.slice(0, i), tasinan, ...b.muhabirler.slice(i)];
+        return { ...b, muhabirler, muhabirTbc: undefined };
+      }),
+    };
+  });
+
 /** Başlığın muhabiri henüz belli değil (TBC); yalnız muhabirsiz başlıkta işaretlenir. */
 export const planMuhabirTbc = (ben: Kisi, planId: string, pbId: string, tbc: boolean) =>
   planIcerik(ben, planId, (p) => {
@@ -2542,12 +2625,43 @@ export const gelismeKaydet = (ben: Kisi, g: Omit<Gelisme, "id"> & { id?: string 
  * gelişmeden ayrışmasın. Dokunulan kayıt bugünün kaydı ("önceki" işareti kalkıyor).
  */
 export const gelismeBasligaTasi = (ben: Kisi, id: string, hedefPbId?: string) => {
-  let d = getir();
+  const d = getir();
   const g = d.gelismeler.find((x) => x.id === id);
   const plan = planBul(d, g?.planId);
   if (!g || !plan || !planOperasyonDuzenler(ben, plan) || g.planBaslikId === hedefPbId) return false;
+  const yd = gelismeBasligaUygula(d, plan, g, hedefPbId);
+  if (!yd) return false;
+  kaydet(yd);
+  return true;
+};
+
+/*
+ * Sürükle-bırak (nextday/planSurukle.ts): gelişme başka başlığa ya da
+ * متابعات'e gider (taşımanın bütün kuralıyla: PKG'si, önerinin muhabiri),
+ * bırakıldığı gelişme varsa onun yerine geçer; aynı başlıkta yalnız sıralar.
+ */
+export const gelismeSurukle = (ben: Kisi, id: string, hedefPbId: string | undefined, yerine?: string) => {
+  let d = getir();
+  const g = d.gelismeler.find((x) => x.id === id);
+  const plan = planBul(d, g?.planId);
+  if (!g || !plan || !planOperasyonDuzenler(ben, plan)) return false;
+  const bas = d;
+  if ((g.planBaslikId ?? "") !== (hedefPbId ?? "")) {
+    const yd = gelismeBasligaUygula(d, plan, g, hedefPbId);
+    if (!yd) return false;
+    d = yd;
+  }
+  const h = yerine ? d.gelismeler.find((x) => x.id === yerine) : undefined;
+  if (h && h.id !== id && h.planId === plan.id && (h.planBaslikId ?? "") === (hedefPbId ?? "")) d = { ...d, gelismeler: yerineKoy(d.gelismeler, kimlikOf, id, h.id) };
+  if (d === bas || d.gelismeler === bas.gelismeler) return false;
+  kaydet(d);
+  return true;
+};
+
+const gelismeBasligaUygula = (d: Durum, plan: NextDayPlan, g: Gelisme, hedefPbId?: string): Durum | null => {
+  const id = g.id;
   const hedef = hedefPbId ? plan.basliklar.find((b) => b.id === hedefPbId) : undefined;
-  if (hedefPbId && !hedef) return false;
+  if (hedefPbId && !hedef) return null;
   const yeni: Gelisme = { ...g, planBaslikId: hedefPbId, onceki: undefined, devir: undefined };
   d = { ...d, gelismeler: [...d.gelismeler.filter((x) => x.id !== id), yeni] };
   // Gelişmenin altındaki PKG onunla gider; başlıksız متابعات'te gelişme altı yok, paket başlıksız haber olur.
@@ -2582,8 +2696,7 @@ export const gelismeBasligaTasi = (ben: Kisi, id: string, hedefPbId?: string) =>
       }));
     }
   }
-  kaydet(d);
-  return true;
+  return d;
 };
 
 /** Gelişme yalnız aynı başlığın (başlıksızsa takiplerin) içinde yer değiştiriyor. */
@@ -2627,6 +2740,17 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy"), ekleyen: { kisiId: ben.id, zaman: simdi() } }] });
   }
+  return true;
+};
+
+/* Sürükle-bırak: canlı yayın başlığa bağlanır (başlığın altında LIVE) ya da "مباشر"a döner (bağsız). */
+export const canliBasligaBagla = (ben: Kisi, id: string, pbId?: string) => {
+  const d = getir();
+  const c = d.canliYayinlar.find((x) => x.id === id);
+  const plan = planBul(d, c?.planId);
+  if (!c || !plan || !planOperasyonDuzenler(ben, plan) || (c.planBaslikId ?? "") === (pbId ?? "")) return false;
+  if (pbId && !plan.basliklar.some((b) => b.id === pbId)) return false;
+  kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === id ? { ...x, planBaslikId: pbId, onceki: undefined, devir: undefined } : x)) });
   return true;
 };
 
@@ -2710,21 +2834,28 @@ export const paketTasi = (ben: Kisi, id: string, yon: -1 | 1) => {
 
 /** Yalnız henüz değerlendirmedeki paket silinir; ileri gitmiş olan iptal edilir ki geçmişi kalsın. */
 /*
- * PKG'nin plandaki yeri: gelişmenin altı ya da başlığın PKG bölümü (sürükle
- * bırak, nextday/paketSurukle.ts). Yalnız aynı başlığın gelişmesine; durum,
- * sıra ve onay değişmez.
+ * PKG'nin plandaki yeri (sürükle bırak, nextday/paketSurukle.ts): bir başlığın
+ * gelişmesinin altı ya da PKG bölümü, aynı başlıkta ya da başka başlıkta
+ * (kullanıcı: plan hazırlarken her işlem sürükle-bırakla); bırakıldığı PKG
+ * varsa onun yerine geçer. Durum ve onay değişmez.
  */
-export const paketYerineTasi = (ben: Kisi, id: string, gelismeId?: string) => {
+export const paketYerineTasi = (ben: Kisi, id: string, gelismeId?: string, pbId?: string, yerine?: string) => {
   const d = getir();
   const p = paketBul(d, id);
   const plan = planBul(d, p?.planId);
   if (!p || !plan || p.durum === "iptal" || !planIcerikDuzenler(ben, plan)) return false;
-  if ((p.gelismeId ?? "") === (gelismeId ?? "")) return false;
+  const hedefPb = pbId ?? p.planBaslikId;
+  if (!hedefPb || !plan.basliklar.some((b) => b.id === hedefPb)) return false;
   if (gelismeId) {
     const g = d.gelismeler.find((x) => x.id === gelismeId);
-    if (!g || g.planId !== plan.id || g.planBaslikId !== p.planBaslikId) return false;
+    if (!g || g.planId !== plan.id || g.planBaslikId !== hedefPb) return false;
   }
-  kaydet({ ...d, paketler: d.paketler.map((x) => (x.id === id ? { ...x, gelismeId: gelismeId || undefined, guncelleme: simdi() } : x)) });
+  const yerDegisti = p.planBaslikId !== hedefPb || (p.gelismeId ?? "") !== (gelismeId ?? "");
+  let paketler = yerDegisti ? d.paketler.map((x) => (x.id === id ? { ...x, planBaslikId: hedefPb, gelismeId: gelismeId || undefined, guncelleme: simdi() } : x)) : d.paketler;
+  const h = yerine ? paketler.find((x) => x.id === yerine) : undefined;
+  if (h && h.id !== id && h.planId === plan.id && h.planBaslikId === hedefPb && (h.gelismeId ?? "") === (gelismeId ?? "")) paketler = yerineKoy(paketler, kimlikOf, id, h.id);
+  if (paketler === d.paketler) return false;
+  kaydet({ ...d, paketler });
   return true;
 };
 

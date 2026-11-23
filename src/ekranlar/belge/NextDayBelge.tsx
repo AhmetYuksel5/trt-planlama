@@ -107,6 +107,7 @@ import {
 } from "../nextday/Bolumler";
 import { PaketPlanNotlari } from "../nextday/PaketPlanNotlari";
 import { paketHedefi, paketSuruklenir } from "../nextday/paketSurukle";
+import { planSurukleKabi, suruklenir } from "../nextday/planSurukle";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import {
   CanliFormu,
@@ -446,7 +447,7 @@ export function NextDayBelgesi({
                                 <BelgeSatiri
                                   key={p.id}
                                   duzen={ic}
-                                  ozellik={paketSuruklenir(p, ic && !!ben && !!p.planBaslikId)}
+                                  ozellik={paketSuruklenir(p, ic && !!ben && !!p.planBaslikId, ben ?? undefined)}
                                   serit={
                                     <SatirSeridi
                                       yukari={yukari(
@@ -579,6 +580,7 @@ export function NextDayBelgesi({
       <BelgeSatiri
         duzen={op}
         onceki={g.onceki}
+        ozellik={suruklenir("gelisme", g.id, planBaslikId, op && !!ben)}
         serit={
           <SatirSeridi
             yukari={yukari(i, () => ben && gelismeTasi(ben, g.id, -1))}
@@ -723,7 +725,7 @@ export function NextDayBelgesi({
   const takipBolumu = (takipler.length > 0 ||
     dosyasizPaketler.length > 0 ||
     op) && (
-    <section>
+    <section data-sur-takip>
       <h2 className="yesil">{c("takipler")}</h2>
       {takipler.map((g, i) => gelismeSatiri(g, i, takipler))}
       {dosyasizPaketler.map((p) => (
@@ -762,6 +764,8 @@ export function NextDayBelgesi({
       ref={belgeRef}
       dir="rtl"
       lang="ar"
+      // Düzenlerken gelişme, muhabir ve canlı sürükle-bırakı (planSurukle.ts); çıktıda dinleyici yok.
+      {...(duzen ? planSurukleKabi(ben, plan) : {})}
     >
       {baski && baski !== 2 && (
         <div className="baski-logo">
@@ -902,6 +906,7 @@ export function NextDayBelgesi({
                               <BelgeSatiri
                                 key={m.kisiId}
                                 duzen={ic}
+                                ozellik={suruklenir("muhabir", m.kisiId, pb.id, ic && !!ben)}
                                 onceki={m.onceki}
                                 serit={
                                   <SatirSeridi
@@ -1032,6 +1037,7 @@ export function NextDayBelgesi({
                               <BelgeSatiri
                                 key={x.id}
                                 duzen={op}
+                                ozellik={suruklenir("canli", x.id, x.planBaslikId, op && !!ben)}
                                 onceki={x.onceki}
                                 serit={
                                   <SatirSeridi
@@ -1320,12 +1326,13 @@ export function NextDayBelgesi({
               )}
 
               {(canlilar.length > 0 || op) && (
-                <section data-bolum="canli">
+                <section data-bolum="canli" data-sur-canli>
                   <h2 className="kirmizi">{c("ciktiCanli")}</h2>
                   {canlilar.map((x) => (
                     <BelgeSatiri
                       key={x.id}
                       duzen={op}
+                      ozellik={suruklenir("canli", x.id, x.planBaslikId, op && !!ben)}
                       onceki={x.onceki}
                       serit={
                         <SatirSeridi
@@ -1591,12 +1598,13 @@ export function NextDayBelgesi({
           )}
 
           {(canlilar.length > 0 || op) && (
-            <section data-bolum="canli">
+            <section data-bolum="canli" data-sur-canli>
               <h2 className="kirmizi">{c("ciktiCanli")}</h2>
               {canlilar.map((x) => (
                 <BelgeSatiri
                   key={x.id}
                   duzen={op}
+                  ozellik={suruklenir("canli", x.id, x.planBaslikId, op && !!ben)}
                   onceki={x.onceki}
                   serit={
                     <SatirSeridi
@@ -1816,6 +1824,7 @@ export function NextDayBelgesi({
                           <BelgeSatiri
                             key={m.kisiId}
                             duzen={ic}
+                            ozellik={suruklenir("muhabir", m.kisiId, pb.id, ic && !!ben)}
                             onceki={m.onceki}
                             serit={
                               <SatirSeridi
@@ -1946,6 +1955,7 @@ export function NextDayBelgesi({
                           <BelgeSatiri
                             key={x.id}
                             duzen={op}
+                            ozellik={suruklenir("canli", x.id, x.planBaslikId, op && !!ben)}
                             onceki={x.onceki}
                             serit={
                               <SatirSeridi

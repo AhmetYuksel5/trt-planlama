@@ -22,6 +22,7 @@ import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, oncekiSinif } fro
 import { MuhabirSecici, PaketFormu } from "./Formlar";
 import { PaketPlanNotlari } from "./PaketPlanNotlari";
 import { paketHedefi, paketSuruklenir } from "./paketSurukle";
+import { suruklenir } from "./planSurukle";
 
 /**
  * Haber gündemindeki bir başlık: kurumun çıktısında altı çizili başlık ve
@@ -94,7 +95,7 @@ export default function BaslikKarti({
             ) : paketForm === p.id ? (
               <PaketFormu key={p.id} plan={plan} planBaslikId={pb.id} mevcut={p} kapat={() => setPaketForm("")} />
             ) : (
-              <div key={p.id} className="kayit" {...paketSuruklenir(p, icerik && !!ben)}>
+              <div key={p.id} className="kayit" {...paketSuruklenir(p, icerik && !!ben, ben ?? undefined)}>
                 <div className="kayit-bas">
                   <div>
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
@@ -279,7 +280,7 @@ export default function BaslikKarti({
             {pb.muhabirler.map((m) => {
               const k = kisiBul(v, m.kisiId);
               return (
-                <span key={m.kisiId} className={oncekiSinif(m.onceki, "cip")} title={m.onceki ? t("oncekiGunden") : undefined}>
+                <span key={m.kisiId} {...suruklenir("muhabir", m.kisiId, pb.id, icerik && !!ben)} className={oncekiSinif(m.onceki, "cip")} title={m.onceki ? t("oncekiGunden") : undefined}>
                   {/* Yeni tasarımda avatara basınca muhabirin kartı: durumu, işleri, WhatsApp, posta (konu başlığın adı). */}
                   {yeni && ben && k ? <KisiCipi ben={ben} kisi={k} konu={baslik?.ad ?? ""} sade /> : <Avatar kisi={k} boy="kucuk" />}
                   <Icerik>{satir(m.yer || sehirAr(k?.sehir), kisiAr(k) || "?")}</Icerik>

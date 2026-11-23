@@ -1450,6 +1450,10 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
 [data-pkg-surukle] { cursor: grab; }
 [data-pkg-surukle]:active { cursor: grabbing; }
 .pkg-birakilir { outline: 2px dashed var(--vurgu); outline-offset: 2px; background: var(--vurgu-sis); border-radius: var(--yaricap-kucuk, 4px); }
+/* Gelişme, muhabir, canlı (ve Weekly'de kalem) sürükle-bırakının hedefi aynı görünüşte; sürüklenen satır soluk (planSurukle.ts). */
+.sur-hedef { outline: 2px dashed var(--vurgu); outline-offset: 2px; background: var(--vurgu-sis); border-radius: var(--yaricap-kucuk, 4px); }
+.suruklenen { opacity: 0.5; }
+[data-sur][draggable="true"] { cursor: grab; }
 .cikti-pkg-not .dugme-ikon { vertical-align: middle; margin-inline-start: var(--ara-1); }
 
 .cikti h4.gun { font-size: 15px; color: var(--cikti-kirmizi); margin: 1.3em 0 0; }

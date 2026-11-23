@@ -1,4 +1,5 @@
 import { GeriBag } from "../../bilesenler/GeriBag";
+import { planSurukleKabi } from "./planSurukle";
 import { useHedefBaslik } from "../../bilesenler/baslikaGit";
 import {
   MoreHorizontal,
@@ -534,12 +535,15 @@ function KlasikPlan({
       <KayipSeridi ben={ben} plan={plan} />
       <StaffingSeridi ben={ben} plan={plan} />
 
-      <EkipBolumu plan={plan} duzenler={icerik} />
-      <HareketBolumu plan={plan} duzenler={icerik} />
-      <CanliBolumu plan={plan} duzenler={operasyon} d={v} />
-      <HazirBolumu plan={plan} duzenler={icerik} d={v} />
-      <GundemBolumu plan={plan} icerik={icerik} operasyon={operasyon} />
-      <TakipBolumu plan={plan} duzenler={operasyon} d={v} no={6} />
+      {/* Gelişme, muhabir ve canlı sürükle-bırakının tek dinleyicisi (planSurukle.ts). */}
+      <div className="plan-surukle" {...planSurukleKabi(ben, plan)}>
+        <EkipBolumu plan={plan} duzenler={icerik} />
+        <HareketBolumu plan={plan} duzenler={icerik} />
+        <CanliBolumu plan={plan} duzenler={operasyon} d={v} />
+        <HazirBolumu plan={plan} duzenler={icerik} d={v} />
+        <GundemBolumu plan={plan} icerik={icerik} operasyon={operasyon} />
+        <TakipBolumu plan={plan} duzenler={operasyon} d={v} no={6} />
+      </div>
 
       {arac === "oneriler" && (
         <Pencere

@@ -1,3 +1,4 @@
+import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "../haftalik/haftaSurukle";
 import { Ban, CalendarClock, Check, Eye, Hourglass, Printer } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
@@ -119,6 +120,7 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
     <BelgeSatiri
       duzen={!!duzen}
       soluk={bekliyor && !ts}
+      ozellik={haftaSuruklenir("kalem", k.id, !!duzen && !!ben)}
       serit={
         duzen &&
         ben && (
@@ -264,7 +266,7 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
  * bölümün (günün, zamana bağlı olmayanların) en altında yeşil "متابعات"
  * başlığının altında, Next Day'in sonundaki متابعات gibi.
  */
-function Dosyalar({ liste, hafta, duzen }: { liste: HaftalikKalem[]; hafta: HaftalikPlan; duzen?: HfDuzen }) {
+function Dosyalar({ liste, hafta, duzen, tarih }: { liste: HaftalikKalem[]; hafta: HaftalikPlan; duzen?: HfDuzen; tarih: string }) {
   const { t } = useDil();
   const v = useVeri();
   const ben = duzen?.ben;
@@ -276,7 +278,7 @@ function Dosyalar({ liste, hafta, duzen }: { liste: HaftalikKalem[]; hafta: Haft
       {sirali.map(([baslikId, ks]) => {
         const ad = baslikId ? (baslikBul(v, baslikId)?.ad ?? "") : "";
         return (
-          <div key={baslikId || "-"} className="cikti-baslik">
+          <div key={baslikId || "-"} className="cikti-baslik" {...hfYer(tarih, baslikId)}>
             {baslikId && (
               <BelgeSatiri
                 duzen={!!duzen}
@@ -354,6 +356,7 @@ export function HaftalikBelgesi({
             <div key={a.id} className="cikti-baslik">
               <BelgeSatiri
                 duzen={!!duzen}
+                ozellik={haftaSuruklenir("ana", a.id, !!duzen && !!ben)}
                 serit={
                   duzen &&
                   ben && (
@@ -396,9 +399,9 @@ export function HaftalikBelgesi({
         <section>
           <h2 className="kirmizi ortali">{c("gunlukGundem")}</h2>
           {gunler.map((g) => (
-            <div key={g} className="cikti-gun">
+            <div key={g} className="cikti-gun" {...hfYer(g)}>
               <h4 className="gun">{ciktiGunu(g, "ar")}</h4>
-              <Dosyalar liste={kalemler.filter((k) => k.tarih === g)} hafta={hafta} duzen={duzen} />
+              <Dosyalar liste={kalemler.filter((k) => k.tarih === g)} hafta={hafta} duzen={duzen} tarih={g} />
               {duzen && (
                 <EkleCubugu>
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: g })} />
@@ -413,9 +416,9 @@ export function HaftalikBelgesi({
   const stokBolum = (
     <>
       {(stok.length > 0 || duzen) && (
-        <section>
+        <section {...hfYer("")}>
           <h2 className="yesil">{c("stokVeProgramlar")}</h2>
-          <Dosyalar liste={stok} hafta={hafta} duzen={duzen} />
+          <Dosyalar liste={stok} hafta={hafta} duzen={duzen} tarih="" />
           {duzen && (
             <EkleCubugu>
               <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: "" })} />
@@ -428,7 +431,7 @@ export function HaftalikBelgesi({
 
   return (
     <ToplantiSecimi.Provider value={toplanti ?? null}>
-    <article className={`cikti hf${baski ? ` baski-${baski}` : ""}${toplanti ? " toplanti-belgesi" : ""}`} ref={belgeRef} dir="rtl" lang="ar">
+    <article className={`cikti hf${baski ? ` baski-${baski}` : ""}${toplanti ? " toplanti-belgesi" : ""}`} ref={belgeRef} dir="rtl" lang="ar" {...(duzen?.ben ? haftaSurukleKabi(duzen.ben, hafta) : {})}>
       {baski && baski !== 2 && (
         <div className="baski-logo">
           <img src={trtArabi} alt="TRT عربي" />
