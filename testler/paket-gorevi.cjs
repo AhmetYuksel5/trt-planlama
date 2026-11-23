@@ -37,10 +37,10 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   ok(!!g1 && g1.durum === "onaylandi" && g1.stok && !g1.planId && g1.gorev?.veren === "pl1" && g1.sonTarih === gunEkle(3) && g1.muhabirId === "mu2", "görev paketi: onaylı, stokta, plansız, ileri tarihli");
 
   // 2. Stok'ta "üretimde"de; "Üretime al" beklemiyor
-  await gir("pl1", "#/stok");
+  await gir("pl1", "#/stok/uretim");
   ok((await p.locator(`[data-uretime-al="${g1?.id}"]`).count()) === 0, "görev paketi \"Üretime al\" beklemiyor");
-  await p.getByRole("tab").first().click(); await p.waitForTimeout(300);
-  ok((await p.locator(`main a[href="#/paketler/${g1?.id}"]`).count()) >= 1, "Stok'un üretimde sekmesinde");
+  await p.locator('[data-stok-uretim-alan="uretimde"]').click(); await p.waitForTimeout(300);
+  ok((await p.locator(`main a[href="#/paketler/${g1?.id}"]`).count()) >= 1, "Stok'un Üretim kutusunda, Üretimde");
 
   // 3. Muhabirin profilinden: muhabir seçili gelir
   await gir("pl1", "#/personel/mu3");
@@ -69,8 +69,8 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   await gir("mu2", "#/oneriler");
   ok((await p.locator(`[data-paket="${t1?.id}"]`).count()) === 0 && (await p.locator(`[data-paket="${g1?.id}"]`).count()) === 1, "muhabir görevi \"Senin sıran\"da görüyor, talebi görmüyor");
 
-  // 6. Planlama Stok'ta talebi göreve çevirir; muhabire düşer, ekonomi masasına değil
-  await gir("pl1", "#/stok");
+  // 6. Planlama Stok'un Programlar kutusunda talebi göreve çevirir; muhabire düşer, ekonomi masasına değil
+  await gir("pl1", "#/stok/programlar");
   ok((await p.locator(`[data-gorev-onayla="${t1?.id}"]`).count()) === 1, "Planlama Stok'ta talebi görüyor");
   await p.locator(`[data-gorev-onayla="${t1?.id}"]`).click(); await p.waitForTimeout(500);
   const t2 = (await paketler()).find((x) => x.id === t1?.id);
@@ -103,7 +103,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 840 });
     await p.evaluate((d) => localStorage.setItem("trt-planlama-dil", d), dil);
-    for (const yol of ["#/stok", "#/paketler"]) {
+    for (const yol of ["#/stok/programlar", "#/paketler"]) {
       await gir("pl1", yol);
       const t = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       ok((await p.locator("[data-gorev-talepleri]").count()) === 1 && t <= 1, `390px taşma yok, talepler kartı (${dil} ${yol}): ${t}`);

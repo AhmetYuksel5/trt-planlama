@@ -3612,6 +3612,21 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 .masa-ekonomi { --prg: var(--masa-ekonomi); --prg-sis: var(--masa-ekonomi-sis); }
 /* Muhabirin sayfası masaların kalıbıyla, kendi renginde (turuncu). */
 .masa-muhabir { --prg: var(--masa-muhabir); --prg-sis: var(--masa-muhabir-sis); }
+/* Stok haberler / Programlar (StokSayfasi.tsx) aynı kalıpla, Planlama'nın renginde (camgöbeği). */
+.prg-masa.masa-planlama { --prg: var(--masa-planlama); --prg-sis: var(--masa-planlama-sis); }
+.prg-k-teklifler .prg-kutu-ik { background: var(--aylik-sis); color: var(--aylik); }
+.prg-k-uretim .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
+.prg-k-stokta .prg-kutu-ik { background: var(--iyi-sis); color: var(--iyi); }
+.stok-hafta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ara-2); margin-block-end: var(--ara-3); font-size: var(--punto-kucuk); }
+.stok-plan { display: inline-flex; align-items: center; gap: 2px; }
+.stok-plan a.rozet { text-decoration: none; }
+/*
+ * Muhabire göre: grupların çoğu bir-iki kart, alt alta dizilince sayfa çok uzuyordu; gruplar gazete
+ * sütunu gibi yan yana akar (grup bölünmez). Telefonda tek sütun.
+ */
+.stok-kolonlu .bp-gruplar { display: block; columns: 22rem; column-gap: var(--ara-3); }
+.stok-kolonlu .bp-grup { break-inside: avoid; margin-block-end: var(--ara-4); }
+.stok-kolonlu .prg-icerikler, .stok-kolonlu .oneri-kartlari { grid-template-columns: minmax(0, 1fr); }
 .prg-k-yapilacaklar .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
 .prg-k-takipler .prg-kutu-ik { background: var(--haftalik-sis); color: var(--haftalik); }
 .prg-k-paketler .prg-kutu-ik { background: var(--nextday-sis); color: var(--nextday); }
@@ -3788,6 +3803,17 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
 .py-kutular > .py-kutu.sonuk { align-self: start; }
 @media (max-width: 359px) { .py-kutular { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) { .prg-masa.bolumde > .prg-kutular { display: none; } }
+/*
+ * Stok sayfasında telefonda alt çubukta bölümleri yok, kutucuklar kalıyor: üç sütun, alt yazısız
+ * (beş kutu iki sütunda üç satır tutup listeyi ekranın altına itiyordu).
+ */
+@media (max-width: 760px) {
+  .stok-sayfa > .prg-kutular { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ara-2); }
+  .stok-sayfa .prg-kutu { padding: var(--ara-2) var(--ara-2) var(--ara-3); row-gap: var(--ara-1); }
+  .stok-sayfa .prg-kutu small { display: none; }
+  .stok-sayfa .prg-kutu-ik { width: 32px; height: 32px; }
+  .stok-sayfa .prg-say { inset-block-start: var(--ara-2); inset-inline-end: var(--ara-2); }
+}
 .py-kutu.sonuk .py-sayi, .py-kutu.sonuk b { color: var(--silik); }
 .py-panel { display: grid; gap: var(--ara-3); min-width: 0; }
 .py-panel > .kart { box-shadow: none; }

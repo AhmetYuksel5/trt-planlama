@@ -1,5 +1,5 @@
 // Weekly'nin günsüz bölümü "Stok ve programlar" (kullanıcı): orada kabul edilen feature haber merkezinin stokunda,
-// program paketi masanın takibinde; Stok sayfası "Haber merkezi / Programlar" diye ikiye ayrılıyor; kesinleşen
+// program paketi masanın takibinde; Stok sayfasının Programlar kutusu masaların paketleri; kesinleşen
 // haftanın görev postası penceresinde günlük haberler ve stok/programlar ayrı sekmede.
 const { chromium } = require(process.env.PW || "playwright");
 const B = "http://localhost:4173/";
@@ -50,11 +50,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(!!fe && fe.stok && !fe.planId, "feature haber merkezinin stokunda");
   ok(!!pr && pr.tur === "program" && !pr.stok, "program paketi masaya gitti");
 
-  // 3. Stok sayfası: başlık ve iki alan
+  // 3. Stok sayfası: başlık; feature Üretim kutusunda (üretime alınacak), program paketi Programlar kutusunda
   await git("#/stok");
   ok((await p.locator("main").innerText()).includes("Stok haberler / Programlar"), "sayfanın yeni adı");
-  ok((await p.locator(`a[href="#/paketler/${fe.id}"]`).count()) > 0 || (await p.locator("main").innerText()).includes("تقرير مخزن اختباري"), "Haber merkezinde feature paketi");
-  await p.locator('[data-stok-alan="masa"]').click(); await p.waitForTimeout(300);
+  ok((await p.locator(`[data-stok-paket="${fe.id}"]`).count()) > 0, "Üretim kutusunda feature paketi");
+  await p.locator('[data-stok-kutu="programlar"]').click(); await p.waitForTimeout(500);
   ok((await p.locator('[data-stok-masa="program"]').count()) === 1 && (await p.locator('[data-stok-masa="ekonomi"]').count()) === 1, "Programlar alanında masa seçimi");
   await p.locator('[data-stok-masa="program"]').click(); await p.waitForTimeout(200);
   await p.locator('[data-stok-masa-alan="planlamada"]').click(); await p.waitForTimeout(200);
@@ -76,8 +76,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 840 });
     await p.evaluate((x) => localStorage.setItem("trt-planlama-dil", x), dil);
-    await git("#/stok");
-    await p.locator('[data-stok-alan="masa"]').click(); await p.waitForTimeout(300);
+    await git("#/stok/programlar");
     const t = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(t <= 1, `390px taşma yok, Programlar alanı (${dil}): ${t}`);
   }

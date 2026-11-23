@@ -55,7 +55,7 @@ export const gelismeOneriAdaylari = (d: Pick<Durum, "oneriler" | "haftalik" | "p
  * 15–16 Kasım yazan öneri başka haftanın listesine düşüyor, etiket yine
  * "Weekly" diyordu.
  */
-export const oneriHaftada = (o: Oneri, h: HaftalikPlan) => {
+export const oneriHaftada = (o: Oneri, h: Pick<HaftalikPlan, "baslangic">) => {
   if (o.hafta && !o.hedefTarih) return o.hafta === h.baslangic;
   const a = oneriAraligi(o);
   return !!a && a[0] <= haftaSonu(h.baslangic) && a[1] >= h.baslangic;

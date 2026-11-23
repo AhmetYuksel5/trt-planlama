@@ -280,7 +280,8 @@ function IcerikDurumu({ p }: { p: Paket }) {
   return <Rozet>{t("pmAlanPlanlamada")}</Rozet>;
 }
 
-function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p: Paket; aktar: () => void }) {
+/* Stok sayfasının Programlar kutusu da bu kartı kullanıyor (aktarma orada yok: programa aktaran masa). */
+export function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p: Paket; aktar?: () => void }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const muhabir = p.muhabirId ? kisiBul(v, p.muhabirId) : undefined;
@@ -314,6 +315,7 @@ function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p
         ) : (
           !arsiv &&
           birim === "program" &&
+          aktar &&
           icerikAktarabilir(ben, p) && (
             <button type="button" className="dugme dugme-yumusak dugme-kucuk" onClick={aktar} data-prg-aktar={p.id}>
               <Tv size={14} /> {t("pmProgramaAktar")}

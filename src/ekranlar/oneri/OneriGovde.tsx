@@ -588,6 +588,7 @@ export function OneriListesi({
   ekleMetni,
   ekleFormu,
   ertelenebilir = false,
+  gruplar,
 }: {
   ben: Kisi;
   d: Durum;
@@ -598,6 +599,8 @@ export function OneriListesi({
   ekleMetni: string;
   ekleFormu?: (o: Oneri, kapat: () => void) => ReactNode;
   ertelenebilir?: boolean;
+  /* Başlıklı gruplar (Stok sayfası: tarihe ya da muhabire göre); pencere yine tek. */
+  gruplar?: { anahtar: string; baslik: ReactNode; oneriler: Oneri[] }[];
 }) {
   const { t } = useDil();
   const kapat = () => setPencere(null);
@@ -629,18 +632,34 @@ export function OneriListesi({
     );
   };
 
+  const liste = (l: Oneri[]) =>
+    gorunum === "kart" ? (
+      <div className="oneri-kartlari">
+        {l.map((o) => (
+          <OneriKarti key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={hizli(o)} />
+        ))}
+      </div>
+    ) : (
+      l.map((o) => <OneriSatiri key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={hizli(o)} />)
+    );
+
   return (
     <>
       {oneriler.length === 0 ? (
         <Bos kucuk metin={t("oneriYok")} />
-      ) : gorunum === "kart" ? (
-        <div className="oneri-kartlari">
-          {oneriler.map((o) => (
-            <OneriKarti key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={hizli(o)} />
+      ) : gruplar ? (
+        <div className="bp-gruplar" data-oneri-gruplari>
+          {gruplar.map((g) => (
+            <section key={g.anahtar || "-"} className="bp-grup" data-oneri-grup={g.anahtar || "-"}>
+              <h3 className="bp-grup-baslik">
+                {g.baslik} <em>{g.oneriler.length}</em>
+              </h3>
+              {liste(g.oneriler)}
+            </section>
           ))}
         </div>
       ) : (
-        oneriler.map((o) => <OneriSatiri key={o.id} oneri={o} d={d} ac={() => setPencere({ id: o.id, mod: "goster" })} eylemler={hizli(o)} />)
+        liste(oneriler)
       )}
       {acik && (
         <OneriAyrinti

@@ -3,24 +3,21 @@ import { PAKET_SIRALARI, PaketListesi, type PaketSirasi } from "../bilesenler/Bi
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { useAdimDurumu } from "../yol";
 import { ARSIV_SONUCLARI, PAKET_SEKMELERI, arsivSonucu, arsivdeYeni, paketArsivGunu, paketSekmesi, type ArsivSonucu, type PaketSekmesi } from "../paketSekmeleri";
-import { CirclePlay, Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
+import { Clapperboard, Landmark, Layers, MonitorPlay, Package, Search, SpellCheck, TrendingUp, Wallet, Workflow } from "lucide-react";
 import { type ReactNode } from "react";
-import { ADIM_ADI, STOK_DURUMLARI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi, stokDurumu, type StokDurumu } from "../akis";
-import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, Sayac, TaslakEtiketi, Tumu, TurRozeti } from "../bilesenler/Parcalar";
-import { OzelTalepAlani } from "./OzelYayin";
+import { ADIM_ADI, adimAdi, adimTuru, durakSahibi, geciktiMi, sorumluBirimi } from "../akis";
+import { AsamaCubugu, Avatar, Bos, HaftalikRozeti, Icerik, Kart, Kilitli, Rozet, TaslakEtiketi, Tumu, TurRozeti } from "../bilesenler/Parcalar";
 import { GorevTalepleri, SartliPaketler, GorevlendirDugmesi } from "../bilesenler/PaketGorevi";
 import { MasaOnerileri, MasaTakibi } from "./oneri/MasaSorusu";
 import { PaketTablosu } from "../bilesenler/Tablolar";
 import { gecenSure, saatYaz, tarihYaz, useDil, yaz, type Anahtar } from "../dil";
 import { ASAMA_ADI, PANO_SUTUNLARI, gfxAcik, panoMasasi, panoSutunu, type PanoSutunu } from "../uretim";
 import { UZUN_DAKIKA } from "../anaPano";
-import { PAKET_DURUM_ADI, STOK_DURUM_ADI, TUR_ADI } from "../etiketler";
+import { PAKET_DURUM_ADI, TUR_ADI } from "../etiketler";
 import { ICERIK_TURLERI, kisiBul, masaPaketi, useVeri, type IcerikTuru, type Kisi, type Paket } from "../veri";
 import { bugun } from "../tarih";
 import { paketGorebilir, ucretGorebilir, uretimeAlabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
-import { ALAN_ADI, MASA_ADI } from "./program/ProgramMasasi";
-import { ICERIK_ALANLARI, MASA_BIRIMLERI, MASA_YOLU, icerikDurumAlani, masaIcerikleri, type IcerikAlani, type MasaBirimi } from "../programMasasi";
 
 /*
  * Liste ekranları. Hepsi aynı ortak kayıtların (paket önerileri) farklı
@@ -274,139 +271,6 @@ function DurakPanosu({ sayfa }: { sayfa: string }) {
           );
         })}
       </div>
-    </>
-  );
-}
-
-/* --- Stok haberler: feature, günü olmayan haber ve özel yayın dosya paketlerinin üretimi, stoğu ve yayını --- */
-
-type StokSekme = "uretimde" | "stokta" | "yayinlandi";
-const STOK_SEKMELERI: StokSekme[] = ["uretimde", "stokta", "yayinlandi"];
-
-/**
- * Hazır paketlerin yeni yeri. Haftalık toplantıda kabul edilen plansız
- * paket feature/stok ekibince üretime alınıyor, bitince stokta bekliyor;
- * bir Next Day planına seçilip plan Newsdesk'e devredilince yayınlanan
- * arşivine geçiyor. Durum kayıttan çıkıyor (akis.ts → stokDurumu).
- */
-export function StokHaberler({ ben }: { ben: Kisi }) {
-  const { t } = useDil();
-  // İki alan (kullanıcı: Weekly'nin "Stok ve programlar"ında kabul edilenler burada birikiyor):
-  // haber merkezinin stoku Planlama'nın gözetiminde, programların ve masaların paketleri
-  // masanın kendi takibinde; burada yalnız nerede oldukları görünüyor.
-  const [alan, setAlan] = useAdimDurumu<"haber" | "masa">("stok:alan", "haber");
-  return (
-    <>
-      <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} sagUc={<GorevlendirDugmesi ben={ben} />} />
-      <div className="secim-grubu ara-alt-2" role="group" aria-label={t("mStok")}>
-        {(["haber", "masa"] as const).map((x) => (
-          <button key={x} type="button" aria-pressed={alan === x} data-stok-alan={x} className={`dugme dugme-kucuk ${alan === x ? "" : "dugme-ikincil"}`} onClick={() => setAlan(x)}>
-            {t(x === "haber" ? "stAlanHaber" : "stAlanMasa")}
-          </button>
-        ))}
-      </div>
-      {alan === "masa" ? <StokMasalar /> : <StokHaberMerkezi ben={ben} />}
-    </>
-  );
-}
-
-/*
- * Programların ve masaların (Ekonomi, Spor) paketleri: masa sayfasının İçerikler'iyle
- * aynı alanlar ve kural (programMasasi.ts); üretimin takibi masada, buradan gidilir.
- */
-function StokMasalar() {
-  const { t } = useDil();
-  const v = useVeri();
-  const [masa, setMasa] = useAdimDurumu<MasaBirimi>("stok:masa", "program");
-  const [alan, setAlan] = useAdimDurumu<IcerikAlani>("stok:masaAlan", "planlamada");
-  const icerik = masaIcerikleri(v, masa);
-  const listede = icerik.filter((p) => icerikDurumAlani(p) === alan).sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
-  return (
-    <Kart sagUc={<Tumu href={`#/${MASA_YOLU[masa]}/icerikler`} />}>
-      <div className="secim-grubu" role="group" aria-label={t("stAlanMasa")}>
-        {MASA_BIRIMLERI.map((b) => (
-          <button key={b} type="button" aria-pressed={masa === b} data-stok-masa={b} className={`dugme dugme-kucuk ${masa === b ? "" : "dugme-ikincil"}`} onClick={() => setMasa(b)}>
-            {t(MASA_ADI[b])} <em>{masaIcerikleri(v, b).filter((p) => icerikDurumAlani(p) !== "arsiv").length}</em>
-          </button>
-        ))}
-      </div>
-      <div className="sekmeler ara-ust-2" role="tablist" aria-label={t(MASA_ADI[masa])}>
-        {ICERIK_ALANLARI.map((a) => (
-          <button key={a} type="button" role="tab" aria-selected={alan === a} className={alan === a ? "acik" : ""} onClick={() => setAlan(a)} data-stok-masa-alan={a}>
-            {t(ALAN_ADI[a])} <em>{icerik.filter((p) => icerikDurumAlani(p) === a).length}</em>
-          </button>
-        ))}
-      </div>
-      <div className="ara-ust-2" data-stok-masa-liste>
-        <PaketTablosu paketler={listede} d={v} bosMetin={t("kayitYok")} sutunlar={["kod", "baslik", "muhabir", "asama", "kimde", "teslim"]} />
-      </div>
-    </Kart>
-  );
-}
-
-function StokHaberMerkezi({ ben }: { ben: Kisi }) {
-  const { t, ad } = useDil();
-  const v = useVeri();
-  const [sekme, setSekme] = useAdimDurumu<StokSekme>("stok:sekme", "stokta");
-  const durumda = (s: StokDurumu) => v.paketler.filter((p) => stokDurumu(p) === s);
-  const bekleyen = durumda("bekliyor");
-  const listeler: Record<StokSekme, Paket[]> = {
-    uretimde: [...bekleyen, ...durumda("uretimde")],
-    stokta: durumda("stokta").sort((a, b) => b.guncelleme.localeCompare(a.guncelleme)),
-    yayinlandi: durumda("yayinlandi").sort((a, b) => (b.yayinlandi?.tarih ?? "").localeCompare(a.yayinlandi?.tarih ?? "")),
-  };
-  // "Stokta" sekmesi kullanıcının adıyla "Üretilmiş paketler": Next Day'de stok diye işaretlenen de buraya düşüyor.
-  const SEKME_ADI: Record<StokSekme, Anahtar> = { uretimde: "sdUretimde", stokta: "sdUretilmis", yayinlandi: "sdYayinlanan" };
-  return (
-    <>
-      <div className="sayaclar">
-        {STOK_DURUMLARI.map((s) => (
-          <Sayac key={s} ikon={<Layers size={22} />} ton={s === "bekliyor" && bekleyen.length ? "uyari" : ""} renk="renk-haftalik" etiket={t(STOK_DURUM_ADI[s])} deger={durumda(s).length} />
-        ))}
-      </div>
-      {/* Özel yayının dosya paketlerini stok ekibi dağıtıyor ve izliyor (önce Output'taydı). */}
-      <OzelTalepAlani ben={ben} />
-      {/* Plansız görev talepleri: Planlama burada göreve çeviriyor; görev paketi stokta "üretimde"de izleniyor. */}
-      <GorevTalepleri ben={ben} />
-      <SartliPaketler ben={ben} />
-      {bekleyen.length > 0 && (
-        <Kart baslik={t("uretimeAlinacaklar")} ikon={<CirclePlay size={18} />} ek={String(bekleyen.length)}>
-          <ul className="liste">
-            {bekleyen.map((p) => (
-              <li key={p.id}>
-                <div className="ad">
-                  <a href={`#/paketler/${p.id}`}>
-                    <Icerik blok>{p.baslik}</Icerik>
-                  </a>
-                  <small>
-                    {p.kod} · {p.muhabirId ? ad(kisiBul(v, p.muhabirId)) : t("atanmadi")}
-                  </small>
-                </div>
-                {p.haftalikKalemId && <HaftalikRozeti />}
-                <TurRozeti tur={p.tur} />
-                {uretimeAlabilir(ben, p) && <UretimeAlDugmesi ben={ben} paket={p} />}
-              </li>
-            ))}
-          </ul>
-        </Kart>
-      )}
-      <Kart>
-        <div className="sekmeler" role="tablist" aria-label={t("mStok")}>
-          {STOK_SEKMELERI.map((s) => (
-            <button key={s} role="tab" aria-selected={sekme === s} className={sekme === s ? "acik" : ""} onClick={() => setSekme(s)}>
-              {t(SEKME_ADI[s])} <em>{listeler[s].length}</em>
-            </button>
-          ))}
-        </div>
-        <div className="ara-ust-2">
-          <PaketTablosu
-            paketler={listeler[sekme]}
-            d={v}
-            bosMetin={t(sekme === "stokta" ? "stokBos" : "kayitYok")}
-            sutunlar={sekme === "uretimde" ? ["kod", "baslik", "muhabir", "tur", "asama", "kimde", "teslim"] : ["kod", "baslik", "muhabir", "tur", "sure", "stok"]}
-          />
-        </div>
-      </Kart>
     </>
   );
 }

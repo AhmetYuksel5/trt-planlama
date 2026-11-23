@@ -21,7 +21,8 @@ import KodlaGiris from "./ekranlar/KodlaGiris";
 import NdToplanti from "./ekranlar/nextday/Toplanti";
 import Organizasyon from "./ekranlar/organizasyon/Organizasyon";
 import Gundem from "./ekranlar/Gundem";
-import { IsAkisi, Paketler, StokHaberler, Ucretler } from "./ekranlar/Listeler";
+import { IsAkisi, Paketler, Ucretler } from "./ekranlar/Listeler";
+import { StokSayfasi } from "./ekranlar/StokSayfasi";
 import { Muhasebe } from "./ekranlar/Muhasebe";
 import Cikti from "./ekranlar/nextday/Cikti";
 import TakdirBildirimi from "./ekranlar/nextday/Takdir";
@@ -401,8 +402,9 @@ export default function App() {
         );
         break;
       }
+      // Kutucuklu sayfa (StokSayfasi.tsx); "#/stok/<bölüm>" o kutuyla açılır.
       case "stok":
-        icerik = <StokHaberler ben={ben} />;
+        icerik = <StokSayfasi key={yol.id ?? ""} ben={ben} ilk={yol.id} />;
         break;
       case "profil":
         icerik = <KisiDetay ben={ben} kisi={ben} />;

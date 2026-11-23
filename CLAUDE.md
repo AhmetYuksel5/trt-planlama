@@ -2509,7 +2509,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   önceden hazırlanıp yayın günü stoktan veriliyor). Ekonomi, program ve
   spor stoka düşmez, masasına (aşağıda). Durumu saklanmaz, kayıttan çıkar
   (`akis.ts → stokDurumu`): üretime alınacak → üretimde → stokta
-  ("Üretilmiş paketler" sekmesi, `sdUretilmis`) → yayınlandı. Özel yayın
+  (Stok sayfasının Stokta kutusu) → yayınlandı. Özel yayın
   paketi kendi görevlendirmesiyle ilerler (onaylıysa "üretimde"), yayının
   "yayına hazır" aşaması işaretlenince stoktaki dosya paketleri o yayınla
   yayınlandı (`Paket.yayinlandi.ozelId`; aşama geri alınınca stoka döner;
@@ -2521,13 +2521,53 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   varsayılanından kalktı).
   Sayfanın adı "Stok haberler / Programlar" (kullanıcı: Weekly'nin günsüz bölümü
   "Stok ve programlar" oldu, feature ve program önerileri düzenlenip oraya giriyor,
-  toplantıda aynı kararlarla değerlendiriliyor): başta "Haber merkezi / Programlar"
-  seçimi (`data-stok-alan`, `useAdimDurumu`). Haber merkezi bugünkü stok (Planlama
-  gözetir); Programlar masaların (Programlar, Ekonomi, Spor) paketleri, masa
-  sayfasının İçerikler'iyle aynı alanlar ve kural (`programMasasi.ts →
-  masaIcerikleri`, `icerikDurumAlani`; `Listeler.tsx → StokMasalar`), takibi masada.
-  Weekly'nin "Kabul edilen paketler" penceresi iki sekme: Günlük ve Stok ve
-  programlar (günsüz kalemler; `data-takdir-sekme`). Test `testler/stok-programlar.cjs`.
+  toplantıda aynı kararlarla değerlendiriliyor). Programlar masasının kalıbıyla
+  (kullanıcı: tıklanınca altında açılan kutucuklar; orada çalışan bir yandan gelecek
+  haftanın tekliflerini topluyor, bir yandan daha önce planladığının üretimini
+  izliyor, bir yandan stoktaki paketleri kontrol edip planlara ekliyor; sıralama
+  tarih ya da muhabir; `ekranlar/StokSayfasi.tsx`, kurallar `stokSayfasi.ts`; önce
+  "Haber merkezi / Programlar" seçimi ve sekmeli tablolardı). Beş kutucuk bağlantı
+  (`#/stok/<bölüm>`, `data-stok-kutu`; geri tuşu bölümler arasında, menü vurgusu
+  kalır), Planlama'nın renginde (`.prg-masa.masa-planlama`); telefonda üç sütun,
+  alt yazısız (alt çubukta bölümleri yok). Varsayılan Üretim.
+  - Teklifler: tekliflerin haftası `teklifHaftasi` (Perşembe toplantısının gelecek
+    haftası, `planlananHafta`; kesinleştiyse bir sonraki), ‹ › ile değişir. Haftaya
+    düşen, karar bekleyen teklifler (`haftaTeklifleri`: `oneriHaftada` ve Öneriler'in
+    "Karar bekleyen" kuralı `oneriSekmesi`); kapsam "Stok ve programlar"
+    (`stokTeklifiMi`: masası haber olmayan ya da günü olmayan) / "Bütün teklifler"
+    (`data-stok-kapsam`). Kartlar plan ekranlarının öneri listesi (`OneriListesi
+    gruplar`, tek pencere); "Gündeme ekle" Weekly'nin formu (`GundemeEkle stok`: stok
+    teklifinde gün boş gelir, teklif "Stok ve programlar"a düşer; günlü haberde
+    kendi günü). Haftanın Weekly'si yoksa
+    "Yeni haftalık plan" (`haftalikOlustur`). Altta haftanın "Stok ve programlar"
+    kalemleri ("Weekly gündeminde", `haftaStokKalemleri`, kararıyla).
+  - Üretim: üretime alınacak ve üretimde (`uretimAlani`, `akis.ts → stokDurumu`);
+    kartta tür, yer, gün (`stokPaketGunu`: teslim, son gün ya da planın günü; yoksa
+    "zamana bağlı değil"; önce son değişikliğin günü yazılıyordu), aşama · kimde,
+    muhabire ulaşma ve "Üretime al". Başta şartlı kabul bekleyenler ve özel yayın
+    paket talepleri (`OzelTalepAlani bosGizle`).
+  - Stokta: plana alınmamış / plana alınan (`stoktaAlani`, `stokPlani`: hazır
+    paketlerinde durduğu Next Day planı; yayına çıkınca arşive). Kartta "n gündür
+    stokta" (`stoktaGun`, `STOK_BAYAT_GUN` 14'ten sonra uyarı rengi). "Plana ekle"
+    penceresi açık Next Day planlarını listeler (`eklenebilirPlanlar`: bugün ve
+    sonrası, içeriği düzenlenebilen), seçilen planın hazır paketlerine
+    (`hazirPaketEkle`, planın "Stoktan seç"iyle aynı eylem); plandakinde planın
+    çipi ve × (`hazirPaketCikar`).
+  - Programlar: masaların (Programlar, Ekonomi, Spor) paketleri, masa sayfasının
+    İçerikler'iyle aynı alanlar, kural ve kart (`masaIcerikleri`,
+    `icerikDurumAlani`, `ProgramMasasi.tsx → IcerikKarti`), takibi masada; başta
+    masaların görev talepleri (`GorevTalepleri`).
+  - Arşiv: yayınlanan ve yapılmayan stok paketleri (`stokArsivAlani`), ay ay,
+    aranır, 40'ar.
+  - Sıra (`data-stok-sira`): tarihe göre (teklifler gün gün, paketler hafta hafta:
+    "Bu hafta", "Gelecek hafta", "Geçen hafta" ve aralık; arşiv ay ay; ileriye bakan
+    listede yakından uzağa, stok ve arşivde yeniden eskiye) ya da muhabire göre
+    (`grupla`; muhabirsiz sonda). Muhabire göre gruplar gazete sütunu gibi yan yana
+    akar (`.stok-kolonlu`; grupların çoğu bir-iki kart, alt alta sayfa çok uzuyordu).
+    Seçim tarayıcıda (`trt-planlama-stok-sira`): kutucuklar arasında sıfırlanmasın.
+  Test `testler/stok-sayfasi.cjs`. Weekly'nin "Kabul edilen paketler" penceresi iki
+  sekme: Günlük ve Stok ve programlar (günsüz kalemler; `data-takdir-sekme`). Test
+  `testler/stok-programlar.cjs`.
 - Plansız paket görevi (kullanıcı: planlamacı muhabire bir plana eklemeden
   paket görevi verebilsin; `bilesenler/PaketGorevi.tsx`, eylemler
   `eylemler.ts → paketGorevVer`, `gorevTalebiGonder`, `gorevTalebiKarar`,
@@ -2795,8 +2835,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekle" (plan ekranında ve belgede; `eylemler.ts → paketStogaAl`,
     `paketStogaAlinabilir`: plan içeriğini düzenleyen, üretimde, iptal ve özel
     yayın paketi değil) onu stok paketi yapar (`tamamlandi`): bu planın hazır
-    paketlerine (التقارير الجاهزة) girer ve Stok'un "Üretilmiş paketler"inde
-    durur, plan onaylanınca yayınlandı; başka planda "Stoktan seç"le de
+    paketlerine (التقارير الجاهزة) girer ve Stok'un Stokta kutusunda (Plana
+    alınan) durur, plan onaylanınca yayınlandı; başka planda "Stoktan seç"le de
     seçilir; hareket `paketStogaAlindi`. Bir süre (10–12 Kasım) yalnız Stok'a
     gidiyordu: hazır listesinde olmayan paket "beklenen" sayılıp التقارير
     المتوقعة'da basılıyordu (kullanıcı: hazır paketlerde görünmeli); o arada

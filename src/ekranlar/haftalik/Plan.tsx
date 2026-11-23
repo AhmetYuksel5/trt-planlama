@@ -268,7 +268,8 @@ function TakvimdenBolumu({ ben, hafta, ekleyebilir }: { ben: Kisi; hafta: Haftal
 
 /* --- Bu haftaya gelen öneriler: gündeme alınıyor ya da reddediliyor --- */
 
-export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void }) {
+/* `stok`: Stok sayfasından (kullanıcı: stok ekibi gelecek haftanın tekliflerini topluyor) gün boş gelir, teklif "Stok ve programlar"a düşer. */
+export function GundemeEkle({ ben, hafta, oneri, kapat, stok }: { ben: Kisi; hafta: HaftalikPlan; oneri: Oneri; kapat: () => void; stok?: boolean }) {
   const { t, dil } = useDil();
   const v = useVeri();
   // Muhabirin söylediği gün hazır gelsin; değiştirmek Planlama'nın elinde.
@@ -279,7 +280,7 @@ export function GundemeEkle({ ben, hafta, oneri, kapat }: { ben: Kisi; hafta: Ha
   // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
   const aralik = oneriAraligi(oneri);
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
-  const [f, setF] = useState({ tarih: gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "" });
+  const [f, setF] = useState({ tarih: !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "" });
   const kaydet = () => {
     if (!confirm(t("gundemeEkleOnay"))) return;
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {

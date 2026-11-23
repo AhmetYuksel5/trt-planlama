@@ -1652,10 +1652,12 @@ function OutputPaketSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
   );
 }
 
-export function OzelTalepAlani({ ben }: { ben: Kisi }) {
+/* `bosGizle`: Stok sayfasının Üretim kutusunda boşken çizilmez (kartlar kalabalıklaşmasın). */
+export function OzelTalepAlani({ ben, bosGizle }: { ben: Kisi; bosGizle?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
   const liste = v.paketler.filter((p) => p.ozelId && p.ozelKaynak === "inhouse" && p.durum === "onaylandi" && (ozelPaketDagitabilir(ben, p) || p.hazirlayanId === ben.id));
+  if (bosGizle && !liste.length) return null;
   if (
     !liste.length &&
     !ozelPaketDagitabilir(ben, {
