@@ -67,7 +67,7 @@ export function oneriAkisi(d: Durum, ben: Kisi, b: string): OneriAkisi {
 /* --- Bugünün zaman çizgisi --- */
 
 export interface CizgiOlayi {
-  /** "HH:MM", İstanbul saati. */
+  /** "HH:MM", GMT: planın, belgenin ve üst çubuğun saati. */
   saat: string;
   tur: "toplanti" | "cagri" | "canli";
   /** Toplantı ve canlıda Arapça içerik; çağrıda boş (ekran kendi metnini yazar). */
@@ -75,33 +75,43 @@ export interface CizgiOlayi {
   href?: string;
 }
 
-/* Canlı yayının saati kayıtta GMT; Türkiye yaz saatine geçmiyor, İstanbul sabit +3. */
-const gmtdenIstanbul = (s: string) => {
+/*
+ * Çizgi GMT'de (kullanıcı: plana 16 GMT girilen canlı çizgide "19:00" görünüyordu).
+ * Kurum planı GMT'yle yazıyor (canlı, vardiya, üst çubuk); çizgi İstanbul'a (+3)
+ * çeviriyor ama dilimini yazmıyordu, toplantıları da tarayıcının yerel saatiyle
+ * koyuyordu. Şimdi her olay GMT: canlı kayıttaki haliyle, toplantı UTC'den,
+ * çağrının son saati (İstanbul, sabit +3) geri çevrilerek.
+ */
+const ikiHane = (h: number, m: number) => `${String(((h % 24) + 24) % 24).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+const gmtSaat = (s: string) => {
   const [h, m] = s.split(":").map(Number);
-  if (Number.isNaN(h)) return "";
-  return `${String((h + 3) % 24).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+  return Number.isNaN(h) ? "" : ikiHane(h, m);
 };
-const yerelSaat = (iso: string) => {
+const istanbuldanGmt = (s: string) => {
+  const [h, m] = s.split(":").map(Number);
+  return Number.isNaN(h) ? "" : ikiHane(h - 3, m);
+};
+const utcSaat = (iso: string) => {
   const t = new Date(iso);
-  return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+  return ikiHane(t.getUTCHours(), t.getUTCMinutes());
 };
 
 export const gunOlaylari = (d: Pick<Durum, "toplantilar" | "cagrilar" | "canliYayinlar">, b: string): CizgiOlayi[] => {
   const l: CizgiOlayi[] = [];
-  for (const t of d.toplantilar ?? []) if (yerelGun(t.zaman) === b) l.push({ saat: yerelSaat(t.zaman), tur: "toplanti", ad: t.ad });
+  for (const t of d.toplantilar ?? []) if (yerelGun(t.zaman) === b) l.push({ saat: utcSaat(t.zaman), tur: "toplanti", ad: t.ad });
   // Yarının planına bugün gönderilmiş çağrının son saati: o saate dek yanıt bekleniyor.
   for (const c of d.cagrilar ?? [])
-    if ((c.tur ?? "nextday") === "nextday" && c.tarih === gunEkle(b, 1) && c.sonSaat && yerelGun(c.zaman) <= b) l.push({ saat: c.sonSaat, tur: "cagri", ad: "", href: "#/oneriler" });
+    if ((c.tur ?? "nextday") === "nextday" && c.tarih === gunEkle(b, 1) && c.sonSaat && yerelGun(c.zaman) <= b) l.push({ saat: istanbuldanGmt(c.sonSaat), tur: "cagri", ad: "", href: "#/oneriler" });
   for (const c of d.canliYayinlar ?? []) {
-    const s = c.tarih === b && c.saatGmt ? gmtdenIstanbul(c.saatGmt) : "";
+    const s = c.tarih === b && c.saatGmt ? gmtSaat(c.saatGmt) : "";
     if (s) l.push({ saat: s, tur: "canli", ad: c.konu, href: `#/nextday/${c.planId}` });
   }
   return l.sort((x, y) => x.saat.localeCompare(y.saat));
 };
 
-/** Şimdiden sonraki ilk olay ve kalan dakika. */
+/** Şimdiden sonraki ilk olay ve kalan dakika (olaylar GMT, şimdi de UTC'den). */
 export const siradakiOlay = (l: CizgiOlayi[], simdi: Date): { olay: CizgiOlayi; dakika: number } | null => {
-  const an = simdi.getHours() * 60 + simdi.getMinutes();
+  const an = simdi.getUTCHours() * 60 + simdi.getUTCMinutes();
   for (const o of l) {
     const [h, m] = o.saat.split(":").map(Number);
     const dk = h * 60 + m - an;

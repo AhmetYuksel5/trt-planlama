@@ -86,8 +86,9 @@ function useDakika() {
   return an;
 }
 
-const BAS_SAAT = 7;
-const BIT_SAAT = 24;
+// GMT; eskiden İstanbul 07–24 idi, aynı pencere.
+const BAS_SAAT = 4;
+const BIT_SAAT = 21;
 const konum = (saat: string) => {
   const [h, m] = saat.split(":").map(Number);
   const x = (h + m / 60 - BAS_SAAT) / (BIT_SAAT - BAS_SAAT);
@@ -101,12 +102,12 @@ function GunCizgisi() {
   const b = bugun();
   const olaylar = gunOlaylari(v, b);
   const sira = siradakiOlay(olaylar, an);
-  const simdi = `${an.getHours()}:${an.getMinutes()}`;
+  const simdi = `${an.getUTCHours()}:${an.getUTCMinutes()}`;
   const ad = (o: (typeof olaylar)[number]) => (o.tur === "cagri" ? t("apCagriSon") : o.ad);
   return (
     <section className="ap-cizgi" aria-label={t("apBugun")} data-ap-cizgi>
       <div className="ap-cizgi-bas">
-        <b>{t("apBugun")}</b>
+        <b>{t("apBugun")}</b> <small className="ap-dilim">GMT</small>
         <span className={sira && sira.dakika <= 60 ? "ap-sira yakin" : "ap-sira"} data-ap-siradaki>
           {sira ? (
             siradakiMetni(t, sira.olay.tur === "cagri" ? t("apCagriSon") : sira.olay.ad, sureYazisi(sira.dakika * 60_000, t), sira.olay.tur !== "cagri")
@@ -133,11 +134,11 @@ function GunCizgisi() {
           const sinif = `ap-olay ${o.tur}${i % 2 ? " alt" : ""}`;
           const stil = { insetInlineStart: `${konum(o.saat)}%` };
           return o.href ? (
-            <a key={i} className={sinif} style={stil} href={o.href} title={`${o.saat} · ${t(o.tur === "cagri" ? "apCagriSon" : o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
+            <a key={i} className={sinif} style={stil} href={o.href} title={`${o.saat} GMT · ${t(o.tur === "cagri" ? "apCagriSon" : o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
               {ic}
             </a>
           ) : (
-            <span key={i} className={sinif} style={stil} title={`${o.saat} · ${t(o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
+            <span key={i} className={sinif} style={stil} title={`${o.saat} GMT · ${t(o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
               {ic}
             </span>
           );

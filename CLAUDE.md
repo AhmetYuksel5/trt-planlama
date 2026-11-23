@@ -3306,8 +3306,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     açtıkça yerinde büyüsün; beş tasarımcıya danışıldı, ortak öneri; `ekranlar/yeni/
     AnaPano.tsx`, kurallar `anaPano.ts`): 961 pikselden genişte `PlanlamaAna` panoyu
     çizer, dar ekranda kutular ve sağ panel (mobil denetimde onaylı) kalır. Üstte
-    bugünün zaman çizgisi (07–24, toplantılar, yarının çağrısının son saati, canlılar
-    [GMT +3], "şimdi" çizgisi; `gunOlaylari`, `siradakiOlay`: "Sıradaki: X · 2 sa
+    bugünün zaman çizgisi (GMT, başlıkta yazılı; 04–21, toplantılar, yarının çağrısının
+    son saati, canlılar kayıttaki GMT saatiyle, "şimdi" çizgisi; kullanıcı: 16 GMT girilen canlı
+    İstanbul'a çevrilip dilimsiz "19:00" görünüyordu; `anaPano.ts → gunOlaylari`; test
+    `testler/zaman-cizgisi.cjs`; `gunOlaylari`, `siradakiOlay`: "Sıradaki: X · 2 sa
     sonra", bir saatten azsa kırmızı). Altında üç sütun (1400 altında iki: kararlar
     solda, öbürleri sağda alt alta); sayfa ekranı doldurur, sütun kendi içinde kayar
     (720 piksel altında sayfa uzar). Sıradaki kararlar tek kuyruk (`kararKuyrugu`:
