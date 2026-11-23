@@ -8,7 +8,7 @@ import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import type { Baski } from "./Baski";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
-import { TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu, onIncelemeyeGidebilir } from "../../haftalik";
 import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
@@ -343,8 +343,7 @@ export function HaftalikBelgesi({
             const g = grup[0];
             return (
               <Satir key={g.id} yer={g.yer}>
-                {grup.map((x) => kisiAdi(x.kisiId)).join(" - ")} / {sureYaz(g.baslangic, g.bitis, "ar")}
-                {g.aciklama ? ` / ${g.aciklama}` : ""}
+                {grup.map((x) => kisiAdi(x.kisiId)).join(" - ")} / {metin(HAREKET_TURU_ADI[g.tur], "ar")} / {sureYaz(g.baslangic, g.bitis, "ar")}
               </Satir>
             );
           })}

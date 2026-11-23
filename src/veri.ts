@@ -484,6 +484,8 @@ export interface MuhasebeKapanisi {
 
 export const HAREKET_TURLERI = ["gorevlendirme", "seyahat", "izin", "diger"] as const;
 export type HareketTuru = (typeof HAREKET_TURLERI)[number];
+/** Formda seçilenler (kullanıcı: seyahat ayrı tür değil, kalktı); eski seyahat kaydı adıyla görünür. */
+export const SECILEN_HAREKET_TURLERI: readonly HareketTuru[] = ["gorevlendirme", "izin", "diger"];
 export type GorevlendirmeDurum = "talep" | "onayli" | "suruyor" | "bitti";
 
 export interface Gorevlendirme {

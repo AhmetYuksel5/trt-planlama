@@ -1287,8 +1287,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yayın alınabilir. Belgede ve çıktıda muhabirlerin altında "LIVE" satırı.
     Saatli canlı yayın (`CanliYayin`, "مباشر" bölümü) ayrı; işaret ertesi güne
     taşınmaz.
-  - Canlı yayın satırı ("مباشر" ve başlığın altındaki LIVE) "ŞEHİR / saat /
-    konu / ayrıntı / muhabir" (kurumun isteği; saat kalın, yoksa "TBC").
+  - Canlı yayın satırı ("مباشر" ve başlığın altındaki LIVE) "YER / etkinlik /
+    saat" (kullanıcı; saat kalın, "16G" biçiminde `vardiyaYaz`, yoksa "TBC";
+    önce "ŞEHİR / saat / konu / ayrıntı / muhabir"dı). Klasik plan ekranında da.
   - Başlığa bağlı canlı yayın (`CanliYayin.planBaslikId`) belgede ve çıktıda
     üstteki "مباشر" bölümünde ve başlığın altında "LIVE" alt başlığıyla, iki
     yerde de.
@@ -1443,9 +1444,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yarının planı önceki günden süreni taşır, o gün başlayanı da alır
     (`yarinPlaniniAc`). Weekly kayıttan okur. Test `testler/hareketler.cjs`.
   - Muhabir hareketleri (تحركات وإجازات المراسلين) belgede ve çıktıda
-    "YER / ad / süre / açıklama" (Next Day ve Weekly; kurumun isteği): süre
-    tek günse o gün, değilse aralık (`dil.ts → sureYaz`). Tür sözcüğü
-    ("مهمة"…) ve "·" ayracı yazılmaz.
+    "مكان / اسم / نوع / تاريخ" (Next Day ve Weekly; kullanıcı): tür Arapça
+    adıyla (مهمة، إجازة، أخرى), süre tek günse o gün, değilse aralık
+    (`dil.ts → sureYaz`); açıklama satıra yazılmaz, formda kalır. Türler
+    görevlendirme, izin, diğer (`veri.ts → SECILEN_HAREKET_TURLERI`; seyahat
+    kalktı, eski seyahat kaydı adıyla görünür). Test `testler/canli-satiri.cjs`.
   - Dosyasız kayıt çıktının sonundaki yeşil "متابعات" bölümünde: başlıksız
     gelişmeler ve plana başlıksız giren haberler (paket, "YER / haber /
     muhabir"; hazır paketler kendi bölümünde).

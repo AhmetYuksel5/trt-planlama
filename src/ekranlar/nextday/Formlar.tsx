@@ -15,6 +15,7 @@ import {
   TAKIP_BICIMI,
   type OneriBicimi,
   HAREKET_TURLERI,
+  SECILEN_HAREKET_TURLERI,
   ICERIK_TURLERI,
   KAYNAK_TURLERI,
   kisiBul,
@@ -702,7 +703,7 @@ export function GorevlendirmeFormu({ plan, mevcut, gun, kapat }: { plan?: NextDa
         <label>
           {t("hareketTuru")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as HareketTuru })} data-hareket-tur>
-            {HAREKET_TURLERI.map((x) => (
+            {HAREKET_TURLERI.filter((x) => SECILEN_HAREKET_TURLERI.includes(x) || x === f.tur).map((x) => (
               <option key={x} value={x}>
                 {t(HAREKET_TURU_ADI[x])}
               </option>

@@ -1546,7 +1546,7 @@ function GorevPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: () 
           <label>
             {t("tur")}
             <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as HareketTuru })}>
-              {HAREKET_TURLERI.filter((x) => x !== "izin").map((x) => (
+              {HAREKET_TURLERI.filter((x) => x !== "izin" && x !== "seyahat").map((x) => (
                 <option key={x} value={x}>
                   {t(HAREKET_TURU_ADI[x])}
                 </option>

@@ -1181,7 +1181,7 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
   {
     id: "gr-kahire",
     kisiId: "mu4",
-    tur: "seyahat",
+    tur: "gorevlendirme",
     yer: "القاهرة ← إسطنبول",
     baslangic: gun(0),
     bitis: gun(2),
@@ -1191,7 +1191,7 @@ const GOREVLENDIRMELER = (gun: (n: number) => string): Gorevlendirme[] => [
   {
     id: "gr-kiev",
     kisiId: "mu26",
-    tur: "seyahat",
+    tur: "gorevlendirme",
     yer: "كييف ← أوديسا",
     baslangic: gun(1),
     bitis: gun(3),

@@ -47,6 +47,7 @@ import {
   pkgGruplari,
   pkgOnerisiMi,
   sehirAr,
+  HAREKET_TURU_ADI,
 } from "../../etiketler";
 import {
   takdirBildirildi,
@@ -1070,14 +1071,7 @@ export function NextDayBelgesi({
                                 }
                               >
                                 <Satir yer={x.yer}>
-                                  <b>
-                                    {x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}
-                                  </b>{" "}
-                                  / <span data-baslik-canli>{x.konu}</span>
-                                  {x.aciklama ? ` / ${x.aciklama}` : ""}
-                                  {x.muhabirId
-                                    ? ` / ${kisiAdi(x.muhabirId)}`
-                                    : ""}
+                                  <span data-baslik-canli>{x.konu}</span> / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
                                 </Satir>
                               </BelgeSatiri>
                             ))}
@@ -1305,28 +1299,7 @@ export function NextDayBelgesi({
                             )
                           }
                         >
-                          {kisiAdi(g.kisiId)} /{" "}
-                          {sureYaz(g.baslangic, g.bitis, "ar")}
-                          {ic ? (
-                            <>
-                              {" / "}
-                              <YerindeMetin
-                                acik
-                                deger={g.aciklama}
-                                etiket={t("aciklama")}
-                                kaydet={(x) =>
-                                  ben &&
-                                  gorevlendirmeMetni(ben, plan.id, g.id, {
-                                    aciklama: x,
-                                  })
-                                }
-                              />
-                            </>
-                          ) : g.aciklama ? (
-                            ` / ${g.aciklama}`
-                          ) : (
-                            ""
-                          )}
+                          {kisiAdi(g.kisiId)} / {metin(HAREKET_TURU_ADI[g.tur], "ar")} / {sureYaz(g.baslangic, g.bitis, "ar")}
                         </Satir>
                       </BelgeSatiri>
                     );
@@ -1370,10 +1343,9 @@ export function NextDayBelgesi({
                         />
                       }
                     >
-                      {/* Kurumun istediği sıra: ŞEHİR / saat / konu / ayrıntı / muhabir. */}
+                      {/* Kurumun istediği sıra (kullanıcı): YER / etkinlik / saat ("16G"). */}
                       <Satir yer={x.yer}>
-                        <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> /{" "}
-                        {op ? (
+{op ? (
                           <YerindeMetin
                             acik
                             deger={x.konu}
@@ -1384,9 +1356,7 @@ export function NextDayBelgesi({
                           />
                         ) : (
                           x.konu
-                        )}
-                        {x.aciklama ? ` / ${x.aciklama}` : ""}
-                        {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
+                        )} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
                       </Satir>
                     </BelgeSatiri>
                   ))}
@@ -1577,28 +1547,7 @@ export function NextDayBelgesi({
                         )
                       }
                     >
-                      {kisiAdi(g.kisiId)} /{" "}
-                      {sureYaz(g.baslangic, g.bitis, "ar")}
-                      {ic ? (
-                        <>
-                          {" / "}
-                          <YerindeMetin
-                            acik
-                            deger={g.aciklama}
-                            etiket={t("aciklama")}
-                            kaydet={(x) =>
-                              ben &&
-                              gorevlendirmeMetni(ben, plan.id, g.id, {
-                                aciklama: x,
-                              })
-                            }
-                          />
-                        </>
-                      ) : g.aciklama ? (
-                        ` / ${g.aciklama}`
-                      ) : (
-                        ""
-                      )}
+                      {kisiAdi(g.kisiId)} / {metin(HAREKET_TURU_ADI[g.tur], "ar")} / {sureYaz(g.baslangic, g.bitis, "ar")}
                     </Satir>
                   </BelgeSatiri>
                 );
@@ -1641,10 +1590,9 @@ export function NextDayBelgesi({
                     />
                   }
                 >
-                  {/* Kurumun istediği sıra: ŞEHİR / saat / konu / ayrıntı / muhabir. */}
+                  {/* Kurumun istediği sıra (kullanıcı): YER / etkinlik / saat ("16G"). */}
                   <Satir yer={x.yer}>
-                    <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b> /{" "}
-                    {op ? (
+{op ? (
                       <YerindeMetin
                         acik
                         deger={x.konu}
@@ -1655,9 +1603,7 @@ export function NextDayBelgesi({
                       />
                     ) : (
                       x.konu
-                    )}
-                    {x.aciklama ? ` / ${x.aciklama}` : ""}
-                    {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
+                    )} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
                   </Satir>
                 </BelgeSatiri>
               ))}
@@ -1987,10 +1933,7 @@ export function NextDayBelgesi({
                             }
                           >
                             <Satir yer={x.yer}>
-                              <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>{" "}
-                              / <span data-baslik-canli>{x.konu}</span>
-                              {x.aciklama ? ` / ${x.aciklama}` : ""}
-                              {x.muhabirId ? ` / ${kisiAdi(x.muhabirId)}` : ""}
+                              <span data-baslik-canli>{x.konu}</span> / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : "TBC"}</b>
                             </Satir>
                           </BelgeSatiri>
                         ))}
