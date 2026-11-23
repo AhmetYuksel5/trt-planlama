@@ -2046,7 +2046,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     İşaretlenmemiş geçmiş canlı sayılmaz, dökümde uyarı.
   - Günü olmayan paketin ayı kapanış anından (teslim, onay, üretimin kapanışı,
     yayın; yerel günle), son değişiklikten (`guncelleme`) değil: düzenlenen
-    paket kapanmış aydan sonraki aya kayıyordu (kod incelemesi 4.1).
+    paket kapanmış aydan sonraki aya kayıyordu (kod incelemesi 4.1). `sonTarih`
+    yalnız plansız görevde ve özel yayında işin günü; stok ve feature paketinde
+    teslim günü (son gün), orada da kapanış anı: erken teslim sonraki aya, geç
+    teslim kapanmış (ödenmiş) aya düşmesin.
   - Demoda kurgusal `mh1` ve örnek anlaşmalar. Test `testler/muhasebe.cjs`,
     kural testleri `testler/kurallar.mjs`.
 - Kaydın yedeği (Ayarlar, yalnız tam yönetici; `ekranlar/KayitYedegi.tsx`):
@@ -2369,7 +2372,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     birimi). Görüş ya da gerekçeli ret; kabul kararı toplantıda.
   - Kesinleşince kabul edilen haber Next Day'e onaylı paket olarak geçer
     (`haftalikKalemId`, "Haftalık plandan" rozeti); feature, ekonomi ve
-    program plansız onaylı paket olur. Paketin başlığı strap
+    program plansız onaylı paket olur (teslim günü kalemin teslim günü ya da günü;
+    yukarıda, Stok sayfası › Teslim günü). Paketin başlığı strap
     (`eylemler.ts → kalemStrapi`: kalemin, yoksa önerinin strap'i, yoksa
     dosyanın adı, sonra olay adı); kalemin metni açıklama, başlığa yazılınca
     PKG satırında gelişmenin aynısı çıkıyordu. Kalemde elle yazılan yer
@@ -2540,14 +2544,42 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`data-stok-kapsam`). Kartlar plan ekranlarının öneri listesi (`OneriListesi
     gruplar`, tek pencere); "Gündeme ekle" Weekly'nin formu (`GundemeEkle stok`: stok
     teklifinde gün boş gelir, teklif "Stok ve programlar"a düşer; günlü haberde
-    kendi günü). Haftanın Weekly'si yoksa
-    "Yeni haftalık plan" (`haftalikOlustur`). Altta haftanın "Stok ve programlar"
-    kalemleri ("Weekly gündeminde", `haftaStokKalemleri`, kararıyla).
+    kendi günü; "Stok ve programlar"a giren paket önerisinde teslim günü). Günü
+    olmayan teklifin grubu "Stok ve programlar" (Weekly'de düşeceği yer). Haftanın
+    Weekly'si yoksa "Yeni haftalık plan" (`haftalikOlustur`). Altta haftanın "Stok ve
+    programlar" kalemleri ("Weekly gündeminde", `haftaStokKalemleri`, kararı ve teslim
+    günüyle).
   - Üretim: üretime alınacak ve üretimde (`uretimAlani`, `akis.ts → stokDurumu`);
-    kartta tür, yer, gün (`stokPaketGunu`: teslim, son gün ya da planın günü; yoksa
-    "zamana bağlı değil"; önce son değişikliğin günü yazılıyordu), aşama · kimde,
-    muhabire ulaşma ve "Üretime al". Başta şartlı kabul bekleyenler ve özel yayın
-    paket talepleri (`OzelTalepAlani bosGizle`).
+    kartta tür, yer, aşama · kimde, muhabire ulaşma, "Üretime al" ve teslim günü
+    satırı (aşağıda). Başta şartlı kabul bekleyenler ve özel yayın paket talepleri
+    (`OzelTalepAlani bosGizle`). Kutucuğun sayısı kişinin işi: üretime alacağı ve
+    teslim gününü belirleyeceği paketler.
+  - Teslim günü (kullanıcı: stok ve feature zamana bağlı olmayabilir ama teslim
+    süresi mutlaka belirlenir, takip ona göre; önce günsüz paket "Zamana bağlı
+    değil" grubundaydı): paketin `sonTarih`'i (plansız görevde görevin günü, özel
+    yayında son tarih de o). Weekly'de "Stok ve programlar"daki paket önerisi
+    (`haftalik.ts → teslimGunuSorulur`) kalem formunda ve "Gündeme ekle"de teslim
+    günü alır (`HaftalikKalem.teslimGunu`; kalem bir güne geçince düşer), kalem
+    kartında, gözden geçirmede ve "Weekly gündeminde"de görünür; kabul edilip günü
+    verilmemişse "Teslim günü belirlenmedi" uyarısı (`bilesenler/Haftalik.tsx →
+    KalemTeslimGunu`). Kesinleşince paketin `sonTarih`'i olur (`haftaliktanPaket`;
+    günü olan feature, ekonomi… kaleminde kalemin günü). Süren paketin günü
+    `bitmisPaket.ts → surenPaketGunu` (`sonTarih`, planın günü, saatli teslimin günü;
+    sıra `paketGunu`'nunki; yoksa yok): Stok sayfasında günsüz paket başta, uyarı
+    renginde "Teslim günü belirlenmedi" grubunda (`grupla bosOnce`; Üretim ve
+    Programlar), kartta
+    `bilesenler/TeslimGunu.tsx → TeslimSatiri`: gün ve "n gün kaldı / Bugün teslim /
+    n gün gecikti" (bir gün kala turuncu, geçince kırmızı), yoksa uyarı rozeti;
+    yetkiliye "Teslim günü belirle" ya da ✎, pencerede gün (bugünden önce değil).
+    Eylem `eylemler.ts → paketTeslimGunu` (yetki `yetki.ts → teslimGunuBelirleyebilir`:
+    ileri tarihe görev verebilen [Planlama, tam yönetici]; plansız, süren, özel
+    yayın değil; saatli teslimin saati kalır, günü değişir), hareket `paketTeslimGunu`
+    (muhabire `kime`, masa paketinde masaya `sahip`; önceki gün `kaynak`'ta, metni
+    "… yerine … yaptı"). Paket sayfasının başında da (`.paket-teslim`; görevde günü
+    görev künyesinde). Muhabirin Yapılacaklar'ı ve ana panonun "geciken"i aynı
+    günden: günsüz iş gecikmiş sayılmaz. Örnek veride plansız paketlerin teslim günü
+    var, Bağdat'taki sahaf paketi bilerek günsüz (`PaketTanimi.sonGun`). Test
+    `testler/teslim-gunu.cjs`.
   - Stokta: plana alınmamış / plana alınan (`stoktaAlani`, `stokPlani`: hazır
     paketlerinde durduğu Next Day planı; yayına çıkınca arşive). Kartta "n gündür
     stokta" (`stoktaGun`, `STOK_BAYAT_GUN` 14'ten sonra uyarı rengi). "Plana ekle"
@@ -3418,8 +3450,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       `yapilacaklar.ts`, saklanmaz; kullanıcı: öneri paket görevine dönünce
       yapılacaklara düşsün, bugün, yarın ve yakın gelecek; yapım aşamasındaki
       işler buradan izlensin): muhabirin onaylı ve üretimdeki paketleri (özel
-      yayın görevi dahil, görevi verilmemişi değil), paketin günüyle
-      (`paketGunu`) Geciken, Bugün, Yarın, Yakında (7 gün), İleride. Satırda
+      yayın görevi dahil, görevi verilmemişi değil), paketin teslim günüyle
+      (`surenPaketGunu`) Geciken, Bugün, Yarın, Yakında (7 gün), İleride; teslim
+      günü yoksa sonda "Teslim günü belirlenmedi" (önce son değişikliğin günüyle
+      "Geciken"di). Satırda
       gün, teslim, şimdiki aşama ve sıra başkasındaysa birimi, paketin yolu
       çubukta (`AsamaCubugu`); sıra muhabirdeyse adımın düğmesi (sonuç
       bildirme, metin/video), değilse "İzle". Menüde ve alt çubukta sayı:

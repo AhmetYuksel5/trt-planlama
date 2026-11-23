@@ -1,4 +1,5 @@
 import { stokDurumu } from "./akis";
+import { yerelGun } from "./tarih";
 import type { BirimId, Durum, Kisi, Paket } from "./veri";
 import { izinBirimi } from "./yapi";
 import { asamaNotuGorur, kisitliKisi, muhasebeciMi, yonetimdeMi } from "./yetki";
@@ -48,6 +49,16 @@ export const bitmisGorunum = (k: Kisi): BitmisGorunum => {
 /** Şeridin türü: biten paketin sonucu, süren ya da iptal (reddedilen, devredilen). */
 export type SeritTuru = BitmisSonuc | "aktif" | "iptal";
 export const paketSeritTuru = (p: Paket): SeritTuru => (bitmisMi(p) ? bitmisSonuc(p) : p.durum === "iptal" ? "iptal" : "aktif");
+
+/*
+ * Süren paketin teslim günü: son gün (stok ve feature teslim günü, plansız
+ * görevin günü, özel yayının son tarihi), yoksa planın günü, o da yoksa saatli
+ * teslimin günü (sıra paketGunu'nunki); hiçbiri yoksa yok. Gecikme ve
+ * muhabirin gün grupları bundan: son değişikliğin günü teslim günü sanılınca
+ * teslim günü olmayan paket "geciken" görünüyordu.
+ */
+export const surenPaketGunu = (d: Pick<Durum, "planlar">, p: Paket): string | undefined =>
+  p.sonTarih?.slice(0, 10) ?? d.planlar.find((x) => x.id === p.planId)?.tarih ?? (p.teslim ? yerelGun(p.teslim) : undefined);
 
 /** Şeritte görünen gün: biten pakette bittiği gün, sürende teslim günü, yoksa planın günü. */
 export const paketGunu = (d: Pick<Durum, "planlar">, p: Paket): string =>

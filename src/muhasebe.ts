@@ -41,7 +41,13 @@ export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
      * saatle: UTC'de gece yarısından sonraki teslim önceki güne düşüyordu.
      */
     const an = p.muhabirTeslimi ?? p.kunye?.onaylayan?.at(-1)?.zaman ?? p.uretim?.kapandi?.zaman ?? p.yayinlandi?.tarih ?? p.guncelleme;
-    const tarih = planTarihi(d, p.planId) ?? p.sonTarih?.slice(0, 10) ?? (an ? (an.length > 10 ? yerelGun(an) : an) : undefined);
+    /*
+     * `sonTarih` plansız görevde ve özel yayında işin günü; Weekly'den doğan ya
+     * da Stok sayfasında verilen teslim gününde son gün. Onda ay teslim anından:
+     * erken teslim sonraki aya, geç teslim kapanmış (ödenmiş) aya düşmesin.
+     */
+    const isGunu = p.gorev || p.ozelId ? p.sonTarih?.slice(0, 10) : undefined;
+    const tarih = planTarihi(d, p.planId) ?? isGunu ?? (an ? (an.length > 10 ? yerelGun(an) : an) : undefined) ?? p.sonTarih?.slice(0, 10);
     if (tarih) l.push({ id: p.id, kaynak: "paket", tur: p.bicim ?? "pkg", tarih, baslik: p.baslik, ...(p.masrafOnayi && p.masraflar?.length && { masraflar: p.masraflar }) });
   }
   for (const c of d.canliYayinlar) {

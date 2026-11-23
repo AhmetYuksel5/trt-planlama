@@ -3,7 +3,7 @@ import { useState } from "react";
 import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil } from "../dil";
 import { BICIM_KODU, KARAR_ADI, KARAR_TONU } from "../etiketler";
 import { onIncelemeGorusu, onIncelemeReddet } from "../eylemler";
-import { haftaSonu, kalemAdi, onIncelemeBekleyenler } from "../haftalik";
+import { haftaSonu, kabulMu, kalemAdi, onIncelemeBekleyenler, teslimGunuSorulur } from "../haftalik";
 import { yerelGun } from "../tarih";
 import { kolSahibi } from "../akis";
 import { birimAdiDilde } from "../yapi";
@@ -22,6 +22,31 @@ export function KararRozeti({ kalem }: { kalem: HaftalikKalem }) {
   if (kalem.onInceleme?.durum === "reddedildi") return <Rozet ton="kotu">{t("onIncelemedeReddedildi")}</Rozet>;
   if (kalem.karar === "bekliyor" && kalem.onInceleme) return <Rozet ton="uyari">{t("onIncelemede")}</Rozet>;
   return <Rozet ton={KARAR_TONU[kalem.karar]}>{t(KARAR_ADI[kalem.karar])}</Rozet>;
+}
+
+/*
+ * "Stok ve programlar" kaleminin teslim günü (kullanıcı: stok ve feature zamana
+ * bağlı olmayabilir ama teslim süresi mutlaka belirlenir). Paketi doğduysa
+ * paketin günü (Stok sayfasında değişmiş olabilir). Kabul edilip günü
+ * verilmemişse uyarı: kesinleşince paket teslim günsüz doğardı.
+ */
+// `kucuk`: listede kendi satırında (gözden geçirme), kartın küçük meta satırının içinde değil.
+export function KalemTeslimGunu({ kalem, kucuk = false }: { kalem: HaftalikKalem; kucuk?: boolean }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  if (!teslimGunuSorulur(kalem) || kalem.karar === "bilgi" || kalem.karar === "ret") return null;
+  const gun = (kalem.aktarim?.paketId && v.paketler.find((p) => p.id === kalem.aktarim!.paketId)?.sonTarih) || kalem.teslimGunu;
+  if (!gun && !kabulMu(kalem)) return null;
+  const icerik = gun ? (
+    <span className="sonuk-yazi" data-kalem-teslim={gun}>
+      {t("teslimGunu")}: <bdi>{tarihYaz(gun, dil, "kisa")}</bdi>
+    </span>
+  ) : (
+    <span data-kalem-teslim="">
+      <Rozet ton="uyari">{t("skTeslimYok")}</Rozet>
+    </span>
+  );
+  return kucuk ? <small>{icerik}</small> : icerik;
 }
 
 /** Kalemin günü; günü yoksa Weekly'nin "Stok ve programlar" bölümünde (eski adı "Zamana bağlı olmayan dosya"). */

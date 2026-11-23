@@ -24,10 +24,11 @@ import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
+import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
 import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
-import { bitmisMi } from "../bitmisPaket";
+import { bitmisMi, surenPaketGunu } from "../bitmisPaket";
 
 /**
  * Paket detayı: ortak kaydın kendisi (rapor bölüm 7).
@@ -66,6 +67,12 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
             </p>
           )}
           <GorevKunyesi p={paket} />
+          {/* Stok, feature ve masa paketinin teslim günü (plansız görevde günü görev künyesinde, özel yayında yayının formunda). */}
+          {!paket.planId && !paket.ozelId && !paket.gorev && (paket.durum === "onaylandi" || paket.durum === "uretimde") && (
+            <div className="paket-teslim">
+              <TeslimSatiri ben={ben} p={paket} gun={surenPaketGunu(v, paket)} />
+            </div>
+          )}
           <OzelBag paket={paket} />
         </div>
       </header>

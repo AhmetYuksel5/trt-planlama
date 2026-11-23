@@ -73,6 +73,9 @@ export const vardiyaYaz = (saat: string) => {
 };
 
 /** İki gün arasındaki gün sayısı (b - a); öğlen üzerinden, yaz saatinden etkilenmesin diye. */
+/** "YYYY-AA-GG" biçimindeki gün; değilse yok (formdan ya da eski kayıttan gelen boş, bozuk değer yazılmasın). */
+export const gecerliGun = (x?: string): string | undefined => (x && /^\d{4}-\d{2}-\d{2}$/.test(x) ? x : undefined);
+
 export const gunFarki = (a: string, b: string) => Math.round((new Date(b + "T12:00:00").getTime() - new Date(a + "T12:00:00").getTime()) / 86_400_000);
 
 /** n ay sonrası; ayın son gününü aşan gün o ayın son gününe iner (31 Ocak → 28 Şubat). */

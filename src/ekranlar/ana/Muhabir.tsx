@@ -435,7 +435,7 @@ export default function MuhabirAna({ ben }: { ben: Kisi }) {
   );
 }
 
-const YK_GRUP_ADI: Record<YapilacakGrubu, Anahtar> = { geciken: "ykGeciken", bugun: "ykBugun", yarin: "ykYarin", yakinda: "ykYakinda", ileride: "ykIleride" };
+const YK_GRUP_ADI: Record<YapilacakGrubu, Anahtar> = { geciken: "ykGeciken", bugun: "ykBugun", yarin: "ykYarin", yakinda: "ykYakinda", ileride: "ykIleride", teslimsiz: "skTeslimYok" };
 
 /*
  * Yapılacaklar: paket görevine dönmüş işler gün gruplarıyla (geciken, bugün,
@@ -488,10 +488,10 @@ function YapilacakSatiri({ ben, y }: { ben: Kisi; y: Yapilacak }) {
           <Icerik blok>{p.baslik}</Icerik>
         </a>
         <small>
-          {tarihYaz(y.gun, dil, "kisa")}
-          {p.teslim && ` · ${t("teslim")} ${saatYaz(p.teslim, dil)}`}
-          {p.ozelId && ` · ${t("ozel")}${p.ozelAd ? `: ${p.ozelAd}` : ""}`}
-          {` · ${asama}`}
+          {/* Teslim günü olmayan iş kendi grubunda ("Teslim günü belirlenmedi"); satırda gün yazılmaz. */}
+          {[y.gun && tarihYaz(y.gun, dil, "kisa"), p.teslim && `${t("teslim")} ${saatYaz(p.teslim, dil)}`, p.ozelId && `${t("ozel")}${p.ozelAd ? `: ${p.ozelAd}` : ""}`, asama]
+            .filter(Boolean)
+            .join(" · ")}
           {kimde && ` · ${kimde}`}
         </small>
         <AsamaCubugu paket={p} />

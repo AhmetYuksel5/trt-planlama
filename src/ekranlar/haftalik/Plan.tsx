@@ -22,10 +22,11 @@ import {
   onIncelemeyeGonder,
 } from "../../eylemler";
 import { etiketUret } from "../../eposta";
-import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "../../haftalik";
+import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
-import { HAFTA_DURUMLARI, sahaGorevi, useVeri, type AnaKonu, type Gorevlendirme, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
+import { HAFTA_DURUMLARI, paketBicimi, sahaGorevi, useVeri, type AnaKonu, type Gorevlendirme, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
+import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { haftalikDuzenler, hareketDuzenleyebilir, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
 import { Bolum, EkleDugmesi, IkonDugme } from "../nextday/Bolumler";
@@ -280,13 +281,17 @@ export function GundemeEkle({ ben, hafta, oneri, kapat, stok }: { ben: Kisi; haf
   // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
   const aralik = oneriAraligi(oneri);
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
-  const [f, setF] = useState({ tarih: !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "" });
+  const [f, setF] = useState({ tarih: !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: dosya, yeniBaslik: "", teslimGunu: "" });
+  // "Stok ve programlar"a giren paket önerisinde teslim günü (kalemin formundaki gibi).
+  const pb = paketBicimi(oneri.bicim);
+  const teslimSorulur = teslimGunuSorulur({ tarih: f.tarih || undefined, bicimler: pb ? [pb] : [] });
   const kaydet = () => {
     if (!confirm(t("gundemeEkleOnay"))) return;
     const id = oneriGundemeEkle(ben, hafta.id, oneri.id, {
       tarih: f.tarih || undefined,
       baslikId: f.baslikId === "yeni" ? undefined : f.baslikId,
       yeniBaslik: f.baslikId === "yeni" ? f.yeniBaslik : undefined,
+      teslimGunu: teslimSorulur ? f.teslimGunu : undefined,
     });
     if (id) {
       bildir(t("bGundemeEklendi"));
@@ -307,6 +312,12 @@ export function GundemeEkle({ ben, hafta, oneri, kapat, stok }: { ben: Kisi; haf
             ))}
           </select>
         </label>
+        {teslimSorulur && (
+          <label>
+            {t("teslimGunu")}
+            <TarihGirdisi value={f.teslimGunu} min={bugun()} onChange={(e) => setF({ ...f, teslimGunu: e.target.value })} data-ge-teslim-gunu />
+          </label>
+        )}
         <label>
           {t("dosya")}
           <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-ge-dosya>

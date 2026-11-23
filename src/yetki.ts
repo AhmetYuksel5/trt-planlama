@@ -438,6 +438,14 @@ export const paketGorevVerebilir = (k: Kisi | undefined): boolean =>
 /** İleri tarihe görev: Planlama ve tam yönetici; Newsdesk yalnız bugüne. */
 export const ileriGorevVerebilir = (k: Kisi | undefined): boolean =>
   !!k && paketGorevVerebilir(k) && (!!k.hesapYoneticisi || izinBirimi(k.birim) === "planlama");
+/*
+ * Teslim günü (kullanıcı: stok ve feature zamana bağlı olmayabilir ama teslim
+ * süresi mutlaka belirlenir): plansız, süren paket (stok, feature, masa, plansız
+ * görev); ileri tarihe görev verebilen (Planlama, tam yönetici). Planı olan
+ * paketin günü planın günü; özel yayın dosyasının son tarihi yayının kendi formunda.
+ */
+export const teslimGunuBelirleyebilir = (k: Kisi | undefined, p: Paket): boolean =>
+  ileriGorevVerebilir(k) && !p.ozelId && !p.planId && (p.durum === "onaylandi" || p.durum === "uretimde");
 export const gorevTarihiUygun = (k: Kisi | undefined, tarih: string): boolean =>
   !!tarih && tarih >= bugun() && (tarih === bugun() || ileriGorevVerebilir(k));
 export const gorevTalebiVerebilir = (k: Kisi | undefined): boolean =>

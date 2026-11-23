@@ -4071,6 +4071,12 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .bp-grup { display: grid; gap: var(--ara-2); }
 .bp-grup-baslik { margin: 0; font-size: var(--punto-kucuk); font-weight: 600; color: var(--sonuk); display: flex; gap: var(--ara-2); align-items: center; }
 .bp-grup-baslik em { font-style: normal; font-variant-numeric: tabular-nums; background: var(--yuzey-2); border-radius: 999px; padding: 0 8px; }
+/* Teslim günü belirlenmemiş paketlerin grubu (Stok sayfası): iş bekliyor, uyarı renginde. */
+.bp-grup-baslik.uyari { color: var(--uyari); }
+/* Süren paketin teslim günü satırı (bilesenler/TeslimGunu.tsx): yaklaşınca turuncu, geçince kırmızı. */
+.teslim-satiri { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; font-size: var(--punto-kucuk); min-width: 0; }
+.teslim-gun { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.teslim-gun.yakin { color: var(--uyari); font-weight: 600; }
 .bp-serit { --bp-renk: var(--vurgu); border: 1px solid var(--cizgi); border-inline-start: 4px solid var(--bp-renk); border-radius: var(--yaricap); background: var(--yuzey); overflow: hidden; }
 .bp-serit.yayin { --bp-renk: var(--iyi); }
 .bp-serit.stok { --bp-renk: var(--sonuk); }
@@ -4241,6 +4247,7 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .ap-kisiler .ikon-dugme.whatsapp { inline-size: 32px; block-size: 32px; min-height: 32px; flex: none; }
 .ap-kisiler .ikon-dugme.whatsapp svg { width: 16px; height: 16px; }
 .paket-muhabir { margin: var(--ara-1) 0 0; }
+.paket-teslim { margin: var(--ara-1) 0 0; }
 
 /* Otomatik çağrı: haftanın günleri iki sütunda, istisnalar tek satır. */
 .oto-zamanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--ara-2); }

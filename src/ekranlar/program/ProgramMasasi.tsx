@@ -281,7 +281,8 @@ function IcerikDurumu({ p }: { p: Paket }) {
 }
 
 /* Stok sayfasının Programlar kutusu da bu kartı kullanıyor (aktarma orada yok: programa aktaran masa). */
-export function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBirimi; p: Paket; aktar?: () => void }) {
+// `teslim`: Stok sayfasında başlığın altında teslim günü satırı (kalanıyla); verilince üstteki gün yazılmaz.
+export function IcerikKarti({ ben, birim, p, aktar, teslim }: { ben: Kisi; birim: MasaBirimi; p: Paket; aktar?: () => void; teslim?: ReactNode }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const muhabir = p.muhabirId ? kisiBul(v, p.muhabirId) : undefined;
@@ -292,13 +293,14 @@ export function IcerikKarti({ ben, birim, p, aktar }: { ben: Kisi; birim: MasaBi
       <div className="prg-icerik-ust">
         <Rozet ton="masa">{t(BICIM_ADI(p.bicim ?? "pkg"))}</Rozet>
         <Icerik>{paketYeri(p)}</Icerik>
-        {p.sonTarih && <span className="soluk">· {tarihYaz(p.sonTarih, dil)}</span>}
+        {!teslim && p.sonTarih && <span className="soluk">· {tarihYaz(p.sonTarih, dil)}</span>}
         <span className="bosluk-esnek" />
         <IcerikDurumu p={p} />
       </div>
       <a href={`#/paketler/${p.id}`} className="prg-icerik-baslik">
         <Icerik blok>{p.baslik}</Icerik>
       </a>
+      {teslim}
       <div className="prg-icerik-alt">
         <span className="soluk">{muhabir ? ad(muhabir) : t("atanmadi")}</span>
         {/* İşin muhabirine ulaşma (kullanıcı: bütün muhabir listesi değil, iş bazında). */}

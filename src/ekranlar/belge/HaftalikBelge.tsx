@@ -81,6 +81,7 @@ const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemGirdisi 
   kararNotu: k.kararNotu,
   ekTalep: k.ekTalep,
   not: k.not,
+  teslimGunu: k.teslimGunu,
   ...g,
 });
 

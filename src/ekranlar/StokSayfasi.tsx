@@ -2,10 +2,11 @@ import { Archive, CalendarRange, ChevronLeft, ChevronRight, CirclePlay, Clapperb
 import { useState, type ReactNode } from "react";
 import { asamaListesi, geciktiMi, gorunenSahip, stokDurumu } from "../akis";
 import { sozcuklerUyar } from "../arama";
-import { KararRozeti } from "../bilesenler/Haftalik";
+import { KalemTeslimGunu, KararRozeti } from "../bilesenler/Haftalik";
 import { KisiIletisim } from "../bilesenler/KisiCipi";
 import { GorevTalepleri, GorevlendirDugmesi, SartliPaketler } from "../bilesenler/PaketGorevi";
 import { Bos, HaftalikRozeti, Icerik, Kart, Pencere, Rozet, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
+import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { aralikYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, paketYeri } from "../etiketler";
@@ -54,7 +55,7 @@ import {
 import { bugun, gunEkle, haftaBasi } from "../tarih";
 import { kisiBul, useVeri, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
-import { gorevTalebiKarariVerebilir, planIcerikDuzenler, uretimeAlabilir, yapabilir } from "../yetki";
+import { gorevTalebiKarariVerebilir, planIcerikDuzenler, teslimGunuBelirleyebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 import { GundemeEkle } from "./haftalik/Plan";
@@ -142,7 +143,7 @@ export function StokSayfasi({ ben, ilk }: { ben: Kisi; ilk?: string }) {
         n: uretim.filter((a) => a === "uretimde").length,
         m: uretim.filter((a) => a === "alinacak").length,
       }),
-      say: v.paketler.filter((p) => uretimeAlabilir(ben, p)).length,
+      say: v.paketler.filter((p) => uretimeAlabilir(ben, p) || (uretimAlani(p) && !stokPaketGunu(v, p) && teslimGunuBelirleyebilir(ben, p))).length,
     },
     stokta: {
       alt: t("skStoktaAlt", { n: stokSayisi, m: planda }),
@@ -208,14 +209,20 @@ function SiraSecimi({ sira, setSira }: { sira: StokSirasi; setSira: (s: StokSira
   );
 }
 
-/* Grubun başlığı: gün, hafta (yakın haftalar adıyla) ya da ay, günsüz; ya da muhabirin adı, muhabirsiz. */
-function useGrupBasligi(sira: StokSirasi, birim: GrupBirimi = "gun") {
+/*
+ * Grubun başlığı: gün, hafta (yakın haftalar adıyla) ya da ay; ya da muhabirin
+ * adı, muhabirsiz. Günsüz grup pakette "Teslim günü belirlenmedi" (kullanıcı:
+ * stok ve feature zamana bağlı olmayabilir ama teslim süresi mutlaka
+ * belirlenir; önce "Zamana bağlı değil" yazıyordu), teklifte Weekly'de
+ * düşeceği yer, "Stok ve programlar".
+ */
+function useGrupBasligi(sira: StokSirasi, birim: GrupBirimi = "gun", bos: Anahtar = "skTeslimYok") {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const bu = haftaBasi(bugun());
   return (anahtar: string) => {
     if (sira === "muhabir") return anahtar ? ad(kisiBul(v, anahtar)) : t("psMuhabirsiz");
-    if (!anahtar) return t("zamanaBagliDegil");
+    if (!anahtar) return t(bos);
     if (birim === "ay") return tarihYaz(anahtar + "-01", dil, "ay");
     if (birim === "gun") return tarihYaz(anahtar, dil, "tam");
     const yakin = anahtar === bu ? t("buHafta") : anahtar === gunEkle(bu, 7) ? t("gelecekHafta") : anahtar === gunEkle(bu, -7) ? t("skGecenHafta") : "";
@@ -268,7 +275,7 @@ function PaketGruplari({ gruplar, sira, kart }: { gruplar: StokGrubu<Paket>[]; s
       <div className="bp-gruplar" data-stok-liste={sira}>
         {gruplar.map((g) => (
           <section key={g.anahtar || "-"} className="bp-grup" data-stok-grup={g.anahtar || "-"}>
-            <h3 className="bp-grup-baslik">
+            <h3 className={`bp-grup-baslik${!g.anahtar && sira === "tarih" ? " uyari" : ""}`}>
               {baslik(g.anahtar)} <em>{g.liste.length}</em>
             </h3>
             <div className="prg-icerikler">{g.liste.map(kart)}</div>
@@ -308,13 +315,12 @@ function StokKarti({ ben, p, ek }: { ben: Kisi; p: Paket; ek?: ReactNode }) {
   const kisi = kisiId ? kisiBul(v, kisiId) : undefined;
   const acik = p.durum === "onaylandi" || p.durum === "uretimde";
   const gun = stokPaketGunu(v, p);
-  const gec = acik && (geciktiMi(p) || (!!gun && gun < bugun()));
   return (
     <div className="prg-icerik" data-stok-paket={p.id}>
       <div className="prg-icerik-ust">
         <Rozet ton="masa">{t(BICIM_ADI(p.bicim ?? "pkg"))}</Rozet>
         <Icerik>{paketYeri(p)}</Icerik>
-        {gun && <span className={gec ? "kotu-yazi" : "soluk"}>· {tarihYaz(gun, dil)}</span>}
+        {!acik && gun && <span className="soluk">· {tarihYaz(gun, dil)}</span>}
         {p.haftalikKalemId && <HaftalikRozeti />}
         <span className="bosluk-esnek" />
         <StokRozeti p={p} />
@@ -327,6 +333,7 @@ function StokKarti({ ben, p, ek }: { ben: Kisi; p: Paket; ek?: ReactNode }) {
           <Tv size={12} /> <Icerik>{p.ozelAd}</Icerik>
         </span>
       )}
+      {acik && <TeslimSatiri ben={ben} p={p} gun={gun} />}
       <div className="prg-icerik-alt">
         <span className="soluk">{kisi ? ad(kisi) : t("atanmadi")}</span>
         {/* İşi süren paketin muhabirine ulaşma (Programlar'daki gibi iş bazında). */}
@@ -352,7 +359,7 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
   const [kapsam, setKapsam] = useAdimDurumu<"stok" | "hepsi">("stok:kapsam", "stok");
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
   const [pencere, setPencere] = useState<PencereDurumu>(null);
-  const baslik = useGrupBasligi(sira);
+  const baslik = useGrupBasligi(sira, "gun", "stokVeProgramlar");
   const plan = v.haftalik.find((h) => h.baslangic === hafta);
   const hepsi = haftaTeklifleri(v, hafta, B);
   const stok = hepsi.filter(stokTeklifiMi);
@@ -478,6 +485,7 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
                 <div className="ad">
                   <Icerik blok>{k.paketBasligi || kalemAdi(k)}</Icerik>
                   <small>{k.muhabirler.length ? k.muhabirler.map((id) => ad(kisiBul(v, id))).join(" · ") : k.muhabirTbc ? "TBC" : t("atanmadi")}</small>
+                  <KalemTeslimGunu kalem={k} kucuk />
                 </div>
                 <TurRozeti tur={k.tur} />
                 <KararRozeti kalem={k} />
@@ -511,6 +519,7 @@ function Uretim({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; siraSe
       artan: true,
       birim: "hafta",
       dil,
+      bosOnce: true,
     },
   );
   return (
@@ -664,6 +673,7 @@ function Programlar({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; si
       artan: true,
       birim: "hafta",
       dil,
+      bosOnce: true,
     },
   );
   return (
@@ -703,7 +713,19 @@ function Programlar({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; si
           veri="stok-masa-alan"
         />
         <div data-stok-masa-liste>
-          <PaketGruplari gruplar={gruplar} sira={sira} kart={(p) => <IcerikKarti key={p.id} ben={ben} birim={masa} p={p} />} />
+          <PaketGruplari
+            gruplar={gruplar}
+            sira={sira}
+            kart={(p) => (
+              <IcerikKarti
+                key={p.id}
+                ben={ben}
+                birim={masa}
+                p={p}
+                teslim={(p.durum === "onaylandi" || p.durum === "uretimde") && <TeslimSatiri ben={ben} p={p} gun={stokPaketGunu(v, p)} />}
+              />
+            )}
+          />
         </div>
       </Kart>
     </>

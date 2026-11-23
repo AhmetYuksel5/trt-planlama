@@ -1,13 +1,13 @@
 import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Pencil, Send, Trash2, X } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useState } from "react";
-import { Gorusler, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
+import { Gorusler, KalemTeslimGunu, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
 import { Icerik, Rozet, TbcKutusu, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder } from "../../eylemler";
-import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir } from "../../haftalik";
+import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
 import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
@@ -71,6 +71,7 @@ export function KalemFormu({
     kararNotu: mevcut?.kararNotu ?? "",
     ekTalep: mevcut?.ekTalep ?? "",
     not: mevcut?.not ?? "",
+    teslimGunu: mevcut?.teslimGunu ?? "",
   });
   // Yalnız bu haftanın dosyaları: her hafta boş başlıyor, eski haftaların dosyaları önüne gelmiyor.
   const haftanin = new Set([...haftaninDosyalari(hafta), f.baslikId]);
@@ -104,6 +105,18 @@ export function KalemFormu({
             <option value="">{t("stokVeProgramlar")}</option>
           </select>
         </label>
+        {/* Günü olmayan paket önerisinde teslim günü (kullanıcı: zamana bağlı olmayabilir ama teslim süresi mutlaka belirlenir). */}
+        {teslimGunuSorulur({ tarih: f.tarih || undefined, bicimler: f.bicimler }) && (
+          <label>
+            {t("teslimGunu")}
+            <TarihGirdisi
+              value={f.teslimGunu}
+              min={f.teslimGunu && f.teslimGunu < bugun() ? f.teslimGunu : bugun()}
+              onChange={(e) => setF({ ...f, teslimGunu: e.target.value })}
+              data-kalem-teslim-gunu
+            />
+          </label>
+        )}
         <label>
           {t("dosya")}
           <select value={f.baslikId} onChange={(e) => setF({ ...f, baslikId: e.target.value })} data-kalem-dosya>
@@ -310,6 +323,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
             <TurRozeti tur={kalem.tur} />
             {bicimSatiri(kalem) && <bdi dir="ltr">{bicimSatiri(kalem)}</bdi>}
             <KararRozeti kalem={kalem} />
+            <KalemTeslimGunu kalem={kalem} />
             {oneri && (
               <a href={`#/oneriler/${oneri.id}`}>
                 {t("oneri")} · {kaynakMetni(oneri, v)}

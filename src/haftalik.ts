@@ -37,6 +37,13 @@ export const isDogurur = (k: HaftalikKalem) => kabulMu(k) || k.karar === "bilgi"
 /* Paket doğuran: paketsiz takip doğurmaz. */
 export const paketDogurur = (k: HaftalikKalem) => isDogurur(k) && k.karar !== "bilgi";
 
+/*
+ * Teslim günü sorulan kalem: "Stok ve programlar"daki (günü olmayan) paket
+ * önerisi. Günü olan kalemin paketi o günle doğuyor (Next Day'e ya da günüyle
+ * plansız pakete), teslim günü ayrıca sorulmaz.
+ */
+export const teslimGunuSorulur = (k: Pick<HaftalikKalem, "tarih" | "bicimler">) => !k.tarih && k.bicimler.some((b) => b !== "canli");
+
 export const kararBekleyenler = (h: HaftalikPlan) => h.kalemler.filter((k) => gundemde(k) && k.karar === "bekliyor");
 
 /* "Kalanları kabul et" ön incelemedeki kalemi almaz: kararı inceleyenin görüşü gelince, tek tek verilir. */

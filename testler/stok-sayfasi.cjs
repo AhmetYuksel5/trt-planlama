@@ -89,10 +89,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(alinacak.length > 0, "örnek veride üretime alınacak stok paketi var: " + alinacak.length);
   await p.locator('[data-stok-uretim-alan="alinacak"]').click(); await p.waitForTimeout(300);
   ok((await p.locator(`[data-stok-paket="${alinacak[0].id}"] [data-uretime-al]`).count()) === 1, "stok ekibinde kartta Üretime al");
+  // Kutucuğun sayısı kişinin yapacağı işler: üretime alacağı ve teslim günü belirleyeceği paketler.
   const say = await p.locator('[data-stok-kutu="uretim"] .prg-say').innerText().catch(() => "0");
-  ok(Number(say) === (await p.locator("[data-uretime-al]").count()), "Üretim kutusunun sayısı Üretime al düğmeleri kadar: " + say);
+  const isli = '[data-stok-paket]:has([data-uretime-al], [data-teslim-belirle])';
+  const alinacakIs = await p.locator(isli).count();
   await p.locator('[data-stok-uretim-alan="uretimde"]').click(); await p.waitForTimeout(300);
   ok((await p.locator("[data-stok-paket]").count()) > 0, "Üretimde paketleri");
+  const uretimdeIs = await p.locator(isli).count();
+  ok(Number(say) === alinacakIs + uretimdeIs, `Üretim kutusunun sayısı yapılacak işler kadar: ${say} = ${alinacakIs} + ${uretimdeIs}`);
 
   // 5. Stokta: plana alınmamış paketi açık Next Day'e ekle, sonra çıkar
   await git("#/stok/stokta");

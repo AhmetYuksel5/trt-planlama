@@ -72,7 +72,8 @@ const xlsx = (satirlar) => {
   const d = await veri();
   const bugun = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const ornekPaket = d.paketler[0];
-  d.paketler.push({ ...ornekPaket, id: "p-mh-test", muhabirId: "mu3", planId: undefined, ozelId: undefined, durum: "tamamlandi", bicim: "walktalk", baslik: "اختبار", sonTarih: bugun, yapilmadi: undefined, reddedildi: undefined });
+  // Görevsiz pakette sonTarih teslim günü (son gün); işin ayı teslim anından: bugün teslim edildi.
+  d.paketler.push({ ...ornekPaket, id: "p-mh-test", muhabirId: "mu3", planId: undefined, ozelId: undefined, durum: "tamamlandi", bicim: "walktalk", baslik: "اختبار", sonTarih: bugun, muhabirTeslimi: new Date().toISOString(), yapilmadi: undefined, reddedildi: undefined });
   d.paketler.push({ ...ornekPaket, id: "p-mh-iptal", muhabirId: "mu3", planId: undefined, ozelId: undefined, durum: "iptal", bicim: "pkg", baslik: "ملغى", sonTarih: bugun });
   d.canliYayinlar.push({ id: "cy-mh-test", planId: d.planlar[0].id, konu: "بث", aciklama: "", tarih: bugun, saatGmt: "10:00", yer: "", muhabirId: "mu3", notlar: "", sonuc: { durum: "yapildi", kisiId: "nd1", zaman: new Date().toISOString() } });
   d.canliYayinlar.push({ id: "cy-mh-isaretsiz", planId: d.planlar[0].id, konu: "بث", aciklama: "", tarih: bugun, saatGmt: "09:00", yer: "", muhabirId: "mu3", notlar: "" });

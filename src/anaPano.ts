@@ -3,7 +3,7 @@ import { sartliBekleyen } from "./haftalik";
 import { masaninSorulari, SORU_MASALARI } from "./masaSorusu";
 import { oneriSekmesi } from "./oneriSekmeleri";
 import { oneriArsivde, oneriSonGunu, takibinOnerisi } from "./oneriPlanlari";
-import { paketGunu } from "./bitmisPaket";
+import { surenPaketGunu } from "./bitmisPaket";
 import { arsivSonucu, arsivdeYeni, paketArsivGunu, paketSekmesi } from "./paketSekmeleri";
 import { gunEkle, yerelGun } from "./tarih";
 import type { BirimId, Durum, Kisi, Paket } from "./veri";
@@ -52,7 +52,11 @@ export function oneriAkisi(d: Durum, ben: Kisi, b: string): OneriAkisi {
   return {
     baskasinda,
     gorevli: gorevli.length,
-    geciken: gorevli.filter((p) => paketGunu(d, p) < b).length,
+    // Teslim günü olmayan paket gecikmiş sayılmaz (önce son değişikliğin günü teslim günü sanılıyordu).
+    geciken: gorevli.filter((p) => {
+      const g = surenPaketGunu(d, p);
+      return !!g && g < b;
+    }).length,
     takip,
     arsivOneri,
     arsivPaket: arsiv.length,

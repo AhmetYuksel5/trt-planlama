@@ -1,8 +1,8 @@
 import { stokDurumu } from "./akis";
-import { bitmisMi, bitmisTarihi } from "./bitmisPaket";
+import { bitmisMi, bitmisTarihi, surenPaketGunu } from "./bitmisPaket";
 import { oneriHaftada, oneriPlanGunu } from "./oneriPlanlari";
 import { oneriSekmesi } from "./oneriSekmeleri";
-import { gunEkle, gunFarki, haftaBasi, planlananHafta, yerelGun } from "./tarih";
+import { gunEkle, gunFarki, haftaBasi, planlananHafta } from "./tarih";
 import type { Durum, HaftalikKalem, Kisi, NextDayPlan, Oneri, Paket } from "./veri";
 import { planIcerikDuzenler } from "./yetki";
 
@@ -115,9 +115,10 @@ export interface StokGrubu<T> {
 /*
  * Listeler gruplu: tarihte teklifler gün gün (tek haftanın içinde), paketler
  * hafta hafta (gün gün tek kartlık gruplar ekranın yarısını boş bırakıyordu),
- * arşiv ay ay; günsüz sonda. İleriye bakan listede (teklif, üretim) yakından
- * uzağa, geriye bakanda (stok, arşiv) yeniden eskiye. Muhabirde adına göre,
- * her grubun içinde aynı tarih sırası; muhabirsiz (in-house) sonda.
+ * arşiv ay ay; günsüz sonda, süren pakette (`bosOnce`) başta: teslim günü
+ * belirlenmemiş paket iş bekliyor. İleriye bakan listede (teklif, üretim)
+ * yakından uzağa, geriye bakanda (stok, arşiv) yeniden eskiye. Muhabirde adına
+ * göre, her grubun içinde aynı tarih sırası; muhabirsiz (in-house) sonda.
  */
 export const grupla = <T>(
   liste: T[],
@@ -129,12 +130,13 @@ export const grupla = <T>(
     artan: boolean;
     birim?: GrupBirimi;
     dil?: string;
+    bosOnce?: boolean;
   },
 ): StokGrubu<T>[] => {
   const tarihSirasi = (a: T, b: T) => {
     const x = s.tarih(a) ?? "";
     const y = s.tarih(b) ?? "";
-    if (!x !== !y) return x ? -1 : 1;
+    if (!x !== !y) return !x === !!s.bosOnce ? -1 : 1;
     return s.artan ? x.localeCompare(y) : y.localeCompare(x);
   };
   const gruplar = new Map<string, T[]>();
@@ -153,14 +155,13 @@ export const grupla = <T>(
 };
 
 /*
- * Paketin listedeki günü: bitmişte bittiği (stoka girdiği) gün; sürende teslim,
- * son gün ya da planın günü; hiçbiri yoksa günsüz. Önce son değişikliğin günü
- * yazılıyordu: teslim günü olmayan paket "20 Kas" gibi anlamsız bir günle duruyordu.
+ * Paketin listedeki günü: bitmişte bittiği (stoka girdiği) gün; sürende teslim
+ * günü (bitmisPaket.ts → surenPaketGunu); yoksa günsüz ("Teslim günü
+ * belirlenmedi"). Önce son değişikliğin günü yazılıyordu: teslim günü olmayan
+ * paket "20 Kas" gibi anlamsız bir günle duruyordu.
  */
-export const stokPaketGunu = (d: Pick<Durum, "planlar">, p: Paket): string | undefined => {
-  if (bitmisMi(p)) return bitmisTarihi(p);
-  if (p.teslim) return yerelGun(p.teslim);
-  return p.sonTarih ?? d.planlar.find((x) => x.id === p.planId)?.tarih;
-};
+export const stokPaketGunu = (d: Pick<Durum, "planlar">, p: Paket): string | undefined => (bitmisMi(p) ? bitmisTarihi(p) : surenPaketGunu(d, p));
+/** Teslim gününe kalan gün (bugün 0, eksi gecikme). */
+export const teslimeKalan = (gun: string, b: string) => gunFarki(b, gun);
 /** Paketin muhabiri; in-house özel yayın paketinde hazırlayan. */
 export const stokPaketKisisi = (p: Paket) => p.muhabirId ?? p.hazirlayanId;

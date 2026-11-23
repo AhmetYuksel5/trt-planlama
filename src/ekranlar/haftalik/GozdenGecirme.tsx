@@ -1,6 +1,6 @@
 import { Check, ClipboardCopy } from "lucide-react";
 import { useState } from "react";
-import { KararRozeti } from "../../bilesenler/Haftalik";
+import { KalemTeslimGunu, KararRozeti } from "../../bilesenler/Haftalik";
 import { Icerik, Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, useDil } from "../../dil";
 import { KARAR_ADI } from "../../etiketler";
@@ -92,6 +92,7 @@ function GozdenSatiri({ ben, hafta, kalem }: { ben: Kisi; hafta: HaftalikPlan; k
       <div className="ad">
         <Icerik blok>{kalemAdi(kalem)}</Icerik>
         <KararNotlari kalem={kalem} />
+        <KalemTeslimGunu kalem={kalem} kucuk />
       </div>
       {kararVerebilir(ben, hafta) ? (
         <select className="girdi" value={kalem.karar} aria-label={t("krKarar")} onChange={(e) => kalemKarar(ben, hafta.id, kalem.id, e.target.value as Karar, kalem.kosul, kalem.kosulSon)} data-gozden-karar>

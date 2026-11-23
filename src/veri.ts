@@ -1004,6 +1004,11 @@ export interface Paket {
    */
   ozelId?: string;
   ozelKaynak?: "inhouse" | "dis";
+  /*
+   * Paketin günü: özel yayında son tarih, plansız görevde görevin günü, stok ve
+   * feature paketinde teslim günü (Weekly kaleminden ya da Stok sayfasından;
+   * eylemler.ts → paketTeslimGunu). Stok sayfası ve Yapılacaklar takibi ondan.
+   */
   sonTarih?: string;
   hazirlayanId?: string;
   /** İşi yapan hazırlamaya başladığını işaretledi (görevlendirildi → hazırlanıyor). */
@@ -1235,6 +1240,13 @@ export interface HaftalikKalem {
    * bekleyenler listesinde sıralar ve geçince kırmızı gösterir.
    */
   kosulSon?: string;
+  /*
+   * "Stok ve programlar" kaleminin (günü olmayan) teslim günü (kullanıcı: stok
+   * ve feature zamana bağlı olmayabilir ama teslim süresi mutlaka belirlenir,
+   * takip ona göre). Kesinleşince doğan paketin `sonTarih`'i olur; günü olan
+   * kalemde paketin günü zaten kalemin günü.
+   */
+  teslimGunu?: string;
   /** Çıktıda sarı vurgulu not. */
   not?: string;
   oneriId?: string;
@@ -1728,6 +1740,7 @@ export const HAREKET_TIPLERI = [
   "paketReddedildi",
   "paketSartliKabul",
   "paketGorevVerildi",
+  "paketTeslimGunu",
   "masaYayinladi",
   "programaAktarildi",
   "masaYayinlamadi",

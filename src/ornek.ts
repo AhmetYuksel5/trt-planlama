@@ -422,6 +422,8 @@ interface PaketTanimi {
   oncelikli?: boolean;
   /** Stok paketi: feature/stok ekibi üretiyor, bitince stokta bekliyor. */
   stok?: boolean;
+  /** Plansız paketin teslim günü, bugünden gün olarak (Weekly'nin "Stok ve programlar"ında verilen). */
+  sonGun?: number;
   /** Üretim balonundaki şablon (yoksa kolunun ya da stok şablonu). */
   sablon?: string;
   /** Balonda işaretli parçalar: stand ve gfx "varsa". */
@@ -719,6 +721,7 @@ const PAKETLER: PaketTanimi[] = [
     durum: "uretimde",
     adim: "video",
     stok: true,
+    sonGun: 3,
   },
   {
     id: "p-hidrojen",
@@ -729,6 +732,7 @@ const PAKETLER: PaketTanimi[] = [
     tur: "ekonomi",
     durum: "uretimde",
     adim: "videoKontrol",
+    sonGun: 2,
   },
   {
     id: "p-sahaf",
@@ -749,6 +753,7 @@ const PAKETLER: PaketTanimi[] = [
     tur: "program",
     durum: "uretimde",
     adim: "newsdesk",
+    sonGun: 6,
   },
 ];
 
@@ -1943,6 +1948,8 @@ export const ORNEK = (): Durum => {
       ucret: t.ucret,
       oncelikli: t.oncelikli,
       stok: t.stok,
+      // Teslim günü: Bağdat'taki sahaf paketi bilerek günsüz ("Teslim günü belirlenmedi" görünsün).
+      ...(t.sonGun !== undefined && { sonTarih: gunEkle(B, t.sonGun) }),
       // Masa paketi (ekonomi…) yeni yolla: damgasız üretimdeki paket eski yoldan (Output, Media) geçiyor sayılırdı.
       ...(masaPaketi({ tur }) && t.durum === "uretimde" && { akis: akisDamgasi({ tur }) }),
       notlar: [],

@@ -4,7 +4,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
-import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, topluKabulAdaylari } from "./haftalik";
+import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -27,7 +27,7 @@ import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriBekleyenGorevPaketi, oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
-import { bugun, gunEkle, gunFarki, haftaBasi, simdi } from "./tarih";
+import { bugun, gecerliGun, girdidenIso, gunEkle, gunFarki, haftaBasi, simdi, yerelGirdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
 import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
 import { oncesi, siradaki } from "./ozel";
@@ -214,6 +214,7 @@ import {
   masrafGirebilir,
   masrafOnaylayabilir,
   postaGorebilir,
+  teslimGunuBelirleyebilir,
 } from "./yetki";
 import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
@@ -1251,6 +1252,8 @@ export interface KalemGirdisi {
   ekTalep?: string;
   not?: string;
   aylikOlayId?: string;
+  /** "Stok ve programlar" kaleminin teslim günü (haftalik.ts → teslimGunuSorulur). */
+  teslimGunu?: string;
 }
 
 /*
@@ -1302,6 +1305,8 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     ekTalep: g.ekTalep?.trim() || undefined,
     not: g.not?.trim() || undefined,
     ...(g.aylikOlayId && { aylikOlayId: g.aylikOlayId }),
+    // Kalem bir güne geçince (ya da paketsiz kalınca) teslim günü düşer: paketin günü artık kalemin günü.
+    teslimGunu: teslimGunuSorulur({ tarih: g.tarih || undefined, bicimler: g.bicimler }) ? gecerliGun(g.teslimGunu) : undefined,
   };
   // Kalemin notları (sarı not, karar notu, ek talep) tek metin gibi: anılan yeni kişiye bildirim.
   const notlar = (k: { not?: string; kararNotu?: string; ekTalep?: string }) => [k.not, k.kararNotu, k.ekTalep].filter(Boolean).join("\n");
@@ -1344,7 +1349,7 @@ export const oneriGundemeEkle = (
   ben: Kisi,
   haftaId: string,
   oneriId: string,
-  g: { tarih?: string; baslikId?: string; yeniBaslik?: string },
+  g: { tarih?: string; baslikId?: string; yeniBaslik?: string; teslimGunu?: string },
 ): string | null => {
   let d = getir();
   const h = haftaBul(d, haftaId);
@@ -1376,6 +1381,7 @@ export const oneriGundemeEkle = (
     oneriId: o.id,
     karar: "bekliyor",
   };
+  if (teslimGunuSorulur(kalem) && gecerliGun(g.teslimGunu)) kalem.teslimGunu = g.teslimGunu;
   d = haftaGuncelle(d, haftaId, (x) => ({ ...x, kalemler: [...x.kalemler, kalem] }));
   d = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "degerlendiriliyor", baslikId: baslikId ?? x.baslikId } : x)) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriDegerlendirmede", oneriId: o.id, haftaId }));
@@ -1695,6 +1701,8 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     tur: k.tur,
     bicim: k.bicimler[0],
     ...kalemPaketDurumu(k),
+    // Teslim günü: "Stok ve programlar" kaleminde toplantının verdiği gün, günü olan kalemde (feature, ekonomi…) o gün.
+    ...((k.teslimGunu ?? k.tarih) && { sonTarih: k.teslimGunu ?? k.tarih }),
     sahaGerekli: false,
     // Masa kolları (ekonomi, program, spor) kendi birimine gidiyor; gerisi (feature, günü olmayan haber) bitince stokta bekliyor.
     stok: !MASA_KOLLARI.includes(k.tur) || undefined,
@@ -3113,6 +3121,35 @@ export const paketMetniDuzenle = (ben: Kisi, id: string, g: { baslik: string; ac
   if (!p || !g.baslik.trim() || !paketMetniDuzenlenebilir(ben, d, p)) return false;
   if (p.baslik === g.baslik.trim() && (p.aciklama ?? "") === g.aciklama) return true;
   kaydet(paketGuncelle(d, id, (x) => ({ ...x, baslik: g.baslik.trim(), aciklama: g.aciklama, guncelleme: simdi() })));
+  return true;
+};
+
+/*
+ * Stok, feature ve masa paketinin teslim günü (kullanıcı: zamana bağlı
+ * olmayabilir ama teslim süresi mutlaka belirlenir, takip ona göre): Stok
+ * sayfasında ve paket sayfasında belirlenir ya da değişir. Saatli teslimi olan
+ * pakette saat kalır, günü yenisi olur (ikisi ayrı gün göstermesin). Haber
+ * muhabire, masanın takibindeyse masaya; önceki gün hareketin `kaynak`'ında.
+ */
+export const paketTeslimGunu = (ben: Kisi, id: string, tarih: string): boolean => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !teslimGunuBelirleyebilir(ben, p) || !gecerliGun(tarih) || tarih < bugun()) return false;
+  if (p.sonTarih === tarih) return true;
+  const yd = paketGuncelle(d, id, (x) => ({
+    ...x,
+    sonTarih: tarih,
+    ...(x.teslim ? { teslim: girdidenIso(`${tarih}T${yerelGirdi(x.teslim).slice(11, 16)}`) } : {}),
+    guncelleme: simdi(),
+  }));
+  kaydet(
+    hareketYaz(yd, {
+      kisiId: ben.id,
+      tip: "paketTeslimGunu",
+      paketId: id,
+      veri: { tarih, ...(p.sonTarih ? { kaynak: p.sonTarih } : {}), ...(p.muhabirId ? { kime: p.muhabirId } : {}), ...(p.masaTakibi ? { sahip: p.masaTakibi } : {}) },
+    }),
+  );
   return true;
 };
 
