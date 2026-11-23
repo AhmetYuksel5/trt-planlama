@@ -829,8 +829,9 @@ export const masaOneriyiDuzenler = (ben: Kisi, o: Oneri, d: Durum): boolean => {
 };
 
 /** Masanın aldığı öneride muhabiri Planlama görevlendirir (ileri tarihe de). */
+// Birimin yanıtı beklenmez (kullanıcı: Ekonomi'ye sorulmuş, yanıtsız öneriyi görevlendiremiyordu); görev soruyu geçer.
 export const oneriGorevlendirebilir = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
-  ileriGorevVerebilir(ben) && !!o.muhabirId && SORULABILIR_DURUM.includes(o.durum) && !!kabulSoru(d, o.id) && !oneriGorevPaketi(d, o.id);
+  ileriGorevVerebilir(ben) && !!o.muhabirId && SORULABILIR_DURUM.includes(o.durum) && !!(kabulSoru(d, o.id) || acikSoru(d, o.id)) && !oneriGorevPaketi(d, o.id);
 
 /*
  * Muhabirin önerisinden plana eklemeden doğrudan görev (kullanıcı): karar

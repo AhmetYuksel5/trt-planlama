@@ -6,7 +6,7 @@ import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { Icerik, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
 import { masaSorusunuYanitla, oneriGorevlendir, oneriMasayaSor } from "../../eylemler";
-import { SORU_MASALARI, kabulSoru, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSoru } from "../../masaSorusu";
+import { SORU_MASALARI, acikSoru, kabulSoru, masaninSorulari, oneriGorevPaketi, oneriSorulari, sonSoru } from "../../masaSorusu";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { kisiBul, oneriBul, useVeri, type BirimId, type Kisi, type MasaSorusu, type Oneri, type Paket } from "../../veri";
 import { birimAdi, izinBirimi } from "../../yapi";
@@ -166,8 +166,8 @@ export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oner
   const v = useVeri();
   const B = bugun();
   const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
-  // Kimin için: birimin aldığı sorudan ya da önerinin masa kolundan; haber merkezi stoğa düşer.
-  const [masa, setMasa] = useState<string>(kabulSoru(v, oneri.id)?.birim ?? ((SORU_MASALARI as readonly string[]).includes(oneri.tur) ? oneri.tur : ""));
+  // Kimin için: birimin aldığı (ya da yanıtını beklediği) sorudan ya da önerinin masa kolundan; haber merkezi stoğa düşer.
+  const [masa, setMasa] = useState<string>((kabulSoru(v, oneri.id) ?? acikSoru(v, oneri.id))?.birim ?? ((SORU_MASALARI as readonly string[]).includes(oneri.tur) ? oneri.tur : ""));
   return (
     <div className="satir-form" data-oneri-gorevlendir-formu>
       <select className="girdi" value={masa} onChange={(e) => setMasa(e.target.value)} aria-label={t("ogGorevMasa")} title={t("ogGorevMasa")} data-oneri-gorev-masa>

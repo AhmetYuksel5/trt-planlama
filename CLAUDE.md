@@ -2737,7 +2737,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kolu masanın), masaya `paketGorevVerildi` (`sahip`). Masa sayfasının
     İçerikler'inde yeni ilk alan "Görevlendirilen" (`icerikDurumAlani →
     gorevli`: muhabire verilmiş, teslim bekleyen; sayfa dolu ilk alanla, önce bununla açılır), teslim
-    edilince "Yayına hazır". Test `testler/masa-gorev.cjs`.
+    edilince "Yayına hazır". Birimin yanıtı beklenmez (kullanıcı: Ekonomi'ye sorulmuş, "görüş bekleniyor"daki öneriye görev verilemiyordu; `oneriGorevlendirebilir` açık soruda da): görev soruyu geçer, masa varsayılanı sorulan birim, rozet "görevlendirildi". Test `testler/masa-gorev.cjs`.
   - Paket masanın takibine geçer (kullanıcı: masanın paketi Planlama'nın
     günlük ve haftalık planına girmiyor, masa yayınlıyor ve takip ediyor;
     `Paket.masaTakibi`, stok değil): Planlama'nın Stok'unda, Next Day "Hazır

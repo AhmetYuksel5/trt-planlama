@@ -3596,11 +3596,11 @@ export const masaSorusunuYanitla = (ben: Kisi, oneriId: string, kabul: boolean, 
   return true;
 };
 
-/** Masanın aldığı öneride muhabire görev: plansız görev paketi (stokta), masanın kolunda, öneriye bağlı. */
+/** Masanın aldığı ya da yanıtını beklediği öneride muhabire görev: plansız görev paketi (stokta), masanın kolunda, öneriye bağlı. */
 export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string, masa?: BirimId | ""): string | null => {
   let d = getir();
   const o = oneriBul(d, oneriId);
-  const s = kabulSoru(d, oneriId);
+  const s = kabulSoru(d, oneriId) ?? acikSoru(d, oneriId);
   if (!o || !o.muhabirId || !gorevTarihiUygun(ben, tarih)) return null;
   const dogrudan = !s && oneriDogrudanGorevlendirebilir(ben, o, d);
   if (!dogrudan && !(s && oneriGorevlendirebilir(ben, o, d))) return null;
