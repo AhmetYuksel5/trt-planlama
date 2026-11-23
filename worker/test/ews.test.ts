@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, staffingAramaIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
+import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, staffingAramaIstegi, yanitIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -418,4 +418,35 @@ test("staffing araması son 36 saatle sınırlı (FindItem sıralamıyor, eskile
   assert.ok(x.includes("<t:And>") && x.includes('Value="News Staffing"'));
   assert.ok(x.includes('FieldURI="item:DateTimeReceived"') && x.includes('Value="2026-11-20T05:00:00Z"'));
   assert.ok(x.indexOf("<m:Restriction>") < x.indexOf("<m:ParentFolderIds>"));
+});
+
+test("yanıt isteği: ReplyToItem, alıcılar, kutudaki postanın kimliği, HTML gövde (şema sırası)", () => {
+  const x = yanitIstegi({ kime: ["m@ornek.test"], cc: ["planning@ornek.test"], konu: "RE: k", metin: "شكرا" }, { id: "IT1", degisim: "CK" });
+  assert.ok(x.includes("<t:ReplyToItem>") && !x.includes("<t:Message>"));
+  const sira = ["<t:ToRecipients>", "<t:CcRecipients>", "<t:ReferenceItemId", "<t:NewBodyContent"].map((e) => x.indexOf(e));
+  assert.ok(sira.every((i) => i > 0) && sira.every((i, j) => !j || i > sira[j - 1]), sira.join(","));
+  assert.ok(x.includes('Id="IT1"') && x.includes('ChangeKey="CK"') && x.includes('BodyType="HTML"') && x.includes("dir=&quot;rtl&quot;"));
+});
+
+const BASARI = `<m:CreateItemResponse><m:ResponseMessages><m:CreateItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode></m:CreateItemResponseMessage></m:ResponseMessages></m:CreateItemResponse>`;
+
+test("postaGonderOtomatik: yanıtlanan posta kutudaysa gerçek yanıt (ReplyToItem)", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const yetki = httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`);
+  const { soket, istekler } = sahteSoket([yetki, httpYanit("200 OK", `<t:Message><t:ItemId Id="IT1" ChangeKey="CK"/></t:Message>`), yetki, httpYanit("200 OK", BASARI)]);
+  const r = await postaGonderOtomatik(ayar, async () => soket, Date.now(), { kime: ["m@ornek.test"], konu: "RE: k", metin: "selam", yanitlanan: "<abc@ornek.test>" });
+  assert.ok("tamam" in r, JSON.stringify(r));
+  const gonderim = istekler.find((x) => x.includes("CreateItem"))!;
+  assert.ok(gonderim.includes("ReplyToItem") && gonderim.includes('ReferenceItemId Id="IT1"'), gonderim.slice(-600));
+  assert.ok(istekler.some((x) => x.includes("InternetMessageId") && x.includes("&lt;abc@ornek.test&gt;")));
+});
+
+test("postaGonderOtomatik: yanıtlanan posta kutuda yoksa bağlı yeni posta (InReplyTo)", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const yetki = httpYanit("401 Unauthorized", "", `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`);
+  const { soket, istekler } = sahteSoket([yetki, httpYanit("200 OK", `<m:FindItemResponse><t:Items/></m:FindItemResponse>`), yetki, httpYanit("200 OK", BASARI)]);
+  const r = await postaGonderOtomatik(ayar, async () => soket, Date.now(), { kime: ["m@ornek.test"], konu: "RE: k", metin: "selam", yanitlanan: "<abc@ornek.test>" });
+  assert.ok("tamam" in r, JSON.stringify(r));
+  const gonderim = istekler.find((x) => x.includes("CreateItem"))!;
+  assert.ok(!gonderim.includes("ReplyToItem") && gonderim.includes("InReplyTo"));
 });

@@ -189,6 +189,29 @@ export const createItemIstegi = (g: GidenPosta): string => {
   );
 };
 
+/*
+ * Gerçek yanıt (kullanıcı: öneriden muhabire yanıt ayrı posta olarak gitti,
+ * yalnız konusu değişmişti): Outlook sohbeti InReplyTo'dan değil, yanıtın
+ * kutudaki postanın üzerinden kurulmasından (ConversationIndex) tanıyor.
+ * ReplyToItem kutudaki postaya yanıt açar; konu sunucunun "RE: …"su, eski
+ * metin altta alıntı. Alıcılar açıkça yazılıyor: hatırlatmada yanıtlanan
+ * çağrının kendisi, varsayılan alıcı gönderen (biz) olurdu. Şema sırası To,
+ * Cc, Bcc, ReferenceItemId, NewBodyContent.
+ */
+export const yanitIstegi = (g: GidenPosta, ref: { id: string; degisim: string }): string => {
+  const liste = (etiket: string, adresler: string[] = []) =>
+    adresler.length ? `<t:${etiket}>${adresler.map((a) => `<t:Mailbox><t:EmailAddress>${kacXml(a)}</t:EmailAddress></t:Mailbox>`).join("")}</t:${etiket}>` : "";
+  return ZARF(
+    `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:ReplyToItem>` +
+      liste("ToRecipients", g.kime) +
+      liste("CcRecipients", g.cc) +
+      liste("BccRecipients", g.bcc) +
+      `<t:ReferenceItemId Id="${kacXml(ref.id)}"${ref.degisim ? ` ChangeKey="${kacXml(ref.degisim)}"` : ""}/>` +
+      `<t:NewBodyContent BodyType="HTML">${kacXml(g.html ?? (g.baslik ? baslikliHtml(g.baslik, g.metin) : metinHtml(g.metin)))}</t:NewBodyContent>` +
+      `</t:ReplyToItem></m:Items></m:CreateItem>`,
+  );
+};
+
 /* --- XML çözme (DOMParser Worker'da yok; küçük düz metin çözücü) --- */
 
 const varlikCoz = (s: string): string =>
@@ -749,13 +772,13 @@ export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi:
   return postalariCek(ayar, baglan, simdi, adet, true);
 };
 
-/* Postayı gönderir (EWS CreateItem, SendAndSaveCopy). */
-export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta, mic = false): Promise<{ tamam: true } | { hata: string; kimlik?: boolean; belirsiz?: boolean }> => {
+/* Postayı gönderir (EWS CreateItem, SendAndSaveCopy); `ref` verilirse kutudaki o postaya yanıt. */
+export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta, mic = false, ref?: { id: string; degisim: string }): Promise<{ tamam: true } | { hata: string; kimlik?: boolean; belirsiz?: boolean }> => {
   let soket: Soket | undefined;
   const iz: { kimlikli?: boolean } = {};
   try {
     soket = await baglan(ayar.sunucu);
-    const r = await ntlmIstek(soket, ayar, createItemIstegi(g), simdi, true, mic, iz);
+    const r = await ntlmIstek(soket, ayar, ref ? yanitIstegi(g, ref) : createItemIstegi(g), simdi, true, mic, iz);
     if (r.durum === 401) return { hata: "kimlik doğrulanamadı", kimlik: true };
     if (r.durum !== 200) return { hata: `CreateItem ${r.durum}: ${faultMetni(latin1Utf8(r.govde))}` };
     const xml = latin1Utf8(r.govde);
@@ -769,7 +792,32 @@ export const postaGonder = async (ayar: EwsAyar, baglan: Baglan, simdi: number, 
   }
 };
 
+/* Yanıtlanan postanın kutudaki kimliği (Message-ID ile, gelen kutusunda); bulunamazsa yok. */
+const kutudaBul = async (ayar: EwsAyar, baglan: Baglan, simdi: number, imid: string, mic: boolean): Promise<{ id: string; degisim: string } | { kimlik: true } | null> => {
+  const o = okumaOturumu(ayar, baglan, simdi, mic);
+  try {
+    const bul = await o.iste(imidBulIstegi(imid));
+    if (bul.durum === 401) return { kimlik: true };
+    if (bul.durum !== 200) return null;
+    return findItemCoz(latin1Utf8(bul.govde))[0] ?? null;
+  } catch {
+    return null;
+  } finally {
+    await o.kapat();
+  }
+};
+
 export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string; belirsiz?: boolean }> => {
+  if (g.yanitlanan) {
+    let ref = await kutudaBul(ayar, baglan, simdi, g.yanitlanan, false);
+    if (ref && "kimlik" in ref) ref = await kutudaBul(ayar, baglan, simdi, g.yanitlanan, true);
+    if (ref && !("kimlik" in ref)) {
+      let y = await postaGonder(ayar, baglan, simdi, g, false, ref);
+      if ("hata" in y && y.kimlik) y = await postaGonder(ayar, baglan, simdi, g, true, ref);
+      // Yanıt reddedildiyse (posta gitmedi) bağlı yeni postayla; gidip gitmediği belirsizse yinelenmez.
+      if (!("hata" in y) || y.belirsiz) return y;
+    }
+  }
   let ilk = await postaGonder(ayar, baglan, simdi, g, false);
   if ("hata" in ilk && ilk.kimlik) ilk = await postaGonder(ayar, baglan, simdi, g, true);
   /*

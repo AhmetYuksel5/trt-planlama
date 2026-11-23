@@ -3270,6 +3270,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       `KisiIletisim yanit`, `data-is-postasi="yanit"`): kime postayı gönderen
       adres, konu "RE: …", yanıtın Message-ID'si kapıda InReplyTo/References
       (`postaGonder yanitlanan`), giden balon postanın Posta'daki sohbetine.
+      Kapı yanıtlananı gönderenin gelen kutusunda Message-ID'siyle bulur ve
+      EWS `ReplyToItem`'la gerçek yanıt gönderir (`ews.ts → yanitIstegi`,
+      `kutudaBul`; kullanıcı: yalnız InReplyTo'lu yeni posta ayrı posta
+      olarak gitti, Outlook sohbeti ConversationIndex'ten kuruyor); konu
+      sunucunun "RE: …"su, eski metin altta alıntı; hatırlatma da öyle.
+      Kutuda yoksa ya da yanıt reddedilirse InReplyTo'lu yeni posta.
       Test `testler/oneri-posta-yanit.cjs`.
     Test `testler/yeni-planlama.cjs`.
     2. aşama (kişi çipinden sonrakiler de yalnız yeni tasarımda, kısıtlı
