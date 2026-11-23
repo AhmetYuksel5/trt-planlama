@@ -1961,6 +1961,12 @@ export interface Durum {
    * muhabirin kabul oranını yanıltmasın; tam kullanıma geçilen gün yazılır.
    */
   sayimBaslangici?: string;
+  /**
+   * Staffing postasındaki adın elle seçilmiş kişisi (kullanıcı: tanınmayanı bir
+   * kez seçeyim, sonra hep o gelsin). Anahtar `staffing.ts → staffingAdAnahtari`.
+   * Gerçek kipte genel ayar belgesinde: bütün planlamacılar aynı eşleşmeyi bulsun.
+   */
+  staffingEslesmeleri?: Record<string, string>;
   /** Geri bildirim ve e-postayla takip ayarı (gerçek kipte genel ayar belgesinde). */
   geriBildirimAyari?: GeriBildirimAyari;
   sayac: number;

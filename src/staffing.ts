@@ -297,6 +297,9 @@ const kisiAdlari = (k: Kisi): KisiAdlari => {
   const isk = new Set([...[...latinSet].map(iskelet), ...(arapca ? arapcaIskeletleri(arapca) : [])].filter((x) => x.length >= 2));
   return { latin: latinSet, iskelet: isk, uzunluk: Math.max(new Set(adParca).size, arParca.length, 1) };
 };
+/** Öğrenilen eşleşmenin anahtarı: büyük-küçük harf, aksan ve noktalama yazımı değiştirmesin. */
+export const staffingAdAnahtari = (ad: string) => parcalar(ad).join(" ");
+
 const tutar = (parca: string, a: KisiAdlari) => {
   if (a.latin.has(parca)) return true;
   const i = iskelet(parca);
@@ -308,13 +311,18 @@ const tutar = (parca: string, a: KisiAdlari) => {
  * e-postası ya da Arapça adının iskeleti). En az iki parça tutmalı (tek
  * parçalı adda o parça) ve en iyisi tek olmalı; değilse eşleşmez, önizlemede
  * elle seçilir. Yanlış kişi sessizce ekibe girmesin. Eşit adaylardan yalnız
- * biri planın ekibindeyse o seçilir (`oncelikli`).
+ * biri planın ekibindeyse, o da yoksa yalnız biri görevin kuralına uyuyorsa
+ * (`uygun`) o seçilir. Daha önce elle seçilmiş kişi (`ogrenilen`) her şeyden önce.
  */
 export const staffingKisisi = (
   ad: string,
   kisiler: Kisi[],
   oncelikli: ReadonlySet<string> = new Set(),
-): { kisiId?: string; adaylar: string[] } => {
+  ogrenilen: Record<string, string> = {},
+  uygun: (k: Kisi) => boolean = () => true,
+): { kisiId?: string; adaylar: string[]; ogrenildi?: boolean } => {
+  const bilinen = ogrenilen[staffingAdAnahtari(ad)];
+  if (bilinen && kisiler.some((k) => k.id === bilinen && !k.pasif)) return { kisiId: bilinen, adaylar: [bilinen], ogrenildi: true };
   const p = [...new Set(parcalar(ad))];
   if (!p.length) return { adaylar: [] };
   const puanlar = kisiler
@@ -331,24 +339,34 @@ export const staffingKisisi = (
   const esit = puanlar.filter((x) => x.sayi === ilk.sayi && x.kalan === ilk.kalan);
   if (esit.length === 1) return { kisiId: ilk.k.id, adaylar };
   const ekipte = esit.filter((x) => oncelikli.has(x.k.id));
-  return ekipte.length === 1 ? { kisiId: ekipte[0].k.id, adaylar } : { adaylar };
+  if (ekipte.length === 1) return { kisiId: ekipte[0].k.id, adaylar };
+  const gorevde = esit.filter((x) => uygun(x.k));
+  return gorevde.length === 1 ? { kisiId: gorevde[0].k.id, adaylar } : { adaylar };
 };
 
 export interface StaffingOnerisi extends StaffingKaydi {
   gorev: EkipGorevi;
   kisiId?: string;
   adaylar: string[];
+  /** Kişi daha önce elle seçilmişti (öğrenilen eşleşme). */
+  ogrenildi?: boolean;
   /** Ekibe yazılacak GMT vardiya. */
   vardiya: string;
 }
 
 /** Ekibe girecek satırlar: eşlemesi olan grupta, o gün vardiyası olan kişiler. */
-export const staffingOnerileri = (metin: string, kisiler: Kisi[], ekip: EkipUyesi[] = []): StaffingOnerisi[] => {
+export const staffingOnerileri = (
+  metin: string,
+  kisiler: Kisi[],
+  ekip: EkipUyesi[] = [],
+  ogrenilen: Record<string, string> = {},
+  uygun: (k: Kisi, gorev: EkipGorevi) => boolean = () => true,
+): StaffingOnerisi[] => {
   const oncelikli = new Set(ekip.map((e) => e.kisiId));
   return staffingCoz(metin).flatMap((k) => {
     const gorev = staffingGorevi(k);
     if (!gorev || !k.calisiyor || !k.saat) return [];
-    return [{ ...k, gorev, vardiya: gmtVardiya(k.saat), ...staffingKisisi(k.ad, kisiler, oncelikli) }];
+    return [{ ...k, gorev, vardiya: gmtVardiya(k.saat), ...staffingKisisi(k.ad, kisiler, oncelikli, ogrenilen, (x) => uygun(x, gorev)) }];
   });
 };
 

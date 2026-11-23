@@ -47,9 +47,21 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     ok((await p.locator('[data-staffing-satir][data-eslesti="0"] input[type=checkbox]').isDisabled()), `${dil}: eşleşmeyen satır işaretlenemiyor`);
     const tasma = await p.evaluate(() => Math.max(document.documentElement.scrollWidth, ...[...document.querySelectorAll("dialog[open]")].map((d) => d.scrollWidth - d.clientWidth + document.documentElement.clientWidth)) - document.documentElement.clientWidth);
     ok(tasma <= 0, `${dil}: ${gen} pikselde taşma yok (${tasma})`);
+    // Görevin seçeneklerinde yalnız o görevin kuralına uyanlar: sunucu satırında sunucular.
+    const sunucuSecenek = await p.locator('[data-staffing-gorev="sunucu"] select option').evaluateAll((l) => l.map((x) => x.value).filter(Boolean));
+    const kisiler0 = (await veri()).kisiler;
+    ok(sunucuSecenek.length > 0 && sunucuSecenek.every((id) => kisiler0.find((k) => k.id === id)?.gorev === "sunucu"), `${dil}: sunucu satırında yalnız sunucular (${sunucuSecenek.length})`);
+    // Kayıtta olmayan ad elle seçiliyor: öğrenilecek.
+    const bos = p.locator('[data-staffing-satir][data-eslesti="0"] select');
+    const elle = await bos.locator("option").nth(1).getAttribute("value");
+    await bos.selectOption(elle);
     await p.locator("[data-staffing-yaz]").click();
     await p.waitForTimeout(500);
+    const ogrenilen = (await veri()).staffingEslesmeleri ?? {};
+    ok(ogrenilen["kerem tunali"] === elle, `${dil}: elle seçilen kişi öğrenildi`);
+    ok(Object.keys(ogrenilen).length === 1, `${dil}: sistemin kendi bulduğu öğrenilmiyor`);
     const plan = (await veri()).planlar.find((x) => x.id === "nd-yarin");
+    ok(plan.ekip.some((e) => e.kisiId === elle && e.gorev === "bultenYapimcisi"), `${dil}: elle seçilen ekipte`);
     const uye = (id) => plan.ekip.find((e) => e.kisiId === id);
     ok(uye("pr6")?.gorev === "sunucu" && uye("pr6")?.vardiya === "03:00", `${dil}: sunucu GMT vardiyayla (06.00 İstanbul → 03G)`);
     ok(uye("nd1")?.gorev === "yapimciSef" && uye("nd1")?.vardiya === "04:00", `${dil}: EP yapım şefi 04G`);
@@ -73,7 +85,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.waitForTimeout(800);
     await p.locator("[data-staffing-ac]").click();
     await p.waitForTimeout(400);
-    ok((await p.locator('[data-staffing-satir][data-eslesti="0"]').count()) === 1, `${dil}: Arapça adlı kayıt Latin adla eşleşiyor (yalnız kayıtta olmayan eşleşmiyor)`);
+    ok((await p.locator('[data-staffing-satir][data-eslesti="0"]').count()) === 0, `${dil}: Arapça adlı kayıt Latin adla eşleşiyor, öğrenilen ad da`);
+    const ogr = p.locator('[data-staffing-satir][data-ogrenildi="1"]');
+    ok((await ogr.count()) === 1 && (await ogr.locator("select").inputValue()) === elle, `${dil}: öğrenilen ad bir dahaki postada seçili geliyor`);
     await p.close();
   }
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));

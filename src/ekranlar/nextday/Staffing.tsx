@@ -6,7 +6,7 @@ import { ekipPostadanYaz } from "../../eylemler";
 import { staffingOnerileri, staffingPostasi, type StaffingOnerisi } from "../../staffing";
 import { vardiyaYaz } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan } from "../../veri";
-import { ekipGorevAdi, ekipGorevListesi } from "../../yapi";
+import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { izlemede } from "../../izleme";
 import { GERCEK, firebaseYukle } from "../../kip";
 import { postaKimlikGetir, postalariCek } from "../../posta-kapi";
@@ -63,7 +63,7 @@ export function StaffingSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) 
   useStaffingPostasi(ben, plan);
   const posta = staffingPostasi(v.postaMesajlari, plan.tarih);
   const kisiler = v.kisiler;
-  const oneriler = useMemo(() => (posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip) : []), [posta, kisiler, plan.ekip]);
+  const oneriler = useMemo(() => (posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip, v.staffingEslesmeleri, (k, g) => ekipAdayi(k, g)) : []), [posta, kisiler, plan.ekip, v.staffingEslesmeleri]);
   if (!posta || !planIcerikDuzenler(ben, plan) || (plan.staffingPosta === posta.id && !acik) || !oneriler.length) return null;
   return (
     <>
@@ -93,10 +93,21 @@ function StaffingPenceresi({ ben, plan, mesajId, oneriler, kapat }: { ben: Kisi;
     [v.kisiler, ad],
   );
   const gorevler = ekipGorevListesi();
+  /*
+   * Yalnız görevin Plan ekibi kuralına uyanlar (kullanıcı: sunucu satırında
+   * bütün personel değil sunucular). Postanın adayları önde; seçili kişi
+   * kurala uymasa da listede kalır, seçim kaybolmasın.
+   */
+  const gorevSecenekleri = (o: StaffingOnerisi, seciliId?: string) => {
+    const uyan = secenekler.filter((k) => ekipAdayi(k, o.gorev) || k.id === seciliId || k.id === o.kisiId);
+    return [...uyan.filter((k) => o.adaylar.includes(k.id)), ...uyan.filter((k) => !o.adaylar.includes(k.id))];
+  };
   const yazilacak = oneriler.flatMap((o, i) => (secili[i] && kisi[i] ? [{ kisiId: kisi[i]!, gorev: o.gorev, vardiya: o.vardiya }] : []));
+  // Elle seçilen ya da değiştirilen kişi öğrenilir; sistemin kendi bulduğu öğrenilmez (kural değişirse eskisi takılı kalmasın).
+  const ogren = oneriler.flatMap((o, i) => (secili[i] && kisi[i] && kisi[i] !== o.kisiId ? [{ ad: o.ad, kisiId: kisi[i]! }] : []));
 
   const yaz = () => {
-    if (ekipPostadanYaz(ben, plan.id, mesajId, yazilacak)) bildir(t("stYazildi", { n: yazilacak.length }));
+    if (ekipPostadanYaz(ben, plan.id, mesajId, yazilacak, ogren)) bildir(t("stYazildi", { n: yazilacak.length }));
     kapat();
   };
   const yoksay = () => {
@@ -127,7 +138,7 @@ function StaffingPenceresi({ ben, plan, mesajId, oneriler, kapat }: { ben: Kisi;
             <div className="alan-etiket">{ekipGorevAdi(g)}</div>
             {oneriler.map((o, i) =>
               o.gorev !== g ? null : (
-                <div key={i} className="staffing-satir" data-staffing-satir={i} data-eslesti={o.kisiId ? "1" : "0"}>
+                <div key={i} className="staffing-satir" data-staffing-satir={i} data-eslesti={o.kisiId ? "1" : "0"} data-ogrenildi={o.ogrenildi ? "1" : undefined}>
                   <input type="checkbox" checked={secili[i]} disabled={!kisi[i]} aria-label={o.ad} onChange={(e) => setSecili((s) => s.map((x, j) => (j === i ? e.target.checked : x)))} />
                   <span className="staffing-saat">{vardiyaYaz(o.vardiya)}</span>
                   <span className="staffing-posta">
@@ -145,7 +156,7 @@ function StaffingPenceresi({ ben, plan, mesajId, oneriler, kapat }: { ben: Kisi;
                     }}
                   >
                     <option value="">{o.kisiId ? t("stKisiSec") : t("stBulunamadi")}</option>
-                    {[...o.adaylar.map((id) => secenekler.find((k) => k.id === id)).filter((k): k is Kisi => !!k), ...secenekler.filter((k) => !o.adaylar.includes(k.id))].map((k) => (
+                    {gorevSecenekleri(o, kisi[i]).map((k) => (
                       <option key={k.id} value={k.id}>
                         {ad(k)}
                       </option>

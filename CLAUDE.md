@@ -1419,7 +1419,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ünlüler, و ve ي düşer, aynı sesin harfleri birleşir; "عبد الرحمن" bileşik
     okunuşlarıyla) karşılaştırılır (kullanıcı: plana ekli kişiler eşleşmiyordu,
     kayıtta çoğunun yalnız Arapça adı var); eşit adaylardan yalnız biri planın
-    ekibindeyse o. Kendiliğinden
+    ekibindeyse o. Önizlemede elle seçilen ya da değiştirilen kişi öğrenilir
+    (kullanıcı: bilinmeyeni bir kez seçeyim, sonra hep o gelsin; `Durum.
+    staffingEslesmeleri`, anahtar `staffingAdAnahtari`, gerçek kipte genel ayar
+    belgesinde, bütün planlamacılara ortak; `ekipPostadanYaz(…, ogren)`): o ad
+    bir daha gelince tahmin yerine o kişi (`data-ogrenildi`); sistemin kendi
+    bulduğu öğrenilmez. Satırın kişi seçiminde yalnız görevin Plan ekibi kuralına
+    uyanlar (`ekipAdayi`; kullanıcı: sunucu satırında bütün personel değil
+    sunucular), seçili olan uymasa da kalır; eşit adaylardan yalnız biri kurala
+    uyuyorsa o. Kendiliğinden
     yazılmaz: önizlemede işaretlenenler "Ekibe yaz"la (`eylemler.ts →
     ekipPostadanYaz`): postadaki görevlerin ekibi postadakiyle değişir, öbür
     görevler kalır; "Yoksay" yalnız işaretler (`NextDayPlan.staffingPosta`,

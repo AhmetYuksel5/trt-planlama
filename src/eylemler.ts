@@ -1,5 +1,5 @@
 import { girisAdi, postaAdresi } from "./girisKodu";
-import { staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
+import { staffingAdAnahtari, staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
@@ -2125,8 +2125,27 @@ export const ekipKisiDegistir = (ben: Kisi, planId: string, eskiId: string, yeni
     p.ekip.some((e) => e.kisiId === yeniId) ? p : { ...p, ekip: p.ekip.map((e) => (e.kisiId === eskiId ? { ...e, kisiId: yeniId, onceki: undefined } : e)) },
   );
 /* Staffing postasından ekip (staffing.ts): postadaki görevlerin ekibi postadakiyle değişir; boş liste yalnız postayı yoksayar. */
-export const ekipPostadanYaz = (ben: Kisi, planId: string, mesajId: string, uyeler: EkipUyesi[]) =>
-  planIcerik(ben, planId, (p) => ({ ...p, ekip: uyeler.length ? staffingEkibi(p.ekip, uyeler) : p.ekip, staffingPosta: mesajId }));
+/*
+ * Önizlemede elle seçilen kişi (`ogren`: postadaki ad → kişi) aynı yazışta
+ * öğrenilir; o ad bir daha gelince tahmin yerine o kişi gelir.
+ */
+export const ekipPostadanYaz = (ben: Kisi, planId: string, mesajId: string, uyeler: EkipUyesi[], ogren: { ad: string; kisiId: string }[] = []) => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan)) return false;
+  const eslesmeler = { ...d.staffingEslesmeleri };
+  let degisti = false;
+  for (const o of ogren) {
+    const a = staffingAdAnahtari(o.ad);
+    if (a && eslesmeler[a] !== o.kisiId) {
+      eslesmeler[a] = o.kisiId;
+      degisti = true;
+    }
+  }
+  const temel = degisti ? { ...d, staffingEslesmeleri: eslesmeler } : d;
+  kaydet(planGuncelle(temel, planId, (p) => ({ ...p, ekip: uyeler.length ? staffingEkibi(p.ekip, uyeler) : p.ekip, staffingPosta: mesajId })));
+  return true;
+};
 export const ekipCikar = (ben: Kisi, planId: string, kisiId: string) =>
   planIcerik(ben, planId, (p) => ({ ...p, ekip: p.ekip.filter((e) => e.kisiId !== kisiId) }));
 export const planGorevlendirmeCikar = (ben: Kisi, planId: string, id: string) =>
