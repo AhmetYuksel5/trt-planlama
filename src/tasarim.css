@@ -1453,6 +1453,14 @@ dialog.pencere .alanlar { grid-template-columns: repeat(auto-fill, minmax(min(12
 /* Gelişme, muhabir, canlı (ve Weekly'de kalem) sürükle-bırakının hedefi aynı görünüşte; sürüklenen satır soluk (planSurukle.ts). */
 .sur-hedef { outline: 2px dashed var(--vurgu); outline-offset: 2px; background: var(--vurgu-sis); border-radius: var(--yaricap-kucuk, 4px); }
 .suruklenen { opacity: 0.5; }
+/* Belgede başlık içeriğiyle taşınıyor: bölge çerçeveli; hedefte içi değil geçeceği kenar (sıralama, içine katılmaz). */
+.baslik-tutamak { display: inline-flex; align-items: center; color: var(--sonuk); cursor: grab; flex: none; }
+.baslik-tutamak:hover { color: var(--vurgu); }
+.belge-satir h3:has(.baslik-tutamak) { display: flex; align-items: center; gap: 4px; }
+.belge-satir:has(> h3 .baslik-tutamak) { cursor: grab; }
+.baslik-tasiniyor { outline: 2px solid var(--vurgu); outline-offset: 4px; background: var(--vurgu-sis); opacity: 0.55; border-radius: var(--yaricap-kucuk, 4px); }
+.sur-araya-ust { box-shadow: 0 -4px 0 0 var(--vurgu); }
+.sur-araya-alt { box-shadow: 0 4px 0 0 var(--vurgu); }
 [data-sur][draggable="true"] { cursor: grab; }
 .cikti-pkg-not .dugme-ikon { vertical-align: middle; margin-inline-start: var(--ara-1); }
 

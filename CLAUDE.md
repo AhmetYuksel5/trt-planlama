@@ -1234,7 +1234,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Başlık başka başlığa katılır (`eylemler.ts → planBaslikBirlestir`):
     başlığın "+" menüsünde "Başka başlığa kat" (hedef pencereden); onay
     sorulur, ↶ geri alır. Başlığı sürükleyip bırakmak katmaz, sıralar:
-    bırakıldığı başlığın yerine geçer (`eylemler.ts → planBaslikYerine`).
+    bırakıldığı başlığın yerine geçer (`eylemler.ts → planBaslikYerine`). Belgede de (Yeni,
+    Sütunlu, belge sayfası; kullanıcı: başlıktan tutunca içeriğiyle bütün
+    bölgesi taşınsın, belli olsun, başka başlığın içine girmesin): başlık
+    satırında tutamak (`NextDayBelge.tsx → BaslikTutamagi`, satır `suruklenir
+    ("baslik")`), sürüklenen görüntü ve işaret bölgenin kendisi
+    (`.baslik-tasiniyor`), hedefte içi değil geçeceği kenar (`.sur-araya-ust`/
+    `-alt`; `planSurukle.ts`). Alt satırlar (gelişme, muhabir, canlı, PKG)
+    başka başlığın içine yine taşınır. Test `testler/belge-baslik-surukle.cjs`.
     Gelişmeler, PKG önerileri ve canlılar hedefin kendi kayıtlarının
     arkasına (kendi sıralarıyla), muhabirler yoksa saat ve yerleriyle;
     bu plandaki öneriler hedef başlığa bağlanır. Pencere kartın dışında

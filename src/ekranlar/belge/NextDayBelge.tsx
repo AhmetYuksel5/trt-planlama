@@ -16,6 +16,7 @@ import {
   Printer,
   Combine,
   Search,
+  GripVertical,
 } from "lucide-react";
 // Kurumun logosu yalnız baskı tasarımlarında; kurumun düz çıktısı ve Word'de yok.
 import type { Baski } from "./Baski";
@@ -117,6 +118,16 @@ import {
 import { PaketPlanNotlari } from "../nextday/PaketPlanNotlari";
 import { paketHedefi, paketSuruklenir } from "../nextday/paketSurukle";
 import { planSurukleKabi, suruklenir } from "../nextday/planSurukle";
+
+/* Başlığın sürükleme tutamağı: başlık adı yazı alanı olduğu için oradan tutulamıyor. */
+function BaslikTutamagi() {
+  const { t } = useDil();
+  return (
+    <span className="baslik-tutamak" title={t("baslikSurukle")} aria-hidden="true">
+      <GripVertical size={16} />
+    </span>
+  );
+}
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import {
   CanliFormu,
@@ -859,6 +870,7 @@ export function NextDayBelgesi({
                       >
                         <BelgeSatiri
                           duzen={ic}
+                          ozellik={suruklenir("baslik", pb.id, pb.id, ic && !!ben)}
                           serit={
                             <SatirSeridi
                               yukari={yukari(
@@ -889,6 +901,7 @@ export function NextDayBelgesi({
                           }
                         >
                           <h3>
+                            {ic && ben && <BaslikTutamagi />}
                             {ic && ben && yapabilir(ben, "baslikYonet") ? (
                               <YerindeMetin
                                 acik
@@ -1731,6 +1744,7 @@ export function NextDayBelgesi({
                   >
                     <BelgeSatiri
                       duzen={ic}
+                      ozellik={suruklenir("baslik", pb.id, pb.id, ic && !!ben)}
                       serit={
                         <SatirSeridi
                           yukari={yukari(
@@ -1757,6 +1771,7 @@ export function NextDayBelgesi({
                       }
                     >
                       <h3>
+                        {ic && ben && <BaslikTutamagi />}
                         {ic && ben && yapabilir(ben, "baslikYonet") ? (
                           <YerindeMetin
                             acik

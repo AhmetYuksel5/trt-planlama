@@ -1,5 +1,5 @@
 import type { DragEvent, PointerEvent } from "react";
-import { canliBasligaBagla, gelismeSurukle, planMuhabirSurukle } from "../../eylemler";
+import { canliBasligaBagla, gelismeSurukle, planBaslikYerine, planMuhabirSurukle } from "../../eylemler";
 import type { Kisi, NextDayPlan } from "../../veri";
 
 /*
@@ -9,12 +9,18 @@ import type { Kisi, NextDayPlan } from "../../veri";
  * başlığa ya da "مباشر"a. Satırlar yalnız işaret taşır (`suruklenir`), karar
  * plan kabının tek dinleyicisinde (`planSurukleKabi`): klasik ekran ve belge
  * (Yeni, Sütunlu, belge sayfası) aynı kuralla. PKG kendi düzeneğinde
- * (paketSurukle.ts), başlık sıralaması başlık kartında.
+ * (paketSurukle.ts), klasikte başlık sıralaması başlık kartında.
+ *
+ * Belgede başlık da sürüklenir (kullanıcı: başlıktan tutunca içeriğiyle bütün
+ * bölgesi taşınsın, bunu belli eden işaret olsun; yalnız yeri değişsin, başka
+ * başlığın içine girmesin): bölge çerçevelenir, sürüklenen görüntü bölgenin
+ * kendisi; hedef başlığın içi değil kenarı vurgulanır (üstüne ya da altına
+ * geçeceği yer), bırakınca `planBaslikYerine`.
  *
  * Hedefler DOM'dan: başlık `[data-plan-baslik]` (klasik) ya da
  * `[data-nd-baslik]` (belge), متابعات `[data-sur-takip]`, مباشر `[data-sur-canli]`.
  */
-export type SurTuru = "gelisme" | "muhabir" | "canli";
+export type SurTuru = "gelisme" | "muhabir" | "canli" | "baslik";
 export const OGE_TURU = "application/x-plan-oge";
 interface Oge {
   tur: SurTuru;
@@ -26,7 +32,10 @@ let suruklenen: Oge | null = null;
 let yazidan = false;
 
 const VURGU = "sur-hedef";
-const vurguKaldir = () => document.querySelectorAll(`.${VURGU}`).forEach((x) => x.classList.remove(VURGU));
+const ARA_UST = "sur-araya-ust";
+const ARA_ALT = "sur-araya-alt";
+const vurguKaldir = () =>
+  document.querySelectorAll(`.${VURGU}, .${ARA_UST}, .${ARA_ALT}`).forEach((x) => x.classList.remove(VURGU, ARA_UST, ARA_ALT));
 
 /** Satıra: sürüklenebilir yapar (yalnız düzenleyende). */
 export const suruklenir = (tur: SurTuru, id: string, pb: string | undefined, etkin: boolean) =>
@@ -36,13 +45,25 @@ interface Hedef {
   el: HTMLElement;
   pb?: string;
   yerine?: string;
+  /** Başlık sıralamasında hedefin hangi kenarına geçeceği. */
+  kenar?: string;
 }
 
 const baslikOf = (el: HTMLElement) => el.closest<HTMLElement>("[data-plan-baslik], [data-nd-baslik]");
 const pbOf = (el: HTMLElement) => el.dataset.planBaslik ?? el.dataset.ndBaslik;
 
 /* Bırakılan yer ve ne olacağı; boşsa bırakılmaz (kendi yeri, geçersiz hedef). */
-const hedefBul = (hedef: HTMLElement, o: Oge): Hedef | null => {
+const hedefBul = (hedef: HTMLElement, o: Oge, plan?: NextDayPlan): Hedef | null => {
+  if (o.tur === "baslik") {
+    // Yalnız sıralama: hedef başlığın yerine geçer; yukarıdan gelen altına, aşağıdan gelen üstüne.
+    const b = hedef.closest<HTMLElement>("[data-nd-baslik]");
+    const id = b?.dataset.ndBaslik;
+    if (!b || !id || id === o.id || !plan) return null;
+    const i = plan.basliklar.findIndex((x) => x.id === o.id);
+    const j = plan.basliklar.findIndex((x) => x.id === id);
+    if (i < 0 || j < 0) return null;
+    return { el: b, yerine: id, kenar: i < j ? ARA_ALT : ARA_UST };
+  }
   const ayni = hedef.closest<HTMLElement>(`[data-sur="${o.tur}"]`);
   if (ayni && o.tur !== "canli") {
     if (ayni.dataset.surId === o.id) return null;
@@ -79,22 +100,30 @@ export const planSurukleKabi = (ben: Kisi | null | undefined, plan: NextDayPlan)
     suruklenen = { tur: el.dataset.sur as SurTuru, id: el.dataset.surId ?? "", pb: el.dataset.surPb || undefined };
     e.dataTransfer.setData(OGE_TURU, suruklenen.id);
     e.dataTransfer.effectAllowed = "move";
-    el.classList.add("suruklenen");
+    const bolge = suruklenen.tur === "baslik" ? el.closest<HTMLElement>("[data-nd-baslik]") : null;
+    if (bolge) {
+      // Başlığın bütün bölgesi taşınıyor: görüntü de işaret de bölgenin kendisi.
+      const r = bolge.getBoundingClientRect();
+      e.dataTransfer.setDragImage(bolge, Math.max(0, e.clientX - r.left), Math.max(0, e.clientY - r.top));
+      // Görüntü alındıktan sonra işaretlensin (yarı saydam görüntü çıkmasın).
+      requestAnimationFrame(() => bolge.classList.add("baslik-tasiniyor"));
+    } else el.classList.add("suruklenen");
   },
   onDragEnd: () => {
     suruklenen = null;
     vurguKaldir();
-    document.querySelectorAll(".suruklenen").forEach((x) => x.classList.remove("suruklenen"));
+    document.querySelectorAll(".suruklenen, .baslik-tasiniyor").forEach((x) => x.classList.remove("suruklenen", "baslik-tasiniyor"));
   },
   onDragOver: (e: DragEvent<HTMLElement>) => {
     if (!suruklenen || !e.dataTransfer.types.includes(OGE_TURU)) return;
-    const h = hedefBul(e.target as HTMLElement, suruklenen);
+    const h = hedefBul(e.target as HTMLElement, suruklenen, plan);
     if (!h) return vurguKaldir();
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (!h.el.classList.contains(VURGU)) {
+    const sinif = h.kenar ?? VURGU;
+    if (!h.el.classList.contains(sinif)) {
       vurguKaldir();
-      h.el.classList.add(VURGU);
+      h.el.classList.add(sinif);
     }
   },
   onDrop: (e: DragEvent<HTMLElement>) => {
@@ -102,10 +131,13 @@ export const planSurukleKabi = (ben: Kisi | null | undefined, plan: NextDayPlan)
     if (!o || !ben || !e.dataTransfer.types.includes(OGE_TURU)) return;
     e.preventDefault();
     vurguKaldir();
-    const h = hedefBul(e.target as HTMLElement, o);
+    const h = hedefBul(e.target as HTMLElement, o, plan);
     suruklenen = null;
+    document.querySelectorAll(".baslik-tasiniyor").forEach((x) => x.classList.remove("baslik-tasiniyor"));
     if (!h) return;
-    if (o.tur === "gelisme") gelismeSurukle(ben, o.id, h.pb, h.yerine);
+    if (o.tur === "baslik") {
+      if (h.yerine) planBaslikYerine(ben, plan.id, o.id, h.yerine);
+    } else if (o.tur === "gelisme") gelismeSurukle(ben, o.id, h.pb, h.yerine);
     else if (o.tur === "muhabir" && o.pb && h.pb) planMuhabirSurukle(ben, plan.id, o.id, o.pb, h.pb, h.yerine);
     else if (o.tur === "canli") canliBasligaBagla(ben, o.id, h.pb);
   },
