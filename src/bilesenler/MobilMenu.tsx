@@ -165,7 +165,7 @@ export default function MobilMenu({
         <span>{t("dilSec")}</span>
         <DilSecici />
       </div>
-      {!muhabir && (
+      {!muhabir && GERCEK && (
         <a className="dugme dugme-ikincil ara-ust-2 tam-genislik" href="#/plan">
           <BookOpen size={16} /> {t("mProjePlani")}
         </a>

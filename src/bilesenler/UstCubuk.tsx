@@ -316,13 +316,15 @@ export default function UstCubuk({
             >
               <Settings size={16} /> {t("mAyarlar")}
             </a>
-            <a
-              className="acilir-satir"
-              href="#/plan"
-              onClick={() => setAcik("")}
-            >
-              <BookOpen size={16} /> {t("mProjePlani")}
-            </a>
+            {GERCEK && (
+              <a
+                className="acilir-satir"
+                href="#/plan"
+                onClick={() => setAcik("")}
+              >
+                <BookOpen size={16} /> {t("mProjePlani")}
+              </a>
+            )}
             {!GERCEK && (
               <a className="acilir-satir" href="#/egitim" onClick={() => setAcik("")} data-menu-egitim>
                 <Presentation size={16} /> {t("egBaslik")}

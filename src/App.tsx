@@ -240,14 +240,6 @@ export default function App() {
 
   // Eğitim sahnesi: yalnız demoda, oturumsuz da; bölmeleri kendi kişileriyle açılıyor.
   if (yol.sayfa === "egitim" && !GERCEK && !GOMULU) return <Egitim />;
-  if (yol.sayfa === "plan")
-    return GOMULU ? (
-      <GomuluKabuk>
-        <BolmeUyarisi tur="projePlani" />
-      </GomuluKabuk>
-    ) : (
-      <ProjePlani />
-    );
   // Bölmede giriş ekranı yok: oradan kişi seçmek bütün pencerenin oturumunu değiştirirdi.
   if (!ben)
     return GOMULU ? (
@@ -258,6 +250,15 @@ export default function App() {
       <GercekGiris />
     ) : (
       <Giris />
+    );
+  // Proje planı giriş yapmış kişiye ve yalnız gerçek kipte (yetki.ts → sayfaGorebilir); önce girişsiz açılıyordu.
+  if (yol.sayfa === "plan" && sayfaGorebilir(ben, "plan"))
+    return GOMULU ? (
+      <GomuluKabuk>
+        <BolmeUyarisi tur="projePlani" />
+      </GomuluKabuk>
+    ) : (
+      <ProjePlani />
     );
 
   const sayfa = yol.sayfa;

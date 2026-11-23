@@ -1,5 +1,5 @@
 import { birimAdi, kisiBirimleri, gorevAdi } from "../yapi";
-import { BookOpen, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import DilSecici from "../bilesenler/DilSecici";
 import { Avatar, Rozet } from "../bilesenler/Parcalar";
@@ -56,9 +56,6 @@ export default function Giris() {
         </a>
         <h1>{t("girisBaslik")}</h1>
         <DilSecici />
-        <a className="dugme dugme-ikincil kendi-hizasi" href="#/plan">
-          <BookOpen size={16} /> {t("mProjePlani")}
-        </a>
         <p className="alt">{t("girisDemoNotu")}</p>
       </aside>
       <main className="giris-sag">

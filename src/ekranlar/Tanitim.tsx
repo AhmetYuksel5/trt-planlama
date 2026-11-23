@@ -1,9 +1,12 @@
 import {
+  Archive,
   ArrowRight,
   Building2,
+  Calculator,
   CalendarCheck,
   CalendarDays,
   CalendarRange,
+  Clapperboard,
   Database,
   FlaskConical,
   Gauge,
@@ -11,12 +14,13 @@ import {
   LayoutGrid,
   Lightbulb,
   LogIn,
+  Mail,
   ShieldCheck,
+  Smartphone,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, type RefObject } from "react";
-import { ASAMALAR, ASAMA_ADI, type Asama } from "../akis";
 import DilSecici from "../bilesenler/DilSecici";
 import Logo from "../bilesenler/Logo";
 import { useDil, type Anahtar } from "../dil";
@@ -33,21 +37,32 @@ import { birimAdi, kisiBirimleri, varsayilanYapi } from "../yapi";
  * düğmeyle kayılıyor.
  */
 
-const ADIM_METNI: Record<Asama, Anahtar> = {
-  planlama: "tnAdimPlanlama",
-  newsgathering: "tnAdimNewsgathering",
-  newsdesk: "tnAdimNewsdesk",
-  uretim: "tnAdimUretim",
-  teknik: "tnAdimTeknik",
-};
+/*
+ * Bugünkü akış (kullanıcı: tanıtım eskimişti, eski beş sabit aşamayı ve Newsdesk'in
+ * devrini anlatıyordu; paketin yolu artık üretim balonunda paket paket seçiliyor).
+ */
+const ADIMLAR: { baslik: Anahtar; metin: Anahtar }[] = [
+  { baslik: "tnA1", metin: "tnA1Metin" },
+  { baslik: "tnA2", metin: "tnA2Metin" },
+  { baslik: "tnA3", metin: "tnA3Metin" },
+  { baslik: "tnA4", metin: "tnA4Metin" },
+  { baslik: "tnA5", metin: "tnA5Metin" },
+];
 
-/* Renk yalnız planların ana başlıklarında (tasarım dili): Next Day ve haftalık kendi renginde, kalanı vurgu. */
+/*
+ * Renk yalnız planların ana başlıklarında (tasarım dili): Next Day ve haftalık kendi renginde, kalanı vurgu.
+ * Metinler genel: sayfa girişsiz okunuyor, kurumun altyapısının adı (posta sunucusu, yayın sistemi) geçmez.
+ */
 const OZELLIKLER: { ikon: LucideIcon; baslik: Anahtar; metin: Anahtar; renk?: string }[] = [
   { ikon: CalendarDays, baslik: "tnOzNextday", metin: "tnOzNextdayMetin", renk: "nextday" },
   { ikon: CalendarRange, baslik: "tnOzHaftalik", metin: "tnOzHaftalikMetin", renk: "haftalik" },
   { ikon: Lightbulb, baslik: "tnOzOneri", metin: "tnOzOneriMetin" },
   { ikon: Workflow, baslik: "tnOzUretim", metin: "tnOzUretimMetin" },
+  { ikon: Mail, baslik: "tnOzPosta", metin: "tnOzPostaMetin" },
+  { ikon: Clapperboard, baslik: "tnOzMasalar", metin: "tnOzMasalarMetin" },
+  { ikon: Archive, baslik: "tnOzStok", metin: "tnOzStokMetin" },
   { ikon: CalendarCheck, baslik: "tnOzTakvim", metin: "tnOzTakvimMetin" },
+  { ikon: Calculator, baslik: "tnOzMuhasebe", metin: "tnOzMuhasebeMetin" },
   { ikon: Gauge, baslik: "tnOzPanel", metin: "tnOzPanelMetin" },
   { ikon: Building2, baslik: "tnOzOrganizasyon", metin: "tnOzOrganizasyonMetin" },
   { ikon: LayoutGrid, baslik: "tnOzOrtam", metin: "tnOzOrtamMetin" },
@@ -57,6 +72,7 @@ const ILKELER: { ikon: LucideIcon; baslik: Anahtar; metin: Anahtar }[] = [
   { ikon: Database, baslik: "tnIlkeKayit", metin: "tnIlkeKayitMetin" },
   { ikon: ShieldCheck, baslik: "tnIlkeYetki", metin: "tnIlkeYetkiMetin" },
   { ikon: Languages, baslik: "tnIlkeDil", metin: "tnIlkeDilMetin" },
+  { ikon: Smartphone, baslik: "tnIlkeTelefon", metin: "tnIlkeTelefonMetin" },
 ];
 
 function Dugmeler({ buyuk = false }: { buyuk?: boolean }) {
@@ -119,7 +135,7 @@ export default function Tanitim() {
             <Dugmeler buyuk />
             <small>{t("tnDemoNotu")}</small>
           </div>
-          {/* Süs: bir paketin beş aşamadaki yeri; gerçek veri değil, yazısız. */}
+          {/* Süs: bir haberin akıştaki yeri; gerçek veri değil. */}
           <div className="tanitim-gorsel" aria-hidden="true">
             <div className="tanitim-kagit">
               <div className="tanitim-kagit-bas">
@@ -130,10 +146,10 @@ export default function Tanitim() {
                 <div key={i} className="tanitim-satir" />
               ))}
               <ol className="tanitim-iz">
-                {ASAMALAR.map((a, i) => (
-                  <li key={a} className={i < 3 ? "gecti" : i === 3 ? "simdi" : ""}>
+                {ADIMLAR.map((a, i) => (
+                  <li key={a.baslik} className={i < 3 ? "gecti" : i === 3 ? "simdi" : ""}>
                     <i />
-                    <span>{t(ASAMA_ADI[a])}</span>
+                    <span>{t(a.baslik)}</span>
                   </li>
                 ))}
               </ol>
@@ -147,11 +163,11 @@ export default function Tanitim() {
           <h2>{t("tnNasil")}</h2>
           <p className="tanitim-alt">{t("tnNasilAlt")}</p>
           <ol className="tanitim-adimlar">
-            {ASAMALAR.map((a, i) => (
-              <li key={a}>
+            {ADIMLAR.map((a, i) => (
+              <li key={a.baslik}>
                 <span className="tanitim-sira">{i + 1}</span>
-                <h3>{t(ASAMA_ADI[a])}</h3>
-                <p>{t(ADIM_METNI[a])}</p>
+                <h3>{t(a.baslik)}</h3>
+                <p>{t(a.metin)}</p>
               </li>
             ))}
           </ol>
@@ -209,7 +225,6 @@ export default function Tanitim() {
       <footer className="tanitim-alt-bilgi">
         <Logo />
         <span>{t("uygulama")}</span>
-        <a href="#/plan">{t("mProjePlani")}</a>
       </footer>
     </div>
   );

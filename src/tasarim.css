@@ -2629,7 +2629,7 @@ tr.soluk > td { color: var(--sonuk); background: var(--yuzey-2); }
 .tanitim-kartlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--ara-4); }
 .tanitim-kart { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); padding: var(--ara-5); box-shadow: var(--golge-kart); }
 .tanitim-ikon { display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--yaricap); background: var(--sis); color: var(--renk); }
-.tanitim-ilkeler { margin-top: calc(var(--ara-8) * 2); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ara-6); padding: var(--ara-8); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
+.tanitim-ilkeler { margin-top: calc(var(--ara-8) * 2); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ara-6); padding: var(--ara-8); background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); }
 .tanitim-ilkeler svg { color: var(--vurgu); }
 .tanitim-birimler { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--ara-2); }
 .tanitim-birimler li { padding: var(--ara-2) var(--ara-4); border-radius: var(--yaricap-hap); background: var(--yuzey); border: 1px solid var(--cizgi); font-weight: 600; font-size: var(--punto-kucuk); }
@@ -2645,7 +2645,7 @@ tr.soluk > td { color: var(--sonuk); background: var(--yuzey-2); }
   .tanitim-nav { display: none; }
   .tanitim-kahraman-ic { grid-template-columns: minmax(0, 1fr); }
   .tanitim-adimlar { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-  .tanitim-ilkeler { grid-template-columns: minmax(0, 1fr); }
+  .tanitim-ilkeler { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   .tanitim-ust { padding: var(--ara-2) var(--ara-4); gap: var(--ara-2); flex-wrap: wrap; }
@@ -2661,7 +2661,7 @@ tr.soluk > td { color: var(--sonuk); background: var(--yuzey-2); }
   .tanitim-gorsel { display: none; }
   .tanitim-govde { padding: 0 var(--ara-4); }
   .tanitim-bolum { padding-top: calc(var(--ara-8) + var(--ara-4)); }
-  .tanitim-ilkeler { padding: var(--ara-5); margin-top: calc(var(--ara-8) + var(--ara-4)); }
+  .tanitim-ilkeler { grid-template-columns: minmax(0, 1fr); padding: var(--ara-5); margin-top: calc(var(--ara-8) + var(--ara-4)); }
   .tanitim-son { padding: var(--ara-8) var(--ara-4); }
   .tanitim-son .tanitim-dugmeler { inline-size: 100%; }
 }

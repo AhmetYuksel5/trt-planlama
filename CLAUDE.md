@@ -153,7 +153,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (demo kişi seçimi) ve Giriş (`#/gercek-giris`). Gerçek kipte kalmış
   kişi çıplak adreste doğrudan sisteme girer. Sayfa içi bağlantı `#…`
   olamaz (hash yönlendirmesi), bölümlere düğmeyle kayılır. Logoya üç tık
-  kalktı.
+  kalktı. İçerik bugünkü akışla (kullanıcı: eskimişti, beş sabit aşamayı ve
+  Newsdesk devrini anlatıyordu): beş adım öneri, plan ve toplantı, görev,
+  üretim yolu, yayın ve künye (`ADIMLAR`); on iki özellik kartı (Posta,
+  Masalar, Stok ve programlar, Takvim ve gündem, Muhasebe ve künye da);
+  dört ilke ("Telefonda da tam"). Sayfa girişsiz okunduğu için metin genel:
+  kurumun altyapısının adı (posta sunucusu, yayın sistemi), adres ve kişi
+  geçmez; birimler varsayılan yapıdan. Test `testler/tanitim.cjs`.
+- Proje planı (`ekranlar/ProjePlani.tsx`, `#/plan`) kurumun iç tartışma
+  notları (açık sorular, altyapı, yol haritası): yalnız gerçek kipte giriş
+  yapmış kişiye (`yetki.ts → sayfaGorebilir`, `App.tsx`'te giriş denetiminin
+  arkasında; kullanıcı: tanıtımda mahrem olabilecek bilgi). Demo şifresiz ve
+  herkese açık, orada menüde, avatar menüsünde ve telefon panelinde yok,
+  adres "erişimin yok" açar; tanıtımın altındaki ve demo girişindeki
+  bağlantı kalktı.
 - Gerçek kip (`kip.ts`, `belgeler/gercek-kip.md`): giriş tanıtımdaki
   "Giriş"ten (`#/gercek-giris`, `ekranlar/GercekGiris.tsx`); demodan
   kullanıcı menüsündeki "Kurum girişi"nden de.

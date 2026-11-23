@@ -1019,7 +1019,10 @@ const hesapIsiYetkisi = (k: Kisi) => !!k.yetkiler?.some((y) => y !== "muhasebe")
 /* Yönetici paneli birime değil kişiye bağlı: müdürler ve birim yöneticileri. */
 export const sayfaGorebilir = (k: Kisi | undefined, sayfa: string): boolean =>
   !!k &&
-  (sayfa === "panel"
+  (sayfa === "plan"
+    ? // Proje planı kurumun iç tartışma notları (açık sorular, altyapı, yol haritası): demo şifresiz ve herkese açık, orada yok.
+      GERCEK
+    : sayfa === "panel"
     ? !!kapsam(k)
     : sayfa === "muhasebe"
         ? muhasebeGorebilir(k)

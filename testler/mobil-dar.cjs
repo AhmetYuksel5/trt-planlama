@@ -6,7 +6,7 @@ const { chromium } = require(process.env.PW);
 const B = "http://localhost:4173/";
 let gec = 0, kal = 0;
 const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
-const SAYFALAR = [["pl2", "#/oneriler"], ["pl2", "#/plan"], ["nd1", "#/paketler/p-altin"], ["nd1", "#/paketler/p-kudus"], ["pr1", "#/programlar/programlar"], ["pr1", "#/programlar/planlar"]];
+const SAYFALAR = [["pl2", "#/oneriler"], ["nd1", "#/paketler/p-altin"], ["nd1", "#/paketler/p-kudus"], ["pr1", "#/programlar/programlar"], ["pr1", "#/programlar/planlar"]];
 (async () => {
   const b = await chromium.launch();
   for (const dil of ["tr", "ar"]) {
