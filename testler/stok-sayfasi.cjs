@@ -21,7 +21,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/stok");
 
   // 1. Kutucuklar: beş bölüm, varsayılan Üretim; kutucuk adres değiştirir, geri tuşu bölümler arasında gezer
-  ok((await p.locator("[data-stok-kutu]").count()) === 5, "beş kutucuk");
+  ok((await p.locator("[data-stok-kutu]").count()) === 6, "altı kutucuk (Special Coverage dahil)");
   ok((await p.locator('[data-stok-kutu="uretim"][aria-selected="true"]').count()) === 1, "varsayılan Üretim kutusu");
   await p.locator('[data-stok-kutu="programlar"]').click(); await p.waitForTimeout(500);
   await p.locator('[data-stok-kutu="arsiv"]').click(); await p.waitForTimeout(500);

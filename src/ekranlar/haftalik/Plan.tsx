@@ -26,7 +26,8 @@ import { etiketUret } from "../../eposta";
 import { gundemde, haftaGunleri, haftaSonu, haftaninDosyalari, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "../../haftalik";
 import { bugun } from "../../tarih";
 import { haftayaDusenler } from "../../aylik";
-import { HAFTA_DURUMLARI, paketBicimi, sahaGorevi, useVeri, type AnaKonu, type Gorevlendirme, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
+import { HaftaOzelBolumu } from "../belge/HaftalikBelge";
+import { HAFTA_DURUMLARI, ozelIcerikMi, paketBicimi, sahaGorevi, useVeri, type AnaKonu, type Gorevlendirme, type HaftalikKalem, type HaftalikPlan, type Kisi, type Oneri } from "../../veri";
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { haftalikDuzenler, hareketDuzenleyebilir, kararVerebilir, planAdimiYapabilir, toplantiNotuGorur, yapabilir } from "../../yetki";
 import { AdimYetkilileri } from "../organizasyon/PlanYetkileri";
@@ -208,6 +209,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
       )}
       {duzenler && yapabilir(ben, "oneriDegerlendir") && <GelenOneriler ben={ben} hafta={hafta} />}
       <AyliktanBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
+      <OzelYayinBolumu hafta={hafta} />
       <TakvimdenBolumu ben={ben} hafta={hafta} ekleyebilir={duzenler} />
       <MuhabirHareketleri hafta={hafta} />
       {/* Kalem, ana dosya ve öneri kartı sürükle-bırak (haftaSurukle.ts): tek dinleyici. */}
@@ -230,6 +232,23 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
         <HareketGecmisi hareketler={v.hareketler.filter((h) => h.haftaId === hafta.id)} d={v} />
       </Bolum>
     </>
+  );
+}
+
+/* Haftaya düşen özel yayınlar: belgenin aynı salt okunur bölümü (karar kalemi değil, özel yayında görevlendirildi). */
+function OzelYayinBolumu({ hafta }: { hafta: HaftalikPlan }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const bas = hafta.baslangic;
+  const bit = haftaSonu(bas);
+  const n = v.paketler.filter((p) => ozelIcerikMi(p) && p.durum !== "iptal" && !!p.yayinGunu && p.yayinGunu >= bas && p.yayinGunu <= bit).length + v.canliYayinlar.filter((x) => x.ozelId && x.tarih >= bas && x.tarih <= bit).length;
+  if (!n) return null;
+  return (
+    <Bolum no="◆" baslik={t("ozel")} ek={String(n)}>
+      <article className="cikti hf" dir="rtl" lang="ar">
+        <HaftaOzelBolumu bas={bas} bit={bit} />
+      </article>
+    </Bolum>
   );
 }
 

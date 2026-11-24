@@ -3,7 +3,7 @@ import { bitmisMi, bitmisTarihi, surenPaketGunu } from "./bitmisPaket";
 import { oneriHaftada, oneriPlanGunu } from "./oneriPlanlari";
 import { oneriSekmesi } from "./oneriSekmeleri";
 import { gunEkle, gunFarki, haftaBasi, planlananHafta } from "./tarih";
-import type { Durum, HaftalikKalem, Kisi, NextDayPlan, Oneri, Paket } from "./veri";
+import { ozelIcerikMi, type Durum, type HaftalikKalem, type Kisi, type NextDayPlan, type Oneri, type Paket } from "./veri";
 import { planIcerikDuzenler } from "./yetki";
 
 /*
@@ -14,7 +14,7 @@ import { planIcerikDuzenler } from "./yetki";
  * göre). Saf kurallar, saklanmaz; ekran ekranlar/StokSayfasi.tsx.
  */
 
-export const STOK_BOLUMLERI = ["teklifler", "uretim", "stokta", "programlar", "arsiv"] as const;
+export const STOK_BOLUMLERI = ["teklifler", "uretim", "stokta", "ozel", "programlar", "arsiv"] as const;
 export type StokBolumu = (typeof STOK_BOLUMLERI)[number];
 
 /* --- Teklifler: gelecek haftanın Weekly'si --- */
@@ -62,6 +62,8 @@ export const teklifGunu = (o: Oneri): string | undefined => oneriPlanGunu(o) ?? 
 export const URETIM_ALANLARI = ["alinacak", "uretimde"] as const;
 export type UretimAlani = (typeof URETIM_ALANLARI)[number];
 export const uretimAlani = (p: Paket): UretimAlani | null => {
+  // Özel yayının içeriği kendi kutusunda (Special Coverage), burada ikinci kez değil.
+  if (ozelIcerikMi(p)) return null;
   const s = stokDurumu(p);
   return s === "bekliyor" ? "alinacak" : s === "uretimde" ? "uretimde" : null;
 };
@@ -78,7 +80,7 @@ export const stokPlani = (d: Pick<Durum, "planlar">, p: Paket): NextDayPlan | un
 export const STOKTA_ALANLARI = ["bekleyen", "planda"] as const;
 export type StoktaAlani = (typeof STOKTA_ALANLARI)[number];
 export const stoktaAlani = (d: Pick<Durum, "planlar">, p: Paket): StoktaAlani | null =>
-  stokDurumu(p) !== "stokta" ? null : stokPlani(d, p) ? "planda" : "bekleyen";
+  ozelIcerikMi(p) || stokDurumu(p) !== "stokta" ? null : stokPlani(d, p) ? "planda" : "bekleyen";
 
 /** Stoka girdiği gün (bitişi) ve o günden bu yana geçen gün: uzun bekleyen gözden kaçmasın. */
 export const stoktaGun = (p: Paket, b: string) => Math.max(0, gunFarki(bitmisTarihi(p), b));
@@ -97,7 +99,7 @@ export const eklenebilirPlanlar = (d: Pick<Durum, "planlar">, ben: Kisi, b: stri
 export const STOK_ARSIV_ALANLARI = ["yayinlandi", "yapilmadi"] as const;
 export type StokArsivAlani = (typeof STOK_ARSIV_ALANLARI)[number];
 export const stokArsivAlani = (p: Paket): StokArsivAlani | null =>
-  stokDurumu(p) === "yayinlandi" ? "yayinlandi" : (p.stok || p.ozelId) && p.durum === "iptal" ? "yapilmadi" : null;
+  ozelIcerikMi(p) ? null : stokDurumu(p) === "yayinlandi" ? "yayinlandi" : (p.stok || p.ozelId) && p.durum === "iptal" ? "yapilmadi" : null;
 export const arsivTarihi = (p: Paket): string => (p.yayinlandi?.tarih ?? p.yapilmadi?.zaman ?? p.reddedildi?.zaman ?? p.guncelleme).slice(0, 10);
 
 /* --- Sıralama: tarih ya da muhabir (kullanıcı) --- */
@@ -165,3 +167,15 @@ export const stokPaketGunu = (d: Pick<Durum, "planlar">, p: Paket): string | und
 export const teslimeKalan = (gun: string, b: string) => gunFarki(b, gun);
 /** Paketin muhabiri; in-house özel yayın paketinde hazırlayan. */
 export const stokPaketKisisi = (p: Paket) => p.muhabirId ?? p.hazirlayanId;
+
+/* --- Special Coverage: özel yayınların içerikleri --- */
+
+/*
+ * Özel yayının içerikleri (kullanıcı: burada yapılan paketler stokta "special
+ * coverage" olarak da görülsün, takibi buradan da yapılsın). Yayın başına
+ * grup, yayının günü yeniden eskiye; süren ve biten ayrı. Saklanmaz.
+ */
+export const OZEL_STOK_ALANLARI = ["suren", "biten"] as const;
+export type OzelStokAlani = (typeof OZEL_STOK_ALANLARI)[number];
+export const ozelStokAlani = (p: Paket): OzelStokAlani | null =>
+  !ozelIcerikMi(p) ? null : p.durum === "onaylandi" || p.durum === "uretimde" ? "suren" : "biten";

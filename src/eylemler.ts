@@ -133,6 +133,7 @@ import {
   type MuhasebeKapanisi,
   type MuhasebeTanimi,
   eskiOzelPaket,
+  ozelIcerikMi,
 } from "./veri";
 import {
   adimYapabilir,
@@ -2042,7 +2043,7 @@ export const yarinPlaniniAc = (): string | null => {
     },
     `h-${id}`,
   );
-  d = ozelCanlilariEsitle(d);
+  d = ozelKayitlariEsitle(d);
   // Haftalık toplantıda bu güne kabul edilmiş, henüz aktarılmamış haberler kendiliğinden geliyor.
   for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
     for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
@@ -2804,7 +2805,7 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   if (c.id) {
     if (d.canliYayinlar.find((x) => x.id === c.id)?.planId !== plan.id) return false;
     // Özel yayının canlısının günü planda değişirse yeni gününün planına geçer.
-    kaydet(ozelCanlilariEsitle({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) }));
+    kaydet(ozelKayitlariEsitle({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) }));
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy"), ekleyen: { kisiId: ben.id, zaman: simdi() } }] });
   }
@@ -2942,7 +2943,8 @@ export const paketSil = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);
   const plan = planBul(d, p?.planId);
-  if (!p || !plan || !planIcerikDuzenler(ben, plan) || !paketPlandanSilinir(p)) return false;
+  // Özel yayının içeriği planda yayının kaydı: yalnız özel yayından yönetilir.
+  if (!p || ozelIcerikMi(p) || !plan || !planIcerikDuzenler(ben, plan) || !paketPlandanSilinir(p)) return false;
   let yeni = oneriBaglariniTazele(
     {
       ...d,
@@ -5780,7 +5782,7 @@ export const aylikOlaydanOzel = (ben: Kisi, olayId: string): string | null => {
   const nafizeler: CanliYayin[] = g.nafizeler.map((n) => ({ id: kimlik("cy"), planId: "", ozelId, konu: n.konu, aciklama: "", tarih: n.tarih, saatGmt: "", yer: n.yer ?? "", ...(n.muhabirId ? { muhabirId: n.muhabirId } : {}), notlar: "", konuklar: [], ekleyen: { kisiId: ben.id, zaman: simdi() } }));
   const paketOnerileri: OzelPaketOnerisi[] = g.paketler.map((p) => ({ id: kimlik("po"), baslik: p.baslik, aciklama: "", kaynak: p.muhabirId && !p.tbc ? "dis" : "inhouse", ...(p.muhabirId && !p.tbc ? { muhabirId: p.muhabirId } : {}), sonTarih: p.sonTarih, tur: "haber", bicim: p.bicim, durum: "oneri", iz: [izYaz(ben, "eklendi")] }));
   const hazirlik = g.hazirlik.map((m) => ({ id: kimlik("oz"), metin: m, tamam: false }));
-  const d1 = ozelCanlilariEsitle({ ...d, canliYayinlar: [...d.canliYayinlar, ...nafizeler] });
+  const d1 = ozelKayitlariEsitle({ ...d, canliYayinlar: [...d.canliYayinlar, ...nafizeler] });
   const d2 = ozelGuncelle(d1, ozelId, (o) => ({ ...o, paketOnerileri: [...(o.paketOnerileri ?? []), ...paketOnerileri], hazirlik: [...o.hazirlik, ...hazirlik] }));
   kaydet({ ...d2, aylik: d2.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.map((o) => (o.id === olayId ? { ...o, ozelId } : o)) } : a)) });
   return ozelId;
@@ -6512,10 +6514,47 @@ export const ozelCanlilariEsitle = (d: Durum): Durum => {
   return degisti ? { ...d, canliYayinlar: canlilar } : d;
 };
 
+/*
+ * Özel yayının içeriği (yeni düzen, `ozelIcerikMi`) yayın gününün Next Day
+ * planına girer (kullanıcı: paketler özel yayının uygulanacağı günün planına
+ * eklenecek): planın içinde yayının adıyla başlık (havuzda aynı adlı varsa o;
+ * kimliği plandan ve yayından), paket onun altında, onaylı PKG. Plan yoksa
+ * paket plansız bekler, açılınca bağlanır; iptal edilen plandan çıkmaz (iz).
+ * Paket plandan silinmez (paketSil reddeder); başlık altında paket varken
+ * çıkarılamıyor, bu yüzden başlık da kalır.
+ */
+const ozelPaketleriEsitle = (d: Durum): Durum => {
+  for (const p of d.paketler) {
+    if (!ozelIcerikMi(p) || !p.yayinGunu || p.durum === "iptal") continue;
+    const o = ozelBul(d, p.ozelId!);
+    if (!o) continue;
+    const simdiki = p.planId ? planBul(d, p.planId) : undefined;
+    if (simdiki && simdiki.tarih === p.yayinGunu && simdiki.basliklar.some((b) => b.id === p.planBaslikId)) continue;
+    const plan = ozelCanlisiPlani(d, p.yayinGunu);
+    if (!plan) {
+      if (p.planId) d = paketGuncelle(d, p.id, (x) => ({ ...x, planId: undefined, planBaslikId: undefined }));
+      continue;
+    }
+    let baslikId: string | undefined;
+    [baslikId, d] = dosyaAc(d, o.ad);
+    let pb = planBul(d, plan.id)!.basliklar.find((b) => b.baslikId === baslikId);
+    if (!pb) {
+      pb = { id: `${plan.id}-oz-${o.id}`, baslikId: baslikId!, muhabirler: [] };
+      const yeni = pb;
+      d = planGuncelle(d, plan.id, (x) => ({ ...x, basliklar: [...x.basliklar, yeni] }));
+    }
+    const pbId = pb.id;
+    d = paketGuncelle(d, p.id, (x) => ({ ...x, planId: plan.id, planBaslikId: pbId }));
+  }
+  return d;
+};
+
+export const ozelKayitlariEsitle = (d: Durum): Durum => ozelPaketleriEsitle(ozelCanlilariEsitle(d));
+
 /** Sistemin açılış işi: plan sonradan açıldıysa (geri getirme, elle) bekleyen nafizeler ona bağlanır. */
 export const ozelCanlilariniBagla = (): number => {
   const d = getir();
-  const yeni = ozelCanlilariEsitle(d);
+  const yeni = ozelKayitlariEsitle(d);
   if (yeni === d) return 0;
   kaydet(yeni);
   return 1;
@@ -6544,7 +6583,7 @@ export const nafizeKaydet = (ben: Kisi, ozelId: string, g: NafizeGirdisi): strin
     const yeni: CanliYayin = { id, planId: "", ozelId, ...alanlar, aciklama: "", ...(g.muhabirId ? { muhabirId: g.muhabirId } : {}), notlar: "", konuklar: [], ekleyen: { kisiId: ben.id, zaman: simdi() } };
     d = { ...d, canliYayinlar: [...d.canliYayinlar, yeni] };
   }
-  kaydet(ozelCanlilariEsitle(d));
+  kaydet(ozelKayitlariEsitle(d));
   return id;
 };
 
@@ -6624,7 +6663,7 @@ export const ozelNafizeleriCevir = (): number => {
       });
     }
   d = { ...d, canliYayinlar: [...d.canliYayinlar, ...yeni], ozel: d.ozel.map((o) => (o.nafizeler?.length ? { ...o, nafizeler: undefined } : o)) };
-  kaydet(ozelCanlilariEsitle(d));
+  kaydet(ozelKayitlariEsitle(d));
   return 1;
 };
 
@@ -6694,12 +6733,13 @@ export const ozelIcerikGorevlendir = (ben: Kisi, ozelId: string, g: OzelIcerikGi
   const teslim = g.tarih || g.yayinGunu;
   if (teslim > g.yayinGunu || !gorevTarihiUygun(ben, teslim)) return null;
   const z = simdi();
-  const k = gorevPaketi(d, ben, { ...g, tarih: teslim }, { durum: "onaylandi", tur: "ozel", ozelId, ozelAd: o.ad, yayinGunu: g.yayinGunu, gorev: { veren: ben.id, zaman: z }, gorevZamani: z });
+  // Stok paketi değil: yayın gününün planına girer (ozelPaketleriEsitle), Stok'ta kendi kutusunda.
+  const k = gorevPaketi(d, ben, { ...g, tarih: teslim }, { durum: "onaylandi", tur: "ozel", ozelId, ozelAd: o.ad, yayinGunu: g.yayinGunu, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, stok: undefined });
   if (!k) return null;
   const [p, yeni] = k;
   let son = hareketYaz(yeni, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, ozelId, veri: { kime: p.muhabirId!, muhabir: p.muhabirId!, tarih: teslim, ad: o.ad } });
   if (g.not?.trim()) son = bahset(son, ben, g.not, { yol: `#/paketler/${p.id}`, baslik: p.baslik });
-  kaydet(son);
+  kaydet(ozelKayitlariEsitle(son));
   return p.id;
 };
 

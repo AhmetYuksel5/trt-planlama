@@ -288,6 +288,8 @@ export const MASA_KOLLARI: readonly IcerikTuru[] = ["ekonomi", "program", "spor"
  * onay ve üretim balonuyla ilerliyor; ayrı kurallar yalnız eskisine.
  */
 export const eskiOzelPaket = (p: { ozelId?: string; gorev?: unknown }) => !!p.ozelId && !p.gorev;
+/* Yeni düzenin içeriği: Stok'ta yalnız "Special Coverage" kutusunda, günün planında yayının başlığı altında. */
+export const ozelIcerikMi = (p: { ozelId?: string; gorev?: unknown }) => !!p.ozelId && !!p.gorev;
 
 export const masaPaketi = (p: { tur: IcerikTuru; ozelId?: string; gorev?: unknown; gorevTalebi?: unknown }) =>
   !p.ozelId && !p.gorev && !p.gorevTalebi && MASA_KOLLARI.includes(p.tur);

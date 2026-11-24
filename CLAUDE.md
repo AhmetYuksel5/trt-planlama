@@ -3133,6 +3133,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sistemin açılış işi bir kez canlıya çevirir (`ozelNafizeleriCevir`, kimlik
     `cy-<nafize>`, iptal edilen gelmez, aşama işaretleri izden). Liste
     `ozel.ts → ozelNafizeleri`, hazır `nafizeHazir`. Test `testler/ozel-nafize.cjs`.
+    3. adım, içerik planlarda (kullanıcı: paketler özel yayının uygulanacağı
+    günün planına, haftalıkta haftalığa eklenecek; stokta "special coverage"
+    olarak görülecek, takibi oradan da): yeni düzenin içeriği
+    (`veri.ts → ozelIcerikMi`: `ozelId` ve `gorev`) stok paketi değil; yayın
+    gününün Next Day planına yayının adıyla açılan başlığın (havuzda aynı adlı
+    varsa o, `dosyaAc`; planda kimliği `<plan>-oz-<yayın>`) altında onaylı PKG
+    olarak girer, plan açılmamışsa plansız bekler, açılınca bağlanır
+    (`eylemler.ts → ozelPaketleriEsitle`, nafizeyle birlikte
+    `ozelKayitlariEsitle`). Plandan silinmez (`paketSil` reddeder); başlık
+    altında paket varken çıkarılamıyor. Stok'ta altıncı kutucuk "Special
+    Coverage" (`#/stok/ozel`, `StokSayfasi.tsx → OzelKutusu`, kural
+    `stokSayfasi.ts → ozelStokAlani`: süren / biten): yayın yayın, Stok'un
+    kartıyla (aşama, kimde, teslim, muhabire ulaşma) ve "Üretime al" balonu;
+    Üretim, Stokta ve Arşiv'de ikinci kez yok. Weekly'de salt okunur
+    "التغطيات الخاصة" (`HaftalikBelge.tsx → HaftaOzelBolumu`; belge, çıktı,
+    toplantı ve plan ekranında `OzelYayinBolumu`): yayın yayın, gün gün LIVE
+    (nafizeler) ve PKG (içerikler); karar kalemi değil. Test
+    `testler/ozel-plan.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında aşamalar
     (Planlama, Onay, Uygulama, Son kontrol, Yayına hazır) ve işaretlenecek

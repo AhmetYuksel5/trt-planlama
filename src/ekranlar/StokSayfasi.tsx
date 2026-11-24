@@ -25,6 +25,9 @@ import {
 } from "../programMasasi";
 import {
   STOKTA_ALANLARI,
+  OZEL_STOK_ALANLARI,
+  ozelStokAlani,
+  type OzelStokAlani,
   STOK_ARSIV_ALANLARI,
   STOK_BAYAT_GUN,
   STOK_BOLUMLERI,
@@ -55,7 +58,7 @@ import {
 import { bugun, gunEkle, haftaBasi } from "../tarih";
 import { eskiOzelPaket, kisiBul, useVeri, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
-import { gorevTalebiKarariVerebilir, planIcerikDuzenler, teslimGunuBelirleyebilir, uretimeAlabilir, yapabilir } from "../yetki";
+import { gorevTalebiKarariVerebilir, planIcerikDuzenler, teslimGunuBelirleyebilir, uretimYoluBelirleyebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 import { GundemeEkle } from "./haftalik/Plan";
@@ -78,6 +81,7 @@ const BOLUM_ADI: Record<StokBolumu, Anahtar> = {
   teklifler: "skTeklifler",
   uretim: "skUretim",
   stokta: "skStokta",
+  ozel: "skOzel",
   programlar: "stAlanMasa",
   arsiv: "pmArsiv",
 };
@@ -85,6 +89,7 @@ const BOLUM_IKONU: Record<StokBolumu, ReactNode> = {
   teklifler: <Lightbulb size={20} />,
   uretim: <CirclePlay size={20} />,
   stokta: <Layers size={20} />,
+  ozel: <Tv size={20} />,
   programlar: <Clapperboard size={20} />,
   arsiv: <Archive size={20} />,
 };
@@ -131,6 +136,7 @@ export function StokSayfasi({ ben, ilk }: { ben: Kisi; ilk?: string }) {
   const stok = v.paketler.map((p) => stoktaAlani(v, p));
   const stokSayisi = stok.filter(Boolean).length;
   const planda = stok.filter((a) => a === "planda").length;
+  const ozelSuren = v.paketler.filter((p) => ozelStokAlani(p) === "suren").length;
   const masaAktif = MASA_BIRIMLERI.reduce((n, b) => n + masaIcerikleri(v, b).filter((p) => icerikDurumAlani(p) !== "arsiv").length, 0);
   const bilgi: Record<StokBolumu, { alt: string; say: number }> = {
     teklifler: {
@@ -149,6 +155,10 @@ export function StokSayfasi({ ben, ilk }: { ben: Kisi; ilk?: string }) {
       alt: t("skStoktaAlt", { n: stokSayisi, m: planda }),
       say: stokSayisi - planda,
     },
+    ozel: {
+      alt: t("skOzelAlt", { n: ozelSuren, m: new Set(v.paketler.filter((p) => ozelStokAlani(p)).map((p) => p.ozelId)).size }),
+      say: ozelSuren,
+    },
     programlar: {
       alt: t("pmIceriklerAlt", { n: masaAktif }),
       say: MASA_BIRIMLERI.reduce((n, b) => n + masaTalepleri(v, b).filter((p) => talepBekliyor(p) && gorevTalebiKarariVerebilir(ben, p)).length, 0),
@@ -165,7 +175,7 @@ export function StokSayfasi({ ben, ilk }: { ben: Kisi; ilk?: string }) {
     <>
       <SayfaBasi ikon={<Layers size={26} />} baslik={t("mStok")} sagUc={<GorevlendirDugmesi ben={ben} />} />
       <div className="prg-masa masa-planlama stok-sayfa" data-stok-sayfasi={bolum}>
-        <div className="prg-kutular kutu-5" role="tablist">
+        <div className="prg-kutular kutu-6" role="tablist">
           {STOK_BOLUMLERI.map((b) => (
             <a
               key={b}
@@ -185,6 +195,7 @@ export function StokSayfasi({ ben, ilk }: { ben: Kisi; ilk?: string }) {
         {bolum === "teklifler" && <Teklifler ben={ben} sira={sira} siraSecimi={siraSecimi} />}
         {bolum === "uretim" && <Uretim ben={ben} sira={sira} siraSecimi={siraSecimi} />}
         {bolum === "stokta" && <Stokta ben={ben} sira={sira} siraSecimi={siraSecimi} />}
+        {bolum === "ozel" && <OzelKutusu ben={ben} />}
         {bolum === "programlar" && <Programlar ben={ben} sira={sira} siraSecimi={siraSecimi} />}
         {bolum === "arsiv" && <Arsiv sira={sira} siraSecimi={siraSecimi} />}
       </div>
@@ -543,6 +554,44 @@ function Uretim({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; siraSe
         />
       </Kart>
     </>
+  );
+}
+
+/* --- Special Coverage: özel yayınların içerikleri, yayın yayın --- */
+
+/*
+ * Özel yayında görevlendirilen içerikler (kullanıcı: stokta "special coverage"
+ * olarak da görülsün, takibi buradan da yapılsın). Kart Stok'unkiyle aynı
+ * (aşama, kimde, teslim, muhabire ulaşma), "Üretime al" balonu; yayının
+ * başlığı yayının sayfasına götürür. Süren / biten.
+ */
+function OzelKutusu({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const liste = v.paketler.filter((p) => ozelStokAlani(p));
+  const [alan, setAlan] = useAdimDurumu<OzelStokAlani>("stok:ozelAlan", "suren");
+  const secili = liste.filter((p) => ozelStokAlani(p) === alan);
+  const yayinlar = v.ozel.filter((o) => secili.some((p) => p.ozelId === o.id)).sort((a, b) => b.tarih.localeCompare(a.tarih));
+  return (
+    <Kart baslik={t("skOzel")} ikon={<Tv size={18} />}>
+      <Alanlar alanlar={OZEL_STOK_ALANLARI} secili={alan} sec={setAlan} ad={(a) => (a === "suren" ? "sdUretimde" : "skOzelBiten")} sayi={(a) => liste.filter((p) => ozelStokAlani(p) === a).length} veri="stok-ozel-alan" />
+      {yayinlar.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
+      {yayinlar.map((o) => (
+        <section key={o.id} className="ara-ust-2" data-stok-ozel={o.id}>
+          <a href={`#/ozel/${o.id}`} className="alan-etiket">
+            <Tv size={14} /> <Icerik>{o.ad}</Icerik> · {o.bitis ? aralikYaz(o.tarih, o.bitis, dil) : tarihYaz(o.tarih, dil)}
+          </a>
+          <div className="prg-icerikler">
+            {secili
+              .filter((p) => p.ozelId === o.id)
+              .sort((a, b) => (a.yayinGunu ?? "").localeCompare(b.yayinGunu ?? ""))
+              .map((p) => (
+                <StokKarti key={p.id} ben={ben} p={p} ek={uretimYoluBelirleyebilir(ben, p) && p.durum === "onaylandi" && !p.uretim && <UretimeAlDugmesi ben={ben} paket={p} />} />
+              ))}
+          </div>
+        </section>
+      ))}
+    </Kart>
   );
 }
 

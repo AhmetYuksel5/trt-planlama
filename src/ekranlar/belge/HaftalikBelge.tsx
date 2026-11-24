@@ -8,10 +8,11 @@ import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import type { Baski } from "./Baski";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirUnvani, muhabirYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { vardiyaYaz } from "../../tarih";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu, onIncelemeyeGidebilir } from "../../haftalik";
-import { baslikBul, kisiBul, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
+import { baslikBul, kisiBul, ozelIcerikMi, sahaGorevi, useVeri, type AnaKonu, type HaftalikKalem, type HaftalikPlan, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir, yapabilir } from "../../yetki";
 import { KalemFormu, KararNotuFormu, KosulFormu, kalemGirdisi } from "../haftalik/Kalem";
 import { AnaKonuFormu } from "../haftalik/Plan";
@@ -304,6 +305,55 @@ function Dosyalar({ liste, hafta, duzen, tarih }: { liste: HaftalikKalem[]; haft
 }
 
 // baski: Next Day'in baskı tasarımları (belge/Baski.tsx); verilmezse kurumun düzeni.
+/*
+ * Haftaya düşen özel yayınlar (kullanıcı: özel yayın içerikleri haftalığa da
+ * eklensin). Karar kalemi değil: içerik ve nafize özel yayında görevlendirildi,
+ * toplantıda yeniden karar beklemesin. Salt okunur, kayıttan: yayın yayın, gün
+ * gün nafizeler (LIVE, "YER / konu / saat") ve içerikler (PKG, "YER / strap /
+ * muhabir"). Belge, çıktı ve toplantı görünümü aynı bölümü çizer.
+ */
+export function HaftaOzelBolumu({ bas, bit }: { bas: string; bit: string }) {
+  const v = useVeri();
+  const icerik = v.paketler.filter((p) => ozelIcerikMi(p) && p.durum !== "iptal" && !!p.yayinGunu && p.yayinGunu >= bas && p.yayinGunu <= bit);
+  const canli = v.canliYayinlar.filter((x) => x.ozelId && x.tarih >= bas && x.tarih <= bit);
+  const yayinlar = v.ozel.filter((o) => icerik.some((p) => p.ozelId === o.id) || canli.some((x) => x.ozelId === o.id)).sort((a, b) => a.tarih.localeCompare(b.tarih));
+  if (!yayinlar.length) return null;
+  return (
+    <section data-bolum="ozel" data-hafta-ozel>
+      <h2 className="kirmizi ortali">{c("hfOzelYayinlar")}</h2>
+      {yayinlar.map((o) => {
+        const gunler = [...new Set([...icerik.filter((p) => p.ozelId === o.id).map((p) => p.yayinGunu!), ...canli.filter((x) => x.ozelId === o.id).map((x) => x.tarih)])].sort();
+        return (
+          <div key={o.id} className="cikti-baslik" data-hafta-ozel-yayin={o.id}>
+            <h3>{o.ad}</h3>
+            {gunler.map((g) => {
+              const n = canli.filter((x) => x.ozelId === o.id && x.tarih === g).sort((a, b) => (a.saatGmt || "99").localeCompare(b.saatGmt || "99"));
+              const pk = icerik.filter((p) => p.ozelId === o.id && p.yayinGunu === g);
+              return (
+                <div key={g}>
+                  <h4 className="gun">{ciktiGunu(g, "ar")}</h4>
+                  {n.length > 0 && <p className="alt-baslik">LIVE</p>}
+                  {n.map((x) => (
+                    <Satir key={x.id} yer={x.yer}>
+                      {x.konu} / <b>{x.saatGmt ? vardiyaYaz(x.saatGmt) : TBC}</b>
+                    </Satir>
+                  ))}
+                  {pk.length > 0 && <p className="alt-baslik">PKG</p>}
+                  {pk.map((p) => (
+                    <Satir key={p.id} yer={paketYeri(p)}>
+                      {p.baslik} / {muhabirYeri([kisiAr(kisiBul(v, p.muhabirId))], !p.muhabirId)}
+                    </Satir>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 export function HaftalikBelgesi({
   hafta,
   duzen,
@@ -454,6 +504,7 @@ export function HaftalikBelgesi({
           <div className="nd-ana">
             {anaBolum}
             {gunlukBolum}
+            <HaftaOzelBolumu bas={bas} bit={bit} />
           </div>
           <div className="nd-yan">
             {hareketBolumu}
@@ -465,6 +516,7 @@ export function HaftalikBelgesi({
           {hareketBolumu}
           {anaBolum}
           {gunlukBolum}
+          <HaftaOzelBolumu bas={bas} bit={bit} />
           {stokBolum}
         </>
       )}
