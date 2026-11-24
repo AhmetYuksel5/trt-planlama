@@ -4570,3 +4570,11 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 
 /* Ayarlar'da yapıştırılan anahtar (JSON): eşit aralıklı, küçük. */
 .kod-alani { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; }
+
+/* Asistanın biçimli yanıtı: paragraf ve liste aralıkları balonun içinde dar. */
+.asistan-ileti.asistan { white-space: normal; }
+.asistan-metin > * { margin: 0; }
+.asistan-metin > * + * { margin-block-start: var(--ara-1); }
+.asistan-metin :is(ul, ol) { padding-inline-start: 1.3em; }
+.asistan-metin li + li { margin-block-start: 2px; }
+.asistan-metin code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em; background: var(--yuzey-3, var(--yuzey-2)); padding: 0 3px; border-radius: 3px; }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDil, type Dil } from "../dil";
 import { alanSecenekleri, gorunurMu, type Degerler, type FormAlani } from "../asistan/araclar";
 import { asistanaYaz, konusmayiTemizle, onayDegeri, useAsistan, type Gorunen } from "../asistan/motor";
+import { AsistanMetni } from "./AsistanMetni";
 import { Icerik, icerikAlani } from "./Parcalar";
 import { SaatGirdisi, TarihGirdisi } from "./TarihSaat";
 import { izlemede } from "../izleme";
@@ -115,7 +116,7 @@ export default function Asistan({ ben }: { ben: Kisi }) {
                 <OnayKarti key={i} g={g} aktif={g.durum === "bekliyor" && !!hal.bekleyen} mesgul={hal.mesgul} onayla={(evet) => void asistanaYaz("", oturum, evet)} />
               ) : (
                 <div key={i} className={`asistan-ileti ${g.tur}`} dir="auto" data-asistan-ileti={g.tur}>
-                  {g.metin}
+                  {g.tur === "asistan" ? <AsistanMetni metin={g.metin} /> : g.metin}
                 </div>
               ),
             )}

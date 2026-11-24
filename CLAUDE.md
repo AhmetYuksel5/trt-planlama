@@ -565,7 +565,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     seçenekler kayıttan, plan → başlık bağlı seçim, "+ Yeni başlık"ta ad), değerler modelin doldurduğu;
     kişi değiştirir (`onayDegeri`), "Onayla" (postada "Gönder") ya da "evet/tamam/نعم/yes" yazar ya da
     söyler, iş formun son haliyle yapılır; zorunlu alan boşsa bekler (`eksikAlanlar`), başka bir şey
-    vazgeçirir (`onayYaniti`). Ekranın düğmeyi göstermediği halde araç form açmaz, nedenini döner. Kapıda
+    vazgeçirir (`onayYaniti`). Asistanın yanıtı biçimli çizilir (kullanıcı: "**…**" yıldızlarıyla görünüyordu; `bilesenler/AsistanMetni.tsx`: kalın, eğik, kod, madde ve sıralı liste, başlık satırı; HTML enjekte edilmez). Ekranın düğmeyi göstermediği halde araç form açmaz, nedenini döner. Kapıda
     "YAZMA" açıklı araç tarayıcıda formlu tarafta olmak zorunda (kapı testi). Asistan da yapay zeka
     özelliği (`asistan`; Ayarlar › Yapay zeka'da açılır, birimler, günlük sınır yalnız kişinin kendi
     iletisinde artar). Demoda kapıya gidilmez ("gerçek kipte çalışır"); test sahte modelle

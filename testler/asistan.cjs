@@ -27,6 +27,7 @@ const SAHTE = () => {
       if (veri.planId && veri.basliklar) return arac("gelismeEkle", { planId: veri.planId, planBaslikId: veri.basliklar[0].planBaslikId, metin: "تطور تجريبي من المساعد" });
       return { icerik: [{ type: "text", text: veri.tamam ? "Eklendi: " + veri.degerler.metin : "Eklenmedi." }] };
     }
+    if (ilk.includes("biçimli")) return { icerik: [{ type: "text", text: "**Yarın** üç başlık var:\n\n- *Gazze*\n- `nd-yarin`\n\n1. bir\n2. iki" }] };
     if (ilk.includes("öneriler sayfası")) {
       if (!sonuc) return arac("sayfaAc", { yol: "#/oneriler" });
       return { icerik: [{ type: "text", text: "Açtım." }] };
@@ -183,6 +184,12 @@ const SAHTE = () => {
     } else acilmayan.push(`${ad}:${JSON.stringify(await sonSonuc())}`);
   }
   ok(acilan === DUMAN.length, `yazma araçları form açıyor (${acilan}/${DUMAN.length})${acilmayan.length ? " · " + acilmayan.join(" ") : ""}`);
+
+  // Biçimli yanıt: yıldızlar görünmez, kalın, liste ve kod çizilir.
+  await yaz("biçimli yanıt ver");
+  const son = p.locator('[data-asistan-ileti="asistan"]').last();
+  ok((await son.locator("b").first().innerText()) === "Yarın" && !(await son.innerText()).includes("*"), "kalın yazı yıldızsız");
+  ok((await son.locator("ul li").count()) === 2 && (await son.locator("ol li").count()) === 2 && (await son.locator("i").innerText()) === "Gazze" && (await son.locator("code").count()) === 1, "liste, eğik ve kod çizildi");
 
   // Gezinme.
   await yaz("öneriler sayfası");
