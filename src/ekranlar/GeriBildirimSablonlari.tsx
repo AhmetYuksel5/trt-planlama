@@ -1,4 +1,4 @@
-import { MailCheck, Pencil, Plus, Trash2 } from "lucide-react";
+import { MailCheck, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
@@ -22,7 +22,6 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
   const liste = sablonlar(v);
   const [duzenlenen, setDuzenlenen] = useState<GeriBildirimSablonu | null>(null);
   const [takdir, setTakdir] = useState<"takdir" | "ozel" | null>(null);
-  const [planGonder, setPlanGonder] = useState<PlanGonderTuru | null>(null);
   return (
     <Kart baslik={t("gbAyarBaslik")} ikon={<MailCheck size={18} />}>
       <ul className="liste" data-gb-sablonlari>
@@ -44,19 +43,6 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
             <Pencil size={15} />
           </button>
         </li>
-        {(["nextday", "haftalik"] as const).map((tur) => (
-          <li key={tur} data-gb-sablonu={`plan-gonder-${tur}`}>
-            <div className="ad">
-              <b>
-                {t("pgGonder")} · {t(tur === "nextday" ? "nextday" : "mHaftalik")}
-              </b>
-              <small>{t("pgAyarAlt")}</small>
-            </div>
-            <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setPlanGonder(tur)} title={t("duzenle")} aria-label={t("duzenle")} data-plan-gonder-duzenle={tur}>
-              <Pencil size={15} />
-            </button>
-          </li>
-        ))}
         {liste.map((s) => (
           <li key={s.id} data-gb-sablonu={s.id}>
             <div className="ad">
@@ -88,11 +74,6 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
         <Plus size={14} /> {t("gbSablonEkle")}
       </button>
       {duzenlenen && <SablonPenceresi ben={ben} sablon={duzenlenen} kapat={() => setDuzenlenen(null)} />}
-      {planGonder && (
-        <Pencere baslik={`${t("pgGonder")} · ${t(planGonder === "nextday" ? "nextday" : "mHaftalik")}`} kapat={() => setPlanGonder(null)}>
-          <PlanGonderFormu ben={ben} tur={planGonder} />
-        </Pencere>
-      )}
       {takdir && (
         <Pencere baslik={t(takdir === "ozel" ? "ozgSablonBaslik" : "tkAyarBaslik")} kapat={() => setTakdir(null)}>
           <TakdirFormu ben={ben} tur={takdir} />
@@ -225,12 +206,44 @@ export function TakdirFormu({ ben, tur }: { ben: Kisi; tur: "takdir" | "ozel" })
  * Planı gönder şablonu (planGonder.ts): onaylanan planın postasının alıcıları ve
  * konusu bir kez burada. Metin isteğe bağlı, planın üstüne girer; gövde planın kendisi.
  */
+/*
+ * Ayarlar › Planların postası (kullanıcı: planların gönderimi Ayarlar'da ayrı
+ * yerde; şablonu, göndereni, CC'si, başlığı orada). Önce "Muhabire geri
+ * bildirim" kartının içindeydi, aranınca bulunmuyordu.
+ */
+export function PlanPostasiAyarlari({ ben }: { ben: Kisi }) {
+  const { t } = useDil();
+  const [acik, setAcik] = useState<PlanGonderTuru | null>(null);
+  return (
+    <Kart baslik={t("pgAyarBaslik")} ikon={<Send size={18} />}>
+      <ul className="liste" data-plan-postasi>
+        {(["nextday", "haftalik"] as const).map((tur) => (
+          <li key={tur} data-gb-sablonu={`plan-gonder-${tur}`}>
+            <div className="ad">
+              <b>{t(tur === "nextday" ? "nextday" : "mHaftalik")}</b>
+              <small>{t("pgAyarAlt")}</small>
+            </div>
+            <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setAcik(tur)} title={t("duzenle")} aria-label={t("duzenle")} data-plan-gonder-duzenle={tur}>
+              <Pencil size={15} />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {acik && (
+        <Pencere baslik={`${t("pgGonder")} · ${t(acik === "nextday" ? "nextday" : "mHaftalik")}`} kapat={() => setAcik(null)}>
+          <PlanGonderFormu ben={ben} tur={acik} />
+        </Pencere>
+      )}
+    </Kart>
+  );
+}
+
 function PlanGonderFormu({ ben, tur }: { ben: Kisi; tur: PlanGonderTuru }) {
   const { t } = useDil();
   const v = useVeri();
   const kayitli = planGonderSablonu(v, tur);
   const [s, setS] = useState(kayitli);
-  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || (s.kime ?? "") !== (kayitli.kime ?? "") || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
+  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || (s.kime ?? "") !== (kayitli.kime ?? "") || (s.gonderen ?? "") !== (kayitli.gonderen ?? "") || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
   const kaydet = (x = s) => {
     if (planGonderSablonuKaydet(ben, tur, x)) {
       setS(x);
@@ -239,6 +252,10 @@ function PlanGonderFormu({ ben, tur }: { ben: Kisi; tur: PlanGonderTuru }) {
   };
   return (
     <div className="form" data-plan-gonder-sablonu={tur}>
+      <label>
+        {t("pgGonderen")}
+        <input dir="ltr" value={s.gonderen ?? ""} onChange={(e) => setS({ ...s, gonderen: e.target.value })} placeholder={t("pgKendiHesabim")} data-pg-sablon-gonderen />
+      </label>
       <label>
         {t("postaKime")}
         <input dir="ltr" value={s.kime ?? ""} onChange={(e) => setS({ ...s, kime: e.target.value })} placeholder={t("pgGrupKime")} data-pg-sablon-kime />

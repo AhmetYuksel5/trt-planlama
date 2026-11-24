@@ -2039,9 +2039,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   özniteliği, url() atılır; önce kapı tarayıcıdan HTML hiç almıyordu); grup yine
   CC'de, Kime boşsa grup Kime'ye. Gönderilince planda `gonderildi` (zaman, kişi;
   `eylemler.ts → planGonderildi`), zarf yeşil, saati ipucunda; yeniden gönderim
-  sorulur. Demoda posta gitmez, yalnız iz. Şablonlar Ayarlar › "Muhabire geri
-  bildirim" kartında "Planı gönder · Next Day / Weekly" satırları
-  (`PlanGonderFormu`): geri bildirim koleksiyonunda sabit kimlikle
+  sorulur. Demoda posta gitmez, yalnız iz. Şablonlar Ayarlar › "Planların postası"
+  kartında (`GeriBildirimSablonlari.tsx → PlanPostasiAyarlari`, `data-plan-postasi`;
+  kullanıcı: önce "Muhabire geri bildirim" kartının içindeydi, bulunmuyordu)
+  Next Day ve Weekly satırları (`PlanGonderFormu`): Gönderen (`GeriBildirimSablonu.gonderen`;
+  boşsa gönderenin kendi hesabı, doluysa posta o adresin adına gider: kapı EWS
+  `From` yazar, `ews.ts → createItemIstegi`; Exchange "farklı gönder" yetkisini
+  sorar, yoksa `gonderenYetki` ve açık bildirim `pgGonderenYetki`), Kime, CC, BCC,
+  konu, metin; geri bildirim koleksiyonunda sabit kimlikle
   (`plan-gonder-nd`, `plan-gonder-hf`; `geriBildirim.ts → SABIT_SABLONLAR`, PKG
   geri bildirimiyle aynı yol), `GeriBildirimSablonu.kime`, yer tutucular {tarih}
   {gun} ve {aralik}; varsayılan konu "الأجندة الإخبارية - {tarih}" ve "الأجندة

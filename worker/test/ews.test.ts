@@ -458,3 +458,10 @@ test("guvenliHtml: biçim kalır, betik, olay, bağlantı ve url() atılır", as
   assert.ok(!/script|onclick|onerror|javascript|<a|<img|url\(|yorum/.test(x), x);
   assert.ok(x.includes("bag") && x.includes("<p>نص</p>"), x);
 });
+
+test("planı gönder: gönderen adres alıcılardan sonra From'da, yoksa hiç yazılmaz", () => {
+  const x = createItemIstegi({ kime: ["a@ornek.local"], bcc: ["b@ornek.local"], konu: "k", metin: "m", gonderen: "grup@ornek.local" });
+  assert.ok(x.includes("<t:From><t:Mailbox><t:EmailAddress>grup@ornek.local</t:EmailAddress></t:Mailbox></t:From>"));
+  assert.ok(x.indexOf("<t:BccRecipients>") < x.indexOf("<t:From>"));
+  assert.ok(!createItemIstegi({ kime: ["a@ornek.local"], konu: "k", metin: "m" }).includes("<t:From>"));
+});

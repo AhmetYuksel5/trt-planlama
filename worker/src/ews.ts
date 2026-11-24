@@ -129,6 +129,11 @@ export interface GidenPosta {
    * programında çağrının altına düşsün (In-Reply-To, References).
    */
   yanitlanan?: string;
+  /*
+   * Gönderen adres (planı gönder: planlama grubunun adına); boşsa kişinin kendi
+   * hesabı. Exchange kişinin o kutuda "farklı gönder" yetkisini sorar, yoksa reddeder.
+   */
+  gonderen?: string;
 }
 
 /*
@@ -219,6 +224,8 @@ export const createItemIstegi = (g: GidenPosta): string => {
       liste("ToRecipients", g.kime) +
       liste("CcRecipients", g.cc) +
       liste("BccRecipients", g.bcc) +
+      // Şema sırası: From alıcılardan sonra, References'tan önce.
+      (g.gonderen ? `<t:From><t:Mailbox><t:EmailAddress>${kacXml(g.gonderen)}</t:EmailAddress></t:Mailbox></t:From>` : "") +
       (g.yanitlanan ? `<t:References>${kacXml(g.yanitlanan)}</t:References>` : "") +
       `</t:Message></m:Items></m:CreateItem>`,
   );

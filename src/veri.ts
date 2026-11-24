@@ -715,6 +715,8 @@ export interface GeriBildirimSablonu {
   govde: string;
   /** Yalnız "planı gönder" şablonunda (planGonder.ts): planın gideceği adresler. */
   kime?: string;
+  /** Yalnız "planı gönder"de: posta bu adresin adına gider (boşsa gönderenin kendi hesabı). */
+  gonderen?: string;
   cc: string;
   bcc: string;
 }

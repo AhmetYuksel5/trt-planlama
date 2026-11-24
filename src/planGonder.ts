@@ -32,6 +32,8 @@ export const planGonderDoldur = (sablonMetni: string, tur: PlanGonderTuru, tarih
 };
 
 export interface PlanPostasi {
+  /** Boşsa gönderenin kendi hesabı. */
+  gonderen: string;
   kime: string[];
   cc: string[];
   bcc: string[];
@@ -41,6 +43,7 @@ export interface PlanPostasi {
 export const planPostasi = (d: Pick<Durum, "geriBildirimSablonlari">, tur: PlanGonderTuru, tarih: string): PlanPostasi => {
   const s = planGonderSablonu(d, tur);
   return {
+    gonderen: adresler(s.gonderen ?? "")[0] ?? "",
     kime: adresler(s.kime ?? ""),
     cc: adresler(s.cc),
     bcc: adresler(s.bcc),

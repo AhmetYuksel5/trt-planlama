@@ -532,9 +532,12 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
-    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown } | null;
+    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown; gonderen?: unknown } | null;
     const kimeL = adresListesi(g?.kime), ccL = adresListesi(g?.cc), bccL = adresListesi(g?.bcc);
     if (!kimeL || !ccL || !bccL) return yanit({ hata: "kime" }, 400);
+    const gonderenL = typeof g?.gonderen === "string" && g.gonderen.trim() ? adresListesi([g.gonderen.trim()]) : [];
+    if (!gonderenL || gonderenL.length > 1) return yanit({ hata: "gonderen" }, 400);
+    const gonderen = gonderenL[0];
     const grup = pk.grupAdresi;
     const kime = kimeL.length ? kimeL : grup ? [grup] : [];
     if (!kime.length) return yanit({ hata: "kime" }, 400);
@@ -552,8 +555,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const yanitlanan = mesajKimligiGecerli(g?.yanitlanan) ? g.yanitlanan : undefined;
     // Biçimli gövde (planı gönder): yalnız süzgeçten geçmiş biçim etiketleri (ews.ts → guvenliHtml).
     const html = typeof g?.html === "string" && g.html.trim() ? guvenliHtml(g.html) : undefined;
-    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }) });
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }), ...(gonderen && { gonderen }) });
     // Gerçekten kime gittiğini döndür: ekrandaki "→ kime · CC" satırı bundan.
+    if ("hata" in r && gonderen && /SendAs|SendOnBehalf/i.test(r.hata)) return yanit({ hata: "gonderenYetki", ayrinti: gonderen }, 403);
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });
   }
 

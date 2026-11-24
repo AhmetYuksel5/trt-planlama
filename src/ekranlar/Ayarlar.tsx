@@ -9,7 +9,7 @@ import { GERCEK, firebaseYukle } from "../kip";
 import { kisiCalismaGunleri, sayimBaslangiciKaydet } from "../eylemler";
 import { sifirla, useVeri, type Kisi } from "../veri";
 import { geriBildirimSablonuDuzenler, kayitTemizleyebilir, postaGorebilir, yapabilir } from "../yetki";
-import { GeriBildirimAyarlari } from "./GeriBildirimSablonlari";
+import { GeriBildirimAyarlari, PlanPostasiAyarlari } from "./GeriBildirimSablonlari";
 import { KayitTemizligi } from "./KayitTemizligi";
 import { KayitYedegi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
@@ -52,6 +52,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         <SesAyari />
         {ben.hesapYoneticisi && <IsAkisiAyari />}
         {ben.hesapYoneticisi && <GunNotuAyari ben={ben} />}
+        {geriBildirimSablonuDuzenler(ben) && <PlanPostasiAyarlari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {ben.hesapYoneticisi && <PostaAyari />}

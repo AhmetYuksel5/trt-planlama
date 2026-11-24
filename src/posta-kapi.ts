@@ -50,7 +50,7 @@ export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/pos
  * Yeni posta ve yanıt (kapı EWS CreateItem ile). Grup adresini kapı her zaman
  * CC'ye ekler; dönen kime/cc gerçekten gönderilen liste ("kim kime yazdı").
  */
-export const postaGonder = (g: { kime: string[]; cc?: string[]; bcc?: string[]; konu: string; metin: string; baslik?: string; yanitlanan?: string; html?: string }) =>
+export const postaGonder = (g: { kime: string[]; gonderen?: string; cc?: string[]; bcc?: string[]; konu: string; metin: string; baslik?: string; yanitlanan?: string; html?: string }) =>
   kapiIstek<{ tamam: boolean; kime: string[]; cc: string[]; bcc: string[] }>("/posta/gonder", "POST", g);
 
 /* Rota tablosu (worker/src/rota.ts): ayar tam yöneticide, günün satırlarını Next Day'i hazırlayan okur. */

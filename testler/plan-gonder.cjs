@@ -21,8 +21,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Ayarlar: Next Day şablonu.
   await git("#/ayarlar");
   await p.locator("details:has([data-gb-sablonlari]) > summary").click();
-  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu^="plan-gonder"]):not([data-gb-sablonu="ozel-gorev"])').count()) === 3, "geri bildirim listesi karışmadı");
+  ok((await p.locator('[data-gb-sablonlari] [data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu="ozel-gorev"])').count()) === 3, "geri bildirim listesi karışmadı");
+  ok((await p.locator("[data-gb-sablonlari] [data-plan-gonder-duzenle]").count()) === 0, "planların postası geri bildirim kartında değil");
+  await p.locator("details:has([data-plan-postasi]) > summary").click();
   await p.locator('[data-plan-gonder-duzenle="nextday"]').click();
+  await p.locator("[data-pg-sablon-gonderen]").fill("planlama@ornek.local");
   await p.locator("[data-pg-sablon-kime]").fill("haber@ornek.local");
   await p.locator("[data-pg-sablon-cc]").fill("mudur@ornek.local, editor@ornek.local");
   await p.locator("[data-pg-sablon-konu]").fill("خطة الغد - {tarih}");
@@ -31,7 +34,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(300);
   let d = await veri();
   const s = d.geriBildirimSablonlari.find((x) => x.id === "plan-gonder-nd");
-  ok(s && s.kime === "haber@ornek.local" && s.konu === "خطة الغد - {tarih}", "şablon kaydedildi");
+  ok(s && s.kime === "haber@ornek.local" && s.gonderen === "planlama@ornek.local" && s.konu === "خطة الغد - {tarih}", "şablon kaydedildi");
   ok(d.geriBildirimSablonlari.filter((x) => !["plan-gonder-nd", "plan-gonder-hf", "takdir-bildirimi"].includes(x.id)).length >= 3, "geri bildirim şablonları duruyor");
 
   // Planı onayla (kayıtta) ve gönder.
@@ -50,6 +53,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/nextday/nd-yarin");
   await p.locator("[data-plan-gonder]").click();
   const pen = p.locator("[data-plan-gonder-penceresi]");
+  ok((await pen.locator("[data-pg-gonderen]").getAttribute("data-pg-gonderen")) === "planlama@ornek.local", "Gönderen şablondan");
   ok((await pen.locator("[data-pg-kime]").getAttribute("data-pg-kime")) === "haber@ornek.local", "Kime şablondan");
   ok((await pen.locator("[data-pg-cc]").getAttribute("data-pg-cc")) === "mudur@ornek.local,editor@ornek.local", "CC şablondan");
   const konu = await pen.locator("[data-pg-konu]").inputValue();

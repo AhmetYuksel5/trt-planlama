@@ -50,8 +50,9 @@ function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; k
     const html = govdeliHtml(p.govde, epostaHtml(belge.current.innerHTML));
     const metin = [p.govde, belge.current.innerText].filter((x) => x.trim()).join("\n\n");
     setGidiyor(true);
-    const r = GERCEK ? await postaGonder({ kime: p.kime, cc: p.cc, bcc: p.bcc, konu: p.konu.trim(), metin, html }) : { tamam: true as const };
+    const r = GERCEK ? await postaGonder({ kime: p.kime, ...(p.gonderen ? { gonderen: p.gonderen } : {}), cc: p.cc, bcc: p.bcc, konu: p.konu.trim(), metin, html }) : { tamam: true as const };
     setGidiyor(false);
+    if ("hata" in r && r.hata === "gonderenYetki") return bildir(t("pgGonderenYetki", { adres: p.gonderen }));
     if ("hata" in r) return bildir(r.hata === "eksikKimlik" ? t("bPostaCekKimlikYok") : r.hata === "kapali" ? t("bPostaCekKapali") : kapiHatasi(r, t("bPostaGonderHata")));
     planGonderildi(ben, hedef.tur, hedef.plan.id);
     bildir(t("pgGitti"));
@@ -79,6 +80,7 @@ function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; k
       }
     >
       <div className="form" data-plan-gonder-penceresi>
+        {satir(t("pgGonderen"), p.gonderen ? [p.gonderen] : [], "data-pg-gonderen", t("pgKendiHesabim"))}
         {satir(t("postaKime"), p.kime, "data-pg-kime", t("pgGrupKime"))}
         {p.cc.length > 0 && satir(t("gbCc"), p.cc, "data-pg-cc")}
         {p.bcc.length > 0 && satir(t("gbBcc"), p.bcc, "data-pg-bcc")}
