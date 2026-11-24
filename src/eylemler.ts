@@ -6900,6 +6900,39 @@ export const ozelIcerikGorevlendir = (ben: Kisi, ozelId: string, g: OzelIcerikGi
 };
 
 /*
+ * Plansız görev paketini özel yayının içeriğine al (kullanıcı: asistan yayın
+ * için görevlendirdiği paketleri plansız görev olarak açtı, yayının İçerik
+ * sekmesinde görünmüyordu). Paket yeniden açılmaz, muhabir ve görev aynı kalır:
+ * yayına bağlanır, stoktan çıkar, yayın gününün planına girer; teslim yayının
+ * son gününden sonraysa ona çekilir. Başka planın hazırında, masanın takibinde
+ * ya da planda duran paket bağlanmaz.
+ */
+export const ozeleBaglanabilir = (ben: Kisi, p: Paket, d: Durum) =>
+  ileriGorevVerebilir(ben) &&
+  !!p.gorev &&
+  !p.ozelId &&
+  !p.planId &&
+  !p.masaTakibi &&
+  !!p.muhabirId &&
+  (p.durum === "onaylandi" || p.durum === "uretimde") &&
+  !d.planlar.some((x) => x.hazirPaketler.includes(p.id));
+
+export const paketiOzeleBagla = (ben: Kisi, paketId: string, ozelId: string, yayinGunu?: string): boolean => {
+  const d = getir();
+  const o = ozelBul(d, ozelId);
+  const p = d.paketler.find((x) => x.id === paketId);
+  if (!o || !p || !ozeleBaglanabilir(ben, p, d) || (yayinGunu && !ozelIcerikGunuUygun(o, yayinGunu))) return false;
+  const sonGun = yayinGunu || o.bitis || o.tarih;
+  const teslim = !p.sonTarih || p.sonTarih > sonGun ? sonGun : p.sonTarih;
+  const { stok: _stok, ...kalan } = p;
+  const yeniP: Paket = { ...kalan, tur: "ozel", ozelId: o.id, ozelAd: o.ad, yayinGunu: yayinGunu || undefined, sonTarih: teslim, guncelleme: simdi() };
+  let yeni: Durum = { ...d, paketler: d.paketler.map((x) => (x.id === p.id ? yeniP : x)) };
+  yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketTeslimGunu", paketId: p.id, ozelId: o.id, veri: { kime: p.muhabirId!, yayin: "1", bag: "1", ...(yayinGunu ? { tarih: yayinGunu } : {}), ad: o.ad } });
+  kaydet(ozelKayitlariEsitle(yeni));
+  return true;
+};
+
+/*
  * Yayın gününü sonradan belirle ya da değiştir (boş: TBC). İçerik yeni
  * gününün planına geçer, TBC'de plandan çıkar; teslim yeni günden sonraysa
  * yayın gününe çekilir. Muhabire gün bildirimi.

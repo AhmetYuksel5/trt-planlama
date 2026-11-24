@@ -65,7 +65,7 @@ Kişi ─► Asistan paneli (bilesenler/Asistan.tsx)
 
 Okuma araçları (sorulmaz): `ara`, `sayfaAc`, `onerileriListele`, `oneriAyrintisi`,
 `planOzeti` (başlıklar, gelişmeler, muhabirler, PKG'ler, canlılar, kimlikleriyle; açık
-planlar), `haftalikOzeti`, `paketleriListele`, `paketAyrintisi`, `kisileriListele`
+planlar), `haftalikOzeti`, `paketleriListele`, `paketAyrintisi`, `ozelYayinlariListele`, `kisileriListele`
 (telefon ve e-posta yok), `takvimListele`, `isleriListele`, `hareketleriListele`.
 
 Yazma araçları (onay kartı; her biri ekranın eylemiyle, kişinin yetkisiyle):
@@ -75,6 +75,7 @@ Yazma araçları (onay kartı; her biri ekranın eylemiyle, kişinin yetkisiyle)
 | Öneriler | `oneriGir` (muhabir adına), `oneriPlanaEkle`, `oneriGundemeEkle`, `oneriReddet`, `oneriDegerlendirmeyeAl`, `oneriDuzeltmeIste`, `oneriTakibeAl`, `oneriPlandanCikar`, `oneriArsiveGonder`, `oneriMesajiGonder`, `muhabireOneriGonder`, `oneriMasayaSor`, `oneriGorevlendir` |
 | Next Day | `planBaslikEkle`, `planBaslikCikar`, `gelismeEkle`, `gelismeDuzenle`, `gelismeSil`, `basligaMuhabirEkle`, `basliktanMuhabirCikar`, `paketEkle`, `paketKarari` (kabul, ret, plandan kaldır, sil), `canliEkle`, `canliSil`, `planAkisi` (toplantıya, taslağa, onay), `hareketKaydet`, `hareketSil`, `toplantiNotuEkle` |
 | Weekly | `haftalikPlanAc`, `kalemEkle`, `kalemKarar`, `haftalikAkisi` (toplantıya, hazırlığa, kesinleştir) |
+| Özel yayın | `ozelIcerikGorevlendir` (yayının İçerik'i; özel yayın için `paketGorevVer` değil), `paketiOzeleBagla` (plansız açılmış görevi yayına alır) |
 | Paketler | `paketGorevVer`, `paketTeslimGunu`, `paketSonucuKarari`, `paketNotu`, `paketMetniDuzenle` |
 | Diğer | `isVer`, `isDurumu`, `faaliyetEkle`, `postaGonder` (kişinin EWS kimliğiyle; giden balon Posta'ya) |
 

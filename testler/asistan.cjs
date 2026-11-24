@@ -129,6 +129,15 @@ const SAHTE = () => {
   ok(is && is.kisiler.length === 2, "iş seçilen iki kişiye verildi");
 
   // Duman: her yazma aracı form açıyor (ya da kaydı bulamayınca hata döndürüyor, sayfa çökmüyor).
+  await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const t = new Date();
+    t.setDate(t.getDate() + 2);
+    d.ozel.push({ id: "oz-asistan", ad: "تغطية", tarih: t.toLocaleDateString("sv"), hazirlik: [], iz: [] });
+    localStorage.setItem(k, JSON.stringify(d));
+    // İz değişmezse sayfa kaydı yeniden okumaz (getir).
+    localStorage.setItem(k + "-iz", String(Date.now()));
+  }, K);
   const d5 = await durum();
   const plan = d5.planlar.find((x) => x.durum !== "devralindi" && x.basliklar.length) ?? d5.planlar[0];
   const pb = plan.basliklar[0];
@@ -138,6 +147,8 @@ const SAHTE = () => {
   const kalem = hf?.kalemler[0];
   const muh = d5.kisiler.find((k) => k.birim === "muhabir" && !k.pasif);
   const o5 = d5.oneriler.find((o) => ["yeni", "degerlendiriliyor"].includes(o.durum) && o.muhabirId);
+  const oz = d5.ozel.find((o) => (o.bitis || o.tarih) >= new Date().toLocaleDateString("sv"));
+  const gp = d5.paketler.find((x) => x.gorev && !x.ozelId && !x.planId && !x.masaTakibi && x.muhabirId && ["onaylandi", "uretimde"].includes(x.durum) && !d5.planlar.some((pl) => pl.hazirPaketler.includes(x.id)));
   const DUMAN = [
     ["oneriGir", { muhabirId: muh.id, haberBasligi: "عنوان" }],
     ["oneriGundemeEkle", { oneriId: o5.id }],
@@ -167,6 +178,8 @@ const SAHTE = () => {
     ["kalemKarar", { haftaId: hf?.id, kalemId: kalem?.id }],
     ["haftalikAkisi", { haftaId: hf?.id }],
     ["paketGorevVer", { muhabirId: muh.id }],
+    ["ozelIcerikGorevlendir", { ozelId: oz?.id, muhabirId: muh.id }],
+    ...(gp ? [["paketiOzeleBagla", { paketId: gp.id, ozelId: oz?.id }]] : []),
     ["paketTeslimGunu", { paketId: pk?.id }],
     ["paketNotu", { paketId: pk?.id }],
     ["paketMetniDuzenle", { paketId: pk?.id }],

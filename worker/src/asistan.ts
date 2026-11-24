@@ -47,6 +47,7 @@ export const ARACLAR: AracTanimi[] = [
   oku("planOzeti", "Bir günün Next Day planı: durum, ekip, başlıklar (kimlik, ad), her başlığın gelişmeleri, muhabirleri, PKG'leri ve canlıları. tarih ya da planId; ikisi de yoksa yarının planı. Açık planların listesini de verir.", { tarih: tarih(), planId: PID }),
   oku("haftalikOzeti", "Weekly: tarih o haftanın herhangi bir günü (Cumartesi başlar); yoksa planlanan hafta. Kalemler (kimlik, gün, dosya, metin, karar, muhabir), ana dosyalar, durum.", { tarih: tarih(), haftaId: HID }),
   oku("paketleriListele", "Haber paketleri. sekme: 'karar' (karar bekleyen), 'gorevli' (görevlendirilmiş, varsayılan), 'arsiv'. muhabirId ile süzülür.", { sekme: e(["karar", "gorevli", "arsiv"]), muhabirId: MUH }),
+  oku("ozelYayinlariListele", "Özel yayınlar (yayının kimliği, adı, günleri) ve her birinin içerikleri. Bir yayına içerik görevlendirmeden önce kimliği buradan.", {}),
   oku("paketAyrintisi", "Bir paketin Strap'i, açıklaması, durumu, muhabiri, planı, teslim günü, sonucu ve notları.", { paketId: PKID }, ["paketId"]),
   oku("kisileriListele", "Kişiler: tur 'muhabir' (dış ve iç muhabirler), 'personel' ya da 'hepsi'; sorgu adla süzer. Kimlik, ad, birim, ünvan, şehir, bugünkü durumu (görevde, izinde, sahada).", { tur: e(["muhabir", "personel", "hepsi"]), sorgu: m("Ad parçası") }),
   oku("takvimListele", "Planlama takvimindeki faaliyetler (seçim, zirve, ziyaret…). Varsayılan bugünden 14 gün.", { baslangic: tarih(), bitis: tarih() }),
@@ -92,7 +93,9 @@ export const ARACLAR: AracTanimi[] = [
   yaz("haftalikAkisi", "Weekly'nin aşaması: 'toplantiya', 'hazirliga', 'kesinlestir'.", { haftaId: HID, adim: e(["toplantiya", "hazirliga", "kesinlestir"]) }, ["haftaId"]),
 
   /* --- Paketler --- */
-  yaz("paketGorevVer", "Plana eklemeden muhabire paket görevi verir.", { muhabirId: MUH, baslik: m("Strap, Arapça"), aciklama: m("Açıklama"), bicim: BICIM, tarih: tarih("Görevin günü"), not: m("Not") }),
+  yaz("paketGorevVer", "Plana eklemeden muhabire paket görevi verir. Özel yayın içeriği için değil (ozelIcerikGorevlendir).", { muhabirId: MUH, baslik: m("Strap, Arapça"), aciklama: m("Açıklama"), bicim: BICIM, tarih: tarih("Görevin günü"), not: m("Not") }),
+  yaz("ozelIcerikGorevlendir", "Özel yayına içerik görevlendirir: paket yayının İçerik sekmesine ve yayın gününün planına girer. Özel yayın için paketGorevVer değil bu kullanılır; her muhabir için ayrı çağrı.", { ozelId: m("Özel yayının kimliği (ozelYayinlariListele)"), muhabirId: MUH, baslik: m("Strap, Arapça"), aciklama: m("Açıklama"), yayinGunu: tarih("Yayın günü, yayının günlerinden; boşsa TBC"), teslim: tarih("Teslim günü, yayın gününden sonra değil"), bicim: BICIM, not: m("Not") }, ["ozelId"]),
+  yaz("paketiOzeleBagla", "Plansız açılmış görev paketini özel yayının içeriğine alır (yanlışlıkla paketGorevVer ile açılmışsa). Paket yeniden açılmaz.", { paketId: PKID, ozelId: m("Özel yayının kimliği"), yayinGunu: tarih("Yayın günü; boşsa TBC") }, ["paketId", "ozelId"]),
   yaz("paketTeslimGunu", "Plansız paketin teslim gününü belirler.", { paketId: PKID, tarih: tarih() }, ["paketId"]),
   yaz("paketSonucuKarari", "Muhabirin 'Yapıldı / Yapılmadı' işaretini onaylar ya da geri çevirir.", { paketId: PKID, onay: { type: "boolean" } }, ["paketId"]),
   yaz("paketNotu", "Pakete not ekler.", { paketId: PKID, metin: m("Not") }, ["paketId"]),

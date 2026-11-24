@@ -167,6 +167,7 @@ const sablonSec = (h: Hareket): Anahtar => {
   if (h.tip === "paketIsaretOnaylandi" && h.veri?.tur === "yapilmadi") return "hrPaketYapilmadiOnay";
   if (h.tip === "ozelAsama" && h.veri?.asama === "hazir") return "hrOzelHazir";
   // Özel yayın içeriğinin yayın günü (boşsa TBC) teslimden ayrı.
+  if (h.tip === "paketTeslimGunu" && h.veri?.bag) return "hrOzeleBaglandi";
   if (h.tip === "paketTeslimGunu" && h.veri?.yayin) return h.veri.tarih ? "hrOzelYayinGunu" : "hrOzelYayinGunuTbc";
   if (h.tip === "paketTeslimGunu" && h.veri?.kaynak) return "hrPaketTeslimGunuDegisti";
   return SABLON[h.tip];

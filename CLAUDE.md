@@ -3167,7 +3167,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `SABIT_SABLONLAR`). Eski düzenin paketi (öneri → onay → görevlendirildi →
     kendi teslimi) `veri.ts → eskiOzelPaket` (`ozelId` var, `gorev` yok): ayrı
     kurallar yalnız ona; yeni paket öbür paketlerin kurallarıyla. Eski "Paket
-    talebi" düğmesi kalktı, var olan öneriler düzenlenir. Test
+    talebi" düğmesi kalktı, var olan öneriler düzenlenir. Plansız açılmış
+    görev (kullanıcı: asistan yayın için plansız paket görevi açmıştı, İçerik'te
+    görünmüyordu) İçerik sekmesindeki "Var olan görevi bağla · n"
+    (`data-ozel-gorev-bagla`) ile yeniden açılmadan yayına alınır
+    (`eylemler.ts → paketiOzeleBagla`, `ozeleBaglanabilir`: ileri görev veren;
+    plansız, görevli, masa takibinde ve hazırda değil): stoktan çıkar, yayın günü
+    seçilen gün ya da TBC, teslim yayının son gününe çekilir, hareket
+    `paketTeslimGunu` (`veri.bag`, `hrOzeleBaglandi`). Asistanda
+    `ozelYayinlariListele`, `ozelIcerikGorevlendir`, `paketiOzeleBagla`. Test
     `testler/ozel-icerik.cjs`.
     2. adım, nafize canlı yayın (kullanıcı: nafize canlı etkinlik biçiminde,
     saati sistemin öbür unsurlarıyla eş zamanlı; günün planına canlı eklemek

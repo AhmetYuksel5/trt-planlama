@@ -42,6 +42,10 @@ import {
   planMuhabirGuncelle,
   postaGidenEkle,
   toplantiNotuEkle,
+  ozelIcerikGorevlendir,
+  ozelIcerikGunuUygun,
+  ozeleBaglanabilir,
+  paketiOzeleBagla,
 } from "../eylemler";
 import { kayitAra } from "../arama";
 import { BICIM_ADI, HAREKET_TURU_ADI, IS_DURUM_ADI, KANAL_ADI, KARAR_ADI, KISI_DURUM_ADI, PAKET_DURUM_ADI, PLAN_DURUM_ADI, TUR_ADI, faaliyetTuruAdi, kisiAr, oncelikAdi, sehirAdi, sehirUlkesi } from "../etiketler";
@@ -82,7 +86,8 @@ import {
   type Oncelik,
 } from "../veri";
 import { birimAdi, disMuhabirMi, gorevAdi, icMuhabirMi } from "../yapi";
-import { isAlabilir, kisitliKisi, oneriGorebilir, paketGorebilir, planIcerikDuzenler, yapabilir } from "../yetki";
+import { ileriGorevVerebilir, isAlabilir, kisitliKisi, oneriGorebilir, paketGorebilir, sayfaGorebilir, planIcerikDuzenler, yapabilir } from "../yetki";
+import { ozelIcerikleri } from "../ozel";
 
 /*
  * Asistanın araç yürütücüleri (belgeler/asistan.md). Adlar kapıdaki listeyle aynı
@@ -185,6 +190,19 @@ const adlaBaslik = (d: Durum, ad: string) => {
   const a = ad.trim();
   return a ? d.basliklar.find((b) => b.ad.trim() === a)?.id : undefined;
 };
+
+/* Özel yayınlar: günü geçmemiş olanlar; yayın günü seçimi yayının günleri ve TBC. */
+const ozelGunleri = (o: { tarih: string; bitis?: string }) => {
+  const l: string[] = [];
+  for (let t = o.tarih; t <= (o.bitis || o.tarih) && l.length < 60; t = gunEkle(t, 1)) l.push(t);
+  return l;
+};
+const ozelSecenekleri = (d: Durum): Secenek[] =>
+  d.ozel
+    .filter((o) => (o.bitis || o.tarih) >= bugun())
+    .sort((a, b) => a.tarih.localeCompare(b.tarih))
+    .map((o) => ({ deger: o.id, ad: `${o.ad} · ${o.tarih}${o.bitis ? ` – ${o.bitis}` : ""}` }));
+const ozelGunHaritasi = (d: Durum) => Object.fromEntries(d.ozel.map((o) => [o.id, [{ deger: "", ad: "TBC" }, ...ozelGunleri(o).map((t) => ({ deger: t, ad: t }))]]));
 
 /* Ortak alanlar */
 const A = {
@@ -334,6 +352,22 @@ const OKUMA: Record<string, Yurutucu> = {
       .slice(0, 40)
       .map((p) => ({ paketId: p.id, kod: p.kod, strap: p.baslik, durum: p.durum, muhabir: kisiAr(kisiBul(d, p.muhabirId)), plan: planBul(d, p.planId)?.tarih ?? "", teslim: p.sonTarih ?? "" }));
     return { sonuc: { sekme, sayi: liste.length, paketler: liste } };
+  },
+
+  ozelYayinlariListele: (_g, { ben }) => {
+    const d = getir();
+    if (!sayfaGorebilir(ben, "ozel")) return hata("yetkiYok");
+    const liste = d.ozel
+      .filter((o) => (o.bitis || o.tarih) >= gunEkle(bugun(), -30))
+      .sort((a, b) => a.tarih.localeCompare(b.tarih))
+      .slice(0, 20)
+      .map((o) => ({
+        ozelId: o.id,
+        ad: o.ad,
+        gunler: ozelGunleri(o),
+        icerikler: ozelIcerikleri(d, o.id).map((p) => ({ paketId: p.id, strap: p.baslik, muhabir: kisiAr(kisiBul(d, p.muhabirId)), yayinGunu: p.yayinGunu ?? "TBC", teslim: p.sonTarih ?? "", durum: p.durum })),
+      }));
+    return { sonuc: { sayi: liste.length, yayinlar: liste } };
   },
 
   paketAyrintisi: (g, { ben, dil }) => {
@@ -1025,6 +1059,54 @@ const YAZMA: Record<string, Yurutucu> = {
         const id = paketGorevVer(ben, { muhabirId: vs(v, "muhabirId"), baslik: vs(v, "baslik"), aciklama: vs(v, "aciklama"), bicim: vs(v, "bicim") as Bicim, tarih: vs(v, "tarih"), ...(vs(v, "not") ? { not: vs(v, "not") } : {}) });
         return tamam(id, { paketId: id });
       },
+    });
+  },
+
+  /* Özel yayın içeriği (ekrandaki "Görevlendir"): yayın günü yayının günlerinden ya da TBC. */
+  ozelIcerikGorevlendir: (g, { ben, dil }) => {
+    const d = getir();
+    if (!ileriGorevVerebilir(ben)) return hata("yetkiYok");
+    const yayinlar = ozelSecenekleri(d);
+    if (!yayinlar.length) return hata("bulunamadi");
+    const muhabirler = muhabirSecenekleri(d, dil);
+    const ozelId = icinde(s(g.ozelId, 100), yayinlar);
+    const o = d.ozel.find((x) => x.id === ozelId);
+    const yg = gun(g.yayinGunu);
+    return form({
+      baslik: "asTOzelIcerik",
+      alanlar: [
+        A.secim("ozelId", "asAOzelYayin", yayinlar),
+        A.muhabir(muhabirler),
+        A.icerik("baslik", "asAStrap", true),
+        A.icerik("aciklama", "asAAciklama", false, true),
+        { ad: "yayinGunu", etiket: "asAYayinGunu", tur: "secim", bagli: { alan: "ozelId", harita: ozelGunHaritasi(d) } },
+        A.tarih("teslim", "asATeslim"),
+        A.secim("bicim", "asABicim", bicimSecenekleri(dil)),
+        A.yazi("not", "asANot"),
+      ],
+      degerler: { ozelId, muhabirId: icinde(s(g.muhabirId, 100), muhabirler), baslik: s(g.baslik, 300), aciklama: s(g.aciklama), yayinGunu: o && yg && ozelIcerikGunuUygun(o, yg) ? yg : "", teslim: gun(g.teslim), bicim: (BICIMLER as readonly string[]).includes(s(g.bicim)) ? s(g.bicim) : "pkg", not: s(g.not, 1000) },
+      calistir: (v) => {
+        const id = ozelIcerikGorevlendir(ben, vs(v, "ozelId"), { muhabirId: vs(v, "muhabirId"), baslik: vs(v, "baslik"), aciklama: vs(v, "aciklama"), bicim: vs(v, "bicim") as Bicim, tarih: vs(v, "teslim"), yayinGunu: vs(v, "yayinGunu") || undefined, ...(vs(v, "not") ? { not: vs(v, "not") } : {}) });
+        return tamam(id, { paketId: id });
+      },
+    });
+  },
+
+  paketiOzeleBagla: (g, { ben }) => {
+    const d = getir();
+    const p = paketBul(d, s(g.paketId, 100));
+    if (!p) return hata("bulunamadi");
+    if (!ozeleBaglanabilir(ben, p, d)) return hata(p.ozelId ? "zatenBagli" : "baglanamaz");
+    const yayinlar = ozelSecenekleri(d);
+    const ozelId = icinde(s(g.ozelId, 100), yayinlar);
+    const o = d.ozel.find((x) => x.id === ozelId);
+    const yg = gun(g.yayinGunu);
+    return form({
+      baslik: "asTOzeleBagla",
+      ozet: p.baslik,
+      alanlar: [A.secim("ozelId", "asAOzelYayin", yayinlar), { ad: "yayinGunu", etiket: "asAYayinGunu", tur: "secim", bagli: { alan: "ozelId", harita: ozelGunHaritasi(d) } }],
+      degerler: { ozelId, yayinGunu: o && yg && ozelIcerikGunuUygun(o, yg) ? yg : "" },
+      calistir: (v) => tamam(paketiOzeleBagla(ben, p.id, vs(v, "ozelId"), vs(v, "yayinGunu") || undefined)),
     });
   },
 

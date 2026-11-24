@@ -38,6 +38,8 @@ import {
   ozelPaketOnerisiOnaylanabilir,
   paketTamamla,
   ozelIcerikGorevlendir,
+  ozeleBaglanabilir,
+  paketiOzeleBagla,
   ozelIcerikGeriAl,
   ozelIcerikGeriAlinabilir,
   ozelIcerikYayinGunu,
@@ -373,27 +375,30 @@ function KunyePenceresi({ ben, o, kapat }: { ben: Kisi; o?: OzelYayin; kapat: ()
  * Katlanır bölüm: kapalı gelir, başlıkta sayı. Ekleme düğmesi başlıkta;
  * basınca bölüm açılıp kapanmasın diye olay durduruluyor.
  */
-function Bolum({ ad, ikon, ek, ekle, acik, children }: { ad: string; ikon: ReactNode; ek?: ReactNode; ekle?: { metin: string; ac: () => void; veri: string }; acik?: boolean; children: ReactNode }) {
+type BolumEki = { metin: string; ac: () => void; veri: string; ikincil?: boolean };
+
+function Bolum({ ad, ikon, ek, ekle, acik, children }: { ad: string; ikon: ReactNode; ek?: ReactNode; ekle?: BolumEki | BolumEki[]; acik?: boolean; children: ReactNode }) {
   return (
     <details className="kart ozel-bolum" data-ozel-bolum={ad} open={acik}>
       <summary>
         {ikon}
         <h2>{ad}</h2>
         {ek !== undefined && <span className="ek">{ek}</span>}
-        {ekle && (
+        {(Array.isArray(ekle) ? ekle : ekle ? [ekle] : []).map((x) => (
           <button
+            key={x.veri}
             type="button"
-            className="dugme dugme-kucuk"
+            className={`dugme dugme-kucuk${x.ikincil ? " dugme-ikincil" : ""}`}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              ekle.ac();
+              x.ac();
             }}
-            {...{ [ekle.veri]: "" }}
+            {...{ [x.veri]: "" }}
           >
-            <Plus size={14} /> {ekle.metin}
+            {!x.ikincil && <Plus size={14} />} {x.metin}
           </button>
-        )}
+        ))}
       </summary>
       <div className="ozel-bolum-govde">{children}</div>
     </details>
@@ -1145,6 +1150,8 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const v = useVeri();
   const [form, setForm] = useState<OzelPaketSatiri | null>(null);
   const [gorev, setGorev] = useState(false);
+  const [bagla, setBagla] = useState(false);
+  const adaylar = v.paketler.filter((p) => ozeleBaglanabilir(ben, p, v));
   const satirlar = ozelPaketSatirlari(o, v);
   const icerikler = ozelIcerikleri(v, o.id);
   const gruplar: ["inhouse" | "dis", Anahtar][] = [
@@ -1160,11 +1167,10 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
         ek={`${icerikler.filter((p) => p.durum === "tamamlandi").length + satirlar.filter((s) => s.asama === "hazir").length}/${icerikler.length + satirlar.length}`}
         ekle={
           ileriGorevVerebilir(ben)
-            ? {
-                metin: t("oyIcerikGorevlendir"),
-                ac: () => setGorev(true),
-                veri: "data-ozel-icerik-ekle",
-              }
+            ? [
+                { metin: t("oyIcerikGorevlendir"), ac: () => setGorev(true), veri: "data-ozel-icerik-ekle" },
+                ...(adaylar.length ? [{ metin: t("oyGorevBagla", { n: adaylar.length }), ac: () => setBagla(true), veri: "data-ozel-gorev-bagla", ikincil: true }] : []),
+              ]
             : undefined
         }
       >
@@ -1198,6 +1204,7 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
       </Bolum>
       {form && <PaketOneriPenceresi ben={ben} o={o} s={form} kapat={() => setForm(null)} />}
       {gorev && <IcerikPenceresi ben={ben} o={o} kapat={() => setGorev(false)} />}
+      {bagla && <BaglaPenceresi ben={ben} o={o} adaylar={adaylar} kapat={() => setBagla(false)} />}
     </>
   );
 }
@@ -1307,6 +1314,60 @@ function YayinGunuPenceresi({ ben, p, kapat }: { ben: Kisi; p: Paket; kapat: () 
 }
 
 /* Doğrudan görevlendirme: muhabir, Strap, yayın günü (yayının günlerinden), teslim günü, haber türü, not; kalıp posta isteğe bağlı. */
+/*
+ * Plansız açılmış görevi yayının içeriğine al (asistan yayın için plansız görev
+ * açmıştı): seçilen paketler yeniden açılmadan bağlanır, yayın günü hepsine aynı
+ * (TBC de olur), sonra kartta tek tek değişir.
+ */
+function BaglaPenceresi({ ben, o, adaylar, kapat }: { ben: Kisi; o: OzelYayin; adaylar: Paket[]; kapat: () => void }) {
+  const { t, dil, ad } = useDil();
+  const v = useVeri();
+  const ilkGun = o.tarih < bugun() && (o.bitis || o.tarih) >= bugun() ? bugun() : o.tarih;
+  const [secili, setSecili] = useState<string[]>([]);
+  const [gun, setGun] = useState(ilkGun);
+  const [tbc, setTbc] = useState(false);
+  const hazir = secili.length > 0 && (tbc || ozelIcerikGunuUygun(o, gun));
+  const kaydet = () => {
+    if (!hazir) return;
+    const n = secili.filter((id) => paketiOzeleBagla(ben, id, o.id, tbc ? undefined : gun)).length;
+    if (n) bildir(t("bKaydedildi"));
+    kapat();
+  };
+  const sirali = [...adaylar].sort((a, b) => (b.olusturma ?? "").localeCompare(a.olusturma ?? ""));
+  return (
+    <Pencere baslik={t("oyGorevBaglaBaslik")} kapat={kapat}>
+      <div className="form" data-ozel-bagla-formu>
+        <fieldset className="secim-listesi">
+          {sirali.map((p) => {
+            const m = kisiBul(v, p.muhabirId);
+            return (
+              <label key={p.id} className="secim" data-ozel-bagla-aday={p.id}>
+                <input type="checkbox" checked={secili.includes(p.id)} onChange={(e) => setSecili(e.target.checked ? [...secili, p.id] : secili.filter((x) => x !== p.id))} />
+                <span>
+                  <Icerik>{p.baslik}</Icerik>
+                  <small className="sonuk">
+                    {" · "}
+                    {m ? ad(m) : ""}
+                    {p.sonTarih ? ` · ${tarihYaz(p.sonTarih, dil, "kisa")}` : ""}
+                  </small>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+        <label>
+          {t("oyYayinGunu")}
+          <span className="tbc-satiri">
+            {!tbc && <TarihGirdisi value={gun} min={o.tarih} max={o.bitis || o.tarih} required onChange={(e) => setGun(e.target.value)} />}
+            <TbcKutusu secili={tbc} degistir={setTbc} />
+          </span>
+        </label>
+        <FormAlt kapat={kapat} kaydet={kaydet} devre={!hazir} />
+      </div>
+    </Pencere>
+  );
+}
+
 function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: () => void }) {
   const { t } = useDil();
   const ilkGun = o.tarih < bugun() && (o.bitis || o.tarih) >= bugun() ? bugun() : o.tarih;

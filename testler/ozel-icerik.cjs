@@ -117,6 +117,31 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(d.geriBildirimSablonlari.some((s) => s.id === "ozel-gorev" && s.konu === "تكليف | {strap}"), "şablon kaydedildi");
   ok(d.geriBildirimSablonlari.some((s) => s.id === "takdir-bildirimi") || true, "PKG geri bildirimi yerinde");
 
+  // Plansız açılmış görev (asistan yayın için paketGorevVer kullanmıştı) yayının içeriğine alınır.
+  await p.evaluate(([k, mu, son]) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const z = new Date().toISOString();
+    d.paketler.unshift({ id: "p-plansiz", kod: "TRT-AR-T1", baslik: "تقرير خارج الخطة", aciklama: "", sehir: "istanbul", muhabirId: mu, tur: "haber", bicim: "pkg", sonTarih: son, sahaGerekli: false, stok: true, durum: "onaylandi", gorev: { veren: "pl1", zaman: z }, notlar: [], olusturma: z, guncelleme: z });
+    localStorage.setItem(k, JSON.stringify(d));
+  }, [K, kur.mu, yerel(9)]);
+  await git("#/ozel/oz-test");
+  await p.click('[data-ozel-sekme="icerik"]');
+  await p.waitForTimeout(300);
+  const bag = p.locator("[data-ozel-gorev-bagla]");
+  ok((await bag.count()) === 1, "İçerik'te 'Var olan görevi bağla'");
+  await bag.click();
+  const bf = p.locator("[data-ozel-bagla-formu]");
+  await bf.waitFor();
+  await bf.locator('[data-ozel-bagla-aday="p-plansiz"] input').check();
+  await bf.locator(".form-alt button.dugme:not(.dugme-ikincil)").last().click();
+  await p.waitForTimeout(600);
+  d = await durum();
+  const bp = d.paketler.find((x) => x.id === "p-plansiz");
+  ok(bp && bp.ozelId === "oz-test" && bp.tur === "ozel" && !bp.stok && bp.yayinGunu === yerel(1), "plansız görev yayının içeriği oldu, stoktan çıktı");
+  ok(bp && bp.sonTarih === yerel(1), "teslim yayın gününe çekildi");
+  ok((await p.locator('[data-ozel-icerikler] >> text=تقرير خارج الخطة').count()) >= 1, "İçerik sekmesinde görünüyor");
+  ok(d.hareketler.some((h) => h.paketId === "p-plansiz" && h.tip === "paketTeslimGunu" && h.veri?.bag), "hareket yazıldı");
+
   ok(hatalar.length === 0, "sayfa hatası yok" + (hatalar.length ? ": " + hatalar.join(" | ") : ""));
   console.log(`\n${gec} geçti, ${kal} kaldı`);
   await b.close();
