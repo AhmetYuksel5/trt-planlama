@@ -3121,10 +3121,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     "Yapıldı"sı ve onay, üretim balonu: yerleşik şablon `u-ozel`, stokun yolu;
     `paketSablonu` özel yayın paketine önce onu). Kalıp posta (`takdir.ts →
     VARSAYILAN_OZEL_GOREV`, `ozelGorevEpostasi`; yer tutucular {yayin} {gun}
-    {teslim}…): formda işaretli gelir, satırda "Görev postası gönder"
-    (`data-ozel-posta`), kişinin EWS kimliğiyle; iz `takdirBildirimi`
-    (`ozelGorevPostasiGitti`), demoda yalnız iz. Şablonu Ayarlar › "Muhabire
-    geri bildirim"de PKG geri bildiriminin altında (`ozel-gorev`,
+    {teslim}…) kendiliğinden gitmez (kullanıcı: görevlendirmede posta
+    gitmesin, karttaki posta düğmesinde şablon olsun): içeriğin kartındaki
+    posta düğmesi (yayının İçerik sekmesi ve Stok'un Special Coverage
+    kutusu; `OzelYayin.tsx → ozelGorevSablonlari`, `StokKarti sablonlar` →
+    `KisiIletisim sablonlar` → `IsPostasiPenceresi`) yeni posta penceresinde
+    gövdenin üstünde "Şablon · Özel yayın görevi" (`posta/Posta.tsx →
+    PostaSablonu`, `data-posta-sablon`): seçilince konu, metin, CC ve BCC
+    şablondan; kişinin EWS kimliğiyle gider, iz `takdirBildirimi`
+    (`ozelGorevPostasiGitti`, kartta "gitti"), demoda yalnız iz. Şablon
+    yanındaki kalemle düzenlenip kaydedilir (`GeriBildirimSablonlari.tsx →
+    TakdirFormu`, yetki `geriBildirimSablonuDuzenler`); Ayarlar › "Muhabire
+    geri bildirim"de de PKG geri bildiriminin altında (`ozel-gorev`,
     `SABIT_SABLONLAR`). Eski düzenin paketi (öneri → onay → görevlendirildi →
     kendi teslimi) `veri.ts → eskiOzelPaket` (`ozelId` var, `gorev` yok): ayrı
     kurallar yalnız ona; yeni paket öbür paketlerin kurallarıyla. Eski "Paket

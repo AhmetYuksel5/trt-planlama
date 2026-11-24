@@ -776,6 +776,8 @@ const M = {
   hrGecmis: m("Geçmiş", "السابقة", "Past"),
   hrYok: m("Hareket yok.", "لا توجد تحركات.", "No movements."),
   kayitliHareketEkle: m("Kayıtlı hareketten seç", "اختيار من الحركات المسجلة", "Pick an existing one"),
+  postaSablon: m("Şablon", "قالب", "Template"),
+  postaSablonDuzenle: m("Şablonu düzenle", "تعديل القالب", "Edit template"),
   paketSilBildirimli: m("Onaylı paket silinsin mi? Muhabire bildirim gidecek.", "هل يُحذف التقرير المعتمد؟ سيُبلَّغ المراسل.", "Delete the approved package? The correspondent will be notified."),
   plandanCikar: m("Plandan çıkar", "إزالة من الخطة", "Remove from plan"),
   hareketTuru: m("Hareket türü", "نوع الحركة", "Movement type"),

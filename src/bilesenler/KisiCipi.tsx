@@ -6,7 +6,7 @@ import { kisiBugunDurumu, kisiOzeti, muhabirAdresi, type PostaYaniti } from "../
 import { useVeri, type Kisi } from "../veri";
 import { birimAdi, disMuhabirMi, gorevAdi } from "../yapi";
 import { kisitliKisi, sayfaGorebilir } from "../yetki";
-import { IsPostasiPenceresi } from "../ekranlar/posta/Posta";
+import { IsPostasiPenceresi, type PostaSablonu } from "../ekranlar/posta/Posta";
 import { IslemMenusu } from "./IslemMenusu";
 import { Avatar } from "./Parcalar";
 import { WhatsAppDugmesi } from "./WhatsApp";
@@ -25,7 +25,8 @@ import { WhatsAppDugmesi } from "./WhatsApp";
 const kisiSayfasi = (k: Kisi) => (disMuhabirMi(k) ? "muhabirler" : "personel");
 
 /** İletişim düğmeleri; kartın içinde ve satır sonunda aynı sıra: WhatsApp, posta, kişinin sayfası. */
-export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true, yanit }: { ben: Kisi; kisi: Kisi; konu: string; onPosta?: () => void; dosya?: boolean; yanit?: PostaYaniti }) {
+/** `sablonlar`: posta penceresinde gövdenin üstünde seçilecek şablonlar (özel yayın görevi…). */
+export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true, yanit, sablonlar }: { ben: Kisi; kisi: Kisi; konu: string; onPosta?: () => void; dosya?: boolean; yanit?: PostaYaniti; sablonlar?: PostaSablonu[] }) {
   const { t } = useDil();
   const [posta, setPosta] = useState(false);
   if (kisitliKisi(ben)) return null;
@@ -56,7 +57,7 @@ export function KisiIletisim({ ben, kisi, konu, onPosta, dosya = true, yanit }: 
           <FolderOpen size={17} />
         </a>
       )}
-      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} yanit={yanit} kapat={() => setPosta(false)} />}
+      {posta && <IsPostasiPenceresi ben={ben} kisi={kisi} konu={konu} yanit={yanit} sablonlar={sablonlar} kapat={() => setPosta(false)} />}
     </span>
   );
 }

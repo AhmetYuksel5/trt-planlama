@@ -2817,6 +2817,9 @@ button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit;
 .ozel-eksikler li.gecikti small { color: var(--kotu); }
 /* Özel yayının içerik kartı Stok kartının sarmalı: ızgaranın hücresi kartın kendisi. */
 .icerik-sarma { display: contents; }
+/* Posta penceresinde gövdenin üstündeki şablon seçenekleri. */
+.posta-sablonlar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
+.posta-sablon { display: inline-flex; align-items: center; gap: 2px; }
 .tbc-satiri { display: flex; align-items: center; gap: var(--ara-2); }
 .tbc-satiri > :first-child:not([data-ozel-yayin-tbc]) { flex: 1; min-width: 0; }
 [data-ozel-madde] { display: flex; align-items: center; gap: var(--ara-2); }

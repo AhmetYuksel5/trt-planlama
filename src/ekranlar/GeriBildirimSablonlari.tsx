@@ -170,7 +170,7 @@ function SablonPenceresi({ ben, sablon, kapat }: { ben: Kisi; sablon: GeriBildir
  * "تكليف تقرير" postası. Konu, metin, CC ve BCC buradan; Kime muhabirin
  * adresi, planning grubu kapıda her zaman CC'de.
  */
-function TakdirFormu({ ben, tur }: { ben: Kisi; tur: "takdir" | "ozel" }) {
+export function TakdirFormu({ ben, tur }: { ben: Kisi; tur: "takdir" | "ozel" }) {
   const { t } = useDil();
   const v = useVeri();
   // Özel yayın görevinin kalıp postası aynı form: şablon, alanlar ve kayıt eylemi değişiyor.

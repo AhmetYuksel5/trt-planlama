@@ -8,6 +8,7 @@ import { GorevTalepleri, GorevlendirDugmesi, SartliPaketler } from "../bilesenle
 import { Bos, HaftalikRozeti, Icerik, Kart, Pencere, Rozet, Tumu, TurRozeti, bildir } from "../bilesenler/Parcalar";
 import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
+import type { PostaSablonu } from "./posta/Posta";
 import { aralikYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { BICIM_ADI, HAFTA_DURUM_ADI, HAFTA_DURUM_TONU, PLAN_DURUM_ADI, PLAN_DURUM_TONU, paketYeri } from "../etiketler";
 import { haftalikOlustur, hazirPaketCikar, hazirPaketEkle } from "../eylemler";
@@ -64,7 +65,7 @@ import { SayfaBasi } from "./ana/Planlama";
 import { GundemeEkle } from "./haftalik/Plan";
 import { OneriListesi } from "./oneri/OneriGovde";
 import { GorunumSecici, useOneriGorunumu, type PencereDurumu } from "./oneri/OneriKarti";
-import { OzelTalepAlani } from "./OzelYayin";
+import { OzelTalepAlani, ozelGorevSablonlari } from "./OzelYayin";
 import { ALAN_ADI, IcerikKarti, MASA_ADI } from "./program/ProgramMasasi";
 
 /*
@@ -320,7 +321,7 @@ function StokRozeti({ p }: { p: Paket }) {
 
 /* Programlar'ın içerik kartının kalıbı: tür, yer, gün, durum; başlık; muhabir, iletişim ve bölümün işi. */
 /** `yayinsiz`: özel yayının kendi sayfasında kartta yayının adı tekrar edilmiyor. */
-export function StokKarti({ ben, p, ek, yayinsiz }: { ben: Kisi; p: Paket; ek?: ReactNode; yayinsiz?: boolean }) {
+export function StokKarti({ ben, p, ek, yayinsiz, sablonlar }: { ben: Kisi; p: Paket; ek?: ReactNode; yayinsiz?: boolean; sablonlar?: PostaSablonu[] }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const kisiId = stokPaketKisisi(p);
@@ -351,7 +352,7 @@ export function StokKarti({ ben, p, ek, yayinsiz }: { ben: Kisi; p: Paket; ek?: 
         {/* İşi süren paketin muhabirine ulaşma (Programlar'daki gibi iş bazında). */}
         {kisi && acik && (
           <span className="prg-iletisim">
-            <KisiIletisim ben={ben} kisi={kisi} konu={p.baslik} />
+            <KisiIletisim ben={ben} kisi={kisi} konu={p.baslik} sablonlar={sablonlar} />
           </span>
         )}
         <span className="bosluk-esnek" />
@@ -587,7 +588,7 @@ function OzelKutusu({ ben }: { ben: Kisi }) {
               .filter((p) => p.ozelId === o.id)
               .sort((a, b) => (a.yayinGunu ?? "").localeCompare(b.yayinGunu ?? ""))
               .map((p) => (
-                <StokKarti key={p.id} ben={ben} p={p} ek={uretimYoluBelirleyebilir(ben, p) && p.durum === "onaylandi" && !p.uretim && <UretimeAlDugmesi ben={ben} paket={p} />} />
+                <StokKarti key={p.id} ben={ben} p={p} sablonlar={ozelGorevSablonlari(ben, v, p, t)} ek={uretimYoluBelirleyebilir(ben, p) && p.durum === "onaylandi" && !p.uretim && <UretimeAlDugmesi ben={ben} paket={p} />} />
               ))}
           </div>
         </section>

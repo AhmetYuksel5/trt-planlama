@@ -1,9 +1,9 @@
 import { postaAdresi } from "../../girisKodu";
 import { kapiHatasi } from "../../yz";
 import { muhabirAdresi, type PostaYaniti } from "../../muhabirIletisim";
-import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, CheckCheck, ChevronDown, ChevronUp, File, FileText, Pencil, Loader2, Lock, Mail, MailOpen, MessageSquare, Plus, RefreshCw, Search, Send, Trash2, X } from "lucide-react";
 import { GOMULU, useAdimDurumu, useGeriKapatir } from "../../yol";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bos, Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { saatYaz, useDil } from "../../dil";
 import { postaGidenEkle, postaSil, postaEtiketsizleriGruba, postaHepsiOkundu, postaOkumaBaslat, postaOkundu, postaOkunmadi } from "../../eylemler";
@@ -738,8 +738,28 @@ function Yazma({ ben, sohbet, grup }: { ben: Kisi; sohbet: Sohbet; grup: string 
  * geri gelince sunucudaki yazışma kimliği öğrenilip iplik ona taşınır
  * (eylemler.ts → postaIsle), sonraki yanıtlar aynı sohbete düşer.
  */
-function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string; bcc?: string[]; yanitlanan?: string; konuKimligi?: string } }) {
+/*
+ * Posta şablonu (kullanıcı: özel yayın görevinin postası kendiliğinden
+ * gitmesin; karttaki posta düğmesinde gövdenin üstünde şablon seçeneği
+ * olsun, seçince dolsun, oradan düzenlenip kaydedilsin). Seçilince konu ve
+ * metin şablondan, CC ve BCC eklenir; gönderilince `gitti` (iz).
+ * `duzenleFormu` şablonun kendi formu (ayrı pencerede).
+ */
+export interface PostaSablonu {
+  id: string;
+  ad: string;
+  konu: string;
+  metin: string;
+  cc?: string[];
+  bcc?: string[];
+  gitti?: () => void;
+  duzenleFormu?: ReactNode;
+}
+
+function YeniPosta({ ben, grup, kapat, acildi, ilk, sablonlar = [] }: { ben: Kisi; grup: string; kapat: () => void; acildi: (konuKimligi: string) => void; ilk?: { kime: string[]; konu: string; bcc?: string[]; yanitlanan?: string; konuKimligi?: string }; sablonlar?: PostaSablonu[] }) {
   const { t } = useDil();
+  const [secilen, setSecilen] = useState<string | null>(null);
+  const [duzenlenen, setDuzenlenen] = useState<PostaSablonu | null>(null);
   const [kime, setKime] = useState<string[]>(ilk?.kime ?? []);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>(ilk?.bcc ?? []);
@@ -762,6 +782,7 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string;
     // Yanıtta giden balon muhabirin postasının sohbetine düşer.
     const konuKimligi = ilk?.konuKimligi || postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`;
     postaGidenEkle(ben, konuKimligi, konu.trim(), metin.trim(), grup, alicilar);
+    sablonlar.find((x) => x.id === secilen)?.gitti?.();
     bildir(t("bPostaGonderildi"));
     acildi(konuKimligi);
     kapat();
@@ -799,11 +820,48 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk }: { ben: Kisi; grup: string;
           {t("postaKonusu")}
           <input {...icerikAlani} value={konu} onChange={(e) => setKonu(e.target.value)} data-posta-yeni-konu />
         </label>
+        {sablonlar.length > 0 && (
+          <div className="posta-sablonlar" data-posta-sablonlar>
+            <span className="alan-etiket">{t("postaSablon")}</span>
+            {sablonlar.map((x) => (
+              <span key={x.id} className="posta-sablon">
+                <button
+                  type="button"
+                  className={`dugme dugme-kucuk ${secilen === x.id ? "" : "dugme-ikincil"}`}
+                  aria-pressed={secilen === x.id}
+                  onClick={() => {
+                    setSecilen(x.id);
+                    setKonu(x.konu);
+                    setMetin(x.metin);
+                    if (x.cc?.length) setCc((l) => tekil([...l, ...x.cc!]));
+                    if (x.bcc?.length) {
+                      setBcc((l) => tekil([...l, ...x.bcc!]));
+                      setBccAcik(true);
+                    }
+                  }}
+                  data-posta-sablon={x.id}
+                >
+                  <FileText size={14} /> {x.ad}
+                </button>
+                {x.duzenleFormu && (
+                  <button type="button" className="dugme dugme-sade dugme-ikon dugme-kucuk" onClick={() => setDuzenlenen(x)} title={t("postaSablonDuzenle")} aria-label={t("postaSablonDuzenle")} data-posta-sablon-duzenle={x.id}>
+                    <Pencil size={14} />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
         <label>
           {t("postaMetin")}
           <textarea {...icerikAlani} rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} data-posta-yeni-metin />
         </label>
       </div>
+      {duzenlenen && (
+        <Pencere baslik={`${t("postaSablonDuzenle")} · ${duzenlenen.ad}`} kapat={() => setDuzenlenen(null)}>
+          {duzenlenen.duzenleFormu}
+        </Pencere>
+      )}
     </Pencere>
   );
 }
@@ -837,7 +895,7 @@ export function TopluPostaPenceresi({ ben, adresler, kapat }: { ben: Kisi; adres
   return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={{ kime: [], konu: "", bcc: adresler }} />;
 }
 
-export function IsPostasiPenceresi({ ben, kisi, konu, kapat, yanit }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void; yanit?: PostaYaniti }) {
+export function IsPostasiPenceresi({ ben, kisi, konu, kapat, yanit, sablonlar }: { ben: Kisi; kisi: Kisi; konu: string; kapat: () => void; yanit?: PostaYaniti; sablonlar?: PostaSablonu[] }) {
   const [grup, setGrup] = useState("");
   useEffect(() => {
     if (GERCEK) void postaKimlikGetir().then((r) => r.tamam && setGrup((r.veri.grupAdresi || "").trim().toLowerCase()));
@@ -845,7 +903,7 @@ export function IsPostasiPenceresi({ ben, kisi, konu, kapat, yanit }: { ben: Kis
   const ilk = yanit
     ? { kime: [yanit.kime], konu: yanit.konu, ...(yanit.mesajKimligi && { yanitlanan: yanit.mesajKimligi }), ...(yanit.konuKimligi && { konuKimligi: yanit.konuKimligi }) }
     : { kime: [muhabirAdresi(kisi)], konu };
-  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={ilk} />;
+  return <YeniPosta ben={ben} grup={grup} kapat={kapat} acildi={() => undefined} ilk={ilk} sablonlar={sablonlar} />;
 }
 
 /*

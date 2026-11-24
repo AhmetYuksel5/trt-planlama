@@ -50,7 +50,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await f.locator("[data-ozel-icerik-baslik]").fill("تقرير التغطية الخاصة");
   await tarihYaz(f.locator("input[data-ozel-yayin-gunu]"), yerel(2));
   await tarihYaz(f.locator("input[data-ozel-teslim]"), yerel(1));
-  ok(await f.locator("[data-ozel-icerik-posta]").isChecked(), "kalıp posta kutusu işaretli geliyor");
+  ok((await f.locator("[data-ozel-icerik-posta]").count()) === 0, "formda kendiliğinden posta yok");
   await f.locator(".form-alt button.dugme:not(.dugme-ikincil)").last().click();
   await p.waitForTimeout(600);
 
@@ -60,10 +60,27 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(pk && pk.tur === "ozel" && pk.durum === "onaylandi" && !!pk.gorev, "masası Özel yayın, onaylı, görevli");
   ok(pk && pk.yayinGunu === yerel(2) && pk.sonTarih === yerel(1), "yayın günü ve teslim günü ayrı");
   ok(pk && pk.muhabirId === kur.mu && pk.ozelAd === "تغطية تجريبية", "muhabir ve yayının adı pakette");
-  ok(pk && !!pk.takdirBildirimi, "demoda kalıp posta izi");
+  ok(pk && !pk.takdirBildirimi, "görevlendirmede posta kendiliğinden gitmedi");
   ok(d.hareketler.some((h) => h.tip === "paketGorevVerildi" && h.paketId === pk.id && h.veri?.kime === kur.mu), "muhabire görev bildirimi");
   ok((await p.locator(`[data-ozel-icerik="${pk.id}"]`).count()) === 1, "içerik satırı yayının sayfasında");
-  ok((await p.locator(`[data-ozel-icerik="${pk.id}"] [data-ozel-posta="gitti"]`).count()) === 1, "satırda 'görev postası gitti'");
+  // Karttaki posta düğmesi: gövdenin üstünde şablon, seçilince dolar, gönderilince iz.
+  await p.locator(`[data-ozel-icerik="${pk.id}"] [data-is-postasi]`).first().click();
+  const pf = p.locator("[data-posta-yeni]");
+  await pf.waitFor();
+  ok((await pf.locator('[data-posta-sablon="ozel-gorev"]').count()) === 1, "posta penceresinde şablon seçeneği");
+  ok((await pf.locator("[data-posta-yeni-metin]").inputValue()) === "", "şablon seçilmeden gövde boş");
+  await pf.locator('[data-posta-sablon="ozel-gorev"]').click();
+  ok((await pf.locator("[data-posta-yeni-konu]").inputValue()).includes("تغطية تجريبية") && (await pf.locator("[data-posta-yeni-metin]").inputValue()).length > 20, "şablon konu ve gövdeyi doldurdu");
+  // Şablonu buradan düzenle: pencere Ayarlar'daki formu açar.
+  await pf.locator('[data-posta-sablon-duzenle="ozel-gorev"]').click();
+  ok((await p.locator('[data-takdir-sablonu="ozel"]').count()) === 1, "şablonu düzenleme formu posta penceresinden");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(200);
+  await p.locator("[data-posta-yeni-gonder]").click();
+  await p.waitForTimeout(500);
+  d = await durum();
+  ok(!!d.paketler.find((x) => x.id === pk.id).takdirBildirimi, "şablonla gönderilen posta pakette iz bıraktı");
+  ok((await p.locator(`[data-ozel-icerik="${pk.id}"] [data-ozel-posta="gitti"]`).count()) === 1, "kartta 'görev postası gitti'");
 
   // Balon özel yayın şablonuyla açılır.
   await git("#/paketler/" + pk.id);

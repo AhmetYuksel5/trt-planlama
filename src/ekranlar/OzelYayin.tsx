@@ -6,11 +6,8 @@ import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
 import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
-import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
-import { GERCEK } from "../kip";
-import { postaGonder } from "../posta-kapi";
+import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { ozelGorevEpostasi } from "../takdir";
-import { muhabirAdresi } from "../muhabirIletisim";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, TUR_ADI } from "../etiketler";
 import {
   aylikOlaydanOzel,
@@ -83,8 +80,7 @@ import {
   KONUK_DURUMLARI,
   SECILEN_TURLER,
   eskiOzelPaket,
-  getir,
-  paketBul,
+  ozelIcerikMi,
   kisiBul,
   useVeri,
   type Bicim,
@@ -104,13 +100,15 @@ import {
   type TalepDurum,
 } from "../veri";
 import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
-import { ileriGorevVerebilir, uretimYoluBelirleyebilir, ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
+import { geriBildirimSablonuDuzenler, ileriGorevVerebilir, uretimYoluBelirleyebilir, ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { IslemMenusu } from "../bilesenler/IslemMenusu";
 import { PlanBasiKalibi, adimlariKur } from "../bilesenler/PlanBasi";
 import { BicimSecici, FormAlt, MuhabirSecici } from "./nextday/Formlar";
 import { PAKET_ASAMA_ADI } from "../bilesenler/OzelGorevler";
 import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
+import { TakdirFormu } from "./GeriBildirimSablonlari";
+import type { PostaSablonu } from "./posta/Posta";
 import { StokKarti } from "./StokSayfasi";
 import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
 import { TamamlamaGeriAlDugmesi } from "../bilesenler/TamamlamaGeriAl";
@@ -1204,21 +1202,29 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   );
 }
 
+
 /*
- * Kalıp posta (Ayarlar › "Muhabire geri bildirim" › Özel yayın görevi) kişinin
- * EWS kimliğiyle; demoda yalnız iz. Hata metni döner, gittiyse null.
+ * Özel yayın görevinin postası kendiliğinden gitmiyor (kullanıcı): içeriğin
+ * kartındaki posta düğmesinde gövdenin üstünde şablon olarak seçilir,
+ * gönderilince pakette iz; şablon oradan düzenlenip kaydedilir (yetkiliye).
+ * Yayının İçerik sekmesi ve Stok'un Special Coverage kutusu aynısını kullanır.
  */
-async function gorevPostasiGonder(ben: Kisi, paketId: string): Promise<string | null> {
-  const d = getir();
-  const p = paketBul(d, paketId);
-  if (!p) return null;
+export const ozelGorevSablonlari = (ben: Kisi, d: Durum, p: Paket, t: (k: Anahtar) => string): PostaSablonu[] => {
+  if (!ozelIcerikMi(p) || !ileriGorevVerebilir(ben)) return [];
   const e = ozelGorevEpostasi(d, p, ben);
-  if (!e.kime.length) return metin("oyPostaAdresYok");
-  const r = GERCEK ? await postaGonder({ kime: e.kime, cc: e.cc, bcc: e.bcc, konu: e.konu, metin: e.metin }) : { tamam: true as const };
-  if (!r.tamam) return r.ayrinti ?? r.hata ?? "";
-  ozelGorevPostasiGitti(ben, paketId);
-  return null;
-}
+  return [
+    {
+      id: "ozel-gorev",
+      ad: t("ozgSablonBaslik"),
+      konu: e.konu,
+      metin: e.metin,
+      cc: e.cc,
+      bcc: e.bcc,
+      gitti: () => ozelGorevPostasiGitti(ben, p.id),
+      ...(geriBildirimSablonuDuzenler(ben) ? { duzenleFormu: <TakdirFormu ben={ben} tur="ozel" /> } : {}),
+    },
+  ];
+};
 
 /*
  * Yeni düzenin içeriği Stok'un kartıyla (kullanıcı: görevlendirme tasarımı standart stoklardaki gibi):
@@ -1228,28 +1234,14 @@ async function gorevPostasiGonder(ben: Kisi, paketId: string): Promise<string | 
 function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
   const { t, dil } = useDil();
   const v = useVeri();
-  const [mesgul, setMesgul] = useState(false);
-  const adres = muhabirAdresi(kisiBul(v, p.muhabirId));
-  const gonder = async () => {
-    if (!confirm(t("oyPostaOnay"))) return;
-    setMesgul(true);
-    const hata = await gorevPostasiGonder(ben, p.id);
-    setMesgul(false);
-    bildir(hata === null ? t("oyPostaGitti") : `${t("tkGonderilemedi")} (${hata})`);
-  };
+  const sablonlar = ozelGorevSablonlari(ben, v, p, t);
   const geriAl = () => confirm(t("oyGorevGeriAlSoru")) && ozelIcerikGeriAl(ben, p.id) && bildir(t("oyGorevGeriAlindi"));
   const [gunAc, setGunAc] = useState(false);
   const acik = p.durum === "onaylandi" || p.durum === "uretimde";
-  const posta = !acik ? null : p.takdirBildirimi ? (
+  const posta = acik && p.takdirBildirimi && (
     <span className="sonuk-yazi" title={saatYaz(p.takdirBildirimi.zaman, dil)} data-ozel-posta="gitti">
       <Mail size={14} /> {t("oyPostaGitti")}
     </span>
-  ) : (
-    ileriGorevVerebilir(ben) && (
-      <button type="button" className="dugme dugme-ikincil dugme-kucuk" aria-disabled={!adres || mesgul} title={adres ? undefined : t("oyPostaAdresYok")} onClick={() => adres && !mesgul && gonder()} data-ozel-posta="">
-        <Mail size={14} /> {t("oyPostaGonder")}
-      </button>
-    )
   );
   return (
     <div className="icerik-sarma" data-ozel-icerik={p.id}>
@@ -1257,6 +1249,7 @@ function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
         ben={ben}
         p={p}
         yayinsiz
+        sablonlar={sablonlar}
         ek={
           <>
             {posta}
@@ -1316,26 +1309,18 @@ function YayinGunuPenceresi({ ben, p, kapat }: { ben: Kisi; p: Paket; kapat: () 
 /* Doğrudan görevlendirme: muhabir, Strap, yayın günü (yayının günlerinden), teslim günü, haber türü, not; kalıp posta isteğe bağlı. */
 function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: () => void }) {
   const { t } = useDil();
-  const v = useVeri();
   const ilkGun = o.tarih < bugun() && (o.bitis || o.tarih) >= bugun() ? bugun() : o.tarih;
-  const [f, setF] = useState({ muhabirId: "", baslik: "", aciklama: "", yayinGunu: ilkGun, tbc: false, tarih: "", bicim: "pkg" as Bicim, not: "", posta: true });
-  const [mesgul, setMesgul] = useState(false);
-  const adres = muhabirAdresi(kisiBul(v, f.muhabirId));
+  const [f, setF] = useState({ muhabirId: "", baslik: "", aciklama: "", yayinGunu: ilkGun, tbc: false, tarih: "", bicim: "pkg" as Bicim, not: "" });
   // Yayın günü TBC: teslim yayının son gününe dek, boşsa yayının ilk günü (eylemle aynı kural).
   const yayinGunu = f.tbc ? "" : f.yayinGunu;
   const sonGun = yayinGunu || o.bitis || o.tarih;
   const teslim = f.tarih || yayinGunu || ilkGun;
   const hazir = !!f.muhabirId && !!f.baslik.trim() && (f.tbc || ozelIcerikGunuUygun(o, f.yayinGunu)) && teslim <= sonGun && teslim >= bugun();
-  const kaydet = async () => {
-    if (!hazir || mesgul) return;
+  const kaydet = () => {
+    if (!hazir) return;
     const id = ozelIcerikGorevlendir(ben, o.id, { muhabirId: f.muhabirId, baslik: f.baslik, aciklama: f.aciklama, yayinGunu: yayinGunu || undefined, tarih: teslim, bicim: f.bicim, not: f.not });
     if (!id) return;
-    if (f.posta && adres) {
-      setMesgul(true);
-      const hata = await gorevPostasiGonder(ben, id);
-      setMesgul(false);
-      bildir(hata === null ? `${t("bKaydedildi")} · ${t("oyPostaGitti")}` : `${t("bKaydedildi")} · ${t("tkGonderilemedi")} (${hata})`);
-    } else bildir(t("bKaydedildi"));
+    bildir(t("bKaydedildi"));
     kapat();
   };
   return (
@@ -1376,11 +1361,7 @@ function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: ()
           {t("not")}
           <AnmaGirdisi cokSatir rows={2} deger={f.not} degistir={(x) => setF({ ...f, not: x })} />
         </label>
-        <label className="secim">
-          <input type="checkbox" checked={f.posta && !!adres} disabled={!adres} onChange={(e) => setF({ ...f, posta: e.target.checked })} data-ozel-icerik-posta />
-          {t(adres || !f.muhabirId ? "oyPostaGonder" : "oyPostaAdresYok")}
-        </label>
-        <FormAlt kapat={kapat} kaydet={kaydet} devre={!hazir || mesgul} />
+        <FormAlt kapat={kapat} kaydet={kaydet} devre={!hazir} />
       </div>
     </Pencere>
   );
