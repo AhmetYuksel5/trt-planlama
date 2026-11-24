@@ -156,3 +156,21 @@ test("ayar: sunucular tablosu ayrı adres", () => {
   assert.ok("ayar" in r && r.ayar.sunucuTabloId === id && !r.ayar.tabloId);
   assert.deepEqual(rotaAyarBirlestir(bosRotaAyar(), { sunucuTablo: "olmaz" }), { hata: "tablo" });
 });
+
+test("kişinin kopyası: tarih aralığı adı olmayan sekmelerde gün aranır", async () => {
+  const { pem } = await pemYap();
+  const ayar = { tabloId: "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789", sunucuTabloId: "", istemciEposta: "rota@proje.iam.gserviceaccount.com", ozelAnahtar: pem };
+  const okunan: string[] = [];
+  const f = (async (u: string | URL | Request) => {
+    const adres = decodeURIComponent(String(u));
+    if (adres.includes("oauth2")) return new Response(JSON.stringify({ access_token: "erisim" }), { status: 200 });
+    if (adres.includes("fields=sheets")) return new Response(JSON.stringify({ sheets: [{ properties: { title: "Bu dönem" } }, { properties: { title: "Sonraki dönem" } }] }), { status: 200 });
+    okunan.push(adres);
+    const ilk = adres.includes("'Bu dönem'");
+    return new Response(JSON.stringify({ values: [["NEWSROOM", "", ilk ? "13.12.2026" : "14.12.2026"], [], ["EP TEAM"], ["EP", "0700-1800", ilk ? "Ali Veli" : "Deniz Kaya"]] }), { status: 200 });
+  }) as typeof fetch;
+  const r = await rotaOku(ayar, "2026-12-14", f, Date.UTC(2026, 11, 13));
+  assert.deepEqual(r, { sekme: "Sonraki dönem", satirlar: [["EP TEAM", "", ""], ["EP", "0700-1800", "Deniz Kaya"]] });
+  assert.equal(okunan.length, 2);
+  assert.deepEqual(await rotaOku(ayar, "2026-12-20", f, Date.UTC(2026, 11, 13)), { hata: "sekme" });
+});

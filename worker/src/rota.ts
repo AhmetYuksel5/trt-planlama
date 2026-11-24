@@ -181,11 +181,21 @@ export const rotaOku = async (a: RotaAyar, tarih: string, f: typeof fetch, simdi
   const r = await f(`${SHEETS}/${tabloId}?fields=sheets.properties.title`, { headers: h });
   if (!r.ok) return { hata: r.status === 403 || r.status === 404 ? "paylasim" : "google", ayrinti: String(r.status) };
   const j = (await r.json().catch(() => ({}))) as { sheets?: { properties?: { title?: string } }[] };
-  const sekme = sekmeSec((j.sheets ?? []).map((x) => x.properties?.title ?? ""), tarih);
-  if (!sekme) return { hata: "sekme" };
-  const v = await f(`${SHEETS}/${tabloId}/values/${encodeURIComponent(`'${sekme.replace(/'/g, "''")}'!A1:AD400`)}?valueRenderOption=FORMATTED_VALUE`, { headers: h });
-  if (!v.ok) return { hata: "google", ayrinti: String(v.status) };
-  const d = (await v.json().catch(() => ({}))) as { values?: string[][] };
-  const satirlar = rotaGunu(d.values ?? [], tarih, tur);
-  return satirlar ? { sekme, satirlar } : { hata: "gun" };
+  const adlar = (j.sheets ?? []).map((x) => x.properties?.title ?? "").filter(Boolean);
+  /*
+   * Sekme adı tarih aralığıysa o; değilse (kişinin kendi kopyası: IMPORTRANGE'li
+   * "Bu dönem" / "Sonraki dönem" sekmeleri, asıl tabloyu paylaşamayan için) her
+   * sekmede gün aranır, en çok dördünde.
+   */
+  const secilen = sekmeSec(adlar, tarih);
+  const adaylar = secilen ? [secilen] : adlar.filter((ad) => !sekmeAraligi(ad)).slice(0, 4);
+  if (!adaylar.length) return { hata: "sekme" };
+  for (const sekme of adaylar) {
+    const v = await f(`${SHEETS}/${tabloId}/values/${encodeURIComponent(`'${sekme.replace(/'/g, "''")}'!A1:AD400`)}?valueRenderOption=FORMATTED_VALUE`, { headers: h });
+    if (!v.ok) return { hata: "google", ayrinti: String(v.status) };
+    const d = (await v.json().catch(() => ({}))) as { values?: string[][] };
+    const satirlar = rotaGunu(d.values ?? [], tarih, tur);
+    if (satirlar) return { sekme, satirlar };
+  }
+  return { hata: secilen ? "gun" : "sekme" };
 };
