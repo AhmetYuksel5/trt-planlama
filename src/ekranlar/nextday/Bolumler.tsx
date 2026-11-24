@@ -6,11 +6,12 @@ import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import { CanliKunyesi } from "../../bilesenler/Kunye";
 import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
+import { PaketMetniFormu } from "./BaslikKarti";
 import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Fragment, useState, type ReactNode, type HTMLAttributes } from "react";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../../dil";
-import { baslikEkle, canliSil, gelismeKaydet, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
+import { baslikEkle, canliSil, gelismeKaydet, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, paketMetniDuzenlenebilir, stokPaketiSil, stokPaketiSilinebilir, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
 import { bicimEki, gelismeBicimEki, paketNotEki, adParcalari, ekipAdi, planAdiYaz, HAREKET_TURU_ADI, KAYNAK_ADI, kisiAr, muhabirUnvani, paketYeri, satir, sehirAr } from "../../etiketler";
 import { baskaPlandaHazir, hazirSecilebilir, stokDurumu } from "../../akis";
 import { useBen } from "../../oturum";
@@ -570,6 +571,7 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
   const { t } = useDil();
   const ben = useBen();
   const [sec, setSec] = useState(false);
+  const [duzenle, setDuzenle] = useState<string | null>(null);
   const secili = plan.hazirPaketler.map((id) => paketBul(d, id)).filter((p): p is Paket => !!p);
   return (
     <Bolum ar no={4} baslik={metin("hazirPaketler", "ar")} ek={String(secili.length)}>
@@ -581,11 +583,17 @@ export function HazirBolumu({ plan, duzenler, d }: { plan: NextDayPlan; duzenler
               <HazirSatiri p={p} d={d} />
             </div>
             {duzenler && (
-              <div className="islemler">
-                <IkonDugme ikon={<Trash2 size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, p.id)} />
+              <div className="islemler" data-hazir-islem={p.id}>
+                {paketMetniDuzenlenebilir(ben, d, p) && <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setDuzenle(duzenle === p.id ? null : p.id)} />}
+                {/* Plandan çıkar paketi stoka geri bırakır; bu planda stoka alınmış paket ayrıca silinir. */}
+                <IkonDugme ikon={<X size={15} />} etiket={t("plandanCikar")} onClick={() => ben && hazirPaketCikar(ben, plan.id, p.id)} />
+                {ben && stokPaketiSilinebilir(ben, d, plan, p) && (
+                  <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} ton="kotu" onClick={() => confirm(t("silinsinMi")) && stokPaketiSil(ben, plan.id, p.id)} />
+                )}
               </div>
             )}
           </div>
+          {duzenle === p.id && ben && <PaketMetniFormu ben={ben} paket={p} kapat={() => setDuzenle(null)} />}
         </div>
       ))}
       {duzenler &&

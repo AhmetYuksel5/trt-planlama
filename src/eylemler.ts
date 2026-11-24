@@ -2331,6 +2331,34 @@ export const paketStogaAl = (ben: Kisi, paketId: string, baslikta = false) => {
   kaydet(hazirYayiniEsitle(d, plan.id, ben.id));
   return true;
 };
+/*
+ * Bu planda stoka alınmış paketi sil (kullanıcı: stoka eklenen paket
+ * silinemiyordu; "Plandan çıkar" yalnız stoka geri bırakıyordu): başka
+ * planın hazırında değilse paket ve plandaki izleri gider, öneri bağı
+ * tazelenir.
+ */
+export const stokPaketiSilinebilir = (ben: Kisi | undefined, d: Durum, plan: NextDayPlan, p: Paket) =>
+  !!ben && !!p.stok && p.planId === plan.id && !p.ozelId && planIcerikDuzenler(ben, plan) && !baskaPlandaHazir(d, p.id, plan.id);
+
+export const stokPaketiSil = (ben: Kisi, planId: string, id: string) => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  const p = paketBul(d, id);
+  if (!plan || !p || !stokPaketiSilinebilir(ben, d, plan, p)) return false;
+  const yeni = oneriBaglariniTazele(
+    {
+      ...d,
+      paketler: d.paketler.filter((x) => x.id !== id),
+      planlar: d.planlar.map((x) => (x.hazirPaketler.includes(id) ? { ...x, hazirPaketler: cikar(x.hazirPaketler, id) } : x)),
+      oneriler: d.oneriler.map((o) => (o.paketId === id ? { ...o, paketId: undefined } : o)),
+    },
+    [p.oneriId],
+  );
+  // Hareket yok: plandaki paket silme (paketSil) de yazmıyor; paket kaydı gidince hareketi boşa düşerdi.
+  kaydet(yeni);
+  return true;
+};
+
 export const hazirPaketCikar = (ben: Kisi, planId: string, id: string) => {
   let d = getir();
   const plan = planBul(d, planId);
@@ -3310,17 +3338,20 @@ export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
  * yalnız taslakta açılıyor, onaydan sonra yazım düzeltilemiyordu.
  */
 export const paketMetniDuzenlenebilir = (ben: Kisi | undefined, d: Durum, p: Paket): boolean => {
-  if (!ben || eskiOzelPaket(p) || p.durum !== "onaylandi" || !yapabilir(ben, "planDuzenle")) return false;
+  // Stoka alınmış paket "tamamlandı" sayılıyor; yayına çıkana dek metni ve kodu düzeltilebilir (kullanıcı: stoka eklenen paket sonradan düzenlenemiyordu).
+  const stokta = !!p.stok && p.durum === "tamamlandi" && !p.yayinlandi;
+  if (!ben || eskiOzelPaket(p) || (p.durum !== "onaylandi" && !stokta) || !yapabilir(ben, "planDuzenle")) return false;
   const plan = p.planId ? planBul(d, p.planId) : undefined;
   return !plan || plan.durum !== "devralindi";
 };
 
-export const paketMetniDuzenle = (ben: Kisi, id: string, g: { baslik: string; aciklama: string }): boolean => {
+export const paketMetniDuzenle = (ben: Kisi, id: string, g: { baslik: string; aciklama: string; slug?: string }): boolean => {
   const d = getir();
   const p = d.paketler.find((x) => x.id === id);
   if (!p || !g.baslik.trim() || !paketMetniDuzenlenebilir(ben, d, p)) return false;
-  if (p.baslik === g.baslik.trim() && (p.aciklama ?? "") === g.aciklama) return true;
-  kaydet(paketGuncelle(d, id, (x) => ({ ...x, baslik: g.baslik.trim(), aciklama: g.aciklama, guncelleme: simdi() })));
+  const slug = g.slug === undefined ? p.slug : g.slug.trim() || undefined;
+  if (p.baslik === g.baslik.trim() && (p.aciklama ?? "") === g.aciklama && p.slug === slug) return true;
+  kaydet(paketGuncelle(d, id, (x) => ({ ...x, baslik: g.baslik.trim(), aciklama: g.aciklama, slug, guncelleme: simdi() })));
   return true;
 };
 

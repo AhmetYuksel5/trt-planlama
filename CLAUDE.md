@@ -2998,6 +2998,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     paketlerde (التقارير المتوقعة) basılmaz; başlığın altında kalıp kalmayacağı sorulur (`stokBaslikta`,
     `paketStogaAl(…, baslikta)`), hayırsa başlıktan ayrılır. Hazır pakette açıklama ve kod (slug) satırın hemen
     altında; PKG satırında da kod altında.
+    Stoka alınan paket sonradan düzenlenir ve silinir (kullanıcı: ikisi de
+    yapılamıyordu; çöp simgesi yalnız plandan çıkarıp stoka bırakıyordu):
+    hazır paket satırında (plan ekranı ve belge) "Düzenle" Strap, açıklama ve
+    kod (`paketMetniDuzenlenebilir` stokta ve yayınlanmamış paketi de kapsar,
+    `PaketMetniFormu`'nda stokta slug alanı), "Plandan çıkar" (×, stoka geri
+    bırakır) ve bu planda stoka alınmışsa "Sil" (`eylemler.ts → stokPaketiSil`,
+    `stokPaketiSilinebilir`: başka planın hazırında değil; onaylı, paket ve
+    hazır listelerindeki izi gider). Test `testler/stok-paket.cjs`.
 - Onaylı paketin kapanışı (tasarım belgesi 3. aşama). "Newsdesk sistemde"
   anahtarı (`Durum.newsdeskDevrede`) kalktı (kullanıcı: Newsdesk aktif değil
   diye bütün düzeni dondurmaya gerek yok; paketin Newsdesk'ten geçip

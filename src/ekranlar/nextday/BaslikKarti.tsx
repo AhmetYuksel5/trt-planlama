@@ -393,7 +393,7 @@ export default function BaslikKarti({
 /* Onaylı paketin yalnız metni (Strap, açıklama); geri kalanı kilitli. */
 export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Paket; kapat: () => void }) {
   const { t } = useDil();
-  const [f, setF] = useState({ baslik: p.baslik, aciklama: p.aciklama ?? "" });
+  const [f, setF] = useState({ baslik: p.baslik, aciklama: p.aciklama ?? "", slug: p.slug ?? "" });
   return (
     <div className="form form-kutu" data-paket-metni={p.id}>
       <label>
@@ -404,11 +404,18 @@ export function PaketMetniFormu({ ben, paket: p, kapat }: { ben: Kisi; paket: Pa
         {t("aciklama")}
         <textarea {...icerikAlani} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} data-paket-metni-aciklama />
       </label>
+      {/* Stoktaki paketin kodu (slug) hazır paketler satırında basılıyor; orada da düzeltilsin. */}
+      {p.stok && (
+        <label>
+          {t("slug")}
+          <input dir="ltr" value={f.slug} onChange={(e) => setF({ ...f, slug: e.target.value })} data-paket-metni-slug />
+        </label>
+      )}
       <div className="form-alt">
         <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
           {t("iptal")}
         </button>
-        <button type="button" className="dugme" disabled={!f.baslik.trim()} onClick={() => paketMetniDuzenle(ben, p.id, f) && kapat()} data-paket-metni-kaydet>
+        <button type="button" className="dugme" disabled={!f.baslik.trim()} onClick={() => paketMetniDuzenle(ben, p.id, p.stok ? f : { baslik: f.baslik, aciklama: f.aciklama }) && kapat()} data-paket-metni-kaydet>
           {t("kaydet")}
         </button>
       </div>

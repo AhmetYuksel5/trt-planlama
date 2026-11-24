@@ -17,6 +17,7 @@ import {
   Combine,
   Search,
   GripVertical,
+  Trash2,
 } from "lucide-react";
 // Kurumun logosu yalnız baskı tasarımlarında; kurumun düz çıktısı ve Word'de yok.
 import type { Baski } from "./Baski";
@@ -80,6 +81,8 @@ import {
   planMuhabirTbc,
   planBaslikLive,
   paketMetniDuzenlenebilir,
+  stokPaketiSil,
+  stokPaketiSilinebilir,
   paketMetniDuzenle,
   beklenenSiraKaydet,
 } from "../../eylemler";
@@ -1458,7 +1461,24 @@ export function NextDayBelgesi({
                             hazirlar.length,
                             () => ben && hazirPaketTasi(ben, plan.id, h.id, 1),
                           )}
-                          ek={<PaketBaglantisi id={h.id} />}
+                          duzenle={
+                            paketMetniDuzenlenebilir(ben, v, h)
+                              ? () => ac({ tur: "paketMetni", paket: h })
+                              : undefined
+                          }
+                          ek={
+                            <>
+                              <PaketBaglantisi id={h.id} />
+                              {ben && stokPaketiSilinebilir(ben, v, plan, h) && (
+                                <IkonDugme
+                                  ikon={<Trash2 size={15} />}
+                                  etiket={t("sil")}
+                                  ton="kotu"
+                                  onClick={() => confirm(t("silinsinMi")) && stokPaketiSil(ben, plan.id, h.id)}
+                                />
+                              )}
+                            </>
+                          }
                           cikar={sil(
                             () => ben && hazirPaketCikar(ben, plan.id, h.id),
                           )}
@@ -1705,7 +1725,15 @@ export function NextDayBelgesi({
                         hazirlar.length,
                         () => ben && hazirPaketTasi(ben, plan.id, h.id, 1),
                       )}
-                      ek={<PaketBaglantisi id={h.id} />}
+                      duzenle={paketMetniDuzenlenebilir(ben, v, h) ? () => ac({ tur: "paketMetni", paket: h }) : undefined}
+                      ek={
+                        <>
+                          <PaketBaglantisi id={h.id} />
+                          {ben && stokPaketiSilinebilir(ben, v, plan, h) && (
+                            <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} ton="kotu" onClick={() => confirm(t("silinsinMi")) && stokPaketiSil(ben, plan.id, h.id)} />
+                          )}
+                        </>
+                      }
                       cikar={sil(
                         () => ben && hazirPaketCikar(ben, plan.id, h.id),
                       )}
