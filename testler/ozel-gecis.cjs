@@ -26,12 +26,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     const mu = d.kisiler.find((x) => x.birim === "muhabir" && !x.pasif);
     const ic = d.kisiler.find((x) => x.birim === "planlama" && !x.pasif);
     d.ozel.push({ id: "oz-g", ad: "تغطية الانتقال", tarih: bas, bitis: bit, hazirlik: [], iz: [],
-      paketOnerileri: [{ id: "po-g", baslik: "تقرير مقترح قديم", aciklama: "", kaynak: "dis", muhabirId: mu.id, sonTarih: bit, tur: "haber", bicim: "pkg", durum: "onaylandi", paketId: "p-g1", iz: [] }] });
+      paketOnerileri: [{ id: "po-g", baslik: "تقرير مقترح قديم", aciklama: "", kaynak: "dis", muhabirId: mu.id, sonTarih: bit, tur: "haber", bicim: "pkg", durum: "onaylandi", paketId: "p-g1", iz: [] },
+        { id: "po-g4", baslik: "تقرير داخلي معتمد", aciklama: "", kaynak: "inhouse", sonTarih: bit, tur: "haber", bicim: "pkg", durum: "onaylandi", paketId: "p-g4", iz: [] }] });
     const temel = { sehir: "istanbul", aciklama: "", tur: "haber", bicim: "pkg", sahaGerekli: false, ozelId: "oz-g", ozelAd: "تغطية الانتقال", notlar: [], olusturma: "2026-01-01T09:00:00Z", guncelleme: "2026-01-01T09:00:00Z" };
     d.paketler.push(
       { ...temel, id: "p-g1", kod: "G1", baslik: "تقرير خارجي قديم", durum: "onaylandi", muhabirId: mu.id, ozelKaynak: "dis", sonTarih: onceki, stok: true },
       { ...temel, id: "p-g2", kod: "G2", baslik: "تقرير داخلي قديم", durum: "onaylandi", hazirlayanId: ic.id, ozelKaynak: "inhouse", sonTarih: bit },
       { ...temel, id: "p-g3", kod: "G3", baslik: "تقرير ينتظر التكليف", durum: "onaylandi", muhabirId: mu.id, ozelKaynak: "dis", ozelGorevBekliyor: true, sonTarih: bit },
+      { ...temel, id: "p-g4", kod: "G4", baslik: "تقرير داخلي معتمد", durum: "onaylandi", ozelKaynak: "inhouse", sonTarih: bit },
     );
     d.hareketler.unshift({ id: "h-g1", zaman: "2026-01-02T10:00:00Z", kisiId: "pl1", tip: "ozelPaketAtandi", paketId: "p-g1", ozelId: "oz-g" });
     localStorage.setItem(k, JSON.stringify(d));
@@ -53,6 +55,17 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => document.querySelectorAll("main details").forEach((x) => (x.open = true)));
   ok((await p.locator('[data-ozel-icerik="p-g1"]').count()) === 1, "çevrilen paket içerikler arasında");
   ok((await p.getByText("تقرير مقترح قديم").count()) === 0, "önerisi eski listede ikinci kez yok");
+
+  // Eski düzende görevi verilmemiş onay geri alınıyor: önerili paket silinir, öneri onaya döner; önerisiz taslağa.
+  p.on("dialog", (x) => x.accept());
+  ok((await p.locator('[data-ozel-icerik="p-g1"] [data-stok-paket="p-g1"]').count()) === 1, "içerik Stok kartıyla");
+  await p.locator('[data-ozel-paket="po-g4"] [data-ozel-paket-onay-geri]').click();
+  await p.waitForTimeout(300);
+  await p.locator('[data-ozel-paket="p-g3"] [data-ozel-paket-onay-geri]').click();
+  await p.waitForTimeout(300);
+  const d3 = await durum();
+  ok(!d3.paketler.some((x) => x.id === "p-g4") && d3.ozel.find((x) => x.id === "oz-g").paketOnerileri.find((x) => x.id === "po-g4").durum === "oneri", "önerili paketin onayı geri alındı (paket silindi, öneri onay bekliyor)");
+  ok(d3.paketler.find((x) => x.id === "p-g3").durum === "taslak", "önerisiz paket taslağa döndü");
 
   // Çıktı: içerik yayın günüyle.
   await git("#/ozel/oz-g/cikti");

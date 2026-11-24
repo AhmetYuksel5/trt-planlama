@@ -3190,6 +3190,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     öbür satırlar da günüyle madde (`aylik.ts → olaydanOzele`). Çıktıda
     içerikler yayın günüyle. Test `testler/ozel-gecis.cjs`, aylık bağı
     `testler/planlama-3.cjs`.
+    Geri alma ve kart (kullanıcı: onaylanan paketler özel yayın planında geri
+    alınabilsin; içerikteki görevlendirme tasarımı standart stoklardaki
+    gibi): İçerik sekmesinde içerik Stok'un kartıyla (`StokSayfasi.tsx →
+    StokKarti`, `yayinsiz`: yayının adı kartta tekrar edilmez; `.icerik-sarma`
+    `display: contents`), yayın günü yayın günü kart ızgarasında; altta görev
+    postası, "Üretime al", "Görevi geri al" (`eylemler.ts → ozelIcerikGeriAl`,
+    `ozelIcerikGeriAlinabilir`: ileri görev veren, onaylı, üretime ve sonuç
+    işaretine girmemiş; iptal, plandan düşer, boş kalan yayın başlığı kalkar,
+    muhabire `paketIptal`) ve biten içerikte "Tamamlamayı geri al". Eski
+    düzenin onaylı paketinde görevi verilmemişse "Onayı geri al"
+    (`ozelPaketOnayGeriAl`, `ozelPaketOnayiGeriAlinabilir`, ozOnay; kontrol
+    listesinde "Onaylandı" kutusu da kalkar): öneriden doğan paket silinir,
+    öneri yeniden onay bekler; önerisiz paket taslağa döner. Testler
+    `testler/ozel-plan.cjs`, `testler/ozel-gecis.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında kayıttan
     okunan aşamalar (Planlama, Onay, Uygulama, Teslim, Yayına hazır), şimdiki

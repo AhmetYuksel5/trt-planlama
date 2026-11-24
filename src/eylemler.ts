@@ -31,7 +31,7 @@ import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { bugun, gecerliGun, girdidenIso, gunEkle, gunFarki, haftaBasi, simdi, yerelGirdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
 import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
-import { ozelOnayli } from "./ozel";
+import { ozelOnayli, ozelPaketAsamasi } from "./ozel";
 import { olayAyi, olayBaglantilari, olayBicimleri, olaydanOzele } from "./aylik";
 import { yeniAnilanlar } from "./bahsetme";
 import {
@@ -6799,6 +6799,30 @@ export interface OzelIcerikGirdisi extends PaketGorevGirdisi {
 
 export const ozelIcerikGunuUygun = (o: Pick<OzelYayin, "tarih" | "bitis">, gun: string) => !!gun && gun >= o.tarih && gun <= (o.bitis || o.tarih);
 
+/*
+ * İçeriğin görevini geri al (kullanıcı: özel yayın planında onaylanan paket
+ * geri alınabilsin): üretime ve muhabirin sonuç işaretine girmemiş içerik
+ * iptal olur, plandan düşer, muhabire bildirim gider; yayının o plandaki
+ * başlığı boş kaldıysa o da kalkar. Biten içeriğin geri alınması paket
+ * sayfasındakiyle aynı ("Tamamlamayı geri al").
+ */
+export const ozelIcerikGeriAlinabilir = (ben: Kisi, p: Paket) => ileriGorevVerebilir(ben) && ozelIcerikMi(p) && p.durum === "onaylandi" && !p.uretim && !p.isaret && !p.parcalar?.length;
+
+export const ozelIcerikGeriAl = (ben: Kisi, id: string) => {
+  let d = getir();
+  const p = paketBul(d, id);
+  if (!p || !ozelIcerikGeriAlinabilir(ben, p)) return false;
+  d = paketGuncelle(d, id, (x) => ({ ...x, durum: "iptal", planId: undefined, planBaslikId: undefined, guncelleme: simdi() }));
+  const plan = p.planId ? planBul(d, p.planId) : undefined;
+  const pbId = p.planBaslikId;
+  if (plan && pbId === `${plan.id}-oz-${p.ozelId}`) {
+    const dolu = d.paketler.some((x) => x.planBaslikId === pbId && x.durum !== "iptal") || d.gelismeler.some((x) => x.planBaslikId === pbId) || d.canliYayinlar.some((x) => x.planBaslikId === pbId);
+    if (!dolu) d = planGuncelle(d, plan.id, (x) => ({ ...x, basliklar: x.basliklar.filter((b) => b.id !== pbId) }));
+  }
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketIptal", paketId: id, ozelId: p.ozelId, ...(plan ? { planId: plan.id } : {}), veri: { ...(p.muhabirId ? { kime: p.muhabirId } : {}), ...(p.ozelAd ? { ad: p.ozelAd } : {}) } }));
+  return true;
+};
+
 export const ozelIcerikGorevlendir = (ben: Kisi, ozelId: string, g: OzelIcerikGirdisi): string | null => {
   const d = getir();
   const o = ozelBul(d, ozelId);
@@ -6875,6 +6899,30 @@ export const ozelPaketOnerisiOnayla = (ben: Kisi, ozelId: string, oneriId: strin
   const x = o?.paketOnerileri?.find((y) => y.id === oneriId);
   if (!o || !x || !ozelPaketOnerisiOnaylanabilir(ben, x)) return false;
   kaydet(paketOnerisiniOnayla(d, ben, o, x));
+  return true;
+};
+
+/*
+ * Eski düzende onaylanan paketin onayı geri alınıyor (kullanıcı: özel yayın
+ * planında onaylanan paket geri alınabilsin): görevi henüz verilmemişse
+ * (dış muhabire "Görevlendirildi" işaretlenmemiş, in-house'ta kimseye
+ * verilmemiş). Öneriden doğan paket silinir, öneri yeniden onay bekler;
+ * önerisiz paket taslağa döner.
+ */
+export const ozelPaketOnayiGeriAlinabilir = (ben: Kisi | undefined, p?: Paket) => !!ben && !!p && eskiOzelPaket(p) && p.durum === "onaylandi" && ozelPaketAsamasi(p) === "onayli" && planAdimiYapabilir(ben, "ozOnay");
+
+export const ozelPaketOnayGeriAl = (ben: Kisi, ozelId: string, paketId: string) => {
+  let d = getir();
+  const p = paketBul(d, paketId);
+  const o = ozelBul(d, ozelId);
+  if (!o || !p || p.ozelId !== ozelId || !ozelPaketOnayiGeriAlinabilir(ben, p)) return false;
+  const oneri = o.paketOnerileri?.find((x) => x.paketId === paketId);
+  if (oneri) {
+    d = { ...d, paketler: d.paketler.filter((x) => x.id !== paketId) };
+    d = ozelGuncelle(d, ozelId, (y) => ({ ...y, paketOnerileri: (y.paketOnerileri ?? []).map((z) => (z.id === oneri.id ? { ...z, durum: "oneri" as const, paketId: undefined, iz: [...z.iz, izYaz(ben, "durum", { durum: "plan", asama: "onayli", not: "↶" })] } : z)) }));
+  } else d = paketGuncelle(d, paketId, (x) => ({ ...x, durum: "taslak", ozelGorevBekliyor: undefined, guncelleme: simdi() }));
+  // Hareket yazılmıyor: görev henüz kimseye gitmedi; öneride iz kalıyor.
+  kaydet(d);
   return true;
 };
 

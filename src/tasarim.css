@@ -2815,6 +2815,8 @@ button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit;
 .ozel-eksik .ad { display: grid; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .ozel-eksik small { color: var(--sonuk); }
 .ozel-eksikler li.gecikti small { color: var(--kotu); }
+/* Özel yayının içerik kartı Stok kartının sarmalı: ızgaranın hücresi kartın kendisi. */
+.icerik-sarma { display: contents; }
 [data-ozel-madde] { display: flex; align-items: center; gap: var(--ara-2); }
 [data-ozel-madde] > .secim { flex: 1; min-width: 0; }
 [data-ozel-madde] .dugmeler { display: flex; gap: 2px; }

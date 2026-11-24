@@ -319,7 +319,8 @@ function StokRozeti({ p }: { p: Paket }) {
 }
 
 /* Programlar'ın içerik kartının kalıbı: tür, yer, gün, durum; başlık; muhabir, iletişim ve bölümün işi. */
-function StokKarti({ ben, p, ek }: { ben: Kisi; p: Paket; ek?: ReactNode }) {
+/** `yayinsiz`: özel yayının kendi sayfasında kartta yayının adı tekrar edilmiyor. */
+export function StokKarti({ ben, p, ek, yayinsiz }: { ben: Kisi; p: Paket; ek?: ReactNode; yayinsiz?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const kisiId = stokPaketKisisi(p);
@@ -339,7 +340,7 @@ function StokKarti({ ben, p, ek }: { ben: Kisi; p: Paket; ek?: ReactNode }) {
       <a href={`#/paketler/${p.id}`} className="prg-icerik-baslik">
         <Icerik blok>{p.baslik}</Icerik>
       </a>
-      {p.ozelAd && (
+      {p.ozelAd && !yayinsiz && (
         <span className="soluk">
           <Tv size={12} /> <Icerik>{p.ozelAd}</Icerik>
         </span>

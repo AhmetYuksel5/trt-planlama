@@ -98,6 +98,21 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     ok((await p.locator('[data-hafta-ozel-yayin="oz-p"]').count()) >= 1, "Weekly plan ekranında da");
   } else ok(true, "bu haftanın Weekly'si yok (bölüm sınanmadı)");
 
+  // Yayının sayfasında içerik Stok'un kartıyla; görevi geri alınca iptal, plandan ve boş kalan başlıktan düşer.
+  await git("#/ozel/oz-p");
+  await p.click('[data-ozel-sekme="icerik"]');
+  ok((await p.locator(`[data-ozel-icerik="${p2.id}"] [data-stok-paket="${p2.id}"]`).count()) === 1, "içerik Stok kartıyla");
+  await p.locator(`[data-ozel-icerik="${p2.id}"] [data-ozel-icerik-geri-al]`).click();
+  await p.waitForTimeout(400);
+  d = await durum();
+  const p2c = d.paketler.find((x) => x.id === p2.id);
+  const plan2 = d.planlar.find((x) => x.id === "nd-" + SONRA);
+  ok(p2c.durum === "iptal" && !p2c.planId, "görevi geri alınan içerik iptal, plandan düştü");
+  ok(!plan2.basliklar.some((x) => x.id === p2b.planBaslikId), "boş kalan yayın başlığı plandan kalktı");
+  ok(d.hareketler.some((h) => h.tip === "paketIptal" && h.paketId === p2.id && h.veri?.kime === mu), "muhabire bildirim");
+  ok((await p.locator(`[data-ozel-icerik="${p2.id}"]`).count()) === 0, "listeden kalktı");
+  ok((await p.locator(`[data-ozel-icerik="${p1.id}"] [data-ozel-icerik-geri-al]`).count()) === 1, "öbür içerikte geri alma düğmesi");
+
   ok(hatalar.length === 0, "sayfa hatası yok" + (hatalar.length ? ": " + hatalar.join(" | ") : ""));
   console.log(`\n${gec} geçti, ${kal} kaldı`);
   await b.close();

@@ -1,5 +1,5 @@
 import { SaatGirdisi, TarihGirdisi } from "../bilesenler/TarihSaat";
-import { AlertTriangle, CheckCircle, Mail, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, Mail, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, RotateCcw, Trash2, Tv, Users } from "lucide-react";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
@@ -11,7 +11,6 @@ import { GERCEK } from "../kip";
 import { postaGonder } from "../posta-kapi";
 import { ozelGorevEpostasi } from "../takdir";
 import { muhabirAdresi } from "../muhabirIletisim";
-import { asamaListesi } from "../akis";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, TUR_ADI } from "../etiketler";
 import {
   aylikOlaydanOzel,
@@ -42,6 +41,10 @@ import {
   ozelPaketOnerisiOnaylanabilir,
   paketTamamla,
   ozelIcerikGorevlendir,
+  ozelIcerikGeriAl,
+  ozelIcerikGeriAlinabilir,
+  ozelPaketOnayGeriAl,
+  ozelPaketOnayiGeriAlinabilir,
   ozelIcerikGunuUygun,
   ozelGorevPostasiGitti,
   type OzelKunye,
@@ -99,13 +102,16 @@ import {
   type TalepDurum,
 } from "../veri";
 import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
-import { ileriGorevVerebilir, ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
+import { ileriGorevVerebilir, uretimYoluBelirleyebilir, ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { IslemMenusu } from "../bilesenler/IslemMenusu";
 import { PlanBasiKalibi, adimlariKur } from "../bilesenler/PlanBasi";
 import { BicimSecici, FormAlt, MuhabirSecici } from "./nextday/Formlar";
 import { PAKET_ASAMA_ADI } from "../bilesenler/OzelGorevler";
 import { AdimYetkilileri } from "./organizasyon/PlanYetkileri";
+import { StokKarti } from "./StokSayfasi";
+import { UretimeAlDugmesi } from "../bilesenler/UretimBalonu";
+import { TamamlamaGeriAlDugmesi } from "../bilesenler/TamamlamaGeriAl";
 
 /**
  * Özel yayın: liste (#/ozel), plan (#/ozel/:id), çıktı (#/ozel/:id/cikti).
@@ -367,9 +373,9 @@ function KunyePenceresi({ ben, o, kapat }: { ben: Kisi; o?: OzelYayin; kapat: ()
  * Katlanır bölüm: kapalı gelir, başlıkta sayı. Ekleme düğmesi başlıkta;
  * basınca bölüm açılıp kapanmasın diye olay durduruluyor.
  */
-function Bolum({ ad, ikon, ek, ekle, children }: { ad: string; ikon: ReactNode; ek?: ReactNode; ekle?: { metin: string; ac: () => void; veri: string }; children: ReactNode }) {
+function Bolum({ ad, ikon, ek, ekle, acik, children }: { ad: string; ikon: ReactNode; ek?: ReactNode; ekle?: { metin: string; ac: () => void; veri: string }; acik?: boolean; children: ReactNode }) {
   return (
-    <details className="kart ozel-bolum" data-ozel-bolum={ad}>
+    <details className="kart ozel-bolum" data-ozel-bolum={ad} open={acik}>
       <summary>
         {ikon}
         <h2>{ad}</h2>
@@ -1135,7 +1141,7 @@ function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n
 /* --- Paketler: öneri → onay → görev → hazırlık → hazır --- */
 
 function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
-  const { t } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const [form, setForm] = useState<OzelPaketSatiri | null>(null);
   const [gorev, setGorev] = useState(false);
@@ -1148,6 +1154,7 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   return (
     <>
       <Bolum
+        acik
         ad={t("oyPaketler")}
         ikon={<Package size={18} />}
         ek={`${icerikler.filter((p) => p.durum === "tamamlandi").length + satirlar.filter((s) => s.asama === "hazir").length}/${icerikler.length + satirlar.length}`}
@@ -1162,13 +1169,19 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
         }
       >
         {satirlar.length + icerikler.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
-        {icerikler.length > 0 && (
-          <div className="ozel-kalemler" data-ozel-icerikler>
-            {icerikler.map((p) => (
-              <IcerikKalemi key={p.id} ben={ben} p={p} />
-            ))}
-          </div>
-        )}
+        {/* Yayın günü yayın günü, Stok'taki gibi kart ızgarasında. */}
+        {[...new Set(icerikler.map((p) => p.yayinGunu ?? ""))].map((g) => (
+          <section key={g || "gunsuz"} className="ara-ust-2" data-ozel-icerikler={g}>
+            {g && <div className="alan-etiket">{`${t("oyYayinGunu")} · ${gunAdi(g, dil)} ${tarihYaz(g, dil, "kisa")}`}</div>}
+            <div className="prg-icerikler">
+              {icerikler
+                .filter((p) => (p.yayinGunu ?? "") === g)
+                .map((p) => (
+                  <IcerikKalemi key={p.id} ben={ben} p={p} />
+                ))}
+            </div>
+          </section>
+        ))}
         {gruplar.map(([kaynak, ad]) => {
           const l = satirlar.filter((s) => s.kaynak === kaynak);
           return l.length ? (
@@ -1205,15 +1218,16 @@ async function gorevPostasiGonder(ben: Kisi, paketId: string): Promise<string | 
   return null;
 }
 
-/* Yeni düzenin içeriği: kim, hangi gün yayında, teslim, şimdiki aşama, posta. Ayrıntı ve üretim paketin sayfasında. */
+/*
+ * Yeni düzenin içeriği Stok'un kartıyla (kullanıcı: görevlendirme tasarımı standart stoklardaki gibi):
+ * tür, yer, aşama · kimde, başlık, teslim satırı, muhabir ve ona ulaşma; altta görev postası, "Üretime al"
+ * ve geri alma (görevi ya da tamamlamayı). Ayrıntı ve üretim paketin sayfasında.
+ */
 function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
-  const { t, dil, ad } = useDil();
+  const { t, dil } = useDil();
   const v = useVeri();
   const [mesgul, setMesgul] = useState(false);
-  const m = kisiBul(v, p.muhabirId);
-  const simdiki = asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti");
-  const gec = p.durum !== "tamamlandi" && !!p.sonTarih && p.sonTarih < bugun();
-  const adres = muhabirAdresi(m);
+  const adres = muhabirAdresi(kisiBul(v, p.muhabirId));
   const gonder = async () => {
     if (!confirm(t("oyPostaOnay"))) return;
     setMesgul(true);
@@ -1221,44 +1235,39 @@ function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
     setMesgul(false);
     bildir(hata === null ? t("oyPostaGitti") : `${t("tkGonderilemedi")} (${hata})`);
   };
+  const geriAl = () => confirm(t("oyGorevGeriAlSoru")) && ozelIcerikGeriAl(ben, p.id) && bildir(t("oyGorevGeriAlindi"));
+  const acik = p.durum === "onaylandi" || p.durum === "uretimde";
+  const posta = !acik ? null : p.takdirBildirimi ? (
+    <span className="sonuk-yazi" title={saatYaz(p.takdirBildirimi.zaman, dil)} data-ozel-posta="gitti">
+      <Mail size={14} /> {t("oyPostaGitti")}
+    </span>
+  ) : (
+    ileriGorevVerebilir(ben) && (
+      <button type="button" className="dugme dugme-ikincil dugme-kucuk" aria-disabled={!adres || mesgul} title={adres ? undefined : t("oyPostaAdresYok")} onClick={() => adres && !mesgul && gonder()} data-ozel-posta="">
+        <Mail size={14} /> {t("oyPostaGonder")}
+      </button>
+    )
+  );
   return (
-    <Kalem veri={{ "data-ozel-icerik": p.id }} baslik={<Icerik>{p.baslik}</Icerik>} gec={gec} rozet={<PaketDurumRozeti paket={p} />}>
-      <small className="sonuk-yazi">
-        {[
-          p.kod,
-          m && ad(m),
-          p.yayinGunu && `${t("oyYayinGunu")}: ${tarihYaz(p.yayinGunu, dil, "kisa")}`,
-          p.sonTarih && p.sonTarih !== p.yayinGunu && `${t("oyTeslim")}: ${tarihYaz(p.sonTarih, dil, "kisa")}`,
-          simdiki?.ad,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </small>
-      {p.aciklama && <Icerik blok>{p.aciklama}</Icerik>}
-      <div className="dugmeler">
-        <a className="dugme dugme-ikincil dugme-kucuk" href={`#/paketler/${p.id}`}>
-          <Package size={14} /> {p.kod}
-        </a>
-        {p.takdirBildirimi ? (
-          <span className="sonuk-yazi" title={saatYaz(p.takdirBildirimi.zaman, dil)} data-ozel-posta="gitti">
-            <Mail size={14} /> {t("oyPostaGitti")}
-          </span>
-        ) : (
-          ileriGorevVerebilir(ben) && (
-            <button
-              type="button"
-              className="dugme dugme-ikincil dugme-kucuk"
-              aria-disabled={!adres || mesgul}
-              title={adres ? undefined : t("oyPostaAdresYok")}
-              onClick={() => adres && !mesgul && gonder()}
-              data-ozel-posta=""
-            >
-              <Mail size={14} /> {t("oyPostaGonder")}
-            </button>
-          )
-        )}
-      </div>
-    </Kalem>
+    <div className="icerik-sarma" data-ozel-icerik={p.id}>
+      <StokKarti
+        ben={ben}
+        p={p}
+        yayinsiz
+        ek={
+          <>
+            {posta}
+            {uretimYoluBelirleyebilir(ben, p) && p.durum === "onaylandi" && !p.uretim && <UretimeAlDugmesi ben={ben} paket={p} />}
+            {ozelIcerikGeriAlinabilir(ben, p) && (
+              <button type="button" className="dugme dugme-sade dugme-kucuk kotu-yazi" onClick={geriAl} data-ozel-icerik-geri-al>
+                <RotateCcw size={14} /> {t("oyGorevGeriAl")}
+              </button>
+            )}
+            {p.durum === "tamamlandi" && <TamamlamaGeriAlDugmesi ben={ben} paket={p} />}
+          </>
+        }
+      />
+    </div>
   );
 }
 
@@ -1351,10 +1360,13 @@ function PaketKalemi({ ben, o, s, duzenle }: { ben: Kisi; o: OzelYayin; s: OzelP
   const v = useVeri();
   const p = s.paket;
   const sira = OZEL_PAKET_ASAMALARI;
+  const onayGeriAl = () => p && confirm(t("oyOnayGeriSoru")) && ozelPaketOnayGeriAl(ben, o.id, p.id) && bildir(t("bKaydedildi"));
   const yapan = kisiBul(v, s.muhabirId ?? p?.hazirlayanId);
   const gec = s.asama !== "hazir" && !!s.sonTarih && s.sonTarih < bugun();
   /* Her aşamanın işaretini kim koyuyor: onayı onaylayan, görevi Output müdürü (dışta onayla), hazırlığı işi yapan ya da Planlama. */
   const degistir = (adim: OzelPaketAsamasi): (() => unknown) | undefined => {
+    // Görevi verilmemiş onay geri alınıyor (kutunun işareti kalkınca).
+    if (adim === "onayli" && s.asama === "onayli" && p && ozelPaketOnayiGeriAlinabilir(ben, p)) return () => onayGeriAl();
     if (adim === "onayli" && s.asama === "plan") {
       if (s.oneri && ozelPaketOnerisiOnaylanabilir(ben, s.oneri)) return () => ozelPaketOnerisiOnayla(ben, o.id, s.oneri!.id) && bildir(t("bKaydedildi"));
       if (!s.oneri && p && ozelPaketOnaylanabilir(ben, p)) return () => ozelPaketOnayla(ben, p.id);
@@ -1384,6 +1396,11 @@ function PaketKalemi({ ben, o, s, duzenle }: { ben: Kisi; o: OzelYayin; s: OzelP
       />
       <div className="dugmeler">
         {p && <OutputAta ben={ben} p={p} />}
+        {ozelPaketOnayiGeriAlinabilir(ben, p) && (
+          <button className="dugme dugme-sade dugme-kucuk" onClick={onayGeriAl} data-ozel-paket-onay-geri>
+            <RotateCcw size={14} /> {t("onayiGeriAl")}
+          </button>
+        )}
         {p && (
           <a className="dugme dugme-ikincil dugme-kucuk" href={`#/paketler/${p.id}`}>
             <Package size={14} /> {p.kod}
@@ -1624,6 +1641,7 @@ function Maddeler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   return (
     <>
       <Bolum
+        acik
         ad={t("oyHazirlik")}
         ikon={<ClipboardList size={18} />}
         ek={`${o.hazirlik.filter((h) => h.tamam).length}/${o.hazirlik.length}`}
