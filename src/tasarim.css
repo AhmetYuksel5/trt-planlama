@@ -4458,3 +4458,101 @@ html.yeni-tasarim.paper { --lacivert-silik: var(--silik); }
   .asistan-panel { inset-inline: 0; inset-block-end: var(--alt-cubuk, 0px); inline-size: 100%; block-size: min(75dvh, calc(100dvh - var(--alt-cubuk, 0px) - 60px)); border-radius: var(--yaricap-kart) var(--yaricap-kart) 0 0; }
   .asistan-ac { inset-block-end: calc(var(--alt-cubuk, 0px) + 12px); inset-inline-end: 12px; inline-size: 48px; block-size: 48px; }
 }
+
+/*
+ * "Logo yeşili" tasarım dili (kullanıcı: logonun yeşiliyle, yeşile boğmadan, kararında; tasarimSecimi.ts).
+ * Renkler logodan ölçüldü: yeşil #389480 (ışığı #68b890), petrol #084050, lacivert mürekkep #0a1a28.
+ * Yazıdaki vurgu logo yeşilinin bir tık koyusu (#237a68, beyazda 5,2:1); logo yeşilinin kendisi yalnız
+ * süs ve simgede (3,7:1). Yeşil yalnız birkaç yerde: seçili menü, bağlantı ve seçim, kart başı simgesi,
+ * birincil düğme (yeşilden petrole ince geçiş), üst çubuğun ve "Sıradaki" kartının başındaki şerit,
+ * asistan düğmesi. Zemin nötr ve hafif serin; durum renkleri yeşille karışmasın diye mercan ve kehribar,
+ * "iyi" logodan ayrı, daha sarıya çalan bir yeşil.
+ */
+html.yeni-tasarim.yesil {
+  --marka-yesil: #389480;
+  --marka-isik: #68b890;
+  --petrol: #0e4250;
+  --zemin: #f4f7f6;
+  --yuzey: #ffffff;
+  --yuzey-2: #eff4f2;
+  --yuzey-3: #e4ece9;
+  --murekkep: #0f1d2b;
+  --sonuk: #46566a;
+  --silik: #5f6e7a;
+  --cizgi: #dfe7e4;
+  --cizgi-girdi: #889895;
+  --vurgu: #237a68;
+  --vurgu-koyu: #185c4f;
+  --vurgu-sis: #e7f3ef;
+  --onceki-fon: #eaf4f0;
+  --onceki-cizgi: #a9d2c3;
+  --onceki-serit: var(--marka-yesil);
+  --lacivert: #0f2a3a;
+  /* Durum yeşili markadan ayrı: zeytine çalan; sis zeminlerde de küçük yazı AA'yı geçsin (ajan incelemesi). */
+  --iyi: #3d7524; --iyi-sis: #eef5e6;
+  --uyari: #965708; --uyari-sis: #fcf0da;
+  --kotu: #b43a29; --kotu-sis: #fbe7e3;
+  /* Bilgi ve "süren" mavi: logonun petrolüne yakın, yeşille çatışmayan. */
+  --bilgi: #2f63a8; --bilgi-sis: #e9eff8;
+  --masa-planlama: #237a68; --masa-planlama-sis: #e7f3ef; --masa-planlama-acik: #68b890;
+  --golge-acilir: 0 10px 30px rgba(14, 66, 80, .16);
+}
+/* Üst çubuğun bitişinde ince şerit: logonun yeşilinden petrole. */
+html.yeni-tasarim.yesil .ust {
+  background: linear-gradient(90deg, var(--marka-yesil), var(--petrol)) bottom / 100% 1.5px no-repeat, var(--yuzey);
+  box-shadow: none;
+}
+/* Arapçada başlangıç sağda: şerit de yansısın. */
+html.yeni-tasarim.yesil[dir="rtl"] .ust, html.yeni-tasarim.yesil [dir="rtl"] .ust { background: linear-gradient(270deg, var(--marka-yesil), var(--petrol)) bottom / 100% 1.5px no-repeat, var(--yuzey); }
+/* Menü: seçili madde yeşil sisi ve başında ince yeşil çizgi; simgesi logo yeşili. */
+html.yeni-tasarim.yesil .menu a.acik { background: var(--vurgu-sis); color: var(--vurgu-koyu); box-shadow: inset 3px 0 0 var(--marka-yesil); }
+html.yeni-tasarim.yesil[dir="rtl"] .menu a.acik, html.yeni-tasarim.yesil [dir="rtl"] .menu a.acik { box-shadow: inset -3px 0 0 var(--marka-yesil); }
+html.yeni-tasarim.yesil .menu a.acik svg { color: var(--marka-yesil); }
+html.yeni-tasarim.yesil .menu-grup-ad { color: var(--silik); }
+/*
+ * Birincil düğme: yeşilden petrole ince geçiş, yalnız düz .dugme'de. Varyantlar (ikincil, sade, kötü, yumuşak,
+ * iyi) yeni tasarımın kendi kurallarında kalır: geçiş onları da ezip "iyi" düğmeyi yeşil-petrole, kötünün
+ * üzerine gelinişini koyu zeminde kırmızı yazıya çeviriyordu (ajan incelemesi).
+ */
+html.yeni-tasarim.yesil .dugme:not(.dugme-ikincil, .dugme-sade, .dugme-kotu, .dugme-yumusak, .dugme-iyi) { background: linear-gradient(135deg, var(--vurgu), var(--petrol)); border-color: transparent; color: #fff; }
+html.yeni-tasarim.yesil .dugme:not(.dugme-ikincil, .dugme-sade, .dugme-kotu, .dugme-yumusak, .dugme-iyi):hover { background: linear-gradient(135deg, var(--vurgu-koyu), var(--petrol)); }
+/* Seçili sekme koyu petrol (lacivertin yerinde), sayısı yeşil sisinde. */
+html.yeni-tasarim.yesil .sekmeler button.acik, html.yeni-tasarim.yesil .sekmeler > a.acik { background: var(--petrol); border-color: var(--petrol); }
+/* Kart başlığının simgesi logo yeşili: sayfa sakin, yön veren işaretler renkli. */
+html.yeni-tasarim.yesil .kart-bas h2 svg { color: var(--marka-yesil); }
+/* "Sıradaki" kartı planın başlangıcı: başında yeşilden petrole dikey şerit. */
+html.yeni-tasarim.yesil .siradaki-karti { border-inline-start: 0; background-image: linear-gradient(var(--marka-yesil), var(--petrol)); background-size: 3px 100%; background-repeat: no-repeat; background-position: left; background-color: var(--yuzey); }
+html.yeni-tasarim.yesil[dir="rtl"] .siradaki-karti, html.yeni-tasarim.yesil [dir="rtl"] .siradaki-karti { background-position: right; }
+html.yeni-tasarim.yesil .durum-cizgisi span.simdi i { background: var(--marka-yesil); border-color: var(--marka-yesil); }
+/* Girdi odağı ve onay kutuları yeşil. */
+html.yeni-tasarim.yesil :is(input, select, textarea):focus-visible { outline-color: var(--marka-yesil); }
+html.yeni-tasarim.yesil input[type="checkbox"], html.yeni-tasarim.yesil input[type="radio"] { accent-color: var(--vurgu); }
+/* Asistan düğmesi logonun kendisi gibi: yeşilden petrole. */
+html.yeni-tasarim.yesil .asistan-ac { background: linear-gradient(135deg, var(--vurgu), var(--petrol)); }
+html.yeni-tasarim.yesil .asistan-ac:hover { background: linear-gradient(135deg, var(--vurgu-koyu), var(--petrol)); }
+html.yeni-tasarim.yesil .asistan-bas svg:first-child { color: var(--marka-yesil); }
+
+/*
+ * Yeşil yalnız marka ve "yayınlandı/iyi" anlamında kalsın (ajan incelemesi): süren paket ve şimdiki adım
+ * mavi/petrol, geçilen adım petrolün soluğu; bilgi rozeti mavi; WhatsApp düğmeleri sakin (rengi üzerine
+ * gelince); staffing şeridi nötr, başında "Sıradaki" gibi ince yeşil çizgi; haftanın gün sayıları nötr.
+ */
+html.yeni-tasarim.yesil .bp-serit { --bp-renk: var(--bilgi); }
+html.yeni-tasarim.yesil .bp-serit.yayin { --bp-renk: var(--iyi); }
+html.yeni-tasarim.yesil .bp-serit.stok { --bp-renk: var(--sonuk); }
+html.yeni-tasarim.yesil .bp-serit:is(.yapilmadi, .iptal) { --bp-renk: var(--kotu); }
+html.yeni-tasarim.yesil :is(.bp-bar i.gecti, .oy-serit i.oy-gecti, .oneri-yolu li.oy-gecti::before) { background: color-mix(in srgb, var(--petrol) 60%, transparent); }
+html.yeni-tasarim.yesil :is(.bp-bar i.simdi, .oy-serit i.oy-simdi, .oneri-yolu li.oy-simdi::before) { background: var(--bilgi); }
+html.yeni-tasarim.yesil .rozet-vurgu { background: var(--bilgi-sis); color: var(--bilgi); }
+html.yeni-tasarim.yesil .ikon-dugme.whatsapp { color: var(--sonuk); background: var(--yuzey); border-color: var(--cizgi); }
+html.yeni-tasarim.yesil .ikon-dugme.whatsapp:hover { color: #fff; background: var(--whatsapp); border-color: var(--whatsapp); filter: none; }
+html.yeni-tasarim.yesil [data-staffing-seridi] { background: var(--yuzey); border-color: var(--cizgi); box-shadow: inset 3px 0 0 var(--marka-yesil); }
+html.yeni-tasarim.yesil[dir="rtl"] [data-staffing-seridi], html.yeni-tasarim.yesil [dir="rtl"] [data-staffing-seridi] { box-shadow: inset -3px 0 0 var(--marka-yesil); }
+/* Görevlendirilmiş iş "iyi/bitti" değil: sayısı nötr (ajan incelemesi). */
+html.yeni-tasarim.yesil :is(.ap-serit-kutu, .py-tek .py-akis-kutu).ton-iyi b { color: var(--murekkep); }
+html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var(--vurgu-koyu); }
+
+.ornek-yesil { background: #f4f7f6; border-color: #dfe7e4; border-radius: 6px; font-family: "Inter", sans-serif; }
+.ornek-yesil i { background: #fff; border-color: #dfe7e4; border-radius: 6px; box-shadow: inset 0 3px 0 #389480; }
+.ornek-yesil b { color: #0f1d2b; font-weight: 600; }
+.ornek-yesil::after { background: linear-gradient(135deg, #237a68, #0e4250); border-radius: 4px; }

@@ -15,7 +15,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl2"); });
   await git("#/ayarlar");
   await p.evaluate(() => (document.querySelector("[data-tasarim-secimi]").closest("details").open = true));
-  ok((await p.locator("[data-tasarim-dili]").count()) === 3, "üç tasarım dili");
+  ok((await p.locator("[data-tasarim-dili]").count()) === 4, "dört tasarım dili");
   await p.click('[data-tasarim-dili="paper"]');
   await p.waitForTimeout(300);
   const sinif = () => p.evaluate(() => [document.documentElement.classList.contains("yeni-tasarim"), document.documentElement.classList.contains("paper")]);
@@ -35,6 +35,25 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
       const tasma = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       ok(tasma <= 0, `${dil} ${y} taşma yok`);
     }
+  }
+  // Logo yeşili: kendi sınıfı, Paper'ın sınıfı kalkar; birincil düğme yeşil-petrol geçişli, "iyi" düğme ezilmiyor.
+  await p.setViewportSize({ width: 1440, height: 900 });
+  await p.evaluate(() => localStorage.setItem("trt-planlama-dil", "tr"));
+  await git("#/ayarlar");
+  await p.evaluate(() => (document.querySelector("[data-tasarim-secimi]").closest("details").open = true));
+  await p.click('[data-tasarim-dili="yesil"]');
+  await p.waitForTimeout(300);
+  ok(await p.evaluate(() => document.documentElement.classList.contains("yesil") && !document.documentElement.classList.contains("paper")), "Logo yeşili sınıfı, Paper kalktı");
+  const dg = await p.evaluate(() => {
+    const d = document.createElement("button"); d.className = "dugme"; const i = document.createElement("button"); i.className = "dugme dugme-iyi";
+    document.body.append(d, i);
+    const r = [getComputedStyle(d).backgroundImage, getComputedStyle(i).backgroundImage]; d.remove(); i.remove(); return r;
+  });
+  ok(dg[0].includes("gradient") && !dg[1].includes("gradient"), "geçiş yalnız birincil düğmede");
+  await p.setViewportSize({ width: 390, height: 844 });
+  for (const y of ["#/", "#/oneriler", "#/paketler"]) {
+    await git(y);
+    ok((await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0, `yeşil ${y} taşma yok`);
   }
   // Eskiye geçiş paper sınıfını da kaldırır.
   await p.evaluate(() => localStorage.setItem("trt-planlama-dil", "tr"));

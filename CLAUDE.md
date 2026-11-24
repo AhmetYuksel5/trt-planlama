@@ -3449,6 +3449,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Serif 4; Arapça arayüz Naskh), küçük etiketler aralıklı büyük harf. Planların
     renkleri mürekkep. Avatar menüsündeki eski/yeni geçişi Paper'ı yeni sayar.
     Tema rengi ayrı kalır (renkli kabuklarda). Test `testler/paper.cjs`.
+    Dördüncü dil "Logo yeşili" (kullanıcı: logonun yeşiliyle, yeşile boğmadan, kararında; iki
+    ajana onaylatıldı): `<html>`'de `yesil`, blok `html.yeni-tasarim.yesil`. Renkler logodan
+    ölçüldü: yeşil #389480 (`--marka-yesil`, yalnız süs ve simge), yazıdaki vurgu bir tık koyusu
+    #237a68, petrol `--petrol` #0e4250, mürekkep #0f1d2b. Yeşil yalnız: seçili menü (sis ve başta
+    3 piksel çizgi), birincil düğme (yeşilden petrole geçiş; varyantlar dışarıda, `:not(...)`),
+    üst çubuğun bitişinde 1,5 piksel şerit (RTL'de yansır), "Sıradaki" kartının ve staffing
+    şeridinin başında ince çizgi, kart başı simgesi, asistan düğmesi. Durum yeşili markayla
+    karışmasın diye zeytin (`--iyi` #3d7524), süren paket, şimdiki adım ve bilgi rozeti mavi
+    (`--bilgi` #2f63a8), geçilen adım petrolün %60 soluğu, görevlendirilmiş sayısı nötr; WhatsApp düğmeleri nötr, gün daireleri nötr.
   - Planlama'nın yeni mimarisi bu anahtarın arkasında (kullanıcı: ana sayfa
     çok işlevsel olsun, planların iç akışı sürsün ve iyileşsin, muhabirle
     iletişim ve raporlama pratikleşsin; iki tur ajan görüşü, brifing ve ham

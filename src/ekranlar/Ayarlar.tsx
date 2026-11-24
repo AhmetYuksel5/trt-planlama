@@ -119,7 +119,7 @@ function KisiselAyar({ ben }: { ben: Kisi }) {
  * Tasarım dili (tasarimSecimi.ts): yeni (varsayılan), Paper, eski; bu tarayıcıda saklanıyor. Her seçeneğin
  * küçük örneği kendi dilinin zemini, kartı, vurgusu ve yazı ailesiyle çiziliyor (`.tasarim-ornek`).
  */
-const TASARIM_ADI = { yeni: "tasarimYeni", paper: "tasarimPaper", eski: "tasarimEski" } as const;
+const TASARIM_ADI = { yeni: "tasarimYeni", yesil: "tasarimYesil", paper: "tasarimPaper", eski: "tasarimEski" } as const;
 function TasarimAyari() {
   const { t } = useDil();
   const secili = useTasarimDili();

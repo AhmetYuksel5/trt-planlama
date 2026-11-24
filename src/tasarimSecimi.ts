@@ -7,9 +7,11 @@ import { useEffect, useState } from "react";
  * - "paper" (kullanıcı: kendi öbür uygulamasının "kağıt" görünümünü gösterdi, renk değil
  *   tasarım dili istedi): yeni tasarımın düzeni üstüne `paper` sınıfı; zemin, yazı ailesi,
  *   köşe ve renk token'ları tasarim.css'in sonundaki `html.paper` bloğunda.
+ * - "yesil" (kullanıcı: Plannersflow logosunun yeşiliyle, yeşile boğmadan, kararında): yeni tasarımın
+ *   düzeni üstüne `yesil` sınıfı; logodan ölçülen yeşil, petrol ve lacivert (`html.yesil` bloğu).
  */
-export type TasarimDili = "yeni" | "eski" | "paper";
-export const TASARIM_DILLERI: TasarimDili[] = ["yeni", "paper", "eski"];
+export type TasarimDili = "yeni" | "eski" | "paper" | "yesil";
+export const TASARIM_DILLERI: TasarimDili[] = ["yeni", "yesil", "paper", "eski"];
 
 const ANAHTAR = "trt-planlama-tasarim";
 const OLAY = "trt-tasarim";
@@ -17,7 +19,7 @@ const OLAY = "trt-tasarim";
 export const tasarimDiliOku = (): TasarimDili => {
   try {
     const d = localStorage.getItem(ANAHTAR);
-    return d === "eski" || d === "paper" ? d : "yeni";
+    return d === "eski" || d === "paper" || d === "yesil" ? d : "yeni";
   } catch {
     return "yeni";
   }
@@ -29,6 +31,7 @@ const uygula = (d: TasarimDili) => {
   const html = document.documentElement;
   html.classList.toggle("yeni-tasarim", d !== "eski");
   html.classList.toggle("paper", d === "paper");
+  html.classList.toggle("yesil", d === "yesil");
 };
 
 export const tasarimDiliKaydet = (d: TasarimDili) => {

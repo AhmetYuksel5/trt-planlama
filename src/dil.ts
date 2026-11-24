@@ -1329,6 +1329,7 @@ const M = {
   tasarimAyar: m("Tasarım dili", "لغة التصميم", "Design language"),
   tasarimYeni: m("Yeni", "الجديد", "New"),
   tasarimPaper: m("Paper", "الورقي", "Paper"),
+  tasarimYesil: m("Logo yeşili", "أخضر الشعار", "Logo green"),
   tasarimEski: m("Eski", "القديم", "Old"),
   yeniTasarimiAc: m("Yeni tasarımı dene", "جرّب التصميم الجديد", "Try the new design"),
   eskiTasarimaDon: m("Eski tasarıma dön", "العودة إلى التصميم القديم", "Back to the old design"),
