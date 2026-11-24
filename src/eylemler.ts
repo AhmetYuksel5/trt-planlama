@@ -167,7 +167,7 @@ import {
   paketGorebilir,
   planIcerikDuzenler,
   hareketDuzenleyebilir,
-  paketPlandanSilinir,
+  paketPlandanKaldirilir,
   paketSilinebilir,
   planOperasyonDuzenler,
   profilDuzenler,
@@ -810,20 +810,31 @@ const plandanCikarilmis = (
   if (yer.planda && yer.plan) {
     const plan = yer.plan;
     const paketler = d.paketler.filter((p) => p.oneriId === o.id && p.planId === plan.id);
-    if (paketler.some((p) => p.durum !== "iptal" && !paketPlandanSilinir(p))) return "paketIlerledi";
+    if (paketler.some((p) => p.durum !== "iptal" && !paketPlandanKaldirilir(p))) return "paketIlerledi";
     const gidenG = new Set(d.gelismeler.filter((g) => g.oneriId === o.id && g.planId === plan.id).map((g) => g.id));
-    const gidenP = new Set(paketler.map((p) => p.id));
+    // Karar verilmemiş paket gider; onaylı paket iptal edilip tarihçede kalır, muhabiri duyar (yetki.ts → paketSilinebilir).
+    const gidenP = new Set(paketler.filter((p) => p.durum !== "onaylandi").map((p) => p.id));
+    const iptaller = paketler.filter((p) => p.durum === "onaylandi");
+    const iptalIdler = new Set(iptaller.map((p) => p.id));
+    const z = simdi();
     d = {
       ...d,
       gelismeler: d.gelismeler.filter((g) => !gidenG.has(g.id)),
-      paketler: d.paketler.filter((p) => !gidenP.has(p.id)),
+      paketler: d.paketler
+        .filter((p) => !gidenP.has(p.id))
+        .map((p) => {
+          if (!iptalIdler.has(p.id)) return p;
+          const { isaret: _i, ...kalan } = p;
+          return { ...kalan, durum: "iptal" as const, adim: undefined, guncelleme: z };
+        }),
       canliYayinlar: d.canliYayinlar.filter((c) => !(c.oneriId === o.id && c.planId === plan.id)),
     };
+    for (const p of iptaller) d = hareketYaz(d, { kisiId: ben.id, tip: "paketIptal", paketId: p.id, planId: plan.id, ...(p.muhabirId && { veri: { kime: p.muhabirId } }) });
     const muhabirId = o.muhabirId;
     const pbIdler = new Set(plan.basliklar.filter((b) => b.baslikId === o.baslikId).map((b) => b.id));
     const isVar = (pbId: string, kisiId?: string) =>
       d.gelismeler.some((g) => g.planBaslikId === pbId && (!kisiId || g.onerenId === kisiId)) ||
-      d.paketler.some((p) => p.planBaslikId === pbId && (!kisiId || p.muhabirId === kisiId)) ||
+      d.paketler.some((p) => p.planBaslikId === pbId && p.durum !== "iptal" && (!kisiId || p.muhabirId === kisiId)) ||
       (!kisiId && d.canliYayinlar.some((c) => c.planBaslikId === pbId));
     if (pbIdler.size)
       d = planGuncelle(d, plan.id, (p) => ({
@@ -2355,8 +2366,8 @@ export const stokPaketiSil = (ben: Kisi, planId: string, id: string) => {
     },
     [p.oneriId],
   );
-  // Hareket yok: plandaki paket silme (paketSil) de yazmıyor; paket kaydı gidince hareketi boşa düşerdi.
-  kaydet(yeni);
+  // Hazır paket yapılmış iş; silindiği planın tarihçesinde dursun (paket kaydı gittiği için başlık veride).
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "stokPaketiSilindi", planId: plan.id, veri: { baslik: p.baslik } }));
   return true;
 };
 
@@ -2972,7 +2983,7 @@ export const paketSil = (ben: Kisi, id: string) => {
   const plan = planBul(d, p?.planId);
   // Özel yayının içeriği planda yayının kaydı: yalnız özel yayından yönetilir.
   if (!p || ozelIcerikMi(p) || !plan || !planIcerikDuzenler(ben, plan) || !paketSilinebilir(p)) return false;
-  let yeni = oneriBaglariniTazele(
+  const yeni = oneriBaglariniTazele(
     {
       ...d,
       paketler: d.paketler.filter((x) => x.id !== id),
@@ -2980,8 +2991,6 @@ export const paketSil = (ben: Kisi, id: string) => {
     },
     [p.oneriId],
   );
-  // Onaylı paketin muhabiri onayı duymuştu; paket gidince o da duysun (paket kaydı kalmadığı için kime ile).
-  if (p.durum === "onaylandi" && p.muhabirId) yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketIptal", planId: plan.id, oneriId: p.oneriId, veri: { kime: p.muhabirId } });
   kaydet(yeni);
   return true;
 };
@@ -3390,6 +3399,8 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
   const p = paketBul(d, id);
   if (!p || !yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal"].includes(p.durum)) return false;
   if (yeni !== "iptal" && !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
+  // Özel yayının içeriği yalnız özel yayından geri alınır (ozelIcerikGeriAl: yayının başlığını da toplar).
+  if (yeni === "iptal" && ozelIcerikMi(p)) return false;
   // İptalde bekleyen işaret de gidiyor: kuyrukta kalıp onaylanınca iptal paketi "tamamlandı"ya çeviriyordu.
   d = paketGuncelle(d, id, (x) => {
     const { isaret: _i, ...kalan } = x;
@@ -3397,7 +3408,9 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
     return yeni === "iptal" ? { ...kalan, durum: yeni, adim: undefined } : yeni === "onaylandi" ? kunyeYaz({ ...x, durum: yeni }, "gorevlendiren", ben.id, simdi()) : { ...x, durum: yeni };
   });
   const tip = yeni === "degerlendiriliyor" ? "paketDegerlendirmede" : yeni === "onaylandi" ? "paketOnaylandi" : "paketIptal";
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip, paketId: id, planId: p.planId }));
+  // Görevi duymuş muhabir (onaylı ya da üretimdeki paket) iptali de duysun.
+  const duyurulur = yeni === "iptal" && !!p.muhabirId && ["onaylandi", "uretimde"].includes(p.durum);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip, paketId: id, planId: p.planId, ...(duyurulur && { veri: { kime: p.muhabirId! } }) }));
   return true;
 };
 

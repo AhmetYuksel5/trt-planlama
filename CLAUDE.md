@@ -2488,9 +2488,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     plana önce girmiyordu, haber kayboluyordu), devredilmiş değil.
     Dosyasız kalem önerinin başlığına, yoksa Header'ıyla açılan başlığa girer
     (önce "متابعات"e düşüyordu). Next Day'de çıkarılır: Weekly'den gelen onaylı
-    PKG üretime girmeden silinir, gelişme kalır (`yetki.ts →
-    paketPlandanSilinir`, muhabire `paketIptal`, `kime`); öneri "Plandan
-    çıkar"la bütünüyle çıkar, kesinleşmiş haftanın kalemi kayıt olarak kalır
+    PKG "Plandan kaldır"la iptal edilir, gelişme kalır (aşağıda, paketi plandan
+    kaldırmanın tek kuralı); öneri "Plandan çıkar"la bütünüyle çıkar, kesinleşmiş haftanın kalemi kayıt olarak kalır
     (`aktarim` durur, yeniden aktarılmaz), öneri yeniden Next Day'e eklenebilir.
   - Çıktı kurumun "الأجندة الأسبوعية" belgesini izler; yazdır/PDF ve Word
     (HTML tabanlı `.doc`). E-postayı planlamacı kendisi gönderir.
@@ -3005,18 +3004,27 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `PaketMetniFormu`'nda stokta slug alanı), "Plandan çıkar" (×, stoka geri
     bırakır) ve bu planda stoka alınmışsa "Sil" (`eylemler.ts → stokPaketiSil`,
     `stokPaketiSilinebilir`: başka planın hazırında değil; onaylı, paket ve
-    hazır listelerindeki izi gider; başlığın altında da kalan stok paket
+    hazır listelerindeki izi gider, planın tarihçesinde hareket
+    `stokPaketiSilindi`, bildirimsiz; başlığın altında da kalan stok paket
     başlığın PKG satırından da, plan ekranında ve belgede; kullanıcı: yalnız
     yukarıdan siliniyordu). Testler `testler/stok-paket.cjs`,
     `testler/stok-paket-baslikta.cjs`.
-    Plana eklenip onaylanan PKG de silinir (kullanıcı: muhabire bildirim
-    gitsin; stokta bildirim yok, o geçici çözüm): `yetki.ts →
-    paketSilinebilir` (kararsız paket, Weekly'den gelen onaylı ve üretime,
-    parçalı metne girmemiş, stokta olmayan her onaylı paket); plan ekranında
-    ve belgede PKG satırının "Sil"i, onay sorusu bildirimi söyler
-    (`paketSilBildirimli`), `paketSil` muhabire `paketIptal` (`kime`) yazar.
-    Öneriyi plandan çıkarma eski kuralla (`paketPlandanSilinir`). Test
-    `testler/paket-sil.cjs`.
+    Paketi plandan kaldırmanın tek kuralı (kullanıcı: stok, normal ve özel
+    yayın paketinin eklenip çıkarılması, silinmesi karışmasın; onaylı paket
+    hiçbir yoldan izsiz kaybolmasın; `yetki.ts → paketSilinebilir`,
+    `paketPlandanKaldirilir`): karar verilmemiş PKG (taslak, değerlendirmede)
+    "Sil"le gider, kaydı kalmaz (`paketSil`); onaylı PKG (Weekly'den gelen de)
+    silinmez, satırdaki "Plandan kaldır" (`SatirIslemleri.tsx →
+    PaketKararDugmeleri`, `data-paket-kaldir`; eski "İptal et") onu iptal
+    eder: plandan düşer, kaydı tarihçede kalır, muhabire `paketIptal` (`kime`;
+    `paketDurum(…, "iptal")`, onaylı ve üretimdeki pakette), onay sorusu
+    bildirimi söyler. Önerinin "Plandan çıkar"ı (ve aşamayı geri alma,
+    `plandanCikarilmis`) onaylı paketi aynı biçimde iptal eder, kararsızı
+    siler; üretime ya da parçalı metne girmiş pakette durur. Özel yayının
+    içeriği yalnız özel yayından geri alınır (`ozelIcerikGeriAl`; `paketDurum`
+    reddeder). Stok paketin "Plandan çıkar"ı ve "Sil"i yukarıdaki gibi
+    (geçici çözüm, bildirimsiz). Bir süre (24 Kasım) onaylı PKG "Sil"le
+    kaydıyla gidiyordu. Test `testler/paket-sil.cjs`.
 - Onaylı paketin kapanışı (tasarım belgesi 3. aşama). "Newsdesk sistemde"
   anahtarı (`Durum.newsdeskDevrede`) kalktı (kullanıcı: Newsdesk aktif değil
   diye bütün düzeni dondurmaya gerek yok; paketin Newsdesk'ten geçip

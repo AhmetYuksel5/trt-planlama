@@ -1892,6 +1892,7 @@ export const HAREKET_TIPLERI = [
   "uretimeAlindi",
   "stokYayinlandi",
   "paketStogaAlindi",
+  "stokPaketiSilindi",
   "planGeriGetirildi",
   "faaliyetEklendi",
   "faaliyetPlanaAlindi",

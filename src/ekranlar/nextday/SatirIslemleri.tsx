@@ -6,7 +6,7 @@ import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
 import { useDil } from "../../dil";
 import { baslikDuzenle, canliSonuc, gelismeKaydet, oneriPlandakineBagla, paketDurum, paketReddet, planBaslikBirlestir } from "../../eylemler";
 import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
-import { baslikBul, useVeri, type CanliYayin, type Durum, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
+import { baslikBul, ozelIcerikMi, useVeri, type CanliYayin, type Durum, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
 import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { FormAlt } from "./Formlar";
@@ -29,8 +29,11 @@ export function PaketKararDugmeleri({ ben, paket: p }: { ben: Kisi | null | unde
       {p.durum === "taslak" && <IkonDugme ikon={<Hourglass size={15} />} etiket={t("degerlendirmeyeAl")} onClick={() => paketDurum(ben, p.id, "degerlendiriliyor")} />}
       {acik && <IkonDugme ikon={<CircleCheck size={15} />} etiket={t("kabulEt")} onClick={() => confirm(t("paketKabulOnay")) && paketDurum(ben, p.id, "onaylandi")} />}
       {acik && <IkonDugme ikon={<Ban size={15} />} etiket={t("reddet")} onClick={() => confirm(t("paketRetOnay")) && paketReddet(ben, p.id)} />}
-      {!acik && p.durum !== "tamamlandi" && p.durum !== "iptal" && (
-        <IkonDugme ikon={<Ban size={15} />} etiket={t("iptalEt")} onClick={() => confirm(t("iptalEdilsinMi")) && paketDurum(ben, p.id, "iptal")} />
+      {/* Onaylı paket silinmez, plandan kaldırılır: iptal, kaydı kalır, muhabir duyar (yetki.ts → paketSilinebilir). Özel yayının içeriği özel yayından. */}
+      {!acik && p.durum !== "tamamlandi" && p.durum !== "iptal" && !ozelIcerikMi(p) && (
+        <span data-paket-kaldir={p.id}>
+          <IkonDugme ikon={<Ban size={15} />} etiket={t("plandanKaldir")} onClick={() => confirm(t(p.muhabirId ? "plandanKaldirBildirimli" : "plandanKaldirSoru")) && paketDurum(ben, p.id, "iptal")} />
+        </span>
       )}
     </>
   );

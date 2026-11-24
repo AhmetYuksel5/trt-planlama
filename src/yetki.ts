@@ -567,23 +567,18 @@ export const yzGorusuGorur = (k: Kisi | undefined): boolean =>
  */
 export const yalnizPlanlama = (_d: Durum) => true;
 /*
- * Plandan silinebilen paket: henüz karar verilmemiş paket önerisi, bir de
- * Weekly'den onaylı gelen ama üretime girmemiş paket. Weekly'nin kabulü
- * Next Day'de geri alınamıyordu; gelişme kalıp PKG çıkabilsin.
+ * Paketi plandan kaldırmanın tek kuralı (kullanıcı: stok, normal ve özel
+ * yayın paketinin ekleme, çıkarma ve silmesi karışmasın; onaylı paket hiçbir
+ * yoldan izsiz kaybolmasın):
+ * - karar verilmemiş paket (öneri) silinir, kaydı gider;
+ * - onaylı paket silinmez, iptal edilir: plandan düşer, kaydı tarihçede kalır,
+ *   muhabire bildirim gider (eylemler.ts → paketDurum "iptal", önerinin
+ *   "Plandan çıkar"ı da aynı yoldan);
+ * - üretime ya da parçalı metne girmiş paket öneriyle birlikte çıkmaz.
+ * Stok paketin "Plandan çıkar"ı ve "Sil"i ayrı (stokPaketiSil).
  */
-export const paketPlandanSilinir = (p: Paket) =>
-  p.durum === "taslak" ||
-  p.durum === "degerlendiriliyor" ||
-  (!!p.haftalikKalemId && p.durum === "onaylandi");
-
-/*
- * Plandaki PKG satırından silme (kullanıcı: plana eklenip onaylanan paket de
- * silinebilsin, muhabire bildirim gitsin): öneri ve kararsız paketin yanında
- * onaylı ama üretime girmemiş paket de. Muhabirin bildirimi eylemde
- * (eylemler.ts → paketSil, `paketIptal`). Öneriyi plandan çıkarma eski
- * kuralla (paketPlandanSilinir) kalıyor.
- */
-export const paketSilinebilir = (p: Paket) => paketPlandanSilinir(p) || (p.durum === "onaylandi" && !p.uretim && !p.parcalar?.length && !p.stok);
+export const paketSilinebilir = (p: Paket) => !p.stok && (p.durum === "taslak" || p.durum === "degerlendiriliyor");
+export const paketPlandanKaldirilir = (p: Paket) => paketSilinebilir(p) || (p.durum === "onaylandi" && !p.uretim && !p.parcalar?.length);
 
 export const paketTamamlayabilir = (
   k: Kisi | undefined,

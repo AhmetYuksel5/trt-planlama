@@ -121,7 +121,7 @@ export default function BaslikKarti({
                       <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => confirm(t("silinsinMi")) && stokPaketiSil(ben, plan.id, p.id)} />
                     )}
                     {icerik && paketSilinebilir(p) && (
-                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t(p.durum === "onaylandi" && p.muhabirId ? "paketSilBildirimli" : "silinsinMi")) && paketSil(ben, p.id)} />
+                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
                     )}
                   </div>
                 </div>
