@@ -81,7 +81,8 @@ export interface OzelPaketSatiri {
 }
 export const ozelPaketSatirlari = (o: OzelYayin, d: Pick<Durum, "paketler">): OzelPaketSatiri[] => {
   const paketler = d.paketler.filter((p) => p.ozelId === o.id && p.durum !== "iptal");
-  const oneriler = (o.paketOnerileri ?? []).map((x): OzelPaketSatiri => {
+  // Paketi yeni içeriğe çevrilmiş öneri (eylemler.ts → ozelEskiPaketleriCevir) içerikler listesinde.
+  const oneriler = (o.paketOnerileri ?? []).filter((x) => !paketler.some((y) => y.id === x.paketId && !eskiOzelPaket(y))).map((x): OzelPaketSatiri => {
     const p = paketler.find((y) => y.id === x.paketId);
     return { oneri: x, paket: p, id: x.id, baslik: p?.baslik ?? x.baslik, kaynak: x.kaynak, muhabirId: p?.muhabirId ?? x.muhabirId, sonTarih: p?.sonTarih ?? x.sonTarih, asama: p ? ozelPaketAsamasi(p) : x.durum === "oneri" ? "plan" : "onayli", iz: x.iz };
   });

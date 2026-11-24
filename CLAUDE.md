@@ -3175,6 +3175,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `yayinGunleri`): ortada günün nafizeleri ve o gün yayınlanacak içerikler,
     sağda o gün sahada olanlar, o günün yapılacakları (oradan işaretlenir) ve
     konuklar; gün düğmesinde toplam. Test `testler/ozel-asama.cjs`.
+    5. adım, geçiş ve aylık bağı: eski düzende görevi verilmiş, süren paket
+    (`eskiOzelPaket`, onaylı, muhabiri ya da hazırlayanı belli, görevi
+    bekleyen değil) sistemin açılış işiyle yeni içerik olur
+    (`eylemler.ts → ozelEskiPaketleriCevir`: masası "Özel yayın", görevi veren
+    son atama ya da onay hareketinden, işi in-house'ta hazırlayana, yayın günü
+    son tarih yayının aralığına çekilerek; günün planına bağlanır). Görevi
+    verilmemiş ya da onaylanmamış olan eski akışta kalır (stok ekibinin
+    listesi `OzelTalepAlani` yalnız onları gösterir), görevi verilince
+    sonraki açılışta çevrilir; bitmiş olan geçmiş kayıt. Önerisi eski listede
+    ikinci kez görünmez (`ozelPaketSatirlari`). Aylık olaydan açılan yayında
+    PKG ve Walk & Talk satırı artık eski paket önerisi değil, o günün yapılacak
+    maddesi ("PKG · başlık · muhabir"; içerik İçerik sekmesinden görevlendirilir),
+    öbür satırlar da günüyle madde (`aylik.ts → olaydanOzele`). Çıktıda
+    içerikler yayın günüyle. Test `testler/ozel-gecis.cjs`, aylık bağı
+    `testler/planlama-3.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında kayıttan
     okunan aşamalar (Planlama, Onay, Uygulama, Teslim, Yayına hazır), şimdiki
@@ -3456,10 +3471,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
       önce gösterir, geçeni kırmızı (`data-kosul-son`). Kendiliğinden karar
       vermez.
     - Aylık olaydan özel yayın (`aylik.ts → olaydanOzele`,
-      `eylemler.ts → aylikOlaydanOzel`): PKG ve Walk & Talk satırı onaysız
-      paket önerisi (olayın muhabiri varsa dış muhabir, yoksa in-house; son
-      tarih satırın günü), LIVE ve نافذة nafize (o gün), öbür satırlar, ekip
-      ve görevlendirme hazırlık maddesi. Önce yalnız ad, gün ve açıklama
+      `eylemler.ts → aylikOlaydanOzel`): PKG ve Walk & Talk satırı o günün
+      yapılacak maddesi (muhabiriyle; içerik özel yayının İçerik sekmesinden
+      görevlendirilir), LIVE ve نافذة nafize (o gün), öbür satırlar günüyle,
+      ekip ve görevlendirme günsüz yapılacak madde. Önce yalnız ad, gün ve açıklama
       geçiyordu.
     - Çok günlü aylık olay Weekly'de gün gün (`aylikOlayiGundemeEkle`): haftaya
       düşen, satırı olan her kapsam günü kendi kalemi, o günün satırlarıyla;

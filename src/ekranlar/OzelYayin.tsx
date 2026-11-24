@@ -77,6 +77,7 @@ import {
   HAREKET_TURLERI,
   KONUK_DURUMLARI,
   SECILEN_TURLER,
+  eskiOzelPaket,
   getir,
   paketBul,
   kisiBul,
@@ -1745,7 +1746,7 @@ function OutputPaketSatiri({ ben, p }: { ben: Kisi; p: Paket }) {
 export function OzelTalepAlani({ ben, bosGizle }: { ben: Kisi; bosGizle?: boolean }) {
   const { t } = useDil();
   const v = useVeri();
-  const liste = v.paketler.filter((p) => p.ozelId && p.ozelKaynak === "inhouse" && p.durum === "onaylandi" && (ozelPaketDagitabilir(ben, p) || p.hazirlayanId === ben.id));
+  const liste = v.paketler.filter((p) => eskiOzelPaket(p) && p.ozelKaynak === "inhouse" && p.durum === "onaylandi" && (ozelPaketDagitabilir(ben, p) || p.hazirlayanId === ben.id));
   if (bosGizle && !liste.length) return null;
   if (
     !liste.length &&

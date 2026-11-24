@@ -5778,10 +5778,14 @@ export const aylikOlaydanOzel = (ben: Kisi, olayId: string): string | null => {
   // Kapsam satırları, ekip ve görevlendirme yayının içine (aylik.ts → olaydanOzele); tek yazış.
   const g = olaydanOzele(olay, (e) => (e.kisiId ? kisiAr(kisiBul(d, e.kisiId)) : e.ad ?? ""), (x) => metin(`ayEkip_${x}` as Anahtar, "ar"));
   const nafizeler: CanliYayin[] = g.nafizeler.map((n) => ({ id: kimlik("cy"), planId: "", ozelId, konu: n.konu, aciklama: "", tarih: n.tarih, saatGmt: "", yer: n.yer ?? "", ...(n.muhabirId ? { muhabirId: n.muhabirId } : {}), notlar: "", konuklar: [], ekleyen: { kisiId: ben.id, zaman: simdi() } }));
-  const paketOnerileri: OzelPaketOnerisi[] = g.paketler.map((p) => ({ id: kimlik("po"), baslik: p.baslik, aciklama: "", kaynak: p.muhabirId && !p.tbc ? "dis" : "inhouse", ...(p.muhabirId && !p.tbc ? { muhabirId: p.muhabirId } : {}), sonTarih: p.sonTarih, tur: "haber", bicim: p.bicim, durum: "oneri", iz: [izYaz(ben, "eklendi")] }));
-  const hazirlik = g.hazirlik.map((m) => ({ id: kimlik("oz"), metin: m, tamam: false }));
+  // PKG ve Walk & Talk satırı görevlendirilecek iş: o günün yapılacak maddesi (içerik İçerik sekmesinden muhabire verilir).
+  const muhabirAdi = (id?: string) => (id ? kisiAr(kisiBul(d, id)) : "TBC");
+  const hazirlik: OzelMadde[] = [
+    ...g.paketler.map((p): OzelMadde => ({ id: kimlik("oz"), metin: [p.bicim === "walktalk" ? "WALK & TALK" : "PKG", p.baslik, p.tbc ? "TBC" : muhabirAdi(p.muhabirId)].join(" · "), gun: p.sonTarih, tamam: false, iz: [izYaz(ben, "eklendi")] })),
+    ...g.hazirlik.map((m): OzelMadde => ({ id: kimlik("oz"), metin: m.metin, ...(m.gun ? { gun: m.gun } : {}), tamam: false, iz: [izYaz(ben, "eklendi")] })),
+  ];
   const d1 = ozelKayitlariEsitle({ ...d, canliYayinlar: [...d.canliYayinlar, ...nafizeler] });
-  const d2 = ozelGuncelle(d1, ozelId, (o) => ({ ...o, paketOnerileri: [...(o.paketOnerileri ?? []), ...paketOnerileri], hazirlik: [...o.hazirlik, ...hazirlik] }));
+  const d2 = ozelGuncelle(d1, ozelId, (o) => ({ ...o, hazirlik: [...o.hazirlik, ...hazirlik] }));
   kaydet({ ...d2, aylik: d2.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.map((o) => (o.id === olayId ? { ...o, ozelId } : o)) } : a)) });
   return ozelId;
 };
@@ -6700,6 +6704,34 @@ export const ozelMaddeSil = (ben: Kisi, ozelId: string, id: string) => {
   if (!m || !ozelDuzenler(ben)) return false;
   kaydet(ozelGuncelle(d, ozelId, (x) => ({ ...x, hazirlik: x.hazirlik.filter((y) => y.id !== id), iz: [...(x.iz ?? []), izYaz(ben, "duzenlendi", { not: m.metin })] })));
   return true;
+};
+
+/*
+ * Eski düzende görevi verilmiş, süren paket yeni içerik oluyor (sistemin
+ * açılış işi): masası "Özel yayın", görevi veren son atama ya da onay
+ * hareketinden, işi yapan muhabir (in-house'ta hazırlayan), yayın günü son
+ * tarih (yayının aralığına çekilir). Böylece günün planına girer, üretim
+ * balonu ve "Yapıldı" akışıyla sürer. Onaylanmamış ya da görevi verilmemiş
+ * olan eski akışta kalır; görevi verilince bir sonraki açılışta çevrilir.
+ * Bitmiş olan geçmiş kayıt olarak kalır.
+ */
+export const ozelEskiPaketleriCevir = (): number => {
+  let d = getir();
+  let n = 0;
+  for (const p of d.paketler) {
+    const kisi = p.muhabirId ?? p.hazirlayanId;
+    if (!eskiOzelPaket(p) || p.durum !== "onaylandi" || !kisi || p.ozelGorevBekliyor) continue;
+    const o = ozelBul(d, p.ozelId!);
+    if (!o) continue;
+    const son = o.bitis && o.bitis > o.tarih ? o.bitis : o.tarih;
+    const gun = !p.sonTarih || p.sonTarih < o.tarih ? o.tarih : p.sonTarih > son ? son : p.sonTarih;
+    const h = d.hareketler.find((x) => x.paketId === p.id && (x.tip === "ozelPaketAtandi" || x.tip === "ozelPaketOnaylandi"));
+    const gorev = h ? { veren: h.kisiId, zaman: h.zaman } : { veren: SISTEM, zaman: p.guncelleme };
+    d = paketGuncelle(d, p.id, (x) => ({ ...x, tur: "ozel", gorev, muhabirId: kisi, yayinGunu: gun, sonTarih: x.sonTarih && x.sonTarih <= gun ? x.sonTarih : gun, stok: undefined, ozelBasladi: undefined }));
+    n++;
+  }
+  if (n) kaydet(ozelKayitlariEsitle(d));
+  return n;
 };
 
 /*

@@ -2,7 +2,7 @@ import { useRef, type RefObject } from "react";
 import { Bos } from "../bilesenler/Parcalar";
 import { aralikYaz, ciktiTarihi, gunAy, metin, useDil, type Anahtar } from "../dil";
 import { kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../etiketler";
-import { nafizeBasligi, ozelGorevlendirmeleri, ozelNafizeleri, ozelPaketSatirlari } from "../ozel";
+import { nafizeBasligi, ozelGorevlendirmeleri, ozelIcerikleri, ozelNafizeleri, ozelPaketSatirlari } from "../ozel";
 import { kisiBul, useVeri, type OzelYayin } from "../veri";
 import { CiktiAraclari } from "./belge/Parcalar";
 
@@ -36,6 +36,7 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
   const tarih = o.bitis ? aralikYaz(o.tarih, o.bitis, "ar") : ciktiTarihi(o.tarih, "ar");
   const nafizeler = ozelNafizeleri(v, o.id);
   const paketler = ozelPaketSatirlari(o, v);
+  const icerikler = ozelIcerikleri(v, o.id);
   const gorevler = ozelGorevlendirmeleri(v, o.id);
   const sonTarih = (iso?: string) => (iso ? ` · ${c("oySonTarih")}: ${gunAy(iso, "ar")}` : "");
   return (
@@ -74,9 +75,15 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
           })}
         </section>
       )}
-      {paketler.length > 0 && (
+      {paketler.length + icerikler.length > 0 && (
         <section>
           <h2 className="yesil">{c("oyPaketler")}</h2>
+          {icerikler.map((p) => (
+            <p key={p.id}>
+              {satir(paketYeri(p), p.baslik, kisiAr(kisiBul(v, p.muhabirId)))}
+              {p.yayinGunu ? ` · ${c("oyYayinGunu")}: ${gunAy(p.yayinGunu, "ar")}` : ""}
+            </p>
+          ))}
           {paketler.map((s) => {
             const yapan = kisiBul(v, s.muhabirId ?? s.paket?.hazirlayanId);
             const yer = s.paket ? paketYeri(s.paket) : sehirAr(yapan?.sehir);

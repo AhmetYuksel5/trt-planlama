@@ -103,10 +103,11 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   const oz = d2.ozel.find((o) => o.id === olay.ozelId);
   const pkgSay = olay.gunler.flatMap((g) => g.satirlar).filter((s) => s.tur === "pkg" || s.tur === "walktalk").length;
   const canliSay = olay.gunler.flatMap((g) => g.satirlar).filter((s) => s.tur === "live" || s.tur === "nafize").length;
-  ok(oz && (oz.paketOnerileri ?? []).length === pkgSay && d2.canliYayinlar.filter((c) => c.ozelId === oz.id).length === canliSay, `PKG paket önerisi, LIVE nafize (canlı yayın) oldu (${pkgSay}/${canliSay})`);
-  ok(oz.nafizeler.every((n) => olay.gunler.some((g) => g.tarih === n.tarih)), "nafizeler kendi günlerinde");
-  ok(oz.hazirlik.length >= olay.ekip.length + 1 && oz.hazirlik.some((h) => h.metin.startsWith("DEPLOYMENT")), "ekip ve görevlendirme hazırlıkta");
-  ok(oz.paketOnerileri.every((x) => x.durum === "oneri"), "paket önerileri onaysız");
+  const pkgMadde = oz ? oz.hazirlik.filter((h) => /^(PKG|WALK & TALK) · /.test(h.metin)) : [];
+  ok(oz && pkgMadde.length === pkgSay && !(oz.paketOnerileri ?? []).length && d2.canliYayinlar.filter((c) => c.ozelId === oz.id).length === canliSay, `PKG o günün yapılacak maddesi (eski paket önerisi yok), LIVE nafize (canlı yayın) oldu (${pkgSay}/${canliSay})`);
+  ok(pkgMadde.every((h) => olay.gunler.some((g) => g.tarih === h.gun)), "PKG maddeleri kendi günlerinde");
+  ok(d2.canliYayinlar.filter((c) => c.ozelId === oz.id).every((n) => olay.gunler.some((g) => g.tarih === n.tarih)), "nafizeler kendi günlerinde");
+  ok(oz.hazirlik.length >= olay.ekip.length + 1 && oz.hazirlik.some((h) => h.metin.startsWith("DEPLOYMENT")), "ekip ve görevlendirme yapılacaklarda");
 
   // 4. Çok günlü olay Weekly'de gün gün
   const h = d2.haftalik.find((x) => x.durum !== "kesinlesti" && olay.gunler.filter((g) => g.tarih >= x.baslangic).length > 1);

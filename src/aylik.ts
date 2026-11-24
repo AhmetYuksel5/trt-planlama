@@ -95,7 +95,7 @@ export const olayBicimleri = (o: AylikOlay) => {
 export interface OzeleGecenler {
   paketler: { baslik: string; muhabirId?: string; sonTarih: string; bicim: "pkg" | "walktalk"; tbc: boolean }[];
   nafizeler: { konu: string; tarih: string; yer?: string; muhabirId?: string; tbc: boolean }[];
-  hazirlik: string[];
+  hazirlik: { metin: string; gun?: string }[];
 }
 
 export function olaydanOzele(o: AylikOlay, ekipAdi: (e: AylikOlay["ekip"][number]) => string, gorevAdi: (g: AylikOlay["ekip"][number]["gorev"]) => string): OzeleGecenler {
@@ -107,9 +107,9 @@ export function olaydanOzele(o: AylikOlay, ekipAdi: (e: AylikOlay["ekip"][number
       if (s.tur === "pkg" || s.tur === "walktalk")
         g.paketler.push({ baslik: metin || o.baslik, muhabirId, sonTarih: gun.tarih, bicim: s.tur, tbc: !!s.tbc });
       else if (s.tur === "live" || s.tur === "nafize") g.nafizeler.push({ konu: metin || o.baslik, tarih: gun.tarih, yer: o.yer, muhabirId: s.tbc ? undefined : muhabirId, tbc: !!s.tbc || !muhabirId });
-      else g.hazirlik.push([gun.tarih, SATIR_KODU[s.tur], metin].filter(Boolean).join(" · "));
+      else g.hazirlik.push({ metin: [SATIR_KODU[s.tur], metin].filter(Boolean).join(" · "), gun: gun.tarih });
     }
-  for (const e of o.ekip) g.hazirlik.push(`${gorevAdi(e.gorev)}: ${e.tbc ? "TBC" : ekipAdi(e)}`);
-  if (o.gorev?.gidis || o.gorev?.donus) g.hazirlik.push(`DEPLOYMENT: ${o.gorev.gidis ?? "?"} – ${o.gorev.donus ?? "?"}`);
+  for (const e of o.ekip) g.hazirlik.push({ metin: `${gorevAdi(e.gorev)}: ${e.tbc ? "TBC" : ekipAdi(e)}` });
+  if (o.gorev?.gidis || o.gorev?.donus) g.hazirlik.push({ metin: `DEPLOYMENT: ${o.gorev.gidis ?? "?"} – ${o.gorev.donus ?? "?"}` });
   return g;
 }
