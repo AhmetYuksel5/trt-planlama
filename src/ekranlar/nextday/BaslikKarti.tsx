@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Avatar, HaftalikRozeti, Icerik, OncelikRozeti, PaketDurumRozeti, Pencere, Rozet, LiveKutusu, TbcKutusu, bildir, icerikAlani, oncelikliOnce } from "../../bilesenler/Parcalar";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { saatYaz, useDil } from "../../dil";
-import { gelismeKaydet, paketMetniDuzenle, paketMetniDuzenlenebilir, paketSil, paketStogaAl, paketStogaAlinabilir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
+import { gelismeKaydet, stokPaketiSil, stokPaketiSilinebilir, paketMetniDuzenle, paketMetniDuzenlenebilir, paketSil, paketStogaAl, paketStogaAlinabilir, planMuhabirTbc, planBaslikLive, planBaslikCikar, planBaslikTasi, planBaslikYerine, planMuhabir, planMuhabirGuncelle } from "../../eylemler";
 import { TBC, bicimEki, paketNotEki, kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { vardiyaYaz } from "../../tarih";
@@ -115,6 +115,10 @@ export default function BaslikKarti({
                     <PaketKararDugmeleri ben={ben} paket={p} />
                     {icerik && paketStogaAlinabilir(p) && (
                       <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
+                    )}
+                    {/* Stoka alınıp başlığın altında da kalan paket buradan da silinir (yukarıdaki hazır paketlerdeki gibi). */}
+                    {icerik && ben && p.stok && stokPaketiSilinebilir(ben, v, plan, p) && (
+                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => confirm(t("silinsinMi")) && stokPaketiSil(ben, plan.id, p.id)} />
                     )}
                     {icerik && paketSilinebilir(p) && (
                       <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t(p.durum === "onaylandi" && p.muhabirId ? "paketSilBildirimli" : "silinsinMi")) && paketSil(ben, p.id)} />

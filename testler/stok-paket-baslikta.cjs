@@ -48,6 +48,16 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok(!beklenenBolum.includes(s1.ad), "beklenen paketlerde basılmadı");
   const kez = metin.split(s1.ad).length - 1;
   ok(kez === (BASLIKTA ? 2 : 1), "çıktıda " + (BASLIKTA ? "iki" : "bir") + " kez: " + kez);
+  // Başlığın altında kalan stok paket orada da silinir (kullanıcı: yalnız yukarıdaki hazır paketlerden siliniyordu).
+  p.removeAllListeners("dialog"); p.on("dialog", (x) => x.accept());
+  await p.goto("about:blank"); await p.goto(B + "#/nextday/yarin"); await p.waitForTimeout(1200);
+  await ac(); await p.waitForTimeout(300);
+  const altta = p.locator(`.kayit:has(a[href="#/paketler/${id}"]):not(:has([data-hazir-islem]))`).first();
+  ok((await altta.locator('button[aria-label="Sil"]').count()) === 1, "başlığın altındaki satırda Sil");
+  await altta.locator('button[aria-label="Sil"]').click(); await p.waitForTimeout(400);
+  const son = await p.evaluate((id) => { const d = JSON.parse(localStorage.getItem("trt-planlama-v25")); return { paket: d.paketler.some((x) => x.id === id), hazir: d.planlar.some((x) => x.hazirPaketler.includes(id)) }; }, id);
+  ok(!son.paket && !son.hazir, "başlığın altından silinen stok paket her yerden kalktı");
+
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);

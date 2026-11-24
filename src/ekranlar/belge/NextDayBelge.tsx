@@ -543,7 +543,9 @@ export function NextDayBelgesi({
                                         </>
                                       }
                                       cikar={
-                                        paketSilinebilir(p)
+                                        ben && p.stok && stokPaketiSilinebilir(ben, v, plan, p)
+                                          ? sil(() => stokPaketiSil(ben, plan.id, p.id))
+                                          : paketSilinebilir(p)
                                           ? onayla(
                                               t(p.durum === "onaylandi" && p.muhabirId ? "paketSilBildirimli" : "silinsinMi"),
                                               () => ben && paketSil(ben, p.id),

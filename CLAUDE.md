@@ -3005,7 +3005,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `PaketMetniFormu`'nda stokta slug alanı), "Plandan çıkar" (×, stoka geri
     bırakır) ve bu planda stoka alınmışsa "Sil" (`eylemler.ts → stokPaketiSil`,
     `stokPaketiSilinebilir`: başka planın hazırında değil; onaylı, paket ve
-    hazır listelerindeki izi gider). Test `testler/stok-paket.cjs`.
+    hazır listelerindeki izi gider; başlığın altında da kalan stok paket
+    başlığın PKG satırından da, plan ekranında ve belgede; kullanıcı: yalnız
+    yukarıdan siliniyordu). Testler `testler/stok-paket.cjs`,
+    `testler/stok-paket-baslikta.cjs`.
     Plana eklenip onaylanan PKG de silinir (kullanıcı: muhabire bildirim
     gitsin; stokta bildirim yok, o geçici çözüm): `yetki.ts →
     paketSilinebilir` (kararsız paket, Weekly'den gelen onaylı ve üretime,
