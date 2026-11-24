@@ -16,7 +16,8 @@ export interface KayipPlan {
 export const kayipPlanlar = (d: Durum): KayipPlan[] => {
   const var_ = new Set(d.planlar.map((p) => p.id));
   const sayi = new Map<string, number>();
-  for (const x of [...d.gelismeler, ...d.canliYayinlar, ...d.paketler]) {
+  // Özel yayının nafizesi planın değil yayının kaydı: planı silinince bağı düşer (ozelCanlilariEsitle), plan kaybı sayılmaz.
+  for (const x of [...d.gelismeler, ...d.canliYayinlar.filter((c) => !c.ozelId), ...d.paketler]) {
     const id = x.planId;
     if (id && !var_.has(id)) sayi.set(id, (sayi.get(id) ?? 0) + 1);
   }

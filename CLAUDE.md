@@ -3114,6 +3114,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kurallar yalnız ona; yeni paket öbür paketlerin kurallarıyla. Eski "Paket
     talebi" düğmesi kalktı, var olan öneriler düzenlenir. Test
     `testler/ozel-icerik.cjs`.
+    2. adım, nafize canlı yayın (kullanıcı: nafize canlı etkinlik biçiminde,
+    saati sistemin öbür unsurlarıyla eş zamanlı; günün planına canlı eklemek
+    gibi): nafize `CanliYayin` kaydı (`ozelId`, `konuklar`, `rezervasyon`,
+    `yerHazir`; `eylemler.ts → nafizeKaydet`, `nafizeIsaret`, `nafizeSil`,
+    `konukKaydet`, `konukSil`, yetki `ozelDuzenler`), saat GMT. Günün Next
+    Day planı açıksa ona bağlanır, açılmamışsa `planId` boş bekler
+    (`ozelCanlilariEsitle`: nafize kaydında, plandaki canlı düzenlemesinde,
+    `yarinPlaniniAc`'ta ve sistemin açılış işi `ozelCanlilariniBagla`'da); günü
+    değişen yeni gününün planına geçer, eski başlık bağı düşer. Next Day'de
+    "مباشر"da aynı kayıt, özel yayının adı rozetle (`data-canli-ozel`), Newsdesk
+    "yapıldı/yapılmadı" der, Muhasebe canlı olarak sayar; plandan silinmez
+    (`canliSil` reddeder, düğme yok), yarının planına kopyalanmaz. Kayıt
+    temizliği planı silince nafize kalır (bağı düşer), `kayipPlanlar` onu
+    saymaz; özel yayın silinince gider. Durum kayıttan (`OzelYayin.tsx →
+    nafizeDurumu`): yapıldı / yapılmadı, yoksa rezervasyon ve yer hazır;
+    onay ve iptal aşaması kalktı (silmek iptal). Eski düzenin nafizesini
+    sistemin açılış işi bir kez canlıya çevirir (`ozelNafizeleriCevir`, kimlik
+    `cy-<nafize>`, iptal edilen gelmez, aşama işaretleri izden). Liste
+    `ozel.ts → ozelNafizeleri`, hazır `nafizeHazir`. Test `testler/ozel-nafize.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında aşamalar
     (Planlama, Onay, Uygulama, Son kontrol, Yayına hazır) ve işaretlenecek

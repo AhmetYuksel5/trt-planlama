@@ -54,9 +54,7 @@ export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
     if (c.muhabirId !== kisiId || c.sonuc?.durum !== "yapildi") continue;
     l.push({ id: c.id, kaynak: "canli", tur: "canli", tarih: c.tarih || planTarihi(d, c.planId) || "", baslik: c.konu });
   }
-  for (const o of d.ozel ?? [])
-    for (const n of o.nafizeler ?? [])
-      if (n.muhabirId === kisiId && n.durum === "yapildi") l.push({ id: n.id, kaynak: "nafize", tur: "canli", tarih: n.tarih, baslik: n.konu });
+  // Özel yayının nafizesi de canlı kaydı (CanliYayin.ozelId): yukarıda "yapıldı" canlıyla sayılıyor.
   return l.filter((x) => x.tarih).sort((a, b) => a.tarih.localeCompare(b.tarih));
 };
 

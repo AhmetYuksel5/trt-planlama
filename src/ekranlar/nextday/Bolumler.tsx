@@ -451,6 +451,11 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                   <small>
                     {c.tarih !== plan.tarih && <Rozet ton="uyari">{tarihYaz(c.tarih, dil, "kisa")}</Rozet>}
                     {c.muhabirId && <span>{ad(kisiBul(v, c.muhabirId))}</span>}
+                    {c.ozelId && (
+                      <a href={`#/ozel/${c.ozelId}`} data-canli-ozel={c.ozelId}>
+                        <Rozet ton="vurgu">{v.ozel.find((o) => o.id === c.ozelId)?.ad ?? t("ozelYayinCanli")}</Rozet>
+                      </a>
+                    )}
                     {c.sonuc && (
                       <Rozet ton={c.sonuc.durum === "yapildi" ? "iyi" : "uyari"}>
                         <span data-canli-sonuc={c.sonuc.durum}>{t(c.sonuc.durum === "yapildi" ? "csYapildi" : "csYapilmadi")}</span>
@@ -470,7 +475,8 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
                     <OneriyiAc oneriId={c.oneriId} />
                     {duzenler && c.onceki && <OncekiDugmesi planId={plan.id} hedef={{ canli: c.id }} />}
                     {duzenler && <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={() => setForm(c.id)} />}
-                    {duzenler && (!c.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />}
+                    {/* Özel yayının nafizesi yalnız özel yayından silinir (tek kayıt). */}
+                    {duzenler && !c.ozelId && (!c.oneriId || (ben && yapabilir(ben, "oneriDegerlendir"))) && <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && canliSil(ben, c.id)} />}
                   </div>
                 )}
               </div>

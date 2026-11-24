@@ -441,6 +441,17 @@ export interface CanliYayin {
   sonuc?: { durum: "yapildi" | "yapilmadi"; kisiId: string; zaman: string };
   /** Canlıyı plana koyan (künye; kunye.ts). Eski kayıtta yok. */
   ekleyen?: KunyeIzi;
+  /*
+   * Özel yayının nafizesi (kullanıcı: nafize canlı etkinlik biçiminde, saati
+   * sistemin öbür unsurlarıyla eş zamanlı; günün planına canlı eklemek gibi).
+   * Kayıt tek: o günün Next Day planına kendiliğinden bağlanır, plan henüz
+   * açılmamışsa `planId` boş bekler (eylemler.ts → ozelCanlilariEsitle).
+   * Konuklar ve iki hazırlık işareti yalnız özel yayının ekranında ve çıktısında.
+   */
+  ozelId?: string;
+  konuklar?: Konuk[];
+  rezervasyon?: KunyeIzi;
+  yerHazir?: KunyeIzi;
 }
 
 /*

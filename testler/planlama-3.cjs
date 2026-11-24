@@ -103,7 +103,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   const oz = d2.ozel.find((o) => o.id === olay.ozelId);
   const pkgSay = olay.gunler.flatMap((g) => g.satirlar).filter((s) => s.tur === "pkg" || s.tur === "walktalk").length;
   const canliSay = olay.gunler.flatMap((g) => g.satirlar).filter((s) => s.tur === "live" || s.tur === "nafize").length;
-  ok(oz && (oz.paketOnerileri ?? []).length === pkgSay && (oz.nafizeler ?? []).length === canliSay, `PKG paket önerisi, LIVE nafize oldu (${pkgSay}/${canliSay})`);
+  ok(oz && (oz.paketOnerileri ?? []).length === pkgSay && d2.canliYayinlar.filter((c) => c.ozelId === oz.id).length === canliSay, `PKG paket önerisi, LIVE nafize (canlı yayın) oldu (${pkgSay}/${canliSay})`);
   ok(oz.nafizeler.every((n) => olay.gunler.some((g) => g.tarih === n.tarih)), "nafizeler kendi günlerinde");
   ok(oz.hazirlik.length >= olay.ekip.length + 1 && oz.hazirlik.some((h) => h.metin.startsWith("DEPLOYMENT")), "ekip ve görevlendirme hazırlıkta");
   ok(oz.paketOnerileri.every((x) => x.durum === "oneri"), "paket önerileri onaysız");

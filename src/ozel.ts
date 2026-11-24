@@ -1,6 +1,6 @@
 import { gunAy, type Anahtar } from "./dil";
 import { bugun } from "./tarih";
-import { OZEL_SIRASI, eskiOzelPaket, type Durum, type Gorevlendirme, type Nafize, type OzelDurum, type OzelIz, type OzelPaketOnerisi, type OzelYayin, type Paket } from "./veri";
+import { OZEL_SIRASI, eskiOzelPaket, type CanliYayin, type Durum, type Gorevlendirme, type Nafize, type OzelDurum, type OzelIz, type OzelPaketOnerisi, type OzelYayin, type Paket } from "./veri";
 
 /**
  * Özel yayının okuma kuralları: aşamaların sırası, hangi kalem bitti,
@@ -37,8 +37,9 @@ export interface OzelKalemi {
 }
 
 /** Nafizenin başlığı kurumun yazımıyla, her arayüz dilinde Arapça: "25 أكتوبر - تل أبيب - 10G". */
-export const nafizeBasligi = (n: Pick<Nafize, "tarih" | "yer" | "saat">) => {
-  const saat = n.saat ? `${n.saat.endsWith(":00") ? String(Number(n.saat.slice(0, 2))) : n.saat}G` : "";
+export const nafizeBasligi = (n: Pick<Nafize, "tarih" | "yer"> & { saat?: string; saatGmt?: string }) => {
+  const s = n.saatGmt ?? n.saat;
+  const saat = s ? `${s.endsWith(":00") ? String(Number(s.slice(0, 2))) : s}G` : "";
   return [gunAy(n.tarih, "ar"), n.yer, saat].filter(Boolean).join(" - ");
 };
 
@@ -96,14 +97,21 @@ export const ozelIcerikleri = (d: Pick<Durum, "paketler">, id: string): Paket[] 
     .filter((p) => p.ozelId === id && !eskiOzelPaket(p) && p.durum !== "iptal")
     .sort((a, b) => (a.yayinGunu ?? "").localeCompare(b.yayinGunu ?? "") || (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
 
+/* Nafizeler: özel yayının canlı yayınları (veri.ts → CanliYayin.ozelId), gün ve GMT saat sırasıyla. */
+export const ozelNafizeleri = (d: Pick<Durum, "canliYayinlar">, ozelId: string): CanliYayin[] =>
+  d.canliYayinlar.filter((c) => c.ozelId === ozelId).sort((a, b) => `${a.tarih} ${a.saatGmt || "99"}`.localeCompare(`${b.tarih} ${b.saatGmt || "99"}`));
+
+/* Nafize hazır: yayınlandı ya da rezervasyonu ve yeri hazır. */
+export const nafizeHazir = (c: CanliYayin) => c.sonuc?.durum === "yapildi" || (!!c.rezervasyon && !!c.yerHazir);
+
 export const ozelPaketleri = (d: Pick<Durum, "paketler">, id: string): Paket[] => d.paketler.filter((p) => p.ozelId === id && p.durum !== "iptal");
 export const ozelGorevlendirmeleri = (d: Pick<Durum, "gorevlendirmeler">, id: string): Gorevlendirme[] => d.gorevlendirmeler.filter((g) => g.ozelId === id);
 
 /** Görevlendirmenin genel aşaması: News Gathering onaylayana dek planlama, sonra hazır. */
 export const gorevHazir = (g: Gorevlendirme) => g.durum !== "talep";
 
-export const ozelKalemleri = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler">): OzelKalemi[] => [
-  ...(o.nafizeler ?? []).filter((n) => n.durum !== "iptal").map((n) => ({ tur: "nafize" as const, id: n.id, ad: nafizeBasligi(n), sonTarih: n.tarih, bitti: n.durum === "hazir" || n.durum === "yapildi", kisiId: n.muhabirId })),
+export const ozelKalemleri = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler" | "canliYayinlar">): OzelKalemi[] => [
+  ...ozelNafizeleri(d, o.id).map((n) => ({ tur: "nafize" as const, id: n.id, ad: nafizeBasligi(n), sonTarih: n.tarih, bitti: nafizeHazir(n), kisiId: n.muhabirId })),
   ...ozelIcerikleri(d, o.id).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.durum === "tamamlandi", kisiId: p.muhabirId })),
   ...ozelPaketSatirlari(o, d).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.asama === "hazir", kisiId: p.muhabirId ?? p.paket?.hazirlayanId })),
   ...(o.talepler ?? []).filter((x) => x.durum !== "iptal").map((x) => ({ tur: "talep" as const, id: x.id, ad: x.metin, sonTarih: x.sonTarih, bitti: x.durum === "tamam" })),
@@ -121,7 +129,7 @@ export interface OzelOzeti {
   tur: Record<OzelKalemTuru, { toplam: number; biten: number }>;
 }
 
-export const ozelOzeti = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler">): OzelOzeti => {
+export const ozelOzeti = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler" | "canliYayinlar">): OzelOzeti => {
   const kalemler = ozelKalemleri(o, d);
   const tur = Object.fromEntries(OZEL_KALEM_TURLERI.map((t) => [t, { toplam: 0, biten: 0 }])) as OzelOzeti["tur"];
   for (const k of kalemler) {
@@ -132,7 +140,7 @@ export const ozelOzeti = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendir
 };
 
 /** Yapılacaklar: son tarihi yakın olan önde, tarihsiz en sonda. */
-export const yapilacaklar = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler">): OzelKalemi[] =>
+export const yapilacaklar = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler" | "canliYayinlar">): OzelKalemi[] =>
   ozelKalemleri(o, d)
     .filter((k) => !k.bitti)
     .sort((a, b) => (a.sonTarih ?? "9999").localeCompare(b.sonTarih ?? "9999"));

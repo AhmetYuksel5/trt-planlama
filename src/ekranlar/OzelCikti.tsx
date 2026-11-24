@@ -2,7 +2,7 @@ import { useRef, type RefObject } from "react";
 import { Bos } from "../bilesenler/Parcalar";
 import { aralikYaz, ciktiTarihi, gunAy, metin, useDil, type Anahtar } from "../dil";
 import { kisiAr, muhabirYeri, paketYeri, satir, sehirAr } from "../etiketler";
-import { nafizeBasligi, ozelGorevlendirmeleri, ozelPaketSatirlari } from "../ozel";
+import { nafizeBasligi, ozelGorevlendirmeleri, ozelNafizeleri, ozelPaketSatirlari } from "../ozel";
 import { kisiBul, useVeri, type OzelYayin } from "../veri";
 import { CiktiAraclari } from "./belge/Parcalar";
 
@@ -34,7 +34,7 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
   const v = useVeri();
   const c = (k: Anahtar) => metin(k, "ar");
   const tarih = o.bitis ? aralikYaz(o.tarih, o.bitis, "ar") : ciktiTarihi(o.tarih, "ar");
-  const nafizeler = (o.nafizeler ?? []).filter((n) => n.durum !== "iptal").sort((a, b) => `${a.tarih} ${a.saat ?? ""}`.localeCompare(`${b.tarih} ${b.saat ?? ""}`));
+  const nafizeler = ozelNafizeleri(v, o.id);
   const paketler = ozelPaketSatirlari(o, v);
   const talepler = (o.talepler ?? []).filter((x) => x.durum !== "iptal");
   const gorevler = ozelGorevlendirmeleri(v, o.id);
@@ -55,14 +55,14 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
         <section>
           <h2 className="yesil">{c("oyNafizeler")}</h2>
           {nafizeler.map((n) => {
-            const konuklar = n.konuklar.filter((k) => k.durum !== "iptal");
+            const konuklar = (n.konuklar ?? []).filter((k) => k.durum !== "iptal");
             return (
               <div key={n.id}>
                 <h3>{nafizeBasligi(n)}</h3>
                 <p>{n.konu}</p>
                 <p>
                   <b>{c("muhabir")}: </b>
-                  {muhabirYeri([kisiAr(kisiBul(v, n.muhabirId))], n.muhabirTbc)}
+                  {muhabirYeri([kisiAr(kisiBul(v, n.muhabirId))], !n.muhabirId)}
                 </p>
                 {konuklar.length > 0 && (
                   <p>

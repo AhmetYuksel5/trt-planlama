@@ -5,7 +5,7 @@ import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { postaGonder } from "../posta-kapi";
@@ -17,10 +17,9 @@ import {
   aylikOlaydanOzel,
   konukKaydet,
   konukSil,
-  nafizeAsamaDegisebilir,
-  nafizeAsamasi,
-  nafizeIptal,
+  nafizeIsaret,
   nafizeKaydet,
+  nafizeSil,
   ozelAsamaDegisebilir,
   ozelAsamaIsaretle,
   ozelAsamaNotu,
@@ -55,6 +54,8 @@ import {
   isaretIzi,
   isaretli,
   nafizeBasligi,
+  nafizeHazir,
+  ozelNafizeleri,
   oncesi,
   ozelAsamasi,
   ozelGecti,
@@ -81,7 +82,6 @@ import {
   SECILEN_TURLER,
   getir,
   paketBul,
-  NAFIZE_SIRASI,
   OZEL_SIRASI,
   TALEP_SIRASI,
   kisiBul,
@@ -93,7 +93,7 @@ import {
   type IcerikTuru,
   type Kisi,
   type KonukDurum,
-  type Nafize,
+  type CanliYayin,
   type NafizeDurum,
   type OzelDurum,
   type OzelIz,
@@ -589,11 +589,11 @@ const OZEL_SEKMELERI: [OzelSekme, Anahtar][] = [
 ];
 
 /* Yayının günleri: künyedeki aralık; aralığın dışına düşen nafize de kendi günüyle girer, kaybolmasın. */
-const yayinGunleri = (o: OzelYayin): string[] => {
+const yayinGunleri = (o: OzelYayin, d: Pick<Durum, "canliYayinlar">): string[] => {
   const gunler = new Set<string>();
   const son = o.bitis && o.bitis > o.tarih ? o.bitis : o.tarih;
   for (let g = o.tarih, i = 0; g <= son && i < 62; g = gunEkle(g, 1), i++) gunler.add(g);
-  for (const n of o.nafizeler ?? []) if (n.tarih) gunler.add(n.tarih);
+  for (const n of ozelNafizeleri(d, o.id)) if (n.tarih) gunler.add(n.tarih);
   return [...gunler].sort();
 };
 
@@ -613,11 +613,10 @@ function OzelBasi({ ben, o, duzen, kunyeAc }: { ben: Kisi; o: OzelYayin; duzen: 
   const bekleyen = yapilacaklar(o, v).length;
   const isaretle = () => {
     if (!sonraki) return;
-    // Planın onayı onay bekleyen nafizeleri ve paket önerilerini de onaylıyor; soru kaçını söylüyor.
+    // Planın onayı eski düzenin onay bekleyen paket önerilerini de onaylıyor; soru kaçını söylüyor.
     if (sonraki === "onayli") {
-      const n = (o.nafizeler ?? []).filter((x) => x.durum === "planlandi").length;
       const p = (o.paketOnerileri ?? []).filter((x) => x.durum === "oneri").length;
-      if ((n || p) && !confirm(t("ozelOnaySayili", { n, p }))) return;
+      if (p && !confirm(t("ozelOnaySayili", { n: 0, p }))) return;
     }
     if (ozelAsamaIsaretle(ben, o.id, sonraki, true)) bildir(t(sonraki === "onayli" ? "bPlanOnaylandi" : "bKaydedildi"));
   };
@@ -675,8 +674,8 @@ export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
   const duzen = ozelDuzenler(ben);
   const ozet = ozelOzeti(o, v);
   const sayilar: [Anahtar, number][] = [
-    ["oyGunSayisi", yayinGunleri(o).length],
-    ["oyNafizeler", (o.nafizeler ?? []).filter((n) => n.durum !== "iptal").length],
+    ["oyGunSayisi", yayinGunleri(o, v).length],
+    ["oyNafizeler", ozelNafizeleri(v, o.id).length],
     ["oyPaketler", ozelPaketSatirlari(o, v).length],
     ["oyTalepler", (o.talepler ?? []).filter((x) => x.durum !== "iptal").length],
   ];
@@ -740,16 +739,16 @@ export function OzelSayfa({ ben, id }: { ben: Kisi; id: string }) {
 function GunlukProgram({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const { t, dil, ad } = useDil();
   const v = useVeri();
-  const gunler = yayinGunleri(o);
-  const nafizeler = o.nafizeler ?? [];
+  const gunler = yayinGunleri(o, v);
+  const nafizeler = ozelNafizeleri(v, o.id);
   const ilk = gunler.includes(bugun()) ? bugun() : (gunler.find((g) => nafizeler.some((n) => n.tarih === g)) ?? gunler[0]);
   const [gun, setGun] = useState(ilk);
   const [ac, setAc] = useState<string | null>(null);
-  const [form, setForm] = useState<Nafize | "yeni" | null>(null);
+  const [form, setForm] = useState<CanliYayin | "yeni" | null>(null);
   const secili = gunler.includes(gun) ? gun : ilk;
-  const gunun = nafizeler.filter((n) => n.tarih === secili).sort((a, b) => (a.saat ?? "99").localeCompare(b.saat ?? "99"));
+  const gunun = nafizeler.filter((n) => n.tarih === secili);
   const acik = nafizeler.find((n) => n.id === ac);
-  const konuklar = gunun.filter((n) => n.durum !== "iptal").flatMap((n) => n.konuklar.map((k) => ({ k, n })));
+  const konuklar = gunun.flatMap((n) => (n.konuklar ?? []).map((k) => ({ k, n })));
   const paketler = ozelPaketSatirlari(o, v).filter((s) => s.sonTarih === secili);
   const talepler = (o.talepler ?? []).filter((x) => x.sonTarih === secili && x.durum !== "iptal");
   return (
@@ -758,7 +757,7 @@ function GunlukProgram({ ben, o }: { ben: Kisi; o: OzelYayin }) {
         <h3>{t("oyGunler")}</h3>
         <div className="ozel-gun-listesi">
           {gunler.map((g) => {
-            const sayi = nafizeler.filter((n) => n.tarih === g && n.durum !== "iptal").length;
+            const sayi = nafizeler.filter((n) => n.tarih === g).length;
             return (
               <button key={g} className={`ozel-gun${g === secili ? " acik" : ""}`} aria-pressed={g === secili} onClick={() => setGun(g)} data-ozel-gun={g}>
                 <span>{gunAdi(g, dil)}</span>
@@ -785,8 +784,8 @@ function GunlukProgram({ ben, o }: { ben: Kisi; o: OzelYayin }) {
           {gunun.map((n) => {
             const muhabir = kisiBul(v, n.muhabirId);
             return (
-              <li key={n.id} className={n.durum === "iptal" ? "soluk" : ""}>
-                <span className="ozel-saat">{n.saat || "TBC"}</span>
+              <li key={n.id}>
+                <span className="ozel-saat">{n.saatGmt ? `${n.saatGmt} GMT` : "TBC"}</span>
                 <button className="ozel-nafize-satiri" onClick={() => setAc(n.id)} data-program-nafize={n.id}>
                   <Icerik blok>{n.konu}</Icerik>
                   <span className="ozel-nafize-alt">
@@ -795,16 +794,14 @@ function GunlukProgram({ ben, o }: { ben: Kisi; o: OzelYayin }) {
                       <span className="ozel-kisi">
                         <Avatar kisi={muhabir} boy="kucuk" /> {ad(muhabir)}
                       </span>
-                    ) : (
-                      n.muhabirTbc && <span>TBC</span>
-                    )}
-                    {n.konuklar.length > 0 && (
+                    ) : null}
+                    {(n.konuklar ?? []).length > 0 && (
                       <span>
-                        <Users size={14} /> {n.konuklar.length}
+                        <Users size={14} /> {n.konuklar!.length}
                       </span>
                     )}
                   </span>
-                  <Rozet ton={DURUM_TONU[n.durum] ?? ""}>{t(NAFIZE_DURUM_ADI[n.durum])}</Rozet>
+                  <NafizeRozeti n={n} />
                 </button>
               </li>
             );
@@ -854,7 +851,7 @@ function GunlukProgram({ ben, o }: { ben: Kisi; o: OzelYayin }) {
       </section>
       {acik && (
         <Pencere baslik={<Icerik>{nafizeBasligi(acik)}</Icerik>} kapat={() => setAc(null)} genis>
-          <NafizeKalemi ben={ben} o={o} n={acik} duzenle={() => { setAc(null); setForm(acik); }} />
+          <NafizeKalemi ben={ben} n={acik} duzenle={() => { setAc(null); setForm(acik); }} />
         </Pencere>
       )}
       {form && <NafizePenceresi ben={ben} o={o} n={form === "yeni" ? undefined : form} gun={secili} kapat={() => setForm(null)} />}
@@ -873,11 +870,10 @@ function PlanAsamalari({ ben, o }: { ben: Kisi; o: OzelYayin }) {
     PLAN_ADIM_ADI,
     (adim, tamam) => ozelAsamaDegisebilir(ben, o, adim as Exclude<OzelDurum, "hazirlik">, tamam),
     (adim, tamam) => {
-      // Planın onayı onay bekleyen nafizeleri ve paket önerilerini de onaylıyor; pencere kaçını söylüyor.
+      // Planın onayı eski düzenin onay bekleyen paket önerilerini de onaylıyor; pencere kaçını söylüyor.
       if (adim === "onayli" && tamam) {
-        const n = (o.nafizeler ?? []).filter((x) => x.durum === "planlandi").length;
         const p = (o.paketOnerileri ?? []).filter((x) => x.durum === "oneri").length;
-        if ((n || p) && !confirm(t("ozelOnaySayili", { n, p }))) return;
+        if (p && !confirm(t("ozelOnaySayili", { n: 0, p }))) return;
       }
       if (ozelAsamaIsaretle(ben, o.id, adim as Exclude<OzelDurum, "hazirlik">, tamam)) bildir(t(adim === "onayli" && tamam ? "bPlanOnaylandi" : "bKaydedildi"));
     },
@@ -954,17 +950,36 @@ function Yapilacaklar({ o, d }: { o: OzelYayin; d: Durum }) {
 
 /* --- Nafizeler ve konuklar --- */
 
+/*
+ * Nafize özel yayının canlı yayını (veri.ts → CanliYayin.ozelId): günün
+ * Next Day planındaki canlıyla tek kayıt, saati GMT. Durumu kayıttan:
+ * yayınlandıysa Newsdesk'in "yapıldı/yapılmadı"sı, değilse Satdesk
+ * rezervasyonu ve yerin hazır olması (başka kayıtta tutulmayan iki işaret).
+ */
+const nafizeDurumu = (n: CanliYayin): NafizeDurum | "yapilmadi" =>
+  n.sonuc ? (n.sonuc.durum === "yapildi" ? "yapildi" : "yapilmadi") : n.rezervasyon && n.yerHazir ? "hazir" : n.rezervasyon ? "rezervasyon" : "planlandi";
+
+function NafizeRozeti({ n }: { n: CanliYayin }) {
+  const { t } = useDil();
+  const d = nafizeDurumu(n);
+  return (
+    <Rozet ton={d === "yapilmadi" ? "kotu" : (DURUM_TONU[d] ?? "")}>
+      <span data-nafize-durum={d}>{t(d === "yapilmadi" ? "oyNfYapilmadi" : NAFIZE_DURUM_ADI[d])}</span>
+    </Rozet>
+  );
+}
+
 function Nafizeler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const { t } = useDil();
-  const [form, setForm] = useState<Nafize | "yeni" | null>(null);
-  const liste = [...(o.nafizeler ?? [])].sort((a, b) => `${a.tarih} ${a.saat ?? ""}`.localeCompare(`${b.tarih} ${b.saat ?? ""}`));
-  const hazir = liste.filter((n) => n.durum === "hazir" || n.durum === "yapildi").length;
+  const v = useVeri();
+  const [form, setForm] = useState<CanliYayin | "yeni" | null>(null);
+  const liste = ozelNafizeleri(v, o.id);
   return (
     <>
       <Bolum
         ad={t("oyNafizeler")}
         ikon={<Mic size={18} />}
-        ek={`${hazir}/${liste.filter((n) => n.durum !== "iptal").length}`}
+        ek={`${liste.filter(nafizeHazir).length}/${liste.length}`}
         ekle={
           ozelDuzenler(ben)
             ? {
@@ -978,7 +993,7 @@ function Nafizeler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
         {liste.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
         <div className="ozel-kalemler">
           {liste.map((n) => (
-            <NafizeKalemi key={n.id} ben={ben} o={o} n={n} duzenle={() => setForm(n)} />
+            <NafizeKalemi key={n.id} ben={ben} n={n} duzenle={() => setForm(n)} />
           ))}
         </div>
       </Bolum>
@@ -987,37 +1002,53 @@ function Nafizeler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   );
 }
 
-function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafize; duzenle: () => void }) {
-  const { t, ad } = useDil();
+function NafizeKalemi({ ben, n, duzenle }: { ben: Kisi; n: CanliYayin; duzenle: () => void }) {
+  const { t, ad, dil } = useDil();
   const v = useVeri();
   const duzen = ozelDuzenler(ben);
   const [konuk, setKonuk] = useState({ ad: "", unvan: "" });
   const muhabir = kisiBul(v, n.muhabirId);
-  const iptal = n.durum === "iptal";
-  const satirlar = siraSatirlari(
-    NAFIZE_SIRASI,
-    n.durum,
-    NAFIZE_DURUM_ADI,
-    (adim, tamam) => nafizeAsamaDegisebilir(ben, n, adim, tamam),
-    (adim, tamam) => nafizeAsamasi(ben, o.id, n.id, adim, tamam),
-  );
+  const konuklar = n.konuklar ?? [];
+  const plan = n.planId ? v.planlar.find((p) => p.id === n.planId) : undefined;
+  const isaret = (alan: "rezervasyon" | "yerHazir", ad_: Anahtar) => {
+    const iz = n[alan];
+    const kisi = kisiBul(v, iz?.kisiId);
+    return (
+      <label className="secim" data-nafize-isaret={alan}>
+        <input type="checkbox" checked={!!iz} disabled={!duzen} onChange={(e) => nafizeIsaret(ben, n.id, alan, e.target.checked)} />
+        {t(ad_)}
+        {iz && <small className="sonuk-yazi">{` · ${kisi ? ad(kisi) : ""} ${tarihYaz(iz.zaman.slice(0, 10), dil, "kisa")}`}</small>}
+      </label>
+    );
+  };
   return (
-    <Kalem veri={{ "data-nafize": n.id }} baslik={<Icerik>{nafizeBasligi(n)}</Icerik>} soluk={iptal} rozet={<Rozet ton={DURUM_TONU[n.durum]}>{t(NAFIZE_DURUM_ADI[n.durum])}</Rozet>}>
+    <Kalem veri={{ "data-nafize": n.id }} baslik={<Icerik>{nafizeBasligi(n)}</Icerik>} rozet={<NafizeRozeti n={n} />}>
       <Icerik blok className="ozel-nafize-konu">
         {n.konu}
       </Icerik>
       <small className="sonuk-yazi">
-        {t("muhabir")}: {muhabir ? ad(muhabir) : n.muhabirTbc ? "TBC" : t("atanmadi")}
+        {t("muhabir")}: {muhabir ? ad(muhabir) : t("atanmadi")}
       </small>
-      {!iptal && (
-        <KontrolListesi satirlar={satirlar} iz={n.iz} notEkle={duzen || planAdimiYapabilir(ben, "ozOnay") ? (asama, m) => ozelKalemNotu(ben, o.id, "nafizeler", n.id, m, asama) : undefined} />
-      )}
+      {/* Günün planı açıksa canlı orada; değilse plan açılınca kendiliğinden girer. */}
+      <small className="sonuk-yazi" data-nafize-plan={plan ? plan.id : ""}>
+        {plan ? (
+          <a href={`#/nextday/${plan.id}`}>
+            {t("nextday")} · {tarihYaz(plan.tarih, dil, "kisa")}
+          </a>
+        ) : (
+          t("oyNfPlanBekliyor")
+        )}
+      </small>
+      <div className="dugmeler">
+        {isaret("rezervasyon", "oyNfRezervasyon")}
+        {isaret("yerHazir", "oyNfHazir")}
+      </div>
       <div className="ozel-konuklar">
         <span className="alan-etiket">
-          <Users size={14} /> {t("oyKonuklar")} ({n.konuklar.filter((k) => k.durum !== "iptal").length})
+          <Users size={14} /> {t("oyKonuklar")} ({konuklar.filter((k) => k.durum !== "iptal").length})
         </span>
         <ul className="konuk-listesi">
-          {n.konuklar.map((k) => (
+          {konuklar.map((k) => (
             <li key={k.id} className={k.durum === "iptal" ? "soluk" : ""} data-konuk={k.id}>
               <span className="konuk-adi">
                 <Icerik blok>{k.ad}</Icerik>
@@ -1031,12 +1062,7 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
                 <select
                   className={`durum-secimi ton-${DURUM_TONU[k.durum] ?? "yok"}`}
                   value={k.durum}
-                  onChange={(e) =>
-                    konukKaydet(ben, o.id, n.id, {
-                      ...k,
-                      durum: e.target.value as KonukDurum,
-                    })
-                  }
+                  onChange={(e) => konukKaydet(ben, n.id, { ...k, durum: e.target.value as KonukDurum })}
                   aria-label={t("durum")}
                   data-durum-secimi
                 >
@@ -1050,7 +1076,7 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
                 <Rozet ton={DURUM_TONU[k.durum]}>{t(KONUK_DURUM_ADI[k.durum])}</Rozet>
               )}
               {duzen && (
-                <button className="dugme dugme-sade dugme-ikon kotu-yazi" onClick={() => konukSil(ben, o.id, n.id, k.id)} title={t("sil")} aria-label={t("sil")}>
+                <button className="dugme dugme-sade dugme-ikon kotu-yazi" onClick={() => konukSil(ben, n.id, k.id)} title={t("sil")} aria-label={t("sil")}>
                   <Trash2 size={14} />
                 </button>
               )}
@@ -1064,13 +1090,7 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
             <button
               className="dugme dugme-ikincil dugme-kucuk"
               disabled={!konuk.ad.trim()}
-              onClick={() =>
-                konukKaydet(ben, o.id, n.id, {
-                  ad: konuk.ad,
-                  unvan: konuk.unvan,
-                  durum: "aday",
-                }) && setKonuk({ ad: "", unvan: "" })
-              }
+              onClick={() => konukKaydet(ben, n.id, { ad: konuk.ad, unvan: konuk.unvan, durum: "aday" }) && setKonuk({ ad: "", unvan: "" })}
               data-konuk-ekle
             >
               <Plus size={14} /> {t("oyKonukEkle")}
@@ -1083,38 +1103,26 @@ function NafizeKalemi({ ben, o, n, duzenle }: { ben: Kisi; o: OzelYayin; n: Nafi
           <button className="dugme dugme-ikincil dugme-kucuk" onClick={duzenle} data-nafize-duzenle>
             <Pencil size={14} /> {t("duzenle")}
           </button>
-          <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => nafizeIptal(ben, o.id, n.id, !iptal)} data-nafize-iptal>
-            {t(iptal ? "oyIptaliKaldir" : "oyIptalEt")}
-          </button>
-          <button className="dugme dugme-sade dugme-kucuk kotu-yazi" onClick={() => confirm(t("silinsinMi")) && ozelKalemSil(ben, o.id, "nafizeler", n.id)}>
+          <button className="dugme dugme-sade dugme-kucuk kotu-yazi" onClick={() => confirm(t("oyNfSilOnay")) && nafizeSil(ben, n.id)} data-nafize-sil>
             <Trash2 size={14} /> {t("sil")}
           </button>
         </div>
       )}
-      <Gecmis iz={n.iz} />
     </Kalem>
   );
 }
 
-function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n?: Nafize; gun?: string; kapat: () => void }) {
+function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n?: CanliYayin; gun?: string; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({
     konu: n?.konu ?? "",
     tarih: n?.tarih ?? gun ?? o.tarih,
-    saat: n?.saat ?? "",
+    saatGmt: n?.saatGmt ?? "",
     yer: n?.yer ?? "",
     muhabirId: n?.muhabirId ?? "",
-    muhabirTbc: !!n?.muhabirTbc,
   });
   const kaydet = () => {
-    if (
-      nafizeKaydet(ben, o.id, {
-        ...f,
-        id: n?.id,
-        muhabirTbc: f.muhabirTbc || undefined,
-      })
-    )
-      bildir(t("bKaydedildi"));
+    if (nafizeKaydet(ben, o.id, { ...f, id: n?.id })) bildir(t("bKaydedildi"));
     kapat();
   };
   return (
@@ -1123,38 +1131,25 @@ function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n
         <div className="satir">
           <label>
             {t("oyTarih")}
-            <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} />
+            <TarihGirdisi value={f.tarih} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-nafize-tarih />
           </label>
           <label>
             {t("oyYer")}
             <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder="تل أبيب" data-nafize-yer />
           </label>
           <label>
-            {t("oySaat")}
-            <SaatGirdisi value={f.saat} onChange={(e) => setF({ ...f, saat: e.target.value })} data-nafize-saat />
+            {t("oyNfSaatGmt")}
+            <SaatGirdisi value={f.saatGmt} onChange={(e) => setF({ ...f, saatGmt: e.target.value })} data-nafize-saat />
           </label>
         </div>
         <label>
           {t("oyKonu")}
           <textarea {...icerikAlani} rows={2} value={f.konu} onChange={(e) => setF({ ...f, konu: e.target.value })} data-nafize-konu />
         </label>
-        <div className="muhabir-sutunu">
-          <label>
-            {t("muhabir")}
-            <MuhabirSecici
-              deger={f.muhabirId}
-              degistir={(x) =>
-                setF({
-                  ...f,
-                  muhabirId: x,
-                  muhabirTbc: x ? false : f.muhabirTbc,
-                })
-              }
-              bosEtiket={t("atanmadi")}
-            />
-          </label>
-          {!f.muhabirId && <TbcKutusu secili={f.muhabirTbc} degistir={(x) => setF({ ...f, muhabirTbc: x })} />}
-        </div>
+        <label>
+          {t("muhabir")}
+          <MuhabirSecici deger={f.muhabirId} degistir={(x) => setF({ ...f, muhabirId: x })} bosEtiket={t("atanmadi")} />
+        </label>
         <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.konu.trim() || !f.tarih} />
       </div>
     </Pencere>

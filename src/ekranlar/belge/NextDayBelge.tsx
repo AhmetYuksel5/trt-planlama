@@ -1133,7 +1133,7 @@ export function NextDayBelgesi({
                                       !x.oneriId ||
                                       (ben &&
                                         yapabilir(ben, "oneriDegerlendir"))
-                                        ? sil(() => ben && canliSil(ben, x.id))
+                                        ? (x.ozelId ? undefined : sil(() => ben && canliSil(ben, x.id)))
                                         : undefined
                                     }
                                   />
@@ -1406,7 +1406,7 @@ export function NextDayBelgesi({
                           cikar={
                             !x.oneriId ||
                             (ben && yapabilir(ben, "oneriDegerlendir"))
-                              ? sil(() => ben && canliSil(ben, x.id))
+                              ? (x.ozelId ? undefined : sil(() => ben && canliSil(ben, x.id)))
                               : undefined
                           }
                         />
@@ -1653,7 +1653,7 @@ export function NextDayBelgesi({
                       cikar={
                         !x.oneriId ||
                         (ben && yapabilir(ben, "oneriDegerlendir"))
-                          ? sil(() => ben && canliSil(ben, x.id))
+                          ? (x.ozelId ? undefined : sil(() => ben && canliSil(ben, x.id)))
                           : undefined
                       }
                     />
@@ -1976,7 +1976,7 @@ export function NextDayBelgesi({
                                 cikar={
                                   !x.oneriId ||
                                   (ben && yapabilir(ben, "oneriDegerlendir"))
-                                    ? sil(() => ben && canliSil(ben, x.id))
+                                    ? (x.ozelId ? undefined : sil(() => ben && canliSil(ben, x.id)))
                                     : undefined
                                 }
                               />

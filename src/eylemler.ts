@@ -46,7 +46,6 @@ import {
   kisiBul,
   yeniKisi,
   SISTEM,
-  NAFIZE_SIRASI,
   OZEL_SIRASI,
   oncekiPlan,
   oneriBul,
@@ -105,8 +104,6 @@ import {
   type OzelYayin,
   type OzelIz,
   type OzelDurum,
-  type Nafize,
-  type NafizeDurum,
   type Konuk,
   type OzelTalep,
   type OzelPaketOnerisi,
@@ -2019,7 +2016,8 @@ export const yarinPlaniniAc = (): string | null => {
   };
   const canlilar: CanliYayin[] = kaynak
     ? d.canliYayinlar
-        .filter((c) => c.planId === kaynak.id && c.tarih >= tarih)
+        // Özel yayının canlısı (nafize) kendi gününe ait: kopyalanmaz, günün planına kendisi bağlanır.
+        .filter((c) => c.planId === kaynak.id && c.tarih >= tarih && !c.ozelId)
         .filter((c) => !c.planBaslikId || pbEsle.has(c.planBaslikId))
         // Gelişmedeki gibi öneri ve Weekly bağı kaynakta kalıyor: taşınan canlı öneriyi her gün "bugünün planında" tutuyordu.
         .map(({ oneriId: _o, haftalikKalemId: _h, ...c }) => ({ ...c, id: turet(id, c.id), planId: id, planBaslikId: c.planBaslikId ? pbEsle.get(c.planBaslikId) : undefined, onceki: true, devir: true }))
@@ -2044,6 +2042,7 @@ export const yarinPlaniniAc = (): string | null => {
     },
     `h-${id}`,
   );
+  d = ozelCanlilariEsitle(d);
   // Haftalık toplantıda bu güne kabul edilmiş, henüz aktarılmamış haberler kendiliğinden geliyor.
   for (const h of d.haftalik.filter((x) => x.durum === "kesinlesti")) {
     for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
@@ -2804,7 +2803,8 @@ export const canliKaydet = (ben: Kisi, c: Omit<CanliYayin, "id"> & { id?: string
   if (!plan || !planOperasyonDuzenler(ben, plan)) return false;
   if (c.id) {
     if (d.canliYayinlar.find((x) => x.id === c.id)?.planId !== plan.id) return false;
-    kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) });
+    // Özel yayının canlısının günü planda değişirse yeni gününün planına geçer.
+    kaydet(ozelCanlilariEsitle({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === c.id ? { ...x, ...c, id: x.id, onceki: undefined, devir: undefined } : x)) }));
   } else {
     kaydet({ ...d, canliYayinlar: [...d.canliYayinlar, { ...c, id: kimlik("cy"), ekleyen: { kisiId: ben.id, zaman: simdi() } }] });
   }
@@ -2826,7 +2826,8 @@ export const canliSil = (ben: Kisi, id: string) => {
   const d = getir();
   const c = d.canliYayinlar.find((x) => x.id === id);
   const plan = planBul(d, c?.planId);
-  if (!c || !plan || !planOperasyonDuzenler(ben, plan) || !oneriBagiSilinir(ben, c.oneriId)) return false;
+  // Özel yayının nafizesi planda tek kayıt: yalnız özel yayından silinir (nafizeSil).
+  if (!c || c.ozelId || !plan || !planOperasyonDuzenler(ben, plan) || !oneriBagiSilinir(ben, c.oneriId)) return false;
   kaydet(oneriBaglariniTazele({ ...d, canliYayinlar: d.canliYayinlar.filter((x) => x.id !== id) }, [c.oneriId]));
   return true;
 };
@@ -5776,10 +5777,11 @@ export const aylikOlaydanOzel = (ben: Kisi, olayId: string): string | null => {
   const d = getir();
   // Kapsam satırları, ekip ve görevlendirme yayının içine (aylik.ts → olaydanOzele); tek yazış.
   const g = olaydanOzele(olay, (e) => (e.kisiId ? kisiAr(kisiBul(d, e.kisiId)) : e.ad ?? ""), (x) => metin(`ayEkip_${x}` as Anahtar, "ar"));
-  const nafizeler: Nafize[] = g.nafizeler.map((n) => ({ id: kimlik("nf"), konu: n.konu, tarih: n.tarih, ...(n.yer ? { yer: n.yer } : {}), ...(n.muhabirId ? { muhabirId: n.muhabirId } : { muhabirTbc: true as const }), konuklar: [], durum: "planlandi", iz: [izYaz(ben, "eklendi")] }));
+  const nafizeler: CanliYayin[] = g.nafizeler.map((n) => ({ id: kimlik("cy"), planId: "", ozelId, konu: n.konu, aciklama: "", tarih: n.tarih, saatGmt: "", yer: n.yer ?? "", ...(n.muhabirId ? { muhabirId: n.muhabirId } : {}), notlar: "", konuklar: [], ekleyen: { kisiId: ben.id, zaman: simdi() } }));
   const paketOnerileri: OzelPaketOnerisi[] = g.paketler.map((p) => ({ id: kimlik("po"), baslik: p.baslik, aciklama: "", kaynak: p.muhabirId && !p.tbc ? "dis" : "inhouse", ...(p.muhabirId && !p.tbc ? { muhabirId: p.muhabirId } : {}), sonTarih: p.sonTarih, tur: "haber", bicim: p.bicim, durum: "oneri", iz: [izYaz(ben, "eklendi")] }));
   const hazirlik = g.hazirlik.map((m) => ({ id: kimlik("oz"), metin: m, tamam: false }));
-  const d2 = ozelGuncelle(d, ozelId, (o) => ({ ...o, nafizeler: [...(o.nafizeler ?? []), ...nafizeler], paketOnerileri: [...(o.paketOnerileri ?? []), ...paketOnerileri], hazirlik: [...o.hazirlik, ...hazirlik] }));
+  const d1 = ozelCanlilariEsitle({ ...d, canliYayinlar: [...d.canliYayinlar, ...nafizeler] });
+  const d2 = ozelGuncelle(d1, ozelId, (o) => ({ ...o, paketOnerileri: [...(o.paketOnerileri ?? []), ...paketOnerileri], hazirlik: [...o.hazirlik, ...hazirlik] }));
   kaydet({ ...d2, aylik: d2.aylik.map((a) => (a.olaylar?.some((o) => o.id === olayId) ? { ...a, olaylar: a.olaylar.map((o) => (o.id === olayId ? { ...o, ozelId } : o)) } : a)) });
   return ozelId;
 };
@@ -6451,7 +6453,6 @@ export const ozelAsamaIsaretle = (ben: Kisi, id: string, adim: Exclude<OzelDurum
       if (tamam ? !p.yayinlandi : p.yayinlandi?.ozelId === id) d = paketGuncelle(d, p.id, (x) => ({ ...x, yayinlandi: tamam ? { ozelId: id, tarih: o.bitis ?? o.tarih } : undefined }));
   }
   if (tamam && adim === "onayli") {
-    d = ozelGuncelle(d, id, (x) => ({ ...x, nafizeler: (x.nafizeler ?? []).map((n) => (n.durum === "planlandi" ? { ...n, durum: "onayli" as const, iz: [...n.iz, izYaz(ben, "durum", { durum: "onayli" })] } : n)) }));
     for (const x of ozelBul(d, id)!.paketOnerileri ?? []) if (x.durum === "oneri") d = paketOnerisiniOnayla(d, ben, ozelBul(d, id)!, x);
     for (const p of d.paketler.filter((x) => x.ozelId === id && x.durum === "taslak")) d = ozelPaketiOnayla(d, ben, p);
   }
@@ -6471,7 +6472,7 @@ export const ozelAsamaNotu = (ben: Kisi, id: string, asama: string, metin: strin
 };
 
 /* Nafize, talep, konuk: aynı kalıp; kalemin kendi izine yazılıyor. */
-type KalemTuru = "nafizeler" | "talepler" | "paketOnerileri";
+type KalemTuru = "talepler" | "paketOnerileri";
 type KalemOf<T extends KalemTuru> = NonNullable<OzelYayin[T]>[number];
 
 // Onay adımı plan düzenleme yetkisi olmayan onaylayana da açık: izin dışarıdan gelebiliyor.
@@ -6486,56 +6487,146 @@ const kalemDegistir = <T extends KalemTuru>(ben: Kisi, ozelId: string, tur: T, k
   return true;
 };
 
-export type NafizeGirdisi = Omit<Nafize, "id" | "iz" | "durum" | "konuklar"> & { id?: string };
+/*
+ * Nafize özel yayının canlı yayını (veri.ts → CanliYayin.ozelId): günün Next
+ * Day planının "مباشر" bölümünde aynı kayıt. Plan o gün için açıksa ona
+ * bağlanır; açılmamışsa `planId` boş bekler, plan açılınca (yarinPlaniniAc,
+ * sistemin açılış işi) bağlanır. Tarihi değişen nafize yeni gününün planına
+ * geçer; eski planın başlığına bağlıysa o bağ düşer (başlık o plana ait).
+ */
+const ozelCanlisiPlani = (d: Durum, tarih: string) =>
+  d.planlar.filter((p) => p.tarih === tarih).sort((a, b) => Number(a.durum === "devralindi") - Number(b.durum === "devralindi"))[0];
+
+export const ozelCanlilariEsitle = (d: Durum): Durum => {
+  let degisti = false;
+  const canlilar = d.canliYayinlar.map((c) => {
+    if (!c.ozelId) return c;
+    const simdiki = c.planId ? planBul(d, c.planId) : undefined;
+    if (simdiki && simdiki.tarih === c.tarih) return c;
+    const planId = ozelCanlisiPlani(d, c.tarih)?.id ?? "";
+    if (planId === c.planId) return c;
+    degisti = true;
+    const { planBaslikId: _b, ...k } = c;
+    return { ...k, planId };
+  });
+  return degisti ? { ...d, canliYayinlar: canlilar } : d;
+};
+
+/** Sistemin açılış işi: plan sonradan açıldıysa (geri getirme, elle) bekleyen nafizeler ona bağlanır. */
+export const ozelCanlilariniBagla = (): number => {
+  const d = getir();
+  const yeni = ozelCanlilariEsitle(d);
+  if (yeni === d) return 0;
+  kaydet(yeni);
+  return 1;
+};
+
+export interface NafizeGirdisi {
+  id?: string;
+  konu: string;
+  tarih: string;
+  saatGmt: string;
+  yer: string;
+  muhabirId?: string;
+}
 
 export const nafizeKaydet = (ben: Kisi, ozelId: string, g: NafizeGirdisi): string | null => {
-  const temiz = { ...g, konu: g.konu.trim(), saat: g.saat || undefined, yer: g.yer?.trim() || undefined, muhabirId: g.muhabirId || undefined, muhabirTbc: !g.muhabirId && g.muhabirTbc ? (true as const) : undefined };
-  if (!temiz.konu || !temiz.tarih) return null;
-  if (g.id) return kalemDegistir(ben, ozelId, "nafizeler", g.id, (n) => ({ ...n, ...temiz, id: n.id, iz: [...n.iz, izYaz(ben, "duzenlendi")] })) ? g.id : null;
-  const d = getir();
-  if (!ozelBul(d, ozelId) || !ozelDuzenler(ben)) return null;
-  const id = kimlik("nf");
-  const n: Nafize = { ...temiz, id, konuklar: [], durum: "planlandi", iz: [izYaz(ben, "eklendi")] };
-  kaydet(ozelGuncelle(d, ozelId, (o) => ({ ...o, nafizeler: [...(o.nafizeler ?? []), n] })));
+  let d = getir();
+  if (!ozelBul(d, ozelId) || !ozelDuzenler(ben) || !g.konu.trim() || !g.tarih) return null;
+  const alanlar = { konu: g.konu.trim(), tarih: g.tarih, saatGmt: g.saatGmt, yer: g.yer.trim() };
+  let id = g.id;
+  if (id) {
+    const c = d.canliYayinlar.find((x) => x.id === id && x.ozelId === ozelId);
+    if (!c) return null;
+    d = { ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === id ? { ...x, ...alanlar, muhabirId: g.muhabirId || undefined } : x)) };
+  } else {
+    id = kimlik("cy");
+    const yeni: CanliYayin = { id, planId: "", ozelId, ...alanlar, aciklama: "", ...(g.muhabirId ? { muhabirId: g.muhabirId } : {}), notlar: "", konuklar: [], ekleyen: { kisiId: ben.id, zaman: simdi() } };
+    d = { ...d, canliYayinlar: [...d.canliYayinlar, yeni] };
+  }
+  kaydet(ozelCanlilariEsitle(d));
   return id;
 };
 
-/*
- * Nafizenin kontrol listesi: onay (onaylayan; tek başına ya da planın
- * onayıyla), Satdesk rezervasyonu, yer hazır, yayınlandı. Sırayla; yalnız
- * sonuncu geri alınıyor. Rezervasyon onaydan önce yapılmıyor.
- */
-export const nafizeAsamaDegisebilir = (ben: Kisi, n: Nafize, adim: NafizeDurum, tamam: boolean) => {
-  if (n.durum === "iptal" || (tamam ? siradaki(NAFIZE_SIRASI, n.durum) !== adim : !oncesi(NAFIZE_SIRASI, n.durum, adim))) return false;
-  return adim === "onayli" ? planAdimiYapabilir(ben, "ozOnay") : ozelDuzenler(ben);
+/* Nafizenin canlısını değiştirir; yalnız yayının düzenleyeni. */
+const nafizeDegistir = (ben: Kisi, id: string, f: (c: CanliYayin) => CanliYayin) => {
+  const d = getir();
+  const c = d.canliYayinlar.find((x) => x.id === id);
+  if (!c?.ozelId || !ozelDuzenler(ben)) return false;
+  kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === id ? f(x) : x)) });
+  return true;
 };
 
-export const nafizeAsamasi = (ben: Kisi, ozelId: string, id: string, adim: NafizeDurum, tamam: boolean) => {
-  const n = ozelBul(getir(), ozelId)?.nafizeler?.find((x) => x.id === id);
-  if (!n || !nafizeAsamaDegisebilir(ben, n, adim, tamam)) return false;
-  const durum = tamam ? adim : oncesi(NAFIZE_SIRASI, n.durum, adim)!;
-  return kalemDegistir(ben, ozelId, "nafizeler", id, (x) => ({ ...x, durum, iz: [...x.iz, izYaz(ben, "durum", tamam ? { durum: adim } : { durum, asama: adim, not: "↶" })] }), undefined, true);
+/* Satdesk rezervasyonu ve yerin hazır olması: başka kayıtta tutulmuyor, nafizenin işareti. */
+export const nafizeIsaret = (ben: Kisi, id: string, alan: "rezervasyon" | "yerHazir", tamam: boolean) =>
+  nafizeDegistir(ben, id, (c) => {
+    const { [alan]: _, ...k } = c;
+    return tamam ? { ...k, [alan]: { kisiId: ben.id, zaman: simdi() } } : k;
+  });
+
+/* İptal silmek: canlı plandan da kalkar (tek kayıt). */
+export const nafizeSil = (ben: Kisi, id: string) => {
+  const d = getir();
+  const c = d.canliYayinlar.find((x) => x.id === id);
+  if (!c?.ozelId || !ozelDuzenler(ben)) return false;
+  kaydet({ ...d, canliYayinlar: d.canliYayinlar.filter((x) => x.id !== id) });
+  return true;
 };
 
-/** İptal ve geri alma: iptal edilen nafize işaretlerini kaybediyor, baştan planlanıyor. */
-export const nafizeIptal = (ben: Kisi, ozelId: string, id: string, iptal: boolean) =>
-  kalemDegistir(ben, ozelId, "nafizeler", id, (n) => (iptal === (n.durum === "iptal") ? n : { ...n, durum: iptal ? "iptal" : "planlandi", iz: [...n.iz, izYaz(ben, "durum", { durum: iptal ? "iptal" : "planlandi" })] }));
-
-export const konukKaydet = (ben: Kisi, ozelId: string, nafizeId: string, g: Omit<Konuk, "id"> & { id?: string }) => {
+export const konukKaydet = (ben: Kisi, nafizeId: string, g: Omit<Konuk, "id"> & { id?: string }) => {
   const ad = g.ad.trim();
   if (!ad) return false;
-  const konuk: Konuk = { id: g.id ?? kimlik("kn"), ad, unvan: g.unvan?.trim() || undefined, yer: g.yer?.trim() || undefined, durum: g.durum };
-  return kalemDegistir(ben, ozelId, "nafizeler", nafizeId, (n) => {
-    const eski = n.konuklar.find((x) => x.id === konuk.id);
-    const konuklar = eski ? n.konuklar.map((x) => (x.id === konuk.id ? konuk : x)) : [...n.konuklar, konuk];
-    // Konuğun durumu değişti mi: izde konuğun adıyla (kim teyit etti, ne zaman).
-    const iz = !eski ? izYaz(ben, "eklendi", { not: ad }) : eski.durum !== konuk.durum ? izYaz(ben, "durum", { durum: konuk.durum, not: ad }) : izYaz(ben, "duzenlendi", { not: ad });
-    return { ...n, konuklar, iz: [...n.iz, iz] };
+  const konuk: Konuk = { id: g.id ?? kimlik("kn"), ad, ...(g.unvan?.trim() ? { unvan: g.unvan.trim() } : {}), ...(g.yer?.trim() ? { yer: g.yer.trim() } : {}), durum: g.durum };
+  return nafizeDegistir(ben, nafizeId, (c) => {
+    const l = c.konuklar ?? [];
+    return { ...c, konuklar: l.some((x) => x.id === konuk.id) ? l.map((x) => (x.id === konuk.id ? konuk : x)) : [...l, konuk] };
   });
 };
 
-export const konukSil = (ben: Kisi, ozelId: string, nafizeId: string, konukId: string) =>
-  kalemDegistir(ben, ozelId, "nafizeler", nafizeId, (n) => ({ ...n, konuklar: n.konuklar.filter((x) => x.id !== konukId) }));
+export const konukSil = (ben: Kisi, nafizeId: string, konukId: string) => nafizeDegistir(ben, nafizeId, (c) => ({ ...c, konuklar: (c.konuklar ?? []).filter((x) => x.id !== konukId) }));
+
+/*
+ * Eski düzenin nafizesi (özel yayının içinde, kendi aşamalarıyla) canlı
+ * yayına çevrilir; sistemin açılış işi, ikinci kez değişiklik yok. İptal
+ * edilen gelmez; yayınlandı → canlının "yapıldı"sı, rezervasyon ve yer
+ * hazır işaretleri izden (yoksa nafizenin son izinden). Kimlik nafizeden:
+ * iki tarayıcı aynı anda çevirirse aynı belgeyi yazar.
+ */
+export const ozelNafizeleriCevir = (): number => {
+  let d = getir();
+  const eskiler = d.ozel.filter((o) => o.nafizeler?.length);
+  if (!eskiler.length) return 0;
+  const sira = ["planlandi", "onayli", "rezervasyon", "hazir", "yapildi"];
+  const yeni: CanliYayin[] = [];
+  for (const o of eskiler)
+    for (const n of o.nafizeler!) {
+      if (n.durum === "iptal" || d.canliYayinlar.some((c) => c.id === `cy-${n.id}`)) continue;
+      const iz = (adim: string) => {
+        const x = [...n.iz].reverse().find((z) => z.durum === adim) ?? n.iz[n.iz.length - 1];
+        return x ? { kisiId: x.kisiId, zaman: x.zaman } : { kisiId: SISTEM, zaman: simdi() };
+      };
+      const k = sira.indexOf(n.durum);
+      yeni.push({
+        id: `cy-${n.id}`,
+        planId: "",
+        ozelId: o.id,
+        konu: n.konu,
+        aciklama: "",
+        tarih: n.tarih,
+        saatGmt: n.saat ?? "",
+        yer: n.yer ?? "",
+        ...(n.muhabirId ? { muhabirId: n.muhabirId } : {}),
+        notlar: "",
+        konuklar: n.konuklar,
+        ...(k >= 2 ? { rezervasyon: iz("rezervasyon") } : {}),
+        ...(k >= 3 ? { yerHazir: iz("hazir") } : {}),
+        ...(n.durum === "yapildi" ? { sonuc: { durum: "yapildi" as const, ...iz("yapildi") } } : {}),
+      });
+    }
+  d = { ...d, canliYayinlar: [...d.canliYayinlar, ...yeni], ozel: d.ozel.map((o) => (o.nafizeler?.length ? { ...o, nafizeler: undefined } : o)) };
+  kaydet(ozelCanlilariEsitle(d));
+  return 1;
+};
 
 export type TalepGirdisi = { id?: string; metin: string; birim?: BirimId; sonTarih?: string };
 
