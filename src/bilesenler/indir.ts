@@ -52,10 +52,19 @@ const bosSatirli = (govde: string) => {
 };
 
 /** Belgenin HTML'inden Word (.doc) dosyası: her zaman Arapça ve sağdan sola. */
-export const wordIndir = (ad: string, baslik: string, govde_: string) => {
+/* Word dosyasının kendisi (indirilen ve planı gönderin eki aynı dosya). */
+export const wordBelgesi = (baslik: string, govde_: string) => {
   const govde = bosSatirli(govde_);
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${baslik}</title><style>${WORD_BICIMI}</style></head><body dir="rtl" lang="ar">${govde}</body></html>`;
-  indir(ad, "﻿" + html, "application/msword");
+  return "\uFEFF" + `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${baslik}</title><style>${WORD_BICIMI}</style></head><body dir="rtl" lang="ar">${govde}</body></html>`;
+};
+export const wordIndir = (ad: string, baslik: string, govde: string) => indir(ad, wordBelgesi(baslik, govde), "application/msword");
+
+/* Metnin UTF-8 baytlarının base64'ü (posta eki; btoa yalnız Latin-1 alıyor). */
+export const base64Metin = (x: string) => {
+  const b = new TextEncoder().encode(x);
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return btoa(s);
 };
 
 /*

@@ -717,6 +717,11 @@ export interface GeriBildirimSablonu {
   kime?: string;
   /** Yalnız "planı gönder"de: posta bu adresin adına gider (boşsa gönderenin kendi hesabı). */
   gonderen?: string;
+  /*
+   * Yalnız "planı gönder"de: plan postanın metninde mi, ekte Word dosyası mı
+   * (kurum haftalık planı kısa yazı + ekte kesinleşmiş plan olarak gönderiyor).
+   */
+  ek?: "metin" | "word";
   cc: string;
   bcc: string;
 }

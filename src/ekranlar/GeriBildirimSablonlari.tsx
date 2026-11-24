@@ -160,7 +160,7 @@ export function TakdirFormu({ ben, tur }: { ben: Kisi; tur: "takdir" | "ozel" })
   const varsayilan = ozel ? VARSAYILAN_OZEL_GOREV : VARSAYILAN_TAKDIR;
   const takdirSablonuKaydet_ = ozel ? ozelGorevSablonuKaydet : takdirSablonuKaydet;
   const [s, setS] = useState(kayitli);
-  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
+  const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc || (s.ek ?? "") !== (kayitli.ek ?? "");
   const kaydet = (x = s) => {
     if (takdirSablonuKaydet_(ben, x)) {
       setS(x);
@@ -277,6 +277,13 @@ function PlanGonderFormu({ ben, tur }: { ben: Kisi; tur: PlanGonderTuru }) {
       <label>
         {t("gbMetin")}
         <textarea {...icerikAlani} rows={4} value={s.govde} onChange={(e) => setS({ ...s, govde: e.target.value })} data-pg-sablon-metin />
+      </label>
+      <label>
+        {t("pgEkSecimi")}
+        <select value={s.ek ?? VARSAYILAN_PLAN_GONDER[tur].ek} onChange={(e) => setS({ ...s, ek: e.target.value as "metin" | "word" })} data-pg-sablon-ek>
+          <option value="metin">{t("pgEkMetin")}</option>
+          <option value="word">{t("pgEkWord")}</option>
+        </select>
       </label>
       <small className="sonuk" dir="ltr">
         {PLAN_GONDER_ALANLARI[tur].map((a) => `{${a}}`).join(" ")}

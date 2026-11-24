@@ -161,6 +161,30 @@ const postaDisa = (m: EwsMesaj) => ({ kimden: m.kimden, kimdenAd: m.kimdenAd, ko
  * tekrarsız. Biri bile geçersizse null: yanlış yazılmış adres sessizce
  * düşmesin, gönderim reddedilsin.
  */
+/*
+ * Postanın dosya ekleri (planı gönder: Word ya da PDF). Yalnız belge türleri,
+ * düz ad, base64 ve toplamda 4 MB: kapı ekleri olduğu gibi Exchange'e geçiriyor,
+ * tarayıcıdan gelen keyfî dosya kurumun adresinden gitmesin. Geçersizse null.
+ */
+const EK_TURLERI = ["application/msword", "application/pdf"];
+const ekListesi = (v: unknown): { ad: string; tur: string; icerik: string }[] | null => {
+  if (v === undefined || v === null) return [];
+  if (!Array.isArray(v) || v.length > 3) return null;
+  let toplam = 0;
+  const sonuc: { ad: string; tur: string; icerik: string }[] = [];
+  for (const e of v as { ad?: unknown; tur?: unknown; icerik?: unknown }[]) {
+    const ad = typeof e?.ad === "string" ? e.ad.trim() : "";
+    const tur = typeof e?.tur === "string" ? e.tur : "";
+    const icerik = typeof e?.icerik === "string" ? e.icerik : "";
+    if (!ad || ad.length > 100 || /[\\/:*?"<>|\x00-\x1F]/.test(ad) || !/\.(docx?|pdf)$/i.test(ad)) return null;
+    if (!EK_TURLERI.includes(tur) || !icerik || !/^[A-Za-z0-9+/]+={0,2}$/.test(icerik)) return null;
+    toplam += icerik.length;
+    if (toplam > 4 * 1024 * 1024 * 4 / 3) return null;
+    sonuc.push({ ad, tur, icerik });
+  }
+  return sonuc;
+};
+
 const adresListesi = (v: unknown): string[] | null => {
   const ham = Array.isArray(v) ? v.map(String) : typeof v === "string" ? v.split(/[,;\s]+/) : [];
   const temiz = [...new Set(ham.map((a) => a.trim().toLowerCase()).filter(Boolean))];
@@ -532,7 +556,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
-    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown; gonderen?: unknown } | null;
+    const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown; gonderen?: unknown; ekler?: unknown } | null;
     const kimeL = adresListesi(g?.kime), ccL = adresListesi(g?.cc), bccL = adresListesi(g?.bcc);
     if (!kimeL || !ccL || !bccL) return yanit({ hata: "kime" }, 400);
     const gonderenL = typeof g?.gonderen === "string" && g.gonderen.trim() ? adresListesi([g.gonderen.trim()]) : [];
@@ -555,7 +579,9 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const yanitlanan = mesajKimligiGecerli(g?.yanitlanan) ? g.yanitlanan : undefined;
     // Biçimli gövde (planı gönder): yalnız süzgeçten geçmiş biçim etiketleri (ews.ts → guvenliHtml).
     const html = typeof g?.html === "string" && g.html.trim() ? guvenliHtml(g.html) : undefined;
-    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }), ...(gonderen && { gonderen }) });
+    const ekler = ekListesi(g?.ekler);
+    if (!ekler) return yanit({ hata: "ek" }, 400);
+    const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(ekler.length && { ekler }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }), ...(gonderen && { gonderen }) });
     // Gerçekten kime gittiğini döndür: ekrandaki "→ kime · CC" satırı bundan.
     if ("hata" in r && gonderen && /SendAs|SendOnBehalf/i.test(r.hata)) return yanit({ hata: "gonderenYetki", ayrinti: gonderen }, 403);
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });

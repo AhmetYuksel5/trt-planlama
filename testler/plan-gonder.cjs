@@ -24,7 +24,12 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator('[data-gb-sablonlari] [data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu="ozel-gorev"])').count()) === 3, "geri bildirim listesi karışmadı");
   ok((await p.locator("[data-gb-sablonlari] [data-plan-gonder-duzenle]").count()) === 0, "planların postası geri bildirim kartında değil");
   await p.locator("details:has([data-plan-postasi]) > summary").click();
+  await p.locator('[data-plan-gonder-duzenle="haftalik"]').click();
+  ok((await p.locator("[data-pg-sablon-ek]").inputValue()) === "word", "Weekly şablonu: ekte Word varsayılan");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(200);
   await p.locator('[data-plan-gonder-duzenle="nextday"]').click();
+  ok((await p.locator("[data-pg-sablon-ek]").inputValue()) === "metin", "Next Day şablonu: plan metinde");
   await p.locator("[data-pg-sablon-gonderen]").fill("planlama@ornek.local");
   await p.locator("[data-pg-sablon-kime]").fill("haber@ornek.local");
   await p.locator("[data-pg-sablon-cc]").fill("mudur@ornek.local, editor@ornek.local");
@@ -58,6 +63,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await pen.locator("[data-pg-cc]").getAttribute("data-pg-cc")) === "mudur@ornek.local,editor@ornek.local", "CC şablondan");
   const konu = await pen.locator("[data-pg-konu]").inputValue();
   ok(konu.startsWith("خطة الغد - ") && !konu.includes("{tarih}"), `konu tarihle dolu (${konu})`);
+  ok((await pen.locator("[data-pg-ek]").count()) === 0, "Next Day plan metinde, ek yok");
   ok((await pen.locator("article.cikti h3").count()) > 0, "önizlemede planın kendisi");
   await p.locator("[data-plan-gonder-gonder]").click();
   await p.waitForTimeout(400);
@@ -78,6 +84,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.locator("[data-plan-gonder]").click();
   const hk = await p.locator("[data-pg-konu]").inputValue();
   ok(hk.startsWith("الأجندة الأسبوعية ") && !hk.includes("{aralik}"), `Weekly varsayılan konu (${hk})`);
+  // Weekly kurumun metniyle, plan ekte Word dosyası.
+  const hg = await p.locator("[data-plan-gonder-penceresi] .pg-govde").innerText();
+  ok(hg.includes("الزملاء الأعزاء") && hg.includes("Dear colleagues,") && !hg.includes("{"), "Weekly varsayılan metin, aralıklar dolu");
+  ok(/for the period \d{2} (- \d{2} )?[A-Z]+/.test(hg), `İngilizce aralık büyük harf (${hg.split("\n").find((x) => x.includes("period"))})`);
+  ok((await p.locator("[data-pg-ek]").getAttribute("data-pg-ek")) === `haftalik-plan-${await p.evaluate((k) => JSON.parse(localStorage.getItem(k)).haftalik[0].baslangic, K)}.doc`, "Weekly'de ek satırı: Word dosyası");
   await p.locator("[data-plan-gonder-gonder]").click();
   await p.waitForTimeout(400);
   ok(!!(await veri()).haftalik.find((x) => x.id === hid).gonderildi, "Weekly gönderildi işaretlendi");

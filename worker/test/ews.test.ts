@@ -465,3 +465,11 @@ test("planı gönder: gönderen adres alıcılardan sonra From'da, yoksa hiç ya
   assert.ok(x.indexOf("<t:BccRecipients>") < x.indexOf("<t:From>"));
   assert.ok(!createItemIstegi({ kime: ["a@ornek.local"], konu: "k", metin: "m" }).includes("<t:From>"));
 });
+
+test("planı gönder: dosya eki Body'nin hemen ardında Attachments'ta, yoksa hiç yazılmaz", () => {
+  const x = createItemIstegi({ kime: ["a@ornek.local"], konu: "k", metin: "m", yanitlanan: "<a@b>", ekler: [{ ad: "plan & hafta.doc", tur: "application/msword", icerik: "QUJD" }] });
+  assert.ok(x.includes("<t:Attachments><t:FileAttachment><t:Name>plan &amp; hafta.doc</t:Name><t:ContentType>application/msword</t:ContentType><t:Content>QUJD</t:Content></t:FileAttachment></t:Attachments>"));
+  assert.ok(x.indexOf("</t:Body>") < x.indexOf("<t:Attachments>"));
+  assert.ok(x.indexOf("</t:Attachments>") < x.indexOf("<t:InReplyTo>"));
+  assert.ok(!createItemIstegi({ kime: ["a@ornek.local"], konu: "k", metin: "m" }).includes("<t:Attachments>"));
+});

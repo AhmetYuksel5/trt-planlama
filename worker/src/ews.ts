@@ -134,6 +134,11 @@ export interface GidenPosta {
    * hesabı. Exchange kişinin o kutuda "farklı gönder" yetkisini sorar, yoksa reddeder.
    */
   gonderen?: string;
+  /*
+   * Dosya ekleri (planı gönder: kesinleşmiş planın Word dosyası; kurum haftalık
+   * planı metin + ek olarak gönderiyor). İçerik base64; doğrulaması index.ts'te.
+   */
+  ekler?: { ad: string; tur: string; icerik: string }[];
 }
 
 /*
@@ -219,6 +224,10 @@ export const createItemIstegi = (g: GidenPosta): string => {
     `<m:CreateItem MessageDisposition="SendAndSaveCopy"><m:Items><t:Message>` +
       `<t:Subject>${kacXml(g.konu)}</t:Subject>` +
       `<t:Body BodyType="HTML">${kacXml(g.html ?? (g.baslik ? baslikliHtml(g.baslik, g.metin) : metinHtml(g.metin)))}</t:Body>` +
+      // Şema sırası: Attachments ItemType'ta Body'nin hemen ardında, InReplyTo'dan önce.
+      (g.ekler?.length
+        ? `<t:Attachments>${g.ekler.map((e) => `<t:FileAttachment><t:Name>${kacXml(e.ad)}</t:Name><t:ContentType>${kacXml(e.tur)}</t:ContentType><t:Content>${e.icerik}</t:Content></t:FileAttachment>`).join("")}</t:Attachments>`
+        : "") +
       // Şema sırası: InReplyTo ItemType'ta Body'den sonra, References MessageType'ta alıcılardan sonra.
       (g.yanitlanan ? `<t:InReplyTo>${kacXml(g.yanitlanan)}</t:InReplyTo>` : "") +
       liste("ToRecipients", g.kime) +

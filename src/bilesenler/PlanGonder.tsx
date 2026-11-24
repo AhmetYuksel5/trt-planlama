@@ -1,6 +1,6 @@
 import { Mail, MailCheck } from "lucide-react";
 import { useRef, useState } from "react";
-import { tarihYaz, saatYaz, useDil } from "../dil";
+import { aralikYaz, ciktiTarihi, metin as dilMetni, tarihYaz, saatYaz, useDil } from "../dil";
 import { planGonderildi } from "../eylemler";
 import { GERCEK } from "../kip";
 import { govdeliHtml, planPostasi } from "../planGonder";
@@ -10,7 +10,8 @@ import { planGonderebilir } from "../yetki";
 import { HaftalikBelgesi } from "../ekranlar/belge/HaftalikBelge";
 import { NextDayBelgesi } from "../ekranlar/belge/NextDayBelge";
 import { kapiHatasi } from "../yz";
-import { epostaHtml } from "./indir";
+import { base64Metin, epostaHtml, wordBelgesi } from "./indir";
+import { gunEkle } from "../tarih";
 import { Pencere, bildir } from "./Parcalar";
 
 /*
@@ -44,13 +45,24 @@ function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; k
   const [p, setP] = useState(() => planPostasi(v, hedef.tur, tarih));
   const [gidiyor, setGidiyor] = useState(false);
   const belge = useRef<HTMLElement>(null);
+  // Ekin adı ve başlığı çıktı sayfasının "Word indir"iyle aynı.
+  const wordAdi = hedef.tur === "nextday" ? `nextday-plan-${tarih}.doc` : `haftalik-plan-${tarih}.doc`;
+  const wordBasligi =
+    hedef.tur === "nextday"
+      ? `${dilMetni("ciktiBaslik", "ar")} ${ciktiTarihi(tarih, "ar")}`
+      : `${dilMetni("haftalikCiktiBaslik", "ar")} ${aralikYaz(tarih, gunEkle(tarih, 6), "ar")}`;
   const gonder = async () => {
     if (!belge.current || gidiyor) return;
     if (hedef.plan.gonderildi && !confirm(t("pgYeniden"))) return;
-    const html = govdeliHtml(p.govde, epostaHtml(belge.current.innerHTML));
-    const metin = [p.govde, belge.current.innerText].filter((x) => x.trim()).join("\n\n");
+    // Ekte Word: gövde yalnız şablonun metni, plan "Word indir"in dosyasının aynısı.
+    const ekli = p.ek === "word";
+    const html = ekli ? (p.govde.trim() ? govdeliHtml(p.govde, "") : undefined) : govdeliHtml(p.govde, epostaHtml(belge.current.innerHTML));
+    const metin = ekli ? p.govde.trim() || p.konu.trim() : [p.govde, belge.current.innerText].filter((x) => x.trim()).join("\n\n");
+    const ekler = ekli ? [{ ad: wordAdi, tur: "application/msword", icerik: base64Metin(wordBelgesi(wordBasligi, belge.current.innerHTML)) }] : undefined;
     setGidiyor(true);
-    const r = GERCEK ? await postaGonder({ kime: p.kime, ...(p.gonderen ? { gonderen: p.gonderen } : {}), cc: p.cc, bcc: p.bcc, konu: p.konu.trim(), metin, html }) : { tamam: true as const };
+    const r = GERCEK
+      ? await postaGonder({ kime: p.kime, ...(p.gonderen ? { gonderen: p.gonderen } : {}), cc: p.cc, bcc: p.bcc, konu: p.konu.trim(), metin, ...(html && { html }), ...(ekler && { ekler }) })
+      : { tamam: true as const };
     setGidiyor(false);
     if ("hata" in r && r.hata === "gonderenYetki") return bildir(t("pgGonderenYetki", { adres: p.gonderen }));
     if ("hata" in r) return bildir(r.hata === "eksikKimlik" ? t("bPostaCekKimlikYok") : r.hata === "kapali" ? t("bPostaCekKapali") : kapiHatasi(r, t("bPostaGonderHata")));
@@ -92,6 +104,11 @@ function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; k
           <p dir="auto" className="pg-govde">
             {p.govde}
           </p>
+        )}
+        {p.ek === "word" && (
+          <div className="pg-alici" data-pg-ek={wordAdi}>
+            <b>{t("pgEk")}</b> <span dir="ltr">{wordAdi}</span>
+          </div>
         )}
         <div className="cikti-sarici pg-onizleme">
           {hedef.tur === "nextday" ? <NextDayBelgesi plan={hedef.plan} belgeRef={belge} /> : <HaftalikBelgesi hafta={hedef.plan} belgeRef={belge} />}

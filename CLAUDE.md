@@ -2049,8 +2049,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   konu, metin; geri bildirim koleksiyonunda sabit kimlikle
   (`plan-gonder-nd`, `plan-gonder-hf`; `geriBildirim.ts → SABIT_SABLONLAR`, PKG
   geri bildirimiyle aynı yol), `GeriBildirimSablonu.kime`, yer tutucular {tarih}
-  {gun} ve {aralik}; varsayılan konu "الأجندة الإخبارية - {tarih}" ve "الأجندة
-  الأسبوعية {aralik}". Test `testler/plan-gonder.cjs`, kapıda `ews.test.ts`.
+  {gun}, {aralik} ve {aralikEn} (İngilizce, büyük harf: "21 - 27 NOVEMBER");
+  varsayılan konu "الأجندة الإخبارية - {tarih}" ve "الأجندة الأسبوعية {aralik}".
+  "Plan nasıl gitsin" (`GeriBildirimSablonu.ek`, `data-pg-sablon-ek`): postanın
+  metninde ya da ekte Word dosyası (kullanıcı: kurum haftalık planı kısa iki dilli
+  yazı ve ekte kesinleşmiş planla gönderiyor); Next Day metinde, Weekly ekte, Weekly'nin
+  varsayılan metni kurumunki (`HAFTALIK_METIN`). Ek "Word indir"in dosyasının aynısı
+  (`indir.ts → wordBelgesi`, base64 `base64Metin`), pencerede "Ek" satırı
+  (`data-pg-ek`); gövde yalnız şablonun metni, satır satır yönlü (`govdeliHtml`:
+  Arapça satır sağa, İngilizce sola). PDF eki yok: tarayıcıda Arapçayı düzgün dizmek
+  kütüphane ister. Kapı eki `CreateItem`'da Body'nin ardında `Attachments`'a yazar
+  (`ews.ts → GidenPosta.ekler`); `/posta/gonder` yalnız .doc/.docx/.pdf, Word ya da
+  PDF türü, en çok üç ek, toplam 4 MB kabul eder (`index.ts → ekListesi`).
+  Test `testler/plan-gonder.cjs`, kapıda `ews.test.ts`.
 - Deneme sürecinin e-postayla takibi kalktı (tasarım 9. bölüm): yerini
   görev ve "yapıldı" akışı aldı; kodu da silindi ("Takipteki haberlerim",
   "Tamamlandı", "Yalnız takip", ayar). Paketsiz eklemek zaten takip olarak.

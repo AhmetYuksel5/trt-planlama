@@ -1101,7 +1101,7 @@ export const ozelGorevSablonuKaydet = (ben: Kisi, s: Pick<GeriBildirimSablonu, "
 };
 
 /* Planı gönder şablonu (planGonder.ts): konu zorunlu, metin isteğe bağlı (plan zaten gövde). */
-export const planGonderSablonuKaydet = (ben: Kisi, tur: PlanGonderTuru, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "kime" | "gonderen" | "cc" | "bcc">) => {
+export const planGonderSablonuKaydet = (ben: Kisi, tur: PlanGonderTuru, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "kime" | "gonderen" | "cc" | "bcc" | "ek">) => {
   if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim()) return false;
   sabitSablonYaz(getir(), { ...VARSAYILAN_PLAN_GONDER[tur], ...s, id: PLAN_GONDER_SABLONU[tur] });
   return true;
