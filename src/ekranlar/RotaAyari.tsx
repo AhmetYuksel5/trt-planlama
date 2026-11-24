@@ -20,6 +20,7 @@ export function RotaAyari() {
   const { t } = useDil();
   const [ayar, setAyar] = useState<RotaAyarGorunum | null>(null);
   const [tablo, setTablo] = useState("");
+  const [sunucuTablo, setSunucuTablo] = useState("");
   const [hesap, setHesap] = useState("");
   const [hata, setHata] = useState("");
   const [deneme, setDeneme] = useState("");
@@ -31,6 +32,7 @@ export function RotaAyari() {
       if (!r.tamam) return setHata(kapiHatasi(r));
       setAyar(r.veri);
       setTablo(r.veri.tabloId ? `https://docs.google.com/spreadsheets/d/${r.veri.tabloId}` : "");
+      setSunucuTablo(r.veri.sunucuTabloId ? `https://docs.google.com/spreadsheets/d/${r.veri.sunucuTabloId}` : "");
     });
   }, []);
 
@@ -43,7 +45,7 @@ export function RotaAyari() {
       </Kart>
     );
 
-  const kaydet = async (g: { tablo?: string; hesap?: string | null }) => {
+  const kaydet = async (g: { tablo?: string; sunucuTablo?: string; hesap?: string | null }) => {
     setMesgul(true);
     const r = await rotaAyariKaydet(g);
     setMesgul(false);
@@ -55,9 +57,15 @@ export function RotaAyari() {
   const dene = async () => {
     setMesgul(true);
     setDeneme("");
-    const r = await rotaGetir(gunEkle(bugun(), 1), true);
+    const yarin = gunEkle(bugun(), 1);
+    const sonuc = async (tur: "rota" | "sunucu") => {
+      const r = await rotaGetir(yarin, true, tur);
+      return r.tamam ? t("rotaDenendi", { sekme: r.veri.sekme, n: r.veri.satirlar.length }) : hataMetni(r.hata, r.ayrinti);
+    };
+    const satirlar = [await sonuc("rota")];
+    if (ayar.sunucuTabloId) satirlar.push(`${t("rotaSunucuTablo")}: ${await sonuc("sunucu")}`);
     setMesgul(false);
-    setDeneme(r.tamam ? t("rotaDenendi", { sekme: r.veri.sekme, n: r.veri.satirlar.length }) : hataMetni(r.hata, r.ayrinti));
+    setDeneme(satirlar.join(" · "));
   };
 
   return (
@@ -68,12 +76,16 @@ export function RotaAyari() {
           <input dir="ltr" value={tablo} onChange={(e) => setTablo(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" data-rota-tablo />
         </label>
         <label>
+          {t("rotaSunucuTablo")}
+          <input dir="ltr" value={sunucuTablo} onChange={(e) => setSunucuTablo(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" data-rota-sunucu-tablo />
+        </label>
+        <label>
           {t("rotaHesap")}
           {ayar.anahtarVar && <small className="sonuk">{t("rotaHesapVar", { eposta: ayar.istemciEposta })}</small>}
           <textarea dir="ltr" rows={4} className="kod-alani" value={hesap} onChange={(e) => setHesap(e.target.value)} placeholder='{ "type": "service_account", … }' autoComplete="off" spellCheck={false} data-rota-hesap />
         </label>
         <div className="dugmeler">
-          <button className="dugme" disabled={mesgul} onClick={() => void kaydet({ tablo, ...(hesap.trim() ? { hesap } : {}) })} data-rota-kaydet>
+          <button className="dugme" disabled={mesgul} onClick={() => void kaydet({ tablo, sunucuTablo, ...(hesap.trim() ? { hesap } : {}) })} data-rota-kaydet>
             {t("kaydet")}
           </button>
           {ayar.anahtarVar && ayar.tabloId && (

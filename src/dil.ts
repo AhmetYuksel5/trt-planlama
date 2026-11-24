@@ -862,6 +862,7 @@ const M = {
   rotaHesapVar: m("Kayıtlı hesap: {eposta}", "الحساب المحفوظ: {eposta}", "Saved account: {eposta}"),
   rotaHesapSil: m("Hesabı sil", "حذف الحساب", "Remove account"),
   rotaDene: m("Yarını dene", "تجربة الغد", "Try tomorrow"),
+  rotaSunucuTablo: m("Sunucular tablosu", "جدول المذيعين", "Presenters sheet"),
   rotaDenendi: m("{sekme} · {n} satır", "{sekme} · {n} سطر", "{sekme} · {n} rows"),
   rotaHata: m("Tablo okunamadı", "تعذّرت قراءة الجدول", "Could not read the sheet"),
   rotaHataPaylasim: m("Tablo hizmet hesabıyla paylaşılmamış", "الجدول غير مشارك مع حساب الخدمة", "The sheet is not shared with the service account"),

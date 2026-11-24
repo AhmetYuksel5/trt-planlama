@@ -17,13 +17,16 @@ import { coz, sifrele } from "./gizli.ts";
 
 export interface RotaAyar {
   tabloId: string;
+  /** Sunucuların ayrı tablosu (kullanıcı: sunucular başka tablodan); boşsa yok. */
+  sunucuTabloId: string;
   istemciEposta: string;
   /** Hizmet hesabının PEM özel anahtarı; KV'de şifreli. */
   ozelAnahtar: string;
 }
 export const ROTA_AYAR_ANAHTARI = "rota-ayar";
-export const bosRotaAyar = (): RotaAyar => ({ tabloId: "", istemciEposta: "", ozelAnahtar: "" });
-export const rotaGorunur = (a: RotaAyar) => ({ tabloId: a.tabloId, istemciEposta: a.istemciEposta, anahtarVar: !!a.ozelAnahtar });
+export const bosRotaAyar = (): RotaAyar => ({ tabloId: "", sunucuTabloId: "", istemciEposta: "", ozelAnahtar: "" });
+export const rotaGorunur = (a: RotaAyar) => ({ tabloId: a.tabloId, sunucuTabloId: a.sunucuTabloId, istemciEposta: a.istemciEposta, anahtarVar: !!a.ozelAnahtar });
+export type RotaTuru = "rota" | "sunucu";
 
 /* Tablonun adresi ya da kimliği. */
 export const tabloKimligi = (s: string): string => {
@@ -44,6 +47,11 @@ export const rotaAyarBirlestir = (eski: RotaAyar, gelen: unknown): { ayar: RotaA
     tabloId = g.tablo.trim() ? tabloKimligi(g.tablo) : "";
     if (g.tablo.trim() && !tabloId) return { hata: "tablo" };
   }
+  let sunucuTabloId = eski.sunucuTabloId ?? "";
+  if (typeof g.sunucuTablo === "string") {
+    sunucuTabloId = g.sunucuTablo.trim() ? tabloKimligi(g.sunucuTablo) : "";
+    if (g.sunucuTablo.trim() && !sunucuTabloId) return { hata: "tablo" };
+  }
   let { istemciEposta, ozelAnahtar } = eski;
   if (g.hesap === null) [istemciEposta, ozelAnahtar] = ["", ""];
   else if (typeof g.hesap === "string" && g.hesap.trim()) {
@@ -57,7 +65,7 @@ export const rotaAyarBirlestir = (eski: RotaAyar, gelen: unknown): { ayar: RotaA
     if (typeof j.private_key !== "string" || !j.private_key.includes("BEGIN PRIVATE KEY")) return { hata: "hesap" };
     [istemciEposta, ozelAnahtar] = [j.client_email, j.private_key];
   }
-  return { ayar: { tabloId, istemciEposta, ozelAnahtar } };
+  return { ayar: { tabloId, sunucuTabloId, istemciEposta, ozelAnahtar } };
 };
 
 export const rotaAyarOku = async (kv: { get(k: string): Promise<string | null> }, anahtar?: string): Promise<RotaAyar> => {
@@ -129,41 +137,55 @@ export const sekmeSec = (adlar: string[], tarih: string): string | undefined =>
     return !!r && r.bas <= tarih && tarih <= r.bit;
   });
 
-/* 1. satırda günün sütunu ("16.11.2026", "16/11/2026", "2026-11-16"). */
-export const gunSutunu = (ilkSatir: string[], tarih: string): number => {
+/*
+ * Satırda günün sütunu: "16.11.2026", "16/11/2026", "2026-11-16" ya da sunucular
+ * tablosundaki gibi yılsız "16 November" (yıl sekmeden belli).
+ */
+export const gunSutunu = (satir: string[], tarih: string): number => {
   const [y, a, g] = tarih.split("-").map(Number);
-  return ilkSatir.findIndex((h) => {
-    const m = String(h ?? "").trim().match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  return satir.findIndex((h) => {
+    const t = String(h ?? "").trim();
+    const m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
     if (m) return Number(m[1]) === g && Number(m[2]) === a && Number(m[3]) === y;
-    return String(h ?? "").trim() === tarih;
+    const n = t.toUpperCase().match(/^(\d{1,2})\s+([A-Z]{3,})$/);
+    if (n) return Number(n[1]) === g && AYLAR.indexOf(n[2].slice(0, 3)) === a - 1;
+    return t === tarih;
   });
 };
 
-/* Günün satırları: [A, B, o günün hücresi]; tamamen boş satır atlanır. */
-export const rotaGunu = (degerler: string[][], tarih: string): [string, string, string][] | null => {
-  const s = gunSutunu(degerler[0] ?? [], tarih);
-  if (s < 2) return null;
+/*
+ * Günün satırları: [A, B, o günün hücresi]; tamamen boş satır atlanır. Tarih
+ * satırı ilk on satırda aranır (Newsroom Rota'da 1., sunucularda 5. satır), altı
+ * gün adları. Sunucular tablosunda B ilk günün sütunu: başka günün adı
+ * tarayıcıya gitmesin diye boş döner.
+ */
+export const rotaGunu = (degerler: string[][], tarih: string, tur: RotaTuru = "rota"): [string, string, string][] | null => {
+  const enAz = tur === "sunucu" ? 1 : 2;
+  const r = degerler.slice(0, 10).findIndex((satir) => gunSutunu(satir ?? [], tarih) >= enAz);
+  if (r < 0) return null;
+  const s = gunSutunu(degerler[r], tarih);
   return degerler
-    .slice(2)
-    .map((r) => [String(r[0] ?? "").trim(), String(r[1] ?? "").trim(), String(r[s] ?? "").trim()] as [string, string, string])
-    .filter((r) => r[0] || r[1] || r[2]);
+    .slice(r + 2)
+    .map((x) => [String(x[0] ?? "").trim(), tur === "sunucu" ? "" : String(x[1] ?? "").trim(), String(x[s] ?? "").trim()] as [string, string, string])
+    .filter((x) => x[0] || x[1] || x[2]);
 };
 
 const SHEETS = "https://sheets.googleapis.com/v4/spreadsheets";
 
-export const rotaOku = async (a: RotaAyar, tarih: string, f: typeof fetch, simdi: number): Promise<{ sekme: string; satirlar: [string, string, string][] } | { hata: string; ayrinti?: string }> => {
-  if (!a.tabloId || !a.istemciEposta || !a.ozelAnahtar) return { hata: "eksik" };
+export const rotaOku = async (a: RotaAyar, tarih: string, f: typeof fetch, simdi: number, tur: RotaTuru = "rota"): Promise<{ sekme: string; satirlar: [string, string, string][] } | { hata: string; ayrinti?: string }> => {
+  const tabloId = tur === "sunucu" ? a.sunucuTabloId : a.tabloId;
+  if (!tabloId || !a.istemciEposta || !a.ozelAnahtar) return { hata: "eksik" };
   const e = await erisimAl(a, f, simdi);
   if ("hata" in e) return e;
   const h = { authorization: `Bearer ${e.anahtar}` };
-  const r = await f(`${SHEETS}/${a.tabloId}?fields=sheets.properties.title`, { headers: h });
+  const r = await f(`${SHEETS}/${tabloId}?fields=sheets.properties.title`, { headers: h });
   if (!r.ok) return { hata: r.status === 403 || r.status === 404 ? "paylasim" : "google", ayrinti: String(r.status) };
   const j = (await r.json().catch(() => ({}))) as { sheets?: { properties?: { title?: string } }[] };
   const sekme = sekmeSec((j.sheets ?? []).map((x) => x.properties?.title ?? ""), tarih);
   if (!sekme) return { hata: "sekme" };
-  const v = await f(`${SHEETS}/${a.tabloId}/values/${encodeURIComponent(`'${sekme.replace(/'/g, "''")}'!A1:AD400`)}?valueRenderOption=FORMATTED_VALUE`, { headers: h });
+  const v = await f(`${SHEETS}/${tabloId}/values/${encodeURIComponent(`'${sekme.replace(/'/g, "''")}'!A1:AD400`)}?valueRenderOption=FORMATTED_VALUE`, { headers: h });
   if (!v.ok) return { hata: "google", ayrinti: String(v.status) };
   const d = (await v.json().catch(() => ({}))) as { values?: string[][] };
-  const satirlar = rotaGunu(d.values ?? [], tarih);
+  const satirlar = rotaGunu(d.values ?? [], tarih, tur);
   return satirlar ? { sekme, satirlar } : { hata: "gun" };
 };

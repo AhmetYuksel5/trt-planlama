@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { bosRotaAyar, gunSutunu, jwtKur, rotaAyarBirlestir, rotaGunu, rotaOku, sekmeAraligi, sekmeSec, tabloKimligi } from "../src/rota.ts";
-import { kayitlardanOneriler, rotaKayitlari, rotaKimligi } from "../../src/staffing.ts";
+import { kayitlardanOneriler, kayitlariBirlestir, rotaKayitlari, rotaKimligi, sunucuKayitlari } from "../../src/staffing.ts";
 
 /* Rota tablosu (worker/src/rota.ts) ve tarayıcıdaki ayrıştırıcı (src/staffing.ts). Adlar kurgusal; ağ yok. */
 
@@ -123,4 +123,36 @@ test("tarayıcıdaki ayrıştırıcı: gruplar, vardiya, izin ve eşleme", () =>
     ["muhabirMasasi", "c", "04:00"],
   ]);
   assert.notEqual(rotaKimligi("2026-11-25", satirlar), rotaKimligi("2026-11-25", satirlar.slice(1)));
+});
+
+test("sunucular tablosu: yılsız gün satırı, vardiyalar, program ve izin satırları girmez", () => {
+  const degerler = [
+    ["SB", "Ece Su", "Can Ak"],
+    [],
+    ["", "24 November", "25 November"],
+    ["", "Tue", "Wed"],
+    ["05.00-15.00", "Ali Veli", "Deniz Kaya"],
+    ["11.00-21.00", "", "Oya Er"],
+    ["20.00-20.25 - Bir Program (Live) (25 mins.)", "Ali Veli", "Oya Er"],
+    ["ANNUAL LEAVE", "", "Ece Su"],
+    ["COMP", "Can Ak", ""],
+  ];
+  assert.equal(gunSutunu(degerler[2], "2026-11-25"), 2);
+  const s = rotaGunu(degerler, "2026-11-25", "sunucu")!;
+  // İlk günün sütunu (B) tarayıcıya gitmez; yedek satırlar tarih satırının üstünde kalır.
+  assert.ok(s.every((x) => x[1] === "") && !s.some((x) => x[0] === "SB"));
+  assert.equal(rotaGunu(degerler, "2026-11-24", "sunucu")![0][2], "Ali Veli");
+  const k = sunucuKayitlari(s);
+  assert.deepEqual(k.map((x) => [x.ad, x.saat]), [["Deniz Kaya", "05:00"], ["Oya Er", "11:00"]]);
+  // Sunucular tablosu varsa öbür kaynağın sunucu satırları düşer.
+  const ana = [{ bolum: "presenter" as const, grup: "PRESENTER", unvan: "", ad: "Eski", saat: "08:00", calisiyor: true }, ...rotaKayitlari([["EP TEAM", "", ""], ["EP", "0700-1800", "Ali Veli"]])];
+  assert.deepEqual(kayitlariBirlestir(ana, k).map((x) => x.ad), ["Ali Veli", "Deniz Kaya", "Oya Er"]);
+  assert.equal(kayitlariBirlestir(ana, null).length, 2);
+});
+
+test("ayar: sunucular tablosu ayrı adres", () => {
+  const id = "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789";
+  const r = rotaAyarBirlestir(bosRotaAyar(), { sunucuTablo: `https://docs.google.com/spreadsheets/d/${id}/edit` });
+  assert.ok("ayar" in r && r.ayar.sunucuTabloId === id && !r.ayar.tabloId);
+  assert.deepEqual(rotaAyarBirlestir(bosRotaAyar(), { sunucuTablo: "olmaz" }), { hata: "tablo" });
 });

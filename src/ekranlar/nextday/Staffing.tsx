@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
 import { ekipPostadanYaz } from "../../eylemler";
-import { kayitlardanOneriler, rotaKayitlari, rotaKimligi, staffingOnerileri, staffingPostasi, type StaffingOnerisi } from "../../staffing";
+import { kayitlardanOneriler, kayitlariBirlestir, rotaKayitlari, rotaKimligi, staffingCoz, staffingPostasi, sunucuKayitlari, type StaffingOnerisi } from "../../staffing";
 import { vardiyaYaz } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan } from "../../veri";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
@@ -56,16 +56,20 @@ function useStaffingPostasi(ben: Kisi, plan: NextDayPlan) {
  * gün başına bir kez okunur). Ayarlı değilse ya da gün tabloda yoksa null:
  * şerit postaya döner.
  */
+type RotaSatirlari = [string, string, string][];
+
 function useRota(ben: Kisi, plan: NextDayPlan) {
   const duzenler = planIcerikDuzenler(ben, plan);
-  const [rota, setRota] = useState<{ id: string; satirlar: [string, string, string][] } | null>(null);
+  const [rota, setRota] = useState<{ rota: RotaSatirlari | null; sunucu: RotaSatirlari | null }>({ rota: null, sunucu: null });
   useEffect(() => {
-    setRota(null);
+    setRota({ rota: null, sunucu: null });
     if (!GERCEK || !duzenler || izlemede()) return;
     let iptal = false;
-    void rotaGetir(plan.tarih)
-      .then((r) => !iptal && r.tamam && r.veri.satirlar?.length && setRota({ id: rotaKimligi(plan.tarih, r.veri.satirlar), satirlar: r.veri.satirlar }))
-      .catch(() => null);
+    const al = (tur: "rota" | "sunucu") =>
+      rotaGetir(plan.tarih, false, tur)
+        .then((r) => (r.tamam && r.veri.satirlar?.length ? r.veri.satirlar : null))
+        .catch(() => null);
+    void Promise.all([al("rota"), al("sunucu")]).then(([r, s]) => !iptal && setRota({ rota: r, sunucu: s }));
     return () => {
       iptal = true;
     };
@@ -84,16 +88,21 @@ export function StaffingSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) 
   const v = useVeri();
   const [acik, setAcik] = useState(false);
   useStaffingPostasi(ben, plan);
-  const rota = useRota(ben, plan);
+  const { rota, sunucu } = useRota(ben, plan);
   const posta = staffingPostasi(v.postaMesajlari, plan.tarih);
   const kisiler = v.kisiler;
   // Rota tablosu varsa o (önceden belli, tam liste); yoksa günün staffing postası.
-  const kaynak = rota ? { id: rota.id, rota: true } : posta ? { id: posta.id, rota: false } : null;
+  // Sunucular kendi tablosundan; yalnız o varsa da şerit tablodan sayılır.
+  const tablodan = !!rota || (!!sunucu && !posta);
+  const kaynak =
+    rota || sunucu || posta
+      ? { id: rota || sunucu ? rotaKimligi(plan.tarih, [...(rota ?? (posta ? [["posta", posta.id, ""] as [string, string, string]] : [])), ...(sunucu ?? [])]) : posta!.id, rota: tablodan }
+      : null;
   const oneriler = useMemo(() => {
     const uygun = (k: Kisi, g: Parameters<typeof ekipAdayi>[1]) => ekipAdayi(k, g);
-    if (rota) return kayitlardanOneriler(rotaKayitlari(rota.satirlar), kisiler, plan.ekip, v.staffingEslesmeleri, uygun);
-    return posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip, v.staffingEslesmeleri, uygun) : [];
-  }, [rota, posta, kisiler, plan.ekip, v.staffingEslesmeleri]);
+    const ana = rota ? rotaKayitlari(rota) : posta ? staffingCoz(posta.tamMetin || posta.metin) : [];
+    return kayitlardanOneriler(kayitlariBirlestir(ana, sunucu ? sunucuKayitlari(sunucu) : null), kisiler, plan.ekip, v.staffingEslesmeleri, uygun);
+  }, [rota, sunucu, posta, kisiler, plan.ekip, v.staffingEslesmeleri]);
   if (!kaynak || !planIcerikDuzenler(ben, plan) || (plan.staffingPosta === kaynak.id && !acik) || !oneriler.length) return null;
   return (
     <>

@@ -403,6 +403,30 @@ export const rotaKayitlari = (satirlar: [string, string, string][]): StaffingKay
   return sonuc.filter((k) => k.ad || k.durum);
 };
 
+/*
+ * Sunucuların ayrı tablosu (kullanıcı: sunucular başka tablodan): A vardiya
+ * ("05.00-15.00"), hücrede o günün sunucusu. Program satırları ("20.00-20.25 -
+ * Wa Lana Waqfa"), izin, COMP ve yayın akışı vardiya biçiminde olmadığı için
+ * girmez; yedek (SB) satırları tarih satırının üstünde, kapı onları göndermiyor.
+ */
+export const sunucuKayitlari = (satirlar: [string, string, string][]): StaffingKaydi[] =>
+  satirlar.flatMap(([a, , h]) => {
+    const m = a.trim().match(ARALIK);
+    if (!m) return [];
+    return h
+      .split(/\n|\/|،/)
+      .map((x) => x.trim())
+      .filter((x) => x && !IZINLI.test(x))
+      .map((ad) => ({ bolum: "presenter" as const, grup: "PRESENTER", unvan: "Presenter", ad, saat: saatYaz(m[1], m[2]), calisiyor: true }));
+  });
+
+/*
+ * Ekibin kaynağı: rota tablosu ya da staffing postası; sunucular tablosu varsa
+ * sunucular yalnız ondan (öbür kaynağın sunucu satırları düşer).
+ */
+export const kayitlariBirlestir = (ana: StaffingKaydi[], sunucular: StaffingKaydi[] | null): StaffingKaydi[] =>
+  sunucular ? [...ana.filter((k) => staffingGorevi(k) !== "sunucu"), ...sunucular] : ana;
+
 /* Rotanın o günkü hali için kimlik: tablo değişince (düzeltilmiş rota) şerit yeniden çıkar. */
 export const rotaKimligi = (tarih: string, satirlar: [string, string, string][]) => {
   let h = 0;

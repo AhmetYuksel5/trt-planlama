@@ -435,17 +435,19 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
   }
   if (req.method === "POST" && yol === "/rota") {
     if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
-    const g = (await req.json().catch(() => null)) as { tarih?: unknown; yenile?: unknown } | null;
+    const g = (await req.json().catch(() => null)) as { tarih?: unknown; yenile?: unknown; tur?: unknown } | null;
     const tarih = typeof g?.tarih === "string" && /^\d{4}-\d{2}-\d{2}$/.test(g.tarih) ? g.tarih : "";
     if (!tarih) return yanit({ hata: "tarih" }, 400);
+    const tur = g?.tur === "sunucu" ? "sunucu" : "rota";
     const ra = await rotaAyarOku(env.YZ, env.POSTA_ANAHTARI);
-    if (!ra.tabloId || !ra.ozelAnahtar) return yanit({ hata: "kapali" }, 404);
-    const kAnahtar = `rota:${ra.tabloId}:${tarih}`;
+    const tabloId = tur === "sunucu" ? ra.sunucuTabloId : ra.tabloId;
+    if (!tabloId || !ra.ozelAnahtar) return yanit({ hata: "kapali" }, 404);
+    const kAnahtar = `rota:${tur}:${tabloId}:${tarih}`;
     if (g?.yenile !== true) {
       const onceki = await d.onbellek?.get(kAnahtar).catch(() => null);
       if (onceki) return yanit(JSON.parse(onceki));
     }
-    const r = await rotaOku(ra, tarih, d.fetch, d.simdi());
+    const r = await rotaOku(ra, tarih, d.fetch, d.simdi(), tur);
     if ("hata" in r) return yanit(r, r.hata === "sekme" || r.hata === "gun" ? 404 : 502);
     await d.onbellek?.put(kAnahtar, JSON.stringify(r), 6 * 3600).catch(() => {});
     return yanit(r);
