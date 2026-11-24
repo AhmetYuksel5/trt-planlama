@@ -1515,7 +1515,22 @@ export interface OzelPaketOnerisi {
   iz: OzelIz[];
 }
 
-/** Grafik ve öbür talepler: elle; istenirse bir birime (bildirim ona) ve son tarihle. */
+/*
+ * Özel yayının yapılacak işi: hazırlık maddesi ve grafik gibi birime düşen
+ * talep artık tek madde (kullanıcı: talepler ve hazırlık ayrı listelerde
+ * ikisi de aynı işi görüyordu). Günü verilirse günlük programda o günün
+ * altında; birimi verilirse o birime bildirim gidiyor.
+ */
+export interface OzelMadde {
+  id: string;
+  metin: string;
+  tamam: boolean;
+  gun?: string;
+  birim?: BirimId;
+  iz?: OzelIz[];
+}
+
+/** Grafik ve öbür talepler (eski düzen): elle; istenirse bir birime (bildirim ona) ve son tarihle. */
 export interface OzelTalep {
   id: string;
   metin: string;
@@ -1543,8 +1558,10 @@ export interface OzelYayin {
   aciklama?: string;
   /** Yoksa hazırlık (eski kayıt). */
   durum?: OzelDurum;
-  hazirlik: { id: string; metin: string; tamam: boolean }[];
+  /** Yapılacaklar: hazırlık maddeleri ve eski "diğer talepler" tek listede (OzelMadde). */
+  hazirlik: OzelMadde[];
   nafizeler?: Nafize[];
+  /** Eski düzen: açılış işi maddeye çeviriyor (eylemler.ts → ozelTalepleriMaddeyeCevir). */
   talepler?: OzelTalep[];
   paketOnerileri?: OzelPaketOnerisi[];
   /** Planın kendi izi: açılış, düzenleme, onay. */

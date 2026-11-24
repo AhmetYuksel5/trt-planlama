@@ -2799,6 +2799,25 @@ button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit;
 [dir="rtl"] .ozel-bolum:not([open]) > summary::after { transform: rotate(90deg); }
 .ozel-bolum > summary:not(:has(.dugme))::after { margin-inline-start: auto; }
 .ozel-bolum-govde { margin-block-start: var(--ara-3); }
+/* Özel yayının aşamaları kayıttan: her aşama, altında eksikleri; şimdiki aşama vurgulu. */
+.ozel-asama-listesi { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--ara-2); }
+.ozel-asama-listesi > li { display: grid; gap: var(--ara-1); padding: var(--ara-2) var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap); }
+.ozel-asama-listesi > li.simdi { border-color: var(--vurgu); }
+.ozel-asama-listesi > li.simdi .ozel-asama-bas > svg { color: var(--vurgu); }
+.ozel-asama-listesi > li.tamam { background: var(--yuzey-2); }
+.ozel-asama-bas { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; min-height: var(--dokunma); }
+.ozel-asama-bas .ek { color: var(--sonuk); }
+.ozel-asama-bas .dugme { margin-inline-start: auto; }
+.ozel-eksikler { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.ozel-eksik { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: var(--ara-2); width: 100%; min-height: var(--dokunma); padding: var(--ara-1) var(--ara-2); border-radius: var(--yaricap); cursor: pointer; }
+.ozel-eksik:hover, .ozel-eksik:focus-visible { background: var(--yuzey-2); }
+.ozel-eksik:focus-visible { outline: 2px solid var(--vurgu); }
+.ozel-eksik .ad { display: grid; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.ozel-eksik small { color: var(--sonuk); }
+.ozel-eksikler li.gecikti small { color: var(--kotu); }
+[data-ozel-madde] { display: flex; align-items: center; gap: var(--ara-2); }
+[data-ozel-madde] > .secim { flex: 1; min-width: 0; }
+[data-ozel-madde] .dugmeler { display: flex; gap: 2px; }
 /* Kontrol listesi: aşama, işaretleyen, notlar. */
 .kontrol-listesi { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
 .kontrol-listesi > li { border-radius: var(--yaricap); }

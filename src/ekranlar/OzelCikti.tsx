@@ -36,7 +36,6 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
   const tarih = o.bitis ? aralikYaz(o.tarih, o.bitis, "ar") : ciktiTarihi(o.tarih, "ar");
   const nafizeler = ozelNafizeleri(v, o.id);
   const paketler = ozelPaketSatirlari(o, v);
-  const talepler = (o.talepler ?? []).filter((x) => x.durum !== "iptal");
   const gorevler = ozelGorevlendirmeleri(v, o.id);
   const sonTarih = (iso?: string) => (iso ? ` · ${c("oySonTarih")}: ${gunAy(iso, "ar")}` : "");
   return (
@@ -90,17 +89,6 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
           })}
         </section>
       )}
-      {talepler.length > 0 && (
-        <section>
-          <h2 className="yesil">{c("oyTalepler")}</h2>
-          {talepler.map((x) => (
-            <p key={x.id}>
-              {x.metin}
-              {sonTarih(x.sonTarih)}
-            </p>
-          ))}
-        </section>
-      )}
       {gorevler.length > 0 && (
         <section>
           <h2 className="yesil">{c("oyGorevler")}</h2>
@@ -116,6 +104,7 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
             <p key={h.id}>
               {h.tamam ? "✓ " : "☐ "}
               {h.metin}
+              {h.gun ? ` · ${gunAy(h.gun, "ar")}` : ""}
             </p>
           ))}
         </section>

@@ -1,5 +1,5 @@
 import { gunAy, type Anahtar } from "./dil";
-import { bugun } from "./tarih";
+import { bugun, gunEkle } from "./tarih";
 import { OZEL_SIRASI, eskiOzelPaket, type CanliYayin, type Durum, type Gorevlendirme, type Nafize, type OzelDurum, type OzelIz, type OzelPaketOnerisi, type OzelYayin, type Paket } from "./veri";
 
 /**
@@ -22,8 +22,8 @@ export const oncesi = <T extends string>(sira: readonly T[], simdi: T, adim: T):
 export const isaretIzi = (iz: OzelIz[] | undefined, adim: string) => [...(iz ?? [])].reverse().find((x) => x.olay === "durum" && x.durum === adim);
 export const asamaNotlari = (iz: OzelIz[] | undefined, adim: string) => (iz ?? []).filter((x) => x.olay === "not" && x.asama === adim);
 
-export type OzelKalemTuru = "nafize" | "paket" | "talep" | "gorev" | "hazirlik";
-export const OZEL_KALEM_TURLERI: OzelKalemTuru[] = ["nafize", "paket", "talep", "gorev", "hazirlik"];
+export type OzelKalemTuru = "nafize" | "paket" | "gorev" | "madde";
+export const OZEL_KALEM_TURLERI: OzelKalemTuru[] = ["nafize", "paket", "gorev", "madde"];
 
 export interface OzelKalemi {
   tur: OzelKalemTuru;
@@ -114,10 +114,9 @@ export const ozelKalemleri = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevle
   ...ozelNafizeleri(d, o.id).map((n) => ({ tur: "nafize" as const, id: n.id, ad: nafizeBasligi(n), sonTarih: n.tarih, bitti: nafizeHazir(n), kisiId: n.muhabirId })),
   ...ozelIcerikleri(d, o.id).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.durum === "tamamlandi", kisiId: p.muhabirId })),
   ...ozelPaketSatirlari(o, d).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.asama === "hazir", kisiId: p.muhabirId ?? p.paket?.hazirlayanId })),
-  ...(o.talepler ?? []).filter((x) => x.durum !== "iptal").map((x) => ({ tur: "talep" as const, id: x.id, ad: x.metin, sonTarih: x.sonTarih, bitti: x.durum === "tamam" })),
   // Dış görevlendirme News Gathering'in onayından geçince hazır: iş artık sahada.
   ...ozelGorevlendirmeleri(d, o.id).map((g) => ({ tur: "gorev" as const, id: g.id, ad: g.yer, sonTarih: g.baslangic, bitti: gorevHazir(g), kisiId: g.kisiId })),
-  ...o.hazirlik.map((h) => ({ tur: "hazirlik" as const, id: h.id, ad: h.metin, bitti: h.tamam })),
+  ...o.hazirlik.map((h) => ({ tur: "madde" as const, id: h.id, ad: h.metin, sonTarih: h.gun, bitti: h.tamam })),
 ];
 
 export const gecikti = (k: { bitti: boolean; sonTarih?: string }, gun = bugun()) => !k.bitti && !!k.sonTarih && k.sonTarih < gun;
@@ -146,21 +145,92 @@ export const yapilacaklar = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlen
     .sort((a, b) => (a.sonTarih ?? "9999").localeCompare(b.sonTarih ?? "9999"));
 
 /*
- * Planın aşaması: işaretlenecek sıradaki adım, hepsi işaretliyse yayına
- * hazır. Saklanan durumdan (son işaretlenen) okunuyor.
+ * Planın aşamaları kayıttan (kullanıcı: elle işaretlenen aşamalar hiçbir
+ * şeye bağlı değildi, iş bitse de "Planlama"da kalıyordu). Yalnız onay elle
+ * (Plan yetkileri › ozOnay); öbürleri kalemlerin kendi durumundan:
+ * - planlama: genel plan yazılmış, en az bir nafize ya da içerik var
+ * - onay: plan onaylandı
+ * - uygulama: nafizelerin rezervasyonu ve yeri, dış görevlendirmelerin onayı,
+ *   yapılacak maddeler
+ * - teslim: içerikler teslim edildi
+ * Bütün aşamalar tamamsa "Yayına hazır". Şimdiki aşama tamamlanmamış ilk
+ * aşama; eksikleri her aşamanın altında.
  */
 export const OZEL_ASAMALARI = ["planlama", "onay", "uygulama", "hazir"] as const;
 export type OzelAsama = (typeof OZEL_ASAMALARI)[number];
-export const OZEL_ASAMA_ADI: Record<OzelAsama | "tamam", Anahtar> = { planlama: "oyAsamaPlanlama", onay: "oyOnayBekliyor", uygulama: "oyAsamaUygulama", hazir: "oyAsamaHazir", tamam: "oyAsamaTamam" };
-/** Kontrol listesinde her aşamanın tamamlandığı durum. */
-export const OZEL_ASAMA_DURUMU: Record<OzelAsama, Exclude<OzelDurum, "hazirlik">> = { planlama: "onayda", onay: "onayli", uygulama: "uygulandi", hazir: "hazir" };
+export const OZEL_ASAMA_ADI: Record<OzelAsama | "tamam", Anahtar> = { planlama: "oyAsamaPlanlama", onay: "oyAsamaOnay", uygulama: "oyAsamaUygulama", hazir: "oyAsamaHazir", tamam: "oyAsamaTamam" };
 export const ozelDurum = (o: OzelYayin): OzelDurum => o.durum ?? "hazirlik";
-export const ozelAsamasi = (o: OzelYayin): OzelAsama | "tamam" => {
-  const s = OZEL_SIRASI.indexOf(ozelDurum(o));
-  return s >= OZEL_SIRASI.length - 1 ? "tamam" : OZEL_ASAMALARI[s];
-};
-/** Plan onaylandı mı (onay ve sonrası). */
+/** Plan onaylandı mı: eski kayıttaki "uygulandı", "hazır" da onaydan sonra. */
 export const ozelOnayli = (o: OzelYayin) => isaretli(OZEL_SIRASI, ozelDurum(o), "onayli");
+
+export interface OzelEksik {
+  tur: OzelKalemTuru | "plan";
+  id: string;
+  /** Kalemin adı (içerik, Arapça); planın kendi eksiğinde yok. */
+  ad?: string;
+  neden: Anahtar;
+  tarih?: string;
+  kisiId?: string;
+}
+export interface OzelAsamaDurumu {
+  asama: OzelAsama;
+  tamam: boolean;
+  eksikler: OzelEksik[];
+}
+
+type OzelKaynak = Pick<Durum, "paketler" | "gorevlendirmeler" | "canliYayinlar">;
+
+export const ozelAsamaDurumlari = (o: OzelYayin, d: OzelKaynak): OzelAsamaDurumu[] => {
+  const nafizeler = ozelNafizeleri(d, o.id);
+  const icerikler = ozelIcerikleri(d, o.id);
+  const eskiler = ozelPaketSatirlari(o, d);
+  const planlama: OzelEksik[] = [];
+  if (!o.aciklama?.trim()) planlama.push({ tur: "plan", id: "aciklama", neden: "oyEkAciklama" });
+  if (!nafizeler.length && !icerikler.length && !eskiler.length) planlama.push({ tur: "plan", id: "icerik", neden: "oyEkIcerik" });
+  const onay: OzelEksik[] = ozelOnayli(o) ? [] : [{ tur: "plan", id: "onay", neden: "oyOnayBekliyor" }];
+  const uygulama: OzelEksik[] = [
+    ...nafizeler.filter((n) => !nafizeHazir(n) && !n.sonuc).map((n): OzelEksik => ({ tur: "nafize", id: n.id, ad: nafizeBasligi(n), neden: n.rezervasyon ? "oyEkYer" : "oyEkRezervasyon", tarih: n.tarih, kisiId: n.muhabirId })),
+    ...ozelGorevlendirmeleri(d, o.id).filter((g) => !gorevHazir(g)).map((g): OzelEksik => ({ tur: "gorev", id: g.id, ad: g.yer, neden: "oyEkGorevOnay", tarih: g.baslangic, kisiId: g.kisiId })),
+    ...eskiler.filter((x) => x.asama === "plan" || x.asama === "onayli").map((x): OzelEksik => ({ tur: "paket", id: x.id, ad: x.baslik, neden: "oyEkGorevVer", tarih: x.sonTarih, kisiId: x.muhabirId })),
+    ...o.hazirlik.filter((h) => !h.tamam).map((h): OzelEksik => ({ tur: "madde", id: h.id, ad: h.metin, neden: "oyEkMadde", tarih: h.gun })),
+  ];
+  const teslim: OzelEksik[] = [
+    ...icerikler.filter((p) => p.durum !== "tamamlandi").map((p): OzelEksik => ({ tur: "paket", id: p.id, ad: p.baslik, neden: "oyEkTeslim", tarih: p.sonTarih, kisiId: p.muhabirId })),
+    ...eskiler.filter((x) => x.asama === "gorevli" || x.asama === "hazirlaniyor").map((x): OzelEksik => ({ tur: "paket", id: x.id, ad: x.baslik, neden: "oyEkTeslim", tarih: x.sonTarih, kisiId: x.muhabirId ?? x.paket?.hazirlayanId })),
+  ];
+  const sirala = (l: OzelEksik[]) => l.sort((a, b) => (a.tarih ?? "9999").localeCompare(b.tarih ?? "9999"));
+  return [
+    { asama: "planlama", tamam: !planlama.length, eksikler: planlama },
+    { asama: "onay", tamam: !onay.length, eksikler: onay },
+    { asama: "uygulama", tamam: !uygulama.length, eksikler: sirala(uygulama) },
+    { asama: "hazir", tamam: !teslim.length, eksikler: sirala(teslim) },
+  ];
+};
+
+export const ozelAsamasi = (o: OzelYayin, d: OzelKaynak): OzelAsama | "tamam" => ozelAsamaDurumlari(o, d).find((a) => !a.tamam)?.asama ?? "tamam";
+
+/*
+ * Günlük program: yayının her günü için nafizeler (saat sırasıyla), o gün
+ * yayınlanacak içerikler, o gün sahada olan görevlendirmeler ve o güne
+ * yazılmış yapılacak maddeler. Saklanmıyor, kayıtlardan güne göre okunuyor.
+ */
+export const ozelGunu = (o: OzelYayin, d: OzelKaynak, gun: string) => ({
+  nafizeler: ozelNafizeleri(d, o.id).filter((n) => n.tarih === gun),
+  icerikler: [...ozelIcerikleri(d, o.id).filter((p) => p.yayinGunu === gun), ...ozelPaketSatirlari(o, d).filter((x) => x.sonTarih === gun).map((x) => x.paket).filter((p): p is Paket => !!p)],
+  gorevler: ozelGorevlendirmeleri(d, o.id).filter((g) => g.baslangic <= gun && (g.bitis ?? g.baslangic) >= gun),
+  maddeler: o.hazirlik.filter((h) => h.gun === gun),
+});
+
+/* Yayının günleri: künyedeki aralık; aralığın dışına düşen nafize, içerik ya da madde de kendi günüyle girer, kaybolmasın. */
+export const yayinGunleri = (o: OzelYayin, d: OzelKaynak): string[] => {
+  const gunler = new Set<string>();
+  const son = o.bitis && o.bitis > o.tarih ? o.bitis : o.tarih;
+  for (let g = o.tarih, i = 0; g <= son && i < 62; g = gunEkle(g, 1), i++) gunler.add(g);
+  for (const n of ozelNafizeleri(d, o.id)) if (n.tarih) gunler.add(n.tarih);
+  for (const p of ozelIcerikleri(d, o.id)) if (p.yayinGunu) gunler.add(p.yayinGunu);
+  for (const h of o.hazirlik) if (h.gun) gunler.add(h.gun);
+  return [...gunler].sort();
+};
 
 /** Yayın bitti mi: son günü geçmiş özel yayın listede arşive iniyor. */
 export const ozelGecti = (o: OzelYayin, gun = bugun()) => (o.bitis ?? o.tarih) < gun;

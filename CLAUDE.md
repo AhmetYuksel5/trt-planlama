@@ -3151,41 +3151,55 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     toplantı ve plan ekranında `OzelYayinBolumu`): yayın yayın, gün gün LIVE
     (nafizeler) ve PKG (içerikler); karar kalemi değil. Test
     `testler/ozel-plan.cjs`.
+    4. adım, aşamalar kayıttan (kullanıcı: aşamaları işaretliyorum, programa
+    etki ediyor mu, havada mı; elle işaretlenenler hiçbir şeye bağlı değildi,
+    iş bitse de "Planlama"da kalıyordu): `ozel.ts → ozelAsamaDurumlari`,
+    saklanmaz. Planlama (genel plan yazılmış, en az bir nafize ya da içerik),
+    Onay (elle verilen tek adım: `eylemler.ts → ozelOnayla`, Plan yetkileri
+    `ozOnay`; eski düzenin onay bekleyen paket önerilerini de onaylar, "Onayı
+    geri al" `data-ozel-onay-geri`), Uygulama (nafizenin rezervasyonu ve yeri,
+    dış görevlendirmenin News Gathering onayı, eski paketin görevi, açık
+    yapılacak maddeler), Teslim (içerikler), hepsi tamamsa "Yayına hazır".
+    Şimdiki aşama tamamlanmamış ilk aşama (`ozelAsamasi(o, d)`); Genel
+    bakış'ta her aşamanın altında eksikleri (`EksikListesi`, `data-eksik`,
+    günü geçen kırmızı), basınca işin sekmesi açılır (genel plan eksiği
+    künyeyi). Kontrol kutusu yok; eski kayıttaki "uygulandı", "hazır" onaylı
+    sayılır. "Yayına hazır"ın eski etkisi (bitmiş paketler yayınlandı)
+    yayının son günü geçince sistemin açılış işinde
+    (`ozelYayinlananlariIsaretle`). "Diğer talepler" ve hazırlık maddeleri
+    tek "Yapılacaklar" listesi (`OzelMadde`: metin, isteğe bağlı gün ve
+    birim, iz; `ozelMaddeKaydet` birime bildirim `ozelTalep`, `ozelMaddeSil`,
+    `ozelHazirlikIsaretle`): sekmede gün gün gruplu, günsüzler sonda;
+    eski talepleri açılış işi maddeye çevirir (`ozelTalepleriMaddeyeCevir`:
+    son tarih gün olur, iptal taşınmaz). Günlük program (`ozel.ts → ozelGunu`,
+    `yayinGunleri`): ortada günün nafizeleri ve o gün yayınlanacak içerikler,
+    sağda o gün sahada olanlar, o günün yapılacakları (oradan işaretlenir) ve
+    konuklar; gün düğmesinde toplam. Test `testler/ozel-asama.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
-    (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında aşamalar
-    (Planlama, Onay, Uygulama, Son kontrol, Yayına hazır) ve işaretlenecek
-    sıradaki aşama (`data-ozel-siradaki`; dolu yalnız onayda, aynı onay
-    sorusuyla); ayrıntılı kontrol listesi ve notlar Genel bakış'ta.
-  - Künyede sayı kutuları (gün, nafize, paket, talep) ve ilerleme
-    (`ozelOzeti`); altında sekmeler (`OZEL_SEKMELERI`): Genel bakış (aşamalar,
-    yapılacaklar), Günlük program, Nafizeler, İçerik (paketler, talepler),
-    Görevlendirmeler, Hazırlık. Günlük program (`GunlukProgram`): solda
-    yayının günleri (`yayinGunleri`: künyedeki aralık ve nafizelerin günleri),
-    ortada seçili günün nafizeleri saat sırasıyla (basınca pencerede kalemi,
-    "Nafize ekle" o günle), sağda gün özeti (konuklar, son tarihi o gün olan
-    paketler ve talepler); saklanmaz, nafizelerden okunur. Telefonda günler
-    yatay şerit, sütunlar alt alta.
-  - Sekmelerde bölümler (yapılacaklar, nafizeler, paketler, talepler,
-    görevlendirmeler, hazırlık) ve içlerindeki her kalem kapalı gelir
+    (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında kayıttan
+    okunan aşamalar (Planlama, Onay, Uygulama, Teslim, Yayına hazır), şimdiki
+    aşamanın eksik sayısı ve onaysızsa "Planı onayla" (`data-ozel-onayla`);
+    eksikler ve notlar Genel bakış'ta.
+  - Künyede sayı kutuları (gün, nafize, paket, açık yapılacak) ve ilerleme
+    (`ozelOzeti`); altında sekmeler (`OZEL_SEKMELERI`): Genel bakış
+    (aşamalar ve eksikleri), Günlük program, Nafizeler, İçerik, Görevlendirmeler,
+    Yapılacaklar. Telefonda günlük programın günleri yatay şerit, sütunlar alt
+    alta.
+  - Sekmelerde bölümler (nafizeler, paketler, görevlendirmeler, yapılacaklar)
+    ve içlerindeki her kalem kapalı gelir
     (`Bolum`, `Kalem`; `<details>`); kapalıyken başlık, sayı, aşama. Pencere
     bölümün dışında çizilir (kapalı `<details>` içini göstermiyor).
-  - Aşamalar kontrol listesi (`KontrolListesi`; sıra `ozel.ts → isaretli`,
-    `siradaki`, `oncesi`): sırayla işaretlenir, yalnız sonuncu geri alınır;
-    işaretleyen ve zaman izden (`isaretIzi`), her aşamanın notu kendi
-    satırında (`OzelIz.asama`, `asamaNotlari`). Durum son işaretlenen.
-    - Plan (`OZEL_SIRASI`): planlama tamam (onayda), onaylandı, uygulama
-      tamam, yayına hazır; her biri ayrı işaretlenir (`ozelAsamaIsaretle`,
-      `ozelAsamaDegisebilir`; onay `ozOnay`, öbürleri plan düzenleyen ya da
-      onaylayan). Planın onayı onay bekleyen nafizeleri ve paket önerilerini
-      de onaylar.
-    - Nafize (`NAFIZE_SIRASI`): onay (tek başına da, `ozOnay`), Satdesk
+  - Kontrol listesi (`KontrolListesi`; sıra `ozel.ts → isaretli`,
+    `siradaki`, `oncesi`) yalnız eski düzenin paket önerilerinde: sırayla
+    işaretlenir, yalnız sonuncu geri alınır; işaretleyen ve zaman izden
+    (`isaretIzi`), her aşamanın notu kendi satırında (`OzelIz.asama`,
+    `asamaNotlari`). Planın aşamaları kayıttan (yukarıda, 4. adım).
+    - Nafize (eski düzen, açılış işi canlıya çevirdi) (`NAFIZE_SIRASI`): onay (tek başına da, `ozOnay`), Satdesk
       rezervasyonu, yer hazır, yayınlandı; iptal ayrı (`nafizeIptal`).
       Başlığı her dilde Arapça "25 أكتوبر - تل أبيب - 10G" (`nafizeBasligi`,
       `dil.ts → gunAy`); konu, muhabir (ya da TBC) ve konuklar içeride.
       Konuklar (aday, davet edildi, teyitli, iptal) sırasız, aşamaya bağlı
       değil.
-    - Talep (`TALEP_SIRASI`): sürüyor, tamamlandı; iptal ayrı. Metin,
-      istenirse birim (o birime bildirim) ve son tarih.
   - Paket önerisi (`OzelYayin.paketOnerileri`) özel yayının içinde, genel
     önerilere karışmaz; yazılınca paket doğmaz. Onayla (tek başına
     `ozelPaketOnerisiOnayla` ya da planın onayıyla) `Paket` açılır
@@ -3216,13 +3230,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     News Gathering'in görevlendirmeleriyle aynı yerden onaylanır; planın
     önünde ya da arkasında açılabilir. Özel yayında iki aşama: talepteyken
     planlama, onaylanınca hazır (`gorevHazir`).
-  - Yapılacaklar bölümü bölüm bölüm yapılanı sayar, son tarihe göre sıralı,
-    geciken kırmızı (`ozelOzeti`, `yapilacaklar`; saklanmaz).
+  - İlerleme ve yönetici panelinin sayıları kalem kalem yapılanı sayar
+    (`ozelOzeti`, `yapilacaklar`; saklanmaz).
   - Çıktı (`ekranlar/OzelCikti.tsx`) Next Day ve Weekly'nin kağıdıyla aynı
     biçim ve araç çubuğu (`CiktiAraclari`: kopyala, Word, yazdır/PDF), her
     arayüz dilinde Arapça: genel plan, nafizeler (başlık, konu, muhabir,
-    konuklar), paketler ("YER / strap / muhabir", son tarih), talepler,
-    görevlendirmeler, hazırlık. İptal basılmaz, onay bekleyen öneri basılır.
+    konuklar), paketler ("YER / strap / muhabir", son tarih),
+    görevlendirmeler, yapılacaklar (günüyle). İptal basılmaz, onay bekleyen öneri basılır.
   - Eski hazırlık maddeleri (`hazirlik`, takvimden aktarılan da) yerinde.
     Kayıt temizliğinde özel yayınla paketleri ve görevlendirmeleri de
     gider. Hareketin özel yayına bağı `Hareket.ozelId`.
