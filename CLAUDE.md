@@ -3419,6 +3419,20 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   öneri kartı. Sonraki adımlar sayfa sayfa (durum dairesi, grup + sütun
   tablosu, Liste/Pano görünümü, klavye). Beğenilirse token'lar `:root`'a
   taşınır, eski blok ve anahtar kalkar. Test `testler/yeni-tasarim.cjs`.
+  - Tasarım dili (kullanıcı: Ayarlar'da tema olsun ama renkten çok tasarım dili;
+    öbür uygulamasının "kâğıt" ekranlarını gösterip "renk tonlarını çek, uyarla"
+    dedi): Ayarlar › "Tasarım dili" üç seçenek, her biri kendi küçük örneğiyle
+    (`Ayarlar.tsx → TasarimAyari`, `.tasarim-ornek`): Yeni (varsayılan), Paper,
+    Eski (`tasarimSecimi.ts → TasarimDili`, `tasarimDiliKaydet`,
+    `useTasarimDili`; aynı anahtar `trt-planlama-tasarim`, değer "paper").
+    Paper yeni tasarımın düzeni üstüne `<html>`'de `paper` sınıfı; bütün
+    değişiklik `tasarim.css`'in sonundaki `html.yeni-tasarim.paper` bloğunda,
+    değerler ekranlardan: kâğıt zemin #f3efe7, krem kart, kahverengiye çalan
+    mürekkep, kiremit vurgu #c4623f (birincil düğme, seçili menü), hardal uyarı,
+    yaprak yeşili iyi, 3 piksel köşe, hafif kâğıt gölgesi, yazı serif (Source
+    Serif 4; Arapça arayüz Naskh), küçük etiketler aralıklı büyük harf. Planların
+    renkleri mürekkep. Avatar menüsündeki eski/yeni geçişi Paper'ı yeni sayar.
+    Tema rengi ayrı kalır (renkli kabuklarda). Test `testler/paper.cjs`.
   - Planlama'nın yeni mimarisi bu anahtarın arkasında (kullanıcı: ana sayfa
     çok işlevsel olsun, planların iç akışı sürsün ve iyileşsin, muhabirle
     iletişim ve raporlama pratikleşsin; iki tur ajan görüşü, brifing ve ham

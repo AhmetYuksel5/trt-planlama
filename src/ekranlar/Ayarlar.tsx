@@ -19,7 +19,7 @@ import { OtoCagriKart } from "./posta/OtoCagri";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
-import { useYeniTasarim, yeniTasarimKaydet } from "../tasarimSecimi";
+import { TASARIM_DILLERI, tasarimDiliKaydet, useTasarimDili, useYeniTasarim } from "../tasarimSecimi";
 import { TEMALAR, temaKaydet, useTema } from "../tema";
 import { birimMenusu } from "../bilesenler/AnaMenu";
 
@@ -115,16 +115,27 @@ function KisiselAyar({ ben }: { ben: Kisi }) {
   );
 }
 
-/* Yeni tasarım varsayılan; eskisine dönüş bu tarayıcıda saklanıyor (tasarimSecimi.ts). */
+/*
+ * Tasarım dili (tasarimSecimi.ts): yeni (varsayılan), Paper, eski; bu tarayıcıda saklanıyor. Her seçeneğin
+ * küçük örneği kendi dilinin zemini, kartı, vurgusu ve yazı ailesiyle çiziliyor (`.tasarim-ornek`).
+ */
+const TASARIM_ADI = { yeni: "tasarimYeni", paper: "tasarimPaper", eski: "tasarimEski" } as const;
 function TasarimAyari() {
   const { t } = useDil();
-  const acik = useYeniTasarim();
+  const secili = useTasarimDili();
   return (
-    <Kart baslik={t("tasarimAyar")}>
-      <label className="satir-kutu">
-        <input type="checkbox" checked={!acik} onChange={(e) => yeniTasarimKaydet(!e.target.checked)} data-tasarim-ayari />{" "}
-        {t("eskiTasarimaDon")}
-      </label>
+    <Kart baslik={t("tasarimAyar")} ikon={<Palette size={18} />}>
+      <div className="tasarim-secimi" role="group" aria-label={t("tasarimAyar")} data-tasarim-secimi>
+        {TASARIM_DILLERI.map((d) => (
+          <button key={d} type="button" aria-pressed={secili === d} onClick={() => tasarimDiliKaydet(d)} data-tasarim-dili={d}>
+            <span className={`tasarim-ornek ornek-${d}`} aria-hidden>
+              <i />
+              <b>Aa</b>
+            </span>
+            {t(TASARIM_ADI[d])}
+          </button>
+        ))}
+      </div>
     </Kart>
   );
 }

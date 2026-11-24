@@ -1,44 +1,61 @@
 import { useEffect, useState } from "react";
 
 /*
- * "Yeni tasarım" denemesi (belgeler/kimlik.md; Linear görünüşü, Monday işlevi):
- * eski tasarım silinmeden yanında. Seçim kişiye değil tarayıcıya bağlı (dil gibi);
- * açıkken <html>'de `yeni-tasarim` sınıfı, bütün site token'larını oradan alıyor.
- * Yeni tasarım varsayılan (kullanıcı); yalnız "Eski tasarıma dön" diyen tarayıcıda eskisi.
+ * Tasarım dili (belgeler/kimlik.md). Seçim kişiye değil tarayıcıya bağlı (dil gibi).
+ * - "yeni" (varsayılan; Linear görünüşü, Monday işlevi): <html>'de `yeni-tasarim`.
+ * - "eski": eski tasarım, silinmeden yanında.
+ * - "paper" (kullanıcı: kendi öbür uygulamasının "kağıt" görünümünü gösterdi, renk değil
+ *   tasarım dili istedi): yeni tasarımın düzeni üstüne `paper` sınıfı; zemin, yazı ailesi,
+ *   köşe ve renk token'ları tasarim.css'in sonundaki `html.paper` bloğunda.
  */
+export type TasarimDili = "yeni" | "eski" | "paper";
+export const TASARIM_DILLERI: TasarimDili[] = ["yeni", "paper", "eski"];
+
 const ANAHTAR = "trt-planlama-tasarim";
 const OLAY = "trt-tasarim";
 
-export const yeniTasarimAcik = (): boolean => {
+export const tasarimDiliOku = (): TasarimDili => {
   try {
-    return localStorage.getItem(ANAHTAR) !== "eski";
+    const d = localStorage.getItem(ANAHTAR);
+    return d === "eski" || d === "paper" ? d : "yeni";
   } catch {
-    return true;
+    return "yeni";
   }
 };
 
-const uygula = (acik: boolean) => document.documentElement.classList.toggle("yeni-tasarim", acik);
+export const yeniTasarimAcik = (): boolean => tasarimDiliOku() !== "eski";
 
-export const yeniTasarimKaydet = (acik: boolean) => {
+const uygula = (d: TasarimDili) => {
+  const html = document.documentElement;
+  html.classList.toggle("yeni-tasarim", d !== "eski");
+  html.classList.toggle("paper", d === "paper");
+};
+
+export const tasarimDiliKaydet = (d: TasarimDili) => {
   try {
-    localStorage.setItem(ANAHTAR, acik ? "yeni" : "eski");
+    localStorage.setItem(ANAHTAR, d);
   } catch {
     /* saklanamazsa yalnız bu açılışta */
   }
-  uygula(acik);
+  uygula(d);
   window.dispatchEvent(new Event(OLAY));
 };
 
-// Açılışta ilk çizimden önce: eski görünüş bir an yanıp sönmesin.
-uygula(yeniTasarimAcik());
-window.addEventListener("storage", (e) => e.key === ANAHTAR && (uygula(yeniTasarimAcik()), window.dispatchEvent(new Event(OLAY))));
+// Avatar menüsündeki eski/yeni geçişi: Paper da "yeni" sayılır, eskiden dönüş yeniye.
+export const yeniTasarimKaydet = (acik: boolean) => tasarimDiliKaydet(acik ? "yeni" : "eski");
 
-export function useYeniTasarim(): boolean {
-  const [acik, setAcik] = useState(yeniTasarimAcik);
+// Açılışta ilk çizimden önce: eski görünüş bir an yanıp sönmesin.
+uygula(tasarimDiliOku());
+window.addEventListener("storage", (e) => e.key === ANAHTAR && (uygula(tasarimDiliOku()), window.dispatchEvent(new Event(OLAY))));
+
+export function useTasarimDili(): TasarimDili {
+  const [d, setD] = useState(tasarimDiliOku);
   useEffect(() => {
-    const yenile = () => setAcik(yeniTasarimAcik());
+    const yenile = () => setD(tasarimDiliOku());
     window.addEventListener(OLAY, yenile);
     return () => window.removeEventListener(OLAY, yenile);
   }, []);
-  return acik;
+  return d;
 }
+
+export const useYeniTasarim = (): boolean => useTasarimDili() !== "eski";

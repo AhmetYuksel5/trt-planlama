@@ -4326,3 +4326,99 @@ li.hesap-pasif .ad > a { color: var(--sonuk); text-decoration: line-through; }
 .pg-onizleme { max-block-size: 55vh; overflow: auto; border: 1px solid var(--cizgi); border-radius: 8px; }
 .prg-kutular.kutu-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .prg-kutular.kutu-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/*
+ * Paper tasarım dili (kullanıcı: kendi öbür uygulamasının ekranlarını gösterdi, "renk değil tasarım dili";
+ * tasarimSecimi.ts). Değerler o ekranlardan çekildi: sıcak kâğıt zemin, krem kart, kahverengiye çalan
+ * mürekkep, kiremit vurgu (seçili sekme, birincil düğme), hardal uyarı, yaprak yeşili iyi; köşeler
+ * neredeyse keskin, ince sıcak çizgi, kartta hafif kâğıt gölgesi; yazı serif (Source Serif 4), Arapça
+ * içerik zaten Naskh. Yeni tasarımın düzeni aynen kalır, yalnız token'lar ve birkaç yüzey değişir.
+ */
+html.yeni-tasarim.paper {
+  --zemin: #f3efe7;
+  --yuzey: #faf8f3;
+  --yuzey-2: #f0ebe1;
+  --yuzey-3: #e7e0d3;
+  --murekkep: #2b2520;
+  --sonuk: #6b6257;
+  --silik: #958b7e;
+  --cizgi: #e2dbcd;
+  --cizgi-girdi: #b9ae9c;
+  --vurgu: #c4623f;
+  --vurgu-koyu: #a44e30;
+  --vurgu-sis: #f6e6de;
+  --onceki-fon: #f8ecd9;
+  --onceki-cizgi: #e3c38f;
+  --onceki-serit: #c9952e;
+  --lacivert: #c4623f;
+  --nextday: var(--murekkep); --nextday-sis: var(--yuzey-2);
+  --haftalik: var(--murekkep); --haftalik-sis: var(--yuzey-2);
+  --aylik: var(--murekkep); --aylik-sis: var(--yuzey-2);
+  --ozel: var(--murekkep); --ozel-sis: var(--yuzey-2);
+  --saha: var(--murekkep); --saha-sis: var(--yuzey-2);
+  --iyi: #2f8a55; --iyi-sis: #e3f0e4;
+  --uyari: #a87313; --uyari-sis: #fbf0d3;
+  --kotu: #b8432f; --kotu-sis: #f8e1db;
+  --masa-planlama: #c4623f; --masa-planlama-sis: #f6e6de; --masa-planlama-acik: #e59a7c;
+  --yaricap-kart: 3px;
+  --yaricap: 3px;
+  --golge-kart: 0 1px 2px rgba(74, 52, 28, .07);
+  --golge-acilir: 0 10px 30px rgba(74, 52, 28, .16);
+  --yazi: "Source Serif 4", Georgia, "Times New Roman", "Noto Naskh Arabic", serif;
+}
+/* Arapça arayüz de kâğıt diliyle: Naskh, serif ailenin karşılığı. */
+html.yeni-tasarim.paper:lang(ar) body { font-family: "Noto Naskh Arabic", var(--yazi); }
+html.yeni-tasarim.paper body { background: var(--zemin); font-feature-settings: "lnum", "tnum"; }
+html.yeni-tasarim.paper .uygulama { background: var(--zemin); }
+@media (min-width: 961px) {
+  html.yeni-tasarim.paper .uygulama:not(.menu-gizli) { background: linear-gradient(to right, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+  html.yeni-tasarim.paper[dir="rtl"] .uygulama:not(.menu-gizli), html.yeni-tasarim.paper [dir="rtl"] .uygulama:not(.menu-gizli) { background: linear-gradient(to left, var(--yuzey) var(--menu-genislik), var(--zemin) var(--menu-genislik)); }
+}
+/* Kart: krem yüzey, ince sıcak çizgi, hafif kâğıt gölgesi. */
+html.yeni-tasarim.paper .kart { box-shadow: var(--golge-kart); }
+/* Başlıklar kitap başlığı gibi; küçük etiketler aralıklı büyük harf (öbür uygulamanın "KDV HARİÇ"i). */
+html.yeni-tasarim.paper h1, html.yeni-tasarim.paper h2 { font-weight: 600; letter-spacing: 0; }
+html.yeni-tasarim.paper .menu-grup-bas, html.yeni-tasarim.paper th { letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+html.yeni-tasarim.paper:lang(ar) .menu-grup-bas, html.yeni-tasarim.paper:lang(ar) th { letter-spacing: 0; text-transform: none; }
+/* Menü: seçili madde kiremit sisi, simgesi kiremit. */
+html.yeni-tasarim.paper .menu a.acik { background: var(--vurgu-sis); color: var(--vurgu-koyu); }
+html.yeni-tasarim.paper .menu a.acik svg { color: var(--vurgu); }
+/* Düğmeler: birincil dolu kiremit, ikincil krem ve ince çizgi; köşe keskin. */
+html.yeni-tasarim.paper .dugme { background: var(--vurgu); border-color: var(--vurgu); color: #fff; letter-spacing: .02em; }
+html.yeni-tasarim.paper .dugme:hover { background: var(--vurgu-koyu); border-color: var(--vurgu-koyu); }
+html.yeni-tasarim.paper .dugme-ikincil, html.yeni-tasarim.paper .dugme-ikincil:hover { background: var(--yuzey); color: var(--murekkep); border-color: var(--cizgi); }
+html.yeni-tasarim.paper .dugme-ikincil:hover { background: var(--yuzey-2); }
+html.yeni-tasarim.paper .dugme-sade { background: transparent; border-color: transparent; color: var(--sonuk); }
+html.yeni-tasarim.paper .dugme-kotu { background: var(--yuzey); color: var(--kotu); border-color: var(--cizgi); }
+html.yeni-tasarim.paper .dugme-yumusak { background: var(--vurgu-sis); color: var(--vurgu-koyu); border-color: transparent; }
+/* Girdiler krem, çizgi sıcak; odakta kiremit. */
+html.yeni-tasarim.paper :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) { background: var(--yuzey); }
+html.yeni-tasarim.paper :is(input, select, textarea):focus-visible { outline-color: var(--vurgu); }
+html.yeni-tasarim.paper input[type="checkbox"], html.yeni-tasarim.paper input[type="radio"] { accent-color: var(--iyi); }
+
+/* Ayarlar › Tasarım dili: her seçenek kendi dilinin küçük örneğiyle. */
+.tasarim-secimi { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--ara-3); }
+.tasarim-secimi button {
+  display: grid; gap: var(--ara-2); justify-items: start; padding: var(--ara-2); min-height: var(--dokunma);
+  border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); color: var(--murekkep);
+  font: inherit; font-size: var(--punto-kucuk); cursor: pointer; text-align: start;
+}
+.tasarim-secimi button[aria-pressed="true"] { border-color: var(--vurgu); box-shadow: 0 0 0 2px var(--vurgu-sis); font-weight: 600; }
+.tasarim-ornek { position: relative; display: block; inline-size: 100%; block-size: 64px; border: 1px solid; overflow: hidden; }
+.tasarim-ornek i { position: absolute; inset-block-start: 10px; inset-inline: 10px; block-size: 26px; border: 1px solid; }
+.tasarim-ornek b { position: absolute; inset-block-end: 6px; inset-inline-start: 12px; font-size: 18px; line-height: 1; }
+.tasarim-ornek::after { content: ""; position: absolute; inset-block-end: 9px; inset-inline-end: 10px; inline-size: 34px; block-size: 12px; }
+.ornek-yeni { background: #f6f7f9; border-color: #e4e7ec; border-radius: 6px; font-family: "Inter", sans-serif; }
+.ornek-yeni i { background: #fff; border-color: #e4e7ec; border-radius: 6px; }
+.ornek-yeni b { color: #101828; font-weight: 600; }
+.ornek-yeni::after { background: #13274a; border-radius: 4px; }
+.ornek-paper { background: #f3efe7; border-color: #e2dbcd; border-radius: 2px; font-family: "Source Serif 4", Georgia, serif; }
+.ornek-paper i { background: #faf8f3; border-color: #e2dbcd; border-radius: 2px; box-shadow: 0 1px 2px rgba(74, 52, 28, .1); }
+.ornek-paper b { color: #2b2520; font-weight: 600; }
+.ornek-paper::after { background: #c4623f; border-radius: 2px; }
+.ornek-eski { background: #0f1f3a; border-color: #0f1f3a; border-radius: 10px; font-family: "Inter", sans-serif; }
+.ornek-eski i { background: #fff; border-color: #fff; border-radius: 10px; }
+.ornek-eski b { color: #fff; font-weight: 700; }
+.ornek-eski::after { background: #1d5bd8; border-radius: 999px; }
+/* Birim menüsünün grup adı lacivertin silik tonundaydı; kâğıtta mürekkebin silik tonu. */
+html.yeni-tasarim.paper { --lacivert-silik: var(--silik); }
