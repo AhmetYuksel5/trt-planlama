@@ -3006,6 +3006,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     bırakır) ve bu planda stoka alınmışsa "Sil" (`eylemler.ts → stokPaketiSil`,
     `stokPaketiSilinebilir`: başka planın hazırında değil; onaylı, paket ve
     hazır listelerindeki izi gider). Test `testler/stok-paket.cjs`.
+    Plana eklenip onaylanan PKG de silinir (kullanıcı: muhabire bildirim
+    gitsin; stokta bildirim yok, o geçici çözüm): `yetki.ts →
+    paketSilinebilir` (kararsız paket, Weekly'den gelen onaylı ve üretime,
+    parçalı metne girmemiş, stokta olmayan her onaylı paket); plan ekranında
+    ve belgede PKG satırının "Sil"i, onay sorusu bildirimi söyler
+    (`paketSilBildirimli`), `paketSil` muhabire `paketIptal` (`kime`) yazar.
+    Öneriyi plandan çıkarma eski kuralla (`paketPlandanSilinir`). Test
+    `testler/paket-sil.cjs`.
 - Onaylı paketin kapanışı (tasarım belgesi 3. aşama). "Newsdesk sistemde"
   anahtarı (`Durum.newsdeskDevrede`) kalktı (kullanıcı: Newsdesk aktif değil
   diye bütün düzeni dondurmaya gerek yok; paketin Newsdesk'ten geçip

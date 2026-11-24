@@ -576,6 +576,15 @@ export const paketPlandanSilinir = (p: Paket) =>
   p.durum === "degerlendiriliyor" ||
   (!!p.haftalikKalemId && p.durum === "onaylandi");
 
+/*
+ * Plandaki PKG satırından silme (kullanıcı: plana eklenip onaylanan paket de
+ * silinebilsin, muhabire bildirim gitsin): öneri ve kararsız paketin yanında
+ * onaylı ama üretime girmemiş paket de. Muhabirin bildirimi eylemde
+ * (eylemler.ts → paketSil, `paketIptal`). Öneriyi plandan çıkarma eski
+ * kuralla (paketPlandanSilinir) kalıyor.
+ */
+export const paketSilinebilir = (p: Paket) => paketPlandanSilinir(p) || (p.durum === "onaylandi" && !p.uretim && !p.parcalar?.length && !p.stok);
+
 export const paketTamamlayabilir = (
   k: Kisi | undefined,
   p: Paket,

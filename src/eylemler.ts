@@ -168,6 +168,7 @@ import {
   planIcerikDuzenler,
   hareketDuzenleyebilir,
   paketPlandanSilinir,
+  paketSilinebilir,
   planOperasyonDuzenler,
   profilDuzenler,
   sayfaGorebilir,
@@ -2970,7 +2971,7 @@ export const paketSil = (ben: Kisi, id: string) => {
   const p = paketBul(d, id);
   const plan = planBul(d, p?.planId);
   // Özel yayının içeriği planda yayının kaydı: yalnız özel yayından yönetilir.
-  if (!p || ozelIcerikMi(p) || !plan || !planIcerikDuzenler(ben, plan) || !paketPlandanSilinir(p)) return false;
+  if (!p || ozelIcerikMi(p) || !plan || !planIcerikDuzenler(ben, plan) || !paketSilinebilir(p)) return false;
   let yeni = oneriBaglariniTazele(
     {
       ...d,

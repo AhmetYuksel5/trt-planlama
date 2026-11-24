@@ -104,7 +104,7 @@ import {
   type PlanBasligi,
 } from "../../veri";
 import {
-  paketPlandanSilinir,
+  paketSilinebilir,
   planIcerikDuzenler,
   planOperasyonDuzenler,
   yapabilir,
@@ -543,8 +543,9 @@ export function NextDayBelgesi({
                                         </>
                                       }
                                       cikar={
-                                        paketPlandanSilinir(p)
-                                          ? sil(
+                                        paketSilinebilir(p)
+                                          ? onayla(
+                                              t(p.durum === "onaylandi" && p.muhabirId ? "paketSilBildirimli" : "silinsinMi"),
                                               () => ben && paketSil(ben, p.id),
                                             )
                                           : undefined

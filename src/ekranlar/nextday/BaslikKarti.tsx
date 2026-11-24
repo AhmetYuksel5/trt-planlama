@@ -13,7 +13,7 @@ import { useBen } from "../../oturum";
 import { vardiyaYaz } from "../../tarih";
 import { useYz } from "../../yz";
 import { baslikBul, kisiBul, useVeri, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
-import { paketPlandanSilinir, yapabilir } from "../../yetki";
+import { paketSilinebilir, yapabilir } from "../../yetki";
 import { CanliListesi, EkleDugmesi, GelismeListesi, IkonDugme, OncekiDugmesi, oncekiSinif } from "./Bolumler";
 import { BaslikAdiPenceresi, BaslikaKatPenceresi, BaslikOnerileri, PaketKararDugmeleri, PaketOneriBagi, SonGelismelerPenceresi, baslikOnerileri } from "./SatirIslemleri";
 import { MuhabirSecici, PaketFormu } from "./Formlar";
@@ -116,8 +116,8 @@ export default function BaslikKarti({
                     {icerik && paketStogaAlinabilir(p) && (
                       <IkonDugme ikon={<PackageCheck size={15} />} etiket={t("stokPaketOlarakEkle")} onClick={() => ben && confirm(t("stokPaketOnay")) && paketStogaAl(ben, p.id, confirm(t("stokBaslikta")))} />
                     )}
-                    {icerik && paketPlandanSilinir(p) && (
-                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t("silinsinMi")) && paketSil(ben, p.id)} />
+                    {icerik && paketSilinebilir(p) && (
+                      <IkonDugme ikon={<Trash2 size={15} />} etiket={t("sil")} onClick={() => ben && confirm(t(p.durum === "onaylandi" && p.muhabirId ? "paketSilBildirimli" : "silinsinMi")) && paketSil(ben, p.id)} />
                     )}
                   </div>
                 </div>
