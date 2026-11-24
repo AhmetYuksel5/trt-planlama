@@ -3204,6 +3204,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     listesinde "Onaylandı" kutusu da kalkar): öneriden doğan paket silinir,
     öneri yeniden onay bekler; önerisiz paket taslağa döner. Testler
     `testler/ozel-plan.cjs`, `testler/ozel-gecis.cjs`.
+    Yayın günü TBC (kullanıcı: yayın günü sonradan ayarlanabiliyor):
+    görevlendirme formunda yayın gününün yanında TBC (`TbcKutusu`,
+    `data-ozel-yayin-tbc`); `Paket.yayinGunu` boş kalır, içerik hiçbir günün
+    planına girmez, teslim yayının son gününe dek (boşsa yayının ilk günü).
+    Kartta "Yayın gününü belirle" (`data-ozel-yayin-gunu-ac`, pencerede
+    yayının günleri ya da TBC; `eylemler.ts → ozelIcerikYayinGunu`, yetki
+    `ozelIcerikYayinGunuDegisebilir`): gün verilince o günün planına geçer,
+    TBC'ye dönünce plandan çıkar (`ozelPaketleriEsitle`; boş kalan yayın
+    başlığı `ozelBaslikTemizle` ile kalkar), teslim yeni günden sonraysa ona
+    çekilir; muhabire `paketTeslimGunu` (`veri.yayin`, metin
+    `hrOzelYayinGunu`/`hrOzelYayinGunuTbc`). İçerik sekmesinde TBC grubu
+    sonda, Uygulama aşamasında eksik "Yayın günü belirlenmedi"
+    (`oyEkYayinGunu`), çıktıda "TBC". Test `testler/ozel-plan.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında kayıttan
     okunan aşamalar (Planlama, Onay, Uygulama, Teslim, Yayına hazır), şimdiki

@@ -193,6 +193,8 @@ export const ozelAsamaDurumlari = (o: OzelYayin, d: OzelKaynak): OzelAsamaDurumu
     ...nafizeler.filter((n) => !nafizeHazir(n) && !n.sonuc).map((n): OzelEksik => ({ tur: "nafize", id: n.id, ad: nafizeBasligi(n), neden: n.rezervasyon ? "oyEkYer" : "oyEkRezervasyon", tarih: n.tarih, kisiId: n.muhabirId })),
     ...ozelGorevlendirmeleri(d, o.id).filter((g) => !gorevHazir(g)).map((g): OzelEksik => ({ tur: "gorev", id: g.id, ad: g.yer, neden: "oyEkGorevOnay", tarih: g.baslangic, kisiId: g.kisiId })),
     ...eskiler.filter((x) => x.asama === "plan" || x.asama === "onayli").map((x): OzelEksik => ({ tur: "paket", id: x.id, ad: x.baslik, neden: "oyEkGorevVer", tarih: x.sonTarih, kisiId: x.muhabirId })),
+    // Yayın günü TBC bırakılan içerik henüz hiçbir günün planında değil.
+    ...icerikler.filter((p) => !p.yayinGunu).map((p): OzelEksik => ({ tur: "paket", id: `${p.id}-gun`, ad: p.baslik, neden: "oyEkYayinGunu", tarih: p.sonTarih, kisiId: p.muhabirId })),
     ...o.hazirlik.filter((h) => !h.tamam).map((h): OzelEksik => ({ tur: "madde", id: h.id, ad: h.metin, neden: "oyEkMadde", tarih: h.gun })),
   ];
   const teslim: OzelEksik[] = [

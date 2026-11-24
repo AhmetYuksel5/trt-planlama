@@ -81,7 +81,7 @@ export function OzelBelgesi({ o, belgeRef }: { o: OzelYayin; belgeRef?: RefObjec
           {icerikler.map((p) => (
             <p key={p.id}>
               {satir(paketYeri(p), p.baslik, kisiAr(kisiBul(v, p.muhabirId)))}
-              {p.yayinGunu ? ` · ${c("oyYayinGunu")}: ${gunAy(p.yayinGunu, "ar")}` : ""}
+              {` · ${c("oyYayinGunu")}: ${p.yayinGunu ? gunAy(p.yayinGunu, "ar") : "TBC"}`}
             </p>
           ))}
           {paketler.map((s) => {

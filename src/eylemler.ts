@@ -6535,16 +6535,29 @@ export const ozelCanlilariEsitle = (d: Durum): Durum => {
  * Paket plandan silinmez (paketSil reddeder); başlık altında paket varken
  * çıkarılamıyor, bu yüzden başlık da kalır.
  */
+/* Yayının plandaki başlığı (`<plan>-oz-<yayın>`) boş kaldıysa kalkar: içerik geri alındı ya da günü değişti. */
+const ozelBaslikTemizle = (d: Durum, planId: string | undefined, pbId: string | undefined, ozelId: string | undefined): Durum => {
+  const plan = planId ? planBul(d, planId) : undefined;
+  if (!plan || !pbId || pbId !== `${plan.id}-oz-${ozelId}`) return d;
+  const dolu = d.paketler.some((x) => x.planBaslikId === pbId && x.durum !== "iptal") || d.gelismeler.some((x) => x.planBaslikId === pbId) || d.canliYayinlar.some((x) => x.planBaslikId === pbId);
+  return dolu ? d : planGuncelle(d, plan.id, (x) => ({ ...x, basliklar: x.basliklar.filter((b) => b.id !== pbId) }));
+};
+
 const ozelPaketleriEsitle = (d: Durum): Durum => {
   for (const p of d.paketler) {
-    if (!ozelIcerikMi(p) || !p.yayinGunu || p.durum === "iptal") continue;
+    if (!ozelIcerikMi(p) || p.durum === "iptal") continue;
     const o = ozelBul(d, p.ozelId!);
     if (!o) continue;
+    // Yayın günü TBC: hiçbir günün planında değil; önceden bağlandıysa çıkar.
+    if (!p.yayinGunu) {
+      if (p.planId) d = ozelBaslikTemizle(paketGuncelle(d, p.id, (x) => ({ ...x, planId: undefined, planBaslikId: undefined })), p.planId, p.planBaslikId, p.ozelId);
+      continue;
+    }
     const simdiki = p.planId ? planBul(d, p.planId) : undefined;
     if (simdiki && simdiki.tarih === p.yayinGunu && simdiki.basliklar.some((b) => b.id === p.planBaslikId)) continue;
     const plan = ozelCanlisiPlani(d, p.yayinGunu);
     if (!plan) {
-      if (p.planId) d = paketGuncelle(d, p.id, (x) => ({ ...x, planId: undefined, planBaslikId: undefined }));
+      if (p.planId) d = ozelBaslikTemizle(paketGuncelle(d, p.id, (x) => ({ ...x, planId: undefined, planBaslikId: undefined })), p.planId, p.planBaslikId, p.ozelId);
       continue;
     }
     let baslikId: string | undefined;
@@ -6557,6 +6570,8 @@ const ozelPaketleriEsitle = (d: Durum): Durum => {
     }
     const pbId = pb.id;
     d = paketGuncelle(d, p.id, (x) => ({ ...x, planId: plan.id, planBaslikId: pbId }));
+    // Günü değişen içeriğin eski planında yayının başlığı boş kaldıysa kalkar.
+    if (p.planId && p.planId !== plan.id) d = ozelBaslikTemizle(d, p.planId, p.planBaslikId, p.ozelId);
   }
   return d;
 };
@@ -6793,8 +6808,9 @@ export const ozelKalemSil = (ben: Kisi, ozelId: string, tur: KalemTuru, id: stri
  * balonuyla ilerler. Yayın günü yayının aralığında; teslim yayından sonra olmaz.
  * Kalıp posta ayrı adımda (ekranda, kapıdan), izi `takdirBildirimi`.
  */
+/* Yayın günü boşsa TBC (kullanıcı: yayın günü sonradan ayarlanabiliyor): içerik hiçbir günün planına girmez, gün verilince girer. */
 export interface OzelIcerikGirdisi extends PaketGorevGirdisi {
-  yayinGunu: string;
+  yayinGunu?: string;
 }
 
 export const ozelIcerikGunuUygun = (o: Pick<OzelYayin, "tarih" | "bitis">, gun: string) => !!gun && gun >= o.tarih && gun <= (o.bitis || o.tarih);
@@ -6813,12 +6829,8 @@ export const ozelIcerikGeriAl = (ben: Kisi, id: string) => {
   const p = paketBul(d, id);
   if (!p || !ozelIcerikGeriAlinabilir(ben, p)) return false;
   d = paketGuncelle(d, id, (x) => ({ ...x, durum: "iptal", planId: undefined, planBaslikId: undefined, guncelleme: simdi() }));
+  d = ozelBaslikTemizle(d, p.planId, p.planBaslikId, p.ozelId);
   const plan = p.planId ? planBul(d, p.planId) : undefined;
-  const pbId = p.planBaslikId;
-  if (plan && pbId === `${plan.id}-oz-${p.ozelId}`) {
-    const dolu = d.paketler.some((x) => x.planBaslikId === pbId && x.durum !== "iptal") || d.gelismeler.some((x) => x.planBaslikId === pbId) || d.canliYayinlar.some((x) => x.planBaslikId === pbId);
-    if (!dolu) d = planGuncelle(d, plan.id, (x) => ({ ...x, basliklar: x.basliklar.filter((b) => b.id !== pbId) }));
-  }
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketIptal", paketId: id, ozelId: p.ozelId, ...(plan ? { planId: plan.id } : {}), veri: { ...(p.muhabirId ? { kime: p.muhabirId } : {}), ...(p.ozelAd ? { ad: p.ozelAd } : {}) } }));
   return true;
 };
@@ -6826,18 +6838,38 @@ export const ozelIcerikGeriAl = (ben: Kisi, id: string) => {
 export const ozelIcerikGorevlendir = (ben: Kisi, ozelId: string, g: OzelIcerikGirdisi): string | null => {
   const d = getir();
   const o = ozelBul(d, ozelId);
-  if (!o || !ileriGorevVerebilir(ben) || !ozelIcerikGunuUygun(o, g.yayinGunu)) return null;
-  const teslim = g.tarih || g.yayinGunu;
-  if (teslim > g.yayinGunu || !gorevTarihiUygun(ben, teslim)) return null;
+  if (!o || !ileriGorevVerebilir(ben) || (g.yayinGunu && !ozelIcerikGunuUygun(o, g.yayinGunu))) return null;
+  // TBC'de teslim yayının son gününden sonra olamaz; boşsa yayının ilk günü (bugünden önceyse bugün).
+  const sonGun = g.yayinGunu || o.bitis || o.tarih;
+  const teslim = g.tarih || g.yayinGunu || (o.tarih < bugun() ? bugun() : o.tarih);
+  if (teslim > sonGun || !gorevTarihiUygun(ben, teslim)) return null;
   const z = simdi();
   // Stok paketi değil: yayın gününün planına girer (ozelPaketleriEsitle), Stok'ta kendi kutusunda.
-  const k = gorevPaketi(d, ben, { ...g, tarih: teslim }, { durum: "onaylandi", tur: "ozel", ozelId, ozelAd: o.ad, yayinGunu: g.yayinGunu, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, stok: undefined });
+  const k = gorevPaketi(d, ben, { ...g, tarih: teslim }, { durum: "onaylandi", tur: "ozel", ozelId, ozelAd: o.ad, yayinGunu: g.yayinGunu || undefined, gorev: { veren: ben.id, zaman: z }, gorevZamani: z, stok: undefined });
   if (!k) return null;
   const [p, yeni] = k;
   let son = hareketYaz(yeni, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, ozelId, veri: { kime: p.muhabirId!, muhabir: p.muhabirId!, tarih: teslim, ad: o.ad } });
   if (g.not?.trim()) son = bahset(son, ben, g.not, { yol: `#/paketler/${p.id}`, baslik: p.baslik });
   kaydet(ozelKayitlariEsitle(son));
   return p.id;
+};
+
+/*
+ * Yayın gününü sonradan belirle ya da değiştir (boş: TBC). İçerik yeni
+ * gününün planına geçer, TBC'de plandan çıkar; teslim yeni günden sonraysa
+ * yayın gününe çekilir. Muhabire gün bildirimi.
+ */
+export const ozelIcerikYayinGunuDegisebilir = (ben: Kisi, p: Paket) => ileriGorevVerebilir(ben) && ozelIcerikMi(p) && (p.durum === "onaylandi" || p.durum === "uretimde");
+
+export const ozelIcerikYayinGunu = (ben: Kisi, id: string, gun: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  const o = p?.ozelId ? ozelBul(d, p.ozelId) : undefined;
+  if (!p || !o || !ozelIcerikYayinGunuDegisebilir(ben, p) || (gun && !ozelIcerikGunuUygun(o, gun)) || (p.yayinGunu ?? "") === gun) return false;
+  let yeni = paketGuncelle(d, id, (x) => ({ ...x, yayinGunu: gun || undefined, ...(gun && x.sonTarih && x.sonTarih > gun ? { sonTarih: gun } : {}), guncelleme: simdi() }));
+  if (p.muhabirId) yeni = hareketYaz(yeni, { kisiId: ben.id, tip: "paketTeslimGunu", paketId: id, ozelId: o.id, veri: { kime: p.muhabirId, yayin: "1", ...(gun ? { tarih: gun } : {}), ad: o.ad } });
+  kaydet(ozelKayitlariEsitle(yeni));
+  return true;
 };
 
 /* Kalıp posta gitti (ya da demoda işaretlendi): içerik satırında "gönderildi". */

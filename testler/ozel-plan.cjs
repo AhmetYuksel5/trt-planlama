@@ -113,6 +113,41 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator(`[data-ozel-icerik="${p2.id}"]`).count()) === 0, "listeden kalktı");
   ok((await p.locator(`[data-ozel-icerik="${p1.id}"] [data-ozel-icerik-geri-al]`).count()) === 1, "öbür içerikte geri alma düğmesi");
 
+  // Yayın günü TBC: görevlendirilir, hiçbir planda değil; sonradan gün verilince o günün planına, TBC'ye dönünce plandan çıkar.
+  await git("#/ozel/oz-p");
+  await p.click('[data-ozel-sekme="icerik"]');
+  await p.click("[data-ozel-icerik-ekle]");
+  const f = p.locator("[data-ozel-icerik-formu]");
+  await f.waitFor();
+  await f.locator("select").first().selectOption(mu);
+  await f.locator("[data-ozel-icerik-baslik]").fill("تقرير بلا يوم");
+  await f.locator("[data-ozel-yayin-tbc] input").check();
+  ok((await f.locator("input[data-ozel-yayin-gunu]").count()) === 0, "TBC seçilince gün alanı gizli");
+  await f.locator(".form-alt button.dugme:not(.dugme-ikincil)").last().click();
+  await p.waitForTimeout(500);
+  d = await durum();
+  const pt = d.paketler.find((x) => x.baslik === "تقرير بلا يوم");
+  ok(!!pt && !pt.yayinGunu && !pt.planId && pt.durum === "onaylandi", "TBC içerik görevlendirildi, planda değil");
+  ok((await p.locator(`[data-ozel-icerikler=""] [data-ozel-icerik="${pt.id}"]`).count()) === 1, "kart 'Yayın günü · TBC' grubunda");
+  await p.click('[data-ozel-sekme="genel"]');
+  ok((await p.locator(`[data-eksik="${pt.id}-gun"]`).count()) === 1, "aşamalarda eksik: yayın günü belirlenmedi");
+  await p.click('[data-ozel-sekme="icerik"]');
+  await p.locator(`[data-ozel-icerik="${pt.id}"] [data-ozel-yayin-gunu-ac]`).click();
+  await p.locator("[data-ozel-yayin-gunu-sec]").selectOption(YARIN);
+  await p.locator("[data-ozel-yayin-gunu-formu] .form-alt button.dugme:not(.dugme-ikincil)").last().click();
+  await p.waitForTimeout(400);
+  d = await durum();
+  let pt2 = d.paketler.find((x) => x.id === pt.id);
+  ok(pt2.yayinGunu === YARIN && pt2.planId === plan.id, "gün verilince o günün planına girdi");
+  ok(d.hareketler.some((h) => h.tip === "paketTeslimGunu" && h.paketId === pt.id && h.veri?.yayin && h.veri?.kime === mu), "muhabire yayın günü bildirimi");
+  await p.locator(`[data-ozel-icerik="${pt.id}"] [data-ozel-yayin-gunu-ac]`).click();
+  await p.locator("[data-ozel-yayin-gunu-sec]").selectOption("");
+  await p.locator("[data-ozel-yayin-gunu-formu] .form-alt button.dugme:not(.dugme-ikincil)").last().click();
+  await p.waitForTimeout(400);
+  d = await durum();
+  pt2 = d.paketler.find((x) => x.id === pt.id);
+  ok(!pt2.yayinGunu && !pt2.planId, "TBC'ye dönünce plandan çıktı");
+
   ok(hatalar.length === 0, "sayfa hatası yok" + (hatalar.length ? ": " + hatalar.join(" | ") : ""));
   console.log(`\n${gec} geçti, ${kal} kaldı`);
   await b.close();

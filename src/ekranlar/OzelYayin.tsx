@@ -1,11 +1,11 @@
 import { SaatGirdisi, TarihGirdisi } from "../bilesenler/TarihSaat";
-import { AlertTriangle, CheckCircle, Mail, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, RotateCcw, Trash2, Tv, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, Mail, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, RotateCcw, Trash2, Tv, Users, CalendarDays } from "lucide-react";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { postaGonder } from "../posta-kapi";
@@ -43,6 +43,8 @@ import {
   ozelIcerikGorevlendir,
   ozelIcerikGeriAl,
   ozelIcerikGeriAlinabilir,
+  ozelIcerikYayinGunu,
+  ozelIcerikYayinGunuDegisebilir,
   ozelPaketOnayGeriAl,
   ozelPaketOnayiGeriAlinabilir,
   ozelIcerikGunuUygun,
@@ -75,7 +77,7 @@ import {
   type OzelPaketAsamasi,
   type OzelPaketSatiri,
 } from "../ozel";
-import { bugun } from "../tarih";
+import { bugun, gunEkle } from "../tarih";
 import {
   HAREKET_TURLERI,
   KONUK_DURUMLARI,
@@ -1170,9 +1172,9 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
       >
         {satirlar.length + icerikler.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
         {/* Yayın günü yayın günü, Stok'taki gibi kart ızgarasında. */}
-        {[...new Set(icerikler.map((p) => p.yayinGunu ?? ""))].map((g) => (
+        {[...new Set(icerikler.map((p) => p.yayinGunu ?? ""))].sort((a, b) => (a || "9999").localeCompare(b || "9999")).map((g) => (
           <section key={g || "gunsuz"} className="ara-ust-2" data-ozel-icerikler={g}>
-            {g && <div className="alan-etiket">{`${t("oyYayinGunu")} · ${gunAdi(g, dil)} ${tarihYaz(g, dil, "kisa")}`}</div>}
+            <div className="alan-etiket">{g ? `${t("oyYayinGunu")} · ${gunAdi(g, dil)} ${tarihYaz(g, dil, "kisa")}` : `${t("oyYayinGunu")} · TBC`}</div>
             <div className="prg-icerikler">
               {icerikler
                 .filter((p) => (p.yayinGunu ?? "") === g)
@@ -1236,6 +1238,7 @@ function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
     bildir(hata === null ? t("oyPostaGitti") : `${t("tkGonderilemedi")} (${hata})`);
   };
   const geriAl = () => confirm(t("oyGorevGeriAlSoru")) && ozelIcerikGeriAl(ben, p.id) && bildir(t("oyGorevGeriAlindi"));
+  const [gunAc, setGunAc] = useState(false);
   const acik = p.durum === "onaylandi" || p.durum === "uretimde";
   const posta = !acik ? null : p.takdirBildirimi ? (
     <span className="sonuk-yazi" title={saatYaz(p.takdirBildirimi.zaman, dil)} data-ozel-posta="gitti">
@@ -1258,6 +1261,11 @@ function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
           <>
             {posta}
             {uretimYoluBelirleyebilir(ben, p) && p.durum === "onaylandi" && !p.uretim && <UretimeAlDugmesi ben={ben} paket={p} />}
+            {ozelIcerikYayinGunuDegisebilir(ben, p) && (
+              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setGunAc(true)} data-ozel-yayin-gunu-ac>
+                <CalendarDays size={14} /> {p.yayinGunu ? `${t("oyYayinGunu")}: ${tarihYaz(p.yayinGunu, dil, "kisa")}` : t("oyYayinGunuBelirle")}
+              </button>
+            )}
             {ozelIcerikGeriAlinabilir(ben, p) && (
               <button type="button" className="dugme dugme-sade dugme-kucuk kotu-yazi" onClick={geriAl} data-ozel-icerik-geri-al>
                 <RotateCcw size={14} /> {t("oyGorevGeriAl")}
@@ -1267,7 +1275,41 @@ function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
           </>
         }
       />
+      {gunAc && <YayinGunuPenceresi ben={ben} p={p} kapat={() => setGunAc(false)} />}
     </div>
+  );
+}
+
+/* Yayın gününü sonradan belirle ya da değiştir: yayının günlerinden biri ya da TBC. */
+function YayinGunuPenceresi({ ben, p, kapat }: { ben: Kisi; p: Paket; kapat: () => void }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const o = v.ozel.find((x) => x.id === p.ozelId);
+  const [gun, setGun] = useState(p.yayinGunu ?? "");
+  if (!o) return null;
+  const gunler: string[] = [];
+  for (let g = o.tarih, i = 0; g <= (o.bitis || o.tarih) && i < 62; g = gunEkle(g, 1), i++) gunler.push(g);
+  const kaydet = () => {
+    if (ozelIcerikYayinGunu(ben, p.id, gun)) bildir(t("bKaydedildi"));
+    kapat();
+  };
+  return (
+    <Pencere baslik={t("oyYayinGunu")} alt={<Icerik>{p.baslik}</Icerik>} kapat={kapat}>
+      <div className="form" data-ozel-yayin-gunu-formu>
+        <label>
+          {t("oyYayinGunu")}
+          <select value={gun} onChange={(e) => setGun(e.target.value)} data-ozel-yayin-gunu-sec>
+            <option value="">TBC</option>
+            {gunler.map((g) => (
+              <option key={g} value={g}>
+                {`${gunAdi(g, dil)} · ${tarihYaz(g, dil, "kisa")}`}
+              </option>
+            ))}
+          </select>
+        </label>
+        <FormAlt kapat={kapat} kaydet={kaydet} devre={gun === (p.yayinGunu ?? "")} />
+      </div>
+    </Pencere>
   );
 }
 
@@ -1276,14 +1318,17 @@ function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: ()
   const { t } = useDil();
   const v = useVeri();
   const ilkGun = o.tarih < bugun() && (o.bitis || o.tarih) >= bugun() ? bugun() : o.tarih;
-  const [f, setF] = useState({ muhabirId: "", baslik: "", aciklama: "", yayinGunu: ilkGun, tarih: "", bicim: "pkg" as Bicim, not: "", posta: true });
+  const [f, setF] = useState({ muhabirId: "", baslik: "", aciklama: "", yayinGunu: ilkGun, tbc: false, tarih: "", bicim: "pkg" as Bicim, not: "", posta: true });
   const [mesgul, setMesgul] = useState(false);
   const adres = muhabirAdresi(kisiBul(v, f.muhabirId));
-  const teslim = f.tarih || f.yayinGunu;
-  const hazir = !!f.muhabirId && !!f.baslik.trim() && ozelIcerikGunuUygun(o, f.yayinGunu) && teslim <= f.yayinGunu && teslim >= bugun();
+  // Yayın günü TBC: teslim yayının son gününe dek, boşsa yayının ilk günü (eylemle aynı kural).
+  const yayinGunu = f.tbc ? "" : f.yayinGunu;
+  const sonGun = yayinGunu || o.bitis || o.tarih;
+  const teslim = f.tarih || yayinGunu || ilkGun;
+  const hazir = !!f.muhabirId && !!f.baslik.trim() && (f.tbc || ozelIcerikGunuUygun(o, f.yayinGunu)) && teslim <= sonGun && teslim >= bugun();
   const kaydet = async () => {
     if (!hazir || mesgul) return;
-    const id = ozelIcerikGorevlendir(ben, o.id, { muhabirId: f.muhabirId, baslik: f.baslik, aciklama: f.aciklama, yayinGunu: f.yayinGunu, tarih: teslim, bicim: f.bicim, not: f.not });
+    const id = ozelIcerikGorevlendir(ben, o.id, { muhabirId: f.muhabirId, baslik: f.baslik, aciklama: f.aciklama, yayinGunu: yayinGunu || undefined, tarih: teslim, bicim: f.bicim, not: f.not });
     if (!id) return;
     if (f.posta && adres) {
       setMesgul(true);
@@ -1311,11 +1356,16 @@ function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: ()
         <div className="satir">
           <label>
             {t("oyYayinGunu")}
-            <TarihGirdisi value={f.yayinGunu} min={o.tarih} max={o.bitis || o.tarih} required onChange={(e) => setF({ ...f, yayinGunu: e.target.value })} data-ozel-yayin-gunu />
+            <span className="tbc-satiri">
+              {!f.tbc && <TarihGirdisi value={f.yayinGunu} min={o.tarih} max={o.bitis || o.tarih} required onChange={(e) => setF({ ...f, yayinGunu: e.target.value })} data-ozel-yayin-gunu />}
+              <span data-ozel-yayin-tbc>
+                <TbcKutusu secili={f.tbc} degistir={(x) => setF({ ...f, tbc: x })} />
+              </span>
+            </span>
           </label>
           <label>
             {t("oyTeslim")}
-            <TarihGirdisi value={f.tarih} min={bugun()} max={f.yayinGunu} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-ozel-teslim />
+            <TarihGirdisi value={f.tarih} min={bugun()} max={sonGun} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-ozel-teslim />
           </label>
           <label>
             {t("haberTuru")}
