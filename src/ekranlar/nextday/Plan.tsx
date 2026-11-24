@@ -1,5 +1,6 @@
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { PlanGonderDugmesi } from "../../bilesenler/PlanGonder";
+import { ImlaPenceresi, useImlaAcik } from "../../bilesenler/YzImla";
 import { planSurukleKabi } from "./planSurukle";
 import { useHedefBaslik } from "../../bilesenler/baslikaGit";
 import {
@@ -18,6 +19,7 @@ import {
   Presentation,
   Printer,
   Send,
+  SpellCheck,
   Undo2,
   UserCheck,
 } from "lucide-react";
@@ -107,7 +109,7 @@ import {
  * başlıyor. Öneriler ve takvim pencerede açılıyor. Dünden gelenleri bugüne
  * alma planın başlangıç işi: başlığın hemen altında.
  */
-type AracPenceresi = "oneriler" | "takipler" | "takvim" | "aktar" | null;
+type AracPenceresi = "oneriler" | "takipler" | "takvim" | "aktar" | "imla" | null;
 
 /*
  * Plan ekranının iki görünümü: klasik (bölümler ve formlar) ve yeni (tek
@@ -586,6 +588,7 @@ function KlasikPlan({
           />
         </Pencere>
       )}
+      {arac === "imla" && <ImlaPenceresi ben={ben} hedef={{ tur: "nextday", plan }} kapat={() => setArac(null)} />}
       {arac === "aktar" && (
         <IceAktarPenceresi ben={ben} plan={plan} kapat={() => setArac(null)} />
       )}
@@ -694,6 +697,7 @@ function PlanMenusu({
   const icerik = planIcerikDuzenler(ben, plan);
   const operasyon = planOperasyonDuzenler(ben, plan);
   const a = usePlanAkisi(ben, plan);
+  const imla = useImlaAcik();
   return (
     <IslemMenusu etiket={t("digerIslemler")} dugmeSinifi="dugme dugme-ikincil dugme-ikon" menuSinifi="plan-menusu" katman>
       <button type="button" role="menuitem" className="acilir-satir" onClick={onizle} data-arac="cikti">
@@ -719,6 +723,11 @@ function PlanMenusu({
         <a role="menuitem" className="acilir-satir" href={`#/oneriler/cagri/${plan.tarih}`} data-arac="cagri">
           <Megaphone size={16} /> {t("oneriCagrisi")}
         </a>
+      )}
+      {imla && (icerik || yapabilir(ben, "planDuzenle")) && (
+        <button type="button" role="menuitem" className="acilir-satir" onClick={() => ac("imla")} data-arac="imla">
+          <SpellCheck size={16} /> {t("imDenetim")}
+        </button>
       )}
       {icerik && (
         <button type="button" role="menuitem" className="acilir-satir" onClick={() => ac("aktar")} data-arac="aktar">

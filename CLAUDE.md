@@ -571,6 +571,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     iletisinde artar). Demoda kapıya gidilmez ("gerçek kipte çalışır"); test sahte modelle
     (`window.__asistanModeli`): `testler/asistan.cjs` (form, düzeltme, eksik alan, bağlı seçim, çoklu
     seçim, her yazma aracının formu), kapıda `worker/test/asistan.test.ts`.
+  - **"İmla denetimi"** (kullanıcı: plan metinlerinde imla düzeltilsin ama tatsız
+    sürpriz olmasın; özellik `imla`): Next Day ve Weekly'nin ⋯ menüsünde
+    (`data-arac="imla"`, `bilesenler/YzImla.tsx → ImlaPenceresi`). Satırlar
+    `imla.ts → ndImlaSatirlari` (gelişme, PKG Strap ve açıklaması, canlının konusu;
+    başlık adı havuzda ortak, girmez) ve `hfImlaSatirlari` (kalemin metni ve Strap'i,
+    ana dosyanın özeti); kimlik "<tür>:<kayıt>". Model düzeltilmiş satırı yazar,
+    öneriye neyin geçeceğine kapının süzgeci karar verir (`worker/src/imla.ts`,
+    yönergeye bırakılmaz): sözcük sayısı değişen ya da dörtten çok sözcüğü değişen
+    satır bütünüyle atılır; hemze, ة/ه, ى/ي kendi aralarında serbest, başka harf
+    değişikliği kısa sözcükte hiç, uzunda bir-iki harf; rakam ve Latin harf taşıyan
+    sözcüğe dokunulmaz; yalnız hareke ekleyen sayılmaz. Tarayıcı aynı kuralı
+    (`imla.ts → sozcukDuzeltmesiMi`) uygulamadan önce yeniden sorar. Pencerede satır
+    satır, değişen sözcük işaretli, öneriler işaretsiz gelir ("Hepsini seç" var);
+    yalnız seçilenler "Seçilenleri uygula"yla tek yazışta (`eylemler.ts →
+    imlaUygula`, hareket `imlaDuzeltildi`), satır o arada değiştiyse öneri atlanır,
+    ↶ geri alır. Yetki plan ekranındaki düzenlemeyle aynı (onaylı PKG'de paket metni,
+    kilitli Weekly kalemi değil); "önceki gün" işareti kalmaz. Demoda kapıya
+    gidilmez, sık hemze hataları sabit listeden (`demoImla`). Test `testler/imla.cjs`,
+    kapıda `worker/test/imla.test.ts`.
   - Ayarlar'da her özelliğe yöneticinin yönergesi (`yonerge`, varsayılan
     yönergenin arkasına; çelişirse o geçerli) ve haber değerine ölçütler
     (`kriterler`, boşsa `dil.ts → yzVarsayilanKriterler`, kapıdakiyle aynı).

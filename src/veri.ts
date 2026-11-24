@@ -1787,6 +1787,7 @@ export const HAREKET_TIPLERI = [
   "planKopyalandi",
   "planGeriAlindi",
   "planIceAktarildi",
+  "imlaDuzeltildi",
   "kisiSilindi",
   "kayitTemizlendi",
   "oneriSilindi",

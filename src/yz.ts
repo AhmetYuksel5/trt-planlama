@@ -3,6 +3,7 @@ import { metin, type Anahtar } from "./dil";
 import { izlemede } from "./izleme";
 import { GERCEK, firebaseYukle } from "./kip";
 import type { Bicim, YzGenel } from "./veri";
+import { demoImla, type ImlaOnerisi } from "./imla";
 
 /*
  * Yapay zeka kapısının istemcisi (worker/, belgeler/yapay-zeka.md).
@@ -15,7 +16,7 @@ import type { Bicim, YzGenel } from "./veri";
  * "Haber değeri" metinden türeyen sabit bir sonuç; ayar kaydedilmiyor.
  */
 
-export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri", "takipMetni", "asistan"] as const;
+export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri", "takipMetni", "asistan", "imla"] as const;
 export type YzOzellik = (typeof YZ_OZELLIKLERI)[number];
 
 export type SaglayiciTuru = "anthropic" | "openai";
@@ -205,6 +206,8 @@ interface Girdiler {
   /** `dil`: gerekçeler isteyenin arayüz dilinde; `kriterler` yalnız demoda (kapı kendi ayarından okuyor). */
   haberDegeri: YzOneriGirdisi & { dil: string; kriterler?: string[] };
   asistan: never;
+  /** Planın metin satırları; kimliği tarayıcının (imla.ts → imlaSatirlari). */
+  imla: { satirlar: { id: string; metin: string }[] };
 }
 interface Sonuclar {
   kisalt: string;
@@ -213,6 +216,7 @@ interface Sonuclar {
   haberDegeri: YzDegerSonucu;
   // Asistan tek seferlik çağrı değil, kendi ucundan (asistan/motor.ts).
   asistan: never;
+  imla: { duzeltmeler: ImlaOnerisi[] };
 }
 
 /* Demoda kısaltma: ilk cümle, en çok yirmi sözcük. */
@@ -228,6 +232,8 @@ const ozet = (m: string) => [...m].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >
 
 const demo = <O extends YzOzellik>(o: O, g: Girdiler[O]): Sonuclar[O] => {
   if (o === "kisalt") return demoKisalt((g as Girdiler["kisalt"]).metin) as Sonuclar[O];
+  // Demoda yapay zeka yok: Arapçanın sık hemze hataları sabit listeden (imla.ts → demoImla).
+  if (o === "imla") return { duzeltmeler: demoImla((g as Girdiler["imla"]).satirlar) } as Sonuclar[O];
   // Demoda internete çıkılmıyor: bizdeki son satır, kaynaksız.
   if (o === "takipMetni") {
     const t = g as Girdiler["takipMetni"];

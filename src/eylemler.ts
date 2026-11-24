@@ -4,6 +4,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { imlaKimligi, sozcukDegistir, type ImlaOnerisi } from "./imla";
 import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
@@ -5860,6 +5861,90 @@ export const faaliyetOzeleEkle = (ben: Kisi, id: string, tarih: string, ozelId?:
  * bugünkü yetki: plan o arada kilitlendiyse geri alınmıyor. Değişen
  * kayıt başkasınca yeniden değiştirildiyse "degisti": üzerine yazılmıyor.
  */
+/*
+ * İmla denetiminin seçilen önerileri (imla.ts): tek yazış, ↶ ile geri alınır.
+ * Her öneri satırın şimdiki halinde aynı sözcüğü bulmalı ve kuralı yeniden
+ * geçmeli; değilse atlanır (o arada başkası düzenledi). Yetki plan ekranındaki
+ * düzenlemeyle aynı: gelişme ve canlı plan içeriği, PKG metni taslakta plan
+ * içeriği, onaylıda paket metni düzenlemesi; Weekly'de haftalık düzenleme ve
+ * kilitli olmayan kalem. "Önceki gün" işareti kalmaz: imla düzeltmesi başlığın
+ * o gün kullanıldığı anlamına gelmiyor.
+ */
+export const imlaUygula = (ben: Kisi, planId: string, oneriler: ImlaOnerisi[]): number => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  const hafta = plan ? undefined : haftaBul(d, planId);
+  if (!plan && !hafta) return 0;
+  const gruplar = new Map<string, ImlaOnerisi[]>();
+  for (const o of oneriler) gruplar.set(o.id, [...(gruplar.get(o.id) ?? []), o]);
+  // Aynı satırın önerileri sondan başa: sözcük sırası kaymıyor ama yine de tek tek denetleniyor.
+  const duzelt = (metin: string, l: ImlaOnerisi[]) => {
+    let m = metin, n = 0;
+    for (const o of [...l].sort((a, b) => b.sira - a.sira)) {
+      const y = sozcukDegistir(m, o);
+      if (y !== null) (m = y), n++;
+    }
+    return { m, n };
+  };
+  let yeni = d, sayi = 0;
+  for (const [id, l] of gruplar) {
+    const k = imlaKimligi(id);
+    if (!k) continue;
+    if (plan) {
+      if (k.tur === "g" || k.tur === "c") {
+        if (!planIcerikDuzenler(ben, plan)) continue;
+        if (k.tur === "g") {
+          const g = yeni.gelismeler.find((x) => x.id === k.kayit && x.planId === plan.id);
+          if (!g) continue;
+          const r = duzelt(g.metin, l);
+          if (!r.n) continue;
+          yeni = { ...yeni, gelismeler: yeni.gelismeler.map((x) => (x === g ? { ...g, metin: r.m } : x)) };
+          sayi += r.n;
+        } else {
+          const c = yeni.canliYayinlar.find((x) => x.id === k.kayit && x.planId === plan.id);
+          if (!c) continue;
+          const r = duzelt(c.konu, l);
+          if (!r.n) continue;
+          yeni = { ...yeni, canliYayinlar: yeni.canliYayinlar.map((x) => (x === c ? { ...c, konu: r.m } : x)) };
+          sayi += r.n;
+        }
+      } else if (k.tur === "pb" || k.tur === "pa") {
+        const p = yeni.paketler.find((x) => x.id === k.kayit && x.planId === plan.id);
+        if (!p) continue;
+        const kararsiz = p.durum === "taslak" || p.durum === "degerlendiriliyor";
+        if (!(kararsiz ? planIcerikDuzenler(ben, plan) : paketMetniDuzenlenebilir(ben, yeni, p))) continue;
+        const alan = k.tur === "pb" ? "baslik" : "aciklama";
+        const r = duzelt(p[alan] ?? "", l);
+        if (!r.n) continue;
+        yeni = paketGuncelle(yeni, p.id, (x) => ({ ...x, [alan]: r.m, guncelleme: simdi() }));
+        sayi += r.n;
+      }
+    } else if (hafta && haftalikDuzenler(ben, hafta)) {
+      const h = haftaBul(yeni, hafta.id)!;
+      if (k.tur === "a") {
+        const a = h.anaKonular.find((x) => x.id === k.kayit);
+        if (!a) continue;
+        const r = duzelt(a.metin, l);
+        if (!r.n) continue;
+        yeni = haftaGuncelle(yeni, h.id, (x) => ({ ...x, anaKonular: x.anaKonular.map((y) => (y.id === a.id ? { ...a, metin: r.m } : y)) }));
+        sayi += r.n;
+      } else if (k.tur === "k" || k.tur === "kp") {
+        const kalem = h.kalemler.find((x) => x.id === k.kayit);
+        if (!kalem || kalemKilitli(h, kalem)) continue;
+        const alan = k.tur === "k" ? "metin" : "paketBasligi";
+        const r = duzelt(kalem[alan] ?? "", l);
+        if (!r.n) continue;
+        yeni = haftaGuncelle(yeni, h.id, (x) => ({ ...x, kalemler: x.kalemler.map((y) => (y.id === kalem.id ? { ...kalem, [alan]: r.m } : y)) }));
+        sayi += r.n;
+      }
+    }
+  }
+  if (!sayi) return 0;
+  const iz = plan ? { planId, veri: { tarih: plan.tarih, sayi: String(sayi) } } : { haftaId: planId, veri: { tarih: hafta!.baslangic, sayi: String(sayi) } };
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "imlaDuzeltildi", ...iz }));
+  return sayi;
+};
+
 export const planGeriAl = (ben: Kisi, planId: string): "tamam" | "bos" | "yetkisiz" | "degisti" => {
   const d = getir();
   const plan = planBul(d, planId);

@@ -32,6 +32,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   planKopyalandi: "hrPlanKopyalandi",
   planGeriAlindi: "hrPlanGeriAlindi",
   planIceAktarildi: "hrPlanIceAktarildi",
+  imlaDuzeltildi: "hrImlaDuzeltildi",
   kisiSilindi: "hrKisiSilindi",
   kayitTemizlendi: "hrKayitTemizlendi",
   oneriSilindi: "hrOneriSilindi",

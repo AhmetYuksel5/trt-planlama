@@ -1,4 +1,5 @@
 import type { Ozellik, OzellikAyari } from "./ayar.ts";
+import { satirDuzeltmeleri, type ImlaDuzeltmesi } from "./imla.ts";
 
 /*
  * Her özelliğin sağlayıcıya giden yönergesi, girdisinin ve yanıtının
@@ -208,7 +209,47 @@ export const istekKur = (ozellik: Ozellik, girdi: unknown, ayar?: OzellikAyari):
         json: true,
       };
     }
+    /*
+     * İmla denetimi: planın metin satırları. Model düzeltilmiş satırı yazıyor,
+     * öneri olarak neyin geçeceğine imla.ts'in süzgeci karar veriyor
+     * (sonucCoz); yönerge yalnız modeli doğru işe yöneltiyor.
+     */
+    case "imla": {
+      const satirlar = imlaSatirlari(girdi);
+      if (!satirlar) return null;
+      const kullanici = JSON.stringify({ lines: satirlar });
+      if (kullanici.length > EN_UZUN_JSON_GIRDI) return null;
+      return {
+        sistem: yonergeli(
+          [
+            "You are a proofreader for the news agenda of an Arabic-language TV news channel.",
+            "Correct only spelling mistakes in each line: hamza (أ إ آ ء ؤ ئ), taa marbuta vs haa (ة/ه), alif maqsura vs yaa (ى/ي), and clear typos in a single word.",
+            "Do not rephrase, do not add or remove words, do not change word order, punctuation style, names, numbers, times or Latin-script words, and do not add diacritics.",
+            "If a line has no spelling mistake, leave it out.",
+            'Return a JSON object: {"lines": [{"id": the line id copied exactly, "text": the corrected line}]}.',
+            "Reply with the JSON object only.",
+          ],
+          ayar,
+        ),
+        kullanici,
+        enCokCikti: 8000,
+        json: true,
+      };
+    }
   }
+};
+
+const IMLA_EN_COK_SATIR = 300;
+/* İmla girdisi: kimlikli satırlar; kimlik yanıtta geri geliyor, süzgeç asıl satırı ondan buluyor. */
+export const imlaSatirlari = (girdi: unknown): { id: string; text: string }[] | null => {
+  const l = girdi && typeof girdi === "object" ? (girdi as { satirlar?: unknown }).satirlar : undefined;
+  if (!Array.isArray(l) || !l.length || l.length > IMLA_EN_COK_SATIR) return null;
+  const sonuc = l.flatMap((x) => {
+    const id = yazi((x as { id?: unknown })?.id, 120);
+    const text = yazi((x as { metin?: unknown })?.metin, 1500);
+    return id && text ? [{ id, text }] : [];
+  });
+  return sonuc.length ? sonuc : null;
 };
 
 /* Modelin yanıtındaki JSON nesnesi: kod bloğu ya da önünde arkasında yazı olsa da. */
@@ -251,8 +292,21 @@ const baglantisiz = (m: string) =>
     .trim();
 
 /** Sağlayıcının metninden tarayıcıya gidecek sonuç; beklenen biçimde değilse null ("bos"). */
-export const sonucCoz = (ozellik: Ozellik, metin: string, kaynaklar: Kaynak[] = []): string | BicimSonucu | DegerSonucu | TakipSonucu | null => {
+export const sonucCoz = (ozellik: Ozellik, metin: string, kaynaklar: Kaynak[] = [], girdi?: unknown): string | BicimSonucu | DegerSonucu | TakipSonucu | { duzeltmeler: ImlaDuzeltmesi[] } | null => {
   if (ozellik === "kisalt") return metin.trim() || null;
+  if (ozellik === "imla") {
+    const j = nesne(metin);
+    const asillar = new Map((imlaSatirlari(girdi) ?? []).map((x) => [x.id, x.text]));
+    if (!j || !Array.isArray(j.lines)) return null;
+    // Hiç hata yoksa boş liste de geçerli sonuç: model bütün satırları atlamış olabilir.
+    const duzeltmeler = j.lines.flatMap((x) => {
+      const id = typeof (x as { id?: unknown })?.id === "string" ? (x as { id: string }).id : "";
+      const text = typeof (x as { text?: unknown })?.text === "string" ? (x as { text: string }).text : "";
+      const asil = asillar.get(id);
+      return asil && text ? satirDuzeltmeleri(id, asil, text) : [];
+    });
+    return { duzeltmeler: duzeltmeler.slice(0, 500) };
+  }
   if (ozellik === "takipMetni") {
     const m = baglantisiz(metin);
     if (!m) return null;

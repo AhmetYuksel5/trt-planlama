@@ -4578,3 +4578,14 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .asistan-metin :is(ul, ol) { padding-inline-start: 1.3em; }
 .asistan-metin li + li { margin-block-start: 2px; }
 .asistan-metin code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em; background: var(--yuzey-3, var(--yuzey-2)); padding: 0 3px; border-radius: 3px; }
+
+/* İmla denetimi (bilesenler/YzImla.tsx): satırda önerilen sözcük sarı, seçilen yeşil. */
+.imla { display: grid; gap: 12px; }
+.imla-satir { display: grid; gap: 4px; padding-block-end: 10px; border-block-end: 1px solid var(--cizgi); }
+.imla-satir mark { padding-inline: 2px; border-radius: 3px; color: inherit; }
+.imla-oneri { background: var(--uyari-sis); box-shadow: inset 0 -2px 0 var(--uyari); }
+.imla-secili { background: var(--iyi-sis); box-shadow: inset 0 -2px 0 var(--iyi); }
+.imla-oneriler { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.imla-oneri-satiri, .imla-hepsi { display: inline-flex; align-items: center; gap: 6px; min-block-size: 32px; }
+.imla-oneri-satiri del { color: var(--uyari); }
+.imla-oneri-satiri b { color: var(--iyi); }

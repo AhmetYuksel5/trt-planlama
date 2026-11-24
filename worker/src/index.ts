@@ -337,7 +337,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const s = await cagir(saglayici, istek, d.fetch);
     if (!s.tamam) return yanit({ hata: s.hata, ...(s.hata === "arama" ? { ayrinti: s.ayrinti } : {}) }, 502);
     // Alanlı sonuç beklenen biçimde değilse kullanılamaz: hak düşmesin.
-    const sonuc = sonucCoz(ozellik, s.metin, s.kaynaklar);
+    const sonuc = sonucCoz(ozellik, s.metin, s.kaynaklar, g?.girdi);
     if (sonuc === null) return yanit({ hata: "bos" }, 502);
     // Sayaç yalnız başarılı çağrıda artıyor; KV anlık tutarlı değil, sınır kaba bir koruma.
     await env.YZ.put(kAnahtar, String(kullanilan + 1), { expirationTtl: IKI_GUN });

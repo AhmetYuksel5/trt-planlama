@@ -2,6 +2,8 @@ import { useSekmeAdi } from "../../sekmeAdi";
 import { PlanGonderDugmesi } from "../../bilesenler/PlanGonder";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { haftaninOnerisi, oneriAraligi, oneriYeri } from "../../oneriPlanlari";
+import { SpellCheck } from "lucide-react";
+import { ImlaPenceresi, useImlaAcik } from "../../bilesenler/YzImla";
 import { ArrowDown, ArrowUp, BellRing, Binoculars, Check, CheckCheck, FilePen, Inbox, MailCheck, Megaphone, Pencil, Presentation, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
@@ -76,6 +78,8 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
   const [onizleme, setOnizleme] = useState(false);
   const [takdir, setTakdir] = useState(false);
   const [hatirlatma, setHatirlatma] = useState(false);
+  const [imla, setImla] = useState(false);
+  const imlaAcik = useImlaAcik();
   // Sürüklenip bir güne ya da dosyaya bırakılan öneri: "Gündeme ekle" o yerle açılır.
   const [birakilan, setBirakilan] = useState<{ oneriId: string; tarih: string; baslikId?: string } | null>(null);
   const birakilanOneri = birakilan ? v.oneriler.find((o) => o.id === birakilan.oneriId) : undefined;
@@ -115,6 +119,11 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
                 <button type="button" role="menuitem" className="acilir-satir" onClick={() => setTakdir(true)} data-arac="kabul-paketler">
                   <MailCheck size={16} /> {t("kabulEdilenPaketler")}
                   {takdirBekleyen > 0 && <em className="dugme-sayi">{takdirBekleyen}</em>}
+                </button>
+              )}
+              {duzenler && imlaAcik && (
+                <button type="button" role="menuitem" className="acilir-satir" onClick={() => setImla(true)} data-arac="imla">
+                  <SpellCheck size={16} /> {t("imDenetim")}
                 </button>
               )}
               {duzenler && (
@@ -199,6 +208,7 @@ export default function HaftalikPlanEkrani({ ben, hafta }: { ben: Kisi; hafta: H
 
       {onizleme && <HaftalikCiktiOnizleme hafta={hafta} kapat={() => setOnizleme(false)} />}
       {takdir && <HaftalikTakdirPenceresi ben={ben} hafta={hafta} kapat={() => setTakdir(false)} />}
+      {imla && <ImlaPenceresi ben={ben} hedef={{ tur: "haftalik", plan: hafta }} kapat={() => setImla(false)} />}
       {hatirlatma && cagri && <HatirlatmaPenceresi ben={ben} cagri={cagri} kapat={() => setHatirlatma(false)} />}
       {gozden && <GozdenGecirme ben={ben} hafta={hafta} kapat={() => setGozden(false)} />}
       {/* Muhabir takipleri gelen önerilerden ayrı pencerede; öneriye çevrilen haftanın ilk gününe düşer. */}

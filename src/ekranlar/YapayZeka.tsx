@@ -15,7 +15,7 @@ import { FormAlt } from "./nextday/Formlar";
  */
 
 
-const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt", bicimle: "yzBicimle", haberDegeri: "yzHaberDegeri", takipMetni: "yzTakipMetni", asistan: "asistan" };
+const OZELLIK_ADI: Record<YzOzellik, Anahtar> = { kisalt: "yzKisalt", bicimle: "yzBicimle", haberDegeri: "yzHaberDegeri", takipMetni: "yzTakipMetni", asistan: "asistan", imla: "yzImla" };
 const TUR_ADI: Record<SaglayiciTuru, Anahtar> = { anthropic: "yzTurClaude", openai: "yzTurOpenai" };
 const VARSAYILAN_OZELLIK: YzOzellikAyari = { acik: false, birimler: [], gunlukSinir: 50 };
 
