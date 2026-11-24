@@ -3,7 +3,7 @@ import { CircleCheck, Circle, CircleDot, CircleAlert, Copy, Lock, SlidersHorizon
 import { asamaListesi, durakBul, stokDurumu, type GorunenAsama } from "../akis";
 import { birimAdi } from "../yapi";
 import { metin as dilMetni, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
-import { baslikBul, kisiBul, oneriBul, planBul, useVeri, type BirimId, type Kisi, type KunyeRolu, type Paket } from "../veri";
+import { baslikBul, eskiOzelPaket, kisiBul, oneriBul, planBul, useVeri, type BirimId, type Kisi, type KunyeRolu, type Paket } from "../veri";
 import { paketKunyesi, type KunyeSatiri } from "../kunye";
 import { useAdimDurumu } from "../yol";
 import { yerelGun } from "../tarih";
@@ -97,7 +97,7 @@ const gfxKutusu = (p: Paket): GorunenAsama | null => {
 };
 
 export const listeKur = (p: Paket): GorunenAsama[] => {
-  const liste = p.ozelId ? ozelListesi(p) : asamaListesi(p);
+  const liste = eskiOzelPaket(p) ? ozelListesi(p) : asamaListesi(p);
   const gfx = gfxKutusu(p);
   if (!gfx) return liste;
   // Metin durağının arkasına; metin durağı yoksa video kontrolünden önce.

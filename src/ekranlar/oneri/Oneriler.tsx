@@ -13,7 +13,7 @@ import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { oneriGonder } from "../../eylemler";
 import { ONERI_ETIKET_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { bugun, gunEkle } from "../../tarih";
-import { ICERIK_TURLERI, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
+import { SECILEN_TURLER, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
 import { MasalardakiOneriler } from "./MasaSorusu";
 import { oneriBirlestirebilir, muhabireOneriGonderebilir, oneriGorebilir, yapabilir } from "../../yetki";
 import { useAdimDurumu, yerineGit } from "../../yol";
@@ -102,7 +102,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const turSecimi = (
     <select className="girdi" value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru | "")} aria-label={t("tur")}>
       <option value="">{t("tumTurler")}</option>
-      {ICERIK_TURLERI.map((x) => (
+      {SECILEN_TURLER.map((x) => (
         <option key={x} value={x}>
           {t(TUR_ADI[x])}
         </option>

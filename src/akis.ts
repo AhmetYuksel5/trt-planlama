@@ -1,5 +1,5 @@
 import { metin, yaz, type Anahtar } from "./dil";
-import { anlik, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
+import { anlik, eskiOzelPaket, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
 import { uretimAkisi } from "./uretim";
 import { ESKI_AKIS, birimAdi, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
@@ -55,6 +55,8 @@ export const KOL_SAHIBI: Record<IcerikTuru, Birim> = {
   ekonomi: "ekonomi",
   program: "program",
   spor: "spor",
+  // Özel yayının içeriğini Planlama görevlendiriyor ve izliyor (stok ekibi).
+  ozel: "planlama",
 };
 
 export const kolSahibi = (tur: IcerikTuru, y: Yapi = yapi()): BirimId => y.kolSahibi[tur] ?? KOL_SAHIBI[tur];
@@ -227,7 +229,7 @@ export const asamaBul = (p: Paket): number | null => {
 export const paketSahibi = (p: Paket): BirimId | null => {
   if (p.durum === "uretimde" && p.adim) return durakSahibi(p, p.adim);
   // Özel yayın talebi: dış muhabirdeyse muhabirde, in-house ise Planlama'nın stok ekibinde (dağıtıyor; önce Output'taydı).
-  if (p.ozelId && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "planlama";
+  if (eskiOzelPaket(p) && p.durum === "onaylandi") return p.muhabirId || p.ozelKaynak === "dis" ? "muhabir" : "planlama";
   // Plansız görev muhabirin işi; "Üretime al" beklemiyor.
   if (p.gorev && p.durum === "onaylandi") return "muhabir";
   // Masa paketi (ekonomi, program, spor) Next Day'den de gelse masasında üretime alınmayı bekliyor.
@@ -250,7 +252,7 @@ export const SADE_ASAMA_ADI: Anahtar[] = ["sadePlanda", "sadeMuhabirde", "sadeTa
 export const sadeAkis = (p: Paket) => !masaPaketi(p) && !p.adim && p.durum !== "uretimde" && p.durum !== "iptal";
 export const sadeSira = (p: Paket) => (p.durum === "tamamlandi" ? 2 : p.durum === "onaylandi" ? 1 : 0);
 /** Ekrandaki "şimdi kimde": sade akışta onaylı paket muhabirde (iş akışının sahibi `paketSahibi` değişmiyor). */
-export const gorunenSahip = (p: Paket): BirimId | null => (!p.ozelId && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
+export const gorunenSahip = (p: Paket): BirimId | null => (!eskiOzelPaket(p) && sadeAkis(p) ? (["planlama", "muhabir", null] as const)[sadeSira(p)] : paketSahibi(p));
 
 /*
  * Masa paketinin (ekonomi, program, spor) yolu: Planlama'dan sonra iş doğrudan

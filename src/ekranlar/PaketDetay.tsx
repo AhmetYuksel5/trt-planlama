@@ -17,7 +17,7 @@ import { adimIlerle, geriGonder, paketDurum, paketReddet, paketTamamla } from ".
 import { sartliBekleyen } from "../haftalik";
 
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
-import { kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
+import { eskiOzelPaket, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
 import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, uretimiKapatabilir, yapabilir } from "../yetki";
 import { UretimBalonuDugmesi, UretimiKapatDugmesi } from "../bilesenler/UretimBalonu";
 import { gfxBekliyor } from "../uretim";
@@ -160,7 +160,7 @@ function EylemIcerigi({ ben, paket }: { ben: Kisi; paket: Paket }) {
   // Newsdesk yokken onaylı paketin sonucu muhabirden (hesapsızsa Planlama onun adına): yapıldı ya da yapılmadı, yetkili onaylıyor.
   // Masanın takibindeki pakette yayın kararı masada (Yayınlandı / Yayınlanmadı).
   if (
-    !paket.ozelId &&
+    !eskiOzelPaket(paket) &&
     (masaYayinKarariVerebilir(ben, paket) ||
       (((paket.isaret && paket.durum === "onaylandi") || paketIsaretleyebilir(ben, paket, v)) && (paketTamamlayabilir(ben, paket, v) || paketIsaretOnaylayabilir(ben, paket))))
   ) {

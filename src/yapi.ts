@@ -332,7 +332,7 @@ export const varsayilanYapi = (): Yapi => {
       { id: YENI_AKIS, kollar: BUTUN_KOLLAR, duraklar: VARSAYILAN_DURAKLAR },
       { id: ESKI_AKIS, kollar: [], duraklar: ESKI_DURAKLAR },
     ],
-    kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "ekonomi", program: "program", spor: "spor" },
+    kolSahibi: { haber: "newsdesk", feature: "planlama", ekonomi: "ekonomi", program: "program", spor: "spor", ozel: "planlama" },
     ekipGorevleri: ekipKurallari(unvanlar),
   });
 };

@@ -1,6 +1,6 @@
 import { gunAy, type Anahtar } from "./dil";
 import { bugun } from "./tarih";
-import { OZEL_SIRASI, type Durum, type Gorevlendirme, type Nafize, type OzelDurum, type OzelIz, type OzelPaketOnerisi, type OzelYayin, type Paket } from "./veri";
+import { OZEL_SIRASI, eskiOzelPaket, type Durum, type Gorevlendirme, type Nafize, type OzelDurum, type OzelIz, type OzelPaketOnerisi, type OzelYayin, type Paket } from "./veri";
 
 /**
  * Özel yayının okuma kuralları: aşamaların sırası, hangi kalem bitti,
@@ -60,7 +60,7 @@ export const ozelPaketAsamasi = (p: Paket): OzelPaketAsamasi =>
  */
 export const ozelGorevleri = (d: Pick<Durum, "paketler">, kisiId: string, bitenler = false): Paket[] =>
   d.paketler
-    .filter((p) => !!p.ozelId && p.muhabirId === kisiId && !p.ozelGorevBekliyor && (p.durum === "onaylandi" || (bitenler && p.durum === "tamamlandi")))
+    .filter((p) => eskiOzelPaket(p) && p.muhabirId === kisiId && !p.ozelGorevBekliyor && (p.durum === "onaylandi" || (bitenler && p.durum === "tamamlandi")))
     .sort((a, b) => (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
 
 /*
@@ -85,9 +85,16 @@ export const ozelPaketSatirlari = (o: OzelYayin, d: Pick<Durum, "paketler">): Oz
     return { oneri: x, paket: p, id: x.id, baslik: p?.baslik ?? x.baslik, kaynak: x.kaynak, muhabirId: p?.muhabirId ?? x.muhabirId, sonTarih: p?.sonTarih ?? x.sonTarih, asama: p ? ozelPaketAsamasi(p) : x.durum === "oneri" ? "plan" : "onayli", iz: x.iz };
   });
   const bagli = new Set((o.paketOnerileri ?? []).map((x) => x.paketId));
-  const yalniz = paketler.filter((p) => !bagli.has(p.id)).map((p): OzelPaketSatiri => ({ paket: p, id: p.id, baslik: p.baslik, kaynak: p.ozelKaynak ?? "dis", muhabirId: p.muhabirId, sonTarih: p.sonTarih, asama: ozelPaketAsamasi(p), iz: [] }));
+  // Yeni düzenin içerikleri (doğrudan görev) ayrı listede: `ozelIcerikleri`.
+  const yalniz = paketler.filter((p) => !bagli.has(p.id) && eskiOzelPaket(p)).map((p): OzelPaketSatiri => ({ paket: p, id: p.id, baslik: p.baslik, kaynak: p.ozelKaynak ?? "dis", muhabirId: p.muhabirId, sonTarih: p.sonTarih, asama: ozelPaketAsamasi(p), iz: [] }));
   return [...oneriler, ...yalniz];
 };
+
+/* Yeni düzenin içerikleri: doğrudan görevle açılmış paketler, yayın gününe ve teslimine göre. */
+export const ozelIcerikleri = (d: Pick<Durum, "paketler">, id: string): Paket[] =>
+  d.paketler
+    .filter((p) => p.ozelId === id && !eskiOzelPaket(p) && p.durum !== "iptal")
+    .sort((a, b) => (a.yayinGunu ?? "").localeCompare(b.yayinGunu ?? "") || (a.sonTarih ?? "").localeCompare(b.sonTarih ?? ""));
 
 export const ozelPaketleri = (d: Pick<Durum, "paketler">, id: string): Paket[] => d.paketler.filter((p) => p.ozelId === id && p.durum !== "iptal");
 export const ozelGorevlendirmeleri = (d: Pick<Durum, "gorevlendirmeler">, id: string): Gorevlendirme[] => d.gorevlendirmeler.filter((g) => g.ozelId === id);
@@ -97,6 +104,7 @@ export const gorevHazir = (g: Gorevlendirme) => g.durum !== "talep";
 
 export const ozelKalemleri = (o: OzelYayin, d: Pick<Durum, "paketler" | "gorevlendirmeler">): OzelKalemi[] => [
   ...(o.nafizeler ?? []).filter((n) => n.durum !== "iptal").map((n) => ({ tur: "nafize" as const, id: n.id, ad: nafizeBasligi(n), sonTarih: n.tarih, bitti: n.durum === "hazir" || n.durum === "yapildi", kisiId: n.muhabirId })),
+  ...ozelIcerikleri(d, o.id).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.durum === "tamamlandi", kisiId: p.muhabirId })),
   ...ozelPaketSatirlari(o, d).map((p) => ({ tur: "paket" as const, id: p.id, ad: p.baslik, sonTarih: p.sonTarih, bitti: p.asama === "hazir", kisiId: p.muhabirId ?? p.paket?.hazirlayanId })),
   ...(o.talepler ?? []).filter((x) => x.durum !== "iptal").map((x) => ({ tur: "talep" as const, id: x.id, ad: x.metin, sonTarih: x.sonTarih, bitti: x.durum === "tamam" })),
   // Dış görevlendirme News Gathering'in onayından geçince hazır: iş artık sahada.

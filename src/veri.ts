@@ -265,8 +265,14 @@ export type HesapYetkisi = (typeof HESAP_YETKILERI)[number];
 
 /* --- İçerik türü: haftalık akışın üç kolu (rapor bölüm 4) bu alandan ayrılıyor. --- */
 
-export const ICERIK_TURLERI = ["haber", "feature", "ekonomi", "program", "spor"] as const;
+export const ICERIK_TURLERI = ["haber", "feature", "ekonomi", "program", "spor", "ozel"] as const;
 export type IcerikTuru = (typeof ICERIK_TURLERI)[number];
+/*
+ * Öneri ve planların formlarında seçilen masalar. "Özel yayın" masası
+ * (kullanıcı) yalnız özel yayının kendi görevlendirmesinde: paketi bir
+ * yayına bağlı (`ozelId`), yayınsız seçilirse sahipsiz kalırdı.
+ */
+export const SECILEN_TURLER: readonly IcerikTuru[] = ICERIK_TURLERI.filter((t) => t !== "ozel");
 /*
  * Masası olan kollar (kullanıcı: Ekonomi, Program ve Spor kendi bülteni ya da
  * programı için üretimi Newsdesk gibi takip ediyor). Paketleri stoka değil
@@ -275,6 +281,14 @@ export type IcerikTuru = (typeof ICERIK_TURLERI)[number];
  */
 export const MASA_KOLLARI: readonly IcerikTuru[] = ["ekonomi", "program", "spor"];
 // Plansız görev paketi masanın değil Planlama'nın stoğunda (kullanıcı): ekonomi kolundan olsa da masa akışına girmez.
+/*
+ * Eski düzendeki özel yayın paketi: öneri → onay → görevlendirildi → kendi
+ * teslimi (paketTamamla). Yeni düzende özel yayının içeriği doğrudan görevle
+ * açılıyor (`gorev`, masası "ozel") ve plansız görev paketi gibi işaret,
+ * onay ve üretim balonuyla ilerliyor; ayrı kurallar yalnız eskisine.
+ */
+export const eskiOzelPaket = (p: { ozelId?: string; gorev?: unknown }) => !!p.ozelId && !p.gorev;
+
 export const masaPaketi = (p: { tur: IcerikTuru; ozelId?: string; gorev?: unknown; gorevTalebi?: unknown }) =>
   !p.ozelId && !p.gorev && !p.gorevTalebi && MASA_KOLLARI.includes(p.tur);
 
@@ -1035,6 +1049,12 @@ export interface Paket {
   ozelGorevBekliyor?: true;
   /** Özel yayının adı (Arapça): muhabir özel yayın kaydını okuyamıyor, işinin hangi yayın için olduğunu buradan görüyor. */
   ozelAd?: string;
+  /*
+   * Özel yayının içeriği hangi gün yayında (yayının gün aralığında). Teslim
+   * günü (`sonTarih`) ondan ayrı: paket önceden hazırlanabiliyor. Paket o
+   * günün Next Day planına bu günle giriyor.
+   */
+  yayinGunu?: string;
   /** Listede olmayan yer ("Diğer"; muhabir başka yere gidip oradan yapıyor): Arapça, elle; çıktıda şehrin yerine. */
   yer?: string;
   muhabirId?: string;

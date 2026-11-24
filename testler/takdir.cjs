@@ -58,7 +58,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(300);
   d = await veri();
   ok(d.geriBildirimSablonlari.some((s) => s.id === "takdir-bildirimi" && s.konu === "تكليف: {strap}") && d.geriBildirimSablonlari.filter((s) => s.id !== "takdir-bildirimi").length >= 3, "şablon kaydedildi, geri bildirim şablonları duruyor");
-  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu^="plan-gonder"])').count()) === 3 && (await p.locator('[data-gb-sablonu="takdir"]').count()) === 1, "takdir şablonu listenin kendi satırında, ikinci kez değil");
+  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu^="plan-gonder"]):not([data-gb-sablonu="ozel-gorev"])').count()) === 3 && (await p.locator('[data-gb-sablonu="takdir"]').count()) === 1, "takdir şablonu listenin kendi satırında, ikinci kez değil");
   await git(`#/nextday/${plan.id}/takdir`);
   await p.locator('[data-takdir-paket="tk1"] [data-takdir-onizle]').click();
   ok((await p.locator('[data-takdir-paket="tk1"] .takdir-konu').innerText()).trim() === "تكليف: عنوان التقرير الأول", "yeni şablon önizlemede");

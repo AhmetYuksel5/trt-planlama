@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Kart, Pencere, bildir, icerikAlani } from "../bilesenler/Parcalar";
 import { metin, useDil } from "../dil";
 import { ONERI_DURUM_ADI } from "../etiketler";
-import { geriBildirimSablonuKaydet, geriBildirimSablonuSil, planGonderSablonuKaydet, takdirSablonuKaydet } from "../eylemler";
+import { geriBildirimSablonuKaydet, geriBildirimSablonuSil, ozelGorevSablonuKaydet, planGonderSablonuKaydet, takdirSablonuKaydet } from "../eylemler";
 import { PLAN_GONDER_ALANLARI, VARSAYILAN_PLAN_GONDER, planGonderSablonu, type PlanGonderTuru } from "../planGonder";
 import { sablonlar } from "../geriBildirim";
-import { TAKDIR_ALANLARI, VARSAYILAN_TAKDIR, takdirSablonu } from "../takdir";
+import { OZEL_GOREV_ALANLARI, TAKDIR_ALANLARI, VARSAYILAN_OZEL_GOREV, VARSAYILAN_TAKDIR, ozelGorevSablonu, takdirSablonu } from "../takdir";
 import { GERI_BILDIRIM_KARARLARI, kimlik, useVeri, type GeriBildirimKarari, type GeriBildirimSablonu, type Kisi } from "../veri";
 
 /*
@@ -21,7 +21,7 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
   const v = useVeri();
   const liste = sablonlar(v);
   const [duzenlenen, setDuzenlenen] = useState<GeriBildirimSablonu | null>(null);
-  const [takdir, setTakdir] = useState(false);
+  const [takdir, setTakdir] = useState<"takdir" | "ozel" | null>(null);
   const [planGonder, setPlanGonder] = useState<PlanGonderTuru | null>(null);
   return (
     <Kart baslik={t("gbAyarBaslik")} ikon={<MailCheck size={18} />}>
@@ -31,7 +31,16 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
             <b>{t("tkAyarBaslik")}</b>
             <small>{t("tkPlanOnayi")}</small>
           </div>
-          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setTakdir(true)} title={t("duzenle")} aria-label={t("duzenle")} data-takdir-duzenle>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setTakdir("takdir")} title={t("duzenle")} aria-label={t("duzenle")} data-takdir-duzenle>
+            <Pencil size={15} />
+          </button>
+        </li>
+        <li data-gb-sablonu="ozel-gorev">
+          <div className="ad">
+            <b>{t("ozgSablonBaslik")}</b>
+            <small>{t("oyIcerikGorevlendir")}</small>
+          </div>
+          <button type="button" className="dugme dugme-sade dugme-ikon" onClick={() => setTakdir("ozel")} title={t("duzenle")} aria-label={t("duzenle")} data-ozel-gorev-duzenle>
             <Pencil size={15} />
           </button>
         </li>
@@ -85,8 +94,8 @@ export function GeriBildirimAyarlari({ ben }: { ben: Kisi }) {
         </Pencere>
       )}
       {takdir && (
-        <Pencere baslik={t("tkAyarBaslik")} kapat={() => setTakdir(false)}>
-          <TakdirFormu ben={ben} />
+        <Pencere baslik={t(takdir === "ozel" ? "ozgSablonBaslik" : "tkAyarBaslik")} kapat={() => setTakdir(null)}>
+          <TakdirFormu ben={ben} tur={takdir} />
         </Pencere>
       )}
     </Kart>
@@ -161,20 +170,24 @@ function SablonPenceresi({ ben, sablon, kapat }: { ben: Kisi; sablon: GeriBildir
  * "تكليف تقرير" postası. Konu, metin, CC ve BCC buradan; Kime muhabirin
  * adresi, planning grubu kapıda her zaman CC'de.
  */
-function TakdirFormu({ ben }: { ben: Kisi }) {
+function TakdirFormu({ ben, tur }: { ben: Kisi; tur: "takdir" | "ozel" }) {
   const { t } = useDil();
   const v = useVeri();
-  const kayitli = takdirSablonu(v);
+  // Özel yayın görevinin kalıp postası aynı form: şablon, alanlar ve kayıt eylemi değişiyor.
+  const ozel = tur === "ozel";
+  const kayitli = ozel ? ozelGorevSablonu(v) : takdirSablonu(v);
+  const varsayilan = ozel ? VARSAYILAN_OZEL_GOREV : VARSAYILAN_TAKDIR;
+  const takdirSablonuKaydet_ = ozel ? ozelGorevSablonuKaydet : takdirSablonuKaydet;
   const [s, setS] = useState(kayitli);
   const degisti = s.konu !== kayitli.konu || s.govde !== kayitli.govde || s.cc !== kayitli.cc || s.bcc !== kayitli.bcc;
   const kaydet = (x = s) => {
-    if (takdirSablonuKaydet(ben, x)) {
+    if (takdirSablonuKaydet_(ben, x)) {
       setS(x);
       bildir(t("bKaydedildi"));
     }
   };
   return (
-      <div className="form" data-takdir-sablonu>
+      <div className="form" data-takdir-sablonu={tur}>
         <div className="satir">
           <label>
             {t("gbCc")}
@@ -194,10 +207,10 @@ function TakdirFormu({ ben }: { ben: Kisi }) {
           <textarea {...icerikAlani} rows={12} value={s.govde} onChange={(e) => setS({ ...s, govde: e.target.value })} data-takdir-metin />
         </label>
         <small className="sonuk" dir="ltr">
-          {TAKDIR_ALANLARI.map((a) => `{${a}}`).join(" ")}
+          {(ozel ? OZEL_GOREV_ALANLARI : TAKDIR_ALANLARI).map((a) => `{${a}}`).join(" ")}
         </small>
         <div className="form-alt">
-          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet({ ...VARSAYILAN_TAKDIR })} data-takdir-varsayilan>
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => kaydet({ ...varsayilan })} data-takdir-varsayilan>
             {t("tkVarsayilan")}
           </button>
           <button type="button" className="dugme dugme-kucuk" disabled={!degisti || !s.konu.trim() || !s.govde.trim()} onClick={() => kaydet()} data-takdir-kaydet>

@@ -95,6 +95,7 @@ export const TUR_ADI: Record<IcerikTuru, Anahtar> = {
   ekonomi: "turEkonomi",
   program: "turProgram",
   spor: "turSpor",
+  ozel: "turOzel",
 };
 
 /** Muhabirin takibinin türü (takipler sayfası ve öneri formundaki "Takip"). */

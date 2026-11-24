@@ -8,7 +8,7 @@ import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
 import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
-import { BICIMLER, ICERIK_TURLERI, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
+import { BICIMLER, SECILEN_TURLER, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
 import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
@@ -133,7 +133,7 @@ export function KalemFormu({
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-            {ICERIK_TURLERI.map((x) => (
+            {SECILEN_TURLER.map((x) => (
               <option key={x} value={x}>
                 {t(TUR_ADI[x])}
               </option>

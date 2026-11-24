@@ -10,7 +10,7 @@ import { useBen } from "../../oturum";
 import { faaliyetBolgesi, faaliyetKolu, hatirlatmaZamani, olusumAc, olusumBaglantilari, olusumHaftalari, olusumPlanlari, type Olusum } from "../../takvim";
 import {
   FAALIYET_DURUMLARI,
-  ICERIK_TURLERI,
+  SECILEN_TURLER,
   ONCELIKLER,
   baslikBul,
   faaliyetBul,
@@ -514,7 +514,7 @@ function AylikAktarim({ o, ben, geri }: { o: Olusum; ben: Kisi; geri: () => void
         <label>
           {t("tur")}
           <select value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru)}>
-            {ICERIK_TURLERI.map((x) => (
+            {SECILEN_TURLER.map((x) => (
               <option key={x} value={x}>
                 {t(TUR_ADI[x])}
               </option>

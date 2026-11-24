@@ -1,7 +1,7 @@
 import { muhabirAdresi } from "./muhabirIletisim";
 import { ciktiTarihi } from "./dil";
 import { kisiAr, paketYeri, sehirAr } from "./etiketler";
-import { TAKDIR_SABLONU, adresler } from "./geriBildirim";
+import { OZEL_GOREV_SABLONU, TAKDIR_SABLONU, adresler } from "./geriBildirim";
 import { baslikBul, kisiBul, oneriBul, planBul, type Durum, type GeriBildirimSablonu, type HaftalikKalem, type HaftalikPlan, type Kisi, type Paket } from "./veri";
 import { gundemde } from "./haftalik";
 
@@ -136,3 +136,48 @@ export const kalemTakdirEpostasi = (d: Durum, k: HaftalikKalem, gonderen?: Kisi,
 
 /** Next Day'de bu planın, postası gitmemiş Weekly paketleri (Sıradaki kartında hatırlatılıyor). */
 export const bildirilmemisHaftalik = (d: Pick<Durum, "paketler">, planId: string) => takdirPaketleri(d, planId).filter((p) => p.haftalikKalemId && !p.takdirBildirimi);
+
+/*
+ * Özel yayın görevi (kullanıcı: içerik doğrudan muhabire görevlendirilir,
+ * sistemin içinden belirlenen kalıp posta gider). Şablon PKG geri bildirimiyle
+ * aynı koleksiyonda, sabit kimlikle; aynı dil kuralı (cinsiyetsiz, emir kipsiz).
+ */
+export { OZEL_GOREV_SABLONU };
+
+export const VARSAYILAN_OZEL_GOREV: GeriBildirimSablonu = {
+  id: OZEL_GOREV_SABLONU,
+  ad: "Özel yayın görevi",
+  konu: "تكليف تقرير للتغطية الخاصة | {yayin} | {strap}",
+  govde:
+    "مرحبًا {muhabir}،\n\nنرجو منك إعداد التقرير التالي ضمن التغطية الخاصة «{yayin}»، وشكرًا على جهودك.\n\nعنوان التقرير: {strap}\nالتفاصيل: {aciklama}\nالمكان: {yer}\nيوم البث: {gun}\nموعد التسليم: {teslim}\nملاحظة: {not}\n\nنرجو منك البقاء على تواصل مع قسم التخطيط خلال العمل على التقرير.\n\nمع التحية،\n{gonderen}\nقسم التخطيط",
+  cc: "",
+  bcc: "",
+};
+
+export const OZEL_GOREV_ALANLARI = ["muhabir", "yayin", "gun", "teslim", "strap", "aciklama", "yer", "not", "gonderen"] as const;
+
+export const ozelGorevSablonu = (d: Pick<Durum, "geriBildirimSablonlari">): GeriBildirimSablonu =>
+  d.geriBildirimSablonlari?.find((s) => s.id === OZEL_GOREV_SABLONU) ?? VARSAYILAN_OZEL_GOREV;
+
+export const ozelGorevEpostasi = (d: Durum, p: Paket, gonderen?: Kisi, s: GeriBildirimSablonu = ozelGorevSablonu(d)): TakdirEpostasi => {
+  const a: Record<string, string> = {
+    muhabir: kisiAr(kisiBul(d, p.muhabirId)),
+    yayin: (d.ozel.find((o) => o.id === p.ozelId)?.ad ?? p.ozelAd ?? "").trim(),
+    gun: p.yayinGunu ? ciktiTarihi(p.yayinGunu, "ar") : "",
+    // Teslim yayın günüyse ayrıca yazılmaz (aynı günü iki satırda okumasın).
+    teslim: p.sonTarih && p.sonTarih !== p.yayinGunu ? ciktiTarihi(p.sonTarih, "ar") : "",
+    strap: p.baslik.trim(),
+    aciklama: p.aciklama.trim(),
+    yer: paketYeri(p),
+    not: (p.notlar ?? []).map((n) => n.metin.trim()).filter(Boolean).join(" - "),
+    gonderen: kisiAr(gonderen),
+  };
+  const adres = takdirAdresi(kisiBul(d, p.muhabirId));
+  return {
+    kime: adres ? [adres] : [],
+    cc: adresler(s.cc),
+    bcc: adresler(s.bcc),
+    konu: takdirDoldur(s.konu, a).replace(/\s*\n\s*/g, " "),
+    metin: takdirDoldur(s.govde, a),
+  };
+};

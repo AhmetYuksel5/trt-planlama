@@ -91,7 +91,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (`varliklar/simge.png`, `simge-180.png`). Kurumun eski logosu arayüzden kalktı (TRT عربي logosu yalnız çıktının baskı tasarımlarında);
   paket ve klip kodlarındaki `TRT-AR`, `TRTA_` kurum kodu, marka değil.
 - Haber türü (biçim: PKG, Long PKG, Live, Vox Pop, Rushes, Ulay, SOT, Overlay,
-  Standup, GFX…; `veri.ts → BICIMLER`) kol'dan (haber, feature/ekonomi, program)
+  Standup, GFX…; `veri.ts → BICIMLER`) kol'dan (haber, feature/ekonomi, program, özel yayın)
   ayrı alan. Kol akışı belirler, biçim ekrana nasıl çıktığını. "Ulay + SOT"
   Ulay ve SOT'un yanında yeniden seçilebilir (kullanıcı; bir süre eski türdü).
   Seçimden kalkan tür (`ESKI_BICIMLER`: In-depth) eski kayıtta adıyla görünür,
@@ -3090,6 +3090,30 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `nafize*`, `konuk*`): Planlama'nın denetiminde hazırlanır, onayı Plan
   yetkileri'nde (`ozOnay`, varsayılan Planlama yöneticisi). Künye: başlık,
   gün (ya da `bitis`), genel planın Arapça paragrafı (`aciklama`).
+  - Yeniden tasarım (kullanıcı: özel yayın öbür planlarla tamamen uyumlu
+    olsun; beş adım, onaylı öneri; içerikleri genel kayıtlarda, yayının
+    kimliğiyle). 1. adım: masa listesinde "Özel yayın" (`IcerikTuru`
+    `ozel`, sahibi Planlama, `TUR_ADI → turOzel`); öneri ve plan formlarında
+    seçilmez (`veri.ts → SECILEN_TURLER`; paketi bir yayına bağlı). İçerik
+    sekmesinde "Görevlendir" (`data-ozel-icerik-ekle`, `IcerikPenceresi`):
+    muhabir, Strap, yayın günü (`Paket.yayinGunu`, yayının aralığında,
+    `ozelIcerikGunuUygun`), teslim günü (`sonTarih`, yayın gününden sonra
+    değil; boşsa yayın günü), haber türü, not; `eylemler.ts →
+    ozelIcerikGorevlendir` (yetki `ileriGorevVerebilir`: Planlama, tam
+    yönetici) paketi onaylı, `gorev`'li, stokta açar, muhabire
+    `paketGorevVerildi`. Plansız görev paketi gibi ilerler (muhabirin
+    "Yapıldı"sı ve onay, üretim balonu: yerleşik şablon `u-ozel`, stokun yolu;
+    `paketSablonu` özel yayın paketine önce onu). Kalıp posta (`takdir.ts →
+    VARSAYILAN_OZEL_GOREV`, `ozelGorevEpostasi`; yer tutucular {yayin} {gun}
+    {teslim}…): formda işaretli gelir, satırda "Görev postası gönder"
+    (`data-ozel-posta`), kişinin EWS kimliğiyle; iz `takdirBildirimi`
+    (`ozelGorevPostasiGitti`), demoda yalnız iz. Şablonu Ayarlar › "Muhabire
+    geri bildirim"de PKG geri bildiriminin altında (`ozel-gorev`,
+    `SABIT_SABLONLAR`). Eski düzenin paketi (öneri → onay → görevlendirildi →
+    kendi teslimi) `veri.ts → eskiOzelPaket` (`ozelId` var, `gorev` yok): ayrı
+    kurallar yalnız ona; yeni paket öbür paketlerin kurallarıyla. Eski "Paket
+    talebi" düğmesi kalktı, var olan öneriler düzenlenir. Test
+    `testler/ozel-icerik.cjs`.
   - Üst kısım `PlanBasiKalibi` (`OzelYayin.tsx → OzelBasi`): yayının adı, ⋯
     (çıktı `data-ozel-cikti`, künyeyi düzenle), "Sıradaki" kartında aşamalar
     (Planlama, Onay, Uygulama, Son kontrol, Yayına hazır) ve işaretlenecek

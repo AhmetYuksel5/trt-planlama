@@ -6,7 +6,7 @@ import { gunAdi, metin, tarihYaz, useDil } from "../../dil";
 import { gunEkle } from "../../tarih";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
-import { ICERIK_TURLERI, KANALLAR, KAYNAK_TURLERI, ONERI_SINIRI, TAKIP_BICIMI, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
+import { SECILEN_TURLER, KANALLAR, KAYNAK_TURLERI, ONERI_SINIRI, TAKIP_BICIMI, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { YzBicimle } from "../../bilesenler/YzOneri";
 import { SayacliAlan } from "../../bilesenler/SayacliAlan";
@@ -191,7 +191,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-            {ICERIK_TURLERI.map((x) => (
+            {SECILEN_TURLER.map((x) => (
               <option key={x} value={x}>
                 {t(TUR_ADI[x])}
               </option>

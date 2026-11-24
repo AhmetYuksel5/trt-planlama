@@ -812,6 +812,7 @@ html body .hatirlatma-onizleme .hatirlatma-baslik { color: var(--kotu); font-wei
 .tur-feature { --renk: var(--haftalik); --sis: var(--haftalik-sis); }
 .tur-ekonomi { --renk: var(--aylik); --sis: var(--aylik-sis); }
 .tur-program { --renk: var(--saha); --sis: var(--saha-sis); }
+.tur-ozel { --renk: var(--ozel); --sis: var(--ozel-sis); }
 
 /* --- Zaman çizelgesi (bugünün takvimi) --- */
 
@@ -890,7 +891,7 @@ html body .hatirlatma-onizleme .hatirlatma-baslik { color: var(--kotu); font-wei
   font-size: var(--punto-mini); font-weight: 600; white-space: nowrap; line-height: 1.5;
   background: var(--yuzey-2); color: var(--sonuk);
 }
-.rozet.tur-haber, .rozet.tur-feature, .rozet.tur-ekonomi, .rozet.tur-program { background: var(--sis); color: var(--renk); }
+.rozet.tur-haber, .rozet.tur-feature, .rozet.tur-ekonomi, .rozet.tur-program, .rozet.tur-ozel { background: var(--sis); color: var(--renk); }
 /* Haber türü (biçim) kol renginden ayrı: çizgili, sakin; terimi Latin ve soldan sağa. */
 .rozet-bicim { background: var(--yuzey); border: 1px solid var(--cizgi); color: var(--murekkep); direction: ltr; unicode-bidi: isolate; cursor: help; }
 /* Önerinin düştüğü plan: planın kendi rengiyle (renk-nextday, renk-haftalik, renk-ozel). */

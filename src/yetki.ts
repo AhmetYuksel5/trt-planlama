@@ -54,6 +54,7 @@ import {
   type MetinParcasi,
   type Paket,
   masaPaketi,
+  eskiOzelPaket,
 } from "./veri";
 
 /**
@@ -205,14 +206,14 @@ export const MUDURLUKLER: Partial<
 > = {
   inputMuduru: {
     birimler: ["planlama", "newsdesk", "newsgathering", "muhabir"],
-    kollar: ["haber", "feature", "ekonomi"],
+    kollar: ["haber", "feature", "ekonomi", "ozel"],
   },
   programMuduru: { birimler: ["program"], kollar: ["program"] },
 };
 
 /* Kademedeki yöneticinin kolları altındaki birimlerden: Input'un altı haber, feature, ekonomi; Program'ın altı program. */
 const BIRIM_KOLLARI: Partial<Record<Birim, IcerikTuru[]>> = {
-  planlama: ["haber", "feature"],
+  planlama: ["haber", "feature", "ozel"],
   newsdesk: ["haber"],
   newsgathering: ["haber"],
   muhabir: ["haber"],
@@ -405,7 +406,7 @@ export const paketGorebilir = (
   if (!k) return false;
   if (k.birim !== "muhabir") return true;
   // Özel yayının planlamadaki paketi muhabire onayla birlikte görev olarak düşüyor; öncesinde plan değişebilir.
-  if (p.ozelId && (p.durum === "taslak" || p.ozelGorevBekliyor)) return false;
+  if (eskiOzelPaket(p) && (p.durum === "taslak" || p.ozelGorevBekliyor)) return false;
   // Görev talebi Planlama'nın onayına dek muhabire görev değil.
   if (p.gorevTalebi && p.durum !== "onaylandi" && !p.gorev) return false;
   return p.muhabirId === k.id || oneriBul(d, p.oneriId)?.muhabirId === k.id;
@@ -454,7 +455,7 @@ export const ileriGorevVerebilir = (k: Kisi | undefined): boolean =>
  * paketin günü planın günü; özel yayın dosyasının son tarihi yayının kendi formunda.
  */
 export const teslimGunuBelirleyebilir = (k: Kisi | undefined, p: Paket): boolean =>
-  ileriGorevVerebilir(k) && !p.ozelId && !p.planId && (p.durum === "onaylandi" || p.durum === "uretimde");
+  ileriGorevVerebilir(k) && !eskiOzelPaket(p) && !p.planId && (p.durum === "onaylandi" || p.durum === "uretimde");
 export const gorevTarihiUygun = (k: Kisi | undefined, tarih: string): boolean =>
   !!tarih && tarih >= bugun() && (tarih === bugun() || ileriGorevVerebilir(k));
 export const gorevTalebiVerebilir = (k: Kisi | undefined): boolean =>
@@ -529,7 +530,7 @@ export const baskaMuhabireVerebilir = (
   !!k &&
   !k.pasif &&
   hesapYetkisi(k, "baskaMuhabire") &&
-  !p.ozelId &&
+  !eskiOzelPaket(p) &&
   !!p.muhabirId &&
   p.durum === "onaylandi" &&
   !p.isaret;
@@ -580,7 +581,7 @@ export const paketTamamlayabilir = (
   p: Paket,
   d: Durum,
 ): boolean =>
-  p.ozelId
+  eskiOzelPaket(p)
     ? ozelPaketTeslimEdebilir(k, p)
     : !!k &&
       // Plansız görev Newsdesk sistemdeyken de muhabirin işaretiyle kapanıyor (üretim akışına girmiyor).
@@ -598,7 +599,7 @@ export const paketTamamlayabilir = (
  * muhabir); masraf onaylanınca kimse değiştirmez.
  */
 export const masrafGirebilir = (k: Kisi | undefined, p: Paket): boolean =>
-  !!k && !k.pasif && !p.masrafOnayi && !p.ozelId && ["onaylandi", "uretimde"].includes(p.durum) && (p.muhabirId === k.id || yapabilir(k, "paketDegerlendir"));
+  !!k && !k.pasif && !p.masrafOnayi && !eskiOzelPaket(p) && ["onaylandi", "uretimde"].includes(p.durum) && (p.muhabirId === k.id || yapabilir(k, "paketDegerlendir"));
 
 /* Üretimden biten (işaretsiz kapanan) paketin masrafı ayrıca onaylanıyor; işaretle kapananınki onayla birlikte. */
 export const masrafOnaylayabilir = (k: Kisi | undefined, p: Paket): boolean =>
@@ -614,7 +615,7 @@ export const paketIsaretleyebilir = (
   k: Kisi | undefined,
   p: Paket,
   d: Durum,
-): boolean => !p.ozelId && !p.isaret && paketTamamlayabilir(k, p, d);
+): boolean => !eskiOzelPaket(p) && !p.isaret && paketTamamlayabilir(k, p, d);
 /*
  * İşaretin onayı yetkiyle: tam yönetici ya da ona "paket onayı" verdiği kişi.
  * Masanın takibindeki paketin işareti onaya gitmiyor; masa yayın kararıyla
@@ -902,7 +903,7 @@ export const kayitTemizleyebilir = (ben: Kisi | undefined): boolean =>
  * onaylayan yetki (paketOnayi); masanın takibindeki pakette karar masada.
  */
 export const uretimiKapatabilir = (k: Kisi | undefined, p: Paket): boolean =>
-  p.durum === "uretimde" && !p.ozelId && !p.masaTakibi && paketIsaretOnaylayabilir(k, p);
+  p.durum === "uretimde" && !eskiOzelPaket(p) && !p.masaTakibi && paketIsaretOnaylayabilir(k, p);
 
 export const tamamlamaGeriAlabilir = (
   ben: Kisi | undefined,
@@ -911,7 +912,7 @@ export const tamamlamaGeriAlabilir = (
 ): boolean =>
   !!ben &&
   p.durum === "tamamlandi" &&
-  !p.ozelId &&
+  !eskiOzelPaket(p) &&
   (p.masaTakibi ? masaUyesi(ben, p.masaTakibi) : yalnizPlanlama(d) && paketIsaretOnaylayabilir(ben));
 
 /** Profil: kişi kendi profilini, Planlama, News Gathering ve Yönetim herkesinkini düzenler. */
@@ -1091,7 +1092,7 @@ export const yetkiMatrisi = (): MatrisSatiri[] => [
 
 /** Paketin şimdiki sahibi kişiye düşüyor mu ("Senin sıran" kutusu); plansız onaylı pakette üretime alacak olana. */
 export const siramMi = (k: Kisi, p: Paket) =>
-  p.ozelId
+  eskiOzelPaket(p)
     ? (ozelPaketTeslimEdebilir(k, p) &&
         (p.muhabirId === k.id || p.hazirlayanId === k.id)) ||
       (!p.hazirlayanId && ozelPaketDagitabilir(k, p))
@@ -1118,7 +1119,7 @@ export const ozelDuzenler = (k: Kisi | undefined): boolean =>
  */
 export const ozelPaketDagitabilir = (k: Kisi | undefined, p: Paket): boolean =>
   !!k &&
-  !!p.ozelId &&
+  eskiOzelPaket(p) &&
   p.ozelKaynak === "inhouse" &&
   p.durum === "onaylandi" &&
   (!!k.hesapYoneticisi || (izinBirimi(k.birim) === "planlama" && (k.gorev === "stokTakip" || k.rol === "yonetici")));
@@ -1129,7 +1130,7 @@ export const ozelPaketTeslimEdebilir = (
   p: Paket,
 ): boolean =>
   !!k &&
-  !!p.ozelId &&
+  eskiOzelPaket(p) &&
   p.durum === "onaylandi" &&
   !p.ozelGorevBekliyor &&
   (p.muhabirId === k.id || p.hazirlayanId === k.id || ozelDuzenler(k));
@@ -1222,7 +1223,7 @@ export const parcaYapabilir = (k: Kisi | undefined, p: Paket, asama: MetinParcas
 export const uretimYoluBelirleyebilir = (k: Kisi | undefined, p: Paket): boolean =>
   !!k &&
   !kisitliKisi(k) &&
-  !p.ozelId &&
+  !eskiOzelPaket(p) &&
   !p.masaTakibi &&
   !p.isaret &&
   ((p.durum === "onaylandi" && (k.hesapYoneticisi || yapabilir(k, "paketDegerlendir") || uretimeAlabilir(k, p))) ||

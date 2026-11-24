@@ -23,7 +23,7 @@ import {
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { bugun, yerelGun } from "../../tarih";
-import { planBul, useVeri, type Kisi, type Oneri } from "../../veri";
+import { eskiOzelPaket, planBul, useVeri, type Kisi, type Oneri } from "../../veri";
 import { ozelGorevleri } from "../../ozel";
 import {
   muhabirBolumu,
@@ -110,7 +110,7 @@ export function MuhabirOnerilerim({
           : oneriSonGunu(x).localeCompare(oneriSonGunu(y)),
       );
   const onerisizPaketler = paketler
-    .filter((p) => !p.oneriId && !p.ozelId && p.muhabirId === ben.id && (p.durum === "tamamlandi" || p.durum === "iptal"))
+    .filter((p) => !p.oneriId && !eskiOzelPaket(p) && p.muhabirId === ben.id && (p.durum === "tamamlandi" || p.durum === "iptal"))
     .sort((a, b) => b.guncelleme.localeCompare(a.guncelleme));
   const bolumler: MuhabirBolumu[] = arsiv
     ? ["kabulEdilmeyen", "tamamlanan"]
@@ -265,7 +265,7 @@ function PaketSatiri({ ben, paketId }: { ben: Kisi; paketId: string }) {
       {p.oncelikli && <OncelikRozeti />}
       {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
       {/* Onaylı paketin sonucu muhabirden: yapıldı ya da sebebiyle yapılmadı, yetkili onaylıyor. Özel yayın paketi kendi teslimiyle. */}
-      {p.durum === "onaylandi" && !p.ozelId ? (
+      {p.durum === "onaylandi" && !eskiOzelPaket(p) ? (
         <PaketSonucDugmeleri ben={ben} paket={p} kucuk />
       ) : p.durum === "onaylandi" ? (
         <button
@@ -510,7 +510,7 @@ function SiradakiAdim({ ben, paketId }: { ben: Kisi; paketId: string }) {
   const v = useVeri();
   const p = v.paketler.find((x) => x.id === paketId);
   if (!p) return null;
-  if (p.durum === "onaylandi" && !p.ozelId) return <PaketSonucDugmeleri ben={ben} paket={p} kucuk />;
+  if (p.durum === "onaylandi" && !eskiOzelPaket(p)) return <PaketSonucDugmeleri ben={ben} paket={p} kucuk />;
   if (p.durum === "onaylandi")
     return (
       <button

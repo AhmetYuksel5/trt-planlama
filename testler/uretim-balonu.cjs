@@ -22,7 +22,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   // Organizasyon: eski adres şablonları açıyor; Grafik birimi yapıda.
   await kim("yo3", "#/organizasyon/akislar");
   ok((await p.locator('[data-org-sekme="uretim"][aria-selected="true"]').count()) === 1, "eski İş akışları adresi Üretim şablonları sekmesini açıyor");
-  ok((await p.locator("[data-uretim-sablon-satiri]").count()) === 6, "altı yerleşik şablon");
+  ok((await p.locator("[data-uretim-sablon-satiri]").count()) === 7, "yedi yerleşik şablon (özel yayın dahil)");
   ok((await p.locator('[data-org-sekme="akislar"]').count()) === 0, "İş akışları sekmesi yok");
 
   // Onaylı Next Day paketi hazırlanıyor; Newsdesk anahtarı açık bile olsa Devral yok.
@@ -50,14 +50,14 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.fill("[data-uretim-sablon-adi]", "Günlük haber · gfx'li Newsdesk");
   await p.click('[data-uretim-sablon-formu] button[type="submit"]');
   await p.waitForTimeout(300);
-  ok((await p.locator("[data-uretim-sablon]").count()) === 7, "yeni şablon listede");
+  ok((await p.locator("[data-uretim-sablon]").count()) === 8, "yeni şablon listede");
   ok((await p.locator("tr.istisna").count()) === 0, "kaydedilen şablon seçili, istisna kalmadı");
   await p.click("[data-uretim-gonder]");
   await p.waitForTimeout(400);
   d = await veri();
   let x = d.paketler.find((y) => y.id === pk.id);
   ok(x.durum === "uretimde" && x.adim === "metin" && !!x.gorevZamani && x.uretim?.yol.editoryal === "newsdesk" && x.uretim?.parca.gfx, `üretim başladı, görev kabulde verildiği için metin durağında (${x.durum}, ${x.adim})`);
-  ok((d.uretimSablonlari || []).length === 7, "şablonlar kayıtta");
+  ok((d.uretimSablonlari || []).length === 8, "şablonlar kayıtta");
   // Üretim yolu ayrı kartta değil: şablon ve istisnalar Planlama kutusunda, aşamalar kutu listesinde.
   await p.locator('[data-asama-kutu="planlama"] button').click(); await p.waitForTimeout(200);
   ok((await p.locator("[data-asama-icerik] [data-uretim-ozet]").count()) === 1 && (await p.locator("[data-asama-kutu]").count()) >= 6, "Planlama kutusunda şablon, aşamalar kutularda");

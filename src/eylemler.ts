@@ -15,7 +15,7 @@ import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { SABIT_SABLONLAR, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { PLAN_GONDER_SABLONU, VARSAYILAN_PLAN_GONDER, type PlanGonderTuru } from "./planGonder";
-import { VARSAYILAN_TAKDIR } from "./takdir";
+import { VARSAYILAN_OZEL_GOREV, VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
 import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, unvanYoneticiMi, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
@@ -135,6 +135,7 @@ import {
   type MuhasebeAnlasmasi,
   type MuhasebeKapanisi,
   type MuhasebeTanimi,
+  eskiOzelPaket,
 } from "./veri";
 import {
   adimYapabilir,
@@ -202,6 +203,7 @@ import {
   canliSonucIsaretleyebilir,
   paketGorevVerebilir,
   gorevTarihiUygun,
+  ileriGorevVerebilir,
   gorevTalebiVerebilir,
   gorevTalebiKarariVerebilir,
   gorevTalebiGeriCekebilir,
@@ -1019,7 +1021,7 @@ export const tamamlamaGeriAl = (ben: Kisi, hedef: { paketId?: string }) => {
   let yeni: Durum = d;
   // Onayla kapanan pakette teslim zamanı o kapanışın (işaretin anı): geri alınınca o da gidiyor.
   const onaylaKapandi = !!p && d.hareketler.some((h) => h.tip === "paketIsaretOnaylandi" && h.paketId === p.id && h.veri?.tur === "yapildi");
-  if (p.durum === "tamamlandi" && !p.ozelId && (yalnizPlanlama(d) || p.masaTakibi))
+  if (p.durum === "tamamlandi" && !eskiOzelPaket(p) && (yalnizPlanlama(d) || p.masaTakibi))
     yeni = paketGuncelle(yeni, p.id, (x) => {
       // Masanın yayın kararı da geri alınıyor: paket yeniden masanın takibinde, onaylı.
       const { muhabirTeslimi, ...kalan } = x;
@@ -1080,6 +1082,13 @@ const sabitSablonYaz = (d: Durum, kayit: GeriBildirimSablonu) => {
 export const takdirSablonuKaydet = (ben: Kisi, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "cc" | "bcc">) => {
   if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim() || !s.govde.trim()) return false;
   sabitSablonYaz(getir(), { ...VARSAYILAN_TAKDIR, ...s });
+  return true;
+};
+
+/* Özel yayın görevinin kalıp postası (Ayarlar): PKG geri bildirimiyle aynı yetki. */
+export const ozelGorevSablonuKaydet = (ben: Kisi, s: Pick<GeriBildirimSablonu, "konu" | "govde" | "cc" | "bcc">) => {
+  if (!geriBildirimSablonuDuzenler(ben) || !s.konu.trim() || !s.govde.trim()) return false;
+  sabitSablonYaz(getir(), { ...VARSAYILAN_OZEL_GOREV, ...s });
   return true;
 };
 
@@ -2956,7 +2965,7 @@ export const paketTamamla = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);
   // Özel yayın dışındaki paket yalnız "Yapıldı" ve onayla kapanıyor; eylem de o yolu atlatmasın.
-  if (!p || !p.ozelId || !paketTamamlayabilir(ben, p, d)) return false;
+  if (!p || !eskiOzelPaket(p) || !paketTamamlayabilir(ben, p, d)) return false;
   const z = simdi();
   const muhabirKendisi = ben.id === p.muhabirId;
   // Künye: işi yapan değil de Planlama kapattıysa onu teslim alan onaylayan.
@@ -3300,7 +3309,7 @@ export const newsdeskDevredeKaydet = (ben: Kisi, devrede: boolean) => {
  * yalnız taslakta açılıyor, onaydan sonra yazım düzeltilemiyordu.
  */
 export const paketMetniDuzenlenebilir = (ben: Kisi | undefined, d: Durum, p: Paket): boolean => {
-  if (!ben || p.ozelId || p.durum !== "onaylandi" || !yapabilir(ben, "planDuzenle")) return false;
+  if (!ben || eskiOzelPaket(p) || p.durum !== "onaylandi" || !yapabilir(ben, "planDuzenle")) return false;
   const plan = p.planId ? planBul(d, p.planId) : undefined;
   return !plan || plan.durum !== "devralindi";
 };
@@ -6574,7 +6583,45 @@ export const ozelKalemSil = (ben: Kisi, ozelId: string, tur: KalemTuru, id: stri
   return true;
 };
 
-/* --- Özel yayın paketi: in-house (Output'a) ya da dış muhabire, son tarihli talep --- */
+/*
+ * Özel yayının içeriği (kullanıcı: içerik kısmında doğrudan muhabir
+ * görevlendirmesi): paket onaylı açılır, masası "Özel yayın", yayına bağlı;
+ * plansız görev paketi gibi muhabirin işaretiyle ve onayla ya da üretim
+ * balonuyla ilerler. Yayın günü yayının aralığında; teslim yayından sonra olmaz.
+ * Kalıp posta ayrı adımda (ekranda, kapıdan), izi `takdirBildirimi`.
+ */
+export interface OzelIcerikGirdisi extends PaketGorevGirdisi {
+  yayinGunu: string;
+}
+
+export const ozelIcerikGunuUygun = (o: Pick<OzelYayin, "tarih" | "bitis">, gun: string) => !!gun && gun >= o.tarih && gun <= (o.bitis || o.tarih);
+
+export const ozelIcerikGorevlendir = (ben: Kisi, ozelId: string, g: OzelIcerikGirdisi): string | null => {
+  const d = getir();
+  const o = ozelBul(d, ozelId);
+  if (!o || !ileriGorevVerebilir(ben) || !ozelIcerikGunuUygun(o, g.yayinGunu)) return null;
+  const teslim = g.tarih || g.yayinGunu;
+  if (teslim > g.yayinGunu || !gorevTarihiUygun(ben, teslim)) return null;
+  const z = simdi();
+  const k = gorevPaketi(d, ben, { ...g, tarih: teslim }, { durum: "onaylandi", tur: "ozel", ozelId, ozelAd: o.ad, yayinGunu: g.yayinGunu, gorev: { veren: ben.id, zaman: z }, gorevZamani: z });
+  if (!k) return null;
+  const [p, yeni] = k;
+  let son = hareketYaz(yeni, { kisiId: ben.id, tip: "paketGorevVerildi", paketId: p.id, ozelId, veri: { kime: p.muhabirId!, muhabir: p.muhabirId!, tarih: teslim, ad: o.ad } });
+  if (g.not?.trim()) son = bahset(son, ben, g.not, { yol: `#/paketler/${p.id}`, baslik: p.baslik });
+  kaydet(son);
+  return p.id;
+};
+
+/* Kalıp posta gitti (ya da demoda işaretlendi): içerik satırında "gönderildi". */
+export const ozelGorevPostasiGitti = (ben: Kisi, paketId: string) => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !p.ozelId || !ileriGorevVerebilir(ben)) return false;
+  kaydet(paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: { zaman: simdi(), kisiId: ben.id } })));
+  return true;
+};
+
+/* --- Özel yayın paketi (eski düzen): in-house (Output'a) ya da dış muhabire, son tarihli talep --- */
 
 export interface OzelPaketGirdisi {
   baslik: string;

@@ -9,7 +9,7 @@ import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOne
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { ICERIK_TURLERI, TAKIP_BICIMI, oneriSinirIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
+import { SECILEN_TURLER, TAKIP_BICIMI, oneriSinirIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
@@ -653,7 +653,7 @@ export function KisaOneriFormu({
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-            {ICERIK_TURLERI.map((x) => (
+            {SECILEN_TURLER.map((x) => (
               <option key={x} value={x}>
                 {t(TUR_ADI[x])}
               </option>

@@ -21,7 +21,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // Ayarlar: Next Day şablonu.
   await git("#/ayarlar");
   await p.locator("details:has([data-gb-sablonlari]) > summary").click();
-  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu^="plan-gonder"])').count()) === 3, "geri bildirim listesi karışmadı");
+  ok((await p.locator('[data-gb-sablonu]:not([data-gb-sablonu="takdir"]):not([data-gb-sablonu^="plan-gonder"]):not([data-gb-sablonu="ozel-gorev"])').count()) === 3, "geri bildirim listesi karışmadı");
   await p.locator('[data-plan-gonder-duzenle="nextday"]').click();
   await p.locator("[data-pg-sablon-kime]").fill("haber@ornek.local");
   await p.locator("[data-pg-sablon-cc]").fill("mudur@ornek.local, editor@ornek.local");

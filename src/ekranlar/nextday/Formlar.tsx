@@ -16,7 +16,7 @@ import {
   type OneriBicimi,
   HAREKET_TURLERI,
   SECILEN_HAREKET_TURLERI,
-  ICERIK_TURLERI,
+  SECILEN_TURLER,
   KAYNAK_TURLERI,
   kisiBul,
   muhabirler,
@@ -585,7 +585,7 @@ export function PaketFormu({ plan, planBaslikId, mevcut, sonra, gelismeId, kapat
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-            {ICERIK_TURLERI.map((x) => (
+            {SECILEN_TURLER.map((x) => (
               <option key={x} value={x}>
                 {t(TUR_ADI[x])}
               </option>

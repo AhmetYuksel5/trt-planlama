@@ -53,7 +53,7 @@ import {
   type UretimAlani,
 } from "../stokSayfasi";
 import { bugun, gunEkle, haftaBasi } from "../tarih";
-import { kisiBul, useVeri, type Kisi, type Paket } from "../veri";
+import { eskiOzelPaket, kisiBul, useVeri, type Kisi, type Paket } from "../veri";
 import { birimAdi } from "../yapi";
 import { gorevTalebiKarariVerebilir, planIcerikDuzenler, teslimGunuBelirleyebilir, uretimeAlabilir, yapabilir } from "../yetki";
 import { useAdimDurumu } from "../yol";
@@ -301,8 +301,8 @@ function StokRozeti({ p }: { p: Paket }) {
   if (s === "bekliyor") return null;
   const kisi = stokPaketKisisi(p);
   // Özel yayın dosyasının kendi aşamaları var (paket sayfasında); burada işin kimde olduğu yeter.
-  const simdi = p.ozelId ? undefined : asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti");
-  const sahip = p.ozelId ? "muhabir" : gorunenSahip(p);
+  const simdi = eskiOzelPaket(p) ? undefined : asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti");
+  const sahip = eskiOzelPaket(p) ? "muhabir" : gorunenSahip(p);
   const kimde = sahip === "muhabir" ? (kisi ? ad(kisiBul(v, kisi)) : "") : sahip ? birimAdi(sahip) : "";
   return <Rozet ton={geciktiMi(p) ? "kotu" : "vurgu"}>{[simdi?.ad ?? t("sdUretimde"), kimde].filter(Boolean).join(" · ")}</Rozet>;
 }

@@ -6,7 +6,7 @@ import { Avatar, Bos, Icerik, Kart, NotKutu, Pencere, bildir, icerikAlani } from
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
 import { muhabireOneriGonder, oneriMesajiGonder, ulkesi } from "../../eylemler";
-import { ICERIK_TURLERI, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri } from "../../veri";
+import { SECILEN_TURLER, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri } from "../../veri";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
 import { oneriYazisabilir } from "../../yetki";
@@ -150,7 +150,7 @@ export function MuhabireOneriPenceresi({ ben, muhabirId, kapat }: { ben: Kisi; m
           <label>
             {t("tur")}
             <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-              {ICERIK_TURLERI.map((x) => (
+              {SECILEN_TURLER.map((x) => (
                 <option key={x} value={x}>
                   {t(TUR_ADI[x])}
                 </option>

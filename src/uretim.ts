@@ -94,6 +94,8 @@ const YERLESIK: (UretimSablonu & { anahtar: Anahtar })[] = [
   { id: "u-ekonomi", anahtar: "urSbEkonomi", yol: yol("ekonomi", "ekonomi", "ekonomi", "ekonomi", "ekonomi"), parca: {}, kollar: ["ekonomi"] },
   { id: "u-program", anahtar: "urSbProgram", yol: yol("program", "program", "program", "program", "program"), parca: {}, kollar: ["program"] },
   { id: "u-spor", anahtar: "urSbSpor", yol: yol("spor", "spor", "spor", "spor", "spor"), parca: {}, kollar: ["spor"] },
+  // Özel yayının içeriği Planlama'da (stokun yolu): tetkik Newsdesk editöründe, görev, video ve yükleme Planlama'da.
+  { id: "u-ozel", anahtar: "urSbOzel", yol: yol("planlama", "newsdesk", "planlama", "planlama", "planlama"), parca: {}, kollar: ["ozel"] },
 ];
 export const VARSAYILAN_URETIM_SABLONLARI: UretimSablonu[] = YERLESIK.map(({ anahtar: _a, ...s }) => s);
 
@@ -106,6 +108,8 @@ export const sablonAdi = (s: UretimSablonu): string => s.ad || metin(YERLESIK.fi
 /** Paketin balonu hangi şablonla açılır: stok paketi stok şablonuyla, öbürü kolunun şablonuyla. */
 export const paketSablonu = (d: { uretimSablonlari?: UretimSablonu[] }, p: Pick<Paket, "tur" | "stok">): UretimSablonu => {
   const l = uretimSablonlari(d);
+  // Özel yayın paketi stokta da durur ama kendi masasının şablonuyla açılır; kayıtta şablonu yoksa (masadan önce kaydedilmiş liste) yerleşiği.
+  if (p.tur === "ozel") return l.find((s) => s.kollar?.includes("ozel")) ?? VARSAYILAN_URETIM_SABLONLARI.find((s) => s.id === "u-ozel")!;
   return (p.stok && l.find((s) => s.stok)) || l.find((s) => s.kollar?.includes(p.tur)) || l[0];
 };
 

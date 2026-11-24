@@ -1,12 +1,17 @@
 import { SaatGirdisi, TarihGirdisi } from "../bilesenler/TarihSaat";
-import { AlertTriangle, CheckCircle, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, Mail, Circle, ClipboardList, FileText, History, MessageSquare, Mic, Package, Pencil, Plane, Plus, Trash2, Tv, Users } from "lucide-react";
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { ozelOnerileri } from "../aylik";
 import { useState, type ReactNode } from "react";
 import { AnmaGirdisi } from "../bilesenler/Anma";
-import { Avatar, Bos, Icerik, Ilerleme, Kart, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
-import { aralikYaz, gunAdi, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
+import { Avatar, Bos, Icerik, Ilerleme, Kart, PaketDurumRozeti, Pencere, Rozet, TbcKutusu, bildir, icerikAlani } from "../bilesenler/Parcalar";
+import { aralikYaz, gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../dil";
+import { GERCEK } from "../kip";
+import { postaGonder } from "../posta-kapi";
+import { ozelGorevEpostasi } from "../takdir";
+import { muhabirAdresi } from "../muhabirIletisim";
+import { asamaListesi } from "../akis";
 import { GOREVLENDIRME_DURUM_ADI, HAREKET_TURU_ADI, TUR_ADI } from "../etiketler";
 import {
   aylikOlaydanOzel,
@@ -38,6 +43,9 @@ import {
   ozelTalepDurumu,
   ozelTalepKaydet,
   paketTamamla,
+  ozelIcerikGorevlendir,
+  ozelIcerikGunuUygun,
+  ozelGorevPostasiGitti,
   type OzelKunye,
 } from "../eylemler";
 import {
@@ -55,6 +63,7 @@ import {
   ozelOzeti,
   ozelPaketAsamasi,
   ozelPaketSatirlari,
+  ozelIcerikleri,
   siradaki,
   yapilacaklar,
   OZEL_ASAMA_ADI,
@@ -68,8 +77,10 @@ import {
 import { bugun, gunEkle } from "../tarih";
 import {
   HAREKET_TURLERI,
-  ICERIK_TURLERI,
   KONUK_DURUMLARI,
+  SECILEN_TURLER,
+  getir,
+  paketBul,
   NAFIZE_SIRASI,
   OZEL_SIRASI,
   TALEP_SIRASI,
@@ -92,7 +103,7 @@ import {
   type TalepDurum,
 } from "../veri";
 import { altindaMi, birimAdi, birimListesi, grupMu } from "../yapi";
-import { ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
+import { ileriGorevVerebilir, ozelDuzenler, ozelPaketDagitabilir, ozelPaketTeslimEdebilir, paketTamamlayabilir, planAdimiYapabilir } from "../yetki";
 import { SayfaBasi } from "./ana/Planlama";
 import { IslemMenusu } from "../bilesenler/IslemMenusu";
 import { PlanBasiKalibi, adimlariKur } from "../bilesenler/PlanBasi";
@@ -1155,8 +1166,10 @@ function NafizePenceresi({ ben, o, n, gun, kapat }: { ben: Kisi; o: OzelYayin; n
 function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
   const { t } = useDil();
   const v = useVeri();
-  const [form, setForm] = useState<OzelPaketSatiri | "yeni" | null>(null);
+  const [form, setForm] = useState<OzelPaketSatiri | null>(null);
+  const [gorev, setGorev] = useState(false);
   const satirlar = ozelPaketSatirlari(o, v);
+  const icerikler = ozelIcerikleri(v, o.id);
   const gruplar: ["inhouse" | "dis", Anahtar][] = [
     ["inhouse", "oyInhouse"],
     ["dis", "oyDis"],
@@ -1166,18 +1179,25 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
       <Bolum
         ad={t("oyPaketler")}
         ikon={<Package size={18} />}
-        ek={`${satirlar.filter((s) => s.asama === "hazir").length}/${satirlar.length}`}
+        ek={`${icerikler.filter((p) => p.durum === "tamamlandi").length + satirlar.filter((s) => s.asama === "hazir").length}/${icerikler.length + satirlar.length}`}
         ekle={
-          ozelDuzenler(ben)
+          ileriGorevVerebilir(ben)
             ? {
-                metin: t("oyPaketTalebi"),
-                ac: () => setForm("yeni"),
-                veri: "data-ozel-paket-ekle",
+                metin: t("oyIcerikGorevlendir"),
+                ac: () => setGorev(true),
+                veri: "data-ozel-icerik-ekle",
               }
             : undefined
         }
       >
-        {satirlar.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
+        {satirlar.length + icerikler.length === 0 && <Bos kucuk metin={t("kayitYok")} />}
+        {icerikler.length > 0 && (
+          <div className="ozel-kalemler" data-ozel-icerikler>
+            {icerikler.map((p) => (
+              <IcerikKalemi key={p.id} ben={ben} p={p} />
+            ))}
+          </div>
+        )}
         {gruplar.map(([kaynak, ad]) => {
           const l = satirlar.filter((s) => s.kaynak === kaynak);
           return l.length ? (
@@ -1192,8 +1212,147 @@ function Paketler({ ben, o }: { ben: Kisi; o: OzelYayin }) {
           ) : null;
         })}
       </Bolum>
-      {form && <PaketOneriPenceresi ben={ben} o={o} s={form === "yeni" ? undefined : form} kapat={() => setForm(null)} />}
+      {form && <PaketOneriPenceresi ben={ben} o={o} s={form} kapat={() => setForm(null)} />}
+      {gorev && <IcerikPenceresi ben={ben} o={o} kapat={() => setGorev(false)} />}
     </>
+  );
+}
+
+/*
+ * Kalıp posta (Ayarlar › "Muhabire geri bildirim" › Özel yayın görevi) kişinin
+ * EWS kimliğiyle; demoda yalnız iz. Hata metni döner, gittiyse null.
+ */
+async function gorevPostasiGonder(ben: Kisi, paketId: string): Promise<string | null> {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p) return null;
+  const e = ozelGorevEpostasi(d, p, ben);
+  if (!e.kime.length) return metin("oyPostaAdresYok");
+  const r = GERCEK ? await postaGonder({ kime: e.kime, cc: e.cc, bcc: e.bcc, konu: e.konu, metin: e.metin }) : { tamam: true as const };
+  if (!r.tamam) return r.ayrinti ?? r.hata ?? "";
+  ozelGorevPostasiGitti(ben, paketId);
+  return null;
+}
+
+/* Yeni düzenin içeriği: kim, hangi gün yayında, teslim, şimdiki aşama, posta. Ayrıntı ve üretim paketin sayfasında. */
+function IcerikKalemi({ ben, p }: { ben: Kisi; p: Paket }) {
+  const { t, dil, ad } = useDil();
+  const v = useVeri();
+  const [mesgul, setMesgul] = useState(false);
+  const m = kisiBul(v, p.muhabirId);
+  const simdiki = asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti");
+  const gec = p.durum !== "tamamlandi" && !!p.sonTarih && p.sonTarih < bugun();
+  const adres = muhabirAdresi(m);
+  const gonder = async () => {
+    if (!confirm(t("oyPostaOnay"))) return;
+    setMesgul(true);
+    const hata = await gorevPostasiGonder(ben, p.id);
+    setMesgul(false);
+    bildir(hata === null ? t("oyPostaGitti") : `${t("tkGonderilemedi")} (${hata})`);
+  };
+  return (
+    <Kalem veri={{ "data-ozel-icerik": p.id }} baslik={<Icerik>{p.baslik}</Icerik>} gec={gec} rozet={<PaketDurumRozeti paket={p} />}>
+      <small className="sonuk-yazi">
+        {[
+          p.kod,
+          m && ad(m),
+          p.yayinGunu && `${t("oyYayinGunu")}: ${tarihYaz(p.yayinGunu, dil, "kisa")}`,
+          p.sonTarih && p.sonTarih !== p.yayinGunu && `${t("oyTeslim")}: ${tarihYaz(p.sonTarih, dil, "kisa")}`,
+          simdiki?.ad,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </small>
+      {p.aciklama && <Icerik blok>{p.aciklama}</Icerik>}
+      <div className="dugmeler">
+        <a className="dugme dugme-ikincil dugme-kucuk" href={`#/paketler/${p.id}`}>
+          <Package size={14} /> {p.kod}
+        </a>
+        {p.takdirBildirimi ? (
+          <span className="sonuk-yazi" title={saatYaz(p.takdirBildirimi.zaman, dil)} data-ozel-posta="gitti">
+            <Mail size={14} /> {t("oyPostaGitti")}
+          </span>
+        ) : (
+          ileriGorevVerebilir(ben) && (
+            <button
+              type="button"
+              className="dugme dugme-ikincil dugme-kucuk"
+              aria-disabled={!adres || mesgul}
+              title={adres ? undefined : t("oyPostaAdresYok")}
+              onClick={() => adres && !mesgul && gonder()}
+              data-ozel-posta=""
+            >
+              <Mail size={14} /> {t("oyPostaGonder")}
+            </button>
+          )
+        )}
+      </div>
+    </Kalem>
+  );
+}
+
+/* Doğrudan görevlendirme: muhabir, Strap, yayın günü (yayının günlerinden), teslim günü, haber türü, not; kalıp posta isteğe bağlı. */
+function IcerikPenceresi({ ben, o, kapat }: { ben: Kisi; o: OzelYayin; kapat: () => void }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const ilkGun = o.tarih < bugun() && (o.bitis || o.tarih) >= bugun() ? bugun() : o.tarih;
+  const [f, setF] = useState({ muhabirId: "", baslik: "", aciklama: "", yayinGunu: ilkGun, tarih: "", bicim: "pkg" as Bicim, not: "", posta: true });
+  const [mesgul, setMesgul] = useState(false);
+  const adres = muhabirAdresi(kisiBul(v, f.muhabirId));
+  const teslim = f.tarih || f.yayinGunu;
+  const hazir = !!f.muhabirId && !!f.baslik.trim() && ozelIcerikGunuUygun(o, f.yayinGunu) && teslim <= f.yayinGunu && teslim >= bugun();
+  const kaydet = async () => {
+    if (!hazir || mesgul) return;
+    const id = ozelIcerikGorevlendir(ben, o.id, { muhabirId: f.muhabirId, baslik: f.baslik, aciklama: f.aciklama, yayinGunu: f.yayinGunu, tarih: teslim, bicim: f.bicim, not: f.not });
+    if (!id) return;
+    if (f.posta && adres) {
+      setMesgul(true);
+      const hata = await gorevPostasiGonder(ben, id);
+      setMesgul(false);
+      bildir(hata === null ? `${t("bKaydedildi")} · ${t("oyPostaGitti")}` : `${t("bKaydedildi")} · ${t("tkGonderilemedi")} (${hata})`);
+    } else bildir(t("bKaydedildi"));
+    kapat();
+  };
+  return (
+    <Pencere baslik={t("oyIcerikGorevlendir")} kapat={kapat}>
+      <div className="form" data-ozel-icerik-formu>
+        <label>
+          {t("muhabir")}
+          <MuhabirSecici deger={f.muhabirId} degistir={(m) => setF({ ...f, muhabirId: m })} bosEtiket={t("seciniz")} />
+        </label>
+        <label>
+          {t("paketBasligi")}
+          <input {...icerikAlani} value={f.baslik} onChange={(e) => setF({ ...f, baslik: e.target.value })} data-ozel-icerik-baslik />
+        </label>
+        <label>
+          {t("kisaAciklama")}
+          <textarea {...icerikAlani} rows={3} value={f.aciklama} onChange={(e) => setF({ ...f, aciklama: e.target.value })} />
+        </label>
+        <div className="satir">
+          <label>
+            {t("oyYayinGunu")}
+            <TarihGirdisi value={f.yayinGunu} min={o.tarih} max={o.bitis || o.tarih} required onChange={(e) => setF({ ...f, yayinGunu: e.target.value })} data-ozel-yayin-gunu />
+          </label>
+          <label>
+            {t("oyTeslim")}
+            <TarihGirdisi value={f.tarih} min={bugun()} max={f.yayinGunu} onChange={(e) => setF({ ...f, tarih: e.target.value })} data-ozel-teslim />
+          </label>
+          <label>
+            {t("haberTuru")}
+            <BicimSecici deger={f.bicim} degistir={(b) => setF({ ...f, bicim: b })} />
+          </label>
+        </div>
+        <label>
+          {t("not")}
+          <AnmaGirdisi cokSatir rows={2} deger={f.not} degistir={(x) => setF({ ...f, not: x })} />
+        </label>
+        <label className="secim">
+          <input type="checkbox" checked={f.posta && !!adres} disabled={!adres} onChange={(e) => setF({ ...f, posta: e.target.checked })} data-ozel-icerik-posta />
+          {t(adres || !f.muhabirId ? "oyPostaGonder" : "oyPostaAdresYok")}
+        </label>
+        <FormAlt kapat={kapat} kaydet={kaydet} devre={!hazir || mesgul} />
+      </div>
+    </Pencere>
   );
 }
 
@@ -1334,7 +1493,7 @@ function PaketOneriPenceresi({ ben, o, s, kapat }: { ben: Kisi; o: OzelYayin; s?
           <label>
             {t("tur")}
             <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
-              {ICERIK_TURLERI.map((y) => (
+              {SECILEN_TURLER.map((y) => (
                 <option key={y} value={y}>
                   {t(TUR_ADI[y])}
                 </option>
