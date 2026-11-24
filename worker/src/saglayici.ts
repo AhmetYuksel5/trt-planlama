@@ -91,10 +91,11 @@ export const asistanCagir = async (
   try {
     const r = await client.beta.messages.create({
       model: s.model,
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: sistem,
       messages: mesajlar,
-      tools: araclar,
+      // Araç listesi uzun ve her turda aynı: önbelleğe (sistem metni bugünü ve sayfayı taşıdığı için değişiyor, onun önünde biter).
+      tools: araclar.map((a, i) => (i === araclar.length - 1 ? { ...a, cache_control: { type: "ephemeral" as const } } : a)),
       ...(EFORLU.test(s.model) ? { output_config: { effort: "low" as const } } : {}),
       ...(YEDEKLI.has(s.model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
     });

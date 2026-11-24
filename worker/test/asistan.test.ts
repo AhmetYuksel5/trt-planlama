@@ -9,13 +9,22 @@ const baglam = { bugun: "2026-11-24", dil: "tr", sayfa: "#/", kisi: "Deneme", bi
 
 test("araç adları tarayıcının yürütücüleriyle aynı", () => {
   const kaynak = readFileSync(new URL("../../src/asistan/araclar.ts", import.meta.url), "utf8");
-  const blok = kaynak.slice(kaynak.indexOf("export const ARAC_YURUTUCULERI"));
+  const blok = kaynak.slice(kaynak.indexOf("const OKUMA"), kaynak.indexOf("export const ARAC_YURUTUCULERI"));
   for (const ad of ARAC_ADLARI) assert.ok(new RegExp(`\\b${ad}:`).test(blok), `tarayıcıda ${ad} yok`);
   assert.equal(new Set(ARAC_ADLARI).size, ARACLAR.length);
 });
 
-test("yazma araçları açıklamada YAZMA diye işaretli", () => {
-  for (const a of ARACLAR.filter((x) => ["gelismeEkle", "oneriPlanaEkle", "oneriReddet", "oneriDegerlendirmeyeAl"].includes(x.name))) assert.ok(a.description.startsWith("YAZMA"), a.name);
+test("yazma araçları tarayıcıda onaylı (formlu) tarafta, okuma araçları okuma tarafında", () => {
+  // Kapıda YAZMA olan araç tarayıcıda okuma tarafına düşerse kişiye sorulmadan çalışırdı.
+  const kaynak = readFileSync(new URL("../../src/asistan/araclar.ts", import.meta.url), "utf8");
+  const okuma = kaynak.slice(kaynak.indexOf("const OKUMA"), kaynak.indexOf("const YAZMA"));
+  const yazma = kaynak.slice(kaynak.indexOf("const YAZMA"), kaynak.indexOf("export const ARAC_YURUTUCULERI"));
+  for (const a of ARACLAR) {
+    const yazar = a.description.startsWith("YAZMA");
+    assert.ok(new RegExp(`\\b${a.name}:`).test(yazar ? yazma : okuma), `${a.name} ${yazar ? "yazma" : "okuma"} tarafında değil`);
+    assert.ok(!new RegExp(`\\b${a.name}:`).test(yazar ? okuma : yazma), `${a.name} iki tarafta`);
+  }
+  for (const ad of ["gelismeEkle", "oneriPlanaEkle", "oneriReddet", "paketKarari", "planAkisi", "postaGonder", "isVer"]) assert.ok(ARACLAR.find((x) => x.name === ad)?.description.startsWith("YAZMA"), ad);
 });
 
 test("kişinin kendi iletisi yeni sayılıyor, araç sonucu sayılmıyor", () => {

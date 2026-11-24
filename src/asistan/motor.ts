@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { metin, yaz, type Dil } from "../dil";
+import { metin, yaz, type Anahtar, type Dil } from "../dil";
 import { GERCEK } from "../kip";
 import { bugun } from "../tarih";
 import type { Kisi } from "../veri";
 import { kapiIstek } from "../yz";
-import { ARAC_YURUTUCULERI, onayYaniti, type AracBaglami, type AracSonucu } from "./araclar";
+import { ARAC_YURUTUCULERI, eksikAlanlar, onayYaniti, type AracBaglami, type AracSonucu, type Deger, type Degerler, type Form, type FormAlani } from "./araclar";
 
 /*
  * Asistanın döngüsü (belgeler/asistan.md). Konuşma Anthropic ileti biçiminde tutuluyor; kapı her
@@ -27,7 +27,13 @@ export interface Ileti {
 export interface Gorunen {
   tur: "kisi" | "asistan" | "onay" | "bilgi" | "hata";
   metin: string;
-  durum?: "bekliyor" | "yapildi" | "vazgecildi";
+  durum?: "bekliyor" | "yapildi" | "vazgecildi" | "hata";
+  /* Onay kartı: işin formu (alanlar, kişinin değiştirdiği değerler) ve kaydın adı. */
+  alanlar?: FormAlani[];
+  degerler?: Degerler;
+  ozet?: string;
+  dugme?: Anahtar;
+  eksik?: string[];
 }
 interface Bekleyen {
   arac: Extract<Blok, { type: "tool_use" }>;
@@ -126,14 +132,27 @@ const araclariCalistir = (araclar: Extract<Blok, { type: "tool_use" }>[], onceki
       sonuclar.push({ type: "tool_result", tool_use_id: a.id, content: sonucMetni(r.sonuc), ...(r.sonuc.hata ? { is_error: true } : {}) });
       continue;
     }
-    bekleyenIs = r.calistir;
-    degis({ bekleyen: { arac: a, sonuclar, kalan: araclar.slice(i + 1) }, gorunen: [...hal.gorunen, { tur: "onay", metin: r.onay, durum: "bekliyor" }] });
+    bekleyenIs = r.form;
+    const f = r.form;
+    degis({
+      bekleyen: { arac: a, sonuclar, kalan: araclar.slice(i + 1) },
+      gorunen: [...hal.gorunen, { tur: "onay", metin: metin(f.baslik, o.dil), durum: "bekliyor", alanlar: f.alanlar, degerler: f.degerler, ...(f.ozet ? { ozet: f.ozet } : {}), ...(f.dugme ? { dugme: f.dugme } : {}) }],
+    });
     return null;
   }
   return sonuclar;
 };
 // Onay bekleyen işin kendisi bellekte (işlev saklanamıyor).
-let bekleyenIs: (() => AracSonucu) | null = null;
+let bekleyenIs: Form | null = null;
+
+const bekleyenSira = () => hal.gorunen.map((g) => g.tur === "onay" && g.durum === "bekliyor").lastIndexOf(true);
+
+/** Onay kartındaki alanın değişmesi: kişi formu düzeltiyor, iş onaylanınca bu değerlerle yapılır. */
+export const onayDegeri = (ad: string, deger: Deger) => {
+  const i = bekleyenSira();
+  if (i < 0 || !hal.bekleyen) return;
+  degis({ gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, degerler: { ...g.degerler, [ad]: deger }, eksik: g.eksik?.filter((x) => x !== ad) } : g)) });
+};
 
 /* Model metinle bitirene ya da yazma aracında durana dek tur tur. */
 const dongu = async (o: Oturum) => {
@@ -170,23 +189,42 @@ const dongu = async (o: Oturum) => {
 };
 
 /*
- * Bekleyen yazma işini sonuçlandırır. Evet: iş yapılır. Hayır ya da başka bir istek: vazgeçilir;
- * başka istekse o metin aynı iletide modele gider (araç sonuçlarının arkasında).
+ * Bekleyen yazma işini sonuçlandırır. Evet: zorunlu alanlar doluysa iş formun son haliyle yapılır
+ * (eksikse kart eksikleri işaretler, iş bekler). Hayır ya da başka bir istek: vazgeçilir; başka
+ * istekse o metin aynı iletide modele gider (araç sonuçlarının arkasında).
+ * Dönüş: "eksik" (iş bekliyor), "durdu" (aynı turda başka yazma işi soruldu), "surdu".
  */
-const bekleyeniBitir = (o: Oturum, evet: boolean, ek?: string) => {
+const bekleyeniBitir = async (o: Oturum, evet: boolean, ek?: string): Promise<"eksik" | "durdu" | "surdu"> => {
   const b = hal.bekleyen!;
-  const sonuc: AracSonucu = evet && bekleyenIs ? bekleyenIs() : { vazgecti: true };
+  const i = bekleyenSira();
+  const kart = hal.gorunen[i];
+  const degerler = kart?.degerler ?? {};
+  if (evet && bekleyenIs) {
+    const eksik = eksikAlanlar(bekleyenIs.alanlar, degerler);
+    if (eksik.length) {
+      degis({ gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, eksik } : g)) });
+      return "eksik";
+    }
+  }
+  let sonuc: AracSonucu = { vazgecti: true };
+  if (evet && bekleyenIs) {
+    try {
+      sonuc = await bekleyenIs.calistir(degerler);
+    } catch {
+      sonuc = { hata: "calismadi" };
+    }
+    // Model kişinin değiştirdiği son hali bilsin (sonraki adımda eski değeri kullanmasın).
+    sonuc = { ...sonuc, degerler };
+  }
   bekleyenIs = null;
-  const gorunen = hal.gorunen.map((g, i, l) =>
-    g.tur === "onay" && g.durum === "bekliyor" && i === l.map((x) => x.tur).lastIndexOf("onay") ? { ...g, durum: (evet && !sonuc.hata ? "yapildi" : "vazgecildi") as Gorunen["durum"] } : g,
-  );
-  degis({ bekleyen: null, gorunen });
+  const durum: Gorunen["durum"] = !evet ? "vazgecildi" : sonuc.hata ? "hata" : "yapildi";
+  degis({ bekleyen: null, gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, durum, eksik: undefined } : g)) });
   const sonuclar = [...b.sonuclar, { type: "tool_result" as const, tool_use_id: b.arac.id, content: sonucMetni(sonuc), ...(sonuc.hata ? { is_error: true } : {}) }];
   // Aynı turdaki öbür araçlar: kişi vazgeçtiyse onlar da çalışmaz (birbirine bağlı olabilir).
   const kalanlar = evet ? araclariCalistir(b.kalan, sonuclar, o) : [...sonuclar, ...b.kalan.map((a) => ({ type: "tool_result" as const, tool_use_id: a.id, content: sonucMetni({ vazgecti: true }) }))];
-  if (!kalanlar) return false;
+  if (!kalanlar) return "durdu";
   degis({ mesajlar: [...hal.mesajlar, { role: "user", content: [...kalanlar, ...(ek ? [{ type: "text" as const, text: ek }] : [])] }] });
-  return true;
+  return "surdu";
 };
 
 /** Kişinin iletisi. Onay bekliyorsa "evet/hayır" onu sonuçlandırır; düğme de buraya gelir. */
@@ -199,7 +237,12 @@ export const asistanaYaz = async (yazi: string, o: Omit<Oturum, "baglam">, onayD
     const karar = onayDugmesi === undefined ? onayYaniti(m) : onayDugmesi ? "evet" : "hayir";
     if (m) degis({ gorunen: [...hal.gorunen, { tur: "kisi", metin: m }] });
     degis({ mesgul: true });
-    if (!bekleyeniBitir(oturum, karar === "evet", karar === null ? m : undefined)) {
+    const r = await bekleyeniBitir(oturum, karar === "evet", karar === null ? m : undefined);
+    if (r === "eksik") {
+      degis({ mesgul: false, gorunen: [...hal.gorunen, { tur: "bilgi", metin: metin("asEksik", o.dil) }] });
+      return;
+    }
+    if (r === "durdu") {
       degis({ mesgul: false });
       return;
     }

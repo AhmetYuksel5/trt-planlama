@@ -11,10 +11,16 @@ sistemde iş yapabilsin; komut versin, veri eklesin, bir şeyler yaptırsın.
 2. **Kapı yazmaz.** Servis hesabı istemiyoruz (bkz. posta). Kapı (`worker/`) konuşmayı
    ve araç tanımlarını modele götürür, modelin "şu aracı şu girdiyle çalıştır" isteğini
    tarayıcıya döndürür. Aracı tarayıcı, kişinin kendi oturumuyla çalıştırır.
-3. **Kayıt değiştiren her araç önce sorulur.** Asistan ne yapacağını bir cümleyle söyler
-   ("Yarının Next Day planına, Gazze başlığına bu gelişmeyi ekleyeceğim"). Kişi "evet",
-   "tamam", "onayla", "نعم", "yes" yazar ya da söyler; düğmeye basmak da olur ama şart
-   değil. "Hayır" ya da başka bir istek iptal eder. Okuma araçları sorulmaz.
+3. **Kayıt değiştiren her araç önce onay kartı açar** (kullanıcı: ekranlar olmasa da her iş
+   asistandan yapılabilsin; söyler, onay ekranı çıkar, orada gerekli seçim ve değişiklik
+   yapılır, altında onay ya da gönder). Kart işin formudur: başlık ("Gelişme ekle"), kaydın
+   adı (önerinin Header'ı), alanlar asistanın doldurduğu değerlerle; seçenekler kayıttan
+   (açık planlar, planın başlıkları, muhabirler, haber türleri). Plan değişince başlık
+   seçenekleri o planın (`bagli`); "+ Yeni başlık" seçilince ad sorulur (`kosul`). Kişi
+   alanları değiştirir, "Onayla" (postada "Gönder") ya da "evet", "tamam", "نعم", "yes" yazar
+   veya söyler; iş formun son haliyle yapılır. Zorunlu alan boşsa iş bekler, alan kırmızı.
+   "Hayır" ya da başka bir istek iptal eder. Okuma araçları sorulmaz. Modele kişinin son
+   değerleri döner (`degerler`).
 4. **Geri alınabilir.** Yazış normal `kaydet`'ten geçtiği için plan ekranının ↶'ü ve
    hareket kaydı aynen çalışır; asistanın yaptığı da hareket kaydında kişinin adıyla durur.
 5. **Model kayıt görmez, kayıt çağırır.** Bütün kayıt modele gönderilmez (hem maliyet hem
@@ -57,34 +63,31 @@ Kişi ─► Asistan paneli (bilesenler/Asistan.tsx)
 
 ## Araç kataloğu
 
-### 1. aşama (bu sürüm)
+Okuma araçları (sorulmaz): `ara`, `sayfaAc`, `onerileriListele`, `oneriAyrintisi`,
+`planOzeti` (başlıklar, gelişmeler, muhabirler, PKG'ler, canlılar, kimlikleriyle; açık
+planlar), `haftalikOzeti`, `paketleriListele`, `paketAyrintisi`, `kisileriListele`
+(telefon ve e-posta yok), `takvimListele`, `isleriListele`, `hareketleriListele`.
 
-| Araç | Tür | Ne yapar | Eylem |
-|---|---|---|---|
-| `ara` | okuma | Paket, öneri, kişi, sayfa arar | `arama.ts → kayitAra` |
-| `sayfaAc` | gezinme | Sayfayı açar | yönlendirme |
-| `onerileriListele` | okuma | Karar bekleyen / planda / arşiv öneriler | `oneriSekmeleri.ts` |
-| `oneriAyrintisi` | okuma | Bir önerinin metni, durumu, yeri | `oneriPlanlari.ts` |
-| `planOzeti` | okuma | Bir günün Next Day planı: başlıklar, gelişme ve PKG sayıları | kayıt |
-| `gelismeEkle` | yazma | Next Day başlığına gelişme ekler | `gelismeKaydet` |
-| `oneriPlanaEkle` | yazma | Öneriyi Next Day planına ekler (PKG ile ya da paketsiz) | `oneriPlanaEkle` |
-| `oneriReddet` | yazma | Öneriyi gerekçeyle reddeder | `oneriDurum` |
-| `oneriDegerlendirmeyeAl` | yazma | Öneriyi değerlendirmeye alır | `oneriDurum` |
+Yazma araçları (onay kartı; her biri ekranın eylemiyle, kişinin yetkisiyle):
 
-### 2. aşama
+| Alan | Araçlar |
+|---|---|
+| Öneriler | `oneriGir` (muhabir adına), `oneriPlanaEkle`, `oneriGundemeEkle`, `oneriReddet`, `oneriDegerlendirmeyeAl`, `oneriDuzeltmeIste`, `oneriTakibeAl`, `oneriPlandanCikar`, `oneriArsiveGonder`, `oneriMesajiGonder`, `muhabireOneriGonder`, `oneriMasayaSor`, `oneriGorevlendir` |
+| Next Day | `planBaslikEkle`, `planBaslikCikar`, `gelismeEkle`, `gelismeDuzenle`, `gelismeSil`, `basligaMuhabirEkle`, `basliktanMuhabirCikar`, `paketEkle`, `paketKarari` (kabul, ret, plandan kaldır, sil), `canliEkle`, `canliSil`, `planAkisi` (toplantıya, taslağa, onay), `hareketKaydet`, `hareketSil`, `toplantiNotuEkle` |
+| Weekly | `haftalikPlanAc`, `kalemEkle`, `kalemKarar`, `haftalikAkisi` (toplantıya, hazırlığa, kesinleştir) |
+| Paketler | `paketGorevVer`, `paketTeslimGunu`, `paketSonucuKarari`, `paketNotu`, `paketMetniDuzenle` |
+| Diğer | `isVer`, `isDurumu`, `faaliyetEkle`, `postaGonder` (kişinin EWS kimliğiyle; giden balon Posta'ya) |
 
-- Öneri gir (muhabir adına telefon/mesaj), takip ekle, PKG kabul/ret, paket notu,
-  muhabire posta taslağı (gönderme yine onaylı), Weekly'ye kalem ekle ve karar ver,
-  görev ver (`isKaydet`), canlı yayın ekle, hareket (izin/görevlendirme) kaydet.
-- Ses: tarayıcının konuşma tanıması (Web Speech API, Arapça ve Türkçe), mikrofon
-  düğmesi ve "Hey" sözcüğü yok: basılı tutup konuşma. Yanıt sesli okunabilir.
+Kapıda yazma aracının açıklaması "YAZMA" ile başlar; tarayıcıda o araç formlu tarafta
+(`YAZMA`) olmak zorunda, okuma tarafına düşen yazma aracı sorulmadan çalışırdı (testte).
+Ekranın düğmeyi göstermediği durumda araç form açmadan nedenini döner (`weeklyGundeminde`,
+`zatenPlanda`, `yetki`…); model kişiye söyler.
+
+### Sonraki adımlar
+
+- Özel yayın, Aylık, Muhasebe, Organizasyon işleri; Next Day ekip ve hazır paketler.
 - Sayfa bağlamı: açık plan, seçili öneri, açık paket asistana "bu" diye geçer.
-
-### 3. aşama
-
-- Çok adımlı işler ("Yarının planını toplantıya hazırla": kararsız PKG'leri listele,
-  her biri için sor), özetler ("bugün ne oldu"), Günün notunu (`gununNotu.ts`) okuyup
-  yorum, OpenAI uyumlu sağlayıcı, muhabirin kendi asistanı (öneri gönder, takip yaz).
+- Yanıt sesli okunabilir; OpenAI uyumlu sağlayıcı; muhabirin kendi asistanı.
 
 ## Güvenlik notları
 
@@ -102,7 +105,7 @@ Kişi ─► Asistan paneli (bilesenler/Asistan.tsx)
 - `worker/src/asistan.ts`: araç tanımları, sistem yönergesi, istek doğrulama.
 - `worker/src/saglayici.ts → asistanCagir`: Claude'a araçlı çağrı.
 - `worker/src/index.ts → /asistan`.
-- `src/asistan/araclar.ts`: yürütücüler (okuma/yazma, onay metni).
+- `src/asistan/araclar.ts`: yürütücüler (okuma; yazma araçlarının formu ve işi).
 - `src/asistan/motor.ts`: döngü, onay, oturum saklama.
-- `src/bilesenler/Asistan.tsx`: panel, yüzen düğme, Ctrl/⌘+J.
+- `src/bilesenler/Asistan.tsx`: panel, onay kartı (form), yüzen düğme, Ctrl/⌘+J.
 - Testler: `worker/test/asistan.test.ts`, `testler/asistan.cjs`.
