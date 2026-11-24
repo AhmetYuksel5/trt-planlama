@@ -70,6 +70,50 @@ const claude = async (s: Saglayici, istek: Istek, fetchFn: typeof fetch): Promis
   }
 };
 
+/*
+ * Asistanın tek turu (asistan.ts): araç tanımlarıyla çağrı; araçları kapı çalıştırmaz, yanıttaki
+ * metin ve araç istekleri olduğu gibi tarayıcıya döner. Şimdilik yalnız Claude: OpenAI uyumlu uçta
+ * işlev çağrısı biçimi ayrı, sonraki adım (belgeler/asistan.md).
+ */
+export type AsistanSonucu =
+  | { tamam: true; icerik: ({ type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: unknown })[]; dur: string }
+  | { tamam: false; hata: "anahtar" | "sinir" | "red" | "saglayici" | "desteklenmiyor"; ayrinti?: string };
+
+export const asistanCagir = async (
+  s: Saglayici,
+  sistem: string,
+  mesajlar: Anthropic.Beta.BetaMessageParam[],
+  araclar: Anthropic.Beta.BetaTool[],
+  fetchFn: typeof fetch,
+): Promise<AsistanSonucu> => {
+  if (s.tur !== "anthropic") return { tamam: false, hata: "desteklenmiyor" };
+  const client = claudeIstemcisi(s.anahtar!, s.calismaAlani, fetchFn, 90_000);
+  try {
+    const r = await client.beta.messages.create({
+      model: s.model,
+      max_tokens: 2000,
+      system: sistem,
+      messages: mesajlar,
+      tools: araclar,
+      ...(EFORLU.test(s.model) ? { output_config: { effort: "low" as const } } : {}),
+      ...(YEDEKLI.has(s.model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
+    });
+    if (r.stop_reason === "refusal") return { tamam: false, hata: "red" };
+    type Parca = { type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: unknown };
+    const icerik: Parca[] = [];
+    for (const b of r.content) {
+      if (b.type === "text") icerik.push({ type: "text", text: b.text });
+      else if (b.type === "tool_use") icerik.push({ type: "tool_use", id: b.id, name: b.name, input: b.input });
+    }
+    return { tamam: true, icerik, dur: r.stop_reason ?? "" };
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return { tamam: false, hata: "anahtar" };
+    if (e instanceof Anthropic.RateLimitError) return { tamam: false, hata: "sinir" };
+    if (e instanceof Anthropic.APIError) return { tamam: false, hata: "saglayici", ayrinti: `${e.status ?? ""} ${e.message}`.trim().slice(0, 300) };
+    return { tamam: false, hata: "saglayici", ayrinti: "baglanti" };
+  }
+};
+
 /* Sağlayıcının hata gövdesinden okunur metin (OpenAI biçimi {error: {message}}; değilse ham metnin başı). */
 const hataMetni = async (r: Response) => {
   const ham = await r.text().catch(() => "");

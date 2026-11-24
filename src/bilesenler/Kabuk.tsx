@@ -8,6 +8,7 @@ import { useGercekBen } from "../oturum";
 import { git } from "../yol";
 import type { Kisi } from "../veri";
 import AltCubuk from "./AltCubuk";
+import Asistan from "./Asistan";
 import MobilMenu from "./MobilMenu";
 import { Bildiri } from "./Parcalar";
 import AnaMenu from "./AnaMenu";
@@ -123,6 +124,7 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
       </div>
       <AltCubuk ben={ben} acik={menuSayfasi} menuAcik={menuAcik} onMenu={() => setMenuAcik((a) => !a)} />
       {menuAcik && <MobilMenu ben={ben} acik={menuSayfasi} onKapat={kapat} />}
+      <Asistan ben={ben} />
       <Bildiri />
     </div>
   );

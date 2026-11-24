@@ -3,7 +3,8 @@ import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from 
 import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
-import { cagir, modelleriGetir } from "./saglayici.ts";
+import { asistanCagir, cagir, modelleriGetir } from "./saglayici.ts";
+import { ARACLAR, asistanIstegiCoz, sistemYonergesi } from "./asistan.ts";
 import { cfBaglan, ekIndirOtomatik, grubaUygun, guvenliHtml, postalariCekOtomatik, postaGonderOtomatik, mesajKimligiGecerli, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { coz, sifrele, sifreliMi } from "./gizli.ts";
@@ -318,6 +319,29 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const tAnahtar = toplamAnahtari(bugun, ozellik);
     await env.YZ.put(tAnahtar, String((await sayiOku(env, tAnahtar)) + 1), { expirationTtl: 30 * 86400 });
     return yanit({ sonuc, kalan: Math.max(0, sinir - kullanilan - 1) });
+  }
+
+  /*
+   * Asistan (asistan.ts): bir tur; araç isteklerini tarayıcı çalıştırıp sonucu yeni turla getirir.
+   * Günlük sınır yalnız kişinin kendi yazdığı iletide artar, araç turlarında değil.
+   */
+  if (req.method === "POST" && yol === "/asistan") {
+    const saglayici = ozellikSaglayicisi(ayar, "asistan", kisi.birim, kisi.yonetici);
+    if (!saglayici) return yanit({ hata: "kapali" }, 403);
+    const g = asistanIstegiCoz(await req.json().catch(() => null));
+    if (!g) return yanit({ hata: "girdi" }, 400);
+    const kAnahtar = kullanimAnahtari(bugun, kisi.kimlik.uid, "asistan");
+    const kullanilan = await sayiOku(env, kAnahtar);
+    const sinir = ayar.ozellikler.asistan.gunlukSinir;
+    if (g.yeni && kullanilan >= sinir) return yanit({ hata: "gunlukSinir", kalan: 0 }, 429);
+    const s = await asistanCagir(saglayici, sistemYonergesi(g.baglam, ayar.ozellikler.asistan.yonerge), g.mesajlar as never, ARACLAR as never, d.fetch);
+    if (!s.tamam) return yanit({ hata: s.hata, ...(s.ayrinti ? { ayrinti: s.ayrinti } : {}) }, 502);
+    if (g.yeni) {
+      await env.YZ.put(kAnahtar, String(kullanilan + 1), { expirationTtl: IKI_GUN });
+      const tAnahtar = toplamAnahtari(bugun, "asistan");
+      await env.YZ.put(tAnahtar, String((await sayiOku(env, tAnahtar)) + 1), { expirationTtl: 30 * 86400 });
+    }
+    return yanit({ icerik: s.icerik, dur: s.dur, kalan: Math.max(0, sinir - kullanilan - (g.yeni ? 1 : 0)) });
   }
 
   /*

@@ -551,6 +551,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Arama: Claude'da `web_search` aracı (`pause_turn` sürdürülür), OpenAI'da
     Responses API `web_search` (yoksa "arama" hatası); Ayarlar'da site
     listesi (`alanlar`, alan adına indirgenir; tanımayan uçta süzgeçsiz).
+  - **Asistan** (kullanıcı: kişi düğmeye basmadan, yalnız doğal dille, yazarak ya da konuşarak iş
+    yaptırsın; plan `belgeler/asistan.md`, aşamaları orada): yüzen düğme ve Ctrl/⌘+J
+    (`bilesenler/Asistan.tsx`, kabukta; kısıtlı kişide ve izlemede yok), mikrofon tarayıcının
+    konuşma tanımasıyla (söylenen doğrudan gider). Kapı yazmaz: `/asistan` ucu
+    (`worker/src/asistan.ts`: araç tanımları `ARACLAR`, yönerge, konuşma denetimi
+    `asistanIstegiCoz`; `saglayici.ts → asistanCagir`, şimdilik yalnız Claude) konuşmayı modele
+    götürür, araç isteklerini döndürür; araçları tarayıcı kişinin kendi yetkisiyle var olan
+    eylemlerle çalıştırır (`src/asistan/araclar.ts → ARAC_YURUTUCULERI`, adlar kapıdakiyle aynı,
+    eşitlik kapı testinde). Döngü `src/asistan/motor.ts` (en çok 8 tur; konuşma sekmede,
+    `trt-planlama-asistan`). Okuma araçları (ara, sayfaAc, onerileriListele, oneriAyrintisi,
+    planOzeti) hemen; yazma araçları (gelismeEkle, oneriPlanaEkle, oneriReddet,
+    oneriDegerlendirmeyeAl) önce sorulur: kart ne yapılacağını yazar, kişi "evet/tamam/نعم/yes"
+    yazar ya da söyler (düğme de var), başka bir şey vazgeçirir (`onayYaniti`). Asistan da yapay
+    zeka özelliği (`asistan`; Ayarlar › Yapay zeka'da açılır, birimler, günlük sınır yalnız
+    kişinin kendi iletisinde artar). Demoda kapıya gidilmez ("gerçek kipte çalışır"); test sahte
+    modelle (`window.__asistanModeli`): `testler/asistan.cjs`, kapıda `worker/test/asistan.test.ts`.
   - Ayarlar'da her özelliğe yöneticinin yönergesi (`yonerge`, varsayılan
     yönergenin arkasına; çelişirse o geçerli) ve haber değerine ölçütler
     (`kriterler`, boşsa `dil.ts → yzVarsayilanKriterler`, kapıdakiyle aynı).

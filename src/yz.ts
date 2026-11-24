@@ -15,7 +15,7 @@ import type { Bicim, YzGenel } from "./veri";
  * "Haber değeri" metinden türeyen sabit bir sonuç; ayar kaydedilmiyor.
  */
 
-export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri", "takipMetni"] as const;
+export const YZ_OZELLIKLERI = ["kisalt", "bicimle", "haberDegeri", "takipMetni", "asistan"] as const;
 export type YzOzellik = (typeof YZ_OZELLIKLERI)[number];
 
 export type SaglayiciTuru = "anthropic" | "openai";
@@ -204,12 +204,15 @@ interface Girdiler {
   bicimle: YzBicimGirdisi;
   /** `dil`: gerekçeler isteyenin arayüz dilinde; `kriterler` yalnız demoda (kapı kendi ayarından okuyor). */
   haberDegeri: YzOneriGirdisi & { dil: string; kriterler?: string[] };
+  asistan: never;
 }
 interface Sonuclar {
   kisalt: string;
   takipMetni: YzTakipSonucu;
   bicimle: YzBicimSonucu;
   haberDegeri: YzDegerSonucu;
+  // Asistan tek seferlik çağrı değil, kendi ucundan (asistan/motor.ts).
+  asistan: never;
 }
 
 /* Demoda kısaltma: ilk cümle, en çok yirmi sözcük. */

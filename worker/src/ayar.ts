@@ -46,7 +46,7 @@ export interface Ayar {
 }
 
 /* Programın bildiği özellikler; yeni özellik buraya ve ozellikler.ts'e girer. */
-export const OZELLIKLER = ["kisalt", "bicimle", "haberDegeri", "takipMetni"] as const;
+export const OZELLIKLER = ["kisalt", "bicimle", "haberDegeri", "takipMetni", "asistan"] as const;
 export type Ozellik = (typeof OZELLIKLER)[number];
 
 export const VARSAYILAN_SINIR = 50;

@@ -72,6 +72,9 @@ const oneriGirdisi = (girdi: unknown) => {
 
 export const istekKur = (ozellik: Ozellik, girdi: unknown, ayar?: OzellikAyari): Istek | null => {
   switch (ozellik) {
+    // Asistan kendi ucundan (/asistan, asistan.ts); tek seferlik çağrı değil.
+    case "asistan":
+      return null;
     /*
      * Plan satırı "YER / gelişme" biçiminde; muhabirin uzun açıklaması o
      * satıra sığmıyor, producer'lar elle kısaltıyordu. Yer ayrı alanda
