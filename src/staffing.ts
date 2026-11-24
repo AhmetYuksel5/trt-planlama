@@ -361,13 +361,53 @@ export const staffingOnerileri = (
   ekip: EkipUyesi[] = [],
   ogrenilen: Record<string, string> = {},
   uygun: (k: Kisi, gorev: EkipGorevi) => boolean = () => true,
+): StaffingOnerisi[] => kayitlardanOneriler(staffingCoz(metin), kisiler, ekip, ogrenilen, uygun);
+
+/* Postadan ya da rota tablosundan çözülmüş kayıtlar: eşleme ve öğrenme ikisinde aynı. */
+export const kayitlardanOneriler = (
+  kayitlar: StaffingKaydi[],
+  kisiler: Kisi[],
+  ekip: EkipUyesi[] = [],
+  ogrenilen: Record<string, string> = {},
+  uygun: (k: Kisi, gorev: EkipGorevi) => boolean = () => true,
 ): StaffingOnerisi[] => {
   const oncelikli = new Set(ekip.map((e) => e.kisiId));
-  return staffingCoz(metin).flatMap((k) => {
+  return kayitlar.flatMap((k) => {
     const gorev = staffingGorevi(k);
     if (!gorev || !k.calisiyor || !k.saat) return [];
     return [{ ...k, gorev, vardiya: gmtVardiya(k.saat), ...staffingKisisi(k.ad, kisiler, oncelikli, ogrenilen, (x) => uygun(x, gorev)) }];
   });
+};
+
+/*
+ * Rota tablosunun günü (kapı: worker/src/rota.ts → rotaGunu; kullanıcı: staffing'i
+ * Google tablosundan çeksin). Her satır [A, B, günün hücresi]. A dolu, B ve hücre boşsa
+ * grup başlığı ("EP TEAM", "PE EARLY TEAM", "Interpreter"); B vardiya ("0700-1800"),
+ * hücre o vardiyadaki kişi ya da durum ("COMP", "OFF"). Gruplar postanın NEWSROOM
+ * bölümüyle aynı adlarda: görev eşlemesi (staffingGorevi) ikisinde ortak.
+ */
+export const rotaKayitlari = (satirlar: [string, string, string][]): StaffingKaydi[] => {
+  let grup = "";
+  const sonuc: StaffingKaydi[] = [];
+  for (const [a, b, h] of satirlar) {
+    if (a && !b && !h) {
+      grup = a.trim();
+      continue;
+    }
+    const m = b.trim().match(ARALIK);
+    const ad = h.trim();
+    if (!ad) continue;
+    const izinli = IZINLI.test(ad);
+    sonuc.push({ bolum: "newsroom", grup, unvan: a.trim(), ad: izinli ? "" : ad, ...(m ? { saat: saatYaz(m[1], m[2]) } : {}), ...(izinli ? { durum: ad } : {}), calisiyor: !!m && !izinli });
+  }
+  return sonuc.filter((k) => k.ad || k.durum);
+};
+
+/* Rotanın o günkü hali için kimlik: tablo değişince (düzeltilmiş rota) şerit yeniden çıkar. */
+export const rotaKimligi = (tarih: string, satirlar: [string, string, string][]) => {
+  let h = 0;
+  for (const c of JSON.stringify(satirlar)) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0;
+  return `rota-${tarih}-${(h >>> 0).toString(36)}`;
 };
 
 /** Ekibe yazış: postadaki görevlerin ekibi postadakiyle değişir, öbür görevler kalır. */

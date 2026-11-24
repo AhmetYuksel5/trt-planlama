@@ -14,6 +14,7 @@ import { KayitTemizligi } from "./KayitTemizligi";
 import { KayitYedegi } from "./KayitYedegi";
 import { YapayZekaAyari } from "./YapayZeka";
 import { PostaAyari } from "./PostaAyari";
+import { RotaAyari } from "./RotaAyari";
 import { PostaKimlikKart } from "./posta/PostaKimlik";
 import { OtoCagriKart } from "./posta/OtoCagri";
 import { SayfaBasi } from "./ana/Planlama";
@@ -54,6 +55,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {geriBildirimSablonuDuzenler(ben) && <GeriBildirimAyarlari ben={ben} />}
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {ben.hesapYoneticisi && <PostaAyari />}
+        {GERCEK && ben.hesapYoneticisi && <RotaAyari />}
         {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}
         {GERCEK && postaGorebilir(ben) && yapabilir(ben, "cagriHazirla") && <OtoCagriKart />}
         {GERCEK && ben.hesapYoneticisi && <OkumaSayaci />}

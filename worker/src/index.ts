@@ -8,6 +8,7 @@ import { ARACLAR, asistanIstegiCoz, sistemYonergesi } from "./asistan.ts";
 import { cfBaglan, ekIndirOtomatik, grubaUygun, guvenliHtml, postalariCekOtomatik, postaGonderOtomatik, mesajKimligiGecerli, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { coz, sifrele, sifreliMi } from "./gizli.ts";
+import { rotaAyarBirlestir, rotaAyarOku, rotaAyarYaz, rotaGorunur, rotaOku } from "./rota.ts";
 import { bosPostaAyar, bosPostaKimlik, postaAyarBirlestir, postaGorunur, postaKimlikBirlestir, postaKimlikGorunur, type PostaAyar, type PostaKimlik } from "./posta-ayar.ts";
 
 /*
@@ -417,6 +418,39 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
    * istemiyoruz): çektiğini döndürüyor, tarayıcı kişinin kendi oturumuyla
    * yazıyor (belgeler/eposta-entegrasyonu.md).
    */
+  /*
+   * Rota tablosu (rota.ts): ayarı tam yönetici girer; günün satırlarını Next Day'i hazırlayan
+   * okur. Kapı tabloyu gün başına bir kez okur (önbellek 6 saat): her plan açılışı Google'a gitmesin.
+   */
+  if (yol === "/rota/ayar") {
+    if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
+    const ra = await rotaAyarOku(env.YZ, env.POSTA_ANAHTARI);
+    if (req.method === "GET") return yanit(rotaGorunur(ra));
+    if (req.method === "PUT") {
+      const r = rotaAyarBirlestir(ra, await req.json().catch(() => null));
+      if ("hata" in r) return yanit({ hata: r.hata }, 400);
+      await rotaAyarYaz(env.YZ, r.ayar, env.POSTA_ANAHTARI);
+      return yanit(rotaGorunur(r.ayar));
+    }
+  }
+  if (req.method === "POST" && yol === "/rota") {
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
+    const g = (await req.json().catch(() => null)) as { tarih?: unknown; yenile?: unknown } | null;
+    const tarih = typeof g?.tarih === "string" && /^\d{4}-\d{2}-\d{2}$/.test(g.tarih) ? g.tarih : "";
+    if (!tarih) return yanit({ hata: "tarih" }, 400);
+    const ra = await rotaAyarOku(env.YZ, env.POSTA_ANAHTARI);
+    if (!ra.tabloId || !ra.ozelAnahtar) return yanit({ hata: "kapali" }, 404);
+    const kAnahtar = `rota:${ra.tabloId}:${tarih}`;
+    if (g?.yenile !== true) {
+      const onceki = await d.onbellek?.get(kAnahtar).catch(() => null);
+      if (onceki) return yanit(JSON.parse(onceki));
+    }
+    const r = await rotaOku(ra, tarih, d.fetch, d.simdi());
+    if ("hata" in r) return yanit(r, r.hata === "sekme" || r.hata === "gun" ? 404 : 502);
+    await d.onbellek?.put(kAnahtar, JSON.stringify(r), 6 * 3600).catch(() => {});
+    return yanit(r);
+  }
+
   /* Ortak ayar (sunucu, alan, açık/kapalı) yalnız tam yöneticide. */
   if (yol === "/posta/ayar") {
     if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);

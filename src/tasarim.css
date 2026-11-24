@@ -4567,3 +4567,6 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .ornek-yesil i { background: #fff; border-color: #dfe7e4; border-radius: 6px; box-shadow: inset 0 3px 0 #389480; }
 .ornek-yesil b { color: #0f1d2b; font-weight: 600; }
 .ornek-yesil::after { background: linear-gradient(135deg, #237a68, #0e4250); border-radius: 4px; }
+
+/* Ayarlar'da yapıştırılan anahtar (JSON): eşit aralıklı, küçük. */
+.kod-alani { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; }

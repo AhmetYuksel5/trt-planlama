@@ -53,6 +53,16 @@ export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/pos
 export const postaGonder = (g: { kime: string[]; cc?: string[]; bcc?: string[]; konu: string; metin: string; baslik?: string; yanitlanan?: string; html?: string }) =>
   kapiIstek<{ tamam: boolean; kime: string[]; cc: string[]; bcc: string[] }>("/posta/gonder", "POST", g);
 
+/* Rota tablosu (worker/src/rota.ts): ayar tam yöneticide, günün satırlarını Next Day'i hazırlayan okur. */
+export interface RotaAyarGorunum {
+  tabloId: string;
+  istemciEposta: string;
+  anahtarVar: boolean;
+}
+export const rotaAyariGetir = () => kapiIstek<RotaAyarGorunum>("/rota/ayar");
+export const rotaAyariKaydet = (g: { tablo?: string; hesap?: string | null }) => kapiIstek<RotaAyarGorunum>("/rota/ayar", "PUT", g);
+export const rotaGetir = (tarih: string, yenile = false) => kapiIstek<{ sekme: string; satirlar: [string, string, string][] }>("/rota", "POST", { tarih, ...(yenile ? { yenile } : {}) });
+
 /* Ekin kendisi: kapı postayı kişinin kendi kutusunda Message-ID ile bulup eki getirir; kayda girmez. */
 export const postaEkiGetir = (mesajKimligi: string, ad: string) => kapiDosya("/posta/ek", { mesajKimligi, ad });
 

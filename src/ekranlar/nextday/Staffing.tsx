@@ -3,13 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { useDil } from "../../dil";
 import { ekipPostadanYaz } from "../../eylemler";
-import { staffingOnerileri, staffingPostasi, type StaffingOnerisi } from "../../staffing";
+import { kayitlardanOneriler, rotaKayitlari, rotaKimligi, staffingOnerileri, staffingPostasi, type StaffingOnerisi } from "../../staffing";
 import { vardiyaYaz } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan } from "../../veri";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { izlemede } from "../../izleme";
 import { GERCEK, firebaseYukle } from "../../kip";
-import { postaKimlikGetir, postalariCek } from "../../posta-kapi";
+import { postaKimlikGetir, postalariCek, rotaGetir } from "../../posta-kapi";
 import { planIcerikDuzenler, postaGorebilir } from "../../yetki";
 
 /*
@@ -51,6 +51,29 @@ function useStaffingPostasi(ben: Kisi, plan: NextDayPlan) {
 }
 
 /*
+ * Rota tablosu (kullanıcı: staffing'i Google tablosundan çeksin): kapı tablo
+ * ayarlıysa planın gününün satırlarını döndürür (kapıda 6 saat önbellek, tablo
+ * gün başına bir kez okunur). Ayarlı değilse ya da gün tabloda yoksa null:
+ * şerit postaya döner.
+ */
+function useRota(ben: Kisi, plan: NextDayPlan) {
+  const duzenler = planIcerikDuzenler(ben, plan);
+  const [rota, setRota] = useState<{ id: string; satirlar: [string, string, string][] } | null>(null);
+  useEffect(() => {
+    setRota(null);
+    if (!GERCEK || !duzenler || izlemede()) return;
+    let iptal = false;
+    void rotaGetir(plan.tarih)
+      .then((r) => !iptal && r.tamam && r.veri.satirlar?.length && setRota({ id: rotaKimligi(plan.tarih, r.veri.satirlar), satirlar: r.veri.satirlar }))
+      .catch(() => null);
+    return () => {
+      iptal = true;
+    };
+  }, [plan.tarih, duzenler]);
+  return rota;
+}
+
+/*
  * Günlük staffing postası (staffing.ts) bu planın gününe aitse ekibin
  * üstünde şerit; önizlemede görev görev kim, hangi saatle. Kendiliğinden
  * yazılmaz: yanlış eşleşen ad sessizce plana girerdi. Yazılan ya da
@@ -61,28 +84,35 @@ export function StaffingSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) 
   const v = useVeri();
   const [acik, setAcik] = useState(false);
   useStaffingPostasi(ben, plan);
+  const rota = useRota(ben, plan);
   const posta = staffingPostasi(v.postaMesajlari, plan.tarih);
   const kisiler = v.kisiler;
-  const oneriler = useMemo(() => (posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip, v.staffingEslesmeleri, (k, g) => ekipAdayi(k, g)) : []), [posta, kisiler, plan.ekip, v.staffingEslesmeleri]);
-  if (!posta || !planIcerikDuzenler(ben, plan) || (plan.staffingPosta === posta.id && !acik) || !oneriler.length) return null;
+  // Rota tablosu varsa o (önceden belli, tam liste); yoksa günün staffing postası.
+  const kaynak = rota ? { id: rota.id, rota: true } : posta ? { id: posta.id, rota: false } : null;
+  const oneriler = useMemo(() => {
+    const uygun = (k: Kisi, g: Parameters<typeof ekipAdayi>[1]) => ekipAdayi(k, g);
+    if (rota) return kayitlardanOneriler(rotaKayitlari(rota.satirlar), kisiler, plan.ekip, v.staffingEslesmeleri, uygun);
+    return posta ? staffingOnerileri(posta.tamMetin || posta.metin, kisiler, plan.ekip, v.staffingEslesmeleri, uygun) : [];
+  }, [rota, posta, kisiler, plan.ekip, v.staffingEslesmeleri]);
+  if (!kaynak || !planIcerikDuzenler(ben, plan) || (plan.staffingPosta === kaynak.id && !acik) || !oneriler.length) return null;
   return (
     <>
-      {plan.staffingPosta !== posta.id && (
-        <div className="onceki-seridi" data-staffing-seridi>
+      {plan.staffingPosta !== kaynak.id && (
+        <div className="onceki-seridi" data-staffing-seridi data-staffing-kaynak={kaynak.rota ? "rota" : "posta"}>
           <span className="onceki-sayi">
-            <Users size={16} /> {t("stSerit", { n: oneriler.length })}
+            <Users size={16} /> {t(kaynak.rota ? "stSeritRota" : "stSerit", { n: oneriler.length })}
           </span>
           <button className="dugme" onClick={() => setAcik(true)} data-staffing-ac>
             {t("stAc")}
           </button>
         </div>
       )}
-      {acik && <StaffingPenceresi ben={ben} plan={plan} mesajId={posta.id} oneriler={oneriler} kapat={() => setAcik(false)} />}
+      {acik && <StaffingPenceresi ben={ben} plan={plan} mesajId={kaynak.id} rota={kaynak.rota} oneriler={oneriler} kapat={() => setAcik(false)} />}
     </>
   );
 }
 
-function StaffingPenceresi({ ben, plan, mesajId, oneriler, kapat }: { ben: Kisi; plan: NextDayPlan; mesajId: string; oneriler: StaffingOnerisi[]; kapat: () => void }) {
+function StaffingPenceresi({ ben, plan, mesajId, rota, oneriler, kapat }: { ben: Kisi; plan: NextDayPlan; mesajId: string; rota: boolean; oneriler: StaffingOnerisi[]; kapat: () => void }) {
   const { t, ad } = useDil();
   const v = useVeri();
   // Satır başına seçili kişi ve işaret; eşleşmeyen satır seçilene dek işaretsiz.
@@ -118,7 +148,7 @@ function StaffingPenceresi({ ben, plan, mesajId, oneriler, kapat }: { ben: Kisi;
   return (
     <Pencere
       genis
-      baslik={t("stBaslik")}
+      baslik={t(rota ? "stBaslikRota" : "stBaslik")}
       kapat={kapat}
       altBilgi={
         <>
