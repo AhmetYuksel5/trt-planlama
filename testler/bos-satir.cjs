@@ -32,7 +32,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.getByRole("button", { name: "E-posta için kopyala" }).click();
     await p.waitForTimeout(400);
     const h = await p.evaluate(async () => { const [it] = await navigator.clipboard.read(); return (await it.getType("text/html")).text(); });
-    ok((h.match(bos) ?? []).length >= 2, `${ad}: e-posta kopyasında başlıkların önünde boş satır (${(h.match(bos) ?? []).length})`);
+    // E-postada başlık, Word biçimiyle (altı çizili) paragraf: Outlook kendi başlık stilini vermesin.
+    const bosE = /<p[^>]*>(&nbsp;| )<\/p>\s*<p[^>]*text-decoration:underline/g;
+    ok((h.match(bosE) ?? []).length >= 2, `${ad}: e-posta kopyasında başlıkların önünde boş satır (${(h.match(bosE) ?? []).length})`);
     ok(!/19pt/.test(h), `${ad}: e-posta kopyasında başlığın üst boşluğu yok`);
     // Word.
     const [indirme] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: /Word/ }).first().click()]);

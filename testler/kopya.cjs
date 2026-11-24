@@ -17,6 +17,11 @@ const { chromium } = require(process.env.PW);
     s["html_" + k] = /dir="rtl"/.test(r.h) && /font-family:Calibri/.test(r.h) && /color:#4f7a28/.test(r.h) && /color:#c00000/.test(r.h);
     s["sinifsiz_" + k] = !/class=/.test(r.h) && !/<button/.test(r.h) && !/baski-/.test(r.h);
     s["duzMetin_" + k] = r.m.length > 200;
+    // Word'ün biçimi her paragrafta: yazı tipi ve punto (Outlook varsayılanını vermesin), başlık etiketi yok.
+    const paragraflar = r.h.match(/<p [^>]*>/g) || [];
+    s["paragrafBicimi_" + k] = paragraflar.length > 10 && paragraflar.every((x) => /font-family:Calibri/.test(x) && /font-size:\d+(\.\d+)?pt/.test(x));
+    s["basliksiz_" + k] = !/<h[1-4]/.test(r.h) && !/<bdi/.test(r.h) && !/<mark/.test(r.h);
+    s["puntolar_" + k] = /font-size:16pt[^"]*text-align:center/.test(r.h) && /font-size:14pt/.test(r.h) && /font-size:13pt/.test(r.h) && /text-decoration:underline/.test(r.h);
   }
   console.log(s, "hata", hata);
   await b.close(); process.exit(Object.values(s).every(Boolean) && !hata ? 0 : 1);

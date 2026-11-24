@@ -2640,8 +2640,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     birlikte (`indir.ts → epostaHtml`, `zenginKopyala`; Clipboard API, olmazsa
     seçip kopyalama). E-posta istemcisi stil dosyasını almıyor; düz metin
     kopyası ve sayfadan seçme biçimi bozuyordu, Word'e indirip oradan
-    kopyalanıyordu. Biçim `EPOSTA_STILI`, `WORD_BICIMI` ile aynı tutulur. Test
-    `testler/kopya.cjs`.
+    kopyalanıyordu. Biçimin tek kaynağı Word'ünki (`WORD_BICIMI`; önce elle tutulan
+    ikinci liste `EPOSTA_STILI` vardı): belge o biçimle görünmez çerçevede çizilir,
+    her öğenin hesaplanmış biçimi kendi style'ına yazılır; yazı tipi ve punto her
+    paragrafta, başlıklar aynı biçimle paragrafa, `bdi`/`mark` span'e (kullanıcı:
+    yapıştırınca boyut ve biçim değişiyordu: biçim yalnız dış kutudaydı, Outlook
+    paragraflara kendi varsayılanını, başlıklara mavi "Başlık" stilini veriyordu).
+    Planı gönder de bu HTML'le gider. Test `testler/kopya.cjs`.
   - Aralık kurumun kuralı: aynı başlığın altındaki satırlar 1,15; başlıklar
     ve bölümler arasında tek boş satır (kullanıcı: satır aralığını artırarak
     değil, birer boş satırla; önce 1,30 satırdı). Word dosyasında ve e-posta
