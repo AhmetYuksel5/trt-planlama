@@ -1,6 +1,7 @@
 import { useYz } from "../../yz";
 import { gelismeMasaEtiketi } from "../../masaEtiketi";
 import { MasaEki } from "../nextday/MasaEki";
+import { NafizeBelgede, NafizeEkleDugmesi } from "../nextday/Nafize";
 import { BaslikOnerileriDugmesi, BaslikaKatPenceresi, CanliSonucDugmeleri, PaketKararDugmeleri, PaketOneriBagi, SonGelismelerPenceresi } from "../nextday/SatirIslemleri";
 import { PaketMetniFormu } from "../nextday/BaslikKarti";
 import { OneridenAl } from "../nextday/Formlar";
@@ -573,7 +574,7 @@ export function NextDayBelgesi({
                                     ) : (
                                       p.baslik
                                     )}
-                                    <MasaEki d={v} p={p} />{" "}
+{" "}
                                     /{" "}
                                     <b>
                                       {muhabirYeri(
@@ -585,6 +586,7 @@ export function NextDayBelgesi({
                                         p.muhabirTbc,
                                       )}
                                     </b>
+                                    <MasaEki d={v} p={p} />
                                     {bicimEki(p.bicim) && (
                                       <b data-bicim-eki> {bicimEki(p.bicim)}</b>
                                     )}
@@ -657,9 +659,10 @@ export function NextDayBelgesi({
               ) : (
                 p.baslik
               )}
-              <MasaEki d={v} p={p} />{" "}
+{" "}
               /{" "}
               <b>{muhabirYeri([p.muhabirId ? kisiAdi(p.muhabirId) : ""], p.muhabirTbc)}</b>
+              <MasaEki d={v} p={p} />
               {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
               {paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
             </Satir>
@@ -853,14 +856,14 @@ export function NextDayBelgesi({
           serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}
         >
           <Satir yer={paketYeri(p)}>
-            {p.baslik}
-            <MasaEki d={v} p={p} /> /{" "}
+            {p.baslik} /{" "}
             <b>
               {muhabirYeri(
                 [p.muhabirId ? kisiAdi(p.muhabirId) : ""],
                 p.muhabirTbc,
               )}
             </b>
+            <MasaEki d={v} p={p} />
             {bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}
             {paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}
           </Satir>
@@ -993,6 +996,7 @@ export function NextDayBelgesi({
                         {gelismeler.map((g, j) =>
                           gelismeSatiri(g, j, gelismeler, pb.id),
                         )}
+                        <NafizeBelgede plan={plan} pbId={pb.id} duzen={ic} />
                         {pb.muhabirler.length > 0 && (
                           <>
                             <p className="alt-baslik">
@@ -1205,6 +1209,7 @@ export function NextDayBelgesi({
                             )}
                             {op && <OneridenAl plan={plan} planBaslikId={pb.id} />}
                             {op && <EkleDugmesi metin={t("canliEkle")} onClick={() => ac({ tur: "canli", pbId: pb.id })} />}
+<NafizeEkleDugmesi plan={plan} planBaslikId={pb.id} />
                             {ic && (
                               <EkleDugmesi
                                 metin={t("muhabirAta")}
@@ -1452,6 +1457,7 @@ export function NextDayBelgesi({
                         metin={t("canliEkle")}
                         onClick={() => ac({ tur: "canli" })}
                       />
+<NafizeEkleDugmesi plan={plan} />
                     </EkleCubugu>
                   )}
                 </section>
@@ -1716,6 +1722,7 @@ export function NextDayBelgesi({
                     metin={t("canliEkle")}
                     onClick={() => ac({ tur: "canli" })}
                   />
+<NafizeEkleDugmesi plan={plan} />
                 </EkleCubugu>
               )}
             </section>
@@ -1866,6 +1873,7 @@ export function NextDayBelgesi({
                     {gelismeler.map((g, j) =>
                       gelismeSatiri(g, j, gelismeler, pb.id),
                     )}
+                    <NafizeBelgede plan={plan} pbId={pb.id} duzen={ic} />
                     {pb.muhabirler.length > 0 && (
                       <>
                         <p className="alt-baslik">
@@ -2072,6 +2080,7 @@ export function NextDayBelgesi({
                         )}
                         {op && <OneridenAl plan={plan} planBaslikId={pb.id} />}
                         {op && <EkleDugmesi metin={t("canliEkle")} onClick={() => ac({ tur: "canli", pbId: pb.id })} />}
+<NafizeEkleDugmesi plan={plan} planBaslikId={pb.id} />
                         {ic && (
                           <EkleDugmesi
                             metin={t("muhabirAta")}

@@ -499,6 +499,7 @@ p > .oneri-sil { margin-inline-start: var(--ara-2); }
 /* "Önerilerden al": gelişme eklemenin sağında; formda sağ üstte. */
 .ekle-satiri { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
 .ekle-satiri > :last-child:not(:first-child) { margin-inline-start: auto; }
+.ekle-yanyana { display: flex; align-items: center; gap: var(--ara-2); flex-wrap: wrap; }
 .form-ust-uc { display: flex; justify-content: flex-end; }
 .pencere-ara-baslik { font-size: var(--punto-kucuk); color: var(--sonuk); margin-block: var(--ara-2) var(--ara-1); }
 .liste.oneriden-al > li { align-items: flex-start; }

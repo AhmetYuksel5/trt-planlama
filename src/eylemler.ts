@@ -92,6 +92,7 @@ import {
   type Kisi,
   type Rol,
   type NextDayPlan,
+  type PlanNafize,
   type Oneri,
   type MasaSorusu,
   type ToplantiNotu,
@@ -2506,6 +2507,34 @@ export const kayipBaslikGeriGetir = (ben: Kisi, planId: string, pbId: string, g:
   return true;
 };
 
+/* --- Nafize (PlanNafize): planın kendi kaydında, plan içeriğini düzenleyen yazar --- */
+
+/* Formdaki her satır ayrı nafize (kullanıcı: bir sunucunun birkaç saatte nafizesi olur, teker teker girilmesin). */
+export const planNafizeleriEkle = (ben: Kisi, planId: string, kayitlar: Omit<PlanNafize, "id">[]) => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  const temiz = kayitlar.filter((n) => n.yer.trim() || n.saat || n.konuklar.length || n.sunucu);
+  if (!plan || !planIcerikDuzenler(ben, plan) || !temiz.length || temiz.some((n) => !plan.basliklar.some((b) => b.id === n.planBaslikId))) return false;
+  kaydet(planGuncelle(d, planId, (p) => ({ ...p, nafizeler: [...(p.nafizeler ?? []), ...temiz.map((n) => ({ ...n, yer: n.yer.trim(), id: kimlik("nf") }))] })));
+  return true;
+};
+
+export const planNafizeKaydet = (ben: Kisi, planId: string, n: PlanNafize) => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan) || !plan.nafizeler?.some((x) => x.id === n.id) || !plan.basliklar.some((b) => b.id === n.planBaslikId)) return false;
+  kaydet(planGuncelle(d, planId, (p) => ({ ...p, nafizeler: (p.nafizeler ?? []).map((x) => (x.id === n.id ? { ...n, yer: n.yer.trim() } : x)) })));
+  return true;
+};
+
+export const planNafizeSil = (ben: Kisi, planId: string, id: string) => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  if (!plan || !planIcerikDuzenler(ben, plan) || !plan.nafizeler?.some((x) => x.id === id)) return false;
+  kaydet(planGuncelle(d, planId, (p) => ({ ...p, nafizeler: (p.nafizeler ?? []).filter((x) => x.id !== id) })));
+  return true;
+};
+
 export const planBaslikCikar = (ben: Kisi, planId: string, pbId: string) => {
   let d = getir();
   const plan = planBul(d, planId);
@@ -2517,7 +2546,7 @@ export const planBaslikCikar = (ben: Kisi, planId: string, pbId: string) => {
     gelismeler: d.gelismeler.filter((g) => g.planBaslikId !== pbId),
     canliYayinlar: d.canliYayinlar.filter((c) => c.planBaslikId !== pbId),
   };
-  kaydet(oneriBaglariniTazele(planGuncelle(d, planId, (p) => ({ ...p, basliklar: p.basliklar.filter((b) => b.id !== pbId) })), oneriler));
+  kaydet(oneriBaglariniTazele(planGuncelle(d, planId, (p) => ({ ...p, basliklar: p.basliklar.filter((b) => b.id !== pbId), ...(p.nafizeler && { nafizeler: p.nafizeler.filter((n) => n.planBaslikId !== pbId) }) })), oneriler));
   return true;
 };
 
@@ -2647,6 +2676,7 @@ export const planBaslikBirlestir = (ben: Kisi, planId: string, kaynakId: string,
   d = planGuncelle(d, planId, (p) => ({
     ...p,
     basliklar: p.basliklar.filter((b) => b.id !== kaynakId).map((b) => (b.id === hedefId ? { ...b, muhabirler } : b)),
+    ...(p.nafizeler && { nafizeler: p.nafizeler.map((n) => (n.planBaslikId === kaynakId ? { ...n, planBaslikId: hedefId } : n)) }),
   }));
   const ad = (id: string) => d.basliklar.find((b) => b.id === id)?.ad ?? "";
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "baslikBirlestirildi", planId, veri: { katilan: ad(kaynak.baslikId), hedef: ad(hedef.baslikId), tarih: plan.tarih } }));

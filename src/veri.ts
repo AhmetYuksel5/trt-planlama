@@ -376,8 +376,24 @@ export interface NextDayPlan {
   staffingPosta?: string;
   /** Onaylanan planın son postayla gönderimi (planGonder.ts). */
   gonderildi?: PlanGonderimi;
+  /** Nafizeler (نافذة): başlığın gelişmelerinin altında, "مباشر"da değil; o güne ait, ertesi güne taşınmaz. */
+  nafizeler?: PlanNafize[];
   olusturan: string;
   olusturma: string;
+}
+
+/**
+ * Nafize (kullanıcı: canlı yayın değil, başlığın altında "نافذة / نوافذ"):
+ * "08:00G - mekan", altında "المذيع: ad / الضيف: ad". Saat GMT, "SS:DD".
+ * Sunucu kayıtlı kişi ya da elle yazılan ad; konuklar düz ad (Arapça).
+ */
+export interface PlanNafize {
+  id: string;
+  planBaslikId: string;
+  saat?: string;
+  yer: string;
+  sunucu?: { kisiId: string } | { ad: string };
+  konuklar: string[];
 }
 
 /* "kurum": başka bir birimin ya da Planlama'nın kendi takibinden çıkan haber; dışarıdan gelmiyor ama muhabirin de değil. */

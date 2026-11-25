@@ -1453,14 +1453,24 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     yazılmaz, bölümün adı zaten o.
   - Masanın işi plan metninde etiketli (kullanıcı: plana eklenen öneri ekonomi için
     yapılıyorsa ekonomi etiketiyle plan metnine girsin, öbür birimler için de; sonra:
-    paketin adından sonra tire ve kalın): PKG'nin adının (Strap) arkasında " - " ve kalın
-    birimin Arapça adı (الاقتصاد، البرامج، الرياضة; `masaEtiketi.ts`, `nextday/MasaEki.tsx`,
+    paketin yer, başlık, muhabir satırı bittikten sonra tire ve kalın): PKG satırının
+    ("YER / Strap / muhabir") arkasında " - " ve kalın birimin Arapça adı (الاقتصاد، البرامج، الرياضة; `masaEtiketi.ts`, `nextday/MasaEki.tsx`,
     `data-plan-masa`; klasik plan ekranı, belge, çıktı, beklenen paketler, متابعات, Word ve
     kopya). Kural tek (Weekly de onu kullanır, orada alt başlık): kolu masanınsa kolun
     sahibi, masanın önerisiyse (`Oneri.masa`) o masa, öneri bir masaya sorulup "Uygundur"
     dendiyse o masa. Aynı öneriden (ya da Weekly kaleminden) gelen PKG aynı başlıkta
     etiketi taşıyorsa gelişmede tekrar edilmez; paketsiz gelişmede metnin sonunda
     (`gelismeMasaEtiketi`). Saklanmaz. Test `testler/plan-masa-etiketi.cjs`.
+  - Nafize (kullanıcı: canlı yayın bölümünde "Nafize ekle" yanda; nafize "مباشر"da
+    görünmez, başlığın altında): `NextDayPlan.nafizeler` (`PlanNafize`: başlık, saat GMT
+    "SS:DD", mekan, sunucu [kayıtlı kişi ya da elle ad], konuklar), planın kendi kaydında;
+    ertesi güne taşınmaz. Formda başlık seçilir, birkaç saat satır satır girilir (yeni satır
+    öncekinin sunucusu ve mekanıyla; her satır ayrı nafize; `eylemler.ts →
+    planNafizeleriEkle`, `planNafizeKaydet`, `planNafizeSil`, plan içeriğini düzenleyen).
+    Plan ekranında, belgede ve çıktıda başlığın gelişmelerinin altında "نافذة" (birden çoksa
+    "نوافذ") alt başlığı, saat sırasıyla her biri iki satır: "**08:00G** - mekan", altında
+    "**المذيع:** ad / **الضيف:** ad" (birden çok konukta الضيوف). Başlık çıkınca nafizesi
+    gider, başka başlığa katılınca onunla. `nextday/Nafize.tsx`; test `testler/nafize.cjs`.
   - Pakete eklenen notlar (`Paket.notlar`: paket formundaki "Not" alanı,
     kimliği `eylemler.ts → formNotuKimligi`, düzenlemede o not değişir;
     not, yönetici notu, durak notu)

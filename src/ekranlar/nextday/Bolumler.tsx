@@ -20,6 +20,7 @@ import { vardiyaYaz, yerelGun } from "../../tarih";
 import { gelismeMuhabirleri, gelismeProgrami, kisiBul, paketBul, useVeri, type CanliYayin, type Durum, type EkipGoreviId, type Gelisme, type Gorevlendirme, type Kisi, type NextDayPlan, type Paket, type PlanAdi } from "../../veri";
 import { OneriyiAc, useOneriSimgesi } from "../oneri/OneriyiAc";
 import { useTelefon } from "../takvim/ortak";
+import { NafizeEkleDugmesi } from "./Nafize";
 import { CanliFormu, GelismeFormu, HareketPenceresi, OneridenAl } from "./Formlar";
 
 /**
@@ -486,9 +487,11 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
           ),
         )}
       {duzenler && form === "yeni" && <CanliFormu plan={plan} planBaslikId={planBaslikId} kapat={() => setForm("")} />}
-      {duzenler && !form && (
-        <div className="ara-ust-2">
-          <EkleDugmesi metin={t("canliEkle")} onClick={() => setForm("yeni")} />
+      {!form && (duzenler || !planBaslikId) && (
+        <div className="ara-ust-2 ekle-yanyana">
+          {duzenler && <EkleDugmesi metin={t("canliEkle")} onClick={() => setForm("yeni")} />}
+          {/* Nafize "مباشر"da görünmez, seçilen başlığın gelişmelerinin altına girer (kullanıcı). */}
+          {!planBaslikId && <NafizeEkleDugmesi plan={plan} />}
         </div>
       )}
     </>
@@ -750,7 +753,7 @@ export function GelismeListesi({
       )}
       {duzenler && form === "yeni" && <GelismeFormu plan={plan} planBaslikId={planBaslikId} kapat={() => setForm("")} />}
       {duzenler && !form && (
-        <div className="ara-ust-2 ekle-satiri">
+        <div className="ara-ust-2 ekle-yanyana">
           <EkleDugmesi metin={t("gelismeEkle")} onClick={() => setForm("yeni")} />
           {planBaslikId && <OneridenAl plan={plan} planBaslikId={planBaslikId} />}
         </div>
