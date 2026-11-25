@@ -2483,6 +2483,19 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     metinsiz kalem ekranda, belgede ve çıktıda yalnız PKG satırıyla, Next Day'e
     gelişmesiz, ayrı paketle (her biri kendi kararıyla) geçer. Test
     `testler/haftalik-coklu-pkg.cjs`.
+  - Günün canlı yayını ve nafizesi (kullanıcı: haftadan gün gündemine canlı yayın ve nafize
+    eklensin; `haftalik/CanliNafize.tsx`, `HaftalikPlan.canlilar`/`nafizeler`, `HaftaCanli`,
+    `HaftaNafize`): günün "Kalem ekle"sinin yanında "Canlı yayın / etkinlik ekle" (konu, yer, saat
+    GMT, muhabir, isteğe bağlı dosya) ve "Nafize ekle" (Next Day'in formu `nextday/Nafize.tsx →
+    NafizeFormu`, başlık yerine haftanın dosyası, "+ Yeni dosya"; birkaç saat tek formda). Karar
+    kalemi değil; plan ekranında, belgede ve çıktıda günün altında "مباشر" ("YER / konu / **saatG**",
+    TBC) ve "نافذة/نوافذ" (satırın sonunda dosyası). Eylemler `eylemler.ts → haftaCanliKaydet`,
+    `haftaNafizeleriEkle`, `haftaNafizeKaydet`, `haftaCanliNafizeSil` (haftalık düzenleyen).
+    Hafta kesinleşince, kesinleşmiş haftaya eklenince, yarının planı açılınca ve sistemin açılış
+    işinde o günün Next Day planına geçer (`haftaCanliNafizeAktar`; kimlik plandan ve kayıttan):
+    canlı "مباشر"a, dosyası varsa başlığın LIVE'ına; nafize dosyanın başlığının altına (başlık
+    planda yoksa açılır). Geçen kayıt haftada `aktarim`'lı, kilitli. Test
+    `testler/haftalik-canli-nafize.cjs`.
   - Dosya seçimleri (kalem formu, "Gündeme ekle", ana dosya) her hafta boş
     başlar: yalnız o haftanın dosyaları (`haftalik.ts → haftaninDosyalari`:
     `HaftalikPlan.dosyalar`, kalemlerin ve ana dosyaların başlıkları) ve

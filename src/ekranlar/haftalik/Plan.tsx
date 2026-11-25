@@ -52,6 +52,7 @@ import { HaftalikTakdirPenceresi } from "./Takdir";
 import { HatirlatmaPenceresi } from "./Cagri";
 import { haftalikTakdirKalemleri, kalemBildirimi } from "../../takdir";
 import { ToplantiNotlari } from "./Toplanti";
+import { GunCanliNafize, GunEkleDugmeleri, gunCanlilari, gunNafizeleri } from "./CanliNafize";
 
 /**
  * Haftalık plan ekranı: Perşembe toplantısına giden planın hazırlandığı
@@ -633,14 +634,16 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
             <h3>
               {gunAdi(g, dil)} <span>{tarihYaz(g, dil, "uzun")}</span>
             </h3>
-            {kalemler.length === 0 && form !== g && <p className="bos-kucuk">{t("buGunKalemYok")}</p>}
+            {kalemler.length === 0 && !gunCanlilari(hafta, g).length && !gunNafizeleri(hafta, g).length && form !== g && <p className="bos-kucuk">{t("buGunKalemYok")}</p>}
             <DosyaGruplari ben={ben} hafta={hafta} kalemler={kalemler} tarih={g} />
+            <GunCanliNafize h={hafta} tarih={g} klasik />
             {duzenler &&
               (form === g ? (
                 <KalemFormu ben={ben} hafta={hafta} tarih={g} kapat={() => setForm(null)} />
               ) : (
-                <div className="ara-ust">
+                <div className="ara-ust ekle-yanyana">
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => setForm(g)} />
+                  <GunEkleDugmeleri h={hafta} tarih={g} />
                 </div>
               ))}
           </section>

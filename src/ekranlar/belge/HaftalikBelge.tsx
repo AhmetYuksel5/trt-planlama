@@ -20,6 +20,7 @@ import { IkonDugme } from "../nextday/Bolumler";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { KararNotlari } from "../haftalik/Kalem";
 import { KalemPostaDugmesi } from "../haftalik/Takdir";
+import { GunCanliNafize, GunEkleDugmeleri, gunCanlilari, gunNafizeleri } from "../haftalik/CanliNafize";
 import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, YerindeMetin, onayla } from "./Parcalar";
 
 /**
@@ -394,7 +395,7 @@ export function HaftalikBelgesi({
   const hareketSatirlari = [...hareketler.reduce((m, g) => m.set(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`, [...(m.get(`${g.yer}|${g.tur}|${g.baslangic}|${g.bitis}`) ?? []), g]), new Map<string, typeof hareketler>()).values()];
   // Toplantıda reddedilen de görünür: karar geri alınabilsin.
   const kalemler = toplanti ? hafta.kalemler.filter(gundemde) : duzen || hafta.durum !== "kesinlesti" ? hafta.kalemler.filter((k) => gundemde(k) && k.karar !== "ret") : hafta.kalemler.filter(ciktida);
-  const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g));
+  const gunler = duzen ? haftaGunleri(bas) : haftaGunleri(bas).filter((g) => kalemler.some((k) => k.tarih === g) || gunCanlilari(hafta, g).length || gunNafizeleri(hafta, g).length);
   const stok = kalemler.filter((k) => !k.tarih);
 
   const hareketBolumu = (
@@ -469,9 +470,11 @@ export function HaftalikBelgesi({
             <div key={g} className="cikti-gun" {...hfYer(g)}>
               <h4 className="gun">{ciktiGunu(g, "ar")}</h4>
               <Dosyalar liste={kalemler.filter((k) => k.tarih === g)} hafta={hafta} duzen={duzen} tarih={g} />
+              <GunCanliNafize h={hafta} tarih={g} duzen={!!duzen} />
               {duzen && (
                 <EkleCubugu>
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: g })} />
+                  <GunEkleDugmeleri h={hafta} tarih={g} />
                 </EkleCubugu>
               )}
             </div>

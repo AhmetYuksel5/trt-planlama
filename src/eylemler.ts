@@ -6,7 +6,7 @@ import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, 
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { konuAnahtari, konuBasligi, konuKatilimcisi, mesajAlicilari, type MesajKonusu } from "./mesajlasma";
 import { imlaKimligi, sozcukDegistir, type ImlaOnerisi } from "./imla";
-import { gundemde, isDogurur, kalemIcerigiVar, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
+import { gundemde, haftaGunleri, isDogurur, kalemIcerigiVar, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -84,6 +84,8 @@ import {
   type Cagri,
   type CagriTuru,
   type HaftalikKalem,
+  type HaftaCanli,
+  type HaftaNafize,
   type HaftalikPlan,
   type Kanal,
   type KaynakTuru,
@@ -1740,6 +1742,119 @@ const kalemGoreviVar = (k: HaftalikKalem) => k.karar === "kabul";
 const planAktarimaAcik = (p: NextDayPlan) => p.durum === "taslak" || p.durum === "toplantida" || p.durum === "onayli";
 
 /*
+ * Haftanın canlı ve nafizeleri o günün Next Day planına (kesinleşmiş haftada).
+ * Kimlikler plandan ve kayıttan: iki tarayıcı aynı anda geçirirse aynı belge
+ * yazılır. Geçen kayıt haftada işaretlenir, ikinci kez geçmez.
+ */
+const planBasligiSagla = (d: Durum, plan: NextDayPlan, baslikId: string): [Durum, string] => {
+  const var_ = planBul(d, plan.id)?.basliklar.find((b) => b.baslikId === baslikId);
+  if (var_) return [d, var_.id];
+  const pb = { id: turet(plan.id, baslikId), baslikId, muhabirler: [] };
+  return [planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: [...p.basliklar, pb] })), pb.id];
+};
+
+const haftaCanliNafizeAktar = (d: Durum, kisiId: string, haftaId: string, plan: NextDayPlan): Durum => {
+  const h = haftaBul(d, haftaId);
+  if (!h || h.durum !== "kesinlesti" || !planAktarimaAcik(plan)) return d;
+  const canlilar = (h.canlilar ?? []).filter((c) => c.tarih === plan.tarih && !c.aktarim);
+  const nafizeler = (h.nafizeler ?? []).filter((n) => n.tarih === plan.tarih && !n.aktarim);
+  if (!canlilar.length && !nafizeler.length) return d;
+  for (const c of canlilar) {
+    let pbId: string | undefined;
+    if (c.baslikId) [d, pbId] = planBasligiSagla(d, plan, c.baslikId);
+    const id = `cy-${turet(plan.id, c.id)}`;
+    if (d.canliYayinlar.some((x) => x.id === id)) continue;
+    d = {
+      ...d,
+      canliYayinlar: [
+        ...d.canliYayinlar,
+        { id, planId: plan.id, planBaslikId: pbId, konu: c.konu, aciklama: "", tarih: plan.tarih, saatGmt: c.saat ?? "", yer: c.yer, muhabirId: c.muhabirId, notlar: "", ekleyen: { kisiId, zaman: simdi() } },
+      ],
+    };
+  }
+  for (const n of nafizeler) {
+    let pbId: string;
+    [d, pbId] = planBasligiSagla(d, plan, n.baslikId);
+    const id = turet(plan.id, n.id);
+    d = planGuncelle(d, plan.id, (p) =>
+      (p.nafizeler ?? []).some((x) => x.id === id) ? p : { ...p, nafizeler: [...(p.nafizeler ?? []), { id, planBaslikId: pbId, saat: n.saat, yer: n.yer, sunucu: n.sunucu, konuklar: n.konuklar }] },
+    );
+  }
+  const gecen = new Set([...canlilar, ...nafizeler].map((x) => x.id));
+  const isaret = <T extends { id: string }>(l?: T[]) => l?.map((x) => (gecen.has(x.id) ? { ...x, aktarim: { planId: plan.id } } : x));
+  return haftaGuncelle(d, haftaId, (x) => ({ ...x, canlilar: isaret(x.canlilar), nafizeler: isaret(x.nafizeler) }));
+};
+
+/* Kesinleşmiş haftanın bütün günleri: açık planı olan güne canlı ve nafizeler geçer. */
+const haftaninCanliNafizeleriniAktar = (d: Durum, kisiId: string, haftaId: string): Durum => {
+  const h = haftaBul(d, haftaId);
+  if (!h) return d;
+  const gunler = new Set([...(h.canlilar ?? []), ...(h.nafizeler ?? [])].filter((x) => !x.aktarim).map((x) => x.tarih));
+  for (const g of gunler) {
+    const plan = d.planlar.find((p) => p.tarih === g);
+    if (plan) d = haftaCanliNafizeAktar(d, kisiId, haftaId, plan);
+  }
+  return d;
+};
+
+/* Weekly'de günün canlısı ve nafizesi: haftalık düzenleyen; Next Day'e geçmiş kayıt değişmez. */
+export const haftaCanliKaydet = (ben: Kisi, haftaId: string, c: Omit<HaftaCanli, "id" | "aktarim"> & { id?: string }, yeniDosya?: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (!h || !haftalikDuzenler(ben, h) || !c.konu.trim() || !haftaGunleri(h.baslangic).includes(c.tarih)) return false;
+  if (yeniDosya?.trim()) [c.baslikId, d] = dosyaAc(d, yeniDosya);
+  const temiz = { ...c, konu: c.konu.trim(), yer: c.yer.trim(), saat: c.saat || undefined, baslikId: c.baslikId || undefined, muhabirId: c.muhabirId || undefined };
+  if (c.id) {
+    const eski = h.canlilar?.find((x) => x.id === c.id);
+    if (!eski || eski.aktarim) return false;
+    d = haftaGuncelle(d, haftaId, (x) => ({ ...x, canlilar: (x.canlilar ?? []).map((y) => (y.id === c.id ? { ...temiz, id: y.id } : y)) }));
+  } else d = haftaGuncelle(d, haftaId, (x) => ({ ...x, canlilar: [...(x.canlilar ?? []), { ...temiz, id: kimlik("hc") }] }));
+  if (temiz.baslikId) d = haftayaDosya(d, haftaId, temiz.baslikId);
+  kaydet(haftaninCanliNafizeleriniAktar(d, ben.id, haftaId));
+  return true;
+};
+
+export const haftaNafizeleriEkle = (ben: Kisi, haftaId: string, kayitlar: Omit<HaftaNafize, "id" | "aktarim">[], yeniDosya?: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (yeniDosya?.trim()) {
+    let id: string | undefined;
+    [id, d] = dosyaAc(d, yeniDosya);
+    kayitlar = kayitlar.map((n) => ({ ...n, baslikId: id ?? "" }));
+  }
+  const temiz = kayitlar.filter((n) => n.yer.trim() || n.saat || n.konuklar.length || n.sunucu);
+  if (!h || !haftalikDuzenler(ben, h) || !temiz.length || temiz.some((n) => !n.baslikId || !haftaGunleri(h.baslangic).includes(n.tarih))) return false;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, nafizeler: [...(x.nafizeler ?? []), ...temiz.map((n) => ({ ...n, yer: n.yer.trim(), id: kimlik("hn") }))] }));
+  for (const n of temiz) d = haftayaDosya(d, haftaId, n.baslikId);
+  kaydet(haftaninCanliNafizeleriniAktar(d, ben.id, haftaId));
+  return true;
+};
+
+export const haftaNafizeKaydet = (ben: Kisi, haftaId: string, n: Omit<HaftaNafize, "aktarim">, yeniDosya?: string) => {
+  let d = getir();
+  const h = haftaBul(d, haftaId);
+  if (yeniDosya?.trim()) {
+    let id: string | undefined;
+    [id, d] = dosyaAc(d, yeniDosya);
+    n = { ...n, baslikId: id ?? "" };
+  }
+  const eski = h?.nafizeler?.find((x) => x.id === n.id);
+  if (!h || !haftalikDuzenler(ben, h) || !eski || eski.aktarim || !n.baslikId) return false;
+  d = haftaGuncelle(d, haftaId, (x) => ({ ...x, nafizeler: (x.nafizeler ?? []).map((y) => (y.id === n.id ? { ...n, yer: n.yer.trim() } : y)) }));
+  kaydet(haftaninCanliNafizeleriniAktar(haftayaDosya(d, haftaId, n.baslikId), ben.id, haftaId));
+  return true;
+};
+
+export const haftaCanliNafizeSil = (ben: Kisi, haftaId: string, id: string) => {
+  const d = getir();
+  const h = haftaBul(d, haftaId);
+  const kayit = [...(h?.canlilar ?? []), ...(h?.nafizeler ?? [])].find((x) => x.id === id);
+  if (!h || !haftalikDuzenler(ben, h) || !kayit || kayit.aktarim) return false;
+  kaydet(haftaGuncelle(d, haftaId, (x) => ({ ...x, canlilar: x.canlilar?.filter((y) => y.id !== id), nafizeler: x.nafizeler?.filter((y) => y.id !== id) })));
+  return true;
+};
+
+/*
  * Sistemin açılış işi: kesinleşmiş haftanın kabul edilen, günü olan haberi
  * o günün açık planına henüz geçmemişse geçiriyor. Aktarım iki anda
  * yapılıyordu (kesinleşme, planın açılışı); ikisini de kaçıran (plan o an
@@ -1753,6 +1868,7 @@ export const haftalikAktarimlariniTamamla = (): boolean => {
       const plan = d.planlar.find((p) => p.tarih === k.tarih);
       if (plan && planAktarimaAcik(plan)) d = haftaliktanAktar(d, SISTEM, h.id, k, plan);
     }
+    d = haftaninCanliNafizeleriniAktar(d, SISTEM, h.id);
   }
   if (d === once) return false;
   kaydet(d);
@@ -1941,6 +2057,7 @@ export const haftalikKesinlestir = (ben: Kisi, haftaId: string, acikReddet = tru
       return acikReddet && (o.durum === "yeni" || o.durum === "degerlendiriliyor" || o.durum === "duzeltme") ? { ...o, durum: "reddedildi" } : o;
     }),
   };
+  d = haftaninCanliNafizeleriniAktar(d, ben.id, haftaId);
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: "haftalikKesinlesti", haftaId, veri: { tarih: h.baslangic, ...(cikan ? { cikan: String(cikan) } : {}) } }));
   return true;
 };
@@ -2134,6 +2251,7 @@ export const yarinPlaniniAc = (): string | null => {
     for (const k of h.kalemler.filter((x) => nextDayeGider(x) && x.tarih === tarih && !x.aktarim?.planId)) {
       d = haftaliktanAktar(d, SISTEM, h.id, k, planBul(d, id)!);
     }
+    d = haftaCanliNafizeAktar(d, SISTEM, h.id, planBul(d, id)!);
   }
   kaydet(d);
   return id;

@@ -1364,8 +1364,41 @@ export interface HaftalikPlan {
    * haftaların dosyaları önüne gelmiyor (haftalik.ts → haftaninDosyalari).
    */
   dosyalar?: string[];
+  /*
+   * Günün gündemine eklenen canlı yayınlar ve nafizeler (kullanıcı: haftadan
+   * günün gündemine canlı yayın ve nafize eklensin). Karar beklemez; hafta
+   * kesinleşince ya da o günün Next Day planı açılınca oraya geçer (canlı
+   * "مباشر"a, dosyası varsa başlığın LIVE'ına da; nafize dosyasının başlığının altına).
+   */
+  canlilar?: HaftaCanli[];
+  nafizeler?: HaftaNafize[];
   olusturan: string;
   olusturma: string;
+}
+
+export interface HaftaCanli {
+  id: string;
+  tarih: string;
+  baslikId?: string;
+  konu: string;
+  yer: string;
+  /** GMT "SS:DD"; boşsa çıktıda TBC. */
+  saat?: string;
+  muhabirId?: string;
+  /** Next Day'e geçince o plan: sonraki düzeltme oraya gitmez, kalem kilitlenir. */
+  aktarim?: { planId: string };
+}
+
+export interface HaftaNafize {
+  id: string;
+  tarih: string;
+  /** Dosya (havuzdaki başlık): Next Day'de o başlığın altına girer. */
+  baslikId: string;
+  saat?: string;
+  yer: string;
+  sunucu?: { kisiId: string } | { ad: string };
+  konuklar: string[];
+  aktarim?: { planId: string };
 }
 
 /* --- Aylık ve özel planlar: Next Day'e karışmayan ayrı kayıtlar. --- */
