@@ -877,8 +877,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (davet, giriş kodu, hesapsız kişi aynı pencerede, `data-kisi-ekle-ac`) ve ⋯
     (Excel'den muhabir aktar, e-posta eşleştir, kayıt bağlantıları penceresi);
     kişinin satırında ⋯ (`KisiHesapMenusu`: hesaba bağla, bekleyen davetin kodu /
-    yeni kodu / yeniden gönderimi / iptali, yeni kod, yetkiler, hesabı kapat/aç,
-    sil; yalnız yetkili maddeler, gerçek kipte). Hesap durumu satırın tonunda
+    yeni kodu / yeniden gönderimi / iptali, yeni kod, şifre yenileme bağlantısı, yetkiler,
+    hesabı kapat/aç, sil; yalnız yetkili maddeler, gerçek kipte). Şifre yenileme
+    (kullanıcı: kullanıcılara şifre yenileme bağlantısı gönderebileyim; `data-sifre-yenile`,
+    `depo/firebase.ts → sifreYenilemeGonder`): açık, e-postalı hesapta (kod hesabının adresi
+    posta almıyor, ona "Yeni kod"), onay sorularak Firebase'in şifre sıfırlama postası kişinin
+    giriş adresine, davetinkiyle aynı şablon ve dönüş adresi; yetki adres değiştirmeninki
+    (`epostaDegistirebilir` ve davet yetkisi; yöneticinin ve yetkilinin hesabına yalnız tam
+    yönetici), kişi kendine de. Test `testler/sifre-yenile.mjs` (emülatör, `giris-kodu.mjs` gibi). Hesap durumu satırın tonunda
     (`hesapDurumu`): hesabı yok soluk (`.hesap-yok`), aktivasyon bekleyen sarımsı
     (`yeniEposta` ya da kişiye bağlı bekleyen davet), kapalı gri ve adı çizili;
     kod hesabında kullanıcı adı satırda. Kaydı henüz kurulmamış davet kendi biriminde

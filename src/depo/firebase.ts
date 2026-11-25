@@ -764,6 +764,19 @@ export const baglantiGonder = async (eposta: string, _dil?: string) => {
   await sendPasswordResetEmail(auth, e, { url: sifreDonusu(e) });
 };
 
+/*
+ * Yöneticinin gönderdiği şifre yenileme (kullanıcı: kullanıcılara şifre yenileme bağlantısı
+ * gönderebileyim). Hesap zaten açık, yeni hesap açılmaz; e-posta davetinkiyle aynı şablon ve
+ * dönüş adresi (yeni şifreyle giriş ekranına, adres hazır). Firebase bağlantıyı yalnız adresin
+ * sahibine yolladığı için başkasının şifresi tarayıcıdan değişmez.
+ */
+export const sifreYenilemeGonder = async (eposta: string) => {
+  baslat();
+  const e = ePosta(eposta);
+  auth.languageCode = "en";
+  await sendPasswordResetEmail(auth, e, { url: sifreDonusu(e) });
+};
+
 export const baglantiMi = () => {
   baslat();
   return isSignInWithEmailLink(auth, location.href);

@@ -281,11 +281,14 @@ export function KisiHesapMenusu({ ben, kisi: k }: { ben: Kisi; kisi: Kisi }) {
   // Şifresini unutan kod hesabına yeni kod: e-postayla sıfırlama yok (adres posta almıyor).
   const yeniKod = !!girisAdi(k.eposta) && davetYetkisi && epostaDegistirebilir(ben, k) && k.id !== ben.id && !k.pasif;
   const bagla = k.hesapsiz && davetYetkisi && !davet;
+  // Şifre yenileme: e-postalı (kod hesabı değil), açık hesap; yönetici ve yetkilinin hesabına
+  // yalnız tam yönetici (adres değiştirmeyle aynı kural, epostaDegistirebilir).
+  const sifreYenile = !k.hesapsiz && !k.pasif && !!k.eposta && !girisAdi(k.eposta) && (k.id === ben.id || (davetYetkisi && epostaDegistirebilir(ben, k)));
   // Kendi hesabını kapatamıyor, yetkisini bırakamıyor: sistem yöneticisiz kalmasın.
   const kapatabilir = k.id !== ben.id && !k.hesapsiz && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "hesapAcKapa") && !k.hesapYoneticisi));
   const yetkiler = !!ben.hesapYoneticisi && k.id !== ben.id && !k.hesapsiz;
   const silebilir = k.id !== ben.id && (!!ben.hesapYoneticisi || (hesapYetkisi(ben, "kisiSil") && !k.hesapYoneticisi));
-  if (!davet && !yeniKod && !bagla && !kapatabilir && !yetkiler && !silebilir) return null;
+  if (!davet && !yeniKod && !bagla && !sifreYenile && !kapatabilir && !yetkiler && !silebilir) return null;
   return (
     <IslemMenusu etiket={t("hesapIslemleri", { ad: ad(k) })} dugmeSinifi="dugme dugme-sade dugme-kucuk dugme-ikon" menuSinifi="plan-menusu" katman>
       {bagla && (
@@ -297,6 +300,23 @@ export function KisiHesapMenusu({ ben, kisi: k }: { ben: Kisi; kisi: Kisi }) {
       {yeniKod && (
         <button type="button" role="menuitem" className="acilir-satir" onClick={() => h.ac({ tur: "yeniKod", kisi: k })} data-yeni-kod>
           <Ticket size={16} /> {t("yeniKodVer")}
+        </button>
+      )}
+      {sifreYenile && (
+        <button
+          type="button"
+          role="menuitem"
+          className="acilir-satir"
+          onClick={() => {
+            if (!confirm(t("sifreYenileSoru", { eposta: k.eposta! }))) return;
+            firebaseYukle()
+              .then((f) => f.sifreYenilemeGonder(k.eposta!))
+              .then(() => bildir(t("sifreYenileGitti", { eposta: k.eposta! })))
+              .catch((x) => bildir(gonderimHatasi(x)));
+          }}
+          data-sifre-yenile
+        >
+          <RotateCcw size={16} /> {t("sifreYenile")}
         </button>
       )}
       {yetkiler && (
