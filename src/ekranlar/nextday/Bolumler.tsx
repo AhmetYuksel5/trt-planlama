@@ -1,4 +1,5 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
+import { gelismeMasaEtiketi } from "../../masaEtiketi";
 import { suruklenir } from "./planSurukle";
 import { CanliSonucDugmeleri } from "./SatirIslemleri";
 import { YzKisaltSerit } from "../../bilesenler/YzKisalt";
@@ -700,6 +701,11 @@ export function GelismeListesi({
           <div {...hedef?.(g)} {...suruklenir("gelisme", g.id, planBaslikId, duzenler && !!ben)} data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
+                {gelismeMasaEtiketi(v, g) && (
+                  <Icerik blok className="kayit-metin">
+                    <b data-plan-masa={g.id}>{gelismeMasaEtiketi(v, g)}</b>
+                  </Icerik>
+                )}
                 <Icerik blok className="kayit-metin">
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}

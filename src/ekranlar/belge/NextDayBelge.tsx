@@ -1,4 +1,5 @@
 import { useYz } from "../../yz";
+import { gelismeMasaEtiketi, paketMasaEtiketi } from "../../masaEtiketi";
 import { BaslikOnerileriDugmesi, BaslikaKatPenceresi, CanliSonucDugmeleri, PaketKararDugmeleri, PaketOneriBagi, SonGelismelerPenceresi } from "../nextday/SatirIslemleri";
 import { PaketMetniFormu } from "../nextday/BaslikKarti";
 import { OneridenAl } from "../nextday/Formlar";
@@ -556,6 +557,11 @@ export function NextDayBelgesi({
                                   }
                                 >
                                   <ToplantiPaketi plan={plan} paket={p} toplanti={toplanti}>
+                                  {paketMasaEtiketi(v, p) && (
+                                    <p className="alt-baslik" data-plan-masa={p.id}>
+                                      {paketMasaEtiketi(v, p)}
+                                    </p>
+                                  )}
                                   <Satir yer={paketYeri(p)}>
                                     {ic && acikPaket ? (
                                       <YerindeMetin
@@ -739,6 +745,12 @@ export function NextDayBelgesi({
           />
         }
       >
+        {/* Masanın işi (Ekonomi, Program, Spor) birimin Arapça adıyla, Weekly'deki gibi. */}
+        {gelismeMasaEtiketi(v, g) && (
+          <p className="alt-baslik" data-plan-masa={g.id}>
+            {gelismeMasaEtiketi(v, g)}
+          </p>
+        )}
         <Satir
           yer={
             op ? (
@@ -842,6 +854,11 @@ export function NextDayBelgesi({
           duzen={ic}
           serit={<SatirSeridi ek={<PaketBaglantisi id={p.id} />} />}
         >
+          {paketMasaEtiketi(v, p) && (
+            <p className="alt-baslik" data-plan-masa={p.id}>
+              {paketMasaEtiketi(v, p)}
+            </p>
+          )}
           <Satir yer={paketYeri(p)}>
             {p.baslik} /{" "}
             <b>
