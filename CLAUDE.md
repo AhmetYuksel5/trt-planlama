@@ -919,8 +919,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     video kontrolü, yükleme, "Yayın kararı" genel işi; atlanan durak yok).
     Editoryal kontrol ve dil denetimi parçalı metnin aşamaları: tetkikçi ve
     dilci yoldan (`parcaYapabilir`), atlanan aşamayı parça geçer
-    (`parcaIlkAsama`, `parcaDilSonrasi`). Gfx yan iş: bütün parçalar hazır
-    olunca Grafik'e haber (`gfxSirada`), paket sayfasının gfx kutusunda "Gfx
+    (`parcaIlkAsama`, `parcaDilSonrasi`). Gfx yan iş: gfx parçası dil denetiminden
+    geçince Grafik'e haber (`gfxSirada`, `gfxAcik`; öbür parçaları beklemez), paket sayfasının gfx kutusunda "Gfx
     hazır" (`gfxTamamla`, `gfxYapabilir`), "Sıradaki işlerim"de de; yükleme
     düğmesi o zamana dek pasif (`gfxBekliyor`, eylem de reddeder). Üretimdeki
     pakette "Yolu düzenle" (`uretimYoluDegistir`): geçmiş aşamalar kilitli
@@ -978,6 +978,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `parcaSonHal`; yetki `yetki.ts → parcaYapabilir`, durağın yardımcısı
     yok). Video bağlantısı ancak bütün parçalar hazırken gönderilir
     (`akis.ts → parcalarHazir`, `adimIlerle`), metin parçalardan birleşir.
+    Hazır: balonun beklediği parçalar gelmiş (`uretim.ts → eksikParcalar`:
+    metin her zaman, intro, metin ya da röportaj türünden en az biri; balonda
+    işaretliyse stand ve gfx) ve gönderilen her parça denetimden geçmiş
+    (kullanıcı: muhabir intro'yu gönderip o onaylanınca metin bitmiş sayılıyor,
+    video açılıyor, Grafik'e haber gidiyordu; balonun stand ve gfx işaretleri
+    beklenmiyordu). Gelmeyen parça kartta "bekleniyor" satırı
+    (`data-parca-bekleniyor`); balonsuz pakette beklenen yok. Test
+    `testler/parca-beklenen.cjs`.
     Kart (`bilesenler/ParcaliMetin.tsx`) paket sayfasında herkese açık, düğme
     sırası gelende; dil denetmeninin sayfasında parça başına kart
     (`dilParcaSirasi`).
@@ -3261,7 +3269,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     plansız, görevli, masa takibinde ve hazırda değil): stoktan çıkar, yayın günü
     seçilen gün ya da TBC, teslim yayının son gününe çekilir, hareket
     `paketTeslimGunu` (`veri.bag`, `hrOzeleBaglandi`). Asistanda
-    `ozelYayinlariListele`, `ozelIcerikGorevlendir`, `paketiOzeleBagla`. Test
+    `ozelYayinlariListele`, `ozelIcerikGorevlendir`, `paketiOzeleBagla` ve
+    `ozelGorevPostasi` (kullanıcı: "görevlendirme maili gönder" deyince asistan
+    kendi postasını yazıyordu): kartın posta düğmesinin şablonu
+    (`ozelGorevEpostasi`), konu ve metin onay kartında şablonla dolu, gidince
+    `ozelGorevPostasiGitti`; kapıda `postaGonder`'in açıklaması onu gösterir. Test
     `testler/ozel-icerik.cjs`.
     2. adım, nafize canlı yayın (kullanıcı: nafize canlı etkinlik biçiminde,
     saati sistemin öbür unsurlarıyla eş zamanlı; günün planına canlı eklemek

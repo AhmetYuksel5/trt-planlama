@@ -1,6 +1,6 @@
 import { metin, yaz, type Anahtar } from "./dil";
 import { anlik, eskiOzelPaket, masaPaketi, type Birim, type BirimId, type IcerikTuru, type Paket } from "./veri";
-import { uretimAkisi } from "./uretim";
+import { eksikParcalar, uretimAkisi } from "./uretim";
 import { ESKI_AKIS, birimAdi, yapi, yapiSurumu, type Akis, type Durak, type DurakTuru, type Sorumlu, type Yapi } from "./yapi";
 
 /**
@@ -389,4 +389,6 @@ export const NEXTDAY_KUTULARI: Kutu[] = [
 export const parcaliMi = (p: AkisPaketi & Pick<Paket, "adim">): boolean => !!durakBul(p, p.adim)?.parcali;
 
 /** Bütün parçalar Script Editor'den döndü mü; video ancak o zaman gönderilir. */
-export const parcalarHazir = (p: Pick<Paket, "parcalar">): boolean => !!p.parcalar?.length && p.parcalar.every((x) => x.asama === "tamam");
+/* Metin hazır: balonun beklediği parçaların hepsi gelmiş ve gönderilen her parça denetimden geçmiş (uretim.ts → eksikParcalar). */
+export const parcalarHazir = (p: Pick<Paket, "parcalar" | "uretim">): boolean =>
+  !!p.parcalar?.length && p.parcalar.every((x) => x.asama === "tamam") && !eksikParcalar(p).length;

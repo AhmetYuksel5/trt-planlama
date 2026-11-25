@@ -10,6 +10,7 @@ import type { Kisi, MetinParcasi, Paket, ParcaTuru } from "../veri";
 import { parcaYapabilir } from "../yetki";
 import { birimAdi } from "../yapi";
 import { parcaTuru } from "../paketMetni";
+import { PARCA_ADI, eksikParcalar } from "../uretim";
 import { Icerik, Kart, NotKutu, Rozet, bildir, icerikAlani } from "./Parcalar";
 
 const ASAMA_ROZETI: Record<MetinParcasi["asama"], [Anahtar, string]> = {
@@ -44,6 +45,12 @@ export function ParcaliMetin({ ben, paket }: { ben: Kisi; paket: Paket }) {
         {paket.videoIade && muhabir && <NotKutu>{paket.videoIade}</NotKutu>}
         {parcalar.map((x) => (
           <ParcaSatiri key={x.id} ben={ben} paket={paket} parca={x} />
+        ))}
+        {/* Balonda seçilip henüz gelmeyen parçalar: metin bunlar gelmeden bitmiş sayılmıyor. */}
+        {eksikParcalar(paket).map((x) => (
+          <div key={x} className="parca-bekleniyor sonuk-yazi" data-parca-bekleniyor={x}>
+            {t("parcaBekleniyor", { ad: t(PARCA_ADI[x]) })}
+          </div>
         ))}
         {muhabir && (yeni ? <ParcaFormu ben={ben} paket={paket} kapat={() => setYeni(false)} /> : (
           <div className="dugmeler">

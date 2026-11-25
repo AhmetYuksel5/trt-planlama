@@ -4615,3 +4615,10 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .mesaj-konusma-bas > b { flex: 1; min-inline-size: 0; }
 .mesaj-rozeti { position: relative; }
 .mesaj-rozeti.okunmamis { color: var(--vurgu); border-color: var(--vurgu); }
+
+/* Balonun beklediği, henüz gelmeyen parça (ParcaliMetin → eksikParcalar): gelen parçanın kutusunun boş hali. */
+.parca-bekleniyor {
+  border: 1px dashed var(--cizgi);
+  border-radius: var(--yaricap, 8px);
+  padding: 10px 12px;
+}

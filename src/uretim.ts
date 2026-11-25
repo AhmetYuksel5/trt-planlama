@@ -1,6 +1,7 @@
 import { metin, type Anahtar, type Metin } from "./dil";
 import type { BirimId, IcerikTuru, Paket } from "./veri";
 import type { Akis, Durak } from "./yapi";
+import { parcaTuru } from "./paketMetni";
 
 /*
  * Üretim balonu (kullanıcı: paketin onayından sonra üretimin her aşamasını
@@ -173,7 +174,26 @@ export const gfxBekliyor = (p: Pick<Paket, "uretim">): boolean => !!p.uretim && 
  * geçmiş ya da parçaları hazır.
  */
 export const gfxAcik = (p: Paket): boolean =>
-  p.durum === "uretimde" && gfxBekliyor(p) && (p.adim !== "metin" && p.adim !== "newsdesk" ? true : !!p.parcalar?.length && p.parcalar.every((x) => x.asama === "tamam"));
+  p.durum === "uretimde" &&
+  gfxBekliyor(p) &&
+  (p.adim !== "metin" && p.adim !== "newsdesk" ? true : (p.parcalar ?? []).some((x) => parcaTuru(x) === "gfx" && x.asama === "tamam"));
+
+/*
+ * Balonda seçilen parçalardan henüz gelmeyenler (kullanıcı: muhabir intro'yu
+ * gönderip o onaylanınca metin bitmiş sayılıyor, video açılıyor, Grafik'e haber
+ * gidiyordu; stand ve gfx hiç beklenmiyordu). Metin her zaman (intro, metin ya
+ * da röportaj türünden en az bir parça), stand ve gfx işaretliyse. Balonsuz
+ * pakette beklenen yok: eskisi gibi gönderilenler.
+ */
+export const eksikParcalar = (p: Pick<Paket, "parcalar" | "uretim">): UretimParcasi[] => {
+  if (!p.uretim) return [];
+  const turler = new Set((p.parcalar ?? []).map(parcaTuru));
+  return [
+    ...(["metin", "intro", "roportaj"].some((t) => turler.has(t as ReturnType<typeof parcaTuru>)) ? [] : (["metin"] as const)),
+    ...(p.uretim.parca.stand && !turler.has("stand") ? (["stand"] as const) : []),
+    ...(p.uretim.parca.gfx && !turler.has("gfx") ? (["gfx"] as const) : []),
+  ];
+};
 
 /* Durakların sırası; aşamanın geçip geçmediği paketin bulunduğu durağa göre. */
 const DURAK_SIRASI = ["newsdesk", "metin", "videoKontrol", "inews", "yayin"];

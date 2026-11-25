@@ -46,6 +46,7 @@ import {
   ozelIcerikGunuUygun,
   ozeleBaglanabilir,
   paketiOzeleBagla,
+  ozelGorevPostasiGitti,
 } from "../eylemler";
 import { kayitAra } from "../arama";
 import { BICIM_ADI, HAREKET_TURU_ADI, IS_DURUM_ADI, KANAL_ADI, KARAR_ADI, KISI_DURUM_ADI, PAKET_DURUM_ADI, PLAN_DURUM_ADI, TUR_ADI, faaliyetTuruAdi, kisiAr, oncelikAdi, sehirAdi, sehirUlkesi } from "../etiketler";
@@ -89,6 +90,7 @@ import {
 import { birimAdi, disMuhabirMi, gorevAdi, icMuhabirMi } from "../yapi";
 import { ileriGorevVerebilir, isAlabilir, kisitliKisi, oneriGorebilir, paketGorebilir, sayfaGorebilir, planIcerikDuzenler, yapabilir } from "../yetki";
 import { ozelIcerikleri } from "../ozel";
+import { ozelGorevEpostasi } from "../takdir";
 
 /*
  * Asistanın araç yürütücüleri (belgeler/asistan.md). Adlar kapıdaki listeyle aynı
@@ -366,7 +368,7 @@ const OKUMA: Record<string, Yurutucu> = {
         ozelId: o.id,
         ad: o.ad,
         gunler: ozelGunleri(o),
-        icerikler: ozelIcerikleri(d, o.id).map((p) => ({ paketId: p.id, strap: p.baslik, muhabir: kisiAr(kisiBul(d, p.muhabirId)), yayinGunu: p.yayinGunu ?? "TBC", teslim: p.sonTarih ?? "", durum: p.durum })),
+        icerikler: ozelIcerikleri(d, o.id).map((p) => ({ paketId: p.id, strap: p.baslik, muhabir: kisiAr(kisiBul(d, p.muhabirId)), yayinGunu: p.yayinGunu ?? "TBC", teslim: p.sonTarih ?? "", durum: p.durum, gorevPostasi: p.takdirBildirimi ? "gitti" : "gitmedi" })),
       }));
     return { sonuc: { sayi: liste.length, yayinlar: liste } };
   },
@@ -1238,6 +1240,58 @@ const YAZMA: Record<string, Yurutucu> = {
         const r = await cagriHatirlatmasiGonder(ben, c, vs(v, "not"));
         if (r.hatalar.length && !r.tamam) return { hata: r.hatalar.join("; ") };
         return { tamam: true, sonuc: { alici: r.tamam, ...(r.hatalar.length && { hatalar: r.hatalar }) } };
+      },
+    });
+  },
+
+  /*
+   * Özel yayın içeriğinin görev postası (kullanıcı: asistan "görevlendirme maili
+   * gönder" deyince kendi postasını yazıyordu): içeriğin kartındaki posta
+   * düğmesinin şablonu (takdir.ts → ozelGorevEpostasi), Kime muhabirin adresi,
+   * CC/BCC şablondan; konu ve metin şablonla dolu gelir, kişi değiştirebilir.
+   * Gidince kartta "gitti" (ozelGorevPostasiGitti).
+   */
+  ozelGorevPostasi: (g, { ben }) => {
+    if (!ileriGorevVerebilir(ben)) return hata("yetkiYok");
+    const d = getir();
+    const icerikler = d.ozel
+      .flatMap((o) => ozelIcerikleri(d, o.id).map((p) => ({ o, p })))
+      .filter(({ p }) => !!p.muhabirId && p.durum !== "tamamlandi");
+    if (!icerikler.length) return hata("bulunamadi");
+    const secenekler = icerikler.map(({ o, p }) => ({ deger: p.id, ad: `${o.ad} · ${p.baslik} · ${kisiAr(kisiBul(d, p.muhabirId))}${p.takdirBildirimi ? " ✓" : ""}` }));
+    const paketId = icinde(s(g.paketId, 100), secenekler) || secenekler[0].deger;
+    const eposta = (id: string, d2 = getir()) => {
+      const p = d2.paketler.find((x) => x.id === id);
+      return p ? ozelGorevEpostasi(d2, p, ben) : null;
+    };
+    const ilk = eposta(paketId, d);
+    return form({
+      baslik: "asTOzelGorevPostasi",
+      dugme: "asGonder",
+      ozet: ilk ? ilk.kime.join(", ") || "—" : undefined,
+      alanlar: [A.secim("paketId", "asAOzelIcerik", secenekler), A.yazi("konu", "asAKonu", true, false), A.yazi("metin", "asAMetin", true)],
+      degerler: { paketId, konu: ilk?.konu ?? "", metin: ilk?.metin ?? "" },
+      calistir: async (v) => {
+        const id = vs(v, "paketId");
+        const e = eposta(id);
+        if (!e) return { hata: "bulunamadi" };
+        if (!e.kime.length) return { hata: "adres" };
+        // Başka içerik seçilip metne dokunulmadıysa o içeriğin şablonu: ilk içeriğin metni başkasına gitmesin.
+        const degismedi = id !== paketId && vs(v, "konu") === ilk?.konu && vs(v, "metin") === ilk?.metin;
+        const konu = degismedi ? e.konu : vs(v, "konu");
+        const metin_ = degismedi ? e.metin : vs(v, "metin");
+        let gidenler = { kime: e.kime, cc: e.cc };
+        let grup = "";
+        if (GERCEK) {
+          const r = await kapiPostaGonder({ kime: e.kime, cc: e.cc, bcc: e.bcc, konu, metin: metin_ });
+          if (!r.tamam) return { hata: r.hata };
+          gidenler = { kime: r.veri.kime, cc: r.veri.cc };
+          const k = await postaKimlikGetir();
+          grup = k.tamam ? (k.veri.grupAdresi || "").trim().toLowerCase() : "";
+        }
+        postaGidenEkle(ben, postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`, konu, metin_, grup || undefined, gidenler);
+        ozelGorevPostasiGitti(ben, id);
+        return { tamam: true, sonuc: { kime: gidenler.kime } };
       },
     });
   },

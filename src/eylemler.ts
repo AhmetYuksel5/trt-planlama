@@ -221,7 +221,7 @@ import {
 import { SORU_MASALARI, SORULABILIR_DURUM, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
 import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
-import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, gorevVerilmis, ilkDurak, yeniDurak, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
+import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, gorevVerilmis, ilkDurak, yeniDurak, gfxAcik, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
 
 /**
  * Eylemler: kaydı değiştiren her şey buradan geçiyor.
@@ -3897,13 +3897,15 @@ const parcaSahibi = (p: Paket, asama: MetinParcasi["asama"]): string =>
   asama === "newsdesk" ? (p.uretim?.yol.editoryal ?? kolSahibi(p.tur)) : asama === "dil" ? (p.uretim?.yol.dil ?? "scriptEditor") : asama === "tamam" ? "muhabir" : "muhabir";
 
 /*
- * Bütün parçalar bu yazışla hazır olduysa ve paket gfx'liyse grafik ekibinin
- * sırası açılır (dil denetiminden sonra, video kontrolüyle yan yana): ona
- * ayrı haber gider, çünkü parçanın hareketi işi muhabire (montaj) veriyor.
+ * Gfx parçası bu yazışla dil denetiminden geçtiyse grafik ekibinin sırası
+ * açılır (uretim.ts → gfxAcik): ona ayrı haber gider, çünkü parçanın hareketi
+ * işi muhabire veriyor. Önce bütün parçaların bitmesine bakıyordu; gfx parçası
+ * hiç gelmeden de haber gidebiliyordu.
  */
 const gfxSirasiHaberi = (d: Durum, ben: Kisi, eski: Paket): Durum => {
   const p = d.paketler.find((x) => x.id === eski.id);
-  if (!p || parcalarHazir(eski) || !parcalarHazir(p) || !gfxBekliyor(p)) return d;
+  // Gfx parçası dil denetiminden geçtiği an (öbür parçaları beklemez; grafiker yalnız onu kullanıyor).
+  if (!p || gfxAcik(eski) || !gfxAcik(p)) return d;
   return hareketYaz(d, { kisiId: ben.id, tip: "gfxSirada", paketId: p.id, planId: p.planId, veri: { sahip: p.uretim!.yol.grafik } });
 };
 
@@ -3911,7 +3913,7 @@ const gfxSirasiHaberi = (d: Durum, ben: Kisi, eski: Paket): Durum => {
 const parcalariYaz = (x: Paket, parcalar: MetinParcasi[]): Paket => ({
   ...x,
   parcalar,
-  ...(parcalarHazir({ parcalar }) && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }),
+  ...(parcalarHazir({ parcalar, uretim: x.uretim }) && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }),
   guncelleme: simdi(),
 });
 
@@ -3952,7 +3954,7 @@ export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: 
   if (!p || !eski || eski.asama !== "dil" || !parcaYapabilir(ben, p, "dil") || !metin.trim()) return false;
   const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "tamam" };
   const parcalar = p.parcalar!.map((y) => (y.id === parcaId ? parca : y));
-  const hazir = parcalarHazir({ parcalar });
+  const hazir = parcalarHazir({ parcalar, uretim: p.uretim });
   d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }, "dil", ben.id, simdi()));
   kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""), ben, p));
   return true;

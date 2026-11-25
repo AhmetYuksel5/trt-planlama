@@ -198,6 +198,7 @@ const SAHTE = () => {
     ["faaliyetEkle", {}],
     ["postaGonder", { kisiId: muh.id, konu: "Konu" }],
     ["cagriHatirlat", {}],
+    ["ozelGorevPostasi", {}],
   ];
   let acilan = 0;
   const acilmayan = [];
@@ -217,6 +218,25 @@ const SAHTE = () => {
   await p.waitForTimeout(500);
   const hc = (await durum()).cagrilar.find((c) => c.id === "c-as-hat" || c.etiket?.startsWith("HP-"));
   ok((hc?.hatirlatmalar?.length ?? 0) >= 1, "hatırlatma çağrıya kaydedildi (Weekly'deki gibi)");
+
+  // Özel yayın görev postası: kartın şablonuyla (konu şablondan), ayrı posta yazılmıyor; kartta "gitti".
+  const ozM = d5.kisiler.find((k) => k.birim === "muhabir" && !k.pasif && (k.kurumEposta || k.eposta));
+  await p.evaluate(([k, ozId, mId]) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const o = d.ozel.find((x) => x.id === ozId);
+    d.paketler.push({ id: "p-as-ozg", baslik: "تقرير التغطية الخاصة", aciklama: "", tur: "haber", bicim: "pkg", durum: "onaylandi", muhabirId: mId, sehir: "istanbul", ozelId: ozId, ozelAd: o.ad, gorev: { veren: "pl1", zaman: new Date().toISOString() }, yayinGunu: o.tarih, sonTarih: o.tarih, guncelleme: new Date().toISOString(), notlar: [] });
+    localStorage.setItem(k, JSON.stringify(d));
+    localStorage.setItem(k + "-iz", String(Date.now()));
+  }, [K, oz.id, ozM.id]);
+  await arac("ozelGorevPostasi", { paketId: "p-as-ozg" });
+  ok((await p.locator(bekleyen).count()) === 1, "özel yayın görev postası onay kartı açıldı");
+  const konuAlani = await p.locator(bekleyen).locator('[data-asistan-alan="konu"]').first().inputValue().catch(() => "");
+  ok(konuAlani.includes("تكليف تقرير للتغطية الخاصة"), "konu kartın şablonundan: " + konuAlani);
+  await yaz("evet");
+  await p.waitForTimeout(500);
+  const d6 = await durum();
+  ok(!!d6.paketler.find((x) => x.id === "p-as-ozg")?.takdirBildirimi, "içeriğin kartında görev postası gitti işareti");
+  ok(d6.postaMesajlari.some((m) => m.giden && m.konu.includes("تكليف تقرير للتغطية الخاصة")), "giden posta şablonun konusuyla");
 
   // Biçimli yanıt: yıldızlar görünmez, kalın, liste ve kod çizilir.
   await yaz("biçimli yanıt ver");
