@@ -66,17 +66,20 @@ Kişi ─► Asistan paneli (bilesenler/Asistan.tsx)
 Okuma araçları (sorulmaz): `ara`, `sayfaAc`, `onerileriListele`, `oneriAyrintisi`,
 `planOzeti` (başlıklar, gelişmeler, muhabirler, PKG'ler, canlılar, kimlikleriyle; açık
 planlar), `haftalikOzeti`, `paketleriListele`, `paketAyrintisi`, `ozelYayinlariListele`, `kisileriListele`
-(telefon ve e-posta yok), `takvimListele`, `isleriListele`, `hareketleriListele`.
+(telefon ve e-posta yok), `takvimListele`, `isleriListele`, `hareketleriListele`, `gununNotu`
+(gözden kaçan işler, Planlama ana sayfasındaki notun kuralları), `muhabirRaporu` (ay ay, Raporlar'ın
+kuralıyla; Raporlar sayfasını görebilene).
 
 Yazma araçları (onay kartı; her biri ekranın eylemiyle, kişinin yetkisiyle):
 
 | Alan | Araçlar |
 |---|---|
 | Öneriler | `oneriGir` (muhabir adına), `oneriPlanaEkle`, `oneriGundemeEkle`, `oneriReddet`, `oneriDegerlendirmeyeAl`, `oneriDuzeltmeIste`, `oneriTakibeAl`, `oneriPlandanCikar`, `oneriArsiveGonder`, `oneriMesajiGonder`, `muhabireOneriGonder`, `oneriMasayaSor`, `oneriGorevlendir` |
-| Next Day | `planBaslikEkle`, `planBaslikCikar`, `gelismeEkle`, `gelismeDuzenle`, `gelismeSil`, `basligaMuhabirEkle`, `basliktanMuhabirCikar`, `paketEkle`, `paketKarari` (kabul, ret, plandan kaldır, sil), `canliEkle`, `canliSil`, `planAkisi` (toplantıya, taslağa, onay), `hareketKaydet`, `hareketSil`, `toplantiNotuEkle` |
-| Weekly | `haftalikPlanAc`, `kalemEkle`, `kalemKarar`, `haftalikAkisi` (toplantıya, hazırlığa, kesinleştir) |
+| Next Day | `planBaslikEkle`, `planBaslikCikar`, `gelismeEkle`, `gelismeDuzenle`, `gelismeSil`, `basligaMuhabirEkle`, `basliktanMuhabirCikar`, `paketEkle`, `paketKarari` (kabul, ret, plandan kaldır, sil), `canliEkle`, `canliSil`, `nafizeEkle` (birkaç saat tek formda, her saat ayrı nafize), `ekibeEkle` (görev seçilince adaylar o görevin kuralından), `planAkisi` (toplantıya, taslağa, onay), `hareketKaydet`, `hareketSil`, `toplantiNotuEkle` |
+| Weekly | `haftalikPlanAc`, `kalemEkle`, `haftaCanliEkle`, `haftaNafizeEkle` (günün canlısı ve nafizesi; dosya yoksa "+ Yeni dosya"), `kalemKarar`, `haftalikAkisi` (toplantıya, hazırlığa, kesinleştir) |
 | Özel yayın | `ozelIcerikGorevlendir` (yayının İçerik'i; özel yayın için `paketGorevVer` değil), `paketiOzeleBagla` (plansız açılmış görevi yayına alır) |
 | Paketler | `paketGorevVer`, `paketTeslimGunu`, `paketSonucuKarari`, `paketNotu`, `paketMetniDuzenle` |
+| Kişiler | `muhabirEkle` (hesapsız dış muhabir; Arapça ad zorunlu, aynı adla kayıtlıysa form açılmaz, şehir adından da çözülür, ünvan şehirden; yetki `hesapsizKisi`), `muhabirBilgisiDuzenle` (telefon, e-postalar, şehir; `profilGuncelle`), `takipSatiriEkle` (öneriye tarihli gelişme satırı) |
 | Diğer | `isVer`, `isDurumu`, `faaliyetEkle`, `postaGonder` (kişinin EWS kimliğiyle; giden balon Posta'ya) |
 
 Kapıda yazma aracının açıklaması "YAZMA" ile başlar; tarayıcıda o araç formlu tarafta
@@ -86,7 +89,7 @@ Ekranın düğmeyi göstermediği durumda araç form açmadan nedenini döner (`
 
 ### Sonraki adımlar
 
-- Özel yayın, Aylık, Muhasebe, Organizasyon işleri; Next Day ekip ve hazır paketler.
+- Özel yayın, Aylık, Muhasebe, Organizasyon işleri; Next Day hazır paketler.
 - Sayfa bağlamı: açık plan, seçili öneri, açık paket asistana "bu" diye geçer.
 - Yanıt sesli okunabilir; OpenAI uyumlu sağlayıcı; muhabirin kendi asistanı.
 

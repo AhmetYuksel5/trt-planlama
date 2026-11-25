@@ -571,6 +571,12 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     iletisinde artar). Demoda kapıya gidilmez ("gerçek kipte çalışır"); test sahte modelle
     (`window.__asistanModeli`): `testler/asistan.cjs` (form, düzeltme, eksik alan, bağlı seçim, çoklu
     seçim, her yazma aracının formu), kapıda `worker/test/asistan.test.ts`.
+    Yeni araçlar (kullanıcı: asistan muhabir ekleyebilsin, yetenekleri artsın): `muhabirEkle` (hesapsız dış
+    muhabir, Arapça ad zorunlu, aynı Arapça adla kayıtlıysa "zatenKayitli", şehir adından da çözülür;
+    `hesapsizKisiEkle` artık demoda da çalışır ve ünvanı şehirden kurar), `muhabirBilgisiDuzenle`,
+    `takipSatiriEkle`, Next Day'e `nafizeEkle` ve `ekibeEkle`, Weekly'ye `haftaCanliEkle` ve
+    `haftaNafizeEkle`; okuma `gununNotu`, `muhabirRaporu`. Nafize formu ortak değil, araçta saatler
+    virgülle ("8, 11:30", `saatCoz`), her saat ayrı nafize. Test `testler/asistan-yeni.cjs`.
   - **"İmla denetimi"** (kullanıcı: plan metinlerinde imla düzeltilsin ama tatsız
     sürpriz olmasın; özellik `imla`): Next Day ve Weekly'nin ⋯ menüsünde
     (`data-arac="imla"`, `bilesenler/YzImla.tsx → ImlaPenceresi`). Satırlar

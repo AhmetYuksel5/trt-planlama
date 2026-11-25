@@ -52,6 +52,8 @@ export const ARACLAR: AracTanimi[] = [
   oku("kisileriListele", "Kişiler: tur 'muhabir' (dış ve iç muhabirler), 'personel' ya da 'hepsi'; sorgu adla süzer. Kimlik, ad, birim, ünvan, şehir, bugünkü durumu (görevde, izinde, sahada).", { tur: e(["muhabir", "personel", "hepsi"]), sorgu: m("Ad parçası") }),
   oku("takvimListele", "Planlama takvimindeki faaliyetler (seçim, zirve, ziyaret…). Varsayılan bugünden 14 gün.", { baslangic: tarih(), bitis: tarih() }),
   oku("isleriListele", "Görevler sayfasındaki açık işler: kişiye verilen ve kişinin verdiği.", {}),
+  oku("gununNotu", "Günün notu: gözden kaçan işler (karar günü gelen öneri, uzun süredir yanıtsız öneri, gelişmesiz duran başlık, sonucu bekleyen ya da geciken paket, plana aktarılmamış takvim faaliyeti, çağrıya yanıt vermeyen muhabir). 'Bugün neye bakmalıyım', 'özet ver' gibi isteklerde.", {}),
+  oku("muhabirRaporu", "Muhabir raporu: bir ayda muhabir başına öneri, kabul oranı, verilen ve biten iş, yapılmayan, çağrıya yanıt oranı, önceki ayla. ay YYYY-AA (boşsa bu ay); muhabirId ile tek kişi.", { ay: m("YYYY-AA"), muhabirId: MUH }),
   oku("hareketleriListele", "Muhabir hareketleri (görevlendirme, izin): süren ve yaklaşanlar; kisiId ile süzülür.", { kisiId: MUH }),
 
   /* --- Öneriler --- */
@@ -84,11 +86,15 @@ export const ARACLAR: AracTanimi[] = [
   yaz("planAkisi", "Next Day planının aşaması: 'toplantiya' (toplantıya götür), 'taslaga' (taslağa geri al), 'onayla'.", { planId: PID, adim: e(["toplantiya", "taslaga", "onayla"]) }),
   yaz("hareketKaydet", "Muhabir hareketi (görevlendirme, izin, diğer) kaydeder; gününe düşen planlara kendiliğinden girer.", { kisiId: MUH, tur: e(["gorevlendirme", "izin", "diger"]), yer: m("Yer, Arapça"), baslangic: tarih(), bitis: tarih(), aciklama: m("Açıklama") }),
   yaz("hareketSil", "Muhabir hareketini siler.", { hareketId: m("Hareketin kimliği") }, ["hareketId"]),
+  yaz("nafizeEkle", "Next Day başlığının altına nafize (نافذة) ekler: saat GMT, mekan, sunucu (sunucu ya da muhabir; kayıtta yoksa adı), konuklar. Aynı sunucunun birkaç saati varsa saatler virgülle; her saat ayrı nafize.", { planId: PID, planBaslikId: PBID, saatler: m("GMT saatleri, virgülle: 08:00, 11:30"), yer: m("Mekan, Arapça"), sunucuId: MUH, sunucuAd: m("Sunucu kayıtta yoksa adı, Arapça"), konuklar: m("Konuklar, virgülle, Arapça") }),
+  yaz("ekibeEkle", "Next Day planının çalışma ekibine kişi ekler (görev ve GMT vardiya saatiyle).", { planId: PID, kisiId: MUH, gorev: m("Ekip görevinin kimliği; boşsa form sorar"), vardiya: m("GMT SS:DD") }),
   yaz("toplantiNotuEkle", "Next Day ya da Weekly planına toplantı notu ekler (muhabir görmez).", { planId: m("Next Day ya da haftalık planın kimliği"), metin: m("Not") }),
 
   /* --- Weekly --- */
   yaz("haftalikPlanAc", "Bir haftanın Weekly planını açar (varsa onu gösterir).", { tarih: tarih("Haftanın herhangi bir günü") }),
   yaz("kalemEkle", "Weekly gündemine kalem ekler.", { haftaId: HID, tarih: tarih("Haftanın günü; boşsa 'Stok ve programlar'"), dosya: m("Dosyanın adı, Arapça"), metin: m("Metin, Arapça"), yer: m("Yer, Arapça"), paketBasligi: m("Strap; boşsa paketsiz"), muhabirId: MUH, bicim: BICIM, tur: MASA }),
+  yaz("haftaCanliEkle", "Weekly'de haftanın bir gününe canlı yayın / etkinlik ekler (karar kalemi değil; hafta kesinleşince o günün Next Day'ine geçer).", { haftaId: HID, tarih: tarih("Haftanın günü"), konu: m("Konu, Arapça"), yer: m("Yer, Arapça"), saat: m("GMT SS:DD"), muhabirId: MUH, dosya: m("Dosyanın adı, Arapça (isteğe bağlı)") }),
+  yaz("haftaNafizeEkle", "Weekly'de haftanın bir gününe nafize ekler; dosyası zorunlu (Next Day'de o başlığın altına girer). Saatler virgülle, her saat ayrı nafize.", { haftaId: HID, tarih: tarih("Haftanın günü"), dosya: m("Dosyanın adı, Arapça"), saatler: m("GMT saatleri, virgülle"), yer: m("Mekan, Arapça"), sunucuId: MUH, sunucuAd: m("Sunucunun adı kayıtta yoksa"), konuklar: m("Konuklar, virgülle") }),
   yaz("kalemKarar", "Weekly kalemine toplantı kararı: kabul, sartli (koşulla), bilgi (paketsiz takip), ret (plandan kaldır), nextday (Next Day'de karar ver), bekliyor (kararı kaldır).", { haftaId: HID, kalemId: m("Kalemin kimliği"), karar: e(["kabul", "sartli", "bilgi", "ret", "nextday", "bekliyor"]), kosul: m("Şartlı kabulün koşulu") }, ["haftaId", "kalemId"]),
   yaz("haftalikAkisi", "Weekly'nin aşaması: 'toplantiya', 'hazirliga', 'kesinlestir'.", { haftaId: HID, adim: e(["toplantiya", "hazirliga", "kesinlestir"]) }, ["haftaId"]),
 
@@ -100,6 +106,11 @@ export const ARACLAR: AracTanimi[] = [
   yaz("paketSonucuKarari", "Muhabirin 'Yapıldı / Yapılmadı' işaretini onaylar ya da geri çevirir.", { paketId: PKID, onay: { type: "boolean" } }, ["paketId"]),
   yaz("paketNotu", "Pakete not ekler.", { paketId: PKID, metin: m("Not") }, ["paketId"]),
   yaz("paketMetniDuzenle", "Onaylı paketin Strap'ini ve açıklamasını düzeltir.", { paketId: PKID, baslik: m("Strap, Arapça"), aciklama: m("Açıklama, Arapça") }, ["paketId"]),
+
+  /* --- Kişiler --- */
+  yaz("muhabirEkle", "Yeni dış muhabir ekler (hesapsız; yönetici sonra hesaba bağlar). Arapça ad zorunlu; aynı Arapça adla kayıtlı varsa eklenmez. Ünvanı şehrinden kendiliğinden.", { adAr: m("Arapça ad"), adTr: m("Latin harfli ad (Türkçe yazım)"), adEn: m("İngilizce yazım"), sehir: m("Şehrin kimliği ya da adı (ör. Gazze, القدس)"), eposta: m("Kurumsal e-posta"), telefon: m("Telefon") }, ["adAr"]),
+  yaz("muhabirBilgisiDuzenle", "Kayıtlı muhabirin iletişim bilgisini ya da şehrini düzeltir (telefon, kurumsal ve kişisel e-posta, şehir). Boş bırakılan alan değişmez.", { kisiId: MUH, telefon: m("Telefon"), eposta: m("Kurumsal e-posta"), kisiselEposta: m("Kişisel e-posta"), sehir: m("Şehrin kimliği ya da adı") }, ["kisiId"]),
+  yaz("takipSatiriEkle", "Takipteki ya da güncel bir öneriye tarihli gelişme satırı ekler (öneri metni değişmez).", { oneriId: OID, metin: m("Gelişme, Arapça") }, ["oneriId"]),
 
   /* --- Diğer --- */
   yaz("isVer", "Görevler sayfasında bir ya da birkaç kişiye iş verir.", { baslik: m("İşin adı"), kisiler: { type: "array", items: { type: "string" }, description: "Kişi kimlikleri" }, aciklama: m("Açıklama"), sonTarih: tarih() }),

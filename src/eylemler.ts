@@ -5422,14 +5422,16 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
  * onun adına görüyor. Yetkisiz: rolü personel.
  */
 export const hesapsizKisiEkle = (ben: Kisi, k: { ad: Yazi; birim: BirimId; gorev: GorevId; eposta?: string; telefon?: string; sehir?: Sehir }) => {
-  if (!GERCEK || !hesapYetkisi(ben, "hesapsizKisi")) return null;
+  // Demoda da (asistanın "muhabir ekle"si denenebilsin): hesapsız kişi demoda yalnız seçimlerde görünen bir ad.
+  if (!hesapYetkisi(ben, "hesapsizKisi")) return null;
   const d = getir();
-  const yeni: Kisi = {
+  // Dış muhabirin ünvanı şehrinden ("<Şehir> muhabiri").
+  const yeni: Kisi = yerUnvaniUygula({
     ...yeniKisi({ id: kimlik("kh"), ad: k.ad, eposta: (k.eposta ?? "").trim().toLowerCase(), birim: k.birim, gorev: k.gorev, rol: "personel", hesapYoneticisi: false }),
     ...(k.telefon ? { telefon: k.telefon.trim() } : {}),
     ...(k.sehir ? { sehir: k.sehir } : {}),
-    hesapsiz: true,
-  };
+    hesapsiz: true as const,
+  });
   kaydet({ ...d, kisiler: [...d.kisiler, yeni] });
   return yeni.id;
 };

@@ -47,9 +47,18 @@ import {
   ozeleBaglanabilir,
   paketiOzeleBagla,
   ozelGorevPostasiGitti,
+  ekipEkle,
+  haftaCanliKaydet,
+  haftaNafizeleriEkle,
+  hesapsizKisiEkle,
+  planNafizeleriEkle,
+  profilGuncelle,
+  oneriyeSatirlarEkle,
 } from "../eylemler";
+import { gununNotu } from "../gununNotu";
+import { muhabirRaporu } from "../muhabirRaporu";
 import { kayitAra } from "../arama";
-import { BICIM_ADI, HAREKET_TURU_ADI, IS_DURUM_ADI, KANAL_ADI, KARAR_ADI, KISI_DURUM_ADI, PAKET_DURUM_ADI, PLAN_DURUM_ADI, TUR_ADI, faaliyetTuruAdi, kisiAr, oncelikAdi, sehirAdi, sehirUlkesi } from "../etiketler";
+import { BICIM_ADI, HAREKET_TURU_ADI, IS_DURUM_ADI, KANAL_ADI, KARAR_ADI, KISI_DURUM_ADI, PAKET_DURUM_ADI, PLAN_DURUM_ADI, TUR_ADI, faaliyetTuruAdi, kisiAr, oncelikAdi, sehirAdi, sehirListesi, sehirUlkesi } from "../etiketler";
 import { etiketUret, hatirlatmaKonusu, postaKonuCekirdegi } from "../eposta";
 import { cagriHatirlatmasiGonder, hatirlatmaAlicilari } from "../hatirlatmaGonder";
 import { isKisinin, isListesi } from "../gorevler";
@@ -61,7 +70,7 @@ import { oneriSekmesi, type OneriSekmesi } from "../oneriSekmeleri";
 import { paketSekmesi } from "../paketSekmeleri";
 import { postaGonder as kapiPostaGonder, postaKimlikGetir } from "../posta-kapi";
 import { olusumlar } from "../takvim";
-import { bugun, gunEkle, haftaBasi, planlananHafta } from "../tarih";
+import { bugun, gunEkle, haftaBasi, planlananHafta, saatCoz } from "../tarih";
 import {
   BICIMLER,
   KARARLAR,
@@ -86,9 +95,10 @@ import {
   type Kisi,
   type NextDayPlan,
   type Oncelik,
+  type Sehir,
 } from "../veri";
-import { birimAdi, disMuhabirMi, gorevAdi, icMuhabirMi } from "../yapi";
-import { ileriGorevVerebilir, isAlabilir, kisitliKisi, oneriGorebilir, paketGorebilir, sayfaGorebilir, planIcerikDuzenler, yapabilir } from "../yetki";
+import { birimAdi, disMuhabirMi, ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi, icMuhabirMi, sehirMuhabirUnvaniId } from "../yapi";
+import { haftalikDuzenler, hesapYetkisi, ileriGorevVerebilir, isAlabilir, kisitliKisi, oneriGorebilir, paketGorebilir, profilDuzenler, sayfaGorebilir, planIcerikDuzenler, oneriSatiriEkleyebilir, yapabilir } from "../yetki";
 import { ozelIcerikleri } from "../ozel";
 import { ozelGorevEpostasi } from "../takdir";
 
@@ -232,6 +242,37 @@ const oneriOzeti = (d: Durum, id: string) => {
 };
 const kisa = (x: string, n = 240) => (x.length > n ? `${x.slice(0, n)}…` : x);
 const planBulTarihle = (d: Durum, tarih: string) => d.planlar.filter((p) => p.tarih === tarih).sort((a, b) => b.id.localeCompare(a.id))[0];
+
+/* Sunucu seçimi: ekipte sunucu olabilenler ve muhabirler (kullanıcı: sunucu yerinde muhabir de olur); boşsa ad elle. */
+const sunucuSecenekleri = (d: Durum, dil: Dil): Secenek[] => [
+  { deger: "", ad: metin("asOElleAd", dil) },
+  ...d.kisiler
+    .filter((k) => !k.pasif && ((!disMuhabirMi(k) && ekipAdayi(k, "sunucu")) || muhabirMi(k)))
+    .map((k) => ({ deger: k.id, ad: kisiAr(k) }))
+    .sort((a, b) => a.ad.localeCompare(b.ad, "ar")),
+];
+// "8", "1130" ve Arapça rakam da (ekrandaki saat alanının kuralı).
+const saatListesi = (x: unknown) => (typeof x === "string" ? x.split(/[,،;\s]+/).map((y) => saatCoz(y) || "").filter(Boolean) : []);
+/* Formun saatleri: her saat ayrı nafize, aynı sunucu, mekan ve konuklarla; saatsizse tek nafize (TBC). */
+const nafizeKayitlari = (v: Degerler) => {
+  const saatler = saatListesi(vs(v, "saatler"));
+  const sunucu = vs(v, "sunucuId") ? { kisiId: vs(v, "sunucuId") } : vs(v, "sunucuAd") ? { ad: vs(v, "sunucuAd") } : undefined;
+  const konuklar = vs(v, "konuklar").split(/[،,؛;]/).map((x) => x.trim()).filter(Boolean);
+  return (saatler.length ? saatler : [""]).map((st) => ({ saat: st || undefined, yer: vs(v, "yer"), sunucu, konuklar }));
+};
+const haftaVar = (g: Girdi, ben: Kisi) => {
+  const d = getir();
+  const h = haftaBul(d, s(g.haftaId, 100)) ?? d.haftalik.find((x) => x.baslangic === (gun(g.tarih) ? haftaBasi(gun(g.tarih)) : planlananHafta(bugun())));
+  return h && haftalikDuzenler(ben, h) ? { d, h } : null;
+};
+const sehirSecenekleri = (d: Durum, dil: Dil): Secenek[] => sehirListesi(d).map((id) => ({ deger: id, ad: sehirAdi(id, dil, d) })).sort((a, b) => a.ad.localeCompare(b.ad, dil));
+/* Modelin verdiği şehir: kimlik ya da herhangi bir dildeki adı. */
+const sehirCoz = (d: Durum, x: string): string => {
+  const a = x.trim().toLocaleLowerCase("tr");
+  if (!a) return "";
+  const l = sehirListesi(d);
+  return l.find((id) => id.toLocaleLowerCase("tr") === a) ?? l.find((id) => (["tr", "ar", "en"] as Dil[]).some((dl) => sehirAdi(id, dl, d).toLocaleLowerCase("tr") === a)) ?? "";
+};
 
 /* --- Okuma --- */
 
@@ -426,6 +467,44 @@ const OKUMA: Record<string, Yurutucu> = {
       .slice(0, 40)
       .map((x) => ({ isId: x.id, ad: x.baslik, durum: metin(IS_DURUM_ADI[x.durum], dil), sonTarih: x.sonTarih ?? "", kisiler: x.kisiler.map((id) => kisiAdi(kisiBul(d, id) ?? ben, dil)), benim: isKisinin(d, x, ben.id) }));
     return { sonuc: { isler: liste } };
+  },
+
+  gununNotu: (_g, { ben }) => {
+    const d = getir();
+    const notlar = gununNotu(d, ben, bugun()).map((n) => ({
+      tur: n.tur,
+      sayi: n.sayi,
+      ornekler: n.kisiler ? n.ornekler.map((id) => kisiAr(kisiBul(d, id))) : n.ornekler,
+      ...(n.gun ? { gun: n.gun } : {}),
+      yol: `#/${n.yol.replace(/^#?\/?/, "")}`,
+    }));
+    return { sonuc: { bugun: bugun(), notlar, bos: !notlar.length } };
+  },
+
+  muhabirRaporu: (g, { ben, dil }) => {
+    if (!sayfaGorebilir(ben, "raporlar")) return hata("yetki");
+    const d = getir();
+    const ay = /^\d{4}-\d{2}$/.test(s(g.ay)) ? s(g.ay) : bugun().slice(0, 7);
+    const m = s(g.muhabirId, 100);
+    const oran = (x: number | null) => (x === null ? null : Math.round(x * 100));
+    const satirlar = muhabirRaporu(d, ay)
+      .filter((r) => (m ? r.kisi.id === m : !r.bos))
+      .map((r) => ({
+        muhabirId: r.kisi.id,
+        ad: kisiAdi(r.kisi, dil),
+        ic: r.ic,
+        oneri: r.bu.oneri,
+        kabulYuzde: oran(r.bu.kabulOrani),
+        verilen: r.bu.verilen,
+        biten: r.bu.biten,
+        yapilmayan: r.bu.yapilmayan,
+        cagriYanitYuzde: oran(r.bu.yanitOrani),
+        oncekiAy: { oneri: r.onceki.oneri, verilen: r.onceki.verilen, biten: r.onceki.biten },
+        sonIs: r.sonIs ?? "",
+      }))
+      .sort((a, b) => b.biten - a.biten || b.oneri - a.oneri)
+      .slice(0, 60);
+    return { sonuc: { ay, muhabirler: satirlar } };
   },
 
   hareketleriListele: (g, { dil }) => {
@@ -1153,6 +1232,168 @@ const YAZMA: Record<string, Yurutucu> = {
       alanlar: [A.icerik("baslik", "asAStrap", true), A.icerik("aciklama", "asAAciklama", false, true)],
       degerler: { baslik: s(g.baslik, 300) || p.baslik, aciklama: typeof g.aciklama === "string" ? s(g.aciklama) : (p.aciklama ?? "") },
       calistir: (v) => tamam(paketMetniDuzenle(ben, p.id, { baslik: vs(v, "baslik"), aciklama: vs(v, "aciklama") })),
+    });
+  },
+
+  nafizeEkle: (g, { ben, dil }) => {
+    const d = getir();
+    const planlar = duzenlenenPlanlar(d, ben);
+    if (!planlar.length) return hata("acikPlanYok");
+    const secenekler = planSecenekleri(d, ben, dil);
+    const planId = icinde(s(g.planId, 100), secenekler) || (planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0]).id;
+    const harita = pbHaritasi(d, planlar);
+    const sunucular = sunucuSecenekleri(d, dil);
+    return form({
+      baslik: "asTNafizeEkle",
+      alanlar: [A.plan(secenekler), A.pb(harita, true), A.yazi("saatler", "asASaatler", false, false), A.icerik("yer", "asAYer"), A.secim("sunucuId", "asASunucu", sunucular, false), { ...A.icerik("sunucuAd", "asASunucuAd"), kosul: { alan: "sunucuId", deger: "" } }, A.icerik("konuklar", "asAKonuklar")],
+      degerler: {
+        planId,
+        planBaslikId: icinde(s(g.planBaslikId, 100), harita[planId]),
+        saatler: saatListesi(g.saatler).join(", "),
+        yer: s(g.yer, 200),
+        sunucuId: icinde(s(g.sunucuId, 100), sunucular),
+        sunucuAd: s(g.sunucuAd, 120),
+        konuklar: s(g.konuklar, 500),
+      },
+      calistir: (v) => {
+        const nafizeler = nafizeKayitlari(v).map((n) => ({ ...n, planBaslikId: vs(v, "planBaslikId") }));
+        return tamam(planNafizeleriEkle(ben, vs(v, "planId"), nafizeler), { sayi: nafizeler.length });
+      },
+    });
+  },
+
+  ekibeEkle: (g, { ben, dil }) => {
+    const d = getir();
+    const planlar = duzenlenenPlanlar(d, ben);
+    if (!planlar.length) return hata("acikPlanYok");
+    const secenekler = planSecenekleri(d, ben, dil);
+    const gorevler = ekipGorevListesi().map((id) => ({ deger: id, ad: ekipGorevAdi(id, "ar") }));
+    const adaylar = Object.fromEntries(
+      gorevler.map((o) => [
+        o.deger,
+        d.kisiler
+          .filter((k) => !k.pasif && ekipAdayi(k, o.deger))
+          .map((k) => ({ deger: k.id, ad: kisiAdi(k, dil) }))
+          .sort((a, b) => a.ad.localeCompare(b.ad, dil)),
+      ]),
+    );
+    const kisiId = s(g.kisiId, 100);
+    // Model görevi vermediyse kişinin uyduğu ilk görev: form doğru adaylarla açılsın.
+    const gorev = icinde(s(g.gorev, 60), gorevler) || gorevler.find((o) => adaylar[o.deger].some((k) => k.deger === kisiId))?.deger || "";
+    return form({
+      baslik: "asTEkibeEkle",
+      alanlar: [A.plan(secenekler), A.secim("gorev", "asAEkipGorevi", gorevler), { ad: "kisiId", etiket: "asAKisi", tur: "secim", zorunlu: true, bagli: { alan: "gorev", harita: adaylar } }, A.saat("vardiya", "asASaatGmt")],
+      degerler: { planId: icinde(s(g.planId, 100), secenekler) || (planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0]).id, gorev, kisiId: gorev ? icinde(kisiId, adaylar[gorev]) : "", vardiya: saat(g.vardiya) || "08:00" },
+      calistir: (v) => tamam(ekipEkle(ben, vs(v, "planId"), { kisiId: vs(v, "kisiId"), gorev: vs(v, "gorev"), vardiya: saat(vs(v, "vardiya")) || "08:00" })),
+    });
+  },
+
+  haftaCanliEkle: (g, { ben, dil }) => {
+    const v0 = haftaVar(g, ben);
+    if (!v0) return hata("bulunamadi");
+    const { d, h } = v0;
+    const dosyalar = dosyaSecenekleri(d, h, dil);
+    const gunler = haftaGunleri(h, dil).slice(1);
+    const muhabirler = muhabirSecenekleri(d, dil, "asOSecilmedi");
+    const dosya = s(g.dosya, 200);
+    const var_ = adlaBaslik(d, dosya);
+    return form({
+      baslik: "asTHaftaCanliEkle",
+      alanlar: [A.secim("tarih", "asAGun", gunler), A.icerik("konu", "asAKonu", true), A.icerik("yer", "asAYer"), A.saat("saat", "asASaatGmt"), A.muhabir(muhabirler, false), A.secim("baslikId", "asADosya", dosyalar, false), { ...A.icerik("yeniDosya", "asAYeniBaslik", true), kosul: { alan: "baslikId", deger: YENI } }],
+      degerler: { tarih: icinde(gun(g.tarih), gunler), konu: s(g.konu, 300), yer: s(g.yer, 120), saat: saat(g.saat), muhabirId: icinde(s(g.muhabirId, 100), muhabirler), baslikId: var_ && icinde(var_, dosyalar) ? var_ : dosya ? YENI : "", yeniDosya: dosya },
+      calistir: (v) => {
+        const yeni = vs(v, "baslikId") === YENI;
+        return tamam(haftaCanliKaydet(ben, h.id, { tarih: vs(v, "tarih"), konu: vs(v, "konu"), yer: vs(v, "yer"), saat: saat(vs(v, "saat")), muhabirId: vs(v, "muhabirId"), baslikId: yeni ? undefined : vs(v, "baslikId") }, yeni ? vs(v, "yeniDosya") : undefined));
+      },
+    });
+  },
+
+  haftaNafizeEkle: (g, { ben, dil }) => {
+    const v0 = haftaVar(g, ben);
+    if (!v0) return hata("bulunamadi");
+    const { d, h } = v0;
+    const dosyalar = dosyaSecenekleri(d, h, dil).slice(1);
+    const gunler = haftaGunleri(h, dil).slice(1);
+    const sunucular = sunucuSecenekleri(d, dil);
+    const dosya = s(g.dosya, 200);
+    const var_ = adlaBaslik(d, dosya);
+    return form({
+      baslik: "asTHaftaNafizeEkle",
+      alanlar: [A.secim("tarih", "asAGun", gunler), A.secim("baslikId", "asADosya", dosyalar), { ...A.icerik("yeniDosya", "asAYeniBaslik", true), kosul: { alan: "baslikId", deger: YENI } }, A.yazi("saatler", "asASaatler", false, false), A.icerik("yer", "asAYer"), A.secim("sunucuId", "asASunucu", sunucular, false), { ...A.icerik("sunucuAd", "asASunucuAd"), kosul: { alan: "sunucuId", deger: "" } }, A.icerik("konuklar", "asAKonuklar")],
+      degerler: {
+        tarih: icinde(gun(g.tarih), gunler),
+        baslikId: var_ && icinde(var_, dosyalar) ? var_ : dosya ? YENI : "",
+        yeniDosya: dosya,
+        saatler: saatListesi(g.saatler).join(", "),
+        yer: s(g.yer, 200),
+        sunucuId: icinde(s(g.sunucuId, 100), sunucular),
+        sunucuAd: s(g.sunucuAd, 120),
+        konuklar: s(g.konuklar, 500),
+      },
+      calistir: (v) => {
+        const yeni = vs(v, "baslikId") === YENI;
+        const nafizeler = nafizeKayitlari(v).map((n) => ({ ...n, tarih: vs(v, "tarih"), baslikId: yeni ? "" : vs(v, "baslikId") }));
+        return tamam(haftaNafizeleriEkle(ben, h.id, nafizeler, yeni ? vs(v, "yeniDosya") : undefined), { sayi: nafizeler.length });
+      },
+    });
+  },
+
+  muhabirEkle: (g, { ben, dil }) => {
+    if (!hesapYetkisi(ben, "hesapsizKisi")) return hata("yetki");
+    const d = getir();
+    const adAr = s(g.adAr, 120);
+    const var_ = adAr && d.kisiler.find((k) => kisiAr(k) === adAr);
+    if (var_) return { sonuc: { hata: "zatenKayitli", kisiId: var_.id, ad: kisiAdi(var_, dil) } };
+    const sehirler = sehirSecenekleri(d, dil);
+    return form({
+      baslik: "asTMuhabirEkle",
+      alanlar: [A.icerik("adAr", "asAAdAr", true), A.yazi("adTr", "asAAdLatin", false, false), A.yazi("adEn", "asAAdEn", false, false), A.secim("sehir", "asASehir", sehirler), A.yazi("eposta", "asAEposta", false, false), A.yazi("telefon", "asATelefon", false, false)],
+      degerler: { adAr, adTr: s(g.adTr, 120), adEn: s(g.adEn, 120), sehir: sehirCoz(d, s(g.sehir, 80)), eposta: s(g.eposta, 200), telefon: s(g.telefon, 40) },
+      calistir: (v) => {
+        const ar = vs(v, "adAr");
+        if (getir().kisiler.some((k) => kisiAr(k) === ar)) return { hata: "zatenKayitli" };
+        const tr = vs(v, "adTr") || vs(v, "adEn") || ar;
+        const sehir = vs(v, "sehir") as Sehir;
+        const id = hesapsizKisiEkle(ben, { ad: { tr, ar, en: vs(v, "adEn") || tr }, birim: "muhabir", gorev: sehirMuhabirUnvaniId(sehir), sehir, eposta: vs(v, "eposta"), telefon: vs(v, "telefon") });
+        return tamam(id, { kisiId: id });
+      },
+    });
+  },
+
+  muhabirBilgisiDuzenle: (g, { ben, dil }) => {
+    const d = getir();
+    const k = kisiBul(d, s(g.kisiId, 100));
+    if (!k) return hata("bulunamadi");
+    if (!profilDuzenler(ben, k)) return hata("yetki");
+    const sehirler = sehirSecenekleri(d, dil);
+    return form({
+      baslik: "asTMuhabirBilgisi",
+      ozet: kisiAdi(k, dil),
+      alanlar: [A.yazi("telefon", "asATelefon", false, false), A.yazi("eposta", "asAEposta", false, false), A.yazi("kisiselEposta", "asAKisiselEposta", false, false), A.secim("sehir", "asASehir", sehirler)],
+      degerler: { telefon: s(g.telefon, 40) || k.telefon || "", eposta: s(g.eposta, 200) || k.kurumEposta || k.eposta || "", kisiselEposta: s(g.kisiselEposta, 200) || k.kisiselEposta || "", sehir: sehirCoz(d, s(g.sehir, 80)) || k.sehir },
+      calistir: (v) =>
+        tamam(
+          profilGuncelle(ben, k.id, {
+            telefon: vs(v, "telefon") || undefined,
+            eposta: vs(v, "eposta") || undefined,
+            kisiselEposta: vs(v, "kisiselEposta") || undefined,
+            sehir: (vs(v, "sehir") || k.sehir) as Sehir,
+          }),
+        ),
+    });
+  },
+
+  takipSatiriEkle: (g, { ben }) => {
+    const v0 = oneriVar(g, ben);
+    if (!v0) return hata("bulunamadi");
+    const { o } = v0;
+    if (!oneriSatiriEkleyebilir(ben, o)) return hata("yetki");
+    return form({
+      baslik: "asTTakipSatiri",
+      ozet: o.haberBasligi,
+      alanlar: [A.icerik("metin", "asAGelisme", true, true)],
+      degerler: { metin: s(g.metin) },
+      calistir: (v) => tamam(oneriyeSatirlarEkle(ben, o.id, [vs(v, "metin")])),
     });
   },
 
