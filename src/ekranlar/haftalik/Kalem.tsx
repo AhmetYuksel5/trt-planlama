@@ -169,7 +169,8 @@ export function KalemFormu({
       </div>
       {pkg && strapAlani}
       <label>
-        {t("metin")} {pkg && <span className="ipucu">{t("varsa")}</span>}
+        {/* Strap'li paketin metni isteğe bağlı (kalemIcerigiVar): metinsiz PKG kalemi de kaydedilir. */}
+        {t("metin")} {(pkg || !!f.paketBasligi.trim()) && <span className="ipucu">{t("varsa")}</span>}
         <textarea {...icerikAlani} rows={3} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} placeholder={metin("kalemMetniIpucu", "ar")} />
       </label>
       <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />

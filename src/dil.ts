@@ -2171,6 +2171,7 @@ const M = {
   asagi: m("Aşağı taşı", "نقل للأسفل", "Move down"),
   gunlukGundem: m("Gün gün gündem", "الأجندة اليومية", "Daily agenda"),
   buGunKalemYok: m("Bu gün için kalem yok.", "لا بنود لهذا اليوم.", "No items for this day."),
+  pkgEkle: m("PKG ekle", "إضافة PKG", "Add PKG"),
   dosyayaPkgEkle: m("Bu dosyaya PKG ekle", "إضافة PKG إلى هذا الملف", "Add PKG to this file"),
   kalemEkle: m("Kalem ekle", "إضافة بند", "Add item"),
   kalemSayisi: m("{n} kalem", "{n} بندا", "{n} items"),

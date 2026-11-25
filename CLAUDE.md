@@ -2488,7 +2488,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     da Strap'li PKG'si olmalı (`haftalik.ts → kalemIcerigiVar`, `kalemKaydet`);
     metinsiz kalem ekranda, belgede ve çıktıda yalnız PKG satırıyla, Next Day'e
     gelişmesiz, ayrı paketle (her biri kendi kararıyla) geçer. Test
-    `testler/haftalik-coklu-pkg.cjs`.
+    `testler/haftalik-coklu-pkg.cjs`. Düğme dosyasız grupta da; günün ve "Stok ve programlar"ın
+    ekleme çubuğunda "PKG ekle" (`data-gun-pkg-ekle`, plan ekranı ve belge; formda dosya
+    seçilir); kalem formunda Strap yazılınca metin "varsa" (kullanıcı: gün gün planda
+    başlığın altına metinsiz başka paket ekleyemiyordu, düğme yalnız dolu dosya grubundaydı).
+    Test `testler/haftalik-gun-pkg.cjs`.
   - Günün canlı yayını ve nafizesi (kullanıcı: haftadan gün gündemine canlı yayın ve nafize
     eklensin; `haftalik/CanliNafize.tsx`, `HaftalikPlan.canlilar`/`nafizeler`, `HaftaCanli`,
     `HaftaNafize`): günün "Kalem ekle"sinin yanında "Canlı yayın / etkinlik ekle" (konu, yer, saat

@@ -474,6 +474,9 @@ export function HaftalikBelgesi({
               {duzen && (
                 <EkleCubugu>
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: g })} />
+                  <span data-gun-pkg-ekle={g}>
+                    <EkleDugmesi metin={t("pkgEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: g, pkg: true })} />
+                  </span>
                   <GunEkleDugmeleri h={hafta} tarih={g} />
                 </EkleCubugu>
               )}
@@ -492,6 +495,9 @@ export function HaftalikBelgesi({
           {duzen && (
             <EkleCubugu>
               <EkleDugmesi metin={t("kalemEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: "" })} />
+              <span data-gun-pkg-ekle="">
+                <EkleDugmesi metin={t("pkgEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: "", pkg: true })} />
+              </span>
             </EkleCubugu>
           )}
         </section>

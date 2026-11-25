@@ -605,10 +605,10 @@ function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: Haft
           {liste.map((k) => (
             <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
           ))}
+          {/* Dosyasız grupta da (kullanıcı: başlığın altına metinsiz başka paket eklenemiyordu). */}
           {duzenler &&
-            baslikId &&
             (pkgFormu === baslikId ? (
-              <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId} sonra={liste[liste.length - 1].id} pkg kapat={() => setPkgFormu(null)} />
+              <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId || undefined} sonra={liste[liste.length - 1].id} pkg kapat={() => setPkgFormu(null)} />
             ) : (
               <div className="ara-ust" data-dosya-pkg-ekle>
                 <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setPkgFormu(baslikId)} />
@@ -634,15 +634,18 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
             <h3>
               {gunAdi(g, dil)} <span>{tarihYaz(g, dil, "uzun")}</span>
             </h3>
-            {kalemler.length === 0 && !gunCanlilari(hafta, g).length && !gunNafizeleri(hafta, g).length && form !== g && <p className="bos-kucuk">{t("buGunKalemYok")}</p>}
+            {kalemler.length === 0 && !gunCanlilari(hafta, g).length && !gunNafizeleri(hafta, g).length && !form?.startsWith(g) && <p className="bos-kucuk">{t("buGunKalemYok")}</p>}
             <DosyaGruplari ben={ben} hafta={hafta} kalemler={kalemler} tarih={g} />
             <GunCanliNafize h={hafta} tarih={g} klasik />
             {duzenler &&
-              (form === g ? (
-                <KalemFormu ben={ben} hafta={hafta} tarih={g} kapat={() => setForm(null)} />
+              (form === g || form === g + "|pkg" ? (
+                <KalemFormu ben={ben} hafta={hafta} tarih={g} pkg={form !== g} kapat={() => setForm(null)} />
               ) : (
                 <div className="ara-ust ekle-yanyana">
                   <EkleDugmesi metin={t("kalemEkle")} onClick={() => setForm(g)} />
+                  <span data-gun-pkg-ekle={g}>
+                    <EkleDugmesi metin={t("pkgEkle")} onClick={() => setForm(g + "|pkg")} />
+                  </span>
                   <GunEkleDugmeleri h={hafta} tarih={g} />
                 </div>
               ))}
@@ -657,7 +660,7 @@ function GunlukGundem({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
 
 function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
   const { t } = useDil();
-  const [form, setForm] = useState(false);
+  const [form, setForm] = useState<"" | "kalem" | "pkg">("");
   const duzenler = haftalikDuzenler(ben, hafta);
   const stok = hafta.kalemler.filter((k) => !k.tarih);
   const gundemdeki = stok.filter(gundemde);
@@ -685,10 +688,13 @@ function StokDosyasi({ ben, hafta }: { ben: Kisi; hafta: HaftalikPlan }) {
       </div>
       {duzenler &&
         (form ? (
-          <KalemFormu ben={ben} hafta={hafta} tarih="" kapat={() => setForm(false)} />
+          <KalemFormu ben={ben} hafta={hafta} tarih="" pkg={form === "pkg"} kapat={() => setForm("")} />
         ) : (
-          <div className="ara-ust">
-            <EkleDugmesi metin={t("kalemEkle")} onClick={() => setForm(true)} />
+          <div className="ara-ust ekle-yanyana">
+            <EkleDugmesi metin={t("kalemEkle")} onClick={() => setForm("kalem")} />
+            <span data-gun-pkg-ekle="">
+              <EkleDugmesi metin={t("pkgEkle")} onClick={() => setForm("pkg")} />
+            </span>
           </div>
         ))}
       {dusen.length > 0 && (
