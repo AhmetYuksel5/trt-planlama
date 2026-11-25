@@ -4442,6 +4442,9 @@ html.yeni-tasarim.paper { --lacivert-silik: var(--silik); }
 .asistan-bas .bosluk { flex: 1; }
 .asistan-liste { overflow-y: auto; padding: var(--ara-3); display: flex; flex-direction: column; gap: var(--ara-2); }
 .asistan-bos { color: var(--sonuk); font-size: var(--punto); margin: 0; }
+.asistan-cipler { display: flex; flex-wrap: wrap; gap: var(--a-2, 8px); }
+.asistan-cip { border: 1px solid var(--cizgi); background: var(--yuzey); color: var(--yazi); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: var(--punto-kucuk, 13px); cursor: pointer; min-block-size: 32px; }
+.asistan-cip:hover { background: var(--yuzey-2); }
 .asistan-ileti { max-inline-size: 88%; padding: var(--ara-2) var(--ara-3); border-radius: var(--yaricap); white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--punto); line-height: 1.5; }
 .asistan-ileti.kisi { align-self: flex-end; background: var(--vurgu-sis); color: var(--murekkep); }
 .asistan-ileti.asistan, .asistan-ileti.bilgi { align-self: flex-start; background: var(--yuzey-2); }
@@ -4453,6 +4456,17 @@ html.yeni-tasarim.paper { --lacivert-silik: var(--silik); }
 .asistan-onay-baslik { font-size: var(--punto); }
 .asistan-onay-ozet { font-size: var(--punto); }
 .asistan-form { gap: var(--ara-2); }
+/* Toplu onay: işler satır satır, alanlar katlı; seçilmeyen ve yapılamayan soluk. */
+.asistan-isler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); }
+.asistan-is { border: 1px solid var(--cizgi); border-radius: var(--yaricap, 6px); padding: var(--ara-1) var(--ara-2); background: var(--yuzey); }
+.asistan-is summary { display: flex; align-items: flex-start; gap: var(--ara-2); cursor: pointer; list-style: none; }
+.asistan-is summary::-webkit-details-marker { display: none; }
+.asistan-is summary input { margin-block-start: 3px; flex: none; }
+.asistan-is-ad { display: grid; gap: 2px; min-inline-size: 0; flex: 1; font-size: var(--punto); }
+.asistan-is details[open] > .asistan-form { margin-block-start: var(--ara-2); }
+.asistan-is.secilmedi, .asistan-is.vazgecildi { color: var(--sonuk); background: var(--yuzey-2); }
+.asistan-is.hata { border-color: var(--kotu, #b3261e); }
+.asistan-is.yapildi { background: var(--iyi-sis); }
 .asistan-form label { display: grid; gap: 2px; font-size: var(--punto-kucuk, 12px); color: var(--silik); min-inline-size: 0; }
 .asistan-form :is(input, select, textarea) { inline-size: 100%; min-inline-size: 0; color: var(--murekkep); }
 .asistan-form label.secim-satiri { display: flex; align-items: center; gap: var(--ara-1); color: var(--murekkep); font-size: var(--punto); }

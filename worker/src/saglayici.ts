@@ -85,18 +85,19 @@ export const asistanCagir = async (
   mesajlar: Anthropic.Beta.BetaMessageParam[],
   araclar: Anthropic.Beta.BetaTool[],
   fetchFn: typeof fetch,
+  derin = false,
 ): Promise<AsistanSonucu> => {
   if (s.tur !== "anthropic") return { tamam: false, hata: "desteklenmiyor" };
   const client = claudeIstemcisi(s.anahtar!, s.calismaAlani, fetchFn, 90_000);
   try {
     const r = await client.beta.messages.create({
       model: s.model,
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: sistem,
       messages: mesajlar,
       // Araç listesi uzun ve her turda aynı: önbelleğe (sistem metni bugünü ve sayfayı taşıdığı için değişiyor, onun önünde biter).
       tools: araclar.map((a, i) => (i === araclar.length - 1 ? { ...a, cache_control: { type: "ephemeral" as const } } : a)),
-      ...(EFORLU.test(s.model) ? { output_config: { effort: "low" as const } } : {}),
+      ...(EFORLU.test(s.model) ? { output_config: { effort: derin ? ("medium" as const) : ("low" as const) } } : {}),
       ...(YEDEKLI.has(s.model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
     });
     if (r.stop_reason === "refusal") return { tamam: false, hata: "red" };

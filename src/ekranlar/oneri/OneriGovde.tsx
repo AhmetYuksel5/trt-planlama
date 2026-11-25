@@ -1,3 +1,4 @@
+import { oneriSatiri, useEkranKaydi } from "../../asistan/ekran";
 import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
@@ -149,6 +150,8 @@ export function OneriAyrinti({
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const oneriGunu = useOneriGunu();
+  // Asistan "bunu" deyince bu öneriyi anlasın (ayrıntı sayfasında adres zaten söylüyor).
+  useEkranKaydi(kapat || yerinde ? `açık pencerede ${oneriSatiri(o)}` : undefined);
   const [mod, setMod] = useState<Mod>(ilkMod);
   const [yenile, setYenile] = useState(false);
   /*

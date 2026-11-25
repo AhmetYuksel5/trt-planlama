@@ -2,12 +2,17 @@ import { Check, Mic, MicOff, Send, Sparkles, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDil, type Dil } from "../dil";
 import { alanSecenekleri, gorunurMu, type Degerler, type FormAlani } from "../asistan/araclar";
-import { asistanaYaz, konusmayiTemizle, onayDegeri, useAsistan, type Gorunen } from "../asistan/motor";
+import { asistanaYaz, isSecimi, konusmayiTemizle, onayDegeri, useAsistan, type Gorunen, type TopluIs } from "../asistan/motor";
 import { AsistanMetni } from "./AsistanMetni";
 import { Icerik, icerikAlani } from "./Parcalar";
 import { SaatGirdisi, TarihGirdisi } from "./TarihSaat";
 import { izlemede } from "../izleme";
-import type { Kisi } from "../veri";
+import { haftaBul, planBul, useVeri, type Durum, type Kisi } from "../veri";
+import { kararlariGetir } from "../planlamaKararlari";
+import type { Anahtar } from "../dil";
+import { useAsistanPenceresi } from "../asistan/pencere";
+import { ImlaPenceresi } from "./YzImla";
+import { PlanGonderPenceresi } from "./PlanGonder";
 import { kisitliKisi } from "../yetki";
 import { git } from "../yol";
 import { useYz } from "../yz";
@@ -62,6 +67,20 @@ export default function Asistan({ ben }: { ben: Kisi }) {
     else l.scrollTo({ top: l.scrollHeight });
   }, [hal.gorunen.length, hal.mesgul]);
 
+  // Asistanın açtırdığı onay pencereleri (pencere.ts): imla ve plan postası her görünümde buradan.
+  const [pencere, setPencere] = useState<{ tur: "imla" | "planGonder"; id: string } | null>(null);
+  useAsistanPenceresi("imla", "*", (id) => setPencere({ tur: "imla", id }));
+  useAsistanPenceresi("planGonder", "*", (id) => setPencere({ tur: "planGonder", id }));
+  const v = useVeri();
+  const pencereHedefi = (() => {
+    if (!pencere) return null;
+    const nd = planBul(v, pencere.id);
+    if (nd) return { tur: "nextday" as const, plan: nd };
+    const h = haftaBul(v, pencere.id);
+    return h ? { tur: "haftalik" as const, plan: h } : null;
+  })();
+  const pencereler = pencereHedefi && (pencere?.tur === "imla" ? <ImlaPenceresi ben={ben} hedef={pencereHedefi} kapat={() => setPencere(null)} /> : <PlanGonderPenceresi ben={ben} hedef={pencereHedefi} kapat={() => setPencere(null)} />);
+
   if (!gorunur) return null;
   const oturum = { ben, dil, git };
   const gonder = (m = yazi) => {
@@ -89,6 +108,7 @@ export default function Asistan({ ben }: { ben: Kisi }) {
 
   return (
     <>
+      {pencereler}
       {!acik && (
         <button type="button" className="asistan-ac" onClick={() => setAcik(true)} title={`${t("asistan")} (Ctrl+J)`} aria-label={t("asistan")} data-asistan-ac>
           <Sparkles size={22} />
@@ -110,7 +130,12 @@ export default function Asistan({ ben }: { ben: Kisi }) {
             </button>
           </header>
           <div className="asistan-liste" ref={liste} data-asistan-liste>
-            {!hal.gorunen.length && <p className="asistan-bos">{t("asKarsilama")}</p>}
+            {!hal.gorunen.length && (
+              <>
+                <p className="asistan-bos">{t("asKarsilama")}</p>
+                <Bekleyenler d={v} ben={ben} sor={(m) => gonder(m)} />
+              </>
+            )}
             {hal.gorunen.map((g, i) =>
               g.tur === "onay" ? (
                 <OnayKarti key={i} g={g} aktif={g.durum === "bekliyor" && !!hal.bekleyen} mesgul={hal.mesgul} onayla={(evet) => void asistanaYaz("", oturum, evet)} />
@@ -167,21 +192,30 @@ function OnayKarti({ g, aktif, mesgul, onayla }: { g: Gorunen; aktif: boolean; m
   const { t } = useDil();
   const v: Degerler = g.degerler ?? {};
   const alanlar = (g.alanlar ?? []).filter((a) => gorunurMu(a, v));
+  const secili = g.isler?.filter((x) => x.secili).length ?? 0;
   return (
-    <section className={`asistan-ileti onay asistan-onay-karti${g.durum ? ` ${g.durum}` : ""}`} data-asistan-ileti="onay" data-durum={g.durum}>
+    <section className={`asistan-ileti onay asistan-onay-karti${g.durum ? ` ${g.durum}` : ""}`} data-asistan-ileti="onay" data-durum={g.durum} {...(g.isler ? { "data-asistan-toplu": g.isler.length } : {})}>
       <b className="asistan-onay-baslik">{g.metin}</b>
       {g.ozet && <Icerik blok className="asistan-onay-ozet">{g.ozet}</Icerik>}
-      {alanlar.length > 0 && (
-        <div className="form asistan-form">
-          {alanlar.map((a) => (
-            <OnayAlani key={a.ad} a={a} v={v} aktif={aktif} eksik={!!g.eksik?.includes(a.ad)} />
+      {g.isler ? (
+        <ol className="asistan-isler">
+          {g.isler.map((x, k) => (
+            <TopluIsSatiri key={k} x={x} sira={k} aktif={aktif} />
           ))}
-        </div>
+        </ol>
+      ) : (
+        alanlar.length > 0 && (
+          <div className="form asistan-form">
+            {alanlar.map((a) => (
+              <OnayAlani key={a.ad} a={a} v={v} aktif={aktif} eksik={!!g.eksik?.includes(a.ad)} />
+            ))}
+          </div>
+        )
       )}
       {aktif ? (
         <div className="asistan-onay">
-          <button type="button" className="dugme dugme-kucuk" disabled={mesgul} onClick={() => onayla(true)} data-asistan-evet>
-            <Check size={14} /> {t(g.dugme ?? "asOnayla")}
+          <button type="button" className="dugme dugme-kucuk" disabled={mesgul || (!!g.isler && !secili)} onClick={() => onayla(true)} data-asistan-evet>
+            <Check size={14} /> {g.isler ? t("asSeciliOnayla", { n: String(secili) }) : t(g.dugme ?? "asOnayla")}
           </button>
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" disabled={mesgul} onClick={() => onayla(false)} data-asistan-hayir>
             {t("iptal")}
@@ -194,7 +228,34 @@ function OnayKarti({ g, aktif, mesgul, onayla }: { g: Gorunen; aktif: boolean; m
   );
 }
 
-function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: boolean; eksik: boolean }) {
+/* Toplu kartta bir iş: başta seçim kutusu ve işin adı; alanlar katlı, eksik ya da açılınca görünür. */
+function TopluIsSatiri({ x, sira, aktif }: { x: TopluIs; sira: number; aktif: boolean }) {
+  const { t } = useDil();
+  const alanlar = x.alanlar.filter((a) => gorunurMu(a, x.degerler));
+  return (
+    <li className={`asistan-is${x.secili ? "" : " secilmedi"}${x.durum ? ` ${x.durum}` : ""}`} data-asistan-is={sira} data-durum={x.durum}>
+      <details open={!!x.eksik?.length || undefined}>
+        <summary>
+          <input type="checkbox" checked={x.secili} disabled={!aktif} onChange={(e) => isSecimi(sira, e.target.checked)} onClick={(e) => e.stopPropagation()} aria-label={x.metin} data-asistan-is-sec />
+          <span className="asistan-is-ad">
+            <b>{x.metin}</b>
+            {x.ozet && <Icerik>{x.ozet}</Icerik>}
+          </span>
+          {x.durum && <small className="asistan-sonuc">{t(SONUC_ADI[x.durum])}</small>}
+        </summary>
+        {alanlar.length > 0 && (
+          <div className="form asistan-form">
+            {alanlar.map((a) => (
+              <OnayAlani key={a.ad} a={a} v={x.degerler} aktif={aktif && x.secili} eksik={!!x.eksik?.includes(a.ad)} sira={sira} />
+            ))}
+          </div>
+        )}
+      </details>
+    </li>
+  );
+}
+
+function OnayAlani({ a, v, aktif, eksik, sira }: { a: FormAlani; v: Degerler; aktif: boolean; eksik: boolean; sira?: number }) {
   const { t } = useDil();
   const deger = v[a.ad];
   const yazi = typeof deger === "string" ? deger : "";
@@ -208,7 +269,7 @@ function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: b
   if (a.tur === "onay")
     return (
       <label className="secim-satiri">
-        <input type="checkbox" checked={deger === true} disabled={!aktif} onChange={(e) => onayDegeri(a.ad, e.target.checked)} data-asistan-alan={a.ad} /> {t(a.etiket)}
+        <input type="checkbox" checked={deger === true} disabled={!aktif} onChange={(e) => onayDegeri(a.ad, e.target.checked, sira)} data-asistan-alan={a.ad} /> {t(a.etiket)}
       </label>
     );
   if (a.tur === "coklu") {
@@ -218,7 +279,7 @@ function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: b
         <legend>{etiket}</legend>
         {alanSecenekleri(a, v).map((o) => (
           <label key={o.deger} className="secim-satiri">
-            <input type="checkbox" checked={secili.includes(o.deger)} onChange={(e) => onayDegeri(a.ad, e.target.checked ? [...secili, o.deger] : secili.filter((x) => x !== o.deger))} /> {o.ad}
+            <input type="checkbox" checked={secili.includes(o.deger)} onChange={(e) => onayDegeri(a.ad, e.target.checked ? [...secili, o.deger] : secili.filter((x) => x !== o.deger), sira)} /> {o.ad}
           </label>
         ))}
       </fieldset>
@@ -228,7 +289,7 @@ function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: b
   if (a.tur === "secim") {
     const secenekler = alanSecenekleri(a, v);
     kontrol = (
-      <select {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value)}>
+      <select {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value, sira)}>
         {!secenekler.some((o) => o.deger === "") && <option value="">—</option>}
         {secenekler.map((o) => (
           <option key={o.deger} value={o.deger}>
@@ -237,14 +298,41 @@ function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: b
         ))}
       </select>
     );
-  } else if (a.tur === "tarih") kontrol = <TarihGirdisi {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value)} />;
-  else if (a.tur === "saat") kontrol = <SaatGirdisi {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value)} />;
-  else if (a.tur === "uzun") kontrol = <textarea {...ortak} rows={3} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value)} />;
-  else kontrol = <input {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value)} />;
+  } else if (a.tur === "tarih") kontrol = <TarihGirdisi {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value, sira)} />;
+  else if (a.tur === "saat") kontrol = <SaatGirdisi {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value, sira)} />;
+  else if (a.tur === "uzun") kontrol = <textarea {...ortak} rows={3} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value, sira)} />;
+  else kontrol = <input {...ortak} value={yazi} onChange={(e) => onayDegeri(a.ad, e.target.value, sira)} />;
   return (
     <label className={eksik ? "eksik" : undefined}>
       {etiket}
       {kontrol}
     </label>
+  );
+}
+
+/*
+ * Açılış özeti (kullanıcı: asistan açılınca seni bekleyenleri göstersin): boş konuşmada
+ * sayıları kayıttan (planlamaKararlari.ts, ana sayfayla aynı kural) çip olarak; basınca
+ * kişinin dilinde soru olarak gider, model okuma araçlarıyla ayrıntıyı getirir.
+ */
+const CIPLER: { sayi: (k: ReturnType<typeof kararlariGetir>) => number; ad: Anahtar; soru: Anahtar }[] = [
+  { sayi: (k) => k.oneri, ad: "asCipOneri", soru: "asCipOneriSoru" },
+  { sayi: (k) => k.nextDayPkg, ad: "asCipPkg", soru: "asCipPkgSoru" },
+  { sayi: (k) => k.onay, ad: "asCipOnay", soru: "asCipOnaySoru" },
+  { sayi: (k) => k.gununNotu, ad: "asCipGununNotu", soru: "asCipGununNotuSoru" },
+];
+function Bekleyenler({ d, ben, sor }: { d: Durum; ben: Kisi; sor: (m: string) => void }) {
+  const { t } = useDil();
+  const k = kararlariGetir(d, ben);
+  const l = CIPLER.map((c) => ({ ...c, n: c.sayi(k) })).filter((c) => c.n > 0);
+  if (!l.length) return null;
+  return (
+    <div className="asistan-cipler" data-asistan-bekleyenler>
+      {l.map((c) => (
+        <button key={c.ad} type="button" className="asistan-cip" onClick={() => sor(t(c.soru))} data-asistan-cip={c.ad}>
+          {t(c.ad, { n: c.n })}
+        </button>
+      ))}
+    </div>
   );
 }

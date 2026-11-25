@@ -1,3 +1,4 @@
+import { useAsistanPenceresi } from "../../asistan/pencere";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
@@ -87,6 +88,8 @@ export function StaffingSeridi({ ben, plan }: { ben: Kisi; plan: NextDayPlan }) 
   const { t } = useDil();
   const v = useVeri();
   const [acik, setAcik] = useState(false);
+  // Asistan "staffing'i ekibe yaz" deyince önizleme açılır; yazmayı kişi pencerede onaylar.
+  useAsistanPenceresi("staffing", plan.id, () => setAcik(true));
   useStaffingPostasi(ben, plan);
   const { rota, sunucu } = useRota(ben, plan);
   const posta = staffingPostasi(v.postaMesajlari, plan.tarih);

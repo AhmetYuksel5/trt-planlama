@@ -87,10 +87,23 @@ Kapıda yazma aracının açıklaması "YAZMA" ile başlar; tarayıcıda o araç
 Ekranın düğmeyi göstermediği durumda araç form açmadan nedenini döner (`weeklyGundeminde`,
 `zatenPlanda`, `yetki`…); model kişiye söyler.
 
+### Güçlendirme (Kasım 2026)
+
+- Ekran bağlamı: açık sayfanın kaydı (adresten) ve sayfaların bildirdiği seçim
+  (`src/asistan/ekran.ts`) yönergeye "Ekranda şu an" olarak girer; "bunu" ekrandakidir.
+- Toplu onay: modelin aynı yanıtta istediği birden çok yazma işi tek kartta; kişi
+  istemediğinin seçimini kaldırır, seçilenler sırayla yapılır, seçilmeyenler `vazgecti`.
+- Pencere açan araçlar (`planGonder`, `staffingEkibeYaz`, `imlaDenetimi`): işin kendi
+  penceresi zaten onay ekranı; asistan sayfayı ve pencereyi açar (`src/asistan/pencere.ts`).
+- Yeni araçlar: `stokListele`, `postaOzeti`, `gundemOzeti`, `hazirPaketEkle`,
+  `uretimeBaslat`, `pkgGeriBildirimi`, `oneriDuzenle` (kısalt ve biçimle: metni model
+  yazar), `aylikOlayEkle`, `ozelNafizeEkle`, `ozelMaddeEkle`, `ozelOnayla`.
+- Açılış: boş panelde kişiyi bekleyen işlerin çipleri (ana sayfayla aynı sayılar).
+- Düşünme: uzun istek ya da iki turdan çok araç kullanımında effort medium.
+
 ### Sonraki adımlar
 
-- Özel yayın, Aylık, Muhasebe, Organizasyon işleri; Next Day hazır paketler.
-- Sayfa bağlamı: açık plan, seçili öneri, açık paket asistana "bu" diye geçer.
+- Muhasebe ve Organizasyon işleri.
 - Yanıt sesli okunabilir; OpenAI uyumlu sağlayıcı; muhabirin kendi asistanı.
 
 ## Güvenlik notları
@@ -112,4 +125,5 @@ Ekranın düğmeyi göstermediği durumda araç form açmadan nedenini döner (`
 - `src/asistan/araclar.ts`: yürütücüler (okuma; yazma araçlarının formu ve işi).
 - `src/asistan/motor.ts`: döngü, onay, oturum saklama.
 - `src/bilesenler/Asistan.tsx`: panel, onay kartı (form), yüzen düğme, Ctrl/⌘+J.
-- Testler: `worker/test/asistan.test.ts`, `testler/asistan.cjs`.
+- `src/asistan/ekran.ts`: ekran bağlamı; `src/asistan/pencere.ts`: pencere istekleri.
+- Testler: `worker/test/asistan.test.ts`, `testler/asistan.cjs`, `testler/asistan-yeni.cjs`, `testler/asistan-guclu.cjs`.

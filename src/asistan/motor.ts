@@ -2,7 +2,8 @@ import { useSyncExternalStore } from "react";
 import { metin, yaz, type Anahtar, type Dil } from "../dil";
 import { GERCEK } from "../kip";
 import { bugun } from "../tarih";
-import type { Kisi } from "../veri";
+import { getir, type Kisi } from "../veri";
+import { ekranBaglami } from "./ekran";
 import { kapiIstek } from "../yz";
 import { ARAC_YURUTUCULERI, eksikAlanlar, onayYaniti, type AracBaglami, type AracSonucu, type Deger, type Degerler, type Form, type FormAlani } from "./araclar";
 
@@ -34,11 +35,23 @@ export interface Gorunen {
   ozet?: string;
   dugme?: Anahtar;
   eksik?: string[];
+  /* Toplu onay (kullanıcı: "beş öneriyi plana ekle" beş ayrı kart açıyordu): aynı turun yazma işleri tek kartta, satır satır seçilir. */
+  isler?: TopluIs[];
 }
+export interface TopluIs {
+  metin: string;
+  ozet?: string;
+  alanlar: FormAlani[];
+  degerler: Degerler;
+  secili: boolean;
+  eksik?: string[];
+  durum?: "yapildi" | "vazgecildi" | "hata";
+}
+type AracIstegi = Extract<Blok, { type: "tool_use" }>;
+type AracSonucBlogu = Extract<Blok, { type: "tool_result" }>;
 interface Bekleyen {
-  arac: Extract<Blok, { type: "tool_use" }>;
-  sonuclar: Extract<Blok, { type: "tool_result" }>[];
-  kalan: Extract<Blok, { type: "tool_use" }>[];
+  araclar: AracIstegi[];
+  sonuclar: AracSonucBlogu[];
 }
 interface Hal {
   mesajlar: Ileti[];
@@ -50,7 +63,8 @@ export type ModelYaniti = { icerik: Blok[] } | { hata: string; ayrinti?: string 
 export type Model = (mesajlar: Ileti[], baglam: Record<string, string>) => Promise<ModelYaniti>;
 
 const ANAHTAR = "trt-planlama-asistan";
-const EN_COK_TUR = 8;
+// Çok adımlı işler (önce oku, sonra birkaç yazma) sekiz turda kesiliyordu.
+const EN_COK_TUR = 12;
 
 const oku = (): Hal => {
   try {
@@ -106,17 +120,21 @@ interface Oturum {
 const sonucMetni = (s: AracSonucu) => JSON.stringify(s).slice(0, 12000);
 
 const hataMetni = (dil: Dil, h: string, ayrinti?: string) =>
-  `${metin(h === "gunlukSinir" ? "asSinir" : h === "kapali" ? "asKapali" : "asHata", dil)}${ayrinti ? ` (${ayrinti})` : ""}`;
+  `${metin(h === "gunlukSinir" ? "asSinir" : h === "kapali" ? "asKapali" : h === "kota" ? "kapiKota" : "asHata", dil)}${ayrinti ? ` (${ayrinti})` : ""}`;
+
+// Onay bekleyen işlerin kendisi bellekte (işlev saklanamıyor); sıra kartın satırlarıyla aynı.
+let bekleyenFormlar: Form[] = [];
 
 /*
- * Bir turun araçlarını sırayla çalıştırır; yazma aracına gelince durur ve kişiye sorar.
- * Dönüş: bütün sonuçlar hazırsa onlar, durduysa null.
+ * Bir turun araçları: okuma araçları hemen (eşzamansız olabilir: Gündem taraması), yazma araçları
+ * formlarıyla toplanır. Yazma yoksa sonuçlar döner; varsa tek kart açılır (bir iş tek form, birkaç
+ * iş toplu liste) ve null döner.
  */
-const araclariCalistir = (araclar: Extract<Blok, { type: "tool_use" }>[], onceki: Extract<Blok, { type: "tool_result" }>[], o: Oturum) => {
-  const sonuclar = [...onceki];
+const araclariCalistir = async (araclar: AracIstegi[], o: Oturum): Promise<AracSonucBlogu[] | null> => {
+  const sonuclar: AracSonucBlogu[] = [];
+  const yazma: { arac: AracIstegi; form: Form }[] = [];
   const b: AracBaglami = { ben: o.ben, dil: o.dil, git: o.git };
-  for (let i = 0; i < araclar.length; i++) {
-    const a = araclar[i];
+  for (const a of araclar) {
     const y = ARAC_YURUTUCULERI[a.name];
     if (!y) {
       sonuclar.push({ type: "tool_result", tool_use_id: a.id, content: sonucMetni({ hata: "arac" }), is_error: true });
@@ -124,35 +142,48 @@ const araclariCalistir = (araclar: Extract<Blok, { type: "tool_use" }>[], onceki
     }
     let r;
     try {
-      r = y(a.input ?? {}, b);
+      r = await y(a.input ?? {}, b);
     } catch {
       r = { sonuc: { hata: "calismadi" } };
     }
-    if ("sonuc" in r) {
-      sonuclar.push({ type: "tool_result", tool_use_id: a.id, content: sonucMetni(r.sonuc), ...(r.sonuc.hata ? { is_error: true } : {}) });
-      continue;
-    }
-    bekleyenIs = r.form;
-    const f = r.form;
-    degis({
-      bekleyen: { arac: a, sonuclar, kalan: araclar.slice(i + 1) },
-      gorunen: [...hal.gorunen, { tur: "onay", metin: metin(f.baslik, o.dil), durum: "bekliyor", alanlar: f.alanlar, degerler: f.degerler, ...(f.ozet ? { ozet: f.ozet } : {}), ...(f.dugme ? { dugme: f.dugme } : {}) }],
-    });
-    return null;
+    if ("sonuc" in r) sonuclar.push({ type: "tool_result", tool_use_id: a.id, content: sonucMetni(r.sonuc), ...(r.sonuc.hata ? { is_error: true } : {}) });
+    else yazma.push({ arac: a, form: r.form });
   }
-  return sonuclar;
+  if (!yazma.length) return sonuclar;
+  bekleyenFormlar = yazma.map((x) => x.form);
+  const kart: Gorunen =
+    yazma.length === 1
+      ? (() => {
+          const f = yazma[0].form;
+          return { tur: "onay", metin: metin(f.baslik, o.dil), durum: "bekliyor", alanlar: f.alanlar, degerler: f.degerler, ...(f.ozet ? { ozet: f.ozet } : {}), ...(f.dugme ? { dugme: f.dugme } : {}) };
+        })()
+      : {
+          tur: "onay",
+          metin: metin("asTopluBaslik", o.dil, { n: String(yazma.length) }),
+          durum: "bekliyor",
+          isler: yazma.map(({ form: f }) => ({ metin: metin(f.baslik, o.dil), ...(f.ozet ? { ozet: f.ozet } : {}), alanlar: f.alanlar, degerler: f.degerler, secili: true })),
+        };
+  degis({ bekleyen: { araclar: yazma.map((x) => x.arac), sonuclar }, gorunen: [...hal.gorunen, kart] });
+  return null;
 };
-// Onay bekleyen işin kendisi bellekte (işlev saklanamıyor).
-let bekleyenIs: Form | null = null;
 
 const bekleyenSira = () => hal.gorunen.map((g) => g.tur === "onay" && g.durum === "bekliyor").lastIndexOf(true);
 
-/** Onay kartındaki alanın değişmesi: kişi formu düzeltiyor, iş onaylanınca bu değerlerle yapılır. */
-export const onayDegeri = (ad: string, deger: Deger) => {
+const kartiGuncelle = (f: (g: Gorunen) => Gorunen) => {
   const i = bekleyenSira();
   if (i < 0 || !hal.bekleyen) return;
-  degis({ gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, degerler: { ...g.degerler, [ad]: deger }, eksik: g.eksik?.filter((x) => x !== ad) } : g)) });
+  degis({ gorunen: hal.gorunen.map((g, j) => (j === i ? f(g) : g)) });
 };
+
+/** Onay kartındaki alanın değişmesi: kişi formu düzeltiyor, iş onaylanınca bu değerlerle yapılır. Toplu kartta `sira` işin satırı. */
+export const onayDegeri = (ad: string, deger: Deger, sira?: number) =>
+  kartiGuncelle((g) =>
+    sira === undefined || !g.isler
+      ? { ...g, degerler: { ...g.degerler, [ad]: deger }, eksik: g.eksik?.filter((x) => x !== ad) }
+      : { ...g, isler: g.isler.map((x, k) => (k === sira ? { ...x, degerler: { ...x.degerler, [ad]: deger }, eksik: x.eksik?.filter((y) => y !== ad) } : x)) },
+  );
+/** Toplu kartta işin yapılıp yapılmayacağı. */
+export const isSecimi = (sira: number, secili: boolean) => kartiGuncelle((g) => (g.isler ? { ...g, isler: g.isler.map((x, k) => (k === sira ? { ...x, secili } : x)) } : g));
 
 /* Model metinle bitirene ya da yazma aracında durana dek tur tur. */
 const dongu = async (o: Oturum) => {
@@ -169,7 +200,7 @@ const dongu = async (o: Oturum) => {
     }
     const icerik = y.icerik.filter((b) => b.type === "text" || b.type === "tool_use");
     const yazi = icerik.flatMap((b) => (b.type === "text" && b.text.trim() ? [b.text.trim()] : [])).join("\n\n");
-    const araclar = icerik.filter((b): b is Extract<Blok, { type: "tool_use" }> => b.type === "tool_use");
+    const araclar = icerik.filter((b): b is AracIstegi => b.type === "tool_use");
     degis({
       mesajlar: icerik.length ? [...hal.mesajlar, { role: "assistant", content: icerik }] : hal.mesajlar,
       gorunen: yazi ? [...hal.gorunen, { tur: "asistan", metin: yazi }] : hal.gorunen,
@@ -178,7 +209,7 @@ const dongu = async (o: Oturum) => {
       degis({ mesgul: false });
       return;
     }
-    const sonuclar = araclariCalistir(araclar, [], o);
+    const sonuclar = await araclariCalistir(araclar, o);
     if (!sonuclar) {
       degis({ mesgul: false });
       return;
@@ -188,42 +219,48 @@ const dongu = async (o: Oturum) => {
   degis({ mesgul: false, gorunen: [...hal.gorunen, { tur: "hata", metin: metin("asUzun", o.dil) }] });
 };
 
+/* Bir işi formun son haliyle yapar; model kişinin değiştirdiği son hali bilsin (sonraki adımda eski değeri kullanmasın). */
+const isiYap = async (f: Form, degerler: Degerler): Promise<AracSonucu> => {
+  let sonuc: AracSonucu;
+  try {
+    sonuc = await f.calistir(degerler);
+  } catch {
+    sonuc = { hata: "calismadi" };
+  }
+  return { ...sonuc, degerler };
+};
+const sonucBlogu = (a: AracIstegi, s: AracSonucu): AracSonucBlogu => ({ type: "tool_result", tool_use_id: a.id, content: sonucMetni(s), ...(s.hata ? { is_error: true } : {}) });
+
 /*
- * Bekleyen yazma işini sonuçlandırır. Evet: zorunlu alanlar doluysa iş formun son haliyle yapılır
- * (eksikse kart eksikleri işaretler, iş bekler). Hayır ya da başka bir istek: vazgeçilir; başka
- * istekse o metin aynı iletide modele gider (araç sonuçlarının arkasında).
- * Dönüş: "eksik" (iş bekliyor), "durdu" (aynı turda başka yazma işi soruldu), "surdu".
+ * Bekleyen yazma işlerini sonuçlandırır. Evet: seçili işlerin zorunlu alanları doluysa işler sırayla
+ * yapılır (eksikse kart eksikleri işaretler, hiçbiri yapılmaz). Hayır ya da başka bir istek:
+ * vazgeçilir; başka istekse o metin aynı iletide modele gider (araç sonuçlarının arkasında).
  */
-const bekleyeniBitir = async (o: Oturum, evet: boolean, ek?: string): Promise<"eksik" | "durdu" | "surdu"> => {
+const bekleyeniBitir = async (evet: boolean, ek?: string): Promise<"eksik" | "surdu"> => {
   const b = hal.bekleyen!;
   const i = bekleyenSira();
   const kart = hal.gorunen[i];
-  const degerler = kart?.degerler ?? {};
-  if (evet && bekleyenIs) {
-    const eksik = eksikAlanlar(bekleyenIs.alanlar, degerler);
-    if (eksik.length) {
-      degis({ gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, eksik } : g)) });
+  const formlar = bekleyenFormlar;
+  const toplu = !!kart?.isler;
+  const isler = toplu ? kart.isler! : [{ metin: kart?.metin ?? "", alanlar: kart?.alanlar ?? [], degerler: kart?.degerler ?? {}, secili: true } as TopluIs];
+  if (evet) {
+    const eksikler = isler.map((x, k) => (x.secili && formlar[k] ? eksikAlanlar(formlar[k].alanlar, x.degerler) : []));
+    if (eksikler.some((e) => e.length)) {
+      degis({ gorunen: hal.gorunen.map((g, j) => (j !== i ? g : toplu ? { ...g, isler: g.isler!.map((x, k) => ({ ...x, eksik: eksikler[k] })) } : { ...g, eksik: eksikler[0] })) });
       return "eksik";
     }
   }
-  let sonuc: AracSonucu = { vazgecti: true };
-  if (evet && bekleyenIs) {
-    try {
-      sonuc = await bekleyenIs.calistir(degerler);
-    } catch {
-      sonuc = { hata: "calismadi" };
-    }
-    // Model kişinin değiştirdiği son hali bilsin (sonraki adımda eski değeri kullanmasın).
-    sonuc = { ...sonuc, degerler };
-  }
-  bekleyenIs = null;
-  const durum: Gorunen["durum"] = !evet ? "vazgecildi" : sonuc.hata ? "hata" : "yapildi";
-  degis({ bekleyen: null, gorunen: hal.gorunen.map((g, j) => (j === i ? { ...g, durum, eksik: undefined } : g)) });
-  const sonuclar = [...b.sonuclar, { type: "tool_result" as const, tool_use_id: b.arac.id, content: sonucMetni(sonuc), ...(sonuc.hata ? { is_error: true } : {}) }];
-  // Aynı turdaki öbür araçlar: kişi vazgeçtiyse onlar da çalışmaz (birbirine bağlı olabilir).
-  const kalanlar = evet ? araclariCalistir(b.kalan, sonuclar, o) : [...sonuclar, ...b.kalan.map((a) => ({ type: "tool_result" as const, tool_use_id: a.id, content: sonucMetni({ vazgecti: true }) }))];
-  if (!kalanlar) return "durdu";
-  degis({ mesajlar: [...hal.mesajlar, { role: "user", content: [...kalanlar, ...(ek ? [{ type: "text" as const, text: ek }] : [])] }] });
+  const sonuclar: AracSonucu[] = [];
+  for (let k = 0; k < b.araclar.length; k++) sonuclar.push(evet && isler[k]?.secili && formlar[k] ? await isiYap(formlar[k], isler[k].degerler) : { vazgecti: true });
+  bekleyenFormlar = [];
+  const isDurumu = (s: AracSonucu): TopluIs["durum"] => (s.vazgecti ? "vazgecildi" : s.hata ? "hata" : "yapildi");
+  const durum: Gorunen["durum"] = !evet ? "vazgecildi" : toplu ? (sonuclar.some((s) => !s.vazgecti && !s.hata) ? "yapildi" : sonuclar.every((s) => s.vazgecti) ? "vazgecildi" : "hata") : isDurumu(sonuclar[0]);
+  degis({
+    bekleyen: null,
+    gorunen: hal.gorunen.map((g, j) => (j !== i ? g : { ...g, durum, eksik: undefined, ...(toplu ? { isler: g.isler!.map((x, k) => ({ ...x, eksik: undefined, durum: isDurumu(sonuclar[k]) })) } : {}) })),
+  });
+  const bloklar = [...b.sonuclar, ...b.araclar.map((a, k) => sonucBlogu(a, sonuclar[k]))];
+  degis({ mesajlar: [...hal.mesajlar, { role: "user", content: [...bloklar, ...(ek ? [{ type: "text" as const, text: ek }] : [])] }] });
   return "surdu";
 };
 
@@ -231,19 +268,15 @@ const bekleyeniBitir = async (o: Oturum, evet: boolean, ek?: string): Promise<"e
 export const asistanaYaz = async (yazi: string, o: Omit<Oturum, "baglam">, onayDugmesi?: boolean) => {
   const m = yazi.trim();
   if ((!m && onayDugmesi === undefined) || hal.mesgul) return;
-  const baglam = { bugun: bugun(), dil: o.dil, sayfa: location.hash || "#/", kisi: yaz(o.ben.ad, "tr"), birim: o.ben.birim };
+  const baglam = { bugun: bugun(), dil: o.dil, sayfa: location.hash || "#/", kisi: yaz(o.ben.ad, "tr"), birim: o.ben.birim, ekran: ekranBaglami(getir()) };
   const oturum = { ...o, baglam };
   if (hal.bekleyen) {
     const karar = onayDugmesi === undefined ? onayYaniti(m) : onayDugmesi ? "evet" : "hayir";
     if (m) degis({ gorunen: [...hal.gorunen, { tur: "kisi", metin: m }] });
     degis({ mesgul: true });
-    const r = await bekleyeniBitir(oturum, karar === "evet", karar === null ? m : undefined);
+    const r = await bekleyeniBitir(karar === "evet", karar === null ? m : undefined);
     if (r === "eksik") {
       degis({ mesgul: false, gorunen: [...hal.gorunen, { tur: "bilgi", metin: metin("asEksik", o.dil) }] });
-      return;
-    }
-    if (r === "durdu") {
-      degis({ mesgul: false });
       return;
     }
     await dongu(oturum);

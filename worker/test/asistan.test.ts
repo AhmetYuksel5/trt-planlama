@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
-import { ARAC_ADLARI, ARACLAR, asistanIstegiCoz, sistemYonergesi, EN_COK_KARAKTER } from "../src/asistan.ts";
+import { ARAC_ADLARI, ARACLAR, asistanIstegiCoz, derinMi, sistemYonergesi, EN_COK_KARAKTER } from "../src/asistan.ts";
 
 /* Asistanın kapı tarafı (belgeler/asistan.md): konuşma denetimi, araç listesi, yönerge. Ağ yok. */
 
@@ -62,4 +62,15 @@ test("uzun konuşma baştan kırpılıyor, kullanıcı iletisiyle başlıyor", (
 test("yönerge dili, bugünü ve yöneticinin notunu taşıyor", () => {
   const y = sistemYonergesi({ ...baglam, dil: "ar" }, "Kısa yaz");
   assert.ok(y.includes("2026-11-24") && y.includes("Arapça") && y.includes("Kısa yaz"));
+});
+
+test("uzun ya da çok turlu istekte derin düşünme", () => {
+  assert.equal(derinMi([{ role: "user", content: "yarının planını göster" }]), false);
+  assert.equal(derinMi([{ role: "user", content: "x".repeat(400) }]), true);
+  const tur = (i: number) => [
+    { role: "assistant", content: [{ type: "tool_use", id: `t${i}`, name: "ara", input: {} }] },
+    { role: "user", content: [{ type: "tool_result", tool_use_id: `t${i}`, content: "{}" }] },
+  ];
+  assert.equal(derinMi([{ role: "user", content: "kısa" }, ...tur(1)]), false);
+  assert.equal(derinMi([{ role: "user", content: "kısa" }, ...tur(1), ...tur(2)]), true);
 });

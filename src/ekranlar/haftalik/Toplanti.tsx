@@ -1,3 +1,4 @@
+import { useEkranKaydi } from "../../asistan/ekran";
 import { Check, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
@@ -54,6 +55,7 @@ export default function HaftalikToplanti({ ben, hafta }: { ben: Kisi; hafta: Haf
   const sira = toplantiSirasi(hafta);
   const [seciliId, setSeciliId] = useState<string | undefined>(() => (sira.find((k) => k.karar === "bekliyor") ?? sira[0])?.id);
   const secili = sira.find((k) => k.id === seciliId);
+  useEkranKaydi(secili ? `toplantıda seçili Weekly kalemi ${secili.id} (hafta ${hafta.id}) «${(secili.paketBasligi || secili.metin).slice(0, 100)}»` : undefined);
   const karar = kararVerebilir(ben, hafta);
   const bekleyen = kararBekleyenler(hafta).length;
   const ayrinti = useRef<HTMLDivElement>(null);

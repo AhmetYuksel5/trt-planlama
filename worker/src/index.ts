@@ -4,7 +4,7 @@ import { istekKur, sonucCoz } from "./ozellikler.ts";
 import { makaleCoz, yonlendirmeCoz, type Makale } from "./makale.ts";
 import { akisAdresiGecerli, akisCoz, telegramCoz, telegramKanali, type AkisOgesi } from "./rss.ts";
 import { asistanCagir, cagir, modelleriGetir } from "./saglayici.ts";
-import { ARACLAR, asistanIstegiCoz, sistemYonergesi } from "./asistan.ts";
+import { ARACLAR, asistanIstegiCoz, derinMi, sistemYonergesi } from "./asistan.ts";
 import { cfBaglan, ekIndirOtomatik, grubaUygun, guvenliHtml, postalariCekOtomatik, postaGonderOtomatik, mesajKimligiGecerli, type EwsAyar, type EwsMesaj, type GidenPosta } from "./ews.ts";
 import { bosOtoCagri, gecmiseEkle, gununKalemi, istanbulGunu, istanbulSaati, otoCagriBirlestir, otoCagriNormal, otoCagriGorunur, type OtoCagriAyar, type OtoCagriKaydi, type OtoCagriTuru } from "./oto-cagri.ts";
 import { coz, sifrele, sifreliMi } from "./gizli.ts";
@@ -359,7 +359,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const kullanilan = await sayiOku(env, kAnahtar);
     const sinir = ayar.ozellikler.asistan.gunlukSinir;
     if (g.yeni && kullanilan >= sinir) return yanit({ hata: "gunlukSinir", kalan: 0 }, 429);
-    const s = await asistanCagir(saglayici, sistemYonergesi(g.baglam, ayar.ozellikler.asistan.yonerge), g.mesajlar as never, ARACLAR as never, d.fetch);
+    const s = await asistanCagir(saglayici, sistemYonergesi(g.baglam, ayar.ozellikler.asistan.yonerge), g.mesajlar as never, ARACLAR as never, d.fetch, derinMi(g.mesajlar));
     if (!s.tamam) return yanit({ hata: s.hata, ...(s.ayrinti ? { ayrinti: s.ayrinti } : {}) }, 502);
     if (g.yeni) {
       await env.YZ.put(kAnahtar, String(kullanilan + 1), { expirationTtl: IKI_GUN });

@@ -1,3 +1,4 @@
+import { useEkranKaydi } from "../../asistan/ekran";
 import { Ban, Check, ChevronDown, ChevronUp, CircleCheck, ExternalLink, MessageSquarePlus } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
@@ -52,6 +53,7 @@ export default function NdToplanti({ ben, plan }: { ben: Kisi; plan: NextDayPlan
     if (!seciliId && l.length) setSeciliId((l.find((e) => e.dataset.karar === "bekliyor") ?? l[0]).dataset.toplantiKalem);
   });
   const secili = seciliId ? paketBul(v, seciliId) : undefined;
+  useEkranKaydi(secili ? `toplantıda seçili paket ${secili.id} «${secili.baslik.slice(0, 100)}»` : undefined);
 
   const belgeSirasi = () =>
     [...(belge.current?.querySelectorAll<HTMLElement>("[data-toplanti-kalem]") ?? [])]

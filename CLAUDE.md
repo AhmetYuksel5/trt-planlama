@@ -579,6 +579,21 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     virgülle ("8, 11:30", `saatCoz`), her saat ayrı nafize. `kalemEkle`'de Strap varsa metin isteğe bağlı
     (kullanıcı: asistana metinsiz paket ekletemiyordu; form alanının `yeter`'i: o alan doluysa zorunluluk
     düşer), kapının tanımı bir dosyaya birden çok PKG'yi ayrı kalem diye anlatır. Test `testler/asistan-yeni.cjs`.
+    Güçlendirme (kullanıcı: asistanın yetenekleri artsın; muhabirin asistanı ve demoda çalışma hariç):
+    ekran bağlamı (`src/asistan/ekran.ts`: adresin kaydı ve sayfaların `useEkranKaydi`'yle bildirdiği seçim,
+    açık öneri penceresi, toplantıda seçili kalem/paket; istekte `baglam.ekran`, yönergede "Ekranda şu an";
+    "bunu plana ekle" kimlikle gider); toplu onay (aynı yanıttaki birkaç yazma aracı tek kartta,
+    `Gorunen.isler`, iş başına seçim kutusu, "Seçilenleri onayla · n"; seçilmeyen `vazgecti`, eksik alanı
+    olan seçili iş kartı bekletir; okuma araçları eşzamansız da olabilir); yeni araçlar: okuma `stokListele`,
+    `postaOzeti` (kişinin grubunun son sohbetleri, gerçek kipte postayı yükler), `gundemOzeti` (bu tarayıcıdaki
+    son taramadan olaylar, `gundemGorebilir`); pencere açanlar (`src/asistan/pencere.ts →
+    asistanPencereIste`, kendi penceresi zaten onay ekranı) `planGonder`, `staffingEkibeYaz`, `imlaDenetimi`
+    (imla ve plan postası pencereleri asistan panelinde, her görünümde); yazma `hazirPaketEkle`,
+    `uretimeBaslat` (şablonla), `pkgGeriBildirimi` (kurumun şablonu, paket başına posta), `oneriDuzenle`
+    (kısalt/biçimle: metni model yazar, kişi formda görür), `aylikOlayEkle`, `ozelNafizeEkle`,
+    `ozelMaddeEkle`, `ozelOnayla`. Boş panelde "seni bekleyenler" çipleri (`Asistan.tsx → Bekleyenler`,
+    sayılar `planlamaKararlari.ts`'ten; basınca soru olarak gider). Uzun ya da çok turlu istekte effort
+    medium (`worker/src/asistan.ts → derinMi`), max_tokens 8000. Test `testler/asistan-guclu.cjs`.
   - **"İmla denetimi"** (kullanıcı: plan metinlerinde imla düzeltilsin ama tatsız
     sürpriz olmasın; özellik `imla`): Next Day ve Weekly'nin ⋯ menüsünde
     (`data-arac="imla"`, `bilesenler/YzImla.tsx → ImlaPenceresi`). Satırlar

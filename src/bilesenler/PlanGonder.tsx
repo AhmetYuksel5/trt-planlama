@@ -20,7 +20,8 @@ import { Pencere, bildir } from "./Parcalar";
  * planın kendisi; gönderilen gövde "E-posta için kopyala"nın biçimi.
  * Gönderilmiş planda zarf işaretli, saati ipucunda.
  */
-type Hedef = { tur: "nextday"; plan: NextDayPlan } | { tur: "haftalik"; plan: HaftalikPlan };
+export type PlanGonderHedefi = { tur: "nextday"; plan: NextDayPlan } | { tur: "haftalik"; plan: HaftalikPlan };
+type Hedef = PlanGonderHedefi;
 
 export function PlanGonderDugmesi({ ben, hedef }: { ben: Kisi; hedef: Hedef }) {
   const { t } = useDil();
@@ -38,7 +39,7 @@ export function PlanGonderDugmesi({ ben, hedef }: { ben: Kisi; hedef: Hedef }) {
   );
 }
 
-function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; kapat: () => void }) {
+export function PlanGonderPenceresi({ ben, hedef, kapat }: { ben: Kisi; hedef: Hedef; kapat: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   const tarih = hedef.tur === "nextday" ? hedef.plan.tarih : hedef.plan.baslangic;
