@@ -105,7 +105,8 @@ export const ARACLAR: AracTanimi[] = [
   yaz("isVer", "Görevler sayfasında bir ya da birkaç kişiye iş verir.", { baslik: m("İşin adı"), kisiler: { type: "array", items: { type: "string" }, description: "Kişi kimlikleri" }, aciklama: m("Açıklama"), sonTarih: tarih() }),
   yaz("isDurumu", "Görevler sayfasındaki işin durumunu değiştirir.", { isId: m("İşin kimliği"), durum: e(["yapilacak", "suruyor", "bitti"]) }, ["isId"]),
   yaz("faaliyetEkle", "Planlama takvimine faaliyet ekler.", { baslik: m("Ad, Arapça"), baslangic: tarih(), bitis: tarih(), saat: m("SS:DD"), tur: e(["secim", "zirve", "konferans", "toplanti", "ziyaret", "parlamento", "dava", "spor", "kultur", "ekonomi", "ozelGun", "yildonumu", "diger"]), oncelik: e(["dusuk", "normal", "yuksek", "kritik"]), sehir: m("Şehir, Arapça"), notlar: m("Not") }),
-  yaz("postaGonder", "Kişinin kurum kutusundan posta gönderir (grup CC'de). kisiId verilirse adresi kayıttan.", { kisiId: MUH, kime: m("Adresler, virgülle"), konu: m("Konu"), metin: m("Metin") }),
+  yaz("cagriHatirlat", "Haftalık plan çağrısına hatırlatma (تذكير) gönderir: Weekly'deki 'Hatırlatma' ile aynı posta, çağrının muhabirlerine, çağrının altına yanıt olarak. 'Hatırlatma gönder' denince bu kullanılır, postaGonder değil; metni sen yazma, istenirse kısa not.", { haftaId: m("Haftalık planın kimliği; boşsa çağrısı olan ilk açık hafta"), not: m("Hatırlatmanın üstüne kısa not (isteğe bağlı)") }, []),
+  yaz("postaGonder", "Kişinin kurum kutusundan posta gönderir (grup CC'de). kisiId verilirse adresi kayıttan. Çağrı hatırlatması için değil (cagriHatirlat).", { kisiId: MUH, kime: m("Adresler, virgülle"), konu: m("Konu"), metin: m("Metin") }),
 ];
 export const ARAC_ADLARI = ARACLAR.map((a) => a.name);
 

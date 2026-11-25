@@ -2004,7 +2004,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   muhabirin posta programında çağrının altına düşer; sunucu şemada reddederse
   bağsız bir kez daha (posta gitmemişti). Kayıt `Cagri.hatirlatmalar`
   (`eylemler.ts → cagriHatirlatildi`), menüde sayısı. Demoda posta gitmez,
-  yalnız kayıt. Test `testler/hatirlatma.cjs`, kapıda `ews.test.ts`.
+  yalnız kayıt. Gönderim tek yerde (`hatirlatmaGonder.ts →
+  cagriHatirlatmasiGonder`): pencere de asistan da onu çağırır. Asistanda
+  `cagriHatirlat` aracı (kullanıcı: "hatırlatma gönder" deyince asistan ayrı
+  posta yazıyordu): onay kartında hafta (çağrısı olan açık haftalar) ve isteğe
+  bağlı not, metin kurumun hatırlatması; kapının araç tanımı ve `postaGonder`'in
+  açıklaması onu gösterir. Test `testler/hatirlatma.cjs`, `testler/asistan.cjs`,
+  kapıda `ews.test.ts`.
 - PKG geri bildirimi (kodda "takdir"; ekrandaki adı kullanıcının isteğiyle
   "PKG geri bildirimi", önce "Takdir bildirimi"ydi; kullanıcı: plan onaylanınca kabul edilen paketin
   muhabirine hazır şablonla posta; kendiliğinden gitmesin, tek tek işaretleyip

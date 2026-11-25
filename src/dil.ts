@@ -2846,6 +2846,7 @@ const M = {
   asTIsDurumu: m("İşin durumu", "حالة المهمة", "Task status"),
   asTFaaliyetEkle: m("Takvime faaliyet ekle", "إضافة نشاط إلى التقويم", "Add event to calendar"),
   asTPostaGonder: m("Posta gönder", "إرسال بريد", "Send email"),
+  asTCagriHatirlat: m("Haftalık çağrıya hatırlatma", "تذكير بطلب الخطة الأسبوعية", "Weekly call reminder"),
   asOnayla: m("Onayla", "تأكيد", "Confirm"),
   asGonder: m("Gönder", "إرسال", "Send"),
   asEksik: m("Eksik alanlar var.", "هناك حقول ناقصة.", "Some fields are missing."),

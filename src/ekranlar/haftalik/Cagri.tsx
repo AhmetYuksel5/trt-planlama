@@ -2,11 +2,10 @@ import { ArrowLeft, BellRing, Inbox, Megaphone } from "lucide-react";
 import { useState } from "react";
 import { Icerik, Kart, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../../dil";
-import { cagriHatirlatildi, cagriKaydet } from "../../eylemler";
+import { cagriKaydet } from "../../eylemler";
 import { GERCEK } from "../../kip";
-import { postaGonder } from "../../posta-kapi";
-import { kapiHatasi } from "../../yz";
-import { HAFTALIK_TABLO, HATIRLATMA_BASLIGI, cagriKonusu, cagriMesajKimligi, etiketUret, hatirlatmaKonusu, hatirlatmaMetni, haftaAraligiAr, haftalikGovde, type GidenEposta } from "../../eposta";
+import { cagriHatirlatmasiGonder } from "../../hatirlatmaGonder";
+import { HAFTALIK_TABLO, HATIRLATMA_BASLIGI, cagriKonusu, cagriMesajKimligi, etiketUret, hatirlatmaKonusu, haftaAraligiAr, haftalikGovde, type GidenEposta } from "../../eposta";
 import { haftaSonu } from "../../haftalik";
 import { getir, kisiBul, useVeri, type Cagri, type HaftalikPlan, type Kisi } from "../../veri";
 import { SayfaBasi } from "../ana/Planlama";
@@ -77,7 +76,6 @@ export default function HaftalikCagri({ ben, hafta }: { ben: Kisi; hafta: Haftal
 }
 
 /* Kapı en çok 50 alıcı kabul ediyor (Kime ve grup CC'de); BCC bu boyda parçalara bölünüyor, her parça ayrı posta. */
-const PARCA = 45;
 
 /**
  * Çağrının altına hatırlatma (kullanıcı: haftalık çağrıdan sonra haftanın
@@ -99,19 +97,8 @@ export function HatirlatmaPenceresi({ ben, cagri, kapat }: { ben: Kisi; cagri: C
   const gonder = async () => {
     if (!bcc.length || !confirm(t("htOnay", { n: String(bcc.length) }))) return;
     setMesgul(true);
-    let tamam = 0;
-    const hatalar: string[] = [];
-    if (GERCEK) {
-      // Sırayla: her parça ayrı EWS bağlantısı; aynı anda açılınca kapı sınırına takılıyordu (PKG geri bildirimi gibi).
-      for (let i = 0; i < bcc.length; i += PARCA) {
-        const parca = bcc.slice(i, i + PARCA);
-        const r = await postaGonder({ kime: [cagri.kime], bcc: parca, konu, metin: hatirlatmaMetni(cagri, not), baslik: HATIRLATMA_BASLIGI, ...(yanitlanan && { yanitlanan }) });
-        if (r.tamam) tamam += parca.length;
-        else hatalar.push(kapiHatasi(r));
-      }
-    } else tamam = bcc.length;
+    const { tamam, hatalar } = await cagriHatirlatmasiGonder(ben, cagri, not);
     setMesgul(false);
-    if (tamam) cagriHatirlatildi(ben, cagri.id, tamam);
     if (hatalar.length) return bildir(`${tamam ? `${t("htGonderildi", { n: String(tamam) })} · ` : ""}${t("htGonderilemedi")} (${hatalar.join("; ")})`);
     bildir(GERCEK ? t("htGonderildi", { n: String(tamam) }) : t("htDemo"));
     kapat();

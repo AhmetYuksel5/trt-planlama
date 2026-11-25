@@ -138,6 +138,17 @@ const SAHTE = () => {
     // İz değişmezse sayfa kaydı yeniden okumaz (getir).
     localStorage.setItem(k + "-iz", String(Date.now()));
   }, K);
+  // Hatırlatma aracı için: son haftanın çağrısı (hazırlıkta).
+  await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const h = d.haftalik[d.haftalik.length - 1];
+    h.durum = "hazirlik";
+    const et = "HP-" + h.baslangic.replace(/-/g, "");
+    const ms = d.kisiler.filter((x) => x.birim === "muhabir" && (x.eposta || x.kurumEposta)).slice(0, 2).map((x) => x.id);
+    if (!d.cagrilar.some((c) => c.etiket === et)) d.cagrilar.unshift({ id: "c-as-hat", tur: "haftalik", tarih: h.baslangic, metin: "نص الطلب", sonSaat: "", olusturan: "pl1", zaman: new Date().toISOString(), kime: "planning@ornek.local", bcc: ms, etiket: et });
+    localStorage.setItem(k, JSON.stringify(d));
+    localStorage.setItem(k + "-iz", String(Date.now()));
+  }, K);
   const d5 = await durum();
   const plan = d5.planlar.find((x) => x.durum !== "devralindi" && x.basliklar.length) ?? d5.planlar[0];
   const pb = plan.basliklar[0];
@@ -186,6 +197,7 @@ const SAHTE = () => {
     ["isVer", {}],
     ["faaliyetEkle", {}],
     ["postaGonder", { kisiId: muh.id, konu: "Konu" }],
+    ["cagriHatirlat", {}],
   ];
   let acilan = 0;
   const acilmayan = [];
@@ -197,6 +209,14 @@ const SAHTE = () => {
     } else acilmayan.push(`${ad}:${JSON.stringify(await sonSonuc())}`);
   }
   ok(acilan === DUMAN.length, `yazma araçları form açıyor (${acilan}/${DUMAN.length})${acilmayan.length ? " · " + acilmayan.join(" ") : ""}`);
+
+  // "Hatırlatma gönder": Weekly'nin hatırlatmasıyla aynı iş, ayrı posta yazmıyor.
+  await arac("cagriHatirlat", { not: "نذكركم بموعد التسليم" });
+  ok((await p.locator(bekleyen).count()) === 1, "hatırlatma onay kartı açıldı");
+  await yaz("evet");
+  await p.waitForTimeout(500);
+  const hc = (await durum()).cagrilar.find((c) => c.id === "c-as-hat" || c.etiket?.startsWith("HP-"));
+  ok((hc?.hatirlatmalar?.length ?? 0) >= 1, "hatırlatma çağrıya kaydedildi (Weekly'deki gibi)");
 
   // Biçimli yanıt: yıldızlar görünmez, kalın, liste ve kod çizilir.
   await yaz("biçimli yanıt ver");

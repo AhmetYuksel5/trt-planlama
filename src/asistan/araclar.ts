@@ -49,7 +49,8 @@ import {
 } from "../eylemler";
 import { kayitAra } from "../arama";
 import { BICIM_ADI, HAREKET_TURU_ADI, IS_DURUM_ADI, KANAL_ADI, KARAR_ADI, KISI_DURUM_ADI, PAKET_DURUM_ADI, PLAN_DURUM_ADI, TUR_ADI, faaliyetTuruAdi, kisiAr, oncelikAdi, sehirAdi, sehirUlkesi } from "../etiketler";
-import { postaKonuCekirdegi } from "../eposta";
+import { etiketUret, hatirlatmaKonusu, postaKonuCekirdegi } from "../eposta";
+import { cagriHatirlatmasiGonder, hatirlatmaAlicilari } from "../hatirlatmaGonder";
 import { isKisinin, isListesi } from "../gorevler";
 import { haftaninDosyalari, haftaSonu } from "../haftalik";
 import { GERCEK } from "../kip";
@@ -1202,6 +1203,41 @@ const YAZMA: Record<string, Yurutucu> = {
           durum: "takipte",
         });
         return tamam(id, { faaliyetId: id });
+      },
+    });
+  },
+
+  /*
+   * Haftalık çağrıya hatırlatma (kullanıcı: asistana "hatırlatma gönder" deyince
+   * ayrı posta yazıyordu): Weekly'nin ⋯ › Hatırlatma'sıyla aynı posta, aynı
+   * alıcılar ve konu (hatirlatmaGonder.ts); asistan yalnız haftayı ve notu verir.
+   */
+  cagriHatirlat: (g, { ben }) => {
+    if (!yapabilir(ben, "cagriHazirla")) return hata("yetki");
+    const d = getir();
+    const haftalar = d.haftalik
+      .filter((h) => h.durum !== "kesinlesti" && d.cagrilar.some((c) => c.etiket === etiketUret(h.baslangic, "haftalik")))
+      .sort((a, b) => a.baslangic.localeCompare(b.baslangic));
+    if (!haftalar.length) return hata("cagriYok");
+    const haftaId = haftalar.find((h) => h.id === s(g.haftaId, 100))?.id ?? haftalar[0].id;
+    const cagriOf = (id: string) => {
+      const h = getir().haftalik.find((x) => x.id === id);
+      return h ? getir().cagrilar.find((c) => c.etiket === etiketUret(h.baslangic, "haftalik")) : undefined;
+    };
+    const ilk = cagriOf(haftaId);
+    return form({
+      baslik: "asTCagriHatirlat",
+      dugme: "asGonder",
+      ozet: ilk ? `${hatirlatmaKonusu(ilk)} · ${hatirlatmaAlicilari(ilk).length}` : undefined,
+      alanlar: [A.secim("haftaId", "asAHafta", haftalar.map((x) => ({ deger: x.id, ad: haftaAdi(x) }))), A.yazi("not", "asANot")],
+      degerler: { haftaId, not: s(g.not, 2000) },
+      calistir: async (v) => {
+        const c = cagriOf(vs(v, "haftaId"));
+        if (!c) return { hata: "cagriYok" };
+        if (!hatirlatmaAlicilari(c).length) return { hata: "adres" };
+        const r = await cagriHatirlatmasiGonder(ben, c, vs(v, "not"));
+        if (r.hatalar.length && !r.tamam) return { hata: r.hatalar.join("; ") };
+        return { tamam: true, sonuc: { alici: r.tamam, ...(r.hatalar.length && { hatalar: r.hatalar }) } };
       },
     });
   },
