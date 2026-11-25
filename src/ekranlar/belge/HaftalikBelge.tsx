@@ -1,5 +1,5 @@
 import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "../haftalik/haftaSurukle";
-import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Printer, Send } from "lucide-react";
+import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Package, Printer, Send } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
 import { Gorusler, KalemTeslimGunu, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
@@ -37,7 +37,7 @@ import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, Yerin
  * de yok.
  */
 
-export type HfPencere = { tur: "anaKonu"; mevcut?: AnaKonu; sonra?: string } | { tur: "kalem"; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string };
+export type HfPencere = { tur: "anaKonu"; mevcut?: AnaKonu; sonra?: string } | { tur: "kalem"; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string; pkg?: boolean };
 
 export interface HfDuzen {
   ben: Kisi;
@@ -164,7 +164,8 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
             {kalemMasaEtiketi(k, v)}
           </p>
         )}
-        {duzen ? (
+        {/* Yalnız PKG'si olan kalem (dosyanın ek paketi) metin satırı çizmez. */}
+        {!k.metin.trim() && !k.baslik ? null : duzen ? (
           <Satir
             yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}
             olay={k.baslik && <YerindeMetin acik deger={k.baslik} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} />}
@@ -288,7 +289,19 @@ function Dosyalar({ liste, hafta, duzen, tarih }: { liste: HaftalikKalem[]; haft
             {baslikId && (
               <BelgeSatiri
                 duzen={!!duzen}
-                serit={duzen && <SatirSeridi ekle={() => duzen.ac({ tur: "kalem", tarih: ks[0].tarih ?? "", dosya: baslikId, sonra: ks[ks.length - 1].id })} ekleEtiket={t("kalemEkle")} />}
+                serit={
+                  duzen && (
+                    <SatirSeridi
+                      ekle={() => duzen.ac({ tur: "kalem", tarih: ks[0].tarih ?? "", dosya: baslikId, sonra: ks[ks.length - 1].id })}
+                      ekleEtiket={t("kalemEkle")}
+                      ek={
+                        <span data-dosya-pkg-ekle>
+                          <IkonDugme ikon={<Package size={15} />} etiket={t("dosyayaPkgEkle")} onClick={() => duzen.ac({ tur: "kalem", tarih: ks[0].tarih ?? "", dosya: baslikId, sonra: ks[ks.length - 1].id, pkg: true })} />
+                        </span>
+                      }
+                    />
+                  )
+                }
               >
                 <h3>{ben && yapabilir(ben, "baslikYonet") ? <YerindeMetin acik deger={ad} etiket={t("dosya")} kaydet={(x) => x && baslikDuzenle(ben, baslikId, { ad: x })} /> : ad}</h3>
               </BelgeSatiri>
@@ -565,8 +578,8 @@ function HfPencereIcerik({ ben, hafta, p, kapat }: { ben: Kisi; hafta: HaftalikP
       </Pencere>
     );
   return (
-    <Pencere baslik={t(p.mevcut ? "duzenle" : "kalemEkle")} kapat={kapat}>
-      <KalemFormu ben={ben} hafta={hafta} mevcut={p.mevcut} tarih={p.tarih} dosya={p.dosya} sonra={p.sonra} kapat={kapat} />
+    <Pencere baslik={t(p.mevcut ? "duzenle" : p.pkg ? "dosyayaPkgEkle" : "kalemEkle")} kapat={kapat}>
+      <KalemFormu ben={ben} hafta={hafta} mevcut={p.mevcut} tarih={p.tarih} dosya={p.dosya} sonra={p.sonra} pkg={p.pkg} kapat={kapat} />
     </Pencere>
   );
 }

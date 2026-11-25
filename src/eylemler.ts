@@ -6,7 +6,7 @@ import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, 
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
 import { konuAnahtari, konuBasligi, konuKatilimcisi, mesajAlicilari, type MesajKonusu } from "./mesajlasma";
 import { imlaKimligi, sozcukDegistir, type ImlaOnerisi } from "./imla";
-import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
+import { gundemde, isDogurur, kalemIcerigiVar, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
@@ -1365,7 +1365,7 @@ const haftayaDosya = (d: Durum, haftaId: string, baslikId?: string): Durum => {
 export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?: string): string | null => {
   let d = getir();
   const h = haftaBul(d, haftaId);
-  if (!h || !haftalikDuzenler(ben, h) || !g.metin.trim()) return null;
+  if (!h || !haftalikDuzenler(ben, h) || !kalemIcerigiVar(g)) return null;
   if (g.tarih && (g.tarih < h.baslangic || g.tarih > haftaSonu(h.baslangic))) return null;
   let baslikId = g.baslikId || undefined;
   if (!baslikId && g.yeniBaslik?.trim()) {
@@ -1729,12 +1729,13 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   const muhabirId = k.muhabirler[0];
   // Kalem bir öneriden geldiyse gelişmenin kaynağı o önerinin kaynağı (muhabir, ajans, resmî duyuru…).
   const oneri = oneriBul(d, k.oneriId);
+  const gelismeMetni = satir(k.baslik?.trim(), k.metin.trim());
   const gelisme: Gelisme = {
     id: turet(plan.id, k.id),
     planId: plan.id,
     planBaslikId: pbId,
     yer: k.yer,
-    metin: k.baslik ? `${k.baslik} / ${k.metin}` : k.metin,
+    metin: gelismeMetni,
     kaynakTuru: oneri ? (oneri.kaynakTuru ?? (oneri.muhabirId ? "muhabir" : "diger")) : "diger",
     kaynakAdi: oneri?.kaynakAdi ?? "",
     tarih: simdi(),
@@ -1742,7 +1743,8 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
   };
-  d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
+  // Yalnız PKG'si olan kalem (dosyanın altına eklenen ikinci, üçüncü paket) Next Day'e boş gelişme bırakmasın.
+  if (gelismeMetni) d = { ...d, gelismeler: [...d.gelismeler, gelisme] };
   // "LIVE" işaretli kalem Next Day'de başlığın canlı yayını; yalnız biçimdeydi, çıktının "مباشر" bölümüne girmiyordu.
   if (k.bicimler.includes("canli")) {
     const canli: CanliYayin = {

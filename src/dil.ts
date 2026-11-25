@@ -2164,6 +2164,7 @@ const M = {
   asagi: m("Aşağı taşı", "نقل للأسفل", "Move down"),
   gunlukGundem: m("Gün gün gündem", "الأجندة اليومية", "Daily agenda"),
   buGunKalemYok: m("Bu gün için kalem yok.", "لا بنود لهذا اليوم.", "No items for this day."),
+  dosyayaPkgEkle: m("Bu dosyaya PKG ekle", "إضافة PKG إلى هذا الملف", "Add PKG to this file"),
   kalemEkle: m("Kalem ekle", "إضافة بند", "Add item"),
   kalemSayisi: m("{n} kalem", "{n} بندا", "{n} items"),
   // Weekly'nin günsüz bölümü (kullanıcı: feature ve program önerileri burada toplanıp toplantıda değerlendiriliyor).

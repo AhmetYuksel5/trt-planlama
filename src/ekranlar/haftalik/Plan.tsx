@@ -586,9 +586,16 @@ const dosyalaraGore = (kalemler: HaftalikKalem[]) => {
   return [...gruplar.entries()];
 };
 
+/*
+ * Dosyanın altına ek paket (kullanıcı: bir dosyaya istediği kadar PKG eklemek
+ * istiyordu): her kalem tek paket taşıdığı için aynı gün ve dosyada yeni kalem,
+ * Strap önde, metin isteğe bağlı; her paket kendi kararını alır, ayrı paket doğar.
+ */
 function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: HaftalikPlan; kalemler: HaftalikKalem[]; tarih: string }) {
   const { t } = useDil();
   const v = useVeri();
+  const [pkgFormu, setPkgFormu] = useState<string | null>(null);
+  const duzenler = haftalikDuzenler(ben, hafta);
   return (
     <>
       {dosyalaraGore(kalemler).map(([baslikId, liste]) => (
@@ -597,6 +604,15 @@ function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: Haft
           {liste.map((k) => (
             <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
           ))}
+          {duzenler &&
+            baslikId &&
+            (pkgFormu === baslikId ? (
+              <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId} sonra={liste[liste.length - 1].id} pkg kapat={() => setPkgFormu(null)} />
+            ) : (
+              <div className="ara-ust" data-dosya-pkg-ekle>
+                <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setPkgFormu(baslikId)} />
+              </div>
+            ))}
         </div>
       ))}
     </>

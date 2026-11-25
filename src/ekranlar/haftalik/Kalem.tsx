@@ -7,7 +7,7 @@ import { useKaynakMetni } from "../../bilesenler/Tablolar";
 import { gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { BICIM_ADI, TBC, TUR_ADI, kisiAr, muhabirUnvani, muhabirYeri, satir, sehirAdi, sehirAr } from "../../etiketler";
 import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
-import { gundemde, haftaGunleri, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
+import { gundemde, haftaGunleri, kalemIcerigiVar, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
 import { BICIMLER, SECILEN_TURLER, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
 import { IkonDugme } from "../nextday/Bolumler";
@@ -42,6 +42,7 @@ export function KalemFormu({
   dosya,
   sonra,
   ilk,
+  pkg = false,
   kaydedildi,
   kapat,
 }: {
@@ -52,6 +53,8 @@ export function KalemFormu({
   dosya?: string;
   sonra?: string;
   ilk?: Partial<Pick<HaftalikKalem, "baslik" | "yer" | "metin" | "tur" | "muhabirler">>;
+  /** Dosyanın altına ek paket: Strap önde ve zorunlu, metin isteğe bağlı. */
+  pkg?: boolean;
   kaydedildi?: (id: string) => void;
   kapat: () => void;
 }) {
@@ -90,6 +93,13 @@ export function KalemFormu({
       kapat();
     }
   };
+  // Strap yalnız paketi olan kalemde: çıktıda "PKG" altında "YER / strap / muhabir".
+  const strapAlani = f.bicimler.some((b) => b !== "canli") && (
+    <label>
+      {t("onerilenPaketBasligi")} {!pkg && <span className="ipucu">{t("varsa")}</span>}
+      <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kalem-strap />
+    </label>
+  );
   const bicimDegistir = (b: Bicim) => setF({ ...f, bicimler: f.bicimler.includes(b) ? f.bicimler.filter((x) => x !== b) : [...f.bicimler, b] });
 
   return (
@@ -157,18 +167,13 @@ export function KalemFormu({
           <input {...icerikAlani} value={f.yer} onChange={(e) => setF({ ...f, yer: e.target.value })} placeholder={metin("yerIpucu", "ar")} />
         </label>
       </div>
+      {pkg && strapAlani}
       <label>
-        {t("metin")}
+        {t("metin")} {pkg && <span className="ipucu">{t("varsa")}</span>}
         <textarea {...icerikAlani} rows={3} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} placeholder={metin("kalemMetniIpucu", "ar")} />
       </label>
       <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
-      {/* Strap yalnız paketi olan kalemde: çıktıda "PKG" altında "YER / strap / muhabir". */}
-      {f.bicimler.some((b) => b !== "canli") && (
-        <label>
-          {t("onerilenPaketBasligi")} <span className="ipucu">{t("varsa")}</span>
-          <input {...icerikAlani} value={f.paketBasligi} onChange={(e) => setF({ ...f, paketBasligi: e.target.value })} data-kalem-strap />
-        </label>
-      )}
+      {!pkg && strapAlani}
       <div>
         <div className="alan-etiket">{t("bicimSatiri")}</div>
         <fieldset className="secim-grubu ara-ust">
@@ -219,7 +224,7 @@ export function KalemFormu({
           </label>
         </>
       )}
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim() || (f.baslikId === YENI_DOSYA && !f.yeniBaslik.trim())} />
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!kalemIcerigiVar(f) || (f.baslikId === YENI_DOSYA && !f.yeniBaslik.trim())} />
     </div>
   );
 }
@@ -265,10 +270,12 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
               <b data-kalem-masa>{kalemMasaEtiketi(kalem, v)}</b>
             </Icerik>
           )}
-          <Icerik blok className="kalem-satiri">
-            {kalem.yer && <b>{kalem.yer} / </b>}
-            {kalem.metin}
-          </Icerik>
+          {kalem.metin.trim() && (
+            <Icerik blok className="kalem-satiri">
+              {kalem.yer && <b>{kalem.yer} / </b>}
+              {kalem.metin}
+            </Icerik>
+          )}
           {/* Paket önerisi Next Day'deki gibi: "YER / strap / muhabir". */}
           {/* Birden çok muhabirde paket satırı "YER / strap", muhabirler altta unvanla (çıktıdaki gibi). */}
           {kalemPaketli(kalem) && (

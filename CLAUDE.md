@@ -2451,6 +2451,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekranında `.plan-surukle`, belgede `<article>`). Test `testler/hafta-surukle.cjs`.
   - Kalemin dosyası merkezi başlık havuzundaki başlık; Next Day'e aynı
     başlıkla geçer, havuz ikiye bölünmez.
+  - Bir dosyaya istediği kadar PKG (kullanıcı: gündemde başlığa yalnız bir paket
+    ekleyebiliyordu): kalem tek paket taşır, bu yüzden dosya grubunun altında
+    "Bu dosyaya PKG ekle" (`data-dosya-pkg-ekle`; plan ekranında `DosyaGruplari`,
+    belgede dosya satırının şeridinde) aynı gün ve dosyada yeni kalem açar
+    (`KalemFormu pkg`: Strap önde ve zorunlu, metin isteğe bağlı). Kalemin metni ya
+    da Strap'li PKG'si olmalı (`haftalik.ts → kalemIcerigiVar`, `kalemKaydet`);
+    metinsiz kalem ekranda, belgede ve çıktıda yalnız PKG satırıyla, Next Day'e
+    gelişmesiz, ayrı paketle (her biri kendi kararıyla) geçer. Test
+    `testler/haftalik-coklu-pkg.cjs`.
   - Dosya seçimleri (kalem formu, "Gündeme ekle", ana dosya) her hafta boş
     başlar: yalnız o haftanın dosyaları (`haftalik.ts → haftaninDosyalari`:
     `HaftalikPlan.dosyalar`, kalemlerin ve ana dosyaların başlıkları) ve

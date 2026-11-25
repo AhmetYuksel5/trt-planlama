@@ -23,7 +23,7 @@ export const haftaninDosyalari = (h: HaftalikPlan): string[] => [
 ];
 
 /** Listede kalemin adı: olayın adı, yoksa "YER / metin". */
-export const kalemAdi = (k: HaftalikKalem) => k.baslik?.trim() || satir(k.yer, k.metin);
+export const kalemAdi = (k: HaftalikKalem) => k.baslik?.trim() || satir(k.yer, k.metin.trim() || k.paketBasligi);
 
 export const gundemde = (k: HaftalikKalem) => k.onInceleme?.durum !== "reddedildi";
 
@@ -42,6 +42,14 @@ export const paketDogurur = (k: HaftalikKalem) => isDogurur(k) && k.karar !== "b
  * önerisi. Günü olan kalemin paketi o günle doğuyor (Next Day'e ya da günüyle
  * plansız pakete), teslim günü ayrıca sorulmaz.
  */
+/*
+ * Kalemin metni ya da PKG'si olmalı (kullanıcı: bir dosyanın altına istediği kadar
+ * paket eklemek istiyordu, her kalem tek paket taşıyor): yalnız Strap'i olan
+ * kalem dosyanın ek paketi, metni (gelişmesi) yok.
+ */
+export const kalemIcerigiVar = (k: Pick<HaftalikKalem, "metin" | "bicimler" | "paketBasligi">) =>
+  !!k.metin.trim() || (!!k.paketBasligi?.trim() && k.bicimler.some((b) => b !== "canli"));
+
 export const teslimGunuSorulur = (k: Pick<HaftalikKalem, "tarih" | "bicimler">) => !k.tarih && k.bicimler.some((b) => b !== "canli");
 
 export const kararBekleyenler = (h: HaftalikPlan) => h.kalemler.filter((k) => gundemde(k) && k.karar === "bekliyor");
