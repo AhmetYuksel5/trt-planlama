@@ -3237,8 +3237,10 @@ export const geriAlinanGorevleriTemizle = (): number => {
     if (!SORULABILIR_DURUM.includes(o.durum)) continue;
     const p = d.paketler.find((x) => x.oneriId === o.id && !x.planId && !!x.gorev && x.durum !== "iptal");
     if (!p) continue;
-    const son = [...d.hareketler].reverse().find((h) => h.oneriId === o.id);
-    if (son?.tip !== "oneriAsamayaDondu") continue;
+    // Görev verildikten sonra herhangi bir an geri alındıysa. Yalnız son harekete bakılıyordu:
+    // geri almadan sonra muhabir yazışmaya yazınca son hareket mesaj oluyor, paket canlı kalıyordu (kullanıcı).
+    const gorevAni = p.gorev!.zaman;
+    if (!d.hareketler.some((h) => h.oneriId === o.id && h.tip === "oneriAsamayaDondu" && h.zaman > gorevAni)) continue;
     if (!p.isaret && paketPlandanKaldirilir(p)) d = gorevPaketiniIptal(d, SISTEM, p);
     else d = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "planaEklendi" as const } : x)) };
     n++;

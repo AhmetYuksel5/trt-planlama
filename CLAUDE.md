@@ -2154,8 +2154,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     görevli sayılıyordu): başlamamış paket iptal, muhabire ve masaya
     `paketIptal` (`gorevPaketiniIptal`), üretime ya da sonuca girmişse durur;
     bu düzeltmeden önce geri alınıp paketi canlı kalanları sistemin açılış işi
-    geri alır (`geriAlinanGorevleriTemizle`; başlamışsa öneri "plana
-    eklendi"ye döner). Test `testler/gorev-geri-al.cjs`;
+    geri alır (`geriAlinanGorevleriTemizle`: görevden sonra geri alma hareketi
+    varsa, arada mesaj gelse de; önce yalnız son hareketine bakıyordu, muhabir
+    yazışmaya yazınca atlanıyordu; başlamışsa öneri "plana eklendi"ye döner). Test `testler/gorev-geri-al.cjs`;
     tek hareket `oneriAsamayaDondu` (`veri.sonuc` hedef), muhabire bildirim.
   - "Başka plana da ekle": öneri ikinci plana girecekse çoğaltılır
     (`oneriKopyala`): kopya değerlendirmeden başlar, `kopyaKaynagi` asılı

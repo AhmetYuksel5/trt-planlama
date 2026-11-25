@@ -87,13 +87,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.click("[data-oneri-gorev-formu] [data-oneri-gorevlendir]");
   await p.waitForTimeout(500);
   await yaz(
-    "d.oneriler.find((x) => x.id === a).durum = 'degerlendiriliyor'; d.hareketler.push({ id: 'h-eski-geri', kisiId: 'pl1', tip: 'oneriAsamayaDondu', oneriId: a, zaman: new Date().toISOString(), veri: { sonuc: 'degerlendiriliyor', onceki: 'planaEklendi' } });",
+    "d.oneriler.find((x) => x.id === a).durum = 'degerlendiriliyor'; d.hareketler.push({ id: 'h-eski-geri', kisiId: 'pl1', tip: 'oneriAsamayaDondu', oneriId: a, zaman: new Date().toISOString(), veri: { sonuc: 'degerlendiriliyor', onceki: 'planaEklendi' } }); d.hareketler.push({ id: 'h-sonra-mesaj', kisiId: d.oneriler.find((x) => x.id === a).muhabirId, tip: 'oneriMesaji', oneriId: a, zaman: new Date(Date.now() + 1000).toISOString(), veri: {} });",
     o2.id,
   );
   await gir("pl1", "#/oneriler/" + o2.id);
   await p.waitForTimeout(500);
   d = await veri();
-  ok(d.paketler.filter((x) => x.oneriId === o2.id && x.gorev && x.durum !== "iptal").length === 0, "açılış işi eski kaydın canlı paketini geri aldı");
+  ok(d.paketler.filter((x) => x.oneriId === o2.id && x.gorev && x.durum !== "iptal").length === 0, "açılış işi eski kaydın canlı paketini geri aldı (geri almadan sonra mesaj gelse de)");
   await menu();
   ok((await p.locator("[data-oneri-dogrudan-gorev]").count()) === 1, "eski kayıtta da ⋯'de 'Muhabiri görevlendir'");
 
