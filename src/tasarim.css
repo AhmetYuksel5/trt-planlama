@@ -4646,6 +4646,10 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .masa-etiketi { color: var(--prg); background: var(--prg-sis); border-radius: var(--yaricap); padding: 0 var(--ara-1); font-weight: 600; }
 
 /* Rotadan çalışma programı (bilesenler/RotaProgrami.tsx). */
-.rota-gunleri { list-style: none; margin: var(--ara-2) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--ara-1) var(--ara-3); }
-.rota-gunleri li { display: flex; justify-content: space-between; gap: var(--ara-2); padding-block: 2px; border-bottom: 1px solid var(--cizgi); font-size: var(--punto-kucuk); }
-.rota-gunleri li.sonuk { color: var(--sonuk); }
+/* Çalışma programı: iki satırlık künye, etiket solda, değer sağda. */
+.rota-ozet { margin: 0; display: grid; gap: 0; }
+.rota-ozet > div { display: grid; grid-template-columns: minmax(110px, 160px) minmax(0, 1fr); gap: var(--ara-3); padding-block: var(--ara-2); border-bottom: 1px solid var(--cizgi); }
+.rota-ozet > div:last-child { border-bottom: 0; }
+.rota-ozet dt { color: var(--sonuk); }
+.rota-ozet dd { margin: 0; }
+.rota-ozet [data-rota-saat] b { font-variant-numeric: tabular-nums; }

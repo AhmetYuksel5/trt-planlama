@@ -108,7 +108,7 @@ test("tarayıcıdaki ayrıştırıcı: gruplar, vardiya, izin ve eşleme", () =>
   ];
   const k = rotaKayitlari(satirlar);
   assert.equal(k.length, 6);
-  assert.deepEqual(k[0], { bolum: "newsroom", grup: "EP TEAM", unvan: "EP", ad: "Deniz Kaya", saat: "07:00", calisiyor: true });
+  assert.deepEqual(k[0], { bolum: "newsroom", grup: "EP TEAM", unvan: "EP", ad: "Deniz Kaya", saat: "07:00", bitis: "18:00", calisiyor: true });
   assert.equal(k[1].calisiyor, false);
   const kisiler = [
     { id: "a", ad: { tr: "Deniz Kaya", ar: "دنيز", en: "Deniz Kaya" } },

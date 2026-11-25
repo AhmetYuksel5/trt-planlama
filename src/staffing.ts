@@ -28,6 +28,8 @@ export interface StaffingKaydi {
   ad: string;
   /** İşe başlama, İstanbul saati "SS:DD". */
   saat?: string;
+  /** Vardiyanın bitişi ("16:00"), aralıktan okunduysa. */
+  bitis?: string;
   /** Postadaki durum hücresi ("0900+Office", "OFF"…), varsa. */
   durum?: string;
   /** O gün vardiyası var: saatli ve izinde, raporda, telafide değil. */
@@ -53,8 +55,8 @@ export const staffingPostasi = (mesajlar: PostaMesaji[] | undefined, tarih: stri
     .sort((a, b) => b.zaman.localeCompare(a.zaman))[0];
 
 const saatYaz = (s: string, d: string) => `${s.padStart(2, "0")}:${d}`;
-/* "05.00-15.00", "0700-1800", "1345-0045": başlangıç saati. */
-const ARALIK = /^(\d{1,2})[.:]?(\d{2})\s*[-–]\s*\d{1,2}[.:]?\d{2}$/;
+/* "05.00-15.00", "0700-1800", "1345-0045": başlangıç ve bitiş saati. */
+const ARALIK = /^(\d{1,2})[.:]?(\d{2})\s*[-–]\s*(\d{1,2})[.:]?(\d{2})$/;
 const PROGRAM = /^\d{1,2}[.:]?\d{2}\s*[-–]\s*\d{1,2}[.:]?\d{2}\s+[-–]\s+\S/;
 const GUN_ADI = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?$/i;
 const TARIH = /^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{1,2}[\s-]+[a-z]{3,9}\.?)$/i;
@@ -398,7 +400,7 @@ export const rotaKayitlari = (satirlar: [string, string, string][]): StaffingKay
     const ad = h.trim();
     if (!ad) continue;
     const izinli = IZINLI.test(ad);
-    sonuc.push({ bolum: "newsroom", grup, unvan: a.trim(), ad: izinli ? "" : ad, ...(m ? { saat: saatYaz(m[1], m[2]) } : {}), ...(izinli ? { durum: ad } : {}), calisiyor: !!m && !izinli });
+    sonuc.push({ bolum: "newsroom", grup, unvan: a.trim(), ad: izinli ? "" : ad, ...(m ? { saat: saatYaz(m[1], m[2]), bitis: saatYaz(m[3], m[4]) } : {}), ...(izinli ? { durum: ad } : {}), calisiyor: !!m && !izinli });
   }
   return sonuc.filter((k) => k.ad || k.durum);
 };
@@ -417,7 +419,7 @@ export const sunucuKayitlari = (satirlar: [string, string, string][]): StaffingK
       .split(/\n|\/|،/)
       .map((x) => x.trim())
       .filter((x) => x && !IZINLI.test(x))
-      .map((ad) => ({ bolum: "presenter" as const, grup: "PRESENTER", unvan: "Presenter", ad, saat: saatYaz(m[1], m[2]), calisiyor: true }));
+      .map((ad) => ({ bolum: "presenter" as const, grup: "PRESENTER", unvan: "Presenter", ad, saat: saatYaz(m[1], m[2]), bitis: saatYaz(m[3], m[4]), calisiyor: true }));
   });
 
 /*

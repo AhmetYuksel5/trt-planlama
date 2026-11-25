@@ -14,14 +14,15 @@ const SAHTE = () => {
     const r = JSON.parse(localStorage.getItem("test-rota") || "null");
     if (!r || tur === "sunucu") return null;
     const sekme = tarih <= r.bitis ? "2026: DONEM1" : "2026: DONEM2";
-    // Birinci kişi her gün 07:00; ikincisi yalnız çift günlerde 13:45.
-    const gun = Number(tarih.slice(8));
+    // Birinci kişi her gün 07:00; ikincisi Cuma ve Cumartesi izinli, Pazartesi 10:00, öbür günler 13:45.
+    const hg = new Date(tarih + "T12:00:00Z").getUTCDay();
     return {
       sekme,
       satirlar: [
         ["EP TEAM", "", ""],
         ["EP", "0700-1600", r.a],
-        ["EP", "1345-2245", gun % 2 ? "OFF" : r.b],
+        ["EP", "1345-2245", hg >= 5 || hg === 1 ? "OFF" : r.b],
+        ["EP", "1000-1900", hg === 1 ? r.b : ""],
         ["EP", "0900-1800", "Zeynep Qwerty"],
       ],
     };
@@ -56,8 +57,8 @@ const SAHTE = () => {
   const pr = (d.rotaProgramlari || [])[0];
   ok(!!pr && pr.sekme === "2026: DONEM1", "dönem aktarıldı");
   ok(pr && pr.bit === kisiler.bitis, "dönem sekme değişince bitti: " + pr?.bit);
-  ok(pr && Object.values(pr.kisiler[kisiler.a] || {}).every((s) => s === "07:00") && Object.keys(pr.kisiler[kisiler.a] || {}).length >= 9, "birinci kişi her gün 07:00");
-  ok(pr && Object.keys(pr.kisiler[kisiler.b] || {}).every((t) => Number(t.slice(8)) % 2 === 0), "ikinci kişi yalnız çift günler");
+  ok(pr && Object.values(pr.kisiler[kisiler.a] || {}).every((s) => s === "07:00-16:00") && Object.keys(pr.kisiler[kisiler.a] || {}).length >= 9, "birinci kişi her gün 07:00");
+  ok(pr && Object.keys(pr.kisiler[kisiler.b] || {}).every((t) => new Date(t + "T12:00:00Z").getUTCDay() < 5), "ikinci kişi Cuma ve Cumartesi yok");
   ok(pr && pr.eslesmeyen.includes("Zeynep Qwerty"), "kayıtta olmayan ad eşleşmeyenlerde");
 
   // Dönem kayıtta: ikinci açılışta okunmaz.
@@ -69,7 +70,11 @@ const SAHTE = () => {
   const kart = p.locator(`[data-rota-program="${kisiler.b}"]`);
   ok((await kart.count()) === 1, "profilde çalışma programı kartı");
   const metin = await kart.innerText();
-  ok(metin.includes("13:45") && metin.includes("Çalışmıyor"), "çalıştığı gün saati, öbürü çalışmıyor");
+  ok((await kart.locator("[data-rota-izin]").innerText()).trim() === "Cumartesi, Cuma", "izin günleri: " + (await kart.locator("[data-rota-izin]").innerText()));
+  ok((await kart.locator("[data-rota-saat]").innerText()).includes("13:45–22:45"), "çalışma saati vardiyayla");
+  ok((await kart.locator("[data-rota-farkli]").innerText()).includes("10:00–19:00"), "farklı saatli gün ayrıca");
+  await git("#/personel/" + kisiler.a);
+  ok((await p.locator(`[data-rota-program="${kisiler.a}"] [data-rota-izin]`).innerText()).trim() === "Yok", "her gün çalışanın izin günü yok");
 
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));
   await b.close();

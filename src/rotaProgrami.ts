@@ -27,7 +27,9 @@ export const rotaGuncel = (d: Pick<Durum, "rotaProgramlari">, gun = bugun()) => 
 /*
  * Günlerden dönem: her günün rota ve sunucu kayıtları kişiye eşlenir (staffing şeridinin
  * kuralı ve öğrenilmiş eşleşmeler); yalnız kesin eşleşen yazılır, belirsiz ya da kayıtta
- * olmayan ad "eşleşmeyen"e. Kişi aynı gün iki satırdaysa erken saat.
+ * olmayan ad "eşleşmeyen"e. Kişi aynı gün iki satırdaysa erken saat. Değer vardiyanın
+ * kendisi ("07:00-16:00"); bitişi okunmamışsa yalnız başlangıç. Başlangıç başta olduğu
+ * için metin karşılaştırması erken vardiyayı seçer.
  */
 export const rotaDonemiKur = (gunler: RotaGunu[], kisiler: Kisi[], ogrenilen: Record<string, string> = {}): Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen"> => {
   const harita: Record<string, Record<string, string>> = {};
@@ -43,7 +45,8 @@ export const rotaDonemiKur = (gunler: RotaGunu[], kisiler: Kisi[], ogrenilen: Re
         continue;
       }
       const gunleri = (harita[kisiId] ??= {});
-      if (!gunleri[g.tarih] || k.saat < gunleri[g.tarih]) gunleri[g.tarih] = k.saat;
+      const vardiya = k.bitis ? `${k.saat}-${k.bitis}` : k.saat;
+      if (!gunleri[g.tarih] || vardiya < gunleri[g.tarih]) gunleri[g.tarih] = vardiya;
     }
   }
   return { sekme: gunler[0]?.sekme ?? "", bas: gunler[0]?.tarih ?? "", bit: gunler[gunler.length - 1]?.tarih ?? "", kisiler: harita, eslesmeyen: [...eslesmeyen].sort() };
@@ -69,27 +72,44 @@ export const rotaGunleriniOku = async (
   return gunler;
 };
 
-/** Kişinin programı: gün → saat, bütün dönemlerden (yenisi eskisinin üstüne). */
-export const kisiProgrami = (d: Pick<Durum, "rotaProgramlari">, kisiId: string): Record<string, string> =>
-  Object.assign({}, ...[...(d.rotaProgramlari ?? [])].sort((a, b) => a.zaman.localeCompare(b.zaman)).map((p) => p.kisiler[kisiId] ?? {}));
+/*
+ * Profilin özeti (kullanıcı: izin günleri düzenli, gün gün cetvel gereksiz; izin günleri ve
+ * çalışma saati yeter, öbür günler zaten çalışılan gün). Bugünü kapsayan dönem, yoksa en
+ * yenisi. Haftanın bir günü, dönemdeki o günlerin yarısından azında çalışıyorsa izin günü.
+ * Saat en sık vardiya; ondan farklı günler sayısıyla "farklı saatler"de.
+ */
+export interface CalismaOzeti {
+  bas: string;
+  bit: string;
+  /** Haftanın günü, Cumartesi 0; örnek tarihle (gün adı dilde yazılsın). */
+  izinGunleri: { gun: number; ornek: string }[];
+  saat: string;
+  farkli: { saat: string; n: number }[];
+}
 
-/** Önümüzdeki günler: çalıştığı gün saatiyle, öbürü boş (rotada var ama o gün yok). */
-export const kisiYakinProgrami = (d: Pick<Durum, "rotaProgramlari">, kisiId: string, gun = bugun(), n = 14) => {
-  const p = kisiProgrami(d, kisiId);
-  const kapsanan = (t: string) => (d.rotaProgramlari ?? []).some((x) => x.bas <= t && t <= x.bit);
-  return Array.from({ length: n }, (_, i) => gunEkle(gun, i))
-    .filter(kapsanan)
-    .map((tarih) => ({ tarih, saat: p[tarih] ?? "" }));
-};
-
-/** Haftalık özet: haftanın günü (Cumartesi 0) → en sık saat; programdaki günlerden. */
-export const haftalikOzet = (program: Record<string, string>): { gun: number; saat: string }[] => {
-  const sayim = new Map<number, Map<string, number>>();
-  for (const [tarih, saat] of Object.entries(program)) {
-    const g = (new Date(`${tarih}T12:00:00Z`).getUTCDay() + 1) % 7;
-    const m = sayim.get(g) ?? new Map();
-    m.set(saat, (m.get(saat) ?? 0) + 1);
-    sayim.set(g, m);
+export const calismaOzeti = (d: Pick<Durum, "rotaProgramlari">, kisiId: string, gun = bugun()): CalismaOzeti | null => {
+  const donemler = (d.rotaProgramlari ?? []).filter((p) => p.kisiler[kisiId] && Object.keys(p.kisiler[kisiId]).length);
+  const p = donemler.find((x) => x.bas <= gun && gun <= x.bit) ?? [...donemler].sort((a, b) => b.bas.localeCompare(a.bas))[0];
+  if (!p) return null;
+  const program = p.kisiler[kisiId];
+  const toplam = new Map<number, number>();
+  const calisan = new Map<number, number>();
+  const ornek = new Map<number, string>();
+  for (let t = p.bas; t <= p.bit; t = gunEkle(t, 1)) {
+    const g = (new Date(`${t}T12:00:00Z`).getUTCDay() + 1) % 7;
+    toplam.set(g, (toplam.get(g) ?? 0) + 1);
+    if (program[t]) calisan.set(g, (calisan.get(g) ?? 0) + 1);
+    if (!ornek.has(g)) ornek.set(g, t);
   }
-  return [...sayim.entries()].sort(([a], [b]) => a - b).map(([gun, m]) => ({ gun, saat: [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0] }));
+  const izinGunleri = [...toplam.entries()]
+    .filter(([g, n]) => (calisan.get(g) ?? 0) * 2 < n)
+    .sort(([a], [b]) => a - b)
+    .map(([g]) => ({ gun: g, ornek: ornek.get(g)! }));
+  const sayim = new Map<string, number>();
+  for (const s of Object.values(program)) sayim.set(s, (sayim.get(s) ?? 0) + 1);
+  const sirali = [...sayim.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return { bas: p.bas, bit: p.bit, izinGunleri, saat: sirali[0][0], farkli: sirali.slice(1).map(([saat, n]) => ({ saat, n })) };
 };
+
+/** Vardiya metni ekranda: "07:00-16:00" → "07:00–16:00". */
+export const vardiyaMetni = (s: string) => s.replace("-", "–");
