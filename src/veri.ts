@@ -1347,6 +1347,31 @@ export interface HaftalikKalem {
    * doğan pakete de taşınıyor; Next Day'in bildirim sayfası onu "gönderildi" görür.
    */
   takdirBildirimi?: { zaman: string; kisiId: string };
+  /*
+   * Next Day gelişmesinin alanları (kullanıcı: haftalıktaki gün gündemi Next Day'in
+   * başlık altıyla birebir aynı yetenekte olsun): saat (metnin sonunda "12G"),
+   * Schedule, Teams, kaynak ve muhabirin o günkü yeri. Next Day'e geçerken gelişmeye
+   * ve başlığın muhabirine taşınır.
+   */
+  saat?: string;
+  program?: ProgramSatiri[];
+  teams?: ({ kisiId: string } | { ad: string })[];
+  muhabirYerleri?: Record<string, string>;
+  kaynakTuru?: KaynakTuru;
+  kaynakAdi?: string;
+}
+
+/*
+ * Günün dosyası Next Day'in başlığı gibi (kullanıcı): başlığın muhabirleri (yer ve
+ * muhabire not), TBC ve LIVE. Kayıt gün + dosya başına; Next Day'e geçerken başlığa.
+ */
+export interface HaftaDosyasi {
+  /** "" Stok ve programlar. */
+  tarih: string;
+  baslikId: string;
+  muhabirler: PlanMuhabiri[];
+  muhabirTbc?: true;
+  live?: true;
 }
 
 export interface HaftalikPlan {
@@ -1372,6 +1397,7 @@ export interface HaftalikPlan {
    */
   canlilar?: HaftaCanli[];
   nafizeler?: HaftaNafize[];
+  dosyaBilgileri?: HaftaDosyasi[];
   olusturan: string;
   olusturma: string;
 }

@@ -10,8 +10,13 @@ import { kalemKarar, kalemKararNotu, kalemKaydet, kalemSil, onIncelemeyeGonder, 
 import { gundemde, haftaGunleri, kalemIcerigiVar, kalemKilitli, haftaninDosyalari, onIncelemeyeGidebilir, teslimGunuSorulur } from "../../haftalik";
 import { BICIMLER, SECILEN_TURLER, baslikBul, kisiBul, oneriBul, paketBul, planBul, useVeri, type Bicim, type HaftalikKalem, type HaftalikPlan, type IcerikTuru, type Karar, type Kisi } from "../../veri";
 import { haftalikDuzenler, kararNotuYazabilir, kararVerebilir } from "../../yetki";
-import { IkonDugme } from "../nextday/Bolumler";
-import { FormAlt, MuhabirSecici } from "../nextday/Formlar";
+import { GelismeProgrami, GelismeTeamSatirlari, IkonDugme } from "../nextday/Bolumler";
+import { vardiyaYaz } from "../../tarih";
+import { FormAlt, FormAyrintilari, MuhabirSecici, ScheduleAlani, TeamsAlani } from "../nextday/Formlar";
+import { useTelefon } from "../takvim/ortak";
+import { SaatGirdisi } from "../../bilesenler/TarihSaat";
+import { KAYNAK_ADI } from "../../etiketler";
+import { KAYNAK_TURLERI, type KaynakTuru } from "../../veri";
 import { YzKisalt, YzKisaltSerit } from "../../bilesenler/YzKisalt";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
@@ -76,13 +81,26 @@ export function KalemFormu({
     ekTalep: mevcut?.ekTalep ?? "",
     not: mevcut?.not ?? "",
     teslimGunu: mevcut?.teslimGunu ?? "",
+    // Next Day gelişmesinin alanları (saat, kaynak, muhabirin yeri, Teams, Schedule).
+    saat: mevcut?.saat ?? "",
+    kaynakTuru: (mevcut?.kaynakTuru ?? "") as KaynakTuru | "",
+    kaynakAdi: mevcut?.kaynakAdi ?? "",
+    muhabirYerleri: mevcut?.muhabirYerleri ?? ({} as Record<string, string>),
+    teams: mevcut?.teams ?? [],
+    schedule: !!mevcut?.program?.length,
+    program: mevcut?.program ?? [],
   });
+  const telefon = useTelefon();
   // Yalnız bu haftanın dosyaları: her hafta boş başlıyor, eski haftaların dosyaları önüne gelmiyor.
   const haftanin = new Set([...haftaninDosyalari(hafta), f.baslikId]);
   const dosyalar = v.basliklar.filter((b) => haftanin.has(b.id));
   const kaydet = () => {
+    const { schedule, program, kaynakTuru, ...g } = f;
     const id = kalemKaydet(ben, hafta.id, {
-      ...f,
+      ...g,
+      program: schedule ? program : [],
+      // Boş seçim kaynağı siler (eylemde "" → yok); undefined olsa eski kaynak kalırdı.
+      kaynakTuru: kaynakTuru as KaynakTuru,
       id: mevcut?.id,
       baslikId: f.baslikId === YENI_DOSYA ? undefined : f.baslikId,
       yeniBaslik: f.baslikId === YENI_DOSYA ? f.yeniBaslik : undefined,
@@ -193,8 +211,19 @@ export function KalemFormu({
             {f.muhabirler.map((id) => {
               const k = kisiBul(v, id);
               return (
-                <span key={id} className="cip">
-                  {ad(k)} · {k && sehirAdi(k.sehir)}
+                <span key={id} className="cip" data-kalem-muhabir={id}>
+                  {ad(k)}
+                  {/* Muhabirin o günkü yeri: şehrinden başka yerdeyse burada (Next Day'deki gibi). */}
+                  <input
+                    {...icerikAlani}
+                    className="cip-yer"
+                    value={f.muhabirYerleri[id] ?? ""}
+                    placeholder={sehirAr(k?.sehir)}
+                    aria-label={t("yer")}
+                    title={k ? sehirAdi(k.sehir) : undefined}
+                    data-kalem-muhabir-yer={id}
+                    onChange={(e) => setF((x) => ({ ...x, muhabirYerleri: { ...x.muhabirYerleri, [id]: e.target.value } }))}
+                  />
                   <button type="button" onClick={() => setF({ ...f, muhabirler: f.muhabirler.filter((x) => x !== id) })} aria-label={t("cikar")} title={t("cikar")}>
                     <X size={13} />
                   </button>
@@ -212,6 +241,32 @@ export function KalemFormu({
         {t("kalemNotu")}
         <AnmaGirdisi deger={f.not} degistir={(x) => setF({ ...f, not: x })} />
       </label>
+      {/* Next Day gelişmesinin ek alanları: saat, kaynak, Teams, Schedule; telefonda katlı. */}
+      <FormAyrintilari telefon={telefon} acik={!!(f.saat || f.kaynakTuru || f.kaynakAdi || f.teams.length || f.schedule)}>
+        <div className="satir">
+          <label>
+            {t("saat")}
+            <SaatGirdisi value={f.saat} onChange={(e) => setF({ ...f, saat: e.target.value })} data-kalem-saat />
+          </label>
+          <label>
+            {t("kaynakTuru")}
+            <select value={f.kaynakTuru} onChange={(e) => setF({ ...f, kaynakTuru: e.target.value as KaynakTuru | "" })} data-kalem-kaynak>
+              <option value="">—</option>
+              {KAYNAK_TURLERI.map((k) => (
+                <option key={k} value={k}>
+                  {t(KAYNAK_ADI[k])}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t("kaynakAdi")}
+            <input {...icerikAlani} value={f.kaynakAdi} onChange={(e) => setF({ ...f, kaynakAdi: e.target.value })} />
+          </label>
+        </div>
+        <TeamsAlani teams={f.teams} degistir={(teams) => setF((x) => ({ ...x, teams }))} />
+        <ScheduleAlani acik={f.schedule} program={f.program} degistir={(schedule, program) => setF((x) => ({ ...x, schedule, program }))} />
+      </FormAyrintilari>
       {/* Toplantının söyledikleri: hazırlıkta yok, toplantıda ya da önceden yazılmışsa var. */}
       {(hafta.durum === "toplantida" || f.kararNotu || f.ekTalep) && (
         <>
@@ -275,8 +330,10 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
             <Icerik blok className="kalem-satiri">
               {kalem.yer && <b>{kalem.yer} / </b>}
               {kalem.metin}
+              {kalem.saat && <b data-gelisme-saat-eki> {vardiyaYaz(kalem.saat)}</b>}
             </Icerik>
           )}
+          <GelismeProgrami g={kalem} />
           {/* Paket önerisi Next Day'deki gibi: "YER / strap / muhabir". */}
           {/* Birden çok muhabirde paket satırı "YER / strap", muhabirler altta unvanla (çıktıdaki gibi). */}
           {kalemPaketli(kalem) && (
@@ -284,8 +341,8 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
               <Icerik blok className="kalem-satiri">
                 <b>{kalemPkgEtiketi(kalem)} · </b>
                 {kalem.muhabirler.length > 1
-                  ? satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi)
-                  : satir(kalem.yer || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}
+                  ? satir(kalem.yer || kalem.muhabirYerleri?.[kalem.muhabirler[0]] || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi)
+                  : satir(kalem.yer || kalem.muhabirYerleri?.[kalem.muhabirler[0]] || sehirAr(kisiBul(v, kalem.muhabirler[0])?.sehir), kalem.paketBasligi, muhabirYeri(kalem.muhabirler.map((id) => kisiAr(kisiBul(v, id))), kalem.muhabirTbc))}
               </Icerik>
               {kalem.muhabirler.length > 1 && (
                 <>
@@ -294,7 +351,7 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
                   </Icerik>
                   {kalem.muhabirler.map((id) => (
                     <Icerik key={id} blok className="kalem-satiri">
-                      {satir(sehirAr(kisiBul(v, id)?.sehir), kisiAr(kisiBul(v, id)))}
+                      {satir(kalem.muhabirYerleri?.[id] || sehirAr(kisiBul(v, id)?.sehir), kisiAr(kisiBul(v, id)))}
                     </Icerik>
                   ))}
                 </>
@@ -314,12 +371,13 @@ export function KalemKarti({ ben, hafta, kalem, dosyaGoster = false, kisayol = f
                 const k = kisiBul(v, id);
                 return (
                   <span key={id}>
-                    {ad(k)} · {k && sehirAdi(k.sehir)}
+                    {ad(k)} · {kalem.muhabirYerleri?.[id] ? <Icerik>{kalem.muhabirYerleri[id]}</Icerik> : k && sehirAdi(k.sehir)}
                   </span>
                 );
               })}
             </small>
           )}
+          <GelismeTeamSatirlari g={kalem} v={v} />
           {/* Konu (olayın adı) belgedeki gibi altta, Next Day'in paket satırı gibi. */}
           {kalem.baslik && (
             <Icerik blok className="kalem-satiri">
@@ -448,6 +506,12 @@ export const kalemGirdisi = (k: HaftalikKalem, g: Partial<KalemGirdisi>): KalemG
   ekTalep: k.ekTalep,
   not: k.not,
   teslimGunu: k.teslimGunu,
+  saat: k.saat ?? "",
+  program: k.program ?? [],
+  teams: k.teams ?? [],
+  muhabirYerleri: k.muhabirYerleri ?? {},
+  kaynakTuru: k.kaynakTuru,
+  kaynakAdi: k.kaynakAdi ?? "",
   ...g,
 });
 

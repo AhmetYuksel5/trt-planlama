@@ -27,11 +27,11 @@ function useDosyalar(h: HaftalikPlan) {
   return haftaninDosyalari(h).map((id) => ({ id, ad: v.basliklar.find((b) => b.id === id)?.ad ?? "" }));
 }
 
-function CanliPenceresi({ h, tarih, mevcut, kapat }: { h: HaftalikPlan; tarih: string; mevcut?: HaftaCanli; kapat: () => void }) {
+function CanliPenceresi({ h, tarih, mevcut, dosya, kapat }: { h: HaftalikPlan; tarih: string; mevcut?: HaftaCanli; dosya?: string; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
   const dosyalar = useDosyalar(h);
-  const [f, setF] = useState({ konu: mevcut?.konu ?? "", yer: mevcut?.yer ?? "", saat: mevcut?.saat ?? "", muhabirId: mevcut?.muhabirId ?? "", baslikId: mevcut?.baslikId ?? "", yeniAd: "" });
+  const [f, setF] = useState({ konu: mevcut?.konu ?? "", yer: mevcut?.yer ?? "", saat: mevcut?.saat ?? "", muhabirId: mevcut?.muhabirId ?? "", baslikId: mevcut?.baslikId ?? dosya ?? "", yeniAd: "" });
   const eksik = !f.konu.trim() || (f.baslikId === YENI_DOSYA && !f.yeniAd.trim());
   const kaydet = () => {
     if (!ben || eksik) return;
@@ -84,7 +84,7 @@ function CanliPenceresi({ h, tarih, mevcut, kapat }: { h: HaftalikPlan; tarih: s
   );
 }
 
-function NafizePenceresi({ h, tarih, mevcut, kapat }: { h: HaftalikPlan; tarih: string; mevcut?: HaftaNafize; kapat: () => void }) {
+function NafizePenceresi({ h, tarih, mevcut, dosya, kapat }: { h: HaftalikPlan; tarih: string; mevcut?: HaftaNafize; dosya?: string; kapat: () => void }) {
   const { t } = useDil();
   const ben = useBen();
   const dosyalar = useDosyalar(h);
@@ -92,8 +92,9 @@ function NafizePenceresi({ h, tarih, mevcut, kapat }: { h: HaftalikPlan; tarih: 
     <NafizeFormu
       baslik={t(mevcut ? "nafizeDuzenle" : "nafizeEkle")}
       secenekler={dosyalar}
-      ilkBaslik={mevcut?.baslikId ?? dosyalar[0]?.id ?? YENI_DOSYA}
-      baslikSor
+      ilkBaslik={mevcut?.baslikId ?? dosya ?? dosyalar[0]?.id ?? YENI_DOSYA}
+      // Dosyanın kendi düğmesinden açılınca dosya sorulmaz (Next Day'de başlıktan açılan nafize gibi).
+      baslikSor={!dosya}
       yeniDosya
       mevcut={mevcut}
       kaydet={(baslikId, kayitlar, yeni) => {
@@ -106,7 +107,12 @@ function NafizePenceresi({ h, tarih, mevcut, kapat }: { h: HaftalikPlan; tarih: 
   );
 }
 
-type Acik = { tur: "canli"; mevcut?: HaftaCanli } | { tur: "nafize"; mevcut?: HaftaNafize };
+type Acik = { tur: "canli"; mevcut?: HaftaCanli; dosya?: string } | { tur: "nafize"; mevcut?: HaftaNafize; dosya?: string };
+
+/* Dosyanın kendi canlı ve nafize düğmesi (Next Day başlığının canlı kutusu gibi): dosya seçili açılır. */
+export function DosyaCanliNafize({ h, tarih, baslikId, tur, kapat }: { h: HaftalikPlan; tarih: string; baslikId: string; tur: "canli" | "nafize"; kapat: () => void }) {
+  return <AcikPencere h={h} tarih={tarih} acik={{ tur, dosya: baslikId }} kapat={kapat} />;
+}
 
 /* Günün iki ekleme düğmesi (plan ekranında ve belgede). */
 export function GunEkleDugmeleri({ h, tarih }: { h: HaftalikPlan; tarih: string }) {
@@ -128,7 +134,7 @@ export function GunEkleDugmeleri({ h, tarih }: { h: HaftalikPlan; tarih: string 
 }
 
 function AcikPencere({ h, tarih, acik, kapat }: { h: HaftalikPlan; tarih: string; acik: Acik; kapat: () => void }) {
-  return acik.tur === "canli" ? <CanliPenceresi h={h} tarih={tarih} mevcut={acik.mevcut} kapat={kapat} /> : <NafizePenceresi h={h} tarih={tarih} mevcut={acik.mevcut} kapat={kapat} />;
+  return acik.tur === "canli" ? <CanliPenceresi h={h} tarih={tarih} mevcut={acik.mevcut} dosya={acik.dosya} kapat={kapat} /> : <NafizePenceresi h={h} tarih={tarih} mevcut={acik.mevcut} dosya={acik.dosya} kapat={kapat} />;
 }
 
 /*

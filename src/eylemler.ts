@@ -86,6 +86,8 @@ import {
   type HaftalikKalem,
   type HaftaCanli,
   type HaftaNafize,
+  type HaftaDosyasi,
+  type ProgramSatiri,
   type HaftalikPlan,
   type Kanal,
   type KaynakTuru,
@@ -1393,6 +1395,13 @@ export interface KalemGirdisi {
   aylikOlayId?: string;
   /** "Stok ve programlar" kaleminin teslim günü (haftalik.ts → teslimGunuSorulur). */
   teslimGunu?: string;
+  /* Next Day gelişmesinin alanları; düzeltmede verilmeyen (undefined) alan kalır, boş değer siler. */
+  saat?: string;
+  program?: ProgramSatiri[];
+  teams?: HaftalikKalem["teams"];
+  muhabirYerleri?: Record<string, string>;
+  kaynakTuru?: KaynakTuru;
+  kaynakAdi?: string;
 }
 
 /*
@@ -1415,6 +1424,62 @@ const haftayaDosya = (d: Durum, haftaId: string, baslikId?: string): Durum => {
   if (!h || !baslikId || h.dosyalar?.includes(baslikId)) return d;
   return haftaGuncelle(d, haftaId, (x) => ({ ...x, dosyalar: [...(x.dosyalar ?? []), baslikId] }));
 };
+
+/*
+ * Günün dosyası Next Day'in başlığı gibi (kullanıcı: haftalıktaki gün gündemi Next Day'in
+ * başlık altıyla birebir aynı olsun): başlığın muhabirleri (yer, muhabire not), TBC, LIVE.
+ * Dosyanın bir kalemi Next Day'e geçtiyse bilgi de geçti, değişikliği oraya gitmez: kilitli.
+ */
+export const haftaDosyasi = (h: HaftalikPlan, tarih: string, baslikId: string): HaftaDosyasi =>
+  h.dosyaBilgileri?.find((x) => x.tarih === tarih && x.baslikId === baslikId) ?? { tarih, baslikId, muhabirler: [] };
+export const haftaDosyasiKilitli = (h: HaftalikPlan, tarih: string, baslikId: string) =>
+  h.kalemler.some((k) => (k.tarih ?? "") === tarih && k.baslikId === baslikId && !!k.aktarim?.planId);
+
+export const haftaDosyasiDegistir = (ben: Kisi, haftaId: string, tarih: string, baslikId: string, f: (x: HaftaDosyasi) => HaftaDosyasi) =>
+  haftaIcerik(ben, haftaId, (h) => {
+    if (!baslikId || haftaDosyasiKilitli(h, tarih, baslikId)) return null;
+    const yeni = f(haftaDosyasi(h, tarih, baslikId));
+    const bos = !yeni.muhabirler.length && !yeni.muhabirTbc && !yeni.live;
+    const digerleri = (h.dosyaBilgileri ?? []).filter((x) => !(x.tarih === tarih && x.baslikId === baslikId));
+    return { ...h, dosyaBilgileri: bos ? digerleri : [...digerleri, yeni] };
+  });
+
+export const haftaDosyaMuhabiri = (ben: Kisi, haftaId: string, tarih: string, baslikId: string, kisiId: string, g: { yer?: string; not?: string } | null) =>
+  haftaDosyasiDegistir(ben, haftaId, tarih, baslikId, (x) => {
+    if (!g) return { ...x, muhabirler: x.muhabirler.filter((m) => m.kisiId !== kisiId) };
+    const m = { kisiId, ...(g.yer?.trim() && { yer: g.yer.trim() }), ...(g.not?.trim() && { not: g.not.trim() }) };
+    const var_ = x.muhabirler.some((y) => y.kisiId === kisiId);
+    // Muhabir atanınca TBC kalkar (Next Day'deki gibi).
+    return { ...x, muhabirTbc: undefined, muhabirler: var_ ? x.muhabirler.map((y) => (y.kisiId === kisiId ? m : y)) : [...x.muhabirler, m] };
+  });
+
+/*
+ * Dosyayı aynı günün başka dosyasına katar (Next Day'in "Başka başlığa kat"ı):
+ * kalemler, canlı ve nafizeler, muhabirler hedefe geçer. Next Day'e geçmiş kayıt kalır.
+ */
+export const haftaDosyaKat = (ben: Kisi, haftaId: string, tarih: string, kaynak: string, hedef: string) =>
+  haftaIcerik(ben, haftaId, (h) => {
+    if (!kaynak || !hedef || kaynak === hedef) return null;
+    const ayni = (x: { tarih?: string; baslikId?: string }) => (x.tarih ?? "") === tarih && x.baslikId === kaynak;
+    const k = haftaDosyasi(h, tarih, kaynak);
+    const hd = haftaDosyasi(h, tarih, hedef);
+    const birlesik: HaftaDosyasi = {
+      ...hd,
+      muhabirler: [...hd.muhabirler, ...k.muhabirler.filter((m) => !hd.muhabirler.some((y) => y.kisiId === m.kisiId))],
+      ...((hd.live || k.live) && { live: true as const }),
+    };
+    if (birlesik.muhabirler.length) delete birlesik.muhabirTbc;
+    else if (hd.muhabirTbc || k.muhabirTbc) birlesik.muhabirTbc = true;
+    const dosyalar = (h.dosyaBilgileri ?? []).filter((x) => !(x.tarih === tarih && (x.baslikId === kaynak || x.baslikId === hedef)));
+    return {
+      ...h,
+      kalemler: h.kalemler.map((x) => (ayni(x) && !x.aktarim?.planId ? { ...x, baslikId: hedef } : x)),
+      canlilar: h.canlilar?.map((x) => (ayni(x) && !x.aktarim ? { ...x, baslikId: hedef } : x)),
+      nafizeler: h.nafizeler?.map((x) => (ayni(x) && !x.aktarim ? { ...x, baslikId: hedef } : x)),
+      dosyaBilgileri: birlesik.muhabirler.length || birlesik.muhabirTbc || birlesik.live ? [...dosyalar, birlesik] : dosyalar,
+      dosyalar: h.dosyalar?.includes(hedef) ? h.dosyalar : [...(h.dosyalar ?? []), hedef],
+    };
+  });
 
 /** Kalemi ekler ya da düzeltir; karar, ön inceleme ve öneri bağı düzeltmede korunuyor. */
 export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?: string): string | null => {
@@ -1446,6 +1511,18 @@ export const kalemKaydet = (ben: Kisi, haftaId: string, g: KalemGirdisi, sonra?:
     ...(g.aylikOlayId && { aylikOlayId: g.aylikOlayId }),
     // Kalem bir güne geçince (ya da paketsiz kalınca) teslim günü düşer: paketin günü artık kalemin günü.
     teslimGunu: teslimGunuSorulur({ tarih: g.tarih || undefined, bicimler: g.bicimler }) ? gecerliGun(g.teslimGunu) : undefined,
+    ...(g.saat !== undefined && { saat: /^\d{2}:\d{2}$/.test(g.saat) ? g.saat : undefined }),
+    ...(g.program !== undefined && { program: g.program.filter((x) => x.olay.trim()).length ? g.program.filter((x) => x.olay.trim()).map((x) => ({ saat: x.saat, olay: x.olay.trim() })) : undefined }),
+    ...(g.teams !== undefined && { teams: g.teams.length ? g.teams : undefined }),
+    // Yer yalnız kalemin muhabirleri için ve doluysa.
+    ...(g.muhabirYerleri !== undefined && {
+      muhabirYerleri: (() => {
+        const y = Object.fromEntries(Object.entries(g.muhabirYerleri).filter(([id, x]) => g.muhabirler.includes(id) && x.trim()).map(([id, x]) => [id, x.trim()]));
+        return Object.keys(y).length ? y : undefined;
+      })(),
+    }),
+    ...(g.kaynakTuru !== undefined && { kaynakTuru: g.kaynakTuru || undefined }),
+    ...(g.kaynakAdi !== undefined && { kaynakAdi: g.kaynakAdi.trim() || undefined }),
   };
   // Kalemin notları (sarı not, karar notu, ek talep) tek metin gibi: anılan yeni kişiye bildirim.
   const notlar = (k: { not?: string; kararNotu?: string; ekTalep?: string }) => [k.not, k.kararNotu, k.ekTalep].filter(Boolean).join("\n");
@@ -1890,9 +1967,20 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     // Kimlikler plandan ve kalemden: aktarım iki tarayıcıda aynı anda olursa aynı kayıtlar yazılsın.
     const pb = var_ ?? { id: turet(plan.id, baslikId), baslikId, muhabirler: [] };
     pbId = pb.id;
-    const muhabirler = [...pb.muhabirler, ...k.muhabirler.filter((m) => !pb.muhabirler.some((x) => x.kisiId === m)).map((kisiId) => ({ kisiId }))];
-    // Kalemin TBC'si muhabirsiz başlığa geçiyor; başlıkta muhabir varsa belirsizlik yok.
-    const yeniPb = { ...pb, muhabirler, ...(k.muhabirTbc && !muhabirler.length ? { muhabirTbc: true as const } : {}) };
+    // Dosyanın muhabirleri (yer ve notuyla), sonra kalemin muhabirleri (kalemde yazılan yerle).
+    const hafta = haftaBul(d, haftaId);
+    const dosya = hafta && haftaDosyasi(hafta, k.tarih ?? "", baslikId);
+    const gelen = [...(dosya?.muhabirler ?? []), ...k.muhabirler.map((kisiId) => ({ kisiId, ...(k.muhabirYerleri?.[kisiId] && { yer: k.muhabirYerleri[kisiId] }) }))];
+    const muhabirler = [...pb.muhabirler];
+    for (const m of gelen) if (!muhabirler.some((x) => x.kisiId === m.kisiId)) muhabirler.push(m);
+    // Kalemin ya da dosyanın TBC'si muhabirsiz başlığa geçiyor; başlıkta muhabir varsa belirsizlik yok.
+    const yeniPb = {
+      ...pb,
+      muhabirler,
+      ...((k.muhabirTbc || dosya?.muhabirTbc) && !muhabirler.length ? { muhabirTbc: true as const } : {}),
+      ...(dosya?.live && { live: true as const }),
+    };
+    if (muhabirler.length) delete yeniPb.muhabirTbc;
     d = planGuncelle(d, plan.id, (p) => ({ ...p, basliklar: var_ ? p.basliklar.map((b) => (b.id === pb.id ? yeniPb : b)) : [...p.basliklar, yeniPb] }));
   }
   const muhabirId = k.muhabirler[0];
@@ -1905,12 +1993,15 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
     planBaslikId: pbId,
     yer: k.yer,
     metin: gelismeMetni,
-    kaynakTuru: oneri ? (oneri.kaynakTuru ?? (oneri.muhabirId ? "muhabir" : "diger")) : "diger",
-    kaynakAdi: oneri?.kaynakAdi ?? "",
+    kaynakTuru: k.kaynakTuru ?? (oneri ? (oneri.kaynakTuru ?? (oneri.muhabirId ? "muhabir" : "diger")) : "diger"),
+    kaynakAdi: k.kaynakAdi ?? oneri?.kaynakAdi ?? "",
     tarih: simdi(),
     onerenId: oneri?.muhabirId,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
+    ...(k.saat && { saat: k.saat }),
+    ...(k.program?.length && { program: k.program }),
+    ...(k.teams?.length && { teams: k.teams }),
   };
   // Yalnız PKG'si olan kalem (dosyanın altına eklenen ikinci, üçüncü paket) Next Day'e boş gelişme bırakmasın.
   if (gelismeMetni) d = { ...d, gelismeler: [...d.gelismeler, gelisme] };

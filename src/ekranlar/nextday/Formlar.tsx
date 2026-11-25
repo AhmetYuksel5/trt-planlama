@@ -24,6 +24,7 @@ import {
   type Bicim,
   type CanliYayin,
   type Gelisme,
+  type ProgramSatiri,
   type Gorevlendirme,
   type HareketTuru,
   type IcerikTuru,
@@ -165,12 +166,10 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
     saat: mevcut?.saat ?? "",
     muhabirler: mevcut ? gelismeMuhabirleri(mevcut) : [],
     teams: mevcut?.teams ?? [],
-    teamAd: "",
     schedule: !!mevcut?.program?.length,
     program: mevcut?.program?.length ? mevcut.program : [{ saat: "", olay: "" }],
   });
   const program = f.schedule ? f.program.map((x) => ({ saat: x.saat, olay: x.olay.trim() })).filter((x) => x.olay) : [];
-  const programDegis = (i: number, alan: "saat" | "olay", deger: string) => setF((x) => ({ ...x, program: x.program.map((y, j) => (j === i ? { ...y, [alan]: deger } : y)) }));
   const telefon = useTelefon();
   const ref = useFormaKay(telefon);
   const kaydet = () => {
@@ -287,66 +286,100 @@ export function GelismeFormu({ plan, planBaslikId, mevcut, sonra, kapat }: { pla
         )}
         <MuhabirSecici deger="" degistir={(id) => id && setF((x) => (x.muhabirler.some((y) => y.kisiId === id) ? x : { ...x, muhabirler: [...x.muhabirler, { kisiId: id }] }))} bosEtiket={t("muhabirAta")} />
       </div>
-      {/* Teams: kayıtlı personelden seçilir; kayıtta yoksa adı elle yazılır. */}
-      <div className="form" data-gelisme-teams-formu>
-        <span>{t("gelismeTeams")}</span>
-        {f.teams.map((x, i) => (
-          <div key={i} className="satir">
-            {"ad" in x ? <Icerik>{x.ad}</Icerik> : <span>{ad(kisiBul(v, x.kisiId))}</span>}
-            <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, teams: y.teams.filter((_, j) => j !== i) }))} title={t("cikar")} aria-label={t("cikar")}>
-              ×
-            </button>
-          </div>
-        ))}
-        <select
-          value=""
-          data-teams-sec
-          aria-label={t("teamsKisiSec")}
-          onChange={(e) => {
-            const id = e.target.value;
-            if (id) setF((y) => (y.teams.some((z) => "kisiId" in z && z.kisiId === id) ? y : { ...y, teams: [...y.teams, { kisiId: id }] }));
-          }}
-        >
-          <option value="">{t("teamsKisiSec")}</option>
-          {v.kisiler
-            .filter((k) => !k.pasif && !disMuhabirMi(k) && !f.teams.some((z) => "kisiId" in z && z.kisiId === k.id))
-            .sort((a, b) => ad(a).localeCompare(ad(b)))
-            .map((k) => (
-              <option key={k.id} value={k.id}>
-                {ad(k)}
-              </option>
-            ))}
-        </select>
-        <div className="satir">
-          <input {...icerikAlani} data-teams-ad value={f.teamAd} aria-label={t("teamsElleAd")} placeholder={t("teamsElleAd")} onChange={(e) => setF({ ...f, teamAd: e.target.value })} />
-          <button type="button" className="dugme dugme-ikincil dugme-kucuk" data-teams-ekle disabled={!f.teamAd.trim()} onClick={() => setF((y) => ({ ...y, teams: [...y.teams, { ad: y.teamAd.trim() }], teamAd: "" }))}>
-            + {t("ekle")}
+      <TeamsAlani teams={f.teams} degistir={(teams) => setF((y) => ({ ...y, teams }))} />
+      <ScheduleAlani acik={f.schedule} program={f.program} degistir={(schedule, program) => setF((y) => ({ ...y, schedule, program }))} />
+      </FormAyrintilari>
+      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
+    </div>
+  );
+}
+
+/*
+ * Gelişmenin Teams'i ve Schedule'u (Next Day gelişme formu ve Weekly kalem formu ortak;
+ * kullanıcı: Weekly'nin gün gündemi Next Day'in başlık altıyla birebir aynı yetenekte olsun).
+ */
+export type Team = { kisiId: string } | { ad: string };
+export function TeamsAlani({ teams, degistir }: { teams: Team[]; degistir: (t: Team[]) => void }) {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const [teamAd, setTeamAd] = useState("");
+  return (
+    // Teams: kayıtlı personelden seçilir; kayıtta yoksa adı elle yazılır.
+    <div className="form" data-gelisme-teams-formu>
+      <span>{t("gelismeTeams")}</span>
+      {teams.map((x, i) => (
+        <div key={i} className="satir">
+          {"ad" in x ? <Icerik>{x.ad}</Icerik> : <span>{ad(kisiBul(v, x.kisiId))}</span>}
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => degistir(teams.filter((_, j) => j !== i))} title={t("cikar")} aria-label={t("cikar")}>
+            ×
           </button>
         </div>
+      ))}
+      <select
+        value=""
+        data-teams-sec
+        aria-label={t("teamsKisiSec")}
+        onChange={(e) => {
+          const id = e.target.value;
+          if (id && !teams.some((z) => "kisiId" in z && z.kisiId === id)) degistir([...teams, { kisiId: id }]);
+        }}
+      >
+        <option value="">{t("teamsKisiSec")}</option>
+        {v.kisiler
+          .filter((k) => !k.pasif && !disMuhabirMi(k) && !teams.some((z) => "kisiId" in z && z.kisiId === k.id))
+          .sort((a, b) => ad(a).localeCompare(ad(b)))
+          .map((k) => (
+            <option key={k.id} value={k.id}>
+              {ad(k)}
+            </option>
+          ))}
+      </select>
+      <div className="satir">
+        <input {...icerikAlani} data-teams-ad value={teamAd} aria-label={t("teamsElleAd")} placeholder={t("teamsElleAd")} onChange={(e) => setTeamAd(e.target.value)} />
+        <button
+          type="button"
+          className="dugme dugme-ikincil dugme-kucuk"
+          data-teams-ekle
+          disabled={!teamAd.trim()}
+          onClick={() => {
+            degistir([...teams, { ad: teamAd.trim() }]);
+            setTeamAd("");
+          }}
+        >
+          + {t("ekle")}
+        </button>
       </div>
+    </div>
+  );
+}
+
+export function ScheduleAlani({ acik, program, degistir }: { acik: boolean; program: ProgramSatiri[]; degistir: (acik: boolean, program: ProgramSatiri[]) => void }) {
+  const { t } = useDil();
+  const satirlar = program.length ? program : [{ saat: "", olay: "" }];
+  const degis = (i: number, alan: "saat" | "olay", deger: string) => degistir(acik, satirlar.map((y, j) => (j === i ? { ...y, [alan]: deger } : y)));
+  return (
+    <>
       <label className="secim">
-        <input type="checkbox" data-schedule-kutusu checked={f.schedule} onChange={(e) => setF({ ...f, schedule: e.target.checked })} />
+        <input type="checkbox" data-schedule-kutusu checked={acik} onChange={(e) => degistir(e.target.checked, satirlar)} />
         {t("schedule")}
       </label>
-      {f.schedule && (
+      {acik && (
         <div className="form" data-program>
-          {f.program.map((x, i) => (
+          {satirlar.map((x, i) => (
             <div key={i} className="satir">
-              <SaatGirdisi value={x.saat} aria-label={t("saat")} onChange={(e) => programDegis(i, "saat", e.target.value)} />
-              <input {...icerikAlani} value={x.olay} aria-label={t("programOlay")} onChange={(e) => programDegis(i, "olay", e.target.value)} />
-              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, program: y.program.length > 1 ? y.program.filter((_, j) => j !== i) : [{ saat: "", olay: "" }] }))} title={t("cikar")} aria-label={t("cikar")}>
+              <SaatGirdisi value={x.saat} aria-label={t("saat")} onChange={(e) => degis(i, "saat", e.target.value)} />
+              <input {...icerikAlani} value={x.olay} aria-label={t("programOlay")} onChange={(e) => degis(i, "olay", e.target.value)} />
+              <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => degistir(acik, satirlar.length > 1 ? satirlar.filter((_, j) => j !== i) : [{ saat: "", olay: "" }])} title={t("cikar")} aria-label={t("cikar")}>
                 ×
               </button>
             </div>
           ))}
-          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setF((y) => ({ ...y, program: [...y.program, { saat: "", olay: "" }] }))}>
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => degistir(acik, [...satirlar, { saat: "", olay: "" }])}>
             + {t("programSatiriEkle")}
           </button>
         </div>
       )}
-      </FormAyrintilari>
-      <FormAlt kapat={kapat} kaydet={kaydet} devre={!f.metin.trim()} />
-    </div>
+    </>
   );
 }
 

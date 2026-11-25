@@ -52,6 +52,7 @@ import { HaftalikTakdirPenceresi } from "./Takdir";
 import { HatirlatmaPenceresi } from "./Cagri";
 import { haftalikTakdirKalemleri, kalemBildirimi } from "../../takdir";
 import { ToplantiNotlari } from "./Toplanti";
+import { DosyaAraclari, DosyaBilgisi, HizliKalem, useDosyaPenceresi } from "./Dosya";
 import { GunCanliNafize, GunEkleDugmeleri, gunCanlilari, gunNafizeleri } from "./CanliNafize";
 
 /**
@@ -593,30 +594,55 @@ const dosyalaraGore = (kalemler: HaftalikKalem[]) => {
  * Strap önde, metin isteğe bağlı; her paket kendi kararını alır, ayrı paket doğar.
  */
 function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: HaftalikPlan; kalemler: HaftalikKalem[]; tarih: string }) {
-  const { t } = useDil();
-  const v = useVeri();
-  const [pkgFormu, setPkgFormu] = useState<string | null>(null);
-  const duzenler = haftalikDuzenler(ben, hafta);
+  // Kalemi olmayan ama muhabiri ya da LIVE'ı girilmiş dosya da görünür (Next Day'in boş başlığı gibi).
+  const gruplar = dosyalaraGore(kalemler);
+  for (const x of hafta.dosyaBilgileri ?? []) if (x.tarih === tarih && !gruplar.some(([b]) => b === x.baslikId)) gruplar.push([x.baslikId, []]);
   return (
     <>
-      {dosyalaraGore(kalemler).map(([baslikId, liste]) => (
-        <div key={baslikId || "-"} className="dosya-grubu" {...hfYer(tarih, baslikId)}>
-          <div className="alan-etiket">{baslikId ? <Icerik>{v.basliklar.find((b) => b.id === baslikId)?.ad}</Icerik> : t("dosyasiz")}</div>
-          {liste.map((k) => (
-            <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
-          ))}
-          {/* Dosyasız grupta da (kullanıcı: başlığın altına metinsiz başka paket eklenemiyordu). */}
-          {duzenler &&
-            (pkgFormu === baslikId ? (
-              <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId || undefined} sonra={liste[liste.length - 1].id} pkg kapat={() => setPkgFormu(null)} />
-            ) : (
-              <div className="ara-ust" data-dosya-pkg-ekle>
-                <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setPkgFormu(baslikId)} />
-              </div>
-            ))}
-        </div>
+      {gruplar.map(([baslikId, liste]) => (
+        <DosyaGrubu key={baslikId || "-"} ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} liste={liste} />
       ))}
     </>
+  );
+}
+
+/*
+ * Günün dosyası Next Day'in başlığı gibi (kullanıcı: birebir aynı yetenek, Weekly'nin tasarımı
+ * kalsın): başlıkta araçlar (gelen öneriler, öneri ve takiplerden al, muhabir, canlı, nafize, son
+ * gelişmeler, başka dosyaya kat), kalemlerin altında dosyanın muhabirleri ve LIVE, hızlı ekleme
+ * satırı ve "Bu dosyaya PKG ekle" (her kalem tek paket: aynı gün ve dosyada yeni kalem).
+ */
+function DosyaGrubu({ ben, hafta, tarih, baslikId, liste }: { ben: Kisi; hafta: HaftalikPlan; tarih: string; baslikId: string; liste: HaftalikKalem[] }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const [form, setForm] = useState<"" | "kalem" | "pkg">("");
+  const duzenler = haftalikDuzenler(ben, hafta);
+  const [ac, pencere] = useDosyaPenceresi(ben, hafta, tarih, baslikId);
+  const son = liste[liste.length - 1]?.id;
+  return (
+    <div className="dosya-grubu" {...hfYer(tarih, baslikId)}>
+      <div className="alan-etiket dosya-basi">
+        {baslikId ? <Icerik>{v.basliklar.find((b) => b.id === baslikId)?.ad}</Icerik> : t("dosyasiz")}
+        {baslikId && duzenler && <DosyaAraclari ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} ac={ac} />}
+      </div>
+      {liste.map((k) => (
+        <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
+      ))}
+      {baslikId && <DosyaBilgisi hafta={hafta} tarih={tarih} baslikId={baslikId} />}
+      {/* Dosyasız grupta da (kullanıcı: başlığın altına metinsiz başka paket eklenemiyordu). */}
+      {duzenler &&
+        (form ? (
+          <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId || undefined} sonra={son} pkg={form === "pkg"} kapat={() => setForm("")} />
+        ) : (
+          <>
+            <HizliKalem ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} sonra={son} kalemAc={(pkg) => setForm(pkg ? "pkg" : "kalem")} ac={ac} />
+            <div className="ara-ust" data-dosya-pkg-ekle>
+              <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setForm("pkg")} />
+            </div>
+          </>
+        ))}
+      {pencere}
+    </div>
   );
 }
 

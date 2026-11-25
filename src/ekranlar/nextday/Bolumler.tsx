@@ -818,7 +818,7 @@ export function TakipBolumu({ plan, duzenler, d, no }: { plan: NextDayPlan; duze
 }
 
 /* Gelişmenin "Schedule"ı: başlık satırı, altında "SAAT / olay"; saatsiz satırda yalnız olay. */
-export function GelismeProgrami({ g }: { g: Gelisme }) {
+export function GelismeProgrami({ g }: { g: Pick<Gelisme, "program"> }) {
   const program = gelismeProgrami(g);
   if (!program.length) return null;
   return (
@@ -837,11 +837,11 @@ export function GelismeProgrami({ g }: { g: Gelisme }) {
 }
 
 /* Teams'teki adlar Arapça yazımıyla; kayıtlı olmayan elle yazıldığı gibi. */
-export const gelismeTeamAdlari = (g: Gelisme, v: Durum): string[] =>
+export const gelismeTeamAdlari = (g: Pick<Gelisme, "teams">, v: Durum): string[] =>
   (g.teams ?? []).map((x) => ("ad" in x ? x.ad : kisiAr(kisiBul(v, x.kisiId)) || "?"));
 
 /* Gelişmenin ekibi muhabirlerin altında: kalın "TEAMS", altında her ad bir satır. */
-export function GelismeTeamSatirlari({ g, v }: { g: Gelisme; v: Durum }) {
+export function GelismeTeamSatirlari({ g, v }: { g: Pick<Gelisme, "teams">; v: Durum }) {
   const adlar = gelismeTeamAdlari(g, v);
   if (!adlar.length) return null;
   return (

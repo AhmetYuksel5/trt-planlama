@@ -2510,6 +2510,22 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     seçilir); kalem formunda Strap yazılınca metin "varsa" (kullanıcı: gün gün planda
     başlığın altına metinsiz başka paket ekleyemiyordu, düğme yalnız dolu dosya grubundaydı).
     Test `testler/haftalik-gun-pkg.cjs`.
+  - Gün gündemi Next Day'in başlık altıyla eş (kullanıcı: Weekly'nin tasarımı kalsın, özellik ve
+    yetenekler birebir aynı olsun): kalemde saat (metnin sonunda kalın "12G"), Schedule, Teams
+    (`nextday/Formlar.tsx → TeamsAlani`, `ScheduleAlani`, iki form ortak), kaynak ve muhabirin o günkü
+    yeri (`HaftalikKalem.saat`, `program`, `teams`, `kaynakTuru`/`kaynakAdi`, `muhabirYerleri`; formda
+    muhabir çipinde yer, öbürleri "Diğer ayrıntılar"da; düzeltmede verilmeyen alan kalır). Günün
+    dosyası Next Day başlığı gibi (`haftalik/Dosya.tsx`): başlığın muhabirleri yer ve muhabire notla,
+    TBC, LIVE (`HaftalikPlan.dosyaBilgileri`, `HaftaDosyasi`, gün + dosya başına; `eylemler.ts →
+    haftaDosyasiDegistir`, `haftaDosyaMuhabiri`; dosyanın kalemi Next Day'e geçtiyse kilitli); dosya
+    araçları (`DosyaAraclari`; plan ekranında dosya adının yanında, belgede şeritte): bu dosyaya gelen
+    öneriler, öneri ve takiplerden al (seçilen öneri o gün ve dosyayla "Gündeme ekle"), muhabir,
+    canlı ve nafize (dosya seçili), son gelişmeler (kalem olarak, kaynak medya), başka dosyaya kat
+    (`haftaDosyaKat`: kalemler, canlı ve nafizeler, muhabirler; geçmiş kayıt kalır); dosyanın altında
+    hızlı ekleme satırı (`HizliKalem`: "YER / metin" + Enter, "/" menüsü). Kalemsiz ama bilgisi olan
+    dosya da görünür. Kesinleşince (`haftaliktanAktar`) dosyanın muhabirleri, TBC ve LIVE başlığa,
+    kalemin muhabiri yeriyle başlığa, saat, Schedule, Teams ve kaynak gelişmeye geçer. Test
+    `testler/haftalik-esit.cjs`.
   - Günün canlı yayını ve nafizesi (kullanıcı: haftadan gün gündemine canlı yayın ve nafize
     eklensin; `haftalik/CanliNafize.tsx`, `HaftalikPlan.canlilar`/`nafizeler`, `HaftaCanli`,
     `HaftaNafize`): günün "Kalem ekle"sinin yanında "Canlı yayın / etkinlik ekle" (konu, yer, saat
