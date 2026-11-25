@@ -739,7 +739,9 @@ export interface GeriBildirimAyari {
 
 export interface Mesaj {
   id: string;
-  oneriId: string;
+  /** Konu: öneri (pakete dönünce de aynı konuşma) ya da önerisiz paket (`paketId`); mesajlasma.ts. */
+  oneriId?: string;
+  paketId?: string;
   kisiId: string;
   metin: string;
   zaman: string;
@@ -2009,6 +2011,8 @@ export interface Durum {
   okundu: Record<string, string>;
   /** Kişinin posta okundu bilgisi (kişi → taban, grup, iplik başına son bakış; postaOkuma.ts). */
   postaOkunan?: Record<string, import("./postaOkuma").PostaOkuma>;
+  /** Kişi başına yazışmalardaki son bakış (mesajlasma.ts → MesajOkuma). */
+  mesajOkunan?: Record<string, import("./mesajlasma").MesajOkuma>;
   /** Muhasebe: tanımlar, anlaşmalar, aylık kapanışlar. Gerçek kipte yalnız muhasebe ve yönetim okur (firestore.rules). */
   muhasebeTanimlari?: MuhasebeTanimi[];
   muhasebeAnlasmalari?: MuhasebeAnlasmasi[];

@@ -4589,3 +4589,29 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .imla-oneri-satiri, .imla-hepsi { display: inline-flex; align-items: center; gap: 6px; min-block-size: 32px; }
 .imla-oneri-satiri del { color: var(--uyari); }
 .imla-oneri-satiri b { color: var(--iyi); }
+
+/* Mesajlar (ekranlar/Mesajlar.tsx): masaüstünde liste ve konuşma yan yana, telefonda tek ekran. */
+.mesaj-duzen { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; overflow-wrap: anywhere; }
+.mesaj-duzen > * { min-inline-size: 0; }
+@media (min-width: 961px) {
+  .mesaj-duzen.secili { grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); align-items: start; }
+  .mesaj-konusma-bas [data-geri-bag] { display: none; }
+}
+@media (max-width: 960px) {
+  .mesaj-duzen.secili .mesaj-liste { display: none; }
+}
+.mesaj-konulari { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.mesaj-konu { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 12px; border-radius: 8px; color: inherit; text-decoration: none; border: 1px solid transparent; }
+.mesaj-konu:hover { background: var(--yuzey-2); }
+.mesaj-konu.secili { border-color: var(--vurgu); background: var(--yuzey-2); }
+.mesaj-konu .mk-ust { display: flex; gap: 8px; align-items: baseline; }
+.mesaj-konu .mk-ust b { flex: 1; min-inline-size: 0; font-weight: 500; }
+.mesaj-konu.okunmamis .mk-ust b { font-weight: 700; }
+.mesaj-konu time { color: var(--sonuk); font-size: 0.8125rem; white-space: nowrap; }
+.mesaj-konu .mk-son { display: flex; gap: 8px; align-items: center; color: var(--sonuk); }
+.mesaj-konu .mk-son > span { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesaj-konu.okunmamis .mk-son > span { color: inherit; }
+.mesaj-konusma-bas { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-block-end: 12px; }
+.mesaj-konusma-bas > b { flex: 1; min-inline-size: 0; }
+.mesaj-rozeti { position: relative; }
+.mesaj-rozeti.okunmamis { color: var(--vurgu); border-color: var(--vurgu); }

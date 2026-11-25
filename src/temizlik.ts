@@ -68,7 +68,7 @@ export const temizle = (d: Durum, s: TemizlikSecimi): { yeni: Durum; sayilar: Te
   for (const g of d.gorevlendirmeler) if (g.ozelId && ozel.has(g.ozelId)) gorevler.add(g.id);
   const gelismeler = new Set(d.gelismeler.filter((g) => planlar.has(g.planId) || (g.oneriId && oneriler.has(g.oneriId))).map((g) => g.id));
   const canlilar = new Set(d.canliYayinlar.filter((c) => (planlar.has(c.planId) && !c.ozelId) || (c.oneriId && oneriler.has(c.oneriId)) || (c.ozelId && ozel.has(c.ozelId))).map((c) => c.id));
-  const mesajlar = new Set(d.mesajlar.filter((m) => oneriler.has(m.oneriId)).map((m) => m.id));
+  const mesajlar = new Set(d.mesajlar.filter((m) => (m.oneriId && oneriler.has(m.oneriId)) || (!m.oneriId && m.paketId && paketler.has(m.paketId))).map((m) => m.id));
   const kalemler = new Set(d.haftalik.flatMap((h) => h.kalemler.filter((k) => haftalik.has(h.id) || (k.oneriId && oneriler.has(k.oneriId))).map((k) => k.id)));
 
   const silinen = new Set([...oneriler, ...planlar, ...paketler, ...haftalik, ...aylik, ...ozel, ...cagrilar, ...yanitlar, ...takipler, ...faaliyetler, ...gorevler, ...gelismeler, ...canlilar, ...mesajlar, ...kalemler]);

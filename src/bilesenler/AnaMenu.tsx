@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Plane, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
+import { MessagesSquare, Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Plane, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
@@ -17,6 +17,7 @@ import { dilDenetmeniMi, kisitliKisi, masaBirimi, sadeEkranMi, dilParcaSirasi, d
 import { bugunkuYapilacakSayisi } from "../yapilacaklar";
 import { GERCEK } from "../kip";
 import { okunmamisSayisi } from "../postaOkuma";
+import { okunmamisMesajSayisi } from "../mesajlasma";
 import Logo from "./Logo";
 
 /**
@@ -116,6 +117,8 @@ export const MENU: Grup[] = [
       { sayfa: "yapilacaklar", ad: "mYapilacaklar", kisa: "kaYapilacaklar", ikon: ListTodo, say: (d, ben) => bugunkuYapilacakSayisi(d, ben) },
       // Gelen posta sohbeti: planlama kutusuna düşen postalar (yetki.ts → SAYFA_IZNI.posta).
       { sayfa: "posta", ad: "mPosta", kisa: "kaPosta", ikon: Mail, say: (d, ben) => okunmamisSayisi(d, ben.id) },
+      // İş yazışmaları (Posta'dan ayrı, kullanıcı): sayı okunmamış mesaj.
+      { sayfa: "mesajlar", ad: "mMesajlar", kisa: "kaMesajlar", ikon: MessagesSquare, say: (d, ben) => okunmamisMesajSayisi(d, ben, yapabilir(ben, "oneriDegerlendir")) },
       {
         sayfa: "takipler",
         ad: "mMuhabirTakipleri",
@@ -195,7 +198,7 @@ export const muhabirMenusu = (ben: Kisi): Grup[] => {
   const ana = bul("ana");
   return [
     { ad: undefined, maddeler: [ana && { ...ana, say: undefined }, bul("oneriler/yeni")] },
-    { ad: "mgIslerim" as Anahtar, maddeler: [bul("yapilacaklar"), bul("oneriler"), bul("takipler"), bul("saha")] },
+    { ad: "mgIslerim" as Anahtar, maddeler: [bul("yapilacaklar"), bul("oneriler"), bul("takipler"), bul("mesajlar"), bul("saha")] },
     { ad: "mgHaberlerimGrubu" as Anahtar, maddeler: [bul("paketler")] },
   ]
     .map((g) => ({ ...g, maddeler: g.maddeler.filter((m): m is Madde => !!m) }))
@@ -231,7 +234,7 @@ export const masaMenusu = (ben: Kisi, birim: MasaBirimi): Grup[] => {
       (ben.rol === "yonetici" || birim === "ekonomi") && tablodan("haftalik"),
       tablodan("takvim"),
     ]),
-    grup("mgIletisim", [tablodan("posta"), tablodan("izinler")]),
+    grup("mgIletisim", [tablodan("mesajlar"), tablodan("posta"), tablodan("izinler")]),
   ].filter((g) => g.maddeler.length > 0);
 };
 
@@ -257,7 +260,7 @@ export const planlamaMenusu = (ben: Kisi): Grup[] => {
   const gruplar = [
     grup(undefined, [tablodan("ana"), yonetici && MENU[0].maddeler.find((m) => m.sayfa === "panel")]),
     grup("mgYayinPlanlari", [tablodan("nextday"), tablodan("haftalik"), tablodan("aylik"), tablodan("ozel"), tablodan("takvim")]),
-    grup("mgGelenler", [tablodan("oneriler", { say: k((x) => x.oneri) }), tablodan("takipler"), tablodan("posta", { say: k((x) => x.posta) })]),
+    grup("mgGelenler", [tablodan("oneriler", { say: k((x) => x.oneri) }), tablodan("takipler"), tablodan("mesajlar", { say: (d, b) => okunmamisMesajSayisi(d, b, yapabilir(b, "oneriDegerlendir")) }), tablodan("posta", { say: k((x) => x.posta) })]),
     grup("mgPaketlerGrubu", [
       tablodan("paketler", { say: k((x) => x.onay + x.sartli + x.gorevTalebi) }),
       tablodan("stok", { say: k((x) => x.uretim) }),

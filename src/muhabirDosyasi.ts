@@ -81,6 +81,6 @@ export function muhabirDosyasi(d: Durum, kisiId: string, b: string = bugun()): M
     .sort((x, y) => x.baslangic.localeCompare(y.baslangic))[0];
   const oneriIdleri = new Set(d.oneriler.filter((o) => o.muhabirId === kisiId).map((o) => o.id));
   let sonTemas: string | undefined;
-  for (const m of d.mesajlar) if (oneriIdleri.has(m.oneriId) && (!sonTemas || m.zaman > sonTemas)) sonTemas = m.zaman;
+  for (const m of d.mesajlar) if (((m.oneriId && oneriIdleri.has(m.oneriId)) || (!!m.paketId && d.paketler.some((p) => p.id === m.paketId && p.muhabirId === kisiId))) && (!sonTemas || m.zaman > sonTemas)) sonTemas = m.zaman;
   return { bizde, onda, planda, takipler, izin, sonTemas };
 }

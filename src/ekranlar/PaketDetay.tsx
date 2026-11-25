@@ -27,6 +27,8 @@ import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
+import { konuKatilimcisi, konuMesajlari, paketKonusu } from "../mesajlasma";
+import { IsYazismasi } from "./oneri/Yazisma";
 import { BitmisPaketSeridi } from "../bilesenler/BitmisPaket";
 import { bitmisMi, surenPaketGunu } from "../bitmisPaket";
 
@@ -103,6 +105,10 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
       */}
       <YoneticiKarti ben={ben} paket={paket} />
       <PaketMetniKarti paket={paket} />
+      {/* İşin yazışması paketin yanında da (kullanıcı: mesaj yalnız önerinin penceresinde katlıydı, bulunmuyordu). */}
+      {(konuKatilimcisi(ben, v, paketKonusu(paket), yapabilir(ben, "oneriDegerlendir")) || konuMesajlari(v, paketKonusu(paket)).length > 0) && (
+        <IsYazismasi ben={ben} konu={paketKonusu(paket)} />
+      )}
       <MasrafKarti ben={ben} paket={paket} />
       <details className="kart katlanir" data-paket-gecmis>
         <summary className="kart-bas">

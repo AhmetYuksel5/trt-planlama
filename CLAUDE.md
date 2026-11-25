@@ -2136,6 +2136,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `eylemler.ts → oneriAsamayaDon` plandaki kayıtları plandan çıkarmayla
     aynı kuralla kaldırır (`plandanCikarilmis`, `oneriPlandanCikar` da onu
     kullanıyor; üretime girmiş paket varsa durur), ret gerekçesini siler;
+    plana girmeden görevlendirilmiş önerinin plansız görev paketini de geri
+    alır (kullanıcı: Programlar için görevlendirdiği öneride aşamayı geri aldı,
+    "Programlar · Görevlendirildi" kalıyordu, ⋯'de "Muhabiri görevlendir"
+    çıkmıyordu: paket planda olmadığı için dokunulmuyor, canlı kaldığından öneri
+    görevli sayılıyordu): başlamamış paket iptal, muhabire ve masaya
+    `paketIptal` (`gorevPaketiniIptal`), üretime ya da sonuca girmişse durur;
+    bu düzeltmeden önce geri alınıp paketi canlı kalanları sistemin açılış işi
+    geri alır (`geriAlinanGorevleriTemizle`; başlamışsa öneri "plana
+    eklendi"ye döner). Test `testler/gorev-geri-al.cjs`;
     tek hareket `oneriAsamayaDondu` (`veri.sonuc` hedef), muhabire bildirim.
   - "Başka plana da ekle": öneri ikinci plana girecekse çoğaltılır
     (`oneriKopyala`): kopya değerlendirmeden başlar, `kopyaKaynagi` asılı
@@ -2347,12 +2356,37 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`oneriYenidenGonder`) aynı öneriyi günceller ve "yeni"ye döndürür;
     önceki hal hareketin verisinde. Kurallar `yetki.ts →
     oneriDuzeltmeyeGider`, `oneriYenidenGonderebilir`.
-  - Önerinin yazışması (`oneri/Yazisma.tsx → OneriYazismasi`): muhabir ile
-    Planlama arasında, önerinin ayrıntı sayfasında; her önerinin
-    yazışması ayrı. Mesaj öneriden ayrı kayıt (`Durum.mesajlar`, gerçek
-    kipte `mesajlar` koleksiyonu): iki taraf aynı anda yazınca öneri
-    belgesi ezilmesin. Yazabilen `yetki.ts → oneriYazisabilir`; bildirim
-    karşı tarafa (`oneriMesaji` hareketi). Geri almaya girmez.
+  - İşin yazışması ve Mesajlar (kullanıcı: muhabir görevlendirilen paketi için
+    yazdı, Programlar'a bildirim gitti ama mesaj bulunamadı; yazışma yalnız
+    önerinin penceresinde katlıydı; Posta'ya karışmasın; kurallar
+    `mesajlasma.ts`, kart `oneri/Yazisma.tsx → IsYazismasi`): konu öneri, öneri
+    pakete dönünce aynı konuşma sürer; önerisiz paketin konusu paket
+    (`Mesaj.oneriId` ya da `paketId`, anahtar `konuAnahtari`: "o-…"/"p-…").
+    Mesaj öneriden ayrı kayıt (`Durum.mesajlar`, gerçek kipte `mesajlar`
+    koleksiyonu; erişim listesi önerinin ya da paketin muhabiri). Katılan
+    (`konuKatilimcisi`): muhabir, öneriyi giren ya da talimatı veren, Planlama
+    (öneri değerlendiren) ve tam yönetici, paket masanın takibindeyse ya da
+    masa kolundaysa o masa (`konuMasasi` → `paketinMasasi`). Eylem
+    `eylemler.ts → mesajGonder` (hareket `oneriMesaji`, `oneriMesajiGonder`
+    sarmalı): bildirim öbür taraflara (`mesajAlicilari`; muhabir yazınca
+    Planlama ve masa birim olarak, `veri.sahip` virgülle, `yetki.ts →
+    bildirimMi`; öbürü yazınca muhabire ve yazanın birimi olmayan Planlama/masaya),
+    bildirim konuşmanın kendisine götürür (`#/mesajlar/<konu>`,
+    `Hareket.tsx → useHareketKonusu`). Kart önerinin penceresinde ve paket
+    sayfasında (katılımcıya ya da mesajı varsa). Mesajlar sayfası
+    (`ekranlar/Mesajlar.tsx`, `#/mesajlar/<konu>`, `SAYFA_IZNI.mesajlar` herkes):
+    kişinin katıldığı konuşmalar en yeni mesaj önce, okunmamış kalın ve sayılı,
+    Hepsi / Okunmamış (`useAdimDurumu`), sağda konuşma ve "İşi aç"
+    (`konuSayfasi`); telefonda tek ekran. Menüde "Mesajlar · okunmamış"
+    (Planlama'da Gelenler, masada İletişim, muhabirde İşlerim). Okunmamış kişiye
+    bağlı harita `Durum.mesajOkunan` (`HARITA_ALANLARI`, kuralda `kendiAyari`,
+    kısıtlı kişi kendi belgesini dinler; taban ilk kayıtta dün): konuşma ekranda
+    göründüğünde okunmuş sayılır (`IntersectionObserver`; katlı bölümdeyken değil,
+    `eylemler.ts → mesajOkundu`, izlemede ve eşitlenmeden yazılmaz), yazan kendi
+    konuşmasını okumuş sayılır. İş kartlarında mesaj simgesi
+    (`bilesenler/MesajRozeti.tsx`: masanın İçerikler'i, Stok, muhabirin
+    Yapılacaklar'ı; okunmamış sayısı vurgulu, basınca konuşma). Geri almaya
+    girmez. Test `testler/mesajlar.cjs`.
   - Muhabire haber önerisi (`muhabireOneriGonder`): Planlama (onun "gibi"
     çalışan birim de) ve tam yönetici (`yetki.ts → muhabireOneriGonderebilir`;
     Ayarlar'daki birim seçimi kalktı, kullanıcı: havada kalıyordu) öneriler sayfasından

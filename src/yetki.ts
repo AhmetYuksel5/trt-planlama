@@ -718,7 +718,9 @@ export const bildirimMi = (k: Kisi, h: Hareket, d: Durum): boolean => {
   if (kime.includes(k.id)) return true;
   if (k.birim === "muhabir") return !kime.length && muhabirBildirimi(k, h, d);
   // "Gibi" çalışan birim (örnek aldığı yerleşik birim) ve kademedeki müdür de: işi yapabiliyor ama birime düşen bildirimi almıyordu.
-  return h.veri?.sahip === k.birim || (!!h.veri?.sahip && h.veri.sahip === izinBirimi(k.birim));
+  // Birden çok birim virgülle (yazışma: Planlama ve masa).
+  const sahipler = h.veri?.sahip ? h.veri.sahip.split(",") : [];
+  return sahipler.includes(k.birim) || sahipler.includes(izinBirimi(k.birim));
 };
 
 /* Muhabirin önerisinde ona dönen karar ve yanıtlar; ara işler (paket önerisi, plan) değil. */
@@ -977,6 +979,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   gorevler: ["planlama", "yonetim"],
   // Gelen posta sohbeti: dış muhabirler hariç haber merkezi (route postaGorebilir soruyor).
   posta: MASA,
+  // İş yazışmaları (mesajlasma.ts): herkes kendi katıldığı konuşmaları görür.
+  mesajlar: HERKES,
   basliklar: ["planlama", "newsdesk", "yonetim"],
   paketler: HERKES,
   feature: HABER_MERKEZI,

@@ -116,7 +116,7 @@ export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
   else if (alan === "gorevlendirmeler" || alan === "yanitlar") l = [o.kisiId];
   // Notta anma: anılan ve yazan (muhabir planlamacıyı da anabiliyor).
   else if (alan === "bahsetmeler") l = [o.kisiId, o.yazanId];
-  else if (alan === "mesajlar") l = [oneriMuhabiri(o.oneriId)];
+  else if (alan === "mesajlar") l = o.oneriId ? [oneriMuhabiri(o.oneriId)] : paketMuhabirleri(o.paketId);
   else if (alan === "cagrilar") l = [...(o.bcc ?? [])];
   else if (alan === "hareketler") {
     const v = o.veri ?? {};
@@ -137,7 +137,7 @@ export const erisimListesi = (alan: string, oge: Oge, d: Durum): string[] => {
   return [...new Set(l.filter((x): x is string => !!x))].sort();
 };
 
-export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari", "gundemSepetleri", "postaOkunan"] as const satisfies readonly (keyof Durum)[];
+export const HARITA_ALANLARI = ["okundu", "anaSayfa", "oneriGorunumu", "ortamlar", "kisayollar", "yapiTaslaklari", "gundemSepetleri", "postaOkunan", "mesajOkunan"] as const satisfies readonly (keyof Durum)[];
 export type HaritaAlani = (typeof HARITA_ALANLARI)[number];
 
 /** Tekil değerler (paket kodu sayacı) tek belgede. */

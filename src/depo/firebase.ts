@@ -588,7 +588,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
     );
     belgeDinle("kisiler", uid, () => diziKur("kisiler"));
     // Kişiye bağlı ayarlar: yalnız kendi belgesi; ana sayfa düzeni birimin adıyla anahtarlı.
-    for (const alan of ["okundu", "oneriGorunumu", "ortamlar", "kisayollar"]) {
+    for (const alan of ["okundu", "oneriGorunumu", "ortamlar", "kisayollar", "mesajOkunan"]) {
       onbellek[alan] = new Map();
       belgeDinle(alan, uid, () => haritaKur(alan));
     }

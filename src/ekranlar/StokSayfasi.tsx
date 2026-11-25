@@ -1,4 +1,5 @@
 import { Archive, CalendarRange, ChevronLeft, ChevronRight, CirclePlay, Clapperboard, Layers, Lightbulb, Plus, Search, Tv, X } from "lucide-react";
+import { MesajRozeti } from "../bilesenler/MesajRozeti";
 import { useState, type ReactNode } from "react";
 import { asamaListesi, geciktiMi, gorunenSahip, stokDurumu } from "../akis";
 import { sozcuklerUyar } from "../arama";
@@ -355,6 +356,7 @@ export function StokKarti({ ben, p, ek, yayinsiz, sablonlar }: { ben: Kisi; p: P
             <KisiIletisim ben={ben} kisi={kisi} konu={p.baslik} sablonlar={sablonlar} />
           </span>
         )}
+        {acik && <MesajRozeti ben={ben} paket={p} />}
         <span className="bosluk-esnek" />
         {ek}
       </div>

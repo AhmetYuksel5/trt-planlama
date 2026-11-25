@@ -1,4 +1,5 @@
 import { Archive, CalendarRange, Landmark, Trophy, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
+import { MesajRozeti } from "../../bilesenler/MesajRozeti";
 import { UretimeAlDugmesi } from "../../bilesenler/UretimBalonu";
 import { useState, type ReactNode } from "react";
 import { GorevlendirDugmesi } from "../../bilesenler/PaketGorevi";
@@ -309,6 +310,7 @@ export function IcerikKarti({ ben, birim, p, aktar, teslim }: { ben: Kisi; birim
             <KisiIletisim ben={ben} kisi={muhabir} konu={p.baslik} />
           </span>
         )}
+        {!arsiv && <MesajRozeti ben={ben} paket={p} />}
         <span className="bosluk-esnek" />
         {prg ? (
           <Rozet ton="iyi">

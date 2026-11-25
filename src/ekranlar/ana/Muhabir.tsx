@@ -1,4 +1,5 @@
 import { AnildigimNotlar } from "../../bilesenler/Anma";
+import { MesajRozeti } from "../../bilesenler/MesajRozeti";
 import { BitmisPaketSeridi } from "../../bilesenler/BitmisPaket";
 import { PaketSonucDugmeleri } from "../../bilesenler/PaketSonucu";
 import { ArrowRight, Binoculars, CheckCircle, Lightbulb, ListTodo, MapPinned, Newspaper } from "lucide-react";
@@ -499,6 +500,7 @@ function YapilacakSatiri({ ben, y }: { ben: Kisi; y: Yapilacak }) {
       </div>
       {p.oncelikli && <OncelikRozeti />}
       {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
+      <MesajRozeti ben={ben} paket={p} />
       {y.sirasi ? <SiradakiAdim ben={ben} paketId={p.id} /> : <a className="dugme dugme-kucuk dugme-ikincil" href={`#/paketler/${p.id}`}>{t("ykIzle")}</a>}
     </li>
   );

@@ -32,6 +32,7 @@ import NextDayListe from "./ekranlar/nextday/Liste";
 import PlanEkrani from "./ekranlar/nextday/Plan";
 import { Cagri, Yanitlar } from "./ekranlar/oneri/Eposta";
 import { Posta } from "./ekranlar/posta/Posta";
+import { Mesajlar } from "./ekranlar/Mesajlar";
 import {
   OneriDetay,
   OnerilerListe,
@@ -73,7 +74,7 @@ import {
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "./ekranlar/program/ProgramMasasi";
 import { MASA_YOLU, PROGRAM_BOLUMLERI, type MasaBirimi, type ProgramBolumu } from "./programMasasi";
-import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
+import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
 import { izlemede } from "./izleme";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
 import { otoHataMetni } from "./ekranlar/posta/OtoCagri";
@@ -168,7 +169,7 @@ export default function App() {
        * kayıtsız açılınca sorun yoktu). Bozulan iş atlanıyor, öbürleri ve
        * sayfa çalışıyor; hata konsolda.
        */
-      for (const is of [ozelNafizeleriCevir, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelCanlilariniBagla, ozelYayinlananlariIsaretle, planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, demoStaffingPostasi, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir]) {
+      for (const is of [ozelNafizeleriCevir, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelCanlilariniBagla, ozelYayinlananlariIsaretle, planCiftleriniTopla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, yarinPlaniniAc, haftalikAktarimlariniTamamla, eskiOnerileriCevir, eskiTakipleriSil, onerileriPlanlaEsitle, muhabirUnvanlariniEsitle, dilDenetmenleriniTasi, yonetimiAgacaTasi, demoTakvimAdaylari, demoStaffingPostasi, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle]) {
         if (!kisiTasir && (is === dilDenetmenleriniTasi || is === yonetimiAgacaTasi)) continue;
         try {
           is();
@@ -338,6 +339,9 @@ export default function App() {
         break;
       case "hareketler":
         icerik = <Hareketler ben={ben} />;
+        break;
+      case "mesajlar":
+        icerik = <Mesajlar ben={ben} secili={yol.id} />;
         break;
       case "posta":
         icerik = postaGorebilir(ben) ? <Posta ben={ben} /> : <Yetkisiz />;

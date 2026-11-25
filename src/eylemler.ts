@@ -4,6 +4,7 @@ import { adiylaBaslik } from "./baslikSecimi";
 import { kayipBasliklar, kayipMuhabirleri } from "./kayipKayitlar";
 import { adimAdi, adimTuru, parcaliMi, parcalarHazir, akisDamgasi, durakSahibi, geriHedefi, kolSahibi, ilkAdim, paketSahibi, sonrakiAdim, hazirSecilebilir, baskaPlandaHazir, type UretimAdimi } from "./akis";
 import { ORNEK_PLANLAMA_ADRESI, bosYanitMi, cagriKonulari, cagriyiBul, etiketBul, gondereniBul, postaKonuCekirdegi, yanittanOneriTaslagi, yeniMetin, type GelenEposta } from "./eposta";
+import { konuAnahtari, konuBasligi, konuKatilimcisi, mesajAlicilari, type MesajKonusu } from "./mesajlasma";
 import { imlaKimligi, sozcukDegistir, type ImlaOnerisi } from "./imla";
 import { gundemde, isDogurur, paketDogurur, haftaSonu, kalemAdi, kalemKilitli, kararBekleyenler, nextDayeGider, onIncelemeyeGidebilir, teslimGunuSorulur, topluKabulAdaylari } from "./haftalik";
 import { GERCEK, sunucuyaEsitMi } from "./kip";
@@ -151,7 +152,6 @@ import {
   mudahaleEdebilir,
   muhabireOneriGonderebilir,
   oneriDuzeltmeyeGider,
-  oneriYazisabilir,
   arsivdenCikarabilir,
   oneriSatiriEkleyebilir,
   oneriBirlestirebilir,
@@ -218,7 +218,7 @@ import {
   postaGorebilir,
   teslimGunuBelirleyebilir,
 } from "./yetki";
-import { SORU_MASALARI, acikSoru, kabulSoru } from "./masaSorusu";
+import { SORU_MASALARI, SORULABILIR_DURUM, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
 import { ADIM_ROLU, hareketlerdenKunye, kunyeYaz } from "./kunye";
 import { URETIM_ASAMALARI, VARSAYILAN_URETIM_SABLONLARI, gecenAsamalar, gorevVerilmis, ilkDurak, yeniDurak, gfxBekliyor, parcaDilSonrasi, parcaIlkAsama, type UretimParcalari, type UretimSablonu, type UretimYolHaritasi, type UretimYolu } from "./uretim";
@@ -796,12 +796,31 @@ const oneriBaglariniTazele = (d: Durum, oneriIdleri: (string | undefined)[]): Du
  * plan ya da hafta bağı da döner.
  */
 // `geriAlmaYetkisi`: aşamayı geri alma yetkisi olan (tam yönetici ya da yetki verdiği) planı düzenleyemese de geri alır.
+/* Plansız görev paketini geri alır: iptal, iz tarihçede; muhabire ve masaya haber. */
+const gorevPaketiniIptal = (d: Durum, kisiId: string, p: Paket): Durum => {
+  const { isaret: _i, ...kalan } = p;
+  d = { ...d, paketler: d.paketler.map((x) => (x.id === p.id ? { ...kalan, durum: "iptal" as const, adim: undefined, guncelleme: simdi() } : x)) };
+  return hareketYaz(d, { kisiId, tip: "paketIptal", paketId: p.id, veri: { ...(p.muhabirId && { kime: p.muhabirId }), ...(p.masaTakibi && { sahip: p.masaTakibi }) } });
+};
+
 const plandanCikarilmis = (
   d: Durum,
   ben: Kisi,
   o: Oneri,
   geriAlmaYetkisi = false,
 ): { d: Durum; bag: Pick<Hareket, "planId" | "haftaId" | "veri"> | null } | "yetkisiz" | "paketIlerledi" => {
+  /*
+   * Plana girmeden görevlendirilmiş öneri (doğrudan görev ya da masa için görev):
+   * planda yeri yok ama görev paketi var. Geri alınınca paket de geri alınır
+   * (kullanıcı: geri aldım, "Programlar · Görevlendirildi" kalktı mı, yeniden
+   * görevlendiremiyorum; paket canlı kaldığı için öneri görevli sayılıyordu).
+   * Başlamamış paket iptal, muhabire ve masaya haber; üretime ya da sonuca girmişse durur.
+   */
+  const gorevli = d.paketler.find((p) => p.oneriId === o.id && !p.planId && !!p.gorev && p.durum !== "iptal");
+  if (gorevli) {
+    if (gorevli.isaret || !paketPlandanKaldirilir(gorevli)) return "paketIlerledi";
+    d = gorevPaketiniIptal(d, ben.id, gorevli);
+  }
   const yer = oneriYeri(d, o);
   if (!yer) return { d, bag: null };
   // Kesinleşmiş haftadan Next Day'e geçmiş öneri planından çıkıyor; haftanın kalemi kayıt olarak kalıyor.
@@ -3204,6 +3223,30 @@ export const icerikProgramaAktar = (ben: Kisi, paketId: string, programId: strin
  * "Uygundur" dediği öneriden doğan plansız görev masanın takibine geçer,
  * stoktan çıkar. Sistemin açılış işi; ikinci kez değişiklik yok.
  */
+/*
+ * Geri alma görev paketini almadan önce (bu düzeltmeden önce) aşaması geri
+ * alınmış öneri: karar aşamasında ama plansız görev paketi canlı; öneri
+ * görevli sayılıyor, yeniden görevlendirilemiyordu. Sistemin açılış işi:
+ * önerinin son hareketi aşamayı geri almaksa ve paket başlamamışsa paketi geri
+ * alır; başlamışsa öneriyi paketine göre "plana eklendi"ye döndürür.
+ */
+export const geriAlinanGorevleriTemizle = (): number => {
+  let d = getir();
+  let n = 0;
+  for (const o of d.oneriler) {
+    if (!SORULABILIR_DURUM.includes(o.durum)) continue;
+    const p = d.paketler.find((x) => x.oneriId === o.id && !x.planId && !!x.gorev && x.durum !== "iptal");
+    if (!p) continue;
+    const son = [...d.hareketler].reverse().find((h) => h.oneriId === o.id);
+    if (son?.tip !== "oneriAsamayaDondu") continue;
+    if (!p.isaret && paketPlandanKaldirilir(p)) d = gorevPaketiniIptal(d, SISTEM, p);
+    else d = { ...d, oneriler: d.oneriler.map((x) => (x.id === o.id ? { ...x, durum: "planaEklendi" as const } : x)) };
+    n++;
+  }
+  if (n) kaydet(d);
+  return n;
+};
+
 export const masaGorevleriniTakibeAl = (): number => {
   const d = getir();
   const hedef = new Map<string, BirimId>();
@@ -5159,6 +5202,7 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
         ortamlar: anahtarlariAt(d.ortamlar, kendi),
         kisayollar: anahtarlariAt(d.kisayollar, kendi),
         postaOkunan: anahtarlariAt(d.postaOkunan, kendi),
+        mesajOkunan: anahtarlariAt(d.mesajOkunan, kendi),
       },
       { kisiId: ben.id, tip: "kisiSilindi", veri: { ad } },
     ),
@@ -6243,22 +6287,37 @@ export const oneriArsivdenCikar = (ben: Kisi, id: string) => {
 };
 
 /**
- * Önerinin yazışmasına yazmak. Bildirim karşı tarafa: muhabir yazdıysa
- * Planlama'ya (ve Planlama dışından gönderen kişiye), Planlama yazdıysa
- * muhabire.
+ * Yazışmaya yazmak (mesajlasma.ts): konu öneri ya da önerisiz paket. Yazan
+ * işin katılımcısı olmalı; bildirim öbür taraflara (`mesajAlicilari`), konusu
+ * Mesajlar'da o konuşma (Hareket.tsx → useHareketKonusu).
  */
-export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => {
+export const mesajGonder = (ben: Kisi, konu: MesajKonusu, metin: string) => {
   let d = getir();
-  const o = oneriBul(d, oneriId);
-  if (!o || !oneriYazisabilir(ben, o) || !metin.trim()) return false;
-  const mesaj: Mesaj = { id: kimlik("ms"), oneriId, kisiId: ben.id, metin: metin.trim(), zaman: simdi() };
+  if (!metin.trim() || !konuKatilimcisi(ben, d, konu, yapabilir(ben, "oneriDegerlendir"))) return false;
+  const mesaj: Mesaj = { id: kimlik("ms"), ...(konu.oneriId ? { oneriId: konu.oneriId } : { paketId: konu.paketId }), kisiId: ben.id, metin: metin.trim(), zaman: simdi() };
   d = { ...d, mesajlar: [...d.mesajlar, mesaj] };
-  d = bahset(d, ben, metin, { yol: `#/oneriler/${oneriId}`, baslik: o.paketBasligi || o.haberBasligi });
-  const muhabirYazdi = ben.id === o.muhabirId;
-  const disaridan = o.giren && kisiBul(d, o.giren)?.birim !== "planlama" ? o.giren : "";
-  const veri: Record<string, string> = muhabirYazdi ? { sahip: "planlama", ...(disaridan && { kime: disaridan }) } : { kime: o.muhabirId! };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMesaji", oneriId, veri }));
+  d = bahset(d, ben, metin, { yol: `#/mesajlar/${konuAnahtari(konu)}`, baslik: konuBasligi(d, konu) });
+  const veri = mesajAlicilari(ben, d, konu);
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMesaji", ...(konu.oneriId ? { oneriId: konu.oneriId } : { paketId: konu.paketId }), veri }));
+  // Yazan kendi konuşmasını okumuş sayılır.
+  mesajOkundu(ben, konuAnahtari(konu), mesaj.zaman);
   return true;
+};
+
+export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => mesajGonder(ben, { oneriId }, metin);
+
+/*
+ * Yazışmanın okunduğu an (Mesajlar sayfası, paket kartı): sessiz yazış, izlemede
+ * ve eşitlenmeden yazılmaz (postaOkumaYaz gibi). İlk kayıtta taban dün: eski
+ * mesajlar birden okunmamış görünmesin.
+ */
+export const mesajOkundu = (ben: Kisi, anahtar: string, zaman: string) => {
+  if (izlemede() || (GERCEK && !sunucuyaEsitMi())) return;
+  const d = getir();
+  const eski = d.mesajOkunan?.[ben.id];
+  if (eski && (eski.k[anahtar] ?? eski.taban) >= zaman) return;
+  const taban = eski?.taban ?? new Date(Date.now() - 24 * 3600_000).toISOString();
+  kaydet({ ...d, mesajOkunan: { ...d.mesajOkunan, [ben.id]: { taban, k: { ...eski?.k, [anahtar]: zaman } } } });
 };
 
 /** Muhabire öneri gönderebilecek birimler: yalnız tam yönetici seçiyor. */

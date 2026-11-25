@@ -1,3 +1,4 @@
+import { konuAnahtari, konuBasligi } from "../mesajlasma";
 import { birimAdi, gorevAdi } from "../yapi";
 import { hareketKutusu } from "../akis";
 import { ArrowRight } from "lucide-react";
@@ -234,6 +235,11 @@ export function useHareketKonusu() {
     /* Takvim hareketinde konu faaliyetin kendisi; plana alındıysa da plan değil, faaliyet. */
     const f = faaliyetBul(d, h.veri?.faaliyetId);
     if (f) return { baslik: f.baslik, href: `#/takvim/faaliyet/${f.id}` };
+    // Yazışma: bildirim konuşmanın kendisine götürür (Mesajlar), işin sayfasına değil.
+    if (h.tip === "oneriMesaji" && (h.oneriId || h.paketId)) {
+      const konu = h.oneriId ? { oneriId: h.oneriId } : { paketId: h.paketId };
+      return { baslik: konuBasligi(d, konu), href: `#/mesajlar/${konuAnahtari(konu)}` };
+    }
     const tk = d.takipler.find((x) => x.id === h.veri?.takipId);
     if (tk) return { baslik: tk.konu, href: "#/takipler" };
     const p = paketBul(d, h.paketId);

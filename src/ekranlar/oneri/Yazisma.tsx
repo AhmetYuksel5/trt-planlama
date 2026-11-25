@@ -1,34 +1,48 @@
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { Lightbulb, MessageSquare, Send } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, Bos, Icerik, Kart, NotKutu, Pencere, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
 import { metin, saatYaz, tarihYaz, useDil } from "../../dil";
-import { muhabireOneriGonder, oneriMesajiGonder, ulkesi } from "../../eylemler";
+import { mesajGonder, mesajOkundu, muhabireOneriGonder, ulkesi } from "../../eylemler";
+import { konuAnahtari, konuKatilimcisi, konuMesajlari, konuMuhabiri, type MesajKonusu } from "../../mesajlasma";
 import { SECILEN_TURLER, kisiBul, useVeri, type Bicim, type IcerikTuru, type Kisi, type Oneri } from "../../veri";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { oneriYazisabilir } from "../../yetki";
+import { yapabilir } from "../../yetki";
 import { BicimSecici, MuhabirSecici } from "../nextday/Formlar";
 
 /**
- * Önerinin yazışması: muhabir ile Planlama arasında, önerinin kendi
- * sayfasında. Her önerinin yazışması ayrı; konu karışmıyor, e-posta
- * zincirinde kaybolmuyor. Mesaj ayrı kayıt (veri.ts → Mesaj).
+ * İşin yazışması (mesajlasma.ts): muhabir, Planlama ve masa arasında; konu
+ * öneri ya da önerisiz paket. Önerinin penceresinde, paket sayfasında ve
+ * Mesajlar sayfasında aynı konuşma. Mesaj ayrı kayıt (veri.ts → Mesaj).
+ * Ekranda göründüğünde okunmuş sayılır (katlı bölümdeyken değil).
  */
-export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: Oneri; kart?: boolean }) {
+export function IsYazismasi({ ben, konu, kart = true }: { ben: Kisi; konu: MesajKonusu; kart?: boolean }) {
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [yazi, setYazi] = useState("");
-  const mesajlar = v.mesajlar.filter((m) => m.oneriId === oneri.id).sort((a, b) => a.zaman.localeCompare(b.zaman));
-  const yazabilir = oneriYazisabilir(ben, oneri);
-  if (!oneri.muhabirId) return null;
+  const kutu = useRef<HTMLDivElement>(null);
+  const mesajlar = konuMesajlari(v, konu);
+  const yazabilir = konuKatilimcisi(ben, v, konu, yapabilir(ben, "oneriDegerlendir"));
+  const anahtar = konuAnahtari(konu);
+  const son = mesajlar.filter((m) => m.kisiId !== ben.id).pop()?.zaman;
+  useEffect(() => {
+    const el = kutu.current;
+    if (!el || !son || !yazabilir) return;
+    const g = new IntersectionObserver((l) => {
+      if (l.some((x) => x.isIntersecting)) mesajOkundu(ben, anahtar, son);
+    });
+    g.observe(el);
+    return () => g.disconnect();
+  }, [ben, anahtar, son, yazabilir]);
+  if (!konuMuhabiri(v, konu)) return null;
   const gonder = () => {
-    if (oneriMesajiGonder(ben, oneri.id, yazi)) setYazi("");
+    if (mesajGonder(ben, konu, yazi)) setYazi("");
   };
   const govde = (
-    <div className="yazisma" data-yazisma={oneri.id}>
+    <div className="yazisma" data-yazisma={anahtar} ref={kutu}>
       {/* Yazabilen için boş yazışmada "mesaj yok" satırı yer kaplamasın: yazı kutusu yeter. */}
       {mesajlar.length === 0 ? (
         !yazabilir && <Bos kucuk metin={t("mesajYok")} />
@@ -78,6 +92,12 @@ export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: 
   ) : (
     govde
   );
+}
+
+/** Önerinin penceresindeki yazışma: önerinin konuşması. */
+export function OneriYazismasi({ ben, oneri, kart = true }: { ben: Kisi; oneri: Oneri; kart?: boolean }) {
+  if (!oneri.muhabirId) return null;
+  return <IsYazismasi ben={ben} konu={{ oneriId: oneri.id }} kart={kart} />;
 }
 
 /*
