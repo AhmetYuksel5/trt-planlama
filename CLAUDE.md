@@ -1830,8 +1830,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Gönderim kapıda EWS `CreateItem` (`SendAndSaveCopy`; `worker/src/ews.ts →
     createItemIstegi`, `GidenPosta`: çoklu Kime, CC, BCC; şema sırası To, Cc,
     Bcc). Gövde her zaman HTML: düz metin `ews.ts → metinHtml` ile satır
-    satır yönlü (`satirYonu`: ilk güçlü harf Arapçaysa `dir="rtl"` ve sağa
-    yaslı, değilse sola; harfsiz satır öncekinin yönünde). Düz metin gövdede
+    satır yönlü (`satirYonu`: harflerin çoğunluğu Arapçaysa `dir="rtl"` ve sağa
+    yaslı, değilse sola, eşitlikte ilk harf; harfsiz satır öncekinin yönünde;
+    kullanıcı: karışık postada Latin satırlar sağa yaslanıyordu). Satır `<p>`,
+    yönü `dir`, `align` ve `direction`/`text-align` ile (`satirHtml`): Arapça
+    çağrıya yanıtta Outlook'un Word motoru div'in hizasını ezebiliyor; plan
+    postasının metni de aynı kuralla (`planGonder.ts → govdeliHtml`), süzgeç
+    `align`'ı tutar. Düz metin gövdede
     Outlook Arapça postayı karşıya sola yaslı gönderiyordu; PKG geri
     bildirimi de bu yoldan, `POST /posta/gonder` (dış muhabir ve onay bekleyen hariç).
     **Grup adresini kapı her zaman CC'ye ekler** (tarayıcıya bırakılmıyor:

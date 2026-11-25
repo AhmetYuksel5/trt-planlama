@@ -389,15 +389,20 @@ test("postalariCek: staffing postası metne çevrilemezse HTML'den okunur, posta
   assert.ok(r.uyari && r.uyari.includes("ErrorItemNotFound"), "öbür postanın hatası görünür: " + r.uyari);
 });
 
-test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", () => {
+test("Giden posta yönlü HTML: Arapça satır sağa, Türkçe sola yaslı", async () => {
   assert.equal(satirYonu("مرحبا بكم"), "rtl");
   assert.equal(satirYonu("Merhaba, şöyle"), "ltr");
   assert.equal(satirYonu("15:00 تقرير"), "rtl", "baştaki rakam yönü belirlemez");
+  assert.equal(satirYonu("Plannersflow ننتظر مقترحاتكم الأسبوعية عبر"), "rtl", "Latin adla başlayan Arapça satır");
+  assert.equal(satirYonu("Haftalık önerilerinizi bekliyoruz عبر"), "ltr", "Arapça sözcük geçen Türkçe satır");
   const h = metinHtml("مرحبا\n\nNATO toplantısı\n12345");
-  assert.ok(h.includes('<div dir="rtl" style="text-align:right">مرحبا</div>'));
-  assert.ok(h.includes('<div dir="rtl" style="text-align:right"><br></div>'), "boş satır önceki yönde");
-  assert.ok(h.includes('<div dir="ltr" style="text-align:left">NATO toplantısı</div>'));
-  assert.ok(h.includes('<div dir="ltr" style="text-align:left">12345</div>'));
+  const p = (y: string, ic: string) => `<p dir="${y}" align="${y === "rtl" ? "right" : "left"}" style="margin:0;direction:${y};text-align:${y === "rtl" ? "right" : "left"}">${ic}</p>`;
+  assert.ok(h.includes(p("rtl", "مرحبا")), h);
+  assert.ok(h.includes(p("rtl", "&nbsp;")), "boş satır önceki yönde");
+  assert.ok(h.includes(p("ltr", "NATO toplantısı")));
+  assert.ok(h.includes(p("ltr", "12345")));
+  const { guvenliHtml } = await import("../src/ews.ts");
+  assert.ok(guvenliHtml('<p align="left" dir="ltr">x</p><p align="javascript:x">y</p>').includes('<p align="left" dir="ltr">x</p><p>y'), "align süzgeçte kalır");
   assert.ok(metinHtml("<b>&").includes("&lt;b&gt;&amp;"), "metin kaçar");
   const x = createItemIstegi({ kime: ["a@ornek.test"], konu: "k", metin: "شكرا" });
   assert.ok(x.includes("dir=&quot;rtl&quot;"));

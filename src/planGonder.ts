@@ -80,17 +80,22 @@ export const planPostasi = (d: Pick<Durum, "geriBildirimSablonlari">, tur: PlanG
  * öncekinin yönünde.
  */
 const kac = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// Kapıdaki kuralın aynısı (worker/src/ews.ts → satirYonu): harflerin çoğunluğu, eşitlikte ilk harf.
+const SAG_HARF = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 const satirYonu = (x: string, onceki: "rtl" | "ltr"): "rtl" | "ltr" => {
-  const m = x.match(/[\p{L}]/u);
-  if (!m) return onceki;
-  return /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(m[0]) ? "rtl" : "ltr";
+  const harfler = x.match(/\p{L}/gu) ?? [];
+  if (!harfler.length) return onceki;
+  const sag = harfler.filter((h) => SAG_HARF.test(h)).length;
+  if (sag * 2 !== harfler.length) return sag * 2 > harfler.length ? "rtl" : "ltr";
+  return SAG_HARF.test(harfler[0] ?? "") ? "rtl" : "ltr";
 };
 export const govdeliHtml = (govde: string, planHtml: string) => {
   if (!govde.trim()) return planHtml;
   let yon: "rtl" | "ltr" = "rtl";
   const satirlar = govde.split("\n").map((x) => {
     yon = satirYonu(x, yon);
-    return `<p dir="${yon}" style="margin:0;text-align:${yon === "rtl" ? "right" : "left"}">${x.trim() ? kac(x) : "&nbsp;"}</p>`;
+    const hiza = yon === "rtl" ? "right" : "left";
+    return `<p dir="${yon}" align="${hiza}" style="margin:0;direction:${yon};text-align:${hiza}">${x.trim() ? kac(x) : "&nbsp;"}</p>`;
   });
   return `<div style="font-family:Calibri,Arial,sans-serif;font-size:13pt">${satirlar.join("")}${planHtml ? `<p style="margin:0">&nbsp;</p>` : ""}</div>${planHtml}`;
 };

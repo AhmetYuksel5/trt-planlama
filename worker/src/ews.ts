@@ -149,7 +149,7 @@ export interface GidenPosta {
  * olay öznitelikleri ve url()/expression içeren stil atılır.
  */
 const IZINLI_ETIKET = new Set(["div", "p", "span", "b", "strong", "i", "em", "u", "br", "h1", "h2", "h3", "h4", "section", "article", "mark", "bdi", "small", "ul", "ol", "li", "table", "thead", "tbody", "tr", "td", "th"]);
-const IZINLI_OZ = new Set(["style", "dir", "lang"]);
+const IZINLI_OZ = new Set(["style", "dir", "lang", "align"]);
 export const HTML_SINIRI = 400_000;
 export const guvenliHtml = (html: string): string => {
   const govde = html
@@ -167,6 +167,7 @@ export const guvenliHtml = (html: string): string => {
         if (!IZINLI_OZ.has(a)) continue;
         if (a === "style" && /url\s*\(|expression|javascript:|@import|behavior/i.test(deger)) continue;
         if ((a === "dir" || a === "lang") && !/^[a-zA-Z-]{1,10}$/.test(deger)) continue;
+        if (a === "align" && !/^(left|right|center)$/i.test(deger)) continue;
         kalan.push(`${a}="${deger.replace(/"/g, "&quot;")}"`);
       }
       return `<${etiket}${kalan.length ? " " + kalan.join(" ") : ""}>`;
@@ -189,8 +190,23 @@ const ARAPCA_HARF = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70
 const GUCLU_HARF = /[\p{L}]/u;
 const kacHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 export const satirYonu = (satir: string, varsayilan: "rtl" | "ltr" = "ltr"): "rtl" | "ltr" => {
+  // Harflerin çoğunluğu: "Plannersflow ننتظر…" Arapça satır, "Toplantı NATO الحدث" Türkçe satır.
+  // İlk harfe bakınca Latin adla başlayan Arapça satır sola, tersi sağa yaslanıyordu. Eşitlikte ilk harf.
+  const harfler = satir.match(/\p{L}/gu) ?? [];
+  if (!harfler.length) return varsayilan;
+  const ar = harfler.filter((h) => ARAPCA_HARF.test(h)).length;
+  if (ar * 2 !== harfler.length) return ar * 2 > harfler.length ? "rtl" : "ltr";
   const h = satir.match(GUCLU_HARF)?.[0];
-  return h ? (ARAPCA_HARF.test(h) ? "rtl" : "ltr") : varsayilan;
+  return h && ARAPCA_HARF.test(h) ? "rtl" : "ltr";
+};
+/*
+ * Satır <p> ve yönü üç yoldan (dir, align, style): Arapça çağrıya yanıtta
+ * Outlook'un Word motoru gövdeyi sağdan sola kuruyor, yalnız div'in
+ * text-align'ı Türkçe satırı sağa yaslı bırakıyordu (kullanıcı).
+ */
+export const satirHtml = (yon: "rtl" | "ltr", ic: string, ek = "") => {
+  const hiza = yon === "rtl" ? "right" : "left";
+  return `<p dir="${yon}" align="${hiza}" style="margin:0;direction:${yon};text-align:${hiza}${ek}">${ic}</p>`;
 };
 export const metinHtml = (metin: string): string => {
   const satirlar = metin.replace(/\r\n?/g, "\n").split("\n");
@@ -199,8 +215,7 @@ export const metinHtml = (metin: string): string => {
   const govde = satirlar
     .map((s) => {
       yon = satirYonu(s, yon);
-      const hiza = yon === "rtl" ? "right" : "left";
-      return `<div dir="${yon}" style="text-align:${hiza}">${s.trim() ? kacHtml(s) : "<br>"}</div>`;
+      return satirHtml(yon, s.trim() ? kacHtml(s) : "&nbsp;");
     })
     .join("");
   return `<html><body><div style="font-family:Arial,sans-serif;font-size:11pt">${govde}</div></body></html>`;
@@ -209,7 +224,7 @@ export const metinHtml = (metin: string): string => {
 /* Başlıklı gövde: başlık iri, kalın, kırmızı; yönü kendi harfinden. */
 export const baslikliHtml = (baslik: string, metin: string): string => {
   const yon = satirYonu(baslik, "rtl");
-  const bas = `<div dir="${yon}" style="text-align:${yon === "rtl" ? "right" : "left"};color:#C00000;font-weight:bold;font-size:28pt;line-height:1.3;font-family:Arial,sans-serif">${kacHtml(baslik)}</div>`;
+  const bas = satirHtml(yon, kacHtml(baslik), ";color:#C00000;font-weight:bold;font-size:28pt;line-height:1.3;font-family:Arial,sans-serif");
   return metinHtml(metin).replace("<body>", `<body>${bas}`);
 };
 
