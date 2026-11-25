@@ -487,11 +487,11 @@ export function CanliListesi({ plan, canlilar, duzenler, planBaslikId }: { plan:
           ),
         )}
       {duzenler && form === "yeni" && <CanliFormu plan={plan} planBaslikId={planBaslikId} kapat={() => setForm("")} />}
-      {!form && (duzenler || !planBaslikId) && (
+      {!form && (duzenler || planBaslikId) && (
         <div className="ara-ust-2 ekle-yanyana">
           {duzenler && <EkleDugmesi metin={t("canliEkle")} onClick={() => setForm("yeni")} />}
-          {/* Nafize "مباشر"da görünmez, seçilen başlığın gelişmelerinin altına girer (kullanıcı). */}
-          {!planBaslikId && <NafizeEkleDugmesi plan={plan} />}
+          {/* Nafize başlığın canlı kutusundan eklenir (kullanıcı: üstteki "مباشر"la ilgisi yok), gelişmelerin altına girer. */}
+          {planBaslikId && <NafizeEkleDugmesi plan={plan} planBaslikId={planBaslikId} />}
         </div>
       )}
     </>

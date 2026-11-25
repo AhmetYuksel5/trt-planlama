@@ -6,9 +6,9 @@ import { planNafizeKaydet, planNafizeleriEkle, planNafizeSil } from "../../eylem
 import { kisiAr } from "../../etiketler";
 import { useBen } from "../../oturum";
 import { saatCoz } from "../../tarih";
-import { disMuhabirMi, ekipAdayi } from "../../yapi";
+import { disMuhabirMi, ekipAdayi, icMuhabirMi } from "../../yapi";
 import { planIcerikDuzenler } from "../../yetki";
-import { kisiBul, useVeri, type Durum, type NextDayPlan, type PlanNafize } from "../../veri";
+import { kisiBul, useVeri, type Durum, type Kisi, type NextDayPlan, type PlanNafize } from "../../veri";
 import { BelgeSatiri, SatirSeridi } from "../belge/Parcalar";
 import { EkleDugmesi, IkonDugme } from "./Bolumler";
 
@@ -67,10 +67,11 @@ export function NafizePenceresi({ plan, planBaslikId, mevcut, kapat }: { plan: N
   const ben = useBen();
   const [pbId, setPbId] = useState(mevcut?.planBaslikId ?? planBaslikId ?? plan.basliklar[0]?.id ?? "");
   const [satirlar, setSatirlar] = useState<FormSatiri[]>(mevcut ? [satirdan(mevcut)] : [bosSatir()]);
-  // Sunucu seçimi: önce planın ekibindeki sunucular, sonra görevin kuralına uyan personel.
+  // Sunucu yerinde muhabir de olabiliyor (kullanıcı): seçimde sunucular ve muhabirler, adları kayıttaki tam Arapça yazımla (ekip satırının kısa adıyla değil).
   const ekipte = plan.ekip.filter((u) => u.gorev === "sunucu").map((u) => u.kisiId);
-  const adaylar = v.kisiler.filter((k) => !k.pasif && !disMuhabirMi(k) && (ekipte.includes(k.id) || ekipAdayi(k, "sunucu")));
-  adaylar.sort((a, b) => Number(ekipte.includes(b.id)) - Number(ekipte.includes(a.id)));
+  const adSirasi = (a: Kisi, b: Kisi) => kisiAr(a).localeCompare(kisiAr(b), "ar");
+  const sunucular = v.kisiler.filter((k) => !k.pasif && !disMuhabirMi(k) && (ekipte.includes(k.id) || ekipAdayi(k, "sunucu"))).sort(adSirasi);
+  const muhabirler = v.kisiler.filter((k) => !k.pasif && !sunucular.includes(k) && (disMuhabirMi(k) || icMuhabirMi(k))).sort(adSirasi);
   const gecersiz = satirlar.some((x) => saatCoz(x.saat) === null);
   const degis = (i: number, f: Partial<FormSatiri>) => setSatirlar((l) => l.map((x, j) => (j === i ? { ...x, ...f } : x)));
   const kaydet = () => {
@@ -89,6 +90,7 @@ export function NafizePenceresi({ plan, planBaslikId, mevcut, kapat }: { plan: N
   return (
     <Pencere baslik={t(mevcut ? "nafizeDuzenle" : "nafizeEkle")} kapat={kapat}>
       <div className="form" data-nafize-formu>
+        {(!planBaslikId || mevcut) && (
         <label>
           {t("baslik")}
           <select className="girdi" value={pbId} onChange={(e) => setPbId(e.target.value)} data-nafize-baslik>
@@ -100,6 +102,7 @@ export function NafizePenceresi({ plan, planBaslikId, mevcut, kapat }: { plan: N
             ))}
           </select>
         </label>
+        )}
         {satirlar.map((x, i) => (
           <div key={i} className="form form-kutu" data-nafize-satir={i}>
             <div className="satir">
@@ -117,11 +120,20 @@ export function NafizePenceresi({ plan, planBaslikId, mevcut, kapat }: { plan: N
                 {t("nafizeSunucu")}
                 <select className="girdi" value={x.kisiId} onChange={(e) => degis(i, { kisiId: e.target.value, ad: "" })} data-nafize-sunucu>
                   <option value="">—</option>
-                  {adaylar.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {kisiAr(k)}
-                    </option>
-                  ))}
+                  {[
+                    ["egSunucu", sunucular],
+                    ["muhabirler", muhabirler],
+                  ].map(([ad, liste]) =>
+                    (liste as Kisi[]).length ? (
+                      <optgroup key={ad as string} label={t(ad as "egSunucu")}>
+                        {(liste as Kisi[]).map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {kisiAr(k)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : null,
+                  )}
                 </select>
               </label>
               {!x.kisiId && (

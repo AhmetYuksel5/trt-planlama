@@ -1457,7 +1457,6 @@ export function NextDayBelgesi({
                         metin={t("canliEkle")}
                         onClick={() => ac({ tur: "canli" })}
                       />
-<NafizeEkleDugmesi plan={plan} />
                     </EkleCubugu>
                   )}
                 </section>
@@ -1722,7 +1721,6 @@ export function NextDayBelgesi({
                     metin={t("canliEkle")}
                     onClick={() => ac({ tur: "canli" })}
                   />
-<NafizeEkleDugmesi plan={plan} />
                 </EkleCubugu>
               )}
             </section>

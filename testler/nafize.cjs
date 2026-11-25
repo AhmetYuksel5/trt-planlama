@@ -28,11 +28,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   await git(`#/nextday/${ids.plan}`);
   await p.evaluate(() => document.querySelectorAll("main details").forEach((x) => (x.open = true)));
-  const dugme = p.locator("[data-nafize-ekle] button").first();
-  ok((await dugme.count()) === 1, "canlı yayın bölümünde Nafize ekle");
+  ok(await p.evaluate(() => [...document.querySelectorAll("[data-nafize-ekle]")].every((e) => e.closest("[data-plan-baslik]"))), "üstteki canlı yayın bölümünde Nafize ekle yok");
+  const dugme = p.locator(`[data-plan-baslik="${ids.pb}"] [data-nafize-ekle] button`).first();
+  ok((await dugme.count()) === 1, "başlığın canlı kutusunda Nafize ekle");
   await dugme.click();
   const f = p.locator("dialog[open] [data-nafize-formu]");
-  await f.locator("[data-nafize-baslik]").selectOption(ids.pb);
+  ok(!(await f.locator("[data-nafize-baslik]").isVisible()), "başlıktan açılınca başlık sorulmuyor");
+  const gruplar = await f.locator("[data-nafize-sunucu] optgroup").evaluateAll((g) => g.map((x) => x.querySelectorAll("option").length));
+  ok(gruplar.length === 2 && gruplar.every((n) => n > 0), "sunucu seçiminde sunucular ve muhabirler (" + gruplar + ")");
   await f.locator("[data-nafize-saat-girdi]").first().fill("8");
   await f.locator("[data-nafize-yer]").first().fill("استوديو الدوحة");
   await f.locator("[data-nafize-sunucu-ad]").first().fill("سامر خليل");
@@ -80,7 +83,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.evaluate((x) => localStorage.setItem("trt-planlama-dil", x), dil);
     await git(`#/nextday/${ids.plan}`);
     await p.evaluate(() => document.querySelectorAll("main details").forEach((x) => (x.open = true)));
-    await p.locator("[data-nafize-ekle] button").first().click();
+    await p.locator(`[data-plan-baslik="${ids.pb}"] [data-nafize-ekle] button`).first().click();
     await p.waitForTimeout(300);
     const t = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(t <= 1, `390px taşma yok (${dil})`);

@@ -1461,10 +1461,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     dendiyse o masa. Aynı öneriden (ya da Weekly kaleminden) gelen PKG aynı başlıkta
     etiketi taşıyorsa gelişmede tekrar edilmez; paketsiz gelişmede metnin sonunda
     (`gelismeMasaEtiketi`). Saklanmaz. Test `testler/plan-masa-etiketi.cjs`.
-  - Nafize (kullanıcı: canlı yayın bölümünde "Nafize ekle" yanda; nafize "مباشر"da
-    görünmez, başlığın altında): `NextDayPlan.nafizeler` (`PlanNafize`: başlık, saat GMT
-    "SS:DD", mekan, sunucu [kayıtlı kişi ya da elle ad], konuklar), planın kendi kaydında;
-    ertesi güne taşınmaz. Formda başlık seçilir, birkaç saat satır satır girilir (yeni satır
+  - Nafize (kullanıcı: "Nafize ekle" başlığın canlı yayın kutusunda, "Canlı yayın ekle"nin
+    yanında; üstteki "مباشر" bölümünde değil, onunla ilgisi yok; belgede başlığın ekleme
+    çubuğunda): `NextDayPlan.nafizeler` (`PlanNafize`: başlık, saat GMT "SS:DD", mekan,
+    sunucu [kayıtlı kişi ya da elle ad], konuklar), planın kendi kaydında; ertesi güne
+    taşınmaz. Sunucu seçiminde sunucular ve muhabirler (kullanıcı: sunucu yerinde muhabir de
+    olur), adlar kayıttaki tam Arapça yazımla, ekip satırının kısa adıyla değil. Başlıktan
+    açılınca başlık sorulmaz; birkaç saat satır satır girilir (yeni satır
     öncekinin sunucusu ve mekanıyla; her satır ayrı nafize; `eylemler.ts →
     planNafizeleriEkle`, `planNafizeKaydet`, `planNafizeSil`, plan içeriğini düzenleyen).
     Plan ekranında, belgede ve çıktıda başlığın gelişmelerinin altında "نافذة" (birden çoksa
