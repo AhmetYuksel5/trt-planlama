@@ -1046,6 +1046,25 @@ export interface AsamaIzi {
  * belgesinde olsaydı muhabir okurdu. Kısıtlı kişi koleksiyonu dinlemiyor,
  * kural okutmuyor (catch-all).
  */
+/*
+ * Rota tablosundan haber merkezi personelinin çalışma programı (kullanıcı: kayıtlı
+ * personelin hangi gün, hangi saatte çalıştığı rotadan çekilsin; dönem başında ilk
+ * açanın tarayıcısı doldursun). Dönem başına bir kayıt; kişi → gün → işe başlama
+ * saati (İstanbul, "SS:DD"). Kayıtta günü olmayan kişi o gün çalışmıyor.
+ */
+export interface RotaProgrami {
+  id: string;
+  /** Tablonun sekmesi ("2026: NOV16-DEC13"); dönem değişince değişir. */
+  sekme: string;
+  bas: string;
+  bit: string;
+  kisiler: Record<string, Record<string, string>>;
+  /** Kayıtlı kişiyle eşleşmeyen adlar (kişisel bilgi değil, rotadaki yazım). */
+  eslesmeyen: string[];
+  kisiId: string;
+  zaman: string;
+}
+
 export interface AsamaNotu {
   id: string;
   paketId: string;
@@ -2072,6 +2091,7 @@ export interface Durum {
   masaSorulari?: MasaSorusu[];
   toplantiNotlari?: ToplantiNotu[];
   asamaNotlari?: AsamaNotu[];
+  rotaProgramlari?: RotaProgrami[];
   /** Programlar biriminin programları; eski kayıtta yok. */
   programlar?: ProgramTanimi[];
   /** Üretim balonunun şablonları (uretim.ts); boşsa yerleşikler. */
@@ -2241,6 +2261,7 @@ export const bosDurum = (): Durum => ({
   programlar: [],
   toplantiNotlari: [],
   asamaNotlari: [],
+  rotaProgramlari: [],
   sehirler: [],
   gorevler: [],
   isler: [],

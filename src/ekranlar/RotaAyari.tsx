@@ -1,11 +1,14 @@
 import { Loader2, Sheet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Kart, bildir } from "../bilesenler/Parcalar";
-import { useDil, type Anahtar } from "../dil";
+import { tarihYaz, useDil, type Anahtar } from "../dil";
 import { GERCEK } from "../kip";
 import { rotaAyariGetir, rotaAyariKaydet, rotaGetir, type RotaAyarGorunum } from "../posta-kapi";
 import { bugun, gunEkle } from "../tarih";
 import { kapiHatasi } from "../yz";
+import { useBen } from "../oturum";
+import { useVeri } from "../veri";
+import { rotaDoneminiAktar } from "../rotaAktar";
 
 /*
  * Ayarlar › Rota tablosu (yalnız tam yönetici, gerçek kip): haber merkezinin Google
@@ -100,7 +103,46 @@ export function RotaAyari() {
           )}
         </div>
         {deneme && <p className="sonuk-yazi" data-rota-sonuc>{deneme}</p>}
+        {ayar.anahtarVar && ayar.tabloId && <RotaDonemi />}
       </div>
     </Kart>
+  );
+}
+
+/*
+ * Rotadan çalışma programı (rotaAktar.ts): dönemin aktarımı açılışta kendiliğinden; burada
+ * son dönem, kaç kişiye yazıldığı, kayıtla eşleşmeyen adlar ve elle yeniden aktarma.
+ */
+function RotaDonemi() {
+  const { t, dil } = useDil();
+  const ben = useBen();
+  const v = useVeri();
+  const [mesgul, setMesgul] = useState(false);
+  const son = [...(v.rotaProgramlari ?? [])].sort((a, b) => b.bas.localeCompare(a.bas))[0];
+  const aktar = async () => {
+    if (!ben) return;
+    setMesgul(true);
+    const r = await rotaDoneminiAktar(ben, true).catch(() => "yok" as const);
+    setMesgul(false);
+    bildir(t(r === "tamam" ? "bRpAktarildi" : "bRpOkunamadi"));
+  };
+  return (
+    <div className="form" data-rota-donemi>
+      {son && (
+        <p className="sonuk-yazi">
+          {t("rpRotaDonem", { bas: tarihYaz(son.bas, dil, "kisa"), bit: tarihYaz(son.bit, dil, "kisa"), n: Object.keys(son.kisiler).length })}
+        </p>
+      )}
+      {son && son.eslesmeyen.length > 0 && (
+        <p className="sonuk-yazi" data-rota-eslesmeyen>
+          {t("rpEslesmeyen", { n: son.eslesmeyen.length, adlar: son.eslesmeyen.join(", ") })}
+        </p>
+      )}
+      <div className="dugmeler">
+        <button className="dugme dugme-ikincil" disabled={mesgul} onClick={() => void aktar()} data-rota-aktar>
+          {t("rpAktar")}
+        </button>
+      </div>
+    </div>
   );
 }

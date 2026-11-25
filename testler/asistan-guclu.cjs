@@ -141,6 +141,24 @@ const SAHTE = () => {
     ok(JSON.stringify(d.ozel.find((x) => x.id === oz.id)).includes("حجز الأقمار"), "özel yayına yapılacak eklendi");
   } else ok(true, "süren özel yayın yok (örnek veri)");
 
+  // Weekly kalemi Next Day gelişmesinin alanlarıyla; dosyanın muhabiri ve LIVE.
+  d = await durum();
+  const hf = d.haftalik.find((x) => x.durum !== "kesinlesti") || d.haftalik[0];
+  await p.evaluate(([k, id]) => { const x = JSON.parse(localStorage.getItem(k)); const h = x.haftalik.find((y) => y.id === id); h.durum = "hazirlik"; localStorage.setItem(k, JSON.stringify(x)); }, [K, hf.id]);
+  await git("#/");
+  await ac();
+  await arac("kalemEkle", { haftaId: hf.id, tarih: hf.baslangic, dosya: "ملف تجريبي", metin: "تطور مع جدول", saat: "12:00", teams: "فريق أول، فريق ثان", program: "09:00 وصول\n11:30 مؤتمر" });
+  await yaz("evet");
+  d = await durum();
+  const yk = d.haftalik.find((x) => x.id === hf.id).kalemler.find((k) => k.metin === "تطور مع جدول");
+  ok(yk && yk.saat === "12:00" && yk.teams?.length === 2 && yk.program?.length === 2 && yk.program[1].saat === "11:30", "asistan kalemi saat, Teams ve Schedule'la ekledi");
+  const mh = d.kisiler.find((x) => x.birim === "muhabir" && !x.pasif);
+  await arac("haftaDosyaMuhabiri", { haftaId: hf.id, tarih: hf.baslangic, dosya: "ملف تجريبي", muhabirId: mh.id, yer: "غزة", live: true });
+  await yaz("evet");
+  d = await durum();
+  const db = d.haftalik.find((x) => x.id === hf.id).dosyaBilgileri?.find((x) => x.tarih === hf.baslangic && x.baslikId === yk?.baslikId);
+  ok(db?.live && db.muhabirler.some((m) => m.kisiId === mh.id && m.yer === "غزة"), "asistan dosyaya muhabir ve LIVE yazdı");
+
   // Tam yönetici: aylık olay, özel yayına nafize ve yapılacak, gündem.
   await p.evaluate(() => { sessionStorage.clear(); localStorage.setItem("trt-planlama-oturum", "yo3"); });
   await git("#/");

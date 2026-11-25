@@ -74,6 +74,7 @@ import {
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "./ekranlar/program/ProgramMasasi";
 import { MASA_YOLU, PROGRAM_BOLUMLERI, type MasaBirimi, type ProgramBolumu } from "./programMasasi";
+import { rotaAktarabilir, rotaDoneminiAktar } from "./rotaAktar";
 import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
 import { izlemede } from "./izleme";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
@@ -207,6 +208,20 @@ export default function App() {
     return () => clearInterval(z);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sistemHazir, otoId]);
+
+  /*
+   * Rotadan çalışma programı (rotaAktar.ts): dönem başına bir kez, o dönemde sistemi ilk açan
+   * Planlama ya da tam yöneticinin tarayıcısı okur, kayda yazar; bugünü kapsayan dönem
+   * kayıttaysa hiçbir şey yapmaz. Demoda yalnız testin sahte okumasıyla.
+   */
+  const rotaKisi = sistemYazar && rotaAktarabilir(ben) ? ben : null;
+  const rotaKisiId = rotaKisi?.id;
+  useEffect(() => {
+    if (GOMULU || !sistemHazir || !rotaKisi || izlemede()) return;
+    if (GERCEK && !baglantiCanliMi()) return;
+    rotaDoneminiAktar(rotaKisi).catch((hata) => console.error("rotaDoneminiAktar", hata));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sistemHazir, rotaKisiId]);
 
   // Tanıtım: adres çıplak açılınca (demoda; gerçek kipte kalmış kişi doğrudan sisteme) ya da `#/tanitim`.
   if (!GOMULU && !BAGLANTI_DONUSU && (yol.sayfa === "tanitim" || (!GERCEK && location.hash.length <= 1))) return <Tanitim />;

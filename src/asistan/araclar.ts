@@ -64,6 +64,8 @@ import {
   ozelMaddeKaydet,
   ozelOnayla,
   ozelOnayDegisebilir,
+  haftaDosyaMuhabiri,
+  haftaDosyasiDegistir,
 } from "../eylemler";
 import { hazirSecilebilir, stokDurumu } from "../akis";
 import { paketSablonu, sablonAdi, uretimSablonlari } from "../uretim";
@@ -1178,9 +1180,16 @@ const YAZMA: Record<string, Yurutucu> = {
         A.muhabir(muhabirler, false),
         A.secim("bicim", "asABicim", bicimSecenekleri(dil)),
         A.secim("tur", "asAMasa", turSecenekleri(dil)),
+        // Next Day gelişmesinin alanları (Weekly'nin gün gündemi onunla eş).
+        A.saat("saat"),
+        A.icerik("teams", "asATeams"),
+        A.yazi("program", "asASchedule"),
       ],
       degerler: {
         haftaId,
+        saat: saat(g.saat),
+        teams: s(g.teams, 500),
+        program: s(g.program, 1500),
         tarih: t >= h.baslangic && t <= haftaSonu(h.baslangic) ? t : "",
         baslikId: dosya ?? (s(g.dosya) ? YENI : ""),
         yeniBaslik: s(g.dosya, 300),
@@ -1202,6 +1211,25 @@ const YAZMA: Record<string, Yurutucu> = {
           bicimler: [vs(v, "bicim") as Bicim],
           paketBasligi: vs(v, "paketBasligi") || undefined,
           muhabirler: vs(v, "muhabirId") ? [vs(v, "muhabirId")] : [],
+          saat: saat(vs(v, "saat")),
+          // Teams adları virgülle; kayıtlı personelin Arapça adı tutarsa kişi, değilse ad olarak.
+          teams: vs(v, "teams")
+            .split(/[،,]/)
+            .map((x) => x.trim())
+            .filter(Boolean)
+            .map((ad) => {
+              const k = getir().kisiler.find((y) => !y.pasif && kisiAr(y) === ad);
+              return k ? { kisiId: k.id } : { ad };
+            }),
+          // Schedule satır satır "SS:DD olay"; saatsiz satır yalnız olay.
+          program: vs(v, "program")
+            .split(/\n/)
+            .map((x) => x.trim())
+            .filter(Boolean)
+            .map((x) => {
+              const m = x.match(/^(\d{1,2}[:.]\d{2})\s*[-/]?\s*(.+)$/);
+              return m ? { saat: saatCoz(m[1]) || "", olay: m[2] } : { saat: "", olay: x };
+            }),
         });
         return tamam(id, { kalemId: id });
       },
@@ -1397,6 +1425,52 @@ const YAZMA: Record<string, Yurutucu> = {
       alanlar: [A.plan(secenekler), A.secim("gorev", "asAEkipGorevi", gorevler), { ad: "kisiId", etiket: "asAKisi", tur: "secim", zorunlu: true, bagli: { alan: "gorev", harita: adaylar } }, A.saat("vardiya", "asASaatGmt")],
       degerler: { planId: icinde(s(g.planId, 100), secenekler) || (planlar.find((p) => p.tarih === gunEkle(bugun(), 1)) ?? planlar[0]).id, gorev, kisiId: gorev ? icinde(kisiId, adaylar[gorev]) : "", vardiya: saat(g.vardiya) || "08:00" },
       calistir: (v) => tamam(ekipEkle(ben, vs(v, "planId"), { kisiId: vs(v, "kisiId"), gorev: vs(v, "gorev"), vardiya: saat(vs(v, "vardiya")) || "08:00" })),
+    });
+  },
+
+  /* Weekly'de günün dosyası Next Day başlığı gibi: muhabir (yer, not), TBC, LIVE (haftalik/Dosya.tsx). */
+  haftaDosyaMuhabiri: (g, { ben, dil }) => {
+    const v0 = haftaVar(g, ben);
+    if (!v0) return hata("haftaYok");
+    const { d, h } = v0;
+    const baslikId = adlaBaslik(d, s(g.dosya, 300));
+    const dosyalar = haftaninDosyalari(h).map((id) => ({ deger: id, ad: baslikBul(d, id)?.ad ?? id }));
+    if (!dosyalar.length) return hata("dosyaYok");
+    const muhabirler = muhabirSecenekleri(d, dil, "asOSecilmedi");
+    const t = gun(g.tarih);
+    return form({
+      baslik: "asTDosyaMuhabiri",
+      alanlar: [
+        { ad: "tarih", etiket: "asAGun", tur: "secim", secenekler: haftaGunleri(h, dil) },
+        A.secim("baslikId", "asADosya", dosyalar),
+        A.muhabir(muhabirler, false),
+        A.icerik("yer", "asAYer"),
+        A.yazi("not", "asANot", false, false),
+        { ad: "tbc", etiket: "asOTbc", tur: "onay" },
+        { ad: "live", etiket: "asALive", tur: "onay" },
+      ],
+      degerler: {
+        tarih: t >= h.baslangic && t <= haftaSonu(h.baslangic) ? t : "",
+        baslikId: icinde(baslikId ?? "", dosyalar),
+        muhabirId: icinde(s(g.muhabirId, 100), muhabirler),
+        yer: s(g.yer, 120),
+        not: s(g.not, 500),
+        tbc: g.tbc === true,
+        live: g.live === true,
+      },
+      calistir: (v) => {
+        const tarih = vs(v, "tarih");
+        const b = vs(v, "baslikId");
+        const m = vs(v, "muhabirId");
+        if (m && !haftaDosyaMuhabiri(ben, h.id, tarih, b, m, { yer: vs(v, "yer"), not: vs(v, "not") })) return { hata: "yapilamadi" };
+        return tamam(
+          haftaDosyasiDegistir(ben, h.id, tarih, b, (x) => ({
+            ...x,
+            muhabirTbc: vb(v, "tbc") && !x.muhabirler.length ? true : undefined,
+            live: vb(v, "live") ? true : undefined,
+          })) || !!m,
+        );
+      },
     });
   },
 

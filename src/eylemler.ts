@@ -87,6 +87,7 @@ import {
   type HaftaCanli,
   type HaftaNafize,
   type HaftaDosyasi,
+  type RotaProgrami,
   type ProgramSatiri,
   type HaftalikPlan,
   type Kanal,
@@ -7675,5 +7676,19 @@ export const canliSonuc = (ben: Kisi, canliId: string, durum: "yapildi" | "yapil
   if (durum) yeni.sonuc = { durum, kisiId: ben.id, zaman: simdi() };
   else delete yeni.sonuc;
   kaydet({ ...d, canliYayinlar: d.canliYayinlar.map((x) => (x.id === canliId ? yeni : x)) });
+  return true;
+};
+
+/*
+ * Rotadan çalışma programı (rotaProgrami.ts): dönemin kaydı. Aynı başlangıçlı dönem yenisiyle
+ * değişir; eski dönemlerden son üçü kalır (geçmiş program profilde gerekmiyor, kayıt büyümesin).
+ */
+export const rotaProgramiKaydet = (ben: Kisi, p: Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen">) => {
+  if (!(yapabilir(ben, "planDuzenle") || ben.hesapYoneticisi) || !p.bas || !p.bit) return false;
+  const d = getir();
+  const id = `rota-${p.bas}`;
+  const kayit: RotaProgrami = { ...p, id, kisiId: ben.id, zaman: simdi() };
+  const kalan = (d.rotaProgramlari ?? []).filter((x) => x.id !== id && x.bit < p.bas).sort((a, b) => b.bas.localeCompare(a.bas)).slice(0, 3);
+  kaydet({ ...d, rotaProgramlari: [...kalan, kayit] });
   return true;
 };

@@ -25,6 +25,7 @@ import { MuhabireOneriPenceresi, MuhabireOnerilenler } from "./oneri/Yazisma";
 import { ProfilTakipleri } from "./Takipler";
 import { SehirSecenekleri, YENI_SEHIR, YeniSehirAlanlari, bosYeniSehir } from "../bilesenler/SehirSecimi";
 import { SayfaBasi } from "./ana/Planlama";
+import { RotaProgramiKarti } from "../bilesenler/RotaProgrami";
 
 /*
  * Personel ve görevlendirmeler. Yaklaşık yüz kişilik kadro için arama ve
@@ -538,6 +539,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
       <div className="iz iz-ana-yan">
         <div className="iz">
           {muhabir && !kendisi && <MuhabirSimdi ben={ben} kisi={kisi} />}
+          {!muhabir && <RotaProgramiKarti kisiId={kisi.id} />}
           {muhabir && performansGorebilir(ben, kisi) && <PerformansKarti kisi={kisi} />}
           {muhabir && (
             <>
