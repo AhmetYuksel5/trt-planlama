@@ -21,8 +21,15 @@ export interface RotaGunu {
 // Sekme adı tarih aralığı değilse ("Bu dönem") dönem uzar; yine de bir aydan uzun okunmaz.
 export const EN_COK_GUN = 35;
 
-/** Bugünü kapsayan dönem kayıtta var mı (aktarım gerekmez). */
-export const rotaGuncel = (d: Pick<Durum, "rotaProgramlari">, gun = bugun()) => (d.rotaProgramlari ?? []).some((p) => p.bas <= gun && gun <= p.bit);
+/*
+ * Kuralın sürümü: 2'de vardiyanın bitişi de yazılıyor. Önceki sürümle aktarılmış dönemde
+ * yalnız başlangıç saati var (kullanıcı: bitiş görünmüyordu); o dönem bir kez yeniden okunur.
+ */
+export const ROTA_SURUMU = 2;
+
+/** Bugünü kapsayan, bu sürümle aktarılmış dönem kayıtta var mı (aktarım gerekmez). */
+export const rotaGuncel = (d: Pick<Durum, "rotaProgramlari">, gun = bugun()) =>
+  (d.rotaProgramlari ?? []).some((p) => p.bas <= gun && gun <= p.bit && (p.surum ?? 1) >= ROTA_SURUMU);
 
 /*
  * Günlerden dönem: her günün rota ve sunucu kayıtları kişiye eşlenir (staffing şeridinin
@@ -31,7 +38,7 @@ export const rotaGuncel = (d: Pick<Durum, "rotaProgramlari">, gun = bugun()) => 
  * kendisi ("07:00-16:00"); bitişi okunmamışsa yalnız başlangıç. Başlangıç başta olduğu
  * için metin karşılaştırması erken vardiyayı seçer.
  */
-export const rotaDonemiKur = (gunler: RotaGunu[], kisiler: Kisi[], ogrenilen: Record<string, string> = {}): Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen"> => {
+export const rotaDonemiKur = (gunler: RotaGunu[], kisiler: Kisi[], ogrenilen: Record<string, string> = {}): Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen" | "surum"> => {
   const harita: Record<string, Record<string, string>> = {};
   const eslesmeyen = new Set<string>();
   const etkin = kisiler.filter((k) => !k.pasif);
@@ -49,7 +56,7 @@ export const rotaDonemiKur = (gunler: RotaGunu[], kisiler: Kisi[], ogrenilen: Re
       if (!gunleri[g.tarih] || vardiya < gunleri[g.tarih]) gunleri[g.tarih] = vardiya;
     }
   }
-  return { sekme: gunler[0]?.sekme ?? "", bas: gunler[0]?.tarih ?? "", bit: gunler[gunler.length - 1]?.tarih ?? "", kisiler: harita, eslesmeyen: [...eslesmeyen].sort() };
+  return { sekme: gunler[0]?.sekme ?? "", bas: gunler[0]?.tarih ?? "", bit: gunler[gunler.length - 1]?.tarih ?? "", kisiler: harita, eslesmeyen: [...eslesmeyen].sort(), surum: ROTA_SURUMU };
 };
 
 /*
@@ -89,7 +96,8 @@ export interface CalismaOzeti {
 
 export const calismaOzeti = (d: Pick<Durum, "rotaProgramlari">, kisiId: string, gun = bugun()): CalismaOzeti | null => {
   const donemler = (d.rotaProgramlari ?? []).filter((p) => p.kisiler[kisiId] && Object.keys(p.kisiler[kisiId]).length);
-  const p = donemler.find((x) => x.bas <= gun && gun <= x.bit) ?? [...donemler].sort((a, b) => b.bas.localeCompare(a.bas))[0];
+  const yeni = [...donemler].sort((a, b) => b.zaman.localeCompare(a.zaman));
+  const p = yeni.find((x) => x.bas <= gun && gun <= x.bit) ?? [...donemler].sort((a, b) => b.bas.localeCompare(a.bas))[0];
   if (!p) return null;
   const program = p.kisiler[kisiId];
   const toplam = new Map<number, number>();

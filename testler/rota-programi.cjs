@@ -76,6 +76,20 @@ const SAHTE = () => {
   await git("#/personel/" + kisiler.a);
   ok((await p.locator(`[data-rota-program="${kisiler.a}"] [data-rota-izin]`).innerText()).trim() === "Yok", "her gün çalışanın izin günü yok");
 
+  // Önceki sürümle (yalnız başlangıç saati) aktarılmış dönem bir kez yeniden okunur.
+  await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    d.rotaProgramlari = d.rotaProgramlari.map((x) => { const { surum, ...g } = x; return { ...g, kisiler: Object.fromEntries(Object.entries(g.kisiler).map(([i, m]) => [i, Object.fromEntries(Object.entries(m).map(([t, s]) => [t, s.slice(0, 5)]))])) }; });
+    localStorage.setItem(k, JSON.stringify(d));
+    localStorage.setItem(k + "-iz", String(Date.now()));
+    localStorage.removeItem("trt-planlama-rota-denendi");
+  }, K);
+  await git("#/personel/" + kisiler.b);
+  await p.waitForTimeout(1500);
+  d = await oku();
+  ok(d.rotaProgramlari.length === 1 && d.rotaProgramlari[0].surum === 2, "eski sürümlü dönem yeniden aktarıldı");
+  ok((await p.locator(`[data-rota-program="${kisiler.b}"] [data-rota-saat]`).innerText()).includes("13:45–22:45"), "yeniden aktarımla bitiş saati görünüyor");
+
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);

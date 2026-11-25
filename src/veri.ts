@@ -1061,6 +1061,8 @@ export interface RotaProgrami {
   kisiler: Record<string, Record<string, string>>;
   /** Kayıtlı kişiyle eşleşmeyen adlar (kişisel bilgi değil, rotadaki yazım). */
   eslesmeyen: string[];
+  /** Kuralın sürümü (rotaProgrami.ts → ROTA_SURUMU); eskisi bir kez yeniden aktarılır. */
+  surum?: number;
   kisiId: string;
   zaman: string;
 }

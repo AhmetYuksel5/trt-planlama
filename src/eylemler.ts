@@ -7683,7 +7683,7 @@ export const canliSonuc = (ben: Kisi, canliId: string, durum: "yapildi" | "yapil
  * Rotadan çalışma programı (rotaProgrami.ts): dönemin kaydı. Aynı başlangıçlı dönem yenisiyle
  * değişir; eski dönemlerden son üçü kalır (geçmiş program profilde gerekmiyor, kayıt büyümesin).
  */
-export const rotaProgramiKaydet = (ben: Kisi, p: Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen">) => {
+export const rotaProgramiKaydet = (ben: Kisi, p: Pick<RotaProgrami, "sekme" | "bas" | "bit" | "kisiler" | "eslesmeyen" | "surum">) => {
   if (!(yapabilir(ben, "planDuzenle") || ben.hesapYoneticisi) || !p.bas || !p.bit) return false;
   const d = getir();
   const id = `rota-${p.bas}`;
