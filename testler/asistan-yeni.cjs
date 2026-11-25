@@ -106,6 +106,18 @@ const SAHTE = () => {
   ok(h2.canlilar?.some((c) => c.konu === "القمة العربية" && c.saat === "15:00" && c.baslikId === dosyaId), "Weekly canlısı dosyasıyla");
   ok(h2.nafizeler?.some((n) => n.saat === "09:00" && n.baslikId === dosyaId), "Weekly nafizesi aynı dosyada");
 
+  // Metinsiz PKG kalemi (kullanıcı: asistana metinsiz paketli dediğinde yapmıyordu): Strap yeter, metin isteğe bağlı.
+  await arac("kalemEkle", { haftaId: hf.id, tarih: hf.baslangic, dosya: "القمة العربية في الرياض", paketBasligi: "تقرير من الرياض" });
+  ok((await p.locator(bekleyen).count()) === 1, "metinsiz kalem kartı açıldı");
+  await yaz("evet");
+  d = await durum();
+  const mk = d.haftalik.find((x) => x.id === hf.id).kalemler.find((k) => k.paketBasligi === "تقرير من الرياض");
+  ok(mk && !mk.metin && mk.baslikId === dosyaId && mk.tarih === hf.baslangic, "metinsiz PKG kalemi dosyaya eklendi");
+  await arac("kalemEkle", { haftaId: hf.id, tarih: hf.baslangic });
+  await yaz("evet");
+  ok((await p.locator(bekleyen).count()) === 1, "metin de Strap de yoksa bekler");
+  await yaz("vazgeç");
+
   // Takibe gelişme satırı.
   const tk = d.oneriler.find((o) => o.durum === "takip") ?? d.oneriler.find((o) => ["yeni", "degerlendiriliyor"].includes(o.durum));
   if (tk) {

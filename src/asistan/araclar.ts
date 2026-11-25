@@ -132,6 +132,8 @@ export interface FormAlani {
   /** Arapça içerik: sağdan sola. */
   icerik?: boolean;
   zorunlu?: boolean;
+  /** Zorunluluk bu alan doluysa düşer (Weekly kaleminde Strap varsa metin isteğe bağlı: metinsiz PKG kalemi). */
+  yeter?: string;
   secenekler?: Secenek[];
   /** Seçenekler başka alanın değerine bağlı (plan değişince başlıklar): o alanın değeri → seçenekler. */
   bagli?: { alan: string; harita: Record<string, Secenek[]> };
@@ -1061,8 +1063,8 @@ const YAZMA: Record<string, Yurutucu> = {
         { ad: "baslikId", etiket: "asADosya", tur: "secim", bagli: { alan: "haftaId", harita: Object.fromEntries(haftalar.map((x) => [x.id, dosyaSecenekleri(d, x, dil)])) } },
         { ...A.icerik("yeniBaslik", "asAYeniBaslik", true), kosul: { alan: "baslikId", deger: YENI } },
         A.icerik("yer", "asAYer"),
-        A.icerik("metin", "asAMetin", true, true),
         A.icerik("paketBasligi", "asAStrap"),
+        { ...A.icerik("metin", "asAMetin", true, true), yeter: "paketBasligi" },
         A.muhabir(muhabirler, false),
         A.secim("bicim", "asABicim", bicimSecenekleri(dil)),
         A.secim("tur", "asAMasa", turSecenekleri(dil)),
@@ -1573,7 +1575,7 @@ export const YAZMA_ARACLARI = Object.keys(YAZMA);
 export const gorunurMu = (a: FormAlani, v: Degerler) => !a.kosul || v[a.kosul.alan] === a.kosul.deger;
 export const alanSecenekleri = (a: FormAlani, v: Degerler): Secenek[] => (a.bagli ? (a.bagli.harita[String(v[a.bagli.alan] ?? "")] ?? []) : (a.secenekler ?? []));
 export const eksikAlanlar = (alanlar: FormAlani[], v: Degerler) =>
-  alanlar.filter((a) => a.zorunlu && gorunurMu(a, v) && (a.tur === "coklu" ? !va(v, a.ad).length : a.tur === "onay" ? false : !vs(v, a.ad))).map((a) => a.ad);
+  alanlar.filter((a) => a.zorunlu && !(a.yeter && vs(v, a.yeter)) && gorunurMu(a, v) && (a.tur === "coklu" ? !va(v, a.ad).length : a.tur === "onay" ? false : !vs(v, a.ad))).map((a) => a.ad);
 
 // Kişinin "evet"i: düğmesiz onay (belgeler/asistan.md, ilke 3). Yalnız kişinin kendi yazdığı iletiden.
 const EVET = /^\s*(evet|tamam|onayla(yorum)?|olur|yap|g[öo]nder|ok(ey)?|yes|sure|confirm|send|نعم|أجل|موافق|تمام|حسنا|حسناً|أرسل)[\s.!]*$/i;

@@ -202,7 +202,7 @@ function OnayAlani({ a, v, aktif, eksik }: { a: FormAlani; v: Degerler; aktif: b
   const etiket = (
     <span>
       {t(a.etiket)}
-      {a.zorunlu && aktif && <span aria-hidden> *</span>}
+      {a.zorunlu && !(a.yeter && v[a.yeter]) && aktif && <span aria-hidden> *</span>}
     </span>
   );
   if (a.tur === "onay")

@@ -576,7 +576,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `hesapsizKisiEkle` artık demoda da çalışır ve ünvanı şehirden kurar), `muhabirBilgisiDuzenle`,
     `takipSatiriEkle`, Next Day'e `nafizeEkle` ve `ekibeEkle`, Weekly'ye `haftaCanliEkle` ve
     `haftaNafizeEkle`; okuma `gununNotu`, `muhabirRaporu`. Nafize formu ortak değil, araçta saatler
-    virgülle ("8, 11:30", `saatCoz`), her saat ayrı nafize. Test `testler/asistan-yeni.cjs`.
+    virgülle ("8, 11:30", `saatCoz`), her saat ayrı nafize. `kalemEkle`'de Strap varsa metin isteğe bağlı
+    (kullanıcı: asistana metinsiz paket ekletemiyordu; form alanının `yeter`'i: o alan doluysa zorunluluk
+    düşer), kapının tanımı bir dosyaya birden çok PKG'yi ayrı kalem diye anlatır. Test `testler/asistan-yeni.cjs`.
   - **"İmla denetimi"** (kullanıcı: plan metinlerinde imla düzeltilsin ama tatsız
     sürpriz olmasın; özellik `imla`): Next Day ve Weekly'nin ⋯ menüsünde
     (`data-arac="imla"`, `bilesenler/YzImla.tsx → ImlaPenceresi`). Satırlar
