@@ -20,6 +20,15 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
     await p.goto("about:blank"); await p.goto(B + yol); await p.waitForTimeout(900);
   };
   const paketler = () => p.evaluate(() => JSON.parse(localStorage.getItem("trt-planlama-v25") || "{}").paketler ?? []);
+  // Masa artık görev talebi açmıyor, öneri gönderiyor (masa-onerisi.cjs); eski talepler kayıtta sürüyor: kayda yazılır.
+  const talepKur = (muhabir, strap, tarih) => p.evaluate(([m, s, t]) => {
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
+    const mu = d.kisiler.find((k) => k.id === m);
+    const z = new Date().toISOString();
+    const id = "p-talep-" + Math.random().toString(36).slice(2, 7);
+    d.paketler.unshift({ id, kod: "TRTA_T" + id.slice(-4), baslik: s, aciklama: "تفاصيل التكليف", sehir: mu.sehir, muhabirId: m, tur: "ekonomi", bicim: "pkg", sonTarih: t, sahaGerekli: false, stok: true, durum: "taslak", notlar: [], olusturma: z, guncelleme: z, gorevTalebi: { kisiId: "ek2", birim: "ekonomi", zaman: z } });
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(d)); localStorage.setItem("trt-planlama-v25-iz", String(Date.now()));
+  }, [muhabir, strap, tarih]);
   const formuDoldur = async (muhabir, strap, tarih) => {
     if (muhabir) await p.locator("[data-gorev-formu] select").first().selectOption(muhabir);
     await p.locator("[data-gorev-baslik]").fill(strap);
@@ -58,9 +67,8 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
 
   // 5. Ekonomi talep eder; muhabir onaya dek görmez
   await gir("ek2", "#/ekonomi");
-  ok((await p.locator('[data-gorevlendir="talep"]').count()) === 1, "Ekonomi'de \"Görev talebi\"");
-  await p.locator("[data-gorevlendir]").click(); await p.waitForTimeout(300);
-  await formuDoldur("mu2", "طلب تكليف من الاقتصاد", gunEkle(2));
+  ok((await p.locator('[data-gorevlendir="oneri"]').count()) === 1 && (await p.locator('[data-gorevlendir="talep"]').count()) === 0, "Ekonomi'de görev talebi yerine \"Öneri gönder\"");
+  await talepKur("mu2", "طلب تكليف من الاقتصاد", gunEkle(2));
   const t1 = (await paketler()).find((x) => x.baslik === "طلب تكليف من الاقتصاد");
   ok(!!t1 && t1.durum === "taslak" && t1.gorevTalebi?.kisiId === "ek2" && !t1.gorev && t1.tur === "ekonomi", "talep: taslak, Planlama'nın onayını bekliyor");
   await gir("ek2", "#/ekonomi/oneriler");
@@ -83,9 +91,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   ok(isaretli?.isaret?.tur === "yapildi", "muhabir \"Yapıldı\" dedi");
 
   // 7. Ret: ikinci talep gerekçeyle reddedilir, talep eden görür
-  await gir("ek2", "#/ekonomi");
-  await p.locator("[data-gorevlendir]").click(); await p.waitForTimeout(300);
-  await formuDoldur("mu4", "طلب سيرفض", gunEkle(1));
+  await talepKur("mu4", "طلب سيرفض", gunEkle(1));
   const r1 = (await paketler()).find((x) => x.baslik === "طلب سيرفض");
   await gir("pl1", "#/paketler");
   await p.locator(`[data-gorev-reddet="${r1?.id}"]`).click();
@@ -97,9 +103,7 @@ const gunEkle = (n) => { const d = new Date(); d.setDate(d.getDate() + n); retur
   ok((await p.locator(`[data-prg-arsiv="${r1?.id}"]`).innerText()).includes("لا حاجة"), "talep eden reddi gerekçesiyle arşivde görüyor");
 
   // 8. 390 pikselde taşma yok (talep kartı ve pencere açıkken)
-  await gir("ek2", "#/ekonomi");
-  await p.locator("[data-gorevlendir]").click(); await p.waitForTimeout(300);
-  await formuDoldur("mu1", "طلب للعرض", gunEkle(1));
+  await talepKur("mu1", "طلب للعرض", gunEkle(1));
   for (const dil of ["tr", "ar"]) {
     await p.setViewportSize({ width: 390, height: 840 });
     await p.evaluate((d) => localStorage.setItem("trt-planlama-dil", d), dil);

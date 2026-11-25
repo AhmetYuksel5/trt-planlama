@@ -1,5 +1,7 @@
 import { Archive, CalendarRange, Landmark, Trophy, ChevronLeft, ChevronRight, Clapperboard, FileText, Lightbulb, Pencil, Plus, Search, Trash2, Tv, X } from "lucide-react";
 import { MesajRozeti } from "../../bilesenler/MesajRozeti";
+import { OneriDurumRozeti } from "../../bilesenler/Tablolar";
+import { oneriArsivde } from "../../oneriPlanlari";
 import { UretimeAlDugmesi } from "../../bilesenler/UretimBalonu";
 import { useState, type ReactNode } from "react";
 import { GorevlendirDugmesi } from "../../bilesenler/PaketGorevi";
@@ -403,9 +405,12 @@ function Oneriler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
   const [sekme, setSekme] = useAdimDurumu<OneriSekmesi>(`${birim}:oneri`, "planlamadan");
   const acikSorular = masaninSorulari(v, birim).filter((s) => !s.cevap);
   const bekleyen = masaTalepleri(v, birim).filter(talepBekliyor);
+  // Masanın Planlama'ya gönderdiği öneriler (arşive düşene dek); karar Planlama'da.
+  const onerilerimiz = v.oneriler.filter((o) => o.masa === birim && !oneriArsivde(o));
+  const kararda = onerilerimiz.filter((o) => o.durum === "yeni" || o.durum === "degerlendiriliyor").length;
   const sekmeler: { s: OneriSekmesi; ad: Anahtar; n?: number }[] = [
     { s: "planlamadan", ad: "pmPlanlamadan", n: acikSorular.length },
-    { s: "bizim", ad: "pmBizim", n: bekleyen.length },
+    { s: "bizim", ad: "pmBizim", n: bekleyen.length + kararda },
   ];
   return (
     <Kart baslik={t("pmOneriler")} ikon={<Lightbulb size={18} />} sagUc={<GorevlendirDugmesi ben={ben} />}>
@@ -419,6 +424,21 @@ function Oneriler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
       <div className="prg-oneriler">
         {sekme === "planlamadan" &&
           (acikSorular.length ? acikSorular.map((s) => <SoruKarti key={s.id} ben={ben} oneriId={s.oneriId} not={s.not} zaman={s.zaman} soran={s.soran} />) : <Bos metin={t("kayitYok")} />)}
+        {sekme === "bizim" &&
+          onerilerimiz.map((o) => (
+            <div key={o.id} className="prg-oneri" data-prg-masa-oneri={o.id}>
+              <div className="prg-icerik-ust">
+                <OneriDurumRozeti oneri={o} />
+                {o.hedefTarih && <span className="soluk">· {tarihYaz(o.hedefTarih, dil)}</span>}
+              </div>
+              <a href={`#/oneriler/${o.id}`}>
+                <Icerik blok>{o.paketBasligi || o.haberBasligi}</Icerik>
+              </a>
+              <div className="prg-icerik-alt">
+                <span className="soluk">{o.muhabirId ? ad(kisiBul(v, o.muhabirId)) : ""}</span>
+              </div>
+            </div>
+          ))}
         {sekme === "bizim" &&
           (bekleyen.length ? (
             bekleyen.map((p) => (
@@ -441,7 +461,7 @@ function Oneriler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
                 </div>
               </div>
             ))
-          ) : (
+          ) : onerilerimiz.length ? null : (
             <Bos metin={t("kayitYok")} />
           ))}
       </div>

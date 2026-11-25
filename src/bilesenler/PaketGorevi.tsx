@@ -1,5 +1,6 @@
 import { TarihGirdisi } from "./TarihSaat";
-import { Check, ClipboardList, Hourglass, Send, Undo2, X } from "lucide-react";
+import { Check, ClipboardList, Hourglass, Lightbulb, Send, Undo2, X } from "lucide-react";
+import { MasaOneriPenceresi } from "../ekranlar/oneri/MasaOnerisi";
 import { useState } from "react";
 import { AnmaGirdisi } from "./Anma";
 import { Icerik, Kart, Pencere, Rozet, bildir, icerikAlani } from "./Parcalar";
@@ -16,6 +17,7 @@ import {
   gorevTalebiVerebilir,
   ileriGorevVerebilir,
   paketGorevVerebilir,
+  masaOneriGonderebilir,
 } from "../yetki";
 import { BicimSecici, MuhabirSecici } from "../ekranlar/nextday/Formlar";
 
@@ -31,6 +33,16 @@ export function GorevlendirDugmesi({ ben, muhabirId }: { ben: Kisi; muhabirId?: 
   const { t } = useDil();
   const [acik, setAcik] = useState(false);
   const verir = paketGorevVerebilir(ben);
+  // Masa (Programlar, Ekonomi, Spor) görev talebi yerine öneri gönderir (kullanıcı: öneri muhabirin önerisi gibi gelsin).
+  if (!verir && masaOneriGonderebilir(ben))
+    return (
+      <>
+        <button type="button" className="dugme" onClick={() => setAcik(true)} data-gorevlendir="oneri">
+          <Lightbulb size={15} /> {t("moOneriGonder")}
+        </button>
+        {acik && <MasaOneriPenceresi ben={ben} kapat={() => setAcik(false)} />}
+      </>
+    );
   if (!verir && !gorevTalebiVerebilir(ben)) return null;
   return (
     <>

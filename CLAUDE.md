@@ -2856,7 +2856,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kapatır, Newsdesk sistemdeyken de (`paketTamamlayabilir`, `sadeAkis`);
   onaylanınca stokta, Next Day "Hazır paketler"den seçilir. Masa kolundan
   olsa da masa akışına girmez (`masaPaketi`).
-  - Görev talebi: Ekonomi, Program, Spor (izin `gorevTalebi`,
+  - Görev talebi (eski; masa artık öneri gönderiyor, aşağıda Masaların sayfası;
+    kayıttaki talepler aynı kurallarla sürer): Ekonomi, Program, Spor (izin `gorevTalebi`,
     `gorevTalebiVerebilir`) aynı formla "Görev talebi"; paket taslak,
     `Paket.gorevTalebi` (talep eden, birimi), kol talep edenin masası.
     Planlama'ya `gorevTalebiGeldi`. Yalnız Planlama (ve tam yönetici) karar
@@ -2989,10 +2990,25 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `masaYayinKarariVerebilir`, `paketinMasasi`). "Yayınlanmadı" denen masa
     paketi Next Day'in hazır paketlerinden de düşer.
   - Öneriler: Planlama'dan (masaya sorulan, "Uygundur / Uygun değildir" notla,
-    `masaSorusunuYanitla`), Bizim önerilerimiz (masanın görev talepleri, karar
-    Planlama'da; "+" düğmesi görev talebi). Görev talebi kabul edilince paket
-    masanın takibine geçer (`gorevTalebiKarar`, `masaTakibi`; eskileri
-    `masaGorevleriniTakibeAl`).
+    `masaSorusunuYanitla`), Bizim önerilerimiz (masanın Planlama'ya gönderdiği
+    öneriler, durumlarıyla; kalmış eski görev talepleri). Görev talebi kabul
+    edilince paket masanın takibine geçer (`gorevTalebiKarar`, `masaTakibi`;
+    eskileri `masaGorevleriniTakibeAl`).
+  - Masanın önerisi (kullanıcı: Programlar'dan gelen öneri doğrudan görevlendirme
+    gibi geliyordu, muhabirin önerisi gibi, program etiketiyle gelsin; `oneri/
+    MasaOnerisi.tsx`, `eylemler.ts → masaOneriGonder`, yetki
+    `masaOneriGonderebilir`): masada "Görev talebi" düğmesinin yerinde "Öneri
+    gönder" (`GorevlendirDugmesi`, `data-gorevlendir="oneri"`; masa sayfası ve
+    Paketler). Form muhabirinkinin dört alanı (`OneriMetinAlanlari`), gün, haber
+    türü, isteğe bağlı muhabir (yoksa kaynak kurum içi, masanın adıyla). Paket
+    açılmaz: `Oneri.masa`'lı, kolu masanın, "yeni" öneri Planlama'nın "Karar
+    bekleyen"ine düşer, kartın bilgi satırında masanın adı masanın renginde
+    (`MasaEtiketi`, `data-oneri-masa`); karar her öneri gibi (plana ekle,
+    muhabiri görevlendir [masa varsayılanı kolundan], reddet). Düzeltmeye
+    gitmez (muhabir yazmadı). Karar aşamasında (yeni, değerlendirme, ret, geri
+    çekilmiş) muhabir görmez (`veri.ts → masaOnerisiGizli`, `oneriGorebilir`,
+    gerçek kipte erişim listesi boş), görev talebindeki gibi. Masa kendi önerisinin
+    sayfasını açar (`masaOneriyiGorur`). Test `testler/masa-onerisi.cjs`.
   - Programlar (yalnız Programlar; `Durum.programlar`, `ProgramTanimi`,
     koleksiyon `programlar`): ad (Arapça), yayın saati (24 saat), süre, yayın
     günleri (Cumartesi 0); `eylemler.ts → programKaydet`, `programKaldir`

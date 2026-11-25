@@ -1,4 +1,5 @@
 import { CircleCheck, LayoutGrid, List, MapPinned, Plus, X } from "lucide-react";
+import { MasaEtiketi } from "./MasaOnerisi";
 import { useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { OneriYolu } from "../../bilesenler/OneriYolu";
@@ -119,6 +120,7 @@ export function OneriMetaSatiri({ oneri: o, d, bagli = false, kapat }: { oneri: 
   const yer = oneriYeri(d, o);
   return (
     <span className="ok-meta" data-oneri-meta>
+      <MasaEtiketi oneri={o} />
       {/* Plana girmişse gün planın notunda; iki kez yazılmasın. */}
       {gun && !yer && <span className="ok-gun">{gun}</span>}
       {yer ? <PlanaEklendiNotu oneri={o} d={d} bagli={bagli} kapat={kapat} /> : <OneriPlanEtiketleri oneri={o} d={d} bagli={bagli} />}

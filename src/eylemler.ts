@@ -19,7 +19,7 @@ import { SABIT_SABLONLAR, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim
 import { PLAN_GONDER_SABLONU, VARSAYILAN_PLAN_GONDER, type PlanGonderTuru } from "./planGonder";
 import { VARSAYILAN_OZEL_GOREV, VARSAYILAN_TAKDIR } from "./takdir";
 import { metin, yaz, type Anahtar, type Yazi } from "./dil";
-import { izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, unvanYoneticiMi, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
+import { birimAdiDilde, izinBirimi, birimeUygunUnvan, ayniYapi, grupMu, icMuhabirMi, kademeHedefi, birimUnvanlari, birimdenUnvanCikar, birimeUnvanEkle, disMuhabirMi, ekipGorevleri, guncelYapi, tamamla, muhabirYerUnvani, otomatikMuhabirUnvaniMi, sehirMuhabirUnvaniId, unvanListesi, unvandanRol, unvanYoneticiMi, yerUnvaniUygula, varsayilanYapi, type Yapi } from "./yapi";
 import { KISAYOL_EN_COK, kisayolGorebilir } from "./kisayol";
 import { BOLME_EN_COK, ORTAM_EN_COK, bolmeyeGirer, kisininOrtamlari, varsayilanDuzen, yolTemizle } from "./ortam";
 import { TAKVIM_KAYNAGI } from "./takvim";
@@ -217,6 +217,8 @@ import {
   masrafOnaylayabilir,
   postaGorebilir,
   teslimGunuBelirleyebilir,
+  masaBirimi,
+  masaOneriGonderebilir,
 } from "./yetki";
 import { SORU_MASALARI, SORULABILIR_DURUM, acikSoru, kabulSoru } from "./masaSorusu";
 import { programGunuMu } from "./programMasasi";
@@ -431,6 +433,56 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   // Elle girilende hareketi yapan giren kişi; geçmişte "gönderdi" değil "girdi" okunsun.
   const veri: Record<string, string> = takip ? (muhabir ? { sahip: "planlama" } : { kime: muhabirId! }) : { sahip: "planlama", ...(muhabir ? {} : { elle: "1" }) };
   kaydet(hareketYaz(d, { kisiId: ben.id, tip: takip ? "takipEklendi" : "oneriGeldi", oneriId: id, veri }));
+  return id;
+};
+
+/*
+ * Masanın önerisi (kullanıcı: Programlar'dan gelen öneri doğrudan görev talebi
+ * gibi geliyordu; muhabirin önerisi gibi, masanın etiketiyle gelsin): kurumun dört
+ * alanı, gün ve isteğe bağlı muhabir. Planlama'nın "Karar bekleyen"ine düşer,
+ * kolu masanın; muhabir seçilmediyse kaynağı kurum içi, masanın adıyla.
+ */
+export interface MasaOneriGirdisi {
+  muhabirId?: string;
+  paketBasligi: string;
+  gelisme: string;
+  islemeFikri?: string;
+  gorselIsleme?: string;
+  bicim: OneriBicimi;
+  hedefTarih: string;
+  bitisTarih?: string;
+}
+
+export const masaOneriGonder = (ben: Kisi, g: MasaOneriGirdisi): string | null => {
+  const masa = masaBirimi(ben);
+  if (!masa || !masaOneriGonderebilir(ben) || !g.paketBasligi.trim() || !g.gelisme.trim() || !g.hedefTarih || !oneriSinirIcinde(g)) return null;
+  let d = getir();
+  const muhabir = g.muhabirId ? kisiBul(d, g.muhabirId) : undefined;
+  if (g.muhabirId && muhabir?.birim !== "muhabir") return null;
+  const id = kimlik("o");
+  const oneri: Oneri = {
+    id,
+    muhabirId: muhabir?.id,
+    ...(!muhabir && { kaynakTuru: "kurum" as const, kaynakAdi: birimAdiDilde(masa, "ar") }),
+    giren: ben.id,
+    masa,
+    ulke: muhabir ? ulkesi(muhabir.sehir) : "turkiye",
+    haberBasligi: g.paketBasligi.trim(),
+    gelisme: g.gelisme.trim(),
+    paketBasligi: g.paketBasligi.trim(),
+    ...(g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
+    ...(g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
+    tur: masa,
+    bicim: g.bicim === TAKIP_BICIMI ? "pkg" : g.bicim,
+    sahaGerekli: false,
+    zaman: simdi(),
+    kanal: "sistem",
+    hedefTarih: g.hedefTarih,
+    ...(g.bitisTarih && g.bitisTarih > g.hedefTarih && { bitisTarih: g.bitisTarih }),
+    durum: "yeni",
+  };
+  d = { ...d, oneriler: [oneri, ...d.oneriler] };
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriGeldi", oneriId: id, veri: { sahip: "planlama", masa } }));
   return id;
 };
 

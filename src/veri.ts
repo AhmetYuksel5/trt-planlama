@@ -566,6 +566,13 @@ export type OneriDurum = (typeof ONERI_DURUMLARI)[number];
 export const KANALLAR = ["sistem", "eposta", "telefon", "mesaj", "yuzYuze"] as const;
 export type Kanal = (typeof KANALLAR)[number];
 
+/*
+ * Masanın önerisi Planlama karar verene dek muhabirin işi değil (görev talebinde
+ * olduğu gibi): muhabir ancak plana girince, görev ya da takip olunca görür.
+ */
+export const masaOnerisiGizli = (o: Pick<Oneri, "masa" | "durum">): boolean =>
+  !!o.masa && ["yeni", "degerlendiriliyor", "reddedildi", "geriCekildi", "sonra"].includes(o.durum);
+
 export interface Oneri {
   id: string;
   /** Talimatta ve muhabir dışı kaynakta boş: muhabiri Planlama plana eklerken atıyor. */
@@ -581,6 +588,12 @@ export interface Oneri {
   kaynakAdi?: string;
   /** Planlama elle girdiyse giren kişi; muhabirin kendi gönderdiğinde boş. */
   giren?: string;
+  /*
+   * Öneriyi gönderen masa (kullanıcı: Programlar'ın önerisi doğrudan görev talebi
+   * gibi geliyordu, muhabirin önerisi gibi gelsin, masanın etiketiyle). Karar
+   * aşamasındayken muhabir görmez (yetki.ts → masaOnerisiGizli).
+   */
+  masa?: "program" | "ekonomi" | "spor";
   ulke: Ulke;
   haberBasligi: string;
   gelisme: string;

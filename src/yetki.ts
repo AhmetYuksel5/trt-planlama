@@ -55,6 +55,7 @@ import {
   type Paket,
   masaPaketi,
   eskiOzelPaket,
+  masaOnerisiGizli,
 } from "./veri";
 
 /**
@@ -413,7 +414,9 @@ export const paketGorebilir = (
 };
 
 export const oneriGorebilir = (k: Kisi | undefined, o: Oneri): boolean =>
-  !!k && (k.birim !== "muhabir" || o.muhabirId === k.id);
+  !!k && (k.birim !== "muhabir" || (o.muhabirId === k.id && !masaOnerisiGizli(o)));
+/** Masa (Programlar, Ekonomi, Spor) Planlama'ya öneri gönderir. */
+export const masaOneriGonderebilir = (k: Kisi | undefined): boolean => !!k && !k.pasif && !!masaBirimi(k);
 
 /*
  * Düzeltmeye gönderme yalnız muhabirin önerisinde: talimatı yönetici verdi,
@@ -425,6 +428,8 @@ export const oneriDuzeltmeyeGider = (k: Kisi | undefined, o: Oneri): boolean =>
   yapabilir(k, "oneriDegerlendir") &&
   !!o.muhabirId &&
   !o.talimatVeren &&
+  // Masanın önerisini muhabir yazmadı: düzeltme ona gitmez.
+  !o.masa &&
   ["yeni", "degerlendiriliyor", "sonra"].includes(o.durum);
 
 /*
@@ -870,7 +875,7 @@ export const oneriDogrudanGorevlendirebilir = (ben: Kisi | undefined, o: Oneri, 
 
 /** Masaya sorulmuş öneri, öneriler sayfası menüsünde olmayan masaya da açık. */
 export const masaOneriyiGorur = (ben: Kisi | undefined, o: Oneri, d: Durum): boolean =>
-  !!ben && oneriSorulari(d, o.id).some((s) => masaUyesi(ben, s.birim));
+  !!ben && ((!!o.masa && masaUyesi(ben, o.masa)) || oneriSorulari(d, o.id).some((s) => masaUyesi(ben, s.birim)));
 /** Planlama görevlerini ve iş taksimini Planlama yöneticisi ve tam yönetici düzenliyor; iş ekleme görevleri gören herkeste. */
 export const gorevleriDuzenler = (ben: Kisi | undefined): boolean =>
   !!ben &&

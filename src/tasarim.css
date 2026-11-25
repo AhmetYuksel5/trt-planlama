@@ -4622,3 +4622,6 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
   border-radius: var(--yaricap, 8px);
   padding: 10px 12px;
 }
+
+/* Masanın önerisi: kartın bilgi satırında masanın adı, masanın renginde. */
+.masa-etiketi { color: var(--prg); background: var(--prg-sis); border-radius: var(--yaricap); padding: 0 var(--ara-1); font-weight: 600; }
