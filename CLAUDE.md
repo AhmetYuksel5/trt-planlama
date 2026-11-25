@@ -1452,15 +1452,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     önerinin türü (`gelismeBicimEki`; paketi varsa yalnız pakette). PKG
     yazılmaz, bölümün adı zaten o.
   - Masanın işi plan metninde etiketli (kullanıcı: plana eklenen öneri ekonomi için
-    yapılıyorsa ekonomi etiketiyle plan metnine girsin, öbür birimler için de;
-    Weekly'de `kalemMasaEtiketi` vardı): gelişmenin ve PKG'nin üstünde kalın satırda
-    birimin Arapça adı (الاقتصاد، البرامج، الرياضة; `masaEtiketi.ts`, `data-plan-masa`;
-    plan ekranı, belge, çıktı, Word ve kopya, متابعات dahil). Kural tek (Weekly de onu
-    kullanır): kolu masanınsa kolun sahibi, masanın önerisiyse (`Oneri.masa`) o masa,
-    öneri bir masaya sorulup "Uygundur" dendiyse o masa; gelişmede önerisinden ya da
-    Weekly kaleminden (`gelismeMasaEtiketi`). Aynı öneriden (ya da kalemden) gelen
-    gelişme aynı başlıkta etiketi taşıyorsa PKG'de tekrar edilmez
-    (`paketMasaEtiketi`). Saklanmaz. Test `testler/plan-masa-etiketi.cjs`.
+    yapılıyorsa ekonomi etiketiyle plan metnine girsin, öbür birimler için de; sonra:
+    paketin adından sonra tire ve kalın): PKG'nin adının (Strap) arkasında " - " ve kalın
+    birimin Arapça adı (الاقتصاد، البرامج، الرياضة; `masaEtiketi.ts`, `nextday/MasaEki.tsx`,
+    `data-plan-masa`; klasik plan ekranı, belge, çıktı, beklenen paketler, متابعات, Word ve
+    kopya). Kural tek (Weekly de onu kullanır, orada alt başlık): kolu masanınsa kolun
+    sahibi, masanın önerisiyse (`Oneri.masa`) o masa, öneri bir masaya sorulup "Uygundur"
+    dendiyse o masa. Aynı öneriden (ya da Weekly kaleminden) gelen PKG aynı başlıkta
+    etiketi taşıyorsa gelişmede tekrar edilmez; paketsiz gelişmede metnin sonunda
+    (`gelismeMasaEtiketi`). Saklanmaz. Test `testler/plan-masa-etiketi.cjs`.
   - Pakete eklenen notlar (`Paket.notlar`: paket formundaki "Not" alanı,
     kimliği `eylemler.ts → formNotuKimligi`, düzenlemede o not değişir;
     not, yönetici notu, durak notu)

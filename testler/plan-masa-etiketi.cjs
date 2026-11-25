@@ -1,5 +1,6 @@
 // Next Day'de masanın işi etiketli (kullanıcı: plana eklenen öneri ekonomi için yapılıyorsa ekonomi etiketiyle plan
-// metnine girsin, öbür birimler için de): gelişme ve PKG'nin üstünde birimin Arapça adı; aynı önerinin PKG'si tekrar etmez.
+// metnine girsin; sonra: paketin adından sonra tire ve kalın): PKG'nin adının arkasında birimin Arapça adı; aynı önerinin
+// PKG'si planda varsa gelişmede tekrar edilmez, paketsiz gelişmede metnin sonunda.
 const { chromium } = require(process.env.PW || "playwright");
 const B = "http://localhost:4173/";
 const K = "trt-planlama-v25";
@@ -37,12 +38,18 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await git(yol);
     await p.evaluate(() => document.querySelectorAll("main details").forEach((x) => (x.open = true)));
     const et = async (id) => ((await p.locator(`[data-plan-masa="${id}"]`).count()) ? (await p.locator(`[data-plan-masa="${id}"]`).first().innerText()).trim() : "");
-    const ek = await et("g-ek"), sp = await et("p-sp"), pr = await et("g-pr");
-    ok(ek.length > 0, `${yol}: ekonomi önerisinin gelişmesi etiketli (${ek})`);
+    const sp = await et("p-sp"), pr = await et("g-pr");
+    const ek = await et("p-ek");
+    ok(ek.length > 0, `${yol}: ekonomi PKG'si etiketli (${ek})`);
+    const satirMetni = (await p.locator(`[data-plan-masa="p-ek"]`).first().evaluate((el) => el.parentElement.textContent)).replace(/\s+/g, " ");
+    ok(satirMetni.includes("تقرير p-ek - " + ek), `${yol}: etiket paketin adından sonra tire ile (${satirMetni.slice(0, 60)})`);
+    ok((await p.locator(`[data-plan-masa="p-ek"]`).first().evaluate((el) => el.tagName)) === "B", `${yol}: etiket kalın`);
     ok(sp.length > 0 && sp !== ek, `${yol}: spor PKG'si kendi biriminin adıyla (${sp})`);
     ok(pr.length > 0 && pr !== ek && pr !== sp, `${yol}: Programlar'ın önerisi program etiketli (${pr})`);
     ok(!(await et("g-hb")) && !(await et("p-hb")), `${yol}: haber masasının işi etiketsiz`);
-    ok(!(await et("p-ek")), `${yol}: aynı önerinin PKG'si etiketi tekrar etmiyor`);
+    ok(!(await et("g-ek")), `${yol}: aynı önerinin gelişmesi etiketi tekrar etmiyor`);
+    const grMetni = (await p.locator(`[data-plan-masa="g-pr"]`).first().evaluate((el) => el.parentElement.textContent)).replace(/\s+/g, " ");
+    ok(grMetni.includes("تطور o-pr - " + pr), `${yol}: paketsiz gelişmede metnin sonunda`);
     ok(/[؀-ۿ]/.test(ek + sp + pr), `${yol}: etiket Arapça`);
   }
   ok(hatalar.length === 0, "sayfa hatası yok: " + hatalar.join(" | "));

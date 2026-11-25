@@ -1,5 +1,5 @@
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
-import { paketMasaEtiketi } from "../../masaEtiketi";
+import { MasaEki } from "./MasaEki";
 import { OneriyiAc } from "../oneri/OneriyiAc";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { useYeniTasarim } from "../../tasarimSecimi";
@@ -84,13 +84,8 @@ export default function BaslikKarti({
               <div key={p.id} className="kayit" {...paketSuruklenir(p, icerik && !!ben, ben ?? undefined)}>
                 <div className="kayit-bas">
                   <div>
-                    {paketMasaEtiketi(v, p) && (
-                      <Icerik blok>
-                        <b data-plan-masa={p.id}>{paketMasaEtiketi(v, p)}</b>
-                      </Icerik>
-                    )}
                     <a href={`#/paketler/${p.id}`} className="kalin-bag">
-                      <Icerik blok>{satir(paketYeri(p), p.baslik, muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc))}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}</Icerik>
+                      <Icerik blok>{satir(paketYeri(p), p.baslik)}<MasaEki d={v} p={p} />{muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc) && " / " + muhabirYeri([p.muhabirId ? kisiAr(kisiBul(v, p.muhabirId)) : ""], p.muhabirTbc)}{bicimEki(p.bicim) && <b data-bicim-eki> {bicimEki(p.bicim)}</b>}{paketNotEki(p) && <span data-paket-notu>{paketNotEki(p)}</span>}</Icerik>
                     </a>
                     {p.slug && (
                       <span dir="ltr" className="slug" data-paket-kodu>

@@ -24,25 +24,29 @@ export const masaEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler">, tur?: I
   masaBirimleri(d, tur, oneriId).map((b) => birimAdiDilde(b, "ar")).join(" · ");
 
 /* Gelişmenin kolu önerisinden ya da Weekly kaleminden. */
-export const gelismeMasaEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler" | "haftalik">, g: Gelisme) => {
+const gelismeKendiEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler" | "haftalik">, g: Gelisme) => {
   const kalem = g.haftalikKalemId ? d.haftalik.flatMap((h) => h.kalemler).find((k) => k.id === g.haftalikKalemId) : undefined;
   if (!g.oneriId && !kalem) return "";
   return masaEtiketi(d, kalem?.tur, g.oneriId ?? kalem?.oneriId);
 };
 
 /*
- * PKG'nin etiketi; aynı öneriden ya da Weekly kaleminden gelen gelişme aynı
- * başlıkta etiketini zaten taşıyorsa tekrar yazılmaz.
+ * Etiket paketin adının arkasında (kullanıcı: "paketin isminden sonra tire ve
+ * kalın"): PKG her zaman taşır; aynı öneriden (ya da Weekly kaleminden) gelen PKG
+ * aynı başlıkta etiketi taşıyorsa gelişmede tekrar edilmez, paketsizde gelişmenin sonunda.
  */
-export const paketMasaEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler" | "haftalik" | "gelismeler">, p: Paket) => {
-  const e = masaEtiketi(d, p.tur, p.oneriId);
+export const paketMasaEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler">, p: Paket) => masaEtiketi(d, p.tur, p.oneriId);
+
+export const gelismeMasaEtiketi = (d: Pick<Durum, "masaSorulari" | "oneriler" | "haftalik" | "paketler">, g: Gelisme) => {
+  const e = gelismeKendiEtiketi(d, g);
   if (!e) return "";
-  const kardes = d.gelismeler.some(
-    (g) =>
-      g.planId === p.planId &&
-      g.planBaslikId === p.planBaslikId &&
-      ((p.oneriId && g.oneriId === p.oneriId) || (p.haftalikKalemId && g.haftalikKalemId === p.haftalikKalemId)) &&
-      gelismeMasaEtiketi(d, g) === e,
+  const kardes = d.paketler.some(
+    (p) =>
+      p.durum !== "iptal" &&
+      p.planId === g.planId &&
+      p.planBaslikId === g.planBaslikId &&
+      ((g.oneriId && p.oneriId === g.oneriId) || (g.haftalikKalemId && p.haftalikKalemId === g.haftalikKalemId)) &&
+      paketMasaEtiketi(d, p) === e,
   );
   return kardes ? "" : e;
 };

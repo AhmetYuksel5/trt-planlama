@@ -701,14 +701,15 @@ export function GelismeListesi({
           <div {...hedef?.(g)} {...suruklenir("gelisme", g.id, planBaslikId, duzenler && !!ben)} data-gelisme={g.id} className={oncekiSinif(g.onceki, "kayit")} title={g.onceki ? t("oncekiGunden") : undefined}>
             <div className="kayit-bas">
               <div>
-                {gelismeMasaEtiketi(v, g) && (
-                  <Icerik blok className="kayit-metin">
-                    <b data-plan-masa={g.id}>{gelismeMasaEtiketi(v, g)}</b>
-                  </Icerik>
-                )}
                 <Icerik blok className="kayit-metin">
                   {(g.yer || g.onerenId) && <b>{g.yer || sehirAr(kisiBul(v, g.onerenId)?.sehir)} / </b>}
                   {g.metin}
+                  {gelismeMasaEtiketi(v, g) && (
+                    <>
+                      {" - "}
+                      <b data-plan-masa={g.id}>{gelismeMasaEtiketi(v, g)}</b>
+                    </>
+                  )}
                   {gelismeBicimEki(v, g) && <b data-bicim-eki> {gelismeBicimEki(v, g)}</b>}
                   {g.saat && <b data-gelisme-saat-eki> {vardiyaYaz(g.saat)}</b>}
                 </Icerik>
