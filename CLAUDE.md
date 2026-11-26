@@ -4274,6 +4274,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (tasarım ajanının kararı: yeşil yalnız durum rozetinde).
 - İndirme sayfası (kullanıcı: plannersflow.net/download, Android indir, iPhone'a yol göster;
   `public/download/index.html`, uygulamanın dışında statik sayfa, girişsiz, kurumun iç bilgisi yok):
+  Kart başında Android ve Apple simgesi, her adımın sonunda işin simgesi (`<symbol>` kümesi).
   Android kartında APK düğmesi (`../indir/plannersflow.apk`) ve kurulum adımları (bilinmeyen kaynak
   izni, Play Protect), iPhone kartında Safari › Paylaş › Ana Ekrana Ekle; cihazın kartı başta ve
   "Bu cihaz" işaretli, iPhone'da başka tarayıcıdaysa Safari uyarısı. Üç dil (metinler sayfanın

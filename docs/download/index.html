@@ -87,13 +87,19 @@
   }
 
   ol.adimlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: adim; }
-  ol.adimlar li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; counter-increment: adim; }
+  ol.adimlar li { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px; gap: 12px; align-items: start; counter-increment: adim; }
   ol.adimlar li::before {
     content: counter(adim); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
     background: var(--lacivert); color: #fff; font-size: 14px; font-weight: 600; margin-top: 1px;
   }
   @media (prefers-color-scheme: dark) { ol.adimlar li::before { background: #2c4675; } }
   ol.adimlar b { font-weight: 600; }
+  .adim-simge { width: 36px; height: 36px; padding: 8px; border-radius: 9px; background: var(--zemin); color: var(--sonuk); justify-self: end; margin-top: -4px; }
+  .simge.android { background: #e3f8ec; color: #2bb56a; }
+  .simge.apple { background: #eef0f3; color: #1d1d1f; }
+  @media (prefers-color-scheme: dark) { .simge.android { background: #173126; color: #3ddc84; } .simge.apple { background: #262c37; color: #f2f3f5; } }
+  .not { display: flex; gap: 10px; align-items: flex-start; }
+  .not-simge { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--yesil); }
   .paylas { display: inline-block; vertical-align: -3px; width: 18px; height: 18px; color: #2f7cf6; }
   .not { font-size: 14px; color: var(--sonuk); border-top: 1px solid var(--cizgi); padding-top: 14px; margin: auto 0 0; }
   .uyari { font-size: 14px; background: var(--uyari-sis); color: var(--uyari); border-radius: 8px; padding: 10px 12px; margin: 0; }
@@ -110,6 +116,20 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-indir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-ayar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-kalkan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-giris" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-pusula" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol>
+    <symbol id="i-paylas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></symbol>
+    <symbol id="i-ekle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="i-ekran" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-zil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-yenile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  </defs>
+</svg>
 <header>
   <div class="ust">
     <img class="logo" src="logo.png" alt="Plannersflow" width="182" height="30">
@@ -129,8 +149,8 @@
   <div class="kartlar">
     <section class="kart" id="android" aria-labelledby="android-baslik">
       <div class="kart-bas">
-        <span class="simge" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+        <span class="simge android" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24"><path d="M7.2 5.2 5.6 2.6M16.8 5.2l1.6-2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2.5 15.5a9.5 9.5 0 0 1 19 0z" fill="currentColor"/><circle cx="8" cy="11.6" r="1.1" fill="#fff"/><circle cx="16" cy="11.6" r="1.1" fill="#fff"/><path d="M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".35"/></svg>
         </span>
         <div>
           <h2 id="android-baslik">Android</h2>
@@ -144,18 +164,18 @@
         <small>APK · 0,4 MB</small>
       </a>
       <ol class="adimlar">
-        <li><span data-m="a1">İndirilen <b>plannersflow.apk</b> dosyasını bildirimden ya da İndirilenler'den aç.</span></li>
-        <li><span data-m="a2">Telefon izin isterse <b>Ayarlar</b>'a geç ve bu tarayıcıya <b>bilinmeyen uygulamaları yükleme</b> izni ver.</span></li>
-        <li><span data-m="a3"><b>Yükle</b>'ye bas. Play Protect sorarsa <b>Yine de yükle</b>'yi seç.</span></li>
-        <li><span data-m="a4">Ana ekrandaki Plannersflow simgesiyle aç ve giriş yap.</span></li>
+        <li><span data-m="a1">İndirilen <b>plannersflow.apk</b> dosyasını bildirimden ya da İndirilenler'den aç.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-indir"/></svg></li>
+        <li><span data-m="a2">Telefon izin isterse <b>Ayarlar</b>'a geç ve bu tarayıcıya <b>bilinmeyen uygulamaları yükleme</b> izni ver.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-ayar"/></svg></li>
+        <li><span data-m="a3"><b>Yükle</b>'ye bas. Play Protect sorarsa <b>Yine de yükle</b>'yi seç.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-kalkan"/></svg></li>
+        <li><span data-m="a4">Ana ekrandaki Plannersflow simgesiyle aç ve giriş yap.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-giris"/></svg></li>
       </ol>
-      <p class="not" data-m="androidNot">Uygulama siteyle aynı; güncellemeler kendiliğinden gelir, yeniden indirmek gerekmez. Telefonda Google Chrome yüklü olmalı.</p>
+      <p class="not"><svg class="not-simge" aria-hidden="true"><use href="#i-yenile"/></svg><span data-m="androidNot">Uygulama siteyle aynı; güncellemeler kendiliğinden gelir, yeniden indirmek gerekmez. Telefonda Google Chrome yüklü olmalı.</span></p>
     </section>
 
     <section class="kart" id="ios" aria-labelledby="ios-baslik">
       <div class="kart-bas">
-        <span class="simge" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4"/></svg>
+        <span class="simge apple" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12.15 6.9c-.95 0-2.42-1.08-3.96-1.04-2.04.03-3.91 1.18-4.96 3.01-2.12 3.68-.55 9.1 1.52 12.09 1.01 1.45 2.2 3.09 3.79 3.04 1.52-.07 2.09-.99 3.94-.99 1.83 0 2.35.99 3.96.95 1.64-.03 2.68-1.48 3.68-2.95 1.16-1.69 1.64-3.33 1.66-3.42-.04-.01-3.18-1.22-3.22-4.86-.03-3.04 2.48-4.49 2.6-4.56-1.43-2.09-3.62-2.32-4.39-2.38-2-.16-3.68 1.09-4.61 1.09zM15.53 3.83c.84-1.01 1.4-2.43 1.25-3.83-1.21.05-2.67.8-3.53 1.82-.78.9-1.46 2.34-1.27 3.71 1.34.1 2.71-.69 3.55-1.7"/></svg>
         </span>
         <div>
           <h2 id="ios-baslik">iPhone · iPad</h2>
@@ -165,16 +185,17 @@
       </div>
       <p class="uyari" id="safari-uyari" data-m="safariUyari" hidden>Bu sayfayı Safari'de aç: ana ekrana ekleme en kolay oradan.</p>
       <ol class="adimlar">
-        <li><span data-m="i1"><b>Safari</b>'de <span class="adres">plannersflow.net</span> adresini aç.</span></li>
-        <li><span><span data-m="i2a">Alttaki</span> <svg class="paylas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <span data-m="i2b"><b>Paylaş</b> düğmesine bas.</span></span></li>
-        <li><span data-m="i3">Listede aşağı kaydır, <b>Ana Ekrana Ekle</b>'yi seç, sonra <b>Ekle</b>.</span></li>
-        <li><span data-m="i4">Ana ekrandaki Plannersflow simgesiyle aç: adres çubuğu olmadan açılır.</span></li>
+        <li><span data-m="i1"><b>Safari</b>'de <span class="adres">plannersflow.net</span> adresini aç.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-pusula"/></svg></li>
+        <li><span><span data-m="i2a">Alttaki</span> <svg class="paylas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <span data-m="i2b"><b>Paylaş</b> düğmesine bas.</span></span> <svg class="adim-simge" aria-hidden="true"><use href="#i-paylas"/></svg></li>
+        <li><span data-m="i3">Listede aşağı kaydır, <b>Ana Ekrana Ekle</b>'yi seç, sonra <b>Ekle</b>.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-ekle"/></svg></li>
+        <li><span data-m="i4">Ana ekrandaki Plannersflow simgesiyle aç: adres çubuğu olmadan açılır.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-giris"/></svg></li>
       </ol>
-      <p class="not" data-m="iosNot">Bildirimler için iOS 16.4 ya da üstü gerekir ve uygulama ana ekrandaki simgeden açılmalıdır.</p>
+      <p class="not"><svg class="not-simge" aria-hidden="true"><use href="#i-zil"/></svg><span data-m="iosNot">Bildirimler için iOS 16.4 ya da üstü gerekir ve uygulama ana ekrandaki simgeden açılmalıdır.</span></p>
     </section>
   </div>
 
   <div class="web">
+    <span class="simge" aria-hidden="true"><svg width="24" height="24"><use href="#i-ekran"/></svg></span>
     <div class="metin">
       <h2 data-m="webBaslik">Bilgisayarda</h2>
       <p class="alt" data-m="webAlt">Kurulum gerekmez; tarayıcıda açman yeterli.</p>
