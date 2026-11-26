@@ -4791,3 +4791,10 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
   /* Yapışkan sekme şeridi kartın kenarına kadar: kartın yan boşluğu 12'ye indi. */
   :root body [data-oneri-sekmeleri] { margin-inline: calc(-1 * var(--ara-3)); padding-inline: var(--ara-3); }
 }
+/* Öneri görselleri (bilesenler/OneriGorselleri.tsx). */
+.gorsel-alani { display: flex; flex-wrap: wrap; gap: var(--ara-2); align-items: center; }
+.gorsel-kucuk { position: relative; display: grid; place-items: center; inline-size: 72px; block-size: 72px; padding: 0; border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey-2); overflow: hidden; cursor: pointer; font-size: var(--punto-mini); color: var(--sonuk); }
+.gorsel-kucuk img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.gorsel-kucuk > button { position: absolute; inset-block-start: 2px; inset-inline-end: 2px; display: grid; place-items: center; inline-size: 24px; block-size: 24px; border: 0; border-radius: 999px; background: rgb(0 0 0 / .55); color: #fff; cursor: pointer; }
+.gorsel-ekle { cursor: pointer; }
+.gorsel-buyuk img { display: block; max-inline-size: 100%; max-block-size: 75vh; margin-inline: auto; border-radius: var(--yaricap); }

@@ -609,14 +609,16 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         const sayimBaslangici = (s.data()?.sayimBaslangici as string | undefined) || undefined;
         const gundemPaylasim = s.data()?.gundemPaylasim as Durum["gundemPaylasim"];
         const staffingEslesmeleri = s.data()?.staffingEslesmeleri as Durum["staffingEslesmeleri"];
+        const gorselAdresi = (s.data()?.gorselAdresi as string | undefined) || undefined;
         const degisti =
           sayac !== d.sayac ||
           JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
           newsdeskDevrede !== d.newsdeskDevrede ||
           sayimBaslangici !== d.sayimBaslangici ||
           JSON.stringify(gundemPaylasim) !== JSON.stringify(d.gundemPaylasim) ||
-          JSON.stringify(staffingEslesmeleri) !== JSON.stringify(d.staffingEslesmeleri);
-        if (degisti) d = { ...d, sayac, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim, staffingEslesmeleri };
+          JSON.stringify(staffingEslesmeleri) !== JSON.stringify(d.staffingEslesmeleri) ||
+          gorselAdresi !== d.gorselAdresi;
+        if (degisti) d = { ...d, sayac, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim, staffingEslesmeleri, gorselAdresi };
         sunucuGeldi(GENEL.koleksiyon, s);
         geldi(GENEL.koleksiyon, degisti);
       },

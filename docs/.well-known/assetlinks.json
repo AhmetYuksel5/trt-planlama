@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "net.plannersflow.app",
+      "sha256_cert_fingerprints": ["02:8D:F1:9A:93:F1:4A:06:D6:05:9B:9E:A4:17:C1:9D:43:22:29:A4:63:34:9D:B2:7C:96:43:BB:80:1D:BB:81"]
+    }
+  }
+]

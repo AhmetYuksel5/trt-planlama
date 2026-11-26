@@ -296,10 +296,12 @@ service cloud.firestore {
     match /{alan}/{belge} {
       allow read: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
       // Gündem paylaşımı genel ayar belgesinde; herkes sayacı yazıyor, paylaşımı yalnız tam yönetici
-      // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi).
+      // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi). Öneri görsellerinin
+      // adresi de (gorselAdresi): başkası değiştirse muhabirlerin görselleri kendi sunucusuna giderdi.
       allow write: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
         && (!(alan == "ayar" && belge == "genel") || hesapYoneticisi()
-            || request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null)));
+            || (request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null))
+                && request.resource.data.get("gorselAdresi", null) == (resource == null ? null : resource.data.get("gorselAdresi", null))));
       allow read: if etkin() && kisitli()
         && ((alan in ["oneriler", "paketler", "takipler", "gorevlendirmeler", "faaliyetler", "mesajlar", "yanitlar", "cagrilar", "hareketler", "bahsetmeler"] && erisir(resource.data))
             || kendiAyari(alan, belge)

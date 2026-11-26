@@ -103,6 +103,10 @@ await t("muhabir kendi önerisini okur", true, getDoc(doc(db("mu"), "oneriler", 
 await t("yönetici gündemi paylaşır", true, setDoc(doc(db("adm"), "ayar", "genel"), { sayac: 1, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
 await t("personel sayacı yazar, paylaşım aynı", true, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 2, gundemPaylasim: { birimler: ["planlama"], kisiler: [] } }));
 await t("personel kendini paylaşıma ekleyemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3, gundemPaylasim: { birimler: ["planlama"], kisiler: ["dv"] } }));
+// Öneri görsellerinin Apps Script adresi: yalnız tam yönetici; personel sayacı yazarken adres aynı kalmalı.
+await t("yönetici görsel adresini yazar", true, setDoc(doc(db("adm"), "ayar", "genel"), { sayac: 4, gundemPaylasim: { birimler: ["planlama"], kisiler: [] }, gorselAdresi: "https://script.google.com/macros/s/A/exec" }));
+await t("personel sayacı yazar, görsel adresi aynı", true, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 5, gundemPaylasim: { birimler: ["planlama"], kisiler: [] }, gorselAdresi: "https://script.google.com/macros/s/A/exec" }));
+await t("personel görsel adresini değiştiremez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 6, gundemPaylasim: { birimler: ["planlama"], kisiler: [] }, gorselAdresi: "https://script.google.com/macros/s/B/exec" }));
 await t("personel paylaşımı silemez", false, setDoc(doc(db("pl"), "ayar", "genel"), { sayac: 3 }));
 // 5. Muhasebe gizli: yalnız muhasebe, tam yönetici, kademe müdürü ve muhasebe yetkilisi.
 const anl = (u) => getDoc(doc(db(u), "muhasebeAnlasmalari", "mu"));

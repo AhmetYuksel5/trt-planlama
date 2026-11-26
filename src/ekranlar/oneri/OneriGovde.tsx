@@ -1,3 +1,4 @@
+import { GorselListesi } from "../../bilesenler/OneriGorselleri";
 import { oneriSatiri, useEkranKaydi } from "../../asistan/ekran";
 import { useEsitYazis } from "../../bilesenler/esitYazis";
 import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
@@ -418,6 +419,7 @@ export function OneriAyrinti({
         <TakipSatirlari ben={ben} oneri={o} />
         {/* Materyal (işleme fikri, görsel işleme, ilk hali, orijinal e-posta) özetle tek bölümde (kullanıcı: iki bölüm birbirini tekrar ediyordu). */}
         <OneriIslemeMetinleri o={o} />
+        <GorselListesi gorseller={o.gorseller} />
         {o.ilkHali && (
           <details className="ara-ust-2 ilk-hal" data-oneri-ilk-hali>
             <summary>{t("oneriIlkHali")}</summary>

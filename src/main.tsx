@@ -6,6 +6,9 @@ import "./tasarim.css";
 import "./tasarimSecimi";
 import "./tema";
 import "./egitimVurgu";
+import { servisBetiginiKaydet } from "./bildirim";
+
+servisBetiginiKaydet();
 
 const kok = document.getElementById("kok");
 if (!kok) throw new Error("Kök eleman bulunamadı.");

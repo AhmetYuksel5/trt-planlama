@@ -4261,7 +4261,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   pencerenin yan boşluğu 12 (`:root body` ile, yeni tasarımın kuralını ezsin);
   arama kutularının yer tutucusu her yerde yalnız "Ara" (açıklayıcı adı
   `aria-label`'da); Öneriler'in süzgeci yalnız simge, adı "Filtre" ipucunda;
-  sekme "Planda". Tam boy pencerenin gövdesi `align-content: start` (kapalı
+  sekme "Planda", durum rozeti "İncelemede" ("Değerlendiriliyor" kartın yarısını kaplıyordu). Tam boy pencerenin gövdesi `align-content: start` (kapalı
   katlanır bölümün başlığı kutunun üstüne yapışıyordu). Yazı kutusu ile yanındaki
   düğme üstten hizalı (`.mesaj-yaz`, `.asistan-yaz`; anma kutusunun textarea'sı
   blok). Öneri kartında kişi satırı ve yol satırı sönük ve küçük; Arapça başlık
@@ -4274,11 +4274,45 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   (tasarım ajanının kararı: yeşil yalnız durum rozetinde).
 - Uygulama olarak yükleme (kullanıcı: Android'de ana ekrana eklenen site adres
   çubuğuyla açılıyordu): `public/manifest.webmanifest` (`display: standalone`,
-  göreli `start_url`/`scope`), simgeler `public/uygulama-192.png`, `-512.png`
-  (işaret beyaz zeminde; "maskable" da). Manifest yokken Chrome uygulama değil
-  kısayol kuruyordu. Eski kısayol silinip Chrome'un "Uygulamayı yükle"siyle yeniden
-  kurulur. APK gerekirse aynı manifestten TWA (Bubblewrap; alan adında
-  `.well-known/assetlinks.json`).
+  göreli `start_url`/`scope`), simgeler `public/uygulama-192.png`, `-512.png`.
+  Manifest yokken Chrome uygulama değil kısayol kuruyordu. Android uygulaması
+  (kullanıcı: APK olarak, herkese açık indirme): `android/`, Trusted Web Activity
+  (`androidbrowserhelper`, paket `net.plannersflow.app`), indirme
+  `public/indir/plannersflow.apk` (plannersflow.net/indir/… ve repoda `docs/indir/`).
+  Adres çubuğu çıkmasın diye site imzanın parmak izini yayınlar
+  (`public/.well-known/assetlinks.json`; `firebase.json` noktalı klasörleri artık
+  dışlamıyor). İmza anahtarı repoda değil (repo herkese açık), yöneticide; derleme
+  `android/README.md`. Site güncellenince uygulama da güncel; APK yalnız kabuğu.
+- Bildirimler (kullanıcı: bazı olaylarda bildirim; ilk deneme yeni haber önerisi;
+  herkese gitsin ama varsayılan kapalı, tam yönetici açar): Web Push, ücretli
+  hizmetsiz. Kapı `worker/src/bildirim.ts` (VAPID anahtarını kendisi üretir, KV'de
+  `POSTA_ANAHTARI` ile şifreli; RFC 8291 şifreleme; abonelikler tek KV kaydında,
+  kişi başına en çok beş cihaz; gönderim istek başına 45, ücretsiz planın 50 dış
+  çağrı sınırı; 404/410 dönen abonelik silinir; yalnız bilinen push servisleri),
+  uçlar `/bildirim`, `/bildirim/ayar` (tam yönetici, `acik`), `/bildirim/abone`,
+  `/bildirim/birak`, `/bildirim/dene`, `/bildirim/oneri` (genel anahtar kapalıysa
+  göndermez; aynı öneri bir kez, kişi başına günde 100, sayaç Cache API'de).
+  Tarayıcı `src/bildirim.ts`, servis betiği `public/sw.js` (yalnız push ve
+  bildirime basınca işin sayfası; istek yakalamaz, önbellek tutmaz), açılışta
+  kaydedilir (bölmede değil). Ayarlar › "Bildirimler" (gerçek kip;
+  `ekranlar/BildirimAyari.tsx`): tam yöneticide "Herkes için bildirimler", herkeste
+  "Bu cihazda bildirim al" (tarayıcı izni cihaza bağlı) ve "Deneme bildirimi".
+  `oneriGonder` yazınca (takip değil) `oneriBildir`: gönderen ve kısıtlı kişiler
+  almaz; demoda ve izlemede gitmez. Bildirimin başlığı abonenin dilinde. iPhone'da
+  yalnız ana ekrana eklenmiş uygulamada. Kapı testi `worker/test/bildirim.test.ts`.
+- Öneri görselleri (kullanıcı: muhabir öneriye görsel eklesin; Cloudflare kotasını
+  patlatmasın, Drive'da kişi adına klasörde toplansın): `Oneri.gorseller`
+  (`OneriGorseli`: Drive dosya kimliği; demoda küçültülmüş görselin kendisi), en çok
+  `GORSEL_SINIRI` 4. Tarayıcı küçültür (1600 piksel, JPEG; `gorsel.ts`), kişinin
+  Firebase oturum belgesiyle kurumun Apps Script web uygulamasına gönderir; betik
+  belgeyi Google'da doğrular, "Plannersflow · Öneri görselleri / <kişi>" klasörüne
+  yazar, bağlantıyla görülebilir yapar (betik ve Cowork promptu
+  `belgeler/gorsel-apps-script.md`). Kapıya uğramaz. Adres Ayarlar › "Öneri
+  görselleri (Google Drive)" (tam yönetici; `Durum.gorselAdresi`, genel ayar
+  belgesinde, kural yalnız tam yöneticiye yazdırır; yalnız `script.google.com/
+  macros/s/…/exec`); boşken "Görsel ekle" çizilmez. Formda `bilesenler/
+  OneriGorselleri.tsx → GorselEkleAlani` (öneri formu), öneri penceresinin Özet'inde
+  `GorselListesi` (basınca büyük hali). Test `testler/gorsel-bildirim.cjs`.
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda

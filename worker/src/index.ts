@@ -1,3 +1,4 @@
+import { aboneCikar, aboneEkle, aboneleriOku, ayarOku as bildirimAyarOku, ayarYaz as bildirimAyarYaz, denemeYuku, gonder as bildirimGonder, pushAdresiUygun, vapidAl, yeniOneriYuku } from "./bildirim.ts";
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur, sonucCoz } from "./ozellikler.ts";
@@ -493,6 +494,62 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if ("hata" in r) return yanit(r, r.hata === "sekme" || r.hata === "gun" ? 404 : 502);
     await d.onbellek?.put(kAnahtar, JSON.stringify(r), 6 * 3600).catch(() => {});
     return yanit(r);
+  }
+
+  /*
+   * Bildirimler (bildirim.ts). Genel anahtar varsayılan kapalı, yalnız tam yönetici
+   * açar; kapalıyken abone olunur ama gönderilmez (deneme bildirimi hariç).
+   */
+  if (req.method === "GET" && yol === "/bildirim") {
+    const ba = await bildirimAyarOku(env.YZ);
+    const v = await vapidAl(env.YZ, env.POSTA_ANAHTARI);
+    return yanit({ acik: ba.acik, anahtar: v.acik });
+  }
+  if (req.method === "PUT" && yol === "/bildirim/ayar") {
+    if (!kisi.yonetici) return yanit({ hata: "yetki" }, 403);
+    const g = (await req.json().catch(() => null)) as { acik?: unknown } | null;
+    await bildirimAyarYaz(env.YZ, { acik: g?.acik === true });
+    return yanit(await bildirimAyarOku(env.YZ));
+  }
+  if (req.method === "POST" && (yol === "/bildirim/abone" || yol === "/bildirim/birak")) {
+    const g = (await req.json().catch(() => null)) as { endpoint?: unknown; p256dh?: unknown; auth?: unknown; dil?: unknown } | null;
+    const endpoint = typeof g?.endpoint === "string" ? g.endpoint : "";
+    if (!pushAdresiUygun(endpoint)) return yanit({ hata: "adres" }, 400);
+    if (yol === "/bildirim/birak") {
+      await aboneCikar(env.YZ, endpoint, kisi.kimlik.uid);
+      return yanit({ tamam: true });
+    }
+    const p256dh = typeof g?.p256dh === "string" ? g.p256dh : "";
+    const auth = typeof g?.auth === "string" ? g.auth : "";
+    if (!/^[A-Za-z0-9_-]{80,100}$/.test(p256dh) || !/^[A-Za-z0-9_-]{16,32}$/.test(auth)) return yanit({ hata: "anahtar" }, 400);
+    const dil = g?.dil === "ar" || g?.dil === "en" ? g.dil : "tr";
+    await aboneEkle(env.YZ, { endpoint, p256dh, auth, uid: kisi.kimlik.uid, kisitli: kisi.kisitli, dil, zaman: d.simdi() });
+    return yanit({ tamam: true });
+  }
+  if (req.method === "POST" && yol === "/bildirim/dene") {
+    const benim = (await aboneleriOku(env.YZ)).filter((a) => a.uid === kisi.kimlik.uid);
+    if (!benim.length) return yanit({ hata: "abone" }, 404);
+    return yanit(await bildirimGonder(env.YZ, env.POSTA_ANAHTARI, benim, denemeYuku, d.fetch, d.simdi()));
+  }
+  if (req.method === "POST" && yol === "/bildirim/oneri") {
+    const ba = await bildirimAyarOku(env.YZ);
+    if (!ba.acik) return yanit({ giden: 0, kapali: true });
+    const g = (await req.json().catch(() => null)) as { oneriId?: unknown; baslik?: unknown; kaynak?: unknown } | null;
+    const oneriId = typeof g?.oneriId === "string" ? g.oneriId.slice(0, 80) : "";
+    if (!oneriId) return yanit({ hata: "oneri" }, 400);
+    // Aynı öneri iki kez bildirilmesin; kişi başına günde 100 (kötüye kullanım sınırı, önbellekte: KV'ye yazmaz).
+    const tekAnahtar = `bildirim:oneri:${oneriId}`;
+    const sayAnahtar = `bildirim:sayi:${kisi.kimlik.uid}:${bugun}`;
+    if (await d.onbellek?.get(tekAnahtar).catch(() => null)) return yanit({ giden: 0, tekrar: true });
+    const sayi = Number((await d.onbellek?.get(sayAnahtar).catch(() => null)) ?? 0);
+    if (sayi >= 100) return yanit({ hata: "sinir" }, 429);
+    await d.onbellek?.put(tekAnahtar, "1", 86400).catch(() => {});
+    await d.onbellek?.put(sayAnahtar, String(sayi + 1), 86400).catch(() => {});
+    const baslik = typeof g?.baslik === "string" ? g.baslik.slice(0, 140) : "";
+    const kaynak = typeof g?.kaynak === "string" ? g.kaynak.slice(0, 60) : "";
+    // Öneriyi gönderen kendisi ve kısıtlı kişiler (başkasının önerisini görmez) almaz.
+    const hedef = (await aboneleriOku(env.YZ)).filter((a) => a.uid !== kisi.kimlik.uid && !a.kisitli);
+    return yanit(await bildirimGonder(env.YZ, env.POSTA_ANAHTARI, hedef, (a) => yeniOneriYuku(a, baslik, kaynak, oneriId), d.fetch, d.simdi()));
   }
 
   /* Ortak ayar (sunucu, alan, açık/kapalı) yalnız tam yöneticide. */

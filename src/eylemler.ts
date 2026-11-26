@@ -1,3 +1,4 @@
+import { oneriBildir } from "./bildirim";
 import { girisAdi, postaAdresi } from "./girisKodu";
 import { staffingAdAnahtari, staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
@@ -99,6 +100,8 @@ import {
   type NextDayPlan,
   type PlanNafize,
   type Oneri,
+  type OneriGorseli,
+  GORSEL_SINIRI,
   type MasaSorusu,
   type ToplantiNotu,
   type AsamaNotu,
@@ -362,6 +365,7 @@ export interface OneriGirdisi {
   gorselIsleme?: string;
   teslimTahmini?: string;
   ekMasraf?: string;
+  gorseller?: OneriGorseli[];
   programId?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
@@ -427,6 +431,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     ...(!takip && g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
     ...(!takip && g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
     ...(!takip && g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
+    ...(g.gorseller?.length && { gorseller: g.gorseller.slice(0, GORSEL_SINIRI) }),
     ...(!takip && g.programId && { programId: g.programId }),
     tur: g.tur,
     bicim: g.bicim,
@@ -445,7 +450,9 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   d = { ...d, oneriler: [oneri, ...d.oneriler] };
   // Elle girilende hareketi yapan giren kişi; geçmişte "gönderdi" değil "girdi" okunsun.
   const veri: Record<string, string> = takip ? (muhabir ? { sahip: "planlama" } : { kime: muhabirId! }) : { sahip: "planlama", ...(muhabir ? {} : { elle: "1" }) };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: takip ? "takipEklendi" : "oneriGeldi", oneriId: id, veri }));
+  const yazildi = kaydet(hareketYaz(d, { kisiId: ben.id, tip: takip ? "takipEklendi" : "oneriGeldi", oneriId: id, veri }));
+  // Yeni öneri öbür cihazlara bildirim olarak (bildirim.ts; genel anahtar kapalıysa kapı göndermez). Takip değil.
+  if (yazildi && !takip) oneriBildir({ id, baslik: oneri.paketBasligi || oneri.haberBasligi, kaynak: (muhabirId && kisiAr(kisiBul(d, muhabirId))) || oneri.kaynakAdi || "" });
   return id;
 };
 
@@ -3686,6 +3693,15 @@ export const eskiOnerileriCevir = (): number => {
 };
 
 /** Günün notunun sayım başlangıcı (tam yönetici); boş tarih kaldırır. */
+/* Görsellerin Drive'a yazıldığı Apps Script adresi (gorsel.ts); yalnız tam yönetici, yalnız Google'ın adresi. */
+export const gorselAdresiKaydet = (ben: Kisi, adres: string) => {
+  if (!ben.hesapYoneticisi) return false;
+  const a = adres.trim();
+  if (a && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(a)) return false;
+  kaydet({ ...getir(), gorselAdresi: a || undefined });
+  return true;
+};
+
 export const sayimBaslangiciKaydet = (ben: Kisi, tarih: string) => {
   if (!ben.hesapYoneticisi) return false;
   if (tarih && !/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return false;

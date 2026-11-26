@@ -1,0 +1,42 @@
+plugins { id "com.android.application" }
+
+/*
+ * Plannersflow'un Android uygulaması: Chrome'un tam ekran kipiyle (Trusted Web
+ * Activity) plannersflow.net. Site docs/.well-known/assetlinks.json'da bu
+ * uygulamanın imza parmak izini yayınladığı için adres çubuğu çıkmaz; bildirim,
+ * oturum ve dosya yükleme Chrome'unki. İmza anahtarı repoda değil (android/README.md).
+ */
+android {
+    namespace "net.plannersflow.app"
+    compileSdk 34
+    defaultConfig {
+        applicationId "net.plannersflow.app"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        manifestPlaceholders = [host: "plannersflow.net", launchUrl: "/"]
+    }
+    signingConfigs {
+        imza {
+            storeFile file(System.getenv("PF_ANAHTAR") ?: "plannersflow.keystore")
+            storePassword System.getenv("PF_ANAHTAR_SIFRE") ?: ""
+            keyAlias "plannersflow"
+            keyPassword System.getenv("PF_ANAHTAR_SIFRE") ?: ""
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.imza
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+}

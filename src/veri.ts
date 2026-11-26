@@ -190,6 +190,17 @@ export const paketBicimi = (b?: OneriBicimi): Bicim | undefined => (b === TAKIP_
 export const CALISMA_BICIMLERI = ["kadrolu", "retainer", "serbest"] as const;
 export type CalismaBicimi = (typeof CALISMA_BICIMLERI)[number];
 
+/** Öneri başına en çok görsel. */
+export const GORSEL_SINIRI = 4;
+
+export interface OneriGorseli {
+  /** Drive dosya kimliği; demoda "demo-…". */
+  id: string;
+  ad?: string;
+  /** Yalnız demoda: küçültülmüş görselin data adresi. */
+  veri?: string;
+}
+
 export interface Kisi {
   id: string;
   ad: Yazi;
@@ -626,6 +637,12 @@ export interface Oneri {
    */
   teslimTahmini?: string;
   ekMasraf?: string;
+  /*
+   * Muhabirin eklediği görseller (kullanıcı: Cloudflare'in kotasına yük olmasın,
+   * Drive'da kişinin klasöründe dursun; gorsel.ts). Kayıtta yalnız Drive dosyasının
+   * kimliği; demoda küçültülmüş görselin kendisi (`veri`).
+   */
+  gorseller?: OneriGorseli[];
   /*
    * Önerilen yayın yeri programın kendisi (kullanıcı: tablonun جهة العرض sütununda
    * "القصة وما فيها" gibi program adı seçilsin; Programlar'ın tanımlarından,
@@ -2163,6 +2180,12 @@ export interface Durum {
    * muhabirin kabul oranını yanıltmasın; tam kullanıma geçilen gün yazılır.
    */
   sayimBaslangici?: string;
+  /**
+   * Öneri görsellerini Drive'a yazan Apps Script web uygulamasının adresi (tam
+   * yönetici, Ayarlar; gerçek kipte genel ayar belgesinde, kural yalnız tam
+   * yöneticiye yazdırır). Boşsa görsel eklenmez.
+   */
+  gorselAdresi?: string;
   /**
    * Staffing postasındaki adın elle seçilmiş kişisi (kullanıcı: tanınmayanı bir
    * kez seçeyim, sonra hep o gelsin). Anahtar `staffing.ts → staffingAdAnahtari`.

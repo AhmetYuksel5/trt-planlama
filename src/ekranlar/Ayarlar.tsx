@@ -17,6 +17,8 @@ import { PostaAyari } from "./PostaAyari";
 import { RotaAyari } from "./RotaAyari";
 import { PostaKimlikKart } from "./posta/PostaKimlik";
 import { OtoCagriKart } from "./posta/OtoCagri";
+import { BildirimAyari } from "./BildirimAyari";
+import { GorselAyari } from "./GorselAyari";
 import { SayfaBasi } from "./ana/Planlama";
 import { MuhabirKilavuzu } from "./ana/MuhabirKilavuzu";
 import { bipCal, sesAcik, sesKaydet } from "../bilesenler/Ses";
@@ -50,6 +52,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         <TasarimAyari />
         <TemaAyari ben={ben} />
         <SesAyari />
+        {GERCEK && <BildirimAyari ben={ben} />}
         {ben.hesapYoneticisi && <IsAkisiAyari />}
         {ben.hesapYoneticisi && <GunNotuAyari ben={ben} />}
         {geriBildirimSablonuDuzenler(ben) && <PlanPostasiAyarlari ben={ben} />}
@@ -57,6 +60,7 @@ export function Ayarlar({ ben }: { ben: Kisi }) {
         {ben.hesapYoneticisi && <YapayZekaAyari />}
         {ben.hesapYoneticisi && <PostaAyari />}
         {GERCEK && ben.hesapYoneticisi && <RotaAyari />}
+        {GERCEK && ben.hesapYoneticisi && <GorselAyari ben={ben} />}
         {GERCEK && postaGorebilir(ben) && <PostaKimlikKart />}
         {GERCEK && postaGorebilir(ben) && yapabilir(ben, "cagriHazirla") && <OtoCagriKart />}
         {GERCEK && ben.hesapYoneticisi && <OkumaSayaci />}

@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { muhabirinBenzerOnerileri } from "../../oneriPlanlari";
-import type { Durum, Oneri } from "../../veri";
+import type { Durum, Oneri, OneriGorseli } from "../../veri";
+import { GorselEkleAlani } from "../../bilesenler/OneriGorselleri";
 import { gunAdi, metin, tarihYaz, useDil } from "../../dil";
 import { bugun, gunEkle } from "../../tarih";
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
@@ -43,6 +44,7 @@ export interface OneriFormDurumu {
   /** Tür "Takip" seçilince muhabirin takibine giden tür. */
   takipTuru: TakipTuru;
   sahaGerekli: boolean;
+  gorseller: OneriGorseli[];
 }
 
 export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu => {
@@ -66,6 +68,7 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
     bicim: "pkg",
     takipTuru: "olay",
     sahaGerekli: false,
+    gorseller: [],
   };
 };
 
@@ -109,12 +112,16 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
   bicim: f.bicim,
   ...(f.bicim === TAKIP_BICIMI && { takipTuru: f.takipTuru }),
   sahaGerekli: f.sahaGerekli,
+  ...(f.gorseller?.length && { gorseller: f.gorseller }),
 });
 
 const ELLE_KANALLAR = KANALLAR.filter((k) => k !== "sistem");
 const BASKA_KAYNAKLAR = KAYNAK_TURLERI.filter((k) => k !== "muhabir");
 
 export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriFormDurumu; setF: (f: OneriFormDurumu) => void; hedef?: ReactNode }) {
+  // Görsel yüklenirken yazılan metin gitmesin: yükleme bitince formun en taze hali.
+  const sonF = useRef(f);
+  sonF.current = f;
   const { t } = useDil();
   const v = useVeri();
   const muhabir = ben.birim === "muhabir";
@@ -237,6 +244,7 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
       )}
       {!muhabir && f.kaynak === "muhabir" && <EsUyarisi v={v} muhabirId={f.muhabirId} header={f.haberBasligi} />}
       <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabir || !takip} islemeli={!takip} strapIstege={!muhabir} />
+      <GorselEkleAlani ben={ben} gorseller={f.gorseller ?? []} degistir={(gorseller) => setF({ ...sonF.current, gorseller })} />
       <YzBicimle
         deger={f}
         muhabirId={muhabir ? ben.id : f.kaynak === "muhabir" ? f.muhabirId : undefined}
