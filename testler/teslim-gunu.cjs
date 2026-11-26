@@ -28,7 +28,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
 
   await p.goto(B);
   // pl1: Planlama yöneticisi (Weekly'yi düzenler, kesinleştirir; kurgusal).
-  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl1"); });
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl1"); localStorage.setItem("trt-planlama-stok-tablo", "kart"); });
   await git("#/haftalik");
 
   // Toplantıdaki haftaya üç kabul edilmiş kalem: ikisi "Stok ve programlar"da, biri günlü feature.

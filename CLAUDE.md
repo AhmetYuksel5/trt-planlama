@@ -2942,6 +2942,34 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`grupla`; muhabirsiz sonda). Muhabire göre gruplar gazete sütunu gibi yan yana
     akar (`.stok-kolonlu`; grupların çoğu bir-iki kart, alt alta sayfa çok uzuyordu).
     Seçim tarayıcıda (`trt-planlama-stok-sira`): kutucuklar arasında sıfırlanmasın.
+  - Rapor önerileri tablosu (kullanıcı: stok haberlerin sistemi kurumun Google/Excel
+    tablosu gibi, aynı biçimde çıktı, planlamacıya karmaşıklaştırmayan düğmeler, haftalık
+    öneriler tabloya doğrudan düşsün; üç tasarımcı ajanla; kurallar `stokTablosu.ts`, ekran
+    `ekranlar/StokTablosu.tsx`): Teklifler'de "Tablo | Kartlar" (`data-stok-gorunum-sec`,
+    tarayıcıda `trt-planlama-stok-tablo`, varsayılan tablo). Saklanmaz: haftanın stok ve
+    programlar teklifleri (kapsam "Bütün teklifler"de hepsi; teklif, geri çekilen, takip,
+    kopya değil), Weekly kalemi ve doğan paket birleşir; öneriden gelmeyen günsüz kalem kendi
+    satırı. Satır tablodan düşmez, durumu ilerler (yeni → gündemde → karar → üretimde →
+    stokta → yayınlandı; kaldırılan çizili, çıktıya girmez). Kurumun dokuz sütunu sırasıyla
+    (`TABLO_SUTUNLARI`, başlıklar her dilde Arapça), sonda ekranda Durum. Muhabire göre gruplu,
+    dört açık ton sırayla (`grupTonlari`; kurumun koyu tonları okunmuyordu), ad grubun ilk
+    satırında; uzun metin üç satırda kesik, seçili satır açılır, düğmeler yalnız onda: "+ Weekly"
+    (`GundemeEkle`, hafta yoksa önce açar; teslim günü önerinin tahmininden), toplantıda ✓/✕
+    (`kalemKarar`), "Üretime al", ⋯ önerinin penceresi. Hücre çift tık ya da Enter'la yerinde
+    düzeltilir (Enter kaydeder, Shift+Enter alt satır, Esc vazgeçer; `eylemler.ts →
+    tabloHucresiKaydet`): teslim günü doğmuş paketin (`paketTeslimGunu`), yoksa günsüz kalemin,
+    yoksa önerinin tahmini; strap kalem varsa kalemin (Weekly ile ayrışmasın); işleme, görsel,
+    masraf önerinin (`oneriDuzenle`, ilkHali). Çıktı: "Tabloya kopyala" (satır içi stilli HTML
+    ve sekmeli düz metin; Google Tablolar bandı, renkleri alıyor), "Excel" (gerçek .xlsx,
+    kitaplıksız yazıcı `xlsx.ts`: sıkıştırmasız zip, sağdan sola, bant birleşik, başlık
+    sabit ve her sayfada, yatay A4; dosya adı Latin `muqtarahat-taqarir_<hafta>_<son>.xlsx`:
+    Arapça adı tarayıcı almıyor, uzantısız "download" iniyordu), "Yazdır" (temiz kopya,
+    `html.tablo-baskisi`). Telefonda muhabire göre gruplu kartlar, açık kartta metinler ve
+    düğmeler. Önerinin iki yeni alanı (kurumun son iki sütunu): `Oneri.teslimTahmini`
+    (مدة التسليم المتوقعة) ve `ekMasraf` (تكاليف إضافية, serbest metin; tahmin, onaylı masraf
+    değil, Muhasebe'ye girmez); muhabirin, Planlama'nın, düzeltme ve masa önerisi formunda
+    işleme ve görselin altında isteğe bağlı (`OneriMetinAlanlari`), ayrıntıda görünür. Test
+    `testler/stok-tablosu.cjs`.
   Test `testler/stok-sayfasi.cjs`. Weekly'nin "Kabul edilen paketler" penceresi iki
   sekme: Günlük ve Stok ve programlar (günsüz kalemler; `data-takdir-sekme`). Test
   `testler/stok-programlar.cjs`.

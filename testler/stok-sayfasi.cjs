@@ -17,7 +17,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const durum = () => p.evaluate((k) => JSON.parse(localStorage.getItem(k)), K);
   await p.goto(B);
   // pl6: Planlama'nın feature/stok ekibi (kurgusal).
-  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl6"); });
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "pl6"); localStorage.setItem("trt-planlama-stok-tablo", "kart"); });
   await git("#/stok");
 
   // 1. Kutucuklar: beş bölüm, varsayılan Üretim; kutucuk adres değiştirir, geri tuşu bölümler arasında gezer

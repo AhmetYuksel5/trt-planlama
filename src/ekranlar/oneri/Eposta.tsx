@@ -628,12 +628,14 @@ export function KisaOneriFormu({
     ...(muhabirFormu && { paketBasligi: ilk.paketBasligi || ilk.haberBasligi }),
     islemeFikri: ilk.islemeFikri ?? "",
     gorselIsleme: ilk.gorselIsleme ?? "",
+    teslimTahmini: ilk.teslimTahmini ?? "",
+    ekMasraf: ilk.ekMasraf ?? "",
   });
   const takipte = f.bicim === TAKIP_BICIMI;
   const birinci = (f.paketBasligi ?? "").trim();
   const ayriHeader = !!ilk.haberBasligi && !!ilk.paketBasligi && ilk.haberBasligi !== ilk.paketBasligi;
   const sonHal = (): YanitOneriGirdisi => {
-    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "" } : f;
+    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "" } : f;
     return muhabirFormu ? { ...g, haberBasligi: takipte || !ayriHeader ? birinci : ilk.haberBasligi } : g;
   };
   const gecerli = muhabirFormu

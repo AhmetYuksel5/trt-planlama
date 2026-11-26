@@ -1,4 +1,4 @@
-import { Archive, CalendarRange, ChevronLeft, ChevronRight, CirclePlay, Clapperboard, Layers, Lightbulb, Plus, Search, Tv, X } from "lucide-react";
+import { Archive, CalendarRange, LayoutGrid, Table2, ChevronLeft, ChevronRight, CirclePlay, Clapperboard, Layers, Lightbulb, Plus, Search, Tv, X } from "lucide-react";
 import { MesajRozeti } from "../bilesenler/MesajRozeti";
 import { useState, type ReactNode } from "react";
 import { asamaListesi, geciktiMi, gorunenSahip, stokDurumu } from "../akis";
@@ -64,6 +64,8 @@ import { gorevTalebiKarariVerebilir, planIcerikDuzenler, teslimGunuBelirleyebili
 import { useAdimDurumu } from "../yol";
 import { SayfaBasi } from "./ana/Planlama";
 import { GundemeEkle } from "./haftalik/Plan";
+import { StokTablosu } from "./StokTablosu";
+import { tabloSatirlari } from "../stokTablosu";
 import { OneriListesi } from "./oneri/OneriGovde";
 import { GorunumSecici, useOneriGorunumu, type PencereDurumu } from "./oneri/OneriKarti";
 import { OzelTalepAlani, ozelGorevSablonlari } from "./OzelYayin";
@@ -373,6 +375,7 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
   const [hafta, setHafta] = useAdimDurumu("stok:hafta", () => teklifHaftasi(v, B));
   const [kapsam, setKapsam] = useAdimDurumu<"stok" | "hepsi">("stok:kapsam", "stok");
   const [gorunum, setGorunum] = useOneriGorunumu(ben);
+  const [tablo, setTablo] = useTabloGorunumu();
   const [pencere, setPencere] = useState<PencereDurumu>(null);
   const baslik = useGrupBasligi(sira, "gun", "stokVeProgramlar");
   const plan = v.haftalik.find((h) => h.baslangic === hafta);
@@ -400,8 +403,16 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
         ikon={<Lightbulb size={18} />}
         sagUc={
           <span className="prg-arac">
-            <GorunumSecici deger={gorunum} degistir={setGorunum} />
-            {siraSecimi}
+            <span className="prg-seg" role="group" data-stok-gorunum={tablo ? "tablo" : "kart"}>
+              <button type="button" className={tablo ? "acik" : undefined} aria-pressed={tablo} onClick={() => setTablo(true)} data-stok-gorunum-sec="tablo">
+                <Table2 size={14} /> {t("sttTablo")}
+              </button>
+              <button type="button" className={tablo ? undefined : "acik"} aria-pressed={!tablo} onClick={() => setTablo(false)} data-stok-gorunum-sec="kart">
+                <LayoutGrid size={14} /> {t("sttKartlar")}
+              </button>
+            </span>
+            {!tablo && <GorunumSecici deger={gorunum} degistir={setGorunum} />}
+            {!tablo && siraSecimi}
           </span>
         }
       >
@@ -453,9 +464,12 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
           secili={kapsam}
           sec={setKapsam}
           ad={(a) => (a === "stok" ? "stokVeProgramlar" : "skButunTeklifler")}
-          sayi={(a) => (a === "stok" ? stok.length : hepsi.length)}
+          sayi={(a) => (tablo ? tabloSatirlari(v, hafta, a === "hepsi").length : a === "stok" ? stok.length : hepsi.length)}
           veri="stok-kapsam"
         />
+        {tablo ? (
+          <StokTablosu ben={ben} hafta={hafta} hepsi={kapsam === "hepsi"} plan={plan} />
+        ) : (
         <div className={sira === "muhabir" ? "stok-kolonlu" : undefined}>
           <OneriListesi
             ben={ben}
@@ -489,7 +503,9 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
             }))}
           />
         </div>
+        )}
       </Kart>
+      {!tablo && (
       <Kart baslik={t("skGundemde")} ikon={<CalendarRange size={18} />} ek={String(kalemler.length)} sagUc={plan && <Tumu href={`#/haftalik/${plan.id}`} />}>
         {kalemler.length === 0 ? (
           <Bos kucuk metin={t("kayitYok")} />
@@ -509,8 +525,33 @@ function Teklifler({ ben, sira, siraSecimi }: { ben: Kisi; sira: StokSirasi; sir
           </ul>
         )}
       </Kart>
+      )}
     </>
   );
+}
+
+/*
+ * Tablo mu kart mı (kullanıcı: stok haberler kurumun Excel tablosu gibi):
+ * tarayıcıda, varsayılan tablo; telefonda tablo muhabire göre gruplu kartlar.
+ */
+const TABLO_ANAHTARI = "trt-planlama-stok-tablo";
+function useTabloGorunumu(): [boolean, (x: boolean) => void] {
+  const [tablo, setTablo] = useState(() => {
+    try {
+      return localStorage.getItem(TABLO_ANAHTARI) !== "kart";
+    } catch {
+      return true;
+    }
+  });
+  const degis = (x: boolean) => {
+    setTablo(x);
+    try {
+      localStorage.setItem(TABLO_ANAHTARI, x ? "tablo" : "kart");
+    } catch {
+      /* saklanamazsa yalnız bu açılışta */
+    }
+  };
+  return [tablo, degis];
 }
 
 /* --- Üretim: daha önce planlananın takibi --- */

@@ -618,6 +618,14 @@ export interface Oneri {
   islemeFikri?: string;
   /** Saha görüntüsü, arşiv, harita, grafik gibi görsel unsurlar (المعالجة البصرية). */
   gorselIsleme?: string;
+  /*
+   * Kurumun rapor önerileri tablosunun iki sütunu (kullanıcı: stok haberler Excel
+   * tablosu gibi, aynı biçimde çıktı): muhabirin beklediği teslim günü (مدة التسليم
+   * المتوقعة) ve ek masraf (تكاليف إضافية, serbest metin "USD 200"). Masraf tahmindir,
+   * onaylı masraf değil (Paket.masraflar), Muhasebe'ye girmez.
+   */
+  teslimTahmini?: string;
+  ekMasraf?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;

@@ -327,7 +327,7 @@ export function GundemeEkle({ ben, hafta, oneri, kapat, stok, yer }: { ben: Kisi
   // Günü (aralığının ilk günü) bu haftadaysa gün hazır gelir; hafta önceden başladıysa haftanın ilk günü.
   const aralik = oneriAraligi(oneri);
   const gun = oneri.haftaGunu ?? (oneri.hedefTarih && aralik ? (aralik[0] >= hafta.baslangic ? aralik[0] : hafta.baslangic) : "");
-  const [f, setF] = useState({ tarih: yer ? yer.tarih : !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: yer ? (yer.baslikId ?? dosya) : dosya, yeniBaslik: "", teslimGunu: "" });
+  const [f, setF] = useState({ tarih: yer ? yer.tarih : !stok && gun && gun <= haftaSonu(hafta.baslangic) ? gun : "", baslikId: yer ? (yer.baslikId ?? dosya) : dosya, yeniBaslik: "", teslimGunu: oneri.teslimTahmini && oneri.teslimTahmini >= bugun() ? oneri.teslimTahmini : "" });
   // "Stok ve programlar"a giren paket önerisinde teslim günü (kalemin formundaki gibi).
   const pb = paketBicimi(oneri.bicim);
   const teslimSorulur = teslimGunuSorulur({ tarih: f.tarih || undefined, bicimler: pb ? [pb] : [] });

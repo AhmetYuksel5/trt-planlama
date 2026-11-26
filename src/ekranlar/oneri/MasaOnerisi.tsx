@@ -17,7 +17,7 @@ import { OneriMetinAlanlari } from "./OneriFormu";
  */
 export function MasaOneriPenceresi({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   const { t } = useDil();
-  const [f, setF] = useState({ muhabirId: "", paketBasligi: "", gelisme: "", islemeFikri: "", gorselIsleme: "", bicim: "pkg" as OneriBicimi, hedefTarih: bugun() });
+  const [f, setF] = useState({ muhabirId: "", paketBasligi: "", gelisme: "", islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "", bicim: "pkg" as OneriBicimi, hedefTarih: bugun() });
   const hazir = !!f.paketBasligi.trim() && !!f.gelisme.trim() && !!f.hedefTarih && oneriSinirIcinde(f);
   const gonder = () => {
     if (!hazir || !confirm(t("eminMisin"))) return;

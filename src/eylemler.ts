@@ -129,6 +129,7 @@ import {
   gelismeMuhabirleri,
   TAKIP_BICIMI,
   oneriSinirIcinde,
+  ONERI_SINIRI,
   MASA_KOLLARI,
   masaPaketi,
   type OneriBicimi,
@@ -359,6 +360,8 @@ export interface OneriGirdisi {
   paketBasligi?: string;
   islemeFikri?: string;
   gorselIsleme?: string;
+  teslimTahmini?: string;
+  ekMasraf?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   /** "Takip" türünde muhabirin takibine giden tür; boşsa "diğer". */
@@ -421,6 +424,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     paketBasligi: g.paketBasligi || undefined,
     ...(!takip && g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
     ...(!takip && g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
+    ...(!takip && g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
+    ...(!takip && g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -454,6 +459,8 @@ export interface MasaOneriGirdisi {
   gelisme: string;
   islemeFikri?: string;
   gorselIsleme?: string;
+  teslimTahmini?: string;
+  ekMasraf?: string;
   bicim: OneriBicimi;
   hedefTarih: string;
   bitisTarih?: string;
@@ -478,6 +485,8 @@ export const masaOneriGonder = (ben: Kisi, g: MasaOneriGirdisi): string | null =
     paketBasligi: g.paketBasligi.trim(),
     ...(g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
     ...(g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
+    ...(g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
+    ...(g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     tur: masa,
     bicim: g.bicim === TAKIP_BICIMI ? "pkg" : g.bicim,
     sahaGerekli: false,
@@ -591,6 +600,8 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
     paketBasligi: g.paketBasligi?.trim() || undefined,
     islemeFikri: (!takipte && g.islemeFikri?.trim()) || undefined,
     gorselIsleme: (!takipte && g.gorselIsleme?.trim()) || undefined,
+    ...(g.teslimTahmini !== undefined && { teslimTahmini: (!takipte && g.teslimTahmini) || undefined }),
+    ...(g.ekMasraf !== undefined && { ekMasraf: (!takipte && g.ekMasraf.trim()) || undefined }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -4999,6 +5010,8 @@ export interface YanitOneriGirdisi {
   paketBasligi?: string;
   islemeFikri?: string;
   gorselIsleme?: string;
+  teslimTahmini?: string;
+  ekMasraf?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;
@@ -5019,6 +5032,8 @@ export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi):
     paketBasligi: g.paketBasligi?.trim() || undefined,
     ...(g.islemeFikri?.trim() && { islemeFikri: g.islemeFikri.trim() }),
     ...(g.gorselIsleme?.trim() && { gorselIsleme: g.gorselIsleme.trim() }),
+    ...(g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
+    ...(g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -5050,6 +5065,8 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     // Alan formda yoksa (eski çağıran) dokunulmuyor; takipte işleme sorulmuyor.
     ...(g.islemeFikri !== undefined && { islemeFikri: (g.bicim !== TAKIP_BICIMI && g.islemeFikri.trim()) || undefined }),
     ...(g.gorselIsleme !== undefined && { gorselIsleme: (g.bicim !== TAKIP_BICIMI && g.gorselIsleme.trim()) || undefined }),
+    ...(g.teslimTahmini !== undefined && { teslimTahmini: (g.bicim !== TAKIP_BICIMI && g.teslimTahmini) || undefined }),
+    ...(g.ekMasraf !== undefined && { ekMasraf: (g.bicim !== TAKIP_BICIMI && g.ekMasraf.trim()) || undefined }),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -7689,4 +7706,64 @@ export const rotaProgramiKaydet = (ben: Kisi, p: Pick<RotaProgrami, "sekme" | "b
   const kalan = (d.rotaProgramlari ?? []).filter((x) => x.id !== id && x.bit < p.bas).sort((a, b) => b.bas.localeCompare(a.bas)).slice(0, 3);
   kaydet({ ...d, rotaProgramlari: [...kalan, kayit] });
   return true;
+};
+
+/*
+ * Rapor önerileri tablosunda hücre yerinde düzeltilir (kullanıcı: stok tablosu
+ * Excel gibi; stokTablosu.ts). Hücrenin yazıldığı kayıt: teslim günü doğmuş
+ * paketin (paketTeslimGunu), yoksa günsüz kalemin, yoksa önerinin tahmini; strap
+ * kalem doğduysa kalemin (Weekly ile tablo ayrışmasın), değilse önerinin; işleme,
+ * görsel ve masraf önerinin (öneri düzeltme kuralı, ilkHali saklanır).
+ */
+export type TabloAlani = "strap" | "isleme" | "gorsel" | "masraf" | "teslim";
+type TabloHedefi = { tur: "paket"; p: Paket } | { tur: "kalem"; h: HaftalikPlan; k: HaftalikKalem } | { tur: "oneri"; o: Oneri };
+
+const tabloHedefi = (d: Durum, ben: Kisi, alan: TabloAlani, haftaId: string | undefined, oneriId?: string, kalemId?: string): TabloHedefi | null => {
+  const o = oneriId ? oneriBul(d, oneriId) : undefined;
+  const h = haftaId ? haftaBul(d, haftaId) : undefined;
+  const k = kalemId ? h?.kalemler.find((x) => x.id === kalemId) : undefined;
+  const pid = k?.aktarim?.paketId ?? o?.paketId;
+  const p = pid ? paketBul(d, pid) : undefined;
+  if (alan === "teslim" && p && p.durum !== "iptal") return teslimGunuBelirleyebilir(ben, p) ? { tur: "paket", p } : null;
+  if ((alan === "teslim" || alan === "strap") && h && k) {
+    if (alan === "teslim" && k.tarih) return null;
+    return haftalikDuzenler(ben, h) && !kalemKilitli(h, k) ? { tur: "kalem", h, k } : null;
+  }
+  // Kalemsiz önerinin metni; paketi doğmuşsa öneri metni artık pakette değil, salt okunur.
+  if (o && !p && oneriDuzenleyebilir(ben, o, d)) return { tur: "oneri", o };
+  return null;
+};
+
+export const tabloHucresiDuzenlenir = (ben: Kisi, alan: TabloAlani, haftaId: string | undefined, oneriId?: string, kalemId?: string) =>
+  !!tabloHedefi(getir(), ben, alan, haftaId, oneriId, kalemId);
+
+export const tabloHucresiKaydet = (ben: Kisi, alan: TabloAlani, deger: string, haftaId: string | undefined, oneriId?: string, kalemId?: string): boolean => {
+  const d = getir();
+  const x = tabloHedefi(d, ben, alan, haftaId, oneriId, kalemId);
+  const yeni = deger.trim();
+  if (!x) return false;
+  if (x.tur === "paket") return !!yeni && paketTeslimGunu(ben, x.p.id, yeni);
+  if (x.tur === "kalem") {
+    if (alan === "strap" && !yeni && !x.k.metin.trim()) return false;
+    if (alan === "teslim" && yeni && !gecerliGun(yeni)) return false;
+    kaydet(kalemGuncelle(d, x.h.id, x.k.id, (k) => ({ ...k, ...(alan === "strap" ? { paketBasligi: yeni || undefined } : { teslimGunu: yeni || undefined }) })));
+    return true;
+  }
+  const o = x.o;
+  if (alan === "teslim" && yeni && !gecerliGun(yeni)) return false;
+  if (alan === "strap" && !yeni && !o.haberBasligi.trim()) return false;
+  const sinir = alan === "strap" ? ONERI_SINIRI.paketBasligi : alan === "isleme" ? ONERI_SINIRI.islemeFikri : alan === "gorsel" ? ONERI_SINIRI.gorselIsleme : 120;
+  if (yeni.length > sinir) return false;
+  return oneriDuzenle(ben, o.id, {
+    haberBasligi: o.haberBasligi || yeni,
+    gelisme: o.gelisme,
+    paketBasligi: alan === "strap" ? yeni : o.paketBasligi,
+    islemeFikri: alan === "isleme" ? yeni : (o.islemeFikri ?? ""),
+    gorselIsleme: alan === "gorsel" ? yeni : (o.gorselIsleme ?? ""),
+    teslimTahmini: alan === "teslim" ? yeni : (o.teslimTahmini ?? ""),
+    ekMasraf: alan === "masraf" ? yeni : (o.ekMasraf ?? ""),
+    tur: o.tur,
+    bicim: o.bicim,
+    sahaGerekli: o.sahaGerekli,
+  });
 };
