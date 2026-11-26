@@ -102,6 +102,7 @@
   .not-simge { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--yesil); }
   .paylas { display: inline-block; vertical-align: -3px; width: 18px; height: 18px; color: #2f7cf6; }
   .not { font-size: 14px; color: var(--sonuk); border-top: 1px solid var(--cizgi); padding-top: 14px; margin: auto 0 0; }
+  .yakinda { display: flex; gap: 10px; align-items: flex-start; margin: 0; font-size: 14px; background: var(--vurgu-sis); border-radius: 8px; padding: 10px 12px; }
   .uyari { font-size: 14px; background: var(--uyari-sis); color: var(--uyari); border-radius: 8px; padding: 10px 12px; margin: 0; }
   .uyari[hidden] { display: none; }
 
@@ -128,6 +129,7 @@
     <symbol id="i-ekran" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
     <symbol id="i-zil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
     <symbol id="i-yenile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-saat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
   </defs>
 </svg>
 <header>
@@ -183,6 +185,7 @@
         </div>
         <span class="rozet" data-m="buCihaz" hidden>Bu cihaz</span>
       </div>
+      <p class="yakinda"><svg class="not-simge" aria-hidden="true"><use href="#i-saat"/></svg><span data-m="iosYakinda">App Store uygulaması hazırlanıyor. O zamana kadar Plannersflow'u aşağıdaki adımlarla ana ekrana ekleyip uygulama gibi kullanabilirsin.</span></p>
       <p class="uyari" id="safari-uyari" data-m="safariUyari" hidden>Bu sayfayı Safari'de aç: ana ekrana ekleme en kolay oradan.</p>
       <ol class="adimlar">
         <li><span data-m="i1"><b>Safari</b>'de <span class="adres">plannersflow.net</span> adresini aç.</span> <svg class="adim-simge" aria-hidden="true"><use href="#i-pusula"/></svg></li>
@@ -218,6 +221,7 @@
       a4: "Ana ekrandaki Plannersflow simgesiyle aç ve giriş yap.",
       androidNot: "Uygulama siteyle aynı; güncellemeler kendiliğinden gelir, yeniden indirmek gerekmez. Telefonda Google Chrome yüklü olmalı.",
       iosAlt: "Safari ile ana ekrana ekle",
+      iosYakinda: "App Store uygulaması hazırlanıyor. O zamana kadar Plannersflow'u aşağıdaki adımlarla ana ekrana ekleyip uygulama gibi kullanabilirsin.",
       safariUyari: "Bu sayfayı Safari'de aç: ana ekrana ekleme en kolay oradan.",
       i1: "<b>Safari</b>'de <span class=\"adres\">plannersflow.net</span> adresini aç.",
       i2a: "Alttaki", i2b: "<b>Paylaş</b> düğmesine bas.",
@@ -237,6 +241,7 @@
       a4: "افتح التطبيق من أيقونة Plannersflow على الشاشة الرئيسية وسجّل الدخول.",
       androidNot: "التطبيق هو الموقع نفسه؛ تصل التحديثات تلقائيًا دون الحاجة إلى تنزيله من جديد. يجب أن يكون Google Chrome مثبتًا على الهاتف.",
       iosAlt: "أضفه إلى الشاشة الرئيسية عبر Safari",
+      iosYakinda: "نعمل حاليًا على إعداد التطبيق لمتجر App Store. وإلى حين صدوره، يمكنك إضافة Plannersflow إلى الشاشة الرئيسية باتباع الخطوات أدناه واستخدامه كأي تطبيق.",
       safariUyari: "افتح هذه الصفحة في Safari: الإضافة إلى الشاشة الرئيسية أسهل من هناك.",
       i1: "افتح العنوان <span class=\"adres\">plannersflow.net</span> في <b>Safari</b>.",
       i2a: "اضغط زر", i2b: "<b>المشاركة</b> في الأسفل.",
@@ -256,6 +261,7 @@
       a4: "Open it from the Plannersflow icon on your home screen and sign in.",
       androidNot: "The app is the website itself; updates arrive automatically, no need to download it again. Google Chrome must be installed on the phone.",
       iosAlt: "Add to Home Screen with Safari",
+      iosYakinda: "An App Store version is on the way. Until then, add Plannersflow to your home screen with the steps below and use it just like an app.",
       safariUyari: "Open this page in Safari: adding to the home screen is easiest there.",
       i1: "Open <span class=\"adres\">plannersflow.net</span> in <b>Safari</b>.",
       i2a: "Tap the", i2b: "<b>Share</b> button at the bottom.",
