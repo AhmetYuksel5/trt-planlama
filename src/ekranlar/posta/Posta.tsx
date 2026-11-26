@@ -451,7 +451,7 @@ function SohbetAramaCubugu({ a }: { a: ReturnType<typeof useSohbetAramasi> }) {
             a.kapat();
           }
         }}
-        placeholder={t("postaSohbetAra")}
+        placeholder={t("ara")}
         aria-label={t("postaSohbetAra")}
         data-posta-ara-girdi
       />
@@ -1077,7 +1077,7 @@ export function Posta({ ben }: { ben: Kisi }) {
                       setSecili(gorunen[0].konuKimligi);
                     }
                   }}
-                  placeholder={t("postaTumunuAra")}
+                  placeholder={t("ara")}
                   aria-label={t("postaTumunuAra")}
                   data-posta-genel-girdi
                 />

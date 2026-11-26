@@ -237,7 +237,7 @@ export function MuhabireOnerilenler({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
         ))}
       </ul>
       {secili && (
-        <Pencere baslik={<Icerik>{secili.haberBasligi}</Icerik>} alt={<OneriDurumRozeti oneri={secili} />} kapat={() => setAcik(null)}>
+        <Pencere icerikBasligi baslik={<Icerik>{secili.haberBasligi}</Icerik>} alt={<OneriDurumRozeti oneri={secili} />} kapat={() => setAcik(null)}>
           <div className="metin-kutu">
             <Icerik blok>{secili.gelisme}</Icerik>
           </div>

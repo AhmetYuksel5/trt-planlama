@@ -488,7 +488,7 @@ function BirimlerSekmesi({ ben }: { ben: Kisi }) {
     >
       <label className="arama ara-alt-2">
         <Search size={16} />
-        <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("orgBirimAra")} aria-label={t("orgBirimAra")} data-org-birim-ara />
+        <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("ara")} aria-label={t("orgBirimAra")} data-org-birim-ara />
       </label>
       {ara && !satirlar.length && <Bos kucuk metin={t("orgBirimBulunamadi")} />}
       {/* Ağaç sırasıyla, alt birim üstünün altında girintili (yapi.ts → birimAgaci); aramada yalnız uyanlar, girintisiz. */}
@@ -884,7 +884,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
           type="search"
           value={aranan}
           onChange={(e) => setAranan(e.target.value)}
-          placeholder={t("kisiAra")}
+          placeholder={t("ara")}
           aria-label={t("kisiAra")}
           data-org-ara
         />

@@ -879,7 +879,7 @@ function Arsiv({ sira, siraSecimi }: { sira: StokSirasi; siraSecimi: ReactNode }
               type="search"
               value={aranan}
               onChange={(e) => (setAranan(e.target.value), setKac(SAYFA))}
-              placeholder={t("skArsivAra")}
+              placeholder={t("ara")}
               aria-label={t("skArsivAra")}
               data-stok-arsiv-ara
             />

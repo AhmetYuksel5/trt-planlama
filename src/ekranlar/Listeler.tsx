@@ -75,7 +75,7 @@ export function Paketler({ ben, sayfa, acilis = "gorevli" }: { ben: Kisi; sayfa:
         <div className="suzgec">
           <label className="arama arama-kutu">
             <Search size={16} />
-            <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("paketAra")} aria-label={t("paketAra")} />
+            <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("ara")} aria-label={t("paketAra")} />
           </label>
           {!ayar.turler && (
             <select className="girdi" value={tur} onChange={(e) => setTur(e.target.value as IcerikTuru | "")} aria-label={t("tur")}>

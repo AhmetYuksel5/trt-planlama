@@ -149,7 +149,7 @@ function TakvimSayfasi({ ben, ilk }: { ben: Kisi; ilk: Baslangic }) {
         <div className="tk-arac-satir">
           <label className="tk-arama">
             <Search size={16} aria-hidden="true" />
-            <input type="search" className="girdi" value={sorgu} onChange={(e) => setSorgu(e.target.value)} placeholder={t("tkAraIpucu")} aria-label={t("ara")} />
+            <input type="search" className="girdi" value={sorgu} onChange={(e) => setSorgu(e.target.value)} placeholder={t("ara")} aria-label={t("ara")} />
           </label>
           <Suzgecler ben={ben} suzgec={suzgec} degistir={setSuzgec} />
         </div>

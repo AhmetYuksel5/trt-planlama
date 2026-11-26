@@ -115,7 +115,7 @@ function AylikDokumSayfasi({ ben }: { ben: Kisi }) {
         </div>
         <label className="muhasebe-ara">
           <Search size={16} className="sonuk" aria-hidden="true" />
-          <input type="search" value={ara} onChange={(e) => setAra(e.target.value)} placeholder={t("mhAra")} aria-label={t("mhAra")} />
+          <input type="search" value={ara} onChange={(e) => setAra(e.target.value)} placeholder={t("ara")} aria-label={t("mhAra")} />
         </label>
         <button type="button" className="dugme dugme-ikincil" onClick={excel} disabled={!satirlar.length} data-mh-excel>
           <Download size={16} /> {t("mhExcelIndir")}
@@ -430,7 +430,7 @@ function Anlasmalar({ ben }: { ben: Kisi }) {
       <div className="muhasebe-ust">
         <label className="muhasebe-ara">
           <Search size={16} className="sonuk" aria-hidden="true" />
-          <input type="search" value={ara} onChange={(e) => setAra(e.target.value)} placeholder={t("mhAra")} aria-label={t("mhAra")} />
+          <input type="search" value={ara} onChange={(e) => setAra(e.target.value)} placeholder={t("ara")} aria-label={t("mhAra")} />
         </label>
         <button type="button" className="dugme dugme-ikincil" onClick={() => setAktar(true)} data-mh-aktar-ac>
           <FileSpreadsheet size={16} /> {t("mhExceldenAktar")}

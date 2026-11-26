@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Plannersflow",
+  "short_name": "Plannersflow",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0f1f3a",
+  "icons": [
+    { "src": "uygulama-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "uygulama-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "uygulama-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

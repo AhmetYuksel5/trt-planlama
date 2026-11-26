@@ -39,7 +39,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git("#/oneriler/" + c.id);
   ok((await p.locator("[data-paketsiz], [data-oneri-paketsiz]").count()) === 0, "paketli öneride yazmıyor");
   await git("#/oneriler");
-  await p.locator("button", { hasText: "Planda / gündemde" }).first().click();
+  await p.locator("button", { hasText: "Planda" }).first().click();
   await p.waitForTimeout(500);
   ok((await p.locator(`[data-oneri="${a.id}"] [data-paketsiz]`).count()) === 1, "Planda sekmesinin kartında");
   ok((await p.locator(`[data-oneri="${c.id}"] [data-paketsiz]`).count()) === 0, "paketli kartta yok");

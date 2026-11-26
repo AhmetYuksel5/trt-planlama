@@ -370,18 +370,39 @@ export function OneriAyrinti({
           {form}
         </div>
       )}
-      <Bolum ad="ozet" baslik={t("obOzet")} acik>
+      <Bolum
+        ad="ozet"
+        baslik={t("obOzet")}
+        acik
+        ek={
+          /*
+           * Kullanıcı: Özet açılınca göze ilk "Düzenle" çarpıyordu. Başlığın
+           * köşesinde, okun yanında yalnız kalem; başlığa basmak bölümü katlar,
+           * kaleme basmak katlamaz.
+           */
+          oneriDuzenleyebilir(ben, o) &&
+          mod !== "duzenle" && (
+            <button
+              type="button"
+              className="ozet-kalem"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMod("duzenle");
+              }}
+              title={t("duzenle")}
+              aria-label={t("duzenle")}
+              data-oneri-duzenle
+            >
+              <Pencil size={16} />
+            </button>
+          )
+        }
+      >
         {simdikiNot && !oneriYenidenGonderebilir(ben, o) && (
           <NotKutu ton="uyari">
             <span dir="auto">{simdikiNot}</span>
           </NotKutu>
-        )}
-        {oneriDuzenleyebilir(ben, o) && mod !== "duzenle" && (
-          <div className="dugmeler oneri-duzenle">
-            <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={() => setMod("duzenle")} data-oneri-duzenle>
-              <Pencil size={14} /> {t("duzenle")}
-            </button>
-          </div>
         )}
         {arka && (
           <div>
@@ -519,7 +540,7 @@ export function OneriAyrinti({
     );
   if (kapat)
     return (
-      <Pencere baslik={baslik} alt={<OneriMetaSatiri oneri={o} d={v} bagli kapat={kapat} />} kapat={kapat} altBilgi={alt}>
+      <Pencere icerikBasligi baslik={baslik} alt={<OneriMetaSatiri oneri={o} d={v} bagli kapat={kapat} />} kapat={kapat} altBilgi={alt}>
         {govde}
       </Pencere>
     );
@@ -824,6 +845,12 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
    * pencere aşağı doğru uzuyordu (kullanıcı): o zaman yalnız "Gelişme ekle"
    * düğmesi, basınca form.
    */
+  /*
+   * Kullanıcı: Planlama'nın penceresinde Özet'in altındaki "Gelişme ekle"
+   * gereksiz kalabalıktı. Satırı olmayan takibe ilk satırı yalnız muhabir
+   * kendisi ekler; öbürüne düğme çizilmez (gündem sepeti kendi yolundan ekliyor).
+   */
+  if (!satirlar.length && !formAcik && o.muhabirId !== ben.id) return null;
   if (ekler && !satirlar.length && !formAcik)
     return (
       <div className="ara-ust-2">

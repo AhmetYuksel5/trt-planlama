@@ -244,7 +244,7 @@ function Icerikler({ ben, birim }: { ben: Kisi; birim: MasaBirimi }) {
         <span className="prg-arac">
           <label className="arama arama-kutu">
             <Search size={15} />
-            <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("paketAra")} aria-label={t("paketAra")} />
+            <input type="search" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("ara")} aria-label={t("paketAra")} />
           </label>
           <GorevlendirDugmesi ben={ben} />
         </span>
@@ -801,7 +801,7 @@ function Arsiv({ birim }: { birim: MasaBirimi }) {
           )}
           <label className="arama arama-kutu">
             <Search size={15} />
-            <input type="search" value={aranan} onChange={(e) => (setAranan(e.target.value), setKac(SAYFA))} placeholder={t("pmArsivAra")} aria-label={t("pmArsivAra")} data-prg-arsiv-ara />
+            <input type="search" value={aranan} onChange={(e) => (setAranan(e.target.value), setKac(SAYFA))} placeholder={t("ara")} aria-label={t("pmArsivAra")} data-prg-arsiv-ara />
           </label>
         </span>
       }

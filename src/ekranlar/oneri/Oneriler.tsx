@@ -96,7 +96,7 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
   const aramaKutusu = (
     <label className="arama arama-kutu">
       <Search size={16} />
-      <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("oneriAra")} aria-label={t("oneriAra")} />
+      <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("ara")} aria-label={t("oneriAra")} />
     </label>
   );
   const turSecimi = (
@@ -215,8 +215,8 @@ export function OnerilerListe({ ben, arsiv = false }: { ben: Kisi; arsiv?: boole
           <>
             <div className="suzgec suzgec-telefon">
               {aramaKutusu}
-              <button type="button" className="dugme dugme-ikincil" onClick={() => setSuzgecAcik(true)} data-suzgec-ac>
-                <SlidersHorizontal size={16} /> {t("suzgecDugmesi")}
+              <button type="button" className="dugme dugme-ikincil ikon-dugme suzgec-ac" onClick={() => setSuzgecAcik(true)} title={t("suzgecDugmesi")} aria-label={t("suzgecDugmesi")} data-suzgec-ac>
+                <SlidersHorizontal size={20} />
                 {etkinSayi > 0 && <em className="sayi-rozet">{etkinSayi}</em>}
               </button>
             </div>

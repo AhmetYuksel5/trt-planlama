@@ -4727,3 +4727,67 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .rota-ozet dt { color: var(--sonuk); }
 .rota-ozet dd { margin: 0; }
 .rota-ozet [data-rota-saat] b { font-variant-numeric: tabular-nums; }
+
+/*
+ * Kullanıcı (telefonda Öneriler): kutu içinde kutuyla kenar boşlukları birikiyor,
+ * içerik ortada dar bir şeride sıkışıyordu. Telefonda sayfanın ve kartın yan
+ * boşluğu bir basamak iner (16 → 12); iç içe ikinci kart da 12. Sıfıra
+ * indirilmedi: kartın kenarı içerikten ayrı görünsün.
+ */
+@media (max-width: 760px) {
+  :root body .sayfa { padding-inline: var(--ara-3); }
+  :root body .kart { padding-inline: var(--ara-3); }
+  :root body .kart .kart { padding-inline: var(--ara-3); }
+  :root body .oneri-bolum .kart { padding-inline: 0; }
+  :root body .pencere > header, :root body .pencere-govde, :root body .pencere > footer { padding-inline: var(--ara-3); }
+}
+/*
+ * Tam boy pencerede gövde alanı dolduruyor; ızgara satırları boşluğu paylaşınca
+ * kapalı katlanır bölümün başlığı kutunun üstüne yapışıp altı boş kalıyordu.
+ */
+.pencere-govde { align-content: start; }
+/*
+ * Öneri kartında asıl bilgi başlık ve meta satırı; kim gönderdi, ne zaman ve
+ * yolun özeti ikincil (kullanıcı: "saat önce" satırı daha az vurgulu olsun).
+ */
+.ok-alt { color: var(--sonuk); font-size: var(--punto-mini); }
+.ok-alt .ok-kaynak { color: var(--sonuk); }
+.oy-metin, :root body .oy-metin { font-size: var(--punto-mini); }
+/* Filtre düğmesi yalnız simge; etkin süzgeç sayısı köşede. */
+.suzgec-ac { inline-size: var(--dokunma, 44px); block-size: var(--dokunma, 44px); }
+.suzgec-ac .sayi-rozet { position: absolute; inset-block-start: -6px; inset-inline-end: -6px; }
+/*
+ * Yazı kutusu ve yanındaki düğme üstten hizalı (kullanıcı: Gönder kutudan aşağıda
+ * başlıyordu). Satır içi textarea'nın altında yazı satırının boşluğu kalıyor,
+ * sarmalayıcı uzuyordu; kutu blok, satır üstten, düğme kutunun en az boyunda.
+ */
+.anma-girdisi > textarea, .anma-girdisi > input { display: block; }
+.mesaj-yaz, .asistan-yaz { align-items: flex-start; }
+.mesaj-yaz > .dugme { min-block-size: 44px; }
+/*
+ * İçerik başlıklı pencere (öneri): başlık Arapça, her arayüz dilinde sağa yaslı;
+ * kapatma da Arapçadaki gibi solda (kullanıcı). Altındaki bilgi satırı başlığın
+ * hizasında, sağda.
+ */
+.pencere > header.icerik-basi:dir(ltr) { flex-direction: row-reverse; }
+.pencere > header.icerik-basi h2 { text-align: right; }
+.pencere > header.icerik-basi small, .pencere > header.icerik-basi .ok-meta { justify-content: flex-end; text-align: right; }
+/* Özet'in kalemi başlığın köşesinde, okun yanında; sakin, üstüne gelince belirir. */
+.oneri-bolum > summary .ek:has(.ozet-kalem) { margin-inline-start: auto; }
+.oneri-bolum > summary .ek:has(.ozet-kalem) + .katlanir-ok { margin-inline-start: 0; }
+.ozet-kalem { display: grid; place-items: center; inline-size: 40px; block-size: 40px; margin-block: -6px; border: 0; border-radius: 999px; background: none; color: var(--silik, var(--sonuk)); cursor: pointer; }
+.ozet-kalem:hover, .ozet-kalem:focus-visible { background: var(--yuzey-2); color: var(--murekkep); }
+/*
+ * Kartın vurgu sırası (kullanıcı ve tasarım ajanı): 1. Arapça başlık, 2. durum
+ * rozeti, 3. kişi, 4. meta satırı (plan çipi, ülke, tür) sönük ve kalın değil,
+ * 5. yol satırı en sönük. Yeşil yalnız durum rozetinde.
+ */
+.ok-meta, html.yeni-tasarim .ok-meta { font-weight: 500; }
+.ok-plana-eklendi.kisa, html.yeni-tasarim .ok-plana-eklendi.kisa { color: var(--sonuk); font-weight: 500; gap: 4px; flex-wrap: nowrap; }
+.ok-plana-eklendi.kisa svg { flex: none; }
+/* Düğmenin içindeki Arapça başlık ortalanıyordu (düğmenin varsayılan hizası); içerik her dilde sağa yaslı. */
+.ok-baslik, .ok-baslik .icerik { text-align: right; }
+@media (max-width: 760px) {
+  /* Yapışkan sekme şeridi kartın kenarına kadar: kartın yan boşluğu 12'ye indi. */
+  :root body [data-oneri-sekmeleri] { margin-inline: calc(-1 * var(--ara-3)); padding-inline: var(--ara-3); }
+}

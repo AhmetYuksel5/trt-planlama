@@ -257,6 +257,7 @@ export function Pencere({
   children,
   altBilgi,
   genis = false,
+  icerikBasligi = false,
 }: {
   baslik: ReactNode;
   alt?: ReactNode;
@@ -265,6 +266,8 @@ export function Pencere({
   altBilgi?: ReactNode;
   /** Liste ya da kart ızgarası taşıyan pencere (plan araçları). */
   genis?: boolean;
+  /** Başlık içerik (Arapça): her arayüz dilinde sağa yaslı, kapatma solda. */
+  icerikBasligi?: boolean;
 }) {
   const { t } = useDil();
   const ref = useRef<HTMLDialogElement>(null);
@@ -297,7 +300,7 @@ export function Pencere({
   // React close olayını üstteki pencerelere de iletiyor; içteki pencere kapanınca dıştaki kapanmasın.
   return (
     <dialog ref={ref} className={`pencere${genis ? " genis" : ""}`} aria-labelledby={id} onClose={(e) => e.target === ref.current && kapat()} onClick={(e) => e.target === ref.current && disarida(e) && kapat()}>
-      <header>
+      <header className={icerikBasligi ? "icerik-basi" : undefined}>
         <div>
           <h2 id={id}>{baslik}</h2>
           {alt && <small>{alt}</small>}

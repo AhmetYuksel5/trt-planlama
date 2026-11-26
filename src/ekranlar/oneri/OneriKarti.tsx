@@ -1,4 +1,4 @@
-import { CircleCheck, LayoutGrid, List, MapPinned, Plus, X } from "lucide-react";
+import { CalendarDays, CalendarRange, CircleCheck, LayoutGrid, List, MapPinned, Plus, X } from "lucide-react";
 import { MasaEtiketi } from "./MasaOnerisi";
 import { useState, type ReactNode } from "react";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
@@ -158,6 +158,23 @@ export function PlanaEklendiNotu({ oneri: o, d, bagli = false, kapat }: { oneri:
     o.bicim !== "canli" &&
     !d.paketler.some((p) => p.oneriId === o.id && p.durum !== "iptal") &&
     !d.canliYayinlar.some((c) => c.oneriId === o.id);
+  /*
+   * Kartta kısa çip (kullanıcı: yeşil, kalın "Plana eklendi · … · başlık" satırı
+   * kartın her yerini vurgulu yapıyordu, göz nereye bakacağını bilemiyordu; bir
+   * tasarım ajanına danışıldı): planın simgesi, adı ve günü, meta satırının sönük
+   * tonunda. Tam cümle ipucunda; başlığın adı önerinin penceresinde.
+   */
+  const tamCumle = [t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi"), t(yer.planda ? "mNextday" : "mHaftalik") + (gun ? ` ${tarihYaz(gun, dil, "kisa")}` : ""), baslik].filter(Boolean).join(" · ");
+  if (!bagli) {
+    const Simge = yer.planda ? CalendarDays : CalendarRange;
+    return (
+      <span className="ok-plana-eklendi kisa" title={tamCumle} aria-label={tamCumle} data-plana-eklendi={yer.planda ? "nextday" : "haftalik"}>
+        <Simge size={14} aria-hidden="true" /> {t(yer.planda ? "mNextday" : "mHaftalik")}
+        {gun && ` ${tarihYaz(gun, dil, "kisa")}`}
+        {paketsiz && <span data-paketsiz> · {t("odPaketsizKisa")}</span>}
+      </span>
+    );
+  }
   const icerik = (
     <>
       <CircleCheck size={14} /> {t(yer.planda ? "odPlanaEklendi" : "odGundemeEklendi")} · {t(yer.planda ? "mNextday" : "mHaftalik")}

@@ -4256,6 +4256,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   kalıyordu, "düzensiz"; satır listesi denendi, istenmedi: kutular kalsın):
   boş kutu da öbürleriyle aynı yükseklikte, soluk ve kesik çizgili; tek kalan
   yeri sonraki tek kutu doldurur (`grid-auto-flow: dense`).
+  Telefonda boşluk ve hiza (kullanıcı: kutu içinde kutuyla içerik ortada dar şeride
+  sıkışıyordu; Gönder yazı kutusundan aşağıda başlıyordu): sayfanın, kartın ve
+  pencerenin yan boşluğu 12 (`:root body` ile, yeni tasarımın kuralını ezsin);
+  arama kutularının yer tutucusu her yerde yalnız "Ara" (açıklayıcı adı
+  `aria-label`'da); Öneriler'in süzgeci yalnız simge, adı "Filtre" ipucunda;
+  sekme "Planda". Tam boy pencerenin gövdesi `align-content: start` (kapalı
+  katlanır bölümün başlığı kutunun üstüne yapışıyordu). Yazı kutusu ile yanındaki
+  düğme üstten hizalı (`.mesaj-yaz`, `.asistan-yaz`; anma kutusunun textarea'sı
+  blok). Öneri kartında kişi satırı ve yol satırı sönük ve küçük; Arapça başlık
+  sağa yaslı (düğmenin varsayılanı ortalıyordu). Öneri penceresinde başlık sağda,
+  kapatma solda (`Pencere icerikBasligi`); Özet'in "Düzenle"si başlığın köşesinde
+  kalem (`.ozet-kalem`); Özet'in altındaki "Gelişme ekle" yalnız muhabirin kendi
+  takibinde. Plana girmiş önerinin kartında yeşil "Plana eklendi · … · başlık"
+  satırı yerine meta satırında sönük çip: planın simgesi (Next Day `CalendarDays`,
+  Weekly `CalendarRange`), adı ve günü; tam cümle ipucunda, başlık pencerede
+  (tasarım ajanının kararı: yeşil yalnız durum rozetinde).
+- Uygulama olarak yükleme (kullanıcı: Android'de ana ekrana eklenen site adres
+  çubuğuyla açılıyordu): `public/manifest.webmanifest` (`display: standalone`,
+  göreli `start_url`/`scope`), simgeler `public/uygulama-192.png`, `-512.png`
+  (işaret beyaz zeminde; "maskable" da). Manifest yokken Chrome uygulama değil
+  kısayol kuruyordu. Eski kısayol silinip Chrome'un "Uygulamayı yükle"siyle yeniden
+  kurulur. APK gerekirse aynı manifestten TWA (Bubblewrap; alan adında
+  `.well-known/assetlinks.json`).
 - Telefonda kayıt kutusunda (gelişme, paket, canlı…; `.kayit > .kayit-bas`)
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda

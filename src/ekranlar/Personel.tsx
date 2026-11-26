@@ -103,7 +103,7 @@ export function PersonelListe({ ben, sayfa }: { ben: Kisi; sayfa: string }) {
         <div className="suzgec">
           <label className="arama arama-kutu">
             <Search size={16} />
-            <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("kisiAra")} aria-label={t("kisiAra")} />
+            <input type="search" dir="auto" value={aranan} onChange={(e) => setAranan(e.target.value)} placeholder={t("ara")} aria-label={t("kisiAra")} />
           </label>
           {muhabirSayfasi ? (
             <>
