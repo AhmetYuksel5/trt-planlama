@@ -173,6 +173,28 @@ const SAHTE = () => {
   const gd = await sonSonuc();
   ok(Array.isArray(gd.olaylar) && gd.olaylar.length > 0, "gündem olayları okundu (" + (gd.olaylar?.length ?? 0) + ")");
 
+  // Araştırma arşivi: yalnız kişinin kendi notları, sözcük ve konuyla süzülür.
+  await p.evaluate((k) => {
+    const d = JSON.parse(localStorage.getItem(k));
+    d.gundemArsivi = [
+      { id: "gn-t1", kisiId: "yo3", baslik: "قمة إقليمية في الخرطوم", baglanti: "https://ornek.local/1", kaynak: "Örnek", konular: ["sudan"], not: "مهم للخطة", zaman: "2026-11-20T10:00:00.000Z" },
+      { id: "gn-t2", kisiId: "yo3", baslik: "انتخابات في تونس", baglanti: "https://ornek.local/2", kaynak: "Örnek", konular: [], not: "", zaman: "2026-11-21T10:00:00.000Z" },
+      { id: "gn-t3", kisiId: "pl1", baslik: "قمة أخرى في الخرطوم", baglanti: "https://ornek.local/3", kaynak: "Örnek", konular: ["sudan"], not: "", zaman: "2026-11-22T10:00:00.000Z" },
+    ];
+    localStorage.setItem(k, JSON.stringify(d));
+  }, K);
+  await git("#/");
+  await ac();
+  await p.click("[data-asistan-temizle]").catch(() => {});
+  await arac("arastirmaArsivi", {});
+  const ar = await sonSonuc();
+  ok(ar.toplam === 2 && ar.notlar[0].baslik === "انتخابات في تونس", "arşiv yalnız kendi notları, en yenisi önce");
+  await arac("arastirmaArsivi", { sorgu: "الخرطوم" });
+  const ar2 = await sonSonuc();
+  ok(ar2.toplam === 1 && ar2.notlar[0].not === "مهم للخطة", "arşivde sözcükle arandı");
+  await arac("arastirmaArsivi", { konu: "sudan", baslangic: "2026-11-21" });
+  ok((await sonSonuc()).toplam === 0, "konu ve tarih süzgeci");
+
   ok(!hatalar.length, "sayfa hatası yok " + hatalar.join(" | "));
   await b.close();
   console.log(`\n${gec} geçti, ${kal} kaldı`);

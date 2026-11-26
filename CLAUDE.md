@@ -586,7 +586,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `Gorunen.isler`, iş başına seçim kutusu, "Seçilenleri onayla · n"; seçilmeyen `vazgecti`, eksik alanı
     olan seçili iş kartı bekletir; okuma araçları eşzamansız da olabilir); yeni araçlar: okuma `stokListele`,
     `postaOzeti` (kişinin grubunun son sohbetleri, gerçek kipte postayı yükler), `gundemOzeti` (bu tarayıcıdaki
-    son taramadan olaylar, `gundemGorebilir`); pencere açanlar (`src/asistan/pencere.ts →
+    son taramadan olaylar, `gundemGorebilir`), `arastirmaArsivi` (kullanıcı: asistan araştırma arşivimi kullanabiliyor mu; kişinin kendi `gundemArsivi` notları, sözcük, konu ve eklendiği gün aralığıyla, en çok 30); pencere açanlar (`src/asistan/pencere.ts →
     asistanPencereIste`, kendi penceresi zaten onay ekranı) `planGonder`, `staffingEkibeYaz`, `imlaDenetimi`
     (imla ve plan postası pencereleri asistan panelinde, her görünümde); yazma `hazirPaketEkle`,
     `uretimeBaslat` (şablonla), `pkgGeriBildirimi` (kurumun şablonu, paket başına posta), `oneriDuzenle`
