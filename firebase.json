@@ -60,13 +60,6 @@
           }
         ]
       }
-    ],
-    "redirects": [
-      {
-        "source": "/download",
-        "destination": "/download/",
-        "type": 301
-      }
     ]
   },
   "firestore": {

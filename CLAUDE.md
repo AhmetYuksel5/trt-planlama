@@ -4279,7 +4279,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   izni, Play Protect), iPhone kartında "App Store uygulaması hazırlanıyor" şeridi (kullanıcı: şimdilik ana ekrana ekleyin, profesyonel dille) ve Safari › Paylaş › Ana Ekrana Ekle; cihazın kartı başta ve
   "Bu cihaz" işaretli, iPhone'da başka tarayıcıdaysa Safari uyarısı. Üç dil (metinler sayfanın
   kendi tablosunda, `dil.ts`'te değil: uygulama yüklenmiyor), tarayıcının dilinden, seçim
-  `plannersflow-indir-dil`. `firebase.json`: `/download` → `/download/` (göreli yollar), sayfa ve APK
+  `plannersflow-indir-dil`. `firebase.json`'da yönlendirme yok (Firebase eşleşmede sondaki "/"ı yok sayıyor; `/download` → `/download/` kuralı kendine dönüp ERR_TOO_MANY_REDIRECTS verdi, klasör sayfasına "/"ı Firebase kendisi ekliyor); sayfa ve APK
   önbelleksiz. Test `testler/indir.cjs`.
 - Uygulama olarak yükleme (kullanıcı: Android'de ana ekrana eklenen site adres
   çubuğuyla açılıyordu): `public/manifest.webmanifest` (`display: standalone`,
