@@ -739,6 +739,7 @@ const M = {
   yinelenemedi: m("Kayıt o arada değişti, yinelenemiyor", "تغيّر السجل في الأثناء، لا يمكن الإعادة", "The record changed meanwhile; it can't be redone"),
   planGeriAlOnay: m("Son işlem geri alınırsa {sil} kayıt silinecek. Geri alınsın mı?", "إذا تم التراجع عن آخر عملية فسيُحذف {sil} سجل. هل تريد التراجع؟", "Undoing the last action will delete {sil} record(s). Undo?"),
   planGeriAlOnayDegis: m("Son işlem geri alınırsa {degis} kayıt eski haline dönecek. Geri alınsın mı?", "إذا تم التراجع عن آخر عملية فسيعود {degis} سجل إلى حاله السابق. هل تريد التراجع؟", "Undoing the last action will revert {degis} record(s). Undo?"),
+  geriAlOnayPosta: m("Silinecek kaydın postası gitmiş; posta geri alınmaz.", "أُرسل بريد السجل الذي سيُحذف؛ البريد لا يُسترجع.", "Email for a record being deleted was already sent; it can't be recalled."),
   geriAlOnayDisari: m("Paket, öneri ya da görevlendirme de geri alınır; giden bildirimler geri alınmaz.", "ستتراجع أيضاً التقارير أو المقترحات أو التكليفات؛ الإشعارات المرسلة لا تُسترجع.", "Packages, proposals or assignments are undone too; notifications already sent are not."),
   geriAlinamadi: m("Bu kayıt sonra değişti, geri alınamıyor", "تغيّر هذا السجل بعد ذلك، لا يمكن التراجع", "This record has changed since; it can't be undone"),
   planIceAktar: m("Geçmiş plandan aktar", "استيراد من خطة سابقة", "Import from a past plan"),

@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useDil } from "../dil";
 import { planGeriAl, planYinele } from "../eylemler";
 import { adimOzeti, sonAdimaBak, sorulmali, useGeriAlKaydi, useGeriAlinabilir, useYinelenebilir } from "../geriAl";
-import type { Kisi } from "../veri";
+import { getir, type Kisi } from "../veri";
 import { bildir } from "./Parcalar";
 
 /* Yazı alanında Ctrl+Z yazının kendi geri almasıdır; planınki değil. */
@@ -29,8 +29,8 @@ export default function GeriAlDugmesi({ ben, planId }: { ben: Kisi; planId: stri
     if (!var_) return;
     const adim = sonAdimaBak(ben.id, planId);
     if (adim) {
-      const o = adimOzeti(adim);
-      if (sorulmali(o) && !confirm(`${(o.silinecek ? t("planGeriAlOnay", { sil: o.silinecek }) : t("planGeriAlOnayDegis", { degis: o.degisecek }))}${o.disari ? `\n\n${t("geriAlOnayDisari")}` : ""}`)) return;
+      const o = adimOzeti(adim, getir());
+      if (sorulmali(o) && !confirm(`${(o.silinecek ? t("planGeriAlOnay", { sil: o.silinecek }) : t("planGeriAlOnayDegis", { degis: o.degisecek }))}${o.disari ? `\n\n${t("geriAlOnayDisari")}` : ""}${o.postaGitti ? `\n\n${t("geriAlOnayPosta")}` : ""}`)) return;
     }
     const s = planGeriAl(ben, planId);
     if (s === "tamam") bildir(t("geriAlindi"), { ad: t("yinele"), f: yinele });

@@ -36,6 +36,35 @@ export interface GeriAdim {
 }
 
 const diziMi = (x: unknown): x is Oge[] => Array.isArray(x);
+const ayni = (x: unknown, y: unknown) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
+
+/*
+ * Gerçekleşmiş dış olayın izi (kullanıcı: geri alma görevlendirme postasının
+ * "gitti" işaretini de siliyordu, posta ise geri alınmıyor): PKG geri bildirimi
+ * ve özel yayın görev postası (`takdirBildirimi`), planın postası (`gonderildi`),
+ * çağrı hatırlatması (`hatirlatmalar`). Geri alma bunlara dokunmaz.
+ */
+const POSTA_IZI = new Set(["takdirBildirimi", "gonderildi", "hatirlatmalar"]);
+const nesneMi = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
+/** Posta izleri atılmış kopya (karşılaştırma için), iç içe dizilerde de. */
+const izsiz = (x: unknown): unknown =>
+  Array.isArray(x) ? x.map(izsiz) : nesneMi(x) ? Object.fromEntries(Object.entries(x).filter(([k]) => !POSTA_IZI.has(k)).map(([k, v]) => [k, izsiz(v)])) : x;
+/** Eski hale dönen öğe posta izlerini şimdiki halinden alır; iç içe dizilerde kimlikle eşlenir. */
+const izleriKoru = (eski: unknown, simdi: unknown): unknown => {
+  if (Array.isArray(eski)) {
+    if (!Array.isArray(simdi)) return eski;
+    const s = new Map(simdi.filter(nesneMi).map((x) => [x.id, x]));
+    return eski.map((x) => (nesneMi(x) && s.has(x.id) ? izleriKoru(x, s.get(x.id)) : x));
+  }
+  if (!nesneMi(eski) || !nesneMi(simdi)) return eski;
+  const yeni: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(eski)) if (!POSTA_IZI.has(k)) yeni[k] = izleriKoru(v, simdi[k]);
+  for (const k of POSTA_IZI) if (simdi[k] !== undefined) yeni[k] = simdi[k];
+  return yeni;
+};
+/** Öğede (ya da iç içe dizilerinde) gitmiş posta izi var mı. */
+const postaIziVar = (x: unknown): boolean =>
+  Array.isArray(x) ? x.some(postaIziVar) : nesneMi(x) ? Object.entries(x).some(([k, v]) => (POSTA_IZI.has(k) && v !== undefined) || postaIziVar(v)) : false;
 
 /** İki kayıt arasındaki değişen öğeler; değişen yoksa null. Saf. */
 export const farkCikar = (eski: Durum, yeni: Durum): GeriAdim | null => {
@@ -48,7 +77,11 @@ export const farkCikar = (eski: Durum, yeni: Durum): GeriAdim | null => {
     if (a === b || !diziMi(a) || !diziMi(b)) continue;
     const eskiler = new Map(a.map((x, i) => [x.id, [x, i] as const]));
     const yeniler = new Map(b.map((x) => [x.id, x]));
-    for (const [id, [x, i]] of eskiler) if (yeniler.get(id) !== x) degisimler.push({ alan, id, once: x, sonra: yeniler.get(id), sira: i });
+    for (const [id, [x, i]] of eskiler) {
+      const y = yeniler.get(id);
+      // Yalnız posta izi değiştiyse (posta gitti) geri alınacak düzenleme değil.
+      if (y !== x && !(y && ayni(izsiz(x), izsiz(y)))) degisimler.push({ alan, id, once: x, sonra: y, sira: i });
+    }
     b.forEach((x, i) => {
       if (!eskiler.has(x.id)) degisimler.push({ alan, id: x.id, sonra: x, sira: i });
     });
@@ -60,8 +93,6 @@ export const farkCikar = (eski: Durum, yeni: Durum): GeriAdim | null => {
   return degisimler.length || Object.keys(siralar).length ? { degisimler, siralar } : null;
 };
 
-const ayni = (x: unknown, y: unknown) => JSON.stringify(x ?? null) === JSON.stringify(y ?? null);
-
 /**
  * Adımı güncel kayda geri uyguluyor. Değişen öğe o arada başka biçime
  * girdiyse (başkası düzenledi) null: üzerine yazılmıyor. Saf.
@@ -69,7 +100,8 @@ const ayni = (x: unknown, y: unknown) => JSON.stringify(x ?? null) === JSON.stri
 export const geriUygula = (d: Durum, adim: GeriAdim): Durum | null => {
   for (const c of adim.degisimler) {
     const simdi = (d[c.alan] as unknown as Oge[]).find((x) => x.id === c.id);
-    if (!ayni(simdi, c.sonra)) return null;
+    // Sonradan giden posta (iz) başkasının düzenlemesi sayılmaz.
+    if (!ayni(izsiz(simdi), izsiz(c.sonra))) return null;
   }
   const yeni = { ...d } as Record<keyof Durum, unknown>;
   const alanlar = new Set([...adim.degisimler.map((c) => c.alan), ...(Object.keys(adim.siralar) as (keyof Durum)[])]);
@@ -80,7 +112,7 @@ export const geriUygula = (d: Durum, adim: GeriAdim): Durum | null => {
     for (const c of bu) {
       const i = liste.findIndex((x) => x.id === c.id);
       if (!c.once) liste.splice(i, 1);
-      else if (i >= 0) liste[i] = c.once;
+      else if (i >= 0) liste[i] = izleriKoru(c.once, liste[i]) as Oge;
     }
     for (const c of bu.filter((x) => x.once && !liste.some((y) => y.id === x.id)).sort((x, y) => x.sira - y.sira))
       liste.splice(Math.min(c.sira, liste.length), 0, c.once!);
@@ -109,35 +141,35 @@ export interface AdimOzeti {
   degisecek: number;
   /** Paket, öneri ya da görevlendirme de geri alınıyor. */
   disari: boolean;
+  /** Silinecek kayıtların postası gitmiş: posta geri alınmaz. */
+  postaGitti: boolean;
 }
-const icSilinen = (once: unknown, sonra: unknown): number => {
+/* Silinecek öğeler: üstte eklenmiş olanlar, iç içe dizilerde eskisinde olmayanlar. */
+const icSilinenler = (once: unknown, sonra: unknown): unknown[] => {
   if (Array.isArray(sonra)) {
-    const eski = Array.isArray(once) ? once : [];
-    const kimlik = (x: unknown) => (x && typeof x === "object" && "id" in x ? String((x as Oge).id) : null);
-    const eskiler = new Map(eski.map((x) => [kimlik(x), x]));
-    return sonra.reduce((n: number, x) => {
-      const id = kimlik(x);
-      if (id === null) return n;
-      return n + (eskiler.has(id) ? icSilinen(eskiler.get(id), x) : 1);
-    }, 0);
+    const eski = new Map((Array.isArray(once) ? once : []).filter(nesneMi).map((x) => [x.id, x]));
+    return sonra.flatMap((x) => (!nesneMi(x) || !("id" in x) ? [] : eski.has(x.id) ? icSilinenler(eski.get(x.id), x) : [x]));
   }
-  if (sonra && typeof sonra === "object") {
-    const o = (once && typeof once === "object" ? once : {}) as Record<string, unknown>;
-    return Object.entries(sonra as Record<string, unknown>).reduce((n, [k, x]) => n + icSilinen(o[k], x), 0);
+  if (nesneMi(sonra)) {
+    const o = nesneMi(once) ? once : {};
+    return Object.entries(sonra).flatMap(([k, x]) => icSilinenler(o[k], x));
   }
-  return 0;
+  return [];
 };
-export const adimOzeti = (adim: GeriAdim): AdimOzeti => {
+/* d verilirse silinecekler kaydın şimdiki halinden: posta adımdan sonra gitmiş olabilir. */
+export const adimOzeti = (adim: GeriAdim, d?: Durum): AdimOzeti => {
+  const simdi = (c: Degisim) => (d ? ((d[c.alan] as unknown as Oge[] | undefined)?.find((x) => x.id === c.id) ?? c.sonra) : c.sonra);
   let silinecek = 0;
   let degisecek = 0;
   for (const c of adim.degisimler) {
     if (!c.once) silinecek++;
     else {
       degisecek++;
-      if (c.sonra) silinecek += icSilinen(c.once, c.sonra);
+      if (c.sonra) silinecek += icSilinenler(c.once, c.sonra).length;
     }
   }
-  return { silinecek, degisecek, disari: adim.degisimler.some((c) => PLAN_DISI.has(c.alan)) };
+  const silinenler = adim.degisimler.flatMap((c) => (!c.once ? [simdi(c)] : c.sonra ? icSilinenler(c.once, simdi(c)) : []));
+  return { silinecek, degisecek, disari: adim.degisimler.some((c) => PLAN_DISI.has(c.alan)), postaGitti: silinenler.some(postaIziVar) };
 };
 /* Sormadan geri alınan yalnız plan içindeki, hiçbir şey silmeyen düzeltme. */
 export const sorulmali = (o: AdimOzeti) => o.silinecek > 0 || o.disari;

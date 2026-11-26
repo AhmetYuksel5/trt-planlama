@@ -1365,8 +1365,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kaydın gideceğini ve giden bildirimlerin geri alınmadığını söyler); yalnız plan içindeki
     silmeyen düzeltme sorulmaz. Geri alınan "Yinele"yle döner (bildirimdeki düğme, ↶'nin yanında
     yalnız yinelenecek varken `data-yinele`, Ctrl/⌘+Shift+Z ve Ctrl+Y; `eylemler.ts →
-    planYinele`, hareket `planYinelendi`); yeni düzenleme ileri yığını boşaltır. Test
-    `testler/geri-al-onay.cjs`.
+    planYinele`, hareket `planYinelendi`); yeni düzenleme ileri yığını boşaltır. Posta izi
+    (`takdirBildirimi`, planın `gonderildi`'si, çağrının `hatirlatmalar`'ı; `geriAl.ts → POSTA_IZI`)
+    geri alınmaz (kullanıcı: geri alma görevlendirme postasının "gitti" işaretini siliyordu, posta
+    geri alınmıyor): yalnız izi değiştiren yazış yığına girmez, eski haline dönen öğe izi şimdiki
+    halinden alır (iç içe dizilerde de, `izleriKoru`), sonradan giden posta geri almayı
+    engellemez; postası gitmiş kaydı silecek geri almanın sorusu bunu söyler (`postaGitti`, kaydın
+    şimdiki halinden). Test `testler/geri-al-onay.cjs`.
   - Geçmiş plandan aktar (yalnız simge; `nextday/IceAktar.tsx`,
     `planAktar.ts`, `eylemler.ts → planIceAktar`): kurumun eski
     الأجندة الإخبارية belgesi (.docx) ya da Plannersflow'un Word/HTML
