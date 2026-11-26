@@ -97,9 +97,56 @@ export const geriUygula = (d: Durum, adim: GeriAdim): Durum | null => {
   return yeni as unknown as Durum;
 };
 
+/*
+ * Geri almanın neye dokunacağı (kullanıcı: Weekly'de paket ekleyip görevlendirdi,
+ * ↶ sormadan hepsini sildi). Silinecek kayıt iç içe dizilerde de sayılıyor:
+ * Weekly kalemi planın içinde, kalem eklemenin geri alınması üstte yalnız
+ * "değişiklik" görünüyor. Saf.
+ */
+const PLAN_DISI = new Set<string>(["paketler", "oneriler", "gorevlendirmeler"]);
+export interface AdimOzeti {
+  silinecek: number;
+  degisecek: number;
+  /** Paket, öneri ya da görevlendirme de geri alınıyor. */
+  disari: boolean;
+}
+const icSilinen = (once: unknown, sonra: unknown): number => {
+  if (Array.isArray(sonra)) {
+    const eski = Array.isArray(once) ? once : [];
+    const kimlik = (x: unknown) => (x && typeof x === "object" && "id" in x ? String((x as Oge).id) : null);
+    const eskiler = new Map(eski.map((x) => [kimlik(x), x]));
+    return sonra.reduce((n: number, x) => {
+      const id = kimlik(x);
+      if (id === null) return n;
+      return n + (eskiler.has(id) ? icSilinen(eskiler.get(id), x) : 1);
+    }, 0);
+  }
+  if (sonra && typeof sonra === "object") {
+    const o = (once && typeof once === "object" ? once : {}) as Record<string, unknown>;
+    return Object.entries(sonra as Record<string, unknown>).reduce((n, [k, x]) => n + icSilinen(o[k], x), 0);
+  }
+  return 0;
+};
+export const adimOzeti = (adim: GeriAdim): AdimOzeti => {
+  let silinecek = 0;
+  let degisecek = 0;
+  for (const c of adim.degisimler) {
+    if (!c.once) silinecek++;
+    else {
+      degisecek++;
+      if (c.sonra) silinecek += icSilinen(c.once, c.sonra);
+    }
+  }
+  return { silinecek, degisecek, disari: adim.degisimler.some((c) => PLAN_DISI.has(c.alan)) };
+};
+/* Sormadan geri alınan yalnız plan içindeki, hiçbir şey silmeyen düzeltme. */
+export const sorulmali = (o: AdimOzeti) => o.silinecek > 0 || o.disari;
+
 /* --- Yığın: kişi ve plan başına, bu pencerede --- */
 
 const yiginlar = new Map<string, GeriAdim[]>();
+/* Geri alınanlar (yinele); yeni bir düzenleme gelince boşalıyor. */
+const ileriler = new Map<string, GeriAdim[]>();
 let etkin: { anahtar: string; kisiId: string } | null = null;
 let susturuldu = false;
 const dinleyiciler = new Set<() => void>();
@@ -121,6 +168,7 @@ yazisDinleyicileri.add((eski, yeni) => {
   if (!adim) return;
   const yigin = yiginlar.get(etkin.anahtar) ?? [];
   yiginlar.set(etkin.anahtar, [...yigin, adim].slice(-SINIR));
+  ileriler.delete(etkin.anahtar);
   haber();
 });
 
@@ -137,6 +185,33 @@ export const useGeriAlKaydi = (kisiId: string | undefined, planId: string) => {
 };
 
 export const geriAlinabilir = (kisiId: string, planId: string) => (yiginlar.get(anahtarOf(kisiId, planId))?.length ?? 0) > 0;
+export const yinelenebilir = (kisiId: string, planId: string) => (ileriler.get(anahtarOf(kisiId, planId))?.length ?? 0) > 0;
+/** Sıradaki geri almaya yığından almadan bakmak (onay sorusu için). */
+export const sonAdimaBak = (kisiId: string, planId: string) => yiginlar.get(anahtarOf(kisiId, planId))?.at(-1);
+/** Geri alınan adımın tersi ileri yığına; yinelenen adımın tersi geri yığına. */
+export const ileriyeEkle = (kisiId: string, planId: string, adim: GeriAdim) => {
+  const a = anahtarOf(kisiId, planId);
+  ileriler.set(a, [...(ileriler.get(a) ?? []), adim].slice(-SINIR));
+  haber();
+};
+export const geriyeEkle = (kisiId: string, planId: string, adim: GeriAdim) => {
+  const a = anahtarOf(kisiId, planId);
+  yiginlar.set(a, [...(yiginlar.get(a) ?? []), adim].slice(-SINIR));
+  haber();
+};
+export const ileriAdimiAl = (kisiId: string, planId: string): GeriAdim | undefined => {
+  const adim = ileriler.get(anahtarOf(kisiId, planId))?.pop();
+  haber();
+  return adim;
+};
+export const useYinelenebilir = (kisiId: string | undefined, planId: string) =>
+  useSyncExternalStore(
+    (f) => {
+      dinleyiciler.add(f);
+      return () => dinleyiciler.delete(f);
+    },
+    () => surum,
+  ) >= 0 && !!kisiId && yinelenebilir(kisiId, planId);
 
 export const useGeriAlinabilir = (kisiId: string | undefined, planId: string) =>
   useSyncExternalStore(

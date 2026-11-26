@@ -1359,6 +1359,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     döner; öğe o arada başkasınca değiştiyse geri alınmaz. Yığın bellekte,
     pencereye bağlı; hareket kaydı geri alınmaz, geri alma ayrı hareket.
     Sistemin yazışı (yarının planı) yığına girmez.
+    Kayıt silecek (iç içe dizide de: Weekly kalemi planın içinde) ya da paket, öneri,
+    görevlendirmeye dokunacak geri alma önce sorulur (kullanıcı: Weekly'de paket ekleyip
+    görevlendirdi, ↶ sormadan hepsini sildi; `geriAl.ts → adimOzeti`, `sorulmali`; soru kaç
+    kaydın gideceğini ve giden bildirimlerin geri alınmadığını söyler); yalnız plan içindeki
+    silmeyen düzeltme sorulmaz. Geri alınan "Yinele"yle döner (bildirimdeki düğme, ↶'nin yanında
+    yalnız yinelenecek varken `data-yinele`, Ctrl/⌘+Shift+Z ve Ctrl+Y; `eylemler.ts →
+    planYinele`, hareket `planYinelendi`); yeni düzenleme ileri yığını boşaltır. Test
+    `testler/geri-al-onay.cjs`.
   - Geçmiş plandan aktar (yalnız simge; `nextday/IceAktar.tsx`,
     `planAktar.ts`, `eylemler.ts → planIceAktar`): kurumun eski
     الأجندة الإخبارية belgesi (.docx) ya da Plannersflow'un Word/HTML

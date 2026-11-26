@@ -13,7 +13,7 @@ import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
 import { ILK_TABAN_SAAT, budanmis, okunduYap, okunmadiYap, type PostaOkuma } from "./postaOkuma";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { bosAlan } from "./epostaEslestir";
-import { geriUygula, sessizce, sonAdimiAl } from "./geriAl";
+import { farkCikar, geriUygula, geriyeEkle, ileriAdimiAl, ileriyeEkle, sessizce, sonAdimiAl } from "./geriAl";
 import { arSade, planTaslagi, type PlanTaslagi } from "./planAktar";
 import { SABIT_SABLONLAR, VARSAYILAN_SABLONLAR, sablonlar } from "./geriBildirim";
 import { PLAN_GONDER_SABLONU, VARSAYILAN_PLAN_GONDER, type PlanGonderTuru } from "./planGonder";
@@ -6329,6 +6329,26 @@ export const planGeriAl = (ben: Kisi, planId: string): "tamam" | "bos" | "yetkis
   if (!yeni) return "degisti";
   const iz = plan ? { planId, veri: { tarih: plan.tarih } } : { haftaId: planId, veri: { tarih: hafta!.baslangic } };
   sessizce(() => kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "planGeriAlindi", ...iz })));
+  // Geri alınan yinelenebilsin (kullanıcı: ↶ görevlendirdiği paketi silmişti, geri getiremedi).
+  const ters = farkCikar(d, yeni);
+  if (ters) ileriyeEkle(ben.id, planId, ters);
+  return "tamam";
+};
+
+/* Son geri almayı geri çevirir: geri almanın değiştirdiği öğeler o arada değişmediyse eski hallerine. */
+export const planYinele = (ben: Kisi, planId: string): "tamam" | "bos" | "yetkisiz" | "degisti" => {
+  const d = getir();
+  const plan = planBul(d, planId);
+  const hafta = plan ? undefined : haftaBul(d, planId);
+  if (plan ? !planOperasyonDuzenler(ben, plan) : !hafta || !yapabilir(ben, "haftalikDuzenle")) return "yetkisiz";
+  const adim = ileriAdimiAl(ben.id, planId);
+  if (!adim) return "bos";
+  const yeni = geriUygula(d, adim);
+  if (!yeni) return "degisti";
+  const iz = plan ? { planId, veri: { tarih: plan.tarih } } : { haftaId: planId, veri: { tarih: hafta!.baslangic } };
+  sessizce(() => kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "planYinelendi", ...iz })));
+  const ters = farkCikar(d, yeni);
+  if (ters) geriyeEkle(ben.id, planId, ters);
   return "tamam";
 };
 
