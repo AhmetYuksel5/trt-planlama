@@ -3800,9 +3800,9 @@ const M = {
   kl1: m("Haber önerisi gönder", "أرسل مقترح خبر", "Send a story proposal"),
   kl1a: m("Menüdeki \u201cÖneri gönder\u201de bas.", "اضغط «أرسل مقترحا» في القائمة.", "Press \u201cSend a proposal\u201d in the menu."),
   kl1b: m(
-    "Üç alan zorunlu: Header (haberin konusu), Gelişme (ne oldu, ne bekleniyor) ve Strap (önerdiğin paketin başlığı). Metinler Arapça yazılır.",
-    "ثلاث خانات إلزامية: العنوان الإخباري (موضوع الخبر)، والتطور (ماذا حدث وما المتوقع)، وعنوان التقرير المقترح. تُكتب النصوص بالعربية.",
-    "Three fields are required: Header (the story's subject), Development (what happened, what is expected) and Strap (the title of the package you propose). Write them in Arabic.",
+    "Dört alan var: önerilen paketin başlığı (عنوان التقرير المقترح) ve gelişmenin ayrıntısı (تفاصيل التطور) zorunlu; işleme fikri (فكرة المعالجة) ve görsel işleme (المعالجة البصرية) isteğe bağlı. Metinler Arapça yazılır, her alanın altında karakter sınırı görünür.",
+    "أربع خانات: عنوان التقرير المقترح وتفاصيل التطور إلزاميان، وفكرة المعالجة والمعالجة البصرية اختياريتان. تُكتب النصوص بالعربية، ويظهر حدّ الأحرف تحت كل خانة.",
+    "Four fields: the proposed package title (عنوان التقرير المقترح) and the development details (تفاصيل التطور) are required; the treatment idea (فكرة المعالجة) and the visual treatment (المعالجة البصرية) are optional. Write in Arabic; each field shows its character limit below.",
   ),
   kl1c: m(
     "Haber türünü (PKG, Live…) ve haberin gününü seç; olay birkaç gün sürecekse bitiş gününü de gir.",
@@ -3815,9 +3815,9 @@ const M = {
     "If you need to travel, tick \u201cNeeds a field assignment\u201d; you are then asked for the country.",
   ),
   kl1e: m(
-    "Öneri çağrısı bildirim olarak gelir; son saatten önce gönder.",
-    "يصلك طلب المقترحات إشعارا؛ أرسل قبل آخر موعد.",
-    "A call for proposals arrives as a notification; send before the deadline.",
+    "Öneri çağrısı bildirim olarak gelir; son saatten önce gönder. Çağrı postasına (“طلب خطة اليوم التالي”) e-postayla yanıt vermeye de devam edebilirsin: yanıtın kendiliğinden öneri olur.",
+    "يصلك طلب المقترحات إشعارا؛ أرسل قبل آخر موعد. ويمكنك أيضا مواصلة الرد بالبريد على رسالة «طلب خطة اليوم التالي»: يتحوّل ردّك تلقائيا إلى مقترح.",
+    "A call for proposals arrives as a notification; send before the deadline. You can also keep replying by email to the call (“طلب خطة اليوم التالي”): your reply becomes a proposal automatically.",
   ),
   kl2: m("Yalnız gelişme mi bildiriyorsun? Takip", "تبلغ عن تطور فقط؟ المتابعة", "Only reporting a development? Follow-up"),
   kl2a: m(
@@ -3866,9 +3866,9 @@ const M = {
   ),
   kl6: m("Yazışma", "المراسلة", "Messages"),
   kl6a: m(
-    "Her önerinin sayfasında Planlama'yla yazışma alanı var. Soru, ek bilgi ve değişiklik orada konuşulur; yanıt gelince zile düşer.",
-    "في صفحة كل مقترح خانة للمراسلة مع التخطيط. تُطرح فيها الأسئلة والمعلومات الإضافية والتعديلات، ويصلك تنبيه عند الرد.",
-    "Each proposal's page has a message thread with Planning. Questions, extra details and changes go there; replies show up in the bell.",
+    "Her önerinin ve paketin sayfasında Planlama'yla yazışma alanı var. Soru, ek bilgi ve değişiklik orada konuşulur; yanıt gelince zile düşer. Bütün yazışmaların menüdeki Mesajlar'da, okunmamışlar sayıyla.",
+    "في صفحة كل مقترح وتقرير خانة للمراسلة مع التخطيط. تُطرح فيها الأسئلة والمعلومات الإضافية والتعديلات، ويصلك تنبيه عند الرد. وتجد كل محادثاتك في «الرسائل» من القائمة مع عدد غير المقروء.",
+    "Each proposal's and package's page has a message thread with Planning. Questions, extra details and changes go there; replies show up in the bell. All your threads are under Messages in the menu, with the unread count.",
   ),
   kl7: m("Haber plana girince", "حين يدخل الخبر الخطة", "When the story is in the plan"),
   kl7a: m(
@@ -3891,6 +3891,11 @@ const M = {
     "Ekonomi, program ve spor paketlerinde “Yapıldı” yok: paketi o masa takip eder. Sıra sana geldiğinde (metin, video) iş “Senin sıran”da görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
     "تقارير الاقتصاد والبرامج والرياضة لا يُضغط فيها «أُنجز»: يتابعها مكتبها. حين يحين دورك (النص، الفيديو) يظهر العمل في «دورك»؛ وبعد إنجازه انقله إلى الخطوة التالية بالزر هناك.",
     "Economy, programme and sports packages have no “Done” button: their desk follows them. When it is your turn (script, video) the job shows under “Your turn”; when done, move it on with the button there.",
+  ),
+  kl7e: m(
+    "Paketin metni parça parça gönderilir (giriş, metin, röportaj, stand-up); her parça ayrı denetlenir, iade edilirse gerekçesi yazılıdır. Bütün parçalar hazır olunca video bağlantısını gönderirsin. Ek masrafları (çekim, ulaşım, konaklama…) paketin sayfasından girersin; “Yapıldı” onaylanınca masraflar da onaylanır.",
+    "يُرسَل نص التقرير على أجزاء (المقدمة، النص، المقابلات، الستاند أب)؛ يُراجَع كل جزء على حدة، وإن أُعيد إليك كُتب السبب. حين تجهز الأجزاء كلها ترسل رابط الفيديو. وتُدخل المصاريف الإضافية (التصوير، النقل، الإقامة…) من صفحة التقرير، وتُعتمد مع اعتماد «أُنجز».",
+    "The package script is sent in parts (intro, script, interviews, stand-up); each part is reviewed separately, and if returned the reason is written. When all parts are ready you send the video link. Enter extra expenses (shoot, transport, accommodation…) on the package page; they are approved together with “Done”.",
   ),
   kl7bNewsdesk: m(
     "Sıra sana geldiğinde (metin, video) iş \u201cSenin sıran\u201dda görünür; bitirince oradaki düğmeyle bir sonraki adıma geçir.",
@@ -3918,6 +3923,32 @@ const M = {
     "Arayüz dilini üst çubuktaki dil düğmesinden (telefonda Menü'den) değiştirebilirsin; haber metinleri her dilde Arapça kalır.",
     "يمكنك تغيير لغة الواجهة من زر اللغة في الشريط العلوي (وفي الهاتف من القائمة)؛ وتبقى نصوص الأخبار بالعربية في كل لغة.",
     "You can change the interface language from the language button in the top bar (on a phone, from Menu); story texts stay in Arabic.",
+  ),
+  kl9d: m(
+    "Düğmede “Eşitleniyor · eşitlenince kaydedilecek” yazıyorsa birkaç saniye bekle: yazdığın silinmez, bağlantı kurulunca kendiliğinden kaydedilir.",
+    "إذا ظهر على الزر «جارٍ التحديث · سيُحفظ عند اكتماله» فانتظر لحظات: لا يُمحى ما كتبته، ويُحفظ تلقائيا حين يكتمل الاتصال.",
+    "If the button says “Syncing · will be saved when done”, wait a few seconds: what you wrote is not lost and is saved automatically once connected.",
+  ),
+  kl0: m("Kısaca", "باختصار", "In short"),
+  kl0a: m(
+    "Öneri gönderirsin (ya da çağrı postasına yanıt verirsin); Planlama değerlendirir.",
+    "ترسل مقترحا (أو ترد على بريد طلب المقترحات)؛ ويقيّمه قسم التخطيط.",
+    "You send a proposal (or reply to the call email); Planning reviews it.",
+  ),
+  kl0b: m(
+    "Plana girer ve paket olarak kabul edilirse görev olur, Yapılacaklar'a düşer.",
+    "إذا دخل الخطة وقُبل تقريرا صار مهمة وانتقل إلى «مهامي».",
+    "If it enters the plan and is accepted as a package it becomes a task in To do.",
+  ),
+  kl0c: m(
+    "Haberi yaparsın, “Yapıldı” dersin; onaylanınca Haberlerim'e geçer.",
+    "تنجز التقرير وتضغط «أُنجز»؛ وبعد اعتماده ينتقل إلى أخباري.",
+    "You do the story and press “Done”; once approved it moves to My stories.",
+  ),
+  kl0d: m(
+    "Süren konular için takip açar, yeni gelişmeyi altına yazarsın.",
+    "للمواضيع الجارية تفتح متابعة وتكتب التطورات الجديدة تحتها.",
+    "For ongoing topics you open a follow-up and add new developments below it.",
   ),
   /* Plan yetkileri (Organizasyon): planların akış adımlarını kim yapar. */
   orgPlanYetkileri: m("Plan yetkileri", "صلاحيات الخطط", "Plan permissions"),

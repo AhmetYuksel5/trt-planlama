@@ -30,6 +30,7 @@ type Bolum = { baslik: Anahtar; maddeler: Anahtar[]; durumlar?: [Anahtar, Anahta
 
 function useBolumler(): Bolum[] {
   return [
+    { baslik: "kl0", maddeler: ["kl0a", "kl0b", "kl0c", "kl0d"] },
     { baslik: "kl1", maddeler: ["kl1a", "kl1b", "kl1c", "kl1d", "kl1e"] },
     { baslik: "kl2", maddeler: ["kl2a", "kl2b"] },
     {
@@ -54,9 +55,9 @@ function useBolumler(): Bolum[] {
     { baslik: "kl6", maddeler: ["kl6a"] },
     // Newsdesk devredeyken muhabir paketi kapatmıyor, sırası gelen adımı yapıyor.
     // Ekonomi, program ve spor paketi masasında, akışla ilerliyor (kl7d); "Yapıldı" yalnız haber ve feature'da.
-    { baslik: "kl7", maddeler: ["kl7a", "kl7b", "kl7c", "kl7d"] },
+    { baslik: "kl7", maddeler: ["kl7a", "kl7b", "kl7c", "kl7d", "kl7e"] },
     { baslik: "kl8", maddeler: ["kl8a"] },
-    { baslik: "kl9", maddeler: ["kl9a", "kl9b", "kl9c"] },
+    { baslik: "kl9", maddeler: ["kl9a", "kl9b", "kl9c", "kl9d"] },
   ];
 }
 

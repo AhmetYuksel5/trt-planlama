@@ -3876,7 +3876,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   Ayarlar sayfasının altında katlanır kart, ilk girişte açık, kapalılığı tarayıcıda
   (`trt-planlama-kilavuz`); metinler `dil.ts → kl*`. "PDF indir"
   kılavuzun temiz kopyasını `body`'ye koyup yazdırmayı açar
-  (`html.kilavuz-baskisi`, baskıda yalnız o; belge adı PDF'in adı). Paket
+  (`html.kilavuz-baskisi`, baskıda yalnız o; belge adı PDF'in adı). Başta "Kısaca" (`kl0`, kullanıcı: muhabire
+  sistemin kısa Arapça anlatımı kılavuza da girsin); öneri formu dört alanla (`kl1b`), e-posta yanıtı
+  (`kl1e`), parçalı metin ve masraf (`kl7e`), Mesajlar (`kl6a`), "eşitleniyor" düğmesi (`kl9d`). Paket
   kapanışı anlatımı Newsdesk anahtarına göre (`kl7b`/`kl7bNewsdesk`);
   muhabirin akışı değişince kılavuz da güncellenir.
 - Workspace (`ekranlar/ortam/`, `#/ortam/:id`): kişinin birkaç sayfayı bir
