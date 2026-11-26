@@ -4261,7 +4261,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   pencerenin yan boşluğu 12 (`:root body` ile, yeni tasarımın kuralını ezsin);
   arama kutularının yer tutucusu her yerde yalnız "Ara" (açıklayıcı adı
   `aria-label`'da); Öneriler'in süzgeci yalnız simge, adı "Filtre" ipucunda;
-  sekme "Planda", durum rozeti "İncelemede" ("Değerlendiriliyor" kartın yarısını kaplıyordu). Tam boy pencerenin gövdesi `align-content: start` (kapalı
+  sekme "Planda", durum rozeti "Değerlendirme" ("Değerlendiriliyor" kartın yarısını kaplıyordu). Tam boy pencerenin gövdesi `align-content: start` (kapalı
   katlanır bölümün başlığı kutunun üstüne yapışıyordu). Yazı kutusu ile yanındaki
   düğme üstten hizalı (`.mesaj-yaz`, `.asistan-yaz`; anma kutusunun textarea'sı
   blok). Öneri kartında kişi satırı ve yol satırı sönük ve küçük; Arapça başlık
