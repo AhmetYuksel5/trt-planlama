@@ -392,6 +392,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     bütün dinlenenlerden (kısıtlı kişinin tek belgeleri, genel ayar dahil)
     sunucu teyidiyle, bir kez olunca bağlantı kopsa da sürer. Hesap
     geçişleri de eşitlenince (`kip.ts → sunucuyaEsitOlunca`).
+    `kaydet` yazıp yazmadığını döndürür; metin yazılan yer (takip satırı, yeni
+    takip, işin yazışması) eşitlenmemiş kayıtta işi bekletir, düğme "Eşitleniyor ·
+    eşitlenince kaydedilecek" der, eşitlenince en taze kayıtla yazar, metin ancak
+    yazılınca silinir (`bilesenler/esitYazis.ts → useEsitYazis`; kullanıcı:
+    muhabirler takipte mesajı çoğu zaman kaydedemiyordu: telefonda sekme yeniden
+    yüklenince eşitlenme uzuyor, metin silinip "eklendi" deniyor, satır hiç
+    yazılmıyordu). Emülatörle `testler/takip-gercek.mjs` (sunucu yanıtı
+    geciktirilerek).
     `yarinPlaniniAc` ayrıca planın izi (açılış hareketi, ona bağlı
     gelişme, canlı, paket) varken de açmaz. O ezilmede düşen başlıkların
     gelişme, PKG ve canlıları ayrı belgelerde kaldı: Next Day ekranında

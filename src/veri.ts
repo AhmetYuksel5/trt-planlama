@@ -2379,16 +2379,17 @@ export const getir = () => {
  */
 export const yazisDinleyicileri = new Set<(eski: Durum, yeni: Durum) => void>();
 
-export const kaydet = (yeni: Durum) => {
+/* Yazıldıysa true: yazılmayan iş (izleme, eşitlenmemiş kayıt) ekranda "kaydedildi" deyip metni silmesin. */
+export const kaydet = (yeni: Durum): boolean => {
   // İzlemede yönetici başkasının gözüyle bakıyor: hiçbir şey yazılmıyor, sistemin yazışları da.
   if (izlemede()) {
     window.dispatchEvent(new Event("trt-izleme-yazilmadi"));
-    return;
+    return false;
   }
   // Gerçek kipte kayıt sunucuyla eşitlenmeden yazış yok: önbellekten kurulan eski görüntüye dayanan yazış sunucudaki yeni hali eziyordu.
   if (GERCEK && !sunucuyaEsitMi()) {
     window.dispatchEvent(new Event("trt-esitlenmedi"));
-    return;
+    return false;
   }
   const eski = simdi();
   // Aşamanın süresi ve iadesi yazışta kendiliğinden (asamaIzi.ts): adımı değiştiren eylemler ona dokunmuyor.
@@ -2399,6 +2400,7 @@ export const kaydet = (yeni: Durum) => {
   // Depo bağlanmadan yazılan (olmamalı: ekran o sırada "yükleniyor") kayda gitmiyor.
   else uzak?.yaz(eski, yeni);
   bildir();
+  return true;
 };
 
 /* Örnek veriye dönüş yalnız demoda; gerçek kayıt silinmiyor. */

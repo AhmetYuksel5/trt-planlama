@@ -6598,7 +6598,7 @@ export const mesajGonder = (ben: Kisi, konu: MesajKonusu, metin: string) => {
   d = { ...d, mesajlar: [...d.mesajlar, mesaj] };
   d = bahset(d, ben, metin, { yol: `#/mesajlar/${konuAnahtari(konu)}`, baslik: konuBasligi(d, konu) });
   const veri = mesajAlicilari(ben, d, konu);
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMesaji", ...(konu.oneriId ? { oneriId: konu.oneriId } : { paketId: konu.paketId }), veri }));
+  if (!kaydet(hareketYaz(d, { kisiId: ben.id, tip: "oneriMesaji", ...(konu.oneriId ? { oneriId: konu.oneriId } : { paketId: konu.paketId }), veri }))) return false;
   // Yazan kendi konuşmasını okumuş sayılır.
   mesajOkundu(ben, konuAnahtari(konu), mesaj.zaman);
   return true;
@@ -6657,8 +6657,7 @@ export const takipKaydet = (ben: Kisi, g: TakipGirdisi): string | null => {
     durum: "takip",
   };
   d = { ...d, oneriler: [oneri, ...d.oneriler] };
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", oneriId: id, veri: { sahip: "planlama" } }));
-  return id;
+  return kaydet(hareketYaz(d, { kisiId: ben.id, tip: "takipEklendi", oneriId: id, veri: { sahip: "planlama" } })) ? id : null;
 };
 
 /*
@@ -6695,8 +6694,7 @@ export const oneriyeSatirlarEkle = (ben: Kisi, oneriId: string, metinler: string
   if (!o || !oneriSatiriEkleyebilir(ben, o) || !temiz.length) return false;
   const t0 = Date.now();
   const yeni: Oneri = { ...o, satirlar: [...(o.satirlar ?? []), ...temiz.map((metin, i) => ({ zaman: new Date(t0 + i).toISOString(), metin }))] };
-  kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "takipSatiriEklendi", oneriId, veri: { sahip: "planlama" } }));
-  return true;
+  return kaydet(hareketYaz({ ...d, oneriler: d.oneriler.map((x) => (x.id === oneriId ? yeni : x)) }, { kisiId: ben.id, tip: "takipSatiriEklendi", oneriId, veri: { sahip: "planlama" } }));
 };
 
 /*

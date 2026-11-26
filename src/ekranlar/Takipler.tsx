@@ -1,4 +1,5 @@
 import { TarihGirdisi } from "../bilesenler/TarihSaat";
+import { useEsitYazis } from "../bilesenler/esitYazis";
 import { Binoculars, Plus } from "lucide-react";
 import { useState } from "react";
 import { Bos, Kart, bildir, icerikAlani } from "../bilesenler/Parcalar";
@@ -56,11 +57,15 @@ export default function Takipler({ ben }: { ben: Kisi }) {
 function TakipFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   const { t } = useDil();
   const [f, setF] = useState({ konu: "", aciklama: "", tur: "olay" as TakipTuru, tarih: "" });
+  const { bekliyor, calistir } = useEsitYazis();
+  // Form yalnız yazılınca kapanır; kayıt eşitlenmemişse eşitlenince yazılır (esitYazis.ts).
   const kaydet = () => {
-    if (confirm(t("eminMisin")) && takipKaydet(ben, f)) {
+    if (!confirm(t("eminMisin"))) return;
+    calistir(() => {
+      if (!takipKaydet(ben, f)) return;
       bildir(t("mtKaydedildi"));
       kapat();
-    }
+    });
   };
   return (
     <Kart baslik={t("mtEkle")}>
@@ -93,8 +98,8 @@ function TakipFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
           <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
             {t("iptal")}
           </button>
-          <button type="button" className="dugme" disabled={!f.konu.trim()} onClick={kaydet} data-takip-kaydet>
-            {t("kaydet")}
+          <button type="button" className="dugme" disabled={!f.konu.trim() || bekliyor} onClick={kaydet} data-takip-kaydet>
+            {bekliyor ? t("esitleninceYazilacak") : t("kaydet")}
           </button>
         </div>
       </div>

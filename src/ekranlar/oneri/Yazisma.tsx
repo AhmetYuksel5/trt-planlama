@@ -1,4 +1,5 @@
 import { TarihGirdisi } from "../../bilesenler/TarihSaat";
+import { useEsitYazis } from "../../bilesenler/esitYazis";
 import { Lightbulb, MessageSquare, Send } from "lucide-react";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +24,7 @@ export function IsYazismasi({ ben, konu, kart = true }: { ben: Kisi; konu: Mesaj
   const { t, ad, dil } = useDil();
   const v = useVeri();
   const [yazi, setYazi] = useState("");
+  const { bekliyor, calistir } = useEsitYazis();
   const kutu = useRef<HTMLDivElement>(null);
   const mesajlar = konuMesajlari(v, konu);
   const yazabilir = konuKatilimcisi(ben, v, konu, yapabilir(ben, "oneriDegerlendir"));
@@ -38,9 +40,11 @@ export function IsYazismasi({ ben, konu, kart = true }: { ben: Kisi; konu: Mesaj
     return () => g.disconnect();
   }, [ben, anahtar, son, yazabilir]);
   if (!konuMuhabiri(v, konu)) return null;
-  const gonder = () => {
-    if (mesajGonder(ben, konu, yazi)) setYazi("");
-  };
+  // Yazı yalnız yazılınca silinir; kayıt eşitlenmemişse eşitlenince gönderilir (esitYazis.ts).
+  const gonder = () =>
+    calistir(() => {
+      if (mesajGonder(ben, konu, yazi)) setYazi("");
+    });
   const govde = (
     <div className="yazisma" data-yazisma={anahtar} ref={kutu}>
       {/* Yazabilen için boş yazışmada "mesaj yok" satırı yer kaplamasın: yazı kutusu yeter. */}
@@ -78,8 +82,8 @@ export function IsYazismasi({ ben, konu, kart = true }: { ben: Kisi; konu: Mesaj
             }}
             data-mesaj-yazi
           />
-          <button type="button" className="dugme" disabled={!yazi.trim()} onClick={gonder} data-mesaj-gonder>
-            <Send size={15} className="yon" /> {t("gonder")}
+          <button type="button" className="dugme" disabled={!yazi.trim() || bekliyor} onClick={gonder} data-mesaj-gonder>
+            <Send size={15} className="yon" /> {bekliyor ? t("esitleninceYazilacak") : t("gonder")}
           </button>
         </div>
       )}

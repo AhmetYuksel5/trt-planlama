@@ -1,4 +1,5 @@
 import { oneriSatiri, useEkranKaydi } from "../../asistan/ekran";
+import { useEsitYazis } from "../../bilesenler/esitYazis";
 import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
@@ -807,14 +808,17 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   const { t, dil } = useDil();
   const [metin, setMetin] = useState("");
   const [formAcik, setFormAcik] = useState(false);
+  const { bekliyor, calistir } = useEsitYazis();
   const ekler = oneriSatiriEkleyebilir(ben, o);
   const satirlar = [...(o.satirlar ?? [])].reverse();
   if (!ekler && !satirlar.length && o.durum !== "takip") return null;
-  const ekle = () => {
-    if (!takipSatiriEkle(ben, o.id, metin)) return;
-    setMetin("");
-    bildir(t("tsEklendi"));
-  };
+  // Metin yalnız yazılınca silinir; kayıt eşitlenmemişse eşitlenince yazılır (esitYazis.ts).
+  const ekle = () =>
+    calistir(() => {
+      if (!takipSatiriEkle(ben, o.id, metin)) return;
+      setMetin("");
+      bildir(t("tsEklendi"));
+    });
   /*
    * Satırı olmayan öneride kart boş bir yazı kutusu ve "kayıt yok"tan ibaretti,
    * pencere aşağı doğru uzuyordu (kullanıcı): o zaman yalnız "Gelişme ekle"
@@ -834,9 +838,9 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
         <div className="form ara-alt-2" data-takip-satiri-formu>
           <textarea {...icerikAlani} rows={2} value={metin} onChange={(e) => setMetin(e.target.value)} data-takip-satiri />
           <div className="form-alt">
-            <button type="button" className="dugme dugme-kucuk" disabled={!metin.trim()} onClick={ekle} data-takip-satiri-ekle>
+            <button type="button" className="dugme dugme-kucuk" disabled={!metin.trim() || bekliyor} onClick={ekle} data-takip-satiri-ekle>
               {/* Açan düğmeyle aynı adı taşımasın (M-46): ardışık iki "Gelişme ekle" vardı. */}
-              {t("ekle")}
+              {bekliyor ? t("esitleninceYazilacak") : t("ekle")}
             </button>
           </div>
         </div>

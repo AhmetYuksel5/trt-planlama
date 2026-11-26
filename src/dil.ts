@@ -48,6 +48,7 @@ const M = {
   onayBekleniyorSerit: m("Hesabın yönetici onayını bekliyor; onaylanınca kayıtlar görünür.", "حسابك بانتظار موافقة المدير؛ تظهر السجلات بعد الموافقة.", "Your account is awaiting admin approval; records appear once approved."),
   izlemeSerit: m("{ad} olarak izliyorsun · değişiklik kaydedilmez", "تشاهد بصفة {ad} · لا تُحفظ أي تغييرات", "Viewing as {ad} · changes are not saved"),
   izlemedenCik: m("Çık", "خروج", "Exit"),
+  esitleninceYazilacak: m("Eşitleniyor · eşitlenince kaydedilecek", "جارٍ التحديث · سيُحفظ عند اكتماله", "Syncing · will be saved when done"),
   esitlenmediYazilmadi: m("Kayıt sunucuyla eşitleniyor, değişiklik kaydedilmedi. Birkaç saniye sonra yeniden dene.", "يجري تحديث البيانات من الخادم، لم يُحفظ التغيير. أعد المحاولة بعد ثوانٍ.", "Syncing with the server; the change was not saved. Try again in a few seconds."),
   izlemeYazilmadi: m("İzlemedesin; değişiklik kaydedilmedi.", "أنت في وضع المشاهدة؛ لم يُحفظ التغيير.", "You are viewing only; the change was not saved."),
   kisininEkraniniIzle: m("{ad} ekranını izle", "مشاهدة شاشة {ad}", "View {ad}'s screen"),
