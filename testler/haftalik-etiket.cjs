@@ -28,6 +28,8 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     return h.id;
   }, o);
   const kalem = () => p.locator(".cikti-kalem", { has: p.locator("[data-kalem-pkg]", { hasText: "تقرير اقتصادي اختباري" }) }).first();
+  // PKG / PKG PROPOSAL dosyanın altında grup başlığı (Next Day'in başlığı gibi); dosyasız kalemde kalemin içinde.
+  const etiket = () => p.locator(".cikti-baslik", { has: p.locator("[data-kalem-pkg]", { hasText: "تقرير اقتصادي اختباري" }) }).first().locator("[data-kalem-pkg-etiketi]").first();
 
   // 1. Ekonomi kalemi, karar bekliyor: birim adı ve PKG PROPOSAL
   const hid = await kur({ karar: "bekliyor", tur: "ekonomi" });
@@ -35,7 +37,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await git(yol);
     const masa = await kalem().locator("[data-kalem-masa]").innerText().catch(() => "");
     ok(masa.trim().length > 0 && /[؀-ۿ]/.test(masa), `${yol}: kalemin üstünde masanın Arapça adı (${masa.trim()})`);
-    ok((await kalem().locator("[data-kalem-pkg-etiketi]").innerText()).trim() === "PKG PROPOSAL", `${yol}: onaylanmamış paket PKG PROPOSAL`);
+    ok((await etiket().innerText()).trim() === "PKG PROPOSAL", `${yol}: onaylanmamış paket PKG PROPOSAL`);
   }
   await git(`#/haftalik/${hid}`);
   await p.evaluate(() => document.querySelectorAll("main details:not([open])").forEach((x) => (x.open = true)));
@@ -46,7 +48,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   // 2. Kabul edilince PKG
   await kur({ karar: "kabul", tur: "ekonomi" });
   await git(`#/haftalik/${hid}/cikti`);
-  ok((await kalem().locator("[data-kalem-pkg-etiketi]").innerText()).trim() === "PKG", "kabul edilen paket PKG");
+  ok((await etiket().innerText()).trim() === "PKG", "kabul edilen paket PKG");
 
   // 3. Haber kolunda masa adı yok; öneri bir masaya sorulup "Uygundur" dendiyse o masanın adı
   await kur({ karar: "kabul", tur: "haber" });

@@ -9,11 +9,12 @@ import { PlanTakipleri, takipOnerileri } from "../Takipler";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
 import { PlanBasiKalibi, adimlariKur } from "../../bilesenler/PlanBasi";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { Bos, Icerik, Pencere, Rozet, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, gunAdi, metin, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { HAFTA_DURUM_ADI } from "../../etiketler";
+import { HAFTA_DURUM_ADI, pkgGruplari } from "../../etiketler";
+import { kalemPaketli } from "../../bilesenler/Haftalik";
 import {
   anaKonuKaydet,
   aylikOlayiGundemeEkle,
@@ -615,7 +616,7 @@ function DosyaGruplari({ ben, hafta, kalemler, tarih }: { ben: Kisi; hafta: Haft
 function DosyaGrubu({ ben, hafta, tarih, baslikId, liste }: { ben: Kisi; hafta: HaftalikPlan; tarih: string; baslikId: string; liste: HaftalikKalem[] }) {
   const { t } = useDil();
   const v = useVeri();
-  const [form, setForm] = useState<"" | "kalem" | "pkg">("");
+  const [form, setForm] = useState<"" | "kalem" | "pkg" | "gelisme">("");
   const duzenler = haftalikDuzenler(ben, hafta);
   const [ac, pencere] = useDosyaPenceresi(ben, hafta, tarih, baslikId);
   const son = liste[liste.length - 1]?.id;
@@ -628,19 +629,38 @@ function DosyaGrubu({ ben, hafta, tarih, baslikId, liste }: { ben: Kisi; hafta: 
           <DosyaAraclari ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} ac={ac} pkg={() => setForm("pkg")} />
         )}
       </div>
-      {liste.map((k) => (
+      {/* Next Day'in başlığı gibi (kullanıcı: başlık tek paketin işi gibi görünüyordu): gelişmeler, başlığın muhabirleri, sonra paketler. */}
+      {(baslikId ? liste.filter((k) => !kalemPaketli(k)) : liste).map((k) => (
         <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
       ))}
       {baslikId && <DosyaBilgisi hafta={hafta} tarih={tarih} baslikId={baslikId} />}
+      {baslikId &&
+        pkgGruplari(liste.filter(kalemPaketli).map((k) => ({ k, durum: k.karar === "kabul" ? "onaylandi" : "taslak" }))).map(([ad, grup]) => (
+          <Fragment key={ad}>
+            <div className="alt-baslik ara-ust" data-pkg-grubu={ad}>
+              <bdi>{ad}</bdi>
+            </div>
+            {grup.map(({ k }) => (
+              <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />
+            ))}
+          </Fragment>
+        ))}
       {/* Dosyasız grupta da (kullanıcı: başlığın altına metinsiz başka paket eklenemiyordu). */}
       {duzenler &&
         (form ? (
-          <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId || undefined} sonra={son} pkg={form === "pkg"} kapat={() => setForm("")} />
+          <KalemFormu ben={ben} hafta={hafta} tarih={tarih} dosya={baslikId || undefined} sonra={son} pkg={form === "pkg"} gelisme={form === "gelisme"} kapat={() => setForm("")} />
         ) : (
           <>
-            <HizliKalem ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} sonra={son} kalemAc={(pkg) => setForm(pkg ? "pkg" : "kalem")} ac={ac} />
-            <div className="ara-ust" data-dosya-pkg-ekle>
-              <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setForm("pkg")} />
+            <HizliKalem ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} sonra={son} kalemAc={(pkg) => setForm(pkg ? "pkg" : baslikId ? "gelisme" : "kalem")} ac={ac} />
+            <div className="ara-ust ekle-satiri">
+              {baslikId && (
+                <span data-dosya-gelisme-ekle>
+                  <EkleDugmesi metin={t("gelismeEkle")} onClick={() => setForm("gelisme")} />
+                </span>
+              )}
+              <span data-dosya-pkg-ekle>
+                <EkleDugmesi metin={t("dosyayaPkgEkle")} onClick={() => setForm("pkg")} />
+              </span>
             </div>
           </>
         ))}

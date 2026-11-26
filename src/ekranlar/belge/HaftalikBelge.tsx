@@ -1,14 +1,14 @@
 import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "../haftalik/haftaSurukle";
 import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Package, Printer, Send } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
-import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
+import { Fragment, createContext, useContext, useRef, useState, type ReactNode, type Ref } from "react";
 import { Gorusler, KalemTeslimGunu, KararRozeti, bicimSatiri, kalemMasaEtiketi, kalemPaketli, kalemPkgEtiketi } from "../../bilesenler/Haftalik";
 import trtArabi from "../../varliklar/trt-arabi.svg";
 import trtArabiBeyaz from "../../varliklar/trt-arabi-beyaz.svg";
 import type { Baski } from "./Baski";
 import { Pencere, bildir } from "../../bilesenler/Parcalar";
 import { aralikYaz, ciktiGunu, metin, sureYaz, useDil, type Anahtar } from "../../dil";
-import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirUnvani, muhabirYeri, paketYeri, sehirAr } from "../../etiketler";
+import { HAREKET_TURU_ADI, TBC, kisiAr, muhabirUnvani, muhabirYeri, paketYeri, pkgGruplari, sehirAr } from "../../etiketler";
 import { vardiyaYaz } from "../../tarih";
 import { anaKonuKaydet, anaKonuSil, anaKonuTasi, baslikDuzenle, kalemKarar, kalemKaydet, kalemSil, kalemTasi, onIncelemeyeGonder, type KalemGirdisi } from "../../eylemler";
 import { ciktida, gundemde, haftaGunleri, kalemKilitli, haftaSonu, onIncelemeyeGidebilir } from "../../haftalik";
@@ -39,7 +39,7 @@ import { BelgeSatiri, CiktiAraclari, EkleCubugu, EkleDugmesi, SatirSeridi, Yerin
  * de yok.
  */
 
-export type HfPencere = { tur: "anaKonu"; mevcut?: AnaKonu; sonra?: string } | { tur: "kalem"; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string; pkg?: boolean };
+export type HfPencere = { tur: "anaKonu"; mevcut?: AnaKonu; sonra?: string } | { tur: "kalem"; mevcut?: HaftalikKalem; tarih?: string; dosya?: string; sonra?: string; pkg?: boolean; gelisme?: boolean };
 
 export interface HfDuzen {
   ben: Kisi;
@@ -86,10 +86,22 @@ const KARARLAR: { karar: Karar; ad: Anahtar; ikon: ReactNode }[] = [
  */
 export const ToplantiSecimi = createContext<{ secili?: string; sec: (id: string) => void } | null>(null);
 
-function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean }) {
+/*
+ * parca: dosyanın altında Next Day'in başlığı gibi (kullanıcı: Weekly'de başlık tek
+ * paketin işi gibi görünüyordu): önce gelişmeler ("gelisme"), sonra başlığın
+ * muhabirleri, en sonda paketler PKG / PKG PROPOSAL altında ("pkg"). Metni ve
+ * paketi olan kalem iki yerde çizilir; kararı, toplantı seçimi ve notları paket
+ * satırında. Dosyasız (متابعات) kalem bütün olarak.
+ */
+function Kalem({ k, hafta, duzen: d, ilk, son, parca }: { k: HaftalikKalem; hafta: HaftalikPlan; duzen?: HfDuzen; ilk: boolean; son: boolean; parca?: "gelisme" | "pkg" }) {
   const { t } = useDil();
   // Kesinleşmiş haftada Next Day'e ya da pakete geçmiş kalem çıktı gibi, düzenlenmez.
   const duzen = d && !kalemKilitli(hafta, k) ? d : undefined;
+  const paketli = kalemPaketli(k);
+  // Paketli kalemin gelişme yüzü yalnız metin: karar, muhabir ve notlar paket satırında.
+  const asil = parca !== "gelisme" || !paketli;
+  const metinGoster = parca !== "pkg";
+  const pkgGoster = parca !== "gelisme" && paketli;
   const v = useVeri();
   const kisiAdi = (id?: string) => kisiAr(kisiBul(v, id));
   const ben = duzen?.ben;
@@ -97,7 +109,8 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
   // Şartlı kabulün koşulu çıktıda sarı notta: toplantının kararı kağıtta da "henüz kesin değil" görünsün.
   const notlar = [k.karar === "sartli" && k.kosul ? `${c("mesrut")} ${k.kosul}` : "", k.not ?? ""].filter(Boolean);
   const bekliyor = k.karar === "bekliyor";
-  const ts = useContext(ToplantiSecimi);
+  const tsBag = useContext(ToplantiSecimi);
+  const ts = asil ? tsBag : null;
   const [kosulAcik, setKosulAcik] = useState(false);
   const [notAcik, setNotAcik] = useState(false);
   // Karar notu ve ek talep kesinleşmiş (kilitli) kalemde de yazılıyor; plan ekranının kartıyla aynı kural.
@@ -106,10 +119,12 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
   return (
     <BelgeSatiri
       duzen={!!duzen}
-      soluk={bekliyor && !ts}
+      soluk={bekliyor && !tsBag}
       ozellik={haftaSuruklenir("kalem", k.id, !!duzen && !!ben)}
       serit={
-        !duzen && d?.ben && notYazar ? (
+        !asil ? (
+          duzen && ben && <SatirSeridi duzenle={() => duzen.ac({ tur: "kalem", mevcut: k })} ek={<YzKisaltSerit metin={k.metin} kaydet={(m) => yaz({ metin: m })} />} />
+        ) : !duzen && d?.ben && notYazar ? (
           <SatirSeridi ek={<IkonDugme ikon={<MessageSquarePlus size={15} />} etiket={t("kararNotuEkTalep")} onClick={() => setNotAcik(true)} />} />
         ) : (
         duzen &&
@@ -161,13 +176,13 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
       >
         {/* Kesinleşen haftada kabul edilen paketin görevlendirme postası satırın solunda. */}
         {ts && hafta.durum === "kesinlesti" && <KalemPostaDugmesi hafta={hafta} kalem={k} />}
-        {kalemMasaEtiketi(k, v) && (
+        {asil && kalemMasaEtiketi(k, v) && (
           <p className="alt-baslik" data-kalem-masa>
             {kalemMasaEtiketi(k, v)}
           </p>
         )}
         {/* Yalnız PKG'si olan kalem (dosyanın ek paketi) metin satırı çizmez. */}
-        {!k.metin.trim() && !k.baslik ? null : duzen ? (
+        {!metinGoster || (!k.metin.trim() && !k.baslik) ? null : duzen ? (
           <Satir
             yer={k.yer && <YerindeMetin acik deger={k.yer} etiket={t("yer")} kaydet={(x) => yaz({ yer: x })} />}
             olay={k.baslik && <YerindeMetin acik deger={k.baslik} etiket={t("olayAdi")} kaydet={(x) => yaz({ baslik: x })} />}
@@ -183,17 +198,20 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
           </Satir>
         )}
         {/* Schedule paragrafın hemen altında (Next Day'deki gibi). */}
-        <GelismeProgrami g={k} />
+        {metinGoster && <GelismeProgrami g={k} />}
         {/*
           Muhabirler Next Day'deki gibi (kullanıcı: ikinci muhabir satırın yanına
           yazılıyordu): pakette tek muhabir "YER / strap / ad"; birden çoksa paket
           satırı "YER / strap", altında unvan (المراسلون) ve her muhabir "YER / ad".
         */}
-        {kalemPaketli(k) && (
+        {pkgGoster && (
           <>
-            <p className="alt-baslik" data-kalem-pkg-etiketi>
-              <bdi>{kalemPkgEtiketi(k)}</bdi>
-            </p>
+            {/* Dosyanın altında etiket grubun başında bir kez (DosyaBolumu). */}
+            {!parca && (
+              <p className="alt-baslik" data-kalem-pkg-etiketi>
+                <bdi>{kalemPkgEtiketi(k)}</bdi>
+              </p>
+            )}
             <p data-kalem-pkg>
               {k.yer || k.muhabirYerleri?.[k.muhabirler[0]] || sehirAr(kisiBul(v, k.muhabirler[0])?.sehir)} / {k.paketBasligi}
               {k.muhabirler.length < 2 && (
@@ -205,13 +223,13 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
             </p>
           </>
         )}
-        {!kalemPaketli(k) && !k.muhabirler.length && k.muhabirTbc ? (
+        {!asil ? null : !paketli && !k.muhabirler.length && k.muhabirTbc ? (
           <>
             <p className="alt-baslik">{c("ciktiMuhabir")}</p>
             <p data-tbc-satir>{TBC}</p>
           </>
         ) : (
-          k.muhabirler.length > (kalemPaketli(k) ? 1 : 0) && (
+          k.muhabirler.length > (paketli ? 1 : 0) && (
             <>
               <p className="alt-baslik" data-kalem-muhabir-unvani>
                 {muhabirUnvani(k.muhabirler.map((id) => kisiBul(v, id)))}
@@ -225,8 +243,8 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
           )
         )}
         {/* Teams muhabirlerin altında (Next Day'deki gibi). */}
-        <GelismeTeamSatirlari g={k} v={v} />
-        {bicimSatiri(k) && (
+        {metinGoster && <GelismeTeamSatirlari g={k} v={v} />}
+        {asil && bicimSatiri(k) && (
           <p>
             <b>
               <bdi>{bicimSatiri(k)}</bdi>
@@ -234,7 +252,7 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
           </p>
         )}
         {/* Boş not satır kaplamıyor (Next Day belgesi gibi); not "Düzenle" penceresinden giriliyor. */}
-        {duzen && k.not ? (
+        {!asil ? null : duzen && k.not ? (
           <p>
             {k.karar === "sartli" && k.kosul && <mark>{`${c("mesrut")} ${k.kosul}`}</mark>}{" "}
             <mark>
@@ -249,9 +267,9 @@ function Kalem({ k, hafta, duzen: d, ilk, son }: { k: HaftalikKalem; hafta: Haft
           )
         )}
         {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız düzenlerken ekranda. */}
-        {(duzen || ts) && <KararNotlari kalem={k} />}
+        {asil && (duzen || ts) && <KararNotlari kalem={k} />}
         {/* Ön inceleme görüşleri ve teslim günü plan ekranının kartında da; çıktıda yok. */}
-        {duzen && (
+        {asil && duzen && (
           <>
             <Gorusler kalem={k} d={v} />
             <KalemTeslimGunu kalem={k} />
@@ -303,6 +321,8 @@ function DosyaBolumu({ baslikId, ks, hafta, duzen, tarih }: { baslikId: string; 
   const [acDosya, pencere] = useDosyaPenceresi(ben, hafta, tarih, baslikId);
   const ad = baslikId ? (baslikBul(v, baslikId)?.ad ?? "") : "";
   const son = ks[ks.length - 1]?.id;
+  const paketler = ks.filter(kalemPaketli);
+  const gelismeler = ks.filter((k) => !kalemPaketli(k) || k.metin.trim() || k.baslik);
   return (
     <div className="cikti-baslik" {...hfYer(tarih, baslikId)}>
       {baslikId && (
@@ -311,8 +331,8 @@ function DosyaBolumu({ baslikId, ks, hafta, duzen, tarih }: { baslikId: string; 
           serit={
             duzen && (
               <SatirSeridi
-                ekle={() => duzen.ac({ tur: "kalem", tarih, dosya: baslikId, sonra: son })}
-                ekleEtiket={t("kalemEkle")}
+                ekle={() => duzen.ac({ tur: "kalem", tarih, dosya: baslikId, sonra: son, gelisme: true })}
+                ekleEtiket={t("gelismeEkle")}
                 ek={
                   <>
                     <span data-dosya-pkg-ekle>
@@ -329,11 +349,24 @@ function DosyaBolumu({ baslikId, ks, hafta, duzen, tarih }: { baslikId: string; 
         </BelgeSatiri>
       )}
       {!baslikId && <h3 className="yesil">{c("takipler")}</h3>}
-      {ks.map((k, i) => (
-        <Kalem key={k.id} k={k} hafta={hafta} duzen={duzen} ilk={i === 0} son={i === ks.length - 1} />
-      ))}
+      {!baslikId &&
+        ks.map((k, i) => <Kalem key={k.id} k={k} hafta={hafta} duzen={duzen} ilk={i === 0} son={i === ks.length - 1} />)}
+      {/* Next Day'in başlığı gibi: gelişmeler, başlığın muhabirleri ve LIVE, en sonda paketler. */}
+      {baslikId &&
+        gelismeler.map((k, i) => <Kalem key={k.id} k={k} hafta={hafta} duzen={duzen} ilk={i === 0} son={i === gelismeler.length - 1} parca="gelisme" />)}
       {baslikId && <DosyaBilgisi hafta={hafta} tarih={tarih} baslikId={baslikId} belge />}
-      {duzen && ben && <HizliKalem ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} sonra={son} kalemAc={(pkg) => duzen.ac({ tur: "kalem", tarih, dosya: baslikId || undefined, sonra: son, pkg })} ac={acDosya} />}
+      {baslikId &&
+        pkgGruplari(paketler.map((k) => ({ k, durum: k.karar === "kabul" ? "onaylandi" : "taslak" }))).map(([ad, grup]) => (
+          <Fragment key={ad}>
+            <p className="alt-baslik" data-kalem-pkg-etiketi data-pkg-grubu={ad}>
+              <bdi>{ad}</bdi>
+            </p>
+            {grup.map(({ k }, i) => (
+              <Kalem key={k.id} k={k} hafta={hafta} duzen={duzen} ilk={i === 0} son={i === grup.length - 1} parca="pkg" />
+            ))}
+          </Fragment>
+        ))}
+      {duzen && ben && <HizliKalem ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} sonra={son} kalemAc={(pkg) => duzen.ac({ tur: "kalem", tarih, dosya: baslikId || undefined, sonra: son, pkg, gelisme: !pkg && !!baslikId })} ac={acDosya} />}
       {pencere}
     </div>
   );
@@ -609,7 +642,7 @@ function HfPencereIcerik({ ben, hafta, p, kapat }: { ben: Kisi; hafta: HaftalikP
     );
   return (
     <Pencere baslik={t(p.mevcut ? "duzenle" : p.pkg ? "dosyayaPkgEkle" : "kalemEkle")} kapat={kapat}>
-      <KalemFormu ben={ben} hafta={hafta} mevcut={p.mevcut} tarih={p.tarih} dosya={p.dosya} sonra={p.sonra} pkg={p.pkg} kapat={kapat} />
+      <KalemFormu ben={ben} hafta={hafta} mevcut={p.mevcut} tarih={p.tarih} dosya={p.dosya} sonra={p.sonra} pkg={p.pkg} gelisme={p.gelisme} kapat={kapat} />
     </Pencere>
   );
 }

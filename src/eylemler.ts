@@ -1814,6 +1814,8 @@ export const kalanlariKabulEt = (ben: Kisi, haftaId: string): number => {
 const kalemStrapi = (d: Durum, k: HaftalikKalem) =>
   k.paketBasligi || oneriBul(d, k.oneriId)?.paketBasligi || (k.baslikId ? d.basliklar.find((b) => b.id === k.baslikId)?.ad : undefined) || k.baslik || undefined;
 const kalemPaketBasligi = (d: Durum, k: HaftalikKalem) => kalemStrapi(d, k) || k.metin;
+/* Gün gündeminde paketin Strap'i: kalemin ya da önerisinin (dosya adı paket sayılmaz). */
+const kalemStrapPaketi = (d: Durum, k: HaftalikKalem) => k.paketBasligi?.trim() || oneriBul(d, k.oneriId)?.paketBasligi?.trim();
 
 /* Kalemde elle yazılan yer muhabirin şehri değilse pakete taşınıyor (muhabir başka yerden yapıyor). */
 const kalemPaketYeri = (k: HaftalikKalem, sehir: Sehir) => (k.yer?.trim() && k.yer.trim() !== sehirAr(sehir) ? { yer: k.yer.trim() } : {});
@@ -2045,7 +2047,9 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
   let paketId: string | undefined;
   const bicim = k.bicimler.length ? k.bicimler.find((b) => b !== "canli") : "pkg";
   // Muhabiri TBC olan kalemin paketi de girer: "YER / strap / TBC", muhabir sonra atanır. Paketsiz takipte paket yok, yalnız gelişme.
-  if ((muhabirId || k.muhabirTbc) && bicim && paketDogurur(k)) {
+  // Paket yalnız Strap'li (PKG) kalemden: gelişme Next Day'de gelişme kalır, muhabiri başlığa geçer
+  // (kullanıcı: Weekly'de başlık tek paketin işi gibiydi; muhabirli gelişme Strap'siz paket açıyordu).
+  if ((muhabirId || k.muhabirTbc) && bicim && paketDogurur(k) && !!kalemStrapPaketi(d, k)) {
     let kod: string;
     [kod, d] = yeniKod(d);
     paketId = `p-${turet(plan.id, k.id)}`;

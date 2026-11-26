@@ -2534,6 +2534,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     seçilir); kalem formunda Strap yazılınca metin "varsa" (kullanıcı: gün gün planda
     başlığın altına metinsiz başka paket ekleyemiyordu, düğme yalnız dolu dosya grubundaydı).
     Test `testler/haftalik-gun-pkg.cjs`.
+  - Dosyanın (başlığın) altı Next Day'in başlığı gibi (kullanıcı: başlık tek paketin işi gibi
+    görünüyordu): önce gelişmeler (kalemlerin metni, saati, Schedule'ı, Teams'i; paketsiz kalemin
+    muhabirleri altında), sonra dosyanın muhabirleri (المراسل/المراسلون), TBC ve LIVE, en sonda
+    dosyanın bütün paketleri "PKG" (kabul) ve "PKG PROPOSAL" (öbürleri) grup başlığı altında
+    (`HaftalikBelge.tsx → DosyaBolumu`, `Kalem parca`; plan ekranında `Plan.tsx → DosyaGrubu`,
+    `data-pkg-grubu`). Metni ve Strap'i olan kalem iki yerde çizilir: gelişme yüzü yalnız metin,
+    karar, toplantı seçimi, muhabir ve notlar paket satırında. Dosyasız (متابعات) kalem bütün. Dosyada
+    "Gelişme ekle" (`data-dosya-gelisme-ekle`, `KalemFormu gelisme`: Strap sorulmaz) ve "Bu dosyaya
+    PKG ekle" ayrı. Gün gündeminin kalemi Next Day'e geçerken paket yalnız Strap'li kalemden doğar
+    (`eylemler.ts → haftaliktanAktar`, `kalemStrapPaketi`: kalemin ya da önerinin Strap'i; önce
+    muhabirli gelişme dosya adıyla paket açıyordu); gelişme gelişme olarak geçer, muhabiri başlığa.
+    Stok ve programlar kalemi (günsüz) eskisi gibi paket. Test `testler/haftalik-baslik-duzeni.cjs`.
   - Gün gündemi Next Day'in başlık altıyla eş (kullanıcı: Weekly'nin tasarımı kalsın, özellik ve
     yetenekler birebir aynı olsun): kalemde saat (metnin sonunda kalın "12G"), Schedule, Teams
     (`nextday/Formlar.tsx → TeamsAlani`, `ScheduleAlani`, iki form ortak), kaynak ve muhabirin o günkü

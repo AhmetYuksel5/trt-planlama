@@ -48,6 +48,7 @@ export function KalemFormu({
   sonra,
   ilk,
   pkg = false,
+  gelisme = false,
   kaydedildi,
   kapat,
 }: {
@@ -60,6 +61,8 @@ export function KalemFormu({
   ilk?: Partial<Pick<HaftalikKalem, "baslik" | "yer" | "metin" | "tur" | "muhabirler">>;
   /** Dosyanın altına ek paket: Strap önde ve zorunlu, metin isteğe bağlı. */
   pkg?: boolean;
+  /** Dosyanın gelişmesi (Next Day'in gelişmesi gibi): Strap sorulmaz, paket "PKG ekle"den ayrı kalem. */
+  gelisme?: boolean;
   kaydedildi?: (id: string) => void;
   kapat: () => void;
 }) {
@@ -192,7 +195,7 @@ export function KalemFormu({
         <textarea {...icerikAlani} rows={3} value={f.metin} onChange={(e) => setF({ ...f, metin: e.target.value })} placeholder={metin("kalemMetniIpucu", "ar")} />
       </label>
       <YzKisalt metin={f.metin} degistir={(m) => setF((x) => ({ ...x, metin: m }))} />
-      {!pkg && strapAlani}
+      {!pkg && !gelisme && strapAlani}
       <div>
         <div className="alan-etiket">{t("bicimSatiri")}</div>
         <fieldset className="secim-grubu ara-ust">
