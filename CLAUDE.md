@@ -4276,7 +4276,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   `public/download/index.html`, uygulamanın dışında statik sayfa, girişsiz, kurumun iç bilgisi yok):
   Kart başında Android ve Apple simgesi, her adımın sonunda işin simgesi (`<symbol>` kümesi).
   Android kartında APK düğmesi (`../indir/plannersflow.apk`) ve kurulum adımları (bilinmeyen kaynak
-  izni, Play Protect), iPhone kartında Safari › Paylaş › Ana Ekrana Ekle; cihazın kartı başta ve
+  izni, Play Protect), iPhone kartında "App Store uygulaması hazırlanıyor" şeridi (kullanıcı: şimdilik ana ekrana ekleyin, profesyonel dille) ve Safari › Paylaş › Ana Ekrana Ekle; cihazın kartı başta ve
   "Bu cihaz" işaretli, iPhone'da başka tarayıcıdaysa Safari uyarısı. Üç dil (metinler sayfanın
   kendi tablosunda, `dil.ts`'te değil: uygulama yüklenmiyor), tarayıcının dilinden, seçim
   `plannersflow-indir-dil`. `firebase.json`: `/download` → `/download/` (göreli yollar), sayfa ve APK
