@@ -1083,11 +1083,7 @@ a.rozet-plan { text-decoration: none; }
 
 /* Sütun minmax(0, 1fr): uzun içerik (Arapça metin kutusu, uzun düğme) formu kartın dışına genişletmesin. */
 .form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-3); }
-/* Muhabirin öneri formu: içerik alanları önde; gün, masa, tür ve saha ardında. */
-.muhabir-formu .oneri-meta-satir { order: 1; }
-.muhabir-formu .oneri-saha-secimi { order: 2; }
-.muhabir-formu [data-oneri-plan-onizleme] { order: 3; }
-.muhabir-formu .oneri-gonder-alt { order: 4; }
+/* Öneri formunun sırası DOM'da (tasarımcı ajanı): masa ve tür, zaman, dört metin, katlı Ek bilgiler, gönder. */
 .oneri-eksik { flex-basis: 100%; margin: 0; color: var(--sonuk); font-size: var(--punto-kucuk); }
 @media (max-width: 760px) {
   .muhabir-formu .oneri-gonder-alt { position: sticky; bottom: calc(var(--alt-cubuk) + env(safe-area-inset-bottom)); z-index: 5; background: var(--yuzey); margin-inline: calc(-1 * var(--ara-4)); padding: var(--ara-2) var(--ara-4); border-block-start: 1px solid var(--cizgi); flex-wrap: wrap; }
@@ -4798,3 +4794,31 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .gorsel-kucuk > button { position: absolute; inset-block-start: 2px; inset-inline-end: 2px; display: grid; place-items: center; inline-size: 24px; block-size: 24px; border: 0; border-radius: 999px; background: rgb(0 0 0 / .55); color: #fff; cursor: pointer; }
 .gorsel-ekle { cursor: pointer; }
 .gorsel-buyuk img { display: block; max-inline-size: 100%; max-block-size: 75vh; margin-inline: auto; border-radius: var(--yaricap); }
+
+/* --- Öneri formunun ek parçaları (OneriEkleri.tsx): zaman, program adayları, masraf, bağlantı, Ek bilgiler --- */
+.alan-sayaci.yakin { color: var(--uyari); font-weight: 600; }
+.alan-sayaci.az .alan-sayaci-az, .alan-sayaci-az { color: var(--uyari); }
+.oneri-zaman { display: grid; gap: var(--ara-2); }
+.hap-secim { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--cizgi-girdi, var(--cizgi)); border-radius: var(--yaricap-hap); overflow: hidden; }
+.hap-secim button { border: 0; background: var(--yuzey); color: var(--murekkep); font: inherit; font-size: var(--punto-kucuk); font-weight: 600; padding: 9px 8px; min-height: 40px; cursor: pointer; }
+.hap-secim button.secili { background: var(--lacivert, #0f1f3a); color: #fff; }
+.oneri-zaman-ek { display: flex; flex-wrap: wrap; gap: var(--ara-3); }
+.baglanti-dugme { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; padding: 4px 0; min-height: 32px; color: var(--vurgu); font: inherit; font-size: var(--punto-kucuk); font-weight: 600; cursor: pointer; }
+.baglanti-dugme[aria-pressed="true"] { color: var(--sonuk); }
+.program-adaylari { display: grid; gap: 6px; }
+.cip-secim { display: flex; flex-wrap: wrap; gap: 6px; }
+.cip-secim button { border: 1px solid var(--cizgi); background: var(--yuzey); color: var(--murekkep); border-radius: var(--yaricap-hap); padding: 5px 12px; min-height: 34px; font: inherit; font-size: var(--punto-kucuk); cursor: pointer; }
+.cip-secim button.secili { border-color: var(--vurgu); background: color-mix(in srgb, var(--vurgu) 10%, var(--yuzey)); color: var(--vurgu); font-weight: 600; }
+.ek-bilgiler { border: 1px dashed var(--cizgi); border-radius: var(--yaricap); padding: 0 var(--ara-3); }
+.ek-bilgiler > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); flex-wrap: wrap; min-height: 44px; cursor: pointer; font-weight: 600; font-size: var(--punto-kucuk); }
+.ek-bilgiler[open] > summary { border-block-end: 1px solid var(--cizgi); margin-block-end: var(--ara-3); }
+.ek-bilgiler-govde { display: grid; gap: var(--ara-3); padding-block-end: var(--ara-3); }
+.masraf-kalemleri { display: grid; gap: var(--ara-2); }
+.masraf-kalemi { display: grid; gap: 6px; padding: var(--ara-2); border: 1px solid var(--cizgi); border-radius: var(--yaricap); background: var(--yuzey); }
+.masraf-satiri { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 7rem) auto; gap: 6px; align-items: center; }
+.baglanti-alani { display: grid; gap: 6px; }
+.baglanti-yaz { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.baglanti-cipi { max-width: 100%; }
+.baglanti-cipi bdi { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.baglanti-cipi button { border: 0; background: none; padding: 2px; cursor: pointer; color: var(--sonuk); display: inline-flex; }
+.oneri-ekleri { display: grid; gap: var(--ara-2); }

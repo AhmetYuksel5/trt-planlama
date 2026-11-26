@@ -173,15 +173,37 @@ export type Bicim = (typeof BICIMLER)[number] | (typeof ESKI_BICIMLER)[number];
 export const TAKIP_BICIMI = "takip";
 
 /*
- * Muhabirin öneri formundaki alanların sınırı (karakter, boşluklar dahil;
- * kurumun istediği: strap kısa başlık, gelişme ~70–85, işleme fikri ~100–120,
- * görsel işleme ~70–85 sözcük). Form yazarken aşmaz; e-postadan gelen öneri
- * kesilmiyor, sayaç aşımı gösteriyor (Planlama kısaltır).
+ * Muhabirin öneri formundaki alanların sınırı (karakter, boşluklar dahil).
+ * Kullanıcı "yine de çok değil mi" diye sordu; bir planlama şefi ve bir Arapça
+ * metin editörü ajanı ölçtü: iyi yazılmış eksiksiz bir öneri 59 / 233 / 249 / 129
+ * karakter; öneri karar belgesi, planlamacı telefonda tek ekranda okuyor, uzun
+ * alan ajans metni yapıştırmaya itiyor. Strap plandaki "YER / Strap / ad"
+ * satırına tek satırda sığmalı (70). En az: strap 15, gelişme 50 (tek başlık
+ * tekrarı gelmesin). Sınır ve en az yalnız muhabirin kendi gönderiminde;
+ * yapıştırılan uzun metin kesilmez, kısaltılana dek gönderilmez. E-postadan
+ * gelen ve Planlama'nın girdiği öneri kesilmiyor, sayaç aşımı gösteriyor.
  */
-export const ONERI_SINIRI = { paketBasligi: 100, gelisme: 500, islemeFikri: 700, gorselIsleme: 500 } as const;
+export const ONERI_SINIRI = { paketBasligi: 70, gelisme: 300, islemeFikri: 300, gorselIsleme: 200 } as const;
+export const ONERI_EN_AZ = { paketBasligi: 15, gelisme: 50 } as const;
 export type OneriSinirAlani = keyof typeof ONERI_SINIRI;
 export const oneriSinirIcinde = (g: Partial<Record<OneriSinirAlani, string>>) =>
   (Object.keys(ONERI_SINIRI) as OneriSinirAlani[]).every((k) => (g[k] ?? "").trim().length <= ONERI_SINIRI[k]);
+/** Muhabirin kendi gönderiminde alt sınır; takipte strap yok, yalnız gelişme. */
+export const oneriEnAzIcinde = (g: Partial<Record<OneriSinirAlani, string>>, takip = false) =>
+  (takip || (g.paketBasligi ?? "").trim().length >= ONERI_EN_AZ.paketBasligi) && (g.gelisme ?? "").trim().length >= ONERI_EN_AZ.gelisme;
+/*
+ * Önerideki bağlantılar (kullanıcı: teklifle ilgili link ve görsel eklenebilsin):
+ * yalnız http(s), en çok beş; ekranda site adıyla çip.
+ */
+export const BAGLANTI_SINIRI = 5;
+export const baglantiAyikla = (metin: string): string[] =>
+  [...new Set((metin.match(/https?:\/\/[^\s<>"'،]+/gi) ?? []).map((u) => u.replace(/[).,;؛]+$/, "")))].filter((u) => {
+    try {
+      return /^https?:$/.test(new URL(u).protocol);
+    } catch {
+      return false;
+    }
+  });
 export type OneriBicimi = Bicim | typeof TAKIP_BICIMI;
 /** Paket ve haftalık kalem gerçek biçim taşıyor; takip oraya biçim olarak geçmiyor. */
 export const paketBicimi = (b?: OneriBicimi): Bicim | undefined => (b === TAKIP_BICIMI ? undefined : b);
@@ -636,7 +658,18 @@ export interface Oneri {
    * onaylı masraf değil (Paket.masraflar), Muhasebe'ye girmez.
    */
   teslimTahmini?: string;
+  /** İlk sürümün serbest metin masrafı ("USD 200"); yalnız eski kaydı okumak için, yeni öneri `masraflar`. */
   ekMasraf?: string;
+  /*
+   * Kalemli ek masraf (kullanıcı: masraf yazıdan ibaret kalmasın, hesaplanıp
+   * Muhasebe'nin biçimiyle gitsin; çekim, ulaşım, konaklama gibi kalemler;
+   * teklif onaylanırken onaya tabi). Paketin masrafıyla aynı yapı: Planlama
+   * öneriyi plana ekler ya da görevlendirirken onaylarsa pakete geçer
+   * (`Paket.masraflar`), oradan işin onayıyla Muhasebe'ye.
+   */
+  masraflar?: Masraf[];
+  /** Muhabirin eklediği bağlantılar (haber kaynağı, belge, video). */
+  baglantilar?: string[];
   /*
    * Muhabirin eklediği görseller (kullanıcı: Cloudflare'in kotasına yük olmasın,
    * Drive'da kişinin klasöründe dursun; gorsel.ts). Kayıtta yalnız Drive dosyasının
@@ -649,6 +682,12 @@ export interface Oneri {
    * `Durum.programlar`). Boşsa sütunda masa adı.
    */
   programId?: string;
+  /*
+   * Muhabirin "hangi program olabilir" seçimi (kullanıcı: muhabir emin
+   * olamayabilir, birden fazla seçebilsin). Kesin program `programId`; onu
+   * Programlar ya da Planlama verir. Boşsa masa karar verir.
+   */
+  programAdaylari?: string[];
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;

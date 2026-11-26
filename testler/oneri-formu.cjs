@@ -21,17 +21,23 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const etiketler = await p.locator(".sayacli-bas bdi").allInnerTexts();
   ok(JSON.stringify(etiketler) === JSON.stringify(["عنوان التقرير المقترح", "تفاصيل التطور", "فكرة المعالجة", "المعالجة البصرية"]), "başlıklar Arapça ve sırayla (Türkçe arayüzde de): " + etiketler.join(" | "));
   ok((await p.locator("[data-oneri-gelisme]").getAttribute("dir")) === "rtl", "alanlar sağdan sola");
+  // Sınır maxLength'le kesilmez (kullanıcı: yapıştırılan metin sessizce kayboluyordu); sayaç ve Gönder söyler.
   const sinirlar = await p.locator(".sayacli-alan textarea").evaluateAll((l) => l.map((x) => x.maxLength));
-  ok(JSON.stringify(sinirlar) === "[100,500,700,500]", "sınırlar 100/500/700/500: " + sinirlar);
-  ok((await p.locator('[data-sayac="oneri-gelisme"]').innerText()) === "0/500", "boş sayaç 0/500");
+  ok(sinirlar.every((x) => x < 0), "alanlarda maxLength yok: " + sinirlar);
+  ok((await p.locator('[data-sayac="oneri-gelisme"]').innerText()).includes("0/300"), "boş sayaç 0/300");
+  ok((await p.locator('[data-sayac="oneri-strap"]').innerText()).includes("0/70"), "strap sınırı 70");
 
   const strap = "تقرير عن حركة الشاحنات عند المعبر";
   await p.fill("[data-oneri-strap]", strap);
   await p.fill("[data-oneri-gelisme]", "أب ج");
-  ok((await p.locator('[data-sayac="oneri-gelisme"]').innerText()) === "4/500", "boşluk sayılıyor (4/500)");
-  // Sınırdan uzun yapıştırma kesilir
-  await p.fill("[data-oneri-isleme]", "ا".repeat(800));
-  ok((await p.locator("[data-oneri-isleme]").inputValue()).length === 700 && (await p.locator('[data-sayac="oneri-isleme"]').innerText()) === "700/700", "700'ü aşan metin alınmıyor");
+  ok((await p.locator('[data-sayac="oneri-gelisme"]').innerText()).includes("4/300"), "boşluk sayılıyor (4/300)");
+  ok((await p.locator('[data-sayac="oneri-gelisme"].az').count()) === 1, "en azın altında sayaç işaretli");
+  const gonder = p.locator(".form-alt button.dugme").last();
+  ok((await gonder.getAttribute("aria-disabled")) === "true" || (await gonder.isDisabled()), "gelişme 50'den kısayken gönderilmez");
+  // Sınırdan uzun yapıştırma kesilmez, Gönder durur
+  await p.fill("[data-oneri-isleme]", "ا".repeat(400));
+  ok((await p.locator("[data-oneri-isleme]").inputValue()).length === 400 && (await p.locator('[data-sayac="oneri-isleme"].asti').count()) === 1, "300'ü aşan metin kesilmiyor, sayaç kırmızı");
+  await p.fill("[data-oneri-gelisme]", "وصلت قافلة جديدة من الشاحنات إلى المعبر صباح اليوم بعد توقف دام أسبوعا كاملا");
   await p.fill("[data-oneri-isleme]", "مقابلات مع السائقين");
   await p.fill("[data-oneri-gorsel]", "لقطات من المعبر وخريطة");
   await p.locator(".form-alt button.dugme").last().click();
@@ -53,7 +59,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   ok((await p.locator("[data-oneri-isleme]").count()) === 0 && (await p.locator("[data-oneri-gorsel]").count()) === 0, "takipte 3 ve 4 yok");
   const tb = "متابعة اجتماعات المجلس";
   await p.fill("[data-oneri-strap]", tb);
-  await p.fill("[data-oneri-gelisme]", "تطور جديد");
+  await p.fill("[data-oneri-gelisme]", "تطور جديد في اجتماعات المجلس البلدي بعد تأجيل الجلسة الماضية مرتين");
   await p.locator(".form-alt button.dugme").last().click();
   await p.waitForTimeout(500);
   const tk = (await durum()).oneriler.find((x) => x.haberBasligi === tb);
@@ -74,7 +80,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(200);
   const kutu = p.locator("[data-oneri-duzenle-formu] [data-oneri-gelisme]");
   ok((await kutu.inputValue()).length === 620, "uzun e-posta metni kesilmedi");
-  ok((await p.locator('[data-oneri-duzenle-formu] [data-sayac="oneri-gelisme"].asti').innerText()) === "620/500", "sayaç aşımı kırmızı gösteriyor");
+  ok((await p.locator('[data-oneri-duzenle-formu] [data-sayac="oneri-gelisme"].asti').innerText()).includes("620/300"), "sayaç aşımı kırmızı gösteriyor");
   ok((await p.locator("[data-oneri-duzenle-formu] [data-kisa-header]").count()) === 1, "Planlama'nın formunda Header var");
 
   // 390px taşma (TR, AR)

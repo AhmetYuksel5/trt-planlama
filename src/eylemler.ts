@@ -132,6 +132,10 @@ import {
   gelismeMuhabirleri,
   TAKIP_BICIMI,
   oneriSinirIcinde,
+  oneriEnAzIcinde,
+  baglantiAyikla,
+  BAGLANTI_SINIRI,
+  MASRAF_TURLERI,
   ONERI_SINIRI,
   MASA_KOLLARI,
   masaPaketi,
@@ -367,6 +371,9 @@ export interface OneriGirdisi {
   ekMasraf?: string;
   gorseller?: OneriGorseli[];
   programId?: string;
+  masraflar?: OneriMasrafGirdisi[];
+  baglantilar?: string[];
+  programAdaylari?: string[];
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   /** "Takip" türünde muhabirin takibine giden tür; boşsa "diğer". */
@@ -383,6 +390,61 @@ export interface OneriGirdisi {
 }
 
 
+/* Formdaki masraf kalemi: kimlik ve kişi kayıtta, eylemde veriliyor. */
+export type OneriMasrafGirdisi = Pick<Masraf, "tur" | "tutar" | "para" | "aciklama"> & Partial<Pick<Masraf, "id" | "kisiId" | "zaman">>;
+
+/* Paketin masraf eylemiyle aynı kural: tutar artı, para birimi dolu, "diğer"de açıklama; en çok on kalem. */
+const temizMasraflar = (l: OneriMasrafGirdisi[] | undefined, kisiId: string): Masraf[] =>
+  (l ?? [])
+    .filter((m) => MASRAF_TURLERI.includes(m.tur) && Number.isFinite(m.tutar) && m.tutar > 0 && !!m.para?.trim() && (m.tur !== "diger" || !!m.aciklama?.trim()))
+    .slice(0, 10)
+    .map((m) => ({
+      id: m.id || kimlik("ms"),
+      tur: m.tur,
+      tutar: Math.round(m.tutar * 100) / 100,
+      para: m.para.trim(),
+      ...(m.aciklama?.trim() && { aciklama: m.aciklama.trim() }),
+      kisiId: m.kisiId || kisiId,
+      zaman: m.zaman || simdi(),
+    }));
+
+/* Bağlantılar: yalnız http(s), çoğalmaz, en çok beş. */
+const temizBaglantilar = (l: string[] | undefined) => baglantiAyikla((l ?? []).join(" ")).slice(0, BAGLANTI_SINIRI);
+
+/*
+ * Önerinin ek bilgileri (kullanıcı: kalemli masraf, bağlantı, birden çok
+ * program adayı). Yeni öneride boşlar yazılmaz; düzenlemede alan formda yoksa
+ * (undefined) dokunulmaz, boş liste siler. Takipte masraf ve program sorulmuyor.
+ */
+const oneriEkleri = (g: Pick<OneriGirdisi, "masraflar" | "baglantilar" | "programAdaylari">, takip: boolean, kisiId: string): Partial<Oneri> => {
+  const masraflar = takip ? [] : temizMasraflar(g.masraflar, kisiId);
+  const baglantilar = temizBaglantilar(g.baglantilar);
+  const programAdaylari = takip ? [] : [...new Set(g.programAdaylari ?? [])];
+  return { ...(masraflar.length && { masraflar }), ...(baglantilar.length && { baglantilar }), ...(programAdaylari.length && { programAdaylari }) };
+};
+const oneriEkGuncelle = (g: Pick<OneriGirdisi, "masraflar" | "baglantilar" | "programAdaylari">, takip: boolean, kisiId: string): Partial<Oneri> => {
+  const e = oneriEkleri(g, takip, kisiId);
+  return {
+    ...(g.masraflar !== undefined && { masraflar: e.masraflar }),
+    ...(g.baglantilar !== undefined && { baglantilar: e.baglantilar }),
+    ...(g.programAdaylari !== undefined && { programAdaylari: e.programAdaylari }),
+  };
+};
+
+/*
+ * Önerinin masrafı pakete (kullanıcı: masraf teklif onaylanırken onaya tabi):
+ * Planlama öneriyi plana eklerken ya da görevlendirirken "masrafı da onayla"
+ * dediyse, toplantıda kabul edilen Weekly kaleminde her zaman. Aynı kalemler
+ * önerinin başka bir paketine geçmişse ikinci kez geçmez: Muhasebe iki kez saymasın.
+ */
+const oneriMasrafi = (d: Durum, oneriId: string | undefined, onay = true): Partial<Paket> => {
+  const o = onay && oneriId ? oneriBul(d, oneriId) : undefined;
+  if (!o?.masraflar?.length) return {};
+  const ids = new Set(o.masraflar.map((m) => m.id));
+  if (d.paketler.some((p) => p.oneriId === o.id && p.durum !== "iptal" && p.masraflar?.some((m) => ids.has(m.id)))) return {};
+  return { masraflar: o.masraflar };
+};
+
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   // Gündem takibini kullanan (tam yönetici ya da paylaştığı) hangi birimde olursa olsun muhabir dışı
   // kaynaktan öneri girer: gündemdeki fırsat öneriye çevriliyor.
@@ -391,7 +453,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   const takip = g.bicim === TAKIP_BICIMI;
   // Muhabirin önerisinde header, gelişme ve strap zorunlu (formdaki kuralın aynısı); takipte paket önerilmiyor.
   // Formda Header sorulmuyor (1. alan strap; takipte takibin başlığı), Header ondan; sınırlar formdakiyle aynı.
-  if (muhabir && (!(g.haberBasligi?.trim() || g.paketBasligi?.trim()) || !g.gelisme?.trim() || (!takip && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g))) return null;
+  if (muhabir && (!(g.haberBasligi?.trim() || g.paketBasligi?.trim()) || !g.gelisme?.trim() || (!takip && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g) || !oneriEnAzIcinde(g, takip))) return null;
   /*
    * Muhabir yalnız kendi adına gönderir. Planlama sistem dışından geleni
    * elle girer: ya bir muhabir adına (telefon, mesaj) ya da muhabir dışı
@@ -433,6 +495,7 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
     ...(!takip && g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     ...(g.gorseller?.length && { gorseller: g.gorseller.slice(0, GORSEL_SINIRI) }),
     ...(!takip && g.programId && { programId: g.programId }),
+    ...oneriEkleri(g, takip, muhabirId ?? ben.id),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -471,14 +534,19 @@ export interface MasaOneriGirdisi {
   teslimTahmini?: string;
   ekMasraf?: string;
   programId?: string;
+  masraflar?: OneriMasrafGirdisi[];
+  baglantilar?: string[];
+  programAdaylari?: string[];
   bicim: OneriBicimi;
-  hedefTarih: string;
+  /** Olaylı öneride günü; zamana bağlı olmayanda boş, `hafta` teslim gününün haftası. */
+  hedefTarih?: string;
   bitisTarih?: string;
+  hafta?: string;
 }
 
 export const masaOneriGonder = (ben: Kisi, g: MasaOneriGirdisi): string | null => {
   const masa = masaBirimi(ben);
-  if (!masa || !masaOneriGonderebilir(ben) || !g.paketBasligi.trim() || !g.gelisme.trim() || !g.hedefTarih || !oneriSinirIcinde(g)) return null;
+  if (!masa || !masaOneriGonderebilir(ben) || !g.paketBasligi.trim() || !g.gelisme.trim() || !(g.hedefTarih || g.hafta) || !oneriSinirIcinde(g)) return null;
   let d = getir();
   const muhabir = g.muhabirId ? kisiBul(d, g.muhabirId) : undefined;
   if (g.muhabirId && muhabir?.birim !== "muhabir") return null;
@@ -498,13 +566,15 @@ export const masaOneriGonder = (ben: Kisi, g: MasaOneriGirdisi): string | null =
     ...(g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
     ...(g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     ...(g.programId && { programId: g.programId }),
+    ...oneriEkleri(g, false, muhabir?.id ?? ben.id),
     tur: masa,
     bicim: g.bicim === TAKIP_BICIMI ? "pkg" : g.bicim,
     sahaGerekli: false,
     zaman: simdi(),
     kanal: "sistem",
-    hedefTarih: g.hedefTarih,
-    ...(g.bitisTarih && g.bitisTarih > g.hedefTarih && { bitisTarih: g.bitisTarih }),
+    // Zamana bağlı olmayan öneri günsüz, teslim gününün haftasında (Weekly › Stok ve programlar).
+    ...(g.hedefTarih ? { hedefTarih: g.hedefTarih } : { hafta: g.hafta }),
+    ...(g.hedefTarih && g.bitisTarih && g.bitisTarih > g.hedefTarih && { bitisTarih: g.bitisTarih }),
     durum: "yeni",
   };
   d = { ...d, oneriler: [oneri, ...d.oneriler] };
@@ -599,7 +669,7 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
   let d = getir();
   const o = oneriBul(d, id);
   const takipte = g.bicim === TAKIP_BICIMI;
-  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || (!takipte && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g)) return false;
+  if (!o || !oneriYenidenGonderebilir(ben, o) || !g.haberBasligi.trim() || !g.gelisme.trim() || (!takipte && !g.paketBasligi?.trim()) || !oneriSinirIcinde(g) || !oneriEnAzIcinde(g, takipte)) return false;
   const onceki: Record<string, string> = { haberBasligi: o.haberBasligi, gelisme: o.gelisme };
   if (o.paketBasligi) onceki.paketBasligi = o.paketBasligi;
   if (o.islemeFikri) onceki.islemeFikri = o.islemeFikri;
@@ -614,6 +684,7 @@ export const oneriYenidenGonder = (ben: Kisi, id: string, g: YanitOneriGirdisi) 
     ...(g.teslimTahmini !== undefined && { teslimTahmini: (!takipte && g.teslimTahmini) || undefined }),
     ...(g.ekMasraf !== undefined && { ekMasraf: (!takipte && g.ekMasraf.trim()) || undefined }),
     ...(g.programId !== undefined && { programId: (!takipte && g.programId) || undefined }),
+    ...oneriEkGuncelle(g, takipte, o.muhabirId ?? ben.id),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -648,7 +719,7 @@ const plandaKarara = (o: Oneri) => !["teklif", "reddedildi", "geriCekildi", "duz
 export const oneriPlanaEkle = (
   ben: Kisi,
   oneriId: string,
-  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string; isleme?: boolean; gorsel?: boolean },
+  g: { planId: string; baslikId?: string; yeniBaslik?: string; paketOlustur: boolean; muhabirId?: string; isleme?: boolean; gorsel?: boolean; /** Önerinin ek masrafı da onaylansın, pakete geçsin (varsayılan evet). */ masraf?: boolean },
 ): boolean => {
   let d = getir();
   const o = oneriBul(d, oneriId);
@@ -722,7 +793,7 @@ export const oneriPlanaEkle = (
       paketler: d.paketler.map((x) => {
         if (x.id !== gorevli.id) return x;
         const { stok: _stok, ...y } = x;
-        return { ...y, ...planNotlari, planId: plan.id, planBaslikId: pbId, guncelleme: simdi() };
+        return { ...y, ...(!y.masraflar?.length && oneriMasrafi(d, o.id, g.masraf !== false)), ...planNotlari, planId: plan.id, planBaslikId: pbId, guncelleme: simdi() };
       }),
     };
   } else if (paketli) {
@@ -746,6 +817,7 @@ export const oneriPlanaEkle = (
       oneriId: o.id,
       oncelikli: o.talimatVeren ? true : undefined,
       ...planNotlari,
+      ...oneriMasrafi(d, o.id, g.masraf !== false),
       notlar: [],
       olusturma: simdi(),
       guncelleme: simdi(),
@@ -830,6 +902,7 @@ export const oneriyePaketEkle = (ben: Kisi, oneriId: string, strap: string): boo
     sahaGerekli: o.sahaGerekli,
     oneriId: o.id,
     oncelikli: o.talimatVeren ? true : undefined,
+    ...oneriMasrafi(d, o.id),
     notlar: [],
     olusturma: simdi(),
     guncelleme: simdi(),
@@ -2078,6 +2151,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       sahaGerekli: false,
       oneriId: k.oneriId,
       haftalikKalemId: k.id,
+      ...oneriMasrafi(d, k.oneriId),
       ...(k.takdirBildirimi ? { takdirBildirimi: k.takdirBildirimi } : {}),
       notlar: [],
       olusturma: simdi(),
@@ -2123,6 +2197,7 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     stok: !MASA_KOLLARI.includes(k.tur) || undefined,
     oneriId: k.oneriId,
     haftalikKalemId: k.id,
+    ...oneriMasrafi(d, k.oneriId),
     ...(k.takdirBildirimi ? { takdirBildirimi: k.takdirBildirimi } : {}),
     notlar: [],
     olusturma: simdi(),
@@ -4087,7 +4162,7 @@ export const masaSorusunuYanitla = (ben: Kisi, oneriId: string, kabul: boolean, 
 };
 
 /** Masanın aldığı ya da yanıtını beklediği öneride muhabire görev: plansız görev paketi (stokta), masanın kolunda, öneriye bağlı. */
-export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string, masa?: BirimId | ""): string | null => {
+export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string, masa?: BirimId | "", masrafOnay = true): string | null => {
   let d = getir();
   const o = oneriBul(d, oneriId);
   const s = kabulSoru(d, oneriId) ?? acikSoru(d, oneriId);
@@ -4112,6 +4187,7 @@ export const oneriGorevlendir = (ben: Kisi, oneriId: string, tarih: string, masa
     oneriId,
     tur: hedef ? (hedef as IcerikTuru) : o.tur,
     sahaGerekli: o.sahaGerekli,
+    ...oneriMasrafi(d, oneriId, masrafOnay),
   });
   if (!k) return null;
   let [p, yeni] = k;
@@ -5038,6 +5114,9 @@ export interface YanitOneriGirdisi {
   teslimTahmini?: string;
   ekMasraf?: string;
   programId?: string;
+  masraflar?: OneriMasrafGirdisi[];
+  baglantilar?: string[];
+  programAdaylari?: string[];
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;
@@ -5061,6 +5140,7 @@ export const yanittanOneri = (ben: Kisi, yanitId: string, g: YanitOneriGirdisi):
     ...(g.teslimTahmini && { teslimTahmini: g.teslimTahmini }),
     ...(g.ekMasraf?.trim() && { ekMasraf: g.ekMasraf.trim() }),
     ...(g.programId && { programId: g.programId }),
+    ...oneriEkleri(g, g.bicim === TAKIP_BICIMI, kisi.id),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,
@@ -5095,6 +5175,7 @@ export const oneriDuzenle = (ben: Kisi, oneriId: string, g: YanitOneriGirdisi) =
     ...(g.teslimTahmini !== undefined && { teslimTahmini: (g.bicim !== TAKIP_BICIMI && g.teslimTahmini) || undefined }),
     ...(g.ekMasraf !== undefined && { ekMasraf: (g.bicim !== TAKIP_BICIMI && g.ekMasraf.trim()) || undefined }),
     ...(g.programId !== undefined && { programId: (g.bicim !== TAKIP_BICIMI && g.programId) || undefined }),
+    ...oneriEkGuncelle(g, g.bicim === TAKIP_BICIMI, o.muhabirId ?? ben.id),
     tur: g.tur,
     bicim: g.bicim,
     sahaGerekli: g.sahaGerekli,

@@ -89,7 +89,8 @@ const durumBul = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined, 
 
 const masrafMetni = (o?: Oneri, p?: Paket) => {
   if (o?.ekMasraf) return o.ekMasraf;
-  const m = p?.masraflar ?? [];
+  // Paketin (onaylanınca geçen) kalemleri, yoksa önerinin kalemli masrafı.
+  const m = p?.masraflar?.length ? p.masraflar : (o?.masraflar ?? []);
   if (!m.length) return "";
   const toplam = new Map<string, number>();
   for (const x of m) toplam.set(x.para, (toplam.get(x.para) ?? 0) + x.tutar);
@@ -110,6 +111,9 @@ const ulkeMetni = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined,
 const jihaMetni = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined) => {
   const program = o?.programId ? (d.programlar ?? []).find((p) => p.id === o.programId) : undefined;
   if (program) return program.ad;
+  // Kesin program yoksa muhabirin işaretlediği adaylar (kullanıcı: emin değilse birden çok seçer).
+  const adaylar = (o?.programAdaylari ?? []).map((id) => (d.programlar ?? []).find((p) => p.id === id)?.ad).filter((x): x is string => !!x);
+  if (adaylar.length) return adaylar.join(" / ");
   const tur = k?.tur ?? o?.tur ?? "haber";
   const masa = masaEtiketi(d, tur, o?.id ?? k?.oneriId);
   if (masa) return masa;

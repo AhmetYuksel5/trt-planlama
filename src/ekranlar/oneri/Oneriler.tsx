@@ -1,4 +1,3 @@
-import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { ONERI_ETIKETLERI, esCiftleri, takibinOnerisi, oneriEtiketleri, oneriPlanGunu, oneriSonGunu, type OneriEtiketi } from "../../oneriPlanlari";
 import { GUN_GRUPLARI, ONERI_SEKMELERI, oneriGunGrubu, oneriSekmesi, type GunGrubu, type OneriSekmesi } from "../../oneriSekmeleri";
@@ -12,8 +11,9 @@ import { OneriDurumRozeti, OneriPlanEtiketleri, OneriTablosu, useKaynakMetni } f
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { oneriGonder } from "../../eylemler";
 import { ONERI_ETIKET_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { bugun, gunEkle } from "../../tarih";
-import { SECILEN_TURLER, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
+import { bugun, gunEkle, haftaBasi } from "../../tarih";
+import { OneriZamani, teslimEki, zamanBaslangic, zamanGecerli, zamanGirdisi, zamanModu } from "./OneriEkleri";
+import { ONERI_EN_AZ, ONERI_SINIRI, SECILEN_TURLER, TAKIP_BICIMI, ULKELER, acikCagri, useVeri, type IcerikTuru, type Kisi, type Oneri, type Ulke } from "../../veri";
 import { MasalardakiOneriler } from "./MasaSorusu";
 import { oneriBirlestirebilir, muhabireOneriGonderebilir, oneriGorebilir, yapabilir } from "../../yetki";
 import { useAdimDurumu, yerineGit } from "../../yol";
@@ -351,12 +351,20 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
    * düşüyorsa o planın etiketini alıyor (oneriPlanlari.ts). Haftalık
    * çağrıdan gelinince gün haftanın ilk günüyle başlıyor.
    */
-  const [hedefTarih, setHedefTarih] = useState(haftalik && haftalikCagri ? (haftalikCagri.tarih > B ? haftalikCagri.tarih : B) : (cagri?.tarih ?? gunEkle(B, 1)));
-  const [bitisTarih, setBitisTarih] = useState("");
+  /*
+   * Zaman tek soru (kullanıcı: tarih, bitiş ve teslim üç alan kafa
+   * karıştırıyordu): olayın günü varsa gün (isteğe bağlı son gün, feature ya da
+   * programa yapılan işte teslim olaydan önce); zamana bağlı değilse yalnız
+   * teslim günü, öneri o günün haftasında (Weekly › Stok ve programlar).
+   */
+  const [z, setZ] = useState(() => zamanBaslangic(haftalik && haftalikCagri ? (haftalikCagri.tarih > B ? haftalikCagri.tarih : B) : (cagri?.tarih ?? gunEkle(B, 1))));
   const [f, setF] = useState(() => oneriFormuBaslangic(ben, "eposta"));
-  const gecerli = oneriFormuGecerli(f, muhabir) && !!hedefTarih && (!bitisTarih || bitisTarih >= hedefTarih);
+  const takipFormu = f.bicim === TAKIP_BICIMI;
+  const mod = zamanModu(z, f.tur, takipFormu);
+  const zaman = zamanGirdisi(z, mod, haftaBasi);
+  const gecerli = oneriFormuGecerli(f, muhabir) && zamanGecerli(z, mod);
   // Formda seçilen günlere göre düşeceği planlar: muhabir göndermeden görsün.
-  const onizleme = { id: "", hedefTarih, ...(bitisTarih > hedefTarih && { bitisTarih }) } as Oneri;
+  const onizleme = { id: "", ...(zaman.hedefTarih ? { hedefTarih: zaman.hedefTarih, ...(zaman.bitisTarih && { bitisTarih: zaman.bitisTarih }) } : { hafta: zaman.hafta }) } as Oneri;
   // Sayfanın başlığı yok, doğrudan form; adı sekmede.
   useSekmeAdi(t(muhabir ? "yeniOneriGonder" : "oneriKaydet"));
   /*
@@ -364,19 +372,31 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
    * muhabir neden gönderemediğini bilmiyordu (mobil denetim). Kural
    * oneriFormuGecerli'nin muhabir kısmı: strap ve gelişme.
    */
-  const takipFormu = f.bicim === TAKIP_BICIMI;
+  // Eksik, kısa ya da sınırı aşan alan adıyla: basınca ona gidilir.
+  const alanDurumu = (ad: "ofStrap" | "ofGelisme" | "ofIsleme" | "ofGorsel", deger: string, sinir: number, enAz = 0): string | null => {
+    const n = deger.trim().length;
+    if (enAz && !n) return t(ad);
+    if (enAz && n < enAz) return t("ofKisa", { alan: t(ad), n: enAz });
+    if (n > sinir) return t("ofUzun", { alan: t(ad) });
+    return null;
+  };
   const eksikler = [
-    !takipFormu && !f.paketBasligi.trim() ? { ad: "ofStrap" as const, alan: "oneri-strap" } : null,
-    !f.gelisme.trim() ? { ad: "ofGelisme" as const, alan: "oneri-gelisme" } : null,
-  ].filter((x): x is { ad: "ofStrap" | "ofGelisme"; alan: string } => !!x);
+    !takipFormu ? { alan: "oneri-strap", m: alanDurumu("ofStrap", f.paketBasligi, ONERI_SINIRI.paketBasligi, muhabir ? ONERI_EN_AZ.paketBasligi : 1) } : null,
+    { alan: "oneri-gelisme", m: alanDurumu("ofGelisme", f.gelisme, ONERI_SINIRI.gelisme, muhabir ? ONERI_EN_AZ.gelisme : 1) },
+    !takipFormu && muhabir ? { alan: "oneri-isleme", m: alanDurumu("ofIsleme", f.islemeFikri, ONERI_SINIRI.islemeFikri) } : null,
+    !takipFormu && muhabir ? { alan: "oneri-gorsel", m: alanDurumu("ofGorsel", f.gorselIsleme, ONERI_SINIRI.gorselIsleme) } : null,
+    !mod ? { alan: "zaman-sec", m: t("ozZamanSec") } : null,
+  ].filter((x): x is { alan: string; m: string } => !!x?.m);
   const eksigeGit = () => {
     const a = eksikler[0] && document.querySelector<HTMLElement>(`[data-${eksikler[0].alan}]`);
+    // Kapalı "Ek bilgiler"in içindeki alana gidilecekse önce açılsın.
+    a?.closest("details")?.setAttribute("open", "");
     a?.scrollIntoView({ block: "center" });
     a?.focus({ preventScroll: true });
   };
   const gonder = () => {
     if (!gecerli || !confirm(t("eminMisin"))) return;
-    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), hedefTarih, bitisTarih: bitisTarih > hedefTarih ? bitisTarih : undefined });
+    const id = oneriGonder(ben, { ...oneriFormuGirdisi(f), ...zaman });
     if (id && f.bicim === TAKIP_BICIMI) {
       // Takip Takip aşamasında öneri; muhabir onu Takiplerim'de izliyor.
       // Gönderilen form geçmişte kalmasın: geri tuşu boş forma dönüyordu (mobil denetim).
@@ -402,35 +422,16 @@ export function YeniOneri({ ben, haftalik = false }: { ben: Kisi; haftalik?: boo
             ben={ben}
             f={f}
             setF={setF}
-            hedef={
-              <>
-                <label>
-                  {t("tarih")}
-                  <TarihGirdisi
-                   
-                    value={hedefTarih}
-                    min={B}
-                    onChange={(e) => {
-                      setHedefTarih(e.target.value);
-                      if (bitisTarih && e.target.value > bitisTarih) setBitisTarih("");
-                    }}
-                    data-oneri-tarih
-                  />
-                </label>
-                <label>
-                  {t("oneriBitis")} <span className="ipucu">{t("varsa")}</span>
-                  <TarihGirdisi value={bitisTarih} min={hedefTarih || B} onChange={(e) => setBitisTarih(e.target.value)} data-oneri-bitis />
-                </label>
-              </>
-            }
+            hedef={<OneriZamani z={z} setZ={setZ} tur={f.tur} takip={takipFormu} min={B} />}
           />
           <div className="cipler" data-oneri-plan-onizleme>
             <OneriPlanEtiketleri oneri={onizleme} d={v} />
+            {mod === "zamansiz" && z.teslim && <span className="sonuk-yazi">{teslimEki(z.teslim, dil, t)}</span>}
           </div>
           <div className="form-alt oneri-gonder-alt">
             {muhabir && !gecerli && eksikler.length > 0 && (
               <p className="oneri-eksik" role="status" data-oneri-eksik>
-                {t("eksikAlan", { alanlar: eksikler.map((x) => t(x.ad)).join(" · ") })}
+                {t("eksikAlan", { alanlar: eksikler.map((x) => x.m).join(" · ") })}
               </p>
             )}
             <a className="dugme dugme-ikincil" href="#/oneriler">

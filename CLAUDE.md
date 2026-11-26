@@ -63,6 +63,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
 - Dil: arayüz üç dilli (Türkçe, Arapça, İngilizce). Bütün metinler
   `src/dil.ts` içinde tek tabloda ve üç dil zorunlu; eksik çeviri derlemeyi
   kırar. Ekranlara çıplak metin yazılmaz.
+  Arapça arayüz iki dil denetmeni ve bir uluslararası medya ajanıyla gözden
+  geçirildi (kullanıcı: önce muhabir kısmı; ~300 düzeltme). Terim kararları
+  `belgeler/arapca-sozluk.md`: öneri مقترح, paket تقرير, masa قسم (مكتب büro
+  demek), birim وحدة, özel yayın التغطية الخاصة, yayınlandı بُث (نُشر değil),
+  gündem الأجندة, haber merkezi مركز الأخبار (غرفة الأخبار Newsdesk birimi),
+  uygulama içi yazışma المحادثة (المراسلة kadın muhabir). Kurumun alan adları
+  (فكرة المعالجة، المعالجة البصرية…) ve Latin terimler (Next Day, PKG…)
+  bilinçli olarak korundu. Yeni Arapça metin bu sözlüğe uyar.
 - İçerik her zaman Arapça ve her arayüz dilinde sağdan sola. İçerik: başlık,
   gelişme, paket, canlı yayın, plan kalemi, script; düz `string`.
   - Ekranda `<Icerik>` (satır içi, `bdi`) ya da `<Icerik blok>` (kendi
@@ -1633,21 +1641,55 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   başlığınınki "Strap" (Arapçada العنوان الإخباري, عنوان التقرير المقترح).
   Muhabirin formu kurumun dört alanı (`OneriFormu.tsx → OneriMetinAlanlari`,
   sayaçlı alan `bilesenler/SayacliAlan.tsx`; başlıklar her arayüz dilinde
-  Arapça, `dil.ts → of*`): عنوان التقرير المقترح (strap, 100), تفاصيل
-  التطور (gelişme, 500), فكرة المعالجة (`Oneri.islemeFikri`, 700), المعالجة
-  البصرية (`Oneri.gorselIsleme`, 500); sınırlar `veri.ts → ONERI_SINIRI`,
-  karakter boşluklarla, altta "n/sınır" sayacı, `maxLength` aşmaz. Header
-  sorulmuyor, 1. alandan (`oneriFormuGirdisi`). Strap ve gelişme zorunlu,
-  3 ve 4 isteğe bağlı; takipte yalnız 1 ve 2 (1. alan takibin başlığı).
-  Eylem de sorar (`oneriGonder`/`oneriYenidenGonder`: `oneriSinirIcinde`).
+  Arapça, `dil.ts → of*`): عنوان التقرير المقترح (strap, 70), تفاصيل
+  التطور (gelişme, 300), فكرة المعالجة (`Oneri.islemeFikri`, 300), المعالجة
+  البصرية (`Oneri.gorselIsleme`, 200); sınırlar `veri.ts → ONERI_SINIRI`
+  (kullanıcı: 100/500/700/500 fazlaydı; iki editör ajanla), karakter
+  boşluklarla. Muhabirin kendi yazışında en az: strap 15, gelişme 50
+  (`ONERI_EN_AZ`, `oneriEnAzIcinde`; takipte yok). Alan `maxLength`'le
+  kesmez (yapıştırılan metin sessizce kayboluyordu): sayaç %80'de sarı
+  (`yakin`), aşınca kırmızı (`asti`, `aria-invalid`), en azın altında
+  "en az n" (`az`); Gönder durur, eksikler satırı söyler. Header sorulmuyor,
+  1. alandan (`oneriFormuGirdisi`). Strap ve gelişme zorunlu, 3 ve 4 isteğe
+  bağlı; takipte yalnız 1 ve 2 (1. alan takibin başlığı). Eylem de sorar
+  (`oneriGonder`/`oneriYenidenGonder`: `oneriSinirIcinde`, muhabirde en az).
   "Düzelt ve yeniden gönder" aynı dört alan (`KisaOneriFormu strapGerekli`;
   eski öneride Header strap'ten ayrıysa korunur). Planlama'nın elle girdiği
-  ve düzenlediği formda Header kalır, strap isteğe bağlı, dört alan aynı
-  sayaçlı alanlar. E-postadan gelen öneri kesilmez (metin gelişmeye girer):
-  sınırı aşan metinde sayaç kırmızı, alan yalnız kısalır (`maxLength` şimdiki
-  uzunluk), Planlama kaydedebilir; sınır yalnız muhabirin kendi yazışında.
-  İşleme fikri ve görsel işleme ayrıntıda ve pencerede
-  (`OneriIslemeMetinleri`). Test `testler/oneri-formu.cjs`.
+  ve düzenlediği formda Header kalır, strap isteğe bağlı, en az yok. E-postadan
+  gelen öneri kesilmez; sınır yalnız muhabirin kendi yazışında. İşleme fikri ve
+  görsel işleme ayrıntıda ve pencerede (`OneriIslemeMetinleri`). Test
+  `testler/oneri-formu.cjs`.
+
+  Formun düzeni ve ek parçaları (kullanıcı: tarih, bitiş ve teslim üç alan
+  kafa karıştırıyordu; masa listesindeki "Program" ile ayrı البرنامج alanı
+  havada kalıyordu; masraf yazıdan ibaret kalmasın; bağlantı ve görsel
+  eklensin; onaylı öneri sayfası; `oneri/OneriEkleri.tsx`): sıra masa ve
+  haber türü → (Program masasında) program adayları → zaman → (Planlama'da
+  Header) → dört alan → katlı "Ek bilgiler". Zaman tek soru
+  (`OneriZamani`, `zamanVarsayilani`): güncel haber, spor ve takip hep
+  "olayın günü var" (soru yok), ekonomi olaylı varsayılan, feature "zamana
+  bağlı değil" varsayılan, programda seçilmeden gönderilmez
+  (`data-zaman-sec`). Olaylı: olayın günü, "+ Birkaç gün sürüyor" ile son
+  gün, feature/program/ekonomide "+ Teslim olaydan önce" ile teslim günü.
+  Zamana bağlı değil: yalnız teslim günü (`teslimTahmini`), öneri o günün
+  haftasında (`hafta`). Program adayları (`Oneri.programAdaylari`,
+  `ProgramAdaylari`): Programlar'ın açık programları çip, birden çok
+  seçilir (kullanıcı: muhabir hangisine uyduğundan emin olamayabilir);
+  stok tablosunun جهة العرض sütunu Planlama'nın seçtiği `programId` yoksa
+  adayları " / " ile yazar. Ek bilgiler (`EkBilgiler`, `data-oneri-ek-
+  bilgiler`; doluysa açık): saha ve ülke, kalemli masraf (`Oneri.masraflar`,
+  paketin `Masraf` tipi: çekim, ulaşım, konaklama, harcırah, diğer; tutar,
+  para birimi), bağlantılar (`Oneri.baglantilar`, yalnız http(s), en çok
+  `BAGLANTI_SINIRI` 5, yapıştırılan metinden ayıklanır `baglantiAyikla`,
+  çipte sitenin adı), görseller. Ayrıntıda `OneriEkleriGoster`. Masraf
+  kalemleri teklifle onaylanır: "Plana ekle"de, "Muhabiri görevlendir"de
+  işaretli kutu (`MasrafOnayKutusu`, "Ek masrafları da onayla · toplam")
+  kalemleri doğan pakete kopyalar (`eylemler.ts → oneriMasrafi`; aynı
+  önerinin başka paketinde varsa ikinci kez değil); öneriden paket açan
+  öbür yollar (`oneriyePaketEkle`, Weekly aktarımı) da. Pakette onay
+  yine "Yapıldı"nın onayıyla, Muhasebe'ye oradan. Eski `ekMasraf` metni
+  eski kayıtta görünür, formda yok. Masanın önerisi ve düzeltme formu aynı
+  parçaları kullanır. Test `testler/oneri-ekleri.cjs`, `stok-tablosu.cjs`.
 
   Öneri formunda ülke sorulmaz, muhabirin şehrinden gelir; yalnız "Saha
   görevlendirmesi gerekiyor" işaretlenince (ve muhabiri olmayan kaynakta)
@@ -2996,11 +3038,9 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     sabit ve her sayfada, yatay A4; dosya adı Latin `muqtarahat-taqarir_<hafta>_<son>.xlsx`:
     Arapça adı tarayıcı almıyor, uzantısız "download" iniyordu), "Yazdır" (temiz kopya,
     `html.tablo-baskisi`). Telefonda muhabire göre gruplu kartlar, açık kartta metinler ve
-    düğmeler. Önerinin iki yeni alanı (kurumun son iki sütunu): `Oneri.teslimTahmini`
-    (مدة التسليم المتوقعة) ve `ekMasraf` (تكاليف إضافية, serbest metin; tahmin, onaylı masraf
-    değil, Muhasebe'ye girmez), program da (`ofProgram`, yalnız tanımlı program varsa);
-    muhabirin, Planlama'nın, düzeltme ve masa önerisi formunda işleme ve görselin altında
-    isteğe bağlı (`OneriMetinAlanlari`), ayrıntıda görünür. Test
+    düğmeler. Önerinin teslim tahmini (`Oneri.teslimTahmini`, مدة التسليم المتوقعة) formun
+    zaman sorusundan, masraf sütunu (تكاليف إضافية) kalemli masraftan (eski kayıtta `ekMasraf`
+    metni; kalemli öneride hücre düzenlenmez), program adaylardan (yukarıda, öneri formu). Test
     `testler/stok-tablosu.cjs`.
   Test `testler/stok-sayfasi.cjs`. Weekly'nin "Kabul edilen paketler" penceresi iki
   sekme: Günlük ve Stok ve programlar (günsüz kalemler; `data-takdir-sekme`). Test

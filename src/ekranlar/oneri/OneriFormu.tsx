@@ -4,12 +4,12 @@ import { muhabirinBenzerOnerileri } from "../../oneriPlanlari";
 import type { Durum, Oneri, OneriGorseli } from "../../veri";
 import { GorselEkleAlani } from "../../bilesenler/OneriGorselleri";
 import { gunAdi, metin, tarihYaz, useDil } from "../../dil";
-import { bugun, gunEkle } from "../../tarih";
-import { TarihGirdisi } from "../../bilesenler/TarihSaat";
+import { gunEkle } from "../../tarih";
 import { tabloTarihi } from "../../stokTablosu";
+import { BaglantiAlani, EkBilgiler, MasrafKalemleri, OneriEkleriGoster, ProgramAdaylari, ekOzeti } from "./OneriEkleri";
 import { KANAL_ADI, KAYNAK_ADI, TAKIP_TUR_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
-import { oneriGonder, ulkesi, type OneriGirdisi } from "../../eylemler";
-import { SECILEN_TURLER, KANALLAR, KAYNAK_TURLERI, ONERI_SINIRI, TAKIP_BICIMI, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
+import { oneriGonder, ulkesi, type OneriGirdisi, type OneriMasrafGirdisi } from "../../eylemler";
+import { SECILEN_TURLER, KANALLAR, KAYNAK_TURLERI, ONERI_EN_AZ, ONERI_SINIRI, TAKIP_BICIMI, oneriEnAzIcinde, oneriSinirIcinde, type OneriSinirAlani, TAKIP_TURLERI, ULKELER, kisiBul, useVeri, type IcerikTuru, type Kanal, type KaynakTuru, type Kisi, type OneriBicimi, type TakipTuru, type Ulke } from "../../veri";
 import { MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { YzBicimle } from "../../bilesenler/YzOneri";
 import { SayacliAlan } from "../../bilesenler/SayacliAlan";
@@ -36,9 +36,10 @@ export interface OneriFormDurumu {
   paketBasligi: string;
   islemeFikri: string;
   gorselIsleme: string;
-  teslimTahmini: string;
-  ekMasraf: string;
-  programId: string;
+  masraflar: OneriMasrafGirdisi[];
+  baglantilar: string[];
+  /** Masa "Program"sa muhabirin işaretlediği programlar (birden çok). */
+  programAdaylari: string[];
   tur: IcerikTuru;
   bicim: OneriBicimi;
   /** Tür "Takip" seçilince muhabirin takibine giden tür. */
@@ -61,9 +62,9 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
     paketBasligi: "",
     islemeFikri: "",
     gorselIsleme: "",
-    teslimTahmini: "",
-    ekMasraf: "",
-    programId: "",
+    masraflar: [],
+    baglantilar: [],
+    programAdaylari: [],
     tur: "haber",
     bicim: "pkg",
     takipTuru: "olay",
@@ -86,7 +87,7 @@ export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) => {
     !!(f.haberBasligi.trim() || f.paketBasligi.trim()) &&
     !!f.gelisme.trim() &&
     (!strapGerekli || takip || !!f.paketBasligi.trim()) &&
-    (!strapGerekli || oneriSinirIcinde(f))
+    (!strapGerekli || (oneriSinirIcinde(f) && oneriEnAzIcinde(f, takip)))
   );
 };
 
@@ -104,10 +105,10 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
   ...(f.bicim !== TAKIP_BICIMI && {
     islemeFikri: f.islemeFikri.trim() || undefined,
     gorselIsleme: f.gorselIsleme.trim() || undefined,
-    teslimTahmini: f.teslimTahmini || undefined,
-    ekMasraf: f.ekMasraf.trim() || undefined,
-    programId: f.programId || undefined,
+    masraflar: f.masraflar,
+    programAdaylari: f.tur === "program" ? f.programAdaylari : [],
   }),
+  baglantilar: f.baglantilar,
   tur: f.tur,
   bicim: f.bicim,
   ...(f.bicim === TAKIP_BICIMI && { takipTuru: f.takipTuru }),
@@ -118,6 +119,11 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
 const ELLE_KANALLAR = KANALLAR.filter((k) => k !== "sistem");
 const BASKA_KAYNAKLAR = KAYNAK_TURLERI.filter((k) => k !== "muhabir");
 
+/*
+ * Formun sırası (tasarımcı ajanı, onaylı öneri sayfası): formu yönlendiren
+ * seçimler önde (masa ve tür, programsa programlar, zaman), sonra dört metin,
+ * isteğe bağlı her şey katlı "Ek bilgiler"de (saha, masraf, bağlantı, görsel).
+ */
 export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriFormDurumu; setF: (f: OneriFormDurumu) => void; hedef?: ReactNode }) {
   // Görsel yüklenirken yazılan metin gitmesin: yükleme bitince formun en taze hali.
   const sonF = useRef(f);
@@ -208,7 +214,6 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         </>
       )}
       <div className="satir oneri-meta-satir">
-        {hedef}
         <label>
           {t("tur")}
           <select value={f.tur} onChange={(e) => setF({ ...f, tur: e.target.value as IcerikTuru })}>
@@ -236,6 +241,8 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
           </label>
         )}
       </div>
+      {f.tur === "program" && !takip && <ProgramAdaylari secili={f.programAdaylari} degistir={(programAdaylari) => setF({ ...f, programAdaylari })} />}
+      {hedef}
       {!muhabir && (
         <label>
           {t("haberBasligi")}
@@ -243,14 +250,14 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         </label>
       )}
       {!muhabir && f.kaynak === "muhabir" && <EsUyarisi v={v} muhabirId={f.muhabirId} header={f.haberBasligi} />}
-      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabir || !takip} islemeli={!takip} strapIstege={!muhabir} />
-      <GorselEkleAlani ben={ben} gorseller={f.gorseller ?? []} degistir={(gorseller) => setF({ ...sonF.current, gorseller })} />
+      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabir || !takip} islemeli={!takip} strapIstege={!muhabir} kendi={muhabir} />
       <YzBicimle
         deger={f}
         muhabirId={muhabir ? ben.id : f.kaynak === "muhabir" ? f.muhabirId : undefined}
         strapli={!takip}
         uygula={(p) => setF({ ...f, ...p, paketBasligi: p.paketBasligi ?? f.paketBasligi, bicim: p.bicim ?? f.bicim })}
       />
+      <EkBilgiler ozet={ekOzeti(t, f)} dolu={f.sahaGerekli || f.masraflar.length > 0 || f.baglantilar.length > 0 || (f.gorseller?.length ?? 0) > 0}>
       <label className="secim oneri-saha-secimi">
         <input
           type="checkbox"
@@ -265,13 +272,20 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
         {t("sahaGerekli")}
       </label>
       {f.sahaGerekli && !baskaKaynak && ulkeSecici}
+      {!takip && <MasrafKalemleri l={f.masraflar} degistir={(masraflar) => setF({ ...sonF.current, masraflar })} />}
+      <BaglantiAlani l={f.baglantilar} degistir={(baglantilar) => setF({ ...sonF.current, baglantilar })} />
+      <GorselEkleAlani ben={ben} gorseller={f.gorseller ?? []} degistir={(gorseller) => setF({ ...sonF.current, gorseller })} />
+      </EkBilgiler>
     </>
   );
 }
 
 /*
- * Dört sınırlı alan, kurumun formundaki sırayla (OneriAlanlari ve
- * KisaOneriFormu ortak). Takipte yalnız ilk ikisi.
+ * Dört sınırlı alan, kurumun formundaki sırayla (OneriAlanlari, masanın
+ * önerisi ve KisaOneriFormu ortak). Takipte yalnız ilk ikisi. `kendi`:
+ * muhabirin kendi gönderimi, sayaçta alt sınır görünür (strap 15, gelişme 50).
+ * Teslim, masraf ve program artık burada değil: zaman formun başında,
+ * masraf ve bağlantı "Ek bilgiler"de, program masa "Program"sa adaylarla.
  */
 export function OneriMetinAlanlari({
   f,
@@ -279,61 +293,27 @@ export function OneriMetinAlanlari({
   strapli,
   islemeli,
   strapIstege,
+  kendi,
 }: {
-  f: { paketBasligi?: string; gelisme: string; islemeFikri?: string; gorselIsleme?: string; teslimTahmini?: string; ekMasraf?: string; programId?: string };
-  setF: (p: Partial<Record<OneriSinirAlani | "teslimTahmini" | "ekMasraf" | "programId", string>>) => void;
+  f: { paketBasligi?: string; gelisme: string; islemeFikri?: string; gorselIsleme?: string };
+  setF: (p: Partial<Record<OneriSinirAlani, string>>) => void;
   strapli: boolean;
   islemeli: boolean;
   /** Planlama'nın girdiğinde strap zorunlu değil. */
   strapIstege?: boolean;
+  kendi?: boolean;
 }) {
   const { t } = useDil();
-  const v = useVeri();
-  // Kapanan program seçilmez; eski kayıtta seçili olan yine görünür.
-  const programlar = (v.programlar ?? []).filter((p) => !p.pasif || p.id === f.programId);
   return (
     <>
       {strapli && (
-        <SayacliAlan etiket="ofStrap" deger={f.paketBasligi ?? ""} degistir={(x) => setF({ paketBasligi: x })} sinir={ONERI_SINIRI.paketBasligi} satir={2} veri="oneri-strap" ek={strapIstege && <span className="ipucu">{t("varsa")}</span>} />
+        <SayacliAlan etiket="ofStrap" deger={f.paketBasligi ?? ""} degistir={(x) => setF({ paketBasligi: x })} sinir={ONERI_SINIRI.paketBasligi} satir={2} veri="oneri-strap" enAz={kendi ? ONERI_EN_AZ.paketBasligi : undefined} ek={strapIstege && <span className="ipucu">{t("varsa")}</span>} />
       )}
-      <SayacliAlan etiket="ofGelisme" deger={f.gelisme} degistir={(x) => setF({ gelisme: x })} sinir={ONERI_SINIRI.gelisme} satir={5} veri="oneri-gelisme" />
+      <SayacliAlan etiket="ofGelisme" deger={f.gelisme} degistir={(x) => setF({ gelisme: x })} sinir={ONERI_SINIRI.gelisme} satir={4} veri="oneri-gelisme" enAz={kendi ? ONERI_EN_AZ.gelisme : undefined} />
       {islemeli && (
         <>
-          <SayacliAlan etiket="ofIsleme" deger={f.islemeFikri ?? ""} degistir={(x) => setF({ islemeFikri: x })} sinir={ONERI_SINIRI.islemeFikri} satir={6} veri="oneri-isleme" />
-          <SayacliAlan etiket="ofGorsel" deger={f.gorselIsleme ?? ""} degistir={(x) => setF({ gorselIsleme: x })} sinir={ONERI_SINIRI.gorselIsleme} satir={5} veri="oneri-gorsel" />
-          {/* Kurumun rapor önerileri tablosunun son iki sütunu; isteğe bağlı (stok tablosu, StokTablosu.tsx). */}
-          <div className="satir oneri-ek-satir">
-            {programlar.length > 0 && (
-              <label>
-                <span className="oneri-ek-bas">
-                  <Icerik>{metin("ofProgram", "ar")}</Icerik>
-                  <span className="ipucu">{t("varsa")}</span>
-                </span>
-                <select value={f.programId ?? ""} onChange={(e) => setF({ programId: e.target.value })} data-oneri-program>
-                  <option value="">—</option>
-                  {programlar.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.ad}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <label>
-              <span className="oneri-ek-bas">
-                <Icerik>{metin("ofTeslim", "ar")}</Icerik>
-                <span className="ipucu">{t("varsa")}</span>
-              </span>
-              <TarihGirdisi value={f.teslimTahmini ?? ""} onChange={(e) => setF({ teslimTahmini: e.target.value })} min={bugun()} data-oneri-teslim />
-            </label>
-            <label>
-              <span className="oneri-ek-bas">
-                <Icerik>{metin("ofMasraf", "ar")}</Icerik>
-                <span className="ipucu">{t("varsa")}</span>
-              </span>
-              <input dir="auto" maxLength={120} value={f.ekMasraf ?? ""} onChange={(e) => setF({ ekMasraf: e.target.value })} placeholder="USD 200" data-oneri-masraf />
-            </label>
-          </div>
+          <SayacliAlan etiket="ofIsleme" deger={f.islemeFikri ?? ""} degistir={(x) => setF({ islemeFikri: x })} sinir={ONERI_SINIRI.islemeFikri} satir={3} veri="oneri-isleme" />
+          <SayacliAlan etiket="ofGorsel" deger={f.gorselIsleme ?? ""} degistir={(x) => setF({ gorselIsleme: x })} sinir={ONERI_SINIRI.gorselIsleme} satir={3} veri="oneri-gorsel" />
         </>
       )}
     </>
@@ -341,7 +321,7 @@ export function OneriMetinAlanlari({
 }
 
 /* Önerinin işleme fikri ve görsel işlemesi: ayrıntıda ve pencerede, yazılmışsa. */
-export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "gorselIsleme" | "teslimTahmini" | "ekMasraf" | "programId"> }) {
+export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "gorselIsleme" | "teslimTahmini" | "ekMasraf" | "programId" | "programAdaylari" | "masraflar" | "baglantilar"> }) {
   const v = useVeri();
   const program = o.programId ? (v.programlar ?? []).find((p) => p.id === o.programId) : undefined;
   return (
@@ -377,6 +357,7 @@ export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "go
           )}
         </div>
       )}
+      <OneriEkleriGoster o={o} />
     </>
   );
 }

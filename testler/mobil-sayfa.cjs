@@ -68,7 +68,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
     await gir("mu1", "#/oneriler/yeni");
     const strapY = (await p.locator("[data-oneri-strap]").boundingBox()).y;
     const tarihY = (await p.locator("[data-oneri-tarih]").first().boundingBox().catch(() => null))?.y ?? (await p.locator(".oneri-meta-satir").boundingBox()).y;
-    ok(strapY < tarihY, `${dil}: içerik alanları günden önce`);
+    // Onaylı düzen: masa ve zaman önce, metin alanları sonra
+    ok(tarihY < strapY, `${dil}: zaman sorusu metin alanlarından önce`);
     ok(await p.locator("[data-oneri-eksik]").isVisible(), `${dil}: eksik alanlar yazılı`);
     await p.locator("[data-oneri-gonder]").tap({ force: true }); // aria-disabled: gerçek dokunuş geçer
     await p.waitForTimeout(400);

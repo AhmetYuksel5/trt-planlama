@@ -2,6 +2,7 @@ import { TarihGirdisi } from "../../bilesenler/TarihSaat";
 import { Check, ClipboardList, Radio, Send, Share2, X } from "lucide-react";
 import { MasaYayinDugmeleri } from "../../bilesenler/PaketSonucu";
 import { useState } from "react";
+import { MasrafOnayKutusu } from "./OneriEkleri";
 import { AnmaGirdisi } from "../../bilesenler/Anma";
 import { Icerik, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { saatYaz, tarihYaz, useDil } from "../../dil";
@@ -168,7 +169,9 @@ export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oner
   const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
   // Kimin için: birimin aldığı (ya da yanıtını beklediği) sorudan ya da önerinin masa kolundan; haber merkezi stoğa düşer.
   const [masa, setMasa] = useState<string>((kabulSoru(v, oneri.id) ?? acikSoru(v, oneri.id))?.birim ?? ((SORU_MASALARI as readonly string[]).includes(oneri.tur) ? oneri.tur : ""));
+  const [masraf, setMasraf] = useState(true);
   return (
+    <>
     <div className="satir-form" data-oneri-gorevlendir-formu>
       <select className="girdi" value={masa} onChange={(e) => setMasa(e.target.value)} aria-label={t("ogGorevMasa")} title={t("ogGorevMasa")} data-oneri-gorev-masa>
         <option value="">{t("ogGorevHaberMerkezi")}</option>
@@ -182,12 +185,14 @@ export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oner
       <button
         type="button"
         className="dugme"
-        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih, masa) && (bildir(t("gvVerildi")), kapat?.())}
+        onClick={() => confirm(t("eminMisin")) && oneriGorevlendir(ben, oneri.id, tarih, masa, masraf) && (bildir(t("gvVerildi")), kapat?.())}
         data-oneri-gorevlendir
       >
         <ClipboardList size={15} /> {t("msGorevlendir")}
       </button>
     </div>
+    <MasrafOnayKutusu o={oneri} onay={masraf} setOnay={setMasraf} />
+    </>
   );
 }
 

@@ -19,25 +19,38 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const git = async (h) => { await p.goto("about:blank"); await p.goto(B + h); await p.waitForTimeout(1200); };
   const durum = () => p.evaluate((k) => JSON.parse(localStorage.getItem(k)), K);
 
-  // 1. Muhabirin formunda iki yeni alan: beklenen teslim ve ek masraf
+  // 1. Muhabirin formu: programa önerirken birden çok program adayı, zamana bağlı değilse teslim günü, kalemli masraf ve bağlantı
   await p.goto(B);
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem("trt-planlama-dil", "tr"); localStorage.setItem("trt-planlama-oturum", "mu1"); });
   await git("#/oneriler/yeni");
-  ok((await p.locator("[data-oneri-teslim]").count()) === 1 && (await p.locator("[data-oneri-masraf]").count()) === 1, "formda teslim ve masraf alanı");
+  await p.locator(".oneri-meta-satir select").filter({ has: p.locator('option[value="program"]') }).first().selectOption("program");
+  await p.waitForTimeout(200);
+  const adaylar = p.locator("[data-program-aday]");
+  ok((await adaylar.count()) > 1, "program adayları listelendi");
+  const prgA = await adaylar.nth(0).getAttribute("data-program-aday"), prgB = await adaylar.nth(1).getAttribute("data-program-aday");
+  await adaylar.nth(0).click(); await adaylar.nth(1).click();
+  ok((await p.locator('[data-oneri-zaman="secilmedi"]').count()) === 1, "programda zaman sorusu seçilmemiş gelir");
+  await p.locator('[data-zaman-sec="zamansiz"]').click();
+  ok((await p.locator("[data-oneri-teslim]").count()) === 1 && (await p.locator("[data-oneri-tarih]").count()) === 0, "zamana bağlı değilse yalnız teslim günü");
   const strap = "ورش الخزف في الخليل تستعيد زبائنها";
   await p.fill("[data-oneri-strap]", strap);
-  await p.fill("[data-oneri-gelisme]", "عودة الحرفيين إلى الأسواق");
+  await p.fill("[data-oneri-gelisme]", "عودة الحرفيين إلى الأسواق بعد سنوات من الركود بفضل الطلب السياحي المتزايد");
   await p.fill("[data-oneri-isleme]", "قصص ثلاثة حرفيين من ثلاثة أجيال");
   await p.fill("[data-oneri-gorsel]", "لقطات الأفران والرسم على الخزف");
-  await p.fill("[data-oneri-masraf]", "USD 120");
-  ok((await p.locator("[data-oneri-program] option").count()) > 1, "formda program seçimi");
-  const ilkPrg = await p.locator("[data-oneri-program] option").nth(1).getAttribute("value");
-  await p.locator("[data-oneri-program]").selectOption(ilkPrg);
+  await p.locator("[data-oneri-ek-bilgiler] > summary").click();
+  await p.locator("[data-oneri-masraf-ekle]").click();
+  await p.locator('[data-oneri-masraf="0"] [data-oneri-masraf-tur="konaklama"]').click();
+  await p.fill('[data-oneri-masraf="0"] [data-oneri-masraf-tutar]', "120");
+  await p.fill("[data-oneri-baglanti-yaz]", "https://ornek.example/haber https://ornek.example/haber yazi");
+  await p.locator("[data-oneri-baglanti-ekle]").click().catch(() => {});
   await p.locator(".form-alt button.dugme").last().click();
   await p.waitForTimeout(600);
   let d = await durum();
   const mo = d.oneriler.find((x) => x.paketBasligi === strap);
-  ok(mo && mo.ekMasraf === "USD 120" && mo.programId === ilkPrg, "masraf ve program kayıtta");
+  ok(!!mo && JSON.stringify(mo.programAdaylari) === JSON.stringify([prgA, prgB]), "iki program adayı kayıtta");
+  ok(mo && mo.masraflar?.length === 1 && mo.masraflar[0].tur === "konaklama" && mo.masraflar[0].tutar === 120 && !mo.ekMasraf, "kalemli masraf kayıtta");
+  ok(mo && JSON.stringify(mo.baglantilar) === JSON.stringify(["https://ornek.example/haber"]), "bağlantı ayıklandı, tekrar yok: " + JSON.stringify(mo?.baglantilar));
+  ok(mo && !mo.hedefTarih && !!mo.teslimTahmini && !!mo.hafta, "zamana bağlı değil: teslim günü ve hafta");
 
   // 2. Planlamacı: tablonun haftasına düşen feature önerisi (teslim tahmini ve masrafla)
   await p.evaluate(() => { localStorage.setItem("trt-planlama-oturum", "pl6"); });

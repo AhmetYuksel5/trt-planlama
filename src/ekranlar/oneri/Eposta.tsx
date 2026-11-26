@@ -9,7 +9,7 @@ import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOne
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { SECILEN_TURLER, TAKIP_BICIMI, oneriSinirIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
+import { SECILEN_TURLER, TAKIP_BICIMI, oneriSinirIcinde, oneriEnAzIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
 import { SayfaBasi } from "../ana/Planlama";
@@ -17,6 +17,7 @@ import { BicimSecici, MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar
 import { indir } from "../../bilesenler/indir";
 import { YzBicimle } from "../../bilesenler/YzOneri";
 import { OneriMetinAlanlari } from "./OneriFormu";
+import { BaglantiAlani, EkBilgiler, MasrafKalemleri, ProgramAdaylari, ekOzeti } from "./OneriEkleri";
 
 /**
  * Öneri çağrısı ve gelen yanıtlar.
@@ -631,16 +632,19 @@ export function KisaOneriFormu({
     teslimTahmini: ilk.teslimTahmini ?? "",
     ekMasraf: ilk.ekMasraf ?? "",
     programId: ilk.programId ?? "",
+    masraflar: ilk.masraflar ?? [],
+    baglantilar: ilk.baglantilar ?? [],
+    programAdaylari: ilk.programAdaylari ?? [],
   });
   const takipte = f.bicim === TAKIP_BICIMI;
   const birinci = (f.paketBasligi ?? "").trim();
   const ayriHeader = !!ilk.haberBasligi && !!ilk.paketBasligi && ilk.haberBasligi !== ilk.paketBasligi;
   const sonHal = (): YanitOneriGirdisi => {
-    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "", programId: "" } : f;
+    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "", programId: "", masraflar: [], programAdaylari: [] } : { ...f, programAdaylari: f.tur === "program" ? f.programAdaylari : [] };
     return muhabirFormu ? { ...g, haberBasligi: takipte || !ayriHeader ? birinci : ilk.haberBasligi } : g;
   };
   const gecerli = muhabirFormu
-    ? !!birinci && !!f.gelisme.trim() && oneriSinirIcinde(sonHal())
+    ? !!birinci && !!f.gelisme.trim() && oneriSinirIcinde(sonHal()) && oneriEnAzIcinde(sonHal(), takipte)
     : !!f.haberBasligi.trim() && (!gelismeGerekli || !!f.gelisme.trim());
   return (
     <div className="form form-kutu ara-ust-2">
@@ -650,7 +654,7 @@ export function KisaOneriFormu({
           <input {...icerikAlani} value={f.haberBasligi} onChange={(e) => setF({ ...f, haberBasligi: e.target.value })} data-kisa-header />
         </label>
       )}
-      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabirFormu || !takipte} islemeli={!takipte} strapIstege={!muhabirFormu} />
+      <OneriMetinAlanlari f={f} setF={(p) => setF({ ...f, ...p })} strapli={muhabirFormu || !takipte} islemeli={!takipte} strapIstege={!muhabirFormu} kendi={muhabirFormu} />
       <YzBicimle deger={f} muhabirId={muhabirId} strapli={!takipte} uygula={(p) => setF({ ...f, ...p, bicim: p.bicim ?? f.bicim })} />
       <div className="satir">
         <label>
@@ -672,10 +676,15 @@ export function KisaOneriFormu({
           )}
         </label>
       </div>
-      <label className="secim">
-        <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
-        {t("sahaGerekli")}
-      </label>
+      {f.tur === "program" && !takipte && <ProgramAdaylari secili={f.programAdaylari ?? []} degistir={(programAdaylari) => setF({ ...f, programAdaylari })} />}
+      <EkBilgiler ozet={ekOzeti(t, f)} dolu={f.sahaGerekli || !!f.masraflar?.length || !!f.baglantilar?.length}>
+        <label className="secim">
+          <input type="checkbox" checked={f.sahaGerekli} onChange={(e) => setF({ ...f, sahaGerekli: e.target.checked })} />
+          {t("sahaGerekli")}
+        </label>
+        {!takipte && <MasrafKalemleri l={f.masraflar ?? []} degistir={(masraflar) => setF({ ...f, masraflar })} />}
+        <BaglantiAlani l={f.baglantilar ?? []} degistir={(baglantilar) => setF({ ...f, baglantilar })} />
+      </EkBilgiler>
       <div className="form-alt">
         <button className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
           {t("iptal")}

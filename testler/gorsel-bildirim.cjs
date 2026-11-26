@@ -29,7 +29,7 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR
   ok((await p.locator("[data-gorsel-alani] .gorsel-kucuk img").count()) === 1, "biri kaldırıldı");
   const strap = "صور من المعبر الحدودي";
   await p.fill("[data-oneri-strap]", strap);
-  await p.fill("[data-oneri-gelisme]", "حركة الشاحنات");
+  await p.fill("[data-oneri-gelisme]", "حركة الشاحنات عند المعبر تعود تدريجيا بعد توقف دام عدة أيام بسبب الأحوال الجوية");
   await p.locator(".form-alt button.dugme").last().click();
   await p.waitForTimeout(600);
   const o = (await durum()).oneriler.find((x) => x.paketBasligi === strap);

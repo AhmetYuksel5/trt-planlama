@@ -214,6 +214,8 @@ export function StokTablosu({ ben, hafta, hepsi, plan }: { ben: Kisi; hafta: str
     const a = ALAN[c];
     // Program yoksa seçecek bir şey yok: yayın yeri masanın adı kalır.
     if (c === "jiha" && !(v.programlar ?? []).some((p) => !p.pasif)) return false;
+    // Kalemli masraf (çekim, ulaşım…) hücrede serbest metne çevrilmez; kalemler önerinin penceresinde.
+    if (c === "masraf" && (s.oneri?.masraflar?.length || s.paket?.masraflar?.length)) return false;
     return !!a && !s.dusuk && tabloHucresiDuzenlenir(ben, a, satirPlani(s)?.id, s.oneri?.id, s.kalem?.id);
   };
   const kaydetHucre = (s: TabloSatiri, c: TabloSutunu, deger: string) => {

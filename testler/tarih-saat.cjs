@@ -22,7 +22,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   const gun = await kutu.locator("[data-tarih-gun]:not([disabled])").nth(2).getAttribute("data-tarih-gun");
   await kutu.locator(`[data-tarih-gun="${gun}"]`).click();
   ok((await p.locator("[data-tarih-kutusu]").count()) === 0, "seçince kapandı");
-  ok((await p.locator("[data-oneri-bitis]").count()) === 1, "data-* yerleşik alanda");
+  ok((await p.locator("input[data-oneri-tarih]").count()) === 1, "data-* yerleşik alanda");
   ok((await p.locator(".tarih-girdisi input[type=date]").first().inputValue()) === gun, "seçilen gün değerde");
 
   // Saat: Next Day'de ekip vardiyası 24 saatlik yazı alanı.

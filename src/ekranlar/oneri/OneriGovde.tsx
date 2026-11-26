@@ -319,7 +319,7 @@ export function OneriAyrinti({
         <KisaOneriFormu
           takip={!!o.muhabirId && !o.yon}
           muhabirId={o.muhabirId}
-          ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, teslimTahmini: o.teslimTahmini ?? "", ekMasraf: o.ekMasraf ?? "", programId: o.programId ?? "", tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
+          ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, teslimTahmini: o.teslimTahmini ?? "", ekMasraf: o.ekMasraf ?? "", programId: o.programId ?? "", masraflar: o.masraflar ?? [], baglantilar: o.baglantilar ?? [], programAdaylari: o.programAdaylari ?? [], tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
           kaydet={(g) => {
             const ok = oneriDuzenle(ben, o.id, g);
             if (ok) bildir(t("bKaydedildi"));
@@ -348,7 +348,7 @@ export function OneriAyrinti({
             <KisaOneriFormu
               takip={!!o.muhabirId && !o.yon}
               muhabirId={o.muhabirId}
-              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, teslimTahmini: o.teslimTahmini ?? "", ekMasraf: o.ekMasraf ?? "", programId: o.programId ?? "", tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
+              ilk={{ haberBasligi: o.haberBasligi, gelisme: o.gelisme, paketBasligi: o.paketBasligi, islemeFikri: o.islemeFikri, gorselIsleme: o.gorselIsleme, teslimTahmini: o.teslimTahmini ?? "", ekMasraf: o.ekMasraf ?? "", programId: o.programId ?? "", masraflar: o.masraflar ?? [], baglantilar: o.baglantilar ?? [], programAdaylari: o.programAdaylari ?? [], tur: o.tur, bicim: o.bicim, sahaGerekli: o.sahaGerekli }}
               kaydet={(g) => {
                 const ok = confirm(t("eminMisin")) && oneriYenidenGonder(ben, o.id, g);
                 if (ok) bildir(t("bYenidenGonderildi"));

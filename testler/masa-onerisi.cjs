@@ -34,6 +34,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await f.locator("[data-oneri-strap]").fill(STRAP);
   await f.locator("[data-oneri-gelisme]").fill("حلقة تتناول تأثير الذكاء الاصطناعي على الإعلام");
   await f.locator("[data-oneri-isleme]").fill("مقابلات مع خبراء");
+  // Programda zaman sorusu zorunlu: seçilmeden gönderilmez
+  ok(await p.locator("[data-masa-oneri-gonder]").isDisabled(), "zaman seçilmeden gönderilmez");
+  await f.locator('[data-zaman-sec="zamansiz"]').click();
   await p.locator("[data-masa-oneri-gonder]").click();
   await p.waitForTimeout(500);
   let d = await durum();

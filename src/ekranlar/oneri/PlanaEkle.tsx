@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MasrafOnayKutusu } from "./OneriEkleri";
 import { Icerik, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { tarihYaz, useDil } from "../../dil";
 import { oneriPaketsizGirer, oneriPlanaEkle } from "../../eylemler";
@@ -115,6 +116,8 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
   // İşleme fikri ve görsel işleme plana kendiliğinden girmez; planlamacı isterse PKG satırının altına.
   const [isleme, setIsleme] = useState(false);
   const [gorsel, setGorsel] = useState(false);
+  // Önerinin ek masrafı teklifle birlikte onaylanır (kullanıcı); kaldırılırsa pakete geçmez.
+  const [masraf, setMasraf] = useState(true);
   // Doğrudan görevlendirilmiş öneri: görev paketi planın başlığına onaylı PKG olarak girer, yeni paket sorulmaz.
   const gorevli = oneriBekleyenGorevPaketi(v, oneri);
 
@@ -138,6 +141,7 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
       muhabirId: oneri.muhabirId ? undefined : muhabirId,
       isleme: paketVar && isleme,
       gorsel: paketVar && gorsel,
+      masraf,
     });
     if (tamam) {
       bildir(t("bOneriPlanda", { tarih: tarihYaz(plan.tarih, dil, "kisa") }));
@@ -219,6 +223,7 @@ function NextDayeEkle({ ben, oneri, planlar, baslikId: istenen, kapat }: { ben: 
           <MuhabirSecici deger={muhabirId} degistir={setMuhabirId} bosEtiket={t("atanmadi")} />
         </label>
       )}
+      {paketVar && <MasrafOnayKutusu o={oneri} onay={masraf} setOnay={setMasraf} />}
       <div className="secim-satiri">
         {gorevli && (
           <span className="secim" data-pe-gorevli={gorevli.id}>
