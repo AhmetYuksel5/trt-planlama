@@ -1985,6 +1985,8 @@ const M = {
   postaKimlikKisiye: m("Kullanıcı adı, parola ve grup adresini herkes Ayarlar'da kendisi girer.", "يُدخل كل شخص اسم المستخدم وكلمة المرور وعنوان المجموعة بنفسه في الإعدادات.", "Each person enters their own username, password and group address in Settings."),
   bPostaDeneTamam: m("Bağlandı · {n} posta görüldü", "تم الاتصال · {n} رسالة", "Connected · {n} messages seen"),
   bPostaDeneHata: m("Bağlanılamadı", "تعذّر الاتصال", "Could not connect"),
+  postaParolaReddedildi: m("Posta şifren kabul edilmedi · yeni şifreni gir", "لم تُقبل كلمة مرور البريد · أدخل كلمة المرور الجديدة", "Mail password was rejected · enter your new password"),
+  kapiParolaReddi: m("Posta şifren kabul edilmedi; Ayarlar › Posta kimliğinde yeni şifreni gir", "لم تُقبل كلمة مرور البريد؛ أدخل كلمة المرور الجديدة في الإعدادات › هوية البريد", "Mail password was rejected; enter your new password in Settings › Mail identity"),
   kapiKota: m("Firestore'un günlük okuma kotası doldu; İstanbul saatiyle 11:00'de (yazın 10:00) kendiliğinden yenilenir", "نفدت حصة القراءة اليومية في Firestore؛ تتجدد تلقائيًا الساعة 11:00 بتوقيت إسطنبول (10:00 صيفًا)", "Firestore's daily read quota is used up; it renews automatically at 11:00 Istanbul time (10:00 in summer)"),
   postaKapiYok: m("Yapay zeka/posta kapısına ulaşılamadı", "تعذّر الوصول إلى البوابة", "Gateway unreachable"),
   bYanitIslendi: m("Yanıt işlendi: {sonuc}", "عولج الرد: {sonuc}", "Reply processed: {sonuc}"),

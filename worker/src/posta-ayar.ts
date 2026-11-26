@@ -25,12 +25,19 @@ export interface PostaKimlik {
   parola: string;
   /** Yalnız bu adrese (To/Cc) gelen postalar alınıyor; kişinin kendi biriminin grup adresi. */
   grupAdresi: string;
+  /*
+   * Exchange şifreyi reddettiği an (ISO). Kişi şifresini kurumda değiştirince kapı
+   * eskisiyle her 15 dakikada (her seferde iki kez) giriş deniyordu; kurumun sunucusu
+   * hesabı kilitliyor, yeni şifre de reddediliyordu. İşaretliyken kendiliğinden
+   * denenmez; kişi yeni şifreyi girince ya da "Bağlantıyı dene" tutunca kalkar.
+   */
+  reddedildi?: string;
 }
 
 export const bosPostaKimlik = (): PostaKimlik => ({ kullanici: "", parola: "", grupAdresi: "" });
 
 /* Tarayıcıya giden hal: parola yerine yalnız "kayıtlı mı". */
-export const postaKimlikGorunur = (k: PostaKimlik) => ({ kullanici: k.kullanici, grupAdresi: k.grupAdresi, parolaVar: k.parola.length > 0 });
+export const postaKimlikGorunur = (k: PostaKimlik) => ({ kullanici: k.kullanici, grupAdresi: k.grupAdresi, parolaVar: k.parola.length > 0, parolaReddedildi: !!k.reddedildi });
 
 const metinMi = (x: unknown): x is string => typeof x === "string";
 const sunucuGecerli = (s: string) => /^[a-z0-9.-]{1,255}$/i.test(s);
@@ -58,11 +65,8 @@ export const postaKimlikBirlestir = (eski: PostaKimlik, gelen: unknown): { kimli
   let parola = eski.parola;
   if (g.parola === null) parola = "";
   else if (metinMi(g.parola) && g.parola.length > 0) parola = g.parola;
-  return {
-    kimlik: {
-      kullanici: metinMi(g.kullanici) ? g.kullanici.trim() : eski.kullanici,
-      parola,
-      grupAdresi,
-    },
-  };
+  const kullanici = metinMi(g.kullanici) ? g.kullanici.trim() : eski.kullanici;
+  // Yeni şifre ya da kullanıcı adı ret işaretini kaldırır: kişi düzeltti, yeniden denensin.
+  const reddedildi = parola !== eski.parola || kullanici !== eski.kullanici ? undefined : eski.reddedildi;
+  return { kimlik: { kullanici, parola, grupAdresi, ...(reddedildi && { reddedildi }) } };
 };

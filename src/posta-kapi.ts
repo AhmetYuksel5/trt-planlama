@@ -33,6 +33,8 @@ export interface PostaKimlikGorunum {
   kullanici: string;
   grupAdresi: string;
   parolaVar: boolean;
+  /** Exchange şifreyi reddetti; kapı yeni şifre girilene dek kendiliğinden denemiyor. */
+  parolaReddedildi?: boolean;
 }
 
 export interface PostaKimlikGirdi {
@@ -44,7 +46,8 @@ export interface PostaKimlikGirdi {
 
 export const postaKimlikGetir = () => kapiIstek<PostaKimlikGorunum>("/posta/kimlik");
 export const postaKimlikKaydet = (g: PostaKimlikGirdi) => kapiIstek<PostaKimlikGorunum>("/posta/kimlik", "PUT", g);
-export const postaDene = () => kapiIstek<{ tamam: boolean; sayi: number }>("/posta/dene", "POST", {});
+/* Formda yazılmış (kaydedilmemiş) kullanıcı adı ve şifre verilirse onlar denenir; boşsa kayıtlı olan. */
+export const postaDene = (g: { kullanici?: string; parola?: string } = {}) => kapiIstek<{ tamam: boolean; sayi: number }>("/posta/dene", "POST", g);
 
 /*
  * Yeni posta ve yanıt (kapı EWS CreateItem ile). Grup adresini kapı her zaman

@@ -39,3 +39,14 @@ test("kimlik birleştirme: parola yalnız dolu metinle değişir, grup adresi k�
   assert.ok("kimlik" in r5 && r5.kimlik.grupAdresi === "news@trtarabi.com");
   assert.ok("hata" in postaKimlikBirlestir(bosPostaKimlik(), { grupAdresi: "notanemail" }));
 });
+
+test("şifre reddi: yeni şifre ya da kullanıcı adı işareti kaldırır, grup adresi kaldırmaz", () => {
+  const eski: PostaKimlik = { kullanici: "u", parola: "eski", grupAdresi: "g@x.com", reddedildi: "2026-11-26T08:00:00.000Z" };
+  assert.equal(postaKimlikGorunur(eski).parolaReddedildi, true);
+  const r1 = postaKimlikBirlestir(eski, { parola: "yeni" });
+  assert.ok("kimlik" in r1 && !r1.kimlik.reddedildi, "yeni şifre işareti kaldırır");
+  const r2 = postaKimlikBirlestir(eski, { kullanici: "v" });
+  assert.ok("kimlik" in r2 && !r2.kimlik.reddedildi, "yeni kullanıcı adı işareti kaldırır");
+  const r3 = postaKimlikBirlestir(eski, { grupAdresi: "h@x.com", parola: "" });
+  assert.ok("kimlik" in r3 && r3.kimlik.reddedildi === eski.reddedildi, "aynı şifreyle işaret kalır");
+});

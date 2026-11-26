@@ -32,18 +32,33 @@ export function PostaKimlikKart() {
   }
 
   const alan = (k: "kullanici" | "grupAdresi", v: string) => setKimlik({ ...kimlik, [k]: v });
+  const deneSonucu = (r: Awaited<ReturnType<typeof postaDene>>) =>
+    r.tamam ? t("bPostaDeneTamam", { n: String(r.veri.sayi) }) : r.hata === "kimlikReddedildi" ? t("postaParolaReddedildi") : `${t("bPostaDeneHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
   const kaydet = async () => {
-    const r = await postaKimlikKaydet({ kullanici: kimlik.kullanici, grupAdresi: kimlik.grupAdresi, ...(parola ? { parola } : {}) });
+    const yeni = parola;
+    const r = await postaKimlikKaydet({ kullanici: kimlik.kullanici, grupAdresi: kimlik.grupAdresi, ...(yeni ? { parola: yeni } : {}) });
     if (!r.tamam) return bildir(kapiHatasi(r, `${t("postaKapiYok")} [${r.hata}]`));
     setKimlik(r.veri);
     setParola("");
-    bildir(t("bKaydedildi"));
+    if (!yeni) return bildir(t("bKaydedildi"));
+    // Yeni şifre hemen sınanır: kabul edilmediyse kişi kaydederken öğrensin, kapı da sonradan eskisiyle denemesin.
+    setDeneniyor(true);
+    const d = await postaDene();
+    setDeneniyor(false);
+    bildir(`${t("bKaydedildi")} · ${deneSonucu(d)}`);
+    const g = await postaKimlikGetir();
+    if (g.tamam) setKimlik(g.veri);
   };
+  // Yazılmış ama kaydedilmemiş şifre ve kullanıcı adı denenir: önce kayıtlı eski şifre deneniyordu.
   const dene = async () => {
     setDeneniyor(true);
-    const r = await postaDene();
+    const r = await postaDene({ kullanici: kimlik.kullanici, ...(parola ? { parola } : {}) });
     setDeneniyor(false);
-    bildir(r.tamam ? t("bPostaDeneTamam", { n: String(r.veri.sayi) }) : `${t("bPostaDeneHata")}${r.ayrinti ? ` (${r.ayrinti})` : ""}`);
+    bildir(deneSonucu(r));
+    if (!parola) {
+      const g = await postaKimlikGetir();
+      if (g.tamam) setKimlik(g.veri);
+    }
   };
 
   return (
@@ -59,6 +74,11 @@ export function PostaKimlikKart() {
             <input type="password" dir="ltr" value={parola} onChange={(e) => setParola(e.target.value)} placeholder={kimlik.parolaVar ? t("postaParolaKayitli") : ""} autoComplete="new-password" />
           </label>
         </div>
+        {kimlik.parolaReddedildi && !parola && (
+          <p className="uyari-yazi" data-posta-parola-reddi>
+            {t("postaParolaReddedildi")}
+          </p>
+        )}
         <label>
           {t("postaGrupAdresi")}
           <input type="email" dir="ltr" value={kimlik.grupAdresi} onChange={(e) => alan("grupAdresi", e.target.value)} placeholder="planning@trtarabi.com" />
@@ -67,7 +87,7 @@ export function PostaKimlikKart() {
           <button className="dugme dugme-ikincil" onClick={dene} disabled={deneniyor}>
             {deneniyor ? <Loader2 size={16} className="donen" /> : <Plug size={16} />} {t("postaBaglantiDene")}
           </button>
-          <button className="dugme" onClick={kaydet}>
+          <button className="dugme" onClick={kaydet} disabled={deneniyor}>
             {t("kaydet")}
           </button>
         </div>

@@ -832,7 +832,7 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
 const siraliMesajlar = (m: EwsMesaj[]) => [...m].sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
 
 /* Önce sade NTLMv2 (MIC'siz), kimlik reddedilirse MIC'li yeni bağlantıda dener; hangisi tuttuysa o. */
-export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string }> => {
+export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string; kimlik?: boolean }> => {
   const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postalariCek(ayar, baglan, simdi, adet, true);
@@ -873,10 +873,12 @@ const kutudaBul = async (ayar: EwsAyar, baglan: Baglan, simdi: number, imid: str
   }
 };
 
-export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string; belirsiz?: boolean }> => {
+export const postaGonderOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, g: GidenPosta): Promise<{ tamam: true } | { hata: string; belirsiz?: boolean; kimlik?: boolean }> => {
   if (g.yanitlanan) {
     let ref = await kutudaBul(ayar, baglan, simdi, g.yanitlanan, false);
     if (ref && "kimlik" in ref) ref = await kutudaBul(ayar, baglan, simdi, g.yanitlanan, true);
+    // İki yolda da şifre reddedildiyse yeni postayı denemek iki başarısız giriş daha: hesap kilitlenmesin.
+    if (ref && "kimlik" in ref) return { hata: "kimlik doğrulanamadı", kimlik: true };
     if (ref && !("kimlik" in ref)) {
       let y = await postaGonder(ayar, baglan, simdi, g, false, ref);
       if ("hata" in y && y.kimlik) y = await postaGonder(ayar, baglan, simdi, g, true, ref);

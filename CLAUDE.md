@@ -1985,7 +1985,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     duruyor): anahtar Worker'ın gizli değeri `POSTA_ANAHTARI`, dağıtım işi yoksa
     rastgele üretip yazar, varsa dokunmaz (değişse kayıtlı şifreler çözülemez,
     çözülemeyen boş sayılır, kişi yeniden girer). Düz kalmış eski kayıt anahtar
-    varken ilk okumada şifrelenir. Test `worker/test/gizli.test.ts`. Her kişi
+    varken ilk okumada şifrelenir. Test `worker/test/gizli.test.ts`. Şifre reddi (kullanıcı: şifresi değişen kişi yeni şifreyi girip kaydedince kabul edilmiyordu):
+    "Bağlantıyı dene" kayıtlı eski şifreyi deniyordu, kapı da eskisiyle her 15 dakikada iki kez giriş
+    deneyip kurumun sunucusunda hesabı kilitleyebiliyordu. Exchange 401 dönünce kimlik işaretlenir
+    (`PostaKimlik.reddedildi`, `index.ts → kimlikReddiniYaz`), işaret dururken çekme, gönderme, ek ve
+    otomatik çağrı o şifreyle denemez (`kimlikReddedildi`, ekranda `kapiParolaReddi`); yanıt gönderiminde
+    iki yolda da reddedilen şifreyle yeni posta denenmez. Yeni şifre ya da kullanıcı adı işareti kaldırır
+    (`postaKimlikBirlestir`). "Bağlantıyı dene" formda yazılmış, kaydedilmemiş şifreyi dener
+    (`/posta/dene {kullanici, parola}`, kaydetmez); kayıtlı şifreyle denemede başarı işareti kaldırır.
+    Kaydet yeni şifreyi hemen sınar, kart reddi satırla söyler (`data-posta-parola-reddi`). Her kişi
     kendi kurumsal hesabını ve kendi biriminin grup adresini girer (planlamacı
     planlama grubunu, Newsdesk kendi grubunu), böylece herkes kendi grubunun
     yazışmalarını görür. Kimlik formu Ayarlar'da (`ekranlar/posta/

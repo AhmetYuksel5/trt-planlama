@@ -91,7 +91,11 @@ const istek = async <T>(yol: string, method = "GET", govde?: unknown): Promise<Y
  * değil, kota yenilenince kendiliğinden düzeliyor; ekran bunu söylesin. Öbür hatalar eski biçimde.
  */
 export const kapiHatasi = (r: { hata: string; ayrinti?: string }, onEk: string = metin("postaKapiYok")) =>
-  r.hata === "kota" || r.ayrinti?.startsWith("firestore 429") ? metin("kapiKota") : `${onEk}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
+  r.hata === "kota" || r.ayrinti?.startsWith("firestore 429")
+    ? metin("kapiKota")
+    : r.hata === "kimlikReddedildi"
+      ? metin("kapiParolaReddi")
+      : `${onEk}${r.ayrinti ? ` (${r.ayrinti})` : ""}`;
 
 /* Kapıdan dosya (posta eki): yanıt JSON değil, dosyanın kendisi; hata yine JSON. */
 export const kapiDosya = async (yol: string, govde: unknown): Promise<YzSonuc<Blob>> => {

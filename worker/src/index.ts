@@ -133,9 +133,11 @@ export const otoCagriCalistir = async (env: Env, simdi: number, tur: OtoCagriTur
   const temel: OtoCagriKaydi = { etiket: k.etiket, tur, tarih: k.tarih, zaman, uid, kime: pk.grupAdresi, bccIdler: ayar.bccIdler, konu: k.konu, metin: k.metin, sonSaat: k.sonSaat, tamam: false };
   if (!pa.acik || !pa.sunucu) return kayit({ ...temel, hata: "postaKapali" });
   if (!pk.kullanici || !pk.parola) return kayit({ ...temel, hata: "eksikKimlik" });
+  if (pk.reddedildi) return kayit({ ...temel, hata: KIMLIK_REDDI });
   if (!pk.grupAdresi) return kayit({ ...temel, hata: "grup" });
   if (!ayar.bcc.length) return kayit({ ...temel, hata: "bcc" });
   const r = await gonder({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, { kime: [pk.grupAdresi], bcc: ayar.bcc.filter((a) => a !== pk.grupAdresi), konu: k.konu, metin: k.metin, html: k.html || undefined });
+  await kimlikReddiniYaz(env, uid, pk, r, simdi);
   return kayit("hata" in r ? { ...temel, hata: r.hata.slice(0, 200), ...(r.belirsiz && { belirsiz: true }) } : { ...temel, tamam: true });
 };
 
@@ -151,6 +153,22 @@ const postaKimlikOku = async (env: Env, uid: string): Promise<PostaKimlik> => {
   const duz = { ...k, parola: await coz(k.parola, env.POSTA_ANAHTARI) };
   if (env.POSTA_ANAHTARI && k.parola && !sifreliMi(k.parola)) await postaKimlikYaz(env, uid, duz).catch(() => undefined);
   return duz;
+};
+
+/*
+ * Şifre reddi: Exchange 401 dönünce kimlik işaretlenir, işaret dururken kapı
+ * kendiliğinden (çekme, gönderme, ek, otomatik çağrı) bu şifreyle giriş denemez;
+ * eski şifreyle tekrar tekrar denemek kurumun sunucusunda hesabı kilitliyordu.
+ */
+const KIMLIK_REDDI = "kimlikReddedildi";
+const kimlikReddiniYaz = async (env: Env, uid: string, pk: PostaKimlik, r: unknown, simdi: number) => {
+  const red = !!r && typeof r === "object" && (r as { kimlik?: boolean }).kimlik === true;
+  if (red && !pk.reddedildi) await postaKimlikYaz(env, uid, { ...pk, reddedildi: new Date(simdi).toISOString() }).catch(() => undefined);
+  if (!red && pk.reddedildi && !(r && typeof r === "object" && "hata" in r)) {
+    const { reddedildi: _, ...temiz } = pk;
+    await postaKimlikYaz(env, uid, temiz).catch(() => undefined);
+  }
+  return red;
 };
 
 /* EWS mesajını tarayıcının postaIsle'sine uygun biçime indirger; gövde temizliğini istemci de yapıyor (tek kaynak). */
@@ -504,9 +522,18 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (req.method === "POST" && yol === "/posta/dene") {
       const pa = await postaAyarOku(env);
       if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
-      if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
-      const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
-      if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
+      // Formda yazılmış (henüz kaydedilmemiş) şifre ve kullanıcı adı varsa onlar denenir, kaydedilmez:
+      // önce kayıtlı eski şifre deneniyordu, kişi yeni şifresinin "kabul edilmediğini" sanıyordu.
+      const g = (await req.json().catch(() => null)) as { kullanici?: unknown; parola?: unknown } | null;
+      const yeniParola = typeof g?.parola === "string" && g.parola.length > 0 && g.parola.length <= 256 ? g.parola : "";
+      const yeniKullanici = typeof g?.kullanici === "string" && g.kullanici.trim() && g.kullanici.length <= 256 ? g.kullanici.trim() : "";
+      const kullanici = yeniKullanici || pk.kullanici;
+      const parola = yeniParola || pk.parola;
+      if (!kullanici || !parola) return yanit({ hata: "eksikKimlik" }, 400);
+      const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici, parola, alan: pa.alan }, cfBaglan, d.simdi(), 10);
+      // Ret işareti yalnız kayıtlı kimlik denenince değişir.
+      if (kullanici === pk.kullanici && parola === pk.parola) await kimlikReddiniYaz(env, kisi.kimlik.uid, pk, r, d.simdi());
+      if ("hata" in r) return yanit({ hata: r.kimlik ? KIMLIK_REDDI : "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
       return yanit({ tamam: true, sayi: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).length });
     }
   }
@@ -518,9 +545,11 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
+    if (pk.reddedildi) return yanit({ hata: KIMLIK_REDDI }, 400);
     const g = (await req.json().catch(() => null)) as { adet?: number } | null;
     const adet = Math.min(50, Math.max(1, Number(g?.adet) || 25));
     const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
+    if (await kimlikReddiniYaz(env, kisi.kimlik.uid, pk, r, d.simdi())) return yanit({ hata: KIMLIK_REDDI }, 502);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
     return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa), ...(r.uyari ? { uyari: r.uyari.slice(0, 200) } : {}), ...(r.staffing ? { staffing: r.staffing } : {}) });
   }
@@ -537,11 +566,13 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
+    if (pk.reddedildi) return yanit({ hata: KIMLIK_REDDI }, 400);
     const g = (await req.json().catch(() => null)) as { mesajKimligi?: unknown; ad?: unknown } | null;
     const imid = typeof g?.mesajKimligi === "string" ? g.mesajKimligi.trim() : "";
     const ad = typeof g?.ad === "string" ? g.ad : "";
     if (!imid || imid.length > 500 || !ad || ad.length > 400) return yanit({ hata: "girdi" }, 400);
     const r = await ekIndirOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), imid, ad);
+    if (await kimlikReddiniYaz(env, kisi.kimlik.uid, pk, r, d.simdi())) return yanit({ hata: KIMLIK_REDDI }, 502);
     if ("hata" in r) return yanit({ hata: r.yok ? "ekYok" : r.buyuk ? "ekBuyuk" : "baglanti", ayrinti: r.hata.slice(0, 200) }, r.yok ? 404 : r.buyuk ? 413 : 502);
     return new Response(r.veri, {
       headers: { "content-type": /^[\w.+-]+\/[\w.+-]+$/.test(r.tur) ? r.tur : "application/octet-stream", "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(ad)}`, "cache-control": "no-store", ...cors },
@@ -556,6 +587,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     if (!pa.sunucu) return yanit({ hata: "eksikSunucu" }, 400);
     const pk = await postaKimlikOku(env, kisi.kimlik.uid);
     if (!pk.kullanici || !pk.parola) return yanit({ hata: "eksikKimlik" }, 400);
+    if (pk.reddedildi) return yanit({ hata: KIMLIK_REDDI }, 400);
     const g = (await req.json().catch(() => null)) as { kime?: unknown; cc?: unknown; bcc?: unknown; konu?: string; metin?: string; baslik?: unknown; yanitlanan?: unknown; html?: unknown; gonderen?: unknown; ekler?: unknown } | null;
     const kimeL = adresListesi(g?.kime), ccL = adresListesi(g?.cc), bccL = adresListesi(g?.bcc);
     if (!kimeL || !ccL || !bccL) return yanit({ hata: "kime" }, 400);
@@ -582,6 +614,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const ekler = ekListesi(g?.ekler);
     if (!ekler) return yanit({ hata: "ek" }, 400);
     const r = await postaGonderOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), { kime, cc, bcc, konu, metin, ...(html && { html }), ...(ekler.length && { ekler }), ...(baslik && !html && { baslik }), ...(yanitlanan && { yanitlanan }), ...(gonderen && { gonderen }) });
+    if (await kimlikReddiniYaz(env, kisi.kimlik.uid, pk, r, d.simdi())) return yanit({ hata: KIMLIK_REDDI }, 502);
     // Gerçekten kime gittiğini döndür: ekrandaki "→ kime · CC" satırı bundan.
     if ("hata" in r && gonderen && /SendAs|SendOnBehalf/i.test(r.hata)) return yanit({ hata: "gonderenYetki", ayrinti: gonderen }, 403);
     return "hata" in r ? yanit({ hata: "gonderilemedi", ayrinti: r.hata.slice(0, 200) }, 502) : yanit({ tamam: true, kime, cc, bcc });
