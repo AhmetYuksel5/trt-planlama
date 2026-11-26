@@ -37,6 +37,7 @@ export interface OneriFormDurumu {
   gorselIsleme: string;
   teslimTahmini: string;
   ekMasraf: string;
+  programId: string;
   tur: IcerikTuru;
   bicim: OneriBicimi;
   /** Tür "Takip" seçilince muhabirin takibine giden tür. */
@@ -60,6 +61,7 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
     gorselIsleme: "",
     teslimTahmini: "",
     ekMasraf: "",
+    programId: "",
     tur: "haber",
     bicim: "pkg",
     takipTuru: "olay",
@@ -101,6 +103,7 @@ export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedef
     gorselIsleme: f.gorselIsleme.trim() || undefined,
     teslimTahmini: f.teslimTahmini || undefined,
     ekMasraf: f.ekMasraf.trim() || undefined,
+    programId: f.programId || undefined,
   }),
   tur: f.tur,
   bicim: f.bicim,
@@ -269,14 +272,17 @@ export function OneriMetinAlanlari({
   islemeli,
   strapIstege,
 }: {
-  f: { paketBasligi?: string; gelisme: string; islemeFikri?: string; gorselIsleme?: string; teslimTahmini?: string; ekMasraf?: string };
-  setF: (p: Partial<Record<OneriSinirAlani | "teslimTahmini" | "ekMasraf", string>>) => void;
+  f: { paketBasligi?: string; gelisme: string; islemeFikri?: string; gorselIsleme?: string; teslimTahmini?: string; ekMasraf?: string; programId?: string };
+  setF: (p: Partial<Record<OneriSinirAlani | "teslimTahmini" | "ekMasraf" | "programId", string>>) => void;
   strapli: boolean;
   islemeli: boolean;
   /** Planlama'nın girdiğinde strap zorunlu değil. */
   strapIstege?: boolean;
 }) {
   const { t } = useDil();
+  const v = useVeri();
+  // Kapanan program seçilmez; eski kayıtta seçili olan yine görünür.
+  const programlar = (v.programlar ?? []).filter((p) => !p.pasif || p.id === f.programId);
   return (
     <>
       {strapli && (
@@ -289,6 +295,22 @@ export function OneriMetinAlanlari({
           <SayacliAlan etiket="ofGorsel" deger={f.gorselIsleme ?? ""} degistir={(x) => setF({ gorselIsleme: x })} sinir={ONERI_SINIRI.gorselIsleme} satir={5} veri="oneri-gorsel" />
           {/* Kurumun rapor önerileri tablosunun son iki sütunu; isteğe bağlı (stok tablosu, StokTablosu.tsx). */}
           <div className="satir oneri-ek-satir">
+            {programlar.length > 0 && (
+              <label>
+                <span className="oneri-ek-bas">
+                  <Icerik>{metin("ofProgram", "ar")}</Icerik>
+                  <span className="ipucu">{t("varsa")}</span>
+                </span>
+                <select value={f.programId ?? ""} onChange={(e) => setF({ programId: e.target.value })} data-oneri-program>
+                  <option value="">—</option>
+                  {programlar.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.ad}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label>
               <span className="oneri-ek-bas">
                 <Icerik>{metin("ofTeslim", "ar")}</Icerik>
@@ -311,7 +333,9 @@ export function OneriMetinAlanlari({
 }
 
 /* Önerinin işleme fikri ve görsel işlemesi: ayrıntıda ve pencerede, yazılmışsa. */
-export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "gorselIsleme" | "teslimTahmini" | "ekMasraf"> }) {
+export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "gorselIsleme" | "teslimTahmini" | "ekMasraf" | "programId"> }) {
+  const v = useVeri();
+  const program = o.programId ? (v.programlar ?? []).find((p) => p.id === o.programId) : undefined;
   return (
     <>
       {([["ofIsleme", o.islemeFikri, "isleme"], ["ofGorsel", o.gorselIsleme, "gorsel"]] as const).map(([k, x, ad]) =>
@@ -326,11 +350,16 @@ export function OneriIslemeMetinleri({ o }: { o: Pick<Oneri, "islemeFikri" | "go
           </div>
         ) : null,
       )}
-      {(o.teslimTahmini || o.ekMasraf) && (
+      {(o.teslimTahmini || o.ekMasraf || program) && (
         <div className="satir ara-ust-2 oneri-ek-bilgi" data-oneri-ek-bilgi>
           {o.teslimTahmini && (
             <span>
               <Icerik>{metin("ofTeslim", "ar")}</Icerik>: <bdi dir="ltr">{tabloTarihi(o.teslimTahmini)}</bdi>
+            </span>
+          )}
+          {program && (
+            <span>
+              <Icerik>{metin("ofProgram", "ar")}</Icerik>: <Icerik>{program.ad}</Icerik>
             </span>
           )}
           {o.ekMasraf && (

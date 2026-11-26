@@ -30,11 +30,14 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.fill("[data-oneri-isleme]", "قصص ثلاثة حرفيين من ثلاثة أجيال");
   await p.fill("[data-oneri-gorsel]", "لقطات الأفران والرسم على الخزف");
   await p.fill("[data-oneri-masraf]", "USD 120");
+  ok((await p.locator("[data-oneri-program] option").count()) > 1, "formda program seçimi");
+  const ilkPrg = await p.locator("[data-oneri-program] option").nth(1).getAttribute("value");
+  await p.locator("[data-oneri-program]").selectOption(ilkPrg);
   await p.locator(".form-alt button.dugme").last().click();
   await p.waitForTimeout(600);
   let d = await durum();
   const mo = d.oneriler.find((x) => x.paketBasligi === strap);
-  ok(mo && mo.ekMasraf === "USD 120", "masraf kayıtta");
+  ok(mo && mo.ekMasraf === "USD 120" && mo.programId === ilkPrg, "masraf ve program kayıtta");
 
   // 2. Planlamacı: tablonun haftasına düşen feature önerisi (teslim tahmini ve masrafla)
   await p.evaluate(() => { localStorage.setItem("trt-planlama-oturum", "pl6"); });
@@ -42,7 +45,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const hafta = await p.locator("[data-stok-tablo]").getAttribute("data-stok-tablo");
   ok(!!hafta, "Teklifler varsayılan olarak tablo: " + hafta);
   const gun = (n) => { const t = new Date(hafta + "T12:00:00"); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); };
-  await p.evaluate(({ k, hafta, teslim }) => {
+  await p.evaluate(({ k, hafta, teslim, gelecek, gelecekHafta }) => {
     const d = JSON.parse(localStorage.getItem(k));
     const yeni = (id, muhabirId, baslik, ek) => ({
       id, muhabirId, ulke: "turkiye", haberBasligi: baslik, gelisme: baslik, paketBasligi: baslik, tur: "feature", bicim: "pkg",
@@ -51,9 +54,13 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     d.oneriler.push(
       yeni("o-tb-1", "mu2", "سوق الكتب القديمة يستعيد زواره", { islemeFikri: "قصص الباعة القدامى", gorselIsleme: "لقطات صباحية", teslimTahmini: teslim, ekMasraf: "USD 200" }),
       yeni("o-tb-2", "mu2", "مزارعو النخيل والملوحة", {}),
+      // Bu haftaya gönderilmiş ama teslimi gelecek haftada: bu haftanın tablosunda değil.
+      yeni("o-tb-3", "mu3", "تقرير يسلم الأسبوع المقبل", { teslimTahmini: gelecek }),
+      // Gelecek haftaya gönderilmiş ama teslimi bu hafta: bu haftanın tablosunda.
+      { ...yeni("o-tb-4", "mu3", "تقرير يسلم هذا الأسبوع", { teslimTahmini: teslim }), hafta: gelecekHafta },
     );
     localStorage.setItem(k, JSON.stringify(d));
-  }, { k: K, hafta, teslim: gun(5) });
+  }, { k: K, hafta, teslim: gun(5), gelecek: gun(9), gelecekHafta: gun(7) });
   await git("#/stok/teklifler");
   const satir = p.locator('[data-tablo-satir="o-o-tb-1"]');
   ok((await satir.count()) === 1, "haftalık öneri tabloya kendiliğinden düştü");
@@ -102,6 +109,21 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.keyboard.press("Enter"); await p.waitForTimeout(400);
   d = await durum();
   ok(d.haftalik.find((h) => h.baslangic === hafta).kalemler.find((x) => x.oneriId === "o-tb-1").paketBasligi === "سوق المتنبي يستعيد زواره", "strap kaleme yazıldı");
+
+  // 5b. Tarih: satır teslim gününün haftasında
+  ok((await p.locator('[data-tablo-satir="o-o-tb-3"]').count()) === 0, "teslimi gelecek haftada olan bu haftanın tablosunda yok");
+  ok((await p.locator('[data-tablo-satir="o-o-tb-4"]').count()) === 1, "gelecek haftaya gönderilip teslimi bu hafta olan burada");
+  await p.locator(`[aria-label="Sonraki hafta"]`).first().click(); await p.waitForTimeout(500);
+  ok((await p.locator('[data-tablo-satir="o-o-tb-3"]').count()) === 1 && (await p.locator('[data-tablo-satir="o-o-tb-4"]').count()) === 0, "gelecek haftanın tablosunda yalnız teslimi orada olan");
+  await p.locator(`[aria-label="Önceki hafta"]`).first().click(); await p.waitForTimeout(500);
+
+  // 5c. Program: جهة العرض hücresinden Programlar'ın programı seçilir
+  const prg = await p.evaluate((k) => (JSON.parse(localStorage.getItem(k)).programlar ?? []).find((x) => !x.pasif), K);
+  ok(!!prg, "demoda program var: " + prg?.ad);
+  await p.locator('[data-tablo-satir="o-o-tb-2"] [data-tablo-hucre="jiha"]').dblclick();
+  await p.locator('[data-tablo-duzen="jiha"]').selectOption(prg.id); await p.waitForTimeout(400);
+  ok((await durum()).oneriler.find((x) => x.id === "o-tb-2").programId === prg.id, "program öneriye yazıldı");
+  ok((await p.locator('[data-tablo-satir="o-o-tb-2"] [data-tablo-hucre="jiha"]').innerText()).includes(prg.ad), "sütunda programın adı");
 
   // 6. Excel: kurumun sütunları, bant, sağdan sola; kaldırılan satır girmez
   const [indirme] = await Promise.all([p.waitForEvent("download"), p.locator('[data-tablo-arac="excel"]').click()]);

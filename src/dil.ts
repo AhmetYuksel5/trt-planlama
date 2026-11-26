@@ -986,6 +986,7 @@ const M = {
   ofGorsel: m("المعالجة البصرية", "المعالجة البصرية", "المعالجة البصرية"),
   ofTeslim: m("مدة التسليم المتوقعة", "مدة التسليم المتوقعة", "مدة التسليم المتوقعة"),
   ofMasraf: m("تكاليف إضافية", "تكاليف إضافية", "تكاليف إضافية"),
+  ofProgram: m("البرنامج", "البرنامج", "البرنامج"),
   sttTablo: m("Tablo", "جدول", "Table"),
   sttKartlar: m("Kartlar", "بطاقات", "Cards"),
   sttKopyala: m("Tabloya kopyala", "نسخ كجدول", "Copy as table"),

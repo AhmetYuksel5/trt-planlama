@@ -4,6 +4,7 @@ import { TUR_ADI, kisiAr, sehirAr, sehirUlkesi, ulkeAdi } from "./etiketler";
 import { masaEtiketi } from "./masaEtiketi";
 import { oneriHaftada } from "./oneriPlanlari";
 import { stokTeklifiMi } from "./stokSayfasi";
+import { gunEkle } from "./tarih";
 import { kisiBul, type Durum, type HaftalikKalem, type HaftalikPlan, type Oneri, type Paket } from "./veri";
 
 /*
@@ -36,6 +37,8 @@ export interface TabloSatiri {
   id: string;
   oneri?: Oneri;
   kalem?: HaftalikKalem;
+  /** Kalemin durduğu Weekly (satırın düzeltmesi ve kararı onun); teslimi başka haftaya düşen kalem de olur. */
+  haftaId?: string;
   paket?: Paket;
   muhabirId?: string;
   /* Sütunların metni, kurumun tablosundaki gibi her arayüz dilinde Arapça. */
@@ -56,9 +59,8 @@ export interface TabloSatiri {
 /** Kurumun tablosundaki biçim: 05.12.2026. */
 export const tabloTarihi = (g?: string) => (g ? g.split("-").reverse().join(".") : "");
 
-/* Öneri tabloya girer: haftaya düşen stok ve programlar teklifi; muhabire giden teklif, geri çekilen, takip ve kopya değil. */
-const tablodaMi = (o: Oneri, hafta: string, hepsi: boolean) =>
-  oneriHaftada(o, { baslangic: hafta }) &&
+/* Öneri tabloya aday: stok ve programlar teklifi; muhabire giden teklif, geri çekilen, takip ve kopya değil. Haftası aşağıda, tarihten. */
+const tablodaMi = (o: Oneri, hepsi: boolean) =>
   (hepsi || stokTeklifiMi(o)) &&
   o.yon !== "muhabire" &&
   o.durum !== "teklif" &&
@@ -106,13 +108,15 @@ const ulkeMetni = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined,
 
 /* Önerilen yayın yeri: masanın Arapça adı (kolu, sorusu, önerisi), yoksa haber merkezi. */
 const jihaMetni = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined) => {
+  const program = o?.programId ? (d.programlar ?? []).find((p) => p.id === o.programId) : undefined;
+  if (program) return program.ad;
   const tur = k?.tur ?? o?.tur ?? "haber";
   const masa = masaEtiketi(d, tur, o?.id ?? k?.oneriId);
   if (masa) return masa;
   return tur === "haber" ? "الأخبار" : metin(TUR_ADI[tur], "ar");
 };
 
-const satirKur = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined): TabloSatiri => {
+const satirKur = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined, haftaId?: string): TabloSatiri => {
   const pid = k?.aktarim?.paketId ?? o?.paketId;
   const p = pid ? d.paketler.find((x) => x.id === pid) : undefined;
   const muhabirId = k?.muhabirler[0] ?? o?.muhabirId ?? p?.muhabirId;
@@ -121,6 +125,7 @@ const satirKur = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined):
     id: o ? `o-${o.id}` : `k-${k!.id}`,
     oneri: o,
     kalem: k,
+    haftaId: k ? haftaId : undefined,
     paket: p,
     muhabirId,
     muhabir: muhabirId ? kisiAr(kisiBul(d, muhabirId)) : k?.muhabirTbc ? "TBC" : (o?.kaynakAdi ?? ""),
@@ -138,26 +143,38 @@ const satirKur = (d: Durum, o: Oneri | undefined, k: HaftalikKalem | undefined):
 };
 
 /*
- * Haftanın satırları, muhabire göre gruplu (kurumun tablosunda her muhabirin
- * satırları bir arada, aynı tonda): grup sırası muhabirin Arapça adı,
+ * Haftanın satırları (kullanıcı: tarih olarak o haftalık dilime giren işler
+ * girsin, yalnız onlar): teslim günü (doğmuş paketin, kalemin, önerinin
+ * tahmini; yoksa günü) haftanın içindeyse satır o haftanın, öneri başka haftaya
+ * gönderilmiş olsa da. Tarihi hiç olmayan satır önerinin (ya da kalemin)
+ * haftasında kalır, kaybolmasın. Muhabire göre gruplu (kurumun tablosunda her
+ * muhabirin satırları bir arada, aynı tonda): grup sırası muhabirin Arapça adı,
  * muhabirsiz sonda; grup içinde teslim günü.
  */
 export const tabloSatirlari = (d: Durum, hafta: string, hepsi = false): TabloSatiri[] => {
-  const plan: HaftalikPlan | undefined = d.haftalik.find((h) => h.baslangic === hafta);
-  const kalemler = plan?.kalemler ?? [];
-  const oneriler = d.oneriler.filter((o) => tablodaMi(o, hafta, hepsi));
-  const ids = new Set(oneriler.map((o) => o.id));
-  const satirlar: TabloSatiri[] = oneriler.map((o) => satirKur(d, o, kalemler.find((k) => k.oneriId === o.id)));
-  // Öneriden gelmeyen (Planlama'nın elle eklediği) "Stok ve programlar" kalemi kendi satırı.
-  for (const k of kalemler) {
-    if (k.oneriId && ids.has(k.oneriId)) continue;
-    if (k.oneriId && d.oneriler.some((o) => o.id === k.oneriId)) {
-      const o = d.oneriler.find((x) => x.id === k.oneriId)!;
-      if (tablodaMi(o, hafta, true) && (hepsi || !k.tarih)) satirlar.push(satirKur(d, o, k));
-      continue;
-    }
-    if (hepsi || !k.tarih) satirlar.push(satirKur(d, undefined, k));
+  const son = gunEkle(hafta, 6);
+  const icinde = (g?: string) => !!g && g >= hafta && g <= son;
+  // Önerinin kalemi hangi Weekly'de olursa olsun (teslimi başka haftaya düşebilir).
+  const kalemi = new Map<string, { k: HaftalikKalem; h: HaftalikPlan }>();
+  for (const h of d.haftalik) for (const k of h.kalemler) if (k.oneriId && !kalemi.has(k.oneriId)) kalemi.set(k.oneriId, { k, h });
+  const satirlar: TabloSatiri[] = [];
+  const goruldu = new Set<string>();
+  for (const o of d.oneriler) {
+    if (!tablodaMi(o, true)) continue;
+    const bag = kalemi.get(o.id);
+    if (!hepsi && !stokTeklifiMi(o) && !(bag && !bag.k.tarih)) continue;
+    const s = satirKur(d, o, bag?.k, bag?.h.id);
+    if (bag) goruldu.add(bag.k.id);
+    if (s.teslim ? icinde(s.teslim) : oneriHaftada(o, { baslangic: hafta }) || bag?.h.baslangic === hafta) satirlar.push(s);
   }
+  // Öneriden gelmeyen (Planlama'nın elle eklediği) kalem kendi satırı.
+  for (const h of d.haftalik)
+    for (const k of h.kalemler) {
+      if (goruldu.has(k.id) || (k.oneriId && d.oneriler.some((o) => o.id === k.oneriId))) continue;
+      if (!hepsi && k.tarih) continue;
+      const s = satirKur(d, undefined, k, h.id);
+      if (s.teslim ? icinde(s.teslim) : h.baslangic === hafta) satirlar.push(s);
+    }
   return satirlar.sort(
     (a, b) =>
       Number(!a.muhabir) - Number(!b.muhabir) ||

@@ -630,12 +630,13 @@ export function KisaOneriFormu({
     gorselIsleme: ilk.gorselIsleme ?? "",
     teslimTahmini: ilk.teslimTahmini ?? "",
     ekMasraf: ilk.ekMasraf ?? "",
+    programId: ilk.programId ?? "",
   });
   const takipte = f.bicim === TAKIP_BICIMI;
   const birinci = (f.paketBasligi ?? "").trim();
   const ayriHeader = !!ilk.haberBasligi && !!ilk.paketBasligi && ilk.haberBasligi !== ilk.paketBasligi;
   const sonHal = (): YanitOneriGirdisi => {
-    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "" } : f;
+    const g = takipte ? { ...f, paketBasligi: undefined, islemeFikri: "", gorselIsleme: "", teslimTahmini: "", ekMasraf: "", programId: "" } : f;
     return muhabirFormu ? { ...g, haberBasligi: takipte || !ayriHeader ? birinci : ilk.haberBasligi } : g;
   };
   const gecerli = muhabirFormu

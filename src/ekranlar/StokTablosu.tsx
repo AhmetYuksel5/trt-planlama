@@ -68,7 +68,7 @@ const DURUM_TONU: Partial<Record<TabloDurumu, string>> = {
 };
 
 /* Yerinde düzeltilen sütunlar ve eylemdeki adları. */
-const ALAN: Partial<Record<TabloSutunu, TabloAlani>> = { strap: "strap", isleme: "isleme", gorsel: "gorsel", teslim: "teslim", masraf: "masraf" };
+const ALAN: Partial<Record<TabloSutunu, TabloAlani>> = { strap: "strap", jiha: "program", isleme: "isleme", gorsel: "gorsel", teslim: "teslim", masraf: "masraf" };
 /* Karakter cinsinden genişlikler (Excel); ekranda da oranlar bunlardan. */
 const GENISLIK: Record<TabloSutunu, number> = { n: 5, muhabir: 18, ulke: 16, strap: 30, jiha: 14, isleme: 48, gorsel: 38, teslim: 13, masraf: 13 };
 
@@ -168,10 +168,16 @@ export function StokTablosu({ ben, hafta, hepsi, plan }: { ben: Kisi; hafta: str
 
   const gundemeEklenir = (s: TabloSatiri) =>
     !!s.oneri && !s.kalem && !s.paket && oneriSekmesi(v, s.oneri, B) === "karar" && yapabilir(ben, "haftalikDuzenle");
-  const kararVerilir = (s: TabloSatiri) => !!plan && !!s.kalem && s.kalem.karar === "bekliyor" && kararVerebilir(ben, plan) && !kalemKilitli(plan, s.kalem);
+  // Kalem başka haftanın Weekly'sinde olabilir (teslimi bu haftaya düşmüş): karar ve düzeltme onun.
+  const satirPlani = (s: TabloSatiri) => (s.haftaId ? v.haftalik.find((h) => h.id === s.haftaId) : undefined) ?? plan;
+  const kararVerilir = (s: TabloSatiri) => {
+    const h = satirPlani(s);
+    return !!h && !!s.kalem && s.kalem.karar === "bekliyor" && kararVerebilir(ben, h) && !kalemKilitli(h, s.kalem);
+  };
   const karar = (s: TabloSatiri, k: "kabul" | "ret") => {
-    if (!plan || !s.kalem || !confirm(t(k === "kabul" ? "sttKabulOnay" : "sttRetOnay"))) return;
-    if (kalemKarar(ben, plan.id, s.kalem.id, k)) bildir(t("bKaydedildi"));
+    const h = satirPlani(s);
+    if (!h || !s.kalem || !confirm(t(k === "kabul" ? "sttKabulOnay" : "sttRetOnay"))) return;
+    if (kalemKarar(ben, h.id, s.kalem.id, k)) bildir(t("bKaydedildi"));
   };
   const gundemeAc = (s: TabloSatiri) => {
     if (!plan && !haftalikOlustur(ben, hafta)) return;
@@ -206,14 +212,16 @@ export function StokTablosu({ ben, hafta, hepsi, plan }: { ben: Kisi; hafta: str
 
   const duzenlenir = (s: TabloSatiri, c: TabloSutunu) => {
     const a = ALAN[c];
-    return !!a && !s.dusuk && tabloHucresiDuzenlenir(ben, a, plan?.id, s.oneri?.id, s.kalem?.id);
+    // Program yoksa seçecek bir şey yok: yayın yeri masanın adı kalır.
+    if (c === "jiha" && !(v.programlar ?? []).some((p) => !p.pasif)) return false;
+    return !!a && !s.dusuk && tabloHucresiDuzenlenir(ben, a, satirPlani(s)?.id, s.oneri?.id, s.kalem?.id);
   };
   const kaydetHucre = (s: TabloSatiri, c: TabloSutunu, deger: string) => {
     setDuzen(null);
     const a = ALAN[c]!;
-    const eski = c === "teslim" ? (s.teslim ?? "") : c === "masraf" ? (s.oneri?.ekMasraf ?? "") : s[c as "strap" | "isleme" | "gorsel"];
+    const eski = c === "teslim" ? (s.teslim ?? "") : c === "jiha" ? (s.oneri?.programId ?? "") : c === "masraf" ? (s.oneri?.ekMasraf ?? "") : s[c as "strap" | "isleme" | "gorsel"];
     if (deger.trim() === eski.trim()) return;
-    if (!tabloHucresiKaydet(ben, a, deger, plan?.id, s.oneri?.id, s.kalem?.id)) bildir(t("sttKaydedilemedi"));
+    if (!tabloHucresiKaydet(ben, a, deger, satirPlani(s)?.id, s.oneri?.id, s.kalem?.id)) bildir(t("sttKaydedilemedi"));
   };
 
   const ust = (
@@ -275,7 +283,7 @@ export function StokTablosu({ ben, hafta, hepsi, plan }: { ben: Kisi; hafta: str
                       if (duzen?.id === s.id && duzen.c === c)
                         return (
                           <td key={c} className="st-duzen">
-                            <HucreDuzeni c={c} ilk={c === "teslim" ? (s.teslim ?? "") : c === "masraf" ? (s.oneri?.ekMasraf ?? s.masraf) : s[c as "strap"]} bitir={(x) => (x === null ? setDuzen(null) : kaydetHucre(s, c, x))} />
+                            <HucreDuzeni c={c} ilk={c === "teslim" ? (s.teslim ?? "") : c === "jiha" ? (s.oneri?.programId ?? "") : c === "masraf" ? (s.oneri?.ekMasraf ?? s.masraf) : s[c as "strap"]} bitir={(x) => (x === null ? setDuzen(null) : kaydetHucre(s, c, x))} />
                           </td>
                         );
                       const deger = c === "n" ? String(i + 1) : c === "muhabir" && !grupBasiMi(satirlar, i) ? "" : hucreMetni(s, c, i + 1);
@@ -333,6 +341,8 @@ function GundemePenceresi({ ben, hafta, oneriId, kapat }: { ben: Kisi; hafta: st
 
 function HucreDuzeni({ c, ilk, bitir }: { c: TabloSutunu; ilk: string; bitir: (x: string | null) => void }) {
   const [x, setX] = useState(ilk);
+  const v = useVeri();
+  const programlar = (v.programlar ?? []).filter((p) => !p.pasif || p.id === ilk);
   const alan = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     const a = alan.current;
@@ -340,6 +350,27 @@ function HucreDuzeni({ c, ilk, bitir }: { c: TabloSutunu; ilk: string; bitir: (x
     a.focus();
     a.setSelectionRange(a.value.length, a.value.length);
   }, []);
+  // Önerilen yayın yeri: Programlar'ın tanımlı programı ya da boş (masa adı görünür).
+  if (c === "jiha")
+    return (
+      <span className="st-tarih" onClick={(e) => e.stopPropagation()}>
+        <select
+          autoFocus
+          value={x}
+          onChange={(e) => bitir(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && (e.preventDefault(), e.stopPropagation(), bitir(null))}
+          onBlur={() => bitir(null)}
+          data-tablo-duzen={c}
+        >
+          <option value="">—</option>
+          {programlar.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.ad}
+            </option>
+          ))}
+        </select>
+      </span>
+    );
   if (c === "teslim")
     return (
       <span className="st-tarih" onClick={(e) => e.stopPropagation()}>

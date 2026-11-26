@@ -626,6 +626,12 @@ export interface Oneri {
    */
   teslimTahmini?: string;
   ekMasraf?: string;
+  /*
+   * Önerilen yayın yeri programın kendisi (kullanıcı: tablonun جهة العرض sütununda
+   * "القصة وما فيها" gibi program adı seçilsin; Programlar'ın tanımlarından,
+   * `Durum.programlar`). Boşsa sütunda masa adı.
+   */
+  programId?: string;
   tur: IcerikTuru;
   bicim?: OneriBicimi;
   sahaGerekli: boolean;
