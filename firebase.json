@@ -25,6 +25,24 @@
         ]
       },
       {
+        "source": "/download/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/indir/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
         "source": "/assets/**",
         "headers": [
           {
@@ -41,6 +59,13 @@
             "value": "application/json"
           }
         ]
+      }
+    ],
+    "redirects": [
+      {
+        "source": "/download",
+        "destination": "/download/",
+        "type": 301
       }
     ]
   },

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plannersflow · İndir</title>
+<meta name="description" content="Plannersflow'u telefonuna kur: Android uygulaması ve iPhone'da ana ekrana ekleme.">
+<meta name="theme-color" content="#0f1f3a">
+<link rel="icon" href="../uygulama-192.png">
+<link rel="apple-touch-icon" href="../uygulama-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap">
+<!--
+  İndirme sayfası (kullanıcı: plannersflow.net/download; Android indir, iPhone'a yol göster).
+  Uygulamanın dışında, tek başına statik sayfa: girişsiz açılır, kurumun iç bilgisi yok.
+  Kaynak public/download/, derlemeyle docs/download/'a kopyalanır.
+-->
+<style>
+  :root {
+    --lacivert: #0f1f3a; --lacivert-2: #1b3560; --yesil: #389480; --yesil-koyu: #237a68;
+    --zemin: #f4f5f8; --kart: #ffffff; --yazi: #172033; --sonuk: #5b6578; --cizgi: #dfe3ea;
+    --vurgu-sis: #e6f2ef; --uyari-sis: #fbf3e1; --uyari: #8a6411;
+    --yazi-tipi: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --zemin: #10141c; --kart: #1a202b; --yazi: #e9ecf2; --sonuk: #a3acbd; --cizgi: #2d3544;
+      --vurgu-sis: #16302b; --uyari-sis: #33291a; --uyari: #e3bb63;
+    }
+  }
+  html[lang="ar"] { --yazi-tipi: "Noto Naskh Arabic", "IBM Plex Sans", system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--zemin); color: var(--yazi); font: 16px/1.6 var(--yazi-tipi); -webkit-text-size-adjust: 100%; }
+  a { color: inherit; }
+
+  header {
+    background: linear-gradient(160deg, var(--lacivert) 0%, var(--lacivert-2) 100%);
+    color: #fff; padding: max(20px, env(safe-area-inset-top)) 20px 88px; position: relative; overflow: hidden;
+  }
+  header::after {
+    /* Logonun yeşili tek ince çizgide: kimlikteki "kararında yeşil". */
+    content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3px;
+    background: linear-gradient(90deg, var(--yesil), transparent 70%);
+  }
+  html[dir="rtl"] header::after { background: linear-gradient(-90deg, var(--yesil), transparent 70%); }
+  .ust { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .logo { height: 30px; width: auto; direction: ltr; }
+  .diller { display: flex; gap: 2px; background: rgba(255,255,255,.1); border-radius: 999px; padding: 3px; }
+  .diller button {
+    border: 0; background: none; color: rgba(255,255,255,.8); font: 600 13px var(--yazi-tipi);
+    padding: 6px 11px; border-radius: 999px; cursor: pointer; min-height: 32px;
+  }
+  .diller button[aria-pressed="true"] { background: #fff; color: var(--lacivert); }
+  .giris { max-width: 960px; margin: 44px auto 0; }
+  h1 { font-size: clamp(28px, 5.5vw, 44px); line-height: 1.15; margin: 0 0 12px; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+  html[lang="ar"] h1 { letter-spacing: 0; line-height: 1.4; }
+  .giris p { margin: 0; color: rgba(255,255,255,.78); font-size: 18px; max-width: 54ch; }
+
+  main { max-width: 960px; margin: -56px auto 0; padding: 0 16px max(40px, env(safe-area-inset-bottom)); position: relative; }
+  .kartlar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 720px) { .kartlar { grid-template-columns: minmax(0, 1fr); } }
+  .kart {
+    background: var(--kart); border: 1px solid var(--cizgi); border-radius: 14px; padding: 24px;
+    box-shadow: 0 1px 2px rgba(15,31,58,.06), 0 8px 24px rgba(15,31,58,.06); display: flex; flex-direction: column; gap: 16px;
+  }
+  .kart.bu { border-color: var(--yesil); box-shadow: 0 0 0 1px var(--yesil), 0 8px 24px rgba(15,31,58,.08); }
+  .kart-bas { display: flex; align-items: center; gap: 12px; }
+  .simge { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; background: var(--vurgu-sis); color: var(--yesil-koyu); flex: none; }
+  @media (prefers-color-scheme: dark) { .simge { color: #7cc9b6; } }
+  h2 { margin: 0; font-size: 21px; line-height: 1.25; }
+  .alt { color: var(--sonuk); font-size: 14px; margin: 2px 0 0; }
+  .rozet { margin-inline-start: auto; font-size: 12px; font-weight: 600; color: var(--yesil-koyu); background: var(--vurgu-sis); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  @media (prefers-color-scheme: dark) { .rozet { color: #7cc9b6; } }
+  .rozet[hidden] { display: none; }
+
+  .dugme {
+    display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 12px 20px;
+    border-radius: 10px; font-weight: 600; font-size: 17px; text-decoration: none;
+    background: linear-gradient(135deg, var(--yesil) 0%, #0e4250 100%); color: #fff;
+  }
+  .dugme:hover { filter: brightness(1.08); }
+  .dugme:focus-visible, .diller button:focus-visible, .ikincil:focus-visible { outline: 3px solid var(--yesil); outline-offset: 2px; }
+  .dugme small { font-weight: 500; opacity: .8; font-size: 14px; }
+  .ikincil {
+    display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 18px; border-radius: 10px;
+    border: 1px solid var(--cizgi); font-weight: 600; text-decoration: none; background: var(--kart);
+  }
+
+  ol.adimlar { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: adim; }
+  ol.adimlar li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; counter-increment: adim; }
+  ol.adimlar li::before {
+    content: counter(adim); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--lacivert); color: #fff; font-size: 14px; font-weight: 600; margin-top: 1px;
+  }
+  @media (prefers-color-scheme: dark) { ol.adimlar li::before { background: #2c4675; } }
+  ol.adimlar b { font-weight: 600; }
+  .paylas { display: inline-block; vertical-align: -3px; width: 18px; height: 18px; color: #2f7cf6; }
+  .not { font-size: 14px; color: var(--sonuk); border-top: 1px solid var(--cizgi); padding-top: 14px; margin: auto 0 0; }
+  .uyari { font-size: 14px; background: var(--uyari-sis); color: var(--uyari); border-radius: 8px; padding: 10px 12px; margin: 0; }
+  .uyari[hidden] { display: none; }
+
+  .web {
+    margin-top: 16px; background: var(--kart); border: 1px solid var(--cizgi); border-radius: 14px; padding: 20px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .web .metin { flex: 1 1 260px; }
+  .web h2 { font-size: 18px; }
+  .adres { font-family: ui-monospace, "SF Mono", Menlo, monospace; direction: ltr; unicode-bidi: isolate; }
+  footer { text-align: center; color: var(--sonuk); font-size: 13px; padding: 8px 16px 32px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="ust">
+    <img class="logo" src="logo.png" alt="Plannersflow" width="182" height="30">
+    <div class="diller" role="group" aria-label="Dil">
+      <button type="button" data-dil="tr">TR</button>
+      <button type="button" data-dil="ar">ع</button>
+      <button type="button" data-dil="en">EN</button>
+    </div>
+  </div>
+  <div class="giris">
+    <h1 data-m="baslik">Plannersflow'u telefonuna kur</h1>
+    <p data-m="alt">Ana ekrandan tek dokunuşla aç; adres çubuğu olmadan, uygulama gibi.</p>
+  </div>
+</header>
+
+<main>
+  <div class="kartlar">
+    <section class="kart" id="android" aria-labelledby="android-baslik">
+      <div class="kart-bas">
+        <span class="simge" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+        </span>
+        <div>
+          <h2 id="android-baslik">Android</h2>
+          <p class="alt" data-m="androidAlt">Android 5.0 ve üstü</p>
+        </div>
+        <span class="rozet" data-m="buCihaz" hidden>Bu cihaz</span>
+      </div>
+      <a class="dugme" href="../indir/plannersflow.apk" download="plannersflow.apk">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        <span data-m="indir">Uygulamayı indir</span>
+        <small>APK · 0,4 MB</small>
+      </a>
+      <ol class="adimlar">
+        <li><span data-m="a1">İndirilen <b>plannersflow.apk</b> dosyasını bildirimden ya da İndirilenler'den aç.</span></li>
+        <li><span data-m="a2">Telefon izin isterse <b>Ayarlar</b>'a geç ve bu tarayıcıya <b>bilinmeyen uygulamaları yükleme</b> izni ver.</span></li>
+        <li><span data-m="a3"><b>Yükle</b>'ye bas. Play Protect sorarsa <b>Yine de yükle</b>'yi seç.</span></li>
+        <li><span data-m="a4">Ana ekrandaki Plannersflow simgesiyle aç ve giriş yap.</span></li>
+      </ol>
+      <p class="not" data-m="androidNot">Uygulama siteyle aynı; güncellemeler kendiliğinden gelir, yeniden indirmek gerekmez. Telefonda Google Chrome yüklü olmalı.</p>
+    </section>
+
+    <section class="kart" id="ios" aria-labelledby="ios-baslik">
+      <div class="kart-bas">
+        <span class="simge" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4"/></svg>
+        </span>
+        <div>
+          <h2 id="ios-baslik">iPhone · iPad</h2>
+          <p class="alt" data-m="iosAlt">Safari ile ana ekrana ekle</p>
+        </div>
+        <span class="rozet" data-m="buCihaz" hidden>Bu cihaz</span>
+      </div>
+      <p class="uyari" id="safari-uyari" data-m="safariUyari" hidden>Bu sayfayı Safari'de aç: ana ekrana ekleme en kolay oradan.</p>
+      <ol class="adimlar">
+        <li><span data-m="i1"><b>Safari</b>'de <span class="adres">plannersflow.net</span> adresini aç.</span></li>
+        <li><span><span data-m="i2a">Alttaki</span> <svg class="paylas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <span data-m="i2b"><b>Paylaş</b> düğmesine bas.</span></span></li>
+        <li><span data-m="i3">Listede aşağı kaydır, <b>Ana Ekrana Ekle</b>'yi seç, sonra <b>Ekle</b>.</span></li>
+        <li><span data-m="i4">Ana ekrandaki Plannersflow simgesiyle aç: adres çubuğu olmadan açılır.</span></li>
+      </ol>
+      <p class="not" data-m="iosNot">Bildirimler için iOS 16.4 ya da üstü gerekir ve uygulama ana ekrandaki simgeden açılmalıdır.</p>
+    </section>
+  </div>
+
+  <div class="web">
+    <div class="metin">
+      <h2 data-m="webBaslik">Bilgisayarda</h2>
+      <p class="alt" data-m="webAlt">Kurulum gerekmez; tarayıcıda açman yeterli.</p>
+    </div>
+    <a class="ikincil adres" href="https://plannersflow.net/">plannersflow.net ↗</a>
+  </div>
+</main>
+<footer>Plannersflow</footer>
+
+<script>
+  // Metinler üç dilde; dil tarayıcıdan, seçim bu tarayıcıda hatırlanır.
+  var M = {
+    tr: {
+      baslik: "Plannersflow'u telefonuna kur",
+      alt: "Ana ekrandan tek dokunuşla aç; adres çubuğu olmadan, uygulama gibi.",
+      androidAlt: "Android 5.0 ve üstü", buCihaz: "Bu cihaz", indir: "Uygulamayı indir",
+      a1: "İndirilen <b>plannersflow.apk</b> dosyasını bildirimden ya da İndirilenler'den aç.",
+      a2: "Telefon izin isterse <b>Ayarlar</b>'a geç ve bu tarayıcıya <b>bilinmeyen uygulamaları yükleme</b> izni ver.",
+      a3: "<b>Yükle</b>'ye bas. Play Protect sorarsa <b>Yine de yükle</b>'yi seç.",
+      a4: "Ana ekrandaki Plannersflow simgesiyle aç ve giriş yap.",
+      androidNot: "Uygulama siteyle aynı; güncellemeler kendiliğinden gelir, yeniden indirmek gerekmez. Telefonda Google Chrome yüklü olmalı.",
+      iosAlt: "Safari ile ana ekrana ekle",
+      safariUyari: "Bu sayfayı Safari'de aç: ana ekrana ekleme en kolay oradan.",
+      i1: "<b>Safari</b>'de <span class=\"adres\">plannersflow.net</span> adresini aç.",
+      i2a: "Alttaki", i2b: "<b>Paylaş</b> düğmesine bas.",
+      i3: "Listede aşağı kaydır, <b>Ana Ekrana Ekle</b>'yi seç, sonra <b>Ekle</b>.",
+      i4: "Ana ekrandaki Plannersflow simgesiyle aç: adres çubuğu olmadan açılır.",
+      iosNot: "Bildirimler için iOS 16.4 ya da üstü gerekir ve uygulama ana ekrandaki simgeden açılmalıdır.",
+      webBaslik: "Bilgisayarda", webAlt: "Kurulum gerekmez; tarayıcıda açman yeterli.",
+      sayfa: "Plannersflow · İndir", dilAdi: "Dil"
+    },
+    ar: {
+      baslik: "ثبّت Plannersflow على هاتفك",
+      alt: "افتحه بلمسة واحدة من الشاشة الرئيسية، دون شريط العنوان، كأي تطبيق.",
+      androidAlt: "أندرويد 5.0 فما فوق", buCihaz: "هذا الجهاز", indir: "تنزيل التطبيق",
+      a1: "افتح ملف <b>plannersflow.apk</b> الذي تم تنزيله من الإشعارات أو من مجلد التنزيلات.",
+      a2: "إذا طلب الهاتف إذنًا، انتقل إلى <b>الإعدادات</b> واسمح لهذا المتصفح <b>بتثبيت التطبيقات غير المعروفة</b>.",
+      a3: "اضغط <b>تثبيت</b>. وإذا سأل Play Protect، اختر <b>التثبيت على أي حال</b>.",
+      a4: "افتح التطبيق من أيقونة Plannersflow على الشاشة الرئيسية وسجّل الدخول.",
+      androidNot: "التطبيق هو الموقع نفسه؛ تصل التحديثات تلقائيًا دون الحاجة إلى تنزيله من جديد. يجب أن يكون Google Chrome مثبتًا على الهاتف.",
+      iosAlt: "أضفه إلى الشاشة الرئيسية عبر Safari",
+      safariUyari: "افتح هذه الصفحة في Safari: الإضافة إلى الشاشة الرئيسية أسهل من هناك.",
+      i1: "افتح العنوان <span class=\"adres\">plannersflow.net</span> في <b>Safari</b>.",
+      i2a: "اضغط زر", i2b: "<b>المشاركة</b> في الأسفل.",
+      i3: "مرّر القائمة إلى الأسفل واختر <b>إضافة إلى الشاشة الرئيسية</b>، ثم <b>إضافة</b>.",
+      i4: "افتحه من أيقونة Plannersflow على الشاشة الرئيسية: يفتح دون شريط العنوان.",
+      iosNot: "تتطلب الإشعارات نظام iOS 16.4 أو أحدث، ويجب فتح التطبيق من أيقونة الشاشة الرئيسية.",
+      webBaslik: "على الحاسوب", webAlt: "لا حاجة إلى التثبيت؛ يكفي فتحه في المتصفح.",
+      sayfa: "Plannersflow · تنزيل", dilAdi: "اللغة"
+    },
+    en: {
+      baslik: "Install Plannersflow on your phone",
+      alt: "Open it with one tap from your home screen, without the address bar, like an app.",
+      androidAlt: "Android 5.0 and later", buCihaz: "This device", indir: "Download the app",
+      a1: "Open the downloaded <b>plannersflow.apk</b> from the notification or your Downloads.",
+      a2: "If your phone asks, go to <b>Settings</b> and allow this browser to <b>install unknown apps</b>.",
+      a3: "Tap <b>Install</b>. If Play Protect asks, choose <b>Install anyway</b>.",
+      a4: "Open it from the Plannersflow icon on your home screen and sign in.",
+      androidNot: "The app is the website itself; updates arrive automatically, no need to download it again. Google Chrome must be installed on the phone.",
+      iosAlt: "Add to Home Screen with Safari",
+      safariUyari: "Open this page in Safari: adding to the home screen is easiest there.",
+      i1: "Open <span class=\"adres\">plannersflow.net</span> in <b>Safari</b>.",
+      i2a: "Tap the", i2b: "<b>Share</b> button at the bottom.",
+      i3: "Scroll down, choose <b>Add to Home Screen</b>, then <b>Add</b>.",
+      i4: "Open it from the Plannersflow icon on your home screen: it opens without the address bar.",
+      iosNot: "Notifications need iOS 16.4 or later, and the app must be opened from its home screen icon.",
+      webBaslik: "On a computer", webAlt: "Nothing to install; just open it in your browser.",
+      sayfa: "Plannersflow · Download", dilAdi: "Language"
+    }
+  };
+  var ANAHTAR = "plannersflow-indir-dil";
+  function dilUygula(d) {
+    var m = M[d] || M.tr;
+    document.documentElement.lang = d;
+    document.documentElement.dir = d === "ar" ? "rtl" : "ltr";
+    document.title = m.sayfa;
+    document.querySelector(".diller").setAttribute("aria-label", m.dilAdi);
+    // Metinler sabit tablodan geliyor (kullanıcı girdisi yok); kalın yazılar için innerHTML.
+    document.querySelectorAll("[data-m]").forEach(function (e) { var k = e.getAttribute("data-m"); if (m[k] != null) e.innerHTML = m[k]; });
+    document.querySelectorAll("[data-dil]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-dil") === d)); });
+  }
+  var secili = null;
+  try { secili = localStorage.getItem(ANAHTAR); } catch (e) {}
+  if (!M[secili]) {
+    var t = (navigator.language || "tr").slice(0, 2).toLowerCase();
+    secili = M[t] ? t : "en";
+  }
+  dilUygula(secili);
+  document.querySelectorAll("[data-dil]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var d = b.getAttribute("data-dil");
+      try { localStorage.setItem(ANAHTAR, d); } catch (e) {}
+      dilUygula(d);
+    });
+  });
+
+  // Cihazı tanı: kendi kartı başa ve işaretli. iPad masaüstü kimliğiyle gelebilir (dokunmatik Mac).
+  var ua = navigator.userAgent;
+  var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var android = /Android/.test(ua);
+  var hedef = ios ? "ios" : android ? "android" : null;
+  if (hedef) {
+    var kart = document.getElementById(hedef);
+    kart.classList.add("bu");
+    kart.querySelector(".rozet").hidden = false;
+    kart.parentNode.insertBefore(kart, kart.parentNode.firstChild);
+  }
+  // iPhone'da Chrome, Firefox, Edge ya da uygulama içi tarayıcı: Safari'ye yönlendir.
+  if (ios && /CriOS|FxiOS|EdgiOS|OPiOS|Instagram|FBAN|FBAV|WhatsApp/.test(ua)) document.getElementById("safari-uyari").hidden = false;
+</script>
+</body>
+</html>

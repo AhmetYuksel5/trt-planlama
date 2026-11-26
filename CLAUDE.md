@@ -4272,6 +4272,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   satırı yerine meta satırında sönük çip: planın simgesi (Next Day `CalendarDays`,
   Weekly `CalendarRange`), adı ve günü; tam cümle ipucunda, başlık pencerede
   (tasarım ajanının kararı: yeşil yalnız durum rozetinde).
+- İndirme sayfası (kullanıcı: plannersflow.net/download, Android indir, iPhone'a yol göster;
+  `public/download/index.html`, uygulamanın dışında statik sayfa, girişsiz, kurumun iç bilgisi yok):
+  Android kartında APK düğmesi (`../indir/plannersflow.apk`) ve kurulum adımları (bilinmeyen kaynak
+  izni, Play Protect), iPhone kartında Safari › Paylaş › Ana Ekrana Ekle; cihazın kartı başta ve
+  "Bu cihaz" işaretli, iPhone'da başka tarayıcıdaysa Safari uyarısı. Üç dil (metinler sayfanın
+  kendi tablosunda, `dil.ts`'te değil: uygulama yüklenmiyor), tarayıcının dilinden, seçim
+  `plannersflow-indir-dil`. `firebase.json`: `/download` → `/download/` (göreli yollar), sayfa ve APK
+  önbelleksiz. Test `testler/indir.cjs`.
 - Uygulama olarak yükleme (kullanıcı: Android'de ana ekrana eklenen site adres
   çubuğuyla açılıyordu): `public/manifest.webmanifest` (`display: standalone`,
   göreli `start_url`/`scope`), simgeler `public/uygulama-192.png`, `-512.png`.
