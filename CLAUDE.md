@@ -2525,7 +2525,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ekleyebiliyordu): kalem tek paket taşır, bu yüzden dosya grubunun altında
     "Bu dosyaya PKG ekle" (`data-dosya-pkg-ekle`; plan ekranında `DosyaGruplari`,
     belgede dosya satırının şeridinde) aynı gün ve dosyada yeni kalem açar
-    (`KalemFormu pkg`: Strap önde ve zorunlu, metin isteğe bağlı). Kalemin metni ya
+    (`KalemFormu pkg`: Strap önde ve zorunlu, metin isteğe bağlı); plan ekranında dosya başlığının simge satırında da 📦 (`DosyaAraclari pkg`, `data-dosya-pkg-ust`; alttaki düğme uzun dosyada gözden kaçıyordu). Kalemin metni ya
     da Strap'li PKG'si olmalı (`haftalik.ts → kalemIcerigiVar`, `kalemKaydet`);
     metinsiz kalem ekranda, belgede ve çıktıda yalnız PKG satırıyla, Next Day'e
     gelişmesiz, ayrı paketle (her biri kendi kararıyla) geçer. Test

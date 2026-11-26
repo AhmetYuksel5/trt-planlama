@@ -55,10 +55,22 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const grupMetni = await p.locator(".dosya-grubu", { has: p.locator("[data-kalem='kc-1']") }).innerText();
   ok(["التقرير الأول", "التقرير الثاني", "التقرير الثالث"].every((s) => grupMetni.includes(s)), "plan ekranında üç paket aynı dosyada");
 
+  // Dosya başlığının simge satırındaki 📦 da aynı formu açar (alttaki düğme uzun dosyada gözden kaçıyordu)
+  {
+    const grup = p.locator(".dosya-grubu", { has: p.locator("[data-kalem='kc-1']") });
+    await grup.locator("[data-dosya-pkg-ust] button").click();
+    const form = grup.locator(".form-kutu");
+    await form.locator("[data-kalem-strap]").fill("التقرير الرابع");
+    await form.locator("button", { hasText: "Kaydet" }).click();
+    await p.waitForTimeout(400);
+    const hh = (await oku()).haftalik.find((x) => x.id === ids.hid);
+    ok(hh.kalemler.length === 4 && hh.kalemler[3].paketBasligi === "التقرير الرابع" && hh.kalemler[3].baslikId === ids.baslikId, "başlıktaki simgeyle dördüncü paket aynı dosyada");
+  }
+
   // Çıktıda üç PKG satırı, ek paketlerde boş metin satırı yok
   await git(`#/haftalik/${ids.hid}/cikti`);
   const pkgler = await p.locator("article.cikti [data-kalem-pkg]").allInnerTexts();
-  ok(pkgler.filter((x) => x.includes("التقرير")).length === 3, "çıktıda üç PKG satırı");
+  ok(pkgler.filter((x) => x.includes("التقرير")).length === 4, "çıktıda dört PKG satırı");
   const satirlar = (await p.locator("article.cikti").first().innerText()).split("\n").map((s) => s.trim());
   ok(!satirlar.some((s) => s === "/" || s.endsWith(" /")), "metinsiz kalem boş satır bırakmadı");
 
@@ -69,11 +81,11 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await dugme.evaluate((el) => el.click());
   await p.waitForTimeout(300);
   const pencere = p.locator("dialog[open]");
-  await pencere.locator("[data-kalem-strap]").fill("التقرير الرابع");
+  await pencere.locator("[data-kalem-strap]").fill("التقرير الخامس");
   await pencere.locator(".form-alt button.dugme:not(.dugme-ikincil)").last().click();
   await p.waitForTimeout(400);
   h = (await oku()).haftalik.find((x) => x.id === ids.hid);
-  ok(h.kalemler.filter((k) => k.baslikId === ids.baslikId && k.tarih === ids.tarih).length === 4, "belgeden dördüncü paket eklendi");
+  ok(h.kalemler.filter((k) => k.baslikId === ids.baslikId && k.tarih === ids.tarih).length === 5, "belgeden beşinci paket eklendi");
 
   // Kesinleşince her biri ayrı paket olarak aynı başlığın altına; metinsiz kalem boş gelişme açmaz
   await git("#/haftalik/" + ids.hid);
@@ -89,7 +101,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const d = await oku();
   const kalemIdleri = d.haftalik.find((x) => x.id === ids.hid).kalemler.map((k) => k.id);
   const paketler = d.paketler.filter((x) => kalemIdleri.includes(x.haftalikKalemId) && x.planId === ids.plan);
-  ok(paketler.length === 4, "dört ayrı paket Next Day'e geçti: " + paketler.length + " " + d.haftalik.find((x) => x.id === ids.hid).durum + " " + JSON.stringify(d.haftalik.find((x) => x.id === ids.hid).kalemler.map((k) => [k.karar, k.muhabirler.length, k.aktarim])));
+  ok(paketler.length === 5, "beş ayrı paket Next Day'e geçti: " + paketler.length + " " + d.haftalik.find((x) => x.id === ids.hid).durum + " " + JSON.stringify(d.haftalik.find((x) => x.id === ids.hid).kalemler.map((k) => [k.karar, k.muhabirler.length, k.aktarim])));
   ok(new Set(paketler.map((x) => x.planBaslikId)).size === 1, "hepsi aynı başlığın altında");
   const gelismeler = d.gelismeler.filter((g) => kalemIdleri.includes(g.haftalikKalemId));
   ok(gelismeler.length === 1 && gelismeler[0].metin === "تطور الملف", "yalnız metinli kalem gelişme açtı");

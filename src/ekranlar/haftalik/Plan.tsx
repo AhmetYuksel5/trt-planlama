@@ -623,7 +623,10 @@ function DosyaGrubu({ ben, hafta, tarih, baslikId, liste }: { ben: Kisi; hafta: 
     <div className="dosya-grubu" {...hfYer(tarih, baslikId)}>
       <div className="alan-etiket dosya-basi">
         {baslikId ? <Icerik>{v.basliklar.find((b) => b.id === baslikId)?.ad}</Icerik> : t("dosyasiz")}
-        {baslikId && duzenler && <DosyaAraclari ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} ac={ac} />}
+        {baslikId && duzenler && (
+          // Alttaki düğme uzun dosyada gözden kaçıyordu (kullanıcı: başlığa birden çok paket); simge satırında da.
+          <DosyaAraclari ben={ben} hafta={hafta} tarih={tarih} baslikId={baslikId} ac={ac} pkg={() => setForm("pkg")} />
+        )}
       </div>
       {liste.map((k) => (
         <KalemKarti key={k.id} ben={ben} hafta={hafta} kalem={k} />

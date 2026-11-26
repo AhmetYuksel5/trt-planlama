@@ -1,4 +1,4 @@
-import { Combine, Lightbulb, Radio, Sparkles, UserPlus, Users } from "lucide-react";
+import { Combine, Lightbulb, Package, Radio, Sparkles, UserPlus, Users } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Icerik, LiveKutusu, Pencere, TbcKutusu, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { YzSonGelismeler, kaynakAdlari } from "../../bilesenler/YzTakip";
@@ -115,7 +115,7 @@ const dosyaAdaylari = (d: Durum, h: HaftalikPlan, tarih: string, baslikId: strin
 };
 
 /* Dosyanın araç düğmeleri (plan ekranında dosya başlığının yanında, belgede şeritte). */
-export function DosyaAraclari({ ben, hafta, tarih, baslikId, ac }: { ben: Kisi; hafta: HaftalikPlan; tarih: string; baslikId: string; ac: (a: Acik) => void }) {
+export function DosyaAraclari({ ben, hafta, tarih, baslikId, ac, pkg }: { ben: Kisi; hafta: HaftalikPlan; tarih: string; baslikId: string; ac: (a: Acik) => void; pkg?: () => void }) {
   const { t } = useDil();
   const v = useVeri();
   if (!haftalikDuzenler(ben, hafta)) return null;
@@ -124,6 +124,11 @@ export function DosyaAraclari({ ben, hafta, tarih, baslikId, ac }: { ben: Kisi; 
   const degerlendirir = yapabilir(ben, "oneriDegerlendir");
   return (
     <span className="dosya-araclari" data-dosya-araclari={baslikId}>
+      {pkg && (
+        <span data-dosya-pkg-ust>
+          <IkonDugme ikon={<Package size={15} />} etiket={t("dosyayaPkgEkle")} onClick={pkg} />
+        </span>
+      )}
       {degerlendirir && dosyanin.length > 0 && (
         <span data-dosya-gelen>
           <IkonDugme ikon={<Lightbulb size={15} />} etiket={`${t("buBasligaGelenOneriler")} · ${dosyanin.length}`} onClick={() => ac("gelen")} />
