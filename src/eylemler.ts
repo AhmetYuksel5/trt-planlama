@@ -4761,6 +4761,18 @@ const sehirKur = (d: Durum, y: YeniSehir): { d: Durum; id: Sehir } => {
   return { d: { ...d, sehirler: [...(d.sehirler ?? []), { id, ad, ulke: y.ulke }] }, id };
 };
 
+/**
+ * Kişi eklerken (davet, giriş kodu) listede olmayan şehir: kişi kaydı henüz yok, şehir önce
+ * kayda girsin, davet onun kimliğini taşısın. Aynı Arapça adlı şehir varsa o (sehirKur).
+ */
+export const sehirEkle = (ben: Kisi, y: YeniSehir): Sehir | null => {
+  if (!y.ar.trim() || !(ben.hesapYoneticisi || hesapYetkisi(ben, "davet") || hesapYetkisi(ben, "hesapsizKisi"))) return null;
+  const d = getir();
+  const k = sehirKur(d, y);
+  if (k.d !== d && !kaydet(k.d)) return null;
+  return k.id;
+};
+
 /*
  * Kişinin şehri tek başına (Hesaplar'daki satır, kişi düzenleme penceresi).
  * Profili düzenleyebilen ya da kişi düzenleme yetkisi olan değiştirir.

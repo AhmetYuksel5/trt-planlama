@@ -1,6 +1,6 @@
 import { useDil } from "../dil";
 import type { BirimId, GorevId } from "../veri";
-import { ayirtEdiciBirimAdi, gorevAdi, kisiBirimSecenekleri, unvanListesi } from "../yapi";
+import { ayirtEdiciBirimAdi, disMuhabirMi, gorevAdi, kisiBirimSecenekleri, otomatikMuhabirUnvaniMi, unvanListesi } from "../yapi";
 
 /*
  * Kişi formlarının (davet, hesapsız kişi, düzenle/tayin, kayıt bağlantısı)
@@ -23,7 +23,10 @@ export function BirimSecenekleri({ dahil }: { dahil?: BirimId }) {
 
 export function UnvanSecenekleri({ birim, dahil }: { birim: BirimId; dahil?: GorevId }) {
   const { t } = useDil();
-  const l = unvanListesi(birim, dahil);
+  // Dış muhabirin yer ünvanı ("<Şehir> muhabiri") seçilmiyor, şehrinden geliyor; eski yer ünvanları listede durmasın.
+  const dis = disMuhabirMi({ birim });
+  let l = dis ? unvanListesi(birim, dahil).filter((g) => g === dahil || g === "muhabir" || !otomatikMuhabirUnvaniMi(g)) : unvanListesi(birim, dahil);
+  if (dis && !l.includes("muhabir")) l = ["muhabir", ...l];
   if (!l.length)
     return (
       <option value="" disabled>

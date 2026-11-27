@@ -852,9 +852,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Dış muhabirin ünvanı şehrinden, kendiliğinden: "<Şehir> muhabiri"
     (`muhabir-s-<şehir>`, `yapi.ts → sehirMuhabirUnvaniId`). Adı `gorevAdi`
     şehirden türetir, yapıda kaydı gerekmez; şehir sonradan eklense ya da adı
-    değişse de doğru çıkar. Kişi düzenleme penceresinde dış muhabire görev
-    sorulmaz, şehir seçilir (altında çıkacak ünvan yazılı); öbür personelde
-    şehir sorulmaz. Şehir nerede değişirse (profil,
+    değişse de doğru çıkar. Kişi düzenleme penceresinde ve "Kişi ekle"de
+    (davet, giriş kodu, hesapsız; kullanıcı: eski yer ünvanları listesi ekleme
+    formunda çıkıyordu) dış muhabire görev sorulmaz, şehir seçilir ("+ Yeni
+    şehir…" de; altında çıkacak ünvan yazılı; davet şehri taşır, `Davet.sehir`,
+    kayıt onunla kurulur; yeni şehir önce `eylemler.ts → sehirEkle`); öbür
+    personelde şehir sorulmaz. Görev seçen öbür formlarda (kayıt bağlantısı,
+    postadan kişiler) dış muhabirin seçeneği yalnız genel "Muhabir"
+    (`BirimSecimi.tsx → UnvanSecenekleri`, `birimeUygunUnvan`), yer ünvanını
+    şehri verir. Test `testler/giris-kodu.mjs` (emülatör). Şehir nerede değişirse (profil,
     düzenleme) ünvan da değişir (`yapi.ts → yerUnvaniUygula`; sistemin verdiği
     ünvan, yani genel "Muhabir" ya da `muhabir-…`; elle verilene dokunmaz).
     Eski kayıtları açılışta sistemin işi eşitler (`eylemler.ts →

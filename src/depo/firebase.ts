@@ -46,7 +46,7 @@ import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayi
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
 import { KOD_SURESI_SAAT, girisAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
-import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol } from "../veri";
+import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol, type Sehir } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, MUHASEBE_ALANLARI, muhasebeOkur, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
 /**
@@ -827,6 +827,8 @@ export interface Davet {
   kullanan?: string;
   /** Hesaba bağlanan hesapsız kişinin kimliği; etkinleşince kaydı bu hesaba geçer (eylemler.ts → hesabaGecir). */
   kisiId?: string;
+  /** Dış muhabirin şehri: ünvanı ("<Şehir> muhabiri") ondan, kayıt da o şehirle kurulsun. */
+  sehir?: Sehir;
   /** E-postası değişen hesabın seçmeli yetkileri: yeni hesap aynı yetkilerle açılsın (kural davetle karşılaştırıyor). */
   yetkiler?: HesapYetkisi[];
   /** Kod davetinde (girisKodu.ts) kod, kullanıcı adı ve son geçerlilik (ms; kural kaydı kurarken karşılaştırıyor). */
@@ -860,6 +862,7 @@ export const ilkKayit = async (verilen?: KayitBilgisi | null): Promise<KisiHali 
     const k = {
       ...yeniKisi({ id: u.uid, ad: davet.ad, eposta, birim: davet.birim, gorev: davet.gorev, rol: davet.rol, hesapYoneticisi: davet.hesapYoneticisi }),
       ...(davet.kisiId ? { oncekiKimlik: davet.kisiId } : {}),
+      ...(davet.sehir ? { sehir: davet.sehir } : {}),
       ...(davet.yetkiler?.length ? { yetkiler: davet.yetkiler } : {}),
     };
     const b = writeBatch(db);

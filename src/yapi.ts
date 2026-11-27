@@ -562,6 +562,8 @@ export const unvanListesi = (birim?: BirimId, dahil?: GorevId, y: Yapi = yapi())
  * tayin edilince sorulmadan yönetici oluyordu.
  */
 export const birimeUygunUnvan = (birim: BirimId, gorev: GorevId, y: Yapi = yapi()): GorevId => {
+  // Dış muhabirde sistemin ünvanı: genel "Muhabir", yer ünvanını şehri veriyor (yerUnvaniUygula).
+  if (disMuhabirMi({ birim }, y)) return otomatikMuhabirUnvaniMi(gorev) || !unvanListesi(birim, undefined, y).includes(gorev) ? "muhabir" : gorev;
   const l = unvanListesi(birim, undefined, y);
   return l.includes(gorev) ? gorev : (l.find((g) => !unvanYoneticiMi(g, y)) ?? l[0] ?? "");
 };

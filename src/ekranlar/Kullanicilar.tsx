@@ -8,7 +8,7 @@ import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, GirisKodu, KayitBaglantisi } from "../depo/firebase";
 import { girisAdi, kodYaz, kullaniciAdiGecerli, kullaniciAdiOner, kullaniciAdresi } from "../girisKodu";
 import { sehirAdi } from "../etiketler";
-import { epostaListesiUygula, hesapsizKisiEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
+import { epostaListesiUygula, hesapsizKisiEkle, sehirEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
 import { bosAlan, epostaListesiniEslestir, listedenAdresler, type EpostaAlani, type EslesmeSatiri } from "../epostaEslestir";
 import { izlemeBaslat } from "../izleme";
@@ -53,6 +53,7 @@ const BOS_FORM = {
   hesapYoneticisi: false,
   telefon: "",
   kullanici: "",
+  sehir: "istanbul" as Sehir,
 };
 
 const YETKI_ADI: Record<HesapYetkisi, Anahtar> = {
@@ -386,9 +387,14 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
   const [tur, setTur] = useState<"davet" | "kod" | "hesapsiz">(davetYetkisi ? "davet" : "hesapsiz");
   const [form, setForm] = useState(BOS_FORM);
   const [bekle, setBekle] = useState(false);
+  const [yeniSehir, setYeniSehir] = useState<YeniSehir | null>(null);
   const alan = <K extends keyof typeof BOS_FORM>(k: K, deger: (typeof BOS_FORM)[K]) => setForm((f) => ({ ...f, [k]: deger }));
+  // Dış muhabirin ünvanı seçilmiyor, şehrinden ("<Şehir> muhabiri"; Düzenle penceresindeki gibi).
+  const disMuhabir = disMuhabirMi({ birim: form.birim });
   // Kayıtlı yapıda başlangıç görevi birimde yoksa formda görünen (birimin ilk ünvanı) gönderilsin.
-  const gorev = birimeUygunUnvan(form.birim, form.gorev);
+  const gorev = disMuhabir ? sehirMuhabirUnvaniId(form.sehir) : birimeUygunUnvan(form.birim, form.gorev);
+  // Yeni şehir önce kayda girer, kişi (ya da davet) onun kimliğiyle kurulur.
+  const sehirKur = (): Sehir | null => (!disMuhabir ? form.sehir : yeniSehir ? sehirEkle(ben, yeniSehir) : form.sehir);
   const kodOnerisi = kullaniciAdiOner(form.adTr || form.adEn, alinmis);
   const hesapsizTur = tur === "hesapsiz";
   const kodTur = tur === "kod";
@@ -398,8 +404,12 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
     if (!confirm(t("eminMisin"))) return;
     const eposta = form.eposta.trim().toLowerCase();
     const adi = adKur(form.adTr, form.adAr, form.adEn, eposta);
+    const sehir = sehirKur();
+    if (!sehir) return;
+    const g = disMuhabir ? sehirMuhabirUnvaniId(sehir) : gorev;
+    const sehirli = disMuhabir ? { sehir } : {};
     if (hesapsizTur) {
-      if (hesapsizKisiEkle(ben, { ad: adi, birim: form.birim, gorev, eposta, telefon: form.telefon })) {
+      if (hesapsizKisiEkle(ben, { ad: adi, birim: form.birim, gorev: g, eposta, telefon: form.telefon, ...sehirli })) {
         bildir(t("hesapsizEklendi", { ad: adi.tr }));
         kapat();
       }
@@ -410,7 +420,7 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
       if (!kullaniciAdiGecerli(kullanici) || alinmis.has(kullanici)) return bildir(t(alinmis.has(kullanici) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
       setBekle(true);
       firebaseYukle()
-        .then((f) => f.kodlaDavetEt({ kullanici, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }))
+        .then((f) => f.kodlaDavetEt({ kullanici, ad: adi, birim: form.birim, gorev: g, rol: unvandanRol(g), ...sehirli, hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }))
         .then((k) => kodVerildi({ ...k, ad: adi.ar }))
         .catch((x) => {
           bildir(gonderimHatasi(x));
@@ -420,7 +430,7 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
     }
     setBekle(true);
     firebaseYukle()
-      .then((f) => f.davetEt({ eposta, ad: adi, birim: form.birim, gorev, rol: unvandanRol(gorev), hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil))
+      .then((f) => f.davetEt({ eposta, ad: adi, birim: form.birim, gorev: g, rol: unvandanRol(g), ...sehirli, hesapYoneticisi: ben.hesapYoneticisi ? form.hesapYoneticisi : false, davetEden: ben.id }, dil))
       .then(() => {
         bildir(t("davetGonderildi", { eposta }));
         kapat();
@@ -485,12 +495,33 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
             <BirimSecenekleri />
           </select>
         </label>
-        <label>
-          {t("gorev")}
-          <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
-            <UnvanSecenekleri birim={form.birim} />
-          </select>
-        </label>
+        {disMuhabir ? (
+          <label>
+            {t("sehir")}
+            <select
+              value={yeniSehir ? YENI_SEHIR : form.sehir}
+              data-davet-sehir
+              onChange={(e) => {
+                if (e.target.value === YENI_SEHIR) setYeniSehir(bosYeniSehir(form.sehir));
+                else {
+                  setYeniSehir(null);
+                  alan("sehir", e.target.value);
+                }
+              }}
+            >
+              <SehirSecenekleri />
+            </select>
+            {!yeniSehir && <small data-davet-unvan>{gorevAdi(gorev)}</small>}
+          </label>
+        ) : (
+          <label>
+            {t("gorev")}
+            <select value={gorev} onChange={(e) => alan("gorev", e.target.value)} data-davet-gorev>
+              <UnvanSecenekleri birim={form.birim} />
+            </select>
+          </label>
+        )}
+        {disMuhabir && yeniSehir && <YeniSehirAlanlari yeni={yeniSehir} degistir={setYeniSehir} />}
         {/* Yöneticilik yalnız tam yöneticiden: davet yetkisi olan yönetici davet edemiyor (kurallar da). */}
         {!hesapsizTur && ben.hesapYoneticisi && (
           <label className="secim">
@@ -500,15 +531,15 @@ function KisiEklePenceresi({ ben, alinmis, kodVerildi, kapat }: { ben: Kisi; ali
         )}
         <div className="form-alt">
           {hesapsizTur ? (
-            <button className="dugme" disabled={!gorev} data-hesapsiz-ekle>
+            <button className="dugme" disabled={!gorev || (!!yeniSehir && !yeniSehir.ar.trim())} data-hesapsiz-ekle>
               <UserPlus size={16} /> {t("hesapsizKisiEkle")}
             </button>
           ) : kodTur ? (
-            <button className="dugme" disabled={bekle || !gorev} data-kod-olustur>
+            <button className="dugme" disabled={bekle || !gorev || (!!yeniSehir && !yeniSehir.ar.trim())} data-kod-olustur>
               <Ticket size={16} /> {t("kodOlustur")}
             </button>
           ) : (
-            <button className="dugme" disabled={bekle || !gorev} data-davet-gonder>
+            <button className="dugme" disabled={bekle || !gorev || (!!yeniSehir && !yeniSehir.ar.trim())} data-davet-gonder>
               <Mail size={16} /> {t("davetGonder")}
             </button>
           )}

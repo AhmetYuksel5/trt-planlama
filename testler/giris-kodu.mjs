@@ -132,6 +132,47 @@ await yon.waitForFunction(
   async () => dogrula("kayıt yeni hesaba taşındı", false, JSON.stringify(await yon.$$eval("[data-hesap] [data-kod-hesap]", (l) => l.map((e) => e.textContent)))),
 );
 
+// 6. Dış muhabir eklerken görev değil şehir sorulur; ünvan şehirden ("<Şehir> muhabiri"), eski yer ünvanları listede yok.
+await yon.goto(ADRES + "#/organizasyon/kisiler");
+await yon.click("[data-kisi-ekle-ac]");
+await yon.click("[data-tur-kod]");
+await yon.selectOption("[data-davet-birim]", "muhabir");
+dogrula("dış muhabirde görev seçimi yok", (await yon.locator("[data-davet-gorev]").count()) === 0);
+await yon.selectOption("[data-davet-sehir]", "beyrut");
+dogrula("ünvan şehirden", /Beyrut|بيروت|Beirut/.test((await yon.textContent("[data-davet-unvan]")) ?? ""));
+await yon.fill("[data-davet-ad-ar]", "سامي نور");
+await yon.fill("[data-davet-ad]", "Sami Nur");
+await yon.click("[data-kod-olustur]");
+await yon.waitForSelector("[data-kod]", { timeout: 30000 });
+const kod3 = await yon.getAttribute("[data-kod]", "data-kod");
+await yon.keyboard.press("Escape");
+const sami = await yeniSayfa();
+await sami.goto(ADRES + `#/kod/${kod3}`);
+await sami.click("[data-kod-devam]");
+await sami.waitForSelector("[data-kod-sifre-formu]", { timeout: 30000 });
+await sami.fill("[data-kod-sifre]", "Sami-sifresi-1");
+await sami.fill("[data-kod-sifre2]", "Sami-sifresi-1");
+await sami.click("[data-kod-sifre-kaydet]");
+await sami.waitForSelector("header.ust", { timeout: 30000 });
+dogrula("kodla gelen dış muhabir girdi", true);
+// Hesapsız dış muhabir, listede olmayan şehirle.
+await yon.click("[data-kisi-ekle-ac]");
+await yon.click("[data-tur-hesapsiz]");
+await yon.selectOption("[data-davet-birim]", "muhabir");
+await yon.selectOption("[data-davet-sehir]", "__yeni");
+await yon.locator("[data-yeni-sehir-ar]").fill("مدينة تجريبية");
+await yon.fill("[data-davet-ad-ar]", "هدى سالم");
+await yon.fill("[data-davet-ad]", "Huda Salim");
+await yon.click("[data-hesapsiz-ekle]");
+await yon.waitForTimeout(1500);
+for (const [ara, beklenen, ad] of [["Sami", /Beyrut muhabiri/, "kodla gelen"], ["Huda", /مدينة تجريبية|muhabiri/, "hesapsız"]]) {
+  await yon.goto(ADRES + "#/organizasyon/kisiler");
+  await yon.fill("[data-org-ara]", ara);
+  await yon.waitForTimeout(800);
+  const metin = (await yon.locator("[data-org-sonuclar]").textContent()) ?? "";
+  dogrula(`${ad} dış muhabirin ünvanı şehrinden`, beklenen.test(metin), metin);
+}
+
 await tarayici.close();
 console.log(`\n${gec} geçti, ${kal} kaldı`);
 process.exit(kal ? 1 : 0);
