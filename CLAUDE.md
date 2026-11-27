@@ -921,7 +921,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kod hesabında kullanıcı adı satırda. Kaydı henüz kurulmamış davet kendi biriminde
     ve ünvanında "aktivasyon bekleniyor" satırı (`DavetSatiri`, `data-davet`).
     Başlıkta süzgeç "Aktivasyon bekleyen · n" ve "Hesabı yok · n" (`data-org-hesap-suz`,
-    `useAdimDurumu`; düz liste). Ayrı davetler tablosu kalktı. Test
+    `useAdimDurumu`; düz liste). Kullanım izi (kullanıcı: hangi kullanıcıların sistemi, hangilerinin
+    uygulamayı indirip kullandığını tam yönetici anlasın; `kullanim.ts`): kişi açılışta kendi
+    ayar belgesine yazar (`Durum.kullanim`, kişiye bağlı harita, kuralda `kendiAyari`; kısıtlı
+    muhabir de; `App.tsx`, `eylemler.ts → kullanimYaz`): son görülme, ilk görülme, açtığı yol
+    (tarayıcı, ana ekran uygulaması `display-mode: standalone`, Android uygulaması: yönlendiren
+    `android-app://net.plannersflow.app`, ilk yüklemede sekmeye yazılır `kanalHatirla`), cihaz,
+    şimdiye dek kullandığı yollar. Aynı gün aynı yol ve cihazla yeniden yazılmaz; bölmede,
+    izlemede ve eşitlenmeden yazılmaz; ileriye dönük (geçmiş yok). Yalnız tam yönetici görür:
+    satırda "Son görülme · yol · cihaz" ya da "Hiç girmedi" (`KullanimSatiri`, `data-kullanim`),
+    süzgeç "Hiç girmemiş · n" ve "Uygulamayla giren · n" (`data-org-hesap-suz` girmedi/uygulama).
+    Test `testler/kullanim.cjs`, kural `testler/kurallar.mjs`. Ayrı davetler tablosu kalktı. Test
     `testler/org-hesap.cjs`; gerçek kip emülatörle `testler/giris-kodu.mjs`.
   - Kişiler: birim ağacı → ünvan (sayılar alt birimleri de toplar), "Tayin et" (`kisiPozisyonu`; birim ya da ünvan
     değişince `kisiTayinEdildi` hareketi, kişiye bildirim).

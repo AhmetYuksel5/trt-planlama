@@ -75,8 +75,9 @@ import {
 import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "./ekranlar/program/ProgramMasasi";
 import { MASA_YOLU, PROGRAM_BOLUMLERI, type MasaBirimi, type ProgramBolumu } from "./programMasasi";
 import { rotaAktarabilir, rotaDoneminiAktar } from "./rotaAktar";
-import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi } from "./eylemler";
+import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi, kullanimYaz } from "./eylemler";
 import { izlemede } from "./izleme";
+import { cihazAlgila, kanalAlgila } from "./kullanim";
 import { otoCagriEsitle, otoHataYeni } from "./otoCagri";
 import { otoHataMetni } from "./ekranlar/posta/OtoCagri";
 import {
@@ -214,6 +215,17 @@ export default function App() {
    * Planlama ya da tam yöneticinin tarayıcısı okur, kayda yazar; bugünü kapsayan dönem
    * kayıttaysa hiçbir şey yapmaz. Demoda yalnız testin sahte okumasıyla.
    */
+  /*
+   * Kullanım izi (kullanim.ts): kişi kendi belgesine, kısıtlı muhabir de. Bölmede
+   * değil (üst pencere yazıyor), izlemede değil (yönetici başkasının adına yazmasın).
+   */
+  const benId = ben?.id;
+  useEffect(() => {
+    if (GOMULU || !sistemHazir || !ben || izlemede()) return;
+    kullanimYaz(ben, kanalAlgila(), cihazAlgila());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sistemHazir, benId]);
+
   const rotaKisi = sistemYazar && rotaAktarabilir(ben) ? ben : null;
   const rotaKisiId = rotaKisi?.id;
   useEffect(() => {

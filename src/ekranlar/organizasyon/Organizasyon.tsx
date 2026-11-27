@@ -33,6 +33,7 @@ import {
 } from "../../bilesenler/Parcalar";
 import {
   DILLER,
+  gecenSure,
   metin,
   tarihYaz,
   saatYaz,
@@ -42,6 +43,7 @@ import {
   type Metin,
 } from "../../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../../etiketler";
+import { uygulamaKullaniyor } from "../../kullanim";
 import {
   yapiSurumunuTaslagaAl,
   yapiTaslagi,
@@ -797,17 +799,22 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
   const tayinEder = hesapYetkisi(ben, "kisiDuzenle");
   const [yoneticiler, setYoneticiler] = useAdimDurumu("orgKisiler:yoneticiler", false);
   // Hesap süzgeci (gerçek kip, hesap işi yapan): hesabı olmayanlar ya da aktivasyonu bekleyenler düz listede.
-  const [hesapSuz, setHesapSuz] = useAdimDurumu<"" | "yok" | "bekliyor">("orgKisiler:hesap", "");
+  const [hesapSuz, setHesapSuz] = useAdimDurumu<"" | "yok" | "bekliyor" | "girmedi" | "uygulama">("orgKisiler:hesap", "");
   const ara = aranan.trim();
   const hesapIsi = hesapIsiVar(ben);
   const durum = (k: Kisi): HesapDurumu => hesapDurumu(k, h?.davetiOf(k));
+  // Kullanım izi (kullanim.ts) yalnız tam yöneticide: kimin girdiği, kimin uygulamayı kullandığı.
+  const kullanimGorur = !!ben.hesapYoneticisi;
+  const girmedi = (k: Kisi) => !k.hesapsiz && !k.pasif && !v.kullanim?.[k.id];
+  const uygulamada = (k: Kisi) => uygulamaKullaniyor(v.kullanim?.[k.id]);
+  const kullanimSuz = (k: Kisi) => (hesapSuz === "girmedi" ? girmedi(k) : hesapSuz === "uygulama" ? uygulamada(k) : durum(k) === hesapSuz);
   const yoneticiMi = (k: Kisi) => k.rol === "yonetici" || unvanYoneticiMi(k.gorev) || !!k.hesapYoneticisi;
   const kisiler = (ara ? v.kisiler.filter((k) => kisiUyar(k, ara, v)) : v.kisiler)
     .filter((k) => !yoneticiler || yoneticiMi(k))
-    .filter((k) => !hesapSuz || durum(k) === hesapSuz);
+    .filter((k) => !hesapSuz || kullanimSuz(k));
   // Kaydı kurulmamış davetler kendi biriminde ("aktivasyon bekleniyor"); aramada adıyla ya da adresiyle.
   const davetler = (h?.bekleyenDavetler ?? [])
-    .filter(() => !yoneticiler && hesapSuz !== "yok")
+    .filter(() => !yoneticiler && (!hesapSuz || hesapSuz === "bekliyor"))
     .filter((d) => !ara || sozcuklerUyar(`${ad({ ad: d.ad })} ${typeof d.ad === "string" ? "" : `${d.ad.tr} ${d.ad.en ?? ""}`} ${d.eposta}`, ara));
   const yoneticiSayisi = v.kisiler.filter(yoneticiMi).length;
   const yokSayisi = v.kisiler.filter((k) => durum(k) === "yok").length;
@@ -826,7 +833,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
     ...agac.filter((s) => altta(s.id)),
     ...[...new Set([...kisiler.map((k) => k.birim), ...davetler.map((d) => d.birim)])].filter((b) => !agac.some((s) => s.id === b)).map((id) => ({ id, derinlik: 0 })),
   ];
-  const suzgecDugmesi = (deger: "yok" | "bekliyor", sayi: number, etiket: Anahtar) =>
+  const suzgecDugmesi = (deger: "yok" | "bekliyor" | "girmedi" | "uygulama", sayi: number, etiket: Anahtar) =>
     (sayi > 0 || hesapSuz === deger) && (
       <button
         type="button"
@@ -841,7 +848,7 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
         {t(etiket)} · {sayi}
       </button>
     );
-  const satir = (k: Kisi, yer?: boolean) => <KisiSatiri key={k.id} ben={ben} kisi={k} durum={durum(k)} hesapIsi={hesapIsi} tayin={tayinEder ? () => setTayin(k) : undefined} yer={yer} />;
+  const satir = (k: Kisi, yer?: boolean) => <KisiSatiri key={k.id} ben={ben} kisi={k} kullanim={kullanimGorur} durum={durum(k)} hesapIsi={hesapIsi} tayin={tayinEder ? () => setTayin(k) : undefined} yer={yer} />;
   return (
     <Kart
       baslik={t("orgKisiler")}
@@ -863,6 +870,8 @@ function KisilerSekmesi({ ben }: { ben: Kisi }) {
           </button>
           {hesapIsi && suzgecDugmesi("bekliyor", bekleyenSayisi, "orgAktivasyonBekleyen")}
           {hesapIsi && suzgecDugmesi("yok", yokSayisi, "orgHesabiYok")}
+          {kullanimGorur && suzgecDugmesi("girmedi", v.kisiler.filter(girmedi).length, "kulSuzGirmedi")}
+          {kullanimGorur && suzgecDugmesi("uygulama", v.kisiler.filter(uygulamada).length, "kulSuzUygulama")}
           <PostaKisileriDugmesi ben={ben} />
           {yapiDuzenleyebilir(ben) && ulkeBekleyen.length > 0 && (
             <button
@@ -1009,7 +1018,7 @@ function YoneticiListesi({ ben, kisiler, tayin, satir }: { ben: Kisi; kisiler: K
  * Hesap durumu satırın tonunda (kullanıcı: aktivasyonu olmayanları farklı tonda görüp oradan etkinleştirmek
  * istedi): hesabı yok soluk, aktivasyon bekleyen sarı, kapalı gri; hesap işleri satırın ⋯'sinde.
  */
-function KisiSatiri({ ben, kisi: k, durum, hesapIsi, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; durum: HesapDurumu; hesapIsi: boolean; tayin?: () => void; yer?: boolean; sec?: SecimDurumu }) {
+function KisiSatiri({ ben, kisi: k, kullanim, durum, hesapIsi, tayin, yer, sec }: { ben: Kisi; kisi: Kisi; kullanim?: boolean; durum: HesapDurumu; hesapIsi: boolean; tayin?: () => void; yer?: boolean; sec?: SecimDurumu }) {
   const { t, ad } = useDil();
   return (
     <li className={durum === "etkin" ? undefined : `hesap-${durum}`} data-org-kisi={k.id} data-hesap={k.id}>
@@ -1037,6 +1046,7 @@ function KisiSatiri({ ben, kisi: k, durum, hesapIsi, tayin, yer, sec }: { ben: K
           {/* Giriş kodu hesabının kullanıcı adı: yönetici kişiye söylerken buradan okuyor. */}
           {hesapIsi && girisAdi(k.yeniEposta ?? k.eposta) && <KullaniciAdi eposta={k.yeniEposta ?? k.eposta} />}
         </small>
+        {kullanim && !k.hesapsiz && <KullanimSatiri kisi={k} />}
       </div>
       <IzleDugmesi ben={ben} kisi={k} />
       {tayin && (
@@ -1046,6 +1056,24 @@ function KisiSatiri({ ben, kisi: k, durum, hesapIsi, tayin, yer, sec }: { ben: K
       )}
       <KisiHesapMenusu ben={ben} kisi={k} />
     </li>
+  );
+}
+
+/* Son görülme, açtığı yol ve cihaz (kullanim.ts); uygulamayı başka gün kullandıysa o da. */
+function KullanimSatiri({ kisi: k }: { kisi: Kisi }) {
+  const { t } = useDil();
+  const iz = useVeri().kullanim?.[k.id];
+  if (!iz)
+    return (
+      <small className="sonuk-yazi" data-kullanim="yok">
+        {t("kulHicGirmedi")}
+      </small>
+    );
+  const kanallar = [iz.kanal, ...iz.kanallar.filter((x) => x !== iz.kanal)];
+  return (
+    <small className="sonuk-yazi" data-kullanim={iz.kanal} data-kullanim-kanallar={iz.kanallar.join(" ")} title={new Date(iz.son).toLocaleString()}>
+      {t("kulSon", { zaman: gecenSure(iz.son) })} · {kanallar.map((x) => t(`kulKanal_${x}`)).join(" / ")} · {t(`kulCihaz_${iz.cihaz}`)}
+    </small>
   );
 }
 

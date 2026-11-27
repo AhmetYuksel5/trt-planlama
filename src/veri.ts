@@ -2194,6 +2194,8 @@ export interface Durum {
   postaOkunan?: Record<string, import("./postaOkuma").PostaOkuma>;
   /** Kişi başına yazışmalardaki son bakış (mesajlasma.ts → MesajOkuma). */
   mesajOkunan?: Record<string, import("./mesajlasma").MesajOkuma>;
+  /** Kişi başına kullanım izi (kullanim.ts): son görülme, açtığı yol, cihaz. Yalnız tam yönetici görür. */
+  kullanim?: Record<string, import("./kullanim").KullanimIzi>;
   /** Muhasebe: tanımlar, anlaşmalar, aylık kapanışlar. Gerçek kipte yalnız muhasebe ve yönetim okur (firestore.rules). */
   muhasebeTanimlari?: MuhasebeTanimi[];
   muhasebeAnlasmalari?: MuhasebeAnlasmasi[];

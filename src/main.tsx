@@ -8,9 +8,12 @@ import "./tema";
 import "./egitimVurgu";
 import { servisBetiginiKaydet } from "./bildirim";
 import { surumIzle } from "./surum";
+import { kanalHatirla } from "./kullanim";
 
 servisBetiginiKaydet();
 surumIzle();
+// Android uygulamasının izi yalnız ilk yüklemede (document.referrer); sekmeye yazılsın.
+kanalHatirla();
 
 const kok = document.getElementById("kok");
 if (!kok) throw new Error("Kök eleman bulunamadı.");

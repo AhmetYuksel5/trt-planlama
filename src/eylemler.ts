@@ -31,6 +31,7 @@ import { gecisOnizlemesi, gecisUygula } from "./gecis";
 import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriBekleyenGorevPaketi, oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
+import { kullanimIziKur, type KullanimCihazi, type KullanimKanali } from "./kullanim";
 import { bugun, gecerliGun, girdidenIso, gunEkle, gunFarki, haftaBasi, simdi, yerelGirdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
 import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
@@ -5655,6 +5656,7 @@ export const kisiSil = (ben: Kisi, kisiId: string) => {
         kisayollar: anahtarlariAt(d.kisayollar, kendi),
         postaOkunan: anahtarlariAt(d.postaOkunan, kendi),
         mesajOkunan: anahtarlariAt(d.mesajOkunan, kendi),
+        kullanim: anahtarlariAt(d.kullanim, kendi),
       },
       { kisiId: ben.id, tip: "kisiSilindi", veri: { ad } },
     ),
@@ -6785,6 +6787,17 @@ export const oneriMesajiGonder = (ben: Kisi, oneriId: string, metin: string) => 
  * ve eşitlenmeden yazılmaz (postaOkumaYaz gibi). İlk kayıtta taban dün: eski
  * mesajlar birden okunmamış görünmesin.
  */
+/**
+ * Kişinin kullanım izi (kullanim.ts): açılışta kendiliğinden, kendi belgesine.
+ * İzlemede ve eşitlenmeden sessizce geçilir; aynı gün aynı yolla yeniden yazılmaz.
+ */
+export const kullanimYaz = (ben: Kisi, kanal: KullanimKanali, cihaz: KullanimCihazi) => {
+  if (izlemede() || (GERCEK && !sunucuyaEsitMi())) return;
+  const d = getir();
+  const iz = kullanimIziKur(d.kullanim?.[ben.id], kanal, cihaz, simdi());
+  if (iz) kaydet({ ...d, kullanim: { ...d.kullanim, [ben.id]: iz } });
+};
+
 export const mesajOkundu = (ben: Kisi, anahtar: string, zaman: string) => {
   if (izlemede() || (GERCEK && !sunucuyaEsitMi())) return;
   const d = getir();

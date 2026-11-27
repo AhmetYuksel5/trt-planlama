@@ -87,6 +87,9 @@ await t("muhabir başkası adına hareket", false, hr("h2", "adm", "adm"));
 await t("muhabir düz k ile j çelişkili", false, hr("h3", "adm", "mu"));
 await t("muhabir çift kisiId", false, hr("h4", null, "mu", '{"id":"h4","kisiId":"mu","kisiId":"adm"}'));
 await t("muhabir eski hareketi taşır (kisiId aynı)", true, hr("h0", "adm", "adm", JSON.stringify({ id: "h0", kisiId: "adm", tip: "x", veri: { kime: "mu" } })));
+// Kullanım izi (kullanim.ts): kısıtlı muhabir yalnız kendi izini yazar.
+await t("muhabir kendi kullanım izi", true, setDoc(doc(db("mu"), "kullanim", "mu"), { j: JSON.stringify({ son: "z", ilk: "z", kanal: "apk", cihaz: "telefon", kanallar: ["apk"] }) }));
+await t("muhabir başkasının kullanım izi", false, setDoc(doc(db("mu"), "kullanim", "adm"), { j: "{}" }));
 // 3. Davet ve önceki kimlik
 const dv = (adres, kisiId) => setDoc(doc(db("dv"), "davetler", adres), { eposta: adres, durum: "bekliyor", birim: "muhabir", hesapYoneticisi: false, yetkiler: [], kisiId });
 await t("davet etkin muhabiri gösterir", false, dv("a@x.test", "mu2"));
