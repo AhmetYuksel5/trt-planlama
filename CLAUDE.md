@@ -2174,6 +2174,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   TakdirFormu`, pencerede; konu, metin, CC, BCC, varsayılana dön; silinmez):
   geri bildirim şablonlarının koleksiyonunda sabit kimlikle (`TAKDIR_SABLONU`),
   öbür şablonların arasında ikinci kez görünmez, onlar yazılırken düşmez. Değeri boş alanın satırı düşer (notsuz "ملاحظة:" yok).
+  Gönderim ekranında da düzenlenir (kullanıcı: planlardan sonra aynı ekrandan,
+  varsayılan şablonun üstüne): listenin başında "Şablonu düzenle"
+  (`TakdirListesi`, `data-takdir-sablon-ac`; Next Day sayfası ve Weekly'nin
+  penceresi, `geriBildirimSablonuDuzenler`) aynı formu (`TakdirFormu`) yerinde
+  açar; kaydedilen önizlemeye ve gönderime hemen geçer.
   Test `testler/takdir.cjs`.
   Weekly'de de (kullanıcı: kesinleşen haftanın ⋯ menüsünde "Kabul edilen
   paketler", dilediğine posta; gönderilmeyen Next Day hazırlanırken karşıma

@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronDown, ChevronUp, Loader2, MailCheck, Send } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronUp, Loader2, MailCheck, Pencil, Send } from "lucide-react";
 import { useState } from "react";
 import { Bos, Icerik, Kart, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { ciktiTarihi, saatYaz, tarihYaz, useDil } from "../../dil";
@@ -7,7 +7,8 @@ import { GERCEK } from "../../kip";
 import { postaGonder } from "../../posta-kapi";
 import { takdirAdresi, takdirEpostasi, takdirPaketleri, type TakdirEpostasi } from "../../takdir";
 import { getir, kisiBul, paketBul, useVeri, type Durum, type Kisi, type NextDayPlan } from "../../veri";
-import { yapabilir } from "../../yetki";
+import { geriBildirimSablonuDuzenler, yapabilir } from "../../yetki";
+import { TakdirFormu } from "../GeriBildirimSablonlari";
 import { SayfaBasi } from "../ana/Planlama";
 
 /*
@@ -65,6 +66,9 @@ export function TakdirListesi({ ben, satirlar, yetkili }: { ben: Kisi; satirlar:
   const [secili, setSecili] = useState<Set<string>>(() => new Set(satirlar.filter((p) => !p.gitti && adresi(p.muhabirId)).map((p) => p.id)));
   const [acik, setAcik] = useState<string | null>(null);
   const [mesgul, setMesgul] = useState(false);
+  // Şablon gönderdiği ekranda düzenlenir (kullanıcı: Ayarlar'a gitmeden, varsayılanın üstüne);
+  // önizleme ve gönderim kayıttan okuduğu için kaydedilen hemen geçerli.
+  const [sablon, setSablon] = useState(false);
   const secilebilir = satirlar.filter((p) => adresi(p.muhabirId));
   const gidecek = satirlar.filter((p) => secili.has(p.id) && adresi(p.muhabirId));
 
@@ -102,6 +106,14 @@ export function TakdirListesi({ ben, satirlar, yetkili }: { ben: Kisi; satirlar:
   if (!satirlar.length) return <Bos kucuk metin={t("tkPaketYok")} />;
   return (
     <>
+      {geriBildirimSablonuDuzenler(ben) && (
+        <div className="takdir-sablon" data-takdir-sablon-alani>
+          <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={() => setSablon(!sablon)} aria-expanded={sablon} data-takdir-sablon-ac>
+            <Pencil size={14} /> {t("postaSablonDuzenle")}
+          </button>
+          {sablon && <TakdirFormu ben={ben} tur="takdir" />}
+        </div>
+      )}
       <ul className="liste takdir-listesi" data-takdir-listesi>
         {satirlar.map((p) => {
           const adres = adresi(p.muhabirId);

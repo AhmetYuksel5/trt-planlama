@@ -62,6 +62,16 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await git(`#/nextday/${plan.id}/takdir`);
   await p.locator('[data-takdir-paket="tk1"] [data-takdir-onizle]').click();
   ok((await p.locator('[data-takdir-paket="tk1"] .takdir-konu').innerText()).trim() === "تكليف: عنوان التقرير الأول", "yeni şablon önizlemede");
+  // Aynı ekranda şablon düzenleme (kullanıcı: Ayarlar'a gitmeden): kaydedilen önizlemeye hemen geçer.
+  await p.locator("[data-takdir-sablon-ac]").click();
+  await p.locator("[data-takdir-sablon-alani] [data-takdir-konu]").fill("تكليف جديد: {strap}");
+  await p.locator("[data-takdir-sablon-alani] [data-takdir-kaydet]").click();
+  await p.waitForTimeout(300);
+  ok((await p.locator('[data-takdir-paket="tk1"] .takdir-konu').innerText()).trim() === "تكليف جديد: عنوان التقرير الأول", "sayfada düzenlenen şablon önizlemede");
+  await p.locator("[data-takdir-sablon-alani] [data-takdir-varsayilan]").click();
+  await p.waitForTimeout(300);
+  d = await veri();
+  ok(d.geriBildirimSablonlari.some((s) => s.id === "takdir-bildirimi" && s.govde.includes("موعد التسليم")), "varsayılana dön sayfada çalışıyor");
   await git(`#/nextday/${plan.id}`);
   ok((await p.locator("[data-takdir-ac]").count()) === 1, "onaylı planda Takdir bildirimi düğmesi");
   for (const dil of ["tr", "ar"]) {
