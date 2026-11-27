@@ -1,15 +1,16 @@
-import { Clock, ListChecks, Radio, Send } from "lucide-react";
-import { useState } from "react";
+import { Archive, Clock, ListTodo, Radio, Send } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { MesajRozeti } from "../../bilesenler/MesajRozeti";
+import { BICIM_ADI, paketYeri } from "../../etiketler";
 import type { CizgiOlayi } from "../../anaPano";
 import { GunCizgisi } from "../../bilesenler/GunCizgisi";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { MuhabirAtaDugmesi, NewsdeskRedDugmesi, StogaDondurDugmesi } from "../../bilesenler/NewsdeskIslemleri";
-import { AsamaCubugu, Bos, Icerik, Kart, Pencere, Rozet, bildir } from "../../bilesenler/Parcalar";
-import { PaketTablosu } from "../../bilesenler/Tablolar";
+import { AsamaCubugu, Bos, Icerik, Kart, PaketDurumRozeti, Pencere, Rozet, bildir } from "../../bilesenler/Parcalar";
 import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { tarihYaz, useDil, type Anahtar } from "../../dil";
 import { paketTeslimSaati } from "../../eylemler";
-import { YAYIN_GRUPLARI, newsdeskSirasi, paketKimde, yayinPaketleri, type YayinGrubu } from "../../newsdesk";
+import { NEWSDESK_BOLUMLERI, YAYIN_GRUPLARI, bugunkuCanlilar, newsdeskArsivi, newsdeskKararlari, newsdeskSirasi, paketKimde, yayinPaketleri, type NewsdeskBolumu, type YayinGrubu } from "../../newsdesk";
 import { bugun, gunEkle } from "../../tarih";
 import { kisiBul, paketBul, planBul, useVeri, type CanliYayin, type Kisi, type Paket } from "../../veri";
 import { birimAdi } from "../../yapi";
@@ -110,16 +111,135 @@ function PaketPenceresi({ ben, paket, kapat }: { ben: Kisi; paket: Paket; kapat:
   );
 }
 
-/* Sırası Newsdesk'te olan işler (video, yükleme, editoryal denetimdeki parça…) tek kuyrukta. */
-export function NewsdeskSiram({ ben }: { ben: Kisi }) {
+/*
+ * Newsdesk'in sayfası Programlar'ın kalıbıyla (kullanıcı: masaların tasarım
+ * dili; ana sayfa Planlama'nınki gibi sabit, altında kişinin özelleştirdiği
+ * alan). Kutucuklar bağlantı ("#/newsdesk/<bölüm>"; menü ve alt çubuk
+ * adresten vurgulanıyor). Ana sayfada (ozet) üstte bugünün kararları ve zaman
+ * çizgisi; seçili bölümün içeriği kutucukların altında.
+ */
+const BOLUM_ADI: Record<NewsdeskBolumu, Anahtar> = { sira: "siradakiIslerim", yayin: "nkYayin", canli: "nkCanlilar", arsiv: "pmArsiv" };
+const BOLUM_IKONU: Record<NewsdeskBolumu, ReactNode> = {
+  sira: <ListTodo size={22} />,
+  yayin: <Send size={22} />,
+  canli: <Radio size={22} />,
+  arsiv: <Archive size={22} />,
+};
+
+export function NewsdeskSayfasi({ ben, ilk = "sira", ozet }: { ben: Kisi; ilk?: NewsdeskBolumu; ozet?: boolean }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const b = bugun();
+  const bolum = (NEWSDESK_BOLUMLERI as readonly string[]).includes(ilk) ? ilk : "sira";
+  const k = newsdeskKararlari(v, ben, b);
+  const bugunPlan = v.planlar.find((p) => p.tarih === b);
+  const bugunPaket = bugunPlan ? YAYIN_GRUPLARI.reduce((s, g) => s + yayinPaketleri(v, bugunPlan)[g].length, 0) : 0;
+  const arsiv = newsdeskArsivi(v, b).reduce((s, x) => s + x.paketler.length, 0);
+  const bilgi: Record<NewsdeskBolumu, { alt: string; say: number }> = {
+    sira: { alt: t("nkSiraAlt", { n: k.sira }), say: k.sira },
+    yayin: { alt: t("nkYayinAlt", { n: bugunPaket }), say: k.tbc },
+    canli: { alt: t("nkCanliAlt", { n: bugunkuCanlilar(v, b).length }), say: k.canli },
+    arsiv: { alt: t("nkArsivAlt", { n: arsiv }), say: 0 },
+  };
+  return (
+    <div className={`prg-masa masa-newsdesk${!ozet && ilk ? " bolumde" : ""}`} data-newsdesk-sayfasi>
+      {ozet && <KararOzeti k={k} />}
+      {ozet && <NewsdeskCizgisi ben={ben} />}
+      <div className="prg-kutular kutu-4" role="tablist">
+        {NEWSDESK_BOLUMLERI.map((x) => (
+          <a key={x} href={`#/newsdesk/${x}`} role="tab" aria-selected={bolum === x} className={`prg-kutu prg-k-nd-${x}${bolum === x ? " secili" : ""}`} data-nd-kutu={x}>
+            <span className="prg-kutu-ik">{BOLUM_IKONU[x]}</span>
+            <b>{t(BOLUM_ADI[x])}</b>
+            <small>{bilgi[x].alt}</small>
+            {bilgi[x].say > 0 && <em className="prg-say">{bilgi[x].say}</em>}
+          </a>
+        ))}
+      </div>
+      {bolum === "sira" && <NewsdeskSiram ben={ben} />}
+      {bolum === "yayin" && <NewsdeskYayin ben={ben} />}
+      {bolum === "canli" && <NewsdeskCanlilar ben={ben} />}
+      {bolum === "arsiv" && <NewsdeskArsiv ben={ben} />}
+    </div>
+  );
+}
+
+/* Ana sayfanın başı (Programlar'daki gibi): bugün karar verilecekler; yoksa çizilmez. */
+function KararOzeti({ k }: { k: ReturnType<typeof newsdeskKararlari> }) {
+  const { t } = useDil();
+  const satirlar = [
+    { n: k.sira, ad: "nkKararSira" as Anahtar, href: "#/newsdesk/sira", o: "sira" },
+    { n: k.tbc, ad: "nkKararTbc" as Anahtar, href: "#/newsdesk/yayin", o: "tbc" },
+    { n: k.canli, ad: "nkKararCanli" as Anahtar, href: "#/newsdesk/canli", o: "canli" },
+  ].filter((x) => x.n > 0);
+  if (!satirlar.length) return null;
+  return (
+    <div className="prg-ozet" data-prg-ozet>
+      <span className="prg-bugun-bas">{t("pmKararlarim")}</span>
+      {satirlar.map((x) => (
+        <a key={x.o} href={x.href} className="prg-ozet-oge" data-prg-ozet-oge={x.o}>
+          <b>{x.n}</b> {t(x.ad)}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/*
+ * Paketin kartı (masaların içerik kartının biçimi): tür, yer, teslim saati ve
+ * durum; başlık; muhabir (TBC'de atama), aşama · kimde; Newsdesk'in işleri.
+ */
+function NdPaketKarti({ ben, p }: { ben: Kisi; p: Paket }) {
+  const { t } = useDil();
+  const v = useVeri();
+  const muhabir = kisiBul(v, p.muhabirId);
+  const bitti = p.durum === "tamamlandi" || !!p.stok;
+  const { asama, kimde } = paketKimde(v, p);
+  return (
+    <div className="prg-icerik" data-nd-paket={p.id}>
+      <div className="prg-icerik-ust">
+        <Rozet ton="masa">{t(BICIM_ADI(p.bicim ?? "pkg"))}</Rozet>
+        <Icerik>{paketYeri(p)}</Icerik>
+        {p.teslim && <span className="soluk">· {gmt(p.teslim)} GMT</span>}
+        <span className="bosluk-esnek" />
+        <PaketDurumRozeti paket={p} />
+      </div>
+      <a href={`#/paketler/${p.id}`} className="prg-icerik-baslik">
+        <Icerik blok>{p.baslik}</Icerik>
+      </a>
+      {!bitti && (
+        <div className="prg-icerik-alt">
+          <AsamaCubugu paket={p} />
+          <span className="soluk">{[asama, kimde && birimAdi(kimde)].filter(Boolean).join(" · ")}</span>
+        </div>
+      )}
+      <div className="prg-icerik-alt">
+        {muhabir && !p.muhabirTbc ? <KisiCipi ben={ben} kisi={muhabir} konu={p.baslik} /> : <Rozet ton="uyari">TBC</Rozet>}
+        <MuhabirAtaDugmesi ben={ben} paket={p} ikon={!!muhabir && !p.muhabirTbc} />
+        {!bitti && <MesajRozeti ben={ben} paket={p} />}
+        <span className="bosluk-esnek" />
+        <StogaDondurDugmesi ben={ben} paket={p} ikon />
+        <NewsdeskRedDugmesi ben={ben} paket={p} ikon />
+      </div>
+    </div>
+  );
+}
+
+const Kartlar = ({ ben, paketler }: { ben: Kisi; paketler: Paket[] }) => (
+  <div className="prg-icerikler">
+    {paketler.map((p) => (
+      <NdPaketKarti key={p.id} ben={ben} p={p} />
+    ))}
+  </div>
+);
+
+/* Sırası Newsdesk'te olan işler (video, yükleme, editoryal denetimdeki parça…) tek kuyrukta, teslim saatine göre. */
+function NewsdeskSiram({ ben }: { ben: Kisi }) {
   const { t } = useDil();
   const v = useVeri();
   const sira = newsdeskSirasi(v, ben);
   return (
-    <Kart baslik={t("siradakiIslerim")} ikon={<ListChecks size={18} />} ek={String(sira.length)}>
-      <div data-nd-sira>
-        <PaketTablosu paketler={sira} d={v} sutunlar={["baslik", "muhabir", "asama", "teslim"]} bosMetin={t("siraBos")} />
-      </div>
+    <Kart baslik={t("siradakiIslerim")} ikon={<ListTodo size={18} />} ek={String(sira.length)}>
+      <div data-nd-sira>{sira.length ? <Kartlar ben={ben} paketler={sira} /> : <Bos metin={t("siraBos")} />}</div>
     </Kart>
   );
 }
@@ -128,23 +248,25 @@ const GRUP_ADI: Record<YayinGrubu, Anahtar> = { tbc: "nkGrupTbc", suruyor: "nkGr
 
 /*
  * Planın paketleri (bugün ya da yarın): muhabiri belli olmayan, süren, teslim
- * edilen, reddedilen ve stoka dönen. Satırda muhabir atama, stoka geri
- * gönderme, reddetme; pakete basınca sayfası.
+ * edilen, reddedilen, stoka dönen; masaların alan sekmeleri gibi. İlk açılışta
+ * dolu ilk grup.
  */
-export function NewsdeskYayin({ ben }: { ben: Kisi }) {
+function NewsdeskYayin({ ben }: { ben: Kisi }) {
   const { t, dil } = useDil();
   const v = useVeri();
   const [gun, setGun] = useAdimDurumu<"bugun" | "yarin">("newsdesk:gun", "bugun");
   const tarih = gun === "bugun" ? bugun() : gunEkle(bugun(), 1);
   const plan = v.planlar.find((p) => p.tarih === tarih);
   const gruplar = plan ? yayinPaketleri(v, plan) : null;
-  const toplam = gruplar ? YAYIN_GRUPLARI.reduce((s, g) => s + gruplar[g].length, 0) : 0;
+  const ilkGrup = (gruplar && YAYIN_GRUPLARI.find((g) => gruplar[g].length)) ?? "suruyor";
+  const [secili, setGrup] = useAdimDurumu<YayinGrubu | "">("newsdesk:grup", "");
+  const grup = secili || ilkGrup;
   return (
     <Kart
       baslik={t("nkYayin")}
       ikon={<Send size={18} />}
       sagUc={
-        <span className="sekmeler" role="tablist" data-nd-gun>
+        <span className="prg-seg" role="tablist" data-nd-gun>
           {(["bugun", "yarin"] as const).map((g) => (
             <button key={g} type="button" role="tab" aria-selected={gun === g} className={gun === g ? "acik" : ""} onClick={() => setGun(g)} data-nd-gun-sec={g}>
               {t(g)}
@@ -154,8 +276,8 @@ export function NewsdeskYayin({ ben }: { ben: Kisi }) {
       }
     >
       <div data-nd-yayin={plan?.id ?? ""}>
-        {!plan ? (
-          <Bos kucuk metin={t("nkPlanYok")} />
+        {!plan || !gruplar ? (
+          <Bos metin={t("nkPlanYok")} />
         ) : (
           <>
             <p className="nd-plan-satir">
@@ -164,19 +286,14 @@ export function NewsdeskYayin({ ben }: { ben: Kisi }) {
               </a>{" "}
               {!newsdeskteMi(plan) && <Rozet ton="uyari">{t("nkPlanOnaysiz")}</Rozet>}
             </p>
-            {!toplam && <Bos kucuk metin={t("kayitYok")} />}
-            {YAYIN_GRUPLARI.filter((g) => gruplar![g].length).map((g) => (
-              <section key={g} className={`nd-grup nd-grup-${g}`} data-nd-grup={g}>
-                <h3>
-                  {t(GRUP_ADI[g])} <span className="sonuk">{gruplar![g].length}</span>
-                </h3>
-                <ul className="liste nd-liste">
-                  {gruplar![g].map((p) => (
-                    <PaketSatiri key={p.id} ben={ben} paket={p} />
-                  ))}
-                </ul>
-              </section>
-            ))}
+            <div className="prg-seg" role="tablist" data-nd-gruplar>
+              {YAYIN_GRUPLARI.map((g) => (
+                <button key={g} type="button" role="tab" aria-selected={g === grup} className={g === grup ? "acik" : ""} onClick={() => setGrup(g)} data-nd-grup-sec={g}>
+                  {t(GRUP_ADI[g])} <em>{gruplar[g].length}</em>
+                </button>
+              ))}
+            </div>
+            <div data-nd-grup={grup}>{gruplar[grup].length ? <Kartlar ben={ben} paketler={gruplar[grup]} /> : <Bos metin={t("kayitYok")} />}</div>
           </>
         )}
       </div>
@@ -184,65 +301,64 @@ export function NewsdeskYayin({ ben }: { ben: Kisi }) {
   );
 }
 
-function PaketSatiri({ ben, paket }: { ben: Kisi; paket: Paket }) {
-  const v = useVeri();
-  const muhabir = kisiBul(v, paket.muhabirId);
-  const { asama, kimde } = paketKimde(v, paket);
-  const bitti = paket.durum === "tamamlandi" || paket.stok;
-  return (
-    <li className="nd-paket" data-nd-paket={paket.id}>
-      <div className="ad">
-        <a href={`#/paketler/${paket.id}`}>
-          <Icerik>{paket.baslik}</Icerik>
-        </a>
-        <small className="sonuk">
-          {[paket.teslim && `${gmt(paket.teslim)} GMT`, !bitti && asama, !bitti && kimde && birimAdi(kimde)].filter(Boolean).join(" · ")}
-        </small>
-      </div>
-      <span className="nd-muhabir">
-        {muhabir && !paket.muhabirTbc ? <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} /> : <Rozet ton="uyari">TBC</Rozet>}
-        <MuhabirAtaDugmesi ben={ben} paket={paket} ikon={!!muhabir && !paket.muhabirTbc} />
-      </span>
-      {!bitti && <AsamaCubugu paket={paket} />}
-      <span className="nd-islem">
-        <StogaDondurDugmesi ben={ben} paket={paket} ikon />
-        <NewsdeskRedDugmesi ben={ben} paket={paket} ikon />
-      </span>
-    </li>
-  );
-}
-
-/* Bugünün canlı yayınları: saat sırasıyla, satırda "yapıldı/yapılmadı" ve düzenleme. */
-export function NewsdeskCanlilar({ ben }: { ben: Kisi }) {
+/* Bugünün canlı yayınları: saat sırasıyla, kartta "yapıldı/yapılmadı"; konuya basınca form. */
+function NewsdeskCanlilar({ ben }: { ben: Kisi }) {
   const { t, ad } = useDil();
   const v = useVeri();
   const [secili, setSecili] = useState<string | null>(null);
-  const b = bugun();
-  const canlilar = v.canliYayinlar.filter((c) => c.tarih === b || (!c.tarih && planBul(v, c.planId)?.tarih === b)).sort((x, y) => (x.saatGmt || "~").localeCompare(y.saatGmt || "~"));
+  const canlilar = bugunkuCanlilar(v, bugun());
   const c = canlilar.find((x) => x.id === secili);
   return (
-    <Kart baslik={t("canliYayinlar")} ikon={<Radio size={18} />} ek={String(canlilar.length)}>
+    <Kart baslik={t("nkCanlilar")} ikon={<Radio size={18} />} ek={String(canlilar.length)}>
       {canlilar.length ? (
-        <ul className="liste" data-nd-canlilar>
+        <div className="prg-icerikler" data-nd-canlilar>
           {canlilar.map((x) => (
-            <li key={x.id} data-nd-canli-satir={x.id}>
-              <div className="ad">
-                <button type="button" className="bag-dugme" onClick={() => setSecili(x.id)}>
-                  <b>{x.saatGmt ? `${x.saatGmt}G` : "TBC"}</b> <Icerik>{x.konu}</Icerik>
-                </button>
-                {x.muhabirId && <small className="sonuk">{ad(kisiBul(v, x.muhabirId))}</small>}
-              </div>
-              <span className="nd-sonuc">
+            <div key={x.id} className="prg-icerik" data-nd-canli-satir={x.id}>
+              <div className="prg-icerik-ust">
+                <Rozet ton="masa">LIVE</Rozet>
+                <b>{x.saatGmt ? `${x.saatGmt} GMT` : "TBC"}</b>
+                {x.yer && <Icerik>{x.yer}</Icerik>}
+                <span className="bosluk-esnek" />
                 {x.sonuc ? <Rozet ton={x.sonuc.durum === "yapildi" ? "iyi" : "kotu"}>{t(x.sonuc.durum === "yapildi" ? "yapildi" : "yapilmadi")}</Rozet> : <Clock size={14} aria-hidden="true" />}
+              </div>
+              <button type="button" className="prg-icerik-baslik bag-dugme" onClick={() => setSecili(x.id)}>
+                <Icerik blok>{x.konu}</Icerik>
+              </button>
+              <div className="prg-icerik-alt">
+                <span className="soluk">{x.muhabirId ? ad(kisiBul(v, x.muhabirId)) : t("atanmadi")}</span>
+                <span className="bosluk-esnek" />
                 <CanliSonucDugmeleri ben={ben} canli={x} />
-              </span>
-            </li>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <Bos kucuk metin={t("kayitYok")} />
+        <Bos metin={t("kayitYok")} />
       )}
       {c && <CanliPenceresi ben={ben} canli={c} kapat={() => setSecili(null)} />}
+    </Kart>
+  );
+}
+
+/* Arşiv: son yedi günün planlarında teslim edilen, reddedilen, stoka dönen paketler, gün gün. */
+function NewsdeskArsiv({ ben }: { ben: Kisi }) {
+  const { t, dil } = useDil();
+  const v = useVeri();
+  const gunler = newsdeskArsivi(v, bugun());
+  return (
+    <Kart baslik={t("pmArsiv")} ikon={<Archive size={18} />}>
+      {gunler.length ? (
+        <div className="prg-arsiv" data-nd-arsiv>
+          {gunler.map(({ plan, paketler }) => (
+            <section key={plan.id} className="prg-arsiv-ay">
+              <h3>{tarihYaz(plan.tarih, dil, "uzun")}</h3>
+              <Kartlar ben={ben} paketler={paketler} />
+            </section>
+          ))}
+        </div>
+      ) : (
+        <Bos metin={t("kayitYok")} />
+      )}
     </Kart>
   );
 }

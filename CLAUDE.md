@@ -1136,19 +1136,32 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `newsdesk.ts`, ana sayfa `ekranlar/ana/Newsdesk.tsx`, düğmeler `bilesenler/NewsdeskIslemleri.tsx`):
     onaylı (ve eski devralınmış) planın içeriğini Newsdesk (`operasyon`) de Planlama da düzenler
     (`yetki.ts → newsdeskteMi`, `planIcerikDuzenler`; önce onaylı plan kimseye açık değildi), PKG kararı
-    da (`paketKararVerebilir`: onaydan sonra eklenen PKG kararsız kalmasın). Ana sayfanın başında
-    Planlama'nın zaman çizgisi, beklenen paketlerle (`gunOlaylari(…, { paketler })`: bugünün planının,
-    teslimi bugün olan paketi); canlıya basınca formu ve ✓/✕, pakete basınca pencerede teslim saati
-    (`eylemler.ts → paketTeslimSaati`, GMT, muhabire bildirim), muhabir, aşama, stok ve ret. Alanlar:
-    Sıradaki işlerim (`newsdeskSirasi`: Newsdesk'in durağı ya da editoryal denetimdeki parça), Planın
-    paketleri (bugün/yarın; muhabiri belli değil, sürüyor, teslim edildi, reddedilen, stoka dönen),
-    Canlı yayınlar, uygulanacak plan, geciken. Muhabir atama (`paketMuhabirAta`, `paketMuhabirAtayabilir`:
+    da (`paketKararVerebilir`: onaydan sonra eklenen PKG kararsız kalmasın). Sayfa masaların kalıbıyla
+    (kullanıcı: Programlar'ın tasarım dili; Planlama'daki gibi sabit ana sayfa, ama özelleştirilebilir de;
+    `Newsdesk.tsx → NewsdeskSayfasi`, `.prg-masa.masa-newsdesk`, rengi üretim balonunun mavisi
+    `--masa-newsdesk`): kendi menüsü (`AnaMenu.tsx → newsdeskMenusu`, `yetki.ts → newsdeskMasasi`: birimi
+    Newsdesk olan, tam yönetici değil; Masam, Yayın planları, Ekip, İletişim) ve telefonda alt çubuğu
+    (`AltCubuk.tsx → newsdeskSekmeleri`). Dört kutucuk bağlantı (`#/newsdesk/<bölüm>`, `SAYFA_IZNI.newsdesk`,
+    `data-nd-kutu`): Sıradaki işlerim (`newsdeskSirasi`: Newsdesk'in durağı ya da editoryal denetimdeki
+    parça), Planın paketleri (bugün/yarın; sekmeler muhabiri belli değil, sürüyor, teslim edildi,
+    reddedilen, stoka dönen; ilk açılışta dolu ilk sekme), Canlı yayınlar (bugünün, ✓/✕, konuya basınca
+    form), Arşiv (son 7 günün planlarında teslim edilen, reddedilen, stoka dönen; `newsdeskArsivi`);
+    paketler masaların içerik kartı biçiminde (`NdPaketKarti`, `.prg-icerik`), satır düğmeleri simge (adı
+    ipucunda). Sayılar tek kuraldan (`newsdeskKararlari`: sırada iş, bugün ve yarın TBC paket, sonucu
+    işaretsiz canlı). Ana sayfa sabit: "Bugün karar vereceklerim" (`KararOzeti`), Planlama'nın zaman
+    çizgisi beklenen paketlerle (`gunOlaylari(…, { paketler })`: bugünün planının, teslimi bugün olan
+    paketi), kutucuklar ve Sıradaki işlerim; altında "Kendi alanım" (`data-nd-kendi`, `CalismaAlani`,
+    "Sayfayı düzenle"yle kişinin alanları; varsayılan verilen işler, uygulanacak plan, geciken). Çizgide
+    canlıya basınca formu ve ✓/✕, pakete basınca pencerede teslim saati (`eylemler.ts →
+    paketTeslimSaati`, GMT, muhabire bildirim), muhabir, aşama, stok ve ret; telefonda ray okunmadığı için
+    yerine şimdiden sonraki olayların listesi (`.ap-cizgi-liste`), aynı yerinde düzenleme. Muhabir atama (`paketMuhabirAta`, `paketMuhabirAtayabilir`:
     Newsdesk'e gelen paket [onaylı planın ya da üretimde]; TBC kalkar, künyede görevlendiren, yeni ve
     önceki muhabire bildirim) paket sayfasında da. Planlanan ama yayınlanmayan paket Planlama'nın
     stoğuna döner (`paketStogaDondur`, isteğe bağlı sebep; stok paketi olur, başlıktan ve hazırlardan
     çıkar, `Paket.stogaDondu`; Planlama'ya [`sahip`] ve muhabire bildirim, paket sayfasında satır).
     Teslim alınan paket gerekçeyle reddedilir (`paketNewsdeskReddet`, `Paket.newsdeskRed`; gerekçesiz
-    olmaz, Muhasebe saymaz, ödeme yapılmaz; geri alınır; sonra ne olacağı sonra konuşulacak). Görüş
+    olmaz, Muhasebe saymaz, ödeme yapılmaz; geri alınır; sonra ne olacağı sonra konuşulacak). Stoka dönüş
+    sürmekte olan pakette de (kullanıcı). Görüş
     nitelik puanının yerinde (`newsdeskGorusEkle`: aşama notu, kutusu `gorus`, muhabir görmez); rapor ve
     profilde nitelik yerine "Newsdesk reddetti" sayısı. Test `testler/newsdesk.cjs`.
   - Muhabir askıda kalmasın (kullanıcı: muhabir metni gönderiyor, sonra ne olacağı, işin kimde olduğu

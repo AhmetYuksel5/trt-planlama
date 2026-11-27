@@ -49,11 +49,16 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(await p.locator("[data-ap-cizgi]").isVisible(), "zaman çizgisi");
   ok((await p.locator('[data-ap-olay="paket"][data-ap-olay-id="pk-nd-tbc"]').count()) === 1, "beklenen paket çizgide");
   ok((await p.locator('[data-ap-olay="canli"][data-ap-olay-id="cy-nd"]').count()) === 1, "canlı çizgide");
-  ok(await p.locator("[data-nd-sira]").isVisible(), "sıradaki işler");
-  ok((await p.locator('[data-nd-grup="tbc"] [data-nd-paket="pk-nd-tbc"]').count()) === 1, "TBC grubu");
+  ok(await p.locator("[data-nd-sira]").isVisible(), "ana sayfada sıradaki işler");
+  ok((await p.locator("[data-newsdesk-sayfasi] [data-nd-kutu]").count()) === 4, "dört kutucuk");
+  ok(await p.locator("[data-nd-kendi]").isVisible(), "kendi alanım");
+  ok((await p.locator('[data-birim-menusu] a[href="#/newsdesk/yayin"], nav.menu.masa-newsdesk a[href="#/newsdesk/yayin"]').count()) >= 1, "menüde Newsdesk'in bölümleri");
+  await gir("nd4", "#/newsdesk/yayin");
+  ok((await p.locator('[data-nd-grup="tbc"] [data-nd-paket="pk-nd-tbc"]').count()) === 1, "TBC grubu ilk açılır");
   ok((await p.locator('a[href="#/ucretler"]').count()) === 0, "ücret yok");
 
   // Çizgideki pakete bas: teslim saati ve muhabir yerinde.
+  await gir("nd4", "#/");
   await p.click('[data-ap-olay-id="pk-nd-tbc"] .ap-olay-ad');
   ok(await p.locator("[data-nd-paket-penceresi]").isVisible(), "paket penceresi");
   await p.fill("[data-nd-teslim-saati]", "13:30");
@@ -79,7 +84,8 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   await p.keyboard.press("Escape");
 
   // Yayınlanmayan paket stoka döner, Planlama'ya ve muhabire bildirilir.
-  await gir("nd4", "#/");
+  await gir("nd4", "#/newsdesk/yayin");
+  await p.click('[data-nd-grup-sec="teslim"]');
   await p.click('[data-nd-paket="pk-nd-stok"] [data-paket-stoga-dondur]');
   await p.fill("[data-stoga-sebep]", "ضيق الوقت");
   await p.click("[data-stoga-dondur-onay]");
@@ -89,6 +95,7 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   ok(st.stok && st.stogaDondu?.sebep === "ضيق الوقت" && !st.planBaslikId, "stoka döndü, başlıktan çıktı");
   const sh = d.hareketler.find((h) => h.tip === "paketStogaDondu" && h.paketId === "pk-nd-stok");
   ok(sh?.veri?.sahip === "planlama" && sh?.veri?.kime === k.stokMuh, "Planlama ve muhabire bildirim");
+  await p.click('[data-nd-grup-sec="stok"]');
   ok((await p.locator('[data-nd-grup="stok"] [data-nd-paket="pk-nd-stok"]').count()) === 1, "Stoka dönen grubunda");
   await gir("pl2", "#/paketler/pk-nd-stok");
   ok(await p.locator("[data-stoga-dondu]").isVisible(), "paket sayfasında stoka dönüş satırı");
@@ -129,8 +136,10 @@ const ok = (k, m) => (k ? gec++ : (kal++, console.log("✗ " + m)));
   // Telefonda taşma yok, Arapçada da.
   await p.setViewportSize({ width: 390, height: 844 });
   await p.evaluate(() => localStorage.setItem("trt-planlama-dil", "ar"));
-  await gir("nd4", "#/");
-  ok((await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, "390'da taşma yok");
+  for (const y of ["#/", "#/newsdesk/yayin", "#/newsdesk/canli", "#/newsdesk/arsiv"]) {
+    await gir("nd4", y);
+    ok((await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, "390'da taşma yok " + y);
+  }
 
   console.log(`newsdesk: ${gec} geçti, ${kal} kaldı`);
   await b.close();

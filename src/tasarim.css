@@ -87,6 +87,8 @@
   --masa-planlama-sis: #e0f2f5;
   /* Üretim balonunun öbür masaları (uretim.ts → URETIM_MASALARI): Newsdesk mavi, Script Editor gül, Grafik turuncu. */
   --masa-newsdesk: #1d5bd8;
+  --masa-newsdesk-sis: #e5edfc;
+  --masa-newsdesk-acik: #7ea6f0;
   --masa-scriptEditor: #a83f73;
   --masa-grafik: #c2561d;
   /* Koyu menüde okunsun diye açık tonları. */
@@ -3679,6 +3681,12 @@ input.saat-girdisi:not(.vardiya-girdi) { max-inline-size: 7rem; }
 /* Muhabirin sayfası masaların kalıbıyla, kendi renginde (turuncu). */
 .masa-muhabir { --prg: var(--masa-muhabir); --prg-sis: var(--masa-muhabir-sis); }
 /* Stok haberler / Programlar (StokSayfasi.tsx) aynı kalıpla, Planlama'nın renginde (camgöbeği). */
+/* Newsdesk masaların kalıbıyla (kullanıcı: Programlar'ın tasarım dili); rengi üretim balonundaki mavisi. */
+.prg-masa.masa-newsdesk { --prg: var(--masa-newsdesk); --prg-sis: var(--masa-newsdesk-sis); }
+.prg-k-nd-sira .prg-kutu-ik, .prg-k-nd-yayin .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
+.prg-k-nd-canli .prg-kutu-ik { background: var(--kotu-sis); color: var(--kotu); }
+.prg-k-nd-arsiv .prg-kutu-ik { background: var(--yuzey-2); color: var(--sonuk); }
+.nd-kendi { font-size: var(--punto-kucuk); color: var(--sonuk); text-transform: uppercase; letter-spacing: .05em; margin: var(--ara-5) 0 var(--ara-2); }
 .prg-masa.masa-planlama { --prg: var(--masa-planlama); --prg-sis: var(--masa-planlama-sis); }
 .prg-k-teklifler .prg-kutu-ik { background: var(--aylik-sis); color: var(--aylik); }
 .prg-k-uretim .prg-kutu-ik { background: var(--prg-sis); color: var(--prg); }
@@ -3789,6 +3797,7 @@ a.prg-kutu { text-decoration: none; }
 .menu.masa-spor { --masa-menu: var(--masa-spor-acik); }
 .menu.masa-ekonomi { --masa-menu: var(--masa-ekonomi-acik); }
 .menu.masa-planlama { --masa-menu: var(--masa-planlama-acik); }
+.menu.masa-newsdesk { --masa-menu: var(--masa-newsdesk-acik); }
 .menu.masa-muhabir { --masa-menu: var(--masa-muhabir-acik); }
 /* Tema rengi (tema.ts, Ayarlar): seçilmişse birimin renginin yerine; seçici masanın kendi kuralından ağır. */
 html[data-tema] .prg-masa { --prg: var(--tema); --prg-sis: var(--tema-sis); }
@@ -3799,6 +3808,7 @@ html[data-tema].yeni-tasarim .menu[class*="masa-"] a.acik svg { color: var(--tem
 .tema-secimi button[aria-pressed="true"] { border-color: var(--murekkep); box-shadow: 0 0 0 2px var(--yuzey-2); font-weight: 600; }
 .tema-secimi .tema-ornek { inline-size: 18px; block-size: 18px; border-radius: 50%; background: var(--ornek); flex: none; }
 html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); }
+html.yeni-tasarim .menu.masa-newsdesk a.acik svg { color: var(--masa-newsdesk); }
 .menu[class*="masa-"] a.acik { border-inline-start-color: var(--masa-menu); }
 .menu[class*="masa-"] .birim-kutusu svg { color: var(--masa-menu); }
 .alt-cubuk .hap { position: relative; }
@@ -4399,7 +4409,19 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .newsdesk-satir.kotu { background: var(--kotu-sis); border-color: var(--kotu); }
 .newsdesk-satir > span { flex: 1 1 240px; min-inline-size: 0; }
 /* Newsdesk ana sayfası: zaman çizgisi, planın paketleri, canlılar. */
-.nd-cizgi { margin: 0 0 var(--ara-4); }
+.nd-cizgi { margin: 0; }
+/* Izgaranın öğesi içeriğiyle genişlemesin (listenin tek satırlık uzun metni telefonda sayfayı genişletiyordu). */
+.prg-masa > *, .ap-cizgi { min-width: 0; }
+.ap-cizgi-liste { display: none; list-style: none; margin: var(--ara-2) 0 0; padding: 0; }
+.ap-cizgi-liste li { padding: var(--ara-1) 0; border-block-end: 1px solid var(--cizgi); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-cizgi-liste li:last-child { border-block-end: 0; }
+.ap-cizgi-liste button, .ap-cizgi-liste a { color: var(--murekkep); text-decoration: none; text-align: start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.ap-tur { font-size: var(--punto-mini); color: var(--sonuk); }
+.ap-tur.canli { color: var(--kotu); }
+@media (max-width: 760px) {
+  .ap-cizgi-ray { display: none; }
+  .ap-cizgi-liste { display: block; }
+}
 button.ap-olay { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: start; }
 .ap-olay.paket > i { background: var(--lacivert); border-radius: 3px; }
 .nd-plan-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0 0 var(--ara-2); }

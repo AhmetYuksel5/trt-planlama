@@ -1071,6 +1071,8 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   metinkontrol: ["output", "scriptEditor", "newsdesk", "planlama", "yonetim"],
   video: ["newsdesk", "media", "planlama", "yonetim"],
   ucretler: ["yonetim"],
+  // Newsdesk'in masa kalıbındaki sayfası ("#/newsdesk/<bölüm>"; ekranlar/ana/Newsdesk.tsx).
+  newsdesk: ["newsdesk", "planlama", "yonetim"],
   // Muhasebe: route ayrıca muhasebeGorebilir soruyor (kuraldaki kişiler).
   muhasebe: ["muhasebe", "yonetim"],
   raporlar: [
@@ -1249,6 +1251,8 @@ export const masaBirimi = (k: Kisi): MasaBirimi | undefined => {
   const b = izinBirimi(k.birim);
   return b === "program" || b === "ekonomi" || b === "spor" ? (b as MasaBirimi) : undefined;
 };
+/* Newsdesk'in masa kalıbındaki menüsü ve alt çubuğu: birimi (ya da onun "gibi" çalışan birimi) Newsdesk olan, tam yönetici değil. */
+export const newsdeskMasasi = (k: Kisi): boolean => !k.hesapYoneticisi && !kisitliKisi(k) && izinBirimi(k.birim) === "newsdesk";
 /* Gelen posta: dış muhabirler (ve onay bekleyen) hariç haber merkezinin herkesi;
    her birim kendi grup adresiyle kendi yazışmalarını görür (worker da aynı kuralla). */
 export const postaGorebilir = (k: Kisi | undefined): boolean => !!k && !kisitliKisi(k);

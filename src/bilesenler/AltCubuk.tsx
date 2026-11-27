@@ -1,9 +1,11 @@
-import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, ListTodo, Mail, MapPinned, Menu, Package, Send, Users, type LucideIcon } from "lucide-react";
+import { Archive, Binoculars, CalendarDays, Clapperboard, Tv, ClipboardList, House, Lightbulb, ListTodo, Mail, MapPinned, Menu, Package, Radio, Send, Users, type LucideIcon } from "lucide-react";
 import { useDil, type Anahtar } from "../dil";
 import { useVeri, type Durum, type Kisi } from "../veri";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
 import { izinBirimi } from "../yapi";
-import { masaBirimi, sadeEkranMi, sayfaGorebilir } from "../yetki";
+import { masaBirimi, newsdeskMasasi, sadeEkranMi, sayfaGorebilir } from "../yetki";
+import { newsdeskKararlari } from "../newsdesk";
+import { bugun } from "../tarih";
 import { kararlariGetir } from "../planlamaKararlari";
 import { okunmamisSayisi } from "../postaOkuma";
 import { planlamaYeniMi } from "./AnaMenu";
@@ -51,6 +53,14 @@ const masaSekmeleri = (b: MasaBirimi): { yol: string; ad: Anahtar; ikon: LucideI
   b === "program" ? { yol: "programlar/programlar", ad: "pmProgramlar", ikon: Tv } : { yol: `${MASA_YOLU[b]}/arsiv`, ad: "pmArsiv", ikon: Archive },
 ];
 
+/* Newsdesk (masa kalıbı): ana sayfa, sıradaki işler, planın paketleri, canlılar. */
+const newsdeskSekmeleri = (): { yol: string; ad: Anahtar; ikon: LucideIcon; say?: (d: Durum, ben: Kisi) => number }[] => [
+  { yol: "ana", ad: "abAna", ikon: House },
+  { yol: "newsdesk/sira", ad: "nkKisaSira", ikon: ListTodo, say: (d, ben) => newsdeskKararlari(d, ben, bugun()).sira },
+  { yol: "newsdesk/yayin", ad: "nkKisaYayin", ikon: Send, say: (d, ben) => newsdeskKararlari(d, ben, bugun()).tbc },
+  { yol: "newsdesk/canli", ad: "nkKisaCanli", ikon: Radio, say: (d, ben) => newsdeskKararlari(d, ben, bugun()).canli },
+];
+
 /*
  * Yeni tasarımda Planlama: ana sayfa (kararlar orada), karar bekleyen
  * öneriler, Next Day, Posta. Posta gün içinde en sık dönülen yerdi ama iki
@@ -81,6 +91,8 @@ export default function AltCubuk({ ben, acik, menuAcik, onMenu }: { ben: Kisi; a
     ? MUHABIR_SEKMELERI
     : masa
     ? masaSekmeleri(masa)
+    : newsdeskMasasi(ben)
+    ? newsdeskSekmeleri()
     : planlamaYeniMi(ben, yeniTasarim)
     ? planlamaSekmeleri()
     : ADAYLAR.map((s) => ({ ...s, ad: muhabir && s.adMuhabir ? s.adMuhabir : s.ad })).filter((s) => sayfaGorebilir(ben, s.yol) && (s.muhabir === undefined || s.muhabir === muhabir) && (s.planlama === undefined || s.planlama === planlama)).slice(0, 4);

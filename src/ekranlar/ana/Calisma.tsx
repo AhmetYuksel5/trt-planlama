@@ -52,7 +52,8 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
   // Muhabirin ana sayfası çalışma alanı değil, Önerilerim (ana/Muhabir.tsx).
   muhabir: [],
-  newsdesk: ["genIslerim", "ndSira", "ndYayin", "ndCanli", "ndPlan", "ndGeciken"],
+  // Sabit sayfanın altındaki kendi alan (Newsdesk.tsx): varsayılanı verilen işler, plan ve geciken.
+  newsdesk: ["genIslerim", "ndPlan", "ndGeciken"],
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   // Ekonomi, Program ve Spor'un masası Newsdesk'inki gibi: kendi paketlerinin üretimi (MasaPaketleri).
   ekonomi: ["genIslerim", "ekOnInceleme", "ekSayfa"],

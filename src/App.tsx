@@ -1,3 +1,4 @@
+import { Building } from "lucide-react";
 import { SayfaBasi } from "./ekranlar/ana/Planlama";
 import { PAKET_SEKMELERI, type PaketSekmesi } from "./paketSekmeleri";
 import { useEffect, type ReactNode } from "react";
@@ -73,6 +74,8 @@ import {
 } from "./veri";
 // veri.ts eylemler.ts'ten önce yüklenmeli: açılışta örnek veriyi kurarken eposta.ts'e dayanıyor (döngü).
 import { MASA_ADI, MASA_IKONU, MasaSayfasi } from "./ekranlar/program/ProgramMasasi";
+import { NewsdeskSayfasi } from "./ekranlar/ana/Newsdesk";
+import { NEWSDESK_BOLUMLERI, type NewsdeskBolumu } from "./newsdesk";
 import { MASA_YOLU, PROGRAM_BOLUMLERI, type MasaBirimi, type ProgramBolumu } from "./programMasasi";
 import { rotaAktarabilir, rotaDoneminiAktar } from "./rotaAktar";
 import { demoStaffingPostasi, demoTakvimAdaylari, dilDenetmenleriniTasi, eskiOnerileriCevir, eskiTakipleriSil, haftalikAktarimlariniTamamla, haftalikPaketBasliklariniDuzelt, masaPaketleriniStoktanAyir, kunyeleriDoldur, stokPaketleriniHazirlaraAl, hazirYayinlariniEsitle, kesinlesmisRetleriCikar, masaGorevleriniTakibeAl, gorevDuragindaKalanlariGecir, geriAlinanGorevleriTemizle, muhabirUnvanlariniEsitle, ozelNafizeleriCevir, ozelCanlilariniBagla, ozelTalepleriMaddeyeCevir, ozelEskiPaketleriCevir, ozelYayinlananlariIsaretle, onerileriPlanlaEsitle, planCiftleriniTopla, yarinPlaniniAc, yonetimiAgacaTasi, kullanimYaz } from "./eylemler";
@@ -434,6 +437,15 @@ export default function App() {
         );
         break;
       }
+      // Newsdesk'in sayfası masaların kalıbıyla (ekranlar/ana/Newsdesk.tsx); "#/newsdesk/<bölüm>".
+      case "newsdesk":
+        icerik = (
+          <>
+            <SayfaBasi ikon={<Building size={26} />} baslik={t("biNewsdesk")} />
+            <NewsdeskSayfasi key={yol.id ?? ""} ben={ben} ilk={(NEWSDESK_BOLUMLERI as readonly string[]).includes(yol.id ?? "") ? (yol.id as NewsdeskBolumu) : undefined} />
+          </>
+        );
+        break;
       // Kutucuklu sayfa (StokSayfasi.tsx); "#/stok/<bölüm>" o kutuyla açılır.
       case "stok":
         icerik = <StokSayfasi key={yol.id ?? ""} ben={ben} ilk={yol.id} />;

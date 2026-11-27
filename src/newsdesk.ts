@@ -1,7 +1,8 @@
 import { asamaListesi, gorunenSahip, parcaliMi } from "./akis";
 import { muhabirDurumu } from "./muhabirDurumu";
 import type { BirimId, Durum, Kisi, NextDayPlan, Paket } from "./veri";
-import { adimYapabilir, parcaYapabilir } from "./yetki";
+import { gunEkle } from "./tarih";
+import { adimYapabilir, newsdeskteMi, parcaYapabilir } from "./yetki";
 
 /*
  * Newsdesk'in ana sayfasının kuralları (kullanıcı: Next Day onaylanınca
@@ -59,3 +60,42 @@ export const paketKimde = (d: Durum, p: Paket): { asama: string; kimde: BirimId 
   if (m) return { asama: m.asama ?? asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti")?.ad ?? "", kimde: m.sende ? "muhabir" : (m.kimde ?? gorunenSahip(p)) };
   return { asama: asamaListesi(p).find((a) => a.durum === "simdi" || a.durum === "gecikti")?.ad ?? "", kimde: gorunenSahip(p) };
 };
+
+/*
+ * Newsdesk'in sayfası Programlar'ın kalıbıyla (kullanıcı: masaların tasarım
+ * dili; sabit ana sayfa, altında kişinin özelleştirdiği alan). Kutucuklar:
+ * sıradaki işler, planın paketleri, canlı yayınlar, arşiv. Adres
+ * "#/newsdesk/<bölüm>".
+ */
+export const NEWSDESK_BOLUMLERI = ["sira", "yayin", "canli", "arsiv"] as const;
+export type NewsdeskBolumu = (typeof NEWSDESK_BOLUMLERI)[number];
+
+const bugunVeYarin = (b: string) => [b, gunEkle(b, 1)];
+
+/* Bugünün canlıları (canlının kendi günü, yoksa planın günü), saat sırasıyla. */
+export const bugunkuCanlilar = (d: Pick<Durum, "canliYayinlar" | "planlar">, b: string) =>
+  d.canliYayinlar
+    .filter((c) => c.tarih === b || (!c.tarih && d.planlar.find((p) => p.id === c.planId)?.tarih === b))
+    .sort((x, y) => (x.saatGmt || "~").localeCompare(y.saatGmt || "~"));
+
+/* Kutucukların ve menünün sayıları: sırada iş, bugün ve yarın muhabiri belli olmayan paket, sonucu işaretlenmemiş bugünkü canlı. */
+export const newsdeskKararlari = (d: Durum, ben: Kisi, b: string) => {
+  const planlar = d.planlar.filter((p) => bugunVeYarin(b).includes(p.tarih) && newsdeskteMi(p));
+  return {
+    sira: newsdeskSirasi(d, ben).length,
+    tbc: planlar.reduce((s, p) => s + yayinPaketleri(d, p).tbc.length, 0),
+    canli: bugunkuCanlilar(d, b).filter((c) => !c.sonuc).length,
+  };
+};
+
+/* Arşiv: son yedi günün Newsdesk planlarında teslim edilen, reddedilen ve stoka dönen paketler, gün gün, yenisi önce. */
+export const ARSIV_GUNU = 7;
+export const newsdeskArsivi = (d: Pick<Durum, "paketler" | "planlar">, b: string) =>
+  d.planlar
+    .filter((p) => newsdeskteMi(p) && p.tarih <= b && p.tarih > gunEkle(b, -ARSIV_GUNU))
+    .sort((x, y) => y.tarih.localeCompare(x.tarih))
+    .map((plan) => {
+      const g = yayinPaketleri(d, plan);
+      return { plan, paketler: [...g.teslim, ...g.red, ...g.stok] };
+    })
+    .filter((x) => x.paketler.length > 0);

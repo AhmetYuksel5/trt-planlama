@@ -62,6 +62,7 @@ export function GunCizgisi({ paketler = false, ac }: { paketler?: boolean; ac?: 
   const olaylar = gunOlaylari(v, b, { paketler });
   const sira = siradakiOlay(olaylar, an);
   const simdi = `${an.getUTCHours()}:${an.getUTCMinutes()}`;
+  const simdiYazi = `${String(an.getUTCHours()).padStart(2, "0")}:${String(an.getUTCMinutes()).padStart(2, "0")}`;
   const enGec = Math.max(0, ...olaylar.map((o) => Number(o.saat.slice(0, 2)) + 1));
   const BIT_SAAT = Math.min(24, Math.max(21, enGec + (enGec % 2)));
   const konum = konumlayici(BIT_SAAT);
@@ -111,6 +112,32 @@ export function GunCizgisi({ paketler = false, ac }: { paketler?: boolean; ac?: 
         })}
         <span className="ap-simdi" style={{ insetInlineStart: `${konum(simdi)}%` }} aria-hidden="true" />
       </div>
+      {/* Telefonda ray okunmuyor (etiketler üst üste biniyordu): şimdiden sonraki olaylar alt alta, yerinde düzenleme aynı. */}
+      <ol className="ap-cizgi-liste" data-ap-cizgi-liste>
+        {olaylar
+          .filter((o) => o.saat >= simdiYazi)
+          .slice(0, 6)
+          .map((o, i) => {
+            const ic = (
+              <>
+                <b>{o.saat}</b> <span className={`ap-tur ${o.tur}`}>{t(TUR_ADI[o.tur])}</span> {o.tur !== "cagri" && <Icerik>{o.ad}</Icerik>}
+              </>
+            );
+            return (
+              <li key={i}>
+                {ac && o.id ? (
+                  <button type="button" className="bag-dugme" onClick={() => ac(o)} data-ap-liste-id={o.id}>
+                    {ic}
+                  </button>
+                ) : o.href ? (
+                  <a href={o.href}>{ic}</a>
+                ) : (
+                  <span>{ic}</span>
+                )}
+              </li>
+            );
+          })}
+      </ol>
     </section>
   );
 }

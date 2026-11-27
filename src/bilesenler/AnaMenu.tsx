@@ -2,7 +2,7 @@ import { onayBekleyenler } from "./HesapOnayi";
 import { useYeniTasarim } from "../tasarimSecimi";
 import { birimAdi, gorevAdi } from "../yapi";
 import { oneriArsivde } from "../oneriPlanlari";
-import { MessagesSquare, Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Plane, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, type LucideIcon } from "lucide-react";
+import { MessagesSquare, Archive, FileText, Binoculars, Landmark, BookOpen, Globe, ClipboardList, Building, Building2, Calendar, CalendarCheck, CalendarClock, CalendarDays, CalendarRange, ChartColumn, ChevronDown, CircleUser, Clapperboard, Contact, Gauge, House, Inbox, Layers, Lightbulb, Mail, MapPinned, MonitorPlay, Newspaper, Package, Plane, Route, Send, Settings, SpellCheck, TrendingUp, Tv, Users, Calculator, Trophy, Workflow, ListTodo, Radio, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDil, type Anahtar } from "../dil";
 import { MASA_YOLU, masaKararlari, type MasaBirimi } from "../programMasasi";
@@ -13,7 +13,9 @@ import { useVeri, type Durum, type Kisi } from "../veri";
 import { gorusBekleyenler } from "../haftalik";
 import { bolmeyeGirer } from "../ortam";
 import { bekleyenHatirlatmalar, gorunenFaaliyetler } from "../takvim";
-import { dilDenetmeniMi, kisitliKisi, masaBirimi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
+import { newsdeskKararlari } from "../newsdesk";
+import { bugun } from "../tarih";
+import { dilDenetmeniMi, kisitliKisi, masaBirimi, newsdeskMasasi, sadeEkranMi, dilParcaSirasi, dilSirasi, paketGorebilir, sayfaGorebilir, siramMi, uretimeAlabilir, yapabilir, yonetimdeMi } from "../yetki";
 import { bugunkuYapilacakSayisi } from "../yapilacaklar";
 import { GERCEK } from "../kip";
 import { okunmamisSayisi } from "../postaOkuma";
@@ -239,6 +241,39 @@ export const masaMenusu = (ben: Kisi, birim: MasaBirimi): Grup[] => {
 };
 
 /*
+ * Newsdesk'in menüsü masaların kalıbıyla (kullanıcı: Programlar'ın tasarım
+ * dili): Masam (sayfanın bölümleri, sayıları kararda; Üretim panosu, metin
+ * kontrol, video), Yayın planları (Next Day onaydan sonra Newsdesk'in), Ekip
+ * (muhabir atadığı için dış muhabirler), İletişim.
+ */
+export const newsdeskMenusu = (ben: Kisi): Grup[] => {
+  const tablodan = (s: string) => {
+    const m = MENU.flatMap((g) => g.maddeler).find((x) => x.sayfa === s);
+    return m && { ...m, say: undefined };
+  };
+  const k = (f: (x: ReturnType<typeof newsdeskKararlari>) => number) => (d: Durum, b: Kisi) => f(newsdeskKararlari(d, b, bugun()));
+  const grup = (ad: Anahtar | undefined, maddeler: (Madde | false | undefined)[]): Grup => ({
+    ad,
+    maddeler: maddeler.filter((m): m is Madde => !!m && sayfaGorebilir(ben, m.sayfa.split("/")[0]) && (m.goster?.(ben) ?? true)),
+  });
+  return [
+    grup(undefined, [tablodan("ana")]),
+    grup("mgMasam", [
+      { sayfa: "newsdesk/sira", ad: "siradakiIslerim", kisa: "nkKisaSira", ikon: ListTodo, say: k((x) => x.sira) },
+      { sayfa: "newsdesk/yayin", ad: "nkYayin", kisa: "nkKisaYayin", ikon: Send, say: k((x) => x.tbc) },
+      { sayfa: "newsdesk/canli", ad: "nkCanlilar", kisa: "nkKisaCanli", ikon: Radio, say: k((x) => x.canli) },
+      { sayfa: "newsdesk/arsiv", ad: "pmArsiv", kisa: "pmArsiv", ikon: Archive },
+      tablodan("uretim"),
+      tablodan("metinkontrol"),
+      tablodan("video"),
+    ]),
+    grup("mgYayinPlanlari", [tablodan("nextday"), tablodan("haftalik"), tablodan("takvim")]),
+    grup("mgEkip", [tablodan("muhabirler"), tablodan("hareketler"), tablodan("izinler")]),
+    grup("mgIletisim", [tablodan("mesajlar"), tablodan("posta")]),
+  ].filter((g) => g.maddeler.length > 0);
+};
+
+/*
  * Planlama'nın menüsü (yeni tasarımda; belgeler/planlama-yeni-mimari.md): 30
  * madde, 7 grup ve başka masaların sayfaları yerine planlamacının işinin
  * sırasıyla beş grup, katlanmaz. Sayı yalnız karar bekleyen işte ve hepsi tek
@@ -292,6 +327,7 @@ export const birimMenusu = (ben: Kisi, yeni: boolean): { tur: string; gruplar: G
   if (ben.birim === "muhabir") return { tur: "muhabir", gruplar: muhabirMenusu(ben) };
   const masa = masaBirimi(ben);
   if (masa) return { tur: masa, gruplar: masaMenusu(ben, masa) };
+  if (newsdeskMasasi(ben)) return { tur: "newsdesk", gruplar: newsdeskMenusu(ben) };
   if (planlamaYeniMi(ben, yeni)) return { tur: "planlama", gruplar: planlamaMenusu(ben) };
   return undefined;
 };
