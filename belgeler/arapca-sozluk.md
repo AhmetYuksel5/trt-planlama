@@ -17,9 +17,9 @@ Kurumun kendi terimleri (التقارير المتوقعة، التقارير ا
 | Saha görevlendirmesi | تكليف ميداني | تكليف ميداني | Tutarlı. |
 | Muhabir | مراسل / المراسلون | مراسل, مراسلون, مراسلين | Tutarlı. |
 | Dış muhabir | المراسلون الخارجيون | المراسلون الخارجيون, مراسل خارجي | Kabul edilebilir (alternatif: مراسلو الخارج); değişiklik önerilmedi. |
-| İç muhabir | مراسلو مركز الأخبار | مراسلو مركز الأخبار | Haber merkezi terimiyle uyumlu. |
-| Haber merkezi (newsroom, bütün) | مركز الأخبار | غرفة الأخبار (marka, tanıtım), مركز الأخبار (org kökü, personel) | ÇAKIŞMA: غرفة الأخبار aynı zamanda Newsdesk biriminin Arapçası. Haber merkezi = مركز الأخبار. |
-| Newsdesk (birim) | غرفة الأخبار (birim adı) / Newsdesk | غرفة الأخبار (32), Newsdesk (4) | Kurumun PKG şablonu da غرفة الأخبار diyor; birim adı korunur. Latin geçen 4 yer bilinçli bırakıldı. |
+| İç muhabir | مراسلو غرفة الأخبار | — | Haber merkezi terimiyle uyumlu. |
+| Haber merkezi (newsroom, bütün) | غرفة الأخبار | — | Kullanıcı kararı: مركز الأخبار kullanılmaz. Uygulamanın adı, kurum ağacının kökü, personel. |
+| Newsdesk (birim) | Newsdesk | — | Kullanıcı kararı: birim adıyla, Latin; haber merkezinin bütününden (غرفة الأخبار) ayrılsın. |
 | Masa (desk) | قسم (قسم الاقتصاد، قسم البرامج، قسم الرياضة) | مكتب (15), القسم, الديسك | مكتب Arapça haber dilinde "büro" (مكتب القاهرة); dış muhabir bürosuyla karışır. "Masa" başlığı zaten القسم. |
 | Birim (unit) | وحدة | وحدة (77), قسم (8), إدارة | Tutarlı; masa ile birimi ayırmak için masa=قسم, birim=وحدة. |
 | Planlama | التخطيط / قسم التخطيط | التخطيط | Tutarlı. Planlamacı = مخطط (kabul edilebilir). |

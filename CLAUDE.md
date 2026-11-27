@@ -67,7 +67,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   geçirildi (kullanıcı: önce muhabir kısmı; ~300 düzeltme). Terim kararları
   `belgeler/arapca-sozluk.md`: öneri مقترح, paket تقرير, masa قسم (مكتب büro
   demek), birim وحدة, özel yayın التغطية الخاصة, yayınlandı بُث (نُشر değil),
-  gündem الأجندة, haber merkezi مركز الأخبار (غرفة الأخبار Newsdesk birimi),
+  gündem الأجندة, haber merkezi (bütün kurum) غرفة الأخبار (kullanıcı; denetim
+  مركز الأخبار önermişti), Newsdesk birimi adıyla Latin "Newsdesk" (kullanıcı),
   uygulama içi yazışma المحادثة (المراسلة kadın muhabir). Kurumun alan adları
   (فكرة المعالجة، المعالجة البصرية…) ve Latin terimler (Next Day, PKG…)
   bilinçli olarak korundu. Yeni Arapça metin bu sözlüğe uyar.

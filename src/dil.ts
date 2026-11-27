@@ -30,9 +30,9 @@ export type Yazi = string | Metin;
 const m = (tr: string, ar: string, en: string): Metin => ({ tr, ar, en });
 
 const M = {
-  uygulama: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط مركز الأخبار", "Plannersflow · Newsroom Planner"),
+  uygulama: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط غرفة الأخبار", "Plannersflow · Newsroom Planner"),
   /* Logonun alt metni: kanalın adı her dilde aynı (bkz. Logo.tsx). */
-  markaAlt: m("Haber Merkezi Planlama", "تخطيط مركز الأخبار", "Newsroom Planner"),
+  markaAlt: m("Haber Merkezi Planlama", "تخطيط غرفة الأخبار", "Newsroom Planner"),
   dilAdi: m("Türkçe", "العربية", "English"),
   dilSec: m("Arayüz dili", "لغة الواجهة", "Interface language"),
   demo: m("Demo", "نسخة تجريبية", "Demo"),
@@ -254,7 +254,7 @@ const M = {
   mOzel: m("Özel yayın", "التغطية الخاصة", "Special broadcast"),
   mMuhabirler: m("Dış muhabirler", "المراسلون الخارجيون", "Field reporters"),
   mEditorler: m("Editörler", "المحررون", "Editors"),
-  mPersonel: m("Haber merkezi personeli", "موظفو مركز الأخبار", "Newsroom staff"),
+  mPersonel: m("Haber merkezi personeli", "موظفو غرفة الأخبار", "Newsroom staff"),
   tumUnvanlar: m("Bütün ünvanlar", "كل المسميات", "All titles"),
   mIzinler: m("İzin ve görev durumu", "الإجازات والمهام", "Leave & duty status"),
   mOneriler: m("Haber önerileri", "مقترحات الأخبار", "News proposals"),
@@ -323,7 +323,7 @@ const M = {
   mAyarlar: m("Ayarlar", "الإعدادات", "Settings"),
 
   /* Giriş */
-  girisBaslik: m("Haber Merkezi Planlama", "تخطيط مركز الأخبار", "Newsroom Planner"),
+  girisBaslik: m("Haber Merkezi Planlama", "تخطيط غرفة الأخبار", "Newsroom Planner"),
   girisDemoNotu: m(
     "Prototip: kurum içi giriş henüz bağlanmadı. Bir kişi seçerek o kişinin ekranını görürsünüz; şifre yok. Veriler bu tarayıcıda saklanır.",
     "نموذج أولي: لم يُربط تسجيل الدخول المؤسسي بعد. اختر شخصا لترى شاشته؛ لا توجد كلمة مرور. تُحفظ البيانات في هذا المتصفح.",
@@ -335,10 +335,10 @@ const M = {
   tnNasil: m("Nasıl çalışır", "كيف يعمل", "How it works"),
   tnOzellikler: m("Özellikler", "الميزات", "Features"),
   tnBirimler: m("Birimler", "الوحدات", "Units"),
-  tnEtiket: m("Haber merkezi planlama sistemi", "نظام تخطيط مركز الأخبار", "Newsroom planning system"),
+  tnEtiket: m("Haber merkezi planlama sistemi", "نظام تخطيط غرفة الأخبار", "Newsroom planning system"),
   tnBaslik: m(
     "Öneriden yayına, haber merkezinin bütün planı tek akışta.",
-    "من المقترح إلى البث: خطة مركز الأخبار كاملةً في مسار واحد.",
+    "من المقترح إلى البث: خطة غرفة الأخبار كاملةً في مسار واحد.",
     "From pitch to broadcast: the whole newsroom plan in one flow.",
   ),
   tnAlt: m(
@@ -1580,7 +1580,7 @@ const M = {
   k10a: m("Son kontrol tamamlanır, iş biter; haber planlamadan yayına bütün aşamaları geçmiş olur.", "يكتمل التدقيق الأخير وينتهي العمل بعد مرور الخبر بكل المراحل.", "The final check is done; the story has passed every stage from planning to air."),
 
   /* Proje planı sayfası */
-  ppBaslik: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط مركز الأخبار", "Plannersflow · Newsroom Planner"),
+  ppBaslik: m("Plannersflow · Haber Merkezi Planlama", "Plannersflow · تخطيط غرفة الأخبار", "Plannersflow · Newsroom Planner"),
   ppOzet: m(
     "Haberlerin planlanmasından hazırlanmasına, muhabirlerin görevlendirilmesinden işin tamamlanmasına kadar bütün süreci tek platformda yönetmek için. Bugün e-posta, Excel ve birimlerin kendi takip yöntemleriyle yürüyen işler ortak bir sistemde birleşiyor.",
     "لإدارة المسار كله في منصة واحدة: من تخطيط الأخبار وإعدادها إلى تكليف المراسلين وإنجاز العمل. تجتمع في نظام مشترك أعمال تُدار اليوم بالبريد وملفات Excel وأساليب متابعة كل وحدة.",
@@ -2334,7 +2334,7 @@ const M = {
   hrHaftalikKesinlesti: m("{kisi}, {tarih} haftasının planını kesinleştirdi", "اعتمد {kisi} خطة أسبوع {tarih}", "{kisi} finalised the plan for the week of {tarih}"),
   hrOnIncelemeyeGonderildi: m("{kisi} öneriyi ön incelemeye gönderdi", "أرسل {kisi} المقترح للمراجعة المسبقة", "{kisi} sent the proposal for pre-review"),
   ogGorevMasa: m("Kimin için", "لصالح", "For"),
-  ogGorevHaberMerkezi: m("Haber merkezi (stok)", "مركز الأخبار (المخزون)", "Newsroom (stock)"),
+  ogGorevHaberMerkezi: m("Haber merkezi (stok)", "غرفة الأخبار (المخزون)", "Newsroom (stock)"),
   hrOnIncelemeGorusu: m("{kisi} ön incelemede görüş yazdı", "أبدى {kisi} رأيه في المراجعة المسبقة", "{kisi} commented in pre-review"),
   hrOnIncelemedeReddedildi: m("{kisi} öneriyi ön incelemede reddetti", "رفض {kisi} المقترح في المراجعة المسبقة", "{kisi} rejected the proposal in pre-review"),
   hrHaftaliktanAktarildi: m(
@@ -2889,7 +2889,7 @@ const M = {
   asOOnayla: m("Planı onayla", "اعتماد الخطة", "Approve plan"),
   asOHazirliga: m("Hazırlığa geri al", "إعادة إلى التحضير", "Back to preparation"),
   asOKesinlestir: m("Planı kesinleştir", "تثبيت الخطة", "Finalise plan"),
-  asOHaberMerkezi: m("Haber merkezi", "مركز الأخبار", "Newsroom"),
+  asOHaberMerkezi: m("Haber merkezi", "غرفة الأخبار", "Newsroom"),
   asOOnayVer: m("Onayla", "اعتماد", "Approve"),
   asOGeriCevir: m("Geri çevir", "رفض الإفادة", "Send back"),
   asOYapildi: m("Yapıldı", "أُنجز", "Done"),
@@ -3393,7 +3393,7 @@ const M = {
   mrSonIs: m("Son iş", "آخر عمل", "Last job"),
   mrBitenCanli: m("Biten canlı", "مباشر منجز", "Live done"),
   mrCanliSay: m("{n} canlı", "{n} مباشر", "{n} live"),
-  mrIc: m("Haber merkezi", "مركز الأخبار", "Newsroom"),
+  mrIc: m("Haber merkezi", "غرفة الأخبار", "Newsroom"),
   mrOncekiAy: m("Önceki ay: {n}", "الشهر السابق: {n}", "Previous month: {n}"),
   tiSecili: m("{n} seçili", "{n} محدد", "{n} selected"),
   tiPosta: m("Posta · {n}", "بريد · {n}", "Email · {n}"),
@@ -3715,7 +3715,7 @@ const M = {
   orgUnvanEkle: m("Ünvan ekle", "إضافة مسمى", "Add title"),
   orgBirimlerde: m("Birimler", "الوحدات", "Units"),
   orgHerBirim: m("Her birim", "كل الوحدات", "All units"),
-  icMuhabirler: m("Haber merkezi muhabirleri", "مراسلو مركز الأخبار", "Newsroom reporters"),
+  icMuhabirler: m("Haber merkezi muhabirleri", "مراسلو غرفة الأخبار", "Newsroom reporters"),
   orgPlanEkibi: m("Plan ekibi", "فريق الخطة", "Plan team"),
   orgUstBirim: m("Üst birim", "الوحدة الأعلى", "Parent unit"),
   orgKok: m("— En üstte —", "— في المستوى الأعلى —", "— Top level —"),
@@ -3730,7 +3730,7 @@ const M = {
   orgEkipGoreviEkle: m("Görev ekle", "إضافة مهمة", "Add role"),
   orgKuralBirimler: m("Hangi birimlerden", "من أي الوحدات", "From which units"),
   orgKuralUnvanlar: m("Hangi ünvanlar", "أي المسميات", "Which titles"),
-  orgKuralTumMerkez: m("Haber merkezinin tamamı", "كل مركز الأخبار", "Whole newsroom"),
+  orgKuralTumMerkez: m("Haber merkezinin tamamı", "غرفة الأخبار كلها", "Whole newsroom"),
   orgKuralTumUnvan: m("bütün ünvanlar", "كل المسميات", "all titles"),
   orgKuralaUyan: m("Kurala uyan: {n} kişi", "المطابقون للقاعدة: {n}", "Matching: {n} people"),
   orgAltBirimVar: m("Altında birim var", "تحتها وحدات", "Has sub-units"),
@@ -3739,7 +3739,7 @@ const M = {
   epostaBekliyor: m("Yeni e-posta: {eposta} · aktivasyon bekleniyor", "البريد الجديد: {eposta} · بانتظار التفعيل", "New email: {eposta} · awaiting activation"),
   epostaYalnizTamYonetici: m("Yöneticinin ya da yetki verilmiş kişinin e-postasını tam yönetici değiştirir", "لا يغيّر بريد المدير أو صاحب الصلاحيات إلا مدير النظام", "Only a full admin changes the email of an admin or someone with permissions"),
   birimdeUnvanYok: m("Bu birimde ünvan yok", "لا مسميات في هذه الوحدة", "No titles in this unit"),
-  orgKokMerkez: m("Haber Merkezi", "مركز الأخبار", "Newsroom"),
+  orgKokMerkez: m("Haber Merkezi", "غرفة الأخبار", "Newsroom"),
   orgKokDis: m("Dış muhabirler", "المراسلون الخارجيون", "Field reporters"),
   orgBolumInput: m("Input", "Input", "Input"),
   orgBolumOutput: m("Output", "Output", "Output"),
@@ -4044,7 +4044,7 @@ const M = {
   pyHfToplanti: m("Toplantıya götürme ve hazırlığa geri alma", "العرض على الاجتماع والإعادة إلى التحضير", "Take to meeting / back to preparation"),
   pyHfKarar: m("Toplantıda karar verme (kabul, bilgi, ret)", "اتخاذ القرار في الاجتماع (قبول، للعلم، رفض)", "Decide in the meeting (accept, info, reject)"),
   pyHfKesinlestir: m("Planı kesinleştirme", "اعتماد الخطة نهائيا", "Finalise the plan"),
-  pyTumMerkez: m("Bütün haber merkezi", "مركز الأخبار كله", "Whole newsroom"),
+  pyTumMerkez: m("Bütün haber merkezi", "غرفة الأخبار كلها", "Whole newsroom"),
   pyYoneticiler: m("yöneticiler", "المديرون", "managers"),
   pyYalnizYoneticiler: m("Yalnız yöneticiler", "المديرون فقط", "Managers only"),
   pyBirimVeUnvan: m("Birim ve ünvan", "الوحدة والمسمى", "Unit and title"),

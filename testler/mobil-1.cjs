@@ -98,7 +98,7 @@ const oran = (a, b) => { const [x, y] = [parlaklik(a), parlaklik(b)].sort((m, n)
     await p.waitForTimeout(700);
     const alanlar = p.locator(".elle-oneri textarea, form textarea, textarea");
     await alanlar.nth(0).fill("جسر الإغاثة البحري يصل إلى ميناء غزة");
-    await alanlar.nth(1).fill("وصلت أول سفينة مساعدات إلى الميناء صباح اليوم.");
+    await alanlar.nth(1).fill("وصلت أول سفينة مساعدات إلى الميناء صباح اليوم بعد رحلة استمرت ثلاثة أيام.");
     await p.locator("[data-oneri-gonder], button.dugme:not([aria-disabled])").filter({ hasText: /Gönder|Kaydet/ }).last().tap();
     await p.waitForTimeout(700);
     const sonra = p.url();
