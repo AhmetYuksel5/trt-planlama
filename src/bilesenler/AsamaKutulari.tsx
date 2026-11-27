@@ -1,3 +1,4 @@
+import { muhabirDurumu } from "../muhabirDurumu";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { CircleCheck, Circle, CircleDot, CircleAlert, Copy, Lock, SlidersHorizontal, Trash2, Undo2 } from "lucide-react";
 import { asamaListesi, durakBul, stokDurumu, type GorunenAsama } from "../akis";
@@ -254,11 +255,14 @@ export function AsamaKutulari({ ben, paket, eylem, kutu }: { ben: Kisi; paket: P
     const sonKutu = SON_KUTU.has(a.id) && a.id === varsayilan;
     if (a.durum === "simdi" || a.durum === "gecikti" || sonKutu) {
       const muhabir = kisiBul(v, paket.muhabirId);
+      // Metin durağı muhabirin, ama parçalar denetimdeyken iş editörde ya da dilde (muhabirDurumu).
+      const md = a.id === paket.adim ? muhabirDurumu(v, paket) : null;
+      const masa = md && !md.sende && md.kimde ? md.kimde : a.masa;
       return (
         <>
           {a.durum !== "gecti" && (
             <p className="asama-kimde" data-asama-kimde>
-              {a.masa && t("simdiKimdeKisa", { birim: birimAdi(a.masa) + (a.masa === "muhabir" && muhabir ? ` · ${ad(muhabir)}` : "") })}
+              {masa && t("simdiKimdeKisa", { birim: birimAdi(masa) + (masa === "muhabir" && muhabir ? ` · ${ad(muhabir)}` : "") })}
               {paket.teslim && (
                 <span className={a.durum === "gecikti" ? "kotu-yazi" : "sonuk"}>
                   {" · "}

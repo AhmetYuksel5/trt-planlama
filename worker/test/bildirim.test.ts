@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { aboneEkle, aboneleriOku, b64uCoz, gonder, pushAdresiUygun, vapidAl, yeniOneriYuku, yukSifrele, type Abonelik } from "../src/bildirim.ts";
+import { aboneEkle, aboneleriOku, b64uCoz, gonder, kisiOlayiMi, kisiOlayYuku, pushAdresiUygun, vapidAl, yeniOneriYuku, yukSifrele, type Abonelik } from "../src/bildirim.ts";
 
 /* Web Push (worker/src/bildirim.ts): şifreleme alıcıda RFC 8291'e göre çözülüyor mu, VAPID imzası, abonelik kuralları. */
 
@@ -82,4 +82,15 @@ test("gönderim: VAPID imzası, 410 silinir, kısıtlıya öneri gitmez (çağı
   assert.equal(yuk.yol, "#/oneriler/o1");
   // Anahtar ikinci kez üretilmez.
   assert.equal((await vapidAl(kv)).acik, v.acik);
+});
+
+test("kişiye olay: yalnız sabit olaylar, başlık abonenin dilinde, paketin sayfasına", () => {
+  assert.equal(kisiOlayiMi("standOnay"), true);
+  assert.equal(kisiOlayiMi("serbest başlık"), false);
+  assert.equal(kisiOlayiMi("toString"), false, "nesnenin kendi alanı değil");
+  const a: Abonelik = { endpoint: "https://fcm.googleapis.com/fcm/send/1", p256dh: "", auth: "", uid: "m1", kisitli: true, dil: "ar", zaman: 1 };
+  const y = kisiOlayYuku(a, "standOnay", "غزة / تقرير", "p1");
+  assert.equal(y.baslik, "اعتُمد نص الستاند (PTC)");
+  assert.equal(y.yol, "#/paketler/p1");
+  assert.equal(kisiOlayYuku({ ...a, dil: "tr" }, "parcaIade", "x".repeat(300), "p1").metin.length, 180);
 });

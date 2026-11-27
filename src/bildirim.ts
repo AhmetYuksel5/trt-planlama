@@ -93,6 +93,18 @@ export const oneriBildir = (o: { id: string; baslik: string; kaynak: string }) =
   void kapiIstek("/bildirim/oneri", "POST", { oneriId: o.id, baslik: o.baslik, kaynak: o.kaynak }).catch(() => {});
 };
 
+/*
+ * Muhabirin işindeki önemli olay telefonuna da (kullanıcı: muhabir askıda
+ * kalmasın): işi ilerletenin tarayıcısı kapıya olayın adını bildirir, başlığı
+ * kapı abonenin dilinde kurar (worker/src/bildirim.ts → KISI_OLAYLARI). Demoda
+ * ve izlemede gitmez; sonucu beklenmez.
+ */
+export type KisiOlayi = "parcaIade" | "standOnay" | "videoSende" | "videoIade" | "tamam";
+export const kisiyeBildir = (g: { kime: string; olay: KisiOlayi; paketId: string; metin: string; anahtar: string }) => {
+  if (!GERCEK || izlemede()) return;
+  void kapiIstek("/bildirim/kisi", "POST", g).catch(() => {});
+};
+
 export const useBildirimDurumu = (yenile: number) => {
   const [d, setD] = useState<BildirimDurumu | { hata: string } | null>(null);
   useEffect(() => {

@@ -1,4 +1,5 @@
-import { oneriBildir } from "./bildirim";
+import { parcaTuru } from "./paketMetni";
+import { kisiyeBildir, oneriBildir, type KisiOlayi } from "./bildirim";
 import { girisAdi, postaAdresi } from "./girisKodu";
 import { staffingAdAnahtari, staffingEkibi, staffingOrnegi, staffingPostasi } from "./staffing";
 import { adiylaBaslik } from "./baslikSecimi";
@@ -4294,7 +4295,8 @@ export const adimIlerle = (ben: Kisi, paketId: string, g: AdimGirdisi = {}) => {
   if (g.klipKodu) veri.kod = g.klipKodu;
   if (g.muhabirId) veri.muhabir = g.muhabirId;
   if (adim === "is") veri.durak = adimAdi(p.adim, p);
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : parcali ? "videoGeldi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
+  const yazildi = kaydet(hareketYaz(d, { kisiId: ben.id, tip: adim === "is" ? "durakTamamlandi" : parcali ? "videoGeldi" : ADIM_HAREKETI[adim], paketId, planId: p.planId, veri }));
+  if (yazildi && sonraki === "tamam" && ben.id !== p.muhabirId) muhabireTelefon(p, "tamam");
   return true;
 };
 
@@ -4347,16 +4349,41 @@ const parcalariYaz = (x: Paket, parcalar: MetinParcasi[]): Paket => ({
   guncelleme: simdi(),
 });
 
+/*
+ * Onayın muhabire etkisi (kullanıcı: muhabir askıda kalmasın): onaylayan
+ * isteğe bağlı kısa not yazarsa not parçada kalır ve hareket muhabire de
+ * gider (ayrı bildirim değil, onayın kendisi); stand (PTC) metni hazır
+ * olunca muhabire ayrı haber, çekime başlayabilir. Bütün parçalar hazırsa
+ * zaten "video sende" haberi gidiyor, stand ayrıca yazılmaz.
+ */
+/* Muhabirin telefonuna (gerçek kipte, abonesiyse): olay başına tek anahtar, aynısı iki kez gitmesin. */
+const muhabireTelefon = (p: Paket, olay: KisiOlayi) => {
+  if (p.muhabirId) kisiyeBildir({ kime: p.muhabirId, olay, paketId: p.id, metin: p.baslik, anahtar: `${p.id}:${olay}:${simdi()}` });
+};
+/* Parça onaylanınca telefona: metin bütünüyle hazırsa "sıra videoda", değilse stand onayı. */
+const parcaTelefonu = (p: Paket, parca: MetinParcasi, hazir: boolean) => {
+  if (hazir) muhabireTelefon(p, "videoSende");
+  else if (parca.asama === "tamam" && parcaTuru(parca) === "stand") muhabireTelefon(p, "standOnay");
+};
+
+const onayNotu = (p: Paket, not?: string): Record<string, string> => (not?.trim() && p.muhabirId ? { not: not.trim(), kime: p.muhabirId } : {});
+const standHaberi = (d: Durum, ben: Kisi, p: Paket, parca: MetinParcasi, hazir: boolean): Durum =>
+  parca.asama === "tamam" && parcaTuru(parca) === "stand" && !hazir && p.muhabirId
+    ? hareketYaz(d, { kisiId: ben.id, tip: "parcaStandOnaylandi", paketId: p.id, planId: p.planId, veri: { parca: parca.ad, kime: p.muhabirId } })
+    : d;
+
 /** Newsdesk parçayı düzeltip Script Editor'e geçiriyor. */
-export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: string) => {
+export const parcaDuzelt = (ben: Kisi, paketId: string, parcaId: string, metin: string, not?: string) => {
   let d = getir();
   const p = paketBul(d, paketId);
   const eski = p?.parcalar?.find((x) => x.id === parcaId);
   if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !metin.trim()) return false;
   const sonra = parcaDilSonrasi(p);
-  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: sonra };
+  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: sonra, ...(not?.trim() && { not: not.trim() }) };
   d = paketGuncelle(d, paketId, (x) => kunyeYaz(parcalariYaz(x, x.parcalar!.map((y) => (y.id === parcaId ? parca : y))), "metin", ben.id, simdi()));
-  kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, parcaSahibi(p, sonra)), ben, p));
+  const hazir = parcalarHazir(paketBul(d, paketId)!);
+  d = standHaberi(parcaHareketi(d, ben, p, "parcaDuzeltildi", parca, parcaSahibi(p, sonra), onayNotu(p, not)), ben, p, parca, hazir);
+  if (kaydet(gfxSirasiHaberi(d, ben, p))) parcaTelefonu(p, parca, hazir);
   return true;
 };
 
@@ -4368,7 +4395,7 @@ export const parcaIade = (ben: Kisi, paketId: string, parcaId: string, gerekce: 
   if (!p || !eski || eski.asama !== "newsdesk" || !parcaYapabilir(ben, p, "newsdesk") || !gerekce.trim()) return false;
   const parca: MetinParcasi = { ...eski, asama: "muhabir", iade: gerekce.trim() };
   d = paketGuncelle(d, paketId, (x) => ({ ...x, parcalar: x.parcalar!.map((y) => (y.id === parcaId ? parca : y)), duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1, guncelleme: simdi() }));
-  kaydet(parcaHareketi(d, ben, p, "parcaIade", parca, "muhabir", { gerekce: gerekce.trim() }));
+  if (kaydet(parcaHareketi(d, ben, p, "parcaIade", parca, "muhabir", { gerekce: gerekce.trim() }))) muhabireTelefon(p, "parcaIade");
   return true;
 };
 
@@ -4377,16 +4404,17 @@ export const parcaIade = (ben: Kisi, paketId: string, parcaId: string, gerekce: 
  * geri göndermiyor). Bütün parçalar hazırsa metin birleşir ve sıra montaja,
  * muhabire geçer.
  */
-export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: string) => {
+export const parcaSonHal = (ben: Kisi, paketId: string, parcaId: string, metin: string, not?: string) => {
   let d = getir();
   const p = paketBul(d, paketId);
   const eski = p?.parcalar?.find((x) => x.id === parcaId);
   if (!p || !eski || eski.asama !== "dil" || !parcaYapabilir(ben, p, "dil") || !metin.trim()) return false;
-  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "tamam" };
+  const parca: MetinParcasi = { ...eski, metin: metin.trim(), asama: "tamam", ...(not?.trim() && { not: not.trim() }) };
   const parcalar = p.parcalar!.map((y) => (y.id === parcaId ? parca : y));
   const hazir = parcalarHazir({ parcalar, uretim: p.uretim });
   d = paketGuncelle(d, paketId, (x) => kunyeYaz({ ...x, parcalar, ...(hazir && { metin: parcalar.map((y) => `${y.ad}\n${y.metin}`).join("\n\n") }), guncelleme: simdi() }, "dil", ben.id, simdi()));
-  kaydet(gfxSirasiHaberi(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : ""), ben, p));
+  d = standHaberi(parcaHareketi(d, ben, p, "parcaTamam", parca, hazir ? "muhabir" : "", onayNotu(p, not)), ben, p, parca, hazir);
+  if (kaydet(gfxSirasiHaberi(d, ben, p))) parcaTelefonu(p, parca, hazir);
   return true;
 };
 
@@ -4403,7 +4431,7 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
   // Video kontrolünün revizyon gerekçesi muhabirin ekranında montaj formunun üstünde.
   const video = adimTuru(p) === "videoKontrol";
   d = paketGuncelle(d, paketId, (x) => ({ ...x, adim: hedef, duzeltmeSayisi: (x.duzeltmeSayisi ?? 0) + 1, ...(video && { videoIade: gerekce.trim() }) }));
-  kaydet(
+  const yazildi = kaydet(
     hareketYaz(d, {
       kisiId: ben.id,
       tip: "geriGonderildi",
@@ -4412,6 +4440,8 @@ export const geriGonder = (ben: Kisi, paketId: string, gerekce: string) => {
       veri: { gerekce: gerekce.trim(), adim: hedef, sahip: durakSahibi(p, hedef) },
     }),
   );
+  // İş muhabire döndüyse telefonuna da.
+  if (yazildi && durakSahibi(p, hedef) === "muhabir") muhabireTelefon(p, video ? "videoIade" : "parcaIade");
   return true;
 };
 

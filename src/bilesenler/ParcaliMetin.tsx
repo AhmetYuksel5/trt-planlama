@@ -1,3 +1,4 @@
+import { useGonderimBildirimi } from "./MuhabirDurumSeridi";
 import { CircleCheck, Plus, Send, Undo2 } from "lucide-react";
 import { HarekeliAlan, HarekeliMetin } from "./Hareke";
 import { useState } from "react";
@@ -39,6 +40,7 @@ export function ParcaliMetin({ ben, paket }: { ben: Kisi; paket: Paket }) {
   const [yeni, setYeni] = useState(false);
   const [video, setVideo] = useState(paket.video ?? "");
   const hazir = parcalarHazir(paket);
+  const gonderildi = useGonderimBildirimi();
   return (
     <Kart baslik={t("parcalar")}>
       <div className="form" data-parcali-metin>
@@ -67,7 +69,7 @@ export function ParcaliMetin({ ben, paket }: { ben: Kisi; paket: Paket }) {
             </label>
             {!hazir && <small className="sonuk-yazi">{t("videoParcaBekliyor")}</small>}
             <div className="form-alt">
-              <button className="dugme" disabled={!hazir || !video.trim()} data-parca-video-gonder onClick={() => confirm(t("eminMisin")) && adimIlerle(ben, paket.id, { video }) && bildir(t("bAdimTamam"))}>
+              <button className="dugme" disabled={!hazir || !video.trim()} data-parca-video-gonder onClick={() => confirm(t("eminMisin")) && adimIlerle(ben, paket.id, { video }) && bildir(gonderildi(paket.id))}>
                 {t("videoyuGonder")}
               </button>
             </div>
@@ -88,6 +90,8 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
   const [metin, setMetin, taslakSil] = useMetinTaslagi(`${paket.id}:${parca.id}:${parca.asama}`, parca.metin);
   const [iade, setIade] = useState<string | null>(null);
   const [duzen, setDuzen] = useState(false);
+  // Onaylarken muhabire isteğe bağlı kısa not (kullanıcı): onayın hareketiyle muhabire gider.
+  const [not, setNot] = useState("");
   const [ad, rozet] = ASAMA_ROZETI[parca.asama];
   const elde = parca.asama !== "tamam" && parcaYapabilir(ben, paket, parca.asama);
   if (duzen) return <ParcaFormu ben={ben} paket={paket} parca={parca} kapat={() => setDuzen(false)} />;
@@ -100,6 +104,11 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
         <Rozet ton={rozet || undefined}>{rozetAdi(t, paket, parca.asama, ad)}</Rozet>
       </div>
       {parca.iade && parca.asama === "muhabir" && <NotKutu>{parca.iade}</NotKutu>}
+      {parca.not && parca.asama !== "muhabir" && (
+        <small className="sonuk-yazi" dir="auto" data-parca-onay-notu>
+          {parca.not}
+        </small>
+      )}
       {parca.ilk && parca.ilk !== parca.metin && parca.asama !== "muhabir" && <ParcaFarki eski={parca.ilk} yeni={parca.metin} />}
       {elde && parca.asama !== "muhabir" ? (
         <HarekeliAlan {...icerikAlani} className="dd-alan" rows={6} value={metin} onChange={(e) => setMetin(e.target.value)} aria-label={parca.ad} data-parca-alan />
@@ -117,19 +126,22 @@ export function ParcaSatiri({ ben, paket, parca }: { ben: Kisi; paket: Paket; pa
           </button>
         </div>
       )}
+      {elde && (parca.asama === "newsdesk" || parca.asama === "dil") && iade === null && (
+        <input dir="auto" value={not} onChange={(e) => setNot(e.target.value)} placeholder={t("pmMuhabireNot")} aria-label={t("pmMuhabireNot")} maxLength={200} data-parca-not />
+      )}
       {elde && parca.asama === "newsdesk" && iade === null && (
         <div className="form-alt">
           <button className="dugme dugme-kotu" onClick={() => setIade("")} data-parca-iade>
             <Undo2 size={15} /> {t("parcaIadeEt")}
           </button>
-          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaDuzelt(ben, paket.id, parca.id, metin) && (taslakSil(), bildir(t("bAdimTamam")))} data-parca-ilerlet>
+          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaDuzelt(ben, paket.id, parca.id, metin, not) && (taslakSil(), setNot(""), bildir(t("bAdimTamam")))} data-parca-ilerlet>
             <CircleCheck size={15} /> {t("parcaDuzeltGonder")}
           </button>
         </div>
       )}
       {elde && parca.asama === "dil" && (
         <div className="form-alt">
-          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaSonHal(ben, paket.id, parca.id, metin) && (taslakSil(), bildir(t("ddGonderildi")))} data-parca-ilerlet data-dd-gonder>
+          <button className="dugme dugme-iyi" disabled={!metin.trim()} onClick={() => parcaSonHal(ben, paket.id, parca.id, metin, not) && (taslakSil(), setNot(""), bildir(t("ddGonderildi")))} data-parca-ilerlet data-dd-gonder>
             <Send size={15} className="yon" /> {t("ddGonder")}
           </button>
         </div>
@@ -168,6 +180,7 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
   const [ad, setAd] = useState(parca?.ad ?? (parca ? "" : t(`pt_${tur}`)));
   const [asil, setAsil] = useState(parca?.asil ?? "");
   const [metin, setMetin, taslakSil] = useMetinTaslagi(`${paket.id}:${parca?.id ?? "yeni"}:muhabir`, parca?.metin ?? "");
+  const gonderildi = useGonderimBildirimi();
   // Ad elle değiştirilmediyse türle birlikte değişir.
   const turSec = (x: ParcaTuru) => {
     if (!ad.trim() || turler.some((y) => ad === t(`pt_${y}`))) setAd(t(`pt_${x}`));
@@ -176,7 +189,7 @@ function ParcaFormu({ ben, paket, parca, kapat }: { ben: Kisi; paket: Paket; par
   const gonder = () => {
     if (parcaGonder(ben, paket.id, { id: parca?.id, ad, metin, tur, asil })) {
       taslakSil();
-      bildir(t("bAdimTamam"));
+      bildir(gonderildi(paket.id));
       kapat();
     }
   };

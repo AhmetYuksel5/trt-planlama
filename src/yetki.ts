@@ -759,6 +759,9 @@ const MUHABIR_PAKET_BILDIRIMI: readonly HareketTipi[] = [
   "masaYayinladi",
   "masaYayinlamadi",
   "paketOnaylandi",
+  // Muhabir askıda kalmasın (kullanıcı): stand metni onaylandı (çekebilir), video kontrolü geçti.
+  "parcaStandOnaylandi",
+  "videoOnaylandi",
   "tamamlandi",
   "uretimKapatildi",
   "tamamlamaGeriAlindi",

@@ -108,6 +108,7 @@ const SABLON: Record<HareketTipi, Anahtar> = {
   parcaDuzeltildi: "hrParcaDuzeltildi",
   parcaIade: "hrParcaIade",
   parcaTamam: "hrParcaTamam",
+  parcaStandOnaylandi: "hrParcaStandOnaylandi",
   gfxHazir: "hrGfxHazir",
   gfxSirada: "hrGfxSirada",
   uretimYoluDegisti: "hrUretimYoluDegisti",

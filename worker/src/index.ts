@@ -1,4 +1,4 @@
-import { aboneCikar, aboneEkle, aboneleriOku, ayarOku as bildirimAyarOku, ayarYaz as bildirimAyarYaz, denemeYuku, gonder as bildirimGonder, pushAdresiUygun, vapidAl, yeniOneriYuku } from "./bildirim.ts";
+import { aboneCikar, aboneEkle, aboneleriOku, ayarOku as bildirimAyarOku, ayarYaz as bildirimAyarYaz, denemeYuku, gonder as bildirimGonder, kisiOlayiMi, kisiOlayYuku, pushAdresiUygun, vapidAl, yeniOneriYuku } from "./bildirim.ts";
 import { ayarBirlestir, bosAyar, gorunur, OZELLIKLER, ozellikSaglayicisi, type Ayar, type Ozellik } from "./ayar.ts";
 import { googleAnahtarlari, oturumuDogrula, type AnahtarBul, type Kimlik } from "./dogrula.ts";
 import { istekKur, sonucCoz } from "./ozellikler.ts";
@@ -530,6 +530,34 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const benim = (await aboneleriOku(env.YZ)).filter((a) => a.uid === kisi.kimlik.uid);
     if (!benim.length) return yanit({ hata: "abone" }, 404);
     return yanit(await bildirimGonder(env.YZ, env.POSTA_ANAHTARI, benim, denemeYuku, d.fetch, d.simdi()));
+  }
+  /*
+   * Bir kişiye (muhabire) işindeki olay: işi ilerleten ekip üyesinin tarayıcısı
+   * çağırır. Kısıtlı kişi çağıramaz; olay sabit listeden, başlık kapıda. Aynı
+   * olay (anahtar) bir kez, çağıran başına günde 300; sayaç önbellekte.
+   */
+  if (req.method === "POST" && yol === "/bildirim/kisi") {
+    if (kisi.kisitli) return yanit({ hata: "yetki" }, 403);
+    const ba = await bildirimAyarOku(env.YZ);
+    if (!ba.acik) return yanit({ giden: 0, kapali: true });
+    const g = (await req.json().catch(() => null)) as { kime?: unknown; olay?: unknown; paketId?: unknown; metin?: unknown; anahtar?: unknown } | null;
+    const kime = typeof g?.kime === "string" ? g.kime.slice(0, 128) : "";
+    const paketId = typeof g?.paketId === "string" ? g.paketId.slice(0, 80) : "";
+    const anahtar = typeof g?.anahtar === "string" ? g.anahtar.slice(0, 160) : "";
+    if (!kime || !paketId || !anahtar || !kisiOlayiMi(g?.olay)) return yanit({ hata: "istek" }, 400);
+    if (kime === kisi.kimlik.uid) return yanit({ giden: 0 });
+    const olay = g.olay;
+    const tekAnahtar = `bildirim:kisi:${kime}:${anahtar}`;
+    const sayAnahtar = `bildirim:kisi-sayi:${kisi.kimlik.uid}:${bugun}`;
+    if (await d.onbellek?.get(tekAnahtar).catch(() => null)) return yanit({ giden: 0, tekrar: true });
+    const sayi = Number((await d.onbellek?.get(sayAnahtar).catch(() => null)) ?? 0);
+    if (sayi >= 300) return yanit({ hata: "sinir" }, 429);
+    await d.onbellek?.put(tekAnahtar, "1", 86400).catch(() => {});
+    await d.onbellek?.put(sayAnahtar, String(sayi + 1), 86400).catch(() => {});
+    const metin = typeof g?.metin === "string" ? g.metin : "";
+    const hedef = (await aboneleriOku(env.YZ)).filter((a) => a.uid === kime);
+    if (!hedef.length) return yanit({ giden: 0 });
+    return yanit(await bildirimGonder(env.YZ, env.POSTA_ANAHTARI, hedef, (a) => kisiOlayYuku(a, olay, metin, paketId), d.fetch, d.simdi()));
   }
   if (req.method === "POST" && yol === "/bildirim/oneri") {
     const ba = await bildirimAyarOku(env.YZ);

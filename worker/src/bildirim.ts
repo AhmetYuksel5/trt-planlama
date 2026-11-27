@@ -209,3 +209,24 @@ export const yeniOneriYuku = (a: Abonelik, baslik: string, kaynak: string, oneri
   etiket: `oneri-${oneriId}`,
 });
 export const denemeYuku = (a: Abonelik): Yuk => ({ baslik: DENEME[a.dil] ?? DENEME.tr, metin: "✓", yol: "#/ayarlar", etiket: "deneme" });
+
+/*
+ * Muhabirin işindeki olay (kullanıcı: muhabir askıda kalmasın, önemli adımlar
+ * telefona da gitsin). Başlık abonenin dilinde, sabit listeden: tarayıcı serbest
+ * başlık gönderemez, yalnız olayın adını; metin paketin Strap'i.
+ */
+export const KISI_OLAYLARI = {
+  parcaIade: { tr: "Metin parçan geri gönderildi", ar: "أُعيد إليك جزء من النص", en: "A script part was returned to you" },
+  standOnay: { tr: "Stand (PTC) metnin onaylandı", ar: "اعتُمد نص الستاند (PTC)", en: "Your stand-up (PTC) script was approved" },
+  videoSende: { tr: "Metin hazır, sıra videoda", ar: "النص جاهز، الدور على الفيديو", en: "Script ready, video is next" },
+  videoIade: { tr: "Video revizyona döndü", ar: "أُعيد الفيديو للتعديل", en: "Video returned for revision" },
+  tamam: { tr: "Paketin tamamlandı", ar: "اكتمل تقريرك", en: "Your package is complete" },
+} as const;
+export type KisiOlayi = keyof typeof KISI_OLAYLARI;
+export const kisiOlayiMi = (x: unknown): x is KisiOlayi => typeof x === "string" && Object.prototype.hasOwnProperty.call(KISI_OLAYLARI, x);
+export const kisiOlayYuku = (a: Abonelik, olay: KisiOlayi, metin: string, paketId: string): Yuk => ({
+  baslik: KISI_OLAYLARI[olay][a.dil] ?? KISI_OLAYLARI[olay].tr,
+  metin: metin.slice(0, 180),
+  yol: `#/paketler/${encodeURIComponent(paketId)}`,
+  etiket: `paket-${paketId}-${olay}`,
+});

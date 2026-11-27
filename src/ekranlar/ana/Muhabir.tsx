@@ -1,3 +1,5 @@
+import { useDurumSatiri } from "../../bilesenler/MuhabirDurumSeridi";
+import type { MuhabireIs } from "../../muhabirDurumu";
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { MesajRozeti } from "../../bilesenler/MesajRozeti";
 import { BitmisPaketSeridi } from "../../bilesenler/BitmisPaket";
@@ -481,7 +483,9 @@ function YapilacakSatiri({ ben, y }: { ben: Kisi; y: Yapilacak }) {
   const yol = sadeAkis(p) ? null : paketYolu(p);
   const simdi = yol ? (yol.find((a) => a.durum === "simdi" || a.durum === "gecikti") ?? yol[yol.length - 1]) : null;
   const asama = p.isaret ? t("msOnayBekliyor") : simdi ? simdi.ad : t(SADE_ASAMA_ADI[sadeSira(p)]);
-  const kimde = !y.sirasi && simdi?.masa && simdi.masa !== "muhabir" ? birimAdi(simdi.masa) : "";
+  // Sıra başkasındaysa birim, aşama, ne zamandan beri (olgu) ve parça sayısı: muhabirDurumu'ndan.
+  const durumSatiri = useDurumSatiri();
+  const kimde = !y.sirasi && y.durum ? durumSatiri(y.durum) : !y.sirasi && simdi?.masa && simdi.masa !== "muhabir" ? birimAdi(simdi.masa) : "";
   return (
     <li data-yapilacak={p.id} data-sirasi={y.sirasi ? "muhabir" : "baska"}>
       <div className="ad">
@@ -501,13 +505,13 @@ function YapilacakSatiri({ ben, y }: { ben: Kisi; y: Yapilacak }) {
       {p.oncelikli && <OncelikRozeti />}
       {geciktiMi(p) && <Rozet ton="kotu">{t("gecikti")}</Rozet>}
       <MesajRozeti ben={ben} paket={p} />
-      {y.sirasi ? <SiradakiAdim ben={ben} paketId={p.id} /> : <a className="dugme dugme-kucuk dugme-ikincil" href={`#/paketler/${p.id}`}>{t("ykIzle")}</a>}
+      {y.sirasi ? <SiradakiAdim ben={ben} paketId={p.id} is={y.durum?.is} /> : <a className="dugme dugme-kucuk dugme-ikincil" href={`#/paketler/${p.id}`}>{t("ykIzle")}</a>}
     </li>
   );
 }
 
 /* Sıra muhabirdeyse yapacağı adım: Paket satırının (Senin sıran) düğmesiyle aynı. */
-function SiradakiAdim({ ben, paketId }: { ben: Kisi; paketId: string }) {
+function SiradakiAdim({ ben, paketId, is }: { ben: Kisi; paketId: string; is?: MuhabireIs }) {
   const { t } = useDil();
   const v = useVeri();
   const p = v.paketler.find((x) => x.id === paketId);
@@ -526,7 +530,7 @@ function SiradakiAdim({ ben, paketId }: { ben: Kisi; paketId: string }) {
     );
   return (
     <a className="dugme dugme-kucuk" href={`#/paketler/${p.id}`}>
-      {t(adimTuru(p) === "metin" ? "metniGonder" : adimTuru(p) === "is" ? "tamamlaVeGec" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
+      {is === "duzelt" || is === "parca" || is === "video" ? t(`mdIs_${is}`) : t(adimTuru(p) === "metin" ? "metniGonder" : adimTuru(p) === "is" ? "tamamlaVeGec" : "videoyuGonder")} <ArrowRight size={14} className="yon" />
     </a>
   );
 }

@@ -25,6 +25,7 @@ import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/Tamamlam
 import { MuhabirSecici } from "./nextday/Formlar";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { GorevlendirmeDugmesi } from "../bilesenler/GorevlendirmeKarti";
+import { MuhabirDurumSeridi } from "../bilesenler/MuhabirDurumSeridi";
 import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
@@ -95,6 +96,8 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
         </NotKutu>
       )}
 
+      {/* Muhabirin şeridi: sıra kimde, ne zamandan beri, sonra ne var (kullanıcı: muhabir askıda kalıyordu). */}
+      {ben.id === paket.muhabirId && !bitmisMi(paket) && <MuhabirDurumSeridi paket={paket} />}
       {/* Biten paket: aşama kutuları yerine yapım aşamalarının ince özeti; kalan işlem (geri alma, masa kararı) altında. */}
       {bitmisMi(paket) ? (
         <>

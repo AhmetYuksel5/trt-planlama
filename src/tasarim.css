@@ -4862,3 +4862,8 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
   .yeni-surum { min-block-size: 44px; min-inline-size: 44px; justify-content: center; padding-inline: 0; }
   .yeni-surum-yazi { display: none; }
 }
+
+/* Muhabirin paket şeridi: sıra kimde, ne zamandan beri, sonra (MuhabirDurumSeridi). */
+.muhabir-durum { display: grid; gap: 2px; padding: var(--ara-2) var(--ara-3); margin-block: 0 var(--ara-3); border: 1px solid var(--cizgi); border-inline-start: 3px solid var(--sonuk); border-radius: 6px; background: var(--yuzey); }
+.muhabir-durum.sende { border-inline-start-color: var(--vurgu); }
+.muhabir-durum .sonuk { font-size: var(--punto-mini); }

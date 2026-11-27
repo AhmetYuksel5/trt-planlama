@@ -1077,6 +1077,8 @@ export interface MetinParcasi {
   tur?: ParcaTuru;
   /** Röportajda konuşmanın aslı (Türkçe, İngilizce…); metin alanı Arapça çevirisi. */
   asil?: string;
+  /** Editörün ya da dil denetmeninin onaylarken muhabire kısa notu (isteğe bağlı; kullanıcı). Son not kalır. */
+  not?: string;
 }
 
 /*
@@ -2057,6 +2059,7 @@ export const HAREKET_TIPLERI = [
   "parcaDuzeltildi",
   "parcaIade",
   "parcaTamam",
+  "parcaStandOnaylandi",
   "gfxHazir",
   "gfxSirada",
   "uretimYoluDegisti",

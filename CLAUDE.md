@@ -1131,6 +1131,29 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Masaüstünde görünüm ayarları (⚙ `data-ak-gorunum`: yazı boyu, Arapça metin
     boyu, sıklık, adım sütunu, karşıtlık; tarayıcıda
     `trt-planlama-asama-gorunum`).
+  - Muhabir askıda kalmasın (kullanıcı: muhabir metni gönderiyor, sonra ne olacağı, işin kimde olduğu
+    belli değildi; tasarımcı, planlamacı ve sistem mühendisi ajanlarıyla; kararlar: süre vaadi yok,
+    yalnız olgu; telefona bildirim; PTC onayı ayrı bildirim; onayda kısa not; fark muhabire de):
+    "sıra kimde" tek kural `muhabirDurumu.ts` (saf): metin durağında paketin adımı muhabirin durağı
+    kalıyor, sıra parçalardan: iade edilen ya da beklenip gelmeyen parça varsa ya da metin hazırsa
+    (video) muhabirde, yoksa en geride kalan parçanın masasında (editoryal, sonra dil); "x itibarıyla"
+    son parça hareketinden; öbür duraklarda `paketYolu` ve `asamaIzi`. Yapılacaklar'ın `sirasi`'si ve
+    menü sayısı ondan (önce parçalar Newsdesk'teyken de "sıra sende" ve "Metni gönder" görünüyordu),
+    satırda birim, aşama, olgu, "metin n/m hazır"; aşama kutusunun "Şimdi kimde"si de. Paket sayfasının
+    başında muhabire şerit (`bilesenler/MuhabirDurumSeridi.tsx`, `data-muhabir-durum`: sende/baska;
+    sıra sende ve iş, değilse birim · aşama · olgu, "Sonra: …", "Sana dönünce: video bağlantısı").
+    Parça ve video gönderiminde bildirim "Gönderildi · Şimdi: X · Sonra: Y" (`useGonderimBildirimi`).
+    Editör ve dil denetmeni onaylarken isteğe bağlı "Muhabire not" (`data-parca-not`,
+    `MetinParcasi.not`, `parcaDuzelt`/`parcaSonHal(…, not)`): parçanın altında (`data-parca-onay-notu`),
+    hareket muhabire de (`veri.kime`, ayrı bildirim değil). Stand metni hazır olunca (bütün metin hazır
+    değilse) ayrı hareket `parcaStandOnaylandi` (muhabire, "çekebilirsin"); video kontrolü geçince
+    (`videoOnaylandi`) muhabirin ziline. "Değişiklikleri göster" parçada herkese, muhabire de.
+    Telefona (Web Push, genel anahtar açıksa ve muhabir abone olduysa): kapıda `POST /bildirim/kisi`
+    (`worker/src/bildirim.ts → KISI_OLAYLARI`: parça iadesi, stand onayı, metin hazır/video sende,
+    video iadesi, paket tamamlandı; başlık abonenin dilinde sabit listeden, tarayıcı yalnız olayı ve
+    Strap'i gönderir; kısıtlı kişi çağıramaz, olay başına tek anahtar, çağıran başına günde 300),
+    tarayıcıda `bildirim.ts → kisiyeBildir`, eylemlerde `muhabireTelefon`. Test
+    `testler/muhabir-sira.cjs`, kapıda `worker/test/bildirim.test.ts`.
   - Biten paket şeridi (kullanıcı: aşama bittikten sonra kutular yerine ince,
     düzenli şerit; başlık, muhabir, tarih; basınca yapım aşamaları, birim ne
     kadar görmeliyse o kadar; `bilesenler/BitmisPaket.tsx`, kurallar

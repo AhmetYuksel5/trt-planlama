@@ -1,4 +1,5 @@
 import { surenPaketGunu } from "./bitmisPaket";
+import { muhabirDurumu, type MuhabirDurumu } from "./muhabirDurumu";
 import { adimYapabilir, paketGorebilir, paketTamamlayabilir } from "./yetki";
 import { bugun, gunEkle } from "./tarih";
 import type { Durum, Kisi, Paket } from "./veri";
@@ -26,6 +27,7 @@ export interface Yapilacak {
   grup: YapilacakGrubu;
   /* Sıra muhabirde mi (metin, video, sonuç bildirme) yoksa başka masada mı. */
   sirasi: boolean;
+  durum: MuhabirDurumu | null;
 }
 
 export const muhabirYapilacaklari = (d: Durum, ben: Kisi, b: string = bugun()): Yapilacak[] =>
@@ -33,7 +35,9 @@ export const muhabirYapilacaklari = (d: Durum, ben: Kisi, b: string = bugun()): 
     .filter((p) => p.muhabirId === ben.id && (p.durum === "onaylandi" || p.durum === "uretimde") && !p.ozelGorevBekliyor && paketGorebilir(ben, p, d))
     .map((p) => {
       const gun = surenPaketGunu(d, p);
-      return { paket: p, gun, grup: yapilacakGrubu(gun, b), sirasi: adimYapabilir(ben, p) || paketTamamlayabilir(ben, p, d) };
+      // Sıra muhabirDurumu'ndan: metin durağında parçalar Newsdesk'teyken de durak muhabirin sayılıyordu.
+      const durum = muhabirDurumu(d, p);
+      return { paket: p, gun, grup: yapilacakGrubu(gun, b), durum, sirasi: durum ? durum.sende : adimYapabilir(ben, p) || paketTamamlayabilir(ben, p, d) };
     })
     .sort((x, y) => (x.gun ?? "9").localeCompare(y.gun ?? "9") || Number(y.sirasi) - Number(x.sirasi));
 
