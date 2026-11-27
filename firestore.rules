@@ -134,9 +134,24 @@ service cloud.firestore {
       allow create: if yetkiVar("davet")
         && request.resource.data.keys().hasOnly(["eposta", "kullanici", "bitis"])
         && request.resource.data.eposta is string
-        && request.resource.data.eposta.matches('[a-z0-9._-]+@giris[.]plannersflow[.]net')
+        && request.resource.data.eposta.matches('[a-z0-9._-]+([+][0-9]+)?@giris[.]plannersflow[.]net')
         && request.resource.data.bitis is int;
       allow delete: if yetkiVar("davet") || (oturum() && eposta() == resource.data.eposta);
+    }
+
+    // Kullanıcı adının şu anki hesabı (src/girisKodu.ts → hesapAdresi; kullanıcı: yeni kodda ada numara
+    // eklenmesin). Şifresini unutana yeni kod yeni hesap açıyor (başkasının şifresi tarayıcıdan değişmiyor);
+    // hesap "ad+n" adresinde, giriş ekranı adı buradan çözüyor. Girişten önce okunduğu için herkes tek tek
+    // okur, liste yok; davet yetkilisi yalnız aynı adın giriş adresine bağlar.
+    match /kullaniciAdlari/{ad} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if yetkiVar("davet")
+        && request.resource.data.keys().hasOnly(["eposta"])
+        && request.resource.data.eposta is string
+        && request.resource.data.eposta.matches('[a-z0-9._-]+([+][0-9]+)?@giris[.]plannersflow[.]net')
+        && request.resource.data.eposta.split('@')[0].split('[+]')[0] == ad;
+      allow delete: if yetkiVar("davet");
     }
 
     // Kayıt başvurusu (src/depo/firebase.ts → basvuruKaydet): formu dolduran, açık bağlantının koduyla yazar;
@@ -175,7 +190,7 @@ service cloud.firestore {
                  && request.time.toMillis() < get(davetYolu()).data.get("bitis", request.time.toMillis() + 1)
                  // Adresin sahibi: davet edilecek adresle önceden hesap açan daveti üstlenmesin. Şifre belirleme
                  // bağlantısı adresi doğruluyor; giriş kodu adresi posta almıyor, şifresi koddan.
-                 && (request.auth.token.email_verified == true || eposta().matches('[a-z0-9._-]+@giris[.]plannersflow[.]net'))
+                 && (request.auth.token.email_verified == true || eposta().matches('[a-z0-9._-]+([+][0-9]+)?@giris[.]plannersflow[.]net'))
                  // Rol ve görev davetteki: davetli kendini yönetici kuramıyor.
                  && request.resource.data.get("rol", "") == get(davetYolu()).data.get("rol", request.resource.data.get("rol", ""))
                  && request.resource.data.get("gorev", "") == get(davetYolu()).data.get("gorev", request.resource.data.get("gorev", ""))
@@ -294,11 +309,11 @@ service cloud.firestore {
     // (src/depo/fark.ts → erisimListesi). Kişiye bağlı ayarlarda (bildirim okundu, ana sayfa, görünüm,
     // workspace) yalnız kendi belgesi; genel ayarı okur, yazamaz.
     match /{alan}/{belge} {
-      allow read: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
+      allow read: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kullaniciAdlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli();
       // Gündem paylaşımı genel ayar belgesinde; herkes sayacı yazıyor, paylaşımı yalnız tam yönetici
       // değiştirir (yoksa her personel kendini ekleyip kapıdan akış okuyabilirdi). Öneri görsellerinin
       // adresi de (gorselAdresi): başkası değiştirse muhabirlerin görselleri kendi sunucusuna giderdi.
-      allow write: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
+      allow write: if etkin() && !(alan in ["kisiler", "davetler", "girisKodlari", "kullaniciAdlari", "kayitBaglantilari", "kayitBasvurulari", "yapilar", "yapiTaslaklari", "muhasebeTanimlari", "muhasebeAnlasmalari", "muhasebeKapanislari"]) && !kisitli()
         && (!(alan == "ayar" && belge == "genel") || hesapYoneticisi()
             || (request.resource.data.get("gundemPaylasim", null) == (resource == null ? null : resource.data.get("gundemPaylasim", null))
                 && request.resource.data.get("gorselAdresi", null) == (resource == null ? null : resource.data.get("gorselAdresi", null))));

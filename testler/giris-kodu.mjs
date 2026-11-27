@@ -105,38 +105,47 @@ await yon.fill("[data-org-ara]", "ali");
 const satir = yon.locator("[data-hesap]", { has: yon.locator("[data-kod-hesap]") }).first();
 await satir.locator("button[aria-haspopup]").last().click();
 await yon.locator("[data-yeni-kod]").click();
-dogrula("yeni kod önerisi", (await yon.getAttribute("[data-yeni-kod-kullanici]", "placeholder")) === "ali.kaya2");
-// Önceki yarım denemeden Firebase'de kalmış ad (kullanıcı: "yeni kod gelmiyor"): kod yine gelsin, sıradaki adla.
+dogrula("yeni kodda ad aynı", (await yon.getAttribute("[data-yeni-kod-kullanici]", "placeholder")) === "ali.kaya");
+// Önceki yarım denemeden Firebase'de kalmış hesap (kullanıcı: "yeni kod gelmiyor"): kod yine gelsin, sıra arkada atlanır.
 await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=deneme`, {
   method: "POST",
   headers: { "content-type": "application/json" },
-  body: JSON.stringify({ email: "ali.kaya2@giris.plannersflow.net", password: "Yarim-deneme-1", returnSecureToken: true }),
+  body: JSON.stringify({ email: "ali.kaya+1@giris.plannersflow.net", password: "Yarim-deneme-1", returnSecureToken: true }),
 });
 await yon.click("[data-yeni-kod-olustur]");
 await yon.waitForSelector("[data-kod]", { timeout: 30000 });
-dogrula("dolu ad atlandı, kod geldi", (await yon.locator("dialog[open]").last().innerText()).includes("ali.kaya3"));
+dogrula("yeni kodun kullanıcı adı aynı (numarasız)", (await yon.textContent("[data-kod-sonuc-kullanici]"))?.trim() === "ali.kaya");
 const kod2 = await yon.getAttribute("[data-kod]", "data-kod");
 await yon.keyboard.press("Escape");
 const ali2 = await yeniSayfa();
 await ali2.goto(ADRES + `#/kod/${kod2}`);
 await ali2.click("[data-kod-devam]");
 await ali2.waitForSelector("[data-kod-sifre-formu]", { timeout: 30000 });
+dogrula("şifre adımında ad aynı", (await ali2.textContent("[data-kod-kullanici]"))?.trim() === "ali.kaya");
 await ali2.fill("[data-kod-sifre]", "Ali-sifresi-2");
 await ali2.fill("[data-kod-sifre2]", "Ali-sifresi-2");
 await ali2.click("[data-kod-sifre-kaydet]");
 await ali2.waitForSelector("header.ust", { timeout: 30000 });
-// Geçişi kişinin kendi tarayıcısı ya da yöneticininki tamamlıyor: listede tek Ali, yeni kullanıcı adıyla.
-await yon.goto(ADRES + "#/organizasyon/hesaplar");
+// Geçişi kişinin kendi tarayıcısı ya da yöneticininki tamamlıyor: listede tek Ali, aynı adla.
+await yon.goto(ADRES + "#/organizasyon/kisiler");
+await yon.fill("[data-org-ara]", "ali");
 await yon.waitForFunction(
   () => {
-    const s = [...document.querySelectorAll("[data-hesap] [data-kod-hesap]")].map((e) => e.textContent?.trim());
-    return s.includes("ali.kaya3") && !s.includes("ali.kaya");
+    const s = [...document.querySelectorAll("[data-kod-hesap]")].map((e) => e.textContent?.trim());
+    return s.length === 1 && s[0] === "ali.kaya";
   },
   null,
   { timeout: 30000 },
 ).then(
-  () => dogrula("kayıt yeni hesaba taşındı", true),
-  async () => dogrula("kayıt yeni hesaba taşındı", false, JSON.stringify(await yon.$$eval("[data-hesap] [data-kod-hesap]", (l) => l.map((e) => e.textContent)))),
+  () => dogrula("kayıt yeni hesaba taşındı, ad aynı", true),
+  async () => dogrula("kayıt yeni hesaba taşındı, ad aynı", false, JSON.stringify(await yon.$$eval("[data-kod-hesap]", (l) => l.map((e) => e.textContent)))),
+);
+// Aynı adla, yeni şifreyle girer (ad arkadaki "+n" hesabına çözülür).
+const ali3 = await yeniSayfa();
+await gir(ali3, "ali.kaya", "Ali-sifresi-2");
+await ali3.waitForSelector("header.ust", { timeout: 30000 }).then(
+  () => dogrula("aynı adla yeni şifreyle giriş", true),
+  () => dogrula("aynı adla yeni şifreyle giriş", false),
 );
 
 // 6. Dış muhabir eklerken görev değil şehir sorulur; ünvan şehirden ("<Şehir> muhabiri"), eski yer ünvanları listede yok.

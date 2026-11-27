@@ -43,16 +43,30 @@ const KULLANICI_ADI = /^[a-z0-9][a-z0-9._-]{1,28}[a-z0-9]$/;
 export const kullaniciAdiGecerli = (ad: string) => KULLANICI_ADI.test(ad) && !/[._-]{2}/.test(ad);
 export const kullaniciAdresi = (ad: string) => `${ad.trim().toLowerCase()}@${GIRIS_ALANI}`;
 
-/** Kod hesabının kullanıcı adı; gerçek adreste boş. */
+/*
+ * Şifresini unutana yeni kod (kullanıcı: ada 1, 2, 3 eklenmesin, aynı ad kalsın): eski
+ * hesabın şifresi tarayıcıdan değişmiyor, yeni Firebase hesabı açılıyor ama kişinin adı
+ * aynı kalıyor. Hesap "ad+n" adresinde ("+" kullanıcı adında geçemediği için başka adla
+ * çakışmaz); adın şu anki hesabı `kullaniciAdlari/<ad>` belgesinde, giriş onu okuyor.
+ */
+export const hesapAdresi = (ad: string, sira: number) => (sira > 0 ? `${ad.trim().toLowerCase()}+${sira}@${GIRIS_ALANI}` : kullaniciAdresi(ad));
+
+/** Kod hesabının kullanıcı adı ("+n" eki görünmez); gerçek adreste boş. */
 export const girisAdi = (eposta?: string | null): string => {
   const e = (eposta ?? "").trim().toLowerCase();
-  return e.endsWith(`@${GIRIS_ALANI}`) ? e.slice(0, -GIRIS_ALANI.length - 1) : "";
+  return e.endsWith(`@${GIRIS_ALANI}`) ? e.slice(0, -GIRIS_ALANI.length - 1).replace(/\+\d+$/, "") : "";
 };
 
 /** Giriş alanına yazılan: "@" yoksa kullanıcı adı. */
 export const girisAdresi = (girdi: string) => {
   const g = girdi.trim().toLowerCase();
   return g && !g.includes("@") ? kullaniciAdresi(g) : g;
+};
+
+/** Denenecek adresler: önce adın şu anki hesabı, sonra eski (kişi yeni kodu henüz kullanmadıysa eskisiyle girer). */
+export const girisAdayAdresleri = (girdi: string, eslesen?: string | null): string[] => {
+  const asil = girisAdresi(girdi);
+  return eslesen && eslesen !== asil && girisAdi(eslesen) === girisAdi(asil) ? [eslesen, asil] : [asil];
 };
 
 const LATIN: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", â: "a", î: "i", û: "u", é: "e", è: "e", à: "a" };

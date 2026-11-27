@@ -45,7 +45,7 @@ import { firebaseAyari } from "../firebase-ayar";
 import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle, yonetimiAgacaTasi } from "../eylemler";
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
-import { KOD_SURESI_SAAT, girisAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
+import { KOD_SURESI_SAAT, girisAdayAdresleri, hesapAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol, type Sehir } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, MUHASEBE_ALANLARI, muhasebeOkur, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
@@ -706,10 +706,28 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
 
 /* --- Giriş, etkinleştirme, şifre --- */
 
-export const sifreyleGir = (eposta: string, sifre: string) => {
+export const sifreyleGir = async (eposta: string, sifre: string) => {
   baslat();
-  // Kod hesabı kullanıcı adıyla giriyor ("@" yoksa giriş adresine çevriliyor; girisKodu.ts).
-  return signInWithEmailAndPassword(auth, girisAdresi(eposta), sifre);
+  // Kod hesabı kullanıcı adıyla giriyor ("@" yoksa giriş adresine çevriliyor; girisKodu.ts). Yeni kod
+  // almış kişinin hesabı "ad+n" adresinde: ad önce kullaniciAdlari'ndan çözülür, olmazsa eski adres.
+  const ad = eposta.trim().toLowerCase();
+  let eslesen: string | null = null;
+  if (ad && !ad.includes("@"))
+    eslesen = await getDoc(doc(db, "kullaniciAdlari", ad))
+      .then((s) => (s.exists() ? String(s.data().eposta ?? "") : null))
+      .catch(() => null);
+  const adaylar = girisAdayAdresleri(ad, eslesen);
+  let hata: unknown;
+  for (const a of adaylar) {
+    try {
+      return await signInWithEmailAndPassword(auth, a, sifre);
+    } catch (x) {
+      hata = x;
+      const h = hataKodu(x);
+      if (h !== "auth/invalid-credential" && h !== "auth/wrong-password" && h !== "auth/user-not-found") throw x;
+    }
+  }
+  throw hata;
 };
 
 export const sifreSifirla = (eposta: string, _dil?: string) => {
@@ -931,23 +949,40 @@ export interface KodDaveti extends Omit<Davet, "durum" | "zaman" | "eposta"> {
 }
 
 /*
+ * Şifresini unutana yeni kod (Kullanicilar.tsx → YeniKodPenceresi): ad aynı kalır, hesap
+ * "ad+n" adresinde açılır (dolu sıra atlanır). `isaretle` hesap açılınca, davetten önce
+ * kişinin kaydını yeni adresle işaretler; işaret yazılamazsa davet ve kod yazılmaz.
+ */
+export interface YeniKodSecenegi {
+  isaretle: (eposta: string) => boolean;
+}
+
+/*
  * Kod davetiyle hesap: ikinci Firebase örneğinde hesap koddan türeyen şifreyle
  * açılıyor, davet ve kodun okuma belgesi yazılıyor. Kullanıcı adı alınmışsa
  * (hesap zaten var) hata: başkasının hesabına yeni kod yazılmasın.
  */
-export const kodlaDavetEt = async (d: KodDaveti): Promise<GirisKodu & { kod: string }> => {
+export const kodlaDavetEt = async (d: KodDaveti, yeni?: YeniKodSecenegi): Promise<GirisKodu & { kod: string }> => {
   baslat();
-  const eposta = kullaniciAdresi(d.kullanici);
   const kod = girisKoduUret();
   const bitis = Date.now() + KOD_SURESI_SAAT * 3600_000;
   const ia = ikinciAuth();
+  let eposta = kullaniciAdresi(d.kullanici);
   try {
-    await createUserWithEmailAndPassword(ia, eposta, kodSifresi(kod));
-  } catch (x) {
-    throw hataKodu(x) === "auth/email-already-in-use" ? { code: "kod/kullanici-var" } : x;
+    for (let sira = 0; ; sira++) {
+      eposta = yeni ? hesapAdresi(d.kullanici, sira) : kullaniciAdresi(d.kullanici);
+      try {
+        await createUserWithEmailAndPassword(ia, eposta, kodSifresi(kod));
+        break;
+      } catch (x) {
+        if (hataKodu(x) !== "auth/email-already-in-use") throw x;
+        if (!yeni || sira >= 50) throw { code: "kod/kullanici-var" };
+      }
+    }
   } finally {
     await signOut(ia).catch(() => {});
   }
+  if (yeni && !yeni.isaretle(eposta)) throw { code: "kod/isaretlenemedi" };
   const { kisiId, yetkiler, kullanici, ...geri } = d;
   const davet: Davet = {
     ...geri,
@@ -962,6 +997,7 @@ export const kodlaDavetEt = async (d: KodDaveti): Promise<GirisKodu & { kod: str
   };
   await setDoc(doc(db, "davetler", eposta), davet);
   await setDoc(doc(db, "girisKodlari", kod), { eposta, kullanici, bitis } satisfies GirisKodu);
+  if (yeni) await setDoc(doc(db, "kullaniciAdlari", kullanici), { eposta });
   return { kod, eposta, kullanici, bitis };
 };
 

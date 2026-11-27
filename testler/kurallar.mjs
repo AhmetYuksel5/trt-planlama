@@ -146,6 +146,18 @@ await davetYaz(KB, { kod: "ABCD2349", bitis: Date.now() - 1000 });
 await t("süresi geçmiş kodla kayıt kurulamaz", false, setDoc(doc(kodDb("kb1", KB), "kisiler", "kb1"), kodKisi("kb1", KB)));
 await t("başkası kodu silemez", false, deleteDoc(doc(db("pl"), "girisKodlari", "ABCD2345")));
 await t("kod sahibi kodunu siler", true, deleteDoc(doc(kodDb("ka1", KA), "girisKodlari", "ABCD2345")));
+// Yeni kodda ad aynı kalır (girisKodu.ts → hesapAdresi): hesap "ad+n"de, ad kullaniciAdlari'ndan çözülür.
+const KA2 = "ali.kaya+1@giris.plannersflow.net";
+const adYaz = (u, ad, v) => setDoc(doc(db(u), "kullaniciAdlari", ad), v);
+await t("davet yetkilisi adı yeni hesaba bağlar", true, adYaz("dv", "ali.kaya", { eposta: KA2 }));
+await t("ad başka adın hesabına bağlanamaz", false, adYaz("dv", "veli", { eposta: KA2 }));
+await t("ad gerçek adrese bağlanamaz", false, adYaz("dv", "ali.kaya", { eposta: "ali@x.test" }));
+await t("personel adı bağlayamaz", false, adYaz("pl", "ali.kaya", { eposta: "ali.kaya+2@giris.plannersflow.net" }));
+await t("oturumsuz adı okur", true, getDoc(doc(anonim, "kullaniciAdlari", "ali.kaya")));
+await t("oturumsuz adları listeleyemez", false, getDocs(collection(anonim, "kullaniciAdlari")));
+await t("davet yetkilisi +n adresine kod yazar", true, kodYaz("dv", "ABCD2350", { eposta: KA2, kullanici: "ali.kaya", bitis }));
+await davetYaz(KA2, { kod: "ABCD2350", bitis });
+await t("+n hesabı kaydını kurar", true, setDoc(doc(kodDb("ka2", KA2), "kisiler", "ka2"), kodKisi("ka2", KA2)));
 // 7. Davetle ilk kayıt: adres doğrulanmış olmalı (davet edilecek adresle önceden hesap açan daveti üstlenmesin),
 // rol ve görev davetteki gibi.
 const DA = "davetli@x.test";

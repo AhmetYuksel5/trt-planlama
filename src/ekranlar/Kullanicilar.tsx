@@ -6,7 +6,7 @@ import { Avatar, Bos, Pencere, Rozet, bildir } from "../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil, oburAd, type Anahtar } from "../dil";
 import { hataAnahtari, hataKodu } from "./GercekGiris";
 import type { Davet, GirisKodu, KayitBaglantisi } from "../depo/firebase";
-import { girisAdi, kodYaz, kullaniciAdiGecerli, kullaniciAdiOner, kullaniciAdresi } from "../girisKodu";
+import { girisAdi, kodYaz, kullaniciAdiGecerli, kullaniciAdiOner } from "../girisKodu";
 import { sehirAdi } from "../etiketler";
 import { epostaListesiUygula, hesapsizKisiEkle, sehirEkle, kisiEpostasi, kisiHesabi, kisiSehri, kisiSil, kisiPozisyonu, kisiYetkileri, muhabirleriIceAktar } from "../eylemler";
 import { muhabirTaslaklari, xlsxOku, type MuhabirTaslagi } from "../iceAktar";
@@ -983,60 +983,40 @@ function BaglaPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi; 
  */
 function YeniKodPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi; kisi: Kisi; alinmis: Set<string>; kodVerildi: (k: KodSonucu) => void; kapat: () => void }) {
   const { t, ad } = useDil();
-  const oneri = kullaniciAdiOner(girisAdi(kisi.eposta), alinmis);
+  // Kullanıcı: yeni kodda ada 1, 2, 3 eklenmesin; kişi aynı adla girsin. Hesap arkada "ad+n"de (girisKodu.ts → hesapAdresi).
+  const kendi = girisAdi(kisi.eposta);
+  const kendiAdlari = new Set([kendi, girisAdi(kisi.yeniEposta)].filter(Boolean));
   const [kullanici, setKullanici] = useState("");
   const [bekle, setBekle] = useState(false);
   const [hata, setHata] = useState("");
-  /*
-   * Kullanıcı: "Yeni kod istediğimde kod gelmiyor". Önce Firebase'de hesap açılıp kişinin kaydı sonra
-   * işaretleniyordu; işaret yazılamayınca (eşitlenmeden) kod gösterilmiyor, açılan hesap adı tutuyordu:
-   * sonraki denemede aynı öneri "kullanıcı adı var"la hep düşüyordu. Şimdi işaret önce (yazılamazsa
-   * hesap açılmaz), önerilen ad Firebase'de doluysa sıradakine geçilir, hata pencerede kalır.
-   */
   const gonder = async (e: FormEvent) => {
     e.preventDefault();
-    const elle = kullanici.trim().toLowerCase();
-    const ilk = elle || oneri;
-    if (!kullaniciAdiGecerli(ilk) || alinmis.has(ilk)) return setHata(t(alinmis.has(ilk) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
+    const ka = kullanici.trim().toLowerCase() || kendi;
+    const baskasinin = alinmis.has(ka) && !kendiAdlari.has(ka);
+    if (!kullaniciAdiGecerli(ka) || baskasinin) return setHata(t(baskasinin ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
     if (!confirm(t("eminMisin"))) return;
     setBekle(true);
     setHata("");
     const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
-    // Vazgeçişte kişinin önceki hali: bekleyen eski yeni kod varsa o, yoksa işaret kalkar.
-    const geriAl = () => kisiEpostasi(ben, kisi.id, kisi.yeniEposta ?? kisi.eposta ?? "");
-    const denenen = new Set(alinmis);
-    let ka = ilk;
     try {
       const f = await firebaseYukle();
-      for (let deneme = 0; ; deneme++) {
-        // İşaret önce: kişi yeni kodla girince kaydı bu işaretle taşınıyor (hesabaGecir).
-        if (kisiEpostasi(ben, kisi.id, kullaniciAdresi(ka)) !== "aktivasyon") throw { code: "kod/isaretlenemedi" };
-        try {
-          const k = await f.kodlaDavetEt({
-            kullanici: ka,
-            ad: adi,
-            birim: kisi.birim,
-            gorev: kisi.gorev,
-            rol: kisi.rol,
-            hesapYoneticisi: !!kisi.hesapYoneticisi,
-            yetkiler: kisi.yetkiler,
-            davetEden: ben.id,
-            kisiId: kisi.id,
-          });
-          kodVerildi({ ...k, ad: adi.ar });
-          kapat();
-          return;
-        } catch (x) {
-          // Önceki yarım denemeden Firebase'de kalmış ad: elle yazılmadıysa sıradaki öneri.
-          if (hataKodu(x) === "kod/kullanici-var" && !elle && deneme < 5) {
-            denenen.add(ka);
-            ka = kullaniciAdiOner(girisAdi(kisi.eposta), denenen);
-            continue;
-          }
-          geriAl();
-          throw x;
-        }
-      }
+      const k = await f.kodlaDavetEt(
+        {
+          kullanici: ka,
+          ad: adi,
+          birim: kisi.birim,
+          gorev: kisi.gorev,
+          rol: kisi.rol,
+          hesapYoneticisi: !!kisi.hesapYoneticisi,
+          yetkiler: kisi.yetkiler,
+          davetEden: ben.id,
+          kisiId: kisi.id,
+        },
+        // Kişi yeni kodla girince kaydı bu işaretle taşınıyor (hesabaGecir); yazılamazsa (eşitlenmeden) kod verilmez.
+        { isaretle: (adres) => kisiEpostasi(ben, kisi.id, adres) === "aktivasyon" },
+      );
+      kodVerildi({ ...k, ad: adi.ar });
+      kapat();
     } catch (x) {
       setHata(hataKodu(x) === "kod/isaretlenemedi" ? t("kodIsaretlenemedi") : gonderimHatasi(x));
     } finally {
@@ -1048,7 +1028,7 @@ function YeniKodPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi
       <form className="form" onSubmit={gonder} data-yeni-kod-formu>
         <label>
           {t("kullaniciAdi")}
-          <input dir="ltr" autoCapitalize="none" spellCheck={false} value={kullanici} placeholder={oneri} onChange={(e) => setKullanici(e.target.value.toLowerCase())} data-yeni-kod-kullanici />
+          <input dir="ltr" autoCapitalize="none" spellCheck={false} value={kullanici} placeholder={kendi} onChange={(e) => setKullanici(e.target.value.toLowerCase())} data-yeni-kod-kullanici />
         </label>
         {hata && (
           <p className="not-kutu uyari" role="alert" data-yeni-kod-hata>
@@ -1072,9 +1052,13 @@ export type KodSonucu = GirisKodu & { kod: string; ad: string };
 
 const kodAdresi = (kod: string) => `${location.origin}${location.pathname}#/kod/${kod}`;
 
-/* Kayıtta ve davetlerde geçen kullanıcı adları (yeni kod önerisi bunlardan kaçınıyor). */
+/*
+ * Kayıtta ve bekleyen davetlerde geçen kullanıcı adları (yeni kod önerisi bunlardan kaçınıyor).
+ * Kullanılmış davetin adı, o adla kişi kalmadıysa boş: eskiden numaralı ad (ali.kaya2) almış
+ * kişiye yeni kodda eski adı (ali.kaya) verilebilsin; Firebase'de kalan hesap "+n"le atlanıyor.
+ */
 const alinmisKullanicilar = (kisiler: Kisi[], davetler: Davet[] | null) =>
-  new Set([...kisiler.flatMap((k) => [girisAdi(k.eposta), girisAdi(k.yeniEposta)]), ...(davetler ?? []).map((d) => girisAdi(d.eposta))].filter(Boolean));
+  new Set([...kisiler.flatMap((k) => [girisAdi(k.eposta), girisAdi(k.yeniEposta)]), ...(davetler ?? []).filter((d) => d.durum === "bekliyor").map((d) => girisAdi(d.eposta))].filter(Boolean));
 
 export function KullaniciAdi({ eposta }: { eposta?: string }) {
   const { t } = useDil();

@@ -231,10 +231,23 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     e-posta doğrulaması yok), kendi şifresini belirler, kod belgesi silinir:
     kod tek kullanımlık, şifre değişince girmez. Sonra kullanıcı adı ve
     şifreyle (`girisAdresi`: "@" yoksa sahte adres). Şifre sıfırlama e-postası
-    yok ("Şifremi unuttum" nedenini yazar): yönetici satırdaki "Yeni kod"la
-    yeni kullanıcı adıyla (ali.kaya → ali.kaya2) yeni hesap açar, eski kayıt
-    `yeniEposta` işaretlenir, kişi yeni kodla girince kaydı `hesabaGecir`'le
-    taşınır (başkasının şifresi tarayıcıdan değişmiyor). Kod kişiye kendiliğinden gitmez, yöneticinin penceresinde çıkar, kopyala ya da WhatsApp'la verilir. Yeni kodda kişinin işareti hesaptan önce yazılır (kullanıcı: "yeni kod gelmiyor": işaret sonradan yazılamayınca kod çıkmıyor, açılan hesap adı tutuyor, sonraki deneme "kullanıcı adı var"la hep düşüyordu; `kisiEpostasi` yazılmayan kayıtta başarı dönmez); önerilen ad Firebase'de doluysa sıradaki denenir, hata pencerede kalır (`data-yeni-kod-hata`), hesap açılamazsa işaret geri alınır. Kullanılmamış kodun
+    yok ("Şifremi unuttum" nedenini yazar): yönetici satırdaki "Yeni kod"la aynı
+    kullanıcı adıyla yeni kod verir (kullanıcı: ada 1, 2, 3 eklemek saçmaydı; önce
+    ali.kaya → ali.kaya2'ydi). Başkasının şifresi tarayıcıdan değişmediği için
+    arkada yeni Firebase hesabı açılır, adresi `ad+n@giris.plannersflow.net`
+    (`girisKodu.ts → hesapAdresi`; "+" kullanıcı adında geçemez, çakışmaz; dolu
+    sıra atlanır, `kodlaDavetEt(…, { isaretle })`), `girisAdi` "+n"yi göstermez.
+    Adın şu anki hesabı `kullaniciAdlari/<ad>` belgesinde (kural: herkes `get`,
+    liste yok, davet yetkilisi yalnız aynı adın giriş adresine yazar); giriş
+    (`depo/firebase.ts → sifreyleGir`, `girisAdayAdresleri`) önce oradaki hesabı,
+    sonra eski adresi dener: kişi yeni kodu kullanmadıysa eskisiyle girer. Eski
+    kayıt `yeniEposta` işaretlenir (hesap açılınca, davetten önce; yazılamazsa
+    davet ve kod yazılmaz, `kisiEpostasi` yazılmayan kayıtta başarı dönmez), kişi
+    yeni kodla girince kaydı `hesabaGecir`'le taşınır. Kod kişiye kendiliğinden
+    gitmez, yöneticinin penceresinde çıkar, kopyala ya da WhatsApp'la verilir; hata
+    pencerede kalır (`data-yeni-kod-hata`; kullanıcı: "yeni kod gelmiyor", hata
+    kısa bildirimle kayboluyordu). Önceden numaralı ad almış kişi bir sonraki yeni
+    kodda yönetici eski adını yazarsa ona döner. Kullanılmamış kodun
     yenisi `kodYenile` (eski kodla girip şifreyi yeni koda çevirir).
     Kurallar: `girisKodlari` herkes `get`, liste yok, yalnız davet yetkilisi
     yalnız giriş adresine yazar, sahibi siler; davetle kayıt `bitis`'ten
