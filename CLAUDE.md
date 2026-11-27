@@ -942,10 +942,13 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     ayar belgesine yazar (`Durum.kullanim`, kişiye bağlı harita, kuralda `kendiAyari`; kısıtlı
     muhabir de; `App.tsx`, `eylemler.ts → kullanimYaz`): son görülme, ilk görülme, açtığı yol
     (tarayıcı, ana ekran uygulaması `display-mode: standalone`, Android uygulaması: yönlendiren
-    `android-app://net.plannersflow.app`, ilk yüklemede sekmeye yazılır `kanalHatirla`), cihaz,
+    `android-app://net.plannersflow.app`, ilk yüklemede sekmeye yazılır `kanalHatirla`), sistem
+    (Android, iOS, PC; `cihazAlgila`, eski izde telefon/bilgisayar `cihazGorunumu`),
     şimdiye dek kullandığı yollar. Aynı gün aynı yol ve cihazla yeniden yazılmaz; bölmede,
     izlemede ve eşitlenmeden yazılmaz; ileriye dönük (geçmiş yok). Yalnız tam yönetici görür:
-    satırda "Son görülme · yol · cihaz" ya da "Hiç girmedi" (`KullanimSatiri`, `data-kullanim`),
+    satırda kısa "13 dk · Android" (kullanıcı: uzun satır telefonda sayfayı yana kaydırıyordu;
+    uygulamayla girdiyse simgesi, yol ve tam zaman ipucunda) ya da "Hiç girmedi" (`KullanimSatiri`,
+    `data-kullanim`; ağacın sütunu `minmax(0, 1fr)`, uzun satır sayfayı genişletmesin),
     süzgeç "Hiç girmemiş · n" ve "Uygulamayla giren · n" (`data-org-hesap-suz` girmedi/uygulama).
     Test `testler/kullanim.cjs`, kural `testler/kurallar.mjs`. Ayrı davetler tablosu kalktı. Test
     `testler/org-hesap.cjs`; gerçek kip emülatörle `testler/giris-kodu.mjs`.

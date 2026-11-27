@@ -2516,7 +2516,9 @@ dialog.pencere.genis { width: min(1100px, calc(100vw - 2 * var(--ara-4))); }
 /* Taslak yokken yalnız durum satırı: sarı çubuk değil, yapışkan da değil. */
 .taslak-cubugu.yayinda { background: none; border: 0; padding: 0; position: static; justify-content: flex-start; color: var(--sonuk); font-size: var(--punto-kucuk); margin: 0; }
 .sekmeler > a { display: inline-flex; align-items: center; text-decoration: none; }
-.org-agac { display: grid; gap: var(--ara-2); }
+/* Sütun minmax(0, 1fr): satırdaki uzun ad ya da tek satırlık küçük yazı ağacı genişletip telefonda sayfayı yana kaydırıyordu. */
+.org-agac { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ara-2); }
+.org-agac details { min-inline-size: 0; }
 .org-sonuclar .ad small[data-org-kisi-yeri] { display: block; }
 .org-yonetici-cubugu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
 /* Postadan kişiler: üstte toplu atama çubuğu, satırda birim ve ünvan seçimi. */

@@ -3,6 +3,7 @@ import { useAdimDurumu } from "../../yol";
 import { kisiUyar, sozcuklerUyar } from "../../arama";
 import { sehirAdi } from "../../etiketler";
 import {
+  AppWindow,
   ArrowDown,
   ArrowUp,
   Building2,
@@ -33,7 +34,6 @@ import {
 } from "../../bilesenler/Parcalar";
 import {
   DILLER,
-  gecenSure,
   metin,
   tarihYaz,
   saatYaz,
@@ -43,7 +43,8 @@ import {
   type Metin,
 } from "../../dil";
 import { BIRIM_ADI, GOREV_ADI } from "../../etiketler";
-import { uygulamaKullaniyor } from "../../kullanim";
+import { cihazGorunumu, uygulamaKullaniyor } from "../../kullanim";
+import { sureYazisi } from "../../bilesenler/AsamaKutulari";
 import {
   yapiSurumunuTaslagaAl,
   yapiTaslagi,
@@ -1059,7 +1060,8 @@ function KisiSatiri({ ben, kisi: k, kullanim, durum, hesapIsi, tayin, yer, sec }
   );
 }
 
-/* Son görülme, açtığı yol ve cihaz (kullanim.ts); uygulamayı başka gün kullandıysa o da. */
+/* Son görülme kısa: "13 dk · Android" (kullanıcı: uzun satır kalabalıktı); uygulamayla girdiyse
+   simgesi, yol ve tam zaman ipucunda. */
 function KullanimSatiri({ kisi: k }: { kisi: Kisi }) {
   const { t } = useDil();
   const iz = useVeri().kullanim?.[k.id];
@@ -1070,9 +1072,22 @@ function KullanimSatiri({ kisi: k }: { kisi: Kisi }) {
       </small>
     );
   const kanallar = [iz.kanal, ...iz.kanallar.filter((x) => x !== iz.kanal)];
+  const ms = Date.now() - new Date(iz.son).getTime();
+  const uygulama = uygulamaKullaniyor(iz);
   return (
-    <small className="sonuk-yazi" data-kullanim={iz.kanal} data-kullanim-kanallar={iz.kanallar.join(" ")} title={new Date(iz.son).toLocaleString()}>
-      {t("kulSon", { zaman: gecenSure(iz.son) })} · {kanallar.map((x) => t(`kulKanal_${x}`)).join(" / ")} · {t(`kulCihaz_${iz.cihaz}`)}
+    <small
+      className="sonuk-yazi"
+      data-kullanim={iz.kanal}
+      data-kullanim-kanallar={iz.kanallar.join(" ")}
+      title={`${new Date(iz.son).toLocaleString()} · ${kanallar.map((x) => t(`kulKanal_${x}`)).join(" / ")}`}
+    >
+      {ms < 60_000 ? t("kulSimdi") : sureYazisi(ms, t)} · {t(`kulCihaz_${cihazGorunumu(iz)}`)}
+      {uygulama && (
+        <>
+          {" "}
+          <AppWindow size={12} aria-label={t(`kulKanal_${iz.kanallar.includes("apk") ? "apk" : "pwa"}`)} />
+        </>
+      )}
     </small>
   );
 }

@@ -34,7 +34,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await gir(p, "pl1");
   let d = await veri(p);
   const iz = d.kullanim?.pl1;
-  ok(iz && iz.kanal === "tarayici" && iz.cihaz === "bilgisayar", "tarayıcı ve bilgisayar izi yazıldı");
+  ok(iz && iz.kanal === "tarayici" && iz.cihaz === "pc", "tarayıcı ve PC izi yazıldı");
   // 2. Aynı gün yeniden açılış yazılmaz.
   await gir(p, "pl1");
   d = await veri(p);
@@ -53,7 +53,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p2.evaluate((k) => localStorage.setItem("trt-planlama-v25", k), kayit);
   await gir(p2, "pl1");
   d = await veri(p2);
-  ok(d.kullanim.pl1.kanal === "pwa" && d.kullanim.pl1.cihaz === "telefon", "ana ekran uygulaması ve telefon tanındı");
+  ok(d.kullanim.pl1.kanal === "pwa" && d.kullanim.pl1.cihaz === "ios", "ana ekran uygulaması ve iOS tanındı");
   ok(d.kullanim.pl1.kanallar.includes("tarayici") && d.kullanim.pl1.kanallar.includes("pwa"), "önceki yol da listede");
   ok(d.kullanim.pl1.ilk === iz.ilk, "ilk görülme korundu");
 
@@ -70,7 +70,7 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p3.evaluate((k) => localStorage.setItem("trt-planlama-v25", k), kayit2);
   await gir(p3, "pl1");
   d = await veri(p3);
-  ok(d.kullanim.pl1.kanal === "apk", "Android uygulaması tanındı");
+  ok(d.kullanim.pl1.kanal === "apk" && d.kullanim.pl1.cihaz === "android", "Android uygulaması tanındı");
 
   // 5. Tam yönetici Kişiler'de görür; süzgeçler.
   const kayit3 = await p3.evaluate(() => localStorage.getItem("trt-planlama-v25"));
@@ -85,7 +85,9 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   await p.waitForTimeout(300);
   const satir = p.locator('[data-org-kisi="pl1"] [data-kullanim]').first();
   ok((await satir.getAttribute("data-kullanim")) === "apk", "satırda son yol Android uygulaması");
-  ok(/Android/.test(await satir.innerText()), "satırda yolun adı");
+  // Kısa satır (kullanıcı): "13 dk · Android"; yol ve tam zaman ipucunda.
+  ok(/^\S+( \S+)? · Android$/.test((await satir.innerText()).trim()), "satır kısa: süre · sistem — " + (await satir.innerText()));
+  ok(/Android/.test((await satir.getAttribute("title")) ?? ""), "yolun adı ipucunda");
   const uygulamada = await p.locator("[data-org-kisi]").evaluateAll((l) => l.map((x) => x.getAttribute("data-org-kisi")));
   ok(uygulamada.includes("pl1") && !uygulamada.includes("yo3"), "süzgeç yalnız uygulamayı kullananları gösterir");
   await p.click('[data-org-hesap-suz="uygulama"]');

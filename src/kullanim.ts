@@ -10,7 +10,8 @@ import { iso } from "./tarih";
 
 /** Tarayıcıda site, ana ekrana eklenmiş uygulama (PWA), Android uygulaması (APK, TWA). */
 export type KullanimKanali = "tarayici" | "pwa" | "apk";
-export type KullanimCihazi = "telefon" | "bilgisayar";
+/** İşletim sistemi; "telefon"/"bilgisayar" sistemden önce yazılmış eski izlerde. */
+export type KullanimCihazi = "android" | "ios" | "pc" | "telefon" | "bilgisayar";
 
 export interface KullanimIzi {
   /** Son açılış (ISO). */
@@ -61,5 +62,14 @@ export const kanalAlgila = (): KullanimKanali => {
   return "tarayici";
 };
 
-export const cihazAlgila = (): KullanimCihazi =>
-  /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent) || (matchMedia("(pointer: coarse)").matches && innerWidth < 1024) ? "telefon" : "bilgisayar";
+export const cihazAlgila = (): KullanimCihazi => {
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return "android";
+  // iPadOS kendini Mac diye tanıtıyor: dokunmatik Mac iPad'dir.
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  return "pc";
+};
+
+/** Ekrandaki kısa ad: eski izde telefon, Android uygulamasıysa Android. */
+export const cihazGorunumu = (iz: KullanimIzi): "android" | "ios" | "pc" | "telefon" =>
+  iz.cihaz === "bilgisayar" ? "pc" : iz.cihaz === "telefon" ? (iz.kanal === "apk" ? "android" : "telefon") : iz.cihaz;
