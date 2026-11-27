@@ -2,6 +2,7 @@ import { birimAdi } from "../yapi";
 import { Building2, ChevronRight, Ellipsis, Landmark, Rss, Trash2, Tv, type LucideIcon } from "lucide-react";
 import { epostaOnerisiSil, epostaOnerisiSilinir } from "../eylemler";
 import { useBen } from "../oturum";
+import { sayfaGorebilir } from "../yetki";
 import { geciktiMi, gorunenSahip, stokDurumu } from "../akis";
 import { aralikYaz, saatYaz, tarihYaz, useDil } from "../dil";
 import { BICIM_ADI, KANAL_ADI, KAYNAK_ADI, ONERI_DURUM_ADI, ONERI_ETIKET_ADI, ONERI_DURUM_TONU, STOK_DURUM_ADI, sehirAdi, ulkeAdi } from "../etiketler";
@@ -398,6 +399,7 @@ export const useSehir = () => {
  */
 export function OneriPlanEtiketleri({ oneri, d, bagli = false }: { oneri: Oneri; d: Durum; bagli?: boolean }) {
   const { t, dil } = useDil();
+  const ben = useBen();
   const e = oneriEtiketleri(d, oneri);
   if (!e.length) return null;
   const p = oneriEtiketPlanlari(d, oneri);
@@ -411,7 +413,8 @@ export function OneriPlanEtiketleri({ oneri, d, bagli = false }: { oneri: Oneri;
         const h = hedef(x);
         const ipucu = h.length ? `${t(ONERI_ETIKET_ADI[x])} · ${h.map((y) => y.ad).join(" / ")}` : undefined;
         const sinif = `rozet rozet-plan renk-${x}`;
-        return bagli && h.length ? (
+        // Planı göremeyene (muhabir) bağlantı değil: basınca "erişimin yok" açılıyordu.
+        return bagli && h.length && sayfaGorebilir(ben, x === "nextday" ? "nextday" : "haftalik") ? (
           <a key={x} className={sinif} href={h[0].yol} title={ipucu} data-oneri-etiketi={x}>
             {t(ONERI_ETIKET_ADI[x])}
           </a>

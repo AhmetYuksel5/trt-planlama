@@ -9,6 +9,8 @@ import { yerelGun } from "../tarih";
 import { IS_DURUM_ADI, ONERI_DURUM_ADI } from "../etiketler";
 import { SISTEM, faaliyetBul, haftaBul, kisiBul, oneriBul, paketBul, planBul, type BaglantiTuru, type Birim, type Durum, type Hareket, type HareketTipi, type IsDurumu, type OneriDurum, type Paket } from "../veri";
 import { Avatar, Icerik, Rozet } from "./Parcalar";
+import { useBen } from "../oturum";
+import { sayfaGorebilir } from "../yetki";
 
 /**
  * Hareket kaydının ekrandaki hali.
@@ -230,7 +232,14 @@ export interface Konu {
 
 export function useHareketKonusu() {
   const { t, dil } = useDil();
+  const ben = useBen();
   return (h: Hareket, d: Durum): Konu | null => {
+    /*
+     * Planı göremeyen (muhabir; kural: muhabir planı görmez) "planda başlığa
+     * eklendin" bildirimine basınca "erişimin yok"a düşüyordu (kullanıcı):
+     * başlık Takiplerim'in "Planda eklendiğin başlıklar"ında.
+     */
+    if (h.tip === "planaMuhabirEklendi" && !sayfaGorebilir(ben, "nextday")) return { baslik: h.veri?.baslik || undefined, href: "#/takipler", ...(h.veri?.baslik ? {} : { metin: "" }) };
     // Notta anma: konu notun yazıldığı sayfa (özel yayın, paket, öneri, haftalık plan).
     if (h.tip === "bahsedildi" && h.veri?.yol) return { href: h.veri.yol, ...(h.veri.baslik ? { baslik: h.veri.baslik } : { metin: "" }) };
     /* Takvim hareketinde konu faaliyetin kendisi; plana alındıysa da plan değil, faaliyet. */
@@ -252,12 +261,14 @@ export function useHareketKonusu() {
     if (o) return { baslik: o.haberBasligi, href: `#/oneriler/${o.id}` };
     const hafta = haftaBul(d, h.haftaId);
     const kalem = hafta?.kalemler.find((k) => k.id === h.veri?.kalem);
-    if (hafta && kalem) return { baslik: kalemAdi(kalem), href: `#/haftalik/${hafta.id}` };
+    // Planı göremeyene (muhabir) plan bağlantısı verilmez: ana sayfasına.
+    const plani = (y: string, sayfa: string) => (sayfaGorebilir(ben, sayfa) ? y : "#/");
+    if (hafta && kalem) return { baslik: kalemAdi(kalem), href: plani(`#/haftalik/${hafta.id}`, "haftalik") };
     const oz = d.ozel.find((x) => x.id === h.ozelId);
     if (oz) return { baslik: oz.ad, href: `#/ozel/${oz.id}` };
     const plan = planBul(d, h.planId);
-    if (plan) return { metin: `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")}`, href: `#/nextday/${plan.id}` };
-    if (hafta) return { metin: `${t("haftalik")} · ${aralikYaz(hafta.baslangic, haftaSonu(hafta.baslangic), dil)}`, href: `#/haftalik/${hafta.id}` };
+    if (plan) return { metin: `${t("nextday")} · ${tarihYaz(plan.tarih, dil, "kisa")}`, href: plani(`#/nextday/${plan.id}`, "nextday") };
+    if (hafta) return { metin: `${t("haftalik")} · ${aralikYaz(hafta.baslangic, haftaSonu(hafta.baslangic), dil)}`, href: plani(`#/haftalik/${hafta.id}`, "haftalik") };
     return null;
   };
 }

@@ -21,12 +21,12 @@ export const VARSAYILAN_TAKDIR: GeriBildirimSablonu = {
   ad: "PKG geri bildirimi",
   konu: "تكليف تقرير من {sehir} | {strap}",
   govde:
-    "مرحبًا {muhabir}،\n\nنرجو منك إعداد التقرير التالي ليوم {gun}، وشكرًا على جهودك.\n\nعنوان التقرير: {strap}\nالملف: {baslik}\nالتفاصيل: {aciklama}\nالمكان: {yer}\nملاحظة: {not}\n\nنرجو منك البقاء على تواصل مع غرفة الأخبار خلال العمل على التقرير.\n\nمع التحية،\n{gonderen}\nقسم التخطيط",
+    "مرحبًا {muhabir}،\n\nنرجو منك إعداد التقرير التالي ليوم {gun}، وشكرًا على جهودك.\n\nعنوان التقرير: {strap}\nالملف: {baslik}\nالتفاصيل: {aciklama}\nالمكان: {yer}\nموعد التسليم: {teslim}\nملاحظة: {not}\n\nنرجو منك البقاء على تواصل مع غرفة الأخبار خلال العمل على التقرير.\n\nمع التحية،\n{gonderen}\nقسم التخطيط",
   cc: "",
   bcc: "",
 };
 
-export const TAKDIR_ALANLARI = ["muhabir", "gun", "sehir", "strap", "baslik", "aciklama", "yer", "not", "gonderen"] as const;
+export const TAKDIR_ALANLARI = ["muhabir", "gun", "teslim", "sehir", "strap", "baslik", "aciklama", "yer", "not", "gonderen"] as const;
 
 export const takdirSablonu = (d: Pick<Durum, "geriBildirimSablonlari">): GeriBildirimSablonu =>
   d.geriBildirimSablonlari?.find((s) => s.id === TAKDIR_SABLONU) ?? VARSAYILAN_TAKDIR;
@@ -38,12 +38,20 @@ export const takdirPaketleri = (d: Pick<Durum, "paketler">, planId: string): Pak
 /* Muhabirin adresi: kurumsal, yoksa kişisel (Excel'den gelenin çoğunda yalnız biri var). */
 export const takdirAdresi = (k?: Kisi) => muhabirAdresi(k);
 
+/*
+ * Teslim günü (kullanıcı: postada "bu teslim gününe kadar" densin): paketin
+ * teslim günü, yoksa önerinin teslim tahmini. Yayın günüyle aynıysa yazılmaz,
+ * satır düşer: "ليوم {gun}" zaten söylüyor.
+ */
+const teslimYaz = (teslim: string | undefined, gun: string | undefined) => (teslim && teslim !== gun ? ciktiTarihi(teslim, "ar") : "");
+
 const alanlar = (d: Durum, p: Paket, gonderen?: Kisi): Record<string, string> => {
   const plan = planBul(d, p.planId);
   const pb = plan?.basliklar.find((b) => b.id === p.planBaslikId);
   return {
     muhabir: kisiAr(kisiBul(d, p.muhabirId)),
     gun: plan ? ciktiTarihi(plan.tarih, "ar") : "",
+    teslim: teslimYaz(p.sonTarih ?? oneriBul(d, p.oneriId)?.teslimTahmini, plan?.tarih),
     sehir: paketYeri(p),
     strap: p.baslik.trim(),
     baslik: baslikBul(d, pb?.baslikId)?.ad ?? "",
@@ -112,6 +120,7 @@ const kalemAlanlari = (d: Durum, k: HaftalikKalem, gonderen?: Kisi): Record<stri
   return {
     muhabir: kisiAr(m),
     gun: k.tarih ? ciktiTarihi(k.tarih, "ar") : "",
+    teslim: teslimYaz(k.teslimGunu ?? oneriBul(d, k.oneriId)?.teslimTahmini, k.tarih),
     sehir: yer,
     strap: kalemStrapi(d, k).trim(),
     baslik: baslikBul(d, k.baslikId)?.ad ?? "",

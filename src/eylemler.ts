@@ -445,6 +445,17 @@ const oneriMasrafi = (d: Durum, oneriId: string | undefined, onay = true): Parti
   return { masraflar: o.masraflar };
 };
 
+/*
+ * Önerinin teslim tahmini (kullanıcı: önerideki teslim süresi akışta havada
+ * kalmasın): öneriden doğan paketin teslim günü olur, paketin günü yoksa.
+ * Yapılacaklar, Stok'un teslim satırı ve PKG geri bildiriminin "موعد التسليم"i
+ * paketin `sonTarih`'inden okuyor.
+ */
+const oneriTeslimi = (d: Durum, oneriId: string | undefined): Partial<Paket> => {
+  const t = oneriId ? oneriBul(d, oneriId)?.teslimTahmini : undefined;
+  return t ? { sonTarih: t } : {};
+};
+
 export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   // Gündem takibini kullanan (tam yönetici ya da paylaştığı) hangi birimde olursa olsun muhabir dışı
   // kaynaktan öneri girer: gündemdeki fırsat öneriye çevriliyor.
@@ -818,6 +829,7 @@ export const oneriPlanaEkle = (
       oncelikli: o.talimatVeren ? true : undefined,
       ...planNotlari,
       ...oneriMasrafi(d, o.id, g.masraf !== false),
+      ...oneriTeslimi(d, o.id),
       notlar: [],
       olusturma: simdi(),
       guncelleme: simdi(),
@@ -903,6 +915,7 @@ export const oneriyePaketEkle = (ben: Kisi, oneriId: string, strap: string): boo
     oneriId: o.id,
     oncelikli: o.talimatVeren ? true : undefined,
     ...oneriMasrafi(d, o.id),
+    ...oneriTeslimi(d, o.id),
     notlar: [],
     olusturma: simdi(),
     guncelleme: simdi(),
@@ -2152,6 +2165,7 @@ const haftaliktanAktar = (d: Durum, kisiId: string, haftaId: string, k: Haftalik
       oneriId: k.oneriId,
       haftalikKalemId: k.id,
       ...oneriMasrafi(d, k.oneriId),
+      ...oneriTeslimi(d, k.oneriId),
       ...(k.takdirBildirimi ? { takdirBildirimi: k.takdirBildirimi } : {}),
       notlar: [],
       olusturma: simdi(),
@@ -2190,7 +2204,9 @@ const haftaliktanPaket = (d: Durum, ben: Kisi, haftaId: string, k: HaftalikKalem
     tur: k.tur,
     bicim: k.bicimler[0],
     ...kalemPaketDurumu(k),
-    // Teslim günü: "Stok ve programlar" kaleminde toplantının verdiği gün, günü olan kalemde (feature, ekonomi…) o gün.
+    // Teslim günü: "Stok ve programlar" kaleminde toplantının verdiği gün, günü olan kalemde (feature, ekonomi…) o gün;
+    // ikisi de yoksa önerinin teslim tahmini.
+    ...oneriTeslimi(d, k.oneriId),
     ...((k.teslimGunu ?? k.tarih) && { sonTarih: k.teslimGunu ?? k.tarih }),
     sahaGerekli: false,
     // Masa kolları (ekonomi, program, spor) kendi birimine gidiyor; gerisi (feature, günü olmayan haber) bitince stokta bekliyor.

@@ -166,7 +166,9 @@ export function GorevlendirFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oner
   const { t } = useDil();
   const v = useVeri();
   const B = bugun();
-  const [tarih, setTarih] = useState(oneri.hedefTarih && oneri.hedefTarih > B ? oneri.hedefTarih : B);
+  // Görevin günü teslim günü: önerinin teslim tahmini, yoksa olayın günü.
+  const ilk = oneri.teslimTahmini || oneri.hedefTarih;
+  const [tarih, setTarih] = useState(ilk && ilk > B ? ilk : B);
   // Kimin için: birimin aldığı (ya da yanıtını beklediği) sorudan ya da önerinin masa kolundan; haber merkezi stoğa düşer.
   const [masa, setMasa] = useState<string>((kabulSoru(v, oneri.id) ?? acikSoru(v, oneri.id))?.birim ?? ((SORU_MASALARI as readonly string[]).includes(oneri.tur) ? oneri.tur : ""));
   const [masraf, setMasraf] = useState(true);

@@ -11,7 +11,7 @@ import { BICIM_ADI, TUR_ADI, ulkeAdi } from "../../etiketler";
 import { oneriDuzeltmeIste, oneriDurum, oneriGorunumuKaydet, oneriPlandanCikar, oneriyePaketEkle, oneriyePaketEklenebilir } from "../../eylemler";
 import { oneriAraligi, oneriYeri } from "../../oneriPlanlari";
 import { useVeri, type Durum, type Kisi, type Oneri, type OneriGorunumu } from "../../veri";
-import { haftalikDuzenler, planIcerikDuzenler, yapabilir } from "../../yetki";
+import { haftalikDuzenler, planIcerikDuzenler, sayfaGorebilir, yapabilir } from "../../yetki";
 import { FormAlt } from "../nextday/Formlar";
 import { useBen } from "../../oturum";
 import { MasaRozeti } from "./MasaSorusu";
@@ -143,8 +143,14 @@ export function OneriMetaSatiri({ oneri: o, d, bagli = false, kapat }: { oneri: 
  */
 export function PlanaEklendiNotu({ oneri: o, d, bagli = false, kapat }: { oneri: Oneri; d: Durum; bagli?: boolean; kapat?: () => void }) {
   const { t, dil } = useDil();
+  const ben = useBen();
   const yer = oneriYeri(d, o);
   if (!yer) return null;
+  /*
+   * Planı göremeyen (muhabir; kural: muhabir planı görmez) başlığa basınca
+   * "erişimin yok"a düşüyordu (kullanıcı): ona bağlantı değil düz satır.
+   */
+  if (bagli && !sayfaGorebilir(ben, yer.planda ? "nextday" : "haftalik")) bagli = false;
   const baslikId = yer.planda ? o.baslikId : (yer.kalem?.baslikId ?? o.baslikId);
   const baslik = baslikId ? d.basliklar.find((b) => b.id === baslikId)?.ad : undefined;
   const gun = yer.planda ? yer.plan?.tarih : yer.kalem?.tarih;

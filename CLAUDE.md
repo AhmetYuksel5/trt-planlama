@@ -1557,7 +1557,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     `veri.kime`, başlığın adı ve not içinde: kısıtlı muhabir planı okuyamıyor);
     zilde ve muhabirin Takiplerim'inde "Planda eklendiğin başlıklar"
     (`Takipler.tsx → PlandaEklendiklerim`; başlık başına son kayıt, en yenisi
-    üstte, eklenişinden 7 gün sonra listeden düşer). Onay geri alınıp yeniden verilince aynı başlık aynı
+    üstte, eklenişinden 7 gün sonra listeden düşer). Planı göremeyene (muhabir) başlık ve
+    plan bağlantı değil (kullanıcı: "başlığa eklendi"deki başlığa basınca "erişimin yok"
+    açılıyordu): öneri penceresinin "Plana eklendi" satırı ve plan etiketi düz yazı
+    (`sayfaGorebilir`), bildirim Takiplerim'e, öbür plan bildirimleri ana sayfaya
+    (`Hareket.tsx → useHareketKonusu`). Onay geri alınıp yeniden verilince aynı başlık aynı
     notla ikinci kez gitmez; not değiştiyse yenisi gider.
   - Muhabirin plandaki yeri her yerde değişir: başlık muhabirinin çipinde yazı
     alanı (plan ekranı, çıkınca kaydedilir; belgede muhabir penceresinde),
@@ -3043,6 +3047,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     zaman sorusundan, masraf sütunu (تكاليف إضافية) kalemli masraftan (eski kayıtta `ekMasraf`
     metni; kalemli öneride hücre düzenlenmez), program adaylardan (yukarıda, öneri formu). Test
     `testler/stok-tablosu.cjs`.
+    Teslim tahmini akışta (kullanıcı: havada kalmasın, postada "bu teslim gününe kadar"
+    densin; `eylemler.ts → oneriTeslimi`): öneriden doğan paketin teslim günü (`sonTarih`)
+    olur ("Plana ekle", "Paket önerisi ekle", Weekly'den aktarım; kalemin teslim günü ya
+    da günü önce); "Muhabiri görevlendir" formu o günle açılır (yoksa olayın günü). Oradan
+    Yapılacaklar, Stok'un teslim satırı ve gecikme okuyor. PKG geri bildirimi postasında
+    "موعد التسليم: {teslim}" (paketin teslim günü, yoksa önerinin tahmini; yayın günüyle
+    aynıysa satır düşer; kurumun kaydettiği eski şablona elle eklenir). Test
+    `testler/teslim-tahmini.cjs`.
   Test `testler/stok-sayfasi.cjs`. Weekly'nin "Kabul edilen paketler" penceresi iki
   sekme: Günlük ve Stok ve programlar (günsüz kalemler; `data-takdir-sekme`). Test
   `testler/stok-programlar.cjs`.
