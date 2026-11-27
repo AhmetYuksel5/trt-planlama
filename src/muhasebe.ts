@@ -33,7 +33,8 @@ const planTarihi = (d: Durum, planId?: string) => (planId ? d.planlar.find((p) =
 export const muhabirIsleri = (d: Durum, kisiId: string): MuhasebeIsi[] => {
   const l: MuhasebeIsi[] = [];
   for (const p of d.paketler) {
-    if (p.muhabirId !== kisiId || p.durum !== "tamamlandi" || p.yapilmadi || p.reddedildi) continue;
+    // Newsdesk'in reddettiği teslime ödeme yapılmaz (kullanıcı).
+    if (p.muhabirId !== kisiId || p.durum !== "tamamlandi" || p.yapilmadi || p.reddedildi || p.newsdeskRed) continue;
     /*
      * Günü olmayan pakette işin ayı kapanış anından: son değişiklik (`guncelleme`)
      * paket her düzenlendiğinde ilerliyor, kapanmış ayın işi sonraki aya kayıyordu.

@@ -95,8 +95,8 @@ export const IZINLER = {
   gorevTalebi: { ad: "yGorevTalebi", birimler: ["ekonomi", "program", "spor"] },
   operasyon: { ad: "yOperasyon", birimler: ["newsdesk"] },
   paketDegerlendir: { ad: "yPaketDegerlendir", birimler: ["planlama"] },
-  ucretGor: { ad: "yUcretGor", birimler: ["newsdesk", "yonetim"] },
-  nitelikPuanla: { ad: "yNitelikPuanla", birimler: ["newsdesk", "yonetim"] },
+  /* Ücret Newsdesk'ten kalktı (kullanıcı: gerek yok); nitelik puanı da kalktı, yerine Newsdesk'in paket görüşü. */
+  ucretGor: { ad: "yUcretGor", birimler: ["yonetim"] },
   profilDuzenle: {
     ad: "yProfilDuzenle",
     birimler: ["planlama", "newsgathering", "yonetim"],
@@ -290,18 +290,79 @@ export const mudahaleEdebilir = (k: Kisi | undefined, p: Paket): boolean =>
 /* --- Plan düzenleme: içerik Planlama'nın, devirden sonra operasyon Newsdesk'in --- */
 
 /*
- * Promptun 1. maddesi: planın asıl içeriği ile üretimdeki operasyonel
- * güncellemeler ayrılsın. Plan onaylanana kadar içeriği Planlama
- * düzenliyor; Newsdesk devraldıktan sonra yalnız gelişme ve canlı yayın
- * ekleyebiliyor, başlık sırası ve ekip artık kilitli.
+ * Plan onaylanana kadar içeriği Planlama düzenliyor. Onaylanan plan
+ * Newsdesk'in kontrolüne geçer (kullanıcı: Next Day planlamadan çıkınca onu
+ * güncellemek Newsdesk'in işi, ama Planlama yine müdahale edebilsin): onaylı
+ * (ya da eski devralınmış) planın içeriğini Newsdesk de Planlama da düzenler.
+ * Önce onaylı plan kilitliydi, devir kalkınca kimse güncelleyemiyordu.
  */
-export const planIcerikDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
-  yapabilir(k, "planDuzenle") &&
-  (p.durum === "taslak" || p.durum === "toplantida");
+export const newsdeskteMi = (p: Pick<NextDayPlan, "durum">) => p.durum === "onayli" || p.durum === "devralindi";
 
-export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
-  planIcerikDuzenler(k, p) ||
-  (yapabilir(k, "operasyon") && p.durum === "devralindi");
+export const planIcerikDuzenler = (k: Kisi | undefined, p: NextDayPlan) =>
+  (yapabilir(k, "planDuzenle") && (p.durum === "taslak" || p.durum === "toplantida")) ||
+  (newsdeskteMi(p) && (yapabilir(k, "planDuzenle") || yapabilir(k, "operasyon")));
+
+export const planOperasyonDuzenler = (k: Kisi | undefined, p: NextDayPlan) => planIcerikDuzenler(k, p);
+
+/* Newsdesk'e gelen paket: Newsdesk'in kontrolündeki (onaylı) planın paketi ya da üretimdeki paket. */
+export const newsdeskPaketi = (d: Pick<Durum, "planlar">, p: Paket) =>
+  p.durum === "uretimde" || (!!p.planId && d.planlar.some((x) => x.id === p.planId && newsdeskteMi(x)));
+
+const newsdeskMi = (k: Kisi | undefined) => !!k && !k.pasif && (yapabilir(k, "operasyon") || !!k.hesapYoneticisi);
+
+/*
+ * PKG kararı (değerlendirmeye al, kabul, ret, plandan kaldır): Planlama her
+ * zaman, Newsdesk kendi kontrolündeki planda (onaydan sonra eklenen PKG de
+ * kararsız kalmasın).
+ */
+export const paketKararVerebilir = (k: Kisi | undefined, d: Pick<Durum, "planlar">, p: Paket) =>
+  yapabilir(k, "paketDegerlendir") || (yapabilir(k, "operasyon") && !!p.planId && d.planlar.some((x) => x.id === p.planId && newsdeskteMi(x)));
+
+/*
+ * Muhabir atama (kullanıcı: Newsdesk'e gelen paketin muhabirini Newsdesk de
+ * atayabilsin; TBC paket ya da muhabir değişikliği). Özel yayın ve masa
+ * paketi kendi akışında; sonucu bildirilmiş (işaretli) pakette değişmez.
+ */
+export const paketMuhabirAtayabilir = (k: Kisi | undefined, d: Pick<Durum, "planlar">, p: Paket) =>
+  !!k &&
+  !k.pasif &&
+  !p.ozelId &&
+  !p.masaTakibi &&
+  !p.isaret &&
+  ["taslak", "degerlendiriliyor", "onaylandi", "uretimde"].includes(p.durum) &&
+  (yapabilir(k, "paketDegerlendir") || !!k.hesapYoneticisi || (yapabilir(k, "operasyon") && newsdeskPaketi(d, p)));
+
+/*
+ * Planlanan ama yayınlanmayan paket Planlama'nın stoğuna döner (kullanıcı):
+ * onaylı planın, henüz yayın izi olmayan, reddedilmemiş paketi. Newsdesk ve
+ * Planlama yapar; stok, özel yayın ve masa paketi değil.
+ */
+export const paketStogaDonebilir = (k: Kisi | undefined, d: Pick<Durum, "planlar">, p: Paket) =>
+  !!k &&
+  !k.pasif &&
+  (yapabilir(k, "operasyon") || yapabilir(k, "planDuzenle") || !!k.hesapYoneticisi) &&
+  !!p.planId &&
+  d.planlar.some((x) => x.id === p.planId && newsdeskteMi(x)) &&
+  !p.stok &&
+  !p.ozelId &&
+  !p.masaTakibi &&
+  !p.yayinlandi &&
+  !p.newsdeskRed &&
+  !p.yapilmadi &&
+  ["onaylandi", "uretimde", "tamamlandi"].includes(p.durum);
+
+/* Beklenen paketin teslim saati (zaman çizgisinden): Newsdesk'e gelen, sürmekte olan paket. */
+export const paketTeslimSaatiDegisebilir = (k: Kisi | undefined, d: Pick<Durum, "planlar">, p: Paket) =>
+  !!k && !k.pasif && (yapabilir(k, "operasyon") || yapabilir(k, "planDuzenle") || !!k.hesapYoneticisi) && newsdeskPaketi(d, p) && ["onaylandi", "uretimde"].includes(p.durum) && !p.ozelId && !p.masaTakibi;
+
+/* Newsdesk teslim alınan paketi gerekçeyle reddeder (ödeme yapılmaz); geri alma da Newsdesk'te. */
+export const newsdeskReddedebilir = (k: Kisi | undefined, p: Paket) =>
+  newsdeskMi(k) && p.durum === "tamamlandi" && !p.yapilmadi && !p.newsdeskRed && !p.masaTakibi && !p.yayinlanmadi;
+export const newsdeskReddiGeriAlabilir = (k: Kisi | undefined, p: Paket) => newsdeskMi(k) && !!p.newsdeskRed;
+
+/* Newsdesk'in paket görüşü (nitelik puanının yerinde): görevi verilmiş pakete; okuyan ekip (asamaNotuGorur), muhabir değil. */
+export const newsdeskGorusYazabilir = (k: Kisi | undefined, p: Paket) =>
+  newsdeskMi(k) && ["onaylandi", "uretimde", "tamamlandi"].includes(p.durum);
 
 /* --- Haftalık plan --- */
 
@@ -1009,7 +1070,7 @@ export const SAYFA_IZNI: Record<string, readonly BirimId[]> = {
   uretim: ["newsdesk", "output", "scriptEditor", "media", "planlama", "program", "ekonomi", "spor", "yonetim"],
   metinkontrol: ["output", "scriptEditor", "newsdesk", "planlama", "yonetim"],
   video: ["newsdesk", "media", "planlama", "yonetim"],
-  ucretler: ["newsdesk", "yonetim"],
+  ucretler: ["yonetim"],
   // Muhasebe: route ayrıca muhasebeGorebilir soruyor (kuraldaki kişiler).
   muhasebe: ["muhasebe", "yonetim"],
   raporlar: [

@@ -38,7 +38,7 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - `eylemler.ts`: kaydı değiştiren her şey; önce yetki, sonra hareket kaydı
   - `performans.ts`: muhabir göstergeleri; saklanmaz, paket kaydındaki
     ölçüm noktalarından (gorevZamani, muhabirTeslimi, duzeltmeSayisi,
-    nitelik) hesaplanır, sınırlı hareket kaydından değil
+    newsdeskRed) hesaplanır, sınırlı hareket kaydından değil
   - `rapor.ts`: raporlar; performans gibi saklanmaz, aynı ölçümle
     (`olcumler`) kayıtlardan hesaplanır
   - `eposta.ts`: çağrı e-postası ("Outlook'ta aç" `.eml` taslak dosyası;
@@ -1131,6 +1131,26 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     Masaüstünde görünüm ayarları (⚙ `data-ak-gorunum`: yazı boyu, Arapça metin
     boyu, sıklık, adım sütunu, karşıtlık; tarayıcıda
     `trt-planlama-asama-gorunum`).
+  - Newsdesk (kullanıcı: Next Day planlamadan çıkınca Newsdesk'in kontrolüne giriyor, güncellemek onun işi,
+    Planlama yine müdahale edebilsin; Newsdesk'te EP yok; ücret ve nitelik puanı kalktı; kurallar
+    `newsdesk.ts`, ana sayfa `ekranlar/ana/Newsdesk.tsx`, düğmeler `bilesenler/NewsdeskIslemleri.tsx`):
+    onaylı (ve eski devralınmış) planın içeriğini Newsdesk (`operasyon`) de Planlama da düzenler
+    (`yetki.ts → newsdeskteMi`, `planIcerikDuzenler`; önce onaylı plan kimseye açık değildi), PKG kararı
+    da (`paketKararVerebilir`: onaydan sonra eklenen PKG kararsız kalmasın). Ana sayfanın başında
+    Planlama'nın zaman çizgisi, beklenen paketlerle (`gunOlaylari(…, { paketler })`: bugünün planının,
+    teslimi bugün olan paketi); canlıya basınca formu ve ✓/✕, pakete basınca pencerede teslim saati
+    (`eylemler.ts → paketTeslimSaati`, GMT, muhabire bildirim), muhabir, aşama, stok ve ret. Alanlar:
+    Sıradaki işlerim (`newsdeskSirasi`: Newsdesk'in durağı ya da editoryal denetimdeki parça), Planın
+    paketleri (bugün/yarın; muhabiri belli değil, sürüyor, teslim edildi, reddedilen, stoka dönen),
+    Canlı yayınlar, uygulanacak plan, geciken. Muhabir atama (`paketMuhabirAta`, `paketMuhabirAtayabilir`:
+    Newsdesk'e gelen paket [onaylı planın ya da üretimde]; TBC kalkar, künyede görevlendiren, yeni ve
+    önceki muhabire bildirim) paket sayfasında da. Planlanan ama yayınlanmayan paket Planlama'nın
+    stoğuna döner (`paketStogaDondur`, isteğe bağlı sebep; stok paketi olur, başlıktan ve hazırlardan
+    çıkar, `Paket.stogaDondu`; Planlama'ya [`sahip`] ve muhabire bildirim, paket sayfasında satır).
+    Teslim alınan paket gerekçeyle reddedilir (`paketNewsdeskReddet`, `Paket.newsdeskRed`; gerekçesiz
+    olmaz, Muhasebe saymaz, ödeme yapılmaz; geri alınır; sonra ne olacağı sonra konuşulacak). Görüş
+    nitelik puanının yerinde (`newsdeskGorusEkle`: aşama notu, kutusu `gorus`, muhabir görmez); rapor ve
+    profilde nitelik yerine "Newsdesk reddetti" sayısı. Test `testler/newsdesk.cjs`.
   - Muhabir askıda kalmasın (kullanıcı: muhabir metni gönderiyor, sonra ne olacağı, işin kimde olduğu
     belli değildi; tasarımcı, planlamacı ve sistem mühendisi ajanlarıyla; kararlar: süre vaadi yok,
     yalnız olgu; telefona bildirim; PTC onayı ayrı bildirim; onayda kısa not; fark muhabire de):
@@ -2427,8 +2447,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   - Anlaşma: sabit maaş (aylık tutar, minimum kota; altında kalan kırmızı),
     parça başı (fiyat türü başına ücret), aylık anlaşma (tutar + kotayı aşan
     iş başına ek ücret). Kota aylık, ayın kapanışında o aya özel değişir.
-  - Sayılan iş (saklanmaz): tamamlanmış paket (yapılmadı, reddedilen, iptal
-    değil; türü haber türü), Newsdesk'in "yapıldı" işaretlediği canlı
+  - Sayılan iş (saklanmaz): tamamlanmış paket (yapılmadı, reddedilen, iptal,
+    Newsdesk'in reddettiği teslim [`newsdeskRed`, ödeme yapılmaz] değil; türü haber türü), Newsdesk'in "yapıldı" işaretlediği canlı
     (`CanliYayin.sonuc`, `eylemler.ts → canliSonuc`, yetki
     `canliSonucIsaretleyebilir`: Newsdesk ve tam yönetici; plan ekranındaki
     canlı satırında ✓/✕, plan kilitliyken de), yayınlanmış nafize.
@@ -4030,7 +4050,8 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     açtıkça yerinde büyüsün; beş tasarımcıya danışıldı, ortak öneri; `ekranlar/yeni/
     AnaPano.tsx`, kurallar `anaPano.ts`): 961 pikselden genişte `PlanlamaAna` panoyu
     çizer, dar ekranda kutular ve sağ panel (mobil denetimde onaylı) kalır. Üstte
-    bugünün zaman çizgisi (GMT, başlıkta yazılı; 04–21, toplantılar, yarının çağrısının
+    bugünün zaman çizgisi (`bilesenler/GunCizgisi.tsx`, Newsdesk'le ortak; GMT, başlıkta yazılı; 04–21, en geç olay geceyse 24'e dek;
+    olaylar etiketleri çakışmasın diye sıralara dağılır, sağ uçtakinin etiketi sola açılır, toplantılar, yarının çağrısının
     son saati, canlılar kayıttaki GMT saatiyle, "şimdi" çizgisi; kullanıcı: 16 GMT girilen canlı
     İstanbul'a çevrilip dilimsiz "19:00" görünüyordu; `anaPano.ts → gunOlaylari`; test
     `testler/zaman-cizgisi.cjs`; `gunOlaylari`, `siradakiOlay`: "Sıradaki: X · 2 sa

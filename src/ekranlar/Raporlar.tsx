@@ -80,7 +80,7 @@ function GenelRapor({ ben, sekmeler }: { ben: Kisi; sekmeler?: ReactNode }) {
       [t("turDagilimi")],
       ...r.bicimler.map(([b, n]) => [t(BICIM_ADI(b)), n]),
       [],
-      [t("muhabir"), t("verilenHaber"), t("tamamlananHaber"), t("zamanindaTeslim"), t("ilkSeferdeKabul"), t("ortTeslimSuresi"), t("nitelikPuani")],
+      [t("muhabir"), t("verilenHaber"), t("tamamlananHaber"), t("zamanindaTeslim"), t("ilkSeferdeKabul"), t("ortTeslimSuresi"), t("nkRedRozet")],
       ...r.muhabirler.map(({ kisi, p }) => [
         ad(kisi),
         p.verilen,
@@ -88,7 +88,7 @@ function GenelRapor({ ben, sekmeler }: { ben: Kisi; sekmeler?: ReactNode }) {
         yuzde(p.zamaninda),
         yuzde(p.ilkSeferde),
         saat(p.ortSaat),
-        p.puan === null ? "—" : p.puan.toFixed(1),
+        p.newsdeskRed,
       ]),
     ];
     const csv = csvMetni(satirlar, dil);
@@ -230,7 +230,7 @@ function GenelRapor({ ben, sekmeler }: { ben: Kisi; sekmeler?: ReactNode }) {
                   <th>{t("zamanindaTeslim")}</th>
                   <th>{t("ilkSeferdeKabul")}</th>
                   <th>{t("ortTeslimSuresi")}</th>
-                  <th>{t("nitelikPuani")}</th>
+                  <th>{t("nkRedRozet")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +246,7 @@ function GenelRapor({ ben, sekmeler }: { ben: Kisi; sekmeler?: ReactNode }) {
                     <td data-etiket={t("zamanindaTeslim")}>{yuzde(p.zamaninda)}</td>
                     <td data-etiket={t("ilkSeferdeKabul")}>{yuzde(p.ilkSeferde)}</td>
                     <td data-etiket={t("ortTeslimSuresi")}>{saat(p.ortSaat)}</td>
-                    <td data-etiket={t("nitelikPuani")}>{p.puan === null ? "—" : p.puan.toFixed(1)}</td>
+                    <td data-etiket={t("nkRedRozet")}>{p.newsdeskRed}</td>
                   </tr>
                 ))}
               </tbody>

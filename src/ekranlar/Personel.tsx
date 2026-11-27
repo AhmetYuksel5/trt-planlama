@@ -8,7 +8,7 @@ import { agacAdi, altindaMi, birimAdi, birimAgaci, disMuhabirMi, gorevAdi } from
 import { useAdimDurumu } from "../yol";
 import { GeriBag } from "../bilesenler/GeriBag";
 import { WhatsAppDugmesi } from "../bilesenler/WhatsApp";
-import { AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Star, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
+import { AtSign, Camera, CalendarClock, Clock, Contact, Inbox, Mail, MapPin, MapPinned, Pencil, Phone, Radio, Route, Search, Send, Ban, ThumbsUp, Trash2, TrendingUp, Users } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { Avatar, BicimRozeti, Bos, Icerik, Kart, PaketDurumRozeti, Rozet, Sayac, TaslakEtiketi, bildir } from "../bilesenler/Parcalar";
 import { OneriTablosu, PaketTablosu } from "../bilesenler/Tablolar";
@@ -344,7 +344,7 @@ function PerformansKarti({ kisi }: { kisi: Kisi }) {
         <Sayac ikon={<Clock size={20} />} etiket={t("zamanindaTeslim")} deger={yuzde(pf.zamaninda)} ton={pf.zamaninda !== null && pf.zamaninda < 0.7 ? "uyari" : ""} />
         <Sayac ikon={<CalendarClock size={20} />} etiket={t("ortTeslimSuresi")} deger={pf.ortSaat === null ? "—" : t("saatKisa", { n: ondalik(pf.ortSaat, dil) })} />
         <Sayac ikon={<Pencil size={20} />} etiket={t("ilkSeferdeKabul")} deger={yuzde(pf.ilkSeferde)} />
-        <Sayac ikon={<Star size={20} />} etiket={t("nitelikPuani")} deger={pf.puan === null ? "—" : `${ondalik(pf.puan, dil)} / 5`} alt={t("puanSayisi", { n: pf.puanSayisi })} />
+        <Sayac ikon={<Ban size={20} />} etiket={t("nkRedRozet")} deger={pf.newsdeskRed} ton={pf.newsdeskRed ? "kotu" : ""} />
         <Sayac ikon={<Inbox size={20} />} etiket={t("oneriKabul")} deger={yuzde(pf.oneriKabul)} />
       </div>
       {Object.keys(pf.bicimler).length > 0 && (
@@ -562,13 +562,7 @@ export function KisiDetay({ ben, kisi }: { ben: Kisi; kisi: Kisi }) {
                           </small>
                         </div>
                         {p.bicim && <BicimRozeti bicim={p.bicim} />}
-                        {p.nitelik && performansGorebilir(ben, kisi) ? (
-                          <span className="puan">
-                            <Star size={13} /> {p.nitelik}
-                          </span>
-                        ) : (
-                          <PaketDurumRozeti paket={p} />
-                        )}
+                        <PaketDurumRozeti paket={p} />
                       </li>
                     ))}
                   </ul>

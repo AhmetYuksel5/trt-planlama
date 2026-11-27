@@ -33,7 +33,7 @@ import { kayipPlanlar } from "./kayipPlanlar";
 import { oneriBekleyenGorevPaketi, oneriPlanKaydi, baglanabilirKayitlar, acikGundemde, oneriArsivde, oneriGeriHedefleri, oneriHaftada, oneriPaketBasligi, oneriPlanaGore, oneriSonGunu, oneriYeri, TAKIP_SILME_GUNU, takibinOnerisi, plandanDonmus, type OneriGeriHedefi } from "./oneriPlanlari";
 import { donemAnahtari, gorevListesi, isListesi } from "./gorevler";
 import { kullanimIziKur, type KullanimCihazi, type KullanimKanali } from "./kullanim";
-import { bugun, gecerliGun, girdidenIso, gunEkle, gunFarki, haftaBasi, simdi, yerelGirdi } from "./tarih";
+import { bugun, gecerliGun, girdidenIso, gunEkle, gunFarki, haftaBasi, saatCoz, simdi, yerelGirdi } from "./tarih";
 import { demoHaberleri, type Haber } from "./gundem";
 import { KURAL_SURUMU, adayTemizligi, haberAdaylari, yeniAdaylar } from "./takvimBotu";
 import { ozelOnayli, ozelPaketAsamasi } from "./ozel";
@@ -188,6 +188,13 @@ import {
   paketPlandanKaldirilir,
   paketSilinebilir,
   planOperasyonDuzenler,
+  paketKararVerebilir,
+  paketTeslimSaatiDegisebilir,
+  paketMuhabirAtayabilir,
+  paketStogaDonebilir,
+  newsdeskReddedebilir,
+  newsdeskReddiGeriAlabilir,
+  newsdeskGorusYazabilir,
   profilDuzenler,
   sayfaGorebilir,
   takipEkleyebilir,
@@ -3873,7 +3880,8 @@ export const paketTeslimGunu = (ben: Kisi, id: string, tarih: string): boolean =
 export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "onaylandi" | "iptal") => {
   let d = getir();
   const p = paketBul(d, id);
-  if (!p || !yapabilir(ben, "paketDegerlendir") || ["tamamlandi", "iptal"].includes(p.durum)) return false;
+  // Newsdesk kendi kontrolündeki (onaylı) planda da karar verir (paketKararVerebilir).
+  if (!p || !paketKararVerebilir(ben, d, p) || ["tamamlandi", "iptal"].includes(p.durum)) return false;
   if (yeni !== "iptal" && !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
   // Özel yayının içeriği yalnız özel yayından geri alınır (ozelIcerikGeriAl: yayının başlığını da toplar).
   if (yeni === "iptal" && ozelIcerikMi(p)) return false;
@@ -3898,9 +3906,132 @@ export const paketDurum = (ben: Kisi, id: string, yeni: "degerlendiriliyor" | "o
 export const paketReddet = (ben: Kisi, id: string) => {
   const d = getir();
   const p = paketBul(d, id);
-  if (!p || p.ozelId || !yapabilir(ben, "paketDegerlendir") || !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
+  if (!p || p.ozelId || !paketKararVerebilir(ben, d, p) || !["taslak", "degerlendiriliyor"].includes(p.durum)) return false;
   const yeni = paketGuncelle(d, id, (x) => ({ ...x, durum: "iptal", adim: undefined, reddedildi: { zaman: simdi(), kisiId: ben.id }, guncelleme: simdi() }));
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "paketReddedildi", paketId: id, planId: p.planId, oneriId: p.oneriId, ...(p.muhabirId && { veri: { kime: p.muhabirId } }) }));
+  return true;
+};
+
+/*
+ * Muhabir atama (kullanıcı: Newsdesk'e gelen paketin muhabirini Newsdesk de
+ * atasın). TBC işareti kalkar, şehir yeni muhabirinki, künyede görevlendiren
+ * atayan. Yeni muhabire görev, önceki muhabire işin alındığı bildirilir.
+ */
+export const paketMuhabirAta = (ben: Kisi, id: string, muhabirId: string) => {
+  let d = getir();
+  const p = paketBul(d, id);
+  const m = kisiBul(d, muhabirId);
+  if (!p || !m || m.pasif || p.muhabirId === muhabirId || !paketMuhabirAtayabilir(ben, d, p)) return false;
+  const eski = p.muhabirTbc ? undefined : p.muhabirId;
+  d = paketGuncelle(d, id, (x) => {
+    const { muhabirTbc: _t, ...kalan } = x;
+    const y = { ...kalan, muhabirId, ...(m.sehir && { sehir: m.sehir }), guncelleme: simdi() };
+    // Görevi alan muhabirin işi: görevlendiren o an atayan (yalnız görevi verilmiş pakette).
+    return ["onaylandi", "uretimde"].includes(x.durum) ? kunyeYaz(y, "gorevlendiren", ben.id, simdi()) : y;
+  });
+  const gorevli = ["onaylandi", "uretimde"].includes(p.durum);
+  d = hareketYaz(d, { kisiId: ben.id, tip: "paketMuhabirAtandi", paketId: id, planId: p.planId, veri: { ...(gorevli && { kime: muhabirId }), muhabir: muhabirId, ...(eski && { eski }) } });
+  if (eski && gorevli) d = hareketYaz(d, { kisiId: ben.id, tip: "paketMuhabirdenAlindi", paketId: id, planId: p.planId, veri: { kime: eski, muhabir: muhabirId } });
+  kaydet(d);
+  return true;
+};
+
+/*
+ * Beklenen paketin teslim saati, GMT (kullanıcı: zaman çizgisindeki beklenen
+ * şeye basıp pratikçe güncellensin). Gün teslimin günü, yoksa planın günü.
+ */
+export const paketTeslimSaati = (ben: Kisi, id: string, saatGmt: string) => {
+  let d = getir();
+  const p = paketBul(d, id);
+  const saat = saatCoz(saatGmt);
+  if (!p || !saat || !paketTeslimSaatiDegisebilir(ben, d, p)) return false;
+  const gun = (p.teslim ? new Date(p.teslim).toISOString().slice(0, 10) : undefined) ?? planBul(d, p.planId)?.tarih;
+  if (!gun) return false;
+  const teslim = new Date(`${gun}T${saat}:00Z`).toISOString();
+  if (teslim === p.teslim) return false;
+  d = paketGuncelle(d, id, (x) => ({ ...x, teslim, guncelleme: simdi() }));
+  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "paketTeslimSaati", paketId: id, planId: p.planId, veri: { ad: saat, ...(p.muhabirId && !p.muhabirTbc && { kime: p.muhabirId }) } }));
+  return true;
+};
+
+/*
+ * Planlanan ama yayınlanmayan paket Planlama'nın stoğuna döner (kullanıcı:
+ * açıkça bildirilsin): stok paketi olur, başlıktan ve bütün planların hazır
+ * paketlerinden çıkar; planın kimliği tarihçe için kalır. Planlama'ya (birim)
+ * ve muhabire bildirim, sebebiyle.
+ */
+export const paketStogaDondur = (ben: Kisi, id: string, sebep = "") => {
+  let d = getir();
+  const p = paketBul(d, id);
+  if (!p || !paketStogaDonebilir(ben, d, p)) return false;
+  const an = simdi();
+  d = paketGuncelle(d, id, (x) => ({
+    ...x,
+    stok: true,
+    planBaslikId: undefined,
+    gelismeId: undefined,
+    stogaDondu: { zaman: an, kisiId: ben.id, planId: p.planId!, ...(sebep.trim() && { sebep: sebep.trim() }) },
+    guncelleme: an,
+  }));
+  d = { ...d, planlar: d.planlar.map((x) => (x.hazirPaketler.includes(id) ? { ...x, hazirPaketler: cikar(x.hazirPaketler, id) } : x)) };
+  kaydet(
+    hareketYaz(d, {
+      kisiId: ben.id,
+      tip: "paketStogaDondu",
+      paketId: id,
+      planId: p.planId,
+      veri: { sahip: "planlama", ...(p.muhabirId && !p.muhabirTbc && { kime: p.muhabirId }), ...(sebep.trim() && { gerekce: sebep.trim() }) },
+    }),
+  );
+  return true;
+};
+
+/*
+ * Newsdesk teslim alınan paketi reddeder (kullanıcı: gerekçe şart, reddedilen
+ * pakete ödeme yapılmaz; sonra ne olacağına sonra bakılacak). Paket
+ * "tamamlandı"da kalır, Muhasebe saymaz (muhasebe.ts → muhabirIsleri).
+ */
+export const paketNewsdeskReddet = (ben: Kisi, id: string, gerekce: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !gerekce.trim() || !newsdeskReddedebilir(ben, p)) return false;
+  const yeni = paketGuncelle(d, id, (x) => ({ ...x, newsdeskRed: { zaman: simdi(), kisiId: ben.id, gerekce: gerekce.trim() }, guncelleme: simdi() }));
+  kaydet(
+    hareketYaz(yeni, {
+      kisiId: ben.id,
+      tip: "paketNewsdeskReddetti",
+      paketId: id,
+      planId: p.planId,
+      veri: { sahip: "planlama", ...(p.muhabirId && { kime: p.muhabirId }), gerekce: gerekce.trim() },
+    }),
+  );
+  return true;
+};
+
+export const newsdeskReddiGeriAl = (ben: Kisi, id: string) => {
+  const d = getir();
+  const p = paketBul(d, id);
+  if (!p || !newsdeskReddiGeriAlabilir(ben, p)) return false;
+  const yeni = paketGuncelle(d, id, (x) => {
+    const { newsdeskRed: _r, ...kalan } = x;
+    return { ...kalan, guncelleme: simdi() };
+  });
+  kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "newsdeskReddiGeriAlindi", paketId: id, planId: p.planId, veri: { sahip: "planlama", ...(p.muhabirId && { kime: p.muhabirId }) } }));
+  return true;
+};
+
+/*
+ * Newsdesk'in paket görüşü (kullanıcı: nitelik puanı yerine teslim alınan
+ * paketle ilgili görüş; sonra raporlanacak). Aşama notlarının kaydında,
+ * kutusu "gorus": kısıtlı kişi (muhabir) okumuyor.
+ */
+export const GORUS_ASAMASI = "gorus";
+export const newsdeskGorusEkle = (ben: Kisi, paketId: string, metin: string): boolean => {
+  const d = getir();
+  const p = paketBul(d, paketId);
+  if (!p || !metin.trim() || !newsdeskGorusYazabilir(ben, p)) return false;
+  const not: AsamaNotu = { id: kimlik("an"), paketId, asama: GORUS_ASAMASI, kisiId: ben.id, zaman: simdi(), metin: metin.trim() };
+  kaydet(bahset({ ...d, asamaNotlari: [...(d.asamaNotlari ?? []), not] }, ben, metin, { yol: `#/paketler/${paketId}`, baslik: p.baslik }));
   return true;
 };
 
@@ -4763,15 +4894,6 @@ export const yoneticiNotu = (ben: Kisi, paketId: string, metin: string) => {
   return true;
 };
 
-/** Tamamlanan pakete nitelik puanı: göstergeye girer, ölçütü birimle netleşecek. */
-export const nitelikPuanla = (ben: Kisi, paketId: string, puan: number) => {
-  let d = getir();
-  const p = paketBul(d, paketId);
-  if (!p || p.durum !== "tamamlandi" || !yapabilir(ben, "nitelikPuanla") || !Number.isInteger(puan) || puan < 1 || puan > 5) return false;
-  d = paketGuncelle(d, paketId, (x) => ({ ...x, nitelik: puan }));
-  kaydet(hareketYaz(d, { kisiId: ben.id, tip: "nitelikPuanlandi", paketId, planId: p.planId, veri: { puan: String(puan) } }));
-  return true;
-};
 
 export type ProfilGirdisi = Partial<
   Pick<Kisi, "telefon" | "eposta" | "kisiselEposta" | "irtibat" | "kisaltma" | "sehir" | "digerUlkeler" | "bicimler" | "calisma" | "foto">

@@ -1270,6 +1270,17 @@ export interface Paket {
    */
   reddedildi?: { zaman: string; kisiId: string };
   /*
+   * Newsdesk teslim alınan paketi gerekçesiyle reddetti (kullanıcı): paket
+   * "tamamlandı"da kalır ama Muhasebe saymaz, ödeme yapılmaz. Sonra ne
+   * olacağı henüz kararlaştırılmadı; Newsdesk geri alabilir.
+   */
+  newsdeskRed?: { zaman: string; kisiId: string; gerekce: string };
+  /*
+   * Planlanan ama yayınlanmayan paket Planlama'nın stoğuna döndü (kullanıcı):
+   * kimin, hangi plandan, neden. Paket stok paketi oldu, plandan çıktı.
+   */
+  stogaDondu?: { zaman: string; kisiId: string; planId: string; sebep?: string };
+  /*
    * Takdir postası muhabire gitti (src/takdir.ts); bildirim sayfasında "gönderildi", ikinci kez seçili gelmez.
    * Konu ve metin gönderildiği haliyle (kullanıcı: görevlendirmede muhabire ne söylendiği sonradan
    * görülsün; gorevBilgisi.ts). Bu kayıttan önce gidenlerde yalnız an var.
@@ -2090,6 +2101,12 @@ export const HAREKET_TIPLERI = [
   "uretimeAlindi",
   "stokYayinlandi",
   "paketStogaAlindi",
+  "paketStogaDondu",
+  "paketTeslimSaati",
+  "paketMuhabirAtandi",
+  "paketMuhabirdenAlindi",
+  "paketNewsdeskReddetti",
+  "newsdeskReddiGeriAlindi",
   "stokPaketiSilindi",
   "planGeriGetirildi",
   "faaliyetEklendi",

@@ -52,7 +52,7 @@ export const VARSAYILAN: Record<Birim | "panel", string[]> = {
   planlama: ["plGorevlerim", "plSonOneri", "plMuhabirler", "plHareket"],
   // Muhabirin ana sayfası çalışma alanı değil, Önerilerim (ana/Muhabir.tsx).
   muhabir: [],
-  newsdesk: ["genIslerim", "ndSayac", "ndPlan", "ndKontrol", "ndUretim", "ndGeciken", "ndUcret"],
+  newsdesk: ["genIslerim", "ndSira", "ndYayin", "ndCanli", "ndPlan", "ndGeciken"],
   newsgathering: ["genIslerim", "ngSayac", "ngBekleyen", "ngSahaGerekecek", "ngSahada", "ngTakvim"],
   // Ekonomi, Program ve Spor'un masası Newsdesk'inki gibi: kendi paketlerinin üretimi (MasaPaketleri).
   ekonomi: ["genIslerim", "ekOnInceleme", "ekSayfa"],

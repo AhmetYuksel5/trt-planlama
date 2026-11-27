@@ -7,7 +7,7 @@ import { useDil } from "../../dil";
 import { baslikDuzenle, canliSonuc, gelismeKaydet, oneriPlandakineBagla, paketDurum, paketReddet, planBaslikBirlestir } from "../../eylemler";
 import { oneriGunde, paketinOneriAdaylari } from "../../oneriPlanlari";
 import { baslikBul, ozelIcerikMi, useVeri, type CanliYayin, type Durum, type Kisi, type NextDayPlan, type Paket, type PlanBasligi } from "../../veri";
-import { canliSonucIsaretleyebilir, yapabilir } from "../../yetki";
+import { canliSonucIsaretleyebilir, paketKararVerebilir, yapabilir } from "../../yetki";
 import PlanaEkle from "../oneri/PlanaEkle";
 import { FormAlt } from "./Formlar";
 import { IkonDugme } from "./Bolumler";
@@ -22,7 +22,9 @@ import { IkonDugme } from "./Bolumler";
 /** PKG kararı: değerlendirmeye al, kabul (muhabire görev), ret (paket iz olarak kalır), iptal. */
 export function PaketKararDugmeleri({ ben, paket: p }: { ben: Kisi | null | undefined; paket: Paket }) {
   const { t } = useDil();
-  if (!ben || !yapabilir(ben, "paketDegerlendir")) return null;
+  const v = useVeri();
+  // Onaylı plan Newsdesk'in kontrolünde: PKG kararını Newsdesk de verir (paketKararVerebilir).
+  if (!ben || !paketKararVerebilir(ben, v, p)) return null;
   const acik = p.durum === "taslak" || p.durum === "degerlendiriliyor";
   return (
     <>

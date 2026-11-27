@@ -4335,6 +4335,17 @@ dialog.pencere[data-yeni-acildi] > .pencere-govde { pointer-events: none; }
 .ap-olay.canli > i { background: var(--kotu); }
 .ap-olay-ad { transform: translateX(-6px); margin-top: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; background: var(--yuzey); padding-inline-end: var(--ara-1); }
 .ap-olay.alt .ap-olay-ad { margin-top: 30px; }
+/* Sıralı yerleşim (GunCizgisi.tsx → siralar): etiket kendi sırasında, ray sıra sayısıyla uzar. */
+.ap-cizgi-ray { height: calc(22px + var(--siralar, 2) * 16px); }
+.ap-olay { z-index: 1; }
+.ap-olay:hover, .ap-olay:focus-visible { z-index: 3; }
+.ap-olay .ap-olay-ad { margin-top: calc(14px + var(--sira, 0) * 16px); max-width: 150px; }
+.ap-olay.sag { align-items: flex-end; transform: translateX(-100%); }
+.ap-olay.sag > i { transform: translateX(50%); }
+.ap-olay.sag .ap-olay-ad { transform: translateX(6px); }
+/* Alt sıradaki olayın kutusu üst sıranın etiketini örtmesin: yalnız nokta ve etiket basılır. */
+.ap-olay { pointer-events: none; }
+.ap-olay > i, .ap-olay .ap-olay-ad { pointer-events: auto; }
 .ap-simdi { position: absolute; top: -10px; bottom: 0; width: 2px; background: var(--kotu); }
 
 /* Karar kuyruğu: satır yerinde açılır. */
@@ -4380,6 +4391,30 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .ap-kisiler .ikon-dugme.whatsapp { inline-size: 32px; block-size: 32px; min-height: 32px; flex: none; }
 .ap-kisiler .ikon-dugme.whatsapp svg { width: 16px; height: 16px; }
 .paket-muhabir { margin: var(--ara-1) 0 0; }
+.paket-muhabir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
+/* Newsdesk: stoka dönüş ve red satırları, paket sayfasındaki düğmeleri. */
+.paket-newsdesk { display: flex; flex-wrap: wrap; gap: var(--ara-2); margin: 0 0 var(--ara-3); }
+.newsdesk-satir { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--ara-2); padding: var(--ara-2) var(--ara-3); margin: 0 0 var(--ara-3); border: 1px solid var(--cizgi); border-radius: var(--yaricap-kart); background: var(--yuzey); }
+.newsdesk-satir.uyari { background: var(--uyari-sis); border-color: var(--uyari); }
+.newsdesk-satir.kotu { background: var(--kotu-sis); border-color: var(--kotu); }
+.newsdesk-satir > span { flex: 1 1 240px; min-inline-size: 0; }
+/* Newsdesk ana sayfası: zaman çizgisi, planın paketleri, canlılar. */
+.nd-cizgi { margin: 0 0 var(--ara-4); }
+button.ap-olay { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: start; }
+.ap-olay.paket > i { background: var(--lacivert); border-radius: 3px; }
+.nd-plan-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0 0 var(--ara-2); }
+.nd-grup h3 { font-size: var(--punto-kucuk); margin: var(--ara-3) 0 var(--ara-1); }
+.nd-grup-tbc h3 { color: var(--uyari); }
+.nd-grup-red h3 { color: var(--kotu); }
+.nd-paket { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); }
+.nd-paket .ad { flex: 1 1 220px; min-inline-size: 0; }
+.nd-paket .nd-muhabir { flex: 0 0 auto; min-inline-size: 190px; }
+.nd-paket .nd-islem { min-inline-size: 84px; justify-content: flex-end; }
+.nd-muhabir, .nd-islem, .nd-sonuc { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-1); }
+.nd-pencere { display: grid; gap: var(--ara-3); }
+.nd-pencere-satir { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ara-2); margin: 0; }
+.nd-saat { display: flex; align-items: center; gap: var(--ara-2); }
+
 .paket-teslim { margin: var(--ara-1) 0 0; }
 /* Görevlendirme penceresi: etiket solda, değer sağda; telefonda alt alta. */
 .paket-gorevlendirme { margin: var(--ara-1) 0 0; }

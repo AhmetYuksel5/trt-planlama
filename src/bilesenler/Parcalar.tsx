@@ -400,6 +400,7 @@ export function PaketDurumRozeti({ paket }: { paket: Paket }) {
     return <Rozet ton={geciktiMi(paket) ? "kotu" : "vurgu"}>{adimAdi(paket.adim as UretimAdimi, paket)}</Rozet>;
   }
   if (paket.durum === "iptal" && paket.reddedildi) return <Rozet ton="kotu">{t("pdReddedildi")}</Rozet>;
+  if (paket.newsdeskRed) return <Rozet ton="kotu">{t("nkRedRozet")}</Rozet>;
   if (paket.durum === "iptal" && paket.devredildi) return <Rozet>{t("pdDevredildi")}</Rozet>;
   if (paket.durum === "iptal" && paket.yapilmadi) return <Rozet ton="kotu">{t(paket.yapilmadi.neden === "haber" ? "ynHaber" : "yapilmadi")}</Rozet>;
   if (paket.isaret && paket.durum === "onaylandi") return <Rozet ton="uyari">{t("isaretOnayBekliyor")}</Rozet>;

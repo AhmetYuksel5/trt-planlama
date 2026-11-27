@@ -69,10 +69,12 @@ export function oneriAkisi(d: Durum, ben: Kisi, b: string): OneriAkisi {
 export interface CizgiOlayi {
   /** "HH:MM", GMT: planın, belgenin ve üst çubuğun saati. */
   saat: string;
-  tur: "toplanti" | "cagri" | "canli";
-  /** Toplantı ve canlıda Arapça içerik; çağrıda boş (ekran kendi metnini yazar). */
+  tur: "toplanti" | "cagri" | "canli" | "paket";
+  /** Toplantı, canlı ve pakette Arapça içerik; çağrıda boş (ekran kendi metnini yazar). */
   ad: string;
   href?: string;
+  /** Canlının ya da paketin kimliği: Newsdesk çizgide basınca yerinde günceller. */
+  id?: string;
 }
 
 /*
@@ -96,7 +98,11 @@ const utcSaat = (iso: string) => {
   return ikiHane(t.getUTCHours(), t.getUTCMinutes());
 };
 
-export const gunOlaylari = (d: Pick<Durum, "toplantilar" | "cagrilar" | "canliYayinlar">, b: string): CizgiOlayi[] => {
+export const gunOlaylari = (
+  d: Pick<Durum, "toplantilar" | "cagrilar" | "canliYayinlar"> & Partial<Pick<Durum, "paketler" | "planlar">>,
+  b: string,
+  { paketler = false }: { paketler?: boolean } = {},
+): CizgiOlayi[] => {
   const l: CizgiOlayi[] = [];
   for (const t of d.toplantilar ?? []) if (yerelGun(t.zaman) === b) l.push({ saat: utcSaat(t.zaman), tur: "toplanti", ad: t.ad });
   // Yarının planına bugün gönderilmiş çağrının son saati: o saate dek yanıt bekleniyor.
@@ -104,7 +110,18 @@ export const gunOlaylari = (d: Pick<Durum, "toplantilar" | "cagrilar" | "canliYa
     if ((c.tur ?? "nextday") === "nextday" && c.tarih === gunEkle(b, 1) && c.sonSaat && yerelGun(c.zaman) <= b) l.push({ saat: istanbuldanGmt(c.sonSaat), tur: "cagri", ad: "", href: "#/oneriler" });
   for (const c of d.canliYayinlar ?? []) {
     const s = c.tarih === b && c.saatGmt ? gmtSaat(c.saatGmt) : "";
-    if (s) l.push({ saat: s, tur: "canli", ad: c.konu, href: `#/nextday/${c.planId}` });
+    if (s) l.push({ saat: s, tur: "canli", ad: c.konu, href: `#/nextday/${c.planId}`, id: c.id });
+  }
+  /*
+   * Newsdesk'in çizgisinde beklenen paketler (kullanıcı: çizgideki beklenen
+   * şeylere basıp pratikçe güncellesin): bugünün planının teslim saati bugün
+   * olan, sürmekte ya da bitmiş paketleri; saat UTC'den.
+   */
+  if (paketler) {
+    const planlar = new Set((d.planlar ?? []).filter((x) => x.tarih === b).map((x) => x.id));
+    for (const p of d.paketler ?? [])
+      if (p.planId && planlar.has(p.planId) && !p.stok && p.teslim && yerelGun(p.teslim) === b && ["onaylandi", "uretimde", "tamamlandi"].includes(p.durum))
+        l.push({ saat: utcSaat(p.teslim), tur: "paket", ad: p.baslik, href: `#/paketler/${p.id}`, id: p.id });
   }
   return l.sort((x, y) => x.saat.localeCompare(y.saat));
 };

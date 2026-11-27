@@ -5,13 +5,14 @@ import type { Bicim, Durum, Oneri, Paket } from "./veri";
  *
  * Ayrıca saklanmıyor, her açılışta paket kayıtlarından hesaplanıyor; rapor
  * ile kayıt ayrışmasın diye. Ölçüm noktaları paketin kendisinde
- * (gorevZamani, muhabirTeslimi, duzeltmeSayisi, nitelik), sınırlı tutulan
+ * (gorevZamani, muhabirTeslimi, duzeltmeSayisi, newsdeskRed), sınırlı tutulan
  * hareket kaydında değil. Tanımlar taslak, birimle netleşecek:
  * - verilen: muhabire atanmış, onaylanmış ya da üretimde ya da bitmiş iş
  * - zamanında: muhabirin payı (video) teslim saatinden önce gelmiş
  * - teslim süresi: görev verildiğinden videonun geldiği ana
  * - ilk seferde kabul: metni kontrolden düzeltmeye hiç dönmemiş iş
- * - nitelik: Newsdesk'in tamamlanan pakete verdiği 1–5 puan
+ * - Newsdesk reddi: teslim alınıp gerekçeyle reddedilen (ödenmez); nitelik puanı
+ *   kalktı (kullanıcı), yerine Newsdesk'in paket görüşü (ayrı kayıt)
  */
 export interface Performans {
   verilen: number;
@@ -21,8 +22,7 @@ export interface Performans {
   zamaninda: number | null;
   ortSaat: number | null;
   ilkSeferde: number | null;
-  puan: number | null;
-  puanSayisi: number;
+  newsdeskRed: number;
   oneriKabul: number | null;
   bicimler: Partial<Record<Bicim, number>>;
 }
@@ -43,7 +43,6 @@ export const olcumler = (paketler: Paket[], tumOneriler: Oneri[]): Performans =>
   const sureli = isler.filter((p) => p.muhabirTeslimi && p.gorevZamani);
   /* Metni kontrolden geçmiş iş: muhabirin payı bitmiş ya da paket tamamlanmış. */
   const kontrollu = isler.filter((p) => p.muhabirTeslimi || p.durum === "tamamlandi");
-  const puanli = biten.filter((p) => p.nitelik);
 
   const oneriler = tumOneriler.filter((o) => o.durum === "planaEklendi" || o.durum === "reddedildi");
 
@@ -57,8 +56,7 @@ export const olcumler = (paketler: Paket[], tumOneriler: Oneri[]): Performans =>
     zamaninda: oran(teslimli.filter((p) => ms(p.muhabirTeslimi!) <= ms(p.teslim!)).length, teslimli.length),
     ortSaat: sureli.length ? sureli.reduce((t, p) => t + (ms(p.muhabirTeslimi!) - ms(p.gorevZamani!)), 0) / sureli.length / 3_600_000 : null,
     ilkSeferde: oran(kontrollu.filter((p) => !p.duzeltmeSayisi).length, kontrollu.length),
-    puan: puanli.length ? puanli.reduce((t, p) => t + p.nitelik!, 0) / puanli.length : null,
-    puanSayisi: puanli.length,
+    newsdeskRed: biten.filter((p) => p.newsdeskRed).length,
     oneriKabul: oran(oneriler.filter((o) => o.durum === "planaEklendi").length, oneriler.length),
     bicimler,
   };

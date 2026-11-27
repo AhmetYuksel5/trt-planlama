@@ -21,7 +21,6 @@ import {
   SpellCheck,
   Upload,
   Users,
-  Wallet,
 } from "lucide-react";
 import { birimAdi } from "../../yapi";
 import { adimTuru, geciktiMi } from "../../akis";
@@ -37,6 +36,7 @@ import { kisiBul, muhabirler, sahaGorevi, useVeri, type Durum, type Kisi } from 
 import { adimYapabilir, gfxYapabilir } from "../../yetki";
 import { BanaVerilenIsler } from "./Islerim";
 import { CalismaAlani, type Alan } from "./Calisma";
+import { NewsdeskCanlilar, NewsdeskCizgisi, NewsdeskSiram, NewsdeskYayin } from "./Newsdesk";
 import { SayfaBasi } from "./Planlama";
 
 /**
@@ -57,6 +57,8 @@ export function NewsdeskAna({ ben, kisisel = true }: { ben: Kisi; kisisel?: bool
   return (
     <>
       <SayfaBasi sekme={!kisisel} ikon={<Building size={26} />} baslik={t("biNewsdesk")} />
+      {/* Planlama'nın zaman çizgisi burada da (kullanıcı), beklenen paketlerle; basınca yerinde güncellenir. */}
+      <NewsdeskCizgisi ben={ben} />
       <CalismaAlani ben={ben} duzen="newsdesk" kisisel={kisisel} />
     </>
   );
@@ -112,15 +114,6 @@ function UygulanacakPlan({ ben }: { ben: Kisi }) {
   );
 }
 
-function KontrolBekleyen({ ben }: { ben: Kisi }) {
-  const { t } = useDil();
-  const { v, kontrol } = useNewsdesk(ben);
-  return (
-    <Kart baslik={t("kontrolBekleyen")} ikon={<SpellCheck size={18} />}>
-      <PaketTablosu paketler={kontrol} d={v} sutunlar={["baslik", "muhabir", "asama", "teslim"]} bosMetin={t("siraBos")} />
-    </Kart>
-  );
-}
 
 /*
  * Akışta sırası kişiye gelmiş paketler: durağın sorumlusu birim, ünvan ya
@@ -139,15 +132,6 @@ function SiradakiIsler({ ben }: { ben: Kisi }) {
   );
 }
 
-function BugununUretimi({ ben }: { ben: Kisi }) {
-  const { t } = useDil();
-  const { v, bugunku } = useNewsdesk(ben);
-  return (
-    <Kart baslik={t("bugununUretimi")} ikon={<ListChecks size={18} />} sagUc={<Tumu href="#/uretim" />}>
-      <PaketTablosu paketler={bugunku} d={v} />
-    </Kart>
-  );
-}
 
 function GecikenOncelikli({ ben }: { ben: Kisi }) {
   const { t } = useDil();
@@ -159,16 +143,6 @@ function GecikenOncelikli({ ben }: { ben: Kisi }) {
   );
 }
 
-function UcretKarti() {
-  const { t } = useDil();
-  return (
-    <Kart baslik={t("mUcretler")} ikon={<Wallet size={18} />} sagUc={<TaslakEtiketi metin={t("ornekEkran")} />}>
-      <a className="dugme dugme-ikincil" href="#/ucretler">
-        {t("ucretleriAc")}
-      </a>
-    </Kart>
-  );
-}
 
 /* --- News Gathering --- */
 
@@ -501,10 +475,11 @@ export const BIRIM_ALANLARI: Alan[] = [
   { id: "genIslerim", ad: "gvBanaVerilenler", grup: "genel", sayfa: "ana", Bilesen: BanaVerilenIsler },
   { id: "ndSayac", ad: "alOzetSayilar", genis: true, grup: "newsdesk", sayfa: "uretim", Bilesen: NewsdeskSayaclari },
   { id: "ndPlan", ad: "uygulanacakPlan", grup: "newsdesk", sayfa: "nextday", Bilesen: UygulanacakPlan },
-  { id: "ndKontrol", ad: "kontrolBekleyen", grup: "newsdesk", sayfa: "metinkontrol", Bilesen: KontrolBekleyen },
-  { id: "ndUretim", ad: "bugununUretimi", genis: true, grup: "newsdesk", sayfa: "uretim", Bilesen: BugununUretimi },
+  // Kullanıcı: sırası Newsdesk'te olan işler tek kuyrukta; planın paketleri (muhabir ata, stoka döndür, reddet); canlılar. Ücret ve kontrol kartı kalktı.
+  { id: "ndSira", ad: "siradakiIslerim", genis: true, grup: "newsdesk", sayfa: "uretim", Bilesen: NewsdeskSiram },
+  { id: "ndYayin", ad: "nkYayin", genis: true, grup: "newsdesk", sayfa: "nextday", Bilesen: NewsdeskYayin },
+  { id: "ndCanli", ad: "canliYayinlar", grup: "newsdesk", sayfa: "nextday", Bilesen: NewsdeskCanlilar },
   { id: "ndGeciken", ad: "gecikenOncelikli", grup: "newsdesk", sayfa: "uretim", Bilesen: GecikenOncelikli },
-  { id: "ndUcret", ad: "mUcretler", grup: "newsdesk", sayfa: "ucretler", Bilesen: UcretKarti },
   { id: "ngSayac", ad: "alOzetSayilar", genis: true, grup: "newsgathering", sayfa: "seyahat", Bilesen: NgSayaclari },
   { id: "ngBekleyen", ad: "gorevlendirmeBekleyen", grup: "newsgathering", sayfa: "seyahat", Bilesen: GorevlendirmeBekleyen },
   { id: "ngSahaGerekecek", ad: "sahaGerekecek", grup: "newsgathering", sayfa: "seyahat", Bilesen: SahaGerekecek },

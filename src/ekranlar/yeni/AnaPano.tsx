@@ -1,6 +1,7 @@
 import { Check, ChevronDown, X } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { UZUN_DAKIKA, cagriDurumu, oneriAkisi, gunOlaylari, kararKuyrugu, siradakiOlay, uretimdekiler, type KuyrukOgesi } from "../../anaPano";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { UZUN_DAKIKA, cagriDurumu, oneriAkisi, kararKuyrugu, uretimdekiler, type KuyrukOgesi } from "../../anaPano";
+import { GunCizgisi } from "../../bilesenler/GunCizgisi";
 import { sureYazisi } from "../../bilesenler/AsamaKutulari";
 import { KisiCipi } from "../../bilesenler/KisiCipi";
 import { TalepSatiri } from "../../bilesenler/PaketGorevi";
@@ -73,91 +74,6 @@ function OneriSeridi({ ben }: { ben: Kisi }) {
       {kutu("#/oneriler/arsiv", "apArsivOneri", a.arsivOneri, t("apBuHafta"), "ton-sonuk")}
       {kutu("#/paketler/arsiv", "apArsivPaket", a.arsivPaket, a.yapilmadi ? t("apYapilmadiAlt", { n: a.yapilmadi }) : t("apBuHafta"), "ton-sonuk")}
     </section>
-  );
-}
-
-/* Dakikada bir yeniden çizer: geri sayım ve "şimdi" çizgisi kaysın. */
-function useDakika() {
-  const [an, setAn] = useState(() => new Date());
-  useEffect(() => {
-    const z = setInterval(() => setAn(new Date()), 60_000);
-    return () => clearInterval(z);
-  }, []);
-  return an;
-}
-
-// GMT; eskiden İstanbul 07–24 idi, aynı pencere.
-const BAS_SAAT = 4;
-const BIT_SAAT = 21;
-const konum = (saat: string) => {
-  const [h, m] = saat.split(":").map(Number);
-  const x = (h + m / 60 - BAS_SAAT) / (BIT_SAAT - BAS_SAAT);
-  return Math.min(1, Math.max(0, x)) * 100;
-};
-
-function GunCizgisi() {
-  const { t } = useDil();
-  const v = useVeri();
-  const an = useDakika();
-  const b = bugun();
-  const olaylar = gunOlaylari(v, b);
-  const sira = siradakiOlay(olaylar, an);
-  const simdi = `${an.getUTCHours()}:${an.getUTCMinutes()}`;
-  const ad = (o: (typeof olaylar)[number]) => (o.tur === "cagri" ? t("apCagriSon") : o.ad);
-  return (
-    <section className="ap-cizgi" aria-label={t("apBugun")} data-ap-cizgi>
-      <div className="ap-cizgi-bas">
-        <b>{t("apBugun")}</b> <small className="ap-dilim">GMT</small>
-        <span className={sira && sira.dakika <= 60 ? "ap-sira yakin" : "ap-sira"} data-ap-siradaki>
-          {sira ? (
-            siradakiMetni(t, sira.olay.tur === "cagri" ? t("apCagriSon") : sira.olay.ad, sureYazisi(sira.dakika * 60_000, t), sira.olay.tur !== "cagri")
-          ) : (
-            t("apGunBitti")
-          )}
-        </span>
-      </div>
-      <div className="ap-cizgi-ray" dir="ltr">
-        {Array.from({ length: (BIT_SAAT - BAS_SAAT) / 2 + 1 }, (_, i) => BAS_SAAT + i * 2).map((h) => (
-          <span key={h} className="ap-saat" style={{ insetInlineStart: `${konum(`${h}:00`)}%` }}>
-            {String(h % 24).padStart(2, "0")}
-          </span>
-        ))}
-        {olaylar.map((o, i) => {
-          const ic = (
-            <>
-              <i aria-hidden="true" />
-              <span className="ap-olay-ad">
-                <b>{o.saat}</b> {o.tur === "cagri" ? ad(o) : <Icerik>{o.ad}</Icerik>}
-              </span>
-            </>
-          );
-          const sinif = `ap-olay ${o.tur}${i % 2 ? " alt" : ""}`;
-          const stil = { insetInlineStart: `${konum(o.saat)}%` };
-          return o.href ? (
-            <a key={i} className={sinif} style={stil} href={o.href} title={`${o.saat} GMT · ${t(o.tur === "cagri" ? "apCagriSon" : o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
-              {ic}
-            </a>
-          ) : (
-            <span key={i} className={sinif} style={stil} title={`${o.saat} GMT · ${t(o.tur === "toplanti" ? "apToplanti" : "apCanli")}`} data-ap-olay={o.tur}>
-              {ic}
-            </span>
-          );
-        })}
-        <span className="ap-simdi" style={{ insetInlineStart: `${konum(simdi)}%` }} aria-hidden="true" />
-      </div>
-    </section>
-  );
-}
-
-/* "Sıradaki: <ad> · 2 sa sonra": ad Arapça içerikse bdi içinde, metnin geri kalanı arayüzün dilinde. */
-function siradakiMetni(t: ReturnType<typeof useDil>["t"], ad: string, sure: string, icerik: boolean): ReactNode {
-  const [on, son] = t("apSiradaki", { ad: "\u0000", sure }).split("\u0000");
-  return (
-    <>
-      {on}
-      {icerik ? <Icerik>{ad}</Icerik> : <b>{ad}</b>}
-      {son}
-    </>
   );
 }
 

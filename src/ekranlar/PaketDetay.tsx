@@ -18,7 +18,7 @@ import { sartliBekleyen } from "../haftalik";
 
 import { bugun, girdidenIso, yerelGirdi, yerelGun } from "../tarih";
 import { eskiOzelPaket, kisiBul, oneriBul, planBul, useVeri, type Kisi, type Paket } from "../veri";
-import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, uretimiKapatabilir, yapabilir } from "../yetki";
+import { adimYapabilir, masaYayinKarariVerebilir, paketIsaretOnaylayabilir, paketIsaretleyebilir, paketTamamlayabilir, tamamlamaGeriAlabilir, uretimYoluBelirleyebilir, uretimiKapatabilir, yapabilir, newsdeskReddedebilir, paketMuhabirAtayabilir, paketStogaDonebilir } from "../yetki";
 import { UretimBalonuDugmesi, UretimiKapatDugmesi } from "../bilesenler/UretimBalonu";
 import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
@@ -26,6 +26,7 @@ import { MuhabirSecici } from "./nextday/Formlar";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
 import { GorevlendirmeDugmesi } from "../bilesenler/GorevlendirmeKarti";
 import { MuhabirDurumSeridi } from "../bilesenler/MuhabirDurumSeridi";
+import { MuhabirAtaDugmesi, NewsdeskGorusleri, NewsdeskRedDugmesi, NewsdeskSatirlari, StogaDondurDugmesi } from "../bilesenler/NewsdeskIslemleri";
 import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
@@ -65,9 +66,10 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
             {geciktiMi(paket) && <Rozet ton="kotu">{t("gecikti")}</Rozet>} {paket.oncelikli && <OncelikRozeti />} {paket.haftalikKalemId && <HaftalikRozeti />}
           </p>
           {/* Muhabir yalnız adıyla; basınca iletişim kartı (ayrı bilgi kartı kalktı). */}
-          {muhabir && (
+          {/* Muhabir atama Newsdesk'te de (kullanıcı): TBC pakete ata ya da değiştir. */}
+          {(muhabir || paketMuhabirAtayabilir(ben, v, paket)) && (
             <p className="paket-muhabir">
-              <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} />
+              {muhabir && !paket.muhabirTbc ? <KisiCipi ben={ben} kisi={muhabir} konu={paket.baslik} /> : <Rozet ton="uyari">TBC</Rozet>} <MuhabirAtaDugmesi ben={ben} paket={paket} />
             </p>
           )}
           <GorevKunyesi p={paket} />
@@ -96,6 +98,13 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
         </NotKutu>
       )}
 
+      {/* Stoka dönüş ve Newsdesk reddi: kim, ne zaman, neden (muhabir de görür). */}
+      <NewsdeskSatirlari ben={ben} paket={paket} />
+      {(paketStogaDonebilir(ben, v, paket) || newsdeskReddedebilir(ben, paket)) && (
+        <p className="paket-newsdesk" data-paket-newsdesk>
+          <StogaDondurDugmesi ben={ben} paket={paket} /> <NewsdeskRedDugmesi ben={ben} paket={paket} />
+        </p>
+      )}
       {/* Muhabirin şeridi: sıra kimde, ne zamandan beri, sonra ne var (kullanıcı: muhabir askıda kalıyordu). */}
       {ben.id === paket.muhabirId && !bitmisMi(paket) && <MuhabirDurumSeridi paket={paket} />}
       {/* Biten paket: aşama kutuları yerine yapım aşamalarının ince özeti; kalan işlem (geri alma, masa kararı) altında. */}
@@ -120,6 +129,7 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
         <IsYazismasi ben={ben} konu={paketKonusu(paket)} />
       )}
       <MasrafKarti ben={ben} paket={paket} />
+      <NewsdeskGorusleri ben={ben} paket={paket} />
       <details className="kart katlanir" data-paket-gecmis>
         <summary className="kart-bas">
           <h2>{t("hareketGecmisi")}</h2>
