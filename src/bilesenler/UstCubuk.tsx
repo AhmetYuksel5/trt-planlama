@@ -10,6 +10,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  RefreshCw,
   Search,
   Settings,
   X,
@@ -32,6 +33,7 @@ import { KomutPaleti } from "./KomutPaleti";
 import { Avatar, Bos } from "./Parcalar";
 import Logo from "./Logo";
 import { useYeniTasarim, yeniTasarimKaydet } from "../tasarimSecimi";
+import { useYeniSurum, yeniSurumuYukle } from "../surum";
 
 /**
  * Üst çubuk: tek ince satır. Sayfanın üstünde başka satır yok; sekmeler,
@@ -67,6 +69,7 @@ export default function UstCubuk({
   const [palet, setPalet] = useState(false);
   const kap = useRef<HTMLDivElement>(null);
   const araDugmesi = useRef<HTMLButtonElement>(null);
+  const yeniSurum = useYeniSurum();
   const metni = useHareketMetni();
   const konusu = useHareketKonusu();
   const mac = /Mac|iPhone|iPad/.test(navigator.platform);
@@ -208,6 +211,12 @@ export default function UstCubuk({
         <button type="button" className="prototip" onClick={demoyuAc} title={t("demoyuDene")} aria-label={t("demoyuDene")} data-demoya-gec>
           <FlaskConical size={14} aria-hidden="true" />
           <span className="prototip-yazi">{t("demo")}</span>
+        </button>
+      )}
+      {yeniSurum && (
+        <button type="button" className="yeni-surum" onClick={yeniSurumuYukle} title={t("yeniSurumYenile")} aria-label={t("yeniSurumYenile")} data-yeni-surum>
+          <RefreshCw size={14} aria-hidden="true" />
+          <span className="yeni-surum-yazi">{t("yeniSurum")}</span>
         </button>
       )}
       <button

@@ -2725,12 +2725,20 @@ button.cip.ekip-oku { min-height: var(--dokunma); font: inherit; color: inherit;
 .yz-takip .yz-satir { margin-block-start: 0; }
 .yz-kaynaklar { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); font-size: var(--punto-kucuk); }
 .yz-kaynaklar a { display: inline-flex; align-items: center; gap: var(--ara-1); overflow-wrap: anywhere; }
-.yz-gorus { display: grid; gap: var(--ara-2); justify-items: start; }
-.yz-gorus > .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); }
+.yz-gorus { display: grid; gap: var(--ara-2); }
+/* Değerlendirmenin satırı: solda etiket, karşıda tek sade eylem; yapay zeka sonda, önceki parçadan ince çizgiyle ayrık. */
+.deg-satir { display: flex; align-items: center; justify-content: space-between; gap: var(--ara-2); min-block-size: 44px; }
+.deg-satir > .alan-etiket { display: inline-flex; align-items: center; gap: var(--ara-1); margin: 0; }
+.deg-eylem { display: inline-flex; align-items: center; gap: var(--ara-1); }
+.oneri-bolum[data-oneri-bolum="degerlendirme"] .katlanir-govde > .yz-gorus:not(:first-child) { border-block-start: 1px solid var(--cizgi); padding-block-start: var(--ara-2); }
+.yz-kanaat { font-weight: 600; }
 .yz-gorus-kutu { display: grid; gap: var(--ara-1); width: 100%; }
 .yz-gorus-kutu p { margin: 0; }
 .yz-kriterler { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ara-1); font-size: var(--punto-kucuk); }
-.yz-puan { display: inline-block; min-width: 5.5em; color: var(--vurgu); letter-spacing: 1px; direction: ltr; unicode-bidi: isolate; }
+.yz-kriterler li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--ara-2); row-gap: 2px; }
+.yz-kriterler li > small { grid-column: 1 / -1; }
+.yz-puan { display: inline-block; color: var(--murekkep); letter-spacing: 1px; direction: ltr; unicode-bidi: isolate; }
+.yz-bos { color: var(--cizgi); }
 .donen { animation: donen 1s linear infinite; }
 @keyframes donen { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .donen { animation: none; } }
@@ -4461,8 +4469,11 @@ html.yeni-tasarim.paper:lang(ar) .menu-grup-bas, html.yeni-tasarim.paper:lang(ar
 html.yeni-tasarim.paper .menu a.acik { background: var(--vurgu-sis); color: var(--vurgu-koyu); }
 html.yeni-tasarim.paper .menu a.acik svg { color: var(--vurgu); }
 /* Düğmeler: birincil dolu kiremit, ikincil krem ve ince çizgi; köşe keskin. */
-html.yeni-tasarim.paper .dugme { background: var(--vurgu); border-color: var(--vurgu); color: #fff; letter-spacing: .02em; }
-html.yeni-tasarim.paper .dugme:hover { background: var(--vurgu-koyu); border-color: var(--vurgu-koyu); }
+/* Yalnız birincil düğme kiremit: kural varyantları da kapsayınca sade düğme dokunulunca
+   (telefonda üstünde kalan hover) kiremit zemine sönük yazıyla kalıyordu (kullanıcı). */
+html.yeni-tasarim.paper .dugme:not(.dugme-ikincil, .dugme-sade, .dugme-kotu, .dugme-yumusak, .dugme-iyi) { background: var(--vurgu); border-color: var(--vurgu); color: #fff; letter-spacing: .02em; }
+html.yeni-tasarim.paper .dugme:not(.dugme-ikincil, .dugme-sade, .dugme-kotu, .dugme-yumusak, .dugme-iyi):hover { background: var(--vurgu-koyu); border-color: var(--vurgu-koyu); }
+html.yeni-tasarim.paper .dugme-sade:hover { background: var(--yuzey-2); color: var(--murekkep); border-color: transparent; }
 html.yeni-tasarim.paper .dugme-ikincil, html.yeni-tasarim.paper .dugme-ikincil:hover { background: var(--yuzey); color: var(--murekkep); border-color: var(--cizgi); }
 html.yeni-tasarim.paper .dugme-ikincil:hover { background: var(--yuzey-2); }
 html.yeni-tasarim.paper .dugme-sade { background: transparent; border-color: transparent; color: var(--sonuk); }
@@ -4824,3 +4835,11 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .baglanti-cipi bdi { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .baglanti-cipi button { border: 0; background: none; padding: 2px; cursor: pointer; color: var(--sonuk); display: inline-flex; }
 .oneri-ekleri { display: grid; gap: var(--ara-2); }
+
+/* Yeni sürüm (src/surum.ts): yarım işi olana çubukta kendisi yenilesin diye; sakin, vurgunun açık tonunda. */
+.yeni-surum { display: inline-flex; align-items: center; gap: 6px; min-block-size: 32px; padding-inline: 10px; border: 0; border-radius: 999px; background: var(--vurgu-sis, #e8eefb); color: var(--vurgu-koyu, var(--vurgu)); font: inherit; font-size: var(--punto-kucuk, 13px); font-weight: 600; cursor: pointer; white-space: nowrap; }
+.yeni-surum:hover { filter: brightness(.96); }
+@media (max-width: 760px) {
+  .yeni-surum { min-block-size: 44px; min-inline-size: 44px; justify-content: center; padding-inline: 0; }
+  .yeni-surum-yazi { display: none; }
+}

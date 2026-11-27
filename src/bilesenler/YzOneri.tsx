@@ -6,7 +6,7 @@ import { yzGorusKaydet } from "../eylemler";
 import { baslikBul, kisiBul, useVeri, type Durum, type Kisi, type Oneri, type OneriBicimi, type YzGenel } from "../veri";
 import { yzGorusuGorur } from "../yetki";
 import { useYz, yzHataMetni, yzIste, type YzBicimSonucu, type YzOneriGirdisi } from "../yz";
-import { Icerik, Rozet, bildir } from "./Parcalar";
+import { Icerik, bildir } from "./Parcalar";
 
 /*
  * Öneri üzerindeki yapay zeka işleri (src/yz.ts, belgeler/yapay-zeka.md):
@@ -16,7 +16,6 @@ import { Icerik, Rozet, bildir } from "./Parcalar";
  * değiştirmiyor. Özellik kişiye açık değilse düğme çizilmiyor.
  */
 
-const GENEL_TONU: Record<YzGenel, string> = { yuksek: "iyi", orta: "uyari", dusuk: "kotu" };
 const GENEL_ADI: Record<YzGenel, Anahtar> = { yuksek: "yzGenel_yuksek", orta: "yzGenel_orta", dusuk: "yzGenel_dusuk" };
 
 /*
@@ -204,17 +203,38 @@ export function YzHaberDegeri({ ben, oneri: o, ulkeAdi }: { ben: Kisi; oneri: On
     else bildir(yzHataMetni(t, r.hata));
   };
   const kisi = kisiBul(v, gorus?.kisiId);
+  /*
+   * Değerlendirmenin son satırı (kullanıcı: kiremit düğme bölümü kaplıyordu; tasarım
+   * ajanının önerisi): yapay zeka tavsiye, kararı yönlendirmesin diye sönük tek satır;
+   * kanaat renkli rozet değil düz yazı, puanlar mürekkep. Yüklenirken satır yerinde kalır.
+   */
   return (
     <div className="yz-gorus" data-yz-gorus>
-      <div className="alan-etiket">
-        <Sparkles size={13} /> {t("yzGorus")}
+      <div className="deg-satir">
+        <span className="alan-etiket">
+          <Sparkles size={13} /> {t("yzHaberDegeri")}
+        </span>
+        {ozellik &&
+          (bekliyor ? (
+            <span className="sonuk deg-eylem" aria-live="polite" data-yz-bekliyor>
+              <Loader2 size={14} className="donen" /> {t("yzAliniyor")}
+            </span>
+          ) : gorus ? (
+            <button type="button" className="ikon-dugme" onClick={iste} aria-disabled={bitti} title={bitti ? t("yzSinirDoldu") : t("yzGorusYenile")} aria-label={t("yzGorusYenile")} data-yz-gorus-al>
+              <RefreshCw size={15} />
+            </button>
+          ) : (
+            <button type="button" className="dugme dugme-sade dugme-kucuk deg-eylem" onClick={iste} aria-disabled={bitti} title={bitti ? t("yzSinirDoldu") : undefined} data-yz-gorus-al>
+              <Sparkles size={14} /> {t("yzGorusAl")}
+            </button>
+          ))}
       </div>
       {gorus && (
         <div className="yz-gorus-kutu">
           <p>
-            <Rozet ton={GENEL_TONU[gorus.genel]}>{t(GENEL_ADI[gorus.genel])}</Rozet>{" "}
+            <b className="yz-kanaat" data-yz-kanaat={gorus.genel}>{t(GENEL_ADI[gorus.genel])}</b>{" "}
             <small className="sonuk">
-              {kisi ? `${ad(kisi)} · ` : ""}
+              · {kisi ? `${ad(kisi)} · ` : ""}
               {gecenSure(gorus.zaman, dil)}
             </small>
           </p>
@@ -225,22 +245,17 @@ export function YzHaberDegeri({ ben, oneri: o, ulkeAdi }: { ben: Kisi; oneri: On
               const puan = Math.min(5, Math.max(0, Math.round(k.puan) || 0));
               return (
                 <li key={k.ad}>
+                  <b dir="auto">{k.ad}</b>
                   <span className="yz-puan" aria-label={t("yzPuan", { n: puan })}>
                     {"●".repeat(puan)}
-                    <span className="sonuk">{"○".repeat(5 - puan)}</span>
+                    <span className="yz-bos">{"●".repeat(5 - puan)}</span>
                   </span>
-                  <b dir="auto">{k.ad}</b>
-                  {k.gerekce && k.gerekce !== "—" && <span dir="auto"> · {k.gerekce}</span>}
+                  {k.gerekce && k.gerekce !== "—" && <small className="sonuk" dir="auto">{k.gerekce}</small>}
                 </li>
               );
             })}
           </ul>
         </div>
-      )}
-      {ozellik && (
-        <button type="button" className="dugme dugme-sade dugme-kucuk" onClick={iste} aria-disabled={bekliyor || bitti} title={bitti ? t("yzSinirDoldu") : undefined} data-yz-gorus-al>
-          {bekliyor ? <Loader2 size={14} className="donen" /> : gorus ? <RefreshCw size={14} /> : <Sparkles size={14} />} {t(gorus ? "yzGorusYenile" : "yzGorusAl")}
-        </button>
       )}
     </div>
   );

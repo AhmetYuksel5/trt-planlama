@@ -7,8 +7,10 @@ import "./tasarimSecimi";
 import "./tema";
 import "./egitimVurgu";
 import { servisBetiginiKaydet } from "./bildirim";
+import { surumIzle } from "./surum";
 
 servisBetiginiKaydet();
+surumIzle();
 
 const kok = document.getElementById("kok");
 if (!kok) throw new Error("Kök eleman bulunamadı.");

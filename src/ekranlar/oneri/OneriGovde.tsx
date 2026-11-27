@@ -7,7 +7,7 @@ import { GeriBag } from "../../bilesenler/GeriBag";
 import { oneriPostaYaniti } from "../../muhabirIletisim";
 import { HareketGecmisi } from "../../bilesenler/Hareket";
 import { IslemMenusu } from "../../bilesenler/IslemMenusu";
-import { Bos, Icerik, Kart, KatlanirKartlar, NotKutu, PaketDurumRozeti, Pencere, Rozet, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
+import { Bos, Icerik, Kart, KatlanirKartlar, NotKutu, PaketDurumRozeti, Pencere, TalimatRozeti, TurRozeti, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { KaynakRozeti, OneriAvatari, OneriDurumRozeti, useOneriGunu } from "../../bilesenler/Tablolar";
 import { YzHaberDegeri } from "../../bilesenler/YzOneri";
 import { saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
@@ -490,8 +490,8 @@ export function OneriAyrinti({
         <EsOneriler ben={ben} oneri={o} />
         <PlandakineBagla ben={ben} oneri={o} />
       </Bolum>
-      <Bolum ad="degerlendirme" baslik={t("degerlendirme")} acik={sayfa}>
-        <YzHaberDegeri ben={ben} oneri={o} ulkeAdi={t(ulkeAdi(o.ulke))} />
+      {/* Sıra insandan makineye: birim görüşü, düzeltme, gerekçe, geri bildirim; yapay zeka tavsiye, sonda. */}
+      <Bolum ad="degerlendirme" baslik={t("degerlendirme")} ek={arsivde ? t("arsivde") : undefined} acik={sayfa}>
         <MasaBolumu ben={ben} oneri={o} />
         {/* Önceki düzeltme isteği: düzeltilip gönderildiyse neye göre düzeltildiği burada kalıyor. */}
         {o.duzeltmeNotu && o.durum !== "duzeltme" && (
@@ -511,7 +511,7 @@ export function OneriAyrinti({
           </NotKutu>
         )}
         <GeriBildirimBolumu ben={ben} oneri={o} />
-        {arsivde && <Rozet>{t("arsivde")}</Rozet>}
+        <YzHaberDegeri ben={ben} oneri={o} ulkeAdi={t(ulkeAdi(o.ulke))} />
       </Bolum>
       {o.muhabirId && (
         <Bolum ad="yazisma" baslik={t("yazisma")} ek={String(mesajSayisi)} acik={sayfa}>

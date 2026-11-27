@@ -557,6 +557,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     kararı değiştirmez. Görüş öneriden ayrı kayıtta (`Durum.yzGorusleri`,
     öneri başına bir, `eylemler.ts → yzGorusKaydet`), ekibin hepsi görür,
     muhabir görmez (`yetki.ts → yzGorusuGorur`); öneri silinince izi gider.
+    Değerlendirme bölümünde sonda (kullanıcı: kiremit düğme bölümü kaplıyordu; tasarım
+    ajanının önerisi; sıra insandan makineye: birim görüşü, düzeltme, gerekçe, geri
+    bildirim, yapay zeka): tek satır "✦ Haber değeri" ve sönük "Görüş al" (`.deg-satir`),
+    yüklenirken yerinde "Alınıyor"; görüş gelince kanaat düz yazı (`.yz-kanaat`, renkli
+    rozet değil), puan noktaları mürekkep, boşlar çizgi rengi, gerekçe ölçütün altında,
+    yenileme simge düğmesi. "Arşivde" bölümün başlığında. Test `testler/yz-degerlendirme.cjs`.
+    Paper'ın birincil düğme kuralı yalnız birincil düğmeye (sade, ikincil, yumuşak, kötü ve
+    iyi değil): telefonda dokunulan sade düğme kiremit zemine sönük yazıyla kalıyordu.
   - **"Son gelişmeler"** (`bilesenler/YzTakip.tsx → YzSonGelismeler`,
     kapıda `takipMetni`): başlık için internette arayıp kısa Arapça takip
     paragrafı (son 24 saat / 3 gün / 7 gün). Next Day'de başlığın "+"
@@ -4453,6 +4461,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   açmaz; sıralı görevde izin, izin kaydından ve sorulan günden
   (`gorevler.ts → izinde`); birime düşen bildirim "gibi" çalışan birime de
   (`bildirimMi`); kayıttan gelen bağlantı `bahsetme.ts → icYol`'dan geçer.
+- Yeni sürüm kendiliğinden (kullanıcı: güncellemeler yapılıyor ama kullanıcılar
+  sayfayı yenilemiyor; `src/surum.ts`): derleme kimliği uygulamada (`__SURUM__`,
+  `vite.config.ts → surumDosyasi`) ve `docs/surum.json`'da (Firebase'de önbelleksiz).
+  Açık sayfa dosyayı beş dakikada bir, sekmeye dönünce ve ağ gelince okur; farklıysa
+  yarım iş yokken (açık pencere, odaktaki yazı alanı, son üç dakikada yazılan metin
+  değil) sekme arka plandayken ya da beş dakika dokunulmayınca kendini yeniler; yarım
+  işte üst çubukta "Yeni sürüm" (`data-yeni-surum`, telefonda yalnız simge), basınca
+  yenilenir. Firestore okuması değil, kota yemez; bölmede ve geliştirmede çalışmaz.
+  Test `testler/surum.cjs`.
 - Hata sınırı (`bilesenler/HataSiniri.tsx`, `main.tsx`): çizimde fırlatılan
   hata sayfayı beyaz bırakmaz, hatanın metni, "Yeniden yükle", "Ana sayfaya
   dön" ve "Hatayı kopyala" çıkar (normal pencerede beyaz, gizli pencerede

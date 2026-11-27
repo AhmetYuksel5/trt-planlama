@@ -26,6 +26,19 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
   const stil = await p.evaluate(() => ({ zemin: getComputedStyle(document.body).backgroundColor, yazi: getComputedStyle(document.body).fontFamily }));
   ok(stil.zemin === "rgb(243, 239, 231)", "kâğıt zemin");
   ok(stil.yazi.includes("Source Serif"), "serif yazı");
+  // Sade düğme üstündeyken (telefonda dokunulduktan sonra) kiremit zemine bürünmüyor, yazı okunuyor.
+  const sade = await p.evaluate(() => {
+    const b = document.createElement("button");
+    b.className = "dugme dugme-sade dugme-kucuk";
+    b.textContent = "x";
+    document.body.append(b);
+    const once = getComputedStyle(b).backgroundColor;
+    return once;
+  });
+  ok(sade === "rgba(0, 0, 0, 0)", "sade düğme saydam: " + sade);
+  await p.hover("body > button.dugme-sade");
+  const ustte = await p.evaluate(() => { const s = getComputedStyle(document.querySelector("body > button.dugme-sade")); return [s.backgroundColor, s.color]; });
+  ok(ustte[0] !== "rgb(196, 98, 63)" && ustte[0] !== ustte[1], "sade düğme üstündeyken kiremit değil: " + ustte.join(" / "));
   // Telefonda taşma yok (Türkçe ve Arapça).
   await p.setViewportSize({ width: 390, height: 844 });
   for (const dil of ["tr", "ar"]) {
