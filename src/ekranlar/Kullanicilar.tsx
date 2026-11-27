@@ -343,7 +343,9 @@ export function KisiHesapMenusu({ ben, kisi: k }: { ben: Kisi; kisi: Kisi }) {
           role="menuitem"
           className="acilir-satir kotu-yazi"
           onClick={() => {
-            if (confirm(t("kisiSilinsinMi", { ad: ad(k) })) && kisiSil(ben, k.id)) bildir(t("kisiSilindi", { ad: ad(k) }));
+            if (!confirm(t("kisiSilinsinMi", { ad: ad(k) })) || !kisiSil(ben, k.id)) return;
+            bildir(t("kisiSilindi", { ad: ad(k) }));
+            void firebaseYukle().then((f) => f.kisiIzleriniTemizle(k));
           }}
           data-kisi-sil
         >

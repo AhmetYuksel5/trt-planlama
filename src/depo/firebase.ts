@@ -45,7 +45,7 @@ import { firebaseAyari } from "../firebase-ayar";
 import { bekleyenGecisleriTamamla, dilDenetmenleriniTasi, hesabaGecir, kendiKayitlariniTasi, muhabirUnvanlariniEsitle, yonetimiAgacaTasi } from "../eylemler";
 import { baglantiCanli, gercekDurumuYaz, sunucuyaEsitOlunca, sunucuyaEsitlendi } from "../kip";
 import { cikisYap, girisYap } from "../oturum";
-import { KOD_SURESI_SAAT, girisAdayAdresleri, hesapAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
+import { KOD_SURESI_SAAT, girisAdayAdresleri, girisAdi, hesapAdresi, kodSifresi, kullaniciAdresi, yeniKod as girisKoduUret } from "../girisKodu";
 import { bosDurum, disaridanGeldi, uzakDepoyuTak, yeniKisi, type BirimId, type Durum, type GorevId, type HesapYetkisi, type Rol, type Sehir } from "../veri";
 import { DIZI_ALANLARI, GENEL, HARITA_ALANLARI, KISITLI_OKUR, MUHASEBE_ALANLARI, muhasebeOkur, anahtarKimligi, belgeKimligi, erisimListesi, farkAlaniMi, farkCikar, kisiBelgedenOku, kisitliJson, ogeBelgesi, type OgeBelgesi, type Siralar } from "./fark";
 
@@ -933,6 +933,28 @@ export const davetIptal = async (eposta: string) => {
   await updateDoc(r, { durum: "iptal" });
   // Kod davetinde kodun okuma belgesi de gitsin: iptal edilen kod "geçerli" görünmesin.
   if (d?.kod) await deleteDoc(doc(db, "girisKodlari", d.kod)).catch(() => {});
+};
+
+/**
+ * Silinen kişinin bekleyen davetleri, giriş kodu ve kullanıcı adı eşlemesi de gider:
+ * kalırsa kişi "aktivasyon bekleniyor" satırıyla listeye döner, daveti kullanıp
+ * kaydını yeniden kurabilirdi. Davet yetkisi olmayanda kural reddeder; sessiz geçilir.
+ */
+export const kisiIzleriniTemizle = async (kisi: { id: string; eposta?: string; yeniEposta?: string }) => {
+  const adresler = new Set([kisi.eposta, kisi.yeniEposta].filter((e): e is string => !!e).map(ePosta));
+  const bekleyen = await getDocs(query(collection(db, "davetler"), where("durum", "==", "bekliyor"))).catch(() => null);
+  for (const s of bekleyen?.docs ?? []) {
+    const d = s.data() as Davet;
+    if (d.kisiId === kisi.id || adresler.has(s.id)) await davetIptal(s.id).catch(() => {});
+  }
+  for (const e of adresler) {
+    const adi = girisAdi(e);
+    if (!adi) continue;
+    const r = doc(db, "kullaniciAdlari", adi);
+    const m = await getDoc(r).catch(() => null);
+    // Ad başka kişiye geçmişse dokunma: yalnız silinen kişinin hesabını gösteren eşleme.
+    if (m?.exists() && adresler.has(ePosta(String(m.data().eposta ?? "")))) await deleteDoc(r).catch(() => {});
+  }
 };
 
 /* --- Giriş kodu (girisKodu.ts): e-postasız hesap --- */

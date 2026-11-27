@@ -354,7 +354,10 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     da yetkili (tam yöneticiyi değil); kimse kendini silemez. Açık
     planlarda (taslak, toplantıda) ekipten ve başlık muhabirlerinden
     çıkar, kişiye bağlı görünüm kayıtları gider; geçmiş kayıtlar kimliği
-    tutar. Kural `kisiler` silmede aynısını sorar. Firebase'deki giriş
+    tutar. Kural `kisiler` silmede aynısını sorar. Kişinin bekleyen davetleri (kişiye bağlı ya da adresine), giriş kodu ve
+    kullanıcı adı eşlemesi de gider (`depo/firebase.ts → kisiIzleriniTemizle`; kullanıcı: silinen
+    muhabir yenileyince "aktivasyon bekleniyor" satırıyla geri geliyordu, daveti kullanıp kaydını
+    yeniden kurabilirdi). Test `testler/kisi-sil.mjs` (emülatör). Firebase'deki giriş
     hesabı kalır ama kişi kaydı olmadan giremez.
   - Etkinleştirmede Firebase giriş bağlantısı (e-posta linki) kullanılmıyor:
     ücretsiz planda günde 5. Davette davetliye ikinci Firebase örneğinde
