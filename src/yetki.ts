@@ -738,6 +738,7 @@ const MUHABIR_ONERI_BILDIRIMI: readonly HareketTipi[] = [
   "oneriDuzeltmeIstendi",
   "oneriDuzenlendi",
   "oneriMuhabireGonderildi",
+  "oneriMuhabirAtandi",
   "oneriGeriCekildi",
   "oneriTakibeAlindi",
   "oneriAsamayaDondu",
@@ -827,6 +828,10 @@ export const geriBildirimSablonuDuzenler = (ben: Kisi | undefined): boolean =>
 /** Planlama öneriyi her aşamada düzeltebiliyor (plana eklendikten sonra da); muhabire gönderilmiş teklif muhabirin. */
 export const oneriDuzenleyebilir = (ben: Kisi | undefined, o: Oneri, d: Durum | null = anlik()): boolean =>
   !!ben && o.durum !== "teklif" && (yapabilir(ben, "oneriDegerlendir") || (!!d && masaOneriyiDuzenler(ben, o, d)));
+
+/** Muhabirsiz girilmiş olay önerisi (kaynak ve talimat da yok); ret ve geri çekilmişte değil. */
+export const oneriMuhabirAtanabilir = (ben: Kisi | undefined, o: Oneri): boolean =>
+  !!ben && yapabilir(ben, "oneriDegerlendir") && !o.muhabirId && !o.kaynakTuru && !o.talimatVeren && o.durum !== "reddedildi" && o.durum !== "geriCekildi";
 
 /* --- Önerinin masaya sorulması (masaSorusu.ts) --- */
 

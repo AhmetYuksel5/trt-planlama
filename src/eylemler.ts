@@ -177,6 +177,7 @@ import {
   paketIsaretOnaylayabilir,
   uretimiKapatabilir,
   oneriGeriCekebilir,
+  oneriMuhabirAtanabilir,
   teklifKarariVerebilir,
   oneriYenidenGonderebilir,
   onIncelemeci,
@@ -360,6 +361,8 @@ export const otoCagrilariKaydet = (
 export interface OneriGirdisi {
   /** Muhabir adına girilende muhabir; muhabir dışı kaynakta boş, kaynakTuru dolu. */
   muhabirId?: string;
+  /** Planlama'nın olay önerisi: muhabir sonra atanacak, kaynak da yok (oneriMuhabirAta). */
+  muhabirSonra?: boolean;
   kaynakTuru?: KaynakTuru;
   kaynakAdi?: string;
   ulke: Ulke;
@@ -473,7 +476,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
    */
   const muhabirId = muhabir ? ben.id : g.muhabirId || undefined;
   const kaynakTuru = muhabir || muhabirId ? undefined : g.kaynakTuru;
-  if (!muhabirId && (!kaynakTuru || kaynakTuru === "muhabir")) return null;
+  const sonra = !muhabir && !muhabirId && !!g.muhabirSonra;
+  if (!muhabirId && !sonra && (!kaynakTuru || kaynakTuru === "muhabir")) return null;
   // Takip muhabirin takiplerine giriyor; muhabiri olmayan kaynakta takip yok.
   if (takip && !muhabirId) return null;
   const kanal: Kanal = muhabir ? "sistem" : g.kanal;
@@ -494,8 +498,8 @@ export const oneriGonder = (ben: Kisi, g: OneriGirdisi): string | null => {
   let oneri: Oneri = {
     id,
     muhabirId,
-    kaynakTuru,
-    kaynakAdi: kaynakTuru ? g.kaynakAdi?.trim() || undefined : undefined,
+    kaynakTuru: sonra ? undefined : kaynakTuru,
+    kaynakAdi: kaynakTuru && !sonra ? g.kaynakAdi?.trim() || undefined : undefined,
     giren: muhabir ? undefined : ben.id,
     ulke: g.ulke,
     haberBasligi: g.haberBasligi.trim() || g.paketBasligi?.trim() || "",
@@ -6716,6 +6720,25 @@ export const muhabireOneriGonder = (ben: Kisi, g: MuhabireOneriGirdisi): string 
  * Geri çekme: muhabir Planlama dokunmadan önerisini, planlamacı muhabire
  * gönderdiği teklifi. Öneri silinmez, arşive gider; karşı taraf haberdar.
  */
+/*
+ * Muhabirsiz girilmiş olay önerisine muhabir (kullanıcı: önce olay için öneri,
+ * muhabir sonra). Öneri o muhabirin adına girilmiş öneri gibi sürer: doğrudan
+ * görev, düzeltme, erişim listesi muhabirden; muhabire haber.
+ */
+export const oneriMuhabirAta = (ben: Kisi, id: string, muhabirId: string) => {
+  const d = getir();
+  const o = oneriBul(d, id);
+  const m = kisiBul(d, muhabirId);
+  if (!o || !m || m.pasif || m.birim !== "muhabir" || !oneriMuhabirAtanabilir(ben, o)) return false;
+  kaydet(
+    hareketYaz(
+      { ...d, oneriler: d.oneriler.map((x) => (x.id === id ? { ...x, muhabirId: m.id, ulke: ulkesi(m.sehir) } : x)) },
+      { kisiId: ben.id, tip: "oneriMuhabirAtandi", oneriId: id, veri: { kime: m.id, muhabir: m.id } },
+    ),
+  );
+  return true;
+};
+
 export const oneriGeriCek = (ben: Kisi, id: string) => {
   const d = getir();
   const o = oneriBul(d, id);

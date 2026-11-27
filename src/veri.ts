@@ -1991,6 +1991,7 @@ export const HAREKET_TIPLERI = [
   "kayitOnaylandi",
   "yapiYayinlandi",
   "oneriMuhabireGonderildi",
+  "oneriMuhabirAtandi",
   "teklifKabulEdildi",
   "teklifReddedildi",
   "oneriGeriCekildi",

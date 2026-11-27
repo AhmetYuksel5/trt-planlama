@@ -1,7 +1,8 @@
 import { GorselListesi } from "../../bilesenler/OneriGorselleri";
 import { oneriSatiri, useEkranKaydi } from "../../asistan/ekran";
 import { useEsitYazis } from "../../bilesenler/esitYazis";
-import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2 } from "lucide-react";
+import { Archive, ArchiveRestore, Ban, ChevronDown, ClipboardList, Clock, Copy, ExternalLink, Lightbulb, Pencil, Plus, Send, Share2, Trash2, Undo2, UserPlus } from "lucide-react";
+import { MuhabirSecici } from "../nextday/Formlar";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GeriBag } from "../../bilesenler/GeriBag";
 import { oneriPostaYaniti } from "../../muhabirIletisim";
@@ -23,6 +24,7 @@ import {
   oneriDuzenle,
   oneriGeriCek,
   oneriKopyala,
+  oneriMuhabirAta,
   oneriPlandakineBagla,
   oneriSil,
   oneriYenidenGonder,
@@ -48,6 +50,7 @@ import {
   oneriDuzenleyebilir,
   oneriDuzeltmeyeGider,
   oneriGeriCekebilir,
+  oneriMuhabirAtanabilir,
   oneriSatiriEkleyebilir,
   oneriSilebilir,
   oneriYenidenGonderebilir,
@@ -86,7 +89,7 @@ import { OneriYazismasi, TeklifNotu } from "./Yazisma";
  * üstünde açılıyor.
  */
 
-type Mod = "ekle" | "ret" | "duzelt" | "duzenle" | "masa" | "geriAl" | "paket" | "gorev" | null;
+type Mod = "ekle" | "ret" | "duzelt" | "duzenle" | "masa" | "geriAl" | "paket" | "gorev" | "muhabir" | null;
 
 /* Katlanır bölüm; açık başlaması ilk çizimde belli, sonra kişinin elinde. */
 function Bolum({ ad, baslik, ek, acik, children }: { ad: string; baslik: ReactNode; ek?: ReactNode; acik: boolean; children: ReactNode }) {
@@ -113,7 +116,18 @@ function OneriKisisi({ ben, oneri: o, d }: { ben: Kisi; oneri: Oneri; d: Durum }
     <span className="kisi-hucre oneri-kisi">
       <OneriAvatari oneri={o} d={d} />
       <span>
-        {o.talimatVeren ? <TalimatRozeti veren={k} /> : k ? <b>{ad(k)}</b> : <KaynakRozeti oneri={o} />}
+        {o.talimatVeren ? (
+          <TalimatRozeti veren={k} />
+        ) : k ? (
+          <b>{ad(k)}</b>
+        ) : o.kaynakTuru ? (
+          <KaynakRozeti oneri={o} />
+        ) : (
+          // Muhabiri sonra atanacak olay önerisi: ⋯ › "Muhabir ata".
+          <span className="sonuk" data-oneri-muhabirsiz>
+            {t("muhabir")}: {t("atanmadi")}
+          </span>
+        )}
         {k && !o.talimatVeren && (
           <small className="sonuk">
             {k.birim === "muhabir" ? t("muhabir") : birimAdi(k.birim)}
@@ -247,6 +261,7 @@ export function OneriAyrinti({
     </button>
   );
   const menu = [
+    oneriMuhabirAtanabilir(ben, o) && madde("muhabir", <UserPlus size={16} />, t("ogMuhabirAta"), () => setMod("muhabir"), "data-oneri-muhabir-ata"),
     (oneriDogrudanGorevlendirebilir(ben, o, v) || oneriGorevlendirebilir(ben, o, v)) && madde("gorev", <ClipboardList size={16} />, t("ogDogrudanGorevlendir"), () => setMod("gorev"), "data-oneri-dogrudan-gorev"),
     masayaSorabilir(ben, o, v) && madde("masa", <Share2 size={16} />, t("msMasayaIlet"), () => setMod("masa"), "data-masaya-sor-ac"),
     teklifKarariVerebilir(ben, o) && madde("tdeg", <Clock size={16} />, t("degerlendirmeyeAl"), () => oneriDurum(ben, o.id, "degerlendiriliyor"), "data-teklif-degerlendir"),
@@ -304,6 +319,8 @@ export function OneriAyrinti({
       <RetFormu ben={ben} oneri={o} kapat={formKapat} />
     ) : mod === "duzelt" ? (
       <DuzeltmeFormu ben={ben} oneri={o} kapat={formKapat} />
+    ) : mod === "muhabir" ? (
+      <MuhabirAtaFormu ben={ben} oneri={o} kapat={formKapat} />
     ) : mod === "gorev" ? (
       <div className="form-kutu" data-oneri-gorev-formu>
         <GorevlendirFormu ben={ben} oneri={o} kapat={formKapat} />
@@ -892,3 +909,36 @@ function TakipSatirlari({ ben, oneri: o }: { ben: Kisi; oneri: Oneri }) {
   );
 }
 
+
+/* Muhabirsiz girilmiş olay önerisine muhabir (oneriMuhabirAta). */
+function MuhabirAtaFormu({ ben, oneri, kapat }: { ben: Kisi; oneri: Oneri; kapat: () => void }) {
+  const { t } = useDil();
+  const [id, setId] = useState("");
+  return (
+    <div className="form-kutu form" data-oneri-muhabir-formu>
+      <label>
+        {t("muhabir")}
+        <MuhabirSecici ic={false} deger={id} degistir={setId} />
+      </label>
+      <div className="dugmeler">
+        <button type="button" className="dugme dugme-ikincil" onClick={kapat}>
+          {t("iptal")}
+        </button>
+        <button
+          type="button"
+          className="dugme"
+          disabled={!id}
+          onClick={() => {
+            if (oneriMuhabirAta(ben, oneri.id, id)) {
+              bildir(t("bOneriMuhabirAtandi"));
+              kapat();
+            }
+          }}
+          data-oneri-muhabir-kaydet
+        >
+          {t("kaydet")}
+        </button>
+      </div>
+    </div>
+  );
+}

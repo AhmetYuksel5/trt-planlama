@@ -27,6 +27,12 @@ export type KaynakSecimi = "muhabir" | "baska";
 export interface OneriFormDurumu {
   kaynak: KaynakSecimi;
   muhabirId: string;
+  /*
+   * Planlama bir olay için öneri girer, muhabiri sonra atar (kullanıcı: önce
+   * hep bir muhabir adına girmek gerekiyordu). Öneri muhabirsiz ve kaynaksız
+   * kaydedilir, "atanmadı" görünür; muhabir pencereden atanır (oneriMuhabirAta).
+   */
+  muhabirSonra: boolean;
   kaynakTuru: KaynakTuru;
   kaynakAdi: string;
   kanal: Kanal;
@@ -53,6 +59,7 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
   return {
     kaynak: "muhabir",
     muhabirId: muhabir ? ben.id : "",
+    muhabirSonra: false,
     kaynakTuru: "ajans",
     kaynakAdi: "",
     kanal: muhabir ? "sistem" : kanal,
@@ -83,7 +90,7 @@ export const oneriFormuBaslangic = (ben: Kisi, kanal: Kanal): OneriFormDurumu =>
 export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) => {
   const takip = f.bicim === TAKIP_BICIMI;
   return (
-    (f.kaynak === "baska" ? !takip : !!f.muhabirId) &&
+    (f.kaynak === "baska" ? !takip : !!f.muhabirId || (f.muhabirSonra && !takip)) &&
     !!(f.haberBasligi.trim() || f.paketBasligi.trim()) &&
     !!f.gelisme.trim() &&
     (!strapGerekli || takip || !!f.paketBasligi.trim()) &&
@@ -93,7 +100,8 @@ export const oneriFormuGecerli = (f: OneriFormDurumu, strapGerekli = false) => {
 
 /** Formdan eyleme: seçilmeyen kaynağın alanları gitmiyor, yoksa muhabir adına girilen öneri ajans gibi de görünürdü. */
 export const oneriFormuGirdisi = (f: OneriFormDurumu): Omit<OneriGirdisi, "hedefTarih" | "hafta"> => ({
-  muhabirId: f.kaynak === "muhabir" ? f.muhabirId : undefined,
+  muhabirId: f.kaynak === "muhabir" && !f.muhabirSonra ? f.muhabirId : undefined,
+  ...(f.kaynak === "muhabir" && f.muhabirSonra && { muhabirSonra: true }),
   kaynakTuru: f.kaynak === "baska" ? f.kaynakTuru : undefined,
   kaynakAdi: f.kaynak === "baska" ? f.kaynakAdi.trim() : undefined,
   kanal: f.kanal,
@@ -181,14 +189,28 @@ export function OneriAlanlari({ ben, f, setF, hedef }: { ben: Kisi; f: OneriForm
             {f.kaynak === "muhabir" ? (
               <label>
                 {t("muhabir")}
-                <MuhabirSecici
-                  ic={false}
-                  deger={f.muhabirId}
-                  degistir={(id) => {
-                    const k = kisiBul(v, id);
-                    setF({ ...f, muhabirId: id, ulke: k ? ulkesi(k.sehir) : f.ulke });
-                  }}
-                />
+                <span className="tbc-satiri">
+                  {!f.muhabirSonra && (
+                    <MuhabirSecici
+                      ic={false}
+                      deger={f.muhabirId}
+                      degistir={(id) => {
+                        const k = kisiBul(v, id);
+                        setF({ ...f, muhabirId: id, ulke: k ? ulkesi(k.sehir) : f.ulke });
+                      }}
+                    />
+                  )}
+                  {/* Olay önerisi: muhabir sonra (takip muhabire bağlı, o zaman seçilmez). */}
+                  <span className="secim">
+                    <input
+                      type="checkbox"
+                      checked={f.muhabirSonra}
+                      onChange={(e) => setF({ ...f, muhabirSonra: e.target.checked, muhabirId: "", ...(e.target.checked && f.bicim === TAKIP_BICIMI && { bicim: "pkg" }) })}
+                      data-oneri-muhabir-sonra
+                    />
+                    {t("ofMuhabirSonra")}
+                  </span>
+                </span>
               </label>
             ) : (
               <>

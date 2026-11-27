@@ -1894,6 +1894,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   birleştirmesinden sonra da) muhabir paketi öneriden ayrı satırda görüyordu;
   gelişme bağlama yalnız plana girmemiş öneride.
 
+  Olay önerisi, muhabir sonra (kullanıcı: öneriyi illa bir muhabir adına girmek
+  gerekiyordu): Planlama'nın formunda muhabir seçiminin yanında "Muhabir sonra"
+  (`OneriFormDurumu.muhabirSonra`, `data-oneri-muhabir-sonra`; takipte değil). Öneri
+  muhabirsiz ve kaynaksız kaydedilir (`oneriGonder → muhabirSonra`), pencerede "Muhabir:
+  atanmadı" (`data-oneri-muhabirsiz`); ⋯ › "Muhabir ata" (`data-oneri-muhabir-ata`,
+  `eylemler.ts → oneriMuhabirAta`, yetki `yetki.ts → oneriMuhabirAtanabilir`: öneri
+  değerlendiren; muhabirsiz, kaynaksız, talimat değil, ret ve geri çekilmiş değil): öneri
+  o muhabirin adına girilmiş öneri gibi sürer (doğrudan görev, düzeltme, erişim listesi),
+  ülke muhabirin şehrinden, hareket `oneriMuhabirAtandi` muhabire. "Plana ekle"de muhabir
+  atanmamış öneriye zaten muhabir seçiliyordu. Test `testler/oneri-muhabir-sonra.cjs`.
+
   Elle girilen öneride `giren` dolu. Plan ekranlarındaki "Öneri ekle" ile
   öneri sayfası aynı formu kullanır (`oneri/OneriFormu.tsx`). Ekranda
   kaynak her yerde `OneriKaynagi` / `OneriAvatari` ile gösterilir
