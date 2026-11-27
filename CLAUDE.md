@@ -4427,6 +4427,11 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   işlem simgeleri metnin üstünde yatay satır, metin bütün genişlikte; başlık
   kartının iç kutularında kenar boşluğu dar (kullanıcı: simgeler yan sütunda
   metni dar şeride sıkıştırıyordu).
+- iPhone'da sabit öğeler (alt çubuk, asistan düğmesi) kaydırma ya da bir katmanın
+  kapanmasıyla sayfa kısalınca ekranın ortasında çizili kalıyordu (kullanıcı; Safari'nin
+  görünüm alanı eşitlenmiyor): `iosSabit.ts` (yalnız iOS) sayfa kısalınca ve kaydırma
+  durunca, alt çubuk görünüm alanının dibinde değilse bir piksel gidip dönüp yeniden
+  çizdirir. Yakınlaştırılmış sayfada dokunmaz. Chromium'da sınanamıyor, gerçek cihazda bakılır.
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

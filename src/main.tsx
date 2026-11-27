@@ -9,11 +9,13 @@ import "./egitimVurgu";
 import { servisBetiginiKaydet } from "./bildirim";
 import { surumIzle } from "./surum";
 import { kanalHatirla } from "./kullanim";
+import { iosSabitDuzelt } from "./iosSabit";
 
 servisBetiginiKaydet();
 surumIzle();
 // Android uygulamasının izi yalnız ilk yüklemede (document.referrer); sekmeye yazılsın.
 kanalHatirla();
+iosSabitDuzelt();
 
 const kok = document.getElementById("kok");
 if (!kok) throw new Error("Kök eleman bulunamadı.");
