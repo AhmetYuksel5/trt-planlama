@@ -370,7 +370,7 @@ function ToplantiPaketi({ plan, paket: p, toplanti, children }: { plan: NextDayP
       onKeyDown={(e) => e.key === "Enter" && toplanti.sec(p.id)}
     >
       {zarf && (
-        <ZarfDugmesi gitti={p.takdirBildirimi} muhabirId={p.muhabirId} eposta={(d, g) => takdirEpostasi(d, paketBul(d, p.id) ?? p, g)} isaretle={(b) => takdirBildirildi(b, p.id)} />
+        <ZarfDugmesi gitti={p.takdirBildirimi} muhabirId={p.muhabirId} eposta={(d, g) => takdirEpostasi(d, paketBul(d, p.id) ?? p, g)} isaretle={(b, e) => takdirBildirildi(b, p.id, e)} />
       )}
       {children}
       {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız toplantı görünümünde. */}

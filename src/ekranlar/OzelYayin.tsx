@@ -1227,7 +1227,7 @@ export const ozelGorevSablonlari = (ben: Kisi, d: Durum, p: Paket, t: (k: Anahta
       metin: e.metin,
       cc: e.cc,
       bcc: e.bcc,
-      gitti: () => ozelGorevPostasiGitti(ben, p.id),
+      gitti: (e) => ozelGorevPostasiGitti(ben, p.id, e),
       ...(geriBildirimSablonuDuzenler(ben) ? { duzenleFormu: <TakdirFormu ben={ben} tur="ozel" /> } : {}),
     },
   ];

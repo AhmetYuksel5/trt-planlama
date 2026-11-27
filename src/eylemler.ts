@@ -1319,11 +1319,14 @@ export const planGonderildi = (ben: Kisi, tur: PlanGonderTuru, id: string) => {
  * Takdir postası gitti: paket işaretlenir (sayfada "gönderildi", ikinci kez
  * seçili gelmez), hareket kaydına düşer. Postayı kapı gönderiyor; bu yalnız iz.
  */
-export const takdirBildirildi = (ben: Kisi, paketId: string) => {
+/** Gönderilen postanın konusu ve metni izde kalıyor: görevlendirme kartı onu gösteriyor. */
+const postaIzi = (ben: Kisi, e?: { konu: string; metin: string }) => ({ zaman: simdi(), kisiId: ben.id, ...(e && { konu: e.konu, metin: e.metin }) });
+
+export const takdirBildirildi = (ben: Kisi, paketId: string, e?: { konu: string; metin: string }) => {
   const d = getir();
   const p = paketBul(d, paketId);
   if (!p || !yapabilir(ben, "planDuzenle")) return false;
-  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: { zaman: simdi(), kisiId: ben.id } }));
+  const yeni = paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: postaIzi(ben, e) }));
   kaydet(hareketYaz(yeni, { kisiId: ben.id, tip: "takdirBildirildi", paketId, planId: p.planId, ...(p.oneriId && { oneriId: p.oneriId }) }));
   return true;
 };
@@ -1332,11 +1335,11 @@ export const takdirBildirildi = (ben: Kisi, paketId: string) => {
  * Weekly'nin kabul edilen paketine görevlendirme postası gitti: iz kalemde ve
  * (doğmuşsa) paketlerinde. Next Day'in bildirim sayfası aynı paketi bir daha önermesin.
  */
-export const haftalikTakdirBildirildi = (ben: Kisi, haftaId: string, kalemId: string) => {
+export const haftalikTakdirBildirildi = (ben: Kisi, haftaId: string, kalemId: string, e?: { konu: string; metin: string }) => {
   let d = getir();
   const k = haftaBul(d, haftaId)?.kalemler.find((x) => x.id === kalemId);
   if (!k || !yapabilir(ben, "haftalikDuzenle")) return false;
-  const iz = { zaman: simdi(), kisiId: ben.id };
+  const iz = postaIzi(ben, e);
   d = kalemGuncelle(d, haftaId, kalemId, (x) => ({ ...x, takdirBildirimi: iz }));
   if (d.paketler.some((p) => p.haftalikKalemId === kalemId))
     d = { ...d, paketler: d.paketler.map((p) => (p.haftalikKalemId === kalemId ? { ...p, takdirBildirimi: iz } : p)) };
@@ -7580,11 +7583,11 @@ export const ozelIcerikYayinGunu = (ben: Kisi, id: string, gun: string) => {
 };
 
 /* Kalıp posta gitti (ya da demoda işaretlendi): içerik satırında "gönderildi". */
-export const ozelGorevPostasiGitti = (ben: Kisi, paketId: string) => {
+export const ozelGorevPostasiGitti = (ben: Kisi, paketId: string, e?: { konu: string; metin: string }) => {
   const d = getir();
   const p = paketBul(d, paketId);
   if (!p || !p.ozelId || !ileriGorevVerebilir(ben)) return false;
-  kaydet(paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: { zaman: simdi(), kisiId: ben.id } })));
+  kaydet(paketGuncelle(d, paketId, (x) => ({ ...x, takdirBildirimi: postaIzi(ben, e) })));
   return true;
 };
 

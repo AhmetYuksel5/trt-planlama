@@ -4381,6 +4381,19 @@ a.ap-plan:hover { border-color: var(--vurgu); }
 .ap-kisiler .ikon-dugme.whatsapp svg { width: 16px; height: 16px; }
 .paket-muhabir { margin: var(--ara-1) 0 0; }
 .paket-teslim { margin: var(--ara-1) 0 0; }
+/* Görevlendirme penceresi: etiket solda, değer sağda; telefonda alt alta. */
+.paket-gorevlendirme { margin: var(--ara-1) 0 0; }
+.gk-liste { display: grid; gap: var(--ara-2); margin: 0; }
+.gk-satir { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: var(--ara-2); padding-block-end: var(--ara-2); border-block-end: 1px solid var(--cizgi); }
+.gk-satir:last-child { border-block-end: 0; }
+.gk-satir dt { color: var(--sonuk); font-size: var(--punto-mini); }
+.gk-satir dd { margin: 0; min-inline-size: 0; overflow-wrap: anywhere; }
+.gk-metin { white-space: pre-wrap; }
+.gk-notlar { margin: 0; padding-inline-start: 1.1em; display: grid; gap: var(--ara-1); }
+.gk-posta { display: grid; gap: var(--ara-1); margin-block-start: var(--ara-1); padding: var(--ara-2); background: var(--yuzey-2); border-radius: 6px; }
+@media (max-width: 760px) {
+  .gk-satir { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
 
 /* Otomatik çağrı: haftanın günleri iki sütunda, istisnalar tek satır. */
 .oto-zamanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--ara-2); }

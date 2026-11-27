@@ -1267,8 +1267,12 @@ export interface Paket {
    * paketsiz kalıyor.
    */
   reddedildi?: { zaman: string; kisiId: string };
-  /** Takdir postası muhabire gitti (src/takdir.ts); bildirim sayfasında "gönderildi", ikinci kez seçili gelmez. */
-  takdirBildirimi?: { zaman: string; kisiId: string };
+  /*
+   * Takdir postası muhabire gitti (src/takdir.ts); bildirim sayfasında "gönderildi", ikinci kez seçili gelmez.
+   * Konu ve metin gönderildiği haliyle (kullanıcı: görevlendirmede muhabire ne söylendiği sonradan
+   * görülsün; gorevBilgisi.ts). Bu kayıttan önce gidenlerde yalnız an var.
+   */
+  takdirBildirimi?: { zaman: string; kisiId: string; konu?: string; metin?: string };
   /*
    * Muhabirin "yapıldı" ya da sebebiyle "yapılmadı" işareti, yetkilinin
    * onayını bekliyor. Onaylanınca yapıldı paketi kapatır (tamamlandı),
@@ -1437,7 +1441,7 @@ export interface HaftalikKalem {
    * Paket henüz doğmamış olabiliyor (günü gelince Next Day'e geçiyor): iz kalemde,
    * doğan pakete de taşınıyor; Next Day'in bildirim sayfası onu "gönderildi" görür.
    */
-  takdirBildirimi?: { zaman: string; kisiId: string };
+  takdirBildirimi?: { zaman: string; kisiId: string; konu?: string; metin?: string };
   /*
    * Next Day gelişmesinin alanları (kullanıcı: haftalıktaki gün gündemi Next Day'in
    * başlık altıyla birebir aynı yetenekte olsun): saat (metnin sonunda "12G"),

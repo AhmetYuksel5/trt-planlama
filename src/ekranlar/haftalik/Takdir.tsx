@@ -33,7 +33,7 @@ export function HaftalikTakdirPenceresi({ ben, hafta, kapat }: { ben: Kisi; haft
     muhabirId: k.muhabirler[0],
     gitti: kalemBildirimi(v, k),
     eposta: (d, gonderen) => kalemTakdirEpostasi(d, d.haftalik.find((h) => h.id === hafta.id)?.kalemler.find((x) => x.id === k.id) ?? k, gonderen),
-    isaretle: (b) => haftalikTakdirBildirildi(b, hafta.id, k.id),
+    isaretle: (b, e) => haftalikTakdirBildirildi(b, hafta.id, k.id, e),
   }));
   return (
     <Pencere baslik={t("kabulEdilenPaketler")} kapat={kapat} genis>
@@ -66,7 +66,7 @@ export function ZarfDugmesi({
   muhabirId?: string;
   /** Gönderim anında en taze kayıttan. */
   eposta: (d: Durum, gonderen: Kisi) => TakdirEpostasi;
-  isaretle: (ben: Kisi) => boolean;
+  isaretle: (ben: Kisi, e?: TakdirEpostasi) => boolean;
 }) {
   const { t, dil } = useDil();
   const v = useVeri();
@@ -92,7 +92,7 @@ export function ZarfDugmesi({
     const p = eposta(getir(), ben);
     const r = GERCEK ? await postaGonder({ kime: p.kime, cc: p.cc, bcc: p.bcc, konu: p.konu, metin: p.metin }) : { tamam: true as const };
     setMesgul(false);
-    if (r.tamam && isaretle(ben)) bildir(t("tkGonderildi", { n: "1" }));
+    if (r.tamam && isaretle(ben, p)) bildir(t("tkGonderildi", { n: "1" }));
     else if (!r.tamam) bildir(`${t("tkGonderilemedi")} (${r.ayrinti ?? r.hata})`);
   };
   return (
@@ -121,7 +121,7 @@ export function KalemPostaDugmesi({ hafta, kalem }: { hafta: HaftalikPlan; kalem
       gitti={kalemBildirimi(v, kalem)}
       muhabirId={kalem.muhabirler[0]}
       eposta={(d, g) => kalemTakdirEpostasi(d, d.haftalik.find((h) => h.id === hafta.id)?.kalemler.find((x) => x.id === kalem.id) ?? kalem, g)}
-      isaretle={(b) => haftalikTakdirBildirildi(b, hafta.id, kalem.id)}
+      isaretle={(b, e) => haftalikTakdirBildirildi(b, hafta.id, kalem.id, e)}
     />
   );
 }

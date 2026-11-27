@@ -24,6 +24,7 @@ import { gfxBekliyor } from "../uretim";
 import { TamamlamaGeriAlDugmesi, tamamlandiBildir } from "../bilesenler/TamamlamaGeriAl";
 import { MuhabirSecici } from "./nextday/Formlar";
 import { GorevKunyesi } from "../bilesenler/PaketGorevi";
+import { GorevlendirmeDugmesi } from "../bilesenler/GorevlendirmeKarti";
 import { TeslimSatiri } from "../bilesenler/TeslimGunu";
 import { AsamaKutulari } from "../bilesenler/AsamaKutulari";
 import { MasrafKarti, PaketMetniKarti } from "../bilesenler/PaketMetni";
@@ -69,6 +70,12 @@ export default function PaketDetay({ ben, paket, kutu }: { ben: Kisi; paket: Pak
             </p>
           )}
           <GorevKunyesi p={paket} />
+          {/* Görevlendirmede ne söylendi: aşamadan bağımsız, her zaman açılır (kullanıcı). */}
+          {paket.durum !== "taslak" && paket.durum !== "degerlendiriliyor" && (
+            <p className="paket-gorevlendirme">
+              <GorevlendirmeDugmesi paket={paket} />
+            </p>
+          )}
           {/* Stok, feature ve masa paketinin teslim günü (plansız görevde günü görev künyesinde, özel yayında yayının formunda). */}
           {!paket.planId && !paket.ozelId && !paket.gorev && (paket.durum === "onaylandi" || paket.durum === "uretimde") && (
             <div className="paket-teslim">

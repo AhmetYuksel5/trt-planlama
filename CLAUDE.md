@@ -1167,6 +1167,17 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     balonda gfx seçildiyse gfx; formda düğme, adı türden gelir, serbest), röportajda
     konuşmanın aslı `asil`; eski parçada addan tahmin (`parcaTuru`: INTRO, PTC, SOT,
     مقابلة…). Biten paketin şeridi sayfada metni tekrar etmez.
+  - Görevlendirme kartı (kullanıcı: paket yapılırken ya da sonra muhabire görevlendirmede ne söylendiği,
+    ne üzerine görevlendirildiği istenince görülsün; `gorevBilgisi.ts`, saf, saklanmaz;
+    `bilesenler/GorevlendirmeKarti.tsx`): paket sayfasının başında "Görevlendirme" (`data-gorevlendirme-ac`;
+    taslak ve değerlendirmede değil), pencerede görevlendiren ve anı (künye, yoksa `Paket.gorev`), nereden
+    (Next Day günü ve başlığı, Weekly, özel yayın, plansız görev, öneriye bağlantı), Strap, yer, açıklama,
+    teslim ve yayın günü, فكرة المعالجة/المعالجة البصرية (paketten, yoksa öneriden), planlamacının başlıktaki
+    muhabire notu, karar notu, ek talep, koşul, paket notları ve görevlendirme postası. Muhabir planı ve
+    başlık havuzunu okuyamadığı için başlığın adı ve not onay hareketinden (`planaMuhabirEklendi`). Postanın
+    konusu ve metni gönderildiği haliyle izde (`Paket.takdirBildirimi.konu`/`metin`; PKG geri bildirimi, Weekly
+    zarfı, özel yayın görev postası, asistan); önceki postalarda yalnız an, "metni kaydedilmemiş". Test
+    `testler/gorevlendirme.cjs`.
   - Ek masraflar (kullanıcı: muhabir girer, Planlama onaylar; "Yapıldı"nın onayı
     masrafı da onaylar, künyeyle Muhasebe'ye; `Paket.masraflar`, `Masraf`: çekim,
     ulaşım, konaklama, harcırah, diğer [açıklama zorunlu]; tutar, para birimi

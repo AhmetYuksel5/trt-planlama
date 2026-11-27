@@ -1748,7 +1748,7 @@ const YAZMA: Record<string, Yurutucu> = {
           grup = k.tamam ? (k.veri.grupAdresi || "").trim().toLowerCase() : "";
         }
         postaGidenEkle(ben, postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`, konu, metin_, grup || undefined, gidenler);
-        ozelGorevPostasiGitti(ben, id);
+        ozelGorevPostasiGitti(ben, id, { konu, metin: metin_ });
         return { tamam: true, sonuc: { kime: gidenler.kime } };
       },
     });
@@ -1819,7 +1819,7 @@ const YAZMA: Record<string, Yurutucu> = {
             const r = await kapiPostaGonder({ kime: e.kime, cc: e.cc, bcc: e.bcc, konu: e.konu, metin: e.metin });
             if (!r.tamam) return { hata: r.hata, gidenler };
           }
-          takdirBildirildi(ben, id);
+          takdirBildirildi(ben, id, e);
           gidenler.push(x.baslik);
         }
         return { tamam: true, gidenler };

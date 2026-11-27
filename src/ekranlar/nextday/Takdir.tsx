@@ -28,7 +28,7 @@ export default function TakdirBildirimi({ ben, plan }: { ben: Kisi; plan: NextDa
     muhabirId: p.muhabirId,
     gitti: p.takdirBildirimi,
     eposta: (d, k) => takdirEpostasi(d, paketBul(d, p.id) ?? p, k),
-    isaretle: (k) => takdirBildirildi(k, p.id),
+    isaretle: (k, e) => takdirBildirildi(k, p.id, e),
   }));
   return (
     <>
@@ -51,7 +51,7 @@ export interface TakdirSatiri {
   gitti?: { zaman: string };
   /** Gönderim anında en taze kayıttan kuruluyor. */
   eposta: (d: Durum, gonderen: Kisi) => TakdirEpostasi;
-  isaretle: (ben: Kisi) => boolean;
+  isaretle: (ben: Kisi, e?: TakdirEpostasi) => boolean;
 }
 
 /*
@@ -94,7 +94,7 @@ export function TakdirListesi({ ben, satirlar, yetkili }: { ben: Kisi; satirlar:
       const e = p.eposta(getir(), ben);
       const r = GERCEK ? await postaGonder({ kime: e.kime, cc: e.cc, bcc: e.bcc, konu: e.konu, metin: e.metin }) : { tamam: true as const };
       if (r.tamam) {
-        p.isaretle(ben);
+        p.isaretle(ben, e);
         tamam++;
       } else hatalar.push(`${muhabirAdi(p.muhabirId)}: ${r.ayrinti ?? r.hata}`);
     }

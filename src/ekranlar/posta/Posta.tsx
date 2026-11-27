@@ -752,7 +752,8 @@ export interface PostaSablonu {
   metin: string;
   cc?: string[];
   bcc?: string[];
-  gitti?: () => void;
+  /** Gönderilen konu ve metinle: iz onları saklıyor (görevlendirme kartı). */
+  gitti?: (e: { konu: string; metin: string }) => void;
   duzenleFormu?: ReactNode;
 }
 
@@ -782,7 +783,7 @@ function YeniPosta({ ben, grup, kapat, acildi, ilk, sablonlar = [] }: { ben: Kis
     // Yanıtta giden balon muhabirin postasının sohbetine düşer.
     const konuKimligi = ilk?.konuKimligi || postaKonuCekirdegi(konu) || `pk-${Date.now().toString(36)}`;
     postaGidenEkle(ben, konuKimligi, konu.trim(), metin.trim(), grup, alicilar);
-    sablonlar.find((x) => x.id === secilen)?.gitti?.();
+    sablonlar.find((x) => x.id === secilen)?.gitti?.({ konu: konu.trim(), metin: metin.trim() });
     bildir(t("bPostaGonderildi"));
     acildi(konuKimligi);
     kapat();
