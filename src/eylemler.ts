@@ -5435,13 +5435,13 @@ export const kisiEpostasi = (ben: Kisi, kisiId: string, eposta: string): "degist
   if (adres && d.kisiler.some((x) => x.id !== kisiId && ((x.eposta ?? "").toLowerCase() === adres || (x.kurumEposta ?? "").toLowerCase() === adres))) return false;
   // Kod hesabında (girisKodu.ts) giriş kullanıcı adıyla; buradaki adres kurumun adresi, girişe dokunmuyor.
   if (girisAdi(k.eposta) && !girisAdi(adres)) {
-    kaydet({ ...d, kisiler: d.kisiler.map((x) => (x.id === kisiId ? { ...x, kurumEposta: adres } : x)) });
-    return "degisti";
+    return kaydet({ ...d, kisiler: d.kisiler.map((x) => (x.id === kisiId ? { ...x, kurumEposta: adres } : x)) }) && "degisti";
   }
   const dogrudan = !GERCEK || !!k.hesapsiz;
   const sonuc = dogrudan ? "degisti" : adres === (k.eposta ?? "").toLowerCase() ? "geriAlindi" : "aktivasyon";
   if (!dogrudan && !adres) return false;
-  kaydet({
+  // Yazılmadıysa (eşitlenmeden, izlemede) başarı dönmesin: "Yeni kod" işaretsiz hesap açardı.
+  const yazildi = kaydet({
     ...d,
     kisiler: d.kisiler.map((x) => {
       if (x.id !== kisiId) return x;
@@ -5450,7 +5450,7 @@ export const kisiEpostasi = (ben: Kisi, kisiId: string, eposta: string): "degist
       return sonuc === "geriAlindi" ? kalan : { ...kalan, yeniEposta: adres };
     }),
   });
-  return sonuc;
+  return yazildi && sonuc;
 };
 
 /* --- Kurumun yapısı (yapi.ts): taslak, yayın, sürüme dönüş; yalnız tam yönetici --- */

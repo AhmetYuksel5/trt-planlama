@@ -986,33 +986,62 @@ function YeniKodPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi
   const oneri = kullaniciAdiOner(girisAdi(kisi.eposta), alinmis);
   const [kullanici, setKullanici] = useState("");
   const [bekle, setBekle] = useState(false);
-  const gonder = (e: FormEvent) => {
+  const [hata, setHata] = useState("");
+  /*
+   * Kullanıcı: "Yeni kod istediğimde kod gelmiyor". Önce Firebase'de hesap açılıp kişinin kaydı sonra
+   * işaretleniyordu; işaret yazılamayınca (eşitlenmeden) kod gösterilmiyor, açılan hesap adı tutuyordu:
+   * sonraki denemede aynı öneri "kullanıcı adı var"la hep düşüyordu. Şimdi işaret önce (yazılamazsa
+   * hesap açılmaz), önerilen ad Firebase'de doluysa sıradakine geçilir, hata pencerede kalır.
+   */
+  const gonder = async (e: FormEvent) => {
     e.preventDefault();
-    const ka = kullanici.trim().toLowerCase() || oneri;
-    if (!kullaniciAdiGecerli(ka) || alinmis.has(ka)) return bildir(t(alinmis.has(ka) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
+    const elle = kullanici.trim().toLowerCase();
+    const ilk = elle || oneri;
+    if (!kullaniciAdiGecerli(ilk) || alinmis.has(ilk)) return setHata(t(alinmis.has(ilk) ? "kodKullaniciVar" : "kullaniciAdiGecersiz"));
     if (!confirm(t("eminMisin"))) return;
     setBekle(true);
+    setHata("");
     const adi = typeof kisi.ad === "string" ? { tr: kisi.ad, ar: kisi.ad, en: kisi.ad } : kisi.ad;
-    firebaseYukle()
-      .then(async (f) => {
-        const k = await f.kodlaDavetEt({
-          kullanici: ka,
-          ad: adi,
-          birim: kisi.birim,
-          gorev: kisi.gorev,
-          rol: kisi.rol,
-          hesapYoneticisi: !!kisi.hesapYoneticisi,
-          yetkiler: kisi.yetkiler,
-          davetEden: ben.id,
-          kisiId: kisi.id,
-        });
-        // Hesap açıldıktan sonra işaret: kural davetin adresini kişinin "yeni adres"iyle karşılaştırıyor.
-        if (kisiEpostasi(ben, kisi.id, kullaniciAdresi(ka)) !== "aktivasyon") throw { code: "permission-denied" };
-        kodVerildi({ ...k, ad: adi.ar });
-        kapat();
-      })
-      .catch((x) => bildir(gonderimHatasi(x)))
-      .finally(() => setBekle(false));
+    // Vazgeçişte kişinin önceki hali: bekleyen eski yeni kod varsa o, yoksa işaret kalkar.
+    const geriAl = () => kisiEpostasi(ben, kisi.id, kisi.yeniEposta ?? kisi.eposta ?? "");
+    const denenen = new Set(alinmis);
+    let ka = ilk;
+    try {
+      const f = await firebaseYukle();
+      for (let deneme = 0; ; deneme++) {
+        // İşaret önce: kişi yeni kodla girince kaydı bu işaretle taşınıyor (hesabaGecir).
+        if (kisiEpostasi(ben, kisi.id, kullaniciAdresi(ka)) !== "aktivasyon") throw { code: "kod/isaretlenemedi" };
+        try {
+          const k = await f.kodlaDavetEt({
+            kullanici: ka,
+            ad: adi,
+            birim: kisi.birim,
+            gorev: kisi.gorev,
+            rol: kisi.rol,
+            hesapYoneticisi: !!kisi.hesapYoneticisi,
+            yetkiler: kisi.yetkiler,
+            davetEden: ben.id,
+            kisiId: kisi.id,
+          });
+          kodVerildi({ ...k, ad: adi.ar });
+          kapat();
+          return;
+        } catch (x) {
+          // Önceki yarım denemeden Firebase'de kalmış ad: elle yazılmadıysa sıradaki öneri.
+          if (hataKodu(x) === "kod/kullanici-var" && !elle && deneme < 5) {
+            denenen.add(ka);
+            ka = kullaniciAdiOner(girisAdi(kisi.eposta), denenen);
+            continue;
+          }
+          geriAl();
+          throw x;
+        }
+      }
+    } catch (x) {
+      setHata(hataKodu(x) === "kod/isaretlenemedi" ? t("kodIsaretlenemedi") : gonderimHatasi(x));
+    } finally {
+      setBekle(false);
+    }
   };
   return (
     <Pencere baslik={t("yeniKodVer")} alt={ad(kisi)} kapat={kapat}>
@@ -1021,6 +1050,11 @@ function YeniKodPenceresi({ ben, kisi, alinmis, kodVerildi, kapat }: { ben: Kisi
           {t("kullaniciAdi")}
           <input dir="ltr" autoCapitalize="none" spellCheck={false} value={kullanici} placeholder={oneri} onChange={(e) => setKullanici(e.target.value.toLowerCase())} data-yeni-kod-kullanici />
         </label>
+        {hata && (
+          <p className="not-kutu uyari" role="alert" data-yeni-kod-hata>
+            {hata}
+          </p>
+        )}
         <div className="form-alt">
           <button type="button" className="dugme dugme-ikincil dugme-kucuk" onClick={kapat}>
             {t("iptal")}

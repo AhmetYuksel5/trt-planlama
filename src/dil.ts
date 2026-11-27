@@ -3815,6 +3815,11 @@ const M = {
   ),
   kodGecersiz: m("Kod geçersiz ya da süresi dolmuş", "الرمز غير صالح أو انتهت صلاحيته", "The code is invalid or has expired"),
   kodKullanilmis: m("Bu kod kullanılmış; kullanıcı adın ve şifrenle gir", "استُخدم هذا الرمز؛ ادخل باسم المستخدم وكلمة المرور", "This code has been used; sign in with your username and password"),
+  kodIsaretlenemedi: m(
+    "Kişinin kaydı güncellenemedi, kod oluşturulmadı. Kayıt eşitlenince yeniden dene.",
+    "تعذّر تحديث سجل الشخص، ولم يُنشأ الرمز. أعد المحاولة بعد اكتمال المزامنة.",
+    "The person's record could not be updated, no code was created. Try again once the record is synced.",
+  ),
   kodKullaniciVar: m("Bu kullanıcı adı alınmış", "اسم المستخدم هذا محجوز", "This username is taken"),
   ggKodHesabiSifre: m(
     "Kullanıcı adıyla açılan hesapta şifre yöneticinin vereceği yeni kodla yenilenir",

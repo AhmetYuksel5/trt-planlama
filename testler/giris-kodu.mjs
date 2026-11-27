@@ -106,8 +106,15 @@ const satir = yon.locator("[data-hesap]", { has: yon.locator("[data-kod-hesap]")
 await satir.locator("button[aria-haspopup]").last().click();
 await yon.locator("[data-yeni-kod]").click();
 dogrula("yeni kod önerisi", (await yon.getAttribute("[data-yeni-kod-kullanici]", "placeholder")) === "ali.kaya2");
+// Önceki yarım denemeden Firebase'de kalmış ad (kullanıcı: "yeni kod gelmiyor"): kod yine gelsin, sıradaki adla.
+await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=deneme`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ email: "ali.kaya2@giris.plannersflow.net", password: "Yarim-deneme-1", returnSecureToken: true }),
+});
 await yon.click("[data-yeni-kod-olustur]");
 await yon.waitForSelector("[data-kod]", { timeout: 30000 });
+dogrula("dolu ad atlandı, kod geldi", (await yon.locator("dialog[open]").last().innerText()).includes("ali.kaya3"));
 const kod2 = await yon.getAttribute("[data-kod]", "data-kod");
 await yon.keyboard.press("Escape");
 const ali2 = await yeniSayfa();
@@ -123,7 +130,7 @@ await yon.goto(ADRES + "#/organizasyon/hesaplar");
 await yon.waitForFunction(
   () => {
     const s = [...document.querySelectorAll("[data-hesap] [data-kod-hesap]")].map((e) => e.textContent?.trim());
-    return s.includes("ali.kaya2") && !s.includes("ali.kaya");
+    return s.includes("ali.kaya3") && !s.includes("ali.kaya");
   },
   null,
   { timeout: 30000 },
