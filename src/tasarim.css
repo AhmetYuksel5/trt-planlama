@@ -3877,6 +3877,10 @@ html.yeni-tasarim .menu.masa-planlama a.acik svg { color: var(--masa-planlama); 
   /* Kart başının araçları sığmayınca alta iner: hafta gezgini 320 pikselde kartın dışına taşıyordu. */
   .kart-bas { flex-wrap: wrap; }
   .kart-bas .sag-uc { flex-wrap: wrap; max-width: 100%; }
+  /* Kişiler'in düğme kümesi başlığın altına iner, baştan dizilir: sağa yaslı satırlar
+     solda boşluk bırakıp dağınık duruyordu (kullanıcı). */
+  .kart-bas .sag-uc:has(> .pk-ust-dugmeler) { flex-basis: 100%; margin-inline-start: 0; }
+  .kart-bas .pk-ust-dugmeler { justify-content: flex-start; }
   .prg-icerik, .prg-oneri, .prg-program { padding: var(--ara-3); }
   .prg-arsiv-satir { grid-template-columns: minmax(0, 1fr); gap: var(--ara-1); }
   .prg-arsiv-alt { justify-content: start; }
