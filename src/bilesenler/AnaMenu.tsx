@@ -319,6 +319,30 @@ export const planlamaMenusu = (ben: Kisi): Grup[] => {
   return gruplar.filter((g) => g.maddeler.length > 0);
 };
 
+/*
+ * Yöneticinin menüsü (yeni tasarımda kademedeki müdür ve koordinatör; kullanıcı:
+ * yönetici karmaşık bölmeye ilgi göstermez; üç yönetici asistanı ajanla): ana
+ * sayfa kokpit ("Kanal"); yayın planları; ekip (görevlendirmeler önde); yönetim
+ * (raporlar, üretim panosu, görevler, yetkiliyse organizasyon ve muhasebe).
+ * Öneriler, posta, stok ve paketler aramada (Ctrl+K) ve adresle.
+ */
+export const yoneticiMenusu = (ben: Kisi): Grup[] => {
+  const tablodan = (s: string, ek: Partial<Madde> = {}): Madde | undefined => {
+    const m = MENU.flatMap((g) => g.maddeler).find((x) => x.sayfa === s);
+    return m && { ...m, say: undefined, ...ek };
+  };
+  const grup = (ad: Anahtar | undefined, maddeler: (Madde | false | undefined)[]): Grup => ({
+    ad,
+    maddeler: maddeler.filter((m): m is Madde => !!m && maddeGorunur(ben, m)),
+  });
+  return [
+    grup(undefined, [tablodan("ana", { ad: "kpKanal", kisa: "kpKanal", ikon: Gauge })]),
+    grup("mgYayinPlanlari", [tablodan("nextday"), tablodan("haftalik"), tablodan("aylik"), tablodan("ozel"), tablodan("takvim")]),
+    grup("mgEkip", [tablodan("hareketler"), tablodan("muhabirler"), tablodan("personel"), tablodan("izinler")]),
+    grup("mgYonetim", [tablodan("raporlar"), tablodan("uretim"), tablodan("gorevler"), tablodan("organizasyon"), tablodan("muhasebe"), tablodan("gundem")]),
+  ].filter((g) => g.maddeler.length > 0);
+};
+
 /* Yeni tasarımda Planlama'nın kendi menüsü ve ana sayfası: Planlama (ve onun "gibi" çalışan birim) ve tam yönetici (kullanıcı isteği; önce tam yönetici eski menüde kalıyordu). */
 export const planlamaYeniMi = (ben: Kisi, yeni: boolean) => yeni && !kisitliKisi(ben) && (!!ben.hesapYoneticisi || izinBirimi(ben.birim) === "planlama");
 
@@ -328,6 +352,8 @@ export const birimMenusu = (ben: Kisi, yeni: boolean): { tur: string; gruplar: G
   const masa = masaBirimi(ben);
   if (masa) return { tur: masa, gruplar: masaMenusu(ben, masa) };
   if (newsdeskMasasi(ben)) return { tur: "newsdesk", gruplar: newsdeskMenusu(ben) };
+  // Tam yönetici Planlama'nın menüsünde kalıyor (kullanıcı isteği); kokpit ona menüdeki "Yönetici paneli"nden.
+  if (yeni && yonetimdeMi(ben) && !ben.hesapYoneticisi) return { tur: "yonetim", gruplar: yoneticiMenusu(ben) };
   if (planlamaYeniMi(ben, yeni)) return { tur: "planlama", gruplar: planlamaMenusu(ben) };
   return undefined;
 };

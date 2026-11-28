@@ -4109,6 +4109,32 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     görevlerim, anmalar, varsa hesap onayı; küçük sayı kutuları, panelde), Planlar
     2×2, Ekip (muhabir paneli, Posta, Takvim). iPhone 13'te (görünür 664 piksel,
     prototip şeridiyle) kaydırmasız. Test `testler/oneri-akisi.cjs`.
+- Yönetici kokpiti (kullanıcı: yöneticiler yoğun, karmaşık bölmeye ilgi göstermez; basit, havalı, genel
+  akışı ve kim ne yapıyor onu görsün, kontrol hissi versin; planın yalnız başlıkları, seçince ayrıntı;
+  muhabir görevlendirmeleri, özel yayınlar ve muhabir istatistikleri önemli; üç yönetici asistanı ajanla,
+  taslak sayfası yayında; kurallar `kokpit.ts`, saf; ekran `ekranlar/yeni/Kokpit.tsx`): yeni tasarımda
+  yönetici panelinin yerinde (`YoneticiPaneli` yeni tasarımda kokpiti çizer, eski tasarımda eski panel;
+  `#/panel/<birim>`'e inme aynı). Sabit sayfa, "Sayfayı düzenle" yok. Üstte kanalın nabzı (`nabiz`: kapsamdaki
+  birim ışıklarının en kötüsü, `birimDurumu`; cümlede geciken, karar bekleyen, sahadaki muhabir) ve tek
+  "Talimat ver"; ön inceleme kartı yalnız varken; günün zaman çizgisi (`GunCizgisi`). Planın başlıkları
+  (`planBasliklari`; Bugün · Yarın · Bu hafta, `useAdimDurumu`): başlık tek satır, gelişme/PKG/LIVE sayısı,
+  basınca yerinde gelişmeler, muhabirler, PKG'ler kararıyla, canlılar; "Planda aç" `baslikaGit`, özel yayının
+  başlığı (`<plan>-oz-<yayın>`) yayına götürür; haftada ana dosyalar ve günlerin dosyaları (`haftaOzeti`,
+  reddedilen kalem girmez). Özel yayınlar (`ozelKartlari`: geçmemiş ilk üç; kalan gün, dört aşamanın
+  çubuğu `ozelAsamaDurumlari`, nafize, hazır içerik, eksik). Görevlendirmeler (`haftaninGorevleri`: haftanın
+  Cumartesi–Cuma şeridi, talep girmez; görev, özel yayın görevi, izin ayrı renk; telefonda liste) ve bugün
+  sahada/yolda/izinde (`kisiBugunDurumu`). İstatistikler: ayın ilk beşi önceki ayla (`ilkMuhabirler`,
+  muhabirRaporu'nun "biten"i), son 8 haftanın öneri ve yayınlanan çizgisi (`haftalikSeri`, yayın
+  `paketGunu`'yla), kabul halkası (`ayinKabulu`). Altta birimler (`.birim-kartlari`, birime inme), üretim
+  hattı (`uretimHatti`, kapsamdaki paketler; 180 dakikayı aşan istasyon kırmızı; bugün biten `paketGunu`'yla,
+  son değişiklikle değil), son 7 günün göstergeleri (`rapor`); en altta verdikleri (açık talimatlar ve
+  görevler, kimde). Karar düğmesi yok. Renk `--masa-yonetim` (petrol) ve `-acik` (logo yeşili). Menü
+  (`AnaMenu.tsx → yoneticiMenusu`, `birimMenusu` tür "yonetim"; yeni tasarımda kademedeki müdür ve
+  koordinatör, tam yönetici değil): Kanal (ana sayfa), Yayın planları, Ekip (görevlendirmeler önde),
+  Yönetim (raporlar, üretim panosu, görevler, yetkiliyse organizasyon ve muhasebe); öneriler, posta,
+  stok, paketler aramada. Tam yöneticinin ana sayfası Planlama'nınki kaldı (kullanıcı isteği), kokpit
+  `#/panel`'de. Sonraki partiler: telefonun alt çubuğu, yönetici bildirimleri ve akşam özeti, toplantı
+  odası ekranı. Test `testler/kokpit.cjs`.
 - Etkileşim ilkeleri (kullanıcı: dokuz ilkeden bizde olanlar, gerçek kullanımlardan örnek sayfa;
   `bilesenler/Etkilesim.tsx`, stiller `tasarim.css`'in sonunda "Etkileşim ilkeleri"): yerinde
   onaylanan işte satır bir kez nabız atar (`nabizAt`, `satiraNabiz`; "Bugün de geçerli" belgede ve

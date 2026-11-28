@@ -21,6 +21,8 @@ import { Yetkisiz } from "./Ayarlar";
 import { FormAlt } from "./nextday/Formlar";
 import PanelPlanlari from "./PanelPlanlari";
 import { CalismaAlani, type Alan } from "./ana/Calisma";
+import Kokpit from "./yeni/Kokpit";
+import { useYeniTasarim } from "../tasarimSecimi";
 
 /**
  * Yönetici paneli.
@@ -41,7 +43,7 @@ const aktifMi = (p: Paket) => p.durum !== "tamamlandi" && p.durum !== "iptal";
 
 /* --- Birim kartlarının sayıları: yalnız ortak kayıttan --- */
 
-interface BirimDurumu {
+export interface BirimDurumu {
   birim: Birim;
   geciken: number;
   bekleyen: number;
@@ -49,7 +51,7 @@ interface BirimDurumu {
   sayilar: [Anahtar, ReactNode][];
 }
 
-const birimDurumu = (d: Durum, b: Birim, paketler: Paket[], t: (k: Anahtar) => string): BirimDurumu => {
+export const birimDurumu = (d: Durum, b: Birim, paketler: Paket[], t: (k: Anahtar) => string): BirimDurumu => {
   const B = bugun();
   const yarinPlan = d.planlar.find((p) => p.tarih === gunEkle(B, 1));
   const masada = paketler.filter((p) => aktifMi(p) && paketSahibi(p) === b);
@@ -167,9 +169,9 @@ function BirimKarti({ durum, ayrinti }: { durum: BirimDurumu; ayrinti: string })
 
 /* --- Verdiğim talimatlar: durum zinciri öneriden ve paketten türetiliyor --- */
 
-const TALIMAT_ADIMLARI: Anahtar[] = ["tdPlanlamada", "tdPlanda", "tdUretimde", "tdTamamlandi"];
+export const TALIMAT_ADIMLARI: Anahtar[] = ["tdPlanlamada", "tdPlanda", "tdUretimde", "tdTamamlandi"];
 
-const talimatDurumu = (o: Oneri, d: Durum): { adim: number; iptal: boolean; ek: string; paket?: Paket } => {
+export const talimatDurumu = (o: Oneri, d: Durum): { adim: number; iptal: boolean; ek: string; paket?: Paket } => {
   if (o.durum !== "planaEklendi") return { adim: 0, iptal: false, ek: "" };
   const p = paketBul(d, o.paketId);
   if (!p) return { adim: 1, iptal: false, ek: "" };
@@ -274,7 +276,7 @@ function TalimatFormu({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
  * reddedilemeyen öneri) ya da görev (ekibe veya kişilere iş). Planlama
  * kapsamı olmayan yönetici yalnız görev verir; seçim o zaman görünmez.
  */
-function TalimatVer({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
+export function TalimatVer({ ben, kapat }: { ben: Kisi; kapat: () => void }) {
   const { t } = useDil();
   const haber = talimatVerebilir(ben);
   const [tur, setTur] = useState<"haber" | "gorev">(haber ? "haber" : "gorev");
@@ -328,6 +330,7 @@ function BirimGorunumu({ ben, birim }: { ben: Kisi; birim: Birim }) {
 export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi; birim?: string; ana?: boolean }) {
   const { t } = useDil();
   const [talimat, setTalimat] = useState(false);
+  const yeniTasarim = useYeniTasarim();
   const ks = kapsam(ben);
   if (!ks) return <Yetkisiz />;
 
@@ -337,6 +340,8 @@ export default function YoneticiPaneli({ ben, birim, ana = false }: { ben: Kisi;
     return <BirimGorunumu ben={ben} birim={birim as Birim} />;
   }
 
+  // Yeni tasarımda yönetici kokpiti (kokpit.ts): sabit sayfa, başlık özeti, özel yayınlar, görevlendirmeler, istatistikler.
+  if (yeniTasarim) return <Kokpit ben={ben} ana={ana} />;
   const kapsamAdi = ks.birimler.map((b) => birimAdi(b)).join(", ");
   const talimatVerir = talimatVerebilir(ben) || isEkleyebilir(ben);
 
@@ -410,7 +415,7 @@ function PanelSayaclari({ ben }: { ben: Kisi }) {
 }
 
 /* Haftalık toplantıdan önce önüne gelen stok öneriler: yalnız varken. */
-function PanelOnInceleme({ ben }: { ben: Kisi }) {
+export function PanelOnInceleme({ ben }: { ben: Kisi }) {
   const v = useVeri();
   return onIncelemeBekleyenler(v, ben).length > 0 ? <OnIncelemeKarti ben={ben} /> : null;
 }
