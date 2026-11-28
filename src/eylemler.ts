@@ -12,7 +12,7 @@ import { gundemde, haftaGunleri, isDogurur, kalemIcerigiVar, paketDogurur, hafta
 import { GERCEK, sunucuyaEsitMi } from "./kip";
 import { izlemede } from "./izleme";
 import { kapanisKimligi, type AnlasmaSatiri } from "./muhasebe";
-import { ILK_TABAN_SAAT, budanmis, okunduYap, okunmadiYap, type PostaOkuma } from "./postaOkuma";
+import { ILK_TABAN_SAAT, budanmis, gorunenPostalar, okunduYap, okunmadiYap, outlookOkunmamisYaz, type PostaOkuma } from "./postaOkuma";
 import type { MuhabirTaslagi } from "./iceAktar";
 import { bosAlan } from "./epostaEslestir";
 import { farkCikar, geriUygula, geriyeEkle, ileriAdimiAl, ileriyeEkle, sessizce, sonAdimiAl } from "./geriAl";
@@ -5292,7 +5292,11 @@ export const postaOkumaBaslat = (ben: Kisi, grup: string) =>
 
 export const postaOkundu = (ben: Kisi, kimlikler: string[], zaman: string) => postaOkumaYaz(ben, (o) => okunduYap(o, kimlikler, zaman));
 
-export const postaOkunmadi = (ben: Kisi, kimlikler: string[], sonGelen: string) => postaOkumaYaz(ben, (o) => okunmadiYap(o, kimlikler, sonGelen));
+/** Postalar çekilince: kişinin kutusunda (Outlook) okunmamış olanlar okuma kaydına. */
+export const postaOutlookOkunmamis = (ben: Kisi, okunmamis: string[]) =>
+  postaOkumaYaz(ben, (o, d) => outlookOkunmamisYaz(o, gorunenPostalar(d, o.grup), okunmamis, simdi()));
+
+export const postaOkunmadi = (ben: Kisi, kimlikler: string[], sonGelen: string, mesajKimligi?: string) => postaOkumaYaz(ben, (o) => okunmadiYap(o, kimlikler, sonGelen, mesajKimligi));
 
 /** Hepsini okundu say: taban şimdi, iplik başına anlar gereksiz. */
 export const postaHepsiOkundu = (ben: Kisi) => postaOkumaYaz(ben, (o) => ({ ...o, taban: simdi(), k: {} }));

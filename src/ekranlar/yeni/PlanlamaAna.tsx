@@ -1,3 +1,4 @@
+import { useSessizPosta } from "../../bilesenler/sessizPosta";
 import { useState } from "react";
 import { AnildigimNotlar } from "../../bilesenler/Anma";
 import { OnayBekleyenHesaplar } from "../../bilesenler/HesapOnayi";
@@ -38,6 +39,8 @@ type PanelTuru = "oneri" | "paket" | "birim" | "gorev" | "anma" | "gunNotu" | "m
 /* Masaüstünde pano (AnaPano: sabit, yerinde açılan), telefonda ve tablette kutular (mobil denetimde onaylanan düzen). */
 export default function YeniPlanlamaAna({ ben }: { ben: Kisi }) {
   const masaustu = useMedya("(min-width: 961px)");
+  // Posta sayısı Outlook'un okunmamışlarıyla eşit kalsın: kutu sessizce çekilir (15 dakikada bir).
+  useSessizPosta(ben, true);
   return masaustu ? <AnaPano ben={ben} /> : <KutuluAna ben={ben} />;
 }
 

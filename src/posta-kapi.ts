@@ -1,5 +1,5 @@
 import { kapiDosya, kapiIstek, type YzSonuc } from "./yz";
-import { cagriYanitiysaIsle, postaIsle } from "./eylemler";
+import { cagriYanitiysaIsle, postaIsle, postaOutlookOkunmamis } from "./eylemler";
 import { type GelenEposta } from "./eposta";
 import { type Kisi } from "./veri";
 import { otoCagriEsitle } from "./otoCagri";
@@ -106,7 +106,7 @@ export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise
   // Kapının sabah gönderdiği çağrı önce kayda girsin: yanıtı o çağrıya bağlanıp öneri olsun.
   await otoCagriEsitle(ben).catch(() => null);
   // uyari: kapı bir grubu alamadı, alınanlar yine geldi (bağlantı kopunca hepsi gitmesin).
-  type Cekis = { mesajlar: KapiMesaji[]; uyari?: string; staffing?: { bulunan: number; okunan: { konu: string }[]; hata?: string } };
+  type Cekis = { mesajlar: KapiMesaji[]; uyari?: string; staffing?: { bulunan: number; okunan: { konu: string }[]; hata?: string }; okunmamis?: string[] };
   const r: YzSonuc<Cekis> = await kapiIstek<Cekis>("/posta/cek", "POST", { adet });
   if (!r.tamam) return { hata: r.hata, ayrinti: r.ayrinti };
   // En eski önce yazılsın ki sohbet sırası doğru olsun (kapı en yeni önce veriyor).
@@ -122,6 +122,8 @@ export const postalariCek = async (ben: Kisi, adet = 25, grup?: string): Promise
     // Çağrıya verilmiş muhabir yanıtı öneriye de aktarılır; sohbette de kalır.
     if (cagriYanitiysaIsle(ben, gelen)?.durum === "oneri") oneri++;
   }
+  // Kişinin kutusunda okunmamışlar (kapı sorabildiyse): ana sayfanın ve menünün Posta sayısı Outlook'la aynı olsun.
+  if (Array.isArray(r.veri.okunmamis)) postaOutlookOkunmamis(ben, r.veri.okunmamis.filter((x): x is string => typeof x === "string"));
   const st = r.veri.staffing;
   const staffing = st ? { bulunan: st.bulunan, okunan: st.okunan.length, eklenen: staffingEklenen, ...(st.hata ? { hata: st.hata } : {}) } : undefined;
   return { eklenen, toplam: mesajlar.length, oneri, ...(r.veri.uyari ? { uyari: r.veri.uyari } : {}), ...(staffing ? { staffing } : {}) };

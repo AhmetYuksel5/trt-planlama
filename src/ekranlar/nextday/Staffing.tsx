@@ -9,46 +9,13 @@ import { vardiyaYaz } from "../../tarih";
 import { useVeri, type Kisi, type NextDayPlan } from "../../veri";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi } from "../../yapi";
 import { izlemede } from "../../izleme";
-import { GERCEK, firebaseYukle } from "../../kip";
-import { postaKimlikGetir, postalariCek, rotaGetir } from "../../posta-kapi";
-import { planIcerikDuzenler, postaGorebilir } from "../../yetki";
+import { GERCEK } from "../../kip";
+import { rotaGetir } from "../../posta-kapi";
+import { useSessizPosta } from "../../bilesenler/sessizPosta";
+import { planIcerikDuzenler } from "../../yetki";
 
-/*
- * Gerçek kipte postalar yalnız Posta'yı açan tarayıcıda yükleniyordu, kutu da
- * yalnız Posta açılınca çekiliyordu: Posta'ya girmeyen planlamacı staffing
- * şeridini hiç görmüyordu. Next Day'i düzenleyen açınca posta yüklenir,
- * kimliği (parolası) olan kişide kutu sessizce çekilir; çekiş tarayıcıda
- * 15 dakikada bir (her plan açılışında kapıya gitmesin).
- */
-const CEKIS_ANAHTARI = "trt-planlama-nd-posta-cek";
-const CEKIS_ARASI = 15 * 60 * 1000;
 function useStaffingPostasi(ben: Kisi, plan: NextDayPlan) {
-  const duzenler = planIcerikDuzenler(ben, plan);
-  useEffect(() => {
-    if (!GERCEK || !duzenler || izlemede() || !postaGorebilir(ben)) return;
-    let son = 0;
-    try {
-      son = Number(localStorage.getItem(CEKIS_ANAHTARI)) || 0;
-    } catch {
-      /* saklama yok: yine de bir kez dene */
-    }
-    const cek = Date.now() - son > CEKIS_ARASI;
-    void (async () => {
-      // Liste sunucudan gelmeden çekilirse aynı posta ikinci kez eklenirdi (Posta sayfasıyla aynı sıra).
-      await (await firebaseYukle()).postaDinle();
-      if (!cek) return;
-      const r = await postaKimlikGetir();
-      if (!r.tamam || !r.veri.parolaVar) return;
-      try {
-        localStorage.setItem(CEKIS_ANAHTARI, String(Date.now()));
-      } catch {
-        /* yok say */
-      }
-      await postalariCek(ben, 25, (r.veri.grupAdresi || "").trim().toLowerCase());
-    })().catch(() => null);
-    // Kişi ve yetki değişmedikçe bir kez.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ben.id, duzenler]);
+  useSessizPosta(ben, planIcerikDuzenler(ben, plan));
 }
 
 /*

@@ -101,6 +101,28 @@ const ok = (k, m) => (k ? (gec++, console.log("✓ " + m)) : (kal++, console.log
     await p.setViewportSize({ width: 1440, height: 1000 });
   }
 
+  // Outlook'un okunmamışları (kapı çekişte veriyor): Outlook'ta okunan posta burada da okunmuş sayılır
+  await p.setViewportSize({ width: 1440, height: 1000 });
+  await p.goto(B);
+  await p.evaluate(() => localStorage.clear());
+  await kim("pl1");
+  await git("#/posta");
+  await p.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem("trt-planlama-v25"));
+    for (const m of d.postaMesajlari) if (["pm-o1", "pm-o3", "pm-o4"].includes(m.id)) m.mesajKimligi = m.id + "@ornek.local";
+    d.postaOkunan.pl1.outlook = { zaman: new Date(Date.now() + 3600_000).toISOString(), idler: ["pm-o3@ornek.local"] };
+    localStorage.setItem("trt-planlama-v25", JSON.stringify(d));
+  });
+  await git("#/");
+  ok((await menuSayi()) === 3, "Outlook'ta okunan iki posta sayılmadı (5 → 3): " + (await menuSayi()));
+  await git("#/posta");
+  ok((await rozet("ornek-gazze")) === 1 && (await rozet("ornek-mukabele")) === 0, "sohbet rozetleri de Outlook'a göre");
+  await p.locator('[data-posta-sohbet-bag="ornek-mukabele"]').click();
+  await p.waitForTimeout(300);
+  await p.locator("[data-posta-okunmadi]").click();
+  await p.waitForTimeout(300);
+  ok((await rozet("ornek-mukabele")) === 1, "Outlook'ta okunmuş posta da 'okunmadı yap'la yeniden okunmamış");
+
   ok(hatalar.length === 0, "sayfa hatası yok " + hatalar.join(" | "));
   await b.close();
   console.log(`${gec} geçti, ${kal} kaldı`);

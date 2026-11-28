@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, staffingAramaIstegi, yanitIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
+import { baslikliHtml, mesajKimligiGecerli, findItemIstegi, getItemIstegi, createItemIstegi, findItemCoz, getItemCoz, grubaUygun, yeniMetin, faultMetni, httpCerceveCoz, postalariCek, postalariCekOtomatik, postaGonderOtomatik, ekIndirOtomatik, ekListesiCoz, ekIcerikCoz, imidBulIstegi, staffingAramaIstegi, okunmamisIstegi, okunmamisCoz, yanitIstegi, metinHtml, satirYonu, type Soket, type EwsAyar } from "../src/ews.ts";
 
 /*
  * EWS istemcisinin saf parçaları (SOAP kurucu/çözücü, gövde temizleme, HTTP
@@ -344,7 +344,9 @@ test("postalariCek: staffing araması reddedilirse yinelenmez, ana liste yine ok
   const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
   assert.ok("mesajlar" in r, JSON.stringify(r));
   assert.equal(r.mesajlar.length, 1);
-  assert.equal(istekler.length, 4, "staffing araması ikinci kez gönderilmez");
+  assert.equal(istekler.filter((x) => x.includes("News Staffing")).length, 1, "staffing araması ikinci kez gönderilmez");
+  assert.ok(istekler[4]?.includes("message:IsRead"), "en sonda okunmamışlar soruldu (aynı bağlantıda, bir kez)");
+  assert.equal(r.okunmamis, undefined, "yanıtsız okunmamış sorusu yok sayıldı");
   assert.ok(r.staffing?.hata?.startsWith("News Staffing"), JSON.stringify(r.staffing));
 });
 
@@ -477,4 +479,34 @@ test("planı gönder: dosya eki Body'nin hemen ardında Attachments'ta, yoksa hi
   assert.ok(x.indexOf("</t:Body>") < x.indexOf("<t:Attachments>"));
   assert.ok(x.indexOf("</t:Attachments>") < x.indexOf("<t:InReplyTo>"));
   assert.ok(!createItemIstegi({ kime: ["a@ornek.local"], konu: "k", metin: "m" }).includes("<t:Attachments>"));
+});
+
+test("okunmamış isteği gelen kutusunda IsRead=false ve Message-ID istiyor", () => {
+  const x = okunmamisIstegi();
+  assert.ok(x.includes('FieldURI="message:IsRead"') && x.includes('Constant Value="false"'));
+  assert.ok(x.includes('FieldURI="message:InternetMessageId"'));
+  assert.ok(x.indexOf("<m:Restriction>") < x.indexOf("<m:ParentFolderIds>"));
+  assert.ok(x.includes('DistinguishedFolderId Id="inbox"'));
+});
+
+test("okunmamış yanıtından Message-ID'ler ayraçsız", () => {
+  const xml = `<m:Items><t:Message><t:ItemId Id="A" ChangeKey="1"/><t:InternetMessageId>&lt;abc@ornek.local&gt;</t:InternetMessageId></t:Message><t:Message><t:ItemId Id="B"/><t:InternetMessageId>&lt;x.y@ornek.local&gt;</t:InternetMessageId></t:Message></m:Items>`;
+  assert.deepEqual(okunmamisCoz(xml), ["abc@ornek.local", "x.y@ornek.local"]);
+});
+
+test("postalariCek: okunmamışlar aynı bağlantıda sorulur, Message-ID'leri döner", async () => {
+  const ayar: EwsAyar = { sunucu: "posta.ornek.test", kullanici: "u", parola: "p", alan: "ORNEK" };
+  const auth = `WWW-Authenticate: NTLM ${GERCEK_TYPE2}\r\n`;
+  const posta = `<t:Message><t:Subject>Deneme</t:Subject><t:Body BodyType="Text">x</t:Body><t:From><t:Mailbox><t:EmailAddress>a@ornek.test</t:EmailAddress></t:Mailbox></t:From></t:Message>`;
+  const { soket, istekler } = sahteSoket([
+    httpYanit("401 Unauthorized", "", auth),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="A1" ChangeKey="C"/></t:Message>`),
+    BOS_ARAMA,
+    httpYanit("200 OK", posta),
+    httpYanit("200 OK", `<t:Message><t:ItemId Id="A1"/><t:InternetMessageId>&lt;bir@ornek.test&gt;</t:InternetMessageId></t:Message>`),
+  ]);
+  const r = await postalariCek(ayar, async () => soket, Date.now(), 25);
+  assert.ok("mesajlar" in r, JSON.stringify(r));
+  assert.deepEqual(r.okunmamis, ["bir@ornek.test"]);
+  assert.equal(istekler.length, 5);
 });

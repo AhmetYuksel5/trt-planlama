@@ -985,7 +985,7 @@ export function Posta({ ben }: { ben: Kisi }) {
   const sonGelen = secik ? [...secik.mesajlar].reverse().find((m) => !m.giden) : undefined;
   const okunmadiYap = () => {
     if (!secik || !sonGelen) return;
-    postaOkunmadi(ben, secik.kimlikler, sonGelen.zaman);
+    postaOkunmadi(ben, secik.kimlikler, sonGelen.zaman, sonGelen.mesajKimligi);
     setSecili("");
   };
   const sil = (konuKimligi: string) => {

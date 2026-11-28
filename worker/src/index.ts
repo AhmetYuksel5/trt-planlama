@@ -636,7 +636,7 @@ const isleIc = async (req: Request, env: Env, d: Bagimlilik, yanit: (g: unknown,
     const r = await postalariCekOtomatik({ sunucu: pa.sunucu, kullanici: pk.kullanici, parola: pk.parola, alan: pa.alan }, cfBaglan, d.simdi(), adet);
     if (await kimlikReddiniYaz(env, kisi.kimlik.uid, pk, r, d.simdi())) return yanit({ hata: KIMLIK_REDDI }, 502);
     if ("hata" in r) return yanit({ hata: "baglanti", ayrinti: r.hata.slice(0, 200) }, 502);
-    return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa), ...(r.uyari ? { uyari: r.uyari.slice(0, 200) } : {}), ...(r.staffing ? { staffing: r.staffing } : {}) });
+    return yanit({ mesajlar: r.mesajlar.filter((m) => grubaUygun(m, pk.grupAdresi)).map(postaDisa), ...(r.uyari ? { uyari: r.uyari.slice(0, 200) } : {}), ...(r.staffing ? { staffing: r.staffing } : {}), ...(r.okunmamis ? { okunmamis: r.okunmamis } : {}) });
   }
 
   /*

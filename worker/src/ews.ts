@@ -57,6 +57,26 @@ export const findItemIstegi = (adet: number): string =>
   );
 
 /*
+ * Kişinin gelen kutusundaki okunmamış postaların Message-ID'leri (kullanıcı:
+ * ana sayfadaki Posta sayısı okunmamışlar olsun; postalar Outlook'ta okununca
+ * Plannersflow habersiz kalıyor, sayı her gelen postayla büyüyüp toplam gibi
+ * görünüyordu). Okundu bilgisi kutuya özgü: kayıttaki sohbet ortak, bu yüzden
+ * yalnız kimlikler döner, tarayıcı kişinin kendi okuma kaydına yazar.
+ */
+export const OKUNMAMIS_EN_COK = 200;
+export const okunmamisIstegi = (): string =>
+  ZARF(
+    `<m:FindItem Traversal="Shallow"><m:ItemShape><t:BaseShape>IdOnly</t:BaseShape><t:AdditionalProperties><t:FieldURI FieldURI="message:InternetMessageId"/></t:AdditionalProperties></m:ItemShape>` +
+      `<m:IndexedPageItemView MaxEntriesReturned="${OKUNMAMIS_EN_COK}" Offset="0" BasePoint="Beginning"/>` +
+      `<m:Restriction><t:IsEqualTo><t:FieldURI FieldURI="message:IsRead"/><t:FieldURIOrConstant><t:Constant Value="false"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction>` +
+      `<m:ParentFolderIds><t:DistinguishedFolderId Id="inbox"/></m:ParentFolderIds></m:FindItem>`,
+  );
+
+/* Yanıttaki Message-ID'ler, kayıttaki biçimde (köşeli ayraçsız). */
+export const okunmamisCoz = (xml: string): string[] =>
+  [...xml.matchAll(/<(?:[a-z]+:)?InternetMessageId>([^<]*)</gi)].map((m) => varlikCoz(m[1]).replace(/[<>]/g, "").trim()).filter(Boolean);
+
+/*
  * Konusunda "News Staffing" geçen son postalar (Next Day ekibinin günlük
  * listesi). Ana liste kutunun en yeni N postası: staffing postasının üstüne
  * N'den çok posta gelince hiç okunmuyordu. Şema sırası: Restriction,
@@ -707,7 +727,9 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
     soket = undefined;
     dogrulandi = false;
   };
-  const iste = async (soap: string): Promise<HttpYanit> => {
+  /* `tek`: yalnız açık, doğrulanmış bağlantıda bir kez (ek sorular: kopunca yeni bağlantı açıp çekişi uzatmasın). */
+  const iste = async (soap: string, tek = false): Promise<HttpYanit> => {
+    if (tek && (!soket || !dogrulandi)) throw new Error("bağlantı kapalı");
     for (let deneme = 0; ; deneme++) {
       if (!soket) soket = await baglan(ayar.sunucu);
       try {
@@ -718,7 +740,7 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
       } catch (e) {
         await birak();
         const metin = e instanceof Error ? e.message : String(e);
-        if (!YENILENIR.test(metin)) throw e;
+        if (tek || !YENILENIR.test(metin)) throw e;
         // Kaç kez yenilendiği hatada yazsın: sorun bağlantının kendisinde mi, tek seferlik mi görülsün.
         if (deneme >= YENILEME) throw new Error(`${metin} · ${deneme + 1} bağlantı denendi`);
       }
@@ -732,7 +754,7 @@ export const okumaOturumu = (ayar: EwsAyar, baglan: Baglan, simdi: number, mic: 
  * GetItem ile gövdeler. Tek soket; FindItem el sıkışmasından sonra GetItem
  * aynı doğrulanmış bağlantıda. Hata metinle döner (kullanıcı "dene"de görsün).
  */
-export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string; kimlik?: boolean }> => {
+export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25, mic = false): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu; okunmamis?: string[] } | { hata: string; kimlik?: boolean }> => {
   const o = okumaOturumu(ayar, baglan, simdi, mic);
   // Hata hangi adımda olduysa metnin başında: bağlantı mı, liste mi, kaçıncı grup.
   let adim = "FindItem";
@@ -816,8 +838,20 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
     }
     if (uyarilar.length && !mesajlar.length) return { hata: uyarilar[0] };
     const staffing = staffingDurumu();
-    if (uyarilar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: uyarilar.find((u) => u.startsWith("News Staffing") || u.includes("GetItem")) ?? uyarilar[0], staffing };
-    return { mesajlar: siraliMesajlar(mesajlar), staffing };
+    // Okunmamışlar ek: sunucu reddederse ya da bağlantı koptuysa yok sayılır, ekran eski kuralla sayar.
+    let okunmamis: string[] | undefined;
+    {
+      try {
+        const ok = await o.iste(okunmamisIstegi(), true);
+        const x = latin1Utf8(ok.govde);
+        if (ok.durum === 200 && !/ResponseClass="Error"/.test(x)) okunmamis = okunmamisCoz(x);
+      } catch {
+        /* yok say */
+      }
+    }
+    const ek = okunmamis ? { okunmamis } : {};
+    if (uyarilar.length) return { mesajlar: siraliMesajlar(mesajlar), uyari: uyarilar.find((u) => u.startsWith("News Staffing") || u.includes("GetItem")) ?? uyarilar[0], staffing, ...ek };
+    return { mesajlar: siraliMesajlar(mesajlar), staffing, ...ek };
   } catch (e) {
     const hata = `${adim}: ${e instanceof Error ? e.message : String(e)}`;
     // Bir grup alınamasa da alınanlar kaybolmasın; kalanı sonraki çekişte gelir.
@@ -832,7 +866,7 @@ export const postalariCek = async (ayar: EwsAyar, baglan: Baglan, simdi: number,
 const siraliMesajlar = (m: EwsMesaj[]) => [...m].sort((a, b) => (b.zaman ?? "").localeCompare(a.zaman ?? ""));
 
 /* Önce sade NTLMv2 (MIC'siz), kimlik reddedilirse MIC'li yeni bağlantıda dener; hangisi tuttuysa o. */
-export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu } | { hata: string; kimlik?: boolean }> => {
+export const postalariCekOtomatik = async (ayar: EwsAyar, baglan: Baglan, simdi: number, adet = 25): Promise<{ mesajlar: EwsMesaj[]; uyari?: string; staffing?: StaffingDurumu; okunmamis?: string[] } | { hata: string; kimlik?: boolean }> => {
   const ilk = await postalariCek(ayar, baglan, simdi, adet, false);
   if (!("hata" in ilk) || !ilk.kimlik) return ilk;
   return postalariCek(ayar, baglan, simdi, adet, true);
