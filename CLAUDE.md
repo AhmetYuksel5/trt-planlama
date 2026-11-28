@@ -4520,14 +4520,14 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   durunca, alt çubuk görünüm alanının dibinde değilse bir piksel gidip dönüp yeniden
   çizdirir. Yakınlaştırılmış sayfada dokunmaz. Chromium'da sınanamıyor, gerçek cihazda bakılır.
 - Telefonda sayfalar arası geri (kullanıcı: mobil uygulamada geri düğmesi ya da hareketi
-  yoktu; ana ekran uygulamasında tarayıcının geri düğmesi yok): üst çubukta logonun önünde
-  "←" (`data-ust-geri`, `yol.ts → useGeriVar`, `geriTikla`), yalnız uygulamanın içinden
-  gelinmişse (doğrudan açılan sayfada yok), yalnız telefon düzeninde. iPhone'un ana ekran
-  uygulamasında kenardan kaydırma da geri gider (`bilesenler/GeriKaydirma.tsx`; Safari'nin
-  hareketi orada yok): başlangıç kenarından (Arapçada sağdan) yatay, en az 72 piksel;
-  parmakla gelen ok işareti eşiği geçince dolar. Android'de sistemin geri hareketi zaten
-  geçmişi kullandığı için kapalı (iki kez geri giderdi). Açık pencere geçmiş adımı olduğu
-  için önce o kapanır. Test `testler/mobil-geri-dugme.cjs` (`window.__geriKaydirmaDene`).
+  yoktu; sonra: üstte geri düğmesi olmasın, ekran kaydırılınca geri gitsin;
+  `bilesenler/GeriKaydirma.tsx`): ekranın sol ya da sağ kenarından içeri doğru yatay, en az
+  72 piksel kaydırma bir önceki sayfaya döner; parmakla gelen ok işareti eşiği geçince
+  dolar; kenardan başlamayan ve dikey kaydırma karışmaz, yazı alanında çalışmaz. Android'de
+  her yerde (sistemin kenar hareketi açıksa dokunuşu sistem alır), iPhone'da yalnız ana
+  ekran uygulamasında (Safari'nin sekmesinde kendi hareketi var, iki kez geri giderdi).
+  Açık pencere geçmiş adımı olduğu için önce o kapanır. Test `testler/mobil-geri-dugme.cjs`
+  (`window.__geriKaydirmaDene`).
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

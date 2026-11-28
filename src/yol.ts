@@ -294,22 +294,6 @@ if (!GOMULU) {
 /** Uygulamanın içinden mi gelindi: "←" o zaman bir önceki sayfaya döner. */
 export const geriVarMi = () => (GOMULU ? yigin.length > 0 : derinlik > 0);
 
-/* Geri var mı, sayfa değiştikçe yeniden: telefonun üst çubuğundaki geri düğmesi için. */
-export function useGeriVar() {
-  const [var_, setVar] = useState(geriVarMi);
-  useEffect(() => {
-    // Derinliği yukarıdaki dinleyici yazıyor; o çalıştıktan sonra okunsun.
-    const oku = () => setTimeout(() => setVar(geriVarMi()), 0);
-    window.addEventListener("hashchange", oku);
-    window.addEventListener("popstate", oku);
-    return () => {
-      window.removeEventListener("hashchange", oku);
-      window.removeEventListener("popstate", oku);
-    };
-  }, []);
-  return var_;
-}
-
 /**
  * Sayfadaki "←" bağlantısının tıklaması: uygulamanın içinden gelindiyse
  * geldiği yere döner, bağlantıyla doğrudan açılmış sayfada `href`'e

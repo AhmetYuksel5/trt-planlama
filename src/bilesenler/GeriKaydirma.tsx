@@ -4,21 +4,25 @@ import { iosMu } from "../iosSabit";
 import { geriVarMi } from "../yol";
 
 /*
- * iPhone'da ana ekrana eklenmiş uygulamada sayfalar arası geri hareketi
- * (kullanıcı: mobilde geri gitme düğmesi ya da hareketi yoktu). Safari'nin
- * kenardan kaydırma ile geri gitmesi ana ekran uygulamasında yok; Android'in
- * sistem geri hareketi zaten tarayıcı geçmişini kullanıyor, orada çalışmaz
- * (iki kez geri giderdi). Kenardan (sağdan sola dilde sağ kenardan) başlayan,
- * yatay, yeterince uzun kaydırma bir önceki sayfaya döner; açık pencere de
- * geçmiş adımı olduğu için önce o kapanır.
+ * Telefonda sayfalar arası geri hareketi (kullanıcı: mobil uygulamada geri
+ * gitmenin yolu yoktu; üstte geri düğmesi istenmedi, ekran kaydırılınca geri
+ * gitsin). Ekranın sol ya da sağ kenarından içeri doğru yatay, yeterince uzun
+ * kaydırma bir önceki sayfaya döner; açık pencere de geçmiş adımı olduğu için
+ * önce o kapanır. Android'de her yerde (sistemin kenar hareketi açıksa
+ * dokunuşu sistem alır, sayfaya gelmez; iki kez geri gidilmez). iPhone'da
+ * yalnız ana ekran uygulamasında: Safari'nin sekmesinde kendi geri hareketi
+ * var, ikisi birden geri götürürdü.
  */
 const KENAR = 24;
 const ESIK = 72;
 
 const etkin = () => {
-  if (typeof window === "undefined" || !iosMu()) return false;
+  if (typeof window === "undefined") return false;
+  if (window.__geriKaydirmaDene) return true;
+  if (/Android/i.test(navigator.userAgent)) return true;
+  if (!iosMu()) return false;
   const nav = navigator as Navigator & { standalone?: boolean };
-  return nav.standalone === true || matchMedia("(display-mode: standalone)").matches || !!window.__geriKaydirmaDene;
+  return nav.standalone === true || matchMedia("(display-mode: standalone)").matches;
 };
 
 declare global {
@@ -30,7 +34,8 @@ declare global {
 
 export function GeriKaydirma() {
   const [dx, setDx] = useState(0);
-  const bas = useRef<{ x: number; y: number; rtl: boolean; yatay: boolean | null } | null>(null);
+  const [sag, setSag] = useState(false);
+  const bas = useRef<{ x: number; y: number; sag: boolean; yatay: boolean | null } | null>(null);
   const [acik] = useState(etkin);
 
   useEffect(() => {
@@ -38,16 +43,18 @@ export function GeriKaydirma() {
     const basla = (e: TouchEvent) => {
       if (e.touches.length !== 1 || !geriVarMi()) return;
       const t = e.touches[0];
-      const rtl = document.documentElement.dir === "rtl";
-      const kenarda = rtl ? t.clientX >= innerWidth - KENAR : t.clientX <= KENAR;
-      if (!kenarda || (e.target as Element).closest?.("input, textarea, [contenteditable]")) return;
-      bas.current = { x: t.clientX, y: t.clientY, rtl, yatay: null };
+      // Hangi kenardan başladıysa ondan içeri: soldan sağa ya da sağdan sola.
+      const soldan = t.clientX <= KENAR;
+      const sagdan = t.clientX >= innerWidth - KENAR;
+      if ((!soldan && !sagdan) || (e.target as Element).closest?.("input, textarea, [contenteditable]")) return;
+      bas.current = { x: t.clientX, y: t.clientY, sag: sagdan, yatay: null };
+      setSag(sagdan);
     };
     const kay = (e: TouchEvent) => {
       const b = bas.current;
       if (!b) return;
       const t = e.touches[0];
-      const x = (b.rtl ? b.x - t.clientX : t.clientX - b.x);
+      const x = b.sag ? b.x - t.clientX : t.clientX - b.x;
       const y = Math.abs(t.clientY - b.y);
       // İlk belirgin hareket dikeyse kaydırmadır, harekete karışılmaz.
       if (b.yatay === null && (Math.abs(x) > 8 || y > 8)) b.yatay = x > y;
@@ -78,8 +85,8 @@ export function GeriKaydirma() {
   if (!acik || dx <= 0) return null;
   const oran = Math.min(1, dx / ESIK);
   return (
-    <div className={`geri-kaydirma${oran >= 1 ? " hazir" : ""}`} style={{ ["--geri-oran" as string]: oran }} aria-hidden="true" data-geri-kaydirma>
-      <ArrowLeft size={20} className="yon" />
+    <div className={`geri-kaydirma${sag ? " sag" : ""}${oran >= 1 ? " hazir" : ""}`} style={{ ["--geri-oran" as string]: oran }} aria-hidden="true" data-geri-kaydirma>
+      <ArrowLeft size={20} />
     </div>
   );
 }

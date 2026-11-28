@@ -1,6 +1,5 @@
 import { birimAdi, gorevAdi } from "../yapi";
 import {
-  ArrowLeft,
   Palette,
   Bell,
   BookOpen,
@@ -27,7 +26,7 @@ import { useVeri, type Kisi } from "../veri";
 import { UstKisayollar } from "../ekranlar/ortam/Kisayollar";
 import { UstSekmeler } from "../ekranlar/ortam/Sekmeler";
 import { bildirimMi, masaBirimi, sadeEkranMi } from "../yetki";
-import { geriTikla, katmanBaglantisi, useGeriKapatir, useGeriVar, type BolmeAramasi } from "../yol";
+import { katmanBaglantisi, useGeriKapatir, type BolmeAramasi } from "../yol";
 import DilSecici from "./DilSecici";
 import { KonuMetni, useHareketKonusu, useHareketMetni } from "./Hareket";
 import { KomutPaleti } from "./KomutPaleti";
@@ -137,7 +136,6 @@ export default function UstCubuk({
    * dışarı ilk dokunuş yalnız kapatır (saydam perde): alttaki bağlantıyı da
    * çalıştırıyordu. Paneldeki bağlantı önce paneli kapatır, sonra gider.
    */
-  const geriVar = useGeriVar();
   const telefon = typeof matchMedia !== "undefined" && matchMedia("(max-width: 760px)").matches;
   useGeriKapatir(!!acik && telefon, () => setAcik(""));
   const araAdi = t("araTus", { tus: mac ? "⌘K" : "Ctrl K" });
@@ -169,12 +167,6 @@ export default function UstCubuk({
       >
         <Menu size={18} />
       </button>
-      {/* Telefonda sayfalar arası geri (kullanıcı: ana ekran uygulamasında tarayıcının geri düğmesi yok). Uygulamanın içinden gelinmişse. */}
-      {geriVar && (
-        <a className="ikon-dugme ust-geri" href="#/" onClick={geriTikla} aria-label={t("bolmeGeri")} title={t("bolmeGeri")} data-ust-geri>
-          <ArrowLeft size={18} className="yon" />
-        </a>
-      )}
       <a
         className="marka marka-mobil"
         href="#/"
