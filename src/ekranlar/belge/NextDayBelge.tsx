@@ -1,3 +1,4 @@
+import { Sicra } from "../../bilesenler/Etkilesim";
 import { useYz } from "../../yz";
 import { gelismeMasaEtiketi } from "../../masaEtiketi";
 import { MasaEki } from "../nextday/MasaEki";
@@ -376,7 +377,9 @@ function ToplantiPaketi({ plan, paket: p, toplanti, children }: { plan: NextDayP
       {/* Toplantının karar notu ve ek talebi kurumun çıktısında yok; yalnız toplantı görünümünde. */}
       <KararNotlari kalem={p} />
       <p className="toplanti-karar-satiri">
-        <PaketDurumRozeti paket={p} />
+        <Sicra kimlik={p.id} deger={paketKarari(p)}>
+          <PaketDurumRozeti paket={p} />
+        </Sicra>
       </p>
     </div>
   );

@@ -4109,6 +4109,18 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     görevlerim, anmalar, varsa hesap onayı; küçük sayı kutuları, panelde), Planlar
     2×2, Ekip (muhabir paneli, Posta, Takvim). iPhone 13'te (görünür 664 piksel,
     prototip şeridiyle) kaydırmasız. Test `testler/oneri-akisi.cjs`.
+- Etkileşim ilkeleri (kullanıcı: dokuz ilkeden bizde olanlar, gerçek kullanımlardan örnek sayfa;
+  `bilesenler/Etkilesim.tsx`, stiller `tasarim.css`'in sonunda "Etkileşim ilkeleri"): yerinde
+  onaylanan işte satır bir kez nabız atar (`nabizAt`, `satiraNabiz`; "Bugün de geçerli" belgede ve
+  klasikte; işaret React'in yönetmediği `data-nabiz`'de, satırın sınıfı yeniden yazılsa da sürer);
+  durum değiştiren simge bulanık geçişle döner (`SimgeGecisi`: "E-posta için kopyala" 1,6 sn onay,
+  planı gönder zarfı); toplantı görünümlerinde verilen kararın rozeti sıçrar (`Sicra`, son değer
+  kimliğe bağlı modül belleğinde: kabul edilen paket PKG grubuna geçerken satırı yeniden kuruluyor;
+  ilk görülüş sayılmaz) ve seçili kalem öne çıkar, öbürleri .62 soluk ("Karar bekleyen"
+  süzgecinde eski .45 kuralı geçerli); yapay zekâ görüşü beklenirken boş satır yerine iskelet
+  (`data-yz-iskelet`), yenilenirken eski görüş sönük; katlanan paket şeridi ve ana sayfa
+  kuyruğunun satırı yerinde açılırken kısa belirme. Az hareket tercihinde animasyon yok. Esneme ve
+  maskeyle belirme yapılmadı. Test `testler/etkilesim.cjs`.
 - Tasarım dili `src/tasarim.css`: lacivert, beyaz, açık gri. Beş ana
   başlığın her birinin kendi rengi var, kalan her şey tek vurgu rengi.
   Ekranlarda çıplak değer yok. Yerleşim mantıksal CSS özellikleriyle;

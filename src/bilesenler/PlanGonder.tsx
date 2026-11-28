@@ -1,3 +1,4 @@
+import { SimgeGecisi } from "./Etkilesim";
 import { Mail, MailCheck } from "lucide-react";
 import { useRef, useState } from "react";
 import { aralikYaz, ciktiTarihi, metin as dilMetni, tarihYaz, saatYaz, useDil } from "../dil";
@@ -32,7 +33,7 @@ export function PlanGonderDugmesi({ ben, hedef }: { ben: Kisi; hedef: Hedef }) {
   return (
     <>
       <button type="button" className={`dugme dugme-ikincil dugme-ikon${g ? " iyi-yazi" : ""}`} title={ad} aria-label={ad} onClick={() => setAcik(true)} data-plan-gonder={g ? "gonderildi" : ""}>
-        {g ? <MailCheck size={16} /> : <Mail size={16} />}
+        <SimgeGecisi acik={!!g} once={<Mail size={16} />} sonra={<MailCheck size={16} />} />
       </button>
       {acik && <PlanGonderPenceresi ben={ben} hedef={hedef} kapat={() => setAcik(false)} />}
     </>

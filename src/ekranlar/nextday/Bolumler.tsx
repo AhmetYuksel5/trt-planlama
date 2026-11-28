@@ -9,7 +9,8 @@ import { ndBaslikSecenekleri } from "../../baslikSecimi";
 import { ekipAdayi, ekipGorevAdi, ekipGorevListesi, gorevAdi } from "../../yapi";
 import { PaketMetniFormu } from "./BaslikKarti";
 import { ArrowRightLeft, Check, ChevronDown, Package, Pencil, Plus, Trash2, X } from "lucide-react";
-import { Fragment, useState, type ReactNode, type HTMLAttributes } from "react";
+import { Fragment, useState, type ReactNode, type HTMLAttributes, type MouseEvent } from "react";
+import { satiraNabiz } from "../../bilesenler/Etkilesim";
 import { Avatar, Bos, Icerik, Pencere, Rozet, TurRozeti, icerikAlani } from "../../bilesenler/Parcalar";
 import { metin, tarihYaz, useDil } from "../../dil";
 import { baslikEkle, canliSil, gelismeKaydet, kisiPlanAdi, ekipCikar, ekipEkle, ekipGuncelle, gelismeBasligaTasi, gelismeSil, hazirPaketCikar, hazirPaketEkle, oncekiOnayla, paketMetniDuzenlenebilir, stokPaketiSil, stokPaketiSilinebilir, planBaslikEkle, planGorevlendirmeCikar, planGorevlendirmeEkle, type OncekiHedef } from "../../eylemler";
@@ -58,9 +59,9 @@ export function Bolum({ no, baslik, ek, children, ar = false }: { no: number | s
   );
 }
 
-export function IkonDugme({ ikon, etiket, onClick, ton = "" }: { ikon: ReactNode; etiket: string; onClick: () => void; ton?: string }) {
+export function IkonDugme({ ikon, etiket, onClick, ton = "", nabiz }: { ikon: ReactNode; etiket: string; onClick: (e?: MouseEvent<HTMLButtonElement>) => void; ton?: string; nabiz?: boolean }) {
   return (
-    <button type="button" className={`dugme dugme-sade dugme-ikon ${ton}`} onClick={onClick} title={etiket} aria-label={etiket}>
+    <button type="button" className={`dugme dugme-sade dugme-ikon ${ton}`} onClick={onClick} title={etiket} aria-label={etiket} data-bugun-gecerli={nabiz ? "" : undefined}>
       {ikon}
     </button>
   );
@@ -76,7 +77,16 @@ export const oncekiSinif = (onceki: boolean | undefined, sinif: string) => (once
 export function OncekiDugmesi({ planId, hedef }: { planId: string; hedef: OncekiHedef }) {
   const { t } = useDil();
   const ben = useBen();
-  return <IkonDugme ikon={<Check size={15} />} etiket={t("bugunDeGecerli")} onClick={() => ben && oncekiOnayla(ben, planId, hedef)} />;
+  return (
+    <IkonDugme
+      ikon={<Check size={15} />}
+      etiket={t("bugunDeGecerli")}
+      nabiz
+      onClick={(e) => {
+        if (ben && oncekiOnayla(ben, planId, hedef)) satiraNabiz(e?.currentTarget ?? null);
+      }}
+    />
+  );
 }
 
 export function EkleDugmesi({ metin, onClick }: { metin: string; onClick: () => void }) {

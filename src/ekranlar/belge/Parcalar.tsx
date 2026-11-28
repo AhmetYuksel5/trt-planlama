@@ -5,6 +5,7 @@ import { epostaHtml, wordIndir, zenginKopyala } from "../../bilesenler/indir";
 import { bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { useDil, type Anahtar } from "../../dil";
 import { IkonDugme } from "../nextday/Bolumler";
+import { SimgeGecisi, satiraNabiz } from "../../bilesenler/Etkilesim";
 
 /*
  * Belge görünümü: plan, çıktı belgesinin (الأجندة) kendisi üzerinde
@@ -135,7 +136,7 @@ export function SatirSeridi({
       {asagi && <IkonDugme ikon={<ArrowDown size={15} />} etiket={t("asagiTasi")} onClick={asagi} />}
       {ekle && <IkonDugme ikon={<Plus size={15} />} etiket={ekleEtiket ?? t("altinaEkle")} onClick={ekle} />}
       {duzenle && <IkonDugme ikon={<Pencil size={15} />} etiket={t("duzenle")} onClick={duzenle} />}
-      {onceki && <IkonDugme ikon={<Check size={15} />} etiket={t("bugunDeGecerli")} onClick={onceki} />}
+      {onceki && <IkonDugme ikon={<Check size={15} />} etiket={t("bugunDeGecerli")} onClick={(e) => { satiraNabiz(e?.currentTarget ?? null); onceki(); }} nabiz />}
       {ek}
       {cikar && <IkonDugme ikon={<X size={15} />} etiket={cikarEtiket ?? t("cikar")} ton="kotu-yazi" onClick={cikar} />}
     </div>
@@ -198,19 +199,25 @@ export function CiktiAraclari({
   ek?: ReactNode;
 }) {
   const { t } = useDil();
+  const [kopyalandi, setKopyalandi] = useState(false);
   const kopyala = async () => {
     // E-postaya biçimiyle yapışsın: satır içi stilli HTML ve düz metin birlikte (indir.ts → epostaHtml).
     const el = belge.current;
     if (!el) return;
-    bildir(t((await zenginKopyala(epostaHtml(el.innerHTML), el.innerText)) ? "bKopyalandi" : "kopyalanamadi"));
+    const oldu = await zenginKopyala(epostaHtml(el.innerHTML), el.innerText);
+    bildir(t(oldu ? "bKopyalandi" : "kopyalanamadi"));
+    if (oldu) {
+      setKopyalandi(true);
+      setTimeout(() => setKopyalandi(false), 1600);
+    }
   };
   return (
     <div className="dugmeler yazdirma-gizle">
       <GeriBag href={geri.href} metin={geri.metin} />
       <span className="bosluk-esnek" />
       {ek}
-      <button className="dugme dugme-ikincil" onClick={kopyala}>
-        <ClipboardCopy size={16} /> {t("metniKopyala")}
+      <button className="dugme dugme-ikincil" onClick={kopyala} data-kopyala={kopyalandi ? "oldu" : ""}>
+        <SimgeGecisi acik={kopyalandi} once={<ClipboardCopy size={16} />} sonra={<Check size={16} />} /> {t("metniKopyala")}
       </button>
       <button className="dugme dugme-ikincil" onClick={() => wordIndir(word.ad, word.baslik, belge.current?.innerHTML ?? "")}>
         <FileDown size={16} /> {t("wordIndir")}

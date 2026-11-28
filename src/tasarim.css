@@ -4932,3 +4932,33 @@ html.yeni-tasarim.yesil .hafta .gun-say { background: var(--yuzey-3); color: var
 .muhabir-durum { display: grid; gap: 2px; padding: var(--ara-2) var(--ara-3); margin-block: 0 var(--ara-3); border: 1px solid var(--cizgi); border-inline-start: 3px solid var(--sonuk); border-radius: 6px; background: var(--yuzey); }
 .muhabir-durum.sende { border-inline-start-color: var(--vurgu); }
 .muhabir-durum .sonuk { font-size: var(--punto-mini); }
+
+/*
+ * Etkileşim ilkeleri (kullanıcının seçtiği dokuz ilkeden bizdekiler; örnek sayfa
+ * yayında): onayda nabız, simgenin bulanık geçişi, yerinde açılan içerik, toplantıda
+ * odak, yapay zekâ beklerken iskelet. Hareket yalnız az hareket istenmemişse.
+ */
+.simge-gecis { display: inline-grid; vertical-align: middle; }
+.simge-gecis > span { grid-area: 1 / 1; display: inline-flex; transition: opacity .2s ease, filter .2s ease, transform .2s ease; }
+.simge-gecis > .gizli { opacity: 0; filter: blur(4px); transform: scale(.6); }
+.sicra { display: inline-flex; }
+.iskelet { display: block; block-size: .75em; inline-size: 100%; border-radius: 4px; background: var(--yuzey-3); }
+.iskelet.kisa { inline-size: 70%; }
+.yz-iskelet { gap: var(--ara-2); padding-block: var(--ara-1); }
+.yz-gorus-kutu.yenileniyor { opacity: .55; transition: opacity .2s; }
+/* Toplantıda seçili kalem öne çıkar, öbürleri geri çekilir (okunur kalır). */
+.toplanti:not(.yalniz-bekleyen) .toplanti-belge:has(.toplanti-kalem.secili) .toplanti-kalem:not(.secili) { opacity: .62; transition: opacity .2s; }
+.toplanti:not(.yalniz-bekleyen) .toplanti-belge:has(.toplanti-kalem.secili) .toplanti-kalem:not(.secili):hover { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-nabiz=""] { animation: etk-nabiz .6s ease-out; }
+  [data-nabiz="sicra"] { animation: etk-sicra .42s cubic-bezier(.3, 1.6, .5, 1); }
+  .iskelet { background: linear-gradient(90deg, var(--yuzey-3) 0%, var(--yuzey-2) 50%, var(--yuzey-3) 100%); background-size: 200% 100%; animation: etk-iskelet 1.2s linear infinite; }
+  .bp-ic:not(.sayfada), .ap-satir-govde { animation: etk-acilis .22s ease-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .simge-gecis > span { transition: none; }
+}
+@keyframes etk-nabiz { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--iyi) 45%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
+@keyframes etk-sicra { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes etk-iskelet { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@keyframes etk-acilis { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

@@ -229,8 +229,18 @@ export function YzHaberDegeri({ ben, oneri: o, ulkeAdi }: { ben: Kisi; oneri: On
             </button>
           ))}
       </div>
+      {/* Doherty eşiği: yanıt saniyeler sürüyor; boş satır yerine gelecek görüşün biçimi. */}
+      {ozellik && bekliyor && !gorus && (
+        <div className="yz-gorus-kutu yz-iskelet" aria-hidden="true" data-yz-iskelet>
+          <span className="iskelet" style={{ inlineSize: "40%" }} />
+          <span className="iskelet" />
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} className="iskelet kisa" />
+          ))}
+        </div>
+      )}
       {gorus && (
-        <div className="yz-gorus-kutu">
+        <div className={`yz-gorus-kutu${bekliyor ? " yenileniyor" : ""}`}>
           <p>
             <b className="yz-kanaat" data-yz-kanaat={gorus.genel}>{t(GENEL_ADI[gorus.genel])}</b>{" "}
             <small className="sonuk">

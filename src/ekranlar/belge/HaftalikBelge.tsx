@@ -1,3 +1,4 @@
+import { Sicra } from "../../bilesenler/Etkilesim";
 import { haftaSurukleKabi, haftaSuruklenir, hfYer } from "../haftalik/haftaSurukle";
 import { Ban, CalendarClock, Check, Eye, Hourglass, MessageSquarePlus, Package, Printer, Send } from "lucide-react";
 import GeriAlDugmesi from "../../bilesenler/GeriAl";
@@ -277,7 +278,9 @@ function Kalem({ k, hafta, duzen: d, ilk, son, parca }: { k: HaftalikKalem; haft
         )}
         {ts && (
           <p className="toplanti-karar-satiri">
-            <KararRozeti kalem={k} />
+            <Sicra kimlik={k.id} deger={k.karar}>
+              <KararRozeti kalem={k} />
+            </Sicra>
           </p>
         )}
       </div>
