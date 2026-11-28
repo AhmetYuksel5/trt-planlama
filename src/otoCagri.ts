@@ -5,7 +5,7 @@ import { otoCagrilariKaydet } from "./eylemler";
 import { postaKimlikGetir } from "./posta-kapi";
 import { bugun, gunEkle } from "./tarih";
 import { temelSorumlular } from "./gorevler";
-import { getir, muhabirler, type CagriTuru, type Durum, type Kisi } from "./veri";
+import { cagriListesi, getir, type CagriTuru, type Durum, type Kisi } from "./veri";
 import { kapiIstek } from "./yz";
 
 /*
@@ -122,9 +122,9 @@ export const otoCagriKalemleri = (gun: string, grup: string, z: OtoZaman = VARSA
   return k;
 };
 
-/* BCC: izinde olmayan, kurumsal adresi olan muhabirler (elle çağrının varsayılanı). */
+/* BCC: çağrı listesindeki (izinde olmayan, listeden çıkarılmamış), adresi olan muhabirler; elle çağrının varsayılanıyla aynı. */
 export const otoBcc = (d: Durum) => {
-  const liste = muhabirler(d).filter((k) => k.durum !== "izinli" && postaAdresi(k));
+  const liste = cagriListesi(d).filter((k) => postaAdresi(k));
   return { bcc: liste.map((k) => postaAdresi(k)), bccIdler: liste.map((k) => k.id) };
 };
 

@@ -327,12 +327,12 @@ export function farkCikar(eski: Durum, yeni: Durum, siralar: Siralar): { islemle
   }
 
   // Genel belge tek parça yazılıyor (set): değişen alan ötekini silmesin diye ikisi birlikte.
-  if (eski.sayac !== yeni.sayac || eski.geriBildirimAyari !== yeni.geriBildirimAyari || eski.newsdeskDevrede !== yeni.newsdeskDevrede || eski.sayimBaslangici !== yeni.sayimBaslangici || eski.gundemPaylasim !== yeni.gundemPaylasim || eski.staffingEslesmeleri !== yeni.staffingEslesmeleri || eski.gorselAdresi !== yeni.gorselAdresi)
+  if (eski.sayac !== yeni.sayac || eski.geriBildirimAyari !== yeni.geriBildirimAyari || eski.newsdeskDevrede !== yeni.newsdeskDevrede || eski.sayimBaslangici !== yeni.sayimBaslangici || eski.gundemPaylasim !== yeni.gundemPaylasim || eski.staffingEslesmeleri !== yeni.staffingEslesmeleri || eski.cagriDisi !== yeni.cagriDisi || eski.gorselAdresi !== yeni.gorselAdresi)
     islemler.push({
       tur: "yaz",
       koleksiyon: GENEL.koleksiyon,
       id: GENEL.id,
-      veri: { sayac: yeni.sayac, ...(yeni.geriBildirimAyari && { geriBildirimAyari: yeni.geriBildirimAyari }), ...(yeni.newsdeskDevrede && { newsdeskDevrede: true }), ...(yeni.sayimBaslangici && { sayimBaslangici: yeni.sayimBaslangici }), ...(yeni.gundemPaylasim && { gundemPaylasim: yeni.gundemPaylasim }), ...(yeni.staffingEslesmeleri && { staffingEslesmeleri: yeni.staffingEslesmeleri }), ...(yeni.gorselAdresi && { gorselAdresi: yeni.gorselAdresi }) },
+      veri: { sayac: yeni.sayac, ...(yeni.geriBildirimAyari && { geriBildirimAyari: yeni.geriBildirimAyari }), ...(yeni.newsdeskDevrede && { newsdeskDevrede: true }), ...(yeni.sayimBaslangici && { sayimBaslangici: yeni.sayimBaslangici }), ...(yeni.gundemPaylasim && { gundemPaylasim: yeni.gundemPaylasim }), ...(yeni.staffingEslesmeleri && { staffingEslesmeleri: yeni.staffingEslesmeleri }), ...(yeni.cagriDisi?.length && { cagriDisi: yeni.cagriDisi }), ...(yeni.gorselAdresi && { gorselAdresi: yeni.gorselAdresi }) },
     });
 
   return { islemler, siralar: yeniSiralar };

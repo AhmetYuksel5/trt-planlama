@@ -6,7 +6,8 @@ import { SaatGirdisi } from "../../bilesenler/TarihSaat";
 import { gunAdi, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
 import { VARSAYILAN_ZAMAN, otoCagriGetir, otoCagriYaz, otoPaketiBirak, type OtoGorunum, type OtoSablon, type OtoZaman } from "../../otoCagri";
 import { bugun } from "../../tarih";
-import { kisiBul, useVeri } from "../../veri";
+import { cagriListesi, kisiBul, useVeri } from "../../veri";
+import { CagriListesi } from "../oneri/Eposta";
 
 /*
  * Otomatik öneri çağrısı (Ayarlar; src/otoCagri.ts). Kullanıcı: kart karışıktı,
@@ -128,6 +129,10 @@ export function OtoCagriKart() {
               </div>
             );
           })}
+        <details className="oto-katli" data-oto-liste>
+          <summary>{t("cagriListesi", { n: cagriListesi(v).length })}</summary>
+          <CagriListesi />
+        </details>
         <details className="oto-katli" data-oto-zaman>
           <summary>{t("otoZamanMetin")}</summary>
           <ZamanMetin d={d} mesgul={mesgul} kaydet={yenidenKur} />

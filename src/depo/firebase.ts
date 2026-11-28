@@ -610,6 +610,7 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
         const gundemPaylasim = s.data()?.gundemPaylasim as Durum["gundemPaylasim"];
         const staffingEslesmeleri = s.data()?.staffingEslesmeleri as Durum["staffingEslesmeleri"];
         const gorselAdresi = (s.data()?.gorselAdresi as string | undefined) || undefined;
+        const cagriDisi = (s.data()?.cagriDisi as string[] | undefined)?.length ? (s.data()?.cagriDisi as string[]) : undefined;
         const degisti =
           sayac !== d.sayac ||
           JSON.stringify(geriBildirimAyari) !== JSON.stringify(d.geriBildirimAyari) ||
@@ -617,8 +618,9 @@ const kayitBagla = (kendi: OgeBelgesi, hazir: (kisitli: boolean) => void): (() =
           sayimBaslangici !== d.sayimBaslangici ||
           JSON.stringify(gundemPaylasim) !== JSON.stringify(d.gundemPaylasim) ||
           JSON.stringify(staffingEslesmeleri) !== JSON.stringify(d.staffingEslesmeleri) ||
-          gorselAdresi !== d.gorselAdresi;
-        if (degisti) d = { ...d, sayac, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim, staffingEslesmeleri, gorselAdresi };
+          gorselAdresi !== d.gorselAdresi ||
+          JSON.stringify(cagriDisi) !== JSON.stringify(d.cagriDisi);
+        if (degisti) d = { ...d, sayac, geriBildirimAyari, newsdeskDevrede, sayimBaslangici, gundemPaylasim, staffingEslesmeleri, gorselAdresi, cagriDisi };
         sunucuGeldi(GENEL.koleksiyon, s);
         geldi(GENEL.koleksiyon, degisti);
       },

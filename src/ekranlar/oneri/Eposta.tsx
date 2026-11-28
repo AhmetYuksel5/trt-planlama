@@ -5,13 +5,14 @@ import { GeriBag } from "../../bilesenler/GeriBag";
 import { useState, type DragEvent } from "react";
 import { Avatar, Bos, Icerik, Kart, Rozet, Sayac, bildir, icerikAlani } from "../../bilesenler/Parcalar";
 import { aralikYaz, metin, saatYaz, tarihYaz, useDil, type Anahtar } from "../../dil";
-import { cagriKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
+import { cagriKaydet, cagriListesiKaydet, epostaYanitiIsle, yanitBagla, yanittanOneri, type YanitOneriGirdisi, type YanitSonucu } from "../../eylemler";
 import { ORNEK_PLANLAMA_ADRESI, cagriGovdesi, cagriKonusu, ADRES_SINIRI, emlUret, etiketUret, haftaAraligiAr, mailtoUret, type GelenEposta, type GidenEposta } from "../../eposta";
 import { TUR_ADI } from "../../etiketler";
 import { bugun, gunEkle, yerelGun } from "../../tarih";
-import { SECILEN_TURLER, TAKIP_BICIMI, oneriSinirIcinde, oneriEnAzIcinde, cagriTuru, kisiBul, muhabirler, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
+import { SECILEN_TURLER, TAKIP_BICIMI, oneriSinirIcinde, oneriEnAzIcinde, cagriTuru, kisiBul, muhabirler, cagriListesi, useVeri, type Bicim, type Cagri as CagriKaydi, type IcerikTuru, type Kisi, type Oneri, type OneriBicimi, type Yanit } from "../../veri";
 import { yapabilir } from "../../yetki";
 import { git } from "../../yol";
+import { useBen } from "../../oturum";
 import { SayfaBasi } from "../ana/Planlama";
 import { BicimSecici, MuhabirSecici, OneriBicimSecici } from "../nextday/Formlar";
 import { indir } from "../../bilesenler/indir";
@@ -89,8 +90,8 @@ export function GonderDugmeleri({ eposta, dosyaAdi, once }: { eposta: GidenEpost
   );
 }
 
-/** İzinde olmayan bütün muhabirler: çağrının varsayılan BCC listesi. */
-export const izinliHaric = (v: ReturnType<typeof useVeri>) => muhabirler(v).filter((k) => k.durum !== "izinli").map((k) => k.id);
+/** Çağrının varsayılan BCC listesi: çağrı listesindeki muhabirler (izinliler ve listeden çıkarılanlar hariç). */
+export const izinliHaric = (v: ReturnType<typeof useVeri>) => cagriListesi(v).map((k) => k.id);
 
 /** Son kullanılan Kime adresi; ilk çağrıda kurgusal örnek adres (gerçeği planlamacı yazıyor). */
 export const sonKime = (v: ReturnType<typeof useVeri>) => [...v.cagrilar].sort((a, b) => b.zaman.localeCompare(a.zaman))[0]?.kime ?? ORNEK_PLANLAMA_ADRESI;
@@ -99,7 +100,11 @@ export const sonKime = (v: ReturnType<typeof useVeri>) => [...v.cagrilar].sort((
 export function AliciAlanlari({ kime, setKime, bcc, setBcc }: { kime: string; setKime: (k: string) => void; bcc: string[]; setBcc: (b: string[]) => void }) {
   const { t, ad } = useDil();
   const v = useVeri();
+  const ben = useBen();
   const [aliciAcik, setAliciAcik] = useState(false);
+  /* Seçimi kalıcı yap: işaretsiz bırakılan (izinli olmayan) muhabirler çağrı listesinden çıkar, sonraki çağrılar ve otomatik çağrı onsuz. */
+  const kaliciDisi = muhabirler(v).filter((k) => !bcc.includes(k.id) && k.durum !== "izinli" && !k.pasif).map((k) => k.id);
+  const kaliciFarkli = JSON.stringify([...kaliciDisi].sort()) !== JSON.stringify([...(v.cagriDisi ?? [])].sort());
   const liste = [...muhabirler(v)].sort((a, b) => ad(a).localeCompare(ad(b)));
   return (
     <>
@@ -123,6 +128,11 @@ export function AliciAlanlari({ kime, setKime, bcc, setBcc }: { kime: string; se
               <button className="dugme dugme-sade dugme-kucuk" onClick={() => setBcc(izinliHaric(v))}>
                 {t("izinliHaric")}
               </button>
+              {ben && kaliciFarkli && (
+                <button className="dugme dugme-ikincil dugme-kucuk" onClick={() => cagriListesiKaydet(ben, kaliciDisi) && bildir(t("cagriListesiKaydedildi"))} data-cagri-listesi-kaydet>
+                  {t("cagriListesiYap")}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -133,12 +143,40 @@ export function AliciAlanlari({ kime, setKime, bcc, setBcc }: { kime: string; se
                 <input type="checkbox" checked={bcc.includes(k.id)} onChange={() => setBcc(bcc.includes(k.id) ? bcc.filter((x) => x !== k.id) : [...bcc, k.id])} />
                 {ad(k)}
                 {k.durum === "izinli" && <Rozet>{t("kdIzinli")}</Rozet>}
+                {(v.cagriDisi ?? []).includes(k.id) && <Rozet>{t("cagriListesiDisi")}</Rozet>}
               </label>
             ))}
           </fieldset>
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Çağrı listesi (Ayarlar › Otomatik öneri çağrısı): her muhabir işaretli ya da
+ * değil, değişiklik hemen kaydedilir. İzinli olan o gün zaten düşer, işareti
+ * kalıcı listeyi değiştirmez.
+ */
+export function CagriListesi() {
+  const { t, ad } = useDil();
+  const v = useVeri();
+  const ben = useBen();
+  const disi = new Set(v.cagriDisi ?? []);
+  const liste = muhabirler(v).filter((k) => !k.pasif).sort((a, b) => ad(a).localeCompare(ad(b)));
+  const yetkili = !!ben && yapabilir(ben, "cagriHazirla");
+  const degistir = (id: string) => ben && cagriListesiKaydet(ben, disi.has(id) ? [...disi].filter((x) => x !== id) : [...disi, id]);
+  return (
+    <fieldset className="secim-grubu ara-ust-2" data-cagri-listesi disabled={!yetkili}>
+      {liste.map((k) => (
+        <label key={k.id} className="secim-cip">
+          <input type="checkbox" checked={!disi.has(k.id)} onChange={() => degistir(k.id)} data-cagri-listesi-kisi={k.id} />
+          {ad(k)}
+          {k.durum === "izinli" && <Rozet>{t("kdIzinli")}</Rozet>}
+          {!postaAdresi(k) && <Rozet>{t("kcAdresYok")}</Rozet>}
+        </label>
+      ))}
+    </fieldset>
   );
 }
 

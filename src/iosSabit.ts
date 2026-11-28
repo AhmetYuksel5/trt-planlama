@@ -7,7 +7,7 @@
  * durunca bir piksellik gidip gelme görünüm alanını yeniden eşitliyor.
  * Yalnız iOS'ta: öbür tarayıcılarda sorun yok, boşuna kaydırma olmasın.
  */
-const iosMu = () =>
+export const iosMu = () =>
   /iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
 /* Alt çubuk görünüm alanının dibinde değilse eşitleme gerekiyor. Çubuk yoksa (masaüstü

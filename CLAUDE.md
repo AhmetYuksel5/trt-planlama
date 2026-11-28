@@ -2233,8 +2233,16 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
     (`worker/src/oto-cagri.ts → gununGondereni`); ilk sürümün tek göndereni
     (`uid`) okurken her günün göndereni olur (`otoCagriNormal`). "Bunu gönderme"
     (`atla`) kalktı, paket bırakılırken eski işaretler silinir.
-    Kime gönderenin grup adresi, muhabirler BCC'de (izinde olmayan, kurumsal
-    adresi olan); HTML gövde. Zamanlayıcı 15 dakikada bir (`wrangler.toml`,
+    Kime gönderenin grup adresi, muhabirler BCC'de (çağrı listesindeki, kurumsal
+    adresi olan); HTML gövde. Çağrı listesi (kullanıcı: çağrının BCC'si programdan
+    güncellenebilsin; `veri.ts → cagriListesi`): etkin, izinde olmayan ve listeden
+    çıkarılmamış muhabirler; çıkarılanlar `Durum.cagriDisi` (gerçek kipte genel ayar
+    belgesinde, planlamacılara ortak; `eylemler.ts → cagriListesiKaydet`, `cagriHazirla`).
+    Elle çağrının (Next Day ve Weekly) varsayılan BCC'si ve otomatik çağrı aynı listeden;
+    çağrı penceresinde "Alıcıları düzenle"deki seçim "Bu seçimi kalıcı yap"la
+    (`data-cagri-listesi-kaydet`) listeye yazılır, listede olmayan "Listede değil"
+    işaretli; Ayarlar › Otomatik öneri çağrısı'nda katlı "Çağrı listesi · n"
+    (`CagriListesi`, değişiklik hemen kaydedilir). Test `testler/cagri-listesi.cjs`. Zamanlayıcı 15 dakikada bir (`wrangler.toml`,
     `index.ts → CRON_OTO`): saati gelmiş kalemi gönderir (`gununKalemi`,
     İstanbul saati), başarısızı üç kez dener (istek sunucuya yazıldıktan sonra kopan gönderim `belirsiz`, yeniden denenmez: çağrı iki kez gidebilirdi), görevli yoksa ya da izin
     vermemişse ve liste bayatsa geçmişe bir kez yazar. Kapı veritabanını okuyamıyor: gönderen
@@ -4511,6 +4519,15 @@ prototipi. Kaynak kökte, derlenmiş çıktı `docs/` altında ve depoda.
   görünüm alanı eşitlenmiyor): `iosSabit.ts` (yalnız iOS) sayfa kısalınca ve kaydırma
   durunca, alt çubuk görünüm alanının dibinde değilse bir piksel gidip dönüp yeniden
   çizdirir. Yakınlaştırılmış sayfada dokunmaz. Chromium'da sınanamıyor, gerçek cihazda bakılır.
+- Telefonda sayfalar arası geri (kullanıcı: mobil uygulamada geri düğmesi ya da hareketi
+  yoktu; ana ekran uygulamasında tarayıcının geri düğmesi yok): üst çubukta logonun önünde
+  "←" (`data-ust-geri`, `yol.ts → useGeriVar`, `geriTikla`), yalnız uygulamanın içinden
+  gelinmişse (doğrudan açılan sayfada yok), yalnız telefon düzeninde. iPhone'un ana ekran
+  uygulamasında kenardan kaydırma da geri gider (`bilesenler/GeriKaydirma.tsx`; Safari'nin
+  hareketi orada yok): başlangıç kenarından (Arapçada sağdan) yatay, en az 72 piksel;
+  parmakla gelen ok işareti eşiği geçince dolar. Android'de sistemin geri hareketi zaten
+  geçmişi kullandığı için kapalı (iki kez geri giderdi). Açık pencere geçmiş adımı olduğu
+  için önce o kapanır. Test `testler/mobil-geri-dugme.cjs` (`window.__geriKaydirmaDene`).
 - Tablolar telefonda karta dönüyor: `tablo kartli` sınıfı, her hücrede
   `data-etiket`, başlık hücresinde `birincil`. Yeni tablo da böyle yazılır.
   Tek istisna yetki matrisi; o bir ızgara, yatay kayıyor.

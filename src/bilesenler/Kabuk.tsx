@@ -1,3 +1,4 @@
+import { GeriKaydirma } from "./GeriKaydirma";
 import { Eye, FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useDil } from "../dil";
@@ -84,6 +85,7 @@ export default function Kabuk({ ben, sayfa, ortamAcik = false, children }: { ben
       <AnaMenu ben={ben} acik={menuSayfasi} />
       <div className="perde" onClick={kapat} />
       <div className="ana">
+        <GeriKaydirma />
         <UstCubuk ben={ben} onMenu={menuDugmesi} masaustu={masaustu} menuGorunur={masaustu ? !menuGizli : menuAcik} />
         {/* Telefonda prototip notu çubuğun altında tam cümle; masaüstünde çubuktaki etiket. */}
         {!GERCEK && (

@@ -2258,6 +2258,13 @@ export interface Durum {
    * Gerçek kipte genel ayar belgesinde: bütün planlamacılar aynı eşleşmeyi bulsun.
    */
   staffingEslesmeleri?: Record<string, string>;
+  /**
+   * Öneri çağrısının BCC listesinden kalıcı olarak çıkarılan muhabirler
+   * (kullanıcı: çağrının BCC'si programdan güncellenebilsin). Elle çağrının
+   * varsayılanı ve otomatik çağrı bundan (`cagriListesi`). Gerçek kipte genel
+   * ayar belgesinde: bütün planlamacılara ortak.
+   */
+  cagriDisi?: string[];
   /** Geri bildirim ve e-postayla takip ayarı (gerçek kipte genel ayar belgesinde). */
   geriBildirimAyari?: GeriBildirimAyari;
   sayac: number;
@@ -2558,6 +2565,12 @@ export const oneriBul = (d: Durum, id?: string) => d.oneriler.find((o) => o.id =
 export const haftaBul = (d: Durum, id?: string) => d.haftalik.find((h) => h.id === id);
 export const faaliyetBul = (d: Durum, id?: string) => d.faaliyetler.find((f) => f.id === id);
 export const muhabirler = (d: Durum) => d.kisiler.filter((k) => k.birim === "muhabir");
+
+/** Öneri çağrısının BCC listesi: etkin, izinde olmayan, listeden çıkarılmamış muhabirler. */
+export const cagriListesi = (d: Pick<Durum, "kisiler" | "cagriDisi">) => {
+  const disi = new Set(d.cagriDisi ?? []);
+  return d.kisiler.filter((k) => k.birim === "muhabir" && !k.pasif && k.durum !== "izinli" && !disi.has(k.id));
+};
 
 /** Çağrının türü; alanı olmayan kayıt Next Day. */
 export const cagriTuru = (c: { tur?: CagriTuru }): CagriTuru => c.tur ?? "nextday";

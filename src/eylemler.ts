@@ -306,6 +306,20 @@ const yeniKod = (d: Durum): [string, Durum] => {
  * ya da telefon), uygulama göndermiyor. Kayıt muhabir ekranına açık çağrı
  * düşürüyor ve gelen yanıtların eşleşeceği etiketi ve BCC listesini tutuyor.
  */
+/*
+ * Çağrı listesi (kullanıcı: muhabirlere giden çağrının BCC'si programdan
+ * güncellenebilsin): listeden çıkarılan muhabirler kalıcı, elle çağrının
+ * varsayılanı ve otomatik çağrı bundan. İzin ve pasiflik ayrıca düşer.
+ */
+export const cagriListesiKaydet = (ben: Kisi, disi: string[]) => {
+  if (!yapabilir(ben, "cagriHazirla")) return false;
+  const d = getir();
+  const muh = new Set(d.kisiler.filter((k) => k.birim === "muhabir").map((k) => k.id));
+  const yeni = [...new Set(disi)].filter((id) => muh.has(id)).sort();
+  if (JSON.stringify(yeni) === JSON.stringify([...(d.cagriDisi ?? [])].sort())) return true;
+  return kaydet({ ...d, cagriDisi: yeni.length ? yeni : undefined }) !== false;
+};
+
 export const cagriKaydet = (
   ben: Kisi,
   g: { tur: CagriTuru; tarih: string; metin: string; sonSaat: string; kime: string; bcc: string[]; etiket: string },
